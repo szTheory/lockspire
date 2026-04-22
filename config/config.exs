@@ -6,3 +6,5 @@ config :lockspire,
   issuer: nil,
   mount_path: "/lockspire",
   oban: []
+
+import_config "#{config_env()}.exs"

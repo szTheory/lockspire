@@ -41,7 +41,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     ClientRecord
     |> where([client], client.client_id == ^client_id)
     |> repo().one()
-    |> then(&{:ok, maybe_map(&1, &ClientRecord.to_domain/1)})
+    |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
@@ -65,7 +65,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([interaction], interaction.interaction_id == ^interaction_id)
     |> where([interaction], interaction.expires_at > ^now)
     |> repo().one()
-    |> then(&{:ok, maybe_map(&1, &InteractionRecord.to_domain/1)})
+    |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
@@ -84,7 +84,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([grant], grant.account_id == ^account_id)
     |> order_by([grant], desc: grant.granted_at, desc: grant.id)
     |> repo().all()
-    |> then(&{:ok, Enum.map(&1, &ConsentGrantRecord.to_domain/1)})
+    |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
@@ -127,7 +127,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
     |> repo().all()
-    |> then(&{:ok, Enum.map(&1, &SigningKeyRecord.to_domain/1)})
+    |> then(fn records -> {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
