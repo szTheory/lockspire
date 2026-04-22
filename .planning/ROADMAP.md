@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Establish library structure, public API boundaries, and configuration model
+- [x] 01-01: Establish library structure, public API boundaries, and configuration model
 - [ ] 01-02: Define Ecto/Postgres domain and adapter seams for clients, consents, interactions, tokens, and keys
 - [ ] 01-03: Generate host-owned integration modules and mount path for login/consent handoff
 
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Host Seam | 0/3 | Not started | - |
+| 1. Foundation and Host Seam | 1/3 | In Progress | - |
 | 2. Authorization Core | 0/3 | Not started | - |
 | 3. OIDC and Token Lifecycle | 0/3 | Not started | - |
 | 4. Operator Product | 0/3 | Not started | - |

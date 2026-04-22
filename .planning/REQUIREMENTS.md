@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Integration
 
-- [ ] **INTE-01**: Host app can install Lockspire as a separate library and mount its routes without requiring a standalone service
-- [ ] **INTE-02**: Host app can implement an explicit account-resolution seam for login, account lookup, and claim enrichment
+- [x] **INTE-01**: Host app can install Lockspire as a separate library and mount its routes without requiring a standalone service
+- [x] **INTE-02**: Host app can implement an explicit account-resolution seam for login, account lookup, and claim enrichment
 - [ ] **INTE-03**: Generated host code provides editable consent and interaction handoff modules that fit a normal Phoenix app
 - [ ] **INTE-04**: Host app retains ownership of layouts, branding, login UX, and product-specific policy
 
