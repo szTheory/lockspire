@@ -214,6 +214,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def fetch_lifecycle_token(token_hash) when is_binary(token_hash) do
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type in [:access_token, :refresh_token])
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
   def fetch_refresh_token(token_hash) when is_binary(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
@@ -252,6 +263,36 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
+  end
+
+  @impl TokenStore
+  def revoke_lifecycle_token(token_hash, client_id, revoked_at)
+      when is_binary(token_hash) and is_binary(client_id) and is_struct(revoked_at, DateTime) do
+    transact(fn ->
+      TokenRecord
+      |> where([token], token.token_hash == ^token_hash)
+      |> where([token], token.token_type in [:access_token, :refresh_token])
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          nil
+
+        %TokenRecord{client_id: ^client_id} = record ->
+          if is_nil(record.revoked_at) do
+            record
+            |> Ecto.Changeset.change(revoked_at: revoked_at, updated_at: DateTime.utc_now())
+            |> repo().update()
+            |> map_one(&TokenRecord.to_domain/1)
+            |> unwrap_or_rollback()
+          else
+            TokenRecord.to_domain(record)
+          end
+
+        %TokenRecord{} ->
+          nil
+      end
+    end)
   end
 
   @impl TokenStore

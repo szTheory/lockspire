@@ -12,11 +12,15 @@ defmodule Lockspire.Storage.TokenStore do
   @callback revoke_token_family(String.t()) :: {:ok, non_neg_integer()} | {:error, store_error()}
   @callback fetch_authorization_code(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
+  @callback fetch_lifecycle_token(String.t()) ::
+              {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_refresh_token(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_active_authorization_code(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_active_access_token(String.t()) ::
+              {:ok, Token.t() | nil} | {:error, store_error()}
+  @callback revoke_lifecycle_token(String.t(), String.t(), DateTime.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback mark_authorization_code_redeemed(String.t(), DateTime.t()) ::
               {:ok, Token.t()} | {:error, store_error()}
