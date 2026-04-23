@@ -72,7 +72,7 @@ Each task was committed atomically:
 1. **Task 1: Complete the durable interaction, consent, and authorization-code contract** - `eeeed64` (test), `f6c6f7b` (feat)
 2. **Task 2: Implement protocol orchestration, consent rules, and authorization-code issuance** - `bebbb69` (test), `0ccb8d8` (feat)
 
-**Plan metadata:** pending
+**Plan metadata:** `255ce2e` (docs)
 
 ## Files Created/Modified
 - `lib/lockspire/protocol/authorization_flow.ex` - Protocol-core orchestration for validated requests, consent decisions, approval or denial, and authorization-code issuance.
