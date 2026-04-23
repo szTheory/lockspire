@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-04-23T01:51:48.641Z"
+status: verifying
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-04-23T01:59:33.600Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 
 Phase: 02 (authorization-core) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-23
 
-Progress: [█████████░] 86%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [█████████░] 86%
 | Phase 02 P01 | 7 | 3 tasks | 12 files |
 | Phase 02 P02 | 11min | 2 tasks | 16 files |
 | Phase 02 P03 | 31min | 3 tasks | 10 files |
+| Phase 02-authorization-core P04 | 5min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - AuthorizeController resolves current account in the web layer and passes explicit subject context into AuthorizationFlow.
 - Pending login interactions resume through AuthorizationFlow.resume_interaction/3 before consent review or consent reuse.
 - Generated host consent templates always post approve and deny decisions back to Lockspire finalize routes.
+- TokenExchange owns token-endpoint client authentication and only allows :none, :client_secret_basic, and :client_secret_post for Phase 2.
+- Access tokens remain opaque and hashed at rest behind TokenFormatter while authorization-code redemption persists through one repository transaction.
+- The /token controller stays a thin JSON adapter and leaves all protocol validation, replay detection, and reason-code emission in protocol core.
 
 ### Pending Todos
 
@@ -101,8 +105,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-23T01:51:48.631Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-04-23T01:59:33.589Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
 
 **Planned Phase:** 2 (Authorization Core) — 4 plans — 2026-04-22T23:33:22.141Z

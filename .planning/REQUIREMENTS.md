@@ -20,7 +20,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUTH-02**: Third-party client can start an authorization code flow with PKCE S256
 - [x] **AUTH-03**: Lockspire validates redirect URIs by exact match and rejects unsafe authorization requests
 - [x] **AUTH-04**: Authenticated account can approve or deny a consent request for requested scopes
-- [ ] **AUTH-05**: Third-party client can exchange a valid authorization code for an access token
+- [x] **AUTH-05**: Third-party client can exchange a valid authorization code for an access token
 
 ### OIDC and Token Lifecycle
 
@@ -89,7 +89,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
-| AUTH-05 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Complete |
 | OIDC-01 | Phase 3 | Pending |
 | OIDC-02 | Phase 3 | Pending |
 | OIDC-03 | Phase 3 | Pending |
@@ -114,4 +114,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-22*
-*Last updated: 2026-04-22 after initial definition*
+*Last updated: 2026-04-23 after Phase 2 completion*

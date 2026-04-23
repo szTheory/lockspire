@@ -13,7 +13,7 @@ Lockspire will be built as a focused six-phase first milestone. The sequence sta
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation and Host Seam** - Establish Lockspire's library boundaries, storage seams, and host-owned integration path
-- [ ] **Phase 2: Authorization Core** - Deliver client registration, authorization code + PKCE, consent, and token exchange
+- [x] **Phase 2: Authorization Core** - Deliver client registration, authorization code + PKCE, consent, and token exchange
 - [ ] **Phase 3: OIDC and Token Lifecycle** - Add discovery, JWKS, userinfo, refresh rotation, revocation, and introspection
 - [ ] **Phase 4: Operator Product** - Build the admin workflows for clients, consents, tokens, and keys
 - [ ] **Phase 5: Security and Observability Hardening** - Enforce secure defaults, auditability, redaction, and negative-path coverage
@@ -53,7 +53,7 @@ Plans:
 - [x] 02-01: Implement client registration and authorization request validation
 - [x] 02-02: Build durable interaction, consent, and authorization-code state plus protocol orchestration
 - [x] 02-03: Wire `/authorize`, consent UI/finalization, and generated host surfaces for the end-to-end flow
-- [ ] 02-04: Implement token exchange for access tokens with durable state transitions
+- [x] 02-04: Implement token exchange for access tokens with durable state transitions
 
 ### Phase 3: OIDC and Token Lifecycle
 **Goal**: Complete the interoperable provider surface with OIDC metadata, JWKS, userinfo, and durable token lifecycle management.
@@ -127,7 +127,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Host Seam | 3/3 | Completed | 2026-04-23 |
-| 2. Authorization Core | 3/4 | In progress | 2026-04-23 |
+| 2. Authorization Core | 4/4 | Completed | 2026-04-23 |
 | 3. OIDC and Token Lifecycle | 0/3 | Not started | - |
 | 4. Operator Product | 0/3 | Not started | - |
 | 5. Security and Observability Hardening | 0/3 | Not started | - |
