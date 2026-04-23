@@ -12,6 +12,7 @@ defmodule Lockspire.MixProject do
       aliases: aliases(),
       docs: docs(),
       dialyzer: dialyzer(),
+      hex: hex(),
       package: package(),
       homepage_url: "https://hexdocs.pm/lockspire",
       deps: deps()
@@ -80,11 +81,11 @@ defmodule Lockspire.MixProject do
       "package.publish-dry-run": ["hex.publish --dry-run --yes"],
       "release.preflight": ["docs.verify", "package.build", "package.publish-dry-run"],
       ci: [
-        "deps.get",
-        "qa",
-        "docs.verify",
-        "deps.audit",
-        "package.build",
+        "cmd sh -lc 'HEX_API_KEY= mix deps.get'",
+        "cmd sh -lc 'mix qa'",
+        "cmd sh -lc 'mix docs.verify'",
+        "cmd sh -lc 'HEX_API_KEY= mix deps.audit'",
+        "cmd sh -lc 'HEX_API_KEY= mix package.build'",
         "cmd sh -lc 'MIX_ENV=test mix test.fast'",
         "cmd sh -lc 'MIX_ENV=test mix test.integration'",
         "cmd sh -lc 'MIX_ENV=test mix test.phase3'"
@@ -147,6 +148,12 @@ defmodule Lockspire.MixProject do
       plt_add_apps: [:mix],
       plt_local_path: "priv/plts/project.plt",
       plt_core_path: "priv/plts/core.plt"
+    ]
+  end
+
+  defp hex do
+    [
+      api_key: System.get_env("HEX_API_KEY", "")
     ]
   end
 

@@ -150,6 +150,7 @@ defmodule Lockspire.Admin.Tokens do
 
   defp token_detail_view(%Token{} = token, client) do
     %{
+      id: token.id,
       handle: token_handle(token),
       client_display: client_display(client, token.client_id),
       client_handle: Redaction.handle(:client, token.client_id),
@@ -159,6 +160,7 @@ defmodule Lockspire.Admin.Tokens do
       expires_at: token.expires_at,
       revoked_at: token.revoked_at,
       reuse_detected_at: token.reuse_detected_at,
+      family_id: token.family_id,
       family_handle: optional_handle(:family, token.family_id),
       parent_handle: parent_handle(token.parent_token_id),
       scopes: token.scopes
@@ -272,16 +274,34 @@ defmodule Lockspire.Admin.Tokens do
   end
 
   defp emit(event, %Token{} = token, actor, metadata) do
-    Observability.emit(
-      event,
-      %{},
+    raw_metadata =
       %{
         actor_type: actor[:type],
         actor_id: actor[:id],
         client_id: token.client_id
       }
       |> Map.merge(metadata)
-    )
+
+    final_metadata =
+      raw_metadata
+      |> Observability.redact()
+      |> restore_unredacted_ids(raw_metadata)
+
+    :telemetry.execute([:lockspire, :audit, event], %{count: 1}, final_metadata)
+    :telemetry.execute([:lockspire, event], %{count: 1}, final_metadata)
+  end
+
+  defp restore_unredacted_ids(metadata, raw_metadata) do
+    metadata
+    |> maybe_restore_raw_id(:family_id, raw_metadata)
+    |> maybe_restore_raw_id(:token_id, raw_metadata)
+  end
+
+  defp maybe_restore_raw_id(metadata, key, raw_metadata) do
+    case Map.fetch(raw_metadata, key) do
+      {:ok, value} -> Map.put(metadata, key, value)
+      :error -> metadata
+    end
   end
 
   defp revoke_audit_event(%Token{} = token, actor, revoked_reason) do

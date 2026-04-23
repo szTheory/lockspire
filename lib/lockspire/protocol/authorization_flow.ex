@@ -358,6 +358,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       fun.()
       |> maybe_append_audit_events(store, audit_events)
     end)
+    |> normalize_transaction_result()
   end
 
   defp append_audit_events(_store, []), do: :ok
@@ -381,6 +382,9 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp normalize_transaction_result({:ok, {:ok, result}}), do: {:ok, result}
+  defp normalize_transaction_result(result), do: result
 
   defp approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
     transact_with_audit(interaction_store(opts), audit_events, fn ->
