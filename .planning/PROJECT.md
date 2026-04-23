@@ -8,19 +8,33 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current State
+
+The first Lockspire milestone is complete and archived as [v1.0](milestones/v1.0-ROADMAP.md) at the planning level. The repo now contains the embedded install path, authorization code + PKCE flow, OIDC discovery/JWKS/userinfo, refresh rotation, revocation, introspection, LiveView-native operator tooling, and the security/observability baseline described by the milestone.
+
+That said, the public release claim should still remain **v0.1 preview**, not `1.0`. The repo's own supported-surface guidance requires repeated green release gates and trusted release-path verification before a full `1.0` claim is warranted, and those gates are still blocked by repo-wide Credo debt and trusted Hex auth requirements.
+
+## Next Milestone Goals
+
+- Close the repo-wide QA backlog so `mix ci` is green without carve-outs.
+- Exercise the trusted Hex publish and release path end to end.
+- Decide whether the next milestone focuses on release hardening or the v2 protocol candidates.
+
 ## Requirements
 
 ### Validated
 
-(None yet — ship to validate)
+- Embedded-library install and host-owned integration seams were delivered in the archived v1.0 milestone.
+- Authorization code + PKCE, OIDC discovery/JWKS/userinfo, revocation, introspection, and refresh rotation were delivered in the archived v1.0 milestone.
+- Operator/admin workflows for clients, consents, tokens, and keys were delivered in the archived v1.0 milestone.
+- Security defaults, telemetry, auditability, redaction, and negative-path coverage were delivered in the archived v1.0 milestone.
+- Canonical onboarding, executable docs, CI/release assets, and supported-surface policy were delivered in the archived v1.0 milestone.
 
 ### Active
 
-- [ ] Phoenix teams can install Lockspire into an existing app and complete a real authorization flow quickly.
-- [ ] Lockspire delivers a secure authorization code + PKCE and OIDC baseline with strong defaults and clear protocol boundaries.
-- [ ] Operators can manage clients, consents, tokens, keys, and incidents from a calm LiveView-native admin surface.
-- [ ] Host apps keep ownership of accounts, login, branding, and product-specific policy through narrow explicit seams.
-- [ ] The library ships with strong telemetry, auditability, docs, CI/CD, and release discipline.
+- [ ] Repo-wide QA and release gates are green enough to justify a public `1.0` claim.
+- [ ] Trusted release-path verification is exercised in the intended publish environment.
+- [ ] The next milestone scope is defined and documented.
 
 ### Out of Scope
 
@@ -42,18 +56,19 @@ Lockspire is a greenfield OSS library project with a substantial prep corpus in 
 - **Architecture**: Strong internal boundaries between protocol core, storage, generators, Plug/Phoenix integration, and operator UI — this keeps the public API small and the library maintainable.
 - **Host seam**: Host apps own accounts, login UX, layouts, branding, and policy — Lockspire must not take over the host's authentication model.
 - **Release quality**: Executable docs, warnings-as-errors, CI/CD, changelog hygiene, and publish-from-release discipline are part of the product — release trust is a core feature for an auth library.
+- **Verification posture**: Default phase closure to executable proof in tests and CI — human UAT is only valid when automation is blocked by a real external boundary such as protected release credentials, third-party trust, or physical hardware.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Ship Lockspire as a separate companion library, not a Sigra module | Keeps provider-side OAuth/OIDC concerns isolated from end-user authentication concerns | — Pending |
-| Build as an embedded library rather than a standalone auth service | Matches Phoenix team deployment reality and preserves host control over UI, accounts, and app policy | — Pending |
-| Use Phoenix LiveView for admin and consent UX | Gives operators and host apps first-class Phoenix-native surfaces instead of a foreign console | — Pending |
-| Default to Ecto/Postgres durable storage with explicit seams for later adapters | Prioritizes correctness, auditability, and operational simplicity for v1 | — Pending |
-| Optimize for a narrow v1 focused on auth code + PKCE, OIDC discovery/JWKS/userinfo, client management, consent, rotation, telemetry, and release readiness | Keeps the initial scope credible and avoids drifting into a heavyweight CIAM suite | — Pending |
-| Treat PAR, dynamic client registration, device flow, stronger sender-constrained modes, and stronger certification profiles as later roadmap candidates | Preserves room for future protocol expansion without bloating the first milestone | — Pending |
-| **Sigra ecosystem sequencing** | Finish **Phase 3 → 5 → 6** before public “Sigra + Lockspire” golden paths; document via **ECOSYSTEM-SIGRA.md** and **`docs/sigra-companion-host.md`** | — Pending |
+| Ship Lockspire as a separate companion library, not a Sigra module | Keeps provider-side OAuth/OIDC concerns isolated from end-user authentication concerns | Adopted in archived v1.0 milestone |
+| Build as an embedded library rather than a standalone auth service | Matches Phoenix team deployment reality and preserves host control over UI, accounts, and app policy | Adopted in archived v1.0 milestone |
+| Use Phoenix LiveView for admin and consent UX | Gives operators and host apps first-class Phoenix-native surfaces instead of a foreign console | Adopted in archived v1.0 milestone |
+| Default to Ecto/Postgres durable storage with explicit seams for later adapters | Prioritizes correctness, auditability, and operational simplicity for v1 | Adopted in archived v1.0 milestone |
+| Optimize for a narrow v1 focused on auth code + PKCE, OIDC discovery/JWKS/userinfo, client management, consent, rotation, telemetry, and release readiness | Keeps the initial scope credible and avoids drifting into a heavyweight CIAM suite | Adopted in archived v1.0 milestone |
+| Treat PAR, dynamic client registration, device flow, stronger sender-constrained modes, and stronger certification profiles as later roadmap candidates | Preserves room for future protocol expansion without bloating the first milestone | Deferred to next milestone planning |
+| **Sigra ecosystem sequencing** | Finish **Phase 3 → 5 → 6** before public “Sigra + Lockspire” golden paths; document via **ECOSYSTEM-SIGRA.md** and **`docs/sigra-companion-host.md`** | Adopted in archived v1.0 milestone |
 
 ## Evolution
 
@@ -73,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 — Ecosystem sequencing doc (**ECOSYSTEM-SIGRA.md**), **`docs/sigra-companion-host.md`**, **`mix lockspire.install --sigra-host`**, ROADMAP ecosystem note.*
+*Last updated: 2026-04-23 — archived v1.0 milestone, rolled requirements into milestone archives, and preserved preview-before-1.0 release posture in project state.*
