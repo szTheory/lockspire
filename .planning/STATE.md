@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: milestone_complete
-last_updated: "2026-04-23T20:40:00Z"
-last_activity: 2026-04-23 -- archived v1.0 milestone; planning scope is complete and public release posture remains preview pending green release gates
+milestone: v1.1
+milestone_name: Release Hardening
+status: executing
+last_updated: "2026-04-23T20:43:49Z"
+last_activity: 2026-04-23 -- completed 07-01 source cleanup so the maintained runtime/security file set passes strict Credo from source truth
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 25
-  completed_plans: 25
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 9
+  completed_plans: 1
+  percent: 11
 ---
 
 # Project State
@@ -21,44 +21,45 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Milestone archive complete; next milestone not yet defined
+**Current focus:** Phase 7 Repo Truth QA
 
 ## Current Position
 
-Phase: v1.0 milestone — COMPLETE
+Phase: 7 (Repo Truth QA) — EXECUTING
 
-Plan: 25 of 25
+Plan: 2 of 4
 
-Status: Six-phase milestone archived. Implementation scope is complete; public release posture remains preview until QA and trusted release-path blockers are closed.
+Status: 07-01 is complete; 07-02 is next.
 
-Last activity: 2026-04-23 -- archived roadmap and requirements, updated project state, and recorded remaining release blockers explicitly
+Last activity: 2026-04-23 -- completed 07-01 runtime/security Credo cleanup and advanced the phase to Mix-task and Dialyzer truthing
 
 ## Performance Metrics
 
-- Phases completed: 6/6
-- Plans completed: 25/25
-- Recorded tasks completed: 42
-- Timeline: 2026-04-22 -> 2026-04-23
+- Phases completed: 0/3
+- Plans completed: 1/9
+- Recorded tasks completed: 1
+- Timeline: 2026-04-23 -> active
 
 ## Accumulated Context
 
 ### Decisions
 
-See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library product shape, narrow host seam, Phoenix-native operator UX, Ecto/Postgres durable storage default, and preview-before-1.0 release posture.
+See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library product shape, narrow host seam, Phoenix-native operator UX, Ecto/Postgres durable storage default, and preview-before-1.0 release posture. The v1.1 milestone adds a polish-first sequencing decision: make the current preview surface boring to ship before expanding protocol breadth, with PAR queued next.
 
 ### Pending Todos
 
-- Clear repo-wide Credo debt until `mix ci` is green on the intended release lane.
+- Clear repo-wide QA debt until `mix ci` is green on the intended release lane.
 - Exercise trusted Hex publish dry-run and release workflow in the protected environment.
-- Define the next milestone with `$gsd-new-milestone`.
+- Tighten contract tests and docs so preview claims cannot drift from workflow truth.
+- Execute the remaining Phase 7 plans starting with Mix-task and Dialyzer truthing.
 
 ### Blockers/Concerns
 
-- Public `1.0` release claims would overstate the current support posture while `mix ci` remains red on repo-wide Credo debt.
+- Public `1.0` release claims would overstate the current support posture while repo-wide gates remain red.
 - `mix package.publish-dry-run` and the publish path still depend on trusted Hex credentials outside this local shell.
 
 ## Session Continuity
 
-**Next action:** Start `$gsd-new-milestone` after deciding whether the immediate priority is release hardening or new protocol scope.
+**Next action:** Execute `07-02` to finish the `mix qa` truthing lane after the runtime/security Credo cleanup landed.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
