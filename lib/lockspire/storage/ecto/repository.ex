@@ -203,6 +203,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def fetch_authorization_code(token_hash) when is_binary(token_hash) do
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type == :authorization_code)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
   def fetch_active_authorization_code(token_hash) when is_binary(token_hash) do
     now = DateTime.utc_now()
 
@@ -265,6 +276,33 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @impl TokenStore
+  def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
+      when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
+    transact(fn ->
+      TokenRecord
+      |> where([token], token.token_hash == ^token_hash)
+      |> where([token], token.token_type == :authorization_code)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %TokenRecord{redeemed_at: %DateTime{}} ->
+          repo().rollback(:already_redeemed)
+
+        %TokenRecord{} = record ->
+          with {:ok, redeemed_code} <- redeem_code_record(record, redeemed_at),
+               {:ok, stored_access_token} <- store_token_record(access_token) do
+            %{authorization_code: redeemed_code, access_token: stored_access_token}
+          else
+            {:error, reason} -> repo().rollback(reason)
+          end
+      end
+    end)
+  end
+
   defp repo do
     Config.repo!()
   end
@@ -283,4 +321,18 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp unwrap_or_rollback({:ok, result}), do: result
   defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
+
+  defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
+    record
+    |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
+    |> repo().update()
+    |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp store_token_record(%Token{} = token) do
+    %TokenRecord{}
+    |> TokenRecord.changeset(token)
+    |> repo().insert()
+    |> map_one(&TokenRecord.to_domain/1)
+  end
 end
