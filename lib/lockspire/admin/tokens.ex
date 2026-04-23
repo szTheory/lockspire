@@ -7,6 +7,7 @@ defmodule Lockspire.Admin.Tokens do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
+  alias Lockspire.Redaction
   alias Lockspire.Storage.Ecto.Repository
 
   @type token_status :: :active | :revoked | :expired | :reuse_detected
@@ -18,10 +19,10 @@ defmodule Lockspire.Admin.Tokens do
         }
 
   @type token_detail :: %{
-          token: Token.t(),
+          token: map(),
           client: Client.t() | nil,
           status: token_status(),
-          family_tokens: [token_view()],
+          family_tokens: [map()],
           family_status: token_status(),
           family_revoked_count: non_neg_integer(),
           family_active_count: non_neg_integer(),
@@ -116,21 +117,23 @@ defmodule Lockspire.Admin.Tokens do
   defp build_detail(nil), do: nil
 
   defp build_detail(%Token{} = token) do
+    client = fetch_client(token.client_id)
+
     family_tokens =
       case token.family_id do
         family_id when is_binary(family_id) ->
           case Repository.list_token_family(family_id) do
-            {:ok, tokens} -> Enum.map(tokens, &enrich_token/1)
-            {:error, _reason} -> [enrich_token(token)]
+            {:ok, tokens} -> Enum.map(tokens, &token_family_entry(&1, token.id))
+            {:error, _reason} -> [token_family_entry(token, token.id)]
           end
 
         _other ->
-          [enrich_token(token)]
+          [token_family_entry(token, token.id)]
       end
 
     %{
-      token: token,
-      client: fetch_client(token.client_id),
+      token: token_detail_view(token, client),
+      client: client,
       status: token_status(token),
       family_tokens: family_tokens,
       family_status: family_status(family_tokens),
@@ -149,6 +152,36 @@ defmodule Lockspire.Admin.Tokens do
       token: token,
       client: fetch_client(token.client_id),
       status: token_status(token)
+    }
+  end
+
+  defp token_detail_view(%Token{} = token, client) do
+    %{
+      handle: token_handle(token),
+      client_display: client_display(client, token.client_id),
+      client_handle: Redaction.handle(:client, token.client_id),
+      account_handle: optional_handle(:account, token.account_id),
+      token_type: token.token_type,
+      generation: token.generation,
+      expires_at: token.expires_at,
+      revoked_at: token.revoked_at,
+      reuse_detected_at: token.reuse_detected_at,
+      family_handle: optional_handle(:family, token.family_id),
+      parent_handle: parent_handle(token.parent_token_id),
+      scopes: token.scopes
+    }
+  end
+
+  defp token_family_entry(%Token{} = token, current_token_id) do
+    %{
+      token: %{
+        handle: token_handle(token),
+        token_type: token.token_type,
+        generation: token.generation,
+        reuse_detected_at: token.reuse_detected_at
+      },
+      status: token_status(token),
+      current?: token.id == current_token_id
     }
   end
 
@@ -174,6 +207,26 @@ defmodule Lockspire.Admin.Tokens do
       true -> :revoked
     end
   end
+
+  defp token_handle(%Token{} = token) do
+    source =
+      cond do
+        is_integer(token.id) -> token.id
+        is_binary(token.family_id) -> "#{token.family_id}:#{token.generation}"
+        true -> token.token_hash
+      end
+
+    Redaction.handle(:token, source)
+  end
+
+  defp client_display(%Client{name: name}, _client_id) when is_binary(name) and name != "", do: name
+  defp client_display(_client, client_id), do: Redaction.handle(:client, client_id)
+
+  defp optional_handle(_type, nil), do: nil
+  defp optional_handle(type, value), do: Redaction.handle(type, value)
+
+  defp parent_handle(nil), do: nil
+  defp parent_handle(value), do: Redaction.handle(:token, value)
 
   defp normalize_revoke_attrs(attrs) do
     attrs
