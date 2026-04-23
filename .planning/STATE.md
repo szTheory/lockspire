@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Release Hardening
 status: executing
-last_updated: "2026-04-23T20:48:30Z"
-last_activity: 2026-04-23 -- completed 07-02 so `mix qa` passes from repo truth with explicit Mix-aware Dialyzer config and narrow test-only Credo policy
+last_updated: "2026-04-23T20:51:32Z"
+last_activity: 2026-04-23 -- completed 07-03 so the maintained integration and phase3 test lanes are green and sharply owned
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 9
-  completed_plans: 2
-  percent: 22
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -27,17 +27,17 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 Phase: 7 (Repo Truth QA) — EXECUTING
 
-Plan: 3 of 4
+Plan: 4 of 4
 
-Status: 07-01 and 07-02 are complete; 07-03 is next.
+Status: 07-01 through 07-03 are complete; 07-04 is next.
 
-Last activity: 2026-04-23 -- completed 07-02 and closed GATE-01 with a truthful green `mix qa`
+Last activity: 2026-04-23 -- completed 07-03 and closed GATE-03 with green maintained release-critical test lanes
 
 ## Performance Metrics
 
 - Phases completed: 0/3
-- Plans completed: 2/9
-- Recorded tasks completed: 3
+- Plans completed: 3/9
+- Recorded tasks completed: 5
 - Timeline: 2026-04-23 -> active
 
 ## Accumulated Context
@@ -51,7 +51,7 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - Clear repo-wide QA debt until `mix ci` is green on the intended release lane.
 - Exercise trusted Hex publish dry-run and release workflow in the protected environment.
 - Tighten contract tests and docs so preview claims cannot drift from workflow truth.
-- Keep the maintained integration and Phase 3 test lanes deterministic and non-duplicative.
+- Align docs, workflows, and contract tests around the single contributor gate story.
 
 ### Blockers/Concerns
 
@@ -60,6 +60,6 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ## Session Continuity
 
-**Next action:** Execute `07-03` to keep `mix test.integration` and `mix test.phase3` green, deterministic, and sharply owned.
+**Next action:** Execute `07-04` to align `mix ci`, workflows, docs, and contract tests around one truthful contributor gate.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`

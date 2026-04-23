@@ -26,7 +26,7 @@ Plans:
 
 - [x] 07-01: Clean runtime and security-sensitive source so strict Credo passes from source truth
 - [x] 07-02: Make `mix qa` truthful for Mix tasks and generators by fixing Dialyzer scope and warning sources
-- [ ] 07-03: Keep `mix test.integration` and `mix test.phase3` deterministic, sharp, and non-duplicative
+- [x] 07-03: Keep `mix test.integration` and `mix test.phase3` deterministic, sharp, and non-duplicative
 - [ ] 07-04: Align `mix ci`, docs, workflows, and contract tests around the maintained contributor gate
 
 **Details:**
