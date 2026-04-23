@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-22T23:41:15.504Z"
-last_activity: 2026-04-22 — Completed 01-01 plan and advancing to 01-02
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-23T01:27:54.245Z"
+last_activity: 2026-04-23
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_phases: 1
+  total_plans: 7
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
-**Current focus:** Phase 01 — foundation-and-host-seam
+**Current focus:** Phase 02 — authorization-core
 
 ## Current Position
 
-Phase: 01 (foundation-and-host-seam) — EXECUTING
-Plan: 2 of 3
-Status: Executing plan 02 of 03
-Last activity: 2026-04-22 — Completed 01-01 plan and advancing to 01-02
+Phase: 02 (authorization-core) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-23
 
-Progress: [███░░░░░░░] 33%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 4
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -51,7 +51,11 @@ Progress: [███░░░░░░░] 33%
 - Last 5 plans: -
 - Trend: Stable
 
-- Phase 01 P01 completed with 3 task commits across 13 files.
+- Phase 01 P01 established the library shell, host seam, and base config boundary.
+- Phase 01 P02 established domain storage contracts, Ecto records, migrations, and repository tests.
+- Phase 01 P03 established the install generator, host-owned templates, and mountable web entrypoints.
+
+| Phase 02 P01 | 7 | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -65,6 +69,9 @@ Recent decisions affecting current work:
 - Kept the public Lockspire API limited to config and seam discovery helpers in Phase 1.
 - Established a single AccountResolver host seam with typed claims and interaction structs.
 - Kept Lockspire.Application free of host session or account supervision assumptions.
+- Client registration returns plaintext secrets only through a typed registration result while persisting only hashed secrets.
+- Authorize validation enforces runtime-configured known scopes in addition to client-allowed scopes before any redirect or host handoff.
+- The Phase 2 /authorize success branch stays as a validated JSON handoff until interaction orchestration lands in 02-02 and 02-03.
 
 ### Pending Todos
 
@@ -86,8 +93,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-22T23:41:15.504Z
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-foundation-and-host-seam/01-02-PLAN.md
+Last session: 2026-04-23T01:27:54.239Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
 
-**Planned Phase:** 1 (Foundation and Host Seam) — 3 plans — 2026-04-22T23:33:22.141Z
+**Planned Phase:** 2 (Authorization Core) — 4 plans — 2026-04-22T23:33:22.141Z

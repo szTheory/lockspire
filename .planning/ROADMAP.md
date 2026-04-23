@@ -12,7 +12,7 @@ Lockspire will be built as a focused six-phase first milestone. The sequence sta
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation and Host Seam** - Establish Lockspire's library boundaries, storage seams, and host-owned integration path
+- [x] **Phase 1: Foundation and Host Seam** - Establish Lockspire's library boundaries, storage seams, and host-owned integration path
 - [ ] **Phase 2: Authorization Core** - Deliver client registration, authorization code + PKCE, consent, and token exchange
 - [ ] **Phase 3: OIDC and Token Lifecycle** - Add discovery, JWKS, userinfo, refresh rotation, revocation, and introspection
 - [ ] **Phase 4: Operator Product** - Build the admin workflows for clients, consents, tokens, and keys
@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01: Establish library structure, public API boundaries, and configuration model
-- [ ] 01-02: Define Ecto/Postgres domain and adapter seams for clients, consents, interactions, tokens, and keys
-- [ ] 01-03: Generate host-owned integration modules and mount path for login/consent handoff
+- [x] 01-02: Define Ecto/Postgres domain and adapter seams for clients, consents, interactions, tokens, and keys
+- [x] 01-03: Generate host-owned integration modules and mount path for login/consent handoff
 
 ### Phase 2: Authorization Core
 **Goal**: Implement the first complete provider flow: client management inputs, authorization code + PKCE, consent decisions, and code exchange for access tokens.
@@ -47,12 +47,13 @@ Plans:
   3. Unsafe or mismatched authorization requests are rejected with clear protocol-safe behavior.
   4. An authenticated account can approve or deny requested scopes through the consent handoff.
   5. A valid authorization code can be exchanged for an access token.
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: Implement client registration and authorization request validation
-- [ ] 02-02: Build interaction lifecycle, consent decision flow, and authorization code issuance
-- [ ] 02-03: Implement token exchange for access tokens with durable state transitions
+- [x] 02-01: Implement client registration and authorization request validation
+- [ ] 02-02: Build durable interaction, consent, and authorization-code state plus protocol orchestration
+- [ ] 02-03: Wire `/authorize`, consent UI/finalization, and generated host surfaces for the end-to-end flow
+- [ ] 02-04: Implement token exchange for access tokens with durable state transitions
 
 ### Phase 3: OIDC and Token Lifecycle
 **Goal**: Complete the interoperable provider surface with OIDC metadata, JWKS, userinfo, and durable token lifecycle management.
@@ -125,8 +126,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Host Seam | 1/3 | In Progress | - |
-| 2. Authorization Core | 0/3 | Not started | - |
+| 1. Foundation and Host Seam | 3/3 | Completed | 2026-04-23 |
+| 2. Authorization Core | 1/4 | In progress | 2026-04-23 |
 | 3. OIDC and Token Lifecycle | 0/3 | Not started | - |
 | 4. Operator Product | 0/3 | Not started | - |
 | 5. Security and Observability Hardening | 0/3 | Not started | - |
