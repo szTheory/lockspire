@@ -14,6 +14,8 @@ defmodule Lockspire.Storage.TokenStore do
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_active_authorization_code(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
+  @callback fetch_active_access_token(String.t()) ::
+              {:ok, Token.t() | nil} | {:error, store_error()}
   @callback mark_authorization_code_redeemed(String.t(), DateTime.t()) ::
               {:ok, Token.t()} | {:error, store_error()}
   @callback redeem_authorization_code(String.t(), DateTime.t(), Token.t()) ::

@@ -5,8 +5,11 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
+  alias Lockspire.Host.Claims
   alias Lockspire.Observability
+  alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.TokenFormatter
 
   @access_token_ttl 3600
@@ -17,12 +20,13 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     @type t :: %__MODULE__{
             access_token: String.t(),
+            id_token: String.t() | nil,
             token_type: String.t(),
             expires_in: pos_integer(),
             scope: String.t()
           }
 
-    defstruct [:access_token, :token_type, :expires_in, :scope]
+    defstruct [:access_token, :id_token, :token_type, :expires_in, :scope]
   end
 
   defmodule Error do
@@ -111,7 +115,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     with {:ok, decoded} <- Base.decode64(encoded_credentials),
          [raw_client_id, raw_client_secret] <- String.split(decoded, ":", parts: 2),
          client_id when client_id not in [nil, ""] <- URI.decode_www_form(raw_client_id),
-         client_secret when client_secret not in [nil, ""] <- URI.decode_www_form(raw_client_secret) do
+         client_secret when client_secret not in [nil, ""] <-
+           URI.decode_www_form(raw_client_secret) do
       {:ok, :client_secret_basic, client_id, client_secret}
     else
       _other ->
@@ -295,13 +300,16 @@ defmodule Lockspire.Protocol.TokenExchange do
     }
 
     case token_store(request).redeem_authorization_code(code_hash, issued_at, access_token) do
-      {:ok, %{access_token: %Token{}}} ->
-        %Success{
-          access_token: formatted_access_token.token,
-          token_type: formatted_access_token.token_type,
-          expires_in: @access_token_ttl,
-          scope: Enum.join(authorization_code.scopes, " ")
-        }
+      {:ok, %{access_token: %Token{} = persisted_access_token}} ->
+        build_success_response(
+          client,
+          authorization_code,
+          persisted_access_token,
+          formatted_access_token.token,
+          formatted_access_token.token_type,
+          issued_at,
+          request
+        )
 
       {:error, :already_redeemed} ->
         {:error,
@@ -318,6 +326,111 @@ defmodule Lockspire.Protocol.TokenExchange do
            "Unable to redeem authorization code",
            :token_redemption_failed
          )}
+    end
+  end
+
+  defp build_success_response(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         %Token{} = persisted_access_token,
+         raw_access_token,
+         token_type,
+         issued_at,
+         request
+       ) do
+    with {:ok, id_token} <-
+           maybe_issue_id_token(client, authorization_code, raw_access_token, issued_at, request) do
+      %Success{
+        access_token: raw_access_token,
+        id_token: id_token,
+        token_type: token_type,
+        expires_in: @access_token_ttl,
+        scope: Enum.join(persisted_access_token.scopes, " ")
+      }
+    end
+  end
+
+  defp maybe_issue_id_token(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         raw_access_token,
+         issued_at,
+         request
+       ) do
+    if "openid" in authorization_code.scopes do
+      with {:ok, %Interaction{} = interaction} <- fetch_interaction(authorization_code, request),
+           {:ok, %Claims{} = claims} <- resolve_claims(authorization_code, client, request),
+           {:ok, signing_key} <- fetch_signing_key(request),
+           {:ok, token} <-
+             IdToken.sign(%{
+               client_id: client.client_id,
+               issuer: Config.issuer!(),
+               host_claims: claims,
+               interaction_nonce: interaction.nonce,
+               access_token: raw_access_token,
+               issued_at: issued_at,
+               signing_key: signing_key
+             }) do
+        {:ok, token}
+      else
+        {:error, %Error{} = error} ->
+          {:error, error}
+
+        {:error, reason_code} ->
+          {:error, oauth_error(500, "server_error", "Unable to issue id_token", reason_code)}
+      end
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
+       when is_binary(interaction_id) do
+    case interaction_store(request).fetch_interaction(interaction_id) do
+      {:ok, %Interaction{} = interaction} ->
+        {:ok, interaction}
+
+      {:ok, nil} ->
+        {:error, :interaction_not_found}
+
+      {:error, _reason} ->
+        {:error, :interaction_lookup_failed}
+    end
+  end
+
+  defp fetch_interaction(_authorization_code, _request), do: {:error, :interaction_not_found}
+
+  defp resolve_claims(%Token{} = authorization_code, %Client{} = client, _request) do
+    resolver = Config.account_resolver!()
+
+    context = %{
+      client_id: client.client_id,
+      scopes: authorization_code.scopes,
+      interaction_id: authorization_code.interaction_id
+    }
+
+    with {:ok, account} <- resolver.resolve_account(authorization_code.account_id, context),
+         {:ok, %Claims{} = claims} <- resolver.build_claims(account, context) do
+      {:ok, claims}
+    else
+      {:error, _reason} -> {:error, :claims_resolution_failed}
+    end
+  end
+
+  defp fetch_signing_key(request) do
+    case key_store(request).fetch_active_signing_key() do
+      {:ok, %{alg: "RS256", private_jwk_encrypted: private_jwk} = key}
+      when is_binary(private_jwk) ->
+        {:ok, key}
+
+      {:ok, nil} ->
+        {:error, :signing_key_not_found}
+
+      {:ok, _key} ->
+        {:error, :invalid_signing_key}
+
+      {:error, _reason} ->
+        {:error, :signing_key_lookup_failed}
     end
   end
 
@@ -417,6 +530,12 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp token_store(request),
     do: Keyword.get(request_options(request), :token_store, Config.repo!())
+
+  defp interaction_store(request),
+    do: Keyword.get(request_options(request), :interaction_store, Config.repo!())
+
+  defp key_store(request),
+    do: Keyword.get(request_options(request), :key_store, Config.repo!())
 
   defp now(request),
     do:

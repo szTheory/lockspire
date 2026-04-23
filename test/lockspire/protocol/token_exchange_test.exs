@@ -6,14 +6,47 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   import Ecto.Query
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.Interaction
+  alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
+  defmodule Resolver do
+    @behaviour Lockspire.Host.AccountResolver
+
+    alias Lockspire.Host.Claims
+    alias Lockspire.Host.InteractionResult
+
+    @impl true
+    def resolve_current_account(_conn_or_socket, _context), do: {:ok, %{id: "subject-123"}}
+
+    @impl true
+    def resolve_account(account_reference, _context), do: {:ok, %{id: account_reference}}
+
+    @impl true
+    def build_claims(account, _context) do
+      {:ok,
+       %Claims{
+         subject: account.id,
+         id_token: %{"email" => "#{account.id}@example.test"},
+         userinfo: %{"email" => "#{account.id}@example.test", "name" => "Subject #{account.id}"}
+       }}
+    end
+
+    @impl true
+    def redirect_for_login(_conn_or_socket, _context) do
+      %InteractionResult{login_path: "/sign-in", return_to: "/authorize", params: %{}}
+    end
+  end
+
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+    Application.put_env(:lockspire, :account_resolver, Resolver)
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
 
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -88,6 +121,66 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     event_names = recorded_event_names(events)
     assert [:lockspire, :authorization_code_redeemed] in event_names
     assert [:lockspire, :access_token_issued] in event_names
+  end
+
+  test "issues an RS256 id token for openid code flow using the linked interaction nonce" do
+    secret = "openid-secret"
+    {:ok, client} = create_client("client-openid", :client_secret_basic, secret)
+    publish_signing_key("kid-openid")
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-openid",
+        code_verifier: "verifier-openid",
+        scopes: ["openid", "email", "profile"],
+        nonce: "nonce-from-interaction"
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-openid",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-openid"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert is_binary(success.id_token)
+
+    assert %{"alg" => "RS256", "kid" => "kid-openid", "typ" => "JWT"} =
+             decode_jwt_section(success.id_token, 0)
+
+    claims = decode_jwt_section(success.id_token, 1)
+
+    assert claims["iss"] == "https://example.test/lockspire"
+    assert claims["aud"] == client.client_id
+    assert claims["sub"] == "subject-123"
+    assert claims["nonce"] == "nonce-from-interaction"
+    assert claims["at_hash"] == at_hash(success.access_token)
+  end
+
+  test "does not issue an id token when openid is not granted" do
+    secret = "oauth-secret"
+    {:ok, client} = create_client("client-oauth", :client_secret_basic, secret)
+    publish_signing_key("kid-oauth")
+
+    _code =
+      create_authorization_code(client, raw_code: "code-oauth", code_verifier: "verifier-oauth")
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-oauth",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-oauth"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert success.id_token == nil
   end
 
   test "accepts form-encoded basic auth credentials containing reserved characters" do
@@ -277,6 +370,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       opts: [
         client_store: Repository,
         token_store: Repository,
+        interaction_store: Repository,
+        key_store: Repository,
         token_generator: fn -> "opaque-access-token-123" end
       ]
     })
@@ -304,19 +399,58 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     verifier = Keyword.fetch!(opts, :code_verifier)
     raw_code = Keyword.fetch!(opts, :raw_code)
     now = DateTime.utc_now()
+    interaction_id = "interaction-#{raw_code}"
+
+    {:ok, _interaction} =
+      Repository.put_interaction(%Interaction{
+        interaction_id: interaction_id,
+        client_id: client.client_id,
+        account_id: "subject-123",
+        scopes_requested: Keyword.get(opts, :scopes, ["email", "profile"]),
+        nonce: Keyword.get(opts, :nonce),
+        redirect_uri: "https://client.example.com/callback",
+        return_to: "/authorize",
+        state: "state-123",
+        code_challenge: code_challenge(verifier),
+        code_challenge_method: :S256,
+        status: :completed,
+        completed_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
 
     Repository.store_token(%Token{
       token_hash: TokenFormatter.hash_token(raw_code),
       token_type: :authorization_code,
       client_id: client.client_id,
       account_id: "subject-123",
-      interaction_id: "interaction-#{raw_code}",
+      interaction_id: interaction_id,
       redirect_uri: "https://client.example.com/callback",
-      scopes: ["email", "profile"],
+      scopes: Keyword.get(opts, :scopes, ["email", "profile"]),
       code_challenge: code_challenge(verifier),
       code_challenge_method: :S256,
       issued_at: now,
       expires_at: Keyword.get(opts, :expires_at, DateTime.add(now, 300, :second))
+    })
+  end
+
+  defp publish_signing_key(kid) do
+    jwk = JOSE.JWK.generate_key({:rsa, 2048}) |> JOSE.JWK.to_map() |> elem(1)
+
+    Repository.publish_key(%SigningKey{
+      kid: kid,
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk:
+        Map.take(jwk, ["kty", "kid", "alg", "use", "n", "e"])
+        |> Map.put("kid", kid)
+        |> Map.put("alg", "RS256")
+        |> Map.put("use", "sig"),
+      private_jwk_encrypted: :erlang.term_to_binary(Map.put(jwk, "kid", kid)),
+      status: :active,
+      published_at: DateTime.utc_now(),
+      activated_at: DateTime.utc_now(),
+      metadata: %{}
     })
   end
 
@@ -339,6 +473,19 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   defp code_challenge(verifier) do
     :crypto.hash(:sha256, verifier)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp at_hash(access_token) do
+    <<left::binary-size(16), _rest::binary>> = :crypto.hash(:sha256, access_token)
+    Base.url_encode64(left, padding: false)
+  end
+
+  defp decode_jwt_section(jwt, index) do
+    jwt
+    |> String.split(".")
+    |> Enum.at(index)
+    |> Base.url_decode64!(padding: false)
+    |> Jason.decode!()
   end
 
   defp recorded_event_names(agent) do

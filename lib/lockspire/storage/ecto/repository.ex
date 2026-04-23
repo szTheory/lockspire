@@ -229,6 +229,21 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def fetch_active_access_token(token_hash) when is_binary(token_hash) do
+    now = DateTime.utc_now()
+
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type == :access_token)
+    |> where([token], is_nil(token.revoked_at))
+    |> where([token], token.expires_at > ^now)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
   def mark_authorization_code_redeemed(token_hash, redeemed_at)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
     transact(fn ->
@@ -279,6 +294,18 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn records ->
       {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
     end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl KeyStore
+  def fetch_active_signing_key do
+    SigningKeyRecord
+    |> where([key], key.status == :active)
+    |> order_by([key], asc: key.inserted_at)
+    |> limit(1)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
