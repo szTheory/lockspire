@@ -27,7 +27,7 @@ Plans:
 - [x] 07-01: Clean runtime and security-sensitive source so strict Credo passes from source truth
 - [x] 07-02: Make `mix qa` truthful for Mix tasks and generators by fixing Dialyzer scope and warning sources
 - [x] 07-03: Keep `mix test.integration` and `mix test.phase3` deterministic, sharp, and non-duplicative
-- [ ] 07-04: Align `mix ci`, docs, workflows, and contract tests around the maintained contributor gate
+- [x] 07-04: Align `mix ci`, docs, workflows, and contract tests around the maintained contributor gate
 
 **Details:**
 This phase closes the repo-truth gap between the documented release bar and what the current tree actually passes. It should prefer boring fixes, small contract clarifications, and explicit gate ownership over new feature work.
