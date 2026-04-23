@@ -11,4 +11,7 @@ defmodule Lockspire.Storage.InteractionStore do
   @callback put_interaction(Interaction.t()) :: {:ok, Interaction.t()} | {:error, store_error()}
   @callback fetch_active_interaction(String.t()) ::
               {:ok, Interaction.t() | nil} | {:error, store_error()}
+  @callback transition_interaction(String.t(), [Interaction.status()], map()) ::
+              {:ok, Interaction.t()} | {:error, store_error()}
+  @callback transact((-> term())) :: {:ok, term()} | {:error, store_error()}
 end

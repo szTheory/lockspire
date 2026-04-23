@@ -28,6 +28,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour TokenStore
   @behaviour KeyStore
 
+  @active_interaction_statuses InteractionRecord.active_statuses()
+
   @impl ClientStore
   def register_client(%Client{} = client) do
     %ClientRecord{}
@@ -63,9 +65,45 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
     InteractionRecord
     |> where([interaction], interaction.interaction_id == ^interaction_id)
+    |> where([interaction], interaction.status in ^@active_interaction_statuses)
     |> where([interaction], interaction.expires_at > ^now)
     |> repo().one()
     |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl InteractionStore
+  def transition_interaction(interaction_id, expected_statuses, attrs)
+      when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
+    transact(fn ->
+      interaction_id
+      |> locked_interaction_query()
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %InteractionRecord{} = record ->
+          if record.status in expected_statuses do
+            record
+            |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
+            |> repo().update()
+            |> map_one(&InteractionRecord.to_domain/1)
+            |> unwrap_or_rollback()
+          else
+            repo().rollback(:invalid_state)
+          end
+      end
+    end)
+  end
+
+  @impl InteractionStore
+  def transact(fun) when is_function(fun, 0) do
+    case repo().transaction(fun) do
+      {:ok, result} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
   rescue
     error -> {:error, error}
   end
@@ -89,6 +127,45 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @impl ConsentStore
+  def list_reusable_consents(account_id, client_id)
+      when is_binary(account_id) and is_binary(client_id) do
+    ConsentGrantRecord
+    |> where([grant], grant.account_id == ^account_id and grant.client_id == ^client_id)
+    |> where([grant], grant.kind == :remembered and grant.status == :active)
+    |> where([grant], is_nil(grant.revoked_at))
+    |> order_by([grant], desc: grant.granted_at, desc: grant.id)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl ConsentStore
+  def revoke_consent_grant(grant_id, attrs) when is_integer(grant_id) and is_map(attrs) do
+    transact(fn ->
+      ConsentGrantRecord
+      |> where([grant], grant.id == ^grant_id)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %ConsentGrantRecord{} = record ->
+          record
+          |> ConsentGrantRecord.update_changeset(
+            attrs
+            |> Map.put_new(:status, :revoked)
+            |> Map.put(:updated_at, DateTime.utc_now())
+          )
+          |> repo().update()
+          |> map_one(&ConsentGrantRecord.to_domain/1)
+          |> unwrap_or_rollback()
+      end
+    end)
+  end
+
   @impl TokenStore
   def store_token(%Token{} = token) do
     %TokenRecord{}
@@ -108,6 +185,47 @@ defmodule Lockspire.Storage.Ecto.Repository do
     {:ok, count}
   rescue
     error -> {:error, error}
+  end
+
+  @impl TokenStore
+  def fetch_active_authorization_code(token_hash) when is_binary(token_hash) do
+    now = DateTime.utc_now()
+
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type == :authorization_code)
+    |> where([token], is_nil(token.redeemed_at) and is_nil(token.revoked_at))
+    |> where([token], token.expires_at > ^now)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
+  def mark_authorization_code_redeemed(token_hash, redeemed_at)
+      when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
+    transact(fn ->
+      TokenRecord
+      |> where([token], token.token_hash == ^token_hash)
+      |> where([token], token.token_type == :authorization_code)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %TokenRecord{redeemed_at: %DateTime{}} ->
+          repo().rollback(:already_redeemed)
+
+        %TokenRecord{} = record ->
+          record
+          |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
+          |> repo().update()
+          |> map_one(&TokenRecord.to_domain/1)
+          |> unwrap_or_rollback()
+      end
+    end)
   end
 
   @impl KeyStore
@@ -141,4 +259,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_map(nil, _mapper), do: nil
   defp maybe_map(record, mapper), do: mapper.(record)
+
+  defp locked_interaction_query(interaction_id) do
+    InteractionRecord
+    |> where([interaction], interaction.interaction_id == ^interaction_id)
+    |> lock("FOR UPDATE")
+  end
+
+  defp unwrap_or_rollback({:ok, result}), do: result
+  defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
 end
