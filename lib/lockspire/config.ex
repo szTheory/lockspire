@@ -25,6 +25,13 @@ defmodule Lockspire.Config do
     fetch_required!(:mount_path)
   end
 
+  @spec known_scopes() :: [String.t()]
+  def known_scopes do
+    @app
+    |> Application.get_env(:known_scopes, [])
+    |> List.wrap()
+  end
+
   @spec oban_config() :: keyword()
   def oban_config do
     Application.get_env(@app, :oban, [])
