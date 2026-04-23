@@ -39,6 +39,19 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ClientStore
+  def list_clients(opts \\ []) when is_list(opts) do
+    ClientRecord
+    |> maybe_filter_client_search(Keyword.get(opts, :search))
+    |> maybe_filter_client_status(Keyword.get(opts, :active))
+    |> order_by([client], asc: client.name, asc: client.client_id)
+    |> maybe_limit_clients(Keyword.get(opts, :limit))
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl ClientStore
   def fetch_client_by_id(client_id) when is_binary(client_id) do
     ClientRecord
     |> where([client], client.client_id == ^client_id)
@@ -46,6 +59,49 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
+  end
+
+  @impl ClientStore
+  def update_client(%Client{id: id}, attrs) when is_integer(id) and is_map(attrs) do
+    transact(fn ->
+      ClientRecord
+      |> where([client], client.id == ^id)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %ClientRecord{} = record ->
+          record
+          |> ClientRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
+          |> repo().update()
+          |> map_one(&ClientRecord.to_domain/1)
+          |> unwrap_or_rollback()
+      end
+    end)
+  end
+
+  @impl ClientStore
+  def rotate_client_secret(%Client{id: id}, secret_hash, rotated_at)
+      when is_integer(id) and is_binary(secret_hash) and is_struct(rotated_at, DateTime) do
+    update_client_record(id, %{
+      client_secret_hash: secret_hash,
+      last_secret_rotated_at: rotated_at,
+      updated_at: DateTime.utc_now()
+    })
+  end
+
+  @impl ClientStore
+  def set_client_active(%Client{id: id}, active, attrs)
+      when is_integer(id) and is_boolean(active) and is_map(attrs) do
+    lifecycle_attrs =
+      attrs
+      |> Map.take([:disabled_at, :disabled_by])
+      |> Map.put(:active, active)
+      |> Map.put(:updated_at, DateTime.utc_now())
+
+    update_client_record(id, lifecycle_attrs)
   end
 
   @impl InteractionStore
@@ -428,11 +484,57 @@ defmodule Lockspire.Storage.Ecto.Repository do
     Config.repo!()
   end
 
+  defp update_client_record(id, attrs) do
+    transact(fn ->
+      ClientRecord
+      |> where([client], client.id == ^id)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %ClientRecord{} = record ->
+          record
+          |> ClientRecord.update_changeset(attrs)
+          |> repo().update()
+          |> map_one(&ClientRecord.to_domain/1)
+          |> unwrap_or_rollback()
+      end
+    end)
+  end
+
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
   defp map_one({:error, error}, _mapper), do: {:error, error}
 
   defp maybe_map(nil, _mapper), do: nil
   defp maybe_map(record, mapper), do: mapper.(record)
+
+  defp maybe_filter_client_search(query, nil), do: query
+  defp maybe_filter_client_search(query, ""), do: query
+
+  defp maybe_filter_client_search(query, search) when is_binary(search) do
+    pattern = "%#{search}%"
+
+    where(
+      query,
+      [client],
+      ilike(client.client_id, ^pattern) or ilike(client.name, ^pattern)
+    )
+  end
+
+  defp maybe_filter_client_status(query, nil), do: query
+
+  defp maybe_filter_client_status(query, active) when is_boolean(active) do
+    where(query, [client], client.active == ^active)
+  end
+
+  defp maybe_limit_clients(query, nil), do: query
+
+  defp maybe_limit_clients(query, limit) when is_integer(limit) and limit > 0,
+    do: limit(query, ^limit)
+
+  defp maybe_limit_clients(query, _limit), do: query
 
   defp locked_interaction_query(interaction_id) do
     InteractionRecord

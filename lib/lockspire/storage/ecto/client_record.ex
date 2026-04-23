@@ -10,33 +10,40 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
   @timestamps_opts [type: :utc_datetime_usec]
 
   schema "lockspire_clients" do
-    field :client_id, :string
-    field :client_secret_hash, :string
-    field :client_type, Ecto.Enum, values: [:public, :confidential]
-    field :name, :string
-    field :redirect_uris, {:array, :string}, default: []
-    field :post_logout_redirect_uris, {:array, :string}, default: []
-    field :allowed_scopes, {:array, :string}, default: []
-    field :allowed_grant_types, {:array, :string}, default: []
-    field :allowed_response_types, {:array, :string}, default: []
-    field :token_endpoint_auth_method,
-          Ecto.Enum,
-          values: [:client_secret_basic, :client_secret_post, :private_key_jwt, :none]
+    field(:client_id, :string)
+    field(:client_secret_hash, :string)
+    field(:client_type, Ecto.Enum, values: [:public, :confidential])
+    field(:name, :string)
+    field(:redirect_uris, {:array, :string}, default: [])
+    field(:post_logout_redirect_uris, {:array, :string}, default: [])
+    field(:allowed_scopes, {:array, :string}, default: [])
+    field(:allowed_grant_types, {:array, :string}, default: [])
+    field(:allowed_response_types, {:array, :string}, default: [])
 
-    field :pkce_required, :boolean, default: true
-    field :subject_type, Ecto.Enum, values: [:public, :pairwise]
-    field :sector_identifier_uri, :string
-    field :id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA]
-    field :jwks, :map
-    field :jwks_uri, :string
-    field :logo_uri, :string
-    field :tos_uri, :string
-    field :policy_uri, :string
-    field :contacts, {:array, :string}, default: []
-    field :tenant_id, :string
-    field :created_by, :string
-    field :created_at, :utc_datetime_usec
-    field :metadata, :map, default: %{}
+    field(
+      :token_endpoint_auth_method,
+      Ecto.Enum,
+      values: [:client_secret_basic, :client_secret_post, :private_key_jwt, :none]
+    )
+
+    field(:pkce_required, :boolean, default: true)
+    field(:subject_type, Ecto.Enum, values: [:public, :pairwise])
+    field(:sector_identifier_uri, :string)
+    field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
+    field(:jwks, :map)
+    field(:jwks_uri, :string)
+    field(:logo_uri, :string)
+    field(:tos_uri, :string)
+    field(:policy_uri, :string)
+    field(:contacts, {:array, :string}, default: [])
+    field(:tenant_id, :string)
+    field(:created_by, :string)
+    field(:created_at, :utc_datetime_usec)
+    field(:active, :boolean, default: true)
+    field(:disabled_at, :utc_datetime_usec)
+    field(:disabled_by, :string)
+    field(:last_secret_rotated_at, :utc_datetime_usec)
+    field(:metadata, :map, default: %{})
 
     timestamps()
   end
@@ -67,6 +74,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :tenant_id,
       :created_by,
       :created_at,
+      :active,
+      :disabled_at,
+      :disabled_by,
+      :last_secret_rotated_at,
       :metadata
     ])
     |> validate_required([
@@ -78,9 +89,34 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_response_types,
       :token_endpoint_auth_method,
       :pkce_required,
-      :subject_type
+      :subject_type,
+      :active
     ])
     |> unique_constraint(:client_id)
+  end
+
+  def update_changeset(record, attrs) do
+    record
+    |> cast(attrs, [
+      :name,
+      :redirect_uris,
+      :allowed_scopes,
+      :logo_uri,
+      :tos_uri,
+      :policy_uri,
+      :contacts,
+      :metadata,
+      :active,
+      :disabled_at,
+      :disabled_by,
+      :client_secret_hash,
+      :last_secret_rotated_at
+    ])
+    |> validate_required([
+      :redirect_uris,
+      :allowed_scopes,
+      :active
+    ])
   end
 
   def to_domain(%__MODULE__{} = record) do
@@ -109,6 +145,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       tenant_id: record.tenant_id,
       created_by: record.created_by,
       created_at: record.created_at,
+      active: record.active,
+      disabled_at: record.disabled_at,
+      disabled_by: record.disabled_by,
+      last_secret_rotated_at: record.last_secret_rotated_at,
       metadata: record.metadata || %{},
       inserted_at: record.inserted_at,
       updated_at: record.updated_at

@@ -48,7 +48,94 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert fetched_client.redirect_uris == ["https://client.example.com/callback"]
     assert fetched_client.allowed_grant_types == ["authorization_code", "refresh_token"]
     assert fetched_client.pkce_required
+    assert fetched_client.active
     assert fetched_client.metadata == %{"tier" => "sandbox"}
+  end
+
+  test "lists, updates, rotates, and toggles client lifecycle state" do
+    now = DateTime.utc_now()
+
+    assert {:ok, %Client{} = first_client} =
+             Repository.register_client(%Client{
+               client_id: "alpha-client",
+               client_secret_hash: "argon2id$hash",
+               client_type: :confidential,
+               name: "Alpha Client",
+               redirect_uris: ["https://alpha.example.com/callback"],
+               allowed_scopes: ["email"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: now,
+               metadata: %{"tier" => "sandbox"}
+             })
+
+    assert {:ok, _second_client} =
+             Repository.register_client(%Client{
+               client_id: "beta-client",
+               client_type: :public,
+               name: "Beta Client",
+               redirect_uris: ["https://beta.example.com/callback"],
+               allowed_scopes: ["profile"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :none,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: now,
+               metadata: %{}
+             })
+
+    assert {:ok, clients} = Repository.list_clients(search: "Alpha", active: true)
+    assert Enum.map(clients, & &1.client_id) == ["alpha-client"]
+
+    assert {:ok, %Client{} = updated_client} =
+             Repository.update_client(first_client, %{
+               name: "Alpha Client Updated",
+               redirect_uris: ["https://alpha.example.com/oidc/callback"],
+               allowed_scopes: ["email", "profile"],
+               metadata: %{"tier" => "production"}
+             })
+
+    assert updated_client.name == "Alpha Client Updated"
+    assert updated_client.redirect_uris == ["https://alpha.example.com/oidc/callback"]
+    assert updated_client.allowed_scopes == ["email", "profile"]
+    assert updated_client.metadata == %{"tier" => "production"}
+
+    assert {:ok, %Client{} = rotated_client} =
+             Repository.rotate_client_secret(
+               updated_client,
+               "sha256:new-salt:new-hash",
+               now
+             )
+
+    assert rotated_client.client_secret_hash == "sha256:new-salt:new-hash"
+    assert rotated_client.last_secret_rotated_at == now
+
+    assert {:ok, %Client{} = disabled_client} =
+             Repository.set_client_active(rotated_client, false, %{
+               disabled_at: now,
+               disabled_by: "ops@example.com"
+             })
+
+    refute disabled_client.active
+    assert disabled_client.disabled_at == now
+    assert disabled_client.disabled_by == "ops@example.com"
+
+    assert {:ok, [%Client{client_id: "beta-client"}]} = Repository.list_clients(active: true)
+    assert {:ok, [%Client{client_id: "alpha-client"}]} = Repository.list_clients(active: false)
+
+    assert {:ok, %Client{} = enabled_client} =
+             Repository.set_client_active(disabled_client, true, %{
+               disabled_at: nil,
+               disabled_by: nil
+             })
+
+    assert enabled_client.active
+    assert is_nil(enabled_client.disabled_at)
+    assert is_nil(enabled_client.disabled_by)
   end
 
   test "stores and fetches an active interaction through the repository contract" do

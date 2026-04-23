@@ -34,6 +34,10 @@ defmodule Lockspire.Domain.Client do
           tenant_id: String.t() | nil,
           created_by: String.t() | nil,
           created_at: DateTime.t() | nil,
+          active: boolean(),
+          disabled_at: DateTime.t() | nil,
+          disabled_by: String.t() | nil,
+          last_secret_rotated_at: DateTime.t() | nil,
           metadata: map(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -64,6 +68,10 @@ defmodule Lockspire.Domain.Client do
     tenant_id: nil,
     created_by: nil,
     created_at: nil,
+    active: true,
+    disabled_at: nil,
+    disabled_by: nil,
+    last_secret_rotated_at: nil,
     metadata: %{},
     inserted_at: nil,
     updated_at: nil

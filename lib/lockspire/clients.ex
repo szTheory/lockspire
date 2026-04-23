@@ -26,6 +26,34 @@ defmodule Lockspire.Clients do
 
   @type error_detail :: %{field: atom(), reason: validation_error(), detail: term()}
 
+  @spec validate_redirect_uris([String.t()] | String.t() | nil) ::
+          :ok | {:error, [error_detail()]}
+  def validate_redirect_uris(redirect_uris) do
+    errors = validate_redirect_uris([], normalize_string_list(redirect_uris))
+
+    case Enum.reverse(errors) do
+      [] -> :ok
+      invalid -> {:error, invalid}
+    end
+  end
+
+  @spec validate_allowed_scopes([String.t()] | String.t() | nil) ::
+          :ok | {:error, [error_detail()]}
+  def validate_allowed_scopes(scopes) do
+    errors = validate_scopes([], normalize_string_list(scopes))
+
+    case Enum.reverse(errors) do
+      [] -> :ok
+      invalid -> {:error, invalid}
+    end
+  end
+
+  @spec rotate_secret_hash() :: {String.t(), String.t()}
+  def rotate_secret_hash do
+    secret = generate_token(@secret_bytes)
+    {hash_secret(secret), secret}
+  end
+
   @spec register_client(map() | keyword()) ::
           {:ok, RegistrationResult.t()} | {:error, [error_detail()]}
   def register_client(attrs) when is_list(attrs) do
@@ -106,8 +134,7 @@ defmodule Lockspire.Clients do
         {client_secret_hash, plaintext_secret} =
           case client_type do
             :confidential ->
-              secret = generate_token(@secret_bytes)
-              {hash_secret(secret), secret}
+              rotate_secret_hash()
 
             :public ->
               {nil, nil}
