@@ -13,6 +13,7 @@ defmodule Lockspire.Web.Router do
     get("/jwks", Lockspire.Web.JwksController, :index)
     post("/token", Lockspire.Web.TokenController, :create)
     post("/revoke", Lockspire.Web.RevocationController, :create)
+    post("/introspect", Lockspire.Web.IntrospectionController, :create)
     get("/userinfo", Lockspire.Web.UserinfoController, :show)
     get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
     post("/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete)
