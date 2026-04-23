@@ -38,14 +38,14 @@ defmodule Lockspire.Audit.Event do
   def normalize(%__MODULE__{} = event) do
     %__MODULE__{
       event
-      | action: normalize_required_value(event.action),
-        outcome: normalize_required_value(event.outcome),
+      | action: normalize_optional_value(event.action),
+        outcome: normalize_optional_value(event.outcome),
         reason_code: normalize_optional_value(event.reason_code),
         actor_type: normalize_optional_value(event.actor_type),
         actor_id: normalize_optional_value(event.actor_id),
         actor_display: normalize_optional_value(event.actor_display),
-        resource_type: normalize_required_value(event.resource_type),
-        resource_id: normalize_required_value(event.resource_id),
+        resource_type: normalize_optional_value(event.resource_type),
+        resource_id: normalize_optional_value(event.resource_id),
         metadata: compact_metadata(event.metadata)
     }
   end

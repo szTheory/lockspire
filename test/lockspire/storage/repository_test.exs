@@ -3,11 +3,14 @@ defmodule Lockspire.Storage.RepositoryTest do
 
   @moduletag :integration
 
+  alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
+  alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -138,6 +141,79 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert is_nil(enabled_client.disabled_by)
   end
 
+  test "rolls back the durable mutation and appended audit row when the wrapped write fails" do
+    client = %Client{
+      client_id: "rolled-back-client",
+      client_secret_hash: "argon2id$hash",
+      client_type: :confidential,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now()
+    }
+
+    audit_event = %{
+      action: :client_created,
+      outcome: :failed,
+      reason_code: :forced_failure,
+      actor: %{type: :operator, id: "ops_456", display: "Ops User"},
+      resource: %{type: :client, id: client.client_id}
+    }
+
+    assert {:error, :forced_failure} =
+             Repository.transact_with_audit(audit_event, fn ->
+               assert {:ok, %ClientRecord{}} =
+                        %ClientRecord{}
+                        |> ClientRecord.changeset(client)
+                        |> Lockspire.TestRepo.insert()
+
+               {:error, :forced_failure}
+             end)
+
+    assert [] = Lockspire.TestRepo.all(AuditEventRecord)
+    assert [] = Lockspire.TestRepo.all(ClientRecord)
+  end
+
+  test "rolls back the durable mutation when the appended audit row is invalid" do
+    client = %Client{
+      client_id: "invalid-audit-client",
+      client_secret_hash: "argon2id$hash",
+      client_type: :confidential,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now()
+    }
+
+    invalid_audit_event =
+      struct!(Event,
+        action: "client_created",
+        outcome: "succeeded",
+        resource_type: "client",
+        resource_id: nil,
+        metadata: %{}
+      )
+
+    assert {:error, changeset} =
+             Repository.transact_with_audit(invalid_audit_event, fn ->
+               %ClientRecord{}
+               |> ClientRecord.changeset(client)
+               |> Lockspire.TestRepo.insert()
+             end)
+
+    assert %{resource_id: ["can't be blank"]} = errors_on(changeset)
+    assert [] = Lockspire.TestRepo.all(AuditEventRecord)
+    assert [] = Lockspire.TestRepo.all(ClientRecord)
+  end
+
   test "stores and fetches an active interaction through the repository contract" do
     interaction = %Interaction{
       interaction_id: "interaction_123",
@@ -246,6 +322,42 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert listed_grant.metadata == %{"source" => "consent-ui"}
   end
 
+  test "lists and fetches consents through filterable durable queries" do
+    now = DateTime.utc_now()
+
+    assert {:ok, %ConsentGrant{} = active_grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "account_active",
+               client_id: "client_alpha",
+               scopes: ["openid"],
+               granted_at: now,
+               status: :active
+             })
+
+    assert {:ok, %ConsentGrant{} = _revoked_grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "account_active",
+               client_id: "client_beta",
+               scopes: ["email"],
+               granted_at: now,
+               status: :revoked,
+               revoked_at: now,
+               revoked_by: "ops@example.com",
+               revoked_reason: "support_request"
+             })
+
+    assert {:ok, [%ConsentGrant{client_id: "client_alpha"}]} =
+             Repository.list_consents(account_id: "account_active", client_id: "client_alpha")
+
+    assert {:ok, [%ConsentGrant{client_id: "client_beta", status: :revoked}]} =
+             Repository.list_consents(status: :revoked, limit: 1)
+
+    assert {:ok, %ConsentGrant{} = fetched_grant} =
+             Repository.fetch_consent_grant(active_grant.id)
+
+    assert fetched_grant.id == active_grant.id
+  end
+
   test "persists reusable remembered consents and excludes revoked grants" do
     now = DateTime.utc_now()
 
@@ -299,6 +411,39 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert revoked.status == :revoked
     assert revoked.revoked_reason == "subject_revoked"
     assert {:ok, []} = Repository.list_reusable_consents("subject_123", "client_123")
+  end
+
+  test "revoke_consent_grant/2 stays idempotent for repeated revocations" do
+    now = DateTime.utc_now()
+
+    assert {:ok, %ConsentGrant{} = grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "subject_123",
+               client_id: "client_123",
+               scopes: ["openid"],
+               granted_at: now,
+               status: :active
+             })
+
+    assert {:ok, %ConsentGrant{} = revoked} =
+             Repository.revoke_consent_grant(grant.id, %{
+               revoked_at: now,
+               revoked_by: "ops@example.com",
+               revoked_reason: "support_request"
+             })
+
+    later = DateTime.add(now, 60, :second)
+
+    assert {:ok, %ConsentGrant{} = repeated} =
+             Repository.revoke_consent_grant(grant.id, %{
+               revoked_at: later,
+               revoked_by: "other@example.com",
+               revoked_reason: "ignored"
+             })
+
+    assert repeated.revoked_at == revoked.revoked_at
+    assert repeated.revoked_by == revoked.revoked_by
+    assert repeated.revoked_reason == revoked.revoked_reason
   end
 
   test "stores token families and revokes them through the repository contract" do
@@ -501,7 +646,7 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert {:ok, nil} = Repository.fetch_active_authorization_code("code_hash_123")
   end
 
-  test "lists only publishable keys and strips private key material" do
+  test "lists publishable keys, keeps active listing strict, and strips private key material" do
     now = DateTime.utc_now()
 
     active_key = %SigningKey{
@@ -560,13 +705,74 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, listed_keys} = Repository.list_publishable_keys()
 
-    assert Enum.map(listed_keys, & &1.kid) == ["kid_active", "kid_retiring"]
+    assert Enum.map(listed_keys, & &1.kid) == ["kid_active", "kid_retiring", "kid_upcoming"]
 
     assert Enum.all?(listed_keys, fn key ->
-             key.status in [:active, :retiring] and is_nil(key.private_jwk_encrypted)
+             key.status in [:active, :retiring, :upcoming] and is_nil(key.private_jwk_encrypted)
            end)
 
     assert {:ok, listed_active_keys} = Repository.list_active_keys()
     assert Enum.map(listed_active_keys, & &1.kid) == ["kid_active", "kid_retiring"]
+  end
+
+  test "runs guided signing key transitions transactionally" do
+    now = DateTime.utc_now()
+
+    assert {:ok, active_key} =
+             Repository.publish_key(%SigningKey{
+               kid: "guided-active",
+               kty: :RSA,
+               alg: "RS256",
+               use: :sig,
+               public_jwk: %{"kty" => "RSA", "kid" => "guided-active", "alg" => "RS256"},
+               private_jwk_encrypted: <<1, 2, 3>>,
+               status: :active,
+               published_at: now,
+               activated_at: now
+             })
+
+    assert {:ok, upcoming_key} =
+             Repository.publish_key(%SigningKey{
+               kid: "guided-upcoming",
+               kty: :RSA,
+               alg: "RS256",
+               use: :sig,
+               public_jwk: %{"kty" => "RSA", "kid" => "guided-upcoming", "alg" => "RS256"},
+               private_jwk_encrypted: <<4, 5, 6>>,
+               status: :upcoming
+             })
+
+    assert {:error, :not_published} = Repository.activate_signing_key(upcoming_key.id, now)
+
+    assert {:ok, %SigningKey{} = published_key} =
+             Repository.publish_signing_key(upcoming_key.id, DateTime.add(now, 10, :second))
+
+    assert published_key.published_at
+    assert {:error, :already_published} = Repository.publish_signing_key(upcoming_key.id, now)
+
+    assert {:ok, %{activated_key: activated_key, retiring_key: retiring_key}} =
+             Repository.activate_signing_key(upcoming_key.id, DateTime.add(now, 20, :second))
+
+    assert activated_key.status == :active
+    assert retiring_key.status == :retiring
+
+    assert {:ok, %SigningKey{} = refreshed_active_key} =
+             Repository.fetch_signing_key_by_id(active_key.id)
+
+    assert refreshed_active_key.status == :retiring
+
+    assert {:ok, %SigningKey{} = retired_key} =
+             Repository.retire_signing_key(active_key.id, DateTime.add(now, 30, :second))
+
+    assert retired_key.status == :retired
+    assert {:error, :already_retired} = Repository.retire_signing_key(active_key.id, now)
+  end
+
+  defp errors_on(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 end

@@ -4,7 +4,10 @@ defmodule Lockspire.Audit.AuditWriterTest do
   @moduletag :integration
 
   alias Lockspire.Audit.Event
+  alias Lockspire.Domain.Client
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -90,5 +93,42 @@ defmodule Lockspire.Audit.AuditWriterTest do
     refute Map.has_key?(record, :snapshot)
     refute Map.has_key?(record, :before_state)
     refute Map.has_key?(record, :after_state)
+  end
+
+  test "repository transaction wrapper commits the durable mutation and audit row together" do
+    client = %Client{
+      client_id: "client_with_audit",
+      client_secret_hash: "argon2id$hash",
+      client_type: :confidential,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now()
+    }
+
+    audit_event = %{
+      action: :client_created,
+      outcome: :succeeded,
+      actor: %{type: :operator, id: "ops_123", display: "Ops User"},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{channel: "test"}
+    }
+
+    assert {:ok, %ClientRecord{} = record} =
+             Repository.transact_with_audit(audit_event, fn ->
+               %ClientRecord{}
+               |> ClientRecord.changeset(client)
+               |> Lockspire.TestRepo.insert()
+             end)
+
+    assert record.client_id == client.client_id
+
+    assert [%AuditEventRecord{} = stored_audit] = Lockspire.TestRepo.all(AuditEventRecord)
+    assert stored_audit.action == "client_created"
+    assert stored_audit.resource_id == client.client_id
   end
 end

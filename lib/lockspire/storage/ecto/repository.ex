@@ -6,11 +6,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
   import Ecto.Query
 
   alias Lockspire.Config
+  alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.Ecto.ClientRecord
@@ -179,6 +181,40 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @spec append_audit_event(Event.t() | map()) :: {:ok, Event.t()} | {:error, term()}
+  def append_audit_event(%Event{} = event) do
+    %AuditEventRecord{}
+    |> AuditEventRecord.changeset(event)
+    |> repo().insert()
+    |> map_one(&AuditEventRecord.to_domain/1)
+  end
+
+  def append_audit_event(attrs) when is_map(attrs) do
+    attrs
+    |> Event.normalize()
+    |> append_audit_event()
+  rescue
+    error -> {:error, error}
+  end
+
+  @spec transact_with_audit(Event.t() | map(), (() -> term())) ::
+          {:ok, term()} | {:error, term()}
+  def transact_with_audit(audit_event, fun) when is_function(fun, 0) do
+    transact(fn ->
+      result =
+        case fun.() do
+          {:ok, value} -> value
+          {:error, reason} -> repo().rollback(reason)
+          value -> value
+        end
+
+      case append_audit_event(audit_event) do
+        {:ok, _event} -> result
+        {:error, reason} -> repo().rollback(reason)
+      end
+    end)
+  end
+
   @impl ConsentStore
   def grant_consent(%ConsentGrant{} = grant) do
     %ConsentGrantRecord{}
@@ -188,12 +224,30 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ConsentStore
-  def list_consents_for_account(account_id) when is_binary(account_id) do
+  def list_consents(opts \\ []) when is_list(opts) do
     ConsentGrantRecord
-    |> where([grant], grant.account_id == ^account_id)
+    |> maybe_filter_consent_account(Keyword.get(opts, :account_id))
+    |> maybe_filter_consent_client(Keyword.get(opts, :client_id))
+    |> maybe_filter_consent_status(Keyword.get(opts, :status))
     |> order_by([grant], desc: grant.granted_at, desc: grant.id)
+    |> maybe_limit_consents(Keyword.get(opts, :limit))
     |> repo().all()
     |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl ConsentStore
+  def list_consents_for_account(account_id) when is_binary(account_id) do
+    list_consents(account_id: account_id)
+  end
+
+  @impl ConsentStore
+  def fetch_consent_grant(grant_id) when is_integer(grant_id) do
+    ConsentGrantRecord
+    |> where([grant], grant.id == ^grant_id)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &ConsentGrantRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
   end
@@ -223,6 +277,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
         nil ->
           repo().rollback(:not_found)
 
+        %ConsentGrantRecord{revoked_at: %DateTime{}} = record ->
+          ConsentGrantRecord.to_domain(record)
+
         %ConsentGrantRecord{} = record ->
           record
           |> ConsentGrantRecord.update_changeset(
@@ -243,6 +300,46 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> TokenRecord.changeset(token)
     |> repo().insert()
     |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  @impl TokenStore
+  def list_lifecycle_tokens(opts \\ []) when is_list(opts) do
+    now = DateTime.utc_now()
+
+    TokenRecord
+    |> where([token], token.token_type in [:access_token, :refresh_token])
+    |> maybe_filter_token_account(Keyword.get(opts, :account_id))
+    |> maybe_filter_token_client(Keyword.get(opts, :client_id))
+    |> maybe_filter_token_status(Keyword.get(opts, :status), now)
+    |> order_by([token], desc: token.issued_at, desc: token.id)
+    |> maybe_limit_tokens(Keyword.get(opts, :limit))
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
+  def fetch_lifecycle_token_by_id(token_id) when is_integer(token_id) do
+    TokenRecord
+    |> where([token], token.id == ^token_id)
+    |> where([token], token.token_type in [:access_token, :refresh_token])
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
+  def list_token_family(family_id) when is_binary(family_id) do
+    TokenRecord
+    |> where([token], token.family_id == ^family_id)
+    |> where([token], token.token_type in [:access_token, :refresh_token])
+    |> order_by([token], asc: token.generation, asc: token.issued_at, asc: token.id)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
   end
 
   @impl TokenStore
@@ -390,13 +487,36 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl KeyStore
   def list_active_keys do
-    list_publishable_keys()
+    SigningKeyRecord
+    |> where([key], key.status in [:active, :retiring])
+    |> order_by([key], asc: key.inserted_at)
+    |> repo().all()
+    |> then(fn records ->
+      {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
+    end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl KeyStore
+  def list_signing_keys(opts \\ []) when is_list(opts) do
+    SigningKeyRecord
+    |> maybe_filter_signing_key_status(Keyword.get(opts, :status))
+    |> order_by([key], desc: key.inserted_at, desc: key.id)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
   end
 
   @impl KeyStore
   def list_publishable_keys do
     SigningKeyRecord
-    |> where([key], key.status in [:active, :retiring])
+    |> where(
+      [key],
+      key.status in [:active, :retiring] or
+        (key.status == :upcoming and not is_nil(key.published_at))
+    )
     |> order_by([key], asc: key.inserted_at)
     |> repo().all()
     |> then(fn records ->
@@ -416,6 +536,148 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
+  end
+
+  @impl KeyStore
+  def fetch_signing_key_by_id(id) when is_integer(id) do
+    SigningKeyRecord
+    |> where([key], key.id == ^id)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl KeyStore
+  def publish_signing_key(id, published_at)
+      when is_integer(id) and is_struct(published_at, DateTime) do
+    transact(fn ->
+      id
+      |> locked_signing_key_query()
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %SigningKeyRecord{status: :upcoming, published_at: nil} = record ->
+          record
+          |> SigningKeyRecord.update_changeset(%{published_at: published_at})
+          |> repo().update()
+          |> map_one(&SigningKeyRecord.to_domain/1)
+          |> unwrap_or_rollback()
+
+        %SigningKeyRecord{status: :upcoming} ->
+          repo().rollback(:already_published)
+
+        %SigningKeyRecord{} ->
+          repo().rollback(:invalid_state)
+      end
+    end)
+  end
+
+  @impl KeyStore
+  def activate_signing_key(id, activated_at)
+      when is_integer(id) and is_struct(activated_at, DateTime) do
+    transact(fn ->
+      selected =
+        id
+        |> locked_signing_key_query()
+        |> repo().one()
+
+      case selected do
+        nil ->
+          repo().rollback(:not_found)
+
+        %SigningKeyRecord{status: status} when status != :upcoming ->
+          repo().rollback(:invalid_state)
+
+        %SigningKeyRecord{published_at: nil} ->
+          repo().rollback(:not_published)
+
+        %SigningKeyRecord{} = selected_record ->
+          active_records =
+            SigningKeyRecord
+            |> where([key], key.status == :active)
+            |> lock("FOR UPDATE")
+            |> repo().all()
+
+          case active_records do
+            [] ->
+              activated_key =
+                selected_record
+                |> SigningKeyRecord.update_changeset(%{
+                  status: :active,
+                  activated_at: activated_at,
+                  retiring_at: nil,
+                  retired_at: nil
+                })
+                |> repo().update()
+                |> map_one(&SigningKeyRecord.to_domain/1)
+                |> unwrap_or_rollback()
+
+              %{activated_key: activated_key, retiring_key: nil}
+
+            [%SigningKeyRecord{} = active_record] ->
+              retiring_key =
+                active_record
+                |> SigningKeyRecord.update_changeset(%{
+                  status: :retiring,
+                  retiring_at: activated_at,
+                  retired_at: nil
+                })
+                |> repo().update()
+                |> map_one(&SigningKeyRecord.to_domain/1)
+                |> unwrap_or_rollback()
+
+              activated_key =
+                selected_record
+                |> SigningKeyRecord.update_changeset(%{
+                  status: :active,
+                  activated_at: activated_at,
+                  retiring_at: nil,
+                  retired_at: nil
+                })
+                |> repo().update()
+                |> map_one(&SigningKeyRecord.to_domain/1)
+                |> unwrap_or_rollback()
+
+              %{activated_key: activated_key, retiring_key: retiring_key}
+
+            _multiple ->
+              repo().rollback(:multiple_active_keys)
+          end
+      end
+    end)
+  end
+
+  @impl KeyStore
+  def retire_signing_key(id, retired_at)
+      when is_integer(id) and is_struct(retired_at, DateTime) do
+    transact(fn ->
+      id
+      |> locked_signing_key_query()
+      |> repo().one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %SigningKeyRecord{status: :retiring} = record ->
+          record
+          |> SigningKeyRecord.update_changeset(%{
+            status: :retired,
+            retired_at: retired_at
+          })
+          |> repo().update()
+          |> map_one(&SigningKeyRecord.to_domain/1)
+          |> unwrap_or_rollback()
+
+        %SigningKeyRecord{status: :retired} ->
+          repo().rollback(:already_retired)
+
+        %SigningKeyRecord{} ->
+          repo().rollback(:invalid_state)
+      end
+    end)
   end
 
   @impl TokenStore
@@ -529,12 +791,89 @@ defmodule Lockspire.Storage.Ecto.Repository do
     where(query, [client], client.active == ^active)
   end
 
+  defp maybe_filter_consent_account(query, nil), do: query
+  defp maybe_filter_consent_account(query, ""), do: query
+
+  defp maybe_filter_consent_account(query, account_id) when is_binary(account_id) do
+    where(query, [grant], grant.account_id == ^account_id)
+  end
+
+  defp maybe_filter_consent_client(query, nil), do: query
+  defp maybe_filter_consent_client(query, ""), do: query
+
+  defp maybe_filter_consent_client(query, client_id) when is_binary(client_id) do
+    where(query, [grant], grant.client_id == ^client_id)
+  end
+
+  defp maybe_filter_consent_status(query, nil), do: query
+
+  defp maybe_filter_consent_status(query, status) when status in [:active, :revoked] do
+    where(query, [grant], grant.status == ^status)
+  end
+
+  defp maybe_filter_token_account(query, nil), do: query
+  defp maybe_filter_token_account(query, ""), do: query
+
+  defp maybe_filter_token_account(query, account_id) when is_binary(account_id) do
+    where(query, [token], token.account_id == ^account_id)
+  end
+
+  defp maybe_filter_token_client(query, nil), do: query
+  defp maybe_filter_token_client(query, ""), do: query
+
+  defp maybe_filter_token_client(query, client_id) when is_binary(client_id) do
+    where(query, [token], token.client_id == ^client_id)
+  end
+
+  defp maybe_filter_token_status(query, nil, _now), do: query
+
+  defp maybe_filter_token_status(query, :active, now) do
+    where(query, [token], is_nil(token.revoked_at) and token.expires_at > ^now)
+  end
+
+  defp maybe_filter_token_status(query, :revoked, _now) do
+    where(query, [token], not is_nil(token.revoked_at))
+  end
+
+  defp maybe_filter_token_status(query, :expired, now) do
+    where(query, [token], is_nil(token.revoked_at) and token.expires_at <= ^now)
+  end
+
+  defp maybe_filter_token_status(query, :reuse_detected, _now) do
+    where(query, [token], not is_nil(token.reuse_detected_at))
+  end
+
+  defp maybe_filter_token_status(query, _status, _now), do: query
+
+  defp maybe_filter_signing_key_status(query, nil), do: query
+
+  defp maybe_filter_signing_key_status(query, status)
+       when status in [:upcoming, :active, :retiring, :retired] do
+    where(query, [key], key.status == ^status)
+  end
+
+  defp maybe_filter_signing_key_status(query, _status), do: query
+
   defp maybe_limit_clients(query, nil), do: query
 
   defp maybe_limit_clients(query, limit) when is_integer(limit) and limit > 0,
     do: limit(query, ^limit)
 
   defp maybe_limit_clients(query, _limit), do: query
+
+  defp maybe_limit_consents(query, nil), do: query
+
+  defp maybe_limit_consents(query, limit) when is_integer(limit) and limit > 0,
+    do: limit(query, ^limit)
+
+  defp maybe_limit_consents(query, _limit), do: query
+
+  defp maybe_limit_tokens(query, nil), do: query
+
+  defp maybe_limit_tokens(query, limit) when is_integer(limit) and limit > 0,
+    do: limit(query, ^limit)
+
+  defp maybe_limit_tokens(query, _limit), do: query
 
   defp locked_interaction_query(interaction_id) do
     InteractionRecord
@@ -546,6 +885,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
     |> where([token], token.token_type == :refresh_token)
+    |> lock("FOR UPDATE")
+  end
+
+  defp locked_signing_key_query(id) do
+    SigningKeyRecord
+    |> where([key], key.id == ^id)
     |> lock("FOR UPDATE")
   end
 
