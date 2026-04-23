@@ -397,6 +397,10 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     def revoke_token_family(_family_id), do: {:ok, 0}
 
+    def fetch_authorization_code(token_hash), do: {:ok, get_in_state([:tokens, token_hash])}
+
+    def fetch_refresh_token(token_hash), do: {:ok, get_in_state([:tokens, token_hash])}
+
     def fetch_active_authorization_code(token_hash) do
       case get_in_state([:tokens, token_hash]) do
         %Token{token_type: :authorization_code, redeemed_at: nil, revoked_at: nil} = token ->
@@ -425,6 +429,28 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
         nil ->
           {:error, :not_found}
       end
+    end
+
+    def fetch_active_access_token(token_hash) do
+      case get_in_state([:tokens, token_hash]) do
+        %Token{token_type: :access_token, revoked_at: nil} = token ->
+          {:ok, token}
+
+        _other ->
+          {:ok, nil}
+      end
+    end
+
+    def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token) do
+      with {:ok, %Token{} = authorization_code} <-
+             mark_authorization_code_redeemed(token_hash, redeemed_at),
+           {:ok, %Token{} = stored_access_token} <- store_token(access_token) do
+        {:ok, %{authorization_code: authorization_code, access_token: stored_access_token}}
+      end
+    end
+
+    def rotate_refresh_token(_token_hash, _client_id, _rotated_at, _refresh_token, _access_token) do
+      {:error, :not_implemented}
     end
 
     def stored_tokens, do: stored_values(:tokens)

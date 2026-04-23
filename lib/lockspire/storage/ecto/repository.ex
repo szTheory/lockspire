@@ -214,6 +214,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def fetch_refresh_token(token_hash) when is_binary(token_hash) do
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type == :refresh_token)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
   def fetch_active_authorization_code(token_hash) when is_binary(token_hash) do
     now = DateTime.utc_now()
 
@@ -337,6 +348,41 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
+  @impl TokenStore
+  def rotate_refresh_token(
+        token_hash,
+        client_id,
+        rotated_at,
+        %Token{} = refresh_token,
+        %Token{} = access_token
+      )
+      when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
+    case repo().transaction(fn ->
+           token_hash
+           |> locked_refresh_token_query()
+           |> repo().one()
+           |> case do
+             nil ->
+               {:error, :not_found}
+
+             %TokenRecord{} = record ->
+               rotate_refresh_token_record(
+                 record,
+                 client_id,
+                 rotated_at,
+                 refresh_token,
+                 access_token
+               )
+           end
+         end) do
+      {:ok, {:ok, result}} -> {:ok, result}
+      {:ok, {:error, reason}} -> {:error, reason}
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    error -> {:error, error}
+  end
+
   defp repo do
     Config.repo!()
   end
@@ -353,6 +399,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> lock("FOR UPDATE")
   end
 
+  defp locked_refresh_token_query(token_hash) do
+    TokenRecord
+    |> where([token], token.token_hash == ^token_hash)
+    |> where([token], token.token_type == :refresh_token)
+    |> lock("FOR UPDATE")
+  end
+
   defp unwrap_or_rollback({:ok, result}), do: result
   defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
 
@@ -361,6 +414,113 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
     |> repo().update()
     |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp rotate_refresh_token_record(
+         %TokenRecord{} = record,
+         client_id,
+         rotated_at,
+         %Token{} = refresh_token,
+         %Token{} = access_token
+       ) do
+    now = DateTime.utc_now()
+
+    cond do
+      record.client_id != client_id ->
+        {:error, :client_mismatch}
+
+      is_nil(record.family_id) ->
+        {:error, :missing_family_id}
+
+      DateTime.compare(record.expires_at, rotated_at) != :gt ->
+        {:error, :expired}
+
+      not is_nil(record.redeemed_at) or not is_nil(record.revoked_at) ->
+        with {:ok, _presented} <- mark_refresh_token_reuse(record, rotated_at, now),
+             {:ok, _count} <- revoke_token_family_records(record.family_id, rotated_at, now) do
+          {:error, :reuse_detected}
+        else
+          {:error, reason} -> repo().rollback(reason)
+        end
+
+      true ->
+        with {:ok, presented_refresh_token} <- revoke_presented_refresh_token(record, rotated_at),
+             {:ok, stored_refresh_token} <-
+               store_rotated_refresh_token(record, refresh_token, rotated_at),
+             {:ok, stored_access_token} <-
+               store_rotated_access_token(record, stored_refresh_token, access_token, rotated_at) do
+          {:ok,
+           %{
+             presented_refresh_token: presented_refresh_token,
+             refresh_token: stored_refresh_token,
+             access_token: stored_access_token
+           }}
+        else
+          {:error, reason} -> repo().rollback(reason)
+        end
+    end
+  end
+
+  defp revoke_presented_refresh_token(%TokenRecord{} = record, rotated_at) do
+    record
+    |> Ecto.Changeset.change(
+      redeemed_at: rotated_at,
+      revoked_at: rotated_at,
+      updated_at: DateTime.utc_now()
+    )
+    |> repo().update()
+    |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp mark_refresh_token_reuse(%TokenRecord{} = record, detected_at, updated_at) do
+    record
+    |> Ecto.Changeset.change(
+      reuse_detected_at: record.reuse_detected_at || detected_at,
+      updated_at: updated_at
+    )
+    |> repo().update()
+    |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp revoke_token_family_records(family_id, revoked_at, updated_at) do
+    {count, _records} =
+      TokenRecord
+      |> where([token], token.family_id == ^family_id)
+      |> repo().update_all(
+        set: [revoked_at: revoked_at, updated_at: updated_at],
+        inc: []
+      )
+
+    {:ok, count}
+  rescue
+    error -> {:error, error}
+  end
+
+  defp store_rotated_refresh_token(%TokenRecord{} = record, %Token{} = refresh_token, rotated_at) do
+    %Token{
+      refresh_token
+      | family_id: record.family_id,
+        generation: record.generation + 1,
+        parent_token_id: record.id,
+        issued_at: refresh_token.issued_at || rotated_at
+    }
+    |> store_token_record()
+  end
+
+  defp store_rotated_access_token(
+         %TokenRecord{} = record,
+         %Token{} = stored_refresh_token,
+         %Token{} = access_token,
+         rotated_at
+       ) do
+    %Token{
+      access_token
+      | family_id: record.family_id,
+        generation: stored_refresh_token.generation,
+        parent_token_id: stored_refresh_token.id,
+        issued_at: access_token.issued_at || rotated_at
+    }
+    |> store_token_record()
   end
 
   defp store_token_record(%Token{} = token) do

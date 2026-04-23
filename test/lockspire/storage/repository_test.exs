@@ -233,6 +233,150 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert {:ok, 1} = Repository.revoke_token_family("family_123")
   end
 
+  test "rotates a refresh token into child refresh and access tokens transactionally" do
+    now = DateTime.utc_now()
+
+    assert {:ok, %Token{} = parent_refresh_token} =
+             Repository.store_token(%Token{
+               token_hash: "refresh_parent_hash",
+               token_type: :refresh_token,
+               family_id: "family_rotate_123",
+               generation: 0,
+               client_id: "client_123",
+               account_id: "account_456",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok,
+            %{
+              presented_refresh_token: %Token{} = rotated_parent,
+              refresh_token: %Token{} = child_refresh_token,
+              access_token: %Token{} = child_access_token
+            }} =
+             Repository.rotate_refresh_token(
+               "refresh_parent_hash",
+               "client_123",
+               now,
+               %Token{
+                 token_hash: "refresh_child_hash",
+                 token_type: :refresh_token,
+                 client_id: "client_123",
+                 account_id: "account_456",
+                 scopes: ["email", "offline_access"],
+                 audience: ["api.example.com"],
+                 expires_at: DateTime.add(now, 86_400, :second)
+               },
+               %Token{
+                 token_hash: "access_child_hash",
+                 token_type: :access_token,
+                 client_id: "client_123",
+                 account_id: "account_456",
+                 scopes: ["email", "offline_access"],
+                 audience: ["api.example.com"],
+                 expires_at: DateTime.add(now, 3600, :second)
+               }
+             )
+
+    assert rotated_parent.id == parent_refresh_token.id
+    assert rotated_parent.redeemed_at == now
+    assert rotated_parent.revoked_at == now
+    assert child_refresh_token.family_id == "family_rotate_123"
+    assert child_refresh_token.generation == 1
+    assert child_refresh_token.parent_token_id == parent_refresh_token.id
+    assert child_access_token.family_id == "family_rotate_123"
+    assert child_access_token.generation == 1
+    assert child_access_token.parent_token_id == child_refresh_token.id
+  end
+
+  test "marks refresh-token reuse and revokes the full family including access tokens" do
+    now = DateTime.utc_now()
+
+    assert {:ok, %Token{} = replayed_refresh_token} =
+             Repository.store_token(%Token{
+               token_hash: "refresh_replayed_hash",
+               token_type: :refresh_token,
+               family_id: "family_reuse_123",
+               generation: 0,
+               client_id: "client_123",
+               account_id: "account_456",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: DateTime.add(now, -60, :second),
+               redeemed_at: DateTime.add(now, -30, :second),
+               revoked_at: DateTime.add(now, -30, :second),
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: "refresh_active_hash",
+               token_type: :refresh_token,
+               family_id: "family_reuse_123",
+               generation: 1,
+               parent_token_id: replayed_refresh_token.id,
+               client_id: "client_123",
+               account_id: "account_456",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: DateTime.add(now, -30, :second),
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: "access_active_hash",
+               token_type: :access_token,
+               family_id: "family_reuse_123",
+               generation: 1,
+               client_id: "client_123",
+               account_id: "account_456",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: DateTime.add(now, -30, :second),
+               expires_at: DateTime.add(now, 3600, :second)
+             })
+
+    assert {:error, :reuse_detected} =
+             Repository.rotate_refresh_token(
+               "refresh_replayed_hash",
+               "client_123",
+               now,
+               %Token{
+                 token_hash: "refresh_unused_hash",
+                 token_type: :refresh_token,
+                 client_id: "client_123",
+                 account_id: "account_456",
+                 scopes: ["email", "offline_access"],
+                 audience: ["api.example.com"],
+                 expires_at: DateTime.add(now, 86_400, :second)
+               },
+               %Token{
+                 token_hash: "access_unused_hash",
+                 token_type: :access_token,
+                 client_id: "client_123",
+                 account_id: "account_456",
+                 scopes: ["email", "offline_access"],
+                 audience: ["api.example.com"],
+                 expires_at: DateTime.add(now, 3600, :second)
+               }
+             )
+
+    assert {:ok, %Token{} = persisted_replayed_refresh_token} =
+             Repository.fetch_refresh_token("refresh_replayed_hash")
+
+    assert persisted_replayed_refresh_token.reuse_detected_at == now
+
+    assert {:ok, %Token{} = persisted_active_refresh_token} =
+             Repository.fetch_refresh_token("refresh_active_hash")
+
+    assert persisted_active_refresh_token.revoked_at == now
+
+    assert {:ok, nil} = Repository.fetch_active_access_token("access_active_hash")
+  end
+
   test "persists authorization codes with pkce fields and marks them single-use on redemption" do
     now = DateTime.utc_now()
 
