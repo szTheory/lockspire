@@ -798,6 +798,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp run_transaction_fun(fun) do
     case fun.() do
+      {:ok, result} -> result
       {:error, reason} -> repo().rollback(reason)
       result -> result
     end
