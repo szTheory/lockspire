@@ -31,6 +31,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "`mix ci` is the maintained contributor lane"
     assert guide =~ "`mix release.preflight` stays additive to `mix ci`"
     assert guide =~ "`mix package.publish-dry-run` remains a required release gate"
+    assert guide =~ "Release Please PR as review-only evidence"
+    assert guide =~ "trusted proof starts only after merge in the protected `hex-publish` lane"
+    assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
     assert guide =~ "`mix test.fast`"
     assert guide =~ "`mix test.integration`"
     assert guide =~ "`mix test.phase3`"
@@ -62,6 +65,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     release_workflow = File.read!(@release_workflow_path)
 
     assert release_workflow =~ "environment: hex-publish"
+    assert release_workflow =~ "recovery_reason"
+    assert release_workflow =~ "workflow_dispatch is recovery-only"
     assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
     assert release_workflow =~ "run: mix release.preflight"
     assert release_workflow =~ "run: mix hex.publish --yes"
