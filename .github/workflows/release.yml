@@ -35,6 +35,11 @@ jobs:
           test -n "${{ inputs.recovery_reason }}"
           echo "workflow_dispatch is recovery-only. Normal publish intent starts from a merged Release Please PR and the protected hex-publish environment."
 
+      - name: Record review-only Release Please PR posture
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        run: |
+          echo "Release Please generated PRs are review-only. Trusted proof starts only after merge and protected hex-publish approval."
+
       - name: Run Release Please
         id: release
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0

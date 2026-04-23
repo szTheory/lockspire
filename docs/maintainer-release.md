@@ -12,6 +12,14 @@ Lockspire release work should stay boring, reviewable, and tied to repo truth.
 6. Approve the protected `hex-publish` deployment when the Release workflow reaches the environment gate.
 7. Treat the approved protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
 
+## Evidence boundaries
+
+Keep release evidence in three separate buckets:
+
+- Repo-owned proof: `.github/workflows/release.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
+- GitHub settings proof: the live `hex-publish` environment settings prove required reviewers, no self-review, restricted deployment refs, and environment-secret placement.
+- Workflow-run proof: one approved `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
+
 ## Contributor gate
 
 Contributors should have one canonical answer before merge: run `mix ci`.
@@ -58,7 +66,6 @@ Before merging a release PR, confirm:
 
 - `mix ci`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
-- workflow files still use pinned action SHAs
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - public docs and `SECURITY.md` still match the supported surface
