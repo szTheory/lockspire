@@ -60,6 +60,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl InteractionStore
+  def fetch_interaction(interaction_id) when is_binary(interaction_id) do
+    InteractionRecord
+    |> where([interaction], interaction.interaction_id == ^interaction_id)
+    |> repo().one()
+    |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl InteractionStore
   def fetch_active_interaction(interaction_id) when is_binary(interaction_id) do
     now = DateTime.utc_now()
 
@@ -100,7 +110,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl InteractionStore
   def transact(fun) when is_function(fun, 0) do
-    case repo().transaction(fun) do
+    case repo().transaction(fn ->
+           case fun.() do
+             {:error, reason} -> repo().rollback(reason)
+             result -> result
+           end
+         end) do
       {:ok, result} -> {:ok, result}
       {:error, reason} -> {:error, reason}
     end

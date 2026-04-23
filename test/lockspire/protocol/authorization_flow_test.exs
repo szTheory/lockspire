@@ -35,13 +35,16 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     assert login_interaction.status == :pending_login
     assert login_interaction.login_required_at == fixed_now()
+
     assert {:ok, %Interaction{status: :pending_login}} =
              Store.fetch_active_interaction(login_interaction.interaction_id)
 
     assert {:consent_required, %Interaction{} = consent_interaction} =
-             AuthorizationFlow.start_authorization(validated_request(state: "state-2"), %{
-               subject_id: "subject_123"
-             },
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "state-2"),
+               %{
+                 subject_id: "subject_123"
+               },
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -67,9 +70,11 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              })
 
     assert {:consent_reused, redirect_uri} =
-             AuthorizationFlow.start_authorization(validated_request(scopes: ["email"]), %{
-               subject_id: "subject_123"
-             },
+             AuthorizationFlow.start_authorization(
+               validated_request(scopes: ["email"]),
+               %{
+                 subject_id: "subject_123"
+               },
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -102,7 +107,10 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     assert {:consent_required, %Interaction{} = escalated_interaction} =
              AuthorizationFlow.start_authorization(
-               validated_request(scopes: ["email", "profile", "offline_access"], state: "escalated"),
+               validated_request(
+                 scopes: ["email", "profile", "offline_access"],
+                 state: "escalated"
+               ),
                %{subject_id: "subject_123"},
                interaction_store: Store,
                consent_store: Store,
@@ -117,7 +125,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
   test "approval issues hashed authorization codes, denial redirects safely, and expired or duplicate finalization fails" do
     assert {:consent_required, %Interaction{} = interaction} =
-             AuthorizationFlow.start_authorization(validated_request(), %{subject_id: "subject_123"},
+             AuthorizationFlow.start_authorization(
+               validated_request(),
+               %{subject_id: "subject_123"},
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -127,7 +137,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
 
     assert {:approved, approved_redirect} =
-             AuthorizationFlow.approve_interaction(interaction.interaction_id, %{subject_id: "subject_123"},
+             AuthorizationFlow.approve_interaction(
+               interaction.interaction_id,
+               %{subject_id: "subject_123"},
                remember: true,
                interaction_store: Store,
                consent_store: Store,
@@ -147,7 +159,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert remembered_grant.scopes == ["email", "profile"]
 
     assert {:error, :interaction_not_active} =
-             AuthorizationFlow.approve_interaction(interaction.interaction_id, %{subject_id: "subject_123"},
+             AuthorizationFlow.approve_interaction(
+               interaction.interaction_id,
+               %{subject_id: "subject_123"},
                remember: true,
                interaction_store: Store,
                consent_store: Store,
@@ -157,9 +171,11 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
 
     assert {:consent_required, %Interaction{} = denied_interaction} =
-             AuthorizationFlow.start_authorization(validated_request(state: "deny-state"), %{
-               subject_id: "subject_123"
-             },
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "deny-state", prompt: ["consent"]),
+               %{
+                 subject_id: "subject_123"
+               },
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -169,7 +185,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
 
     assert {:denied, denied_redirect} =
-             AuthorizationFlow.deny_interaction(denied_interaction.interaction_id, %{subject_id: "subject_123"},
+             AuthorizationFlow.deny_interaction(
+               denied_interaction.interaction_id,
+               %{subject_id: "subject_123"},
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -181,9 +199,11 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert denied_query["state"] == "deny-state"
 
     assert {:consent_required, %Interaction{} = expired_interaction} =
-             AuthorizationFlow.start_authorization(validated_request(state: "expired-state"), %{
-               subject_id: "subject_123"
-             },
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "expired-state", prompt: ["consent"]),
+               %{
+                 subject_id: "subject_123"
+               },
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -195,7 +215,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     Store.force_expire(expired_interaction.interaction_id)
 
     assert {:error, :interaction_expired} =
-             AuthorizationFlow.approve_interaction(expired_interaction.interaction_id, %{subject_id: "subject_123"},
+             AuthorizationFlow.approve_interaction(
+               expired_interaction.interaction_id,
+               %{subject_id: "subject_123"},
                remember: false,
                interaction_store: Store,
                consent_store: Store,
@@ -304,7 +326,12 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     end
 
     def grant_consent(%ConsentGrant{} = grant) do
-      stored = %{grant | id: grant.id || next_id(), inserted_at: fixed_now(), updated_at: fixed_now()}
+      stored = %{
+        grant
+        | id: grant.id || next_id(),
+          inserted_at: fixed_now(),
+          updated_at: fixed_now()
+      }
 
       update(fn state ->
         consents = Map.put(state.consents, stored.id, stored)
@@ -325,7 +352,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       {:ok,
        stored_consents()
        |> Enum.filter(fn grant ->
-         grant.account_id == account_id and grant.client_id == client_id and grant.kind == :remembered and
+         grant.account_id == account_id and grant.client_id == client_id and
+           grant.kind == :remembered and
            grant.status == :active and is_nil(grant.revoked_at)
        end)}
     end
@@ -352,7 +380,12 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     end
 
     def store_token(%Token{} = token) do
-      stored = %{token | id: token.id || next_id(), inserted_at: fixed_now(), updated_at: fixed_now()}
+      stored = %{
+        token
+        | id: token.id || next_id(),
+          inserted_at: fixed_now(),
+          updated_at: fixed_now()
+      }
 
       update(fn state ->
         tokens = Map.put(state.tokens, stored.token_hash, stored)
@@ -400,14 +433,26 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     def force_expire(interaction_id) do
       update(fn state ->
         update_in(state, [:interactions, interaction_id], fn
-          nil -> nil
-          interaction -> %{interaction | status: :expired, expired_at: fixed_now(), expires_at: DateTime.add(fixed_now(), -1, :second)}
+          nil ->
+            nil
+
+          interaction ->
+            %{
+              interaction
+              | status: :expired,
+                expired_at: fixed_now(),
+                expires_at: DateTime.add(fixed_now(), -1, :second)
+            }
         end)
       end)
     end
 
     defp ensure_interaction_timestamps(interaction) do
-      %{interaction | inserted_at: interaction.inserted_at || fixed_now(), updated_at: fixed_now()}
+      %{
+        interaction
+        | inserted_at: interaction.inserted_at || fixed_now(),
+          updated_at: fixed_now()
+      }
     end
 
     defp stored_values(key) do

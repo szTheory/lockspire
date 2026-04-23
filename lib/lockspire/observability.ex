@@ -28,6 +28,15 @@ defmodule Lockspire.Observability do
 
   @spec redact(metadata()) :: metadata()
   def redact(metadata) when is_map(metadata) do
-    Map.drop(metadata, [:client_secret, :client_secret_hash, :code_verifier, :code_challenge])
+    Map.drop(metadata, [
+      :authorization_code,
+      :client_secret,
+      :client_secret_hash,
+      :code,
+      :code_challenge,
+      :code_verifier,
+      :state,
+      :token_hash
+    ])
   end
 end
