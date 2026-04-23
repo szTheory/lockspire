@@ -90,6 +90,32 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert [:lockspire, :access_token_issued] in event_names
   end
 
+  test "accepts form-encoded basic auth credentials containing reserved characters" do
+    client_id = "client:with/slash"
+    secret = "sec:ret?/+= value"
+    {:ok, client} = create_client(client_id, :client_secret_basic, secret)
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-encoded-basic",
+        code_verifier: "verifier-encoded-basic"
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-encoded-basic",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-encoded-basic"
+               },
+               authorization: basic_auth_form_encoded(client_id, secret)
+             )
+
+    assert success.access_token
+    assert success.token_type == "Bearer"
+  end
+
   test "rejects replayed authorization code redemption and emits replay telemetry", %{
     events: events
   } do
@@ -296,6 +322,12 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   defp basic_auth(client_id, client_secret) do
     "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
+  end
+
+  defp basic_auth_form_encoded(client_id, client_secret) do
+    encoded_client_id = URI.encode_www_form(client_id)
+    encoded_client_secret = URI.encode_www_form(client_secret)
+    "Basic " <> Base.encode64("#{encoded_client_id}:#{encoded_client_secret}")
   end
 
   defp client_secret_hash(secret) do

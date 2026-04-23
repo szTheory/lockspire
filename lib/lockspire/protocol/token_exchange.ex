@@ -109,9 +109,9 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp parse_basic_authorization("Basic " <> encoded_credentials) do
     with {:ok, decoded} <- Base.decode64(encoded_credentials),
-         [client_id, client_secret] <- :binary.split(decoded, ":", [:global]),
-         true <- present?(client_id),
-         true <- present?(client_secret) do
+         [raw_client_id, raw_client_secret] <- String.split(decoded, ":", parts: 2),
+         client_id when client_id not in [nil, ""] <- URI.decode_www_form(raw_client_id),
+         client_secret when client_secret not in [nil, ""] <- URI.decode_www_form(raw_client_secret) do
       {:ok, :client_secret_basic, client_id, client_secret}
     else
       _other ->
