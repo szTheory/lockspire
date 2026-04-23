@@ -117,7 +117,10 @@ defmodule Lockspire.Web.AuthorizeController do
   end
 
   defp redirect_location(%Error{} = error) do
-    query =
+    uri = URI.parse(error.redirect_uri)
+    existing_params = URI.decode_query(uri.query || "")
+
+    oauth_params =
       %{
         "error" => error.error,
         "error_description" => error.error_description,
@@ -125,18 +128,9 @@ defmodule Lockspire.Web.AuthorizeController do
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
-      |> URI.encode_query()
-
-    uri = URI.parse(error.redirect_uri)
-    existing_query = uri.query
-
-    merged_query =
-      [existing_query, query]
-      |> Enum.reject(&(&1 in [nil, ""]))
-      |> Enum.join("&")
 
     uri
-    |> Map.put(:query, merged_query)
+    |> Map.put(:query, URI.encode_query(Map.merge(existing_params, oauth_params)))
     |> URI.to_string()
   end
 

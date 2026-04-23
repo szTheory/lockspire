@@ -80,7 +80,10 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
         name: "Acme Integrations",
-        redirect_uris: ["https://client.example.com/callback"],
+        redirect_uris: [
+          "https://client.example.com/callback",
+          "https://client.example.com/callback?foo=bar&state=old-state"
+        ],
         allowed_scopes: ["profile", "email"],
         allowed_grant_types: ["authorization_code"],
         allowed_response_types: ["code"],
@@ -127,6 +130,33 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert location =~ "https://client.example.com/callback"
     assert location =~ "error=invalid_request"
     assert location =~ "state=state-123"
+  end
+
+  test "redirect-safe validation failures merge existing redirect query params canonically" do
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("redirect_uri", "https://client.example.com/callback?foo=bar&state=old-state")
+      |> Map.put("prompt", "select_account")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    assert uri.scheme == "https"
+    assert uri.host == "client.example.com"
+    assert uri.path == "/callback"
+
+    params = URI.decode_query(uri.query || "")
+
+    assert params["foo"] == "bar"
+    assert params["state"] == "state-123"
+    assert params["error"] == "invalid_request"
+    refute uri.query =~ "state=old-state"
   end
 
   test "valid unauthenticated requests redirect to the host login handoff" do
