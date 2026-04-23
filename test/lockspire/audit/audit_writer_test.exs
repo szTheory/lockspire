@@ -121,6 +121,36 @@ defmodule Lockspire.Audit.AuditWriterTest do
     assert event.metadata == %{"rotated_at" => DateTime.to_iso8601(now)}
   end
 
+  test "routes durable audit metadata through the shared redaction seam" do
+    event =
+      Event.normalize(%{
+        action: :refresh_token_reuse_detected,
+        outcome: :denied,
+        reason_code: :refresh_token_reuse_detected,
+        actor: %{type: :client, id: "client_123"},
+        resource: %{type: :token_family, id: "family_123"},
+        metadata: %{
+          access_token: "raw-access-token",
+          refresh_token: "raw-refresh-token",
+          client_secret: "top-secret",
+          token_hash: "sha256-token-hash",
+          request: %{"authorization" => "Bearer raw-access-token"},
+          family_id: "family_123",
+          interaction_id: "interaction_123"
+        }
+      })
+
+    assert event.resource_type == "token_family"
+    assert event.resource_id == "family_123"
+    assert event.metadata["family_id"] == "family_123"
+    assert event.metadata["interaction_id"] == "interaction_123"
+    refute Map.has_key?(event.metadata, "access_token")
+    refute Map.has_key?(event.metadata, "refresh_token")
+    refute Map.has_key?(event.metadata, "client_secret")
+    refute Map.has_key?(event.metadata, "token_hash")
+    refute Map.has_key?(event.metadata, "request")
+  end
+
   test "repository transaction wrapper commits the durable mutation and audit row together" do
     client = %Client{
       client_id: "client_with_audit",
@@ -179,11 +209,11 @@ defmodule Lockspire.Audit.AuditWriterTest do
                approved_interaction.interaction_id,
                %{subject_id: "subject-123"},
                remember: true,
-                interaction_store: Repository,
-                consent_store: Repository,
-                token_store: Repository,
-                now: fn -> now end,
-                code_generator: fn -> "approval-code" end
+               interaction_store: Repository,
+               consent_store: Repository,
+               token_store: Repository,
+               now: fn -> now end,
+               code_generator: fn -> "approval-code" end
              )
 
     assert {:consent_required, %Interaction{} = denied_interaction} =
@@ -202,10 +232,10 @@ defmodule Lockspire.Audit.AuditWriterTest do
              AuthorizationFlow.deny_interaction(
                denied_interaction.interaction_id,
                %{subject_id: "subject-123"},
-                interaction_store: Repository,
-                consent_store: Repository,
-                token_store: Repository,
-                now: fn -> now end
+               interaction_store: Repository,
+               consent_store: Repository,
+               token_store: Repository,
+               now: fn -> now end
              )
 
     audits =
@@ -331,7 +361,8 @@ defmodule Lockspire.Audit.AuditWriterTest do
   defp register_client(client_id, now, auth_method \\ :none) do
     Repository.register_client(%Client{
       client_id: client_id,
-      client_secret_hash: if(auth_method == :none, do: "argon2id$hash", else: client_secret_hash("secret")),
+      client_secret_hash:
+        if(auth_method == :none, do: "argon2id$hash", else: client_secret_hash("secret")),
       client_type: if(auth_method == :none, do: :public, else: :confidential),
       redirect_uris: ["https://client.example.com/callback"],
       allowed_scopes: ["email", "profile", "offline_access"],

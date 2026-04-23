@@ -3,6 +3,8 @@ defmodule Lockspire.Observability do
   Shared audit and telemetry emission helpers.
   """
 
+  alias Lockspire.Redaction
+
   @type event_name :: atom()
   @type measurements :: map()
   @type metadata :: map()
@@ -28,18 +30,6 @@ defmodule Lockspire.Observability do
 
   @spec redact(metadata()) :: metadata()
   def redact(metadata) when is_map(metadata) do
-    Map.drop(metadata, [
-      :access_token,
-      :authorization,
-      :authorization_header,
-      :authorization_code,
-      :client_secret,
-      :client_secret_hash,
-      :code,
-      :code_challenge,
-      :code_verifier,
-      :state,
-      :token_hash
-    ])
+    Redaction.for_telemetry(metadata)
   end
 end

@@ -3,6 +3,8 @@ defmodule Lockspire.Audit.Event do
   Normalized durable audit event payload for append-only incident evidence.
   """
 
+  alias Lockspire.Redaction
+
   @enforce_keys [:action, :outcome, :resource_type, :resource_id]
   defstruct [
     :id,
@@ -46,7 +48,7 @@ defmodule Lockspire.Audit.Event do
         actor_display: normalize_optional_value(event.actor_display),
         resource_type: normalize_optional_value(event.resource_type),
         resource_id: normalize_optional_value(event.resource_id),
-        metadata: compact_metadata(event.metadata)
+        metadata: event.metadata |> Redaction.for_audit() |> compact_metadata()
     }
   end
 
@@ -67,6 +69,7 @@ defmodule Lockspire.Audit.Event do
       metadata:
         attrs
         |> get_value(:metadata, %{})
+        |> Redaction.for_audit()
         |> compact_metadata(),
       inserted_at: Map.get(attrs, :inserted_at) || Map.get(attrs, "inserted_at"),
       updated_at: Map.get(attrs, :updated_at) || Map.get(attrs, "updated_at")
@@ -110,6 +113,7 @@ defmodule Lockspire.Audit.Event do
   defp compact_metadata_value(%Date{} = value), do: Date.to_iso8601(value)
   defp compact_metadata_value(%Time{} = value), do: Time.to_iso8601(value)
   defp compact_metadata_value(%_{} = value), do: inspect(value)
+
   defp compact_metadata_value(%{} = value) do
     case compact_metadata(value) do
       map when map == %{} -> :drop
