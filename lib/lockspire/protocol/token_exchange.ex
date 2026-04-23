@@ -13,6 +13,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Security.Policy
 
   @access_token_ttl 3600
   @refresh_token_ttl 2_592_000
@@ -76,15 +77,24 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     with :ok <- validate_grant_type(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %Token{} = authorization_code, code_hash} <-
-           fetch_authorization_code(params, request),
-         :ok <- validate_code_active(authorization_code, code_hash),
+         {:ok, %Token{} = authorization_code, code_hash} <- fetch_authorization_code(params, request) do
+      handle_code_exchange(client, authorization_code, code_hash, params, request)
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
+    end
+  end
+
+  defp handle_code_exchange(%Client{} = client, %Token{} = authorization_code, code_hash, params, request) do
+    with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          %Success{} = success <- redeem_code(client, authorization_code, code_hash, request) do
       emit_success(client, authorization_code, success)
       {:ok, success}
     else
       {:error, %Error{} = error} ->
+        maybe_append_failure_audit(error, client, authorization_code, request)
         emit_failure(error, params, request)
         {:error, error}
     end
@@ -130,7 +140,7 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp fetch_authorization_code(params, request) do
     with code when is_binary(code) and code != "" <- normalize_optional_string(params["code"]) do
-      code_hash = TokenFormatter.hash_token(code)
+      code_hash = Policy.hash_token(code)
 
       case token_store(request).fetch_authorization_code(code_hash) do
         {:ok, %Token{} = authorization_code} ->
@@ -381,6 +391,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       interaction_id: authorization_code.interaction_id,
       subject_id: authorization_code.account_id,
       authorization_code_id: authorization_code.id,
+      reason_code: :authorization_code_redeemed,
       token_type: :access_token
     }
 
@@ -538,11 +549,15 @@ defmodule Lockspire.Protocol.TokenExchange do
          code_hash,
          issued_at,
          %Token{} = access_token,
-         %Token{} = _authorization_code,
+         %Token{} = authorization_code,
          nil,
          request
        ) do
-    case token_store(request).redeem_authorization_code(code_hash, issued_at, access_token) do
+    audit_event = redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
+
+    case transact_with_audit_event(token_store(request), audit_event, fn ->
+           token_store(request).redeem_authorization_code(code_hash, issued_at, access_token)
+         end) do
       {:ok, %{access_token: %Token{} = persisted_access_token}} ->
         {:ok, %{access_token: persisted_access_token}}
 
@@ -573,7 +588,9 @@ defmodule Lockspire.Protocol.TokenExchange do
       expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
     }
 
-    transact_token_store(request, fn ->
+    audit_event = redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
+
+    transact_with_audit_event(token_store(request), audit_event, fn ->
       with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
              token_store(request).redeem_authorization_code(code_hash, issued_at, access_token),
            {:ok, %Token{} = persisted_refresh_token} <-
@@ -594,14 +611,96 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp transact_token_store(request, fun) do
-    store = token_store(request)
+  defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0) do
+    cond do
+      function_exported?(store, :transact_with_audit, 2) ->
+        store.transact_with_audit(audit_event, fun)
 
-    if function_exported?(store, :transact, 1) do
-      store.transact(fun)
-    else
-      fun.()
+      function_exported?(store, :transact, 1) ->
+        store.transact(fn ->
+          case fun.() do
+            {:error, reason} ->
+              {:error, reason}
+
+            result ->
+              case append_audit_event(store, audit_event) do
+                {:ok, _event} -> result
+                {:error, reason} -> {:error, reason}
+              end
+          end
+        end)
+
+      true ->
+        case fun.() do
+          {:error, reason} ->
+            {:error, reason}
+
+          result ->
+            case append_audit_event(store, audit_event) do
+              {:ok, _event} -> result
+              {:error, reason} -> {:error, reason}
+            end
+        end
     end
+  end
+
+  defp append_audit_event(store, audit_event) do
+    if function_exported?(store, :append_audit_event, 1) do
+      store.append_audit_event(audit_event)
+    else
+      {:error, :audit_append_unsupported}
+    end
+  end
+
+  defp maybe_append_failure_audit(%Error{reason_code: :authorization_code_replayed}, %Client{} = client, %Token{} = authorization_code, request) do
+    replay_audit_event(client_actor(client.client_id), authorization_code)
+    |> then(&append_audit_event(token_store(request), &1))
+
+    :ok
+  end
+
+  defp maybe_append_failure_audit(_error, _client, _authorization_code, _request), do: :ok
+
+  defp redemption_audit_event(actor, %Token{} = authorization_code) do
+    audit_event(
+      :authorization_code_redeemed,
+      :succeeded,
+      :authorization_code_redeemed,
+      actor,
+      authorization_code
+    )
+  end
+
+  defp replay_audit_event(actor, %Token{} = authorization_code) do
+    audit_event(
+      :authorization_code_replay_detected,
+      :denied,
+      :authorization_code_replayed,
+      actor,
+      authorization_code
+    )
+  end
+
+  defp audit_event(action, outcome, reason_code, actor, %Token{} = authorization_code) do
+    %{
+      action: action,
+      outcome: outcome,
+      reason_code: reason_code,
+      actor: actor,
+      resource: %{
+        type: :authorization_code,
+        id: to_string(authorization_code.id || authorization_code.interaction_id)
+      },
+      metadata: %{
+        client_id: authorization_code.client_id,
+        interaction_id: authorization_code.interaction_id,
+        subject_id: authorization_code.account_id
+      }
+    }
+  end
+
+  defp client_actor(client_id) when is_binary(client_id) do
+    %{type: :client, id: client_id, display: client_id}
   end
 
   defp token_format_options(request, token_type) do

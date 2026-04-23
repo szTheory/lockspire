@@ -6,6 +6,9 @@ defmodule Lockspire.Audit.AuditWriterTest do
   alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Interaction
+  alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenExchange
+  alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
@@ -214,16 +217,50 @@ defmodule Lockspire.Audit.AuditWriterTest do
            end)
   end
 
-  defp register_client(client_id, now) do
+  test "token exchange persists redemption and replay audit rows through the repository boundary" do
+    now = DateTime.utc_now()
+    {:ok, client} = register_client("audit-token-client", now, :client_secret_basic)
+
+    {:ok, authorization_code} =
+      seed_authorization_code(client, "audit-code", "audit-verifier", now)
+
+    request = %{
+      params: %{
+        "grant_type" => "authorization_code",
+        "code" => "audit-code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => "audit-verifier"
+      },
+      authorization: basic_auth(client.client_id, "secret"),
+      opts: [
+        client_store: Repository,
+        token_store: Repository,
+        interaction_store: Repository
+      ]
+    }
+
+    assert {:ok, _success} = TokenExchange.exchange_authorization_code(request)
+    assert {:error, replay_error} = TokenExchange.exchange_authorization_code(request)
+    assert replay_error.reason_code == :authorization_code_replayed
+
+    audits =
+      Lockspire.TestRepo.all(AuditEventRecord)
+      |> Enum.filter(&(&1.resource_id == Integer.to_string(authorization_code.id)))
+
+    assert Enum.any?(audits, &(&1.action == "authorization_code_redeemed"))
+    assert Enum.any?(audits, &(&1.action == "authorization_code_replay_detected"))
+  end
+
+  defp register_client(client_id, now, auth_method \\ :none) do
     Repository.register_client(%Client{
       client_id: client_id,
-      client_secret_hash: "argon2id$hash",
-      client_type: :public,
+      client_secret_hash: if(auth_method == :none, do: "argon2id$hash", else: client_secret_hash("secret")),
+      client_type: if(auth_method == :none, do: :public, else: :confidential),
       redirect_uris: ["https://client.example.com/callback"],
       allowed_scopes: ["email", "profile", "offline_access"],
       allowed_grant_types: ["authorization_code"],
       allowed_response_types: ["code"],
-      token_endpoint_auth_method: :none,
+      token_endpoint_auth_method: auth_method,
       pkce_required: true,
       subject_type: :public,
       created_at: now,
@@ -244,5 +281,52 @@ defmodule Lockspire.Audit.AuditWriterTest do
     }
 
     struct!(Validated, Enum.into(overrides, defaults))
+  end
+
+  defp seed_authorization_code(client, raw_code, verifier, now) do
+    {:ok, _interaction} =
+      Repository.put_interaction(%Interaction{
+        interaction_id: "interaction-#{raw_code}",
+        client_id: client.client_id,
+        account_id: "subject-123",
+        scopes_requested: ["email", "profile"],
+        redirect_uri: "https://client.example.com/callback",
+        return_to: "/authorize",
+        state: "state-123",
+        code_challenge: code_challenge(verifier),
+        code_challenge_method: :S256,
+        status: :completed,
+        completed_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
+
+    Repository.store_token(%Token{
+      token_hash: TokenFormatter.hash_token(raw_code),
+      token_type: :authorization_code,
+      client_id: client.client_id,
+      account_id: "subject-123",
+      interaction_id: "interaction-#{raw_code}",
+      redirect_uri: "https://client.example.com/callback",
+      scopes: ["email", "profile"],
+      code_challenge: code_challenge(verifier),
+      code_challenge_method: :S256,
+      issued_at: now,
+      expires_at: DateTime.add(now, 300, :second)
+    })
+  end
+
+  defp basic_auth(client_id, client_secret) do
+    "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
+  end
+
+  defp client_secret_hash(secret) do
+    salt = "static-salt"
+    hash = :crypto.hash(:sha256, salt <> secret) |> Base.encode64()
+    "sha256:#{salt}:#{hash}"
+  end
+
+  defp code_challenge(verifier) do
+    :crypto.hash(:sha256, verifier)
+    |> Base.url_encode64(padding: false)
   end
 end

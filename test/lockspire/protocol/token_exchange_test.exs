@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
@@ -283,6 +284,105 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert [:lockspire, :authorization_code_replay_detected] in recorded_event_names(events)
   end
 
+  test "successful redemption and replay attempts append durable audit rows with client attribution",
+       %{events: events} do
+    secret = "audit-secret"
+    {:ok, client} = create_client("client-audit", :client_secret_basic, secret)
+
+    {:ok, authorization_code} =
+      create_authorization_code(client, raw_code: "code-audit", code_verifier: "verifier-audit")
+
+    assert {:ok, _success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-audit",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-audit"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert {:error, replay_error} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-audit",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-audit"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert replay_error.reason_code == :authorization_code_replayed
+
+    audits =
+      Lockspire.TestRepo.all(AuditEventRecord)
+      |> Enum.filter(&(&1.actor_id == client.client_id))
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "authorization_code_redeemed" and
+               audit.resource_type == "authorization_code" and
+               audit.resource_id == Integer.to_string(authorization_code.id) and
+               audit.actor_type == "client" and
+               audit.reason_code == "authorization_code_redeemed"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "authorization_code_replay_detected" and
+               audit.resource_type == "authorization_code" and
+               audit.resource_id == Integer.to_string(authorization_code.id) and
+               audit.actor_type == "client" and
+               audit.reason_code == "authorization_code_replayed"
+           end)
+
+    assert {[:lockspire, :authorization_code_redeemed], %{reason_code: :authorization_code_redeemed}} =
+             Enum.find(recorded_events(events), fn {event, metadata} ->
+               event == [:lockspire, :authorization_code_redeemed] and
+                 metadata[:reason_code] == :authorization_code_redeemed
+             end)
+
+    assert {[:lockspire, :authorization_code_replay_detected], %{reason_code: :authorization_code_replayed}} =
+             Enum.find(recorded_events(events), fn {event, metadata} ->
+               event == [:lockspire, :authorization_code_replay_detected] and
+                 metadata[:reason_code] == :authorization_code_replayed
+             end)
+  end
+
+  test "rejects authorization codes issued with an unsupported PKCE challenge method" do
+    secret = "plain-method-secret"
+    {:ok, client} = create_client("client-plain-method", :client_secret_basic, secret)
+    raw_code = "code-plain-method"
+    __MODULE__.PlainMethodTokenStore.use_token(%Token{
+      id: 123,
+      token_hash: TokenFormatter.hash_token(raw_code),
+      token_type: :authorization_code,
+      client_id: client.client_id,
+      account_id: "subject-123",
+      interaction_id: "interaction-code-plain-method",
+      redirect_uri: "https://client.example.com/callback",
+      scopes: ["email", "profile"],
+      code_challenge: code_challenge("verifier-plain-method"),
+      code_challenge_method: :plain,
+      issued_at: DateTime.utc_now(),
+      expires_at: DateTime.add(DateTime.utc_now(), 300, :second)
+    })
+
+    assert {:error, error} =
+             exchange_with_store(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => raw_code,
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-plain-method"
+               },
+               __MODULE__.PlainMethodTokenStore,
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert error.reason_code == :unsupported_code_challenge_method
+  end
+
   test "rejects expired, verifier-mismatched, client-mismatched, and redirect-mismatched exchanges" do
     secret = "negative-secret"
     {:ok, client} = create_client("client-negative", :client_secret_basic, secret)
@@ -402,12 +502,16 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   end
 
   defp exchange(params, opts \\ []) do
+    exchange_with_store(params, Repository, opts)
+  end
+
+  defp exchange_with_store(params, token_store, opts) do
     TokenExchange.exchange_authorization_code(%{
       params: params,
       authorization: Keyword.get(opts, :authorization),
       opts: [
         client_store: Repository,
-        token_store: Repository,
+        token_store: token_store,
         interaction_store: Repository,
         key_store: Repository,
         access_token_generator:
@@ -446,6 +550,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     raw_code = Keyword.fetch!(opts, :raw_code)
     now = DateTime.utc_now()
     interaction_id = "interaction-#{raw_code}"
+    code_challenge_method = Keyword.get(opts, :code_challenge_method, :S256)
+    code_challenge = code_challenge(verifier)
 
     {:ok, _interaction} =
       Repository.put_interaction(%Interaction{
@@ -457,8 +563,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         redirect_uri: "https://client.example.com/callback",
         return_to: "/authorize",
         state: "state-123",
-        code_challenge: code_challenge(verifier),
-        code_challenge_method: :S256,
+        code_challenge: code_challenge,
+        code_challenge_method: code_challenge_method,
         status: :completed,
         completed_at: now,
         expires_at: DateTime.add(now, 300, :second)
@@ -472,8 +578,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       interaction_id: interaction_id,
       redirect_uri: "https://client.example.com/callback",
       scopes: Keyword.get(opts, :scopes, ["email", "profile"]),
-      code_challenge: code_challenge(verifier),
-      code_challenge_method: :S256,
+      code_challenge: code_challenge,
+      code_challenge_method: code_challenge_method,
       issued_at: now,
       expires_at: Keyword.get(opts, :expires_at, DateTime.add(now, 300, :second))
     })
@@ -536,5 +642,17 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   defp recorded_event_names(agent) do
     Agent.get(agent, fn events -> Enum.map(events, fn {event, _metadata} -> event end) end)
+  end
+
+  defp recorded_events(agent) do
+    agent
+    |> Agent.get(&Enum.reverse(&1))
+    |> Enum.map(fn {event, metadata} -> {event, Map.take(metadata, [:reason_code])} end)
+  end
+
+  defmodule PlainMethodTokenStore do
+    def use_token(%Token{} = token), do: Process.put({__MODULE__, :token}, token)
+
+    def fetch_authorization_code(_token_hash), do: {:ok, Process.get({__MODULE__, :token})}
   end
 end
