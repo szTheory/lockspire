@@ -270,25 +270,72 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert {:ok, nil} = Repository.fetch_active_authorization_code("code_hash_123")
   end
 
-  test "publishes keys and lists active keys through the repository contract" do
-    key = %SigningKey{
-      kid: "kid_123",
+  test "lists only publishable keys and strips private key material" do
+    now = DateTime.utc_now()
+
+    active_key = %SigningKey{
+      kid: "kid_active",
       kty: :RSA,
       alg: "RS256",
       use: :sig,
-      public_jwk: %{"kty" => "RSA", "kid" => "kid_123"},
+      public_jwk: %{"kty" => "RSA", "kid" => "kid_active", "alg" => "RS256", "use" => "sig"},
       private_jwk_encrypted: <<1, 2, 3>>,
       status: :active,
-      published_at: DateTime.utc_now(),
-      activated_at: DateTime.utc_now()
+      published_at: now,
+      activated_at: now
     }
 
-    assert {:ok, %SigningKey{} = stored_key} = Repository.publish_key(key)
+    retiring_key = %SigningKey{
+      kid: "kid_retiring",
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk: %{"kty" => "RSA", "kid" => "kid_retiring", "alg" => "RS256", "use" => "sig"},
+      private_jwk_encrypted: <<4, 5, 6>>,
+      status: :retiring,
+      published_at: now,
+      activated_at: now,
+      retiring_at: now
+    }
 
-    assert {:ok, [%SigningKey{} = listed_key]} = Repository.list_active_keys()
+    upcoming_key = %SigningKey{
+      kid: "kid_upcoming",
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk: %{"kty" => "RSA", "kid" => "kid_upcoming", "alg" => "RS256", "use" => "sig"},
+      private_jwk_encrypted: <<7, 8, 9>>,
+      status: :upcoming,
+      published_at: now
+    }
 
-    assert listed_key.kid == stored_key.kid
-    assert listed_key.alg == "RS256"
-    assert listed_key.status == :active
+    retired_key = %SigningKey{
+      kid: "kid_retired",
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk: %{"kty" => "RSA", "kid" => "kid_retired", "alg" => "RS256", "use" => "sig"},
+      private_jwk_encrypted: <<10, 11, 12>>,
+      status: :retired,
+      published_at: now,
+      activated_at: now,
+      retired_at: now
+    }
+
+    assert {:ok, _stored_active} = Repository.publish_key(active_key)
+    assert {:ok, _stored_retiring} = Repository.publish_key(retiring_key)
+    assert {:ok, _stored_upcoming} = Repository.publish_key(upcoming_key)
+    assert {:ok, _stored_retired} = Repository.publish_key(retired_key)
+
+    assert {:ok, listed_keys} = Repository.list_publishable_keys()
+
+    assert Enum.map(listed_keys, & &1.kid) == ["kid_active", "kid_retiring"]
+
+    assert Enum.all?(listed_keys, fn key ->
+             key.status in [:active, :retiring] and is_nil(key.private_jwk_encrypted)
+           end)
+
+    assert {:ok, listed_active_keys} = Repository.list_active_keys()
+    assert Enum.map(listed_active_keys, & &1.kid) == ["kid_active", "kid_retiring"]
   end
 end

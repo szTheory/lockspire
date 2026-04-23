@@ -267,11 +267,18 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl KeyStore
   def list_active_keys do
+    list_publishable_keys()
+  end
+
+  @impl KeyStore
+  def list_publishable_keys do
     SigningKeyRecord
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
     |> repo().all()
-    |> then(fn records -> {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)} end)
+    |> then(fn records ->
+      {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
+    end)
   rescue
     error -> {:error, error}
   end
@@ -334,5 +341,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> TokenRecord.changeset(token)
     |> repo().insert()
     |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp strip_private_key_material(%SigningKey{} = key) do
+    %SigningKey{key | private_jwk_encrypted: nil}
   end
 end

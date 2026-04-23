@@ -59,25 +59,25 @@ defmodule Lockspire.ConfigTest do
   test "reads configured runtime values through the public api" do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :account_resolver, Lockspire.TestAccountResolver)
-    Application.put_env(:lockspire, :issuer, "https://example.test")
+    Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
     Application.put_env(:lockspire, :mount_path, "/oauth")
     Application.put_env(:lockspire, :oban, repo: Lockspire.TestRepo, queues: false)
 
     assert Lockspire.Config.repo!() == Lockspire.TestRepo
     assert Lockspire.Config.account_resolver!() == Lockspire.TestAccountResolver
-    assert Lockspire.Config.issuer!() == "https://example.test"
+    assert Lockspire.Config.issuer!() == "https://example.test/oauth"
     assert Lockspire.Config.mount_path() == "/oauth"
     assert Lockspire.Config.oban_config() == [repo: Lockspire.TestRepo, queues: false]
 
     assert Lockspire.config() == %{
              repo: Lockspire.TestRepo,
              account_resolver: Lockspire.TestAccountResolver,
-             issuer: "https://example.test",
+             issuer: "https://example.test/oauth",
              mount_path: "/oauth",
              oban: [repo: Lockspire.TestRepo, queues: false]
            }
 
-    assert Lockspire.issuer() == "https://example.test"
+    assert Lockspire.issuer() == "https://example.test/oauth"
     assert Lockspire.mount_path() == "/oauth"
     assert Lockspire.account_resolver!() == Lockspire.TestAccountResolver
   end
@@ -98,6 +98,29 @@ defmodule Lockspire.ConfigTest do
                  fn ->
                    Lockspire.Config.account_resolver!()
                  end
+  end
+
+  test "issuer!/0 validates absolute issuer urls that match mount_path" do
+    Application.put_env(:lockspire, :mount_path, "/oauth")
+
+    invalid_issuers = [
+      "oauth",
+      "https://example.test/oauth?foo=bar",
+      "https://example.test/oauth#fragment",
+      "https://example.test/other"
+    ]
+
+    for issuer <- invalid_issuers do
+      Application.put_env(:lockspire, :issuer, issuer)
+
+      assert_raise ArgumentError, fn ->
+        Lockspire.Config.issuer!()
+      end
+    end
+
+    Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
+
+    assert Lockspire.Config.issuer!() == "https://example.test/oauth"
   end
 
   test "test resolver satisfies the host seam behaviour without macros" do
