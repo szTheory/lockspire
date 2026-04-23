@@ -9,6 +9,7 @@ defmodule Lockspire.Web.Router do
 
   scope "/" do
     get("/authorize", Lockspire.Web.AuthorizeController, :show)
+    post("/token", Lockspire.Web.TokenController, :create)
     get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
     post("/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete)
     live("/consent/:interaction_id", Lockspire.Web.ConsentLive, :show)
