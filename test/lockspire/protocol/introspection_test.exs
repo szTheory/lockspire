@@ -130,8 +130,12 @@ defmodule Lockspire.Protocol.IntrospectionTest do
         revoked_at: now
       })
 
-    %{confidential_client: confidential_client, secret: secret, other_client: other_client,
-      public_client: public_client}
+    %{
+      confidential_client: confidential_client,
+      secret: secret,
+      other_client: other_client,
+      public_client: public_client
+    }
   end
 
   test "returns active token details for authorized confidential callers", %{

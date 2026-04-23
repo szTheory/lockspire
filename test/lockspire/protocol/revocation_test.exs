@@ -94,7 +94,10 @@ defmodule Lockspire.Protocol.RevocationTest do
     }
   end
 
-  test "revokes access tokens for the authenticated client", %{client: client, client_secret: secret} do
+  test "revokes access tokens for the authenticated client", %{
+    client: client,
+    client_secret: secret
+  } do
     assert :ok =
              Revocation.revoke(%{
                params: %{"token" => "revoke-access-token"},
@@ -106,7 +109,10 @@ defmodule Lockspire.Protocol.RevocationTest do
              Repository.fetch_lifecycle_token(TokenFormatter.hash_token("revoke-access-token"))
   end
 
-  test "revokes refresh tokens for the authenticated client", %{client: client, client_secret: secret} do
+  test "revokes refresh tokens for the authenticated client", %{
+    client: client,
+    client_secret: secret
+  } do
     assert :ok =
              Revocation.revoke(%{
                params: %{"token" => "revoke-refresh-token", "token_type_hint" => "bogus_hint"},

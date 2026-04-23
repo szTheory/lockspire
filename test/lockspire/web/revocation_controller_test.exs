@@ -91,7 +91,9 @@ defmodule Lockspire.Web.RevocationControllerTest do
     assert Jason.decode!(conn.resp_body) == %{}
 
     assert {:ok, %Token{revoked_at: %DateTime{}}} =
-             Repository.fetch_lifecycle_token(TokenFormatter.hash_token("controller-revoke-access"))
+             Repository.fetch_lifecycle_token(
+               TokenFormatter.hash_token("controller-revoke-access")
+             )
   end
 
   test "POST /revoke returns success for unknown tokens", %{client: client, secret: secret} do
@@ -116,10 +118,15 @@ defmodule Lockspire.Web.RevocationControllerTest do
     assert Jason.decode!(conn.resp_body) == %{}
 
     assert {:ok, %Token{revoked_at: nil}} =
-             Repository.fetch_lifecycle_token(TokenFormatter.hash_token("controller-revoke-access"))
+             Repository.fetch_lifecycle_token(
+               TokenFormatter.hash_token("controller-revoke-access")
+             )
   end
 
-  test "POST /revoke returns success for already revoked tokens", %{client: client, secret: secret} do
+  test "POST /revoke returns success for already revoked tokens", %{
+    client: client,
+    secret: secret
+  } do
     first_conn =
       build_conn(:post, "/revoke", %{"token" => "controller-revoke-access"})
       |> put_req_header("authorization", basic_auth(client.client_id, secret))

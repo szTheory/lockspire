@@ -51,7 +51,8 @@ defmodule Lockspire.Protocol.Introspection do
     end
   end
 
-  defp fetch_token_hash(_params), do: {:error, invalid_request("token is required", :missing_token)}
+  defp fetch_token_hash(_params),
+    do: {:error, invalid_request("token is required", :missing_token)}
 
   defp authenticate_client(params, authorization, request) do
     case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
