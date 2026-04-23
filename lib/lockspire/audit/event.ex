@@ -105,6 +105,11 @@ defmodule Lockspire.Audit.Event do
   defp compact_metadata(_metadata), do: %{}
 
   defp compact_metadata_value(nil), do: :drop
+  defp compact_metadata_value(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  defp compact_metadata_value(%NaiveDateTime{} = value), do: NaiveDateTime.to_iso8601(value)
+  defp compact_metadata_value(%Date{} = value), do: Date.to_iso8601(value)
+  defp compact_metadata_value(%Time{} = value), do: Time.to_iso8601(value)
+  defp compact_metadata_value(%_{} = value), do: inspect(value)
   defp compact_metadata_value(%{} = value) do
     case compact_metadata(value) do
       map when map == %{} -> :drop

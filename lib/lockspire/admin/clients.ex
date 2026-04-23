@@ -6,6 +6,7 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Clients
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
+  alias Lockspire.Observability
   alias Lockspire.Storage.Ecto.Repository
 
   @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts metadata)a
@@ -42,7 +43,34 @@ defmodule Lockspire.Admin.Clients do
 
   @spec create_client(map() | keyword()) ::
           {:ok, RegistrationResult.t()} | {:error, [Clients.error_detail()]}
-  def create_client(attrs), do: Clients.register_client(attrs)
+  def create_client(attrs) when is_list(attrs) do
+    create_client(Enum.into(attrs, %{}))
+  end
+
+  def create_client(attrs) when is_map(attrs) do
+    actor = actor_from_attrs(attrs)
+
+    case transact_with_audit(
+           fn -> Clients.register_client(attrs) end,
+           fn %RegistrationResult{client: client} ->
+             client_audit_event(:client_created, :succeeded, client, actor, %{
+               client_type: client.client_type,
+               token_endpoint_auth_method: client.token_endpoint_auth_method
+             })
+           end
+         ) do
+      {:ok, %RegistrationResult{client: client} = result} ->
+        emit(:client_created, client, actor, %{
+          client_type: client.client_type,
+          token_endpoint_auth_method: client.token_endpoint_auth_method
+        })
+
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   @spec update_client(String.t(), map() | keyword()) ::
           {:ok, Client.t()} | {:error, [error_detail()]} | {:error, term()}
@@ -74,13 +102,22 @@ defmodule Lockspire.Admin.Clients do
 
   def rotate_client_secret(client_id, attrs) when is_binary(client_id) and is_map(attrs) do
     rotated_at = Map.get(attrs, :rotated_at, DateTime.utc_now())
+    actor = actor_from_attrs(attrs)
 
     with {:ok, %Client{} = client} <- get_client(client_id),
          :ok <- ensure_confidential_client(client) do
       {secret_hash, plaintext_secret} = Clients.rotate_secret_hash()
 
-      case Repository.rotate_client_secret(client, secret_hash, rotated_at) do
-        {:ok, updated_client} ->
+      case transact_with_audit(
+             fn -> Repository.rotate_client_secret(client, secret_hash, rotated_at) end,
+             fn %Client{} = updated_client ->
+               client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
+                 rotated_at: rotated_at
+               })
+             end
+           ) do
+        {:ok, %Client{} = updated_client} ->
+          emit(:client_secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
           {:ok, %{client: updated_client, client_secret: plaintext_secret}}
 
         {:error, reason} ->
@@ -101,11 +138,32 @@ defmodule Lockspire.Admin.Clients do
   end
 
   def disable_client(client_id, attrs) when is_binary(client_id) and is_map(attrs) do
+    actor = actor_from_attrs(attrs)
+    disabled_by = normalize_string(Map.get(attrs, :disabled_by))
+    disabled_at = Map.get(attrs, :disabled_at, DateTime.utc_now())
+
     with {:ok, %Client{} = client} <- get_client(client_id) do
-      Repository.set_client_active(client, false, %{
-        disabled_at: Map.get(attrs, :disabled_at, DateTime.utc_now()),
-        disabled_by: normalize_string(Map.get(attrs, :disabled_by))
-      })
+      case transact_with_audit(
+             fn ->
+               Repository.set_client_active(client, false, %{
+                 disabled_at: disabled_at,
+                 disabled_by: disabled_by
+               })
+             end,
+             fn %Client{} = updated_client ->
+               client_audit_event(:client_disabled, :succeeded, updated_client, actor, %{
+                 disabled_at: disabled_at,
+                 disabled_by: disabled_by
+               })
+             end
+           ) do
+        {:ok, %Client{} = updated_client} ->
+          emit(:client_disabled, updated_client, actor, %{disabled_at: disabled_at})
+          {:ok, updated_client}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
   end
 
@@ -245,4 +303,63 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_field_name(_value), do: nil
+
+  defp transact_with_audit(fun, build_audit_event) when is_function(fun, 0) and is_function(build_audit_event, 1) do
+    Repository.transact(fn ->
+      case fun.() do
+        {:ok, result} ->
+          case Repository.append_audit_event(build_audit_event.(result)) do
+            {:ok, _event} -> result
+            {:error, reason} -> {:error, reason}
+          end
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end)
+  end
+
+  defp emit(event, %Client{} = client, actor, metadata) do
+    Observability.emit(event, %{}, %{
+      actor_type: actor[:type],
+      actor_id: actor[:id],
+      client_id: client.client_id,
+      reason_code: event
+    } |> Map.merge(metadata))
+  end
+
+  defp client_audit_event(action, outcome, %Client{} = client, actor, metadata) do
+    %{
+      action: action,
+      outcome: outcome,
+      reason_code: action,
+      actor: actor,
+      resource: %{type: :client, id: client.client_id},
+      metadata: Map.merge(%{client_id: client.client_id}, metadata)
+    }
+  end
+
+  defp actor_from_attrs(attrs) when is_map(attrs) do
+    actor = Map.get(attrs, :actor) || Map.get(attrs, "actor") || %{}
+
+    %{
+      type: normalize_actor_type(Map.get(actor, :type) || Map.get(actor, "type")),
+      id: normalize_string(Map.get(actor, :id) || Map.get(actor, "id")),
+      display: normalize_string(Map.get(actor, :display) || Map.get(actor, "display"))
+    }
+  end
+
+  defp normalize_actor_type(nil), do: :operator
+  defp normalize_actor_type(value) when is_atom(value), do: value
+
+  defp normalize_actor_type(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> :operator
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_actor_type(_value), do: :operator
 end

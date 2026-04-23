@@ -103,6 +103,24 @@ defmodule Lockspire.Audit.AuditWriterTest do
     refute Map.has_key?(record, :after_state)
   end
 
+  test "normalizes timestamp metadata without treating structs as nested maps" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    event =
+      Event.normalize(%{
+        action: :client_secret_rotated,
+        outcome: :succeeded,
+        actor: %{type: :operator, id: "ops-123"},
+        resource: %{type: :client, id: "client-123"},
+        metadata: %{
+          rotated_at: now,
+          disabled_at: nil
+        }
+      })
+
+    assert event.metadata == %{"rotated_at" => DateTime.to_iso8601(now)}
+  end
+
   test "repository transaction wrapper commits the durable mutation and audit row together" do
     client = %Client{
       client_id: "client_with_audit",

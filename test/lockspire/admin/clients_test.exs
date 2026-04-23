@@ -1,9 +1,12 @@
 defmodule Lockspire.Admin.ClientsTest do
   use ExUnit.Case, async: false
 
+  import Ecto.Query
+
   alias Lockspire.Admin.Clients
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -17,6 +20,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    handler_id = attach_events(self())
 
     {:ok, _client} =
       Repository.register_client(%Client{
@@ -35,10 +39,12 @@ defmodule Lockspire.Admin.ClientsTest do
         metadata: %{"tier" => "sandbox"}
       })
 
-    :ok
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    %{handler_id: handler_id}
   end
 
-  test "create_client/1 reuses canonical registration and returns plaintext secret once" do
+  test "create_client/1 reuses canonical registration, emits telemetry, and appends operator audit" do
     assert {:ok, %RegistrationResult{client: client, client_secret: secret}} =
              Clients.create_client(%{
                client_id: "new-client",
@@ -47,12 +53,33 @@ defmodule Lockspire.Admin.ClientsTest do
                redirect_uris: ["https://new.example.com/callback"],
                allowed_scopes: ["profile"],
                allowed_grant_types: ["authorization_code"],
-               token_endpoint_auth_method: :client_secret_basic
+               token_endpoint_auth_method: :client_secret_basic,
+               actor: %{
+                 type: :operator,
+                 id: "ops-123",
+                 display: "Ops User"
+               }
              })
 
     assert client.client_id == "new-client"
     assert is_binary(secret)
     assert client.client_secret_hash
+
+    assert_received {:telemetry_event, [:lockspire, :client_created],
+                     %{client_id: "new-client", actor_type: :operator, actor_id: "ops-123"}}
+
+    assert_received {:telemetry_event, [:lockspire, :audit, :client_created],
+                     %{client_id: "new-client", actor_type: :operator, actor_id: "ops-123"}}
+
+    assert %AuditEventRecord{} = audit = latest_audit!("client_created")
+    assert audit.resource_type == "client"
+    assert audit.resource_id == "new-client"
+    assert audit.actor_type == "operator"
+    assert audit.actor_id == "ops-123"
+    assert audit.actor_display == "Ops User"
+    assert audit.outcome == "succeeded"
+    assert audit.reason_code == "client_created"
+    assert audit.metadata["client_type"] == "confidential"
   end
 
   test "update_client/2 allows safe metadata changes and rejects immutable fields" do
@@ -94,9 +121,12 @@ defmodule Lockspire.Admin.ClientsTest do
     assert Enum.any?(errors, &(&1.field == :redirect_uris and &1.reason == :invalid_redirect_uri))
   end
 
-  test "rotate_client_secret/2 returns a plaintext secret once and persists only the hash" do
+  test "rotate_client_secret/2 returns a plaintext secret once, emits telemetry, and appends operator audit" do
     assert {:ok, %{client: %Client{} = client, client_secret: secret}} =
-             Clients.rotate_client_secret("admin-client", %{rotated_at: DateTime.utc_now()})
+             Clients.rotate_client_secret("admin-client", %{
+               rotated_at: DateTime.utc_now(),
+               actor: %{type: :operator, id: "ops-rotate", display: "Rotate User"}
+             })
 
     assert is_binary(secret)
     refute secret == client.client_secret_hash
@@ -105,11 +135,22 @@ defmodule Lockspire.Admin.ClientsTest do
     assert {:ok, %Client{} = stored_client} = Repository.fetch_client_by_id("admin-client")
     assert stored_client.client_secret_hash == client.client_secret_hash
     refute stored_client.client_secret_hash == secret
+
+    assert_received {:telemetry_event, [:lockspire, :client_secret_rotated],
+                     %{client_id: "admin-client", actor_id: "ops-rotate"}}
+
+    assert %AuditEventRecord{} = audit = latest_audit!("client_secret_rotated")
+    assert audit.resource_id == "admin-client"
+    assert audit.actor_id == "ops-rotate"
+    assert audit.reason_code == "client_secret_rotated"
   end
 
-  test "disable_client/2 and enable_client/2 expose queryable lifecycle state" do
+  test "disable_client/2 and enable_client/2 expose queryable lifecycle state with operator evidence" do
     assert {:ok, %Client{} = disabled_client} =
-             Clients.disable_client("admin-client", %{disabled_by: "ops@example.com"})
+             Clients.disable_client("admin-client", %{
+               disabled_by: "ops@example.com",
+               actor: %{type: :operator, id: "ops-disable", display: "Disable User"}
+             })
 
     refute disabled_client.active
     assert disabled_client.disabled_by == "ops@example.com"
@@ -122,5 +163,48 @@ defmodule Lockspire.Admin.ClientsTest do
     assert enabled_client.active
     assert is_nil(enabled_client.disabled_at)
     assert is_nil(enabled_client.disabled_by)
+
+    assert_received {:telemetry_event, [:lockspire, :client_disabled],
+                     %{client_id: "admin-client", actor_id: "ops-disable"}}
+
+    assert %AuditEventRecord{} = audit = latest_audit!("client_disabled")
+    assert audit.resource_id == "admin-client"
+    assert audit.actor_id == "ops-disable"
+    assert audit.metadata["disabled_by"] == "ops@example.com"
+  end
+
+  def handle_event(event, _measurements, metadata, pid) do
+    send(pid, {:telemetry_event, event, metadata})
+  end
+
+  defp attach_events(pid) do
+    handler_id = "admin-clients-test-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        [
+          [:lockspire, :client_created],
+          [:lockspire, :audit, :client_created],
+          [:lockspire, :client_secret_rotated],
+          [:lockspire, :audit, :client_secret_rotated],
+          [:lockspire, :client_disabled],
+          [:lockspire, :audit, :client_disabled]
+        ],
+        &__MODULE__.handle_event/4,
+        pid
+      )
+
+    handler_id
+  end
+
+  defp latest_audit!(action) do
+    Lockspire.TestRepo.one!(
+      from(audit in AuditEventRecord,
+        where: audit.action == ^to_string(action),
+        order_by: [desc: audit.id],
+        limit: 1
+      )
+    )
   end
 end
