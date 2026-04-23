@@ -10,6 +10,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   alias Lockspire.Observability
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias Lockspire.Protocol.ConsentPolicy
+  alias Lockspire.Security.Policy
 
   @authorization_code_ttl 300
 
@@ -89,7 +90,12 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       subject_id = subject_id!(subject_context)
       remember? = Keyword.get(opts, :remember, false)
 
-      case interaction_store(opts).transact(fn ->
+      audit_events = [
+        consent_approved_event(interaction, subject_id, remember?),
+        authorization_completed_event(interaction, subject_actor(subject_id), :consent_approved)
+      ]
+
+      case transact_with_audit(interaction_store(opts), audit_events, fn ->
              with {:ok, completed} <-
                     interaction_store(opts).transition_interaction(
                       interaction_id,
@@ -102,7 +108,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
              end
            end) do
         {:ok, {completed, redirect_uri}} ->
-          emit(:consent_approved, completed, subject_id)
+          emit(:consent_approved, completed, subject_id, %{reason_code: :consent_approved})
+          emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_approved})
           {:approved, redirect_uri}
 
         {:error, :invalid_state} ->
@@ -122,7 +129,9 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
          :ok <- ensure_subject_match(interaction, subject_context) do
       subject_id = subject_id!(subject_context)
 
-      case interaction_store(opts).transact(fn ->
+      audit_event = consent_denied_event(interaction, subject_id)
+
+      case transact_with_audit(interaction_store(opts), [audit_event], fn ->
              with {:ok, denied} <-
                     interaction_store(opts).transition_interaction(
                       interaction_id,
@@ -137,7 +146,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
              end
            end) do
         {:ok, %Interaction{} = denied} ->
-          emit(:consent_denied, denied, subject_id)
+          emit(:consent_denied, denied, subject_id, %{reason_code: :access_denied})
           {:denied, denial_redirect(interaction)}
 
         {:error, :invalid_state} ->
@@ -158,7 +167,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp finalize_reused_consent(%Interaction{} = interaction, subject_id, opts) do
-    case interaction_store(opts).transact(fn ->
+    audit_event =
+      authorization_completed_event(interaction, system_actor(), :consent_reused)
+
+    case transact_with_audit(interaction_store(opts), [audit_event], fn ->
            with {:ok, completed} <-
                   interaction_store(opts).transition_interaction(
                     interaction.interaction_id,
@@ -169,7 +181,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
              {completed, redirect_uri}
            end
          end) do
-      {:ok, {_completed, redirect_uri}} -> {:consent_reused, redirect_uri}
+      {:ok, {%Interaction{} = completed, redirect_uri}} ->
+        emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_reused})
+        {:consent_reused, redirect_uri}
+
       {:error, :invalid_state} -> {:error, :interaction_not_active}
       {:error, reason} -> {:error, reason}
     end
@@ -198,7 +213,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp issue_authorization_code(%Interaction{} = interaction, subject_id, opts) do
     raw_code = generate_code(opts)
     now = now(opts)
-    token_hash = hash_secret(raw_code)
+    token_hash = Policy.hash_token(raw_code)
 
     token = %Token{
       token_hash: token_hash,
@@ -368,6 +383,83 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     ])
   end
 
+  defp transact_with_audit(store, audit_events, fun)
+       when is_atom(store) and is_list(audit_events) and is_function(fun, 0) do
+    store.transact(fn ->
+      case fun.() do
+        {:error, reason} ->
+          {:error, reason}
+
+        result ->
+          case append_audit_events(store, audit_events) do
+            :ok -> result
+            {:error, reason} -> {:error, reason}
+          end
+      end
+    end)
+  end
+
+  defp append_audit_events(_store, []), do: :ok
+
+  defp append_audit_events(store, [event | rest]) do
+    if function_exported?(store, :append_audit_event, 1) do
+      case store.append_audit_event(event) do
+        {:ok, %Lockspire.Audit.Event{}} -> append_audit_events(store, rest)
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      {:error, :audit_append_unsupported}
+    end
+  end
+
+  defp consent_approved_event(%Interaction{} = interaction, subject_id, remember?) do
+    audit_event(
+      :consent_approved,
+      :succeeded,
+      interaction,
+      subject_actor(subject_id),
+      :consent_approved,
+      %{remember: remember?}
+    )
+  end
+
+  defp consent_denied_event(%Interaction{} = interaction, subject_id) do
+    audit_event(
+      :consent_denied,
+      :denied,
+      interaction,
+      subject_actor(subject_id),
+      :access_denied
+    )
+  end
+
+  defp authorization_completed_event(%Interaction{} = interaction, actor, reason_code) do
+    audit_event(:authorization_completed, :succeeded, interaction, actor, reason_code)
+  end
+
+  defp audit_event(action, outcome, %Interaction{} = interaction, actor, reason_code, metadata \\ %{}) do
+    %{
+      action: action,
+      outcome: outcome,
+      reason_code: reason_code,
+      actor: actor,
+      resource: %{type: :interaction, id: interaction.interaction_id},
+      metadata:
+        Map.merge(metadata, %{
+          client_id: interaction.client_id,
+          status: interaction.status
+        })
+    }
+  end
+
+  defp subject_actor(subject_id) do
+    %{type: :subject, id: subject_id, display: subject_id}
+  end
+
+  defp system_actor do
+    %{type: :system, id: "lockspire", display: "Lockspire"}
+  end
+
   defp generate_code(opts) do
     opts
     |> Keyword.get_lazy(:code_generator, fn -> &default_generator/0 end)
@@ -384,12 +476,6 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     32
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
-  end
-
-  defp hash_secret(secret) when is_binary(secret) do
-    :sha256
-    |> :crypto.hash(secret)
-    |> Base.encode16(case: :lower)
   end
 
   defp now(opts) do

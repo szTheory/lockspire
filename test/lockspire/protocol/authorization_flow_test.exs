@@ -1,6 +1,7 @@
 defmodule Lockspire.Protocol.AuthorizationFlowTest do
   use ExUnit.Case, async: false
 
+  alias Lockspire.Audit.Event
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
@@ -12,6 +13,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     {:ok, pid} =
       Agent.start_link(fn ->
         %{
+          audits: [],
           interactions: %{},
           consents: %{},
           tokens: %{}
@@ -19,7 +21,30 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       end)
 
     Store.use_agent(pid)
-    :ok
+
+    :telemetry.detach("authorization-flow-test-handler")
+
+    events = start_supervised!({Agent, fn -> [] end})
+
+    :telemetry.attach_many(
+      "authorization-flow-test-handler",
+      [
+        [:lockspire, :consent_approved],
+        [:lockspire, :consent_denied],
+        [:lockspire, :authorization_completed],
+        [:lockspire, :audit, :consent_approved],
+        [:lockspire, :audit, :consent_denied],
+        [:lockspire, :audit, :authorization_completed]
+      ],
+      fn event, _measurements, metadata, agent ->
+        Agent.update(agent, fn current -> [{event, metadata} | current] end)
+      end,
+      events
+    )
+
+    on_exit(fn -> :telemetry.detach("authorization-flow-test-handler") end)
+
+    %{events: events}
   end
 
   test "validated requests become login-required or consent-required interactions backed by durable state" do
@@ -90,6 +115,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     [stored_code] = Store.stored_tokens()
     assert stored_code.token_hash != reused_query["code"]
     assert stored_code.token_type == :authorization_code
+    assert DateTime.diff(stored_code.expires_at, fixed_now(), :second) == 300
 
     assert {:consent_required, %Interaction{} = forced_interaction} =
              AuthorizationFlow.start_authorization(
@@ -151,6 +177,14 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     %{query: approved_query} = parse_redirect(approved_redirect)
     assert approved_query["state"] == "state-123"
     assert approved_query["code"] == "approval-code-123"
+
+    [stored_code] =
+      Store.stored_tokens()
+      |> Enum.filter(&(&1.token_type == :authorization_code))
+
+    assert stored_code.token_hash != approved_query["code"]
+    assert is_nil(stored_code.redeemed_at)
+    assert DateTime.diff(stored_code.expires_at, fixed_now(), :second) == 300
 
     [remembered_grant] =
       Store.stored_consents()
@@ -227,6 +261,132 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
   end
 
+  test "approval, denial, and reused completion append audit events with actor attribution and reason codes",
+       %{events: events} do
+    assert {:ok, _grant} =
+             Store.grant_consent(%ConsentGrant{
+               account_id: "subject_123",
+               client_id: "client_123",
+               scopes: ["email", "profile"],
+               granted_at: fixed_now(),
+               status: :active,
+               kind: :remembered
+             })
+
+    assert {:consent_reused, _redirect_uri} =
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "reused-state"),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "reused-code-123" end,
+               interaction_id_generator: fn -> "interaction-reused-audit" end
+             )
+
+    assert {:consent_required, %Interaction{} = approved_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "approval-state", prompt: ["consent"]),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "approval-audit-code" end,
+               interaction_id_generator: fn -> "interaction-approval-audit" end
+             )
+
+    assert {:approved, _redirect_uri} =
+             AuthorizationFlow.approve_interaction(
+               approved_interaction.interaction_id,
+               %{subject_id: "subject_123"},
+               remember: true,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "approval-audit-code" end
+             )
+
+    assert {:consent_required, %Interaction{} = denied_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(state: "deny-audit-state", prompt: ["consent"]),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-deny-audit" end
+             )
+
+    assert {:denied, _redirect_uri} =
+             AuthorizationFlow.deny_interaction(
+               denied_interaction.interaction_id,
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0
+             )
+
+    audits = Store.stored_audits()
+
+    assert %Event{
+             action: "authorization_completed",
+             outcome: "succeeded",
+             reason_code: "consent_reused",
+             actor_type: "system",
+             actor_id: "lockspire",
+             resource_type: "interaction",
+             resource_id: "interaction-reused-audit"
+           } = Enum.find(audits, &(&1.resource_id == "interaction-reused-audit"))
+
+    assert %Event{
+             action: "consent_approved",
+             outcome: "succeeded",
+             reason_code: "consent_approved",
+             actor_type: "subject",
+             actor_id: "subject_123",
+             resource_type: "interaction",
+             resource_id: "interaction-approval-audit"
+           } = Enum.find(audits, &(&1.action == "consent_approved"))
+
+    assert %Event{
+             action: "authorization_completed",
+             outcome: "succeeded",
+             reason_code: "consent_approved",
+             actor_type: "subject",
+             actor_id: "subject_123",
+             resource_type: "interaction",
+             resource_id: "interaction-approval-audit"
+           } = Enum.find(audits, &(&1.action == "authorization_completed" and &1.resource_id == "interaction-approval-audit"))
+
+    assert %Event{
+             action: "consent_denied",
+             outcome: "denied",
+             reason_code: "access_denied",
+             actor_type: "subject",
+             actor_id: "subject_123",
+             resource_type: "interaction",
+             resource_id: "interaction-deny-audit"
+           } = Enum.find(audits, &(&1.action == "consent_denied"))
+
+    recorded = recorded_events(events)
+
+    assert {[:lockspire, :consent_approved], %{reason_code: :consent_approved}} =
+             Enum.find(recorded, fn {event, _metadata} -> event == [:lockspire, :consent_approved] end)
+
+    assert {[:lockspire, :consent_denied], %{reason_code: :access_denied}} =
+             Enum.find(recorded, fn {event, _metadata} -> event == [:lockspire, :consent_denied] end)
+
+    assert {[:lockspire, :authorization_completed], %{reason_code: :consent_reused}} =
+             Enum.find(recorded, fn {event, metadata} ->
+               event == [:lockspire, :authorization_completed] and metadata[:reason_code] == :consent_reused
+             end)
+  end
+
   defp validated_request(overrides \\ []) do
     defaults = %{
       client_id: "client_123",
@@ -260,7 +420,14 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
   defp fixed_now, do: ~U[2026-04-23 02:02:00Z]
 
+  defp recorded_events(agent) do
+    agent
+    |> Agent.get(&Enum.reverse(&1))
+    |> Enum.map(fn {event, metadata} -> {event, Map.take(metadata, [:reason_code])} end)
+  end
+
   defmodule Store do
+    alias Lockspire.Audit.Event
     alias Lockspire.Domain.ConsentGrant
     alias Lockspire.Domain.Interaction
     alias Lockspire.Domain.Token
@@ -323,6 +490,16 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
         {:error, reason} -> {:error, reason}
         result -> {:ok, result}
       end
+    end
+
+    def append_audit_event(attrs) when is_map(attrs) do
+      event = Event.normalize(attrs)
+
+      update(fn state ->
+        update_in(state.audits, &[event | &1])
+      end)
+
+      {:ok, event}
     end
 
     def grant_consent(%ConsentGrant{} = grant) do
@@ -455,6 +632,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     def stored_tokens, do: stored_values(:tokens)
     def stored_consents, do: stored_values(:consents)
+    def stored_audits, do: stored_values(:audits)
 
     def force_expire(interaction_id) do
       update(fn state ->
@@ -483,7 +661,12 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     defp stored_values(key) do
       pid()
-      |> Agent.get(fn state -> state[key] |> Map.values() |> Enum.sort_by(& &1.id) end)
+      |> Agent.get(fn state ->
+        case state[key] do
+          values when is_map(values) -> values |> Map.values() |> Enum.sort_by(& &1.id)
+          values when is_list(values) -> Enum.reverse(values)
+        end
+      end)
     end
 
     defp get_in_state(path) do

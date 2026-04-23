@@ -5,9 +5,12 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.Interaction
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Protocol.AuthorizationFlow
+  alias Lockspire.Protocol.AuthorizationRequest.Validated
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -130,5 +133,116 @@ defmodule Lockspire.Audit.AuditWriterTest do
     assert [%AuditEventRecord{} = stored_audit] = Lockspire.TestRepo.all(AuditEventRecord)
     assert stored_audit.action == "client_created"
     assert stored_audit.resource_id == client.client_id
+  end
+
+  test "authorization flow persists approval and denial audit rows through the repository boundary" do
+    now = DateTime.utc_now()
+    {:ok, client} = register_client("audit-flow-client", now)
+
+    assert {:consent_required, %Interaction{} = approved_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(client, state: "approval-state"),
+               %{subject_id: "subject-123"},
+               interaction_store: Repository,
+               consent_store: Repository,
+               token_store: Repository,
+               now: fn -> now end,
+               code_generator: fn -> "approval-code" end,
+               interaction_id_generator: fn -> "interaction-approval" end
+             )
+
+    assert {:approved, _redirect_uri} =
+             AuthorizationFlow.approve_interaction(
+               approved_interaction.interaction_id,
+               %{subject_id: "subject-123"},
+               remember: true,
+                interaction_store: Repository,
+                consent_store: Repository,
+                token_store: Repository,
+                now: fn -> now end,
+                code_generator: fn -> "approval-code" end
+             )
+
+    assert {:consent_required, %Interaction{} = denied_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(client, state: "deny-state", prompt: ["consent"]),
+               %{subject_id: "subject-123"},
+               interaction_store: Repository,
+               consent_store: Repository,
+               token_store: Repository,
+               now: fn -> now end,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-denied" end
+             )
+
+    assert {:denied, _redirect_uri} =
+             AuthorizationFlow.deny_interaction(
+               denied_interaction.interaction_id,
+               %{subject_id: "subject-123"},
+                interaction_store: Repository,
+                consent_store: Repository,
+                token_store: Repository,
+                now: fn -> now end
+             )
+
+    audits =
+      Lockspire.TestRepo.all(AuditEventRecord)
+      |> Enum.sort_by(&{&1.resource_id, &1.action})
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "consent_approved" and
+               audit.resource_id == "interaction-approval" and
+               audit.actor_type == "subject" and
+               audit.actor_id == "subject-123" and
+               audit.reason_code == "consent_approved"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "authorization_completed" and
+               audit.resource_id == "interaction-approval" and
+               audit.actor_type == "subject" and
+               audit.actor_id == "subject-123" and
+               audit.reason_code == "consent_approved"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "consent_denied" and
+               audit.resource_id == "interaction-denied" and
+               audit.actor_type == "subject" and
+               audit.actor_id == "subject-123" and
+               audit.reason_code == "access_denied"
+           end)
+  end
+
+  defp register_client(client_id, now) do
+    Repository.register_client(%Client{
+      client_id: client_id,
+      client_secret_hash: "argon2id$hash",
+      client_type: :public,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["email", "profile", "offline_access"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :none,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: now,
+      metadata: %{}
+    })
+  end
+
+  defp validated_request(client, overrides) do
+    defaults = %{
+      client_id: client.client_id,
+      client: client,
+      redirect_uri: "https://client.example.com/callback",
+      scopes: ["email", "profile"],
+      prompt: ["consent"],
+      state: "state-123",
+      code_challenge: "challenge-123",
+      code_challenge_method: :S256
+    }
+
+    struct!(Validated, Enum.into(overrides, defaults))
   end
 end
