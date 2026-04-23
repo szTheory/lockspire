@@ -17,9 +17,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Authorization Core
 
 - [x] **AUTH-01**: Operator can register a client with redirect URIs, grant types, scopes, and client type settings
-- [ ] **AUTH-02**: Third-party client can start an authorization code flow with PKCE S256
+- [x] **AUTH-02**: Third-party client can start an authorization code flow with PKCE S256
 - [x] **AUTH-03**: Lockspire validates redirect URIs by exact match and rejects unsafe authorization requests
-- [ ] **AUTH-04**: Authenticated account can approve or deny a consent request for requested scopes
+- [x] **AUTH-04**: Authenticated account can approve or deny a consent request for requested scopes
 - [ ] **AUTH-05**: Third-party client can exchange a valid authorization code for an access token
 
 ### OIDC and Token Lifecycle
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTE-03 | Phase 1 | Pending |
 | INTE-04 | Phase 1 | Pending |
 | AUTH-01 | Phase 2 | Complete |
-| AUTH-02 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
-| AUTH-04 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 2 | Pending |
 | OIDC-01 | Phase 3 | Pending |
 | OIDC-02 | Phase 3 | Pending |

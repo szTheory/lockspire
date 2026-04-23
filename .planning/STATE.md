@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-23T01:27:54.245Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-23T01:39:35.024Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 02 (authorization-core) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-23
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [██████░░░░] 57%
 - Phase 01 P03 established the install generator, host-owned templates, and mountable web entrypoints.
 
 | Phase 02 P01 | 7 | 3 tasks | 12 files |
+| Phase 02 P02 | 11min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - Client registration returns plaintext secrets only through a typed registration result while persisting only hashed secrets.
 - Authorize validation enforces runtime-configured known scopes in addition to client-allowed scopes before any redirect or host handoff.
 - The Phase 2 /authorize success branch stays as a validated JSON handoff until interaction orchestration lands in 02-02 and 02-03.
+- Consent reuse is limited to remembered active grants whose scope set fully covers the validated request, and prompt=consent always forces an interactive path.
+- Authorization codes remain opaque to clients but are hashed before persistence, with redirect_uri and PKCE challenge data stored durably for later redemption.
+- AuthorizationFlow accepts explicit subject context and store modules, keeping host account resolution and concrete Ecto repository coupling out of protocol decisions.
 
 ### Pending Todos
 
@@ -93,8 +97,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-23T01:27:54.239Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-04-23T01:39:34.975Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
 
 **Planned Phase:** 2 (Authorization Core) — 4 plans — 2026-04-22T23:33:22.141Z
