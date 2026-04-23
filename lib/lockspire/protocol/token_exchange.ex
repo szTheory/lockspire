@@ -47,7 +47,8 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     with :ok <- validate_grant_type(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %Token{} = authorization_code, code_hash} <- fetch_authorization_code(params, request),
+         {:ok, %Token{} = authorization_code, code_hash} <-
+           fetch_authorization_code(params, request),
          :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          %Success{} = success <- redeem_code(client, authorization_code, code_hash, request) do
@@ -119,7 +120,8 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp parse_basic_authorization(_authorization) do
-    {:error, invalid_client("Unsupported token endpoint authentication method", :unsupported_auth)}
+    {:error,
+     invalid_client("Unsupported token endpoint authentication method", :unsupported_auth)}
   end
 
   defp fetch_client(client_id, request) do
@@ -207,7 +209,8 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     cond do
       not is_nil(authorization_code.redeemed_at) ->
-        {:error, invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
+        {:error,
+         invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
 
       not is_nil(authorization_code.revoked_at) ->
         {:error, invalid_grant("Authorization code is invalid", :authorization_code_revoked)}
@@ -232,7 +235,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     if client.client_id == authorization_code.client_id do
       :ok
     else
-      {:error, invalid_grant("Authorization code was not issued to this client", :client_mismatch)}
+      {:error,
+       invalid_grant("Authorization code was not issued to this client", :client_mismatch)}
     end
   end
 
@@ -258,7 +262,8 @@ defmodule Lockspire.Protocol.TokenExchange do
         {:error, invalid_grant("code_verifier is required", :missing_code_verifier)}
 
       authorization_code.code_challenge_method != :S256 ->
-        {:error, invalid_grant("Unsupported PKCE challenge method", :unsupported_code_challenge_method)}
+        {:error,
+         invalid_grant("Unsupported PKCE challenge method", :unsupported_code_challenge_method)}
 
       not pkce_verifier_matches?(verifier, authorization_code.code_challenge) ->
         {:error, invalid_grant("code_verifier is invalid", :code_verifier_mismatch)}
@@ -299,7 +304,8 @@ defmodule Lockspire.Protocol.TokenExchange do
         }
 
       {:error, :already_redeemed} ->
-        {:error, invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
+        {:error,
+         invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
 
       {:error, :not_found} ->
         {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}

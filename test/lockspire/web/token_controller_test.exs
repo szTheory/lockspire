@@ -63,7 +63,9 @@ defmodule Lockspire.Web.TokenControllerTest do
     %{public_client: public_client}
   end
 
-  test "POST /token returns an oauth token response for public clients", %{public_client: public_client} do
+  test "POST /token returns an oauth token response for public clients", %{
+    public_client: public_client
+  } do
     conn =
       build_conn(:post, "/token", %{
         "grant_type" => "authorization_code",
@@ -87,9 +89,9 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     persisted_token =
       Lockspire.TestRepo.one!(
-        from token in TokenRecord,
-          where:
-            token.token_type == :access_token and token.client_id == ^public_client.client_id
+        from(token in TokenRecord,
+          where: token.token_type == :access_token and token.client_id == ^public_client.client_id
+        )
       )
 
     assert persisted_token.token_hash == TokenFormatter.hash_token(body["access_token"])

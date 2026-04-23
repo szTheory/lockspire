@@ -51,15 +51,20 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   } do
     secret = "super-secret-value"
     {:ok, client} = create_client("client-basic", :client_secret_basic, secret)
-    _code = create_authorization_code(client, raw_code: "code-basic", code_verifier: "verifier-basic")
+
+    _code =
+      create_authorization_code(client, raw_code: "code-basic", code_verifier: "verifier-basic")
 
     assert {:ok, success} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-basic",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-basic"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-basic",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-basic"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert success.access_token
     assert success.token_type == "Bearer"
@@ -71,8 +76,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     persisted_token =
       Lockspire.TestRepo.one!(
-        from token in TokenRecord,
+        from(token in TokenRecord,
           where: token.token_type == :access_token and token.client_id == ^client.client_id
+        )
       )
 
     assert persisted_token.account_id == "subject-123"
@@ -84,26 +90,36 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert [:lockspire, :access_token_issued] in event_names
   end
 
-  test "rejects replayed authorization code redemption and emits replay telemetry", %{events: events} do
+  test "rejects replayed authorization code redemption and emits replay telemetry", %{
+    events: events
+  } do
     secret = "replay-secret"
     {:ok, client} = create_client("client-replay", :client_secret_basic, secret)
-    _code = create_authorization_code(client, raw_code: "code-replay", code_verifier: "verifier-replay")
+
+    _code =
+      create_authorization_code(client, raw_code: "code-replay", code_verifier: "verifier-replay")
 
     assert {:ok, _success} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-replay",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-replay"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-replay",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-replay"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert {:error, error} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-replay",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-replay"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-replay",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-replay"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert error.error == "invalid_grant"
     assert error.reason_code == :authorization_code_replayed
@@ -121,12 +137,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     )
 
     assert {:error, expired_error} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-expired",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "expired-verifier"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-expired",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "expired-verifier"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert expired_error.reason_code == :authorization_code_expired
 
@@ -136,12 +155,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     )
 
     assert {:error, verifier_error} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-verifier",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "wrong-verifier"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-verifier",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "wrong-verifier"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert verifier_error.reason_code == :code_verifier_mismatch
 
@@ -154,12 +176,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     )
 
     assert {:error, client_error} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-client-mismatch",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "client-verifier"
-             }, authorization: basic_auth(other_client.client_id, secret_two))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-client-mismatch",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "client-verifier"
+               },
+               authorization: basic_auth(other_client.client_id, secret_two)
+             )
 
     assert client_error.reason_code == :client_mismatch
 
@@ -169,12 +194,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     )
 
     assert {:error, redirect_error} =
-             exchange(%{
-               "grant_type" => "authorization_code",
-               "code" => "code-redirect-mismatch",
-               "redirect_uri" => "https://attacker.example.com/callback",
-               "code_verifier" => "redirect-verifier"
-             }, authorization: basic_auth(client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-redirect-mismatch",
+                 "redirect_uri" => "https://attacker.example.com/callback",
+                 "code_verifier" => "redirect-verifier"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
 
     assert redirect_error.reason_code == :redirect_uri_mismatch
   end
@@ -182,15 +210,23 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   test "rejects unsupported grant types and unsupported token-endpoint auth methods" do
     secret = "post-secret"
     {:ok, basic_client} = create_client("client-basic-only", :client_secret_basic, secret)
-    _code = create_authorization_code(basic_client, raw_code: "code-post", code_verifier: "verifier-post")
+
+    _code =
+      create_authorization_code(basic_client,
+        raw_code: "code-post",
+        code_verifier: "verifier-post"
+      )
 
     assert {:error, grant_error} =
-             exchange(%{
-               "grant_type" => "refresh_token",
-               "code" => "code-post",
-               "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-post"
-             }, authorization: basic_auth(basic_client.client_id, secret))
+             exchange(
+               %{
+                 "grant_type" => "refresh_token",
+                 "code" => "code-post",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-post"
+               },
+               authorization: basic_auth(basic_client.client_id, secret)
+             )
 
     assert grant_error.error == "unsupported_grant_type"
 

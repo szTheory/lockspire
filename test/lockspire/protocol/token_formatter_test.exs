@@ -5,9 +5,7 @@ defmodule Lockspire.Protocol.TokenFormatterTest do
 
   test "formats opaque bearer access tokens with durable hashes" do
     formatted =
-      TokenFormatter.format_access_token(
-        token_generator: fn -> "opaque-access-token-value" end
-      )
+      TokenFormatter.format_access_token(token_generator: fn -> "opaque-access-token-value" end)
 
     assert formatted.token == "opaque-access-token-value"
     assert formatted.token_type == "Bearer"
