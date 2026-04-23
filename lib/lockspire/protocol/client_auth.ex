@@ -4,11 +4,14 @@ defmodule Lockspire.Protocol.ClientAuth do
   """
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Security.Policy
 
   @supported_auth_methods [:none, :client_secret_basic, :client_secret_post]
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Client authentication failure returned to OAuth protocol handlers.
+    """
 
     @type t :: %__MODULE__{
             status: pos_integer(),
@@ -96,14 +99,24 @@ defmodule Lockspire.Protocol.ClientAuth do
          attempted_method
        )
        when auth_method in @supported_auth_methods do
-    if auth_method == attempted_method do
-      :ok
-    else
-      {:error,
-       invalid_client(
-         "Client is not allowed to use this token endpoint authentication method",
-         :unsupported_token_endpoint_auth_method
-       )}
+    case Policy.ensure_supported_token_endpoint_auth_method(auth_method) do
+      :ok ->
+        if auth_method == attempted_method do
+          :ok
+        else
+          {:error,
+           invalid_client(
+             "Client is not allowed to use this token endpoint authentication method",
+             :unsupported_token_endpoint_auth_method
+           )}
+        end
+
+      {:error, :unsupported_token_endpoint_auth_method} ->
+        {:error,
+         invalid_client(
+           "Unsupported token endpoint authentication method",
+           :unsupported_token_endpoint_auth_method
+         )}
     end
   end
 
@@ -124,7 +137,7 @@ defmodule Lockspire.Protocol.ClientAuth do
       not present?(client.client_secret_hash) ->
         {:error, invalid_client("Client secret is not configured", :missing_client_secret)}
 
-      not verify_client_secret(client.client_secret_hash, client_secret) ->
+      not Policy.verify_client_secret(client.client_secret_hash, client_secret) ->
         {:error, invalid_client("Client authentication failed", :invalid_client_secret)}
 
       true ->
@@ -132,32 +145,9 @@ defmodule Lockspire.Protocol.ClientAuth do
     end
   end
 
-  defp verify_client_secret("sha256:" <> rest, client_secret) when is_binary(client_secret) do
-    case String.split(rest, ":", parts: 2) do
-      [salt, expected_hash] ->
-        calculated_hash =
-          :crypto.hash(:sha256, salt <> client_secret)
-          |> Base.encode64()
-
-        secure_compare(expected_hash, calculated_hash)
-
-      _other ->
-        false
-    end
-  end
-
-  defp verify_client_secret(_client_secret_hash, _client_secret), do: false
-
   defp client_store(opts) do
     Keyword.fetch!(opts, :client_store)
   end
-
-  defp secure_compare(left, right)
-       when is_binary(left) and is_binary(right) and byte_size(left) == byte_size(right) do
-    Plug.Crypto.secure_compare(left, right)
-  end
-
-  defp secure_compare(_left, _right), do: false
 
   defp normalize_optional_string(value) when is_binary(value) do
     value

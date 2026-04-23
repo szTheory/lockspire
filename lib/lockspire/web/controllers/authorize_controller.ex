@@ -83,9 +83,10 @@ defmodule Lockspire.Web.AuthorizeController do
 
     case resolver.resolve_current_account(conn, context) do
       {:ok, account} ->
-        with {:ok, %Claims{} = claims} <- resolver.build_claims(account, context) do
-          {:ok, %{subject_id: claims.subject}}
-        else
+        case resolver.build_claims(account, context) do
+          {:ok, %Claims{} = claims} ->
+            {:ok, %{subject_id: claims.subject}}
+
           {:error, _reason} ->
             {:error,
              protocol_error(

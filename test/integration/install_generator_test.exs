@@ -1,6 +1,8 @@
 defmodule Lockspire.InstallGeneratorTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureIO
+
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
 
   setup do
@@ -10,19 +12,16 @@ defmodule Lockspire.InstallGeneratorTest do
   end
 
   test "mix lockspire.install writes the host-owned integration files" do
-    File.cd!(@fixture_root, fn ->
-      Mix.Task.reenable("lockspire.install")
-
-      Mix.Tasks.Lockspire.Install.run([
-        "--web",
-        "GeneratedHostAppWeb",
-        "--scope",
-        "GeneratedHostApp.Lockspire"
-      ])
-    end)
+    output =
+      capture_io(fn ->
+        install_fixture!()
+      end)
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "config :lockspire"
+
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(import_config "lockspire.exs")
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "account_resolver: GeneratedHostApp.Lockspire.AccountResolver"
@@ -33,9 +32,11 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(get "/authorized-apps", AuthorizedAppsController, :index)
 
-    resolver = File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
+    resolver =
+      File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
 
     assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
+    assert resolver =~ "subject: to_string(account.id)"
     refute resolver =~ "Sigra"
 
     assert File.read!(
@@ -75,37 +76,42 @@ defmodule Lockspire.InstallGeneratorTest do
                "lib/generated_host_app_web/controllers/authorized_apps_html/index.html.heex"
              )
            ) =~ "Host-owned account settings page"
+
+    assert output =~ "Lockspire canonical onboarding next steps"
+    assert output =~ "Import `config/lockspire.exs`"
+    assert output =~ "auth-code + PKCE flow"
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
-    File.cd!(@fixture_root, fn ->
-      Mix.Task.reenable("lockspire.install")
-
-      Mix.Tasks.Lockspire.Install.run([
-        "--web",
-        "GeneratedHostAppWeb",
-        "--scope",
-        "GeneratedHostApp.Lockspire",
-        "--sigra-host"
-      ])
+    capture_io(fn ->
+      install_fixture!(["--sigra-host"])
     end)
 
-    resolver = File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
+    resolver =
+      File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
 
     assert resolver =~ "Sigra"
     assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
   end
 
-  test "mix lockspire.install refuses to overwrite host edits" do
-    File.cd!(@fixture_root, fn ->
-      Mix.Task.reenable("lockspire.install")
+  test "mix lockspire.install is idempotent when the host has not edited generated files" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
 
-      Mix.Tasks.Lockspire.Install.run([
-        "--web",
-        "GeneratedHostAppWeb",
-        "--scope",
-        "GeneratedHostApp.Lockspire"
-      ])
+    rerun_output =
+      capture_io(fn ->
+        install_fixture!()
+      end)
+
+    assert rerun_output =~ "* unchanged lib/generated_host_app_web/router/lockspire.ex"
+    assert rerun_output =~ "* unchanged config/lockspire.exs"
+    assert rerun_output =~ "Lockspire canonical onboarding next steps"
+  end
+
+  test "mix lockspire.install refuses to overwrite host edits" do
+    capture_io(fn ->
+      install_fixture!()
     end)
 
     router_path = Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
@@ -114,15 +120,25 @@ defmodule Lockspire.InstallGeneratorTest do
     assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
       File.cd!(@fixture_root, fn ->
         Mix.Task.reenable("lockspire.install")
-
-        Mix.Tasks.Lockspire.Install.run([
-          "--web",
-          "GeneratedHostAppWeb",
-          "--scope",
-          "GeneratedHostApp.Lockspire"
-        ])
+        Mix.Tasks.Lockspire.Install.run(base_args())
       end)
     end
+  end
+
+  defp install_fixture!(extra_args \\ []) do
+    File.cd!(@fixture_root, fn ->
+      Mix.Task.reenable("lockspire.install")
+      Mix.Tasks.Lockspire.Install.run(base_args() ++ extra_args)
+    end)
+  end
+
+  defp base_args do
+    [
+      "--web",
+      "GeneratedHostAppWeb",
+      "--scope",
+      "GeneratedHostApp.Lockspire"
+    ]
   end
 
   defp reset_fixture! do

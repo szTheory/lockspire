@@ -9,17 +9,15 @@ defmodule Lockspire.Protocol.ConsentPolicy do
           {:reuse, ConsentGrant.t()} | :consent_required
   def reusable_grant(grants, requested_scopes, prompt)
       when is_list(grants) and is_list(requested_scopes) and is_list(prompt) do
-    cond do
-      "consent" in prompt ->
-        :consent_required
+    if "consent" in prompt do
+      :consent_required
+    else
+      requested = MapSet.new(requested_scopes)
 
-      true ->
-        requested = MapSet.new(requested_scopes)
-
-        case Enum.find(grants, &reusable_grant?(&1, requested)) do
-          nil -> :consent_required
-          grant -> {:reuse, grant}
-        end
+      case Enum.find(grants, &reusable_grant?(&1, requested)) do
+        nil -> :consent_required
+        grant -> {:reuse, grant}
+      end
     end
   end
 

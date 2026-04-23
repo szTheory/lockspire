@@ -18,5 +18,27 @@ defmodule Lockspire.Web.Router do
     get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
     post("/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete)
     live("/consent/:interaction_id", Lockspire.Web.ConsentLive, :show)
+    live("/admin", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
+    live("/admin/clients", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
+    live("/admin/clients/:client_id", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)
+    live("/admin/consents", Lockspire.Web.Live.Admin.ConsentsLive.Index, :index)
+    live("/admin/consents/:id", Lockspire.Web.Live.Admin.ConsentsLive.Show, :show)
+    live("/admin/tokens", Lockspire.Web.Live.Admin.TokensLive.Index, :index)
+    live("/admin/tokens/:id", Lockspire.Web.Live.Admin.TokensLive.Show, :show)
+    live("/admin/keys", Lockspire.Web.Live.Admin.KeysLive.Index, :index)
+    live("/admin/keys/:id", Lockspire.Web.Live.Admin.KeysLive.Show, :show)
+    live("/admin/clients/:client_id/edit", Lockspire.Web.Live.Admin.ClientsLive.Show, :edit)
+
+    live(
+      "/admin/clients/:client_id/redirects",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :redirects
+    )
+
+    live(
+      "/admin/clients/:client_id/rotate-secret",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :rotate_secret
+    )
   end
 end

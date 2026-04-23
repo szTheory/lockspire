@@ -1,0 +1,9 @@
+* @szTheory
+
+# Release and workflow surfaces require explicit maintainer review.
+.github/ @szTheory
+.github/workflows/ @szTheory
+mix.exs @szTheory
+README.md @szTheory
+docs/ @szTheory
+CHANGELOG.md @szTheory

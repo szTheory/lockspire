@@ -336,13 +336,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                audit.reason_code == "authorization_code_replayed"
            end)
 
-    assert {[:lockspire, :authorization_code_redeemed], %{reason_code: :authorization_code_redeemed}} =
+    assert {[:lockspire, :authorization_code_redeemed],
+            %{reason_code: :authorization_code_redeemed}} =
              Enum.find(recorded_events(events), fn {event, metadata} ->
                event == [:lockspire, :authorization_code_redeemed] and
                  metadata[:reason_code] == :authorization_code_redeemed
              end)
 
-    assert {[:lockspire, :authorization_code_replay_detected], %{reason_code: :authorization_code_replayed}} =
+    assert {[:lockspire, :authorization_code_replay_detected],
+            %{reason_code: :authorization_code_replayed}} =
              Enum.find(recorded_events(events), fn {event, metadata} ->
                event == [:lockspire, :authorization_code_replay_detected] and
                  metadata[:reason_code] == :authorization_code_replayed
@@ -353,6 +355,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     secret = "plain-method-secret"
     {:ok, client} = create_client("client-plain-method", :client_secret_basic, secret)
     raw_code = "code-plain-method"
+
     __MODULE__.PlainMethodTokenStore.use_token(%Token{
       id: 123,
       token_hash: TokenFormatter.hash_token(raw_code),

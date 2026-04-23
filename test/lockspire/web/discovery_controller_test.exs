@@ -41,11 +41,14 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["issuer"] == "https://example.test/lockspire"
     assert body["authorization_endpoint"] == "https://example.test/lockspire/authorize"
     assert body["token_endpoint"] == "https://example.test/lockspire/token"
+    assert body["userinfo_endpoint"] == "https://example.test/lockspire/userinfo"
     assert body["jwks_uri"] == "https://example.test/lockspire/jwks"
+    assert body["revocation_endpoint"] == "https://example.test/lockspire/revoke"
+    assert body["introspection_endpoint"] == "https://example.test/lockspire/introspect"
     assert body["scopes_supported"] == ["openid", "profile", "email"]
     assert body["response_types_supported"] == ["code"]
     assert body["response_modes_supported"] == ["query"]
-    assert body["grant_types_supported"] == ["authorization_code"]
+    assert body["grant_types_supported"] == ["authorization_code", "refresh_token"]
 
     assert body["token_endpoint_auth_methods_supported"] == [
              "none",
@@ -61,8 +64,5 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "end_session_endpoint")
     refute Map.has_key?(body, "pushed_authorization_request_endpoint")
     refute Map.has_key?(body, "request_object_signing_alg_values_supported")
-    refute Map.has_key?(body, "userinfo_endpoint")
-    refute Map.has_key?(body, "revocation_endpoint")
-    refute Map.has_key?(body, "introspection_endpoint")
   end
 end

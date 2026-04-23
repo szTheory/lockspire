@@ -6,13 +6,16 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
   @unsupported_params ~w(claims request request_uri resource response_mode)
 
   defmodule Validated do
-    @moduledoc false
+    @moduledoc """
+    Canonical validated `/authorize` request state.
+    """
 
     alias Lockspire.Domain.Client
 
@@ -42,7 +45,9 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Browser-safe or redirect-safe authorization request validation error.
+    """
 
     @type t :: %__MODULE__{
             error: String.t(),
@@ -207,16 +212,20 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp validate_response_type(%{"response_type" => "code"}), do: :ok
-
   defp validate_response_type(params) do
-    {:redirect_error,
-     redirect_error(
-       params,
-       :unsupported_response_type,
-       "Only response_type=code is supported",
-       :unsupported_response_type
-     )}
+    case Policy.ensure_supported_response_type(params["response_type"]) do
+      :ok ->
+        :ok
+
+      {:error, :unsupported_response_type} ->
+        {:redirect_error,
+         redirect_error(
+           params,
+           :unsupported_response_type,
+           "Only response_type=code is supported",
+           :unsupported_response_type
+         )}
+    end
   end
 
   defp validate_nonce(params, scopes) do

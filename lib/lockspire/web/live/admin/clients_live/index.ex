@@ -1,0 +1,201 @@
+defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
+  @moduledoc false
+
+  use Phoenix.LiveView
+
+  alias Lockspire.Admin
+  alias Lockspire.Web.Components.AdminComponents
+  alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
+  alias Lockspire.Web.Live.AdminLayoutLive
+
+  @per_page 10
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     assign(socket,
+       page_title: "Clients",
+       current_section: :clients,
+       clients: [],
+       filters: %{"q" => "", "status" => "all", "page" => "1"},
+       form_errors: [],
+       created_result: nil
+     )}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    filters = normalize_filters(params)
+    clients = load_clients(filters)
+
+    {:noreply,
+     assign(socket,
+       filters: filters,
+       clients: paginate(clients, filters),
+       total_clients: length(clients)
+     )}
+  end
+
+  @impl true
+  def handle_event("save_client", %{"client" => client_params}, socket) do
+    case Admin.create_client(create_attrs(client_params)) do
+      {:ok, result} ->
+        filters = socket.assigns.filters
+
+        {:noreply,
+         socket
+         |> assign(
+           created_result: result,
+           form_errors: [],
+           clients: paginate(load_clients(filters), filters),
+           total_clients: length(load_clients(filters))
+         )}
+
+      {:error, errors} ->
+        {:noreply, assign(socket, form_errors: errors, created_result: nil)}
+    end
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.section_card
+        title="Client inventory"
+        subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
+      >
+        <form method="get" action={clients_index_path()}>
+          <label for="client_search">Search</label>
+          <input id="client_search" name="q" type="text" value={@filters["q"]} />
+
+          <label for="client_status">Status</label>
+          <select id="client_status" name="status">
+            <option value="all" selected={@filters["status"] == "all"}>All</option>
+            <option value="active" selected={@filters["status"] == "active"}>Active</option>
+            <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
+          </select>
+
+          <button type="submit">Apply</button>
+        </form>
+
+        <p>Total matching clients: {@total_clients}</p>
+
+        <%= if @clients == [] do %>
+          <AdminComponents.empty_state
+            title="No clients match this view"
+            body="Adjust the search or status filter, or register a new client."
+          />
+        <% else %>
+          <ul class="lockspire-admin-client-list">
+            <%= for client <- @clients do %>
+              <li>
+                <a href={client_show_path(client.client_id)}>{client.name || client.client_id}</a>
+                <span>{client.client_id}</span>
+                <AdminComponents.status_badge status={status_for(client)} />
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </AdminComponents.section_card>
+
+      <AdminComponents.section_card
+        title="Register client"
+        subtitle="Registration reuses the canonical Lockspire client API and reveals plaintext only once."
+      >
+        <FormComponent.client_form mode={:new} errors={@form_errors} />
+
+        <div :if={@created_result} class="lockspire-admin-secret-reveal">
+          <h3>Client created</h3>
+          <p>Client ID: <code>{@created_result.client.client_id}</code></p>
+          <p :if={@created_result.client_secret}>
+            Client secret: <code>{@created_result.client_secret}</code>
+          </p>
+          <p :if={!@created_result.client_secret}>This public client does not use a client secret.</p>
+        </div>
+      </AdminComponents.section_card>
+    </AdminLayoutLive.shell>
+    """
+  end
+
+  defp load_clients(filters) do
+    opts =
+      [search: blank_to_nil(filters["q"])]
+      |> put_status_filter(filters["status"])
+
+    case Admin.list_clients(opts) do
+      {:ok, clients} -> clients
+      {:error, _reason} -> []
+    end
+  end
+
+  defp paginate(clients, filters) do
+    page = parse_page(filters["page"])
+    Enum.slice(clients, (page - 1) * @per_page, @per_page)
+  end
+
+  defp normalize_filters(params) do
+    %{
+      "q" => Map.get(params, "q", ""),
+      "status" => normalize_status(Map.get(params, "status", "all")),
+      "page" => Integer.to_string(parse_page(Map.get(params, "page", "1")))
+    }
+  end
+
+  defp create_attrs(params) do
+    %{
+      name: blank_to_nil(params["name"]),
+      client_type: params["client_type"],
+      token_endpoint_auth_method: params["token_endpoint_auth_method"],
+      redirect_uris: split_lines(params["redirect_uris"]),
+      allowed_scopes: split_csv(params["allowed_scopes"]),
+      allowed_grant_types: ["authorization_code", "refresh_token"]
+    }
+  end
+
+  defp status_for(%{active: true}), do: :active
+  defp status_for(_client), do: :disabled
+
+  defp clients_index_path, do: Lockspire.mount_path() <> "/admin"
+  defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+
+  defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)
+  defp put_status_filter(opts, "disabled"), do: Keyword.put(opts, :active, false)
+  defp put_status_filter(opts, _status), do: opts
+
+  defp normalize_status(status) when status in ["all", "active", "disabled"], do: status
+  defp normalize_status(_status), do: "all"
+
+  defp parse_page(page) when is_binary(page) do
+    case Integer.parse(page) do
+      {value, _rest} when value > 0 -> value
+      _other -> 1
+    end
+  end
+
+  defp parse_page(_page), do: 1
+
+  defp split_lines(value) when is_binary(value) do
+    value
+    |> String.split("\n", trim: true)
+    |> Enum.map(&String.trim/1)
+  end
+
+  defp split_lines(_value), do: []
+
+  defp split_csv(value) when is_binary(value) do
+    value
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+  end
+
+  defp split_csv(_value), do: []
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      normalized -> normalized
+    end
+  end
+end

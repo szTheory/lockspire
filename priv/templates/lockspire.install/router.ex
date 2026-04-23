@@ -1,6 +1,9 @@
 defmodule <%= @web_module %>.Router.Lockspire do
   @moduledoc """
   Host-owned mount point for the embedded Lockspire router.
+
+  Import this module from `lib/<%= @web_path %>/router.ex` and call
+  `lockspire_routes/0` where your product wants the Lockspire surfaces to live.
   """
 
   def lockspire_routes do

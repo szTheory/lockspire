@@ -33,7 +33,12 @@ defmodule <%= @resolver_module %> do
 
   @impl true
   def build_claims(account, _context) do
-    {:ok, %Claims{sub: to_string(account.id)}}
+    {:ok,
+     %Claims{
+       subject: to_string(account.id),
+       id_token: %{},
+       userinfo: %{}
+     }}
   end
 
   @impl true

@@ -10,19 +10,19 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
   @timestamps_opts [type: :utc_datetime_usec]
 
   schema "lockspire_signing_keys" do
-    field :kid, :string
-    field :kty, Ecto.Enum, values: [:RSA, :EC, :OKP]
-    field :alg, :string
-    field :use, Ecto.Enum, values: [:sig]
-    field :public_jwk, :map
-    field :private_jwk_encrypted, :binary
-    field :status, Ecto.Enum, values: [:upcoming, :active, :retiring, :retired]
-    field :published_at, :utc_datetime_usec
-    field :activated_at, :utc_datetime_usec
-    field :retiring_at, :utc_datetime_usec
-    field :retired_at, :utc_datetime_usec
-    field :tenant_id, :string
-    field :metadata, :map, default: %{}
+    field(:kid, :string)
+    field(:kty, Ecto.Enum, values: [:RSA, :EC, :OKP])
+    field(:alg, :string)
+    field(:use, Ecto.Enum, values: [:sig])
+    field(:public_jwk, :map)
+    field(:private_jwk_encrypted, :binary)
+    field(:status, Ecto.Enum, values: [:upcoming, :active, :retiring, :retired])
+    field(:published_at, :utc_datetime_usec)
+    field(:activated_at, :utc_datetime_usec)
+    field(:retiring_at, :utc_datetime_usec)
+    field(:retired_at, :utc_datetime_usec)
+    field(:tenant_id, :string)
+    field(:metadata, :map, default: %{})
 
     timestamps()
   end
@@ -46,6 +46,18 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
     ])
     |> validate_required([:kid, :kty, :alg, :use, :public_jwk, :status])
     |> unique_constraint(:kid)
+  end
+
+  def update_changeset(record, attrs) when is_map(attrs) do
+    record
+    |> cast(attrs, [
+      :status,
+      :published_at,
+      :activated_at,
+      :retiring_at,
+      :retired_at,
+      :metadata
+    ])
   end
 
   def to_domain(%__MODULE__{} = record) do

@@ -3,3 +3,10 @@
 /.elixir_ls/
 /.DS_Store
 **/.DS_Store
+/doc/
+/priv/plts/
+/.planning/
+/prompts/
+/lockspire-idea.md
+*.tar
+/erl_crash.dump

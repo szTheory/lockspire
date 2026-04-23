@@ -17,7 +17,9 @@ defmodule Lockspire.Protocol.Userinfo do
   }
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Userinfo endpoint error payload.
+    """
 
     @type t :: %__MODULE__{
             status: pos_integer(),

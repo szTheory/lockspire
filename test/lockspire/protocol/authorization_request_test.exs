@@ -144,6 +144,16 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.error == "invalid_request"
   end
 
+  test "unsupported response_type returns a stable redirect-safe reason code" do
+    params =
+      valid_params("client_123")
+      |> Map.put("response_type", "token")
+
+    assert {:redirect_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.reason_code == :unsupported_response_type
+    assert error.error == "unsupported_response_type"
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,

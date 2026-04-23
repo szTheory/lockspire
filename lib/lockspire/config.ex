@@ -3,6 +3,8 @@ defmodule Lockspire.Config do
   Runtime configuration helpers for the embedded Lockspire library.
   """
 
+  alias Lockspire.Security.Policy
+
   @app :lockspire
 
   @spec repo!() :: module()
@@ -19,8 +21,12 @@ defmodule Lockspire.Config do
   def issuer! do
     issuer = fetch_required!(:issuer)
     mount_path = fetch_required!(:mount_path)
+    signing_alg = Application.get_env(@app, :signing_alg, "RS256")
 
-    validate_issuer!(issuer, mount_path)
+    Policy.validate_issuer_and_mount_path!(issuer, mount_path)
+    Policy.validate_signing_alg!(signing_alg)
+
+    issuer
   end
 
   @spec mount_path() :: String.t()
@@ -41,49 +47,6 @@ defmodule Lockspire.Config do
   end
 
   defp fetch_required!(key) do
-    case Application.get_env(@app, key) do
-      value when value in [nil, ""] ->
-        raise ArgumentError,
-              "missing required config :#{key} for :lockspire. " <>
-                "Set it in config/runtime.exs or config/*.exs."
-
-      value ->
-        value
-    end
+    Policy.fetch_required_config!(key, Application.get_env(@app, key))
   end
-
-  defp validate_issuer!(issuer, mount_path) do
-    uri = URI.parse(issuer)
-    issuer_path = uri.path || "/"
-
-    cond do
-      not absolute_uri?(uri) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Expected an absolute URL with scheme and host."
-
-      present?(uri.query) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Query parameters are not allowed."
-
-      present?(uri.fragment) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Fragments are not allowed."
-
-      issuer_path != mount_path ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Issuer path #{inspect(issuer_path)} must match mount_path #{inspect(mount_path)}."
-
-      true ->
-        issuer
-    end
-  end
-
-  defp absolute_uri?(%URI{scheme: scheme, host: host})
-       when is_binary(scheme) and scheme != "" and is_binary(host) and host != "",
-       do: true
-
-  defp absolute_uri?(_uri), do: false
-
-  defp present?(value) when value in [nil, ""], do: false
-  defp present?(_value), do: true
 end

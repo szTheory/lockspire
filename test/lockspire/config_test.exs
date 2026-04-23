@@ -39,7 +39,8 @@ defmodule Lockspire.ConfigTest do
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :oban], into: %{} do
+      for key <- [:repo, :account_resolver, :issuer, :mount_path, :oban, :signing_alg],
+          into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
 
@@ -121,6 +122,20 @@ defmodule Lockspire.ConfigTest do
     Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
 
     assert Lockspire.Config.issuer!() == "https://example.test/oauth"
+  end
+
+  test "issuer!/0 rejects unsupported signing posture when configured" do
+    Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
+    Application.put_env(:lockspire, :mount_path, "/oauth")
+    Application.put_env(:lockspire, :signing_alg, "none")
+
+    assert_raise ArgumentError,
+                 "invalid :signing_alg for :lockspire. Expected RS256 and never alg=none.",
+                 fn ->
+                   Lockspire.Config.issuer!()
+                 end
+  after
+    Application.delete_env(:lockspire, :signing_alg)
   end
 
   test "test resolver satisfies the host seam behaviour without macros" do

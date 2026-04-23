@@ -11,7 +11,9 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Protocol.TokenFormatter
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Introspection endpoint error payload.
+    """
 
     @type t :: %__MODULE__{
             status: pos_integer(),

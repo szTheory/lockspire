@@ -167,10 +167,11 @@ defmodule Lockspire.Protocol.RevocationTest do
              })
   end
 
-  test "matched revocations append durable audit rows and unknown tokens do not append orphan rows", %{
-    client: client,
-    client_secret: secret
-  } do
+  test "matched revocations append durable audit rows and unknown tokens do not append orphan rows",
+       %{
+         client: client,
+         client_secret: secret
+       } do
     assert :ok =
              Revocation.revoke(%{
                params: %{"token" => "revoke-refresh-token"},

@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ELIXIR_VERSION: "1.19.5"
+  OTP_VERSION: "28"
+
+jobs:
+  fast:
+    name: Fast Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@8d44588995e53ce789721e96227122a67826542d # v1.24.0
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Restore Mix cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-fast-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-fast-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+            ${{ runner.os }}-mix-fast-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run qa gate
+        run: mix qa
+
+      - name: Build docs
+        run: mix docs.verify
+
+      - name: Audit retired dependencies
+        run: mix deps.audit
+
+      - name: Verify Hex package
+        run: mix package.build
+
+      - name: Run fast tests
+        run: MIX_ENV=test mix test.fast
+
+  integration:
+    name: Integration Checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
+      LOCKSPIRE_TEST_DB_PORT: "5432"
+      LOCKSPIRE_TEST_DB_USER: lockspire
+      LOCKSPIRE_TEST_DB_PASSWORD: lockspire
+      LOCKSPIRE_TEST_DB_NAME: lockspire_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@8d44588995e53ce789721e96227122a67826542d # v1.24.0
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Restore Mix cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-integration-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-integration-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+            ${{ runner.os }}-mix-integration-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in $(seq 1 30); do
+            pg_isready -h "$LOCKSPIRE_TEST_DB_HOST" -p "$LOCKSPIRE_TEST_DB_PORT" -U "$LOCKSPIRE_TEST_DB_USER" -d "$LOCKSPIRE_TEST_DB_NAME" && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL did not become ready in time" >&2
+          exit 1
+
+      - name: Run integration suite including onboarding and OIDC E2E proof
+        run: mix test.integration
+
+      - name: Run Phase 3 protocol gate
+        run: mix test.phase3

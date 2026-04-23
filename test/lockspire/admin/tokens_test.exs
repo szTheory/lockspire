@@ -116,9 +116,10 @@ defmodule Lockspire.Admin.TokensTest do
     assert detail.family_reuse_detected_at == now
   end
 
-  test "revoke_token/2 and revoke_token_family/2 stay idempotent with operator telemetry and audit", %{
-    access_token: access_token
-  } do
+  test "revoke_token/2 and revoke_token_family/2 stay idempotent with operator telemetry and audit",
+       %{
+         access_token: access_token
+       } do
     access_token_id = access_token.id
 
     assert {:ok, detail} =

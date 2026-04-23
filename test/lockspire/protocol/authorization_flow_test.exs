@@ -361,7 +361,12 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              actor_id: "subject_123",
              resource_type: "interaction",
              resource_id: "interaction-approval-audit"
-           } = Enum.find(audits, &(&1.action == "authorization_completed" and &1.resource_id == "interaction-approval-audit"))
+           } =
+             Enum.find(
+               audits,
+               &(&1.action == "authorization_completed" and
+                   &1.resource_id == "interaction-approval-audit")
+             )
 
     assert %Event{
              action: "consent_denied",
@@ -376,14 +381,19 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     recorded = recorded_events(events)
 
     assert {[:lockspire, :consent_approved], %{reason_code: :consent_approved}} =
-             Enum.find(recorded, fn {event, _metadata} -> event == [:lockspire, :consent_approved] end)
+             Enum.find(recorded, fn {event, _metadata} ->
+               event == [:lockspire, :consent_approved]
+             end)
 
     assert {[:lockspire, :consent_denied], %{reason_code: :access_denied}} =
-             Enum.find(recorded, fn {event, _metadata} -> event == [:lockspire, :consent_denied] end)
+             Enum.find(recorded, fn {event, _metadata} ->
+               event == [:lockspire, :consent_denied]
+             end)
 
     assert {[:lockspire, :authorization_completed], %{reason_code: :consent_reused}} =
              Enum.find(recorded, fn {event, metadata} ->
-               event == [:lockspire, :authorization_completed] and metadata[:reason_code] == :consent_reused
+               event == [:lockspire, :authorization_completed] and
+                 metadata[:reason_code] == :consent_reused
              end)
   end
 

@@ -170,19 +170,24 @@ defmodule Lockspire.Admin.Keys do
   defp database_handle(%SigningKey{id: id}) when is_integer(id), do: Redaction.handle(:key, id)
   defp database_handle(%SigningKey{} = key), do: key_handle(key)
 
-  defp transact_with_audit(fun, build_audit_event) when is_function(fun, 0) and is_function(build_audit_event, 1) do
+  defp transact_with_audit(fun, build_audit_event)
+       when is_function(fun, 0) and is_function(build_audit_event, 1) do
     Repository.transact(fn ->
       case fun.() do
         {:ok, result} ->
-          case Repository.append_audit_event(build_audit_event.(result)) do
-            {:ok, _event} -> result
-            {:error, reason} -> {:error, reason}
-          end
+          append_audit_event(build_audit_event, result)
 
         {:error, reason} ->
           {:error, reason}
       end
     end)
+  end
+
+  defp append_audit_event(build_audit_event, result) do
+    case Repository.append_audit_event(build_audit_event.(result)) do
+      {:ok, _event} -> result
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp emit(event, %SigningKey{} = key, actor) do
