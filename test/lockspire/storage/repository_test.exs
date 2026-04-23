@@ -1,6 +1,8 @@
 defmodule Lockspire.Storage.RepositoryTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
   @moduletag :integration
 
   alias Lockspire.Audit.Event
@@ -12,6 +14,8 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
+
+  require Logger
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -212,6 +216,97 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert %{resource_id: ["can't be blank"]} = errors_on(changeset)
     assert [] = Lockspire.TestRepo.all(AuditEventRecord)
     assert [] = Lockspire.TestRepo.all(ClientRecord)
+  end
+
+  test "suppresses SQL bind logging for sensitive token lookup and audit insert paths" do
+    previous_level = Logger.level()
+    Logger.configure(level: :debug)
+
+    on_exit(fn -> Logger.configure(level: previous_level) end)
+
+    now = DateTime.utc_now()
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               client_id: "sensitive-client",
+               client_secret_hash: "argon2id$top-secret-hash",
+               client_type: :confidential,
+               name: "Sensitive Client",
+               redirect_uris: ["https://client.example.com/callback"],
+               allowed_scopes: ["openid"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: now
+             })
+
+    assert {:ok, _token} =
+             Repository.store_token(%Token{
+               token_hash: "sensitive-token-hash",
+               token_type: :authorization_code,
+               client_id: "sensitive-client",
+               interaction_id: "interaction-sensitive",
+               redirect_uri: "https://client.example.com/callback",
+               code_challenge: "challenge",
+               code_challenge_method: :S256,
+               expires_at: DateTime.add(now, 300, :second)
+             })
+
+    sensitive_log =
+      capture_log(fn ->
+        assert {:ok, %Token{}} = Repository.fetch_authorization_code("sensitive-token-hash")
+
+        assert {:ok, %Event{}} =
+                 Repository.append_audit_event(%{
+                   action: :token_introspected,
+                   outcome: :succeeded,
+                   actor: %{type: :client, id: "sensitive-client"},
+                   resource: %{type: :authorization_code, id: "interaction-sensitive"},
+                   metadata: %{token_hash: "sensitive-token-hash"}
+                 })
+      end)
+
+    refute sensitive_log =~ "sensitive-token-hash"
+    refute sensitive_log =~ "argon2id$top-secret-hash"
+    refute sensitive_log =~ "INSERT INTO \"lockspire_audit_events\""
+    refute sensitive_log =~ "FROM \"lockspire_tokens\""
+  end
+
+  test "keeps ordinary repository debugging available for non-sensitive client paths" do
+    previous_level = Logger.level()
+    Logger.configure(level: :debug)
+
+    on_exit(fn -> Logger.configure(level: previous_level) end)
+
+    now = DateTime.utc_now()
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               client_id: "debug-client",
+               client_secret_hash: "argon2id$hash",
+               client_type: :confidential,
+               name: "Debug Client",
+               redirect_uris: ["https://debug.example.com/callback"],
+               allowed_scopes: ["openid"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: now
+             })
+
+    debug_log =
+      capture_log(fn ->
+        assert {:ok, %Client{client_id: "debug-client"}} =
+                 Repository.fetch_client_by_id("debug-client")
+      end)
+
+    assert debug_log =~ "SELECT"
+    assert debug_log =~ "lockspire_clients"
+    assert debug_log =~ "debug-client"
   end
 
   test "stores and fetches an active interaction through the repository contract" do

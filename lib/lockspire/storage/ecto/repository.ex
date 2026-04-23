@@ -36,7 +36,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def register_client(%Client{} = client) do
     %ClientRecord{}
     |> ClientRecord.changeset(client)
-    |> repo().insert()
+    |> repo_insert()
     |> map_one(&ClientRecord.to_domain/1)
   end
 
@@ -57,7 +57,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def fetch_client_by_id(client_id) when is_binary(client_id) do
     ClientRecord
     |> where([client], client.client_id == ^client_id)
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -87,11 +87,15 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl ClientStore
   def rotate_client_secret(%Client{id: id}, secret_hash, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_struct(rotated_at, DateTime) do
-    update_client_record(id, %{
-      client_secret_hash: secret_hash,
-      last_secret_rotated_at: rotated_at,
-      updated_at: DateTime.utc_now()
-    })
+    update_client_record(
+      id,
+      %{
+        client_secret_hash: secret_hash,
+        last_secret_rotated_at: rotated_at,
+        updated_at: DateTime.utc_now()
+      },
+      sensitive: true
+    )
   end
 
   @impl ClientStore
@@ -185,7 +189,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def append_audit_event(%Event{} = event) do
     %AuditEventRecord{}
     |> AuditEventRecord.changeset(event)
-    |> repo().insert()
+    |> repo_insert(sensitive: true)
     |> map_one(&AuditEventRecord.to_domain/1)
   end
 
@@ -197,7 +201,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec transact_with_audit(Event.t() | map(), (() -> term())) ::
+  @spec transact_with_audit(Event.t() | map(), (-> term())) ::
           {:ok, term()} | {:error, term()}
   def transact_with_audit(audit_event, fun) when is_function(fun, 0) do
     transact(fn ->
@@ -298,7 +302,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def store_token(%Token{} = token) do
     %TokenRecord{}
     |> TokenRecord.changeset(token)
-    |> repo().insert()
+    |> repo_insert(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
   end
 
@@ -336,7 +340,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([token], token.family_id == ^family_id)
     |> where([token], token.token_type in [:access_token, :refresh_token])
     |> order_by([token], asc: token.generation, asc: token.issued_at, asc: token.id)
-    |> repo().all()
+    |> repo().all(repo_log_options(sensitive: true))
     |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -348,7 +352,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
       TokenRecord
       |> where([token], token.family_id == ^family_id)
       |> where([token], is_nil(token.revoked_at))
-      |> repo().update_all(set: [revoked_at: DateTime.utc_now(), updated_at: DateTime.utc_now()])
+      |> repo_update_all(
+        [set: [revoked_at: DateTime.utc_now(), updated_at: DateTime.utc_now()]],
+        sensitive: true
+      )
 
     {:ok, count}
   rescue
@@ -360,7 +367,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
     |> where([token], token.token_type == :authorization_code)
-    |> repo().one()
+    |> repo_one(sensitive: true)
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -371,7 +378,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
     |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> repo().one()
+    |> repo_one(sensitive: true)
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -382,7 +389,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
     |> where([token], token.token_type == :refresh_token)
-    |> repo().one()
+    |> repo_one(sensitive: true)
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -397,7 +404,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([token], token.token_type == :authorization_code)
     |> where([token], is_nil(token.redeemed_at) and is_nil(token.revoked_at))
     |> where([token], token.expires_at > ^now)
-    |> repo().one()
+    |> repo_one(sensitive: true)
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -412,7 +419,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([token], token.token_type == :access_token)
     |> where([token], is_nil(token.revoked_at))
     |> where([token], token.expires_at > ^now)
-    |> repo().one()
+    |> repo_one(sensitive: true)
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -426,7 +433,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], token.token_hash == ^token_hash)
       |> where([token], token.token_type in [:access_token, :refresh_token])
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one(sensitive: true)
       |> case do
         nil ->
           nil
@@ -435,7 +442,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
           if is_nil(record.revoked_at) do
             record
             |> Ecto.Changeset.change(revoked_at: revoked_at, updated_at: DateTime.utc_now())
-            |> repo().update()
+            |> repo_update(sensitive: true)
             |> map_one(&TokenRecord.to_domain/1)
             |> unwrap_or_rollback()
           else
@@ -456,7 +463,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], token.token_hash == ^token_hash)
       |> where([token], token.token_type == :authorization_code)
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one(sensitive: true)
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -467,7 +474,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %TokenRecord{} = record ->
           record
           |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
-          |> repo().update()
+          |> repo_update(sensitive: true)
           |> map_one(&TokenRecord.to_domain/1)
           |> unwrap_or_rollback()
       end
@@ -688,7 +695,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], token.token_hash == ^token_hash)
       |> where([token], token.token_type == :authorization_code)
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one(sensitive: true)
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -719,7 +726,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     case repo().transaction(fn ->
            token_hash
            |> locked_refresh_token_query()
-           |> repo().one()
+           |> repo_one(sensitive: true)
            |> case do
              nil ->
                {:error, :not_found}
@@ -746,12 +753,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     Config.repo!()
   end
 
-  defp update_client_record(id, attrs) do
+  defp update_client_record(id, attrs, opts \\ []) do
     transact(fn ->
       ClientRecord
       |> where([client], client.id == ^id)
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one(opts)
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -759,7 +766,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %ClientRecord{} = record ->
           record
           |> ClientRecord.update_changeset(attrs)
-          |> repo().update()
+          |> repo_update(opts)
           |> map_one(&ClientRecord.to_domain/1)
           |> unwrap_or_rollback()
       end
@@ -900,7 +907,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
     record
     |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
-    |> repo().update()
+    |> repo_update(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
   end
 
@@ -956,7 +963,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       revoked_at: rotated_at,
       updated_at: DateTime.utc_now()
     )
-    |> repo().update()
+    |> repo_update(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
   end
 
@@ -966,7 +973,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       reuse_detected_at: record.reuse_detected_at || detected_at,
       updated_at: updated_at
     )
-    |> repo().update()
+    |> repo_update(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
   end
 
@@ -974,8 +981,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
     {count, _records} =
       TokenRecord
       |> where([token], token.family_id == ^family_id)
-      |> repo().update_all(
-        set: [revoked_at: revoked_at, updated_at: updated_at],
+      |> repo_update_all(
+        [set: [revoked_at: revoked_at, updated_at: updated_at]],
+        [sensitive: true],
         inc: []
       )
 
@@ -1026,8 +1034,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp store_token_record(%Token{} = token) do
     %TokenRecord{}
     |> TokenRecord.changeset(token)
-    |> repo().insert()
+    |> repo_insert(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp repo_one(query, opts \\ []) do
+    repo().one(query, repo_log_options(opts))
+  end
+
+  defp repo_insert(changeset, opts \\ []) do
+    repo().insert(changeset, repo_log_options(opts))
+  end
+
+  defp repo_update(changeset, opts) do
+    repo().update(changeset, repo_log_options(opts))
+  end
+
+  defp repo_update_all(query, updates, opts, keyword_opts \\ []) do
+    repo().update_all(query, Keyword.merge(updates, keyword_opts), repo_log_options(opts))
+  end
+
+  defp repo_log_options(opts) do
+    if Keyword.get(opts, :sensitive, false), do: [log: false], else: []
   end
 
   defp strip_private_key_material(%SigningKey{} = key) do
