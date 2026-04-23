@@ -182,6 +182,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       account_id: subject_id,
       scopes_requested: validated.scopes,
       prompt: validated.prompt,
+      nonce: validated.nonce,
       redirect_uri: validated.redirect_uri,
       return_to: default_return_to(interaction_id),
       state: validated.state,

@@ -9,7 +9,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
-  @unsupported_params ~w(claims nonce request request_uri resource response_mode)
+  @unsupported_params ~w(claims request request_uri resource response_mode)
 
   defmodule Validated do
     @moduledoc false
@@ -22,6 +22,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
             redirect_uri: String.t(),
             scopes: [String.t()],
             prompt: [String.t()],
+            nonce: String.t() | nil,
             state: String.t() | nil,
             code_challenge: String.t(),
             code_challenge_method: :S256
@@ -31,6 +32,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       :client,
       :client_id,
       :redirect_uri,
+      :nonce,
       :state,
       :code_challenge,
       :code_challenge_method,
@@ -63,6 +65,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, scopes} <- validate_scopes(client, params),
          {:ok, prompt} <- validate_prompt(params),
          :ok <- validate_response_type(params),
+         :ok <- validate_nonce(params, scopes),
          :ok <- validate_pkce(client, params),
          :ok <- reject_unsupported_params(params) do
       validated = %Validated{
@@ -71,6 +74,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
         redirect_uri: redirect_uri,
         scopes: scopes,
         prompt: prompt,
+        nonce: normalize_optional_string(params["nonce"]),
         state: normalize_optional_string(params["state"]),
         code_challenge: params["code_challenge"],
         code_challenge_method: :S256
@@ -141,24 +145,15 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       scopes == [] ->
         {:redirect_error, redirect_error(params, :invalid_scope, "Missing scope", :missing_scope)}
 
-      Enum.any?(scopes, &(&1 == "openid")) ->
-        {:redirect_error,
-         redirect_error(
-           params,
-           :invalid_scope,
-           "openid scope is not supported yet",
-           :openid_scope_not_supported
-         )}
-
       Enum.any?(scopes, &(not valid_scope_token?(&1))) ->
         {:redirect_error,
          redirect_error(params, :invalid_scope, "Scope syntax is invalid", :malformed_scope)}
 
-      Enum.any?(scopes, &(&1 not in Config.known_scopes())) ->
+      Enum.any?(scopes, &unknown_scope?(&1)) ->
         {:redirect_error,
          redirect_error(params, :invalid_scope, "Requested scope is unknown", :unknown_scope)}
 
-      Enum.any?(scopes, &(&1 not in client.allowed_scopes)) ->
+      Enum.any?(scopes, &disallowed_scope?(client, &1)) ->
         {:redirect_error,
          redirect_error(
            params,
@@ -222,6 +217,26 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
        "Only response_type=code is supported",
        :unsupported_response_type
      )}
+  end
+
+  defp validate_nonce(params, scopes) do
+    if "openid" in scopes do
+      case normalize_optional_string(params["nonce"]) do
+        nil ->
+          {:redirect_error,
+           redirect_error(
+             params,
+             :invalid_request,
+             "nonce is required for openid requests",
+             :missing_nonce
+           )}
+
+        _nonce ->
+          :ok
+      end
+    else
+      :ok
+    end
   end
 
   defp validate_pkce(
@@ -311,6 +326,12 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp normalize_optional_string(_value), do: nil
+
+  defp unknown_scope?("openid"), do: false
+  defp unknown_scope?(scope), do: scope not in Config.known_scopes()
+
+  defp disallowed_scope?(_client, "openid"), do: false
+  defp disallowed_scope?(client, scope), do: scope not in client.allowed_scopes
 
   defp valid_scope_token?(scope) do
     Regex.match?(~r/^[A-Za-z0-9._:-]+$/, scope)

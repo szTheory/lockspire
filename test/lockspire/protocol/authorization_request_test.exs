@@ -53,6 +53,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert validated.redirect_uri == "https://client.example.com/callback"
     assert validated.scopes == ["profile", "email"]
     assert validated.prompt == ["login", "consent"]
+    assert validated.nonce == nil
     assert validated.code_challenge_method == :S256
 
     assert_received {:telemetry_event, [:lockspire, :authorization_request_accepted],
@@ -82,25 +83,46 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_redirect_uri
   end
 
-  test "unknown or unsupported scopes return redirect errors with preserved state" do
+  test "unknown scopes return redirect errors with preserved state" do
     handler_id = attach_events(self())
 
     params =
       valid_params("client_123")
-      |> Map.put("scope", "profile openid")
+      |> Map.put("scope", "profile admin")
 
     assert {:redirect_error, %Error{} = error} = AuthorizationRequest.validate(params)
     assert error.error == "invalid_scope"
-    assert error.reason_code == :openid_scope_not_supported
+    assert error.reason_code == :unknown_scope
     assert error.state == "state-123"
 
     assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
-                     %{reason_code: :openid_scope_not_supported, redirect_safe: true}}
+                     %{reason_code: :unknown_scope, redirect_safe: true}}
 
     assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
-                     %{reason_code: :openid_scope_not_supported, redirect_safe: true}}
+                     %{reason_code: :unknown_scope, redirect_safe: true}}
 
     :telemetry.detach(handler_id)
+  end
+
+  test "openid requests require a nonce and persist it when present", %{client: client} do
+    missing_nonce_params =
+      valid_params(client.client_id)
+      |> Map.put("scope", "openid email profile")
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationRequest.validate(missing_nonce_params)
+
+    assert error.reason_code == :missing_nonce
+
+    assert {:ok, %Validated{} = validated} =
+             client.client_id
+             |> valid_params()
+             |> Map.put("scope", "openid email profile")
+             |> Map.put("nonce", "nonce-123")
+             |> AuthorizationRequest.validate()
+
+    assert validated.scopes == ["openid", "email", "profile"]
+    assert validated.nonce == "nonce-123"
   end
 
   test "invalid prompt returns a redirect error" do

@@ -12,6 +12,7 @@ defmodule Lockspire.Web.TokenJSON do
       expires_in: success.expires_in,
       scope: success.scope
     }
+    |> maybe_put_id_token(success.id_token)
   end
 
   @spec error_response(Error.t()) :: map()
@@ -21,4 +22,7 @@ defmodule Lockspire.Web.TokenJSON do
       error_description: error.error_description
     }
   end
+
+  defp maybe_put_id_token(response, nil), do: response
+  defp maybe_put_id_token(response, id_token), do: Map.put(response, :id_token, id_token)
 end

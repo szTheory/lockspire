@@ -17,7 +17,10 @@ defmodule Lockspire.Web.TokenController do
     case TokenExchange.exchange_authorization_code(%{
            params: params,
            authorization: authorization,
-           opts: [client_store: Repository, token_store: Repository]
+           opts:
+             [client_store: Repository, token_store: Repository]
+             |> Keyword.put(:interaction_store, Repository)
+             |> Keyword.put(:key_store, Repository)
          }) do
       {:ok, %Success{} = success} ->
         conn
