@@ -52,7 +52,7 @@ Plans:
 Plans:
 - [x] 02-01: Implement client registration and authorization request validation
 - [x] 02-02: Build durable interaction, consent, and authorization-code state plus protocol orchestration
-- [ ] 02-03: Wire `/authorize`, consent UI/finalization, and generated host surfaces for the end-to-end flow
+- [x] 02-03: Wire `/authorize`, consent UI/finalization, and generated host surfaces for the end-to-end flow
 - [ ] 02-04: Implement token exchange for access tokens with durable state transitions
 
 ### Phase 3: OIDC and Token Lifecycle
@@ -127,7 +127,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Host Seam | 3/3 | Completed | 2026-04-23 |
-| 2. Authorization Core | 2/4 | In progress | 2026-04-23 |
+| 2. Authorization Core | 3/4 | In progress | 2026-04-23 |
 | 3. OIDC and Token Lifecycle | 0/3 | Not started | - |
 | 4. Operator Product | 0/3 | Not started | - |
 | 5. Security and Observability Hardening | 0/3 | Not started | - |
