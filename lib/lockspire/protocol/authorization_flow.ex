@@ -56,6 +56,29 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
+  @spec resume_interaction(String.t(), map(), keyword()) ::
+          {:consent_required, Interaction.t()}
+          | {:consent_reused, String.t()}
+          | {:error, term()}
+  def resume_interaction(interaction_id, subject_context, opts \\ [])
+      when is_binary(interaction_id) and is_map(subject_context) do
+    with {:ok, %Interaction{} = interaction} <- load_active_interaction(interaction_id, opts),
+         :ok <- ensure_resume_subject(interaction, subject_context) do
+      subject_id = subject_id!(subject_context)
+
+      case interaction.status do
+        :pending_login ->
+          transition_pending_login(interaction, subject_id, opts)
+
+        :pending_consent ->
+          {:consent_required, interaction}
+
+        _other ->
+          {:error, :interaction_not_active}
+      end
+    end
+  end
+
   @spec approve_interaction(String.t(), map(), keyword()) ::
           {:approved, String.t()} | {:error, term()}
   def approve_interaction(interaction_id, subject_context, opts \\ [])
@@ -209,6 +232,50 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     consent_store(opts).grant_consent(grant)
   end
 
+  defp transition_pending_login(%Interaction{} = interaction, subject_id, opts) do
+    case interaction_store(opts).transact(fn ->
+           with {:ok, pending_consent} <-
+                  interaction_store(opts).transition_interaction(
+                    interaction.interaction_id,
+                    [:pending_login],
+                    %{
+                      status: :pending_consent,
+                      account_id: subject_id,
+                      consent_requested_at: now(opts)
+                    }
+                  ) do
+             pending_consent
+           end
+         end) do
+      {:ok, %Interaction{} = pending_consent} ->
+        case consent_store(opts).list_reusable_consents(subject_id, interaction.client_id) do
+          {:ok, grants} ->
+            case ConsentPolicy.reusable_grant(
+                   grants,
+                   interaction.scopes_requested,
+                   interaction.prompt
+                 ) do
+              {:reuse, _grant} ->
+                emit(:consent_reused, pending_consent, subject_id)
+                finalize_reused_consent(pending_consent, subject_id, opts)
+
+              :consent_required ->
+                emit(:consent_shown, pending_consent, subject_id)
+                {:consent_required, pending_consent}
+            end
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, :invalid_state} ->
+        {:error, :interaction_not_active}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp load_pending_consent_interaction(interaction_id, opts) do
     case interaction_store(opts).fetch_active_interaction(interaction_id) do
       {:ok, %Interaction{status: :pending_consent} = interaction} ->
@@ -252,6 +319,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     do: :ok
 
   defp ensure_subject_match(_interaction, _subject_context), do: {:error, :subject_mismatch}
+
+  defp ensure_resume_subject(%Interaction{account_id: nil}, _subject_context), do: :ok
+
+  defp ensure_resume_subject(%Interaction{} = interaction, subject_context),
+    do: ensure_subject_match(interaction, subject_context)
 
   defp approval_redirect(%Interaction{} = interaction, raw_code) do
     build_redirect(interaction.redirect_uri, %{
@@ -327,6 +399,19 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp login_required?(prompt, nil) when is_list(prompt), do: true
   defp login_required?(prompt, _subject_context), do: "login" in prompt
+
+  defp load_active_interaction(interaction_id, opts) do
+    case interaction_store(opts).fetch_active_interaction(interaction_id) do
+      {:ok, %Interaction{} = interaction} ->
+        {:ok, interaction}
+
+      {:ok, nil} ->
+        classify_inactive_interaction(interaction_id, opts)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   defp subject_id!(%{subject_id: subject_id}) when is_binary(subject_id) and subject_id != "",
     do: subject_id
