@@ -41,7 +41,8 @@ defmodule Lockspire.Protocol.Discovery do
       "response_types_supported" => @response_types_supported,
       "response_modes_supported" => @response_modes_supported,
       "grant_types_supported" => grant_types_supported(endpoint_metadata),
-      "token_endpoint_auth_methods_supported" => token_endpoint_auth_methods_supported(endpoint_metadata),
+      "token_endpoint_auth_methods_supported" =>
+        token_endpoint_auth_methods_supported(endpoint_metadata),
       "code_challenge_methods_supported" => code_challenge_methods_supported(endpoint_metadata),
       "subject_types_supported" => @subject_types_supported,
       "id_token_signing_alg_values_supported" => @id_token_signing_alg_values_supported
