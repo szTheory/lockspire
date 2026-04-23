@@ -5,16 +5,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   import Ecto.Query
 
-  alias Lockspire.Config
   alias Lockspire.Audit.Event
+  alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
-  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
@@ -152,32 +152,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
       interaction_id
       |> locked_interaction_query()
       |> repo().one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %InteractionRecord{} = record ->
-          if record.status in expected_statuses do
-            record
-            |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-            |> repo().update()
-            |> map_one(&InteractionRecord.to_domain/1)
-            |> unwrap_or_rollback()
-          else
-            repo().rollback(:invalid_state)
-          end
-      end
+      |> transition_interaction_record(expected_statuses, attrs)
     end)
   end
 
   @impl InteractionStore
   def transact(fun) when is_function(fun, 0) do
-    case repo().transaction(fn ->
-           case fun.() do
-             {:error, reason} -> repo().rollback(reason)
-             result -> result
-           end
-         end) do
+    case repo().transaction(fn -> run_transaction_fun(fun) end) do
       {:ok, result} -> {:ok, result}
       {:error, reason} -> {:error, reason}
     end
@@ -434,24 +415,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], token.token_type in [:access_token, :refresh_token])
       |> lock("FOR UPDATE")
       |> repo_one(sensitive: true)
-      |> case do
-        nil ->
-          nil
-
-        %TokenRecord{client_id: ^client_id} = record ->
-          if is_nil(record.revoked_at) do
-            record
-            |> Ecto.Changeset.change(revoked_at: revoked_at, updated_at: DateTime.utc_now())
-            |> repo_update(sensitive: true)
-            |> map_one(&TokenRecord.to_domain/1)
-            |> unwrap_or_rollback()
-          else
-            TokenRecord.to_domain(record)
-          end
-
-        %TokenRecord{} ->
-          nil
-      end
+      |> revoke_lifecycle_token_record(client_id, revoked_at)
     end)
   end
 
@@ -586,74 +550,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def activate_signing_key(id, activated_at)
       when is_integer(id) and is_struct(activated_at, DateTime) do
     transact(fn ->
-      selected =
-        id
-        |> locked_signing_key_query()
-        |> repo().one()
-
-      case selected do
-        nil ->
-          repo().rollback(:not_found)
-
-        %SigningKeyRecord{status: status} when status != :upcoming ->
-          repo().rollback(:invalid_state)
-
-        %SigningKeyRecord{published_at: nil} ->
-          repo().rollback(:not_published)
-
-        %SigningKeyRecord{} = selected_record ->
-          active_records =
-            SigningKeyRecord
-            |> where([key], key.status == :active)
-            |> lock("FOR UPDATE")
-            |> repo().all()
-
-          case active_records do
-            [] ->
-              activated_key =
-                selected_record
-                |> SigningKeyRecord.update_changeset(%{
-                  status: :active,
-                  activated_at: activated_at,
-                  retiring_at: nil,
-                  retired_at: nil
-                })
-                |> repo().update()
-                |> map_one(&SigningKeyRecord.to_domain/1)
-                |> unwrap_or_rollback()
-
-              %{activated_key: activated_key, retiring_key: nil}
-
-            [%SigningKeyRecord{} = active_record] ->
-              retiring_key =
-                active_record
-                |> SigningKeyRecord.update_changeset(%{
-                  status: :retiring,
-                  retiring_at: activated_at,
-                  retired_at: nil
-                })
-                |> repo().update()
-                |> map_one(&SigningKeyRecord.to_domain/1)
-                |> unwrap_or_rollback()
-
-              activated_key =
-                selected_record
-                |> SigningKeyRecord.update_changeset(%{
-                  status: :active,
-                  activated_at: activated_at,
-                  retiring_at: nil,
-                  retired_at: nil
-                })
-                |> repo().update()
-                |> map_one(&SigningKeyRecord.to_domain/1)
-                |> unwrap_or_rollback()
-
-              %{activated_key: activated_key, retiring_key: retiring_key}
-
-            _multiple ->
-              repo().rollback(:multiple_active_keys)
-          end
-      end
+      id
+      |> locked_signing_key_query()
+      |> repo().one()
+      |> activate_signing_key_record(activated_at)
     end)
   end
 
@@ -696,21 +596,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], token.token_type == :authorization_code)
       |> lock("FOR UPDATE")
       |> repo_one(sensitive: true)
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %TokenRecord{redeemed_at: %DateTime{}} ->
-          repo().rollback(:already_redeemed)
-
-        %TokenRecord{} = record ->
-          with {:ok, redeemed_code} <- redeem_code_record(record, redeemed_at),
-               {:ok, stored_access_token} <- store_token_record(access_token) do
-            %{authorization_code: redeemed_code, access_token: stored_access_token}
-          else
-            {:error, reason} -> repo().rollback(reason)
-          end
-      end
+      |> redeem_authorization_code_record(redeemed_at, access_token)
     end)
   end
 
@@ -724,22 +610,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
       )
       when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
     case repo().transaction(fn ->
-           token_hash
-           |> locked_refresh_token_query()
-           |> repo_one(sensitive: true)
-           |> case do
-             nil ->
-               {:error, :not_found}
-
-             %TokenRecord{} = record ->
-               rotate_refresh_token_record(
-                 record,
-                 client_id,
-                 rotated_at,
-                 refresh_token,
-                 access_token
-               )
-           end
+           run_rotate_refresh_token(
+             token_hash,
+             client_id,
+             rotated_at,
+             refresh_token,
+             access_token
+           )
          end) do
       {:ok, {:ok, result}} -> {:ok, result}
       {:ok, {:error, reason}} -> {:error, reason}
@@ -904,6 +781,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp unwrap_or_rollback({:ok, result}), do: result
   defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
 
+  defp transition_interaction_record(nil, _expected_statuses, _attrs),
+    do: repo().rollback(:not_found)
+
+  defp transition_interaction_record(%InteractionRecord{} = record, expected_statuses, attrs) do
+    if record.status in expected_statuses do
+      record
+      |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
+      |> repo().update()
+      |> map_one(&InteractionRecord.to_domain/1)
+      |> unwrap_or_rollback()
+    else
+      repo().rollback(:invalid_state)
+    end
+  end
+
+  defp run_transaction_fun(fun) do
+    case fun.() do
+      {:error, reason} -> repo().rollback(reason)
+      result -> result
+    end
+  end
+
   defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
     record
     |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
@@ -953,6 +852,119 @@ defmodule Lockspire.Storage.Ecto.Repository do
         else
           {:error, reason} -> repo().rollback(reason)
         end
+    end
+  end
+
+  defp revoke_lifecycle_token_record(nil, _client_id, _revoked_at), do: nil
+
+  defp revoke_lifecycle_token_record(
+         %TokenRecord{client_id: client_id} = record,
+         client_id,
+         revoked_at
+       ) do
+    if is_nil(record.revoked_at) do
+      record
+      |> Ecto.Changeset.change(revoked_at: revoked_at, updated_at: DateTime.utc_now())
+      |> repo_update(sensitive: true)
+      |> map_one(&TokenRecord.to_domain/1)
+      |> unwrap_or_rollback()
+    else
+      TokenRecord.to_domain(record)
+    end
+  end
+
+  defp revoke_lifecycle_token_record(%TokenRecord{}, _client_id, _revoked_at), do: nil
+
+  defp activate_signing_key_record(nil, _activated_at), do: repo().rollback(:not_found)
+
+  defp activate_signing_key_record(%SigningKeyRecord{status: status}, _activated_at)
+       when status != :upcoming,
+       do: repo().rollback(:invalid_state)
+
+  defp activate_signing_key_record(%SigningKeyRecord{published_at: nil}, _activated_at),
+    do: repo().rollback(:not_published)
+
+  defp activate_signing_key_record(%SigningKeyRecord{} = selected_record, activated_at) do
+    case fetch_active_signing_key_records() do
+      [] ->
+        %{
+          activated_key: activate_selected_signing_key(selected_record, activated_at),
+          retiring_key: nil
+        }
+
+      [%SigningKeyRecord{} = active_record] ->
+        %{
+          activated_key: activate_selected_signing_key(selected_record, activated_at),
+          retiring_key: retire_active_signing_key(active_record, activated_at)
+        }
+
+      _multiple ->
+        repo().rollback(:multiple_active_keys)
+    end
+  end
+
+  defp fetch_active_signing_key_records do
+    SigningKeyRecord
+    |> where([key], key.status == :active)
+    |> lock("FOR UPDATE")
+    |> repo().all()
+  end
+
+  defp activate_selected_signing_key(%SigningKeyRecord{} = record, activated_at) do
+    record
+    |> SigningKeyRecord.update_changeset(%{
+      status: :active,
+      activated_at: activated_at,
+      retiring_at: nil,
+      retired_at: nil
+    })
+    |> repo().update()
+    |> map_one(&SigningKeyRecord.to_domain/1)
+    |> unwrap_or_rollback()
+  end
+
+  defp retire_active_signing_key(%SigningKeyRecord{} = record, activated_at) do
+    record
+    |> SigningKeyRecord.update_changeset(%{
+      status: :retiring,
+      retiring_at: activated_at,
+      retired_at: nil
+    })
+    |> repo().update()
+    |> map_one(&SigningKeyRecord.to_domain/1)
+    |> unwrap_or_rollback()
+  end
+
+  defp redeem_authorization_code_record(nil, _redeemed_at, _access_token),
+    do: repo().rollback(:not_found)
+
+  defp redeem_authorization_code_record(
+         %TokenRecord{redeemed_at: %DateTime{}},
+         _redeemed_at,
+         _access_token
+       ),
+       do: repo().rollback(:already_redeemed)
+
+  defp redeem_authorization_code_record(
+         %TokenRecord{} = record,
+         redeemed_at,
+         %Token{} = access_token
+       ) do
+    with {:ok, redeemed_code} <- redeem_code_record(record, redeemed_at),
+         {:ok, stored_access_token} <- store_token_record(access_token) do
+      %{authorization_code: redeemed_code, access_token: stored_access_token}
+    else
+      {:error, reason} -> repo().rollback(reason)
+    end
+  end
+
+  defp run_rotate_refresh_token(token_hash, client_id, rotated_at, refresh_token, access_token) do
+    case token_hash |> locked_refresh_token_query() |> repo_one(sensitive: true) do
+      nil ->
+        {:error, :not_found}
+
+      %TokenRecord{} = record ->
+        rotate_refresh_token_record(record, client_id, rotated_at, refresh_token, access_token)
     end
   end
 

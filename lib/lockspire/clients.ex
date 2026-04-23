@@ -6,6 +6,7 @@ defmodule Lockspire.Clients do
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_grant_types MapSet.new(["authorization_code", "refresh_token"])
@@ -51,7 +52,7 @@ defmodule Lockspire.Clients do
   @spec rotate_secret_hash() :: {String.t(), String.t()}
   def rotate_secret_hash do
     secret = generate_token(@secret_bytes)
-    {hash_secret(secret), secret}
+    {Policy.hash_client_secret(secret), secret}
   end
 
   @spec register_client(map() | keyword()) ::
@@ -87,71 +88,23 @@ defmodule Lockspire.Clients do
   end
 
   defp normalize(attrs) do
-    client_type =
-      normalize_client_type(Map.get(attrs, :client_type) || Map.get(attrs, "client_type"))
-
-    auth_method =
-      normalize_auth_method(
-        Map.get(attrs, :token_endpoint_auth_method) ||
-          Map.get(attrs, "token_endpoint_auth_method")
-      )
-
-    redirect_uris =
-      attrs
-      |> fetch_required_list(:redirect_uris)
-      |> normalize_string_list()
-
-    allowed_scopes =
-      attrs
-      |> fetch_required_list(:allowed_scopes)
-      |> normalize_string_list()
-
-    allowed_grant_types =
-      attrs
-      |> fetch_required_list(:allowed_grant_types)
-      |> normalize_string_list()
-
-    allowed_response_types =
-      attrs
-      |> Map.get(:allowed_response_types, Map.get(attrs, "allowed_response_types", ["code"]))
-      |> normalize_string_list()
-
-    pkce_required =
-      Map.get(attrs, :pkce_required, Map.get(attrs, "pkce_required", true))
-
-    errors =
-      []
-      |> validate_client_type(client_type)
-      |> validate_auth_method(client_type, auth_method)
-      |> validate_redirect_uris(redirect_uris)
-      |> validate_scopes(allowed_scopes)
-      |> validate_grant_types(allowed_grant_types)
-      |> validate_response_types(allowed_response_types)
-      |> validate_pkce_required(pkce_required)
+    normalized = normalize_client_attrs(attrs)
+    errors = validation_errors(normalized)
 
     case errors do
       [] ->
-        {client_secret_hash, plaintext_secret} =
-          case client_type do
-            :confidential ->
-              rotate_secret_hash()
-
-            :public ->
-              {nil, nil}
-          end
-
         client = %Client{
           client_id:
             normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
               generate_client_id(),
-          client_secret_hash: client_secret_hash,
-          client_type: client_type,
+          client_secret_hash: normalized.client_secret_hash,
+          client_type: normalized.client_type,
           name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
-          redirect_uris: redirect_uris,
-          allowed_scopes: allowed_scopes,
-          allowed_grant_types: allowed_grant_types,
-          allowed_response_types: allowed_response_types,
-          token_endpoint_auth_method: auth_method,
+          redirect_uris: normalized.redirect_uris,
+          allowed_scopes: normalized.allowed_scopes,
+          allowed_grant_types: normalized.allowed_grant_types,
+          allowed_response_types: normalized.allowed_response_types,
+          token_endpoint_auth_method: normalized.auth_method,
           pkce_required: true,
           subject_type: :public,
           created_by:
@@ -160,7 +113,7 @@ defmodule Lockspire.Clients do
           metadata: normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
         }
 
-        {:ok, %{client: client, plaintext_secret: plaintext_secret}}
+        {:ok, %{client: client, plaintext_secret: normalized.plaintext_secret}}
 
       _errors ->
         {:error, Enum.reverse(errors)}
@@ -183,6 +136,49 @@ defmodule Lockspire.Clients do
   defp validate_client_type(errors, nil) do
     [%{field: :client_type, reason: :invalid_client_type, detail: nil} | errors]
   end
+
+  defp normalize_client_attrs(attrs) do
+    client_type =
+      normalize_client_type(Map.get(attrs, :client_type) || Map.get(attrs, "client_type"))
+
+    auth_method = normalize_auth_method(fetch_auth_method(attrs))
+    {client_secret_hash, plaintext_secret} = secret_values(client_type)
+
+    %{
+      client_type: client_type,
+      auth_method: auth_method,
+      redirect_uris: attrs |> fetch_required_list(:redirect_uris) |> normalize_string_list(),
+      allowed_scopes: attrs |> fetch_required_list(:allowed_scopes) |> normalize_string_list(),
+      allowed_grant_types:
+        attrs |> fetch_required_list(:allowed_grant_types) |> normalize_string_list(),
+      allowed_response_types:
+        attrs
+        |> Map.get(:allowed_response_types, Map.get(attrs, "allowed_response_types", ["code"]))
+        |> normalize_string_list(),
+      pkce_required: Map.get(attrs, :pkce_required, Map.get(attrs, "pkce_required", true)),
+      client_secret_hash: client_secret_hash,
+      plaintext_secret: plaintext_secret
+    }
+  end
+
+  defp validation_errors(normalized) do
+    []
+    |> validate_client_type(normalized.client_type)
+    |> validate_auth_method(normalized.client_type, normalized.auth_method)
+    |> validate_redirect_uris(normalized.redirect_uris)
+    |> validate_scopes(normalized.allowed_scopes)
+    |> validate_grant_types(normalized.allowed_grant_types)
+    |> validate_response_types(normalized.allowed_response_types)
+    |> validate_pkce_required(normalized.pkce_required)
+  end
+
+  defp fetch_auth_method(attrs) do
+    Map.get(attrs, :token_endpoint_auth_method) || Map.get(attrs, "token_endpoint_auth_method")
+  end
+
+  defp secret_values(:confidential), do: rotate_secret_hash()
+  defp secret_values(:public), do: {nil, nil}
+  defp secret_values(_other), do: {nil, nil}
 
   defp validate_client_type(errors, type) when type in [:public, :confidential], do: errors
 
@@ -393,12 +389,6 @@ defmodule Lockspire.Clients do
     size
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
-  end
-
-  defp hash_secret(secret) do
-    salt = generate_token(16)
-    hash = :crypto.hash(:sha256, salt <> secret) |> Base.encode64()
-    "sha256:#{salt}:#{hash}"
   end
 
   defp changeset_errors(changeset) do

@@ -108,14 +108,7 @@ defmodule Lockspire.Admin.Clients do
          :ok <- ensure_confidential_client(client) do
       {secret_hash, plaintext_secret} = Clients.rotate_secret_hash()
 
-      case transact_with_audit(
-             fn -> Repository.rotate_client_secret(client, secret_hash, rotated_at) end,
-             fn %Client{} = updated_client ->
-               client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
-                 rotated_at: rotated_at
-               })
-             end
-           ) do
+      case rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
         {:ok, %Client{} = updated_client} ->
           emit(:client_secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
           {:ok, %{client: updated_client, client_secret: plaintext_secret}}
@@ -143,20 +136,7 @@ defmodule Lockspire.Admin.Clients do
     disabled_at = Map.get(attrs, :disabled_at, DateTime.utc_now())
 
     with {:ok, %Client{} = client} <- get_client(client_id) do
-      case transact_with_audit(
-             fn ->
-               Repository.set_client_active(client, false, %{
-                 disabled_at: disabled_at,
-                 disabled_by: disabled_by
-               })
-             end,
-             fn %Client{} = updated_client ->
-               client_audit_event(:client_disabled, :succeeded, updated_client, actor, %{
-                 disabled_at: disabled_at,
-                 disabled_by: disabled_by
-               })
-             end
-           ) do
+      case disable_client_with_audit(client, disabled_at, disabled_by, actor) do
         {:ok, %Client{} = updated_client} ->
           emit(:client_disabled, updated_client, actor, %{disabled_at: disabled_at})
           {:ok, updated_client}
@@ -182,35 +162,28 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp validate_safe_update(attrs) do
-    with :ok <- validate_redirects_if_present(attrs),
-         :ok <- validate_scopes_if_present(attrs) do
-      :ok
+    with :ok <- validate_redirects_if_present(attrs) do
+      validate_scopes_if_present(attrs)
     end
   end
 
   defp validate_redirects_if_present(attrs) do
-    if Map.has_key?(attrs, :redirect_uris) or Map.has_key?(attrs, "redirect_uris") do
-      case Clients.validate_redirect_uris(
-             Map.get(attrs, :redirect_uris) || Map.get(attrs, "redirect_uris")
-           ) do
-        :ok -> :ok
-        {:error, errors} -> {:error, errors}
-      end
-    else
-      :ok
+    case fetch_attr(attrs, :redirect_uris) do
+      nil ->
+        :ok
+
+      redirect_uris ->
+        Clients.validate_redirect_uris(redirect_uris)
     end
   end
 
   defp validate_scopes_if_present(attrs) do
-    if Map.has_key?(attrs, :allowed_scopes) or Map.has_key?(attrs, "allowed_scopes") do
-      case Clients.validate_allowed_scopes(
-             Map.get(attrs, :allowed_scopes) || Map.get(attrs, "allowed_scopes")
-           ) do
-        :ok -> :ok
-        {:error, errors} -> {:error, errors}
-      end
-    else
-      :ok
+    case fetch_attr(attrs, :allowed_scopes) do
+      nil ->
+        :ok
+
+      allowed_scopes ->
+        Clients.validate_allowed_scopes(allowed_scopes)
     end
   end
 
@@ -242,15 +215,9 @@ defmodule Lockspire.Admin.Clients do
 
   defp normalize_update_attrs(attrs) do
     Enum.reduce(@mutable_fields, %{}, fn field, acc ->
-      case Map.fetch(attrs, field) do
-        {:ok, value} ->
-          Map.put(acc, field, normalize_mutable_field(field, value))
-
-        :error ->
-          case Map.fetch(attrs, Atom.to_string(field)) do
-            {:ok, value} -> Map.put(acc, field, normalize_mutable_field(field, value))
-            :error -> acc
-          end
+      case fetch_mutable_attr(attrs, field) do
+        {:ok, value} -> Map.put(acc, field, normalize_mutable_field(field, value))
+        :error -> acc
       end
     end)
   end
@@ -295,23 +262,19 @@ defmodule Lockspire.Admin.Clients do
   defp normalize_field_name(value) when is_atom(value), do: value
 
   defp normalize_field_name(value) when is_binary(value) do
-    try do
-      String.to_existing_atom(value)
-    rescue
-      ArgumentError -> nil
-    end
+    String.to_existing_atom(value)
+  rescue
+    ArgumentError -> nil
   end
 
   defp normalize_field_name(_value), do: nil
 
-  defp transact_with_audit(fun, build_audit_event) when is_function(fun, 0) and is_function(build_audit_event, 1) do
+  defp transact_with_audit(fun, build_audit_event)
+       when is_function(fun, 0) and is_function(build_audit_event, 1) do
     Repository.transact(fn ->
       case fun.() do
         {:ok, result} ->
-          case Repository.append_audit_event(build_audit_event.(result)) do
-            {:ok, _event} -> result
-            {:error, reason} -> {:error, reason}
-          end
+          append_audit_event(build_audit_event, result)
 
         {:error, reason} ->
           {:error, reason}
@@ -319,13 +282,64 @@ defmodule Lockspire.Admin.Clients do
     end)
   end
 
+  defp fetch_attr(attrs, key) do
+    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+  end
+
+  defp fetch_mutable_attr(attrs, field) do
+    case Map.fetch(attrs, field) do
+      {:ok, value} -> {:ok, value}
+      :error -> Map.fetch(attrs, Atom.to_string(field))
+    end
+  end
+
+  defp rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
+    transact_with_audit(
+      fn -> Repository.rotate_client_secret(client, secret_hash, rotated_at) end,
+      fn %Client{} = updated_client ->
+        client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
+          rotated_at: rotated_at
+        })
+      end
+    )
+  end
+
+  defp disable_client_with_audit(client, disabled_at, disabled_by, actor) do
+    transact_with_audit(
+      fn ->
+        Repository.set_client_active(client, false, %{
+          disabled_at: disabled_at,
+          disabled_by: disabled_by
+        })
+      end,
+      fn %Client{} = updated_client ->
+        client_audit_event(:client_disabled, :succeeded, updated_client, actor, %{
+          disabled_at: disabled_at,
+          disabled_by: disabled_by
+        })
+      end
+    )
+  end
+
+  defp append_audit_event(build_audit_event, result) do
+    case Repository.append_audit_event(build_audit_event.(result)) do
+      {:ok, _event} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp emit(event, %Client{} = client, actor, metadata) do
-    Observability.emit(event, %{}, %{
-      actor_type: actor[:type],
-      actor_id: actor[:id],
-      client_id: client.client_id,
-      reason_code: event
-    } |> Map.merge(metadata))
+    Observability.emit(
+      event,
+      %{},
+      %{
+        actor_type: actor[:type],
+        actor_id: actor[:id],
+        client_id: client.client_id,
+        reason_code: event
+      }
+      |> Map.merge(metadata)
+    )
   end
 
   defp client_audit_event(action, outcome, %Client{} = client, actor, metadata) do

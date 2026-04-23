@@ -19,7 +19,9 @@ defmodule Lockspire.Protocol.TokenExchange do
   @refresh_token_ttl 2_592_000
 
   defmodule Success do
-    @moduledoc false
+    @moduledoc """
+    Successful token endpoint response payload.
+    """
 
     @type t :: %__MODULE__{
             access_token: String.t(),
@@ -34,7 +36,9 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Token endpoint error payload.
+    """
 
     @type t :: %__MODULE__{
             status: pos_integer(),
@@ -77,7 +81,8 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     with :ok <- validate_grant_type(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %Token{} = authorization_code, code_hash} <- fetch_authorization_code(params, request) do
+         {:ok, %Token{} = authorization_code, code_hash} <-
+           fetch_authorization_code(params, request) do
       handle_code_exchange(client, authorization_code, code_hash, params, request)
     else
       {:error, %Error{} = error} ->
@@ -86,7 +91,13 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp handle_code_exchange(%Client{} = client, %Token{} = authorization_code, code_hash, params, request) do
+  defp handle_code_exchange(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         code_hash,
+         params,
+         request
+       ) do
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          %Success{} = success <- redeem_code(client, authorization_code, code_hash, request) do
@@ -139,26 +150,11 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp fetch_authorization_code(params, request) do
-    with code when is_binary(code) and code != "" <- normalize_optional_string(params["code"]) do
-      code_hash = Policy.hash_token(code)
+    case normalize_optional_string(params["code"]) do
+      code when is_binary(code) ->
+        code_hash = Policy.hash_token(code)
+        load_authorization_code(request, code_hash)
 
-      case token_store(request).fetch_authorization_code(code_hash) do
-        {:ok, %Token{} = authorization_code} ->
-          {:ok, authorization_code, code_hash}
-
-        {:ok, nil} ->
-          {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
-
-        {:error, _reason} ->
-          {:error,
-           oauth_error(
-             500,
-             "server_error",
-             "Unable to load authorization code",
-             :authorization_code_lookup_failed
-           )}
-      end
-    else
       _other ->
         {:error, invalid_grant("Authorization code is required", :missing_authorization_code)}
     end
@@ -185,9 +181,8 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp validate_code_binding(%Client{} = client, %Token{} = authorization_code, params) do
     with :ok <- validate_client_binding(client, authorization_code),
-         :ok <- validate_redirect_uri_binding(authorization_code, params),
-         :ok <- validate_pkce_binding(authorization_code, params) do
-      :ok
+         :ok <- validate_redirect_uri_binding(authorization_code, params) do
+      validate_pkce_binding(authorization_code, params)
     end
   end
 
@@ -553,7 +548,8 @@ defmodule Lockspire.Protocol.TokenExchange do
          nil,
          request
        ) do
-    audit_event = redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
+    audit_event =
+      redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
 
     case transact_with_audit_event(token_store(request), audit_event, fn ->
            token_store(request).redeem_authorization_code(code_hash, issued_at, access_token)
@@ -588,7 +584,8 @@ defmodule Lockspire.Protocol.TokenExchange do
       expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
     }
 
-    audit_event = redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
+    audit_event =
+      redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
 
     transact_with_audit_event(token_store(request), audit_event, fn ->
       with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
@@ -612,35 +609,10 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0) do
-    cond do
-      function_exported?(store, :transact_with_audit, 2) ->
-        store.transact_with_audit(audit_event, fun)
-
-      function_exported?(store, :transact, 1) ->
-        store.transact(fn ->
-          case fun.() do
-            {:error, reason} ->
-              {:error, reason}
-
-            result ->
-              case append_audit_event(store, audit_event) do
-                {:ok, _event} -> result
-                {:error, reason} -> {:error, reason}
-              end
-          end
-        end)
-
-      true ->
-        case fun.() do
-          {:error, reason} ->
-            {:error, reason}
-
-          result ->
-            case append_audit_event(store, audit_event) do
-              {:ok, _event} -> result
-              {:error, reason} -> {:error, reason}
-            end
-        end
+    if function_exported?(store, :transact_with_audit, 2) do
+      store.transact_with_audit(audit_event, fun)
+    else
+      transact_token_operation(store, audit_event, fun)
     end
   end
 
@@ -652,7 +624,12 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp maybe_append_failure_audit(%Error{reason_code: :authorization_code_replayed}, %Client{} = client, %Token{} = authorization_code, request) do
+  defp maybe_append_failure_audit(
+         %Error{reason_code: :authorization_code_replayed},
+         %Client{} = client,
+         %Token{} = authorization_code,
+         request
+       ) do
     replay_audit_event(client_actor(client.client_id), authorization_code)
     |> then(&append_audit_event(token_store(request), &1))
 
@@ -660,6 +637,47 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp maybe_append_failure_audit(_error, _client, _authorization_code, _request), do: :ok
+
+  defp load_authorization_code(request, code_hash) do
+    case token_store(request).fetch_authorization_code(code_hash) do
+      {:ok, %Token{} = authorization_code} ->
+        {:ok, authorization_code, code_hash}
+
+      {:ok, nil} ->
+        {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to load authorization code",
+           :authorization_code_lookup_failed
+         )}
+    end
+  end
+
+  defp transact_token_operation(store, audit_event, fun) do
+    if function_exported?(store, :transact, 1) do
+      store.transact(fn -> run_audited_token_operation(store, audit_event, fun) end)
+    else
+      run_audited_token_operation(store, audit_event, fun)
+    end
+  end
+
+  defp run_audited_token_operation(store, audit_event, fun) do
+    fun.()
+    |> maybe_append_audit_event(store, audit_event)
+  end
+
+  defp maybe_append_audit_event({:error, reason}, _store, _audit_event), do: {:error, reason}
+
+  defp maybe_append_audit_event(result, store, audit_event) do
+    case append_audit_event(store, audit_event) do
+      {:ok, _event} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   defp redemption_audit_event(actor, %Token{} = authorization_code) do
     audit_event(

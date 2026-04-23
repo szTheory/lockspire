@@ -23,37 +23,12 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     now = now(opts)
     interaction_id = generate_interaction_id(opts)
 
-    cond do
-      login_required?(validated.prompt, subject_context) ->
-        validated
-        |> build_interaction(interaction_id, nil, :pending_login, now)
-        |> persist_login_required(opts)
-
-      true ->
-        subject_id = subject_id!(subject_context)
-
-        interaction =
-          build_interaction(validated, interaction_id, subject_id, :pending_consent, now)
-
-        with {:ok, persisted} <- interaction_store(opts).put_interaction(interaction) do
-          emit(:interaction_started, persisted, subject_id)
-
-          case consent_store(opts).list_reusable_consents(subject_id, validated.client_id) do
-            {:ok, grants} ->
-              case ConsentPolicy.reusable_grant(grants, validated.scopes, validated.prompt) do
-                {:reuse, _grant} ->
-                  emit(:consent_reused, persisted, subject_id)
-                  finalize_reused_consent(persisted, subject_id, opts)
-
-                :consent_required ->
-                  emit(:consent_shown, persisted, subject_id)
-                  {:consent_required, persisted}
-              end
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-        end
+    if login_required?(validated.prompt, subject_context) do
+      validated
+      |> build_interaction(interaction_id, nil, :pending_login, now)
+      |> persist_login_required(opts)
+    else
+      start_subject_authorization(validated, subject_context, interaction_id, now, opts)
     end
   end
 
@@ -95,18 +70,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         authorization_completed_event(interaction, subject_actor(subject_id), :consent_approved)
       ]
 
-      case transact_with_audit(interaction_store(opts), audit_events, fn ->
-             with {:ok, completed} <-
-                    interaction_store(opts).transition_interaction(
-                      interaction_id,
-                      [:pending_consent],
-                      %{status: :completed, completed_at: now(opts)}
-                    ),
-                  {:ok, _grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
-                  {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
-               {completed, redirect_uri}
-             end
-           end) do
+      case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
         {:ok, {completed, redirect_uri}} ->
           emit(:consent_approved, completed, subject_id, %{reason_code: :consent_approved})
           emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_approved})
@@ -131,20 +95,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
       audit_event = consent_denied_event(interaction, subject_id)
 
-      case transact_with_audit(interaction_store(opts), [audit_event], fn ->
-             with {:ok, denied} <-
-                    interaction_store(opts).transition_interaction(
-                      interaction_id,
-                      [:pending_consent],
-                      %{
-                        status: :denied,
-                        denied_at: now(opts),
-                        denial_reason: "access_denied"
-                      }
-                    ) do
-               denied
-             end
-           end) do
+      case deny_with_audit(interaction_id, audit_event, opts) do
         {:ok, %Interaction{} = denied} ->
           emit(:consent_denied, denied, subject_id, %{reason_code: :access_denied})
           {:denied, denial_redirect(interaction)}
@@ -166,27 +117,70 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
+  defp start_subject_authorization(validated, subject_context, interaction_id, now, opts) do
+    subject_id = subject_id!(subject_context)
+
+    validated
+    |> build_interaction(interaction_id, subject_id, :pending_consent, now)
+    |> persist_subject_authorization(validated, subject_id, opts)
+  end
+
+  defp persist_subject_authorization(%Interaction{} = interaction, validated, subject_id, opts) do
+    with {:ok, persisted} <- interaction_store(opts).put_interaction(interaction) do
+      emit(:interaction_started, persisted, subject_id)
+
+      handle_subject_consent(
+        persisted,
+        validated.client_id,
+        validated.scopes,
+        validated.prompt,
+        subject_id,
+        opts
+      )
+    end
+  end
+
+  defp handle_subject_consent(
+         %Interaction{} = interaction,
+         client_id,
+         scopes,
+         prompt,
+         subject_id,
+         opts
+       ) do
+    case consent_store(opts).list_reusable_consents(subject_id, client_id) do
+      {:ok, grants} ->
+        case ConsentPolicy.reusable_grant(grants, scopes, prompt) do
+          {:reuse, _grant} ->
+            emit(:consent_reused, interaction, subject_id)
+            finalize_reused_consent(interaction, subject_id, opts)
+
+          :consent_required ->
+            emit(:consent_shown, interaction, subject_id)
+            {:consent_required, interaction}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp finalize_reused_consent(%Interaction{} = interaction, subject_id, opts) do
     audit_event =
       authorization_completed_event(interaction, system_actor(), :consent_reused)
 
     case transact_with_audit(interaction_store(opts), [audit_event], fn ->
-           with {:ok, completed} <-
-                  interaction_store(opts).transition_interaction(
-                    interaction.interaction_id,
-                    [:pending_consent],
-                    %{status: :completed, completed_at: now(opts)}
-                  ),
-                {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
-             {completed, redirect_uri}
-           end
+           complete_reused_consent(interaction, subject_id, opts)
          end) do
       {:ok, {%Interaction{} = completed, redirect_uri}} ->
         emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_reused})
         {:consent_reused, redirect_uri}
 
-      {:error, :invalid_state} -> {:error, :interaction_not_active}
-      {:error, reason} -> {:error, reason}
+      {:error, :invalid_state} ->
+        {:error, :interaction_not_active}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -250,39 +244,17 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp transition_pending_login(%Interaction{} = interaction, subject_id, opts) do
     case interaction_store(opts).transact(fn ->
-           with {:ok, pending_consent} <-
-                  interaction_store(opts).transition_interaction(
-                    interaction.interaction_id,
-                    [:pending_login],
-                    %{
-                      status: :pending_consent,
-                      account_id: subject_id,
-                      consent_requested_at: now(opts)
-                    }
-                  ) do
-             pending_consent
-           end
+           move_login_to_pending_consent(interaction, subject_id, opts)
          end) do
       {:ok, %Interaction{} = pending_consent} ->
-        case consent_store(opts).list_reusable_consents(subject_id, interaction.client_id) do
-          {:ok, grants} ->
-            case ConsentPolicy.reusable_grant(
-                   grants,
-                   interaction.scopes_requested,
-                   interaction.prompt
-                 ) do
-              {:reuse, _grant} ->
-                emit(:consent_reused, pending_consent, subject_id)
-                finalize_reused_consent(pending_consent, subject_id, opts)
-
-              :consent_required ->
-                emit(:consent_shown, pending_consent, subject_id)
-                {:consent_required, pending_consent}
-            end
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        handle_subject_consent(
+          pending_consent,
+          interaction.client_id,
+          interaction.scopes_requested,
+          interaction.prompt,
+          subject_id,
+          opts
+        )
 
       {:error, :invalid_state} ->
         {:error, :interaction_not_active}
@@ -313,12 +285,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
     case interaction_store(opts).fetch_interaction(interaction_id) do
       {:ok, %Interaction{} = interaction} ->
-        cond do
-          interaction.status == :expired or DateTime.compare(interaction.expires_at, now) != :gt ->
-            {:error, :interaction_expired}
-
-          true ->
-            {:error, :interaction_not_active}
+        if interaction_expired?(interaction, now) do
+          {:error, :interaction_expired}
+        else
+          {:error, :interaction_not_active}
         end
 
       {:ok, nil} ->
@@ -370,8 +340,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp emit(event, %Interaction{} = interaction, subject_id, extra \\ %{}) do
-    observability_module()
-    |> apply(:emit, [
+    observability_module().emit(
       event,
       %{},
       Map.merge(extra, %{
@@ -380,22 +349,14 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         subject_id: subject_id,
         status: interaction.status
       })
-    ])
+    )
   end
 
   defp transact_with_audit(store, audit_events, fun)
        when is_atom(store) and is_list(audit_events) and is_function(fun, 0) do
     store.transact(fn ->
-      case fun.() do
-        {:error, reason} ->
-          {:error, reason}
-
-        result ->
-          case append_audit_events(store, audit_events) do
-            :ok -> result
-            {:error, reason} -> {:error, reason}
-          end
-      end
+      fun.()
+      |> maybe_append_audit_events(store, audit_events)
     end)
   end
 
@@ -410,6 +371,80 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     else
       {:error, :audit_append_unsupported}
     end
+  end
+
+  defp maybe_append_audit_events({:error, reason}, _store, _audit_events), do: {:error, reason}
+
+  defp maybe_append_audit_events(result, store, audit_events) do
+    case append_audit_events(store, audit_events) do
+      :ok -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
+    transact_with_audit(interaction_store(opts), audit_events, fn ->
+      approve_pending_interaction(interaction_id, subject_id, remember?, opts)
+    end)
+  end
+
+  defp deny_with_audit(interaction_id, audit_event, opts) do
+    transact_with_audit(interaction_store(opts), [audit_event], fn ->
+      deny_pending_interaction(interaction_id, opts)
+    end)
+  end
+
+  defp approve_pending_interaction(interaction_id, subject_id, remember?, opts) do
+    with {:ok, completed} <-
+           interaction_store(opts).transition_interaction(
+             interaction_id,
+             [:pending_consent],
+             %{status: :completed, completed_at: now(opts)}
+           ),
+         {:ok, _grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
+         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+      {completed, redirect_uri}
+    end
+  end
+
+  defp deny_pending_interaction(interaction_id, opts) do
+    interaction_store(opts).transition_interaction(
+      interaction_id,
+      [:pending_consent],
+      %{
+        status: :denied,
+        denied_at: now(opts),
+        denial_reason: "access_denied"
+      }
+    )
+  end
+
+  defp complete_reused_consent(%Interaction{} = interaction, subject_id, opts) do
+    with {:ok, completed} <-
+           interaction_store(opts).transition_interaction(
+             interaction.interaction_id,
+             [:pending_consent],
+             %{status: :completed, completed_at: now(opts)}
+           ),
+         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+      {completed, redirect_uri}
+    end
+  end
+
+  defp move_login_to_pending_consent(%Interaction{} = interaction, subject_id, opts) do
+    interaction_store(opts).transition_interaction(
+      interaction.interaction_id,
+      [:pending_login],
+      %{
+        status: :pending_consent,
+        account_id: subject_id,
+        consent_requested_at: now(opts)
+      }
+    )
+  end
+
+  defp interaction_expired?(%Interaction{} = interaction, now) do
+    interaction.status == :expired or DateTime.compare(interaction.expires_at, now) != :gt
   end
 
   defp consent_approved_event(%Interaction{} = interaction, subject_id, remember?) do
@@ -437,7 +472,14 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     audit_event(:authorization_completed, :succeeded, interaction, actor, reason_code)
   end
 
-  defp audit_event(action, outcome, %Interaction{} = interaction, actor, reason_code, metadata \\ %{}) do
+  defp audit_event(
+         action,
+         outcome,
+         %Interaction{} = interaction,
+         actor,
+         reason_code,
+         metadata \\ %{}
+       ) do
     %{
       action: action,
       outcome: outcome,

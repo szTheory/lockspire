@@ -53,13 +53,7 @@ defmodule Lockspire.Admin.Tokens do
     with {:ok, %Token{} = token} <- fetch_existing_token(token_id),
          {:ok, {_revoked_token, detail}} <-
            transact_with_audit(
-             fn ->
-               with {:ok, revoked_token} <-
-                      Repository.revoke_lifecycle_token(token.token_hash, token.client_id, revoked_at),
-                    {:ok, detail} <- get_token(token_id) do
-                 {:ok, {revoked_token || token, detail}}
-               end
-             end,
+             fn -> revoke_token_detail(token, token_id, revoked_at) end,
              fn {revoked_token, _detail} ->
                revoke_audit_event(revoked_token, actor, revoked_reason)
              end
@@ -84,12 +78,7 @@ defmodule Lockspire.Admin.Tokens do
          family_id when is_binary(family_id) <- token.family_id || {:error, :no_family},
          {:ok, {count, detail}} <-
            transact_with_audit(
-             fn ->
-               with {:ok, count} <- Repository.revoke_token_family(family_id),
-                    {:ok, detail} <- get_token(token_id) do
-                 {:ok, {count, detail}}
-               end
-             end,
+             fn -> revoke_token_family_detail(family_id, token_id) end,
              fn {count, _detail} ->
                revoke_family_audit_event(token, actor, count, revoked_reason)
              end
@@ -114,22 +103,26 @@ defmodule Lockspire.Admin.Tokens do
     end
   end
 
+  defp revoke_token_detail(%Token{} = token, token_id, revoked_at) do
+    with {:ok, revoked_token} <-
+           Repository.revoke_lifecycle_token(token.token_hash, token.client_id, revoked_at),
+         {:ok, detail} <- get_token(token_id) do
+      {:ok, {revoked_token || token, detail}}
+    end
+  end
+
+  defp revoke_token_family_detail(family_id, token_id) do
+    with {:ok, count} <- Repository.revoke_token_family(family_id),
+         {:ok, detail} <- get_token(token_id) do
+      {:ok, {count, detail}}
+    end
+  end
+
   defp build_detail(nil), do: nil
 
   defp build_detail(%Token{} = token) do
     client = fetch_client(token.client_id)
-
-    family_tokens =
-      case token.family_id do
-        family_id when is_binary(family_id) ->
-          case Repository.list_token_family(family_id) do
-            {:ok, tokens} -> Enum.map(tokens, &token_family_entry(&1, token.id))
-            {:error, _reason} -> [token_family_entry(token, token.id)]
-          end
-
-        _other ->
-          [token_family_entry(token, token.id)]
-      end
+    family_tokens = load_family_tokens(token)
 
     %{
       token: token_detail_view(token, client),
@@ -219,7 +212,9 @@ defmodule Lockspire.Admin.Tokens do
     Redaction.handle(:token, source)
   end
 
-  defp client_display(%Client{name: name}, _client_id) when is_binary(name) and name != "", do: name
+  defp client_display(%Client{name: name}, _client_id) when is_binary(name) and name != "",
+    do: name
+
   defp client_display(_client, client_id), do: Redaction.handle(:client, client_id)
 
   defp optional_handle(_type, nil), do: nil
@@ -247,14 +242,12 @@ defmodule Lockspire.Admin.Tokens do
     end
   end
 
-  defp transact_with_audit(fun, build_audit_event) when is_function(fun, 0) and is_function(build_audit_event, 1) do
+  defp transact_with_audit(fun, build_audit_event)
+       when is_function(fun, 0) and is_function(build_audit_event, 1) do
     Repository.transact(fn ->
       case fun.() do
         {:ok, result} ->
-          case Repository.append_audit_event(build_audit_event.(result)) do
-            {:ok, _event} -> result
-            {:error, reason} -> {:error, reason}
-          end
+          append_audit_event(build_audit_event, result)
 
         {:error, reason} ->
           {:error, reason}
@@ -262,12 +255,33 @@ defmodule Lockspire.Admin.Tokens do
     end)
   end
 
+  defp load_family_tokens(%Token{family_id: family_id} = token) when is_binary(family_id) do
+    case Repository.list_token_family(family_id) do
+      {:ok, tokens} -> Enum.map(tokens, &token_family_entry(&1, token.id))
+      {:error, _reason} -> [token_family_entry(token, token.id)]
+    end
+  end
+
+  defp load_family_tokens(%Token{} = token), do: [token_family_entry(token, token.id)]
+
+  defp append_audit_event(build_audit_event, result) do
+    case Repository.append_audit_event(build_audit_event.(result)) do
+      {:ok, _event} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp emit(event, %Token{} = token, actor, metadata) do
-    Observability.emit(event, %{}, %{
-      actor_type: actor[:type],
-      actor_id: actor[:id],
-      client_id: token.client_id
-    } |> Map.merge(metadata))
+    Observability.emit(
+      event,
+      %{},
+      %{
+        actor_type: actor[:type],
+        actor_id: actor[:id],
+        client_id: token.client_id
+      }
+      |> Map.merge(metadata)
+    )
   end
 
   defp revoke_audit_event(%Token{} = token, actor, revoked_reason) do

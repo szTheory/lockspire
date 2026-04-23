@@ -57,7 +57,12 @@ defmodule Lockspire.Protocol.RefreshExchange do
   defp rotate_refresh_token(%Client{} = client, refresh_token_hash, request) do
     with {:ok, %Token{} = presented_refresh_token} <-
            fetch_presented_refresh_token(refresh_token_hash, request) do
-      rotate_refresh_token_with_audit(client, refresh_token_hash, presented_refresh_token, request)
+      rotate_refresh_token_with_audit(
+        client,
+        refresh_token_hash,
+        presented_refresh_token,
+        request
+      )
     end
   end
 
@@ -67,84 +72,21 @@ defmodule Lockspire.Protocol.RefreshExchange do
          %Token{} = presented_refresh_token,
          request
        ) do
-    formatted_access_token =
-      TokenFormatter.format_access_token(token_format_options(request, :access_token))
-
-    formatted_refresh_token =
-      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
-
+    {formatted_access_token, formatted_refresh_token} = format_refresh_rotation_tokens(request)
     rotated_at = now(request)
-
-    access_token = %Token{
-      token_hash: formatted_access_token.token_hash,
-      token_type: :access_token,
-      client_id: client.client_id,
-      account_id: nil,
-      expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
-    }
-
-    refresh_token = %Token{
-      token_hash: formatted_refresh_token.token_hash,
-      token_type: :refresh_token,
-      client_id: client.client_id,
-      account_id: nil,
-      expires_at: DateTime.add(rotated_at, @refresh_token_ttl, :second)
-    }
+    access_token = build_rotated_access_token(client, formatted_access_token, rotated_at)
+    refresh_token = build_rotated_refresh_token(client, formatted_refresh_token, rotated_at)
 
     case transact_with_audit_outcome(token_store(request), fn ->
-           case token_store(request).rotate_refresh_token(
-                  refresh_token_hash,
-                  client.client_id,
-                  rotated_at,
-                  refresh_token,
-                  access_token
-                ) do
-             {:ok,
-              %{
-                presented_refresh_token: %Token{} = presented,
-                refresh_token: %Token{} = persisted_refresh_token,
-                access_token: %Token{}
-              } = success} ->
-               {:ok,
-                success,
-                [refresh_rotation_audit_event(client, presented, persisted_refresh_token)]}
-
-             {:error, :reuse_detected} ->
-               {:durable_error,
-                invalid_grant(
-                  "Refresh token reuse detected; the token family has been revoked",
-                  :refresh_token_reuse_detected
-                ),
-                reuse_audit_events(client, presented_refresh_token)}
-
-             {:error, :not_found} ->
-               {:error, invalid_grant("Refresh token is invalid", :refresh_token_not_found)}
-
-             {:error, :client_mismatch} ->
-               {:error,
-                invalid_grant("Refresh token was not issued to this client", :client_mismatch)}
-
-             {:error, :expired} ->
-               {:error, invalid_grant("Refresh token has expired", :refresh_token_expired)}
-
-             {:error, :missing_family_id} ->
-               {:error,
-                oauth_error(
-                  500,
-                  "server_error",
-                  "Refresh token family is invalid",
-                  :missing_family_id
-                )}
-
-             {:error, _reason} ->
-               {:error,
-                oauth_error(
-                  500,
-                  "server_error",
-                  "Unable to rotate refresh token",
-                  :refresh_rotation_failed
-                )}
-           end
+           handle_refresh_rotation(
+             token_store(request),
+             client,
+             refresh_token_hash,
+             rotated_at,
+             refresh_token,
+             access_token,
+             presented_refresh_token
+           )
          end) do
       {:ok,
        %{
@@ -233,18 +175,14 @@ defmodule Lockspire.Protocol.RefreshExchange do
   end
 
   defp token_format_options(request, token_type) do
-    generator =
-      request
-      |> Map.get(:opts, [])
-      |> case do
-        opts ->
-          case Keyword.get(opts, :"#{token_type}_generator", Keyword.get(opts, :token_generator)) do
-            nil -> []
-            generator -> [token_generator: generator]
-          end
-      end
-
-    generator
+    case Keyword.get(
+           Map.get(request, :opts, []),
+           :"#{token_type}_generator",
+           Keyword.get(Map.get(request, :opts, []), :token_generator)
+         ) do
+      nil -> []
+      generator -> [token_generator: generator]
+    end
   end
 
   defp now(request) do
@@ -256,29 +194,24 @@ defmodule Lockspire.Protocol.RefreshExchange do
 
   defp transact_with_audit_outcome(store, fun) when is_function(fun, 0) do
     store.transact(fn ->
-      case fun.() do
-        {:ok, result, audit_events} ->
-          case append_audit_events(store, audit_events) do
-            :ok -> result
-            {:error, reason} -> {:error, reason}
-          end
-
-        {:durable_error, error, audit_events} ->
-          case append_audit_events(store, audit_events) do
-            :ok -> {:durable_error, error}
-            {:error, reason} -> {:error, reason}
-          end
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      fun.()
+      |> maybe_append_audit_events(store)
     end)
     |> case do
-      {:ok, {:durable_error, %Error{} = error}} -> {:error, error}
-      {:ok, result} -> {:ok, result}
-      {:error, %Error{} = error} -> {:error, error}
-      {:error, reason} when is_atom(reason) -> {:error, oauth_error(500, "server_error", "Unable to rotate refresh token", reason)}
-      {:error, other} -> {:error, other}
+      {:ok, {:durable_error, %Error{} = error}} ->
+        {:error, error}
+
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Error{} = error} ->
+        {:error, error}
+
+      {:error, reason} when is_atom(reason) ->
+        {:error, oauth_error(500, "server_error", "Unable to rotate refresh token", reason)}
+
+      {:error, other} ->
+        {:error, other}
     end
   end
 
@@ -287,6 +220,100 @@ defmodule Lockspire.Protocol.RefreshExchange do
   defp append_audit_events(store, [event | rest]) do
     case store.append_audit_event(event) do
       {:ok, _event} -> append_audit_events(store, rest)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp format_refresh_rotation_tokens(request) do
+    {
+      TokenFormatter.format_access_token(token_format_options(request, :access_token)),
+      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
+    }
+  end
+
+  defp build_rotated_access_token(%Client{} = client, formatted_access_token, rotated_at) do
+    %Token{
+      token_hash: formatted_access_token.token_hash,
+      token_type: :access_token,
+      client_id: client.client_id,
+      account_id: nil,
+      expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
+    }
+  end
+
+  defp build_rotated_refresh_token(%Client{} = client, formatted_refresh_token, rotated_at) do
+    %Token{
+      token_hash: formatted_refresh_token.token_hash,
+      token_type: :refresh_token,
+      client_id: client.client_id,
+      account_id: nil,
+      expires_at: DateTime.add(rotated_at, @refresh_token_ttl, :second)
+    }
+  end
+
+  defp handle_refresh_rotation(
+         store,
+         %Client{} = client,
+         refresh_token_hash,
+         rotated_at,
+         %Token{} = refresh_token,
+         %Token{} = access_token,
+         %Token{} = presented_refresh_token
+       ) do
+    case store.rotate_refresh_token(
+           refresh_token_hash,
+           client.client_id,
+           rotated_at,
+           refresh_token,
+           access_token
+         ) do
+      {:ok,
+       %{
+         presented_refresh_token: %Token{} = presented,
+         refresh_token: %Token{} = persisted_refresh_token,
+         access_token: %Token{}
+       } = success} ->
+        {:ok, success, [refresh_rotation_audit_event(client, presented, persisted_refresh_token)]}
+
+      {:error, :reuse_detected} ->
+        {:durable_error,
+         invalid_grant(
+           "Refresh token reuse detected; the token family has been revoked",
+           :refresh_token_reuse_detected
+         ), reuse_audit_events(client, presented_refresh_token)}
+
+      {:error, reason} ->
+        {:error, refresh_rotation_error(reason)}
+    end
+  end
+
+  defp refresh_rotation_error(:not_found),
+    do: invalid_grant("Refresh token is invalid", :refresh_token_not_found)
+
+  defp refresh_rotation_error(:client_mismatch),
+    do: invalid_grant("Refresh token was not issued to this client", :client_mismatch)
+
+  defp refresh_rotation_error(:expired),
+    do: invalid_grant("Refresh token has expired", :refresh_token_expired)
+
+  defp refresh_rotation_error(:missing_family_id),
+    do: oauth_error(500, "server_error", "Refresh token family is invalid", :missing_family_id)
+
+  defp refresh_rotation_error(_reason),
+    do:
+      oauth_error(
+        500,
+        "server_error",
+        "Unable to rotate refresh token",
+        :refresh_rotation_failed
+      )
+
+  defp maybe_append_audit_events({:error, reason}, _store), do: {:error, reason}
+
+  defp maybe_append_audit_events({tag, error, audit_events}, store)
+       when tag in [:ok, :durable_error] do
+    case append_audit_events(store, audit_events) do
+      :ok -> {tag, error}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -314,7 +341,10 @@ defmodule Lockspire.Protocol.RefreshExchange do
         outcome: :denied,
         reason_code: :refresh_token_reuse_detected,
         actor: client_actor(client.client_id),
-        resource: %{type: :refresh_token, id: to_string(refresh_token.id || refresh_token.token_hash)},
+        resource: %{
+          type: :refresh_token,
+          id: to_string(refresh_token.id || refresh_token.token_hash)
+        },
         metadata: %{
           client_id: client.client_id,
           subject_id: refresh_token.account_id,

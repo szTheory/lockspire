@@ -107,24 +107,7 @@ defmodule Lockspire.Redaction do
   @spec for_telemetry(metadata()) :: metadata()
   def for_telemetry(metadata) when is_map(metadata) do
     metadata
-    |> Enum.reduce(%{}, fn {key, value}, acc ->
-      cond do
-        MapSet.member?(@telemetry_drop_keys, key) ->
-          acc
-
-        handle_type = Map.get(@telemetry_handle_keys, key) ->
-          case normalize_scalar(value) do
-            nil -> acc
-            normalized -> Map.put(acc, handle_key(key), handle(handle_type, normalized))
-          end
-
-        true ->
-          case sanitize_value(value, :telemetry) do
-            :drop -> acc
-            sanitized -> Map.put(acc, key, sanitized)
-          end
-      end
-    end)
+    |> Enum.reduce(%{}, &reduce_telemetry_metadata/2)
   end
 
   def for_telemetry(_metadata), do: %{}
@@ -132,16 +115,7 @@ defmodule Lockspire.Redaction do
   @spec for_audit(metadata()) :: metadata()
   def for_audit(metadata) when is_map(metadata) do
     metadata
-    |> Enum.reduce(%{}, fn {key, value}, acc ->
-      if MapSet.member?(@audit_drop_keys, key) do
-        acc
-      else
-        case sanitize_value(value, :audit) do
-          :drop -> acc
-          sanitized -> Map.put(acc, key, sanitized)
-        end
-      end
-    end)
+    |> Enum.reduce(%{}, &reduce_audit_metadata/2)
   end
 
   def for_audit(_metadata), do: %{}
@@ -192,6 +166,38 @@ defmodule Lockspire.Redaction do
   end
 
   defp sanitize_value(value, _surface), do: value
+
+  defp reduce_telemetry_metadata({key, _value}, acc)
+       when MapSet.member?(@telemetry_drop_keys, key),
+       do: acc
+
+  defp reduce_telemetry_metadata({key, value}, acc) do
+    case Map.get(@telemetry_handle_keys, key) do
+      nil -> put_sanitized_value(acc, key, value, :telemetry)
+      handle_type -> put_handled_value(acc, key, value, handle_type)
+    end
+  end
+
+  defp reduce_audit_metadata({key, _value}, acc) when MapSet.member?(@audit_drop_keys, key),
+    do: acc
+
+  defp reduce_audit_metadata({key, value}, acc) do
+    put_sanitized_value(acc, key, value, :audit)
+  end
+
+  defp put_handled_value(acc, key, value, handle_type) do
+    case normalize_scalar(value) do
+      nil -> acc
+      normalized -> Map.put(acc, handle_key(key), handle(handle_type, normalized))
+    end
+  end
+
+  defp put_sanitized_value(acc, key, value, surface) do
+    case sanitize_value(value, surface) do
+      :drop -> acc
+      sanitized -> Map.put(acc, key, sanitized)
+    end
+  end
 
   defp normalize_scalar(value) when is_binary(value), do: value
   defp normalize_scalar(value) when is_atom(value), do: Atom.to_string(value)

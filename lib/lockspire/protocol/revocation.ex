@@ -11,7 +11,9 @@ defmodule Lockspire.Protocol.Revocation do
   alias Lockspire.Protocol.TokenFormatter
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc """
+    Revocation endpoint error payload.
+    """
 
     @type t :: %__MODULE__{
             status: pos_integer(),
@@ -74,16 +76,7 @@ defmodule Lockspire.Protocol.Revocation do
     revoked_at = now(request)
 
     case transact_with_optional_audit(token_store(request), fn ->
-           case token_store(request).revoke_lifecycle_token(token_hash, client.client_id, revoked_at) do
-             {:ok, %Token{} = token} ->
-               {:ok, token, [revocation_audit_event(client, token)]}
-
-             {:ok, nil} ->
-               {:ok, nil, []}
-
-             {:error, reason} ->
-               {:error, reason}
-           end
+           build_revocation_result(token_store(request), client, token_hash, revoked_at)
          end) do
       {:ok, token} -> {:ok, token}
       {:error, _reason} -> {:error, server_error("Unable to revoke token", :revocation_failed)}
@@ -154,16 +147,8 @@ defmodule Lockspire.Protocol.Revocation do
 
   defp transact_with_optional_audit(store, fun) when is_function(fun, 0) do
     store.transact(fn ->
-      case fun.() do
-        {:ok, result, audit_events} ->
-          case append_audit_events(store, audit_events) do
-            :ok -> result
-            {:error, reason} -> {:error, reason}
-          end
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      fun.()
+      |> maybe_append_audit_events(store)
     end)
   end
 
@@ -172,6 +157,28 @@ defmodule Lockspire.Protocol.Revocation do
   defp append_audit_events(store, [event | rest]) do
     case store.append_audit_event(event) do
       {:ok, _event} -> append_audit_events(store, rest)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp build_revocation_result(store, %Client{} = client, token_hash, revoked_at) do
+    case store.revoke_lifecycle_token(token_hash, client.client_id, revoked_at) do
+      {:ok, %Token{} = token} ->
+        {:ok, token, [revocation_audit_event(client, token)]}
+
+      {:ok, nil} ->
+        {:ok, nil, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp maybe_append_audit_events({:error, reason}, _store), do: {:error, reason}
+
+  defp maybe_append_audit_events({:ok, result, audit_events}, store) do
+    case append_audit_events(store, audit_events) do
+      :ok -> result
       {:error, reason} -> {:error, reason}
     end
   end
