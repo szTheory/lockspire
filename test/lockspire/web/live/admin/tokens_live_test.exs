@@ -134,6 +134,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              Show.handle_event("revoke_family", %{"family" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.family_notice =~ "Revoked"
+
+    assert {:noreply, socket} = Show.handle_event("revoke_family", %{}, socket)
+
+    assert socket.assigns.family_error =~ "Confirm the family-wide action"
+    assert is_nil(socket.assigns.family_notice)
   end
 
   defp socket_for(action) do

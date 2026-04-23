@@ -45,7 +45,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def handle_event("revoke_token", _params, socket) do
     {:noreply,
      assign(socket,
-       revoke_error: "Confirm the single-token action before changing lifecycle state."
+       revoke_error: "Confirm the single-token action before changing lifecycle state.",
+       family_notice: nil
      )}
   end
 
@@ -75,7 +76,10 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   def handle_event("revoke_family", _params, socket) do
     {:noreply,
-     assign(socket, family_error: "Confirm the family-wide action before revoking the lineage.")}
+     assign(socket,
+       family_error: "Confirm the family-wide action before revoking the lineage.",
+       family_notice: nil
+     )}
   end
 
   @impl true

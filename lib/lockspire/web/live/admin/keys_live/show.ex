@@ -54,7 +54,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   end
 
   def handle_event("publish_key", _params, socket) do
-    {:noreply, assign(socket, action_error: "Confirm publish before changing key visibility.")}
+    {:noreply,
+     assign(socket,
+       action_error: "Confirm publish before changing key visibility.",
+       action_notice: nil
+     )}
   end
 
   def handle_event("activate_key", %{"activate" => %{"confirm" => "true"}}, socket) do
@@ -83,7 +87,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
 
   def handle_event("activate_key", _params, socket) do
     {:noreply,
-     assign(socket, action_error: "Confirm activation before changing the active signer.")}
+     assign(socket,
+       action_error: "Confirm activation before changing the active signer.",
+       action_notice: nil
+     )}
   end
 
   def handle_event("retire_key", %{"retire" => %{"confirm" => "true"}}, socket) do
@@ -109,7 +116,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
 
   def handle_event("retire_key", _params, socket) do
     {:noreply,
-     assign(socket, action_error: "Confirm retirement before removing publication overlap.")}
+     assign(socket,
+       action_error: "Confirm retirement before removing publication overlap.",
+       action_notice: nil
+     )}
   end
 
   @impl true

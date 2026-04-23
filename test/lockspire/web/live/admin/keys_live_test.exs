@@ -91,6 +91,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     assert socket.assigns.key_detail.publishable
     assert socket.assigns.key_detail.key.handle =~ "kid_"
+    assert socket.assigns.action_notice == "Key published for verification overlap."
+
+    assert {:noreply, socket} = Show.handle_event("activate_key", %{}, socket)
+
+    assert socket.assigns.action_error =~ "Confirm activation before changing the active signer."
+    assert is_nil(socket.assigns.action_notice)
 
     assert {:noreply, socket} =
              Show.handle_event("activate_key", %{"activate" => %{"confirm" => "true"}}, socket)
