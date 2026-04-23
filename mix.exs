@@ -5,10 +5,15 @@ defmodule Lockspire.MixProject do
     [
       app: :lockspire,
       version: "0.1.0",
+      description: "Embedded OAuth/OIDC authorization server for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      docs: docs(),
+      dialyzer: dialyzer(),
+      package: package(),
+      homepage_url: "https://hexdocs.pm/lockspire",
       deps: deps()
     ]
   end
@@ -36,7 +41,10 @@ defmodule Lockspire.MixProject do
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
       {:opentelemetry_api, "~> 1.5"},
-      {:telemetry, "~> 1.3"}
+      {:telemetry, "~> 1.3"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -48,12 +56,38 @@ defmodule Lockspire.MixProject do
       "test.setup": ["lockspire.test.setup"],
       "test.fast": ["test"],
       "test.integration": ["test.setup", "test --only integration"],
-      ci: [
-        "deps.get",
+      "test.phase6.e2e": [
+        "test.setup",
+        "test --include integration test/integration/phase6_onboarding_e2e_test.exs"
+      ],
+      "test.phase3.e2e": [
+        "test.setup",
+        "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs"
+      ],
+      "test.phase3": [
+        "test.setup",
+        "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/jwks_controller_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/token_exchange_test.exs test/lockspire/web/token_controller_test.exs test/lockspire/web/userinfo_controller_test.exs test/lockspire/protocol/refresh_exchange_test.exs test/lockspire/protocol/revocation_test.exs test/lockspire/web/revocation_controller_test.exs test/lockspire/protocol/introspection_test.exs test/lockspire/web/introspection_controller_test.exs test/lockspire/storage/repository_test.exs"
+      ],
+      qa: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "test.fast",
-        "cmd sh -lc 'MIX_ENV=test mix test.integration'"
+        "credo --strict",
+        "dialyzer"
+      ],
+      "docs.verify": ["docs --warnings-as-errors"],
+      "deps.audit": ["hex.audit"],
+      "package.build": ["hex.build"],
+      "package.publish-dry-run": ["hex.publish --dry-run --yes"],
+      "release.preflight": ["docs.verify", "package.build", "package.publish-dry-run"],
+      ci: [
+        "deps.get",
+        "qa",
+        "docs.verify",
+        "deps.audit",
+        "package.build",
+        "cmd sh -lc 'MIX_ENV=test mix test.fast'",
+        "cmd sh -lc 'MIX_ENV=test mix test.integration'",
+        "cmd sh -lc 'MIX_ENV=test mix test.phase3'"
       ]
     ]
   end
@@ -64,7 +98,66 @@ defmodule Lockspire.MixProject do
       "test.setup": :test,
       "test.fast": :test,
       "test.integration": :test,
-      ci: :test
+      "test.phase6.e2e": :test,
+      "test.phase3.e2e": :test,
+      "test.phase3": :test,
+      qa: :dev,
+      "docs.verify": :dev,
+      "deps.audit": :dev,
+      "package.build": :dev,
+      "package.publish-dry-run": :dev,
+      "release.preflight": :dev,
+      ci: :dev
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "SECURITY.md",
+        "docs/getting-started.md",
+        "docs/install-and-onboard.md",
+        "docs/operator-admin.md",
+        "docs/supported-surface.md",
+        "docs/maintainer-release.md",
+        "docs/sigra-companion-host.md"
+      ],
+      groups_for_extras: [
+        Guides: [
+          "docs/getting-started.md",
+          "docs/install-and-onboard.md",
+          "docs/operator-admin.md",
+          "docs/supported-surface.md",
+          "docs/sigra-companion-host.md"
+        ],
+        Maintainers: [
+          "CHANGELOG.md",
+          "SECURITY.md",
+          "docs/maintainer-release.md"
+        ]
+      ]
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      plt_local_path: "priv/plts/project.plt",
+      plt_core_path: "priv/plts/core.plt"
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{
+        "Changelog" => "https://hexdocs.pm/lockspire/changelog.html",
+        "Docs" => "https://hexdocs.pm/lockspire"
+      },
+      files: ~w(lib priv docs .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]
   end
 end

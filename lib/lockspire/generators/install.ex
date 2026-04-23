@@ -15,6 +15,8 @@ defmodule Lockspire.Generators.Install do
       render_template(template, assigns)
     end)
 
+    Mix.shell().info(instructions(assigns))
+
     :ok
   end
 
@@ -84,5 +86,18 @@ defmodule Lockspire.Generators.Install do
       authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
       sigra_host: Keyword.get(opts, :sigra_host, false)
     }
+  end
+
+  defp instructions(assigns) do
+    """
+
+    Lockspire canonical onboarding next steps:
+      1. Import `config/lockspire.exs` from your main config files.
+      2. Import `#{assigns.web_module}.Router.Lockspire` in `lib/#{assigns.web_path}/router.ex`.
+      3. Call `lockspire_routes()` where your host wants the authorized-apps surface.
+      4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
+      5. Point your login flow back through `#{assigns.interaction_handler_module}`.
+      6. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
+    """
   end
 end

@@ -319,9 +319,6 @@ defmodule Lockspire.Protocol.TokenExchange do
              }) do
         {:ok, token}
       else
-        {:error, %Error{} = error} ->
-          {:error, error}
-
         {:error, reason_code} ->
           {:error, oauth_error(500, "server_error", "Unable to issue id_token", reason_code)}
       end

@@ -133,10 +133,6 @@ defmodule Lockspire.Clients do
     end
   end
 
-  defp validate_client_type(errors, nil) do
-    [%{field: :client_type, reason: :invalid_client_type, detail: nil} | errors]
-  end
-
   defp normalize_client_attrs(attrs) do
     client_type =
       normalize_client_type(Map.get(attrs, :client_type) || Map.get(attrs, "client_type"))
@@ -181,6 +177,10 @@ defmodule Lockspire.Clients do
   defp secret_values(_other), do: {nil, nil}
 
   defp validate_client_type(errors, type) when type in [:public, :confidential], do: errors
+
+  defp validate_client_type(errors, nil) do
+    [%{field: :client_type, reason: :invalid_client_type, detail: nil} | errors]
+  end
 
   defp validate_client_type(errors, type) do
     [%{field: :client_type, reason: :invalid_client_type, detail: type} | errors]

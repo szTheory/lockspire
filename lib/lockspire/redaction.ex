@@ -125,10 +125,6 @@ defmodule Lockspire.Redaction do
     encoded =
       value
       |> normalize_scalar()
-      |> case do
-        nil -> "nil"
-        normalized -> normalized
-      end
       |> then(&:crypto.hash(:sha256, &1))
       |> Base.encode16(case: :lower)
       |> binary_part(0, 12)
@@ -167,29 +163,36 @@ defmodule Lockspire.Redaction do
 
   defp sanitize_value(value, _surface), do: value
 
-  defp reduce_telemetry_metadata({key, _value}, acc)
-       when MapSet.member?(@telemetry_drop_keys, key),
-       do: acc
-
   defp reduce_telemetry_metadata({key, value}, acc) do
-    case Map.get(@telemetry_handle_keys, key) do
-      nil -> put_sanitized_value(acc, key, value, :telemetry)
-      handle_type -> put_handled_value(acc, key, value, handle_type)
+    case telemetry_drop_result(key, acc) do
+      :continue ->
+        case Map.get(@telemetry_handle_keys, key) do
+          nil -> put_sanitized_value(acc, key, value, :telemetry)
+          handle_type -> put_handled_value(acc, key, value, handle_type)
+        end
+
+      filtered_acc ->
+        filtered_acc
     end
   end
 
-  defp reduce_audit_metadata({key, _value}, acc) when MapSet.member?(@audit_drop_keys, key),
-    do: acc
-
   defp reduce_audit_metadata({key, value}, acc) do
-    put_sanitized_value(acc, key, value, :audit)
+    case audit_drop_result(key, acc) do
+      :continue -> put_sanitized_value(acc, key, value, :audit)
+      filtered_acc -> filtered_acc
+    end
+  end
+
+  defp telemetry_drop_result(key, acc) do
+    if MapSet.member?(@telemetry_drop_keys, key), do: acc, else: :continue
+  end
+
+  defp audit_drop_result(key, acc) do
+    if MapSet.member?(@audit_drop_keys, key), do: acc, else: :continue
   end
 
   defp put_handled_value(acc, key, value, handle_type) do
-    case normalize_scalar(value) do
-      nil -> acc
-      normalized -> Map.put(acc, handle_key(key), handle(handle_type, normalized))
-    end
+    Map.put(acc, handle_key(key), handle(handle_type, value))
   end
 
   defp put_sanitized_value(acc, key, value, surface) do

@@ -105,8 +105,6 @@ defmodule Lockspire.Audit.Event do
     end)
   end
 
-  defp compact_metadata(_metadata), do: %{}
-
   defp compact_metadata_value(nil), do: :drop
   defp compact_metadata_value(%DateTime{} = value), do: DateTime.to_iso8601(value)
   defp compact_metadata_value(%NaiveDateTime{} = value), do: NaiveDateTime.to_iso8601(value)

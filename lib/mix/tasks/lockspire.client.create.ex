@@ -1,4 +1,8 @@
 defmodule Mix.Tasks.Lockspire.Client.Create do
+  @moduledoc """
+  Register a durable OAuth client from the command line.
+  """
+
   @shortdoc "Registers a durable OAuth client"
 
   use Mix.Task
@@ -27,15 +31,13 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
       Mix.raise("Unknown options: #{Enum.map_join(invalid, ", ", &elem(&1, 0))}")
     end
 
-    cond do
-      Keyword.get(opts, :help, false) ->
-        Mix.shell().info(help())
-
-      true ->
-        opts
-        |> build_attrs()
-        |> Clients.register_client()
-        |> print_result()
+    if Keyword.get(opts, :help, false) do
+      Mix.shell().info(help())
+    else
+      opts
+      |> build_attrs()
+      |> Clients.register_client()
+      |> print_result()
     end
   end
 
