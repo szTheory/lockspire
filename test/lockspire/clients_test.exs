@@ -80,6 +80,22 @@ defmodule Lockspire.ClientsTest do
     detach_events(events)
   end
 
+  test "register_client/1 returns a validation error for unknown client_type input" do
+    assert {:error, errors} =
+             Clients.register_client(%{
+               name: "Bad Client Type",
+               client_type: "zzzz_not_a_real_type",
+               redirect_uris: ["https://client.example.com/callback"],
+               allowed_scopes: ["profile"],
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :none
+             })
+
+    assert Enum.any?(errors, fn error ->
+             error.field == :client_type and error.reason == :invalid_client_type
+           end)
+  end
+
   test "mix lockspire.client.create prints the plaintext secret once and persists only the hash" do
     output =
       capture_io(fn ->

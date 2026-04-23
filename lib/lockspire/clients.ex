@@ -292,7 +292,15 @@ defmodule Lockspire.Clients do
   end
 
   defp normalize_client_type(value) when value in [:public, :confidential], do: value
-  defp normalize_client_type(value) when is_binary(value), do: String.to_existing_atom(value)
+
+  defp normalize_client_type(value) when is_binary(value) do
+    case value do
+      "public" -> :public
+      "confidential" -> :confidential
+      _other -> nil
+    end
+  end
+
   defp normalize_client_type(_value), do: nil
 
   defp normalize_auth_method(nil), do: nil
