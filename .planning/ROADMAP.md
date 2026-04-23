@@ -4,6 +4,10 @@
 
 Lockspire will be built as a focused six-phase first milestone. The sequence starts by locking down the embedded-library boundary and host seam, then ships the authorization core, completes the OIDC and token lifecycle path, builds the operator/admin product, hardens security and observability, and finishes with install DX and release readiness. Every v1 requirement is mapped exactly once so planning can proceed phase by phase without losing scope discipline.
 
+## Ecosystem: Sigra companion (parallel track)
+
+Sigra covers **resource-owner** authentication; Lockspire covers **authorization-server** protocol for **third-party clients**. Do **not** block Lockspire Phases **3 → 5 → 6** on Sigra releases. After **Phase 6** install DX is credible, add cross-repo **example + docs** only (no mandatory core dependency). See [`.planning/ECOSYSTEM-SIGRA.md`](ECOSYSTEM-SIGRA.md) and repo **`docs/sigra-companion-host.md`**.
+
 ## Phases
 
 **Phase Numbering:**
@@ -15,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation and Host Seam** - Establish Lockspire's library boundaries, storage seams, and host-owned integration path
 - [x] **Phase 2: Authorization Core** - Deliver client registration, authorization code + PKCE, consent, and token exchange
 - [ ] **Phase 3: OIDC and Token Lifecycle** - Add discovery, JWKS, userinfo, refresh rotation, revocation, and introspection
-- [ ] **Phase 4: Operator Product** - Build the admin workflows for clients, consents, tokens, and keys
+- [x] **Phase 4: Operator Product** - Build the admin workflows for clients, consents, tokens, and keys
 - [ ] **Phase 5: Security and Observability Hardening** - Enforce secure defaults, auditability, redaction, and negative-path coverage
 - [ ] **Phase 6: Install DX and Release Readiness** - Finish generators, canonical onboarding, CI/CD, and release discipline
 
@@ -64,12 +68,13 @@ Plans:
   2. OpenID clients receive correct OIDC token material and can fetch user claims through userinfo.
   3. Refresh tokens rotate on use and reuse detection revokes the token family.
   4. Revocation and introspection endpoints expose the supported token lifecycle actions safely.
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [ ] 03-01: Implement discovery, issuer metadata, and JWKS publication
 - [ ] 03-02: Implement ID token and userinfo support with host claim enrichment
-- [ ] 03-03: Implement refresh rotation, revocation, introspection, and lifecycle persistence
+- [ ] 03-03: Fix token-endpoint Basic auth reuse and implement refresh rotation with lifecycle persistence
+- [ ] 03-04: Implement revocation and introspection over the hardened lifecycle model
 
 ### Phase 4: Operator Product
 **Goal**: Make Lockspire operable through a calm LiveView-native admin surface for clients, consents, tokens, and keys.
@@ -83,9 +88,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Build client-management screens and credential rotation workflows
-- [ ] 04-02: Build consent-management and token-inspection workflows
-- [ ] 04-03: Build key-lifecycle screens and operator navigation across admin areas
+- [x] 04-01: Build client-management screens and credential rotation workflows
+- [x] 04-02: Build consent-management and token-inspection workflows
+- [x] 04-03: Build key-lifecycle screens and operator navigation across admin areas
 
 ### Phase 5: Security and Observability Hardening
 **Goal**: Enforce the security posture, emit durable observability signals, and prove negative-path behavior across the protocol and operator surfaces.
@@ -96,12 +101,17 @@ Plans:
   2. Telemetry and audit events exist for the key protocol and operator lifecycle transitions.
   3. Secrets and sensitive token material are redacted in logs and operator-visible surfaces.
   4. Negative-path tests cover malformed, replayed, mismatched, denied, and downgrade-oriented requests.
-**Plans**: 3 plans
+**Plans**: 8 plans
 
 Plans:
-- [ ] 05-01: Enforce security invariants and downgrade-resistant configuration defaults
-- [ ] 05-02: Implement telemetry, audit emission, and operator-safe redaction behavior
-- [ ] 05-03: Add negative-path and threat-driven coverage across protocol and admin flows
+- [ ] 05-01-PLAN.md - Enforce boot-time and runtime security invariants, including hashed secrets and single-use authorization codes
+- [ ] 05-02-PLAN.md - Create the append-only audit schema and repository append foundation
+- [ ] 05-03-PLAN.md - Wire authorization, consent, and protocol lifecycle transitions into telemetry and durable audit appends
+- [ ] 05-04-PLAN.md - Wire admin lifecycle commands into operator-safe telemetry plus durable operator-attributed audit appends
+- [ ] 05-05-PLAN.md - Centralize telemetry and audit redaction and close sensitive SQL log leakage
+- [ ] 05-06-PLAN.md - Apply operator-safe masking to token and key detail workflows
+- [ ] 05-07-PLAN.md - Add protocol-first negative-path and threat-story coverage
+- [ ] 05-08-PLAN.md - Add thin consent-boundary and delivery-edge failure coverage after masked operator surfaces land
 
 ### Phase 6: Install DX and Release Readiness
 **Goal**: Make Lockspire credible to adopt and maintain through polished generators, canonical onboarding, CI/CD, and release discipline.
@@ -128,7 +138,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation and Host Seam | 3/3 | Completed | 2026-04-23 |
 | 2. Authorization Core | 4/4 | Completed | 2026-04-23 |
-| 3. OIDC and Token Lifecycle | 0/3 | Not started | - |
-| 4. Operator Product | 0/3 | Not started | - |
-| 5. Security and Observability Hardening | 0/3 | Not started | - |
+| 3. OIDC and Token Lifecycle | 0/4 | Not started | - |
+| 4. Operator Product | 3/3 | Completed | 2026-04-23 |
+| 5. Security and Observability Hardening | 0/8 | Not started | - |
 | 6. Install DX and Release Readiness | 0/3 | Not started | - |

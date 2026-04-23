@@ -30,9 +30,13 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(forward "/lockspire", Lockspire.Web.Router)
 
-    assert File.read!(
-             Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
-           ) =~ "@behaviour Lockspire.Host.AccountResolver"
+    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
+             ~s(get "/authorized-apps", AuthorizedAppsController, :index)
+
+    resolver = File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
+
+    assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
+    refute resolver =~ "Sigra"
 
     assert File.read!(
              Path.join(@fixture_root, "lib/generated_host_app/lockspire/interaction_handler.ex")
@@ -57,6 +61,39 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(
              Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
            ) =~ "/interactions/\#{interaction_id}/complete"
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/authorized_apps_controller.ex"
+             )
+           ) =~ "Lockspire.Admin.Consents"
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/authorized_apps_html/index.html.heex"
+             )
+           ) =~ "Host-owned account settings page"
+  end
+
+  test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
+    File.cd!(@fixture_root, fn ->
+      Mix.Task.reenable("lockspire.install")
+
+      Mix.Tasks.Lockspire.Install.run([
+        "--web",
+        "GeneratedHostAppWeb",
+        "--scope",
+        "GeneratedHostApp.Lockspire",
+        "--sigra-host"
+      ])
+    end)
+
+    resolver = File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
+
+    assert resolver =~ "Sigra"
+    assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
   end
 
   test "mix lockspire.install refuses to overwrite host edits" do

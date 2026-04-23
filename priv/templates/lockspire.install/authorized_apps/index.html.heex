@@ -1,0 +1,41 @@
+<section class="host-authorized-apps">
+  <header>
+    <p>Host-owned account settings page</p>
+    <h1><%%= @page_title %></h1>
+    <p>
+      This page stays in the host app so account authentication, layout, copy, and branding
+      remain fully host-owned.
+    </p>
+  </header>
+
+  <%%= if @consents == [] do %>
+    <section>
+      <h2>No authorized apps</h2>
+      <p>No remembered or active app access is currently stored for this account.</p>
+    </section>
+  <%% else %>
+    <ul>
+      <%%= for consent <- @consents do %>
+        <li id={"authorized-app-<%%= consent.grant.id %>"}>
+          <div>
+            <h2><%%= consent.client && (consent.client.name || consent.client.client_id) || consent.grant.client_id %></h2>
+            <p>Client ID: <code><%%= consent.grant.client_id %></code></p>
+            <p>Status: <%%= consent.grant.status %></p>
+            <p>Granted: <%%= DateTime.to_iso8601(consent.grant.granted_at) %></p>
+            <p :if={consent.grant.revoked_at}>
+              Revoked: <%%= DateTime.to_iso8601(consent.grant.revoked_at) %>
+            </p>
+            <p>Scopes: <%%= Enum.join(consent.grant.scopes, ", ") %></p>
+          </div>
+
+          <form action={~p"/authorized-apps/#{consent.grant.id}"} method="post">
+            <input type="hidden" name="_method" value="delete" />
+            <button type="submit" disabled={consent.grant.status == :revoked}>
+              <%%= if consent.grant.status == :revoked, do: "Access already revoked", else: "Revoke access" %>
+            </button>
+          </form>
+        </li>
+      <%% end %>
+    </ul>
+  <%% end %>
+</section>
