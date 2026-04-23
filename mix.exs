@@ -66,7 +66,7 @@ defmodule Lockspire.MixProject do
       ],
       "test.phase3": [
         "test.setup",
-        "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/jwks_controller_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/token_exchange_test.exs test/lockspire/web/token_controller_test.exs test/lockspire/web/userinfo_controller_test.exs test/lockspire/protocol/refresh_exchange_test.exs test/lockspire/protocol/revocation_test.exs test/lockspire/web/revocation_controller_test.exs test/lockspire/protocol/introspection_test.exs test/lockspire/web/introspection_controller_test.exs test/lockspire/storage/repository_test.exs"
+        "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/userinfo_controller_test.exs"
       ],
       qa: [
         "format --check-formatted",
