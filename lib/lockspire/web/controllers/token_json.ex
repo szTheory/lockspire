@@ -12,6 +12,7 @@ defmodule Lockspire.Web.TokenJSON do
       expires_in: success.expires_in,
       scope: success.scope
     }
+    |> maybe_put_refresh_token(success.refresh_token)
     |> maybe_put_id_token(success.id_token)
   end
 
@@ -25,4 +26,9 @@ defmodule Lockspire.Web.TokenJSON do
 
   defp maybe_put_id_token(response, nil), do: response
   defp maybe_put_id_token(response, id_token), do: Map.put(response, :id_token, id_token)
+
+  defp maybe_put_refresh_token(response, nil), do: response
+
+  defp maybe_put_refresh_token(response, refresh_token),
+    do: Map.put(response, :refresh_token, refresh_token)
 end

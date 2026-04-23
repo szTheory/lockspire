@@ -11,22 +11,25 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Observability
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
+  alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenFormatter
 
   @access_token_ttl 3600
+  @refresh_token_ttl 2_592_000
 
   defmodule Success do
     @moduledoc false
 
     @type t :: %__MODULE__{
             access_token: String.t(),
+            refresh_token: String.t() | nil,
             id_token: String.t() | nil,
             token_type: String.t(),
             expires_in: pos_integer(),
             scope: String.t()
           }
 
-    defstruct [:access_token, :id_token, :token_type, :expires_in, :scope]
+    defstruct [:access_token, :refresh_token, :id_token, :token_type, :expires_in, :scope]
   end
 
   defmodule Error do
@@ -44,6 +47,28 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   @type result :: {:ok, Success.t()} | {:error, Error.t()}
 
+  @spec exchange(map()) :: result()
+  def exchange(request) when is_map(request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+
+    case normalize_optional_string(params["grant_type"]) do
+      "authorization_code" ->
+        exchange_authorization_code(request)
+
+      "refresh_token" ->
+        exchange_refresh_token(request)
+
+      _other ->
+        {:error,
+         oauth_error(
+           400,
+           "unsupported_grant_type",
+           "Only grant_type=authorization_code and grant_type=refresh_token are supported",
+           :unsupported_grant_type
+         )}
+    end
+  end
+
   @spec exchange_authorization_code(map()) :: result()
   def exchange_authorization_code(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
@@ -56,12 +81,22 @@ defmodule Lockspire.Protocol.TokenExchange do
          :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          %Success{} = success <- redeem_code(client, authorization_code, code_hash, request) do
-      emit_success(client, authorization_code)
+      emit_success(client, authorization_code, success)
       {:ok, success}
     else
       {:error, %Error{} = error} ->
         emit_failure(error, params, request)
         {:error, error}
+    end
+  end
+
+  defp exchange_refresh_token(request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
+
+    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
+         {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
+      {:ok, success}
     end
   end
 
@@ -189,35 +224,29 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp redeem_code(%Client{} = client, %Token{} = authorization_code, code_hash, request) do
-    formatted_access_token =
-      TokenFormatter.format_access_token(
-        token_generator:
-          Keyword.get(request_options(request), :token_generator, &default_token_generator/0)
-      )
-
     issued_at = now(request)
-    expires_at = DateTime.add(issued_at, @access_token_ttl, :second)
+    formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
 
-    access_token = %Token{
-      token_hash: formatted_access_token.token_hash,
-      token_type: :access_token,
-      client_id: client.client_id,
-      account_id: authorization_code.account_id,
-      interaction_id: authorization_code.interaction_id,
-      scopes: authorization_code.scopes,
-      issued_at: issued_at,
-      expires_at: expires_at
-    }
+    {access_token, raw_access_token} =
+      build_access_token(client, authorization_code, issued_at, formatted_refresh_token, request)
 
-    case token_store(request).redeem_authorization_code(code_hash, issued_at, access_token) do
-      {:ok, %{access_token: %Token{} = persisted_access_token}} ->
+    case persist_authorization_code_grant(
+           code_hash,
+           issued_at,
+           access_token,
+           authorization_code,
+           formatted_refresh_token,
+           request
+         ) do
+      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
         build_success_response(
           client,
           authorization_code,
           persisted_access_token,
-          formatted_access_token.token,
-          formatted_access_token.token_type,
+          raw_access_token,
+          formatted_token_type(),
           issued_at,
+          Map.get(persisted_grant, :refresh_token_raw),
           request
         )
 
@@ -246,12 +275,14 @@ defmodule Lockspire.Protocol.TokenExchange do
          raw_access_token,
          token_type,
          issued_at,
+         raw_refresh_token,
          request
        ) do
     with {:ok, id_token} <-
            maybe_issue_id_token(client, authorization_code, raw_access_token, issued_at, request) do
       %Success{
         access_token: raw_access_token,
+        refresh_token: raw_refresh_token,
         id_token: id_token,
         token_type: token_type,
         expires_in: @access_token_ttl,
@@ -357,6 +388,23 @@ defmodule Lockspire.Protocol.TokenExchange do
     Observability.emit(:access_token_issued, %{}, metadata)
   end
 
+  defp emit_success(%Client{} = client, %Token{} = authorization_code, %Success{
+         refresh_token: refresh_token
+       })
+       when is_binary(refresh_token) do
+    emit_success(client, authorization_code)
+
+    Observability.emit(:refresh_token_issued, %{}, %{
+      client_id: client.client_id,
+      interaction_id: authorization_code.interaction_id,
+      subject_id: authorization_code.account_id
+    })
+  end
+
+  defp emit_success(%Client{} = client, %Token{} = authorization_code, %Success{} = _success) do
+    emit_success(client, authorization_code)
+  end
+
   defp emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
     Observability.emit(:authorization_code_replay_detected, %{}, metadata)
@@ -436,11 +484,136 @@ defmodule Lockspire.Protocol.TokenExchange do
       |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
       |> then(& &1.())
 
-  defp default_token_generator do
-    32
-    |> :crypto.strong_rand_bytes()
-    |> Base.url_encode64(padding: false)
+  defp maybe_format_refresh_token(%Client{} = client, %Token{} = authorization_code, request) do
+    if issue_refresh_token?(client, authorization_code) do
+      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
+    else
+      nil
+    end
   end
+
+  defp issue_refresh_token?(%Client{} = client, %Token{} = authorization_code) do
+    "refresh_token" in client.allowed_grant_types and
+      refresh_scope_policy_allows?(authorization_code.scopes)
+  end
+
+  defp refresh_scope_policy_allows?(scopes) when is_list(scopes) do
+    if "offline_access" in scopes do
+      true
+    else
+      true
+    end
+  end
+
+  defp build_access_token(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         issued_at,
+         formatted_refresh_token,
+         request
+       ) do
+    family_id = if formatted_refresh_token, do: formatted_refresh_token.token_hash
+
+    formatted_access_token =
+      TokenFormatter.format_access_token(token_format_options(request, :access_token))
+
+    access_token = %Token{
+      token_hash: formatted_access_token.token_hash,
+      token_type: :access_token,
+      family_id: family_id,
+      generation: 0,
+      client_id: client.client_id,
+      account_id: authorization_code.account_id,
+      interaction_id: authorization_code.interaction_id,
+      scopes: authorization_code.scopes,
+      audience: authorization_code.audience,
+      issued_at: issued_at,
+      expires_at: DateTime.add(issued_at, @access_token_ttl, :second)
+    }
+
+    {access_token, formatted_access_token.token}
+  end
+
+  defp persist_authorization_code_grant(
+         code_hash,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = _authorization_code,
+         nil,
+         request
+       ) do
+    case token_store(request).redeem_authorization_code(code_hash, issued_at, access_token) do
+      {:ok, %{access_token: %Token{} = persisted_access_token}} ->
+        {:ok, %{access_token: persisted_access_token}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp persist_authorization_code_grant(
+         code_hash,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = authorization_code,
+         formatted_refresh_token,
+         request
+       ) do
+    refresh_token = %Token{
+      token_hash: formatted_refresh_token.token_hash,
+      token_type: :refresh_token,
+      family_id: formatted_refresh_token.token_hash,
+      generation: 0,
+      client_id: authorization_code.client_id,
+      account_id: authorization_code.account_id,
+      interaction_id: authorization_code.interaction_id,
+      scopes: authorization_code.scopes,
+      audience: authorization_code.audience,
+      issued_at: issued_at,
+      expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+    }
+
+    transact_token_store(request, fn ->
+      with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
+             token_store(request).redeem_authorization_code(code_hash, issued_at, access_token),
+           {:ok, %Token{} = persisted_refresh_token} <-
+             token_store(request).store_token(refresh_token) do
+        %{
+          access_token: persisted_access_token,
+          refresh_token: persisted_refresh_token,
+          refresh_token_raw: formatted_refresh_token.token
+        }
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> case do
+      {:ok, %{} = result} -> {:ok, result}
+      {:error, _reason} = error -> error
+      %{} = result -> {:ok, result}
+    end
+  end
+
+  defp transact_token_store(request, fun) do
+    store = token_store(request)
+
+    if function_exported?(store, :transact, 1) do
+      store.transact(fun)
+    else
+      fun.()
+    end
+  end
+
+  defp token_format_options(request, token_type) do
+    opts = request_options(request)
+
+    case Keyword.get(opts, :"#{token_type}_generator", Keyword.get(opts, :token_generator)) do
+      nil -> []
+      generator -> [token_generator: generator]
+    end
+  end
+
+  defp formatted_token_type, do: "Bearer"
 
   defp request_options(request), do: Map.get(request, :opts, [])
 

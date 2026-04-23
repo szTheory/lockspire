@@ -14,7 +14,7 @@ defmodule Lockspire.Web.TokenController do
   def create(conn, params) do
     authorization = List.first(get_req_header(conn, "authorization"))
 
-    case TokenExchange.exchange_authorization_code(%{
+    case TokenExchange.exchange(%{
            params: params,
            authorization: authorization,
            opts:

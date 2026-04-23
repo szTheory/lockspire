@@ -183,6 +183,44 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert success.id_token == nil
   end
 
+  test "issues a refresh token when the client allows refresh grants" do
+    secret = "refresh-secret"
+
+    {:ok, client} =
+      create_client("client-refresh-issuer", :client_secret_basic, secret, [
+        "authorization_code",
+        "refresh_token"
+      ])
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-refresh-issue",
+        code_verifier: "verifier-refresh-issue",
+        scopes: ["email", "offline_access"]
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-refresh-issue",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-refresh-issue"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               access_token_generator: fn -> "issued-access-token" end,
+               refresh_token_generator: fn -> "issued-refresh-token" end
+             )
+
+    assert success.refresh_token == "issued-refresh-token"
+
+    assert {:ok, %Token{} = persisted_refresh_token} =
+             Repository.fetch_refresh_token(TokenFormatter.hash_token("issued-refresh-token"))
+
+    assert persisted_refresh_token.family_id == TokenFormatter.hash_token("issued-refresh-token")
+    assert persisted_refresh_token.scopes == ["email", "offline_access"]
+  end
+
   test "accepts form-encoded basic auth credentials containing reserved characters and colons" do
     client_id = "client:with/slash"
     secret = "sec:ret?/+= value:tail"
@@ -372,12 +410,20 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         token_store: Repository,
         interaction_store: Repository,
         key_store: Repository,
-        token_generator: fn -> "opaque-access-token-123" end
+        access_token_generator:
+          Keyword.get(opts, :access_token_generator, fn -> "opaque-access-token-123" end),
+        refresh_token_generator:
+          Keyword.get(opts, :refresh_token_generator, fn -> "opaque-refresh-token-123" end)
       ]
     })
   end
 
-  defp create_client(client_id, auth_method, client_secret) do
+  defp create_client(
+         client_id,
+         auth_method,
+         client_secret,
+         allowed_grant_types \\ ["authorization_code"]
+       ) do
     Repository.register_client(%Client{
       client_id: client_id,
       client_secret_hash: client_secret_hash(client_secret),
@@ -385,7 +431,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       name: "Client #{client_id}",
       redirect_uris: ["https://client.example.com/callback"],
       allowed_scopes: ["email", "profile"],
-      allowed_grant_types: ["authorization_code"],
+      allowed_grant_types: allowed_grant_types,
       allowed_response_types: ["code"],
       token_endpoint_auth_method: auth_method,
       pkce_required: true,

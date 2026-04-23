@@ -11,16 +11,12 @@ defmodule Lockspire.Protocol.TokenFormatter do
 
   @spec format_access_token(keyword()) :: formatted_token()
   def format_access_token(opts \\ []) do
-    token =
-      opts
-      |> Keyword.get_lazy(:token_generator, fn -> &default_token_generator/0 end)
-      |> then(& &1.())
+    format_token(opts)
+  end
 
-    %{
-      token: token,
-      token_hash: hash_token(token),
-      token_type: "Bearer"
-    }
+  @spec format_refresh_token(keyword()) :: formatted_token()
+  def format_refresh_token(opts \\ []) do
+    format_token(opts)
   end
 
   @spec hash_token(String.t()) :: String.t()
@@ -34,5 +30,23 @@ defmodule Lockspire.Protocol.TokenFormatter do
     @token_bytes
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
+  end
+
+  defp format_token(opts) do
+    token =
+      opts
+      |> Keyword.get_lazy(:token_generator, fn -> &default_token_generator/0 end)
+      |> then(fn generator ->
+        case :erlang.fun_info(generator, :arity) do
+          {:arity, 1} -> generator.(:token)
+          _other -> generator.()
+        end
+      end)
+
+    %{
+      token: token,
+      token_hash: hash_token(token),
+      token_type: "Bearer"
+    }
   end
 end

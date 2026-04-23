@@ -502,6 +502,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
       | family_id: record.family_id,
         generation: record.generation + 1,
         parent_token_id: record.id,
+        client_id: record.client_id,
+        account_id: refresh_token.account_id || record.account_id,
+        interaction_id: refresh_token.interaction_id || record.interaction_id,
+        scopes: if(refresh_token.scopes == [], do: record.scopes, else: refresh_token.scopes),
+        audience: if(refresh_token.audience == [], do: record.audience, else: refresh_token.audience),
         issued_at: refresh_token.issued_at || rotated_at
     }
     |> store_token_record()
@@ -518,6 +523,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
       | family_id: record.family_id,
         generation: stored_refresh_token.generation,
         parent_token_id: stored_refresh_token.id,
+        client_id: record.client_id,
+        account_id: access_token.account_id || record.account_id,
+        interaction_id: access_token.interaction_id || record.interaction_id,
+        scopes: if(access_token.scopes == [], do: record.scopes, else: access_token.scopes),
+        audience: if(access_token.audience == [], do: record.audience, else: access_token.audience),
         issued_at: access_token.issued_at || rotated_at
     }
     |> store_token_record()

@@ -174,7 +174,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   } do
     conn =
       build_conn(:post, "/token", %{
-        "grant_type" => "refresh_token",
+        "grant_type" => "password",
         "client_id" => public_client.client_id
       })
       |> put_req_header("accept", "application/json")
@@ -186,8 +186,128 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     assert body == %{
              "error" => "unsupported_grant_type",
-             "error_description" => "Only grant_type=authorization_code is supported"
+             "error_description" =>
+               "Only grant_type=authorization_code and grant_type=refresh_token are supported"
            }
+  end
+
+  test "POST /token rotates refresh tokens for confidential clients" do
+    secret = "controller-refresh-secret"
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client-controller-refresh",
+        client_secret_hash: client_secret_hash(secret),
+        client_type: :confidential,
+        name: "Controller Refresh Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "offline_access"],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    now = DateTime.utc_now()
+
+    {:ok, _refresh_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("controller-refresh-token"),
+        token_type: :refresh_token,
+        family_id: "controller-refresh-family",
+        generation: 0,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        interaction_id: "interaction-controller-refresh",
+        scopes: ["email", "offline_access"],
+        audience: ["api.example.com"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 86_400, :second)
+      })
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "refresh_token",
+        "refresh_token" => "controller-refresh-token"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert Map.has_key?(body, "access_token")
+    assert Map.has_key?(body, "refresh_token")
+    assert body["scope"] == "email offline_access"
+  end
+
+  test "POST /token returns invalid_grant after refresh-token replay" do
+    secret = "controller-replay-secret"
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client-controller-replay",
+        client_secret_hash: client_secret_hash(secret),
+        client_type: :confidential,
+        name: "Controller Replay Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "offline_access"],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    now = DateTime.utc_now()
+
+    {:ok, _refresh_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("controller-replay-token"),
+        token_type: :refresh_token,
+        family_id: "controller-replay-family",
+        generation: 0,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        interaction_id: "interaction-controller-replay",
+        scopes: ["email", "offline_access"],
+        audience: ["api.example.com"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 86_400, :second)
+      })
+
+    first_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "refresh_token",
+        "refresh_token" => "controller-replay-token"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert first_conn.status == 200
+
+    replay_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "refresh_token",
+        "refresh_token" => "controller-replay-token"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert replay_conn.status == 400
+
+    body = Jason.decode!(replay_conn.resp_body)
+    assert body["error"] == "invalid_grant"
+    assert body["error_description"] =~ "reuse detected"
   end
 
   defp code_challenge(verifier) do
@@ -215,6 +335,14 @@ defmodule Lockspire.Web.TokenControllerTest do
       activated_at: DateTime.utc_now(),
       metadata: %{}
     })
+  end
+
+  defp client_secret_hash(secret) do
+    "sha256:static-salt:" <> Base.encode64(:crypto.hash(:sha256, "static-salt" <> secret))
+  end
+
+  defp basic_auth(client_id, client_secret) do
+    "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
   end
 
   defp create_openid_authorization_code(client, raw_code, verifier, nonce) do
