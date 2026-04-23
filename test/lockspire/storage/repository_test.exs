@@ -1,12 +1,23 @@
 defmodule Lockspire.Storage.RepositoryTest do
   use ExUnit.Case, async: false
 
+  @moduletag :integration
+
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.Repository
+
+  setup_all do
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+
+    start_supervised!(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+
+    :ok
+  end
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
@@ -67,6 +78,68 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert fetched_interaction.return_to == "/lockspire/authorize/continue"
   end
 
+  test "persists interaction lifecycle transitions and only fetches active interactions" do
+    now = DateTime.utc_now()
+
+    interaction = %Interaction{
+      interaction_id: "interaction_lifecycle",
+      client_id: "client_123",
+      scopes_requested: ["email"],
+      redirect_uri: "https://client.example.com/callback",
+      return_to: "/lockspire/authorize/continue",
+      state: "state-123",
+      code_challenge: "challenge-123",
+      code_challenge_method: :S256,
+      status: :pending_login,
+      login_required_at: now,
+      expires_at: DateTime.add(now, 300, :second)
+    }
+
+    assert {:ok, %Interaction{} = stored_interaction} = Repository.put_interaction(interaction)
+    assert stored_interaction.status == :pending_login
+    assert stored_interaction.login_required_at
+
+    assert {:ok, %Interaction{} = pending_login} =
+             Repository.fetch_active_interaction("interaction_lifecycle")
+
+    assert pending_login.status == :pending_login
+
+    assert {:ok, %Interaction{} = pending_consent} =
+             Repository.transition_interaction("interaction_lifecycle", [:pending_login], %{
+               status: :pending_consent,
+               account_id: "subject_123",
+               consent_requested_at: now
+             })
+
+    assert pending_consent.status == :pending_consent
+    assert pending_consent.account_id == "subject_123"
+    assert pending_consent.consent_requested_at
+
+    assert {:ok, %Interaction{} = completed} =
+             Repository.transition_interaction("interaction_lifecycle", [:pending_consent], %{
+               status: :completed,
+               completed_at: now
+             })
+
+    assert completed.status == :completed
+    assert completed.completed_at
+
+    assert {:ok, nil} = Repository.fetch_active_interaction("interaction_lifecycle")
+
+    expired_interaction = %Interaction{
+      interaction_id: "interaction_expired",
+      client_id: "client_123",
+      scopes_requested: ["email"],
+      redirect_uri: "https://client.example.com/callback",
+      return_to: "/lockspire/authorize/continue",
+      status: :pending_login,
+      expires_at: DateTime.add(now, -5, :second)
+    }
+
+    assert {:ok, _expired} = Repository.put_interaction(expired_interaction)
+    assert {:ok, nil} = Repository.fetch_active_interaction("interaction_expired")
+  end
+
   test "grants and lists consents through the repository contract" do
     grant = %ConsentGrant{
       account_id: "account_456",
@@ -86,6 +159,61 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert listed_grant.metadata == %{"source" => "consent-ui"}
   end
 
+  test "persists reusable remembered consents and excludes revoked grants" do
+    now = DateTime.utc_now()
+
+    remembered_grant = %ConsentGrant{
+      account_id: "subject_123",
+      client_id: "client_123",
+      scopes: ["email", "profile"],
+      granted_at: now,
+      status: :active,
+      kind: :remembered,
+      metadata: %{"source" => "consent-ui"}
+    }
+
+    one_time_grant = %ConsentGrant{
+      account_id: "subject_123",
+      client_id: "client_123",
+      scopes: ["email"],
+      granted_at: now,
+      status: :active,
+      kind: :one_time
+    }
+
+    revoked_grant = %ConsentGrant{
+      account_id: "subject_123",
+      client_id: "client_123",
+      scopes: ["email"],
+      granted_at: now,
+      status: :revoked,
+      kind: :remembered,
+      revoked_at: now,
+      revoked_reason: "operator_revoked"
+    }
+
+    assert {:ok, %ConsentGrant{} = stored_remembered} = Repository.grant_consent(remembered_grant)
+    assert {:ok, _one_time} = Repository.grant_consent(one_time_grant)
+    assert {:ok, _revoked} = Repository.grant_consent(revoked_grant)
+
+    assert {:ok, [%ConsentGrant{} = reusable]} =
+             Repository.list_reusable_consents("subject_123", "client_123")
+
+    assert reusable.id == stored_remembered.id
+    assert reusable.kind == :remembered
+    assert reusable.status == :active
+
+    assert {:ok, %ConsentGrant{} = revoked} =
+             Repository.revoke_consent_grant(stored_remembered.id, %{
+               revoked_at: DateTime.add(now, 60, :second),
+               revoked_reason: "subject_revoked"
+             })
+
+    assert revoked.status == :revoked
+    assert revoked.revoked_reason == "subject_revoked"
+    assert {:ok, []} = Repository.list_reusable_consents("subject_123", "client_123")
+  end
+
   test "stores token families and revokes them through the repository contract" do
     refresh_token = %Token{
       token_hash: "token_hash_123",
@@ -103,6 +231,43 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert stored_token.family_id == "family_123"
 
     assert {:ok, 1} = Repository.revoke_token_family("family_123")
+  end
+
+  test "persists authorization codes with pkce fields and marks them single-use on redemption" do
+    now = DateTime.utc_now()
+
+    authorization_code = %Token{
+      token_hash: "code_hash_123",
+      token_type: :authorization_code,
+      client_id: "client_123",
+      account_id: "subject_123",
+      interaction_id: "interaction_123",
+      redirect_uri: "https://client.example.com/callback",
+      scopes: ["email", "profile"],
+      code_challenge: "challenge-123",
+      code_challenge_method: :S256,
+      issued_at: now,
+      expires_at: DateTime.add(now, 300, :second)
+    }
+
+    assert {:ok, %Token{} = stored_code} = Repository.store_token(authorization_code)
+    assert stored_code.token_type == :authorization_code
+    assert stored_code.redirect_uri == "https://client.example.com/callback"
+    assert stored_code.interaction_id == "interaction_123"
+    assert stored_code.code_challenge_method == :S256
+    assert stored_code.redeemed_at == nil
+
+    assert {:ok, %Token{} = active_code} =
+             Repository.fetch_active_authorization_code("code_hash_123")
+
+    assert active_code.id == stored_code.id
+
+    assert {:ok, %Token{} = redeemed_code} =
+             Repository.mark_authorization_code_redeemed("code_hash_123", now)
+
+    assert redeemed_code.redeemed_at
+
+    assert {:ok, nil} = Repository.fetch_active_authorization_code("code_hash_123")
   end
 
   test "publishes keys and lists active keys through the repository contract" do
