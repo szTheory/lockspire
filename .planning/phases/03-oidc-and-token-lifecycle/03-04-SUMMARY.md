@@ -63,6 +63,7 @@ completed: 2026-04-22
 
 1. **Task 1: Implement client-authenticated token revocation** - `2d68408` (`feat`)
 2. **Task 2: Implement opaque-token introspection with inactive-state collapse** - `694e5c0` (`feat`)
+3. **Follow-up: Satisfy formatter gate for lifecycle files** - `42fea65` (`style`)
 
 ## Files Created/Modified
 
@@ -92,7 +93,7 @@ completed: 2026-04-22
 
 ## Issues Encountered
 
-- `mix format --check-formatted` initially reported formatting drift in the new lifecycle files; rerunning `mix format` and the formatter gate cleared it without additional tracked changes.
+- `mix format --check-formatted` reported formatting drift in the new lifecycle files after the task commits; that was resolved in follow-up commit `42fea65`.
 
 ## User Setup Required
 
@@ -110,4 +111,4 @@ None.
 ## Self-Check: PASSED
 
 - Summary file exists at `.planning/phases/03-oidc-and-token-lifecycle/03-04-SUMMARY.md`
-- Verified commits exist: `2d68408`, `694e5c0`
+- Verified commits exist: `2d68408`, `694e5c0`, `42fea65`
