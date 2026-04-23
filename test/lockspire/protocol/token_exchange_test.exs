@@ -183,9 +183,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert success.id_token == nil
   end
 
-  test "accepts form-encoded basic auth credentials containing reserved characters" do
+  test "accepts form-encoded basic auth credentials containing reserved characters and colons" do
     client_id = "client:with/slash"
-    secret = "sec:ret?/+= value"
+    secret = "sec:ret?/+= value:tail"
     {:ok, client} = create_client(client_id, :client_secret_basic, secret)
 
     _code =
