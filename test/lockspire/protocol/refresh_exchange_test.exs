@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -109,6 +110,58 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
     assert {:ok, nil} =
              Repository.fetch_active_access_token(TokenFormatter.hash_token("first-access-token"))
+  end
+
+  test "rotation and reuse detection append durable audit rows with explicit reason codes", %{
+    client: client,
+    refresh_token: refresh_token
+  } do
+    assert {:ok, _success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "seed-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 access_token_generator: fn -> "audit-access-token" end,
+                 refresh_token_generator: fn -> "audit-refresh-token" end,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert {:error, error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "seed-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 access_token_generator: fn -> "audit-access-token-2" end,
+                 refresh_token_generator: fn -> "audit-refresh-token-2" end,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert error.reason_code == :refresh_token_reuse_detected
+
+    audits = Lockspire.TestRepo.all(AuditEventRecord)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "refresh_token_rotated" and
+               audit.actor_type == "client" and
+               audit.actor_id == client.client_id and
+               audit.reason_code == "refresh_token_rotated"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "refresh_token_reuse_detected" and
+               audit.resource_type == "refresh_token" and
+               audit.resource_id == Integer.to_string(refresh_token.id) and
+               audit.reason_code == "refresh_token_reuse_detected"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "token_family_revoked" and
+               audit.resource_type == "token_family" and
+               audit.resource_id == refresh_token.family_id and
+               audit.reason_code == "refresh_token_reuse_detected"
+           end)
   end
 
   test "rejects refresh tokens issued to a different client", %{now: now} do

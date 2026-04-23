@@ -8,6 +8,8 @@ defmodule Lockspire.Audit.AuditWriterTest do
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange
+  alias Lockspire.Protocol.RefreshExchange
+  alias Lockspire.Protocol.Revocation
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
@@ -249,6 +251,63 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
     assert Enum.any?(audits, &(&1.action == "authorization_code_redeemed"))
     assert Enum.any?(audits, &(&1.action == "authorization_code_replay_detected"))
+  end
+
+  test "refresh reuse and revocation persist audit rows through the repository boundary" do
+    now = DateTime.utc_now()
+    {:ok, client} = register_client("audit-refresh-client", now, :client_secret_basic)
+
+    {:ok, refresh_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("audit-refresh-token"),
+        token_type: :refresh_token,
+        family_id: "family-audit-refresh",
+        generation: 0,
+        client_id: client.client_id,
+        account_id: "subject-123",
+        interaction_id: "interaction-audit-refresh",
+        scopes: ["email", "offline_access"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 86_400, :second)
+      })
+
+    assert {:ok, _success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "audit-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 access_token_generator: fn -> "audit-refresh-access" end,
+                 refresh_token_generator: fn -> "audit-refresh-child" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert {:error, reuse_error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "audit-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 access_token_generator: fn -> "audit-refresh-access-2" end,
+                 refresh_token_generator: fn -> "audit-refresh-child-2" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert reuse_error.reason_code == :refresh_token_reuse_detected
+
+    assert :ok =
+             Revocation.revoke(%{
+               params: %{"token" => "audit-refresh-child"},
+               authorization: basic_auth(client.client_id, "secret"),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    audits = Lockspire.TestRepo.all(AuditEventRecord)
+
+    assert Enum.any?(audits, &(&1.action == "refresh_token_reuse_detected"))
+    assert Enum.any?(audits, &(&1.action == "token_family_revoked"))
+    assert Enum.any?(audits, &(&1.action == "token_revoked"))
+    assert Enum.any?(audits, &(&1.resource_id == Integer.to_string(refresh_token.id)))
   end
 
   defp register_client(client_id, now, auth_method \\ :none) do

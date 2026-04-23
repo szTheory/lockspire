@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.RevocationTest do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.Revocation
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -164,6 +165,37 @@ defmodule Lockspire.Protocol.RevocationTest do
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
+  end
+
+  test "matched revocations append durable audit rows and unknown tokens do not append orphan rows", %{
+    client: client,
+    client_secret: secret
+  } do
+    assert :ok =
+             Revocation.revoke(%{
+               params: %{"token" => "revoke-refresh-token"},
+               authorization: basic_auth(client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert :ok =
+             Revocation.revoke(%{
+               params: %{"token" => "unknown-token"},
+               authorization: basic_auth(client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    audits = Lockspire.TestRepo.all(AuditEventRecord)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "token_revoked" and
+               audit.actor_type == "client" and
+               audit.actor_id == client.client_id and
+               audit.reason_code == "token_revoked" and
+               audit.resource_type == "refresh_token"
+           end)
+
+    assert Enum.count(audits, &(&1.action == "token_revoked")) == 1
   end
 
   defp client_secret_hash(secret) do

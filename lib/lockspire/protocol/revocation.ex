@@ -73,7 +73,18 @@ defmodule Lockspire.Protocol.Revocation do
   defp revoke_token(%Client{} = client, token_hash, request) do
     revoked_at = now(request)
 
-    case token_store(request).revoke_lifecycle_token(token_hash, client.client_id, revoked_at) do
+    case transact_with_optional_audit(token_store(request), fn ->
+           case token_store(request).revoke_lifecycle_token(token_hash, client.client_id, revoked_at) do
+             {:ok, %Token{} = token} ->
+               {:ok, token, [revocation_audit_event(client, token)]}
+
+             {:ok, nil} ->
+               {:ok, nil, []}
+
+             {:error, reason} ->
+               {:error, reason}
+           end
+         end) do
       {:ok, token} -> {:ok, token}
       {:error, _reason} -> {:error, server_error("Unable to revoke token", :revocation_failed)}
     end
@@ -139,5 +150,44 @@ defmodule Lockspire.Protocol.Revocation do
     |> Map.get(:opts, [])
     |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
     |> then(& &1.())
+  end
+
+  defp transact_with_optional_audit(store, fun) when is_function(fun, 0) do
+    store.transact(fn ->
+      case fun.() do
+        {:ok, result, audit_events} ->
+          case append_audit_events(store, audit_events) do
+            :ok -> result
+            {:error, reason} -> {:error, reason}
+          end
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end)
+  end
+
+  defp append_audit_events(_store, []), do: :ok
+
+  defp append_audit_events(store, [event | rest]) do
+    case store.append_audit_event(event) do
+      {:ok, _event} -> append_audit_events(store, rest)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp revocation_audit_event(%Client{} = client, %Token{} = token) do
+    %{
+      action: :token_revoked,
+      outcome: :succeeded,
+      reason_code: :token_revoked,
+      actor: %{type: :client, id: client.client_id, display: client.client_id},
+      resource: %{type: token.token_type, id: to_string(token.id || token.token_hash)},
+      metadata: %{
+        client_id: client.client_id,
+        subject_id: token.account_id,
+        family_id: token.family_id
+      }
+    }
   end
 end
