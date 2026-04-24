@@ -9,6 +9,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @readme_path Path.expand("../../README.md", __DIR__)
   @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
+  @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @roadmap_path Path.expand("../../.planning/ROADMAP.md", __DIR__)
   @requirements_path Path.expand("../../.planning/REQUIREMENTS.md", __DIR__)
@@ -135,6 +136,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   test "security and release posture stay inside the supported preview surface" do
     security = File.read!(@security_policy_path)
+    onboarding = File.read!(@install_and_onboard_path)
     guide = File.read!(@maintainer_guide_path)
     ci_workflow = File.read!(@ci_workflow_path)
     release_workflow = File.read!(@release_workflow_path)
@@ -151,6 +153,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Preview releases should only claim the supported surface the repo can currently prove."
     assert guide =~ "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
     assert guide =~ "Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+
+    assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
+    assert onboarding =~ "Lockspire stays embedded inside your host app"
+    assert onboarding =~ "authorization-code + PKCE exchange"
+    assert onboarding =~ "The executable repo proof lives in:"
+    assert onboarding =~ "test/integration/install_generator_test.exs"
+    assert onboarding =~ "test/integration/phase6_onboarding_e2e_test.exs"
+    refute Regex.match?(~r/## 5\\..*\\n(?:- .*\\n)*- .*\\bPAR\\b/m, onboarding)
+    refute onboarding =~ "production-ready"
 
     assert ci_workflow =~ "run: mix docs.verify"
     assert release_workflow =~ "environment: hex-publish"
@@ -179,8 +190,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "- PAR, device flow, and dynamic client registration"
 
     refute readme =~ "already supports PAR"
-    refute readme =~ "What v0.1 includes\n\n- PAR"
-    refute supported_surface =~ "preview currently supports this repo-proven surface:\n\n- PAR"
-    refute security =~ "supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:\n\n- PAR"
+    refute Regex.match?(~r/## What v0\\.1 includes\\s+(?:.*\\n)*- .*\\bPAR\\b/m, readme)
+    refute Regex.match?(
+             ~r/preview currently supports this repo-proven surface:\\s+(?:.*\\n)*- .*\\bPAR\\b/m,
+             supported_surface
+           )
+
+    refute Regex.match?(
+             ~r/supported security surface is limited.*\\s+(?:- .*\\n)*- .*\\bPAR\\b/m,
+             security
+           )
   end
 end

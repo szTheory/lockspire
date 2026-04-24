@@ -8,7 +8,7 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Planned 2026-04-23
+**Status:** Execution complete 2026-04-24
 **Phases:** 7-9
 **Total Plans:** 9
 
@@ -40,9 +40,9 @@ This phase closes the repo-truth gap between the documented release bar and what
 
 Plans:
 
-- [ ] 08-01: Verify and harden the trusted release workflow, protected environment, and secret wiring
-- [ ] 08-02: Align package metadata, release automation, and maintainer docs to one reviewable publish path
-- [ ] 08-03: Add or tighten automated release-readiness checks that fail when workflow and docs drift
+- [x] 08-01: Verify and harden the trusted release workflow, protected environment, and secret wiring
+- [x] 08-02: Align package metadata, release automation, and maintainer docs to one reviewable publish path
+- [x] 08-03: Add or tighten automated release-readiness checks that fail when workflow and docs drift
 
 **Details:**
 This phase is about trustable release mechanics, not public `1.0` claims. The outcome should be a preview release path that is easy to audit and hard to accidentally bypass.
@@ -55,8 +55,8 @@ This phase is about trustable release mechanics, not public `1.0` claims. The ou
 
 Plans:
 
-- [ ] 09-01: Tighten supported-surface, security, and onboarding docs to the proven preview scope
-- [ ] 09-02: Record PAR as the next protocol-expansion milestone, explicitly not implemented in v1.1, and close remaining preview-posture drift tests
+- [x] 09-01: Tighten supported-surface, security, and onboarding docs to the proven preview scope
+- [x] 09-02: Record PAR as the next protocol-expansion milestone, explicitly not implemented in v1.1, and close remaining preview-posture drift tests
 
 **Details:**
 This phase keeps public claims honest, prevents accidental scope inflation, and creates a clean handoff into the later PAR milestone.
@@ -67,7 +67,8 @@ After v1.1, the default next milestone is **v1.2 PAR Foundation**. It should ext
 
 ## Next Up
 
-- Start execution with `$gsd-execute-phase 7`.
+- Run `$gsd-secure-phase 09` to close the required security audit for the preview-posture lock.
+- Archive or roll the v1.1 milestone forward only after the Phase 09 security pass is recorded.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.
 - Keep PAR out of current support-facing docs, examples, and feature claims until v1.2 work actually begins.
 

@@ -71,7 +71,6 @@ Do not broaden release claims to PAR, device flow, dynamic client registration, 
 Before merging a release PR, confirm:
 
 - `mix ci`
-- `mix release.preflight`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
 - `release-please-config.json` and `.release-please-manifest.json` still match the intended preview release policy
 - publish job still targets the protected `hex-publish` environment

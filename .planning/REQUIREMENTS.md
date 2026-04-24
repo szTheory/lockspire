@@ -20,9 +20,9 @@
 
 ### Preview Support Posture
 
-- [ ] **POST-01**: Public docs and supported-surface guidance describe only the implemented `v0.1` preview scope and explicitly avoid unsupported protocol claims.
-- [ ] **POST-02**: Contract tests fail if release docs, security policy, or workflow files drift from the supported preview posture.
-- [ ] **POST-03**: The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1.
+- [x] **POST-01**: Public docs and supported-surface guidance describe only the implemented `v0.1` preview scope and explicitly avoid unsupported protocol claims.
+- [x] **POST-02**: Contract tests fail if release docs, security policy, or workflow files drift from the supported preview posture.
+- [x] **POST-03**: The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1.
 
 ## v1.2 Requirements
 
@@ -52,9 +52,9 @@
 | RELS-01 | Phase 8 | Pending |
 | RELS-02 | Phase 8 | Pending |
 | RELS-03 | Phase 8 | Pending |
-| POST-01 | Phase 9 | Pending |
-| POST-02 | Phase 9 | Pending |
-| POST-03 | Phase 9 | Pending |
+| POST-01 | Phase 9 | Complete |
+| POST-02 | Phase 9 | Complete |
+| POST-03 | Phase 9 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 9 total
@@ -63,4 +63,4 @@
 
 ---
 *Requirements defined: 2026-04-23*
-*Last updated: 2026-04-23 after completing Phase 7 Repo Truth QA*
+*Last updated: 2026-04-24 after completing Phase 9 Preview Posture Lock*
