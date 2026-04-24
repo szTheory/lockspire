@@ -31,6 +31,7 @@ Lockspire aims to:
 Lockspire's supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:
 
 - authorization code + PKCE
+- pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path
 - discovery and JWKS
 - userinfo
 - revocation and introspection
@@ -44,7 +45,7 @@ Unsupported or out-of-scope surfaces include:
 - host login/session implementations
 - third-party IdP integrations not shipped in this repo
 - hosted auth as a separate service
-- PAR, device flow, and dynamic client registration
+- request-object-by-value support, generic external `request_uri` handling, device flow, and dynamic client registration
 - SAML, LDAP, or generic federation features
 
 ## Secure defaults

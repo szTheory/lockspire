@@ -9,6 +9,7 @@ The public support contract for the current `v0.1` preview lives in [`docs/suppo
 ## What v0.1 includes
 
 - Authorization code + PKCE
+- Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path
 - OIDC discovery and JWKS
 - Userinfo, revocation, introspection, and refresh rotation
 - Host-owned login and consent seams
@@ -18,7 +19,7 @@ The public support contract for the current `v0.1` preview lives in [`docs/suppo
 ## What v0.1 does not include
 
 - Hosted auth as a separate service
-- PAR, device flow, or dynamic client registration
+- Request-object-by-value support, generic external `request_uri` handling, device flow, or dynamic client registration
 - SAML or LDAP federation
 - A full CIAM suite
 - Lockspire-owned account tables or login UX

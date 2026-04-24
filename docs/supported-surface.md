@@ -10,6 +10,7 @@ Lockspire `v0.1` preview currently supports this repo-proven surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
+- Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
 - OIDC discovery and JWKS
 - Userinfo
 - Revocation
@@ -24,7 +25,8 @@ Lockspire `v0.1` preview currently supports this repo-proven surface:
 Lockspire `v0.1` preview does not currently support:
 
 - Implicit flow
-- PAR
+- Request-object-by-value support
+- Generic external `request_uri` handling outside Lockspire's own PAR endpoint
 - Device flow
 - Dynamic client registration
 - Hosted auth as a separate required service
@@ -60,7 +62,7 @@ A `v0.1` preview claim can honestly say:
 A `v0.1` preview claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
-- Lockspire already supports PAR, device flow, dynamic client registration, SAML, or LDAP
+- Lockspire supports broader request-object modes, generic external `request_uri` handling, device flow, dynamic client registration, SAML, or LDAP
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 
