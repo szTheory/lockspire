@@ -8,9 +8,9 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Gap closure planning added 2026-04-24 after milestone audit
+**Status:** Gap closure execution completed 2026-04-24; ready for re-audit
 **Phases:** 7-11
-**Total Plans:** 9 completed; follow-up planning pending for phases 10-11
+**Total Plans:** 13 completed
 
 **Overview**
 
@@ -81,12 +81,17 @@ This phase should fix the formatting drift that currently stops `mix ci` inside 
 
 **Goal**: Close the trusted protected release path with the required external proof and record phase-level verification for the reopened release-path requirements.
 **Depends on**: Phase 10
-**Plans**: Pending planning
+**Plans**: 2 plans
 **Requirements**: RELS-01, RELS-02, RELS-03
 **Gap Closure**: Closes the partial trusted protected publish flow plus the missing Phase 08 requirement-verification record.
 
+Plans:
+
+- [x] 11-01: Capture the approved protected release proof and reconcile any live GitHub environment drift
+- [x] 11-02: Backfill Phase 08 verification artifacts and close RELS traceability
+
 **Details:**
-This phase should gather the required protected GitHub environment proof and approved `hex-publish` run evidence, reconcile release-path documentation and metadata with what the repo actually uses, and write the verification artifacts that close the Phase 08 requirements.
+This phase gathered the required protected GitHub environment proof, recorded the approved `hex-publish` run evidence from the canonical `push` lane, and wrote the verification artifacts that close the reopened Phase 08 release-path requirements.
 
 ## Next Milestone Candidate
 
@@ -94,8 +99,8 @@ After v1.1 gap closure work passes re-audit, the default next milestone is **v1.
 
 ## Next Up
 
-- Plan and execute Phase 11 to collect trusted release proof and close the reopened release-path requirements.
-- Re-run `$gsd-audit-milestone` after phases 10 and 11 complete to confirm v1.1 is actually done.
+- Re-run `$gsd-audit-milestone` now that phases 10 and 11 are complete to confirm v1.1 is actually done.
+- Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner deprecation cutoff.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.
 - Keep PAR out of current support-facing docs, examples, and feature claims until v1.2 work actually begins.
 

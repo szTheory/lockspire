@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Release Hardening
-status: blocked
-last_updated: "2026-04-24T09:15:30Z"
-last_activity: 2026-04-24 -- Phase 11 blocked on missing hex-publish reviewer approval
+status: ready_for_milestone_audit
+last_updated: "2026-04-24T09:24:00Z"
+last_activity: 2026-04-24 -- completed Phase 11 trusted release proof closure after approved protected publish run
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -21,17 +21,17 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 11 blocker resolution — live `hex-publish` approval gate
+**Current focus:** Milestone v1.1 re-audit after Phase 11 closure
 
 ## Current Position
 
-Phase: 11 (trusted-release-proof-closure) — BLOCKED
+Phase: 11 (trusted-release-proof-closure) — COMPLETED
 
-Plan: 11-01 documented blocker; 11-02 pending
+Plan: completed
 
-Status: Awaiting GitHub environment approval protection before rerunning the canonical release lane
+Status: Awaiting milestone audit
 
-Last activity: 2026-04-24 -- captured live protected-release evidence and recorded blocker
+Last activity: 2026-04-24 -- captured approved protected publish proof and closed RELS traceability
 
 ## Performance Metrics
 
@@ -48,19 +48,18 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Add reviewer approval protection to the `hex-publish` GitHub environment.
-- Re-run the canonical `Release` workflow from a `push` on `main` and record the approved protected-run evidence.
-- Resume Phase 11 to close RELS-01 through RELS-03 after the approved run exists.
+- Re-run `$gsd-audit-milestone` to confirm v1.1 is now actually done.
+- Review the release workflow warning about the deprecated Node.js 20 action runtime and schedule the action upgrade.
 
 ### Blockers/Concerns
 
-- The live `hex-publish` environment exists and stores `HEX_API_KEY`, but it has no reviewer approval rule, so `RELS-01` cannot close from the current run evidence.
-- Phase 11 Plan 02 cannot execute until Plan 11-01 is rerun with an approved protected publish run.
+- No active execution blockers remain for v1.1 release hardening.
+- The `googleapis/release-please-action` pin still emits a Node.js 20 deprecation warning during the successful release run and should be upgraded before the GitHub runner cutoff.
 
 ## Session Continuity
 
-**Next action:** Add reviewer approval to `hex-publish`, trigger a canonical `push` release on `main`, then rerun `$gsd-execute-phase 11 --wave 1`.
+**Next action:** Run `$gsd-audit-milestone` to confirm milestone closure from current evidence.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** 11 (Trusted Release Proof Closure) — blocked until live GitHub approval proof exists for the protected publish lane.
+**Completed Phase:** 11 (Trusted Release Proof Closure) — approved `hex-publish` run evidence recorded and RELS-01 through RELS-03 closed.
