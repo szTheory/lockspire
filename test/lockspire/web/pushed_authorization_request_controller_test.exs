@@ -109,7 +109,11 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
              "Basic realm=\"Lockspire Pushed Authorization Request Endpoint\""
            ]
 
-    assert Jason.decode!(conn.resp_body) == %{
+    body = Jason.decode!(conn.resp_body)
+
+    assert Map.keys(body) |> Enum.sort() == ["error", "error_description"]
+
+    assert body == %{
              "error" => "invalid_client",
              "error_description" => "Client authentication failed"
            }
@@ -134,7 +138,11 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
     assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "pragma") == ["no-cache"]
 
-    assert Jason.decode!(conn.resp_body) == %{
+    body = Jason.decode!(conn.resp_body)
+
+    assert Map.keys(body) |> Enum.sort() == ["error", "error_description"]
+
+    assert body == %{
              "error" => "invalid_request",
              "error_description" => "request_uri is not supported"
            }
@@ -160,7 +168,11 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
     assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "pragma") == ["no-cache"]
 
-    assert Jason.decode!(conn.resp_body) == %{
+    body = Jason.decode!(conn.resp_body)
+
+    assert Map.keys(body) |> Enum.sort() == ["error", "error_description"]
+
+    assert body == %{
              "error" => "invalid_request",
              "error_description" => "PKCE S256 is required"
            }
