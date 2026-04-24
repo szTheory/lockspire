@@ -10,23 +10,20 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived two planning milestones. The embedded provider foundation from v1.0 remains intact, and v1.1 closed the release-hardening work needed to make repo-truth QA, trusted release proof, and preview-posture claims defensible.
+Lockspire has now archived three planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, and v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring.
 
-At archive time, the package version in `mix.exs` is `0.2.0`, and the protected release path has real proof behind it. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
+At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
-Phase 15 is now complete in v1.2. Lockspire can consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, rejects expired/replayed/wrong-client references safely, and publishes only the narrow PAR slice it actually ships through discovery and public docs.
+Lockspire can now accept pushed authorization requests at `/par`, consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, reject expired/replayed/wrong-client references safely, and publish only the narrow PAR slice it actually ships through discovery and public docs.
 
-## Current Milestone: v1.2 PAR Foundation
+## Next Milestone Goals
 
-**Goal:** Add pushed authorization requests as a narrow extension of the existing authorization code + PKCE flow while keeping Lockspire embedded, truthful about scope, and boring to release.
+No next milestone is active yet. Define it with `$gsd-new-milestone`.
 
-PAR is the default next protocol-expansion milestone after release hardening.
-PAR was not implemented and not supported in v1.1.
-
-**Target features:**
-- Add a standards-aligned PAR endpoint and request lifecycle on top of the existing authorization code + PKCE surface.
-- Advertise PAR support truthfully in discovery, docs, and support-facing surfaces without implying broader JAR, DCR, or device-flow support.
-- Keep the trusted preview release path healthy by removing the remaining `release-please-action` runtime warning during this milestone.
+Likely candidates for the next milestone:
+- Decide whether to deepen request-object support beyond Lockspire-issued PAR references.
+- Evaluate operator-facing PAR policy controls such as per-client or global PAR requirements.
+- Reassess the next protocol-expansion priority among JAR interoperability, dynamic client registration, device flow, and sender-constrained token work.
 
 ## Requirements
 
@@ -40,11 +37,12 @@ PAR was not implemented and not supported in v1.1.
 - Repo-truth QA, contributor gate closure, trusted protected release proof, and preview-posture drift fences were delivered in the archived v1.1 milestone.
 - PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15.
 - Discovery, support docs, and SECURITY wording now describe only the shipped PAR slice, validated in Phase 15.
+- PAR milestone closure and release-runtime hygiene were validated in Phase 16, including warning-free checked-in release automation.
 
 ### Active
 
-- [ ] Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner cutoff.
-- [ ] Decide whether full Nyquist completeness is required during v1.2 and, if so, backfill `10/12/13-VALIDATION.md` without derailing the PAR wedge.
+- [ ] Define the next milestone with a narrow protocol or operator-surface goal that preserves the embedded-library product shape.
+- [ ] Decide whether future roadmap work should deepen PAR/JAR policy, add new grant breadth, or improve operator controls first.
 
 ### Out of Scope
 
@@ -82,6 +80,8 @@ Lockspire is a greenfield OSS library project with a substantial prep corpus in 
 | Polish the current preview surface before adding more protocol breadth | The repo already has its core provider wedge; release trust is now the gating risk to adoption and velocity | Adopted in archived v1.1 milestone |
 | Make PAR the first post-polish protocol wedge | PAR extends the existing auth-code flow with less product-shape drift than dynamic registration or device flow | Adopted and delivered by Phase 15 |
 | Include the lingering release-automation runtime warning in v1.2 scope rather than treating it as indefinite background debt | PAR should not land on top of a release path already known to drift toward a GitHub runtime cutoff | Adopted at v1.2 milestone start |
+| Keep PAR support limited to Lockspire-issued `request_uri` values in v1.2 | Preserves truthful support claims and avoids smuggling broader request-object semantics into the first PAR milestone | Adopted and delivered by Phase 15 |
+| Wrap Release Please in a checked-in composite action | Future runtime migrations should stay behind a stable, reviewable workflow contract | Adopted and delivered by Phase 16 |
 
 ## Evolution
 
@@ -101,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after completing Phase 15 of the v1.2 PAR Foundation milestone.*
+*Last updated: 2026-04-24 after archiving the v1.2 PAR Foundation milestone.*

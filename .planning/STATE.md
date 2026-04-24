@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: human_needed
-last_updated: "2026-04-24T15:40:00.000Z"
-last_activity: 2026-04-24 -- Phase 16 awaiting live human verification
+status: archived
+last_updated: "2026-04-24T16:20:30.444Z"
+last_activity: 2026-04-24 -- v1.2 milestone archived after passed audit-open and passed milestone audit
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -21,25 +21,25 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 16 — verification-and-release-runtime-hygiene
+**Current focus:** Define the next milestone after the archived v1.2 PAR Foundation release
 
 ## Current Position
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: 16 (verification-and-release-runtime-hygiene) — HUMAN VERIFICATION PENDING
+Phase: 16 (verification-and-release-runtime-hygiene) — COMPLETE
 
 Plan: 2 of 2 complete
 
-Status: Awaiting live GitHub Actions verification for the Release workflow recovery lane
+Status: Archived; no active milestone is defined yet
 
-Last activity: 2026-04-24 -- Phase 16 awaiting live human verification
+Last activity: 2026-04-24 -- v1.2 archive files written and active roadmap collapsed
 
 ## Performance Metrics
 
-- Phases completed: 2/3
-- Plans completed: 6/6
-- Recorded tasks completed: 10
+- Phases completed: 3/3
+- Plans completed: 8/8
+- Recorded tasks completed: 16
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -61,19 +61,14 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - Keep 15-03 proof-only on top of 15-01/15-02 runtime behavior instead of reopening implementation.
 - Enforce narrow PAR support claims through discovery, docs, SECURITY, and release contract tests.
 
-### Pending Todos
-
-- Run the `Release` workflow on `workflow_dispatch` with an invalid branch ref and confirm it fails before publish.
-- Run the `Release` workflow on `workflow_dispatch` with a valid 40-character SHA or existing tag and confirm it proceeds without the deprecated Node 20 warning.
-
 ### Blockers/Concerns
 
-- Phase 16 is blocked only on live GitHub Actions proof of the recovery-ref enforcement and warning-free runtime; local repo verification is complete.
+- No current phase blockers. The recovery proof and milestone-close archive are complete; the only remaining workflow step is defining the next milestone.
 
 ## Session Continuity
 
-**Next action:** Execute the `16-HUMAN-UAT.md` recovery workflow checks, then approve Phase 16 so it can be marked complete.
+**Next action:** Run `$gsd-new-milestone` to define the next milestone and create a fresh `.planning/REQUIREMENTS.md`.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Completed Milestone:** v1.1 (Release Hardening) — archived to `.planning/milestones/v1.1-*` with a `tech_debt` audit verdict limited to Nyquist completeness gaps and the `release-please-action` Node.js 20 warning.
+**Completed Milestone:** v1.2 (PAR Foundation) — archived to `.planning/milestones/v1.2-*` with a passed milestone audit and no remaining in-scope gaps.
