@@ -77,6 +77,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     mixfile = File.read!("mix.exs")
 
     assert mixfile =~ "ci: ["
+    assert mixfile =~ "\"test.fast\": [\"test.setup\", \"test\"]"
     assert mixfile =~ "\"cmd sh -lc 'mix qa'\""
     assert mixfile =~ "\"cmd sh -lc 'mix docs.verify'\""
     assert mixfile =~ "\"cmd sh -lc 'HEX_API_KEY= mix deps.audit'\""

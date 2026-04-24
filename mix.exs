@@ -55,7 +55,7 @@ defmodule Lockspire.MixProject do
   defp aliases do
     [
       "test.setup": ["lockspire.test.setup"],
-      "test.fast": ["test"],
+      "test.fast": ["test.setup", "test"],
       "test.integration": ["test.setup", "test --only integration"],
       "test.phase6.e2e": [
         "test.setup",
