@@ -8,26 +8,23 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## Current Milestone: v1.1 Release Hardening
-
-**Goal:** Make the current Lockspire surface boring to verify, ship, and trust before expanding protocol scope.
-
-**Target features:**
-- Repo-wide QA, CI, and release-readiness checks are green from repo truth rather than carve-outs.
-- Trusted release-path verification is exercised and documented around the protected Hex publish workflow.
-- Public docs, support posture, and release claims stay tightly bounded to the implemented preview surface.
-
 ## Current State
 
-The first Lockspire milestone is complete and archived as [v1.0](milestones/v1.0-ROADMAP.md) at the planning level. The repo now contains the embedded install path, authorization code + PKCE flow, OIDC discovery/JWKS/userinfo, refresh rotation, revocation, introspection, LiveView-native operator tooling, and the security/observability baseline described by the milestone.
+Lockspire has now archived two planning milestones. The embedded provider foundation from v1.0 remains intact, and v1.1 closed the release-hardening work needed to make repo-truth QA, trusted release proof, and preview-posture claims defensible.
 
-That said, the public release claim should still remain **v0.1 preview**, not `1.0`. Phase 10 closed the reopened contributor-gate gap by restoring the maintained `mix ci` lane and backfilling Phase 07 gate verification, but trusted Hex publish proof is still required before a full `1.0` claim is warranted.
+At archive time, the package version in `mix.exs` is `0.2.0`, and the protected release path has real proof behind it. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
+
+## Next Milestone Candidate
+
+### v1.2 PAR Foundation
+
+The default next milestone is PAR as a narrow extension of the existing authorization-code + PKCE flow. That work should add pushed authorization requests without broadening Lockspire into dynamic registration, device flow, sender-constrained tokens, or a larger CIAM surface.
 
 ## Next Milestone Goals
 
-- Exercise the trusted Hex publish and release path end to end.
-- Keep the public preview posture and docs aligned to what the repo can actually prove today.
-- Re-audit v1.1 once the trusted release proof is recorded so the milestone can close without caveats.
+- Define a fresh milestone-scoped requirements file for PAR rather than carrying forward the archived v1.1 ledger.
+- Keep discovery, support docs, and examples honest about what PAR is and is not once work starts.
+- Maintain the trusted preview release path and remove the remaining release-tooling warning before the GitHub Node.js 20 cutoff.
 
 ## Requirements
 
@@ -38,13 +35,13 @@ That said, the public release claim should still remain **v0.1 preview**, not `1
 - Operator/admin workflows for clients, consents, tokens, and keys were delivered in the archived v1.0 milestone.
 - Security defaults, telemetry, auditability, redaction, and negative-path coverage were delivered in the archived v1.0 milestone.
 - Canonical onboarding, executable docs, CI/release assets, and supported-surface policy were delivered in the archived v1.0 milestone.
+- Repo-truth QA, contributor gate closure, trusted protected release proof, and preview-posture drift fences were delivered in the archived v1.1 milestone.
 
 ### Active
 
-- [x] Repo-wide QA and release gates are green enough to support repeated preview releases without exceptions. Validated in Phase 10: Contributor Gate Recovery.
-- [ ] Trusted release-path verification is exercised in the intended publish environment.
-- [ ] Public docs, workflow contracts, and supported-surface claims remain synchronized to the implemented preview surface.
-- [ ] PAR is the default next protocol-expansion milestone after release hardening, but it is not implemented and not supported in v1.1.
+- [ ] Define fresh PAR requirements and phase breakdown for v1.2.
+- [ ] Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner cutoff.
+- [ ] Decide whether full Nyquist completeness is required before or during the next milestone and, if so, backfill `10/12/13-VALIDATION.md`.
 
 ### Out of Scope
 
@@ -79,8 +76,8 @@ Lockspire is a greenfield OSS library project with a substantial prep corpus in 
 | Optimize for a narrow v1 focused on auth code + PKCE, OIDC discovery/JWKS/userinfo, client management, consent, rotation, telemetry, and release readiness | Keeps the initial scope credible and avoids drifting into a heavyweight CIAM suite | Adopted in archived v1.0 milestone |
 | Treat PAR, dynamic client registration, device flow, stronger sender-constrained modes, and stronger certification profiles as later roadmap candidates | Preserves room for future protocol expansion without bloating the first milestone | Deferred to next milestone planning |
 | **Sigra ecosystem sequencing** | Finish **Phase 3 → 5 → 6** before public “Sigra + Lockspire” golden paths; document via **ECOSYSTEM-SIGRA.md** and **`docs/sigra-companion-host.md`** | Adopted in archived v1.0 milestone |
-| Polish the current preview surface before adding more protocol breadth | The repo already has its core provider wedge; release trust is now the gating risk to adoption and velocity | Adopted for v1.1 milestone |
-| Make PAR the first post-polish protocol wedge | PAR extends the existing auth-code flow with less product-shape drift than dynamic registration or device flow | Deferred to v1.2 planning; not implemented and not supported in v1.1 |
+| Polish the current preview surface before adding more protocol breadth | The repo already has its core provider wedge; release trust is now the gating risk to adoption and velocity | Adopted in archived v1.1 milestone |
+| Make PAR the first post-polish protocol wedge | PAR extends the existing auth-code flow with less product-shape drift than dynamic registration or device flow | Active candidate for v1.2 planning |
 
 ## Evolution
 
@@ -100,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 — Phase 10 restored the maintained contributor gate, kept v1.1 focused on release hardening, and left trusted release proof as the remaining closure gap before re-audit.*
+*Last updated: 2026-04-24 after archiving the v1.1 Release Hardening milestone.*
