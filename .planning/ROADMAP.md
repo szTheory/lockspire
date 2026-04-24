@@ -8,9 +8,9 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Gap closure phase planned 2026-04-24; Phase 12 pending before re-audit
+**Status:** Phase 12 executed 2026-04-24; milestone ready for re-audit
 **Phases:** 7-12
-**Total Plans:** 13 completed, 1 pending
+**Total Plans:** 14 completed, 0 pending
 
 **Overview**
 
@@ -103,7 +103,7 @@ This phase gathered the required protected GitHub environment proof, recorded th
 
 Plans:
 
-- [ ] 12-01: Write `11-VERIFICATION.md`, re-anchor RELS traceability on Phase 11 evidence, and prepare the milestone for re-audit
+- [x] 12-01: Write `11-VERIFICATION.md`, re-anchor RELS traceability on Phase 11 evidence, and prepare the milestone for re-audit
 
 **Details:**
 This phase is intentionally narrow. It should consolidate the existing Phase 11 protected release proof, summaries, and prior Phase 08 verification evidence into a normal phase-level verification rollup without reopening product scope or altering the trusted release path itself.
@@ -114,7 +114,7 @@ After v1.1 gap closure work passes re-audit, the default next milestone is **v1.
 
 ## Next Up
 
-- Plan and execute Phase 12 to write the missing Phase 11 verification rollup, then re-run `$gsd-audit-milestone`.
+- Re-run `$gsd-audit-milestone` now that Phase 12 wrote the missing Phase 11 verification rollup.
 - Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner deprecation cutoff.
 - Defer optional Nyquist completeness cleanup for missing `10-VALIDATION.md` until after v1.1 archive unless archive criteria are tightened.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.
