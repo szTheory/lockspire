@@ -9,11 +9,11 @@ The public support contract for the current `v0.1` preview lives in [`docs/suppo
 ## What v0.1 includes
 
 - Authorization code + PKCE
-- Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path
+- Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Userinfo, revocation, introspection, and refresh rotation
 - Host-owned login and consent seams
-- LiveView admin surfaces for clients, consents, tokens, and keys
+- LiveView admin surfaces for clients, consents, tokens, keys, and PAR policies
 - Generator-backed install flow for Phoenix hosts
 
 ## What v0.1 does not include

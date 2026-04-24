@@ -9,8 +9,18 @@ Lockspire ships a library-owned operator surface for protocol state, while the h
 - Inspect and revoke consents
 - Inspect and revoke tokens
 - Publish, activate, and retire signing keys
+- Manage Global PAR policy at `/admin/policies/par`
+- Manage Client PAR override at `/admin/clients/:client_id/par-policy`
 
 These routes live under the embedded Lockspire router and are meant for application operators.
+
+## PAR Policy Management
+
+Operators can control whether PAR is required for authorization requests:
+
+- **Global PAR policy**: The default requirement for all clients (Required or Optional).
+- **Client PAR override**: A per-client setting that can override the global default.
+- **Effective PAR requirement**: The resolved policy for a specific request, used by Lockspire to enforce or allow direct authorization.
 
 ## Host-owned account workflows
 

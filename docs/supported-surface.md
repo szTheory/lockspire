@@ -11,13 +11,14 @@ Lockspire `v0.1` preview currently supports this repo-proven surface:
 - Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
+- global and client-specific PAR requirement policies (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Userinfo
 - Revocation
 - Introspection
 - Refresh token rotation
 - Host-owned login redirects and consent handoff seams
-- LiveView and admin workflows for clients, consents, tokens, and keys
+- LiveView and admin workflows for clients, consents, tokens, keys, and PAR policies
 - Phoenix-first onboarding docs and generated host integration files
 
 ## Explicitly out of scope

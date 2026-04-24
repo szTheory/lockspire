@@ -297,7 +297,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     security = File.read!(@security_policy_path)
 
     for doc <- [readme, supported_surface, security] do
-      assert doc =~ "Lockspire-issued request_uri"
+      assert doc =~ "Lockspire-issued `request_uri`"
       assert doc =~ "required"
       assert doc =~ "optional"
     end
@@ -307,11 +307,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     # Explicit exclusions preserved
     for doc <- [readme, supported_surface, security] do
-      assert doc =~ "request-object-by-value"
-      assert doc =~ "generic external request_uri"
-      assert doc =~ "dynamic client registration"
-      assert doc =~ "device flow"
-      assert doc =~ "hosted auth"
+      doc_down = String.downcase(doc)
+      assert doc_down =~ "request-object-by-value"
+      assert doc_down =~ "generic external `request_uri`"
+      assert doc_down =~ "dynamic client registration"
+      assert doc_down =~ "device flow"
+      assert doc_down =~ "hosted auth"
     end
   end
 end

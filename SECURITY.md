@@ -31,13 +31,13 @@ Lockspire aims to:
 Lockspire's supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:
 
 - authorization code + PKCE
-- pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path
+- pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path (supports `required` or `optional` policy enforcement)
 - discovery and JWKS
 - userinfo
 - revocation and introspection
 - refresh token rotation
 - generator-backed Phoenix install flow
-- operator workflows for clients, consents, tokens, and keys
+- operator workflows for clients, consents, tokens, keys, and PAR policies
 
 Unsupported or out-of-scope surfaces include:
 
