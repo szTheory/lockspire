@@ -16,7 +16,7 @@ Lockspire release work should stay boring, reviewable, tied to repo truth, and i
 
 Keep release evidence in three separate buckets:
 
-- Repo-owned proof: `.github/workflows/release.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
+- Repo-owned proof: `.github/workflows/release.yml`, `.github/actions/release-please/action.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
 - GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
 - Workflow-run proof: one successful `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
 
@@ -37,6 +37,8 @@ Contributors should have one canonical answer before merge: run `mix ci`.
 CI may keep those checks split into separate jobs for cacheability and diagnostics, but that workflow still needs to remain mechanically equivalent to `mix ci`.
 
 Release Please generated PR checks are informative review context. They are not authoritative release proof, because trusted proof starts only after merge in the protected `hex-publish` lane.
+
+Keep the Release Please invocation repo-controlled. `.github/workflows/release.yml` should call `./.github/actions/release-please`, and that checked-in action should remain the only implementation detail between the workflow contract and the upstream `release-please` runtime.
 
 ## Maintainer-only release gate
 
@@ -72,6 +74,7 @@ Before merging a release PR, confirm:
 
 - `mix ci`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
+- `.github/workflows/release.yml` still calls `./.github/actions/release-please` rather than a direct third-party Release Please action reference
 - `release-please-config.json` and `.release-please-manifest.json` still match the intended preview release policy
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`

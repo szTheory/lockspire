@@ -3,6 +3,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
   @release_workflow_path Path.expand("../../.github/workflows/release.yml", __DIR__)
+  @release_please_action_path Path.expand("../../.github/actions/release-please/action.yml", __DIR__)
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
@@ -25,8 +26,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "trusted proof starts only after merge in the protected `hex-publish` lane"
     assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
     assert guide =~ "Repo-owned proof:"
+    assert guide =~ ".github/actions/release-please/action.yml"
     assert guide =~ "GitHub settings proof:"
     assert guide =~ "Workflow-run proof:"
+    assert guide =~ "should call `./.github/actions/release-please`"
+    assert guide =~ "direct third-party Release Please action reference"
 
     assert guide =~
              "branch restriction to `main`, admin-bypass posture, and environment-secret placement"
@@ -54,6 +58,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~
              "Trusted proof starts only after merge in the protected hex-publish environment"
 
+    assert release_workflow =~ "uses: ./.github/actions/release-please"
     assert release_workflow =~ "config-file: release-please-config.json"
     assert release_workflow =~ "manifest-file: .release-please-manifest.json"
     assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
@@ -65,8 +70,26 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     refute release_workflow =~ "pull_request:"
     refute release_workflow =~ "package-name: lockspire"
+    refute release_workflow =~ "googleapis/release-please-action"
 
     refute release_workflow =~ "mix package.verify"
+  end
+
+  test "repo-controlled release please action stays on a supported runtime and keeps root release outputs" do
+    action = File.read!(@release_please_action_path)
+
+    assert action =~ "using: composite"
+    assert action =~ "actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903"
+    assert action =~ "node-version: \"24\""
+    assert action =~ "release-please@17.3.0"
+    assert action =~ "config-file"
+    assert action =~ "manifest-file"
+    assert action =~ "core.setOutput(\"release_created\", false)"
+    assert action =~ "setPathOutput(path, \"release_created\", true)"
+    assert action =~ "manifest.createReleases()"
+    assert action =~ "manifest.createPullRequests()"
+    refute action =~ "googleapis/release-please-action@"
+    refute action =~ "using: node20"
   end
 
   test "release please policy is checked in and keeps preview versioning explicit" do
