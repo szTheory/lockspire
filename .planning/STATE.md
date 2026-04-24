@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: phase_completed
-last_updated: "2026-04-24T13:29:30Z"
-last_activity: 2026-04-24 -- Completed Phase 14 PAR intake
+status: executing
+last_updated: "2026-04-24T14:29:50.906Z"
+last_activity: 2026-04-24 -- Completed Phase 15 plan 01 PAR authorization consumption
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 8
-  completed_plans: 3
-  percent: 38
+  total_plans: 6
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -21,25 +21,25 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Plan Phase 15 of the v1.2 PAR Foundation milestone.
+**Current focus:** Phase 15 — authorization-consumption-and-truthful-surface
 
 ## Current Position
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: 15 - Authorization Consumption and Truthful Surface
+Phase: 15 (authorization-consumption-and-truthful-surface) — EXECUTING
 
-Plan: Phase 15 - Authorization Consumption and Truthful Surface
+Plan: 2 of 3
 
-Status: Phase 14 complete; ready for Phase 15 planning
+Status: Executing Phase 15
 
-Last activity: 2026-04-24 -- Completed Phase 14 PAR intake
+Last activity: 2026-04-24
 
 ## Performance Metrics
 
 - Phases completed: 1/3
-- Plans completed: 3/8
-- Recorded tasks completed: 6
+- Plans completed: 4/6
+- Recorded tasks completed: 8
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -54,11 +54,12 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - Reconcile RELS-01 through RELS-03 to Phase 12 completion without attributing new release-path implementation to Phase 13.
 - Keep v1.2 narrow: PAR extends the authorization request path, but does not justify dynamic registration, device flow, sender-constrained tokens, or hosted-auth ambitions.
 - PAR request_uri values are stored durably by hash, not plaintext.
+- Burn PAR references inside the repository transaction even on wrong-client or expired use so replay resistance does not depend on controller logic.
+- Resolve Lockspire-issued PAR references into canonical authorization params before validation so AuthorizationFlow keeps the existing %Validated{} contract.
 
 ### Pending Todos
 
-- Run `$gsd-plan-phase 15` for PAR authorization consumption.
-- Keep PAR scoped to the embedded code + PKCE path while planning Phase 15.
+- Execute `15-02-PLAN.md` to publish truthful PAR discovery metadata and support docs.
 - Decide during execution whether Nyquist backfill becomes explicit v1.2 scope or remains deferred.
 
 ### Blockers/Concerns
@@ -67,7 +68,7 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-plan-phase 15` to break down the PAR authorization-consumption phase into executable plans.
+**Next action:** Execute `15-02-PLAN.md` for truthful PAR discovery metadata and docs.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

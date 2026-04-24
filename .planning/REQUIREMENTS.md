@@ -15,7 +15,7 @@ This milestone explicitly excludes any claim of PAR implementation in v1.1.
 
 ### Authorization Lifecycle
 
-- [ ] **PAR-02**: OAuth clients can complete the existing authorization code + PKCE flow by presenting a PAR-issued `request_uri`, and Lockspire enforces expiry, client binding, and replay-resistant single use for that reference.
+- [x] **PAR-02**: OAuth clients can complete the existing authorization code + PKCE flow by presenting a PAR-issued `request_uri`, and Lockspire enforces expiry, client binding, and replay-resistant single use for that reference.
 
 ### Discovery and Support Truth
 

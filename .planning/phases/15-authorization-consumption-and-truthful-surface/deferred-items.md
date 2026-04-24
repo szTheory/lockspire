@@ -1,0 +1,1 @@
+- `MIX_ENV=test mix test.fast` currently fails in `test/lockspire/protocol/pushed_authorization_request_test.exs` because two tests hard-code `expires_at: ~U[2026-04-24 14:05:00Z]`, which is already expired on the current test clock (`2026-04-24 14:29Z`). This is pre-existing Phase 14 debt unrelated to PAR `/authorize` consumption.
