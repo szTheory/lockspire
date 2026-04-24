@@ -6,6 +6,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
+  @readme_path Path.expand("../../README.md", __DIR__)
+  @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
+  @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
+  @roadmap_path Path.expand("../../.planning/ROADMAP.md", __DIR__)
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
@@ -104,5 +108,64 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert release_workflow =~ "mix release.preflight"
     assert release_workflow =~ "mix hex.publish --yes"
+  end
+
+  test "preview docs keep the v0.1 embedded Phoenix wedge explicit" do
+    readme = File.read!(@readme_path)
+    supported_surface = File.read!(@supported_surface_path)
+
+    assert readme =~ "current `v0.1` preview"
+    assert readme =~ "inside its existing app"
+    assert readme =~ "The public support contract"
+    assert readme =~ "Generator-backed install flow for Phoenix hosts"
+    assert readme =~ "PAR, device flow, or dynamic client registration"
+
+    assert supported_surface =~ "Lockspire `v0.1` is a preview release"
+    assert supported_surface =~ "embedded Phoenix library wedge"
+    assert supported_surface =~ "Authorization code flow with PKCE S256"
+    assert supported_surface =~ "OIDC discovery and JWKS"
+    assert supported_surface =~ "Lockspire does not use a demo app"
+    assert supported_surface =~ "A `v0.1` preview claim should not say:"
+
+    refute readme =~ "production-ready"
+    refute supported_surface =~ "production-ready"
+  end
+
+  test "security and release posture stay inside the supported preview surface" do
+    security = File.read!(@security_policy_path)
+    guide = File.read!(@maintainer_guide_path)
+    ci_workflow = File.read!(@ci_workflow_path)
+    release_workflow = File.read!(@release_workflow_path)
+
+    assert security =~ "Please do not file public issues"
+    assert security =~ "Open a GitHub Security Advisory draft"
+    assert security =~ "supported security surface is limited"
+    assert security =~ "authorization code + PKCE"
+    assert security =~ "PAR, device flow, and dynamic client registration"
+    assert security =~ "PKCE S256 required by default"
+    assert security =~ "no `alg=none`"
+
+    assert guide =~ "inside the `v0.1` preview support contract"
+    assert guide =~ "Preview releases should only claim the supported surface the repo can currently prove."
+    assert guide =~ "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
+    assert guide =~ "Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+
+    assert ci_workflow =~ "run: mix docs.verify"
+    assert release_workflow =~ "environment: hex-publish"
+  end
+
+  test "roadmap keeps PAR future-facing while current posture rejects present support claims" do
+    roadmap = File.read!(@roadmap_path)
+    readme = File.read!(@readme_path)
+    supported_surface = File.read!(@supported_surface_path)
+    security = File.read!(@security_policy_path)
+
+    assert roadmap =~ "document PAR as the next milestone without starting it here"
+    assert roadmap =~ "v1.2 PAR Foundation"
+    assert roadmap =~ "next milestone is **v1.2 PAR Foundation**"
+
+    refute readme =~ "already supports PAR"
+    refute supported_surface =~ "already supports PAR"
+    refute security =~ "already supports PAR"
   end
 end
