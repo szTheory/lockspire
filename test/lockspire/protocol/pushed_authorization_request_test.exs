@@ -39,7 +39,26 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
         metadata: %{}
       })
 
-    %{public_client: public_client}
+    secret = "par-confidential-secret"
+
+    {:ok, confidential_client} =
+      Repository.register_client(%Client{
+        client_id: "par-confidential",
+        client_secret_hash: Policy.hash_client_secret(secret),
+        client_type: :confidential,
+        name: "PAR Confidential Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["profile", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    %{public_client: public_client, confidential_client: confidential_client, secret: secret}
   end
 
   test "issues opaque PAR references with a 300 second ttl and hashes them for durable lookup" do
@@ -158,6 +177,67 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
              before_count
   end
 
+  test "push rejects mixed client authentication without creating durable state", %{
+    confidential_client: confidential_client,
+    secret: secret
+  } do
+    before_count = Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id)
+
+    assert {:error, error} =
+             PushedAuthorizationRequestProtocol.push(%{
+               params:
+                 valid_params(confidential_client.client_id)
+                 |> Map.put("client_secret", secret),
+               authorization: basic_auth(confidential_client.client_id, secret),
+               opts: [client_store: Repository, pushed_authorization_request_store: Repository]
+             })
+
+    assert error.status == 401
+    assert error.error == "invalid_client"
+    assert error.reason_code == :mixed_auth
+
+    assert Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id) ==
+             before_count
+  end
+
+  test "push rejects invalid redirect_uri without creating durable state", %{
+    public_client: public_client
+  } do
+    before_count = Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id)
+
+    assert {:error, error} =
+             PushedAuthorizationRequestProtocol.push(%{
+               params:
+                 valid_params(public_client.client_id)
+                 |> Map.put("redirect_uri", "https://attacker.example.com/callback"),
+               opts: [client_store: Repository, pushed_authorization_request_store: Repository]
+             })
+
+    assert error.status == 400
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_redirect_uri
+
+    assert Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id) ==
+             before_count
+  end
+
+  test "push rejects missing pkce without creating durable state", %{public_client: public_client} do
+    before_count = Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id)
+
+    assert {:error, error} =
+             PushedAuthorizationRequestProtocol.push(%{
+               params: Map.delete(valid_params(public_client.client_id), "code_challenge"),
+               opts: [client_store: Repository, pushed_authorization_request_store: Repository]
+             })
+
+    assert error.status == 400
+    assert error.error == "invalid_request"
+    assert error.reason_code == :missing_pkce
+
+    assert Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id) ==
+             before_count
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,
@@ -169,5 +249,9 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
+  end
+
+  defp basic_auth(client_id, secret) do
+    "Basic " <> Base.encode64("#{URI.encode_www_form(client_id)}:#{URI.encode_www_form(secret)}")
   end
 end

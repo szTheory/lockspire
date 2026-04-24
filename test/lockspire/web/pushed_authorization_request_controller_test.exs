@@ -142,6 +142,32 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
     assert count_pushed_requests() == before_count
   end
 
+  test "POST /par returns oauth error json for missing pkce submissions", %{
+    public_client: public_client
+  } do
+    before_count = count_pushed_requests()
+
+    conn =
+      build_conn(
+        :post,
+        "/par",
+        Map.delete(valid_params(public_client.client_id), "code_challenge")
+      )
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 400
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "invalid_request",
+             "error_description" => "PKCE S256 is required"
+           }
+
+    assert count_pushed_requests() == before_count
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,
