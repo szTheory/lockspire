@@ -22,6 +22,29 @@ jobs:
     name: Fast Checks
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
+      LOCKSPIRE_TEST_DB_PORT: "5432"
+      LOCKSPIRE_TEST_DB_USER: lockspire
+      LOCKSPIRE_TEST_DB_PASSWORD: lockspire
+      LOCKSPIRE_TEST_DB_NAME: lockspire_test
+
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -46,6 +69,15 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in $(seq 1 30); do
+            pg_isready -h "$LOCKSPIRE_TEST_DB_HOST" -p "$LOCKSPIRE_TEST_DB_PORT" -U "$LOCKSPIRE_TEST_DB_USER" -d "$LOCKSPIRE_TEST_DB_NAME" && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL did not become ready in time" >&2
+          exit 1
+
       - name: Run qa gate
         run: mix qa
 
@@ -59,7 +91,7 @@ jobs:
         run: mix package.build
 
       - name: Run fast tests
-        run: MIX_ENV=test mix test.fast
+        run: mix test.fast
 
   integration:
     name: Integration Checks

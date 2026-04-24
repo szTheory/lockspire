@@ -90,7 +90,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
           "run: mix docs.verify",
           "run: mix deps.audit",
           "run: mix package.build",
-          "run: MIX_ENV=test mix test.fast",
+          "run: mix test.fast",
           "run: mix test.integration",
           "run: mix test.phase3"
         ] do
