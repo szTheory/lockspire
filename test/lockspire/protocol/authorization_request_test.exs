@@ -196,6 +196,25 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
              )
   end
 
+  test "resolves a valid pushed authorization request into the canonical validated contract", %{
+    client: client
+  } do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == "https://client.example.com/callback"
+    assert validated.scopes == ["profile", "email"]
+    assert validated.prompt == ["login", "consent"]
+    assert validated.state == "state-123"
+    assert validated.code_challenge == String.duplicate("a", 43)
+  end
+
   test "expired pushed authorization request is treated like a missing reference", %{
     client: client
   } do
@@ -206,6 +225,21 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
                pushed_request.request_uri_hash,
                client.client_id
              )
+  end
+
+  test "expired pushed authorization request is rejected as invalid input", %{client: client} do
+    request_uri =
+      put_pushed_request!(client.client_id, ttl: -1)
+      |> Map.fetch!(:request_uri)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => request_uri
+             })
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_request_uri
   end
 
   test "replayed pushed authorization request stays burned after first successful consume", %{
@@ -226,6 +260,19 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
              )
   end
 
+  test "replayed pushed authorization request is rejected after first successful use", %{
+    client: client
+  } do
+    pushed_request = put_pushed_request!(client.client_id)
+    params = %{"client_id" => client.client_id, "request_uri" => pushed_request.request_uri}
+
+    assert {:ok, %Validated{}} = AuthorizationRequest.validate(params)
+
+    assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_request_uri
+  end
+
   test "wrong-client pushed authorization request attempt burns the reference", %{
     client: client,
     other_client: other_client
@@ -243,6 +290,45 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
                pushed_request.request_uri_hash,
                client.client_id
              )
+  end
+
+  test "wrong-client pushed authorization request is rejected and burns the reference", %{
+    client: client,
+    other_client: other_client
+  } do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = wrong_client_error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => other_client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert wrong_client_error.error == "invalid_request"
+    assert wrong_client_error.reason_code == :invalid_request_uri
+
+    assert {:browser_error, %Error{} = replay_error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert replay_error.error == "invalid_request"
+    assert replay_error.reason_code == :invalid_request_uri
+  end
+
+  test "rejects mixed request_uri and raw authorization parameters", %{client: client} do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri,
+               "redirect_uri" => "https://client.example.com/callback"
+             })
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :request_uri_conflict
   end
 
   defp valid_params(client_id) do

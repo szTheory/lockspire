@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Observability
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
@@ -66,7 +67,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   @spec validate(map()) :: result()
   def validate(params) when is_map(params) do
     with {:ok, %Client{} = client} <- fetch_client(params),
-         {:ok, %Validated{} = validated} <- validate_with_client(params, client) do
+         {:ok, resolved_params} <- resolve_authorization_params(params, client),
+         {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client) do
       validated = %Validated{validated | client: client}
 
       Observability.emit(:authorization_request_accepted, %{}, %{
@@ -117,6 +119,18 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp fetch_client(_params) do
     {:browser_error, browser_error(:invalid_request, "Missing client_id", :missing_client_id)}
   end
+
+  defp resolve_authorization_params(%{"request_uri" => request_uri} = params, %Client{} = client)
+       when is_binary(request_uri) and request_uri != "" do
+    with :ok <- reject_request_uri_conflicts(params),
+         :ok <- validate_lockspire_request_uri(request_uri),
+         {:ok, %PushedAuthorizationRequest{} = request} <-
+           consume_pushed_authorization_request(request_uri, client.client_id) do
+      {:ok, pushed_request_to_params(request)}
+    end
+  end
+
+  defp resolve_authorization_params(params, %Client{}), do: {:ok, params}
 
   defp validate_redirect_uri(client, %{"redirect_uri" => redirect_uri})
        when is_binary(redirect_uri) and redirect_uri != "" do
@@ -319,6 +333,85 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp maybe_reject_inbound_request_uri(_params, false), do: :ok
+
+  defp reject_request_uri_conflicts(params) do
+    conflict_keys =
+      params
+      |> Enum.reject(fn {key, _value} -> key in ["client_id", "request_uri"] end)
+      |> Enum.filter(fn {_key, value} -> present?(value) end)
+
+    case conflict_keys do
+      [] ->
+        :ok
+
+      _other ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "request_uri cannot be combined with raw authorization parameters",
+           :request_uri_conflict
+         )}
+    end
+  end
+
+  defp validate_lockspire_request_uri(request_uri) do
+    if String.starts_with?(request_uri, PushedAuthorizationRequest.request_uri_prefix()) do
+      :ok
+    else
+      {:browser_error,
+       browser_error(
+         :invalid_request,
+         "request_uri must be a Lockspire-issued reference",
+         :unsupported_request_uri
+       )}
+    end
+  end
+
+  defp consume_pushed_authorization_request(request_uri, client_id) do
+    request_uri
+    |> Policy.hash_token()
+    |> Repository.consume_pushed_authorization_request(client_id)
+    |> case do
+      {:ok, %PushedAuthorizationRequest{} = request} ->
+        {:ok, request}
+
+      {:ok, nil} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "request_uri is invalid, expired, or already used",
+           :invalid_request_uri
+         )}
+
+      {:error, _reason} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "Unable to resolve request_uri",
+           :request_uri_lookup_failed
+         )}
+    end
+  end
+
+  defp pushed_request_to_params(%PushedAuthorizationRequest{} = request) do
+    %{
+      "client_id" => request.client_id,
+      "redirect_uri" => request.redirect_uri,
+      "response_type" => "code",
+      "scope" => Enum.join(request.scopes, " "),
+      "prompt" => prompt_param(request.prompt),
+      "nonce" => request.nonce,
+      "state" => request.state,
+      "code_challenge" => request.code_challenge,
+      "code_challenge_method" => Atom.to_string(request.code_challenge_method)
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
+
+  defp prompt_param(nil), do: nil
+  defp prompt_param(prompt) when is_binary(prompt), do: prompt
+  defp prompt_param(prompt) when is_list(prompt), do: Enum.join(prompt, " ")
 
   defp reject_unsupported_params(params) do
     case Enum.find(@unsupported_params, &present?(params[&1])) do
