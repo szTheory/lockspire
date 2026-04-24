@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: PAR Foundation
-status: archived
-last_updated: "2026-04-24T16:20:30.444Z"
-last_activity: 2026-04-24 -- v1.2 milestone archived after passed audit-open and passed milestone audit
+milestone: v1.3
+milestone_name: PAR Policy Controls
+status: complete
+last_updated: "2026-04-24T21:00:00.000Z"
+last_activity: 2026-04-24
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 4
   total_plans: 8
   completed_plans: 8
   percent: 100
@@ -21,25 +21,25 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Define the next milestone after the archived v1.2 PAR Foundation release
+**Current focus:** Phase 20 — Verification and Milestone Closure
 
 ## Current Position
 
-Milestone: v1.2 — PAR Foundation
+Milestone: v1.3 — PAR Policy Controls
 
-Phase: 16 (verification-and-release-runtime-hygiene) — COMPLETE
+Phase: 20 (Verification and Milestone Closure) — COMPLETE
 
-Plan: 2 of 2 complete
+Plan: 2 of 2
 
-Status: Archived; no active milestone is defined yet
+Status: Milestone complete — all requirements verified
 
-Last activity: 2026-04-24 -- v1.2 archive files written and active roadmap collapsed
+Last activity: 2026-04-24
 
 ## Performance Metrics
 
-- Phases completed: 3/3
+- Phases completed: 4/4
 - Plans completed: 8/8
-- Recorded tasks completed: 16
+- Recorded tasks completed: 22
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -60,15 +60,24 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - Describe PAR publicly only as Lockspire-issued request_uri support on the existing authorization code plus PKCE flow.
 - Keep 15-03 proof-only on top of 15-01/15-02 runtime behavior instead of reopening implementation.
 - Enforce narrow PAR support claims through discovery, docs, SECURITY, and release contract tests.
+- Prioritize PAR policy controls before broader JAR, DCR, device flow, or sender-constrained token work because they tighten the narrow `1.0` path more directly.
+- Keep v1.3 limited to PAR policy controls and operator UX; broader request-object interoperability remains a follow-on milestone.
+- Pin discovery metadata to capability-only fields, refuting universal-required or JAR-related metadata until implemention proven.
+- Enforce shared wording for PAR capability-vs-policy resolution across README, supported-surface, and SECURITY docs.
+- Include explicit operator routes and workflow terms (Global/Client/Effective policy) in operator docs to ensure admin-surface explainability.
+- Use `.link patch` for internal admin navigation to preserve LiveView state and simplify testing/UX.
+- Allow empty string as a valid `mount_path` config to support root-mounted library usage.
+- Consolidate all PAR policy resolution branches into a single integration verification artifact for milestone closure.
+- Omit 'openid' from registered allowed_scopes as it is implicitly allowed by the protocol and rejected by registration validation.
 
 ### Blockers/Concerns
 
-- No current phase blockers. The recovery proof and milestone-close archive are complete; the only remaining workflow step is defining the next milestone.
+- No current execution blockers. The active constraint is scope discipline: v1.3 should not blur into JAR-by-value, generic external `request_uri`, dynamic client registration, device flow, or release-process expansion.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` to define the next milestone and create a fresh `.planning/REQUIREMENTS.md`.
+**Next action:** Milestone v1.3 complete. Prepare for the next milestone in the roadmap (e.g., JAR or DCR).
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Completed Milestone:** v1.2 (PAR Foundation) — archived to `.planning/milestones/v1.2-*` with a passed milestone audit and no remaining in-scope gaps.
+**Completed Milestone:** v1.3 (PAR Policy Controls) — all requirements (PARPOL-01 through PARPOL-06) verified with consolidated integration proof; v1.2 (PAR Foundation) — archived to `.planning/milestones/v1.2-*` with a passed milestone audit and no remaining in-scope gaps.
