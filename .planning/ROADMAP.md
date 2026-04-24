@@ -46,7 +46,7 @@ Plans:
 Plans:
 
 - [x] 15-01: Teach the authorization pipeline to resolve PAR-issued `request_uri` values with expiry, client-binding, and single-use enforcement
-- [ ] 15-02: Publish truthful PAR discovery metadata and update support-facing docs without implying broader request-object or adjacent flow support
+- [x] 15-02: Publish truthful PAR discovery metadata and update support-facing docs without implying broader request-object or adjacent flow support
 - [ ] 15-03: Add end-to-end tests for the PAR-backed authorization code + PKCE flow and truth-surface contract coverage
 
 **Success criteria:**

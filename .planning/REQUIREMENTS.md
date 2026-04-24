@@ -19,7 +19,7 @@ This milestone explicitly excludes any claim of PAR implementation in v1.1.
 
 ### Discovery and Support Truth
 
-- [ ] **PAR-03**: Integrators can discover PAR support through truthful metadata and docs that advertise only the implemented PAR slice and do not imply request-object-by-value, dynamic registration, or device-flow support.
+- [x] **PAR-03**: Integrators can discover PAR support through truthful metadata and docs that advertise only the implemented PAR slice and do not imply request-object-by-value, dynamic registration, or device-flow support.
 
 ### Verification
 
@@ -57,7 +57,7 @@ This milestone explicitly excludes any claim of PAR implementation in v1.1.
 |-------------|-------|--------|
 | PAR-01 | Phase 14 | Complete |
 | PAR-02 | Phase 15 | Pending |
-| PAR-03 | Phase 15 | Pending |
+| PAR-03 | Phase 15 | Complete |
 | PAR-04 | Phase 16 | Pending |
 | RELS-04 | Phase 16 | Pending |
 

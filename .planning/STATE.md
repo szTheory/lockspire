@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
 status: executing
-last_updated: "2026-04-24T14:29:50.906Z"
-last_activity: 2026-04-24 -- Completed Phase 15 plan 01 PAR authorization consumption
+last_updated: "2026-04-24T14:32:56.940Z"
+last_activity: 2026-04-24
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -29,9 +29,9 @@ Milestone: v1.2 — PAR Foundation
 
 Phase: 15 (authorization-consumption-and-truthful-surface) — EXECUTING
 
-Plan: 2 of 3
+Plan: 3 of 3
 
-Status: Executing Phase 15
+Status: Ready to execute
 
 Last activity: 2026-04-24
 
@@ -56,10 +56,12 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - PAR request_uri values are stored durably by hash, not plaintext.
 - Burn PAR references inside the repository transaction even on wrong-client or expired use so replay resistance does not depend on controller logic.
 - Resolve Lockspire-issued PAR references into canonical authorization params before validation so AuthorizationFlow keeps the existing %Validated{} contract.
+- Advertise PAR only through pushed_authorization_request_endpoint when the mounted /par route exists.
+- Describe PAR publicly only as Lockspire-issued request_uri support on the existing authorization code plus PKCE flow.
 
 ### Pending Todos
 
-- Execute `15-02-PLAN.md` to publish truthful PAR discovery metadata and support docs.
+- Execute `15-03-PLAN.md` to add PAR discovery and docs contract coverage.
 - Decide during execution whether Nyquist backfill becomes explicit v1.2 scope or remains deferred.
 
 ### Blockers/Concerns
@@ -68,7 +70,7 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ## Session Continuity
 
-**Next action:** Execute `15-02-PLAN.md` for truthful PAR discovery metadata and docs.
+**Next action:** Execute `15-03-PLAN.md` for PAR integration and truth-surface contract coverage.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
