@@ -4,6 +4,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
   @release_workflow_path Path.expand("../../.github/workflows/release.yml", __DIR__)
   @release_please_action_path Path.expand("../../.github/actions/release-please/action.yml", __DIR__)
+  @release_please_runtime_package_path Path.expand("../../.github/actions/release-please/runtime/package.json", __DIR__)
+  @release_please_runtime_lock_path Path.expand("../../.github/actions/release-please/runtime/package-lock.json", __DIR__)
+  @release_please_runtime_index_path Path.expand("../../.github/actions/release-please/runtime/index.js", __DIR__)
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
@@ -25,6 +28,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Release Please PR as review-only evidence"
     assert guide =~ "trusted proof starts only after merge in the protected `hex-publish` lane"
     assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
+    assert guide =~ "exact commit SHA or tag being recovered"
     assert guide =~ "Repo-owned proof:"
     assert guide =~ ".github/actions/release-please/action.yml"
     assert guide =~ "GitHub settings proof:"
@@ -49,7 +53,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "workflow_dispatch:"
     assert release_workflow =~ "environment: hex-publish"
     assert release_workflow =~ "recovery_reason"
+    assert release_workflow =~ "recovery_ref"
     assert release_workflow =~ "workflow_dispatch is recovery-only"
+    assert release_workflow =~ "github.event_name != 'workflow_dispatch'"
+    assert release_workflow =~ "Check out repository for the recovery ref"
+    assert release_workflow =~ "ref: ${{ inputs.recovery_ref }}"
     assert release_workflow =~ "Release Please generated PRs are review-only"
     assert release_workflow =~ "github.event_name == 'workflow_dispatch'"
     assert release_workflow =~ "mix local.hex --force"
@@ -77,19 +85,29 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   test "repo-controlled release please action stays on a supported runtime and keeps root release outputs" do
     action = File.read!(@release_please_action_path)
+    runtime_package = File.read!(@release_please_runtime_package_path)
+    runtime_lock = File.read!(@release_please_runtime_lock_path)
+    runtime_index = File.read!(@release_please_runtime_index_path)
 
     assert action =~ "using: composite"
     assert action =~ "actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903"
     assert action =~ "node-version: \"24\""
-    assert action =~ "release-please@17.3.0"
+    assert action =~ "npm ci"
+    assert action =~ "--ignore-scripts"
+    assert action =~ "node .github/actions/release-please/runtime/index.js"
     assert action =~ "config-file"
     assert action =~ "manifest-file"
-    assert action =~ "core.setOutput(\"release_created\", false)"
-    assert action =~ "setPathOutput(path, \"release_created\", true)"
-    assert action =~ "manifest.createReleases()"
-    assert action =~ "manifest.createPullRequests()"
+    assert runtime_package =~ "\"release-please\": \"17.3.0\""
+    assert runtime_package =~ "\"@actions/core\": \"1.10.0\""
+    assert runtime_lock =~ "\"lockspire-release-please-runtime\""
+    assert runtime_lock =~ "\"release-please\": \"17.3.0\""
+    assert runtime_index =~ "core.setOutput(\"release_created\", false)"
+    assert runtime_index =~ "setPathOutput(path, \"release_created\", true)"
+    assert runtime_index =~ "manifest.createReleases()"
+    assert runtime_index =~ "manifest.createPullRequests()"
     refute action =~ "googleapis/release-please-action@"
     refute action =~ "using: node20"
+    refute action =~ "npm install"
   end
 
   test "release please policy is checked in and keeps preview versioning explicit" do

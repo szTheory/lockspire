@@ -46,7 +46,7 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 
 `mix package.publish-dry-run` remains a required release gate, but it is enforced from the trusted release workflow where `HEX_API_KEY` is available. It is not a manual local verification requirement for contributor closure.
 
-If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal publish trigger and it does not replace the Release Please driven path.
+If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal publish trigger, it does not replace the Release Please driven path, and it must target the exact commit SHA or tag being recovered.
 
 ## Secrets and environment
 
@@ -55,7 +55,7 @@ If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal pu
 - Restrict the environment to deployments from `main`.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
 - Keep the authenticated dry-run inside the trusted workflow via `mix release.preflight`.
-- If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with a recovery reason to rerun the same protected publish lane.
+- If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with both a recovery reason and the exact recovery ref so the protected publish lane replays the intended revision rather than whatever `main` points to later.
 - Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
 
 ## Release posture
