@@ -14,6 +14,8 @@ Lockspire has now archived two planning milestones. The embedded provider founda
 
 At archive time, the package version in `mix.exs` is `0.2.0`, and the protected release path has real proof behind it. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
+Phase 15 is now complete in v1.2. Lockspire can consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, rejects expired/replayed/wrong-client references safely, and publishes only the narrow PAR slice it actually ships through discovery and public docs.
+
 ## Current Milestone: v1.2 PAR Foundation
 
 **Goal:** Add pushed authorization requests as a narrow extension of the existing authorization code + PKCE flow while keeping Lockspire embedded, truthful about scope, and boring to release.
@@ -36,11 +38,11 @@ PAR was not implemented and not supported in v1.1.
 - Security defaults, telemetry, auditability, redaction, and negative-path coverage were delivered in the archived v1.0 milestone.
 - Canonical onboarding, executable docs, CI/release assets, and supported-surface policy were delivered in the archived v1.0 milestone.
 - Repo-truth QA, contributor gate closure, trusted protected release proof, and preview-posture drift fences were delivered in the archived v1.1 milestone.
+- PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15.
+- Discovery, support docs, and SECURITY wording now describe only the shipped PAR slice, validated in Phase 15.
 
 ### Active
 
-- [ ] Ship PAR as a narrow extension of the existing authorization code + PKCE flow.
-- [ ] Keep discovery, support docs, and examples truthful about what Lockspire supports once PAR lands.
 - [ ] Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner cutoff.
 - [ ] Decide whether full Nyquist completeness is required during v1.2 and, if so, backfill `10/12/13-VALIDATION.md` without derailing the PAR wedge.
 
@@ -78,7 +80,7 @@ Lockspire is a greenfield OSS library project with a substantial prep corpus in 
 | Treat PAR, dynamic client registration, device flow, stronger sender-constrained modes, and stronger certification profiles as later roadmap candidates | Preserves room for future protocol expansion without bloating the first milestone | Deferred to next milestone planning |
 | **Sigra ecosystem sequencing** | Finish **Phase 3 → 5 → 6** before public “Sigra + Lockspire” golden paths; document via **ECOSYSTEM-SIGRA.md** and **`docs/sigra-companion-host.md`** | Adopted in archived v1.0 milestone |
 | Polish the current preview surface before adding more protocol breadth | The repo already has its core provider wedge; release trust is now the gating risk to adoption and velocity | Adopted in archived v1.1 milestone |
-| Make PAR the first post-polish protocol wedge | PAR extends the existing auth-code flow with less product-shape drift than dynamic registration or device flow | Active candidate for v1.2 planning |
+| Make PAR the first post-polish protocol wedge | PAR extends the existing auth-code flow with less product-shape drift than dynamic registration or device flow | Adopted and delivered by Phase 15 |
 | Include the lingering release-automation runtime warning in v1.2 scope rather than treating it as indefinite background debt | PAR should not land on top of a release path already known to drift toward a GitHub runtime cutoff | Adopted at v1.2 milestone start |
 
 ## Evolution
@@ -99,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after starting the v1.2 PAR Foundation milestone.*
+*Last updated: 2026-04-24 after completing Phase 15 of the v1.2 PAR Foundation milestone.*
