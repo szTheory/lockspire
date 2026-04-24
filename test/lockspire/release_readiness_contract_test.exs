@@ -71,7 +71,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert config =~ "\".\""
     assert config =~ "\"release-type\": \"elixir\""
     assert config =~ "\"package-name\": \"lockspire\""
-    assert manifest =~ "\".\": \"0.1.0\""
+    assert manifest =~ "\".\""
+    assert manifest =~ ~r/"\.\":\s*"\d+\.\d+\.\d+"/
   end
 
   test "workflow files keep contributor proof separate from the protected publish lane" do

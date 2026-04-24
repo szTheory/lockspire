@@ -79,7 +79,7 @@ defmodule Lockspire.MixProject do
       "deps.audit": ["hex.audit"],
       "package.build": ["hex.build"],
       "package.publish-dry-run": ["hex.publish --dry-run --yes"],
-      "release.preflight": ["docs.verify", "package.build", "package.publish-dry-run"],
+      "release.preflight": ["package.build", "package.publish-dry-run", "docs.verify"],
       ci: [
         "cmd sh -lc 'HEX_API_KEY= mix deps.get'",
         "cmd sh -lc 'mix qa'",
