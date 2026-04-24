@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
+    "pushed_authorization_request_endpoint" => "/par",
     "token_endpoint" => "/token",
     "userinfo_endpoint" => "/userinfo",
     "jwks_uri" => "/jwks",
