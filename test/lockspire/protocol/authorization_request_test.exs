@@ -2,6 +2,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   use ExUnit.Case, async: false
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Protocol.AuthorizationRequest
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
@@ -37,7 +38,24 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
         metadata: %{}
       })
 
-    %{client: client}
+    {:ok, other_client} =
+      Repository.register_client(%Client{
+        client_id: "client_456",
+        client_secret_hash: "sha256:salt:hash",
+        client_type: :confidential,
+        name: "Other Integrations",
+        redirect_uris: ["https://other.example.com/callback"],
+        allowed_scopes: ["profile", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    %{client: client, other_client: other_client}
   end
 
   test "accepts a valid authorization request and returns a typed validated contract", %{
@@ -154,6 +172,88 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.error == "unsupported_response_type"
   end
 
+  test "resolves a valid pushed authorization request into the canonical validated contract", %{
+    client: client
+  } do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == "https://client.example.com/callback"
+    assert validated.scopes == ["profile", "email"]
+    assert validated.prompt == ["login", "consent"]
+    assert validated.state == "state-123"
+    assert validated.code_challenge == String.duplicate("a", 43)
+
+    assert {:ok, nil} =
+             Repository.fetch_active_pushed_authorization_request(pushed_request.request_uri_hash)
+  end
+
+  test "expired pushed authorization request is rejected as invalid input", %{client: client} do
+    request_uri =
+      put_pushed_request!(client.client_id, ttl: -1)
+      |> Map.fetch!(:request_uri)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => request_uri
+             })
+
+    assert error.error == "invalid_request"
+  end
+
+  test "replayed pushed authorization request is rejected after first successful use", %{client: client} do
+    pushed_request = put_pushed_request!(client.client_id)
+    params = %{"client_id" => client.client_id, "request_uri" => pushed_request.request_uri}
+
+    assert {:ok, %Validated{}} = AuthorizationRequest.validate(params)
+
+    assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.error == "invalid_request"
+  end
+
+  test "wrong-client pushed authorization request attempt burns the reference", %{
+    client: client,
+    other_client: other_client
+  } do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = wrong_client_error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => other_client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert wrong_client_error.error == "invalid_request"
+
+    assert {:browser_error, %Error{} = replay_error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert replay_error.error == "invalid_request"
+  end
+
+  test "rejects mixed request_uri and raw authorization parameters", %{client: client} do
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri,
+               "redirect_uri" => "https://client.example.com/callback"
+             })
+
+    assert error.error == "invalid_request"
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,
@@ -165,6 +265,25 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
+  end
+
+  defp put_pushed_request!(client_id, opts \\ []) do
+    attrs = %{
+      client_id: client_id,
+      redirect_uri: "https://client.example.com/callback",
+      scopes: ["profile", "email"],
+      prompt: ["login", "consent"],
+      state: "state-123",
+      code_challenge: String.duplicate("a", 43),
+      code_challenge_method: :S256
+    }
+
+    request = PushedAuthorizationRequest.issue(attrs, opts)
+
+    assert {:ok, %PushedAuthorizationRequest{} = stored} =
+             Repository.put_pushed_authorization_request(request)
+
+    stored
   end
 
   def handle_event(event, _measurements, metadata, pid) do
