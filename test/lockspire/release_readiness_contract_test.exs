@@ -9,7 +9,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @readme_path Path.expand("../../README.md", __DIR__)
   @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
+  @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @roadmap_path Path.expand("../../.planning/ROADMAP.md", __DIR__)
+  @requirements_path Path.expand("../../.planning/REQUIREMENTS.md", __DIR__)
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
@@ -154,20 +156,31 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "environment: hex-publish"
   end
 
-  test "roadmap keeps PAR future-facing while current posture rejects present support claims" do
+  test "planning metadata keeps PAR future-facing while current posture rejects present support claims" do
+    project = File.read!(@project_path)
     roadmap = File.read!(@roadmap_path)
+    requirements = File.read!(@requirements_path)
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert roadmap =~ "document PAR as the next milestone without starting it here"
+    assert project =~ "PAR is the default next protocol-expansion milestone after release hardening"
+    assert project =~ "not implemented and not supported in v1.1"
+
+    assert roadmap =~ "document PAR as the next milestone candidate without starting it here or implying current v1.1 support"
     assert roadmap =~ "v1.2 PAR Foundation"
-    assert roadmap =~ "next milestone is **v1.2 PAR Foundation**"
+    assert roadmap =~ "PAR is not implemented and not supported in v1.1"
+
+    assert requirements =~ "The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1."
+    assert requirements =~ "PAR implementation in v1.1"
 
     assert supported_surface =~ "does not currently support:"
     assert supported_surface =~ "- PAR"
     assert security =~ "- PAR, device flow, and dynamic client registration"
 
     refute readme =~ "already supports PAR"
+    refute readme =~ "What v0.1 includes\n\n- PAR"
+    refute supported_surface =~ "preview currently supports this repo-proven surface:\n\n- PAR"
+    refute security =~ "supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:\n\n- PAR"
   end
 end
