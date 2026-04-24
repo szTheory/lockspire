@@ -7,6 +7,7 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
   import Plug.Conn
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
@@ -85,11 +86,42 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     %{client: client}
   end
 
-  test "canonical par flow completes authorization code plus pkce and rejects request_uri replay", %{
+  test "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
+       %{
     client: client
   } do
+    put_server_policy!(:required)
     signing_key = publish_signing_key("phase15-onboarding-kid")
     code_verifier = "phase15-onboarding-verifier"
+
+    direct_authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "response_type" => "code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "scope" => "openid email profile",
+        "state" => "phase15-state",
+        "nonce" => "phase15-nonce",
+        "prompt" => "consent",
+        "code_challenge" => code_challenge(code_verifier),
+        "code_challenge_method" => "S256"
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert direct_authorize_conn.status in [302, 303]
+
+    direct_error_uri =
+      direct_authorize_conn
+      |> get_resp_header("location")
+      |> List.first()
+      |> URI.parse()
+
+    direct_error_params = URI.decode_query(direct_error_uri.query || "")
+
+    assert direct_error_uri.host == "client.example.com"
+    assert direct_error_params["error"] == "invalid_request"
+    assert direct_error_params["error_description"] == "request_uri from the PAR endpoint is required"
+    assert direct_error_params["state"] == "phase15-state"
 
     par_conn =
       build_conn(:post, "/par", %{
@@ -193,6 +225,91 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     assert replay_conn.resp_body =~ "request_uri is invalid, expired, or already used"
   end
 
+  test "optional-PAR clients keep the direct authorization-code plus PKCE browser flow", %{
+    client: client
+  } do
+    put_server_policy!(:required)
+    client = update_client_par_policy!(client, :optional)
+    signing_key = publish_signing_key("phase15-optional-direct-kid")
+    code_verifier = "phase15-optional-direct-verifier"
+
+    authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "response_type" => "code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "scope" => "openid email profile",
+        "state" => "phase15-optional-state",
+        "nonce" => "phase15-optional-nonce",
+        "prompt" => "consent",
+        "code_challenge" => code_challenge(code_verifier),
+        "code_challenge_method" => "S256"
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert authorize_conn.status in [302, 303]
+
+    consent_path =
+      authorize_conn
+      |> get_resp_header("location")
+      |> List.first()
+
+    assert consent_path =~ "/lockspire/consent/"
+
+    interaction_id =
+      consent_path
+      |> URI.parse()
+      |> Map.fetch!(:path)
+      |> String.split("/")
+      |> List.last()
+
+    consent_complete_conn =
+      build_conn(:post, "/interactions/#{interaction_id}/complete", %{
+        "decision" => "approve",
+        "remember" => "true"
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert consent_complete_conn.status in [302, 303]
+
+    callback_uri =
+      consent_complete_conn
+      |> get_resp_header("location")
+      |> List.first()
+      |> URI.parse()
+
+    callback_params = URI.decode_query(callback_uri.query || "")
+
+    assert callback_uri.host == "client.example.com"
+    assert callback_params["state"] == "phase15-optional-state"
+    assert code = callback_params["code"]
+
+    token_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "client_id" => client.client_id,
+        "code" => code,
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => code_verifier
+      })
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert token_conn.status == 200
+
+    token_response = Jason.decode!(token_conn.resp_body)
+
+    assert Map.has_key?(token_response, "access_token")
+    assert Map.has_key?(token_response, "id_token")
+    assert token_response["token_type"] == "Bearer"
+
+    assert {true, %JOSE.JWT{fields: id_token_claims}, _jws} =
+             JOSE.JWT.verify_strict(signing_key, ["RS256"], token_response["id_token"])
+
+    assert id_token_claims["sub"] == "phase15-host-user"
+    assert id_token_claims["nonce"] == "phase15-optional-nonce"
+  end
+
   defp publish_signing_key(kid) do
     key = JOSE.JWK.generate_key({:rsa, 2048})
     {_fields, jwk} = JOSE.JWK.to_map(key)
@@ -223,5 +340,15 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     :sha256
     |> :crypto.hash(verifier)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp put_server_policy!(mode) do
+    assert {:ok, %ServerPolicy{} = _policy} =
+             Repository.put_server_policy(%ServerPolicy{par_policy: mode})
+  end
+
+  defp update_client_par_policy!(client, mode) do
+    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    updated_client
   end
 end
