@@ -8,7 +8,7 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Gap closure phase added 2026-04-24; Phase 13 pending planning
+**Status:** All v1.1 plans complete; fresh milestone audit rerun pending
 **Phases:** 7-13
 **Total Plans:** 14 completed, 0 pending
 
@@ -118,7 +118,7 @@ This phase is intentionally narrow. It should consolidate the existing Phase 11 
 
 Plans:
 
-- [ ] 13-01: Write `12-VERIFICATION.md`, update `RELS-01` through `RELS-03` in `.planning/REQUIREMENTS.md`, and re-anchor the milestone closeout chain
+- [x] 13-01: Write `12-VERIFICATION.md`, update `RELS-01` through `RELS-03` in `.planning/REQUIREMENTS.md`, and re-anchor the milestone closeout chain
 
 **Details:**
 This phase should stay process-only. It closes the last audit-reported contradiction between the passed Phase 11/12 closure evidence and the canonical planning ledger, then leaves the milestone ready for a fresh audit without reopening release workflow implementation.
@@ -129,7 +129,6 @@ After v1.1 gap closure work passes re-audit, the default next milestone is **v1.
 
 ## Next Up
 
-- Plan Phase 13 with `$gsd-plan-phase 13`.
 - Re-run `$gsd-audit-milestone` after Phase 13 closes the remaining verification/ledger handoff.
 - Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner deprecation cutoff.
 - Defer optional Nyquist completeness cleanup for missing `10-VALIDATION.md` and `12-VALIDATION.md` until after v1.1 archive unless archive criteria are tightened.
