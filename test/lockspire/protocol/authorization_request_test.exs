@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.PushedAuthorizationRequest
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.AuthorizationRequest
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
@@ -172,6 +173,110 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.error == "unsupported_response_type"
   end
 
+  test "required global par policy rejects direct authorize requests with a trusted redirect", %{
+    client: client
+  } do
+    handler_id = attach_events(self())
+    put_server_policy!(:required)
+    client_id = client.client_id
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationRequest.validate(valid_params(client.client_id))
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :par_required_request_uri
+    assert error.redirect_uri == "https://client.example.com/callback"
+    assert error.state == "state-123"
+
+    assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
+                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: true}}
+
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
+                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: true}}
+
+    :telemetry.detach(handler_id)
+  end
+
+  test "required global par policy keeps missing redirect_uri on the browser-safe error surface", %{
+    client: client
+  } do
+    handler_id = attach_events(self())
+    put_server_policy!(:required)
+    client_id = client.client_id
+
+    params =
+      valid_params(client.client_id)
+      |> Map.delete("redirect_uri")
+
+    assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :par_required_request_uri
+    assert error.redirect_uri == nil
+    assert error.state == nil
+
+    assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
+                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: false}}
+
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
+                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: false}}
+
+    :telemetry.detach(handler_id)
+  end
+
+  test "required global par policy keeps mismatched redirect_uri on the browser-safe error surface", %{
+    client: client
+  } do
+    put_server_policy!(:required)
+
+    params =
+      valid_params(client.client_id)
+      |> Map.put("redirect_uri", "https://attacker.example.com/callback")
+
+    assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.error == "invalid_request"
+    assert error.reason_code == :par_required_request_uri
+    assert error.redirect_uri == nil
+  end
+
+  test "client required par policy rejects direct authorize requests when the global policy is optional",
+       %{client: client} do
+    put_server_policy!(:optional)
+    client = update_client_par_policy!(client, :required)
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationRequest.validate(valid_params(client.client_id))
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :par_required_request_uri
+  end
+
+  test "client optional par policy preserves direct authorize requests when the global policy is required",
+       %{client: client} do
+    put_server_policy!(:required)
+    client = update_client_par_policy!(client, :optional)
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(valid_params(client.client_id))
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == "https://client.example.com/callback"
+  end
+
+  test "required par policy still accepts a valid lockspire-issued request_uri", %{client: client} do
+    put_server_policy!(:required)
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == "https://client.example.com/callback"
+  end
+
   test "consumes a valid pushed authorization request exactly once for the bound client", %{
     client: client
   } do
@@ -228,6 +333,25 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   end
 
   test "expired pushed authorization request is rejected as invalid input", %{client: client} do
+    request_uri =
+      put_pushed_request!(client.client_id, ttl: -1)
+      |> Map.fetch!(:request_uri)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => request_uri
+             })
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_request_uri
+  end
+
+  test "required par policy preserves invalid_request_uri semantics for expired request_uri values", %{
+    client: client
+  } do
+    put_server_policy!(:required)
+
     request_uri =
       put_pushed_request!(client.client_id, ttl: -1)
       |> Map.fetch!(:request_uri)
@@ -317,6 +441,21 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert replay_error.reason_code == :invalid_request_uri
   end
 
+  test "required par policy preserves invalid_request_uri semantics for wrong-client request_uri values",
+       %{client: client, other_client: other_client} do
+    put_server_policy!(:required)
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => other_client.client_id,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_request_uri
+  end
+
   test "rejects mixed request_uri and raw authorization parameters", %{client: client} do
     pushed_request = put_pushed_request!(client.client_id)
 
@@ -361,6 +500,15 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
              Repository.put_pushed_authorization_request(request)
 
     stored
+  end
+
+  defp put_server_policy!(mode) do
+    assert {:ok, %ServerPolicy{} = _policy} = Repository.put_server_policy(%ServerPolicy{par_policy: mode})
+  end
+
+  defp update_client_par_policy!(client, mode) do
+    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    updated_client
   end
 
   def handle_event(event, _measurements, metadata, pid) do
