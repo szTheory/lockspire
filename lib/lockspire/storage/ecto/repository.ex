@@ -10,6 +10,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
+  alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.ClientStore
@@ -18,10 +19,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
+  alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.InteractionStore
   alias Lockspire.Storage.KeyStore
+  alias Lockspire.Storage.PushedAuthorizationRequestStore
   alias Lockspire.Storage.TokenStore
 
   @behaviour ClientStore
@@ -29,6 +32,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour ConsentStore
   @behaviour TokenStore
   @behaviour KeyStore
+  @behaviour PushedAuthorizationRequestStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -162,6 +166,33 @@ defmodule Lockspire.Storage.Ecto.Repository do
       {:ok, result} -> {:ok, result}
       {:error, reason} -> {:error, reason}
     end
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl PushedAuthorizationRequestStore
+  def put_pushed_authorization_request(%PushedAuthorizationRequest{} = request) do
+    %PushedAuthorizationRequestRecord{}
+    |> PushedAuthorizationRequestRecord.changeset(request)
+    |> repo().insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:request_uri_hash]
+    )
+    |> map_one(&PushedAuthorizationRequestRecord.to_domain(&1, request_uri: request.request_uri))
+  end
+
+  @impl PushedAuthorizationRequestStore
+  def fetch_active_pushed_authorization_request(request_uri_hash)
+      when is_binary(request_uri_hash) do
+    now = DateTime.utc_now()
+
+    PushedAuthorizationRequestRecord
+    |> where([request], request.request_uri_hash == ^request_uri_hash)
+    |> where([request], request.expires_at > ^now)
+    |> repo_one(sensitive: true)
+    |> then(fn record ->
+      {:ok, maybe_map(record, &PushedAuthorizationRequestRecord.to_domain/1)}
+    end)
   rescue
     error -> {:error, error}
   end
