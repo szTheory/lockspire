@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Release Hardening
-status: ready_for_milestone_audit
-last_updated: "2026-04-24T09:24:00Z"
-last_activity: 2026-04-24 -- completed Phase 11 trusted release proof closure after approved protected publish run
+status: gap_closure_planned
+last_updated: "2026-04-24T10:15:00Z"
+last_activity: 2026-04-24 -- planned Phase 12 to close the missing Phase 11 verification artifact before milestone re-audit
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 13
+  total_plans: 14
   completed_plans: 13
-  percent: 100
+  percent: 93
 ---
 
 # Project State
@@ -21,22 +21,22 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Milestone v1.1 re-audit after Phase 11 closure
+**Current focus:** Plan and execute Phase 12, then rerun the v1.1 milestone audit
 
 ## Current Position
 
-Phase: 11 (trusted-release-proof-closure) — COMPLETED
+Phase: 12 (phase-11-verification-closure) — PLANNED
 
-Plan: completed
+Plan: 12-01 pending
 
-Status: Awaiting milestone audit
+Status: Gap closure planned before milestone re-audit
 
-Last activity: 2026-04-24 -- captured approved protected publish proof and closed RELS traceability
+Last activity: 2026-04-24 -- created Phase 12 to write the missing Phase 11 verification rollup for RELS traceability closure
 
 ## Performance Metrics
 
-- Phases completed: 4/5
-- Plans completed: 11/11
+- Phases completed: 5/6
+- Plans completed: 13/14
 - Recorded tasks completed: 15
 - Timeline: 2026-04-23 -> active
 
@@ -48,18 +48,19 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Re-run `$gsd-audit-milestone` to confirm v1.1 is now actually done.
+- Plan Phase 12 and write `11-VERIFICATION.md`.
+- Re-run `$gsd-audit-milestone` after Phase 12 completes to confirm v1.1 is actually done.
 - Review the release workflow warning about the deprecated Node.js 20 action runtime and schedule the action upgrade.
 
 ### Blockers/Concerns
 
-- No active execution blockers remain for v1.1 release hardening.
+- Phase 12 remains before the milestone can be archived.
 - The `googleapis/release-please-action` pin still emits a Node.js 20 deprecation warning during the successful release run and should be upgraded before the GitHub runner cutoff.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-audit-milestone` to confirm milestone closure from current evidence.
+**Next action:** Run `$gsd-plan-phase 12` to create the verification-closure plan, then execute it and rerun `$gsd-audit-milestone`.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Completed Phase:** 11 (Trusted Release Proof Closure) — approved `hex-publish` run evidence recorded and RELS-01 through RELS-03 closed.
+**Completed Phase:** 11 (Trusted Release Proof Closure) — approved `hex-publish` run evidence recorded, but Phase 12 is now required to add the missing phase-level verification rollup.
