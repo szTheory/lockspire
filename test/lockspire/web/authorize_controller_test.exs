@@ -339,6 +339,19 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert conn.resp_body =~ "request_uri is invalid, expired, or already used"
   end
 
+  test "foreign par request_uris fail safely at the browser surface", %{client: client} do
+    conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => "https://attacker.example.com/request/123"
+      }
+      |> call_authorize()
+
+    assert conn.status == 400
+    refute redirected?(conn)
+    assert conn.resp_body =~ "request_uri is invalid, expired, or already used"
+  end
+
   test "consumed par request_uris cannot reopen the authorization flow", %{client: client} do
     pushed_request = issue_pushed_request(client)
 

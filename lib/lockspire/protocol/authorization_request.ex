@@ -417,8 +417,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       {:browser_error,
        browser_error(
          :invalid_request,
-         "request_uri must be a Lockspire-issued reference",
-         :unsupported_request_uri
+         "request_uri is invalid, expired, or already used",
+         :invalid_request_uri
        )}
     end
   end

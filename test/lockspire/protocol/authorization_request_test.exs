@@ -366,6 +366,20 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_uri
   end
 
+  test "required par policy preserves invalid_request_uri semantics for foreign request_uri values",
+       %{client: client} do
+    put_server_policy!(:required)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => "https://attacker.example.com/request/123"
+             })
+
+    assert error.error == "invalid_request"
+    assert error.reason_code == :invalid_request_uri
+  end
+
   test "replayed pushed authorization request stays burned after first successful consume", %{
     client: client
   } do
