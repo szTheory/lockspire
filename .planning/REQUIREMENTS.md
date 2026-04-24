@@ -4,11 +4,14 @@
 **Milestone:** v1.2 PAR Foundation
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1.
+This milestone explicitly excludes any claim of PAR implementation in v1.1.
+
 ## v1.2 Requirements
 
 ### PAR Intake
 
-- [ ] **PAR-01**: OAuth clients can submit a pushed authorization request to a dedicated PAR endpoint using Lockspire's supported direct-call client authentication rules and receive a server-issued `request_uri` plus `expires_in`.
+- [x] **PAR-01**: OAuth clients can submit a pushed authorization request to a dedicated PAR endpoint using Lockspire's supported direct-call client authentication rules and receive a server-issued `request_uri` plus `expires_in`.
 
 ### Authorization Lifecycle
 
@@ -52,7 +55,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PAR-01 | Phase 14 | Pending |
+| PAR-01 | Phase 14 | Complete |
 | PAR-02 | Phase 15 | Pending |
 | PAR-03 | Phase 15 | Pending |
 | PAR-04 | Phase 16 | Pending |

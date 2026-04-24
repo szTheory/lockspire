@@ -18,6 +18,9 @@ At archive time, the package version in `mix.exs` is `0.2.0`, and the protected 
 
 **Goal:** Add pushed authorization requests as a narrow extension of the existing authorization code + PKCE flow while keeping Lockspire embedded, truthful about scope, and boring to release.
 
+PAR is the default next protocol-expansion milestone after release hardening.
+PAR was not implemented and not supported in v1.1.
+
 **Target features:**
 - Add a standards-aligned PAR endpoint and request lifecycle on top of the existing authorization code + PKCE surface.
 - Advertise PAR support truthfully in discovery, docs, and support-facing surfaces without implying broader JAR, DCR, or device-flow support.

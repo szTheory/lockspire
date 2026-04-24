@@ -9,11 +9,14 @@
 
 ### v1.2 PAR Foundation
 
-**Status:** Not started; milestone initialized on 2026-04-24
+**Status:** In progress; Phase 14 completed on 2026-04-24
 **Phase range:** 14-16
 **Requirements:** 5 mapped, 0 unmapped
 
 **Milestone goal:** Add pushed authorization requests as a narrow extension of the existing authorization code + PKCE flow while keeping Lockspire embedded, truthful about scope, and boring to release.
+
+This milestone follows the v1.1 release-hardening rule to document PAR as the next milestone candidate without starting it here or implying current v1.1 support.
+PAR is not implemented and not supported in v1.1.
 
 ### Phase 14: Pushed Request Intake
 
@@ -24,9 +27,9 @@
 
 Plans:
 
-- [ ] 14-01: Add pushed authorization request storage/domain lifecycle with opaque request URI issuance and expiry
-- [ ] 14-02: Add the PAR web endpoint and reuse Lockspire's direct-call client authentication and request validation rules
-- [ ] 14-03: Add protocol tests for PAR success and request-intake error handling
+- [x] 14-01-PLAN.md — Add pushed authorization request storage/domain lifecycle with opaque request URI issuance and expiry
+- [x] 14-02-PLAN.md — Add the PAR web endpoint and reuse Lockspire's direct-call client authentication and request validation rules
+- [x] 14-03-PLAN.md — Add protocol tests for PAR success and request-intake error handling
 
 **Success criteria:**
 1. A client can `POST` a valid pushed authorization request and receive `201 Created` with `request_uri` and `expires_in`.
