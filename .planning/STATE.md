@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: executing
-last_updated: "2026-04-24T14:32:56.940Z"
+status: verifying
+last_updated: "2026-04-24T14:39:25.117Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -21,25 +21,25 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 15 — authorization-consumption-and-truthful-surface
+**Current focus:** Phase 16 — verification-and-release-runtime-hygiene
 
 ## Current Position
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: 15 (authorization-consumption-and-truthful-surface) — EXECUTING
+Phase: 16 (verification-and-release-runtime-hygiene) — READY
 
-Plan: 3 of 3
+Plan: 0 of 2
 
-Status: Ready to execute
+Status: Phase 15 complete — ready to execute Phase 16 verification work
 
 Last activity: 2026-04-24
 
 ## Performance Metrics
 
-- Phases completed: 1/3
-- Plans completed: 4/6
-- Recorded tasks completed: 8
+- Phases completed: 2/3
+- Plans completed: 6/6
+- Recorded tasks completed: 10
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -58,10 +58,12 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 - Resolve Lockspire-issued PAR references into canonical authorization params before validation so AuthorizationFlow keeps the existing %Validated{} contract.
 - Advertise PAR only through pushed_authorization_request_endpoint when the mounted /par route exists.
 - Describe PAR publicly only as Lockspire-issued request_uri support on the existing authorization code plus PKCE flow.
+- Keep 15-03 proof-only on top of 15-01/15-02 runtime behavior instead of reopening implementation.
+- Enforce narrow PAR support claims through discovery, docs, SECURITY, and release contract tests.
 
 ### Pending Todos
 
-- Execute `15-03-PLAN.md` to add PAR discovery and docs contract coverage.
+- Execute Phase 16 verification and release-runtime-hygiene plans.
 - Decide during execution whether Nyquist backfill becomes explicit v1.2 scope or remains deferred.
 
 ### Blockers/Concerns
@@ -70,7 +72,7 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ## Session Continuity
 
-**Next action:** Execute `15-03-PLAN.md` for PAR integration and truth-surface contract coverage.
+**Next action:** Execute Phase 16 to record PAR milestone verification and clear the release-runtime warning.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
