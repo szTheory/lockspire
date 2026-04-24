@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Observability
+  alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -67,6 +68,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   @spec validate(map()) :: result()
   def validate(params) when is_map(params) do
     with {:ok, %Client{} = client} <- fetch_client(params),
+         {:ok, resolved_par_policy} <- resolve_effective_par_policy(client),
+         :ok <- maybe_require_pushed_authorization_request(params, client, resolved_par_policy),
          {:ok, resolved_params} <- resolve_authorization_params(params, client),
          {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client) do
       validated = %Validated{validated | client: client}
@@ -120,6 +123,38 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     {:browser_error, browser_error(:invalid_request, "Missing client_id", :missing_client_id)}
   end
 
+  defp resolve_effective_par_policy(%Client{} = client) do
+    case Repository.get_server_policy() do
+      {:ok, server_policy} ->
+        {:ok, ParPolicy.resolve_effective_policy(server_policy, client)}
+
+      {:error, _reason} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "Unable to load server policy",
+           :server_policy_lookup_failed
+         )}
+    end
+  end
+
+  defp maybe_require_pushed_authorization_request(
+         %{"request_uri" => request_uri},
+         %Client{},
+         _resolved_par_policy
+       )
+       when is_binary(request_uri) and request_uri != "" do
+    :ok
+  end
+
+  defp maybe_require_pushed_authorization_request(params, %Client{} = client, resolved_par_policy) do
+    if resolved_par_policy.par_required? do
+      par_required_error(params, client)
+    else
+      :ok
+    end
+  end
+
   defp resolve_authorization_params(%{"request_uri" => request_uri} = params, %Client{} = client)
        when is_binary(request_uri) and request_uri != "" do
     with :ok <- reject_request_uri_conflicts(params),
@@ -131,6 +166,27 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp resolve_authorization_params(params, %Client{}), do: {:ok, params}
+
+  defp par_required_error(params, %Client{} = client) do
+    case validate_redirect_uri(client, params) do
+      {:ok, _redirect_uri} ->
+        {:redirect_error,
+         redirect_error(
+           params,
+           :invalid_request,
+           "request_uri from the PAR endpoint is required",
+           :par_required_request_uri
+         )}
+
+      {:browser_error, %Error{}} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "request_uri from the PAR endpoint is required",
+           :par_required_request_uri
+         )}
+    end
+  end
 
   defp validate_redirect_uri(client, %{"redirect_uri" => redirect_uri})
        when is_binary(redirect_uri) and redirect_uri != "" do
