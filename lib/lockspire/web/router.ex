@@ -11,6 +11,7 @@ defmodule Lockspire.Web.Router do
     get("/.well-known/openid-configuration", Lockspire.Web.DiscoveryController, :show)
     get("/authorize", Lockspire.Web.AuthorizeController, :show)
     get("/jwks", Lockspire.Web.JwksController, :index)
+    post("/par", Lockspire.Web.PushedAuthorizationRequestController, :create)
     post("/token", Lockspire.Web.TokenController, :create)
     post("/revoke", Lockspire.Web.RevocationController, :create)
     post("/introspect", Lockspire.Web.IntrospectionController, :create)

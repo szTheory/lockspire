@@ -66,24 +66,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   @spec validate(map()) :: result()
   def validate(params) when is_map(params) do
     with {:ok, %Client{} = client} <- fetch_client(params),
-         {:ok, redirect_uri} <- validate_redirect_uri(client, params),
-         {:ok, scopes} <- validate_scopes(client, params),
-         {:ok, prompt} <- validate_prompt(params),
-         :ok <- validate_response_type(params),
-         :ok <- validate_nonce(params, scopes),
-         :ok <- validate_pkce(client, params),
-         :ok <- reject_unsupported_params(params) do
-      validated = %Validated{
-        client: client,
-        client_id: client.client_id,
-        redirect_uri: redirect_uri,
-        scopes: scopes,
-        prompt: prompt,
-        nonce: normalize_optional_string(params["nonce"]),
-        state: normalize_optional_string(params["state"]),
-        code_challenge: params["code_challenge"],
-        code_challenge_method: :S256
-      }
+         {:ok, %Validated{} = validated} <- validate_with_client(params, client) do
+      validated = %Validated{validated | client: client}
 
       Observability.emit(:authorization_request_accepted, %{}, %{
         client_id: client.client_id,
@@ -99,6 +83,20 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       {:redirect_error, %Error{} = error} ->
         emit_rejection(params["client_id"], error, true)
         {:redirect_error, error}
+    end
+  end
+
+  @spec validate_pushed(map(), Client.t()) :: {:ok, Validated.t()} | {:error, Error.t()}
+  def validate_pushed(params, %Client{} = client) when is_map(params) do
+    case validate_with_client(params, client, pushed?: true) do
+      {:ok, %Validated{} = validated} ->
+        {:ok, validated}
+
+      {:browser_error, %Error{} = error} ->
+        {:error, error}
+
+      {:redirect_error, %Error{} = error} ->
+        {:error, error}
     end
   end
 
@@ -137,6 +135,22 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp validate_redirect_uri(_client, _params) do
     {:browser_error,
      browser_error(:invalid_request, "Missing redirect_uri", :missing_redirect_uri)}
+  end
+
+  defp validate_with_client(params, %Client{} = client, opts \\ []) do
+    pushed? = Keyword.get(opts, :pushed?, false)
+
+    with :ok <- maybe_validate_pushed_client_id(params, client, pushed?),
+         :ok <- maybe_reject_inbound_request_uri(params, pushed?),
+         {:ok, redirect_uri} <- validate_redirect_uri(client, params),
+         {:ok, scopes} <- validate_scopes(client, params),
+         {:ok, prompt} <- validate_prompt(params),
+         :ok <- validate_response_type(params),
+         :ok <- validate_nonce(params, scopes),
+         :ok <- validate_pkce(client, params),
+         :ok <- reject_unsupported_params(params) do
+      {:ok, build_validated(params, client, redirect_uri, scopes, prompt)}
+    end
   end
 
   defp validate_scopes(client, params) do
@@ -277,6 +291,35 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
      redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
   end
 
+  defp maybe_validate_pushed_client_id(_params, _client, false), do: :ok
+
+  defp maybe_validate_pushed_client_id(%{"client_id" => client_id}, %Client{} = client, true)
+       when is_binary(client_id) and client_id != "" do
+    if client_id == client.client_id do
+      :ok
+    else
+      {:browser_error,
+       browser_error(
+         :invalid_client,
+         "client_id does not match authenticated client",
+         :client_id_mismatch
+       )}
+    end
+  end
+
+  defp maybe_validate_pushed_client_id(_params, _client, true), do: :ok
+
+  defp maybe_reject_inbound_request_uri(params, true) do
+    if present?(params["request_uri"]) do
+      {:browser_error,
+       browser_error(:invalid_request, "request_uri is not supported", :unsupported_request_uri)}
+    else
+      :ok
+    end
+  end
+
+  defp maybe_reject_inbound_request_uri(_params, false), do: :ok
+
   defp reject_unsupported_params(params) do
     case Enum.find(@unsupported_params, &present?(params[&1])) do
       nil ->
@@ -319,6 +362,20 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       reason_code: error.reason_code,
       redirect_safe: redirect_safe
     })
+  end
+
+  defp build_validated(params, %Client{} = client, redirect_uri, scopes, prompt) do
+    %Validated{
+      client: client,
+      client_id: client.client_id,
+      redirect_uri: redirect_uri,
+      scopes: scopes,
+      prompt: prompt,
+      nonce: normalize_optional_string(params["nonce"]),
+      state: normalize_optional_string(params["state"]),
+      code_challenge: params["code_challenge"],
+      code_challenge_method: :S256
+    }
   end
 
   defp to_scope_list(nil), do: []
