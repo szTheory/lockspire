@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: verifying
+status: ready_to_plan
 last_updated: "2026-04-24T14:39:25.117Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
   completed_plans: 6
   percent: 100
@@ -27,11 +27,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: 16 (verification-and-release-runtime-hygiene) — READY
+Phase: 16
 
-Plan: 0 of 2
+Plan: Not started
 
-Status: Phase 15 complete — ready to execute Phase 16 verification work
+Status: Ready to plan
 
 Last activity: 2026-04-24
 
