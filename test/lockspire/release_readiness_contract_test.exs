@@ -70,6 +70,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "exact 40-character commit SHA or an existing tag"
     assert release_workflow =~ "workflow_dispatch is recovery-only"
     assert release_workflow =~ "Release Please generated PRs are review-only"
+    assert release_workflow =~ "id: release"
     assert release_workflow =~ "github.event_name == 'workflow_dispatch'"
     assert release_workflow =~ "github.event_name != 'workflow_dispatch'"
     assert release_workflow =~ "mix local.hex --force"

@@ -52,6 +52,7 @@ jobs:
 
       - name: Run Release Please
         id: release
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: ./.github/actions/release-please
         with:
           config-file: release-please-config.json
