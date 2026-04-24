@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: planning
-last_updated: "2026-04-24T15:02:47.071Z"
-last_activity: 2026-04-24
+status: human_needed
+last_updated: "2026-04-24T15:40:00.000Z"
+last_activity: 2026-04-24 -- Phase 16 awaiting live human verification
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
+  total_plans: 8
   completed_plans: 6
-  percent: 100
+  percent: 75
 ---
 
 # Project State
@@ -27,13 +27,13 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: 16
+Phase: 16 (verification-and-release-runtime-hygiene) — HUMAN VERIFICATION PENDING
 
-Plan: Not started
+Plan: 2 of 2 complete
 
-Status: Ready to plan
+Status: Awaiting live GitHub Actions verification for the Release workflow recovery lane
 
-Last activity: 2026-04-24
+Last activity: 2026-04-24 -- Phase 16 awaiting live human verification
 
 ## Performance Metrics
 
@@ -63,16 +63,16 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Execute Phase 16 verification and release-runtime-hygiene plans.
-- Decide during execution whether Nyquist backfill becomes explicit v1.2 scope or remains deferred.
+- Run the `Release` workflow on `workflow_dispatch` with an invalid branch ref and confirm it fails before publish.
+- Run the `Release` workflow on `workflow_dispatch` with a valid 40-character SHA or existing tag and confirm it proceeds without the deprecated Node 20 warning.
 
 ### Blockers/Concerns
 
-- The `googleapis/release-please-action` pin still emits a Node.js 20 deprecation warning during the successful release run and should be upgraded before the GitHub runner cutoff.
+- Phase 16 is blocked only on live GitHub Actions proof of the recovery-ref enforcement and warning-free runtime; local repo verification is complete.
 
 ## Session Continuity
 
-**Next action:** Execute Phase 16 to record PAR milestone verification and clear the release-runtime warning.
+**Next action:** Execute the `16-HUMAN-UAT.md` recovery workflow checks, then approve Phase 16 so it can be marked complete.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

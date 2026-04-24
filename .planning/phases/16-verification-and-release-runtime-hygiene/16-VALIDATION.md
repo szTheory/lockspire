@@ -1,7 +1,7 @@
 ---
 phase: 16
 slug: verification-and-release-runtime-hygiene
-status: in_progress
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-24
@@ -44,8 +44,8 @@ Phase 16 keeps `nyquist_compliant: true` because it reuses focused existing harn
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 16-01-01 | 01 | 1 | PAR-04 | T-16-01 / T-16-03 | Existing protocol, web, integration, and discovery harnesses are traced explicitly to PAR success, expiry, wrong-client rejection, replay rejection, and discovery truth without inventing a second proof stack | protocol + web + integration + contract | `MIX_ENV=test mix test test/lockspire/protocol/authorization_request_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/web/discovery_controller_test.exs test/integration/phase15_par_authorization_e2e_test.exs` | ✅ existing reused | ✅ green |
 | 16-01-02 | 01 | 1 | PAR-04 | T-16-02 | Closure proof either records that the existing Phase 15 PAR harnesses are sufficient or closes one demonstrable gap in-place, then captures the result in `16-VERIFICATION.md` | closure suite | `MIX_ENV=test mix test.fast && MIX_ENV=test mix test test/integration/phase15_par_authorization_e2e_test.exs test/lockspire/release_readiness_contract_test.exs` | ✅ existing reused / ✅ execution report created during plan execution | ✅ green |
-| 16-02-01 | 02 | 1 | RELS-04 | T-16-04 / T-16-05 | The checked-in release lane replaces the deprecated Node 20 Release Please implementation detail without changing review-only PR posture, recovery-only manual dispatch, or the protected `hex-publish` boundary | contract | `MIX_ENV=test mix test test/lockspire/release_readiness_contract_test.exs` | ✅ existing reused | ⬜ pending |
-| 16-02-02 | 02 | 1 | RELS-04 | T-16-06 | Maintainer docs and repo-truth tests remain aligned with `mix ci`, `mix release.preflight`, `mix hex.publish --yes`, checked-in Release Please config/manifest, and the warning-free runtime swap | docs + contract | `mix docs.verify && MIX_ENV=test mix test test/lockspire/release_readiness_contract_test.exs` | ✅ existing reused | ⬜ pending |
+| 16-02-01 | 02 | 1 | RELS-04 | T-16-04 / T-16-05 | The checked-in release lane replaces the deprecated Node 20 Release Please implementation detail without changing review-only PR posture, recovery-only manual dispatch, or the protected `hex-publish` boundary | contract | `MIX_ENV=test mix test test/lockspire/release_readiness_contract_test.exs` | ✅ existing reused | ✅ green |
+| 16-02-02 | 02 | 1 | RELS-04 | T-16-06 | Maintainer docs and repo-truth tests remain aligned with `mix ci`, `mix release.preflight`, `mix hex.publish --yes`, checked-in Release Please config/manifest, and the warning-free runtime swap | docs + contract | `mix docs.verify && MIX_ENV=test mix test test/lockspire/release_readiness_contract_test.exs` | ✅ existing reused | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -81,7 +81,7 @@ Phase 16 keeps `nyquist_compliant: true` because it reuses focused existing harn
 
 ## Typed Human-Only Verifications
 
-All planned Phase 16 closure checks are automated. If execution captures a GitHub workflow run proving the release warning is gone, that evidence belongs in `16-VERIFICATION.md` as workflow-run proof, not as a planning-time human gate.
+All local repo checks are automated and green. One external-service confirmation remains: a live GitHub Actions recovery run should prove that invalid branch refs fail before publish, valid immutable refs proceed, and the deprecated Node 20 warning is gone. That item is persisted in `16-HUMAN-UAT.md` and referenced from `16-VERIFICATION.md`.
 
 ---
 
@@ -111,4 +111,4 @@ No unplanned source items found. Deferred Nyquist backfill and broader release-p
 - [x] No broader release-process redesign is included
 - [x] Exactly two plans cover the Phase 16 roadmap scope
 
-**Approval:** pending
+**Approval:** automated checks complete; awaiting live GitHub Actions recovery proof
