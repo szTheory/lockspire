@@ -51,6 +51,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
+  alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Storage.Ecto.Repository
   import Phoenix.ConnTest
 
@@ -222,6 +223,107 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert location =~ "state=state-123"
   end
 
+  test "par-backed authorize requests reuse the normal browser login handoff", %{client: client} do
+    pushed_request = issue_pushed_request(client)
+
+    conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+    assert location = redirect_location(conn)
+    assert location =~ "/sign-in?"
+    assert location =~ "source=authorize"
+    assert location =~ "interaction_id="
+    assert location =~ "return_to=%2Flockspire%2Fconsent%2F"
+  end
+
+  test "expired par request_uris fail safely at the browser surface", %{client: client} do
+    pushed_request =
+      issue_pushed_request(client, now: DateTime.add(DateTime.utc_now(), -600, :second))
+
+    conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert conn.status == 400
+    refute redirected?(conn)
+    assert conn.resp_body =~ "request_uri is invalid, expired, or already used"
+  end
+
+  test "consumed par request_uris cannot reopen the authorization flow", %{client: client} do
+    pushed_request = issue_pushed_request(client)
+
+    first_conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert first_conn.status in [302, 303]
+
+    replay_conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert replay_conn.status == 400
+    refute redirected?(replay_conn)
+    assert replay_conn.resp_body =~ "request_uri is invalid, expired, or already used"
+  end
+
+  test "wrong-client par attempts are rejected and burn the request_uri", %{client: client} do
+    pushed_request = issue_pushed_request(client)
+
+    {:ok, other_client} =
+      Repository.register_client(%Client{
+        client_id: "client_456",
+        client_secret_hash: "sha256:salt:hash",
+        client_type: :confidential,
+        name: "Other Integrations",
+        redirect_uris: ["https://other.example.com/callback"],
+        allowed_scopes: ["profile", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    wrong_client_conn =
+      %{
+        "client_id" => other_client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert wrong_client_conn.status == 400
+    refute redirected?(wrong_client_conn)
+    assert wrong_client_conn.resp_body =~ "request_uri is invalid, expired, or already used"
+
+    burned_conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert burned_conn.status == 400
+    refute redirected?(burned_conn)
+    assert burned_conn.resp_body =~ "request_uri is invalid, expired, or already used"
+  end
+
   defp call_authorize(params) do
     conn = build_conn(:get, "/authorize", params)
     Lockspire.Web.Router.call(conn, Lockspire.Web.Router.init([]))
@@ -242,5 +344,26 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
+  end
+
+  defp issue_pushed_request(client, opts \\ []) do
+    now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
+
+    pushed_request =
+      PushedAuthorizationRequest.issue(
+        %{
+          client_id: client.client_id,
+          redirect_uri: "https://client.example.com/callback",
+          scopes: ["profile", "email"],
+          prompt: ["consent"],
+          state: "state-123",
+          code_challenge: String.duplicate("a", 43),
+          code_challenge_method: :S256
+        },
+        now: now
+      )
+
+    {:ok, stored_request} = Repository.put_pushed_authorization_request(pushed_request)
+    stored_request
   end
 end
