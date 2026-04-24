@@ -1,0 +1,334 @@
+name: Release Please
+description: Repo-controlled Release Please invocation on a supported Node runtime
+
+inputs:
+  token:
+    description: GitHub token for creating releases and grooming release PRs
+    required: false
+    default: ${{ github.token }}
+  repo-url:
+    description: GitHub repository name in the form of <owner>/<repo>
+    required: false
+    default: ${{ github.repository }}
+  release-type:
+    description: Optional release strategy override
+    required: false
+    default: ""
+  path:
+    description: Optional release path override
+    required: false
+    default: ""
+  target-branch:
+    description: Branch to open release PRs against and tag releases on
+    required: false
+    default: ${{ github.ref_name }}
+  config-file:
+    description: Path to the checked-in Release Please config
+    required: false
+    default: release-please-config.json
+  manifest-file:
+    description: Path to the checked-in Release Please manifest
+    required: false
+    default: .release-please-manifest.json
+  github-api-url:
+    description: GitHub REST API URL
+    required: false
+    default: ${{ github.api_url }}
+  github-graphql-url:
+    description: GitHub GraphQL API URL
+    required: false
+    default: ${{ github.graphql_url }}
+  fork:
+    description: Whether release PRs should be created from a fork
+    required: false
+    default: "false"
+  include-component-in-tag:
+    description: Whether to include the component in generated tags
+    required: false
+    default: "false"
+  skip-github-release:
+    description: Whether to skip GitHub release creation
+    required: false
+    default: "false"
+  skip-github-pull-request:
+    description: Whether to skip release PR creation
+    required: false
+    default: "false"
+  skip-labeling:
+    description: Whether to skip Release Please labeling
+    required: false
+    default: "false"
+  changelog-host:
+    description: Host prefix used in changelog links
+    required: false
+    default: ${{ github.server_url }}
+  versioning-strategy:
+    description: Optional Release Please versioning strategy
+    required: false
+    default: default
+  release-as:
+    description: Optional explicit version override
+    required: false
+    default: ""
+
+outputs:
+  release_created:
+    description: True when a root-component release was created
+    value: ${{ steps.release-please.outputs.release_created }}
+  releases_created:
+    description: True when any release was created
+    value: ${{ steps.release-please.outputs.releases_created }}
+  prs_created:
+    description: True when any release PR was created or updated
+    value: ${{ steps.release-please.outputs.prs_created }}
+  paths_released:
+    description: JSON array of released paths
+    value: ${{ steps.release-please.outputs.paths_released }}
+  pr:
+    description: JSON payload for the first created or updated release PR
+    value: ${{ steps.release-please.outputs.pr }}
+  prs:
+    description: JSON payload for created or updated release PRs
+    value: ${{ steps.release-please.outputs.prs }}
+  upload_url:
+    description: GitHub release upload URL for the root component
+    value: ${{ steps.release-please.outputs.upload_url }}
+  html_url:
+    description: GitHub release HTML URL for the root component
+    value: ${{ steps.release-please.outputs.html_url }}
+  tag_name:
+    description: GitHub release tag for the root component
+    value: ${{ steps.release-please.outputs.tag_name }}
+  version:
+    description: Root-component version value
+    value: ${{ steps.release-please.outputs.version }}
+  major:
+    description: Root-component major version
+    value: ${{ steps.release-please.outputs.major }}
+  minor:
+    description: Root-component minor version
+    value: ${{ steps.release-please.outputs.minor }}
+  patch:
+    description: Root-component patch version
+    value: ${{ steps.release-please.outputs.patch }}
+  sha:
+    description: Root-component release SHA
+    value: ${{ steps.release-please.outputs.sha }}
+  body:
+    description: Root-component release notes body
+    value: ${{ steps.release-please.outputs.body }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node for Release Please
+      uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      with:
+        node-version: "24"
+
+    - name: Install Release Please runtime
+      shell: bash
+      run: |
+        set -euo pipefail
+        action_node_dir="$RUNNER_TEMP/lockspire-release-please"
+        rm -rf "$action_node_dir"
+        mkdir -p "$action_node_dir"
+        npm install \
+          --prefix "$action_node_dir" \
+          --no-package-lock \
+          --no-save \
+          @actions/core@1.10.0 \
+          release-please@17.3.0
+
+    - name: Run Release Please
+      id: release-please
+      shell: bash
+      env:
+        RP_TOKEN: ${{ inputs.token }}
+        RP_REPO_URL: ${{ inputs.repo-url }}
+        RP_RELEASE_TYPE: ${{ inputs.release-type }}
+        RP_PATH: ${{ inputs.path }}
+        RP_TARGET_BRANCH: ${{ inputs.target-branch }}
+        RP_CONFIG_FILE: ${{ inputs.config-file }}
+        RP_MANIFEST_FILE: ${{ inputs.manifest-file }}
+        RP_GITHUB_API_URL: ${{ inputs.github-api-url }}
+        RP_GITHUB_GRAPHQL_URL: ${{ inputs.github-graphql-url }}
+        RP_FORK: ${{ inputs.fork }}
+        RP_INCLUDE_COMPONENT_IN_TAG: ${{ inputs.include-component-in-tag }}
+        RP_SKIP_GITHUB_RELEASE: ${{ inputs.skip-github-release }}
+        RP_SKIP_GITHUB_PULL_REQUEST: ${{ inputs.skip-github-pull-request }}
+        RP_SKIP_LABELING: ${{ inputs.skip-labeling }}
+        RP_CHANGELOG_HOST: ${{ inputs.changelog-host }}
+        RP_VERSIONING_STRATEGY: ${{ inputs.versioning-strategy }}
+        RP_RELEASE_AS: ${{ inputs.release-as }}
+      run: |
+        set -euo pipefail
+        export NODE_PATH="$RUNNER_TEMP/lockspire-release-please/node_modules"
+        node <<'NODE'
+        const core = require("@actions/core");
+        const {GitHub, Manifest, VERSION} = require("release-please");
+
+        const DEFAULT_GITHUB_API_URL = "https://api.github.com";
+        const DEFAULT_GITHUB_GRAPHQL_URL = "https://api.github.com";
+        const DEFAULT_GITHUB_SERVER_URL = "https://github.com";
+
+        function normalizeBoolean(value) {
+          if (value === undefined || value === null || value === "") {
+            return undefined;
+          }
+
+          return value === "true";
+        }
+
+        function optional(value) {
+          return value === undefined || value === null || value === "" ? undefined : value;
+        }
+
+        function setPathOutput(path, key, value) {
+          if (value === undefined || value === null) {
+            return;
+          }
+
+          if (path === ".") {
+            core.setOutput(key, value);
+          } else {
+            core.setOutput(`${path}--${key}`, value);
+          }
+        }
+
+        function outputReleases(releases) {
+          const createdReleases = releases.filter(Boolean);
+          const pathsReleased = [];
+
+          core.setOutput("releases_created", createdReleases.length > 0);
+          core.setOutput("release_created", false);
+          core.setOutput("paths_released", JSON.stringify(pathsReleased));
+
+          for (const release of createdReleases) {
+            const path = release.path || ".";
+            pathsReleased.push(path);
+            setPathOutput(path, "release_created", true);
+
+            for (const [rawKey, value] of Object.entries(release)) {
+              let key = rawKey;
+              if (key === "tagName") key = "tag_name";
+              if (key === "uploadUrl") key = "upload_url";
+              if (key === "notes") key = "body";
+              if (key === "url") key = "html_url";
+              setPathOutput(path, key, value);
+            }
+          }
+
+          core.setOutput("paths_released", JSON.stringify(pathsReleased));
+        }
+
+        function outputPRs(prs) {
+          const createdPrs = prs.filter(Boolean);
+          core.setOutput("prs_created", createdPrs.length > 0);
+          if (createdPrs.length > 0) {
+            core.setOutput("pr", JSON.stringify(createdPrs[0]));
+            core.setOutput("prs", JSON.stringify(createdPrs));
+          }
+        }
+
+        async function loadOrBuildManifest(github, inputs) {
+          if (inputs.releaseType) {
+            return Manifest.fromConfig(
+              github,
+              github.repository.defaultBranch,
+              {
+                releaseType: inputs.releaseType,
+                includeComponentInTag: inputs.includeComponentInTag,
+                changelogHost: inputs.changelogHost,
+                versioning: inputs.versioningStrategy,
+                releaseAs: inputs.releaseAs
+              },
+              {
+                fork: inputs.fork,
+                skipLabeling: inputs.skipLabeling
+              },
+              inputs.path
+            );
+          }
+
+          const manifestOverrides =
+            inputs.fork || inputs.skipLabeling
+              ? {
+                  fork: inputs.fork,
+                  skipLabeling: inputs.skipLabeling
+                }
+              : {};
+
+          const manifest = await Manifest.fromManifest(
+            github,
+            github.repository.defaultBranch,
+            inputs.configFile,
+            inputs.manifestFile,
+            manifestOverrides
+          );
+
+          if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {
+            for (const path of Object.keys(manifest.repositoryConfig)) {
+              manifest.repositoryConfig[path].changelogHost = inputs.changelogHost;
+            }
+          }
+
+          return manifest;
+        }
+
+        async function main() {
+          const inputs = {
+            token: process.env.RP_TOKEN,
+            repoUrl: process.env.RP_REPO_URL || process.env.GITHUB_REPOSITORY,
+            releaseType: optional(process.env.RP_RELEASE_TYPE),
+            path: optional(process.env.RP_PATH),
+            targetBranch: optional(process.env.RP_TARGET_BRANCH),
+            configFile: process.env.RP_CONFIG_FILE || "release-please-config.json",
+            manifestFile: process.env.RP_MANIFEST_FILE || ".release-please-manifest.json",
+            githubApiUrl: process.env.RP_GITHUB_API_URL || DEFAULT_GITHUB_API_URL,
+            githubGraphqlUrl:
+              optional(process.env.RP_GITHUB_GRAPHQL_URL)?.replace(/\/graphql$/, "") ||
+              DEFAULT_GITHUB_GRAPHQL_URL,
+            fork: normalizeBoolean(process.env.RP_FORK),
+            includeComponentInTag: normalizeBoolean(process.env.RP_INCLUDE_COMPONENT_IN_TAG),
+            skipGitHubRelease: normalizeBoolean(process.env.RP_SKIP_GITHUB_RELEASE),
+            skipGitHubPullRequest: normalizeBoolean(process.env.RP_SKIP_GITHUB_PULL_REQUEST),
+            skipLabeling: normalizeBoolean(process.env.RP_SKIP_LABELING),
+            changelogHost: process.env.RP_CHANGELOG_HOST || DEFAULT_GITHUB_SERVER_URL,
+            versioningStrategy: optional(process.env.RP_VERSIONING_STRATEGY),
+            releaseAs: optional(process.env.RP_RELEASE_AS)
+          };
+
+          const [owner, repo] = inputs.repoUrl.split("/");
+          const github = await GitHub.create({
+            owner,
+            repo,
+            apiUrl: inputs.githubApiUrl,
+            graphqlUrl: inputs.githubGraphqlUrl,
+            token: inputs.token,
+            defaultBranch: inputs.targetBranch
+          });
+
+          core.info(`Running release-please version: ${VERSION}`);
+
+          if (!inputs.skipGitHubRelease) {
+            const manifest = await loadOrBuildManifest(github, inputs);
+            outputReleases(await manifest.createReleases());
+          } else {
+            core.setOutput("releases_created", false);
+            core.setOutput("release_created", false);
+            core.setOutput("paths_released", "[]");
+          }
+
+          if (!inputs.skipGitHubPullRequest) {
+            const manifest = await loadOrBuildManifest(github, inputs);
+            outputPRs(await manifest.createPullRequests());
+          } else {
+            core.setOutput("prs_created", false);
+          }
+        }
+
+        main().catch(error => {
+          core.setFailed(`release-please failed: ${error.message}`);
+        });
+        NODE
