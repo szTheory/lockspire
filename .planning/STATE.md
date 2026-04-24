@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: PAR Foundation
-status: defining_requirements
-last_updated: "2026-04-24T12:47:13Z"
-last_activity: 2026-04-24 -- Started v1.2 milestone and reset planning state
+status: milestone_initialized
+last_updated: "2026-04-24T12:50:56Z"
+last_activity: 2026-04-24 -- Created v1.2 roadmap and staged Phase 14 as next
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 8
   completed_plans: 0
   percent: 0
 ---
@@ -21,7 +21,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Define and stage the v1.2 PAR Foundation milestone.
+**Current focus:** Plan and execute Phase 14 of the v1.2 PAR Foundation milestone.
 
 ## Current Position
 
@@ -29,16 +29,16 @@ Milestone: v1.2 — PAR Foundation
 
 Phase: Not started (defining requirements)
 
-Plan: -
+Plan: Phase 14 - Pushed Request Intake
 
-Status: Defining requirements
+Status: Milestone initialized; ready for phase planning
 
-Last activity: 2026-04-24 -- Milestone v1.2 started
+Last activity: 2026-04-24 -- Created roadmap for phases 14-16
 
 ## Performance Metrics
 
-- Phases completed: 0/0
-- Plans completed: 0/0
+- Phases completed: 0/3
+- Plans completed: 0/8
 - Recorded tasks completed: 0
 - Timeline: 2026-04-24 -> present
 
@@ -56,9 +56,9 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Define milestone-scoped v1.2 requirements for PAR and release-tooling hygiene.
-- Split the milestone into executable phases and map every requirement.
-- Decide whether Nyquist backfill belongs inside a v1.2 phase or remains deferred tech debt.
+- Run `$gsd-plan-phase 14` for PAR request intake.
+- Keep PAR scoped to the embedded code + PKCE path while planning Phase 15.
+- Decide during execution whether Nyquist backfill becomes explicit v1.2 scope or remains deferred.
 
 ### Blockers/Concerns
 
@@ -66,7 +66,7 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ## Session Continuity
 
-**Next action:** Finish `$gsd-new-milestone` by writing research, requirements, and the v1.2 roadmap.
+**Next action:** Run `$gsd-plan-phase 14` to break down the PAR intake phase into executable plans.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
