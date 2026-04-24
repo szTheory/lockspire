@@ -1,6 +1,6 @@
 # Install And Onboard
 
-The canonical onboarding path is Phoenix-first and generator-first.
+The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full `v0.1` preview support contract, see `docs/supported-surface.md`.
 
 ## 1. Add Lockspire
 
@@ -36,6 +36,8 @@ Implement the generated `AccountResolver` with:
 - Claim building for ID token and userinfo
 - Login redirect behavior that preserves `interaction_id` and `return_to`
 
+Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
+
 ## 4. Run migrations
 
 Run:
@@ -56,6 +58,8 @@ The executable repo proof lives in:
 
 - `test/integration/install_generator_test.exs`
 - `test/integration/phase6_onboarding_e2e_test.exs`
+
+The maintained contributor gate for that proof is `mix ci`, which runs the docs, package, fast-test, integration, and phase gates described in `.github/workflows/ci.yml`.
 
 ## Sigra companion path
 

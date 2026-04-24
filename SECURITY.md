@@ -28,13 +28,14 @@ Lockspire aims to:
 
 ## Supported security surface
 
-Lockspire’s supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo:
+Lockspire's supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:
 
 - authorization code + PKCE
 - discovery and JWKS
 - userinfo
 - revocation and introspection
 - refresh token rotation
+- generator-backed Phoenix install flow
 - operator workflows for clients, consents, tokens, and keys
 
 Unsupported or out-of-scope surfaces include:
@@ -42,6 +43,8 @@ Unsupported or out-of-scope surfaces include:
 - host-owned account databases
 - host login/session implementations
 - third-party IdP integrations not shipped in this repo
+- hosted auth as a separate service
+- PAR, device flow, and dynamic client registration
 - SAML, LDAP, or generic federation features
 
 ## Secure defaults
@@ -53,3 +56,5 @@ Unsupported or out-of-scope surfaces include:
 - refresh-token family revocation on reuse
 - no implicit flow
 - no `alg=none`
+
+This file does not broaden the public preview contract. For the full supported and out-of-scope surface, see `docs/supported-surface.md`.

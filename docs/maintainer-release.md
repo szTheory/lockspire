@@ -1,6 +1,6 @@
 # Maintainer And Release Guide
 
-Lockspire release work should stay boring, reviewable, and tied to repo truth.
+Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the `v0.1` preview support contract defined in `docs/supported-surface.md`.
 
 ## Normal flow
 
@@ -62,15 +62,21 @@ Preview releases should only claim the supported surface the repo can currently 
 
 The repo should not claim full release readiness or broader protocol support until the docs, CI, support policy, and maintainer runbooks all agree with implemented behavior.
 
+That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
+
+Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
+
 ## Preflight checklist
 
 Before merging a release PR, confirm:
 
 - `mix ci`
+- `mix release.preflight`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
 - `release-please-config.json` and `.release-please-manifest.json` still match the intended preview release policy
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
+- trusted publish lane still runs `mix hex.publish --yes`
 - public docs and `SECURITY.md` still match the supported surface
 
 ## Hold points
