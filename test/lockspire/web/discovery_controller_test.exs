@@ -67,6 +67,8 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "request_parameter_supported")
     refute Map.has_key?(body, "request_uri_parameter_supported")
     refute Map.has_key?(body, "request_object_signing_alg_values_supported")
+    refute Map.has_key?(body, "request_object_encryption_alg_values_supported")
+    refute Map.has_key?(body, "request_object_encryption_enc_values_supported")
     refute Map.has_key?(body, "require_pushed_authorization_requests")
   end
 end

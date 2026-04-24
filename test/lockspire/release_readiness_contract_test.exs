@@ -247,7 +247,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "environment: hex-publish"
   end
 
-  test "planning metadata and repo truth keep PAR scoped to the narrow v1.2 slice" do
+  test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
     project = File.read!(@project_path)
     roadmap = File.read!(@roadmap_path)
     requirements = File.read!(@requirements_path)
@@ -255,30 +255,17 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~
-             "PAR is the default next protocol-expansion milestone after release hardening"
+    assert project =~ "Current Milestone: v1.3 PAR Policy Controls"
+    assert project =~ "v1.2 delivered the narrow PAR wedge"
+    assert project =~ "v1.3 should not blur into JAR-by-value" || project =~ "v1.3 limited to PAR policy controls"
 
-    assert project =~ "not implemented and not supported in v1.1"
-    assert project =~ "Add pushed authorization requests as a narrow extension"
-    assert project =~
-             "Advertise PAR support truthfully in discovery, docs, and support-facing surfaces without implying broader JAR, DCR, or device-flow support."
+    assert roadmap =~ "v1.3 PAR Policy Controls"
+    assert roadmap =~ "Phase 19: Operator UX and Truthful Surface"
+    assert roadmap =~ "19-02: Update discovery/docs/contract tests so support claims match the shipped policy slice"
 
-    assert roadmap =~
-             "document PAR as the next milestone candidate without starting it here or implying current v1.1 support"
-
-    assert roadmap =~ "v1.2 PAR Foundation"
-    assert roadmap =~ "15-03: Add end-to-end tests for the PAR-backed authorization code + PKCE flow and truth-surface contract coverage"
-    assert roadmap =~
-             "README, supported-surface docs, and related contract tests describe PAR as implemented without implying JAR-by-value, DCR, or device-flow support."
-
-    assert requirements =~
-             "The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1."
-
-    assert requirements =~
-             "PAR-03"
-
-    assert requirements =~
-             "advertise only the implemented PAR slice and do not imply request-object-by-value, dynamic registration, or device-flow support."
+    assert requirements =~ "v1.3 PAR Policy Controls"
+    assert requirements =~ "PARPOL-04"
+    assert requirements =~ "Integrators and maintainers can discover the shipped PAR policy slice through truthful metadata and docs"
 
     assert readme =~
              "Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path"
@@ -292,15 +279,39 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute readme =~ "supports broader request-object modes"
     refute supported_surface =~ "Request-object-by-value support is in scope"
     refute security =~ "hosted auth is part of the supported security surface"
+  end
 
-    refute Regex.match?(
-             ~r/Pushed authorization requests.*generic external `request_uri` handling/m,
-             readme
-           )
+  test "operator workflow docs keep PAR policy and effective requirement explicit" do
+    operator_admin = File.read!(Path.expand("../../docs/operator-admin.md", __DIR__))
 
-    refute Regex.match?(
-             ~r/Supported in scope\\s+(?:.*\\n)*- .*dynamic client registration/m,
-             supported_surface
-           )
+    assert operator_admin =~ "/admin/policies/par"
+    assert operator_admin =~ "/admin/clients/:client_id/par-policy"
+    assert operator_admin =~ "Global PAR policy"
+    assert operator_admin =~ "Client PAR override"
+    assert operator_admin =~ "Effective PAR requirement"
+  end
+
+  test "supported surface and security docs distinguish capability from policy-resolved requirement" do
+    readme = File.read!(@readme_path)
+    supported_surface = File.read!(@supported_surface_path)
+    security = File.read!(@security_policy_path)
+
+    for doc <- [readme, supported_surface, security] do
+      assert doc =~ "Lockspire-issued request_uri"
+      assert doc =~ "required"
+      assert doc =~ "optional"
+    end
+
+    assert supported_surface =~ "global"
+    assert supported_surface =~ "client"
+
+    # Explicit exclusions preserved
+    for doc <- [readme, supported_surface, security] do
+      assert doc =~ "request-object-by-value"
+      assert doc =~ "generic external request_uri"
+      assert doc =~ "dynamic client registration"
+      assert doc =~ "device flow"
+      assert doc =~ "hosted auth"
+    end
   end
 end
