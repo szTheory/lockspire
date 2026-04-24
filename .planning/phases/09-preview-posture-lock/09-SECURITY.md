@@ -59,11 +59,14 @@ created: 2026-04-24
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-04-24 | 8 | 8 | 0 | Codex (`$gsd-secure-phase 09`) |
+| 2026-04-24 | 8 | 8 | 0 | Codex (`$gsd-secure-phase 09`, revalidation) |
 
 Verification evidence used for this audit:
 
 - `mix docs.verify`
 - `mix test test/lockspire/release_readiness_contract_test.exs`
+- `rg -n 'PKCE S256|required by default|exact-match redirect URI|hashed at rest|single-use|revocation on reuse|no implicit flow|no \`alg=none\`' SECURITY.md docs/supported-surface.md`
+- `rg -n 'PAR' README.md docs/supported-surface.md SECURITY.md docs/install-and-onboard.md docs/maintainer-release.md`
 - Current review of `README.md`, `docs/supported-surface.md`, `SECURITY.md`, `docs/install-and-onboard.md`, `docs/maintainer-release.md`, `test/lockspire/release_readiness_contract_test.exs`, `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/REQUIREMENTS.md`
 
 ---
