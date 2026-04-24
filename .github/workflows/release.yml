@@ -38,14 +38,14 @@ jobs:
       - name: Record review-only Release Please PR posture
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
-          echo "Release Please generated PRs are review-only. Trusted proof starts only after merge and protected hex-publish approval."
+          echo "Release Please generated PRs are review-only. Trusted proof starts only after merge in the protected hex-publish environment."
 
       - name: Run Release Please
         id: release
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
         with:
-          release-type: elixir
-          package-name: lockspire
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   publish:
     name: Publish to Hex

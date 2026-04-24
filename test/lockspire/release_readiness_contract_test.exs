@@ -4,6 +4,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
   @release_workflow_path Path.expand("../../.github/workflows/release.yml", __DIR__)
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
+  @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
+  @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
@@ -18,8 +20,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Repo-owned proof:"
     assert guide =~ "GitHub settings proof:"
     assert guide =~ "Workflow-run proof:"
-    assert guide =~ "required reviewers, no self-review, restricted deployment refs"
-    assert guide =~ "approved `hex-publish` workflow run"
+
+    assert guide =~
+             "branch restriction to `main`, admin-bypass posture, and environment-secret placement"
+
+    assert guide =~ "successful `hex-publish` workflow run"
+    assert guide =~ "release-please-config.json"
+    assert guide =~ ".release-please-manifest.json"
 
     refute guide =~ "mix package.verify"
   end
@@ -33,16 +40,35 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "recovery_reason"
     assert release_workflow =~ "workflow_dispatch is recovery-only"
     assert release_workflow =~ "Release Please generated PRs are review-only"
-    assert release_workflow =~ "Trusted proof starts only after merge and protected hex-publish approval"
+
+    assert release_workflow =~
+             "Trusted proof starts only after merge in the protected hex-publish environment"
+
+    assert release_workflow =~ "config-file: release-please-config.json"
+    assert release_workflow =~ "manifest-file: .release-please-manifest.json"
     assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
     assert release_workflow =~ "run: mix release.preflight"
     assert release_workflow =~ "run: mix hex.publish --yes"
+
     assert release_workflow =~
              "if: ${{ needs.release-please.outputs.release_created == 'true' }}"
 
     refute release_workflow =~ "pull_request:"
+    refute release_workflow =~ "package-name: lockspire"
 
     refute release_workflow =~ "mix package.verify"
+  end
+
+  test "release please policy is checked in and keeps preview versioning explicit" do
+    config = File.read!(@release_please_config_path)
+    manifest = File.read!(@release_please_manifest_path)
+
+    assert config =~ "\"bump-minor-pre-major\": true"
+    assert config =~ "\"packages\""
+    assert config =~ "\".\""
+    assert config =~ "\"release-type\": \"elixir\""
+    assert config =~ "\"package-name\": \"lockspire\""
+    assert manifest =~ "\".\": \"0.1.0\""
   end
 
   test "workflow files keep contributor proof separate from the protected publish lane" do

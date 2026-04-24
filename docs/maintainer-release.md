@@ -9,16 +9,16 @@ Lockspire release work should stay boring, reviewable, and tied to repo truth.
 3. Treat the Release Please PR as review-only evidence, not authenticated release proof.
 4. Review the release PR diff, `mix.exs`, `CHANGELOG.md`, and the workflow/config artifacts that define the release lane.
 5. Merge the release PR.
-6. Approve the protected `hex-publish` deployment when the Release workflow reaches the environment gate.
-7. Treat the approved protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
+6. Let the Release workflow cross the `hex-publish` environment boundary on `main`.
+7. Treat the resulting protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
 
 ## Evidence boundaries
 
 Keep release evidence in three separate buckets:
 
 - Repo-owned proof: `.github/workflows/release.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
-- GitHub settings proof: the live `hex-publish` environment settings prove required reviewers, no self-review, restricted deployment refs, and environment-secret placement.
-- Workflow-run proof: one approved `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
+- GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
+- Workflow-run proof: one successful `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
 
 ## Contributor gate
 
@@ -50,9 +50,10 @@ If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal pu
 
 - Use a protected `hex-publish` environment for publish jobs.
 - Store `HEX_API_KEY` as an environment secret, not an inline workflow secret.
+- Restrict the environment to deployments from `main`.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
 - Keep the authenticated dry-run inside the trusted workflow via `mix release.preflight`.
-- Record protected-environment evidence separately from repo-owned proof: required reviewers, no self-review, restricted deployment refs, and environment-secret placement all live in GitHub settings rather than in the repo.
+- Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
 
 ## Release posture
 
@@ -66,6 +67,7 @@ Before merging a release PR, confirm:
 
 - `mix ci`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
+- `release-please-config.json` and `.release-please-manifest.json` still match the intended preview release policy
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - public docs and `SECURITY.md` still match the supported surface
@@ -78,4 +80,4 @@ Stop the release if:
 - package metadata or docs build drift from the release artifact
 - a workflow change bypasses CODEOWNERS or dependency review
 - CI stops being equivalent to the maintained `mix ci` contract
-- the protected `hex-publish` deployment no longer requires explicit reviewer approval or stores `HEX_API_KEY` outside the environment boundary
+- the protected `hex-publish` environment stops being restricted to `main`, allows bypass you do not intend to allow, or stores `HEX_API_KEY` outside the environment boundary
