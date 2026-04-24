@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 Milestone: v1.2 — PAR Foundation
 
-Phase: Not started (defining requirements)
+Phase: 14 - Pushed Request Intake
 
 Plan: Phase 14 - Pushed Request Intake
 
