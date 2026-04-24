@@ -121,14 +121,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "PAR, device flow, or dynamic client registration"
 
     assert supported_surface =~ "Lockspire `v0.1` is a preview release"
-    assert supported_surface =~ "embedded Phoenix library wedge"
+    assert supported_surface =~ "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
     assert supported_surface =~ "Authorization code flow with PKCE S256"
     assert supported_surface =~ "OIDC discovery and JWKS"
     assert supported_surface =~ "Lockspire does not use a demo app"
     assert supported_surface =~ "A `v0.1` preview claim should not say:"
+    assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
 
     refute readme =~ "production-ready"
-    refute supported_surface =~ "production-ready"
   end
 
   test "security and release posture stay inside the supported preview surface" do
@@ -164,8 +164,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert roadmap =~ "v1.2 PAR Foundation"
     assert roadmap =~ "next milestone is **v1.2 PAR Foundation**"
 
+    assert supported_surface =~ "does not currently support:"
+    assert supported_surface =~ "- PAR"
+    assert security =~ "- PAR, device flow, and dynamic client registration"
+
     refute readme =~ "already supports PAR"
-    refute supported_surface =~ "already supports PAR"
-    refute security =~ "already supports PAR"
   end
 end
