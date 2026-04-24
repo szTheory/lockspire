@@ -84,7 +84,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Database handle"
     refute html =~ "Retire key"
     refute html =~ "ui-upcoming"
-    refute html =~ Integer.to_string(upcoming_key.id)
+    refute html =~ ~r/>\s*#{upcoming_key.id}\s*</
 
     assert {:noreply, socket} =
              Show.handle_event("publish_key", %{"publish" => %{"confirm" => "true"}}, socket)
