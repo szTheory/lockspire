@@ -45,6 +45,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["jwks_uri"] == "https://example.test/lockspire/jwks"
     assert body["revocation_endpoint"] == "https://example.test/lockspire/revoke"
     assert body["introspection_endpoint"] == "https://example.test/lockspire/introspect"
+    assert body["pushed_authorization_request_endpoint"] == "https://example.test/lockspire/par"
     assert body["scopes_supported"] == ["openid", "profile", "email"]
     assert body["response_types_supported"] == ["code"]
     assert body["response_modes_supported"] == ["query"]
@@ -61,8 +62,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["id_token_signing_alg_values_supported"] == ["RS256"]
 
     refute Map.has_key?(body, "registration_endpoint")
+    refute Map.has_key?(body, "device_authorization_endpoint")
     refute Map.has_key?(body, "end_session_endpoint")
-    refute Map.has_key?(body, "pushed_authorization_request_endpoint")
+    refute Map.has_key?(body, "request_parameter_supported")
+    refute Map.has_key?(body, "request_uri_parameter_supported")
     refute Map.has_key?(body, "request_object_signing_alg_values_supported")
+    refute Map.has_key?(body, "require_pushed_authorization_requests")
   end
 end

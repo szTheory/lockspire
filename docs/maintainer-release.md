@@ -64,7 +64,7 @@ The repo should not claim full release readiness or broader protocol support unt
 
 That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
 
-Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
+Do not broaden release claims to request-object-by-value support, generic external request_uri handling, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
 
 ## Preflight checklist
 

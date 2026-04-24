@@ -121,7 +121,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "inside its existing app"
     assert readme =~ "The public support contract"
     assert readme =~ "Generator-backed install flow for Phoenix hosts"
-    assert readme =~ "PAR, device flow, or dynamic client registration"
+    assert readme =~
+             "Pushed authorization requests through Lockspire-issued `request_uri` references"
+
+    assert readme =~
+             "Request-object-by-value support, generic external `request_uri` handling, device flow, or dynamic client registration"
 
     assert supported_surface =~ "Lockspire `v0.1` is a preview release"
 
@@ -129,10 +133,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
 
     assert supported_surface =~ "Authorization code flow with PKCE S256"
+    assert supported_surface =~
+             "Pushed authorization requests only as Lockspire-issued `request_uri` references"
+
     assert supported_surface =~ "OIDC discovery and JWKS"
     assert supported_surface =~ "Lockspire does not use a demo app"
     assert supported_surface =~ "A `v0.1` preview claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
+    assert supported_surface =~ "Generic external `request_uri` handling outside Lockspire's own PAR endpoint"
 
     refute readme =~ "production-ready"
   end
@@ -148,9 +156,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "Open a GitHub Security Advisory draft"
     assert security =~ "supported security surface is limited"
     assert security =~ "authorization code + PKCE"
-    assert security =~ "PAR, device flow, and dynamic client registration"
+    assert security =~
+             "pushed authorization requests only through Lockspire-issued `request_uri` references"
+
     assert security =~ "PKCE S256 required by default"
     assert security =~ "no `alg=none`"
+    assert security =~
+             "request-object-by-value support, generic external `request_uri` handling, device flow, and dynamic client registration"
 
     assert guide =~ "inside the `v0.1` preview support contract"
 
@@ -161,7 +173,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
 
     assert guide =~
-             "Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+             "Do not broaden release claims to request-object-by-value support, generic external request_uri handling, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
 
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
@@ -169,14 +181,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "The executable repo proof lives in:"
     assert onboarding =~ "test/integration/install_generator_test.exs"
     assert onboarding =~ "test/integration/phase6_onboarding_e2e_test.exs"
-    refute Regex.match?(~r/## 5\\..*\\n(?:- .*\\n)*- .*\\bPAR\\b/m, onboarding)
+    refute Regex.match?(~r/## 5\\..*\\n(?:- .*\\n)*- .*\\bdevice flow\\b/m, onboarding)
     refute onboarding =~ "production-ready"
 
     assert ci_workflow =~ "run: mix docs.verify"
     assert release_workflow =~ "environment: hex-publish"
   end
 
-  test "planning metadata keeps PAR future-facing while current posture rejects present support claims" do
+  test "planning metadata and repo truth keep PAR scoped to the narrow v1.2 slice" do
     project = File.read!(@project_path)
     roadmap = File.read!(@roadmap_path)
     requirements = File.read!(@requirements_path)
@@ -188,33 +200,48 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "PAR is the default next protocol-expansion milestone after release hardening"
 
     assert project =~ "not implemented and not supported in v1.1"
+    assert project =~ "Add pushed authorization requests as a narrow extension"
+    assert project =~
+             "Advertise PAR support truthfully in discovery, docs, and support-facing surfaces without implying broader JAR, DCR, or device-flow support."
 
     assert roadmap =~
              "document PAR as the next milestone candidate without starting it here or implying current v1.1 support"
 
     assert roadmap =~ "v1.2 PAR Foundation"
-    assert roadmap =~ "PAR is not implemented and not supported in v1.1"
+    assert roadmap =~ "15-03: Add end-to-end tests for the PAR-backed authorization code + PKCE flow and truth-surface contract coverage"
+    assert roadmap =~
+             "README, supported-surface docs, and related contract tests describe PAR as implemented without implying JAR-by-value, DCR, or device-flow support."
 
     assert requirements =~
              "The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1."
 
-    assert requirements =~ "PAR implementation in v1.1"
+    assert requirements =~
+             "PAR-03"
 
-    assert supported_surface =~ "does not currently support:"
-    assert supported_surface =~ "- PAR"
-    assert security =~ "- PAR, device flow, and dynamic client registration"
+    assert requirements =~
+             "advertise only the implemented PAR slice and do not imply request-object-by-value, dynamic registration, or device-flow support."
 
-    refute readme =~ "already supports PAR"
-    refute Regex.match?(~r/## What v0\\.1 includes\\s+(?:.*\\n)*- .*\\bPAR\\b/m, readme)
+    assert readme =~
+             "Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path"
+
+    assert supported_surface =~
+             "Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow"
+
+    assert security =~
+             "pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path"
+
+    refute readme =~ "supports broader request-object modes"
+    refute supported_surface =~ "Request-object-by-value support is in scope"
+    refute security =~ "hosted auth is part of the supported security surface"
 
     refute Regex.match?(
-             ~r/preview currently supports this repo-proven surface:\\s+(?:.*\\n)*- .*\\bPAR\\b/m,
-             supported_surface
+             ~r/Pushed authorization requests.*generic external `request_uri` handling/m,
+             readme
            )
 
     refute Regex.match?(
-             ~r/supported security surface is limited.*\\s+(?:- .*\\n)*- .*\\bPAR\\b/m,
-             security
+             ~r/Supported in scope\\s+(?:.*\\n)*- .*dynamic client registration/m,
+             supported_surface
            )
   end
 end
