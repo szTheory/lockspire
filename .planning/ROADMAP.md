@@ -8,8 +8,8 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Phase 12 executed 2026-04-24; milestone ready for re-audit
-**Phases:** 7-12
+**Status:** Gap closure phase added 2026-04-24; Phase 13 pending planning
+**Phases:** 7-13
 **Total Plans:** 14 completed, 0 pending
 
 **Overview**
@@ -108,15 +108,31 @@ Plans:
 **Details:**
 This phase is intentionally narrow. It should consolidate the existing Phase 11 protected release proof, summaries, and prior Phase 08 verification evidence into a normal phase-level verification rollup without reopening product scope or altering the trusted release path itself.
 
+### Phase 13: Milestone Closure Ledger Finalization
+
+**Goal**: Close the final milestone handoff gap by writing the missing Phase 12 verification artifact and reconciling the canonical RELS ledger with the passed release-closure evidence.
+**Depends on**: Phase 12 plus `v1.1-MILESTONE-AUDIT.md`
+**Plans**: 1 plan
+**Requirements**: RELS-01, RELS-02, RELS-03
+**Gap Closure**: Closes the missing Phase 12 verification artifact plus the stale RELS requirement ledger rows that still block milestone closeout.
+
+Plans:
+
+- [ ] 13-01: Write `12-VERIFICATION.md`, update `RELS-01` through `RELS-03` in `.planning/REQUIREMENTS.md`, and re-anchor the milestone closeout chain
+
+**Details:**
+This phase should stay process-only. It closes the last audit-reported contradiction between the passed Phase 11/12 closure evidence and the canonical planning ledger, then leaves the milestone ready for a fresh audit without reopening release workflow implementation.
+
 ## Next Milestone Candidate
 
 After v1.1 gap closure work passes re-audit, the default next milestone is **v1.2 PAR Foundation**. It should extend the current authorization-code + PKCE path with pushed authorization requests before broader candidates like dynamic registration or device flow. PAR is not implemented and not supported in v1.1; it remains planning metadata only until the next milestone starts.
 
 ## Next Up
 
-- Re-run `$gsd-audit-milestone` now that Phase 12 wrote the missing Phase 11 verification rollup.
+- Plan Phase 13 with `$gsd-plan-phase 13`.
+- Re-run `$gsd-audit-milestone` after Phase 13 closes the remaining verification/ledger handoff.
 - Upgrade the pinned `googleapis/release-please-action` before the GitHub Node.js 20 runner deprecation cutoff.
-- Defer optional Nyquist completeness cleanup for missing `10-VALIDATION.md` until after v1.1 archive unless archive criteria are tightened.
+- Defer optional Nyquist completeness cleanup for missing `10-VALIDATION.md` and `12-VALIDATION.md` until after v1.1 archive unless archive criteria are tightened.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.
 - Keep PAR out of current support-facing docs, examples, and feature claims until v1.2 work actually begins.
 

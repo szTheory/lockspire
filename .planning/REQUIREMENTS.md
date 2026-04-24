@@ -48,9 +48,9 @@
 | GATE-01 | Phase 10 | Complete |
 | GATE-02 | Phase 10 | Complete |
 | GATE-03 | Phase 10 | Complete |
-| RELS-01 | Phase 12 | Pending |
-| RELS-02 | Phase 12 | Pending |
-| RELS-03 | Phase 12 | Pending |
+| RELS-01 | Phase 13 | Pending |
+| RELS-02 | Phase 13 | Pending |
+| RELS-03 | Phase 13 | Pending |
 | POST-01 | Phase 9 | Complete |
 | POST-02 | Phase 9 | Complete |
 | POST-03 | Phase 9 | Complete |
@@ -62,4 +62,4 @@
 
 ---
 *Requirements defined: 2026-04-23*
-*Last updated: 2026-04-24 after the milestone audit reopened RELS traceability and assigned closure to Phase 12*
+*Last updated: 2026-04-24 after the milestone audit grouped the remaining RELS ledger/verification handoff into Phase 13*
