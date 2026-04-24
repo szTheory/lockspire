@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Release Hardening
-status: awaiting_security_review
-last_updated: "2026-04-24T03:45:00Z"
-last_activity: 2026-04-24 -- Phase 09 execution, review, and verification completed
+status: gap_closure_planned
+last_updated: "2026-04-24T09:05:00Z"
+last_activity: 2026-04-24 -- milestone audit reopened v1.1 and added phases 10-11 for closure
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
   total_plans: 9
   completed_plans: 9
-  percent: 100
+  percent: 60
 ---
 
 # Project State
@@ -21,21 +21,21 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 09 — security follow-through
+**Current focus:** Phase 10 planning — contributor gate recovery
 
 ## Current Position
 
-Phase: 09 (Preview Posture Lock) — COMPLETE
+Phase: 10 (Contributor Gate Recovery) — planned
 
-Plan: 2 of 2
+Plan: not started
 
-Status: Awaiting `gsd-secure-phase 09`
+Status: Awaiting `$gsd-plan-phase 10`
 
-Last activity: 2026-04-24 -- Phase 09 execution, review, and verification completed
+Last activity: 2026-04-24 -- milestone audit found reopened release-hardening gaps and created phases 10-11
 
 ## Performance Metrics
 
-- Phases completed: 3/3
+- Phases completed: 3/5
 - Plans completed: 9/9
 - Recorded tasks completed: 15
 - Timeline: 2026-04-23 -> active
@@ -48,19 +48,19 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Exercise trusted Hex publish dry-run and release workflow in the protected environment.
-- Keep release workflow, package metadata, and protected Hex publish checks aligned to one trusted maintainer path.
-- Preserve the new contributor-gate contract as later release hardening work lands.
+- Restore the maintained `mix ci` contributor gate so it reaches downstream repo-truth checks again.
+- Record Phase 07 closure with verification artifacts that defensibly close GATE-01 through GATE-03.
+- Exercise trusted Hex publish proof in the protected environment and record Phase 08 closure for RELS-01 through RELS-03.
 
 ### Blockers/Concerns
 
-- `mix package.publish-dry-run` and the publish path still depend on trusted Hex credentials outside this local shell.
-- This shell's global Hex auth cache can still prompt before `mix ci`; repo-owned gate steps were verified cleanly, with Hex-backed steps rechecked in an isolated `HEX_HOME`.
+- The maintained contributor path is currently broken by formatting drift in `test/lockspire/release_readiness_contract_test.exs`.
+- Trusted protected release proof still depends on GitHub environment settings and an approved workflow run outside the repo.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-secure-phase 09` to close the required post-execution security gate for the preview-posture lock.
+**Next action:** Run `$gsd-plan-phase 10` to plan contributor-gate recovery and repo-truth verification closure.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** 09 (Preview Posture Lock) — completed 2026-04-24 after 2 plans, clean review, and passing verification.
+**Planned Phase:** 10 (Contributor Gate Recovery) — closes GATE-01 through GATE-03 plus the broken maintained contributor gate flow.

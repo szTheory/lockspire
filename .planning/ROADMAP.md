@@ -8,9 +8,9 @@
 
 ### v1.1 Release Hardening
 
-**Status:** Execution complete 2026-04-24
-**Phases:** 7-9
-**Total Plans:** 9
+**Status:** Gap closure planning added 2026-04-24 after milestone audit
+**Phases:** 7-11
+**Total Plans:** 9 completed; follow-up planning pending for phases 10-11
 
 **Overview**
 
@@ -61,14 +61,37 @@ Plans:
 **Details:**
 This phase keeps public claims honest, prevents accidental scope inflation, and creates a clean handoff into the later PAR milestone.
 
+### Phase 10: Contributor Gate Recovery
+
+**Goal**: Restore the maintained contributor gate to repo truth and record phase-level closure for the release-gate requirements that the audit reopened.
+**Depends on**: Phase 9 plus `v1.1-MILESTONE-AUDIT.md`
+**Plans**: Pending planning
+**Requirements**: GATE-01, GATE-02, GATE-03
+**Gap Closure**: Closes the broken maintained contributor gate flow plus the missing Phase 07 requirement-verification record.
+
+**Details:**
+This phase should fix the formatting drift that currently stops `mix ci` inside `mix qa`, rerun the maintained repo-truth gate end to end, and write the verification artifacts needed to close the reopened Phase 07 requirements defensibly.
+
+### Phase 11: Trusted Release Proof Closure
+
+**Goal**: Close the trusted protected release path with the required external proof and record phase-level verification for the reopened release-path requirements.
+**Depends on**: Phase 10
+**Plans**: Pending planning
+**Requirements**: RELS-01, RELS-02, RELS-03
+**Gap Closure**: Closes the partial trusted protected publish flow plus the missing Phase 08 requirement-verification record.
+
+**Details:**
+This phase should gather the required protected GitHub environment proof and approved `hex-publish` run evidence, reconcile release-path documentation and metadata with what the repo actually uses, and write the verification artifacts that close the Phase 08 requirements.
+
 ## Next Milestone Candidate
 
-After v1.1, the default next milestone is **v1.2 PAR Foundation**. It should extend the current authorization-code + PKCE path with pushed authorization requests before broader candidates like dynamic registration or device flow. PAR is not implemented and not supported in v1.1; it remains planning metadata only until the next milestone starts.
+After v1.1 gap closure work passes re-audit, the default next milestone is **v1.2 PAR Foundation**. It should extend the current authorization-code + PKCE path with pushed authorization requests before broader candidates like dynamic registration or device flow. PAR is not implemented and not supported in v1.1; it remains planning metadata only until the next milestone starts.
 
 ## Next Up
 
-- Run `$gsd-secure-phase 09` to close the required security audit for the preview-posture lock.
-- Archive or roll the v1.1 milestone forward only after the Phase 09 security pass is recorded.
+- Plan and execute Phase 10 to restore the maintained contributor gate and close the reopened release-gate requirements.
+- Plan and execute Phase 11 to collect trusted release proof and close the reopened release-path requirements.
+- Re-run `$gsd-audit-milestone` after phases 10 and 11 complete to confirm v1.1 is actually done.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.
 - Keep PAR out of current support-facing docs, examples, and feature claims until v1.2 work actually begins.
 
