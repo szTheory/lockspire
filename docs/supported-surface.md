@@ -1,60 +1,74 @@
 # Supported Surface
 
-Lockspire v0.1 is a focused embedded OAuth/OIDC provider library.
+Lockspire `v0.1` is a preview release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
+
+This page is the canonical preview contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
 
 ## Supported in scope
 
-- Embedded Phoenix install flow
+Lockspire `v0.1` preview currently supports this repo-proven surface:
+
+- Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
 - OIDC discovery and JWKS
 - Userinfo
-- Refresh rotation
 - Revocation
 - Introspection
-- Host-owned login and consent seams
-- Operator/admin workflows for clients, consents, tokens, and keys
+- Refresh token rotation
+- Host-owned login redirects and consent handoff seams
+- LiveView and admin workflows for clients, consents, tokens, and keys
+- Phoenix-first onboarding docs and generated host integration files
 
 ## Explicitly out of scope
 
+Lockspire `v0.1` preview does not currently support:
+
 - Implicit flow
+- PAR
+- Device flow
+- Dynamic client registration
 - Hosted auth as a separate required service
 - SAML
 - LDAP or Active Directory federation
 - Full CIAM or workforce identity platform scope
-- Lockspire-owned account database or login UX
+- Lockspire-owned account database, passwords, or login UX
+- Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
 
 ## Trust posture
 
-Lockspire is aiming for a serious public preview bar first, then a stricter 1.0 bar.
+Lockspire stays at `v0.1` preview because public claims are limited to what this repo can prove today. Repo-owned proof for this preview posture lives in:
 
-That means public claims must stay inside what the repo can prove through:
+- `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
+- `test/integration/install_generator_test.exs` for generator-backed install proof
+- `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow
+- `test/lockspire/release_readiness_contract_test.exs` for narrow release and docs posture checks
+- `.github/workflows/ci.yml` and `.github/workflows/release.yml` for maintained contributor and protected release lanes
+- `docs/maintainer-release.md` and `SECURITY.md` for versioned release and disclosure guidance
 
-- automated tests
-- generated host fixtures
-- CI gates
-- versioned maintainer guidance
+Lockspire does not use a demo app, certification language, or external folklore as its primary public proof story.
 
 ## Preview bar
 
-A public preview can claim:
+A `v0.1` preview claim can honestly say:
 
-- one canonical Phoenix onboarding path
-- secure default protocol behavior
-- executable install and onboarding proof
-- versioned docs and release automation
-- a private disclosure path
+- there is one canonical Phoenix onboarding path
+- secure OAuth/OIDC defaults are enforced inside the supported surface
+- executable install and onboarding proof is checked into the repo
+- contributor and release workflows are versioned in the repo
+- a private disclosure path exists for supported security issues
 
-It should not claim:
+A `v0.1` preview claim should not say:
 
-- broad ecosystem coverage
-- certification or formal conformance
-- production readiness for unsupported host shapes
+- Lockspire is production-ready for unsupported host shapes
+- Lockspire already supports PAR, device flow, dynamic client registration, SAML, or LDAP
+- Lockspire is a hosted auth service or full CIAM product
+- Lockspire has broad certification or conformance coverage
 
 ## 1.0 bar
 
 A `1.0` claim should require everything in the preview bar plus:
 
-- stable support expectations
+- repeated green release gates in the trusted publish lane
 - maintainer runbooks that match real release operations
-- repeated green release gates
-- evidence that public docs, workflows, and shipped behavior still agree
+- stable support expectations for the documented embedded-library surface
+- evidence that public docs, workflows, and shipped behavior still agree over time
