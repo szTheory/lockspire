@@ -52,6 +52,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.PushedAuthorizationRequest
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.Repository
   import Phoenix.ConnTest
 
@@ -160,6 +161,68 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     refute uri.query =~ "state=old-state"
   end
 
+  test "required-PAR direct requests redirect to the trusted exact callback with oauth error params",
+       %{client: client} do
+    put_server_policy!(:required)
+
+    conn =
+      client.client_id
+      |> valid_params()
+      |> Map.delete("prompt")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    assert uri.scheme == "https"
+    assert uri.host == "client.example.com"
+    assert uri.path == "/callback"
+
+    params = URI.decode_query(uri.query || "")
+
+    assert params["error"] == "invalid_request"
+    assert params["error_description"] == "request_uri from the PAR endpoint is required"
+    assert params["state"] == "state-123"
+  end
+
+  test "required-PAR direct requests without redirect safety render the first-party error page",
+       %{client: client} do
+    put_server_policy!(:required)
+
+    conn =
+      client.client_id
+      |> valid_params()
+      |> Map.put("redirect_uri", "https://attacker.example.com/callback")
+      |> call_authorize()
+
+    assert conn.status == 400
+    refute redirected?(conn)
+    assert conn.resp_body =~ "Authorization request rejected"
+    assert conn.resp_body =~ "request_uri from the PAR endpoint is required"
+  end
+
+  test "optional-PAR direct requests keep the existing browser login handoff", %{client: client} do
+    put_server_policy!(:required)
+    update_client_par_policy!(client, :optional)
+
+    conn =
+      client.client_id
+      |> valid_params()
+      |> Map.delete("prompt")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+    assert location = redirect_location(conn)
+    assert location =~ "/sign-in?"
+    assert location =~ "source=authorize"
+    assert location =~ "interaction_id="
+    assert location =~ "return_to=%2Flockspire%2Fconsent%2F"
+  end
+
   test "valid unauthenticated requests redirect to the host login handoff" do
     conn =
       "client_123"
@@ -224,6 +287,25 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   end
 
   test "par-backed authorize requests reuse the normal browser login handoff", %{client: client} do
+    pushed_request = issue_pushed_request(client)
+
+    conn =
+      %{
+        "client_id" => client.client_id,
+        "request_uri" => pushed_request.request_uri
+      }
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+    assert location = redirect_location(conn)
+    assert location =~ "/sign-in?"
+    assert location =~ "source=authorize"
+    assert location =~ "interaction_id="
+    assert location =~ "return_to=%2Flockspire%2Fconsent%2F"
+  end
+
+  test "required-PAR request_uris still reuse the normal browser login handoff", %{client: client} do
+    put_server_policy!(:required)
     pushed_request = issue_pushed_request(client)
 
     conn =
@@ -365,5 +447,15 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
     {:ok, stored_request} = Repository.put_pushed_authorization_request(pushed_request)
     stored_request
+  end
+
+  defp put_server_policy!(mode) do
+    assert {:ok, %ServerPolicy{} = _policy} =
+             Repository.put_server_policy(%ServerPolicy{par_policy: mode})
+  end
+
+  defp update_client_par_policy!(client, mode) do
+    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    updated_client
   end
 end
