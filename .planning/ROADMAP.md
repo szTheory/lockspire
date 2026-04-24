@@ -65,9 +65,14 @@ This phase keeps public claims honest, prevents accidental scope inflation, and 
 
 **Goal**: Restore the maintained contributor gate to repo truth and record phase-level closure for the release-gate requirements that the audit reopened.
 **Depends on**: Phase 9 plus `v1.1-MILESTONE-AUDIT.md`
-**Plans**: Pending planning
+**Plans**: 2 plans
 **Requirements**: GATE-01, GATE-02, GATE-03
 **Gap Closure**: Closes the broken maintained contributor gate flow plus the missing Phase 07 requirement-verification record.
+
+Plans:
+
+- [x] 10-01: Restore the broken contributor gate and capture a fresh end-to-end rerun record
+- [x] 10-02: Backfill Phase 07 verification artifacts and close GATE traceability
 
 **Details:**
 This phase should fix the formatting drift that currently stops `mix ci` inside `mix qa`, rerun the maintained repo-truth gate end to end, and write the verification artifacts needed to close the reopened Phase 07 requirements defensibly.
@@ -89,7 +94,6 @@ After v1.1 gap closure work passes re-audit, the default next milestone is **v1.
 
 ## Next Up
 
-- Plan and execute Phase 10 to restore the maintained contributor gate and close the reopened release-gate requirements.
 - Plan and execute Phase 11 to collect trusted release proof and close the reopened release-path requirements.
 - Re-run `$gsd-audit-milestone` after phases 10 and 11 complete to confirm v1.1 is actually done.
 - Keep dynamic client registration, device flow, sender-constrained tokens, and broader ecosystem expansion out of the v1.1 scope.

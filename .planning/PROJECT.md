@@ -21,13 +21,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 The first Lockspire milestone is complete and archived as [v1.0](milestones/v1.0-ROADMAP.md) at the planning level. The repo now contains the embedded install path, authorization code + PKCE flow, OIDC discovery/JWKS/userinfo, refresh rotation, revocation, introspection, LiveView-native operator tooling, and the security/observability baseline described by the milestone.
 
-That said, the public release claim should still remain **v0.1 preview**, not `1.0`. The repo's own supported-surface guidance requires repeated green release gates and trusted release-path verification before a full `1.0` claim is warranted, and those gates are still blocked by repo-wide QA friction and trusted Hex auth requirements.
+That said, the public release claim should still remain **v0.1 preview**, not `1.0`. Phase 10 closed the reopened contributor-gate gap by restoring the maintained `mix ci` lane and backfilling Phase 07 gate verification, but trusted Hex publish proof is still required before a full `1.0` claim is warranted.
 
 ## Next Milestone Goals
 
-- Close the repo-wide QA backlog so `mix ci` is green without carve-outs.
 - Exercise the trusted Hex publish and release path end to end.
 - Keep the public preview posture and docs aligned to what the repo can actually prove today.
+- Re-audit v1.1 once the trusted release proof is recorded so the milestone can close without caveats.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ That said, the public release claim should still remain **v0.1 preview**, not `1
 
 ### Active
 
-- [ ] Repo-wide QA and release gates are green enough to support repeated preview releases without exceptions.
+- [x] Repo-wide QA and release gates are green enough to support repeated preview releases without exceptions. Validated in Phase 10: Contributor Gate Recovery.
 - [ ] Trusted release-path verification is exercised in the intended publish environment.
 - [ ] Public docs, workflow contracts, and supported-surface claims remain synchronized to the implemented preview surface.
 - [ ] PAR is the default next protocol-expansion milestone after release hardening, but it is not implemented and not supported in v1.1.
@@ -100,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 — kept v1.1 focused on release hardening, made PAR the default next protocol milestone candidate, and recorded that PAR is not implemented and not supported in v1.1.*
+*Last updated: 2026-04-24 — Phase 10 restored the maintained contributor gate, kept v1.1 focused on release hardening, and left trusted release proof as the remaining closure gap before re-audit.*
