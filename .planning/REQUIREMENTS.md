@@ -7,9 +7,9 @@
 
 ### Release Gates
 
-- [ ] **GATE-01**: `mix qa` passes from repo truth on the maintained development path.
-- [ ] **GATE-02**: `mix docs.verify`, `mix deps.audit`, and `mix package.build` pass from repo truth on the maintained development path.
-- [ ] **GATE-03**: `mix test.integration` and `mix test.phase3` pass from repo truth on the maintained development path.
+- [x] **GATE-01**: `mix qa` passes from repo truth on the maintained development path.
+- [x] **GATE-02**: `mix docs.verify`, `mix deps.audit`, and `mix package.build` pass from repo truth on the maintained development path.
+- [x] **GATE-03**: `mix test.integration` and `mix test.phase3` pass from repo truth on the maintained development path.
 
 ### Trusted Release Path
 
@@ -45,9 +45,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GATE-01 | Phase 10 | Pending |
-| GATE-02 | Phase 10 | Pending |
-| GATE-03 | Phase 10 | Pending |
+| GATE-01 | Phase 10 | Complete |
+| GATE-02 | Phase 10 | Complete |
+| GATE-03 | Phase 10 | Complete |
 | RELS-01 | Phase 11 | Pending |
 | RELS-02 | Phase 11 | Pending |
 | RELS-03 | Phase 11 | Pending |
