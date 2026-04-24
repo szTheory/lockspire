@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Release Hardening
-status: ready_for_planning
-last_updated: "2026-04-24T08:44:14Z"
-last_activity: 2026-04-24 -- completed Phase 10 contributor gate recovery and advanced to Phase 11 planning
+status: blocked
+last_updated: "2026-04-24T09:15:30Z"
+last_activity: 2026-04-24 -- Phase 11 blocked on missing hex-publish reviewer approval
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_plans: 13
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State
@@ -21,17 +21,17 @@ See: `.planning/PROJECT.md` (updated 2026-04-23)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 11 planning — trusted release proof closure
+**Current focus:** Phase 11 blocker resolution — live `hex-publish` approval gate
 
 ## Current Position
 
-Phase: 11 (Trusted Release Proof Closure) — planned
+Phase: 11 (trusted-release-proof-closure) — BLOCKED
 
-Plan: not started
+Plan: 11-01 documented blocker; 11-02 pending
 
-Status: Awaiting `$gsd-plan-phase 11`
+Status: Awaiting GitHub environment approval protection before rerunning the canonical release lane
 
-Last activity: 2026-04-24 -- completed Phase 10 contributor gate recovery and advanced to Phase 11 planning
+Last activity: 2026-04-24 -- captured live protected-release evidence and recorded blocker
 
 ## Performance Metrics
 
@@ -48,16 +48,19 @@ See `PROJECT.md` Key Decisions. The v1.0 milestone locked the embedded-library p
 
 ### Pending Todos
 
-- Exercise trusted Hex publish proof in the protected environment and record Phase 08 closure for RELS-01 through RELS-03.
+- Add reviewer approval protection to the `hex-publish` GitHub environment.
+- Re-run the canonical `Release` workflow from a `push` on `main` and record the approved protected-run evidence.
+- Resume Phase 11 to close RELS-01 through RELS-03 after the approved run exists.
 
 ### Blockers/Concerns
 
-- Trusted protected release proof still depends on GitHub environment settings and an approved workflow run outside the repo.
+- The live `hex-publish` environment exists and stores `HEX_API_KEY`, but it has no reviewer approval rule, so `RELS-01` cannot close from the current run evidence.
+- Phase 11 Plan 02 cannot execute until Plan 11-01 is rerun with an approved protected publish run.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-plan-phase 11` to plan trusted release proof closure and capture the external publish evidence.
+**Next action:** Add reviewer approval to `hex-publish`, trigger a canonical `push` release on `main`, then rerun `$gsd-execute-phase 11 --wave 1`.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** 11 (Trusted Release Proof Closure) — closes RELS-01 through RELS-03 plus the missing Phase 08 verification record.
+**Planned Phase:** 11 (Trusted Release Proof Closure) — blocked until live GitHub approval proof exists for the protected publish lane.
