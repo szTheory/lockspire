@@ -62,7 +62,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
   end
 
   test "issues opaque PAR references with a 300 second ttl and hashes them for durable lookup" do
-    now = ~U[2026-04-24 14:00:00Z]
+    now = DateTime.utc_now()
 
     request =
       PushedAuthorizationRequest.issue(
@@ -130,7 +130,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
   test "push returns a PAR request_uri and expires_in for valid public clients", %{
     public_client: public_client
   } do
-    now = ~U[2026-04-24 14:00:00Z]
+    now = DateTime.utc_now()
 
     assert {:ok, success} =
              PushedAuthorizationRequestProtocol.push(%{
