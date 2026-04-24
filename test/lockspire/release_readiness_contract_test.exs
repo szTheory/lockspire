@@ -124,7 +124,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "PAR, device flow, or dynamic client registration"
 
     assert supported_surface =~ "Lockspire `v0.1` is a preview release"
-    assert supported_surface =~ "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
+
+    assert supported_surface =~
+             "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
+
     assert supported_surface =~ "Authorization code flow with PKCE S256"
     assert supported_surface =~ "OIDC discovery and JWKS"
     assert supported_surface =~ "Lockspire does not use a demo app"
@@ -150,9 +153,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "no `alg=none`"
 
     assert guide =~ "inside the `v0.1` preview support contract"
-    assert guide =~ "Preview releases should only claim the supported surface the repo can currently prove."
-    assert guide =~ "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
-    assert guide =~ "Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+
+    assert guide =~
+             "Preview releases should only claim the supported surface the repo can currently prove."
+
+    assert guide =~
+             "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
+
+    assert guide =~
+             "Do not broaden release claims to PAR, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
 
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
@@ -175,14 +184,20 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~ "PAR is the default next protocol-expansion milestone after release hardening"
+    assert project =~
+             "PAR is the default next protocol-expansion milestone after release hardening"
+
     assert project =~ "not implemented and not supported in v1.1"
 
-    assert roadmap =~ "document PAR as the next milestone candidate without starting it here or implying current v1.1 support"
+    assert roadmap =~
+             "document PAR as the next milestone candidate without starting it here or implying current v1.1 support"
+
     assert roadmap =~ "v1.2 PAR Foundation"
     assert roadmap =~ "PAR is not implemented and not supported in v1.1"
 
-    assert requirements =~ "The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1."
+    assert requirements =~
+             "The next protocol-expansion milestone is documented as PAR, but PAR is not implemented and not supported during v1.1."
+
     assert requirements =~ "PAR implementation in v1.1"
 
     assert supported_surface =~ "does not currently support:"
@@ -191,6 +206,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     refute readme =~ "already supports PAR"
     refute Regex.match?(~r/## What v0\\.1 includes\\s+(?:.*\\n)*- .*\\bPAR\\b/m, readme)
+
     refute Regex.match?(
              ~r/preview currently supports this repo-proven surface:\\s+(?:.*\\n)*- .*\\bPAR\\b/m,
              supported_surface
