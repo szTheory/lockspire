@@ -13,9 +13,9 @@
 
 ### Trusted Release Path
 
-- [ ] **RELS-01**: The trusted release workflow runs `mix release.preflight` inside the protected `hex-publish` environment with the required credentials wired through environment secrets.
-- [ ] **RELS-02**: Maintainer-facing release guidance references only real commands and the trusted publish path used by the repo.
-- [ ] **RELS-03**: Release automation and package metadata remain pinned and reviewable enough that a preview release can be published without undocumented manual steps.
+- [x] **RELS-01**: The trusted release workflow runs `mix release.preflight` inside the protected `hex-publish` environment with the required credentials wired through environment secrets.
+- [x] **RELS-02**: Maintainer-facing release guidance references only real commands and the trusted publish path used by the repo.
+- [x] **RELS-03**: Release automation and package metadata remain pinned and reviewable enough that a preview release can be published without undocumented manual steps.
 
 ### Preview Support Posture
 
@@ -48,9 +48,9 @@
 | GATE-01 | Phase 10 | Complete |
 | GATE-02 | Phase 10 | Complete |
 | GATE-03 | Phase 10 | Complete |
-| RELS-01 | Phase 13 | Pending |
-| RELS-02 | Phase 13 | Pending |
-| RELS-03 | Phase 13 | Pending |
+| RELS-01 | Phase 12 | Complete |
+| RELS-02 | Phase 12 | Complete |
+| RELS-03 | Phase 12 | Complete |
 | POST-01 | Phase 9 | Complete |
 | POST-02 | Phase 9 | Complete |
 | POST-03 | Phase 9 | Complete |
@@ -62,4 +62,4 @@
 
 ---
 *Requirements defined: 2026-04-23*
-*Last updated: 2026-04-24 after the milestone audit grouped the remaining RELS ledger/verification handoff into Phase 13*
+*Last updated: 2026-04-24 after Phase 13 reconciled the RELS ledger to the passed Phase 11/12 verification chain without reopening release implementation*
