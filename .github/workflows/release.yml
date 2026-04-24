@@ -25,15 +25,26 @@ permissions:
 jobs:
   release-please:
     name: Release Please
-    if: ${{ github.event_name != 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
       pull-requests: write
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      release_created: ${{ steps.release.outputs.release_created || steps.manual_dispatch.outputs.release_created || 'false' }}
     steps:
+      - name: Check out repository for Release Please
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Confirm manual dispatch stays recovery-only
+        id: manual_dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          echo "release_created=false" >> "$GITHUB_OUTPUT"
+          echo "workflow_dispatch bypasses Release Please and exists only to recover the trusted publish lane for an exact immutable ref."
+
       - name: Record review-only Release Please PR posture
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
