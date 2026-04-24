@@ -53,6 +53,7 @@ If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal pu
 - Restrict the environment to deployments from `main`.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
 - Keep the authenticated dry-run inside the trusted workflow via `mix release.preflight`.
+- If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with a recovery reason to rerun the same protected publish lane.
 - Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
 
 ## Release posture

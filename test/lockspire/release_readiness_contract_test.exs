@@ -40,6 +40,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "recovery_reason"
     assert release_workflow =~ "workflow_dispatch is recovery-only"
     assert release_workflow =~ "Release Please generated PRs are review-only"
+    assert release_workflow =~ "github.event_name == 'workflow_dispatch'"
+    assert release_workflow =~ "mix local.hex --force"
+    assert release_workflow =~ "mix local.rebar --force"
 
     assert release_workflow =~
              "Trusted proof starts only after merge in the protected hex-publish environment"
@@ -51,7 +54,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "run: mix hex.publish --yes"
 
     assert release_workflow =~
-             "if: ${{ needs.release-please.outputs.release_created == 'true' }}"
+             "if: ${{ github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true' }}"
 
     refute release_workflow =~ "pull_request:"
     refute release_workflow =~ "package-name: lockspire"
