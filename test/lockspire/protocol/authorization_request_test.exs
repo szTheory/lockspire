@@ -172,50 +172,58 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.error == "unsupported_response_type"
   end
 
-  test "resolves a valid pushed authorization request into the canonical validated contract", %{
+  test "consumes a valid pushed authorization request exactly once for the bound client", %{
     client: client
   } do
     pushed_request = put_pushed_request!(client.client_id)
 
-    assert {:ok, %Validated{} = validated} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-               "request_uri" => pushed_request.request_uri
-             })
+    assert {:ok, %PushedAuthorizationRequest{} = consumed} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
 
-    assert validated.client_id == client.client_id
-    assert validated.redirect_uri == "https://client.example.com/callback"
-    assert validated.scopes == ["profile", "email"]
-    assert validated.prompt == ["login", "consent"]
-    assert validated.state == "state-123"
-    assert validated.code_challenge == String.duplicate("a", 43)
+    assert consumed.client_id == client.client_id
+    assert consumed.redirect_uri == "https://client.example.com/callback"
+    assert consumed.scopes == ["profile", "email"]
+    assert consumed.prompt == ["login", "consent"]
+    assert consumed.state == "state-123"
 
     assert {:ok, nil} =
-             Repository.fetch_active_pushed_authorization_request(pushed_request.request_uri_hash)
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
   end
 
-  test "expired pushed authorization request is rejected as invalid input", %{client: client} do
-    request_uri =
-      put_pushed_request!(client.client_id, ttl: -1)
-      |> Map.fetch!(:request_uri)
+  test "expired pushed authorization request is treated like a missing reference", %{
+    client: client
+  } do
+    pushed_request = put_pushed_request!(client.client_id, ttl: -1)
 
-    assert {:browser_error, %Error{} = error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-               "request_uri" => request_uri
-             })
-
-    assert error.error == "invalid_request"
+    assert {:ok, nil} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
   end
 
-  test "replayed pushed authorization request is rejected after first successful use", %{client: client} do
+  test "replayed pushed authorization request stays burned after first successful consume", %{
+    client: client
+  } do
     pushed_request = put_pushed_request!(client.client_id)
-    params = %{"client_id" => client.client_id, "request_uri" => pushed_request.request_uri}
 
-    assert {:ok, %Validated{}} = AuthorizationRequest.validate(params)
+    assert {:ok, %PushedAuthorizationRequest{}} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
 
-    assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
-    assert error.error == "invalid_request"
+    assert {:ok, nil} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
   end
 
   test "wrong-client pushed authorization request attempt burns the reference", %{
@@ -224,34 +232,17 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     pushed_request = put_pushed_request!(client.client_id)
 
-    assert {:browser_error, %Error{} = wrong_client_error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => other_client.client_id,
-               "request_uri" => pushed_request.request_uri
-             })
+    assert {:ok, nil} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               other_client.client_id
+             )
 
-    assert wrong_client_error.error == "invalid_request"
-
-    assert {:browser_error, %Error{} = replay_error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-               "request_uri" => pushed_request.request_uri
-             })
-
-    assert replay_error.error == "invalid_request"
-  end
-
-  test "rejects mixed request_uri and raw authorization parameters", %{client: client} do
-    pushed_request = put_pushed_request!(client.client_id)
-
-    assert {:browser_error, %Error{} = error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-               "request_uri" => pushed_request.request_uri,
-               "redirect_uri" => "https://client.example.com/callback"
-             })
-
-    assert error.error == "invalid_request"
+    assert {:ok, nil} =
+             Repository.consume_pushed_authorization_request(
+               pushed_request.request_uri_hash,
+               client.client_id
+             )
   end
 
   defp valid_params(client_id) do

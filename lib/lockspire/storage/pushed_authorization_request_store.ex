@@ -11,4 +11,6 @@ defmodule Lockspire.Storage.PushedAuthorizationRequestStore do
               {:ok, PushedAuthorizationRequest.t()} | {:error, store_error()}
   @callback fetch_active_pushed_authorization_request(String.t()) ::
               {:ok, PushedAuthorizationRequest.t() | nil} | {:error, store_error()}
+  @callback consume_pushed_authorization_request(String.t(), String.t()) ::
+              {:ok, PushedAuthorizationRequest.t() | nil} | {:error, store_error()}
 end

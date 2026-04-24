@@ -197,6 +197,27 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @impl PushedAuthorizationRequestStore
+  def consume_pushed_authorization_request(request_uri_hash, client_id)
+      when is_binary(request_uri_hash) and is_binary(client_id) do
+    transact(fn ->
+      now = DateTime.utc_now()
+
+      PushedAuthorizationRequestRecord
+      |> where([request], request.request_uri_hash == ^request_uri_hash)
+      |> lock("FOR UPDATE")
+      |> repo_one(sensitive: true)
+      |> consume_pushed_authorization_request_record(client_id, now)
+    end)
+    |> case do
+      {:ok, %PushedAuthorizationRequest{} = request} -> {:ok, request}
+      {:ok, nil} -> {:ok, nil}
+      {:error, :not_found} -> {:ok, nil}
+      {:error, :invalid_client_binding} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec append_audit_event(Event.t() | map()) :: {:ok, Event.t()} | {:error, term()}
   def append_audit_event(%Event{} = event) do
     %AuditEventRecord{}
@@ -759,6 +780,40 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   defp maybe_filter_token_status(query, _status, _now), do: query
+
+  defp consume_pushed_authorization_request_record(nil, _client_id, _now) do
+    repo().rollback(:not_found)
+  end
+
+  defp consume_pushed_authorization_request_record(
+         %PushedAuthorizationRequestRecord{} = record,
+         client_id,
+         now
+       ) do
+    case repo().delete(record, repo_log_options(sensitive: true))
+         |> map_one(&PushedAuthorizationRequestRecord.to_domain(&1)) do
+      {:ok, %PushedAuthorizationRequest{} = consumed} ->
+        cond do
+          not active_pushed_authorization_request?(consumed, now) ->
+            nil
+
+          consumed.client_id != client_id ->
+            nil
+
+          true ->
+            consumed
+        end
+
+      {:error, reason} ->
+        repo().rollback(reason)
+    end
+  end
+
+  defp active_pushed_authorization_request?(
+         %PushedAuthorizationRequest{expires_at: %DateTime{} = expires_at},
+         now
+       ),
+       do: DateTime.compare(expires_at, now) == :gt
 
   defp maybe_filter_signing_key_status(query, nil), do: query
 
