@@ -37,6 +37,20 @@ Plans:
 
 **Goal**: Integrate request objects into the authorization path, allowing them to be passed by value in `/authorize` and via PAR.
 
+**Depends on**: Phase 21 (JAR Foundation)
+**Plans**: 7 plans
+**Requirements**: `JAR-01`
+
+Plans:
+
+- [ ] 22-01: Jar primitive hardening (WR-01 typ-check, WR-02 aud-list strict, WR-03 :max_age opt)
+- [ ] 22-02: Add Lockspire.Config.jar_max_age_seconds/0 accessor (default 600)
+- [ ] 22-03: Create Lockspire.JarTestHelpers test-support module
+- [ ] 22-04: RequestObject orchestrator + AuthorizationRequest splice + protocol-seam reason-code matrix
+- [ ] 22-05: PushedAuthorizationRequest /par splice + D-10 ClientAuth-and-JAR independence proofs
+- [ ] 22-06: AuthorizeController browser-boundary proofs (rejection page + redirect-safe handoff)
+- [ ] 22-07: Phase 15 e2e surgical extension (one new JAR-via-PAR-via-/authorize branch per D-21)
+
 ### Phase 23: JAR Operator UX and Discovery
 
 **Goal**: Expose JAR capabilities in discovery metadata and provide operator controls for required-JAR policies.

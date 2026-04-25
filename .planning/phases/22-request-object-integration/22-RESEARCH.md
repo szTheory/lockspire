@@ -767,17 +767,17 @@ The orchestrator maps `:expiration_too_far` → `:invalid_request_object_max_age
 
 **Note:** All other claims in this research were verified against the codebase at file:line precision or cited from RFCs. No additional `[ASSUMED]`-tagged decisions need user confirmation before planning.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the orchestrator's `consume/3` accept the full `params` map or just `{outer_client_id, request_jwt, outer_redirect_uri}` as separate args?**
    - What we know: full map gives flexibility but couples to outer-param shape; tuple is narrow but requires the splice site to extract.
    - What's unclear: Whether future Phase 23 work (per-client policy controls) needs to thread additional outer fields.
-   - Recommendation: pass the full `params` map. Reduces churn at the splice site. Matches `pushed_request_to_params/1`'s shape (operates on a struct-shaped map).
+   - **RESOLVED:** Pass the full `params` map. Reduces churn at the splice site and matches `pushed_request_to_params/1`'s shape (operates on a struct-shaped map). Incorporated into Plan 22-04 — `RequestObject.consume/3` accepts `(params, %Client{}, opts)`.
 
 2. **Should we extract a generic `reject_param_conflicts/2` helper covering both PAR (`request_uri`) and JAR (`request`) cases?**
    - What we know: D-04 explicitly says "symmetric with the existing `:request_uri_conflict` rule".
    - What's unclear: Whether the duplication is small enough to keep two separate helpers for clarity.
-   - Recommendation: do extract. The function is one-liner; allows the planner to write `reject_param_conflicts(params, allowed: ["client_id", "request"])` for JAR and reduces visual diff in the test file. (Plan-level decision; not load-bearing.)
+   - **RESOLVED:** Plan-local discretion (not load-bearing). The function is one-liner; allows the planner to write `reject_param_conflicts(params, allowed: ["client_id", "request"])` for JAR and reduces visual diff. Plan 22-04 keeps two separate helpers for clarity; either choice is acceptable.
 
 ## Environment Availability
 
