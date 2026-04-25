@@ -20,7 +20,7 @@ defmodule Lockspire.Config do
   @spec issuer!() :: String.t()
   def issuer! do
     issuer = fetch_required!(:issuer)
-    mount_path = fetch_required!(:mount_path)
+    mount_path = mount_path()
     signing_alg = Application.get_env(@app, :signing_alg, "RS256")
 
     Policy.validate_issuer_and_mount_path!(issuer, mount_path)
@@ -29,9 +29,24 @@ defmodule Lockspire.Config do
     issuer
   end
 
+  @doc """
+  Returns the configured Lockspire mount path.
+
+  Accepts any binary, including the empty string (`""`), which is a deliberate
+  signal that Lockspire is mounted at the host's root. Only `nil` (config
+  unset) is rejected — host apps must set this explicitly to declare intent.
+  """
   @spec mount_path() :: String.t()
   def mount_path do
-    fetch_required!(:mount_path)
+    case Application.get_env(@app, :mount_path) do
+      value when is_binary(value) ->
+        value
+
+      _missing ->
+        raise ArgumentError,
+              "missing required config :mount_path for :lockspire. " <>
+                "Set it in config/runtime.exs or config/*.exs."
+    end
   end
 
   @spec known_scopes() :: [String.t()]
