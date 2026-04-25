@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
 
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.Client
+  alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.PushedAuthorizationRequest, as: PushedAuthorizationRequestProtocol
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
@@ -236,6 +237,91 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
 
     assert Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id) ==
              before_count
+  end
+
+  describe "/par with JAR-by-value (D-03 + D-10 — ClientAuth and JAR run independently)" do
+    setup %{confidential_client: confidential_client, secret: secret} do
+      %{pub_jwk_map: pub_jwk_map, private_jwk: private_jwk} = JarTestHelpers.generate_keys()
+
+      {:ok, jar_client} =
+        Repository.register_client(%Client{
+          client_id: "#{confidential_client.client_id}-jar",
+          client_secret_hash: Policy.hash_client_secret(secret),
+          client_type: :confidential,
+          name: "PAR Confidential JAR Client",
+          redirect_uris: ["https://client.example.com/callback"],
+          allowed_scopes: ["profile", "email"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          jwks: pub_jwk_map,
+          created_at: DateTime.utc_now(),
+          metadata: %{}
+        })
+
+      %{jar_client: jar_client, secret: secret, private_jwk: private_jwk}
+    end
+
+    test "valid Basic auth + invalid JAR signature returns the JAR error", %{
+      jar_client: client,
+      secret: secret
+    } do
+      %{private_jwk: wrong_jwk} = JarTestHelpers.generate_keys()
+      bad_jwt = JarTestHelpers.sign_jar(wrong_jwk, jar_claims_for(client.client_id))
+
+      assert {:error, error} =
+               PushedAuthorizationRequestProtocol.push(%{
+                 params: %{"client_id" => client.client_id, "request" => bad_jwt},
+                 authorization: basic_auth(client.client_id, secret),
+                 opts: [client_store: Repository, pushed_authorization_request_store: Repository]
+               })
+
+      assert error.status == 400
+      assert error.error == "invalid_request_object"
+      assert error.reason_code == :invalid_request_object_signature
+    end
+
+    test "wrong Basic password + valid JAR returns the ClientAuth error", %{
+      jar_client: client,
+      private_jwk: private_jwk
+    } do
+      valid_jwt = JarTestHelpers.sign_jar(private_jwk, jar_claims_for(client.client_id))
+
+      assert {:error, error} =
+               PushedAuthorizationRequestProtocol.push(%{
+                 params: %{"client_id" => client.client_id, "request" => valid_jwt},
+                 authorization: basic_auth(client.client_id, "wrong-secret"),
+                 opts: [client_store: Repository, pushed_authorization_request_store: Repository]
+               })
+
+      assert error.status == 401
+      assert error.error == "invalid_client"
+      assert error.reason_code == :invalid_client_secret
+
+      refute error.reason_code in [
+               :invalid_request_object_signature,
+               :invalid_request_object_typ,
+               :invalid_request_object_jwt,
+               :invalid_request_object_iss
+             ]
+    end
+  end
+
+  defp jar_claims_for(client_id) do
+    %{
+      "iss" => client_id,
+      "aud" => Lockspire.Config.issuer!(),
+      "exp" => DateTime.utc_now() |> DateTime.add(300, :second) |> DateTime.to_unix(),
+      "redirect_uri" => "https://client.example.com/callback",
+      "response_type" => "code",
+      "scope" => "profile email",
+      "state" => "state-123",
+      "prompt" => "login consent",
+      "code_challenge" => String.duplicate("a", 43),
+      "code_challenge_method" => "S256"
+    }
   end
 
   defp valid_params(client_id) do
