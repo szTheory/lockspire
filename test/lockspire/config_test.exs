@@ -138,6 +138,25 @@ defmodule Lockspire.ConfigTest do
     Application.delete_env(:lockspire, :signing_alg)
   end
 
+  test "jar_max_age_seconds/0 returns 600 by default and honors configured override" do
+    original = Application.get_env(:lockspire, :jar_max_age_seconds)
+    on_exit(fn ->
+      if is_nil(original) do
+        Application.delete_env(:lockspire, :jar_max_age_seconds)
+      else
+        Application.put_env(:lockspire, :jar_max_age_seconds, original)
+      end
+    end)
+
+    # Default (no app env)
+    Application.delete_env(:lockspire, :jar_max_age_seconds)
+    assert Lockspire.Config.jar_max_age_seconds() == 600
+
+    # Override
+    Application.put_env(:lockspire, :jar_max_age_seconds, 300)
+    assert Lockspire.Config.jar_max_age_seconds() == 300
+  end
+
   test "test resolver satisfies the host seam behaviour without macros" do
     assert {:ok, %{id: "account-123"}} =
              Lockspire.TestAccountResolver.resolve_current_account(%{}, %{return_to: "/authorize"})
