@@ -41,6 +41,26 @@ defmodule Lockspire.Config do
     |> List.wrap()
   end
 
+  @jar_max_age_default 600
+
+  @doc """
+  Returns the configured JAR (`request` JWT) maximum age in seconds.
+
+  Caps `exp - now` for inbound JAR request objects to bound the replay window
+  between issuance and use. Default: #{@jar_max_age_default}s (10 minutes).
+
+  Hosts can override via `config :lockspire, jar_max_age_seconds: 300`.
+  Lower values reduce replay risk but may break clients with clock drift.
+
+  Consumed by `Lockspire.Protocol.RequestObject.consume/3` (Phase 22) and threaded
+  into `Lockspire.Protocol.Jar.validate_claims/2`'s `:max_age` opt to enforce the
+  ceiling at the protocol seam (D-13, WR-03).
+  """
+  @spec jar_max_age_seconds() :: pos_integer()
+  def jar_max_age_seconds do
+    Application.get_env(@app, :jar_max_age_seconds, @jar_max_age_default)
+  end
+
   @spec oban_config() :: keyword()
   def oban_config do
     Application.get_env(@app, :oban, [])
