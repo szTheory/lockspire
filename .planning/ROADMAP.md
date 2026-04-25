@@ -31,7 +31,7 @@ Plans:
 
 - [x] 21-01: Define JAR data structure and unverified decoding logic
 - [x] 21-02: Implement signature verification using client keys
-- [ ] 21-03: Implement RFC 9101 security claims validation
+- [x] 21-03: Implement RFC 9101 security claims validation
 
 ### Phase 22: Request Object Integration
 
