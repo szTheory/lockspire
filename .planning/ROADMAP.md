@@ -46,7 +46,7 @@ Plans:
 - [x] 22-01: Jar primitive hardening (WR-01 typ-check, WR-02 aud-list strict, WR-03 :max_age opt)
 - [x] 22-02: Add Lockspire.Config.jar_max_age_seconds/0 accessor (default 600)
 - [x] 22-03: Create Lockspire.JarTestHelpers test-support module
-- [ ] 22-04: RequestObject orchestrator + AuthorizationRequest splice + protocol-seam reason-code matrix
+- [x] 22-04: RequestObject orchestrator + AuthorizationRequest splice + protocol-seam reason-code matrix
 - [ ] 22-05: PushedAuthorizationRequest /par splice + D-10 ClientAuth-and-JAR independence proofs
 - [ ] 22-06: AuthorizeController browser-boundary proofs (rejection page + redirect-safe handoff)
 - [ ] 22-07: Phase 15 e2e surgical extension (one new JAR-via-PAR-via-/authorize branch per D-21)

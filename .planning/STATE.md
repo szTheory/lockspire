@@ -4,14 +4,14 @@ milestone: v1.4
 milestone_name: JAR and Request Objects
 status: planning
 stopped_at: Phase 22 context gathered (assumptions mode)
-last_updated: "2026-04-25T16:08:21.050Z"
+last_updated: "2026-04-25T17:06:00.000Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 3
-  percent: 30
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -30,17 +30,17 @@ Milestone: v1.4 — JAR and Request Objects
 
 Phase: 22
 
-Plan: Not started
+Plan: 05
 
-Status: Ready to plan
+Status: Ready to execute
 
 Last activity: 2026-04-25
 
 ## Performance Metrics
 
 - Phases completed: 0/4 (v1.4)
-- Plans completed: 3/3 (v1.4)
-- Recorded tasks completed: 6 (v1.4)
+- Plans completed: 4/10 (v1.4)
+- Recorded tasks completed: 7 (v1.4)
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -55,6 +55,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Reuse existing client key infrastructure for request object signature validation.
 - Use JOSE.JWT.peek_payload and JOSE.JWS.peek_protected for initial unverified JAR decoding.
 - Represent JAR as a struct with :claims and :header fields.
+- Consume signed request objects before `validate_with_client/3` so the existing `/authorize` pipeline stays unchanged after projection.
+- Treat `request` + `request_uri` as a sealed-envelope conflict and pin the request-object reason-code matrix at the protocol seam.
 
 ### Blockers/Concerns
 
@@ -62,11 +64,11 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Run `/gsd-plan-phase 22` to break Request Object Integration into executable plans (CONTEXT.md captured 2026-04-25).
+**Next action:** Execute Phase 22 Plan 05 (PAR splice + D-10 ClientAuth-and-JAR independence proofs).
 
 **Resume file:** `.planning/phases/22-request-object-integration/22-CONTEXT.md`
 
-**Stopped at:** Phase 22 context gathered (assumptions mode)
+**Stopped at:** Phase 22 Plan 04 completed (request-object orchestration landed)
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
