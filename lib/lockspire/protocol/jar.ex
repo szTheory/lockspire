@@ -194,6 +194,9 @@ defmodule Lockspire.Protocol.Jar do
     checks. Defaults to `DateTime.utc_now/0`.
   - `:leeway` (non-negative integer, seconds) — clock skew tolerance applied to
     time-based checks. Defaults to `0`.
+  - `:max_age` (positive integer, seconds) — caps the time between `now` and `exp`.
+    When set, returns `{:error, :expiration_too_far}` if `exp - now > max_age + leeway`.
+    When nil/absent, no ceiling is applied (preserves Phase 21 behavior).
 
   Returns `:ok` on success, or `{:error, reason}` where `reason` is one of:
 
@@ -202,6 +205,8 @@ defmodule Lockspire.Protocol.Jar do
   - `:missing_audience` / `:invalid_audience` — `aud` claim missing or mismatched.
   - `:missing_expiration` / `:invalid_expiration` / `:expired_token` —
     `exp` claim missing, malformed, or in the past.
+  - `:expiration_too_far` — `exp` is farther in the future than `:max_age + leeway`
+    permits (RFC 9101 replay-window mitigation, T-22-03).
   - `:invalid_not_before` — `nbf` is present but in the future.
   - `:invalid_issued_at` — `iat` is present but in the future.
 
@@ -211,10 +216,10 @@ defmodule Lockspire.Protocol.Jar do
   """
   @spec validate_claims(t(), keyword()) :: :ok | {:error, validate_claims_reason()}
   def validate_claims(%__MODULE__{claims: claims}, opts) when is_map(claims) and is_list(opts) do
-    with {:ok, expected_client_id, expected_audience, now, leeway} <- parse_opts(opts),
+    with {:ok, expected_client_id, expected_audience, now, leeway, max_age} <- parse_opts(opts),
          :ok <- check_issuer(claims, expected_client_id),
          :ok <- check_audience(claims, expected_audience),
-         :ok <- check_expiration(claims, now, leeway),
+         :ok <- check_expiration(claims, now, leeway, max_age),
          :ok <- check_not_before(claims, now, leeway),
          :ok <- check_issued_at(claims, now, leeway) do
       :ok
@@ -232,6 +237,7 @@ defmodule Lockspire.Protocol.Jar do
     expected_audience = Keyword.get(opts, :expected_audience)
     now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
     leeway = Keyword.get(opts, :leeway, 0)
+    max_age = Keyword.get(opts, :max_age)
 
     cond do
       not is_binary(expected_client_id) or expected_client_id == "" ->
@@ -246,8 +252,11 @@ defmodule Lockspire.Protocol.Jar do
       not (is_integer(leeway) and leeway >= 0) ->
         {:error, :invalid_claims_options}
 
+      not (is_nil(max_age) or (is_integer(max_age) and max_age > 0)) ->
+        {:error, :invalid_claims_options}
+
       true ->
-        {:ok, expected_client_id, expected_audience, now, leeway}
+        {:ok, expected_client_id, expected_audience, now, leeway, max_age}
     end
   end
 
@@ -273,10 +282,11 @@ defmodule Lockspire.Protocol.Jar do
         if aud == expected_audience, do: :ok, else: {:error, :invalid_audience}
 
       aud when is_list(aud) ->
-        if Enum.any?(aud, fn entry -> entry == expected_audience end) do
-          :ok
-        else
-          {:error, :invalid_audience}
+        cond do
+          aud == [] -> {:error, :invalid_audience}
+          not Enum.all?(aud, &is_binary/1) -> {:error, :invalid_audience}
+          Enum.member?(aud, expected_audience) -> :ok
+          true -> {:error, :invalid_audience}
         end
 
       _ ->
@@ -284,7 +294,7 @@ defmodule Lockspire.Protocol.Jar do
     end
   end
 
-  defp check_expiration(claims, now, leeway) do
+  defp check_expiration(claims, now, leeway, max_age) do
     case Map.get(claims, "exp") do
       nil ->
         {:error, :missing_expiration}
@@ -292,15 +302,24 @@ defmodule Lockspire.Protocol.Jar do
       exp when is_integer(exp) ->
         now_unix = DateTime.to_unix(now)
 
-        if exp + leeway > now_unix do
+        with :ok <- check_not_expired(exp, now_unix, leeway),
+             :ok <- check_max_age(exp, now_unix, leeway, max_age) do
           :ok
-        else
-          {:error, :expired_token}
         end
 
       _ ->
         {:error, :invalid_expiration}
     end
+  end
+
+  defp check_not_expired(exp, now_unix, leeway) do
+    if exp + leeway > now_unix, do: :ok, else: {:error, :expired_token}
+  end
+
+  defp check_max_age(_exp, _now_unix, _leeway, nil), do: :ok
+
+  defp check_max_age(exp, now_unix, leeway, max_age) do
+    if exp - now_unix <= max_age + leeway, do: :ok, else: {:error, :expiration_too_far}
   end
 
   defp check_not_before(claims, now, leeway) do
