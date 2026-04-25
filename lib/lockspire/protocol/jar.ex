@@ -2,7 +2,8 @@ defmodule Lockspire.Protocol.Jar do
   @moduledoc """
   JWT Secured Authorization Request (JAR) foundation.
 
-  Provides unverified decoding and signature verification of RFC 9101 request objects.
+  Provides unverified decoding, signature verification, and security claims
+  validation of RFC 9101 request objects.
   """
 
   alias Lockspire.Domain.Client
@@ -13,6 +14,18 @@ defmodule Lockspire.Protocol.Jar do
           claims: map(),
           header: map()
         }
+
+  @type validate_claims_reason ::
+          :invalid_claims_options
+          | :missing_issuer
+          | :invalid_issuer
+          | :missing_audience
+          | :invalid_audience
+          | :missing_expiration
+          | :invalid_expiration
+          | :expired_token
+          | :invalid_not_before
+          | :invalid_issued_at
 
   # Algorithms explicitly permitted for JAR request objects.
   # "none" is never permitted — it would allow unsigned requests to bypass auth.
@@ -144,6 +157,165 @@ defmodule Lockspire.Protocol.Jar do
       _ -> {:error, :invalid_signature}
     catch
       _, _ -> {:error, :invalid_signature}
+    end
+  end
+
+  @doc """
+  Validates RFC 9101 security claims on a decoded JAR request object.
+
+  Required options:
+  - `:expected_client_id` (binary) — the `iss` claim MUST equal this value.
+  - `:expected_audience` (binary) — the `aud` claim MUST contain this value.
+
+  Optional options:
+  - `:now` — a `DateTime.t/0` representing the current time for `exp`/`nbf`/`iat`
+    checks. Defaults to `DateTime.utc_now/0`.
+  - `:leeway` (non-negative integer, seconds) — clock skew tolerance applied to
+    time-based checks. Defaults to `0`.
+
+  Returns `:ok` on success, or `{:error, reason}` where `reason` is one of:
+
+  - `:invalid_claims_options` — required options missing or malformed.
+  - `:missing_issuer` / `:invalid_issuer` — `iss` claim missing or mismatched.
+  - `:missing_audience` / `:invalid_audience` — `aud` claim missing or mismatched.
+  - `:missing_expiration` / `:invalid_expiration` / `:expired_token` —
+    `exp` claim missing, malformed, or in the past.
+  - `:invalid_not_before` — `nbf` is present but in the future.
+  - `:invalid_issued_at` — `iat` is present but in the future.
+
+  Security: Mitigates T-21-05 (Repudiation) by binding requests to a specific
+  client via `iss`, and T-21-06 (Information Disclosure) by ensuring requests
+  are intended for this AS via `aud`.
+  """
+  @spec validate_claims(t(), keyword()) :: :ok | {:error, validate_claims_reason()}
+  def validate_claims(%__MODULE__{claims: claims}, opts) when is_map(claims) and is_list(opts) do
+    with {:ok, expected_client_id, expected_audience, now, leeway} <- parse_opts(opts),
+         :ok <- check_issuer(claims, expected_client_id),
+         :ok <- check_audience(claims, expected_audience),
+         :ok <- check_expiration(claims, now, leeway),
+         :ok <- check_not_before(claims, now, leeway),
+         :ok <- check_issued_at(claims, now, leeway) do
+      :ok
+    end
+  end
+
+  def validate_claims(%__MODULE__{}, _opts), do: {:error, :invalid_claims_options}
+
+  # ---------------------------------------------------------------------------
+  # validate_claims helpers
+  # ---------------------------------------------------------------------------
+
+  defp parse_opts(opts) do
+    expected_client_id = Keyword.get(opts, :expected_client_id)
+    expected_audience = Keyword.get(opts, :expected_audience)
+    now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
+    leeway = Keyword.get(opts, :leeway, 0)
+
+    cond do
+      not is_binary(expected_client_id) or expected_client_id == "" ->
+        {:error, :invalid_claims_options}
+
+      not is_binary(expected_audience) or expected_audience == "" ->
+        {:error, :invalid_claims_options}
+
+      not match?(%DateTime{}, now) ->
+        {:error, :invalid_claims_options}
+
+      not (is_integer(leeway) and leeway >= 0) ->
+        {:error, :invalid_claims_options}
+
+      true ->
+        {:ok, expected_client_id, expected_audience, now, leeway}
+    end
+  end
+
+  defp check_issuer(claims, expected_client_id) do
+    case Map.get(claims, "iss") do
+      nil ->
+        {:error, :missing_issuer}
+
+      iss when is_binary(iss) ->
+        if iss == expected_client_id, do: :ok, else: {:error, :invalid_issuer}
+
+      _ ->
+        {:error, :invalid_issuer}
+    end
+  end
+
+  defp check_audience(claims, expected_audience) do
+    case Map.get(claims, "aud") do
+      nil ->
+        {:error, :missing_audience}
+
+      aud when is_binary(aud) ->
+        if aud == expected_audience, do: :ok, else: {:error, :invalid_audience}
+
+      aud when is_list(aud) ->
+        if Enum.any?(aud, fn entry -> entry == expected_audience end) do
+          :ok
+        else
+          {:error, :invalid_audience}
+        end
+
+      _ ->
+        {:error, :invalid_audience}
+    end
+  end
+
+  defp check_expiration(claims, now, leeway) do
+    case Map.get(claims, "exp") do
+      nil ->
+        {:error, :missing_expiration}
+
+      exp when is_integer(exp) ->
+        now_unix = DateTime.to_unix(now)
+
+        if exp + leeway > now_unix do
+          :ok
+        else
+          {:error, :expired_token}
+        end
+
+      _ ->
+        {:error, :invalid_expiration}
+    end
+  end
+
+  defp check_not_before(claims, now, leeway) do
+    case Map.get(claims, "nbf") do
+      nil ->
+        :ok
+
+      nbf when is_integer(nbf) ->
+        now_unix = DateTime.to_unix(now)
+
+        if nbf - leeway <= now_unix do
+          :ok
+        else
+          {:error, :invalid_not_before}
+        end
+
+      _ ->
+        {:error, :invalid_not_before}
+    end
+  end
+
+  defp check_issued_at(claims, now, leeway) do
+    case Map.get(claims, "iat") do
+      nil ->
+        :ok
+
+      iat when is_integer(iat) ->
+        now_unix = DateTime.to_unix(now)
+
+        if iat - leeway <= now_unix do
+          :ok
+        else
+          {:error, :invalid_issued_at}
+        end
+
+      _ ->
+        {:error, :invalid_issued_at}
     end
   end
 end
