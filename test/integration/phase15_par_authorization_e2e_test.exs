@@ -9,6 +9,8 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.JarTestHelpers
+  alias Lockspire.Security.Policy
   alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
   alias Lockspire.Storage.Ecto.Repository
@@ -223,6 +225,152 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
     assert replay_conn.status == 400
     assert replay_conn.resp_body =~ "request_uri is invalid, expired, or already used"
+  end
+
+  test "client signs JAR, posts to /par with Basic auth, completes /authorize + /token via the issued request_uri (Phase 22 JAR-via-PAR-via-Lockspire end-to-end)",
+       %{
+    client: _client
+  } do
+    put_server_policy!(:required)
+    signing_key = publish_signing_key("phase22-jar-onboarding-kid")
+
+    %{pub_jwk_map: pub_jwk_map, private_jwk: private_jwk} = JarTestHelpers.generate_keys()
+
+    suffix = System.unique_integer([:positive])
+    client_id = "phase22-jar-confidential-#{suffix}"
+    secret = "phase22-jar-confidential-secret-#{suffix}"
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: client_id,
+        client_secret_hash: Policy.hash_client_secret(secret),
+        client_type: :confidential,
+        name: "Phase 22 JAR Confidential Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "profile", "openid"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        jwks: pub_jwk_map,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    code_verifier = "phase22-jar-verifier-#{suffix}"
+    nonce = "phase22-jar-nonce-#{suffix}"
+    state = "phase22-jar-state-#{suffix}"
+
+    claims = %{
+      "iss" => client.client_id,
+      "aud" => Lockspire.Config.issuer!(),
+      "exp" => DateTime.utc_now() |> DateTime.add(300, :second) |> DateTime.to_unix(),
+      "redirect_uri" => "https://client.example.com/callback",
+      "response_type" => "code",
+      "scope" => "openid",
+      "prompt" => "consent",
+      "code_challenge" => code_challenge(code_verifier),
+      "code_challenge_method" => "S256",
+      "nonce" => nonce,
+      "state" => state
+    }
+
+    signed_jar = JarTestHelpers.sign_jar(private_jwk, claims)
+
+    par_conn =
+      build_conn(:post, "/par", %{
+        "client_id" => client.client_id,
+        "request" => signed_jar
+      })
+      |> put_req_header("accept", "application/json")
+      |> put_req_header(
+        "authorization",
+        "Basic " <> Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
+      )
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert par_conn.status == 201
+
+    par_response = Jason.decode!(par_conn.resp_body)
+    assert request_uri = par_response["request_uri"]
+    assert is_integer(par_response["expires_in"])
+    assert String.starts_with?(request_uri, Lockspire.Domain.PushedAuthorizationRequest.request_uri_prefix())
+
+    authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => request_uri
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert authorize_conn.status in [302, 303]
+
+    consent_path =
+      authorize_conn
+      |> get_resp_header("location")
+      |> List.first()
+
+    assert consent_path =~ "/lockspire/consent/"
+
+    interaction_id =
+      consent_path
+      |> URI.parse()
+      |> Map.fetch!(:path)
+      |> String.split("/")
+      |> List.last()
+
+    consent_complete_conn =
+      build_conn(:post, "/interactions/#{interaction_id}/complete", %{
+        "decision" => "approve",
+        "remember" => "true"
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert consent_complete_conn.status in [302, 303]
+
+    callback_uri =
+      consent_complete_conn
+      |> get_resp_header("location")
+      |> List.first()
+      |> URI.parse()
+
+    callback_params = URI.decode_query(callback_uri.query || "")
+
+    assert callback_uri.host == "client.example.com"
+    assert callback_params["state"] == state
+    assert code = callback_params["code"]
+
+    token_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "client_id" => client.client_id,
+        "code" => code,
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => code_verifier
+      })
+      |> put_req_header("accept", "application/json")
+      |> put_req_header(
+        "authorization",
+        "Basic " <> Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
+      )
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert token_conn.status == 200
+
+    token_response = Jason.decode!(token_conn.resp_body)
+
+    assert Map.has_key?(token_response, "access_token")
+    assert Map.has_key?(token_response, "id_token")
+    assert token_response["token_type"] == "Bearer"
+
+    assert {true, %JOSE.JWT{fields: claims_verified}, _jws} =
+             JOSE.JWT.verify_strict(signing_key, ["RS256"], token_response["id_token"])
+
+    assert claims_verified["iss"] == Lockspire.Config.issuer!()
+    assert claims_verified["sub"] == "phase15-host-user"
+    assert claims_verified["aud"] == client.client_id
+    assert claims_verified["nonce"] == nonce
   end
 
   test "optional-PAR clients keep the direct authorization-code plus PKCE browser flow", %{
