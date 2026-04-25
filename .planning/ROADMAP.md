@@ -11,10 +11,10 @@
 
 ## v1.4 JAR and Request Objects
 
-**Status:** Planning  
+**Status:** Executing  
 **Phases:** 21-24  
-**Total Plans:** 3  
-**Requirements:** JAR-01, JAR-02, JAR-03, JAR-05, JAR-06
+**Total Plans:** 3 (Phase 21)  
+**Requirements:** 6 (`JAR-01`-`JAR-06`)
 
 ### Overview
 
@@ -22,14 +22,16 @@ This milestone expands Lockspire's interoperability by adding support for JWT Se
 
 ### Phase 21: JAR Foundation and Request Validation
 
-**Goal**: Implement the core logic for parsing and validating JWT request objects, including signature verification and security claims checks.
-
-**Plans:** 3 plans
+**Goal**: Implement the core logic for parsing and validating JWT request objects, including signature verification and security claims checks.  
+**Depends on**: Milestone v1.3 archive  
+**Plans**: 3 plans  
+**Requirements**: `JAR-01`, `JAR-02`, `JAR-03`
 
 Plans:
-- [ ] 21-01-PLAN.md — JAR Data Structure and Initial Parsing
-- [ ] 21-02-PLAN.md — Signature Verification
-- [ ] 21-03-PLAN.md — Security Claims Validation
+
+- [x] 21-01: Define JAR data structure and unverified decoding logic
+- [x] 21-02: Implement signature verification using client keys
+- [ ] 21-03: Implement RFC 9101 security claims validation
 
 ### Phase 22: Request Object Integration
 

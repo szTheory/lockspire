@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: JAR and Request Objects
-status: planning
-last_updated: "2026-04-24T21:15:00.000Z"
-last_activity: 2026-04-24
+status: executing
+last_updated: "2026-04-25T17:45:00.000Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -27,19 +27,19 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 Milestone: v1.4 — JAR and Request Objects
 
-Phase: 21 (JAR Foundation and Request Validation) — PLANNING
+Phase: 21 (JAR Foundation and Request Validation) — EXECUTING
 
-Plan: 0 of 3
+Plan: 3 of 3
 
-Status: Phase planned — ready for execution
+Status: Ready to execute 21-03-PLAN.md
 
-Last activity: 2026-04-24
+Last activity: 2026-04-25
 
 ## Performance Metrics
 
 - Phases completed: 0/4 (v1.4)
-- Plans completed: 0/3 (v1.4)
-- Recorded tasks completed: 0 (v1.4)
+- Plans completed: 1/3 (v1.4)
+- Recorded tasks completed: 2 (v1.4)
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -50,9 +50,10 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 - Milestone v1.3 successfully established PAR policy controls (Global/Client/Effective) and hardened the truthful PAR support surface.
 - Milestone v1.4 expands interoperability via JWT Secured Authorization Requests (JAR - RFC 9101).
-- Support JAR-by-value as the first integration pattern.
+- Phase 21 structure: 01 (Foundation/Parsing), 02 (Signatures), 03 (Security Claims).
 - Reuse existing client key infrastructure for request object signature validation.
-- Phase 21 focuses on the core logic (parsing/verification/validation) before controller integration in Phase 22.
+- Use JOSE.JWT.peek_payload and JOSE.JWS.peek_protected for initial unverified JAR decoding.
+- Represent JAR as a struct with :claims and :header fields.
 
 ### Blockers/Concerns
 
@@ -60,10 +61,10 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Execute plan 21-01: `/gsd-execute-phase 21 --plan 01`
+**Next action:** Execute `21-03-PLAN.md` to implement RFC 9101 security claims validation.
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
 **Completed Milestone:** v1.3 (PAR Policy Controls) — archived to `.planning/milestones/v1.3-*`.
 
-**Planned Phase:** 21 (JAR Foundation and Request Validation) — 2026-04-24T21:15:00.000Z
+**Planned Phase:** 21 (JAR Foundation and Request Validation) — 3 plans — 2026-04-24T21:10:00.000Z
