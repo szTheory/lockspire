@@ -11,6 +11,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.PushedAuthorizationRequest
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.ClientStore
@@ -20,11 +21,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
+  alias Lockspire.Storage.Ecto.ServerPolicyRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.InteractionStore
   alias Lockspire.Storage.KeyStore
   alias Lockspire.Storage.PushedAuthorizationRequestStore
+  alias Lockspire.Storage.ServerPolicyStore
   alias Lockspire.Storage.TokenStore
 
   @behaviour ClientStore
@@ -33,6 +36,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour TokenStore
   @behaviour KeyStore
   @behaviour PushedAuthorizationRequestStore
+  @behaviour ServerPolicyStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -83,6 +87,46 @@ defmodule Lockspire.Storage.Ecto.Repository do
           |> ClientRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
           |> repo().update()
           |> map_one(&ClientRecord.to_domain/1)
+          |> unwrap_or_rollback()
+      end
+    end)
+  end
+
+  @impl ServerPolicyStore
+  def get_server_policy do
+    ServerPolicyRecord
+    |> where([policy], policy.id == ^ServerPolicyRecord.singleton_id())
+    |> repo_one()
+    |> then(fn
+      nil -> {:ok, %ServerPolicy{}}
+      %ServerPolicyRecord{} = record -> {:ok, ServerPolicyRecord.to_domain(record)}
+    end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl ServerPolicyStore
+  def put_server_policy(%ServerPolicy{} = policy) do
+    transact(fn ->
+      singleton_id = ServerPolicyRecord.singleton_id()
+
+      ServerPolicyRecord
+      |> where([stored_policy], stored_policy.id == ^singleton_id)
+      |> lock("FOR UPDATE")
+      |> repo().one()
+      |> case do
+        nil ->
+          %ServerPolicyRecord{}
+          |> ServerPolicyRecord.changeset(%ServerPolicy{policy | id: singleton_id})
+          |> repo_insert()
+          |> map_one(&ServerPolicyRecord.to_domain/1)
+          |> unwrap_or_rollback()
+
+        %ServerPolicyRecord{} = record ->
+          record
+          |> ServerPolicyRecord.changeset(%ServerPolicy{policy | id: singleton_id})
+          |> repo_update([])
+          |> map_one(&ServerPolicyRecord.to_domain/1)
           |> unwrap_or_rollback()
       end
     end)

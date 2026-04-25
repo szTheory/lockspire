@@ -6,6 +6,7 @@ defmodule Lockspire.Admin do
   alias Lockspire.Admin.Clients
   alias Lockspire.Admin.Consents
   alias Lockspire.Admin.Keys
+  alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Admin.Tokens
 
   defdelegate list_clients(opts \\ []), to: Clients
@@ -15,6 +16,8 @@ defmodule Lockspire.Admin do
   defdelegate rotate_client_secret(client_id, attrs \\ %{}), to: Clients
   defdelegate disable_client(client_id, attrs \\ %{}), to: Clients
   defdelegate enable_client(client_id, attrs \\ %{}), to: Clients
+  defdelegate get_server_policy(), to: ServerPolicy
+  defdelegate put_server_policy(mode), to: ServerPolicy
   defdelegate list_consents(opts \\ []), to: Consents
   defdelegate list_consents_for_account(account_id), to: Consents
   defdelegate get_consent(grant_id), to: Consents
