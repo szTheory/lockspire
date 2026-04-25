@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
   attr(:mode, :atom, required: true)
   attr(:client, Client, default: nil)
+  attr(:effective_par_policy, :map, default: nil)
   attr(:errors, :list, default: [])
 
   def client_form(assigns) do
@@ -111,6 +112,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <textarea id="client_redirect_uris" name="client[redirect_uris]" rows="4"><%= @defaults.redirect_uris %></textarea>
         </div>
 
+        <div :if={@mode == :par_policy}>
+          <label for="client_par_policy">Client PAR override</label>
+          <select id="client_par_policy" name="client[par_policy]">
+            <option value="inherit" selected={@defaults.par_policy == "inherit"}>
+              Inherit from global policy
+            </option>
+            <option value="required" selected={@defaults.par_policy == "required"}>
+              Require PAR for this client
+            </option>
+            <option value="optional" selected={@defaults.par_policy == "optional"}>
+              Mark PAR optional for this client
+            </option>
+          </select>
+
+          <div :if={@effective_par_policy} class="lockspire-admin-help">
+            <p>
+              <strong>Global policy:</strong> {@effective_par_policy.global_policy}
+            </p>
+            <p>
+              <strong>Effective requirement:</strong> {if @effective_par_policy.par_required?,
+                do: "Required",
+                else: "Not required"}
+            </p>
+          </div>
+        </div>
+
         <button type="submit">{@button_label}</button>
       </form>
     </section>
@@ -160,9 +187,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     }
   end
 
+  defp defaults_for(:par_policy, %Client{} = client) do
+    %{
+      par_policy: Atom.to_string(client.par_policy)
+    }
+  end
+
   defp title_for(:new), do: "Register client"
   defp title_for(:edit), do: "Update safe metadata"
   defp title_for(:redirects), do: "Update redirect URIs"
+  defp title_for(:par_policy), do: "Update PAR policy"
 
   defp subtitle_for(:new), do: "Create a client using the canonical secure registration path."
 
@@ -171,9 +205,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
   defp subtitle_for(:redirects), do: "Redirect URIs stay explicit and exact-match validated."
 
+  defp subtitle_for(:par_policy),
+    do: "Override the global PAR requirement for this specific client."
+
   defp button_for(:new), do: "Create client"
   defp button_for(:edit), do: "Save metadata"
   defp button_for(:redirects), do: "Save redirect URIs"
+  defp button_for(:par_policy), do: "Save PAR policy"
 
   defp format_error(%{field: field, reason: reason, detail: detail}) do
     "#{field} #{reason} #{inspect(detail)}"

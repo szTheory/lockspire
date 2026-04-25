@@ -2,17 +2,29 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   use ExUnit.Case, async: false
 
   import Phoenix.LiveViewTest
+  import Phoenix.ConnTest
 
+  alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
+  alias Lockspire.Web.Live.Admin.ClientsLive.Show
   alias Phoenix.Router
+
+  @endpoint Lockspire.Web.Endpoint
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
-    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    Application.put_env(:lockspire, :mount_path, "")
+
+    Application.put_env(:lockspire, Lockspire.Web.Endpoint,
+      secret_key_base: String.duplicate("a", 64),
+      render_errors: [view: Lockspire.Web.ErrorView, accepts: ~w(html json)],
+      live_view: [signing_salt: "lockspire_salt"]
+    )
 
     start_supervised!(Lockspire.TestRepo)
+    start_supervised!(Lockspire.Web.Endpoint)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
     :ok
@@ -49,6 +61,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         allowed_response_types: ["code"],
         token_endpoint_auth_method: :none,
         pkce_required: true,
+        par_policy: :required,
         subject_type: :public,
         created_at: DateTime.utc_now(),
         metadata: %{}
@@ -62,6 +75,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert Enum.any?(routes, &live_route?(&1, "/admin", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients", Index))
+    assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/par-policy", Show))
     refute Enum.any?(routes, &(&1.path == "/admin/overview"))
   end
 
@@ -69,7 +83,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
-             Index.handle_params(%{"q" => "Alpha"}, "/lockspire/admin?q=Alpha", socket)
+             Index.handle_params(%{"q" => "Alpha"}, "/admin?q=Alpha", socket)
 
     html = rendered_to_string(Index.render(socket.assigns))
 
@@ -79,6 +93,65 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Beta Client"
     refute html =~ "Overview"
     assert html =~ "Register client"
+  end
+
+  test "client detail shows stored override and effective PAR policy state" do
+    assert {:ok, _policy} = ServerPolicy.put_server_policy(:optional)
+
+    assert {:ok, alpha_socket} = Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
+
+    assert {:noreply, alpha_socket} =
+             Show.handle_params(
+               %{"client_id" => "alpha-client"},
+               "/admin/clients/alpha-client",
+               alpha_socket
+             )
+
+    alpha_html = rendered_to_string(Show.render(alpha_socket.assigns))
+
+    assert alpha_html =~ "Global PAR policy"
+    assert alpha_html =~ "Client PAR override"
+    assert alpha_html =~ "inherit"
+    assert alpha_html =~ "Effective PAR requirement"
+    assert alpha_html =~ "Not required"
+
+    assert {:ok, beta_socket} = Show.mount(%{"client_id" => "beta-client"}, %{}, socket_for(:show))
+
+    assert {:noreply, beta_socket} =
+             Show.handle_params(
+               %{"client_id" => "beta-client"},
+               "/admin/clients/beta-client",
+               beta_socket
+             )
+
+    beta_html = rendered_to_string(Show.render(beta_socket.assigns))
+
+    assert beta_html =~ "Global PAR policy"
+    assert beta_html =~ "Client PAR override"
+    assert beta_html =~ "required"
+    assert beta_html =~ "Effective PAR requirement"
+    assert beta_html =~ "Required"
+  end
+
+  test "saving client PAR override persists change" do
+    assert {:ok, _policy} = ServerPolicy.put_server_policy(:optional)
+
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/alpha-client")
+
+    view
+    |> element("a", "Edit PAR policy")
+    |> render_click()
+
+    view
+    |> form("form[phx-submit=save_client]", %{client: %{mode: "par_policy", par_policy: "required"}})
+    |> render_submit()
+
+    assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
+    assert client.par_policy == :required
+  end
+
+  defp conn_for_admin do
+    Phoenix.ConnTest.build_conn()
   end
 
   defp socket_for(action) do

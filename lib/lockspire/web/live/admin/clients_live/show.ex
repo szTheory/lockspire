@@ -5,13 +5,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   alias Lockspire.Admin
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
   alias Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
-  def mount(%{"client_id" => client_id}, _session, socket) do
+  def mount(params, _session, socket) do
+    client_id = if is_map(params), do: Map.get(params, "client_id"), else: nil
+
     {:ok,
      socket
      |> assign(
@@ -19,6 +23,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        current_section: :clients,
        client_id: client_id,
        client: nil,
+       effective_par_policy: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil
@@ -41,11 +46,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       case params["mode"] do
         "edit" -> Admin.update_client(socket.assigns.client_id, edit_attrs(params))
         "redirects" -> Admin.update_client(socket.assigns.client_id, redirect_attrs(params))
+        "par_policy" -> Admin.update_client(socket.assigns.client_id, %{par_policy: params["par_policy"]})
       end
 
     case result do
       {:ok, %Client{} = client} ->
-        {:noreply, assign(socket, client: client, form_errors: [])}
+        {:noreply, assign(socket, client: client, effective_par_policy: resolve_effective_par_policy(client), form_errors: [])}
 
       {:error, errors} when is_list(errors) ->
         {:noreply, assign(socket, form_errors: errors)}
@@ -112,6 +118,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Type: <code>{@client.client_type}</code></p>
         <p>Token auth: <code>{@client.token_endpoint_auth_method}</code></p>
         <p>PKCE required: <code>{to_string(@client.pkce_required)}</code></p>
+        <p>Global PAR policy: <code>{par_policy_label(@effective_par_policy.global_policy)}</code></p>
+        <p>Client PAR override: <code>{par_policy_label(@client.par_policy)}</code></p>
+        <p>Effective PAR requirement: <strong>{verdict_for(@effective_par_policy)}</strong></p>
         <p>Current secret: redacted</p>
         <p>Last secret rotation: {format_datetime(@client.last_secret_rotated_at)}</p>
         <AdminComponents.status_badge status={status_for(@client)} />
@@ -131,11 +140,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </ul>
 
         <div class="lockspire-admin-actions">
-          <a href={show_path(@client.client_id, :edit)}>Edit metadata</a>
-          <a href={show_path(@client.client_id, :redirects)}>Edit redirect URIs</a>
-          <a :if={@client.client_type == :confidential} href={show_path(@client.client_id, :rotate_secret)}>
+          <.link patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
+          <.link patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
+          <.link patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+          <.link :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
             Rotate secret
-          </a>
+          </.link>
           <button phx-click="toggle_client" type="button">
             {if @client.active, do: "Disable client", else: "Enable client"}
           </button>
@@ -143,11 +153,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        :if={@action in [:edit, :redirects]}
+        :if={@action in [:edit, :redirects, :par_policy]}
         title="Safe edit workflow"
         subtitle="Only the allowed shape for this workflow is editable."
       >
-        <FormComponent.client_form mode={@action} client={@client} errors={@form_errors} />
+        <FormComponent.client_form
+          mode={@action}
+          client={@client}
+          effective_par_policy={@effective_par_policy}
+          errors={@form_errors}
+        />
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
@@ -164,13 +179,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     """
   end
 
+  defp load_client(socket, nil) do
+    assign(socket, client: nil, effective_par_policy: nil)
+  end
+
   defp load_client(socket, client_id) do
     case Admin.get_client(client_id) do
       {:ok, %Client{} = client} ->
-        assign(socket, client_id: client_id, client: client)
+        assign(socket,
+          client_id: client_id,
+          client: client,
+          effective_par_policy: resolve_effective_par_policy(client)
+        )
 
       {:error, _reason} ->
-        assign(socket, client_id: client_id, client: nil)
+        assign(socket, client_id: client_id, client: nil, effective_par_policy: nil)
     end
   end
 
@@ -205,13 +228,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     }
   end
 
-  defp normalize_action(action) when action in [:show, :edit, :redirects, :rotate_secret],
+  defp normalize_action(action) when action in [:show, :edit, :redirects, :rotate_secret, :par_policy],
     do: action
 
   defp normalize_action(_action), do: :show
 
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
+  defp show_path(client_id, :par_policy), do: show_path(client_id, :show) <> "/par-policy"
   defp show_path(client_id, :redirects), do: show_path(client_id, :show) <> "/redirects"
   defp show_path(client_id, :rotate_secret), do: show_path(client_id, :show) <> "/rotate-secret"
 
@@ -233,6 +257,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp status_for(%Client{active: true}), do: :active
   defp status_for(%Client{}), do: :disabled
+
+  defp resolve_effective_par_policy(%Client{} = client) do
+    server_policy =
+      case Admin.get_server_policy() do
+        {:ok, %ServerPolicy{} = policy} -> policy
+        {:error, _reason} -> %ServerPolicy{}
+      end
+
+    ParPolicy.resolve_effective_policy(server_policy, client)
+  end
+
+  defp par_policy_label(policy) when policy in [:inherit, :required, :optional] do
+    Atom.to_string(policy)
+  end
+
+  defp verdict_for(%{par_required?: true}), do: "Required"
+  defp verdict_for(%{par_required?: false}), do: "Not required"
 
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)

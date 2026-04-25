@@ -11,6 +11,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
     assigns =
       assign(assigns, :nav_items, [
         %{label: "Clients", key: :clients, href: admin_path("/clients"), enabled: true},
+        %{label: "Policies", key: :policies, href: admin_path("/policies/par"), enabled: true},
         %{label: "Consents", key: :consents, href: admin_path("/consents"), enabled: true},
         %{label: "Tokens", key: :tokens, href: admin_path("/tokens"), enabled: true},
         %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true}

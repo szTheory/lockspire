@@ -8,6 +8,7 @@ defmodule Lockspire.Domain.Client do
           :client_secret_basic | :client_secret_post | :private_key_jwt | :none
   @type subject_type :: :public | :pairwise
   @type signing_alg :: :RS256 | :ES256 | :EdDSA
+  @type par_policy :: :inherit | :required | :optional
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -22,6 +23,7 @@ defmodule Lockspire.Domain.Client do
           allowed_response_types: [String.t()],
           token_endpoint_auth_method: token_endpoint_auth_method(),
           pkce_required: boolean(),
+          par_policy: par_policy(),
           subject_type: subject_type(),
           sector_identifier_uri: String.t() | nil,
           id_token_signed_response_alg: signing_alg() | nil,
@@ -56,6 +58,7 @@ defmodule Lockspire.Domain.Client do
     allowed_response_types: [],
     token_endpoint_auth_method: :client_secret_basic,
     pkce_required: true,
+    par_policy: :inherit,
     subject_type: :public,
     sector_identifier_uri: nil,
     id_token_signed_response_alg: nil,

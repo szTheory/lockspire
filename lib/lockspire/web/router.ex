@@ -31,6 +31,12 @@ defmodule Lockspire.Web.Router do
     live("/admin/clients/:client_id/edit", Lockspire.Web.Live.Admin.ClientsLive.Show, :edit)
 
     live(
+      "/admin/clients/:client_id/par-policy",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :par_policy
+    )
+
+    live(
       "/admin/clients/:client_id/redirects",
       Lockspire.Web.Live.Admin.ClientsLive.Show,
       :redirects
@@ -41,5 +47,7 @@ defmodule Lockspire.Web.Router do
       Lockspire.Web.Live.Admin.ClientsLive.Show,
       :rotate_secret
     )
+
+    live("/admin/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
   end
 end

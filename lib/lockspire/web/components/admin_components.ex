@@ -52,6 +52,18 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
+  attr(:errors, :list, required: true)
+
+  def error_list(assigns) do
+    ~H"""
+    <ul :if={@errors != []} class="lockspire-admin-errors">
+      <%= for error <- @errors do %>
+        <li>{format_error(error)}</li>
+      <% end %>
+    </ul>
+    """
+  end
+
   defp badge_class(:active), do: "lockspire-admin-badge lockspire-admin-badge-active"
   defp badge_class(:upcoming), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
   defp badge_class(:retiring), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
@@ -77,4 +89,10 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   defp format_datetime(nil), do: "Not recorded"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
+
+  defp format_error(%{field: field, reason: reason, detail: detail}) do
+    "#{field} #{reason} #{inspect(detail)}"
+  end
+
+  defp format_error(error), do: inspect(error)
 end

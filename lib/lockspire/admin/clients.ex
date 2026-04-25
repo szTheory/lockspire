@@ -9,7 +9,7 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Observability
   alias Lockspire.Storage.Ecto.Repository
 
-  @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts metadata)a
+  @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts par_policy metadata)a
   @immutable_fields ~w(
     client_id
     client_type
@@ -162,8 +162,9 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp validate_safe_update(attrs) do
-    with :ok <- validate_redirects_if_present(attrs) do
-      validate_scopes_if_present(attrs)
+    with :ok <- validate_redirects_if_present(attrs),
+         :ok <- validate_scopes_if_present(attrs) do
+      validate_par_policy_if_present(attrs)
     end
   end
 
@@ -184,6 +185,22 @@ defmodule Lockspire.Admin.Clients do
 
       allowed_scopes ->
         Clients.validate_allowed_scopes(allowed_scopes)
+    end
+  end
+
+  defp validate_par_policy_if_present(attrs) do
+    case fetch_mutable_attr(attrs, :par_policy) do
+      :error ->
+        :ok
+
+      {:ok, value} ->
+        case normalize_par_policy(value) do
+          {:ok, _policy} ->
+            :ok
+
+          :error ->
+            {:error, [%{field: :par_policy, reason: :invalid_par_policy, detail: value}]}
+        end
     end
   end
 
@@ -227,6 +244,13 @@ defmodule Lockspire.Admin.Clients do
     normalize_string_list(value)
   end
 
+  defp normalize_mutable_field(:par_policy, value) do
+    case normalize_par_policy(value) do
+      {:ok, policy} -> policy
+      :error -> value
+    end
+  end
+
   defp normalize_mutable_field(:metadata, value) when is_map(value), do: value
   defp normalize_mutable_field(:metadata, _value), do: %{}
   defp normalize_mutable_field(_field, value), do: normalize_string(value)
@@ -258,6 +282,23 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_string(_value), do: nil
+
+  defp normalize_par_policy(:inherit), do: {:ok, :inherit}
+  defp normalize_par_policy(:required), do: {:ok, :required}
+  defp normalize_par_policy(:optional), do: {:ok, :optional}
+
+  defp normalize_par_policy(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "inherit" -> {:ok, :inherit}
+      "required" -> {:ok, :required}
+      "optional" -> {:ok, :optional}
+      _other -> :error
+    end
+  end
+
+  defp normalize_par_policy(_value), do: :error
 
   defp normalize_field_name(value) when is_atom(value), do: value
 

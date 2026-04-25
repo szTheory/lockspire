@@ -121,6 +121,37 @@ defmodule Lockspire.Admin.ClientsTest do
     assert Enum.any?(errors, &(&1.field == :redirect_uris and &1.reason == :invalid_redirect_uri))
   end
 
+  test "update_client/2 accepts only inherit, required, and optional for par_policy" do
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               par_policy: "required"
+             })
+
+    assert client.par_policy == :required
+
+    assert {:ok, %Client{} = fetched_client} = Repository.fetch_client_by_id("admin-client")
+    assert fetched_client.par_policy == :required
+
+    assert {:ok, %Client{} = optional_client} =
+             Clients.update_client("admin-client", %{
+               par_policy: :optional
+             })
+
+    assert optional_client.par_policy == :optional
+
+    assert {:ok, %Client{} = inherited_client} =
+             Clients.update_client("admin-client", %{
+               par_policy: :inherit
+             })
+
+    assert inherited_client.par_policy == :inherit
+
+    assert {:error, [%{field: :par_policy, reason: :invalid_par_policy, detail: "strict"}]} =
+             Clients.update_client("admin-client", %{
+               par_policy: "strict"
+             })
+  end
+
   test "rotate_client_secret/2 returns a plaintext secret once, emits telemetry, and appends operator audit" do
     assert {:ok, %{client: %Client{} = client, client_secret: secret}} =
              Clients.rotate_client_secret("admin-client", %{

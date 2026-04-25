@@ -45,7 +45,8 @@ defmodule Lockspire.MixProject do
       {:telemetry, "~> 1.3"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false},
+      {:lazy_html, ">= 0.1.0", only: :test}
     ]
   end
 
