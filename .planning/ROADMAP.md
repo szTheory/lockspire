@@ -49,7 +49,7 @@ Plans:
 - [x] 22-04: RequestObject orchestrator + AuthorizationRequest splice + protocol-seam reason-code matrix
 - [ ] 22-05: PushedAuthorizationRequest /par splice + D-10 ClientAuth-and-JAR independence proofs
 - [x] 22-06: AuthorizeController browser-boundary proofs (rejection page + redirect-safe handoff)
-- [ ] 22-07: Phase 15 e2e surgical extension (one new JAR-via-PAR-via-/authorize branch per D-21)
+- [x] 22-07: Phase 15 e2e surgical extension (one new JAR-via-PAR-via-/authorize branch per D-21)
 
 ### Phase 23: JAR Operator UX and Discovery
 
