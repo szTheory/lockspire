@@ -58,9 +58,12 @@ defmodule Lockspire.Protocol.Jar do
   @spec verify_signature(String.t(), Client.t()) ::
           {:ok, t()} | {:error, :invalid_signature | :no_matching_key | :invalid_client_keys}
   def verify_signature(jwt, %Client{jwks: jwks}) when is_binary(jwt) and is_map(jwks) do
-    case load_jwk(jwks) do
-      {:ok, public_jwk} ->
-        verify_with_jwk(jwt, public_jwk)
+    case extract_public_keys(jwks) do
+      {:ok, []} ->
+        {:error, :no_matching_key}
+
+      {:ok, public_keys} ->
+        verify_against_keys(jwt, public_keys)
 
       {:error, reason} ->
         {:error, reason}
@@ -74,9 +77,33 @@ defmodule Lockspire.Protocol.Jar do
   # Private helpers
   # ---------------------------------------------------------------------------
 
-  defp load_jwk(jwks) when is_map(jwks) do
+  # Normalise client.jwks into a flat list of individual JOSE.JWK structs.
+  # Supports both a single JWK map (RFC 7517) and a JWK Set with a "keys" array.
+  defp extract_public_keys(%{"keys" => keys} = _jwks_set) when is_list(keys) do
+    parsed =
+      Enum.reduce_while(keys, {:ok, []}, fn key_map, {:ok, acc} ->
+        case parse_single_jwk(key_map) do
+          {:ok, jwk} -> {:cont, {:ok, [jwk | acc]}}
+          {:error, _} -> {:halt, {:error, :invalid_client_keys}}
+        end
+      end)
+
+    case parsed do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      error -> error
+    end
+  end
+
+  defp extract_public_keys(jwk_map) when is_map(jwk_map) do
+    case parse_single_jwk(jwk_map) do
+      {:ok, jwk} -> {:ok, [jwk]}
+      {:error, _} -> {:error, :invalid_client_keys}
+    end
+  end
+
+  defp parse_single_jwk(key_map) when is_map(key_map) do
     try do
-      jwk = JOSE.JWK.from_map(jwks)
+      jwk = JOSE.JWK.from_map(key_map)
       {:ok, jwk}
     rescue
       _ -> {:error, :invalid_client_keys}
@@ -85,7 +112,21 @@ defmodule Lockspire.Protocol.Jar do
     end
   end
 
-  defp verify_with_jwk(jwt, public_jwk) do
+  defp parse_single_jwk(_), do: {:error, :invalid_client_keys}
+
+  # Attempt verification against each candidate public key.
+  # Returns {:ok, %Jar{}} on the first successful verification.
+  # Returns {:error, :invalid_signature} if all keys fail.
+  defp verify_against_keys(jwt, public_keys) do
+    Enum.reduce_while(public_keys, {:error, :invalid_signature}, fn jwk, _acc ->
+      case verify_with_single_jwk(jwt, jwk) do
+        {:ok, _} = ok -> {:halt, ok}
+        {:error, :invalid_signature} -> {:cont, {:error, :invalid_signature}}
+      end
+    end)
+  end
+
+  defp verify_with_single_jwk(jwt, public_jwk) do
     try do
       case JOSE.JWT.verify_strict(public_jwk, @allowed_algorithms, jwt) do
         {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
@@ -94,6 +135,9 @@ defmodule Lockspire.Protocol.Jar do
           {:ok, %__MODULE__{claims: claims, header: header}}
 
         {false, _jwt_struct, _jws_struct} ->
+          {:error, :invalid_signature}
+
+        {:error, _} ->
           {:error, :invalid_signature}
       end
     rescue
