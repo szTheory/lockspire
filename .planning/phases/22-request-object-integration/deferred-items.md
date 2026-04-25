@@ -1,4 +1,6 @@
 # Deferred Items
 
-- `Lockspire.ReleaseReadinessContractTest` fails in the full suite because it still expects older `.planning/PROJECT.md` wording: `Current Milestone: v1.3 PAR Policy Controls`.
-- This is out of scope for Phase 22-04; the request-object changes themselves pass their focused suite.
+- `test/lockspire/release_readiness_contract_test.exs` still expects the older `PROJECT.md` milestone wording (`Current Milestone: v1.3 PAR Policy Controls`).
+- `test/lockspire/protocol/pushed_authorization_request_test.exs` has two existing JAR-by-value cases that fail in the full suite with `Config.issuer!/0` mount-path validation (`/lockspire` vs `""`).
+
+These were observed during full-suite verification and are out of scope for this controller-seam plan.
