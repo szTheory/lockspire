@@ -410,5 +410,100 @@ defmodule Lockspire.Protocol.JarTest do
 
       assert :ok = Jar.validate_claims(jar_with(claims), opts)
     end
+
+    # WR-02
+    test "returns {:error, :invalid_audience} for aud list with non-binary entries (WR-02)" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => [@audience, 42],
+        "exp" => @reference_unix + 60
+      }
+
+      assert {:error, :invalid_audience} =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time
+               )
+    end
+
+    test "returns {:error, :invalid_audience} for empty aud list (WR-02)" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => [],
+        "exp" => @reference_unix + 60
+      }
+
+      assert {:error, :invalid_audience} =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time
+               )
+    end
+
+    # WR-03
+    test "returns {:error, :expiration_too_far} when exp exceeds :max_age ceiling (WR-03)" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => @audience,
+        "exp" => @reference_unix + 3600
+      }
+
+      assert {:error, :expiration_too_far} =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time,
+                 max_age: 600
+               )
+    end
+
+    test "returns :ok when exp within :max_age ceiling (WR-03)" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => @audience,
+        "exp" => @reference_unix + 300
+      }
+
+      assert :ok =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time,
+                 max_age: 600
+               )
+    end
+
+    test "ignores :max_age ceiling when opt is absent (preserves Phase 21 contract)" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => @audience,
+        "exp" => @reference_unix + 999_999_999
+      }
+
+      assert :ok =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time
+               )
+    end
+
+    test "returns {:error, :invalid_claims_options} for negative :max_age" do
+      claims = %{
+        "iss" => @client_id,
+        "aud" => @audience,
+        "exp" => @reference_unix + 60
+      }
+
+      assert {:error, :invalid_claims_options} =
+               Jar.validate_claims(jar_with(claims),
+                 expected_client_id: @client_id,
+                 expected_audience: @audience,
+                 now: @reference_time,
+                 max_age: -1
+               )
+    end
   end
 end
