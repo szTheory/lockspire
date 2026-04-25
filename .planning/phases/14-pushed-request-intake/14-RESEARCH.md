@@ -321,17 +321,19 @@ request_uri = "urn:ietf:params:oauth:request_uri:" <> reference
 | A1 | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs` will be the right quick-run command once the new test files exist. [ASSUMED] | Validation Architecture | Low. The planner may need to rename the files or adjust the command to the final module/file names. |
 | A2 | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs test/lockspire/storage/repository_test.exs` will be the right negative-path command split once the new test files exist. [ASSUMED] | Validation Architecture | Low. Only the exact file selection may change. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All revision-blocking planning questions for Phase 14 are now closed and must be treated as fixed inputs for the plans and validation matrix below.
 
 1. **What `expires_in` should Lockspire ship for PAR in v1.2?**
-   - What we know: RFC 9126 says the lifetime is at the server's discretion and is typically short, for example 5-600 seconds. [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt]
-   - What's unclear: The project docs do not yet lock a concrete default such as 60 or 90 seconds. [VERIFIED: codebase grep]
-   - Recommendation: Pick a boring fixed default in Phase 14, expose it internally as protocol config if needed later, and keep it short enough that stale references expire quickly without forcing flaky browser round-trips. [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt]
+   - Decision: Ship a fixed default of `300` seconds for Phase 14 and surface that same value in the PAR success response. [RESOLVED: 2026-04-24]
+   - Why: RFC 9126 leaves the lifetime to the server and expects it to be short-lived; `300` seconds matches Lockspire's existing authorization-code TTL, keeps the request reference boring to reason about, and avoids introducing a second low-duration expiry that could make the later browser handoff flaky. [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt] [VERIFIED: lib/lockspire/protocol/authorization_flow.ex]
+   - Planning consequence: The domain, protocol, controller, and tests should all treat `300` as the default `expires_in`, and the plans should assert that exact value rather than only checking positivity.
 
 2. **Should the store keep both plaintext `request_uri` and a hashed lookup key?**
-   - What we know: Lockspire hashes opaque tokens before durable lookup, but the RFC only requires unpredictability and client binding for PAR references. [VERIFIED: lib/lockspire/protocol/token_formatter.ex] [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt]
-   - What's unclear: The project has not yet established whether PAR references should follow the token-hash-at-rest pattern or whether plaintext URNs are acceptable because they are shorter-lived and not reused as bearer credentials. [VERIFIED: codebase grep]
-   - Recommendation: Decide this during planning. A hashed lookup key is more aligned with Lockspire's existing opaque-token posture, but it adds one more transform and test surface. [VERIFIED: lib/lockspire/protocol/token_formatter.ex]
+   - Decision: Persist only the hashed lookup key plus the validated pushed-request payload; keep the plaintext `request_uri` only long enough to return it from the PAR success path. [RESOLVED: 2026-04-24]
+   - Why: That keeps Phase 14 aligned with Lockspire's opaque-token posture, reduces accidental disclosure in logs or operator surfaces, and still supports later Phase 15 resolution because the incoming `request_uri` can be hashed again at lookup time. [VERIFIED: lib/lockspire/protocol/token_formatter.ex] [VERIFIED: lib/lockspire/redaction.ex]
+   - Planning consequence: Repository/storage work should key persistence and fetch on `request_uri_hash`, while the domain/protocol/controller success path may temporarily carry plaintext `request_uri` only long enough to return the `201` response. Durable rows do not need a plaintext `request_uri` column.
 
 ## Environment Availability
 
@@ -364,8 +366,8 @@ request_uri = "urn:ietf:params:oauth:request_uri:" <> reference
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| PAR-01 | Valid PAR submission returns `201` with opaque `request_uri` and `expires_in`, using supported direct client auth. [VERIFIED: .planning/REQUIREMENTS.md] | protocol + controller integration | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs` [ASSUMED] | ❌ Wave 0 |
-| PAR-01 | Invalid PAR submission rejects mixed auth, bad redirect URI, missing PKCE, incoming `request_uri`, and unknown client without durable partial state. [VERIFIED: .planning/ROADMAP.md] [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt] | protocol + repository integration | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs test/lockspire/storage/repository_test.exs` [ASSUMED] | ❌ Wave 0 |
+| PAR-01 | Valid PAR submission returns `201` with opaque `request_uri` and `expires_in`, using supported direct client auth. [VERIFIED: .planning/REQUIREMENTS.md] | protocol + controller integration | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs` [ASSUMED] | ✅ created in Plans 14-01/14-02 |
+| PAR-01 | Invalid PAR submission rejects mixed auth, bad redirect URI, missing PKCE, incoming `request_uri`, and unknown client without durable partial state. [VERIFIED: .planning/ROADMAP.md] [CITED: https://www.rfc-editor.org/rfc/rfc9126.txt] | protocol + repository integration | `MIX_ENV=test mix test test/lockspire/protocol/pushed_authorization_request_test.exs` [ASSUMED] | ✅ created in Plan 14-01 |
 
 ### Sampling Rate
 
@@ -373,10 +375,10 @@ request_uri = "urn:ietf:params:oauth:request_uri:" <> reference
 - **Per wave merge:** `MIX_ENV=test mix test.fast` [VERIFIED: mix.exs]
 - **Phase gate:** Full suite green plus the new PAR protocol/controller tests before `/gsd-verify-work`. [VERIFIED: .planning/PROJECT.md]
 
-### Wave 0 Gaps
+### Earliest Verification Artifacts
 
-- [ ] `test/lockspire/protocol/pushed_authorization_request_test.exs` - covers PAR-01 protocol success and negative paths. [VERIFIED: codebase grep]
-- [ ] `test/lockspire/web/pushed_authorization_request_controller_test.exs` - covers HTTP contract, cache headers, and `WWW-Authenticate` behavior. [VERIFIED: codebase grep]
+- [x] `test/lockspire/protocol/pushed_authorization_request_test.exs` - created in Plan 14-01 Task 1 to cover PAR-01 protocol success and negative-path scaffolding. [VERIFIED: codebase grep]
+- [x] `test/lockspire/web/pushed_authorization_request_controller_test.exs` - created in Plan 14-02 Task 1 to cover the HTTP contract, cache headers, and `WWW-Authenticate` scaffolding. [VERIFIED: codebase grep]
 - [ ] `priv/repo/migrations/*_create_lockspire_pushed_authorization_requests.exs` - adds durable schema for PAR references. [VERIFIED: codebase grep]
 - [ ] `lib/lockspire/storage/pushed_authorization_request_store.ex` - formal storage contract. [VERIFIED: codebase grep]
 

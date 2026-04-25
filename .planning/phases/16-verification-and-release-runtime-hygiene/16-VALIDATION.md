@@ -81,7 +81,7 @@ Phase 16 keeps `nyquist_compliant: true` because it reuses focused existing harn
 
 ## Typed Human-Only Verifications
 
-All local repo checks are automated and green. One external-service confirmation remains: a live GitHub Actions recovery run should prove that invalid branch refs fail before publish, valid immutable refs proceed, and the deprecated Node 20 warning is gone. That item is persisted in `16-HUMAN-UAT.md` and referenced from `16-VERIFICATION.md`.
+All local repo checks are automated and green. The external-service confirmation is now complete: GitHub Actions run `24898764939` proved that invalid branch refs fail before publish, and run `24898785416` proved that an immutable SHA proceeds to the protected `hex-publish` lane without any deprecated Node 20 runtime warning appearing in the completed recovery-validation jobs. That evidence is persisted in `16-HUMAN-UAT.md` and referenced from `16-VERIFICATION.md`.
 
 ---
 
@@ -111,4 +111,4 @@ No unplanned source items found. Deferred Nyquist backfill and broader release-p
 - [x] No broader release-process redesign is included
 - [x] Exactly two plans cover the Phase 16 roadmap scope
 
-**Approval:** automated checks complete; awaiting live GitHub Actions recovery proof
+**Approval:** automated checks complete; live GitHub Actions recovery proof captured
