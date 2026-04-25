@@ -156,6 +156,50 @@ defmodule Lockspire.Protocol.JarTest do
       client = client_with_single_jwk(pub_jwk_map)
       assert {:error, :invalid_signature} = Jar.verify_signature(tampered_jwt, client)
     end
+
+    test "returns {:error, :invalid_typ} for JWT with typ=JWT-bearer (cross-JWT confusion)", %{
+      private_jwk: private_jwk,
+      pub_jwk_map: pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
+      jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "JWT-bearer"})
+      client = client_with_single_jwk(pub_jwk_map)
+
+      assert {:error, :invalid_typ} = Jar.verify_signature(jwt, client)
+    end
+
+    test "returns {:ok, %Jar{}} for JWT with typ=oauth-authz-req+jwt (canonical RFC 9101 typ)", %{
+      private_jwk: private_jwk,
+      pub_jwk_map: pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
+      jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "oauth-authz-req+jwt"})
+      client = client_with_single_jwk(pub_jwk_map)
+
+      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+    end
+
+    test "returns {:ok, %Jar{}} for JWT with typ=jwt (lowercase legacy)", %{
+      private_jwk: private_jwk,
+      pub_jwk_map: pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id"}
+      jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "jwt"})
+      client = client_with_single_jwk(pub_jwk_map)
+
+      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+    end
+
+    test "returns {:ok, %Jar{}} for JWT with no typ header (permissive default per RFC 9101 SHOULD)", %{
+      private_jwk: private_jwk,
+      pub_jwk_map: pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id"}
+      jwt = sign_jwt(private_jwk, claims)
+      client = client_with_single_jwk(pub_jwk_map)
+
+      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+    end
   end
 
   describe "validate_claims/2" do
