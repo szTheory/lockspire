@@ -5,6 +5,7 @@ config :lockspire,
   account_resolver: nil,
   issuer: nil,
   mount_path: "/lockspire",
-  oban: []
+  oban: [],
+  jar_max_age_seconds: 600
 
 import_config "#{config_env()}.exs"
