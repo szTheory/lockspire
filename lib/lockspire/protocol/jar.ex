@@ -24,6 +24,7 @@ defmodule Lockspire.Protocol.Jar do
           | :missing_expiration
           | :invalid_expiration
           | :expired_token
+          | :expiration_too_far
           | :invalid_not_before
           | :invalid_issued_at
 
@@ -64,12 +65,16 @@ defmodule Lockspire.Protocol.Jar do
   - `:no_matching_key` — no key could be loaded from the client's JWKS
   - `:invalid_client_keys` — the client's `jwks` field is missing, not a map, or cannot
     be parsed as a JWK or JWK Set by JOSE
+  - `:invalid_typ` — the JWT protected header has a `typ` value other than
+    `oauth-authz-req+jwt` or `jwt` (case-insensitive). RFC 9101 §10.8 cross-JWT-confusion
+    mitigation (T-22-01).
 
   Security: `alg=none` is never accepted. Only algorithms in the explicit allow-list are
   permitted, mitigating T-21-03 (Spoofing) and T-21-04 (Tampering).
   """
   @spec verify_signature(String.t(), Client.t()) ::
-          {:ok, t()} | {:error, :invalid_signature | :no_matching_key | :invalid_client_keys}
+          {:ok, t()}
+          | {:error, :invalid_signature | :no_matching_key | :invalid_client_keys | :invalid_typ}
   def verify_signature(jwt, %Client{jwks: jwks}) when is_binary(jwt) and is_map(jwks) do
     case extract_public_keys(jwks) do
       {:ok, []} ->
@@ -130,10 +135,13 @@ defmodule Lockspire.Protocol.Jar do
   # Attempt verification against each candidate public key.
   # Returns {:ok, %Jar{}} on the first successful verification.
   # Returns {:error, :invalid_signature} if all keys fail.
+  # Returns {:error, :invalid_typ} immediately if the typ header is rejected — this is a
+  # definitive rejection, not a "try next key" situation (WR-01 / T-22-01).
   defp verify_against_keys(jwt, public_keys) do
     Enum.reduce_while(public_keys, {:error, :invalid_signature}, fn jwk, _acc ->
       case verify_with_single_jwk(jwt, jwk) do
         {:ok, _} = ok -> {:halt, ok}
+        {:error, :invalid_typ} = err -> {:halt, err}
         {:error, :invalid_signature} -> {:cont, {:error, :invalid_signature}}
       end
     end)
@@ -145,7 +153,11 @@ defmodule Lockspire.Protocol.Jar do
         {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
           {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
           {_modules, header} = JOSE.JWS.to_map(jws_struct)
-          {:ok, %__MODULE__{claims: claims, header: header}}
+
+          case check_typ(header) do
+            :ok -> {:ok, %__MODULE__{claims: claims, header: header}}
+            {:error, _} = err -> err
+          end
 
         {false, _jwt_struct, _jws_struct} ->
           {:error, :invalid_signature}
@@ -159,6 +171,16 @@ defmodule Lockspire.Protocol.Jar do
       _, _ -> {:error, :invalid_signature}
     end
   end
+
+  # Permissive: absent typ allowed (RFC 9101 §10.8 SHOULD, not MUST).
+  # Recognized values (case-insensitive): "oauth-authz-req+jwt" (canonical), "jwt" (legacy).
+  # Per CONTEXT.md D-11, anything else rejected as :invalid_typ — closes JWT-type confusion
+  # (RFC 9101 §10.8) the moment JAR is HTTP-reachable in Phase 22.
+  defp check_typ(%{"typ" => typ}) when is_binary(typ) do
+    if String.downcase(typ) in ["oauth-authz-req+jwt", "jwt"], do: :ok, else: {:error, :invalid_typ}
+  end
+
+  defp check_typ(_), do: :ok
 
   @doc """
   Validates RFC 9101 security claims on a decoded JAR request object.
