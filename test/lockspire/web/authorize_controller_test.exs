@@ -53,6 +53,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.JarTestHelpers
   alias Lockspire.Storage.Ecto.Repository
   import Phoenix.ConnTest
 
@@ -118,6 +119,73 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert conn.status == 400
     refute redirected?(conn)
     assert conn.resp_body =~ "redirect_uri must match a registered URI"
+  end
+
+  describe "JAR-by-value (RFC 9101) at /authorize — browser boundary" do
+    setup do
+      %{pub_jwk_map: pub_jwk_map, private_jwk: private_jwk} = JarTestHelpers.generate_keys()
+
+      {:ok, client} =
+        Repository.register_client(%Client{
+          client_id: "client_jar",
+          client_secret_hash: "sha256:salt:hash",
+          client_type: :confidential,
+          name: "JAR Integrations",
+          redirect_uris: ["https://client.example.com/callback"],
+          allowed_scopes: ["profile", "email"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          jwks: pub_jwk_map,
+          created_at: DateTime.utc_now(),
+          metadata: %{}
+        })
+
+      %{client: client, private_jwk: private_jwk}
+    end
+
+    test "renders the first-party browser error page when JAR signature is invalid", %{
+      client: client
+    } do
+      %{private_jwk: wrong_jwk} = JarTestHelpers.generate_keys()
+
+      bad_jwt =
+        JarTestHelpers.sign_jar(
+          wrong_jwk,
+          jar_claims_for_controller(client.client_id, hd(client.redirect_uris))
+        )
+
+      conn = call_authorize(%{"client_id" => client.client_id, "request" => bad_jwt})
+
+      assert conn.status == 400
+      refute redirected?(conn)
+      assert conn.resp_body =~ "Authorization request rejected"
+      assert conn.resp_body =~ "Request object signature is invalid"
+    end
+
+    test "redirects to the host login surface when JAR is valid (redirect-safe handoff)", %{
+      client: client,
+      private_jwk: private_jwk
+    } do
+      jwt =
+        JarTestHelpers.sign_jar(
+          private_jwk,
+          jar_claims_for_controller(client.client_id, hd(client.redirect_uris))
+        )
+
+      conn = call_authorize(%{"client_id" => client.client_id, "request" => jwt})
+
+      assert conn.status in [302, 303]
+      assert redirected?(conn)
+
+      location = redirect_location(conn)
+      assert location =~ "/sign-in?"
+      assert location =~ "source=authorize"
+      assert location =~ "interaction_id="
+      assert location =~ "return_to=%2Flockspire%2Fconsent%2F"
+    end
   end
 
   test "redirect-safe validation failures redirect with oauth error params and preserved state" do
@@ -436,6 +504,23 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
       "scope" => "profile email",
       "state" => "state-123",
       "prompt" => "consent",
+      "code_challenge" => String.duplicate("a", 43),
+      "code_challenge_method" => "S256"
+    }
+  end
+
+  defp jar_claims_for_controller(client_id, redirect_uri) do
+    now_unix = DateTime.utc_now() |> DateTime.to_unix()
+
+    %{
+      "iss" => client_id,
+      "aud" => Lockspire.Config.issuer!(),
+      "exp" => now_unix + 300,
+      "redirect_uri" => redirect_uri,
+      "response_type" => "code",
+      "scope" => "profile email",
+      "prompt" => "consent",
+      "state" => "state-123",
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
