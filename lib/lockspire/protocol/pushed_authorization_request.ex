@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
   alias Lockspire.Domain.PushedAuthorizationRequest, as: PushedAuthorizationRequestState
   alias Lockspire.Protocol.AuthorizationRequest
   alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.RequestObject
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
@@ -46,9 +47,11 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
     now = now(request)
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %AuthorizationRequest.Validated{} = validated} <- validate_request(params, client),
+         {:ok, post_jar_params} <- maybe_consume_request_object(params, client),
+         {:ok, %AuthorizationRequest.Validated{} = validated} <-
+           validate_request(post_jar_params, client),
          {:ok, %PushedAuthorizationRequestState{} = pushed_request} <-
-           persist_pushed_request(validated, request, now) do
+            persist_pushed_request(validated, request, now) do
       {:ok,
        %Success{
          request_uri: pushed_request.request_uri,
@@ -69,6 +72,22 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
         {:error, oauth_error(400, error.error, error.error_description, error.reason_code)}
     end
   end
+
+  defp maybe_consume_request_object(%{"request" => req} = params, %Client{} = client)
+       when is_binary(req) and req != "" do
+    case RequestObject.consume(params, client, []) do
+      {:ok, projected_params} ->
+        {:ok, projected_params}
+
+      {:browser_error, %AuthorizationRequest.Error{} = error} ->
+        {:error, wrap_jar_error(error)}
+
+      {:redirect_error, %AuthorizationRequest.Error{} = error} ->
+        {:error, wrap_jar_error(error)}
+    end
+  end
+
+  defp maybe_consume_request_object(params, %Client{}), do: {:ok, params}
 
   defp authenticate_client(params, authorization, request) do
     case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
@@ -153,5 +172,9 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
       error_description: description,
       reason_code: reason_code
     }
+  end
+
+  defp wrap_jar_error(%AuthorizationRequest.Error{} = error) do
+    oauth_error(400, error.error, error.error_description, error.reason_code)
   end
 end
