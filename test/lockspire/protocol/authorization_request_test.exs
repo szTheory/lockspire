@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.AuthorizationRequest
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
@@ -12,6 +13,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :known_scopes, ["profile", "email", "offline_access"])
+    Application.put_env(:lockspire, :issuer, "https://server.example.com/lockspire")
 
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -484,6 +486,239 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :request_uri_conflict
   end
 
+  test "accepts a signed request object and projects its claims into the authorization pipeline", %{
+    client: client
+  } do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client_jar",
+        client_secret_hash: "sha256:salt:hash",
+        client_type: :confidential,
+        name: "JAR Integrations",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["profile", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        jwks: pub_jwk_map,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    request_jwt =
+      JarTestHelpers.sign_jar(
+        private_jwk,
+        %{
+          "iss" => client.client_id,
+          "aud" => Lockspire.Config.issuer!(),
+          "exp" => DateTime.utc_now() |> DateTime.add(300, :second) |> DateTime.to_unix(),
+          "redirect_uri" => "https://client.example.com/callback",
+          "response_type" => "code",
+          "scope" => "profile email",
+          "state" => "state-123",
+          "prompt" => "login consent",
+          "code_challenge" => String.duplicate("a", 43),
+          "code_challenge_method" => "S256"
+        }
+      )
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => request_jwt
+             })
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == "https://client.example.com/callback"
+    assert validated.scopes == ["profile", "email"]
+    assert validated.prompt == ["login", "consent"]
+    assert validated.state == "state-123"
+    assert validated.code_challenge == String.duplicate("a", 43)
+  end
+
+  test "rejects raw params mixed into a request object as sealed-envelope conflicts", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    request_jwt =
+      sign_jar_request!(private_jwk, client.client_id)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => request_jwt,
+               "redirect_uri" => "https://client.example.com/callback"
+             })
+
+    assert error.reason_code == :request_object_conflict
+  end
+
+  test "rejects request and request_uri collisions with the request-object reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    request_jwt =
+      sign_jar_request!(private_jwk, client.client_id)
+
+    pushed_request = put_pushed_request!(client.client_id)
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => request_jwt,
+               "request_uri" => pushed_request.request_uri
+             })
+
+    assert error.reason_code == :request_object_and_request_uri_conflict
+  end
+
+  test "maps malformed request objects to the invalid_request_object_jwt reason code", %{client: _client} do
+    %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => "not.a.jwt"
+             })
+
+    assert error.reason_code == :invalid_request_object_jwt
+  end
+
+  test "maps invalid request object typ headers to the invalid_request_object_typ reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" =>
+                 JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id),
+                   extra_header: %{"typ" => "JWT-bearer"}
+                 )
+             })
+
+    assert error.reason_code == :invalid_request_object_typ
+  end
+
+  test "maps invalid signatures to the invalid_request_object_signature reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+    other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => JarTestHelpers.sign_jar(other_private_jwk, jar_claims(client.client_id))
+             })
+
+    assert error.reason_code == :invalid_request_object_signature
+  end
+
+  test "maps missing client jwks to the client_jwks_missing reason code", %{client: client} do
+    %{private_jwk: private_jwk} = JarTestHelpers.generate_keys()
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" => JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id))
+             })
+
+    assert error.reason_code == :client_jwks_missing
+  end
+
+  test "maps expired request objects to the invalid_request_object_expired reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+                "request" =>
+                  JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id,
+                    exp: DateTime.utc_now() |> DateTime.add(-5, :second) |> DateTime.to_unix()
+                  ))
+              })
+
+    assert error.reason_code == :invalid_request_object_expired
+  end
+
+  test "maps issuer mismatches to the invalid_request_object_iss reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" =>
+                 JarTestHelpers.sign_jar(private_jwk, jar_claims("other-client"))
+             })
+
+    assert error.reason_code == :invalid_request_object_iss
+  end
+
+  test "maps audience mismatches to the invalid_request_object_aud reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" =>
+                 JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id, aud: "https://other.example.com"))
+             })
+
+    assert error.reason_code == :invalid_request_object_aud
+  end
+
+  test "maps max-age violations to the invalid_request_object_max_age reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+                "request" =>
+                  JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id,
+                    exp: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
+                  ))
+              })
+
+    assert error.reason_code == :invalid_request_object_max_age
+  end
+
+  test "maps invalid claim shapes to the invalid_request_object_claims reason code", %{client: _client} do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" =>
+                  JarTestHelpers.sign_jar(
+                    private_jwk,
+                    jar_claims(client.client_id,
+                      nbf: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
+                    )
+                  )
+              })
+
+    assert error.reason_code == :invalid_request_object_claims
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,
@@ -495,6 +730,47 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
+  end
+
+  defp register_jar_client!(pub_jwk_map, client_id) do
+    Repository.register_client(%Client{
+      client_id: client_id,
+      client_secret_hash: "sha256:salt:hash",
+      client_type: :confidential,
+      name: "JAR Integrations",
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["profile", "email"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      jwks: pub_jwk_map,
+      created_at: DateTime.utc_now(),
+      metadata: %{}
+    })
+  end
+
+  defp sign_jar_request!(private_jwk, client_id, overrides \\ []) do
+    claims = jar_claims(client_id) |> Map.merge(Map.new(overrides))
+    JarTestHelpers.sign_jar(private_jwk, claims, extra_header: %{"typ" => "oauth-authz-req+jwt"})
+  end
+
+  defp jar_claims(client_id, overrides \\ []) do
+    base = %{
+      "iss" => client_id,
+      "aud" => Lockspire.Config.issuer!(),
+      "exp" => DateTime.utc_now() |> DateTime.add(300, :second) |> DateTime.to_unix(),
+      "redirect_uri" => "https://client.example.com/callback",
+      "response_type" => "code",
+      "scope" => "profile email",
+      "state" => "state-123",
+      "prompt" => "login consent",
+      "code_challenge" => String.duplicate("a", 43),
+      "code_challenge_method" => "S256"
+    }
+
+    Map.merge(base, Map.new(overrides))
   end
 
   defp put_pushed_request!(client_id, opts \\ []) do

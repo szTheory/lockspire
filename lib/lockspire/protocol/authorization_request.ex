@@ -8,11 +8,12 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Observability
   alias Lockspire.Protocol.ParPolicy
+  alias Lockspire.Protocol.RequestObject
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
-  @unsupported_params ~w(claims request request_uri resource response_mode)
+  @unsupported_params ~w(claims resource response_mode)
 
   defmodule Validated do
     @moduledoc """
@@ -71,6 +72,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, resolved_par_policy} <- resolve_effective_par_policy(client),
          :ok <- maybe_require_pushed_authorization_request(params, client, resolved_par_policy),
          {:ok, resolved_params} <- resolve_authorization_params(params, client),
+         {:ok, resolved_params} <- maybe_consume_request_object(resolved_params, client),
          {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client) do
       validated = %Validated{validated | client: client}
 
@@ -156,8 +158,9 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp resolve_authorization_params(%{"request_uri" => request_uri} = params, %Client{} = client)
-       when is_binary(request_uri) and request_uri != "" do
-    with :ok <- reject_request_uri_conflicts(params),
+        when is_binary(request_uri) and request_uri != "" do
+    with :ok <- reject_request_uri_and_request_conflict(params),
+         :ok <- reject_request_uri_conflicts(params),
          :ok <- validate_lockspire_request_uri(request_uri),
          {:ok, %PushedAuthorizationRequest{} = request} <-
            consume_pushed_authorization_request(request_uri, client.client_id) do
@@ -166,6 +169,21 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp resolve_authorization_params(params, %Client{}), do: {:ok, params}
+
+  defp reject_request_uri_and_request_conflict(%{"request_uri" => request_uri, "request" => request}) do
+    if present?(request_uri) and present?(request) do
+      {:browser_error,
+       browser_error(
+         :invalid_request,
+         "request and request_uri cannot both be supplied",
+         :request_object_and_request_uri_conflict
+       )}
+    else
+      :ok
+    end
+  end
+
+  defp reject_request_uri_and_request_conflict(_params), do: :ok
 
   defp par_required_error(params, %Client{} = client) do
     case validate_redirect_uri(client, params) do
@@ -221,6 +239,21 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          :ok <- reject_unsupported_params(params) do
       {:ok, build_validated(params, client, redirect_uri, scopes, prompt)}
     end
+  end
+
+  defp maybe_consume_request_object(%{"request" => request} = params, %Client{} = client)
+       when is_binary(request) and request != "" do
+    RequestObject.consume(params, client, jar_opts())
+  end
+
+  defp maybe_consume_request_object(params, _client), do: {:ok, params}
+
+  defp jar_opts do
+    [
+      expected_audience: Config.issuer!(),
+      max_age: Config.jar_max_age_seconds(),
+      leeway: 5
+    ]
   end
 
   defp validate_scopes(client, params) do
