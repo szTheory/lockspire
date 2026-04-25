@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: JAR and Request Objects
-status: planning
-stopped_at: Phase 22 context gathered (assumptions mode)
-last_updated: "2026-04-25T17:06:00.000Z"
+status: executing
+stopped_at: Completed 22-06-PLAN.md
+last_updated: "2026-04-25T21:13:22.658Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Milestone: v1.4 — JAR and Request Objects
 
 Phase: 22
 
-Plan: 05
+Plan: 07
 
 Status: Ready to execute
 
@@ -39,8 +39,8 @@ Last activity: 2026-04-25
 ## Performance Metrics
 
 - Phases completed: 0/4 (v1.4)
-- Plans completed: 4/10 (v1.4)
-- Recorded tasks completed: 7 (v1.4)
+- Plans completed: 5/10 (v1.4)
+- Recorded tasks completed: 8 (v1.4)
 - Timeline: 2026-04-24 -> present
 
 ## Accumulated Context
@@ -57,6 +57,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Represent JAR as a struct with :claims and :header fields.
 - Consume signed request objects before `validate_with_client/3` so the existing `/authorize` pipeline stays unchanged after projection.
 - Treat `request` + `request_uri` as a sealed-envelope conflict and pin the request-object reason-code matrix at the protocol seam.
+- Use a fresh JAR-capable client fixture in the controller test describe block because client updates do not persist jwks.
+- Assert the browser-error page by its rendered headline and the valid-JAR handoff by the existing /sign-in redirect shape.
+- Treat the happy-path redirect as the redirect-safe proof because D-16 makes JAR-failure redirect safety unreachable at this seam.
 
 ### Blockers/Concerns
 
@@ -64,11 +67,11 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Execute Phase 22 Plan 05 (PAR splice + D-10 ClientAuth-and-JAR independence proofs).
+**Next action:** Execute Phase 22 Plan 07.
 
-**Resume file:** `.planning/phases/22-request-object-integration/22-CONTEXT.md`
+**Resume file:** None
 
-**Stopped at:** Phase 22 Plan 04 completed (request-object orchestration landed)
+**Stopped at:** Completed 22-06-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

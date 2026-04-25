@@ -48,7 +48,7 @@ Plans:
 - [x] 22-03: Create Lockspire.JarTestHelpers test-support module
 - [x] 22-04: RequestObject orchestrator + AuthorizationRequest splice + protocol-seam reason-code matrix
 - [ ] 22-05: PushedAuthorizationRequest /par splice + D-10 ClientAuth-and-JAR independence proofs
-- [ ] 22-06: AuthorizeController browser-boundary proofs (rejection page + redirect-safe handoff)
+- [x] 22-06: AuthorizeController browser-boundary proofs (rejection page + redirect-safe handoff)
 - [ ] 22-07: Phase 15 e2e surgical extension (one new JAR-via-PAR-via-/authorize branch per D-21)
 
 ### Phase 23: JAR Operator UX and Discovery
