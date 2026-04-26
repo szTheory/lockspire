@@ -4,14 +4,14 @@ milestone: v1.4
 milestone_name: milestone
 status: executing
 stopped_at: Phase 26 context gathered (assumptions mode)
-last_updated: "2026-04-26T18:12:04.883Z"
+last_updated: "2026-04-26T20:05:46.794Z"
 last_activity: 2026-04-26 -- Phase 25 execution started
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 8
+  total_plans: 15
   completed_plans: 8
-  percent: 100
+  percent: 53
 ---
 
 # Project State
@@ -73,4 +73,4 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Completed Milestone:** v1.4 (JAR and Request Objects) — archived to `.planning/milestones/v1.4-*`.
 
-**Planned Phase:** 25 (DCR Storage Skeleton, Domain Types, and Policy Resolver) — 8 plans — 2026-04-26T15:33:18.989Z
+**Planned Phase:** 26 (Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core) — 7 plans — 2026-04-26T20:05:46.785Z

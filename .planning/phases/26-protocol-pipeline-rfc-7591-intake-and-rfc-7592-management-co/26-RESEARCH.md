@@ -764,37 +764,44 @@ end
 
 If any A1/A2/A3 turn out to require a different resolution, the planner should fold the resolution into the early "carve out helpers" tasks before authoring protocol modules.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All six questions resolved. Resolutions are folded into Phase 26 plans 26-01 through 26-07.
 
 1. **`disable_client_with_audit/4` is currently `defp` (private) at `admin/clients.ex:348` — D-21 calls it from `RegistrationManagement.delete/2`.**
    - What we know: D-21 specifies the call. The function is private. The public `Admin.Clients.disable_client/2` (line 127) wraps it.
    - What's unclear: Whether to (a) promote the private function or (b) use `disable_client/2` instead.
    - Recommendation: Use `Admin.Clients.disable_client/2`. It already takes `(client_id, attrs)` where `attrs` carries `:disabled_by`, `:disabled_at`, and `:actor`. After D-22 tightens `actor_from_attrs/1`, passing `actor: %{type: :self_registered_client, id: client.client_id}` flows correctly. No changes to `admin/clients.ex` required beyond D-22.
+   - **RESOLVED:** Use `Admin.Clients.disable_client/2` (public). Folded into plan 26-06 task 2 (`grep -c 'Admin.Clients.disable_client(client.client_id'` returns 1; `grep -c 'disable_client_with_audit'` returns 0). D-21 in CONTEXT.md still names `disable_client_with_audit/4` — the planner reads the recommendation here and supersedes that detail with the public wrapper.
 
 2. **`Lockspire.Clients.generate_client_id/0` is currently `defp` (private) at `clients.ex:384-386` — D-16 calls it from `Registration.register/1`.**
    - What we know: D-16 specifies the call. The function is private.
    - What's unclear: Whether to promote it to public (smaller diff, single source of truth) or duplicate the 2-line idiom (`"ls_" <> Base.url_encode64(:crypto.strong_rand_bytes(24), padding: false)`) in `Registration`.
    - Recommendation: Promote to public. The format is operator-affecting (every operator-created and DCR-created client uses this prefix); keeping it in one place avoids drift.
+   - **RESOLVED:** Promote to `def` with `@spec`. Folded into plan 26-01 task 1.
 
 3. **D-24 regression test queries `Repository.list_audit_events/1`, which does not exist.**
    - What we know: `grep` returns no matches for `list_audit_events` in `repository.ex`. Existing pattern at `test/lockspire/admin/clients_test.exs:232-240` queries `AuditEventRecord` directly via `Lockspire.TestRepo.all(from(...))`.
    - What's unclear: Whether to add `Repository.list_audit_events/1` to `repository.ex` (consistent with `register_client/1`, `list_clients/1` shape) or stay with the in-test direct-query pattern.
    - Recommendation: Stay with the in-test direct-query pattern. Phase 26's regression test is the only Phase 26 caller; adding a public Repository helper for one test is over-investment.
+   - **RESOLVED:** Use direct `from(audit in AuditEventRecord, ...)` query in tests (no new Repository helper). Folded into plans 26-05 task 1, 26-06 task 1, and 26-07 (cross-cutting sweep).
 
 4. **Should `:registration_access_token`, `:initial_access_token`, `:rat`, `:iat` be added to the `Redaction.for_telemetry/1` and `Redaction.for_audit/1` drop lists at `redaction.ex:8-53`?**
    - What we know: Currently the drop list covers `:client_secret`, `:token`, `:token_hash`, `:authorization`, `:code`, `:code_verifier`, etc. — but NOT the named credential keys.
    - What's unclear: Whether D-27's single-sweep test is enough (defense via discipline + test) or whether the drop list itself should be extended (defense via filter).
    - Recommendation: Belt-and-braces — extend the drop list. 12-line addition. Reduces the blast radius if a future caller accidentally puts plaintext under one of these keys.
+   - **RESOLVED:** Yes — extend `@telemetry_drop_keys` and `@audit_drop_keys` MapSets with `:registration_access_token`, `:initial_access_token`, `:rat`, `:iat` (atom + string variants). Folded into plan 26-01 task 4 (Wave 0). Belt-and-braces: defense via filter complements D-27's defense-via-test.
 
 5. **What does `Registration.register/1` do when no `iat` is provided AND `server_policy.registration_policy = :initial_access_token`?**
    - What we know: D-12 says `iat: <plaintext_iat | nil>`. D-13 step 1 says "IAT redemption (if `iat` non-nil)".
    - What's unclear: When `iat` is nil but server policy requires one, where is that gating enforced?
    - Recommendation: Phase 26 enforces it before pipeline step 1: when `server_policy.registration_policy == :initial_access_token` and `iat == nil`, return `{:error, %Error{code: :invalid_token, field: :iat, reason: :missing}}` immediately. This keeps the protocol module self-sufficient and lets Phase 27's controller stay thin (the controller maps `:invalid_token` to `401`, which is the RFC 7592 default).
+   - **RESOLVED:** Reject with `%Error{code: :invalid_token, field: :iat, reason: :missing}` immediately, BEFORE `maybe_redeem_iat/1` runs. Folded into plan 26-05 task 2a (precondition gate `require_iat_when_policy_demands/2`). Test pin in plan 26-05 task 1: "rejects with :invalid_token/:iat/:missing when server_policy.registration_policy == :initial_access_token and iat == nil".
 
-6. **What happens to old `Domain.Client` rows that were created before Phase 25's provenance backfill?**
-   - What we know: Phase 25 migration `20260427000020_extend_lockspire_clients_dcr.exs` backfills existing rows to `:operator` (per ROADMAP.md SC 1).
-   - What's unclear: None — verified.
-   - Status: Resolved.
+6. **What happens to old `Domain.Client` rows that were created before Phase 25's provenance backfill? (Also covers RFC 7591 §2.3 `software_statement` field handling.)**
+   - What we know: Phase 25 migration `20260427000020_extend_lockspire_clients_dcr.exs` backfills existing rows to `:operator` (per ROADMAP.md SC 1). RFC 7591 §2 says "Extensions and profiles of this specification MAY define new metadata members for use in client registration" — i.e., the validator should ignore unknown fields gracefully.
+   - What's unclear: None — verified for backfill; the unknown-field handling is documented in the RESEARCH §"Additional Pitfall — Software Statement" (lines 925-931).
+   - **RESOLVED:** (a) Backfill: existing rows are `:operator` per Phase 25 migration — verified. (b) Unknown fields including `software_statement`: silently ignore — the intake validator's allowlist is "the fields we explicitly handle"; everything else is dropped before persistence. Test pin in plan 26-05 task 1: "register/1 silently ignores software_statement".
 
 ## Environment Availability
 
