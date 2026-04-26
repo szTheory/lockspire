@@ -19,7 +19,7 @@
 ### Phases
 
 - [ ] **Phase 25: DCR Storage Skeleton, Domain Types, and Policy Resolver** - Land additive migrations, domain types for ServerPolicy/Client/InitialAccessToken, and the intersection-only `DcrPolicy` resolver with its discovery-binding invariant.
-- [ ] **Phase 26: Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core** - Build HTTP-free protocol modules for intake validation, RAT/IAT issuance and atomic redemption, hash-at-rest, and tightened DCR-flavored audit attribution with telemetry redaction.
+- [x] **Phase 26: Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core** - Build HTTP-free protocol modules for intake validation, RAT/IAT issuance and atomic redemption, hash-at-rest, and tightened DCR-flavored audit attribution with telemetry redaction. (completed 2026-04-26)
 - [ ] **Phase 27: HTTP Surface — Registration and Management Controllers** - Mount `POST /register` and `GET/PUT/DELETE /register/:client_id` with RFC 7591 §3.2.1 response shape, RAT auth, RAT rotation on PUT, and soft-disable on DELETE.
 - [ ] **Phase 28: Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry** - Ship `PoliciesLive.Dcr`, `IatLive.{Index,New}`, ClientsLive provenance + RAT-rotate, and the full DCR/IAT lifecycle telemetry surface.
 - [ ] **Phase 29: Truthful Discovery, SECURITY/Docs, and Milestone Closure** - Advertise `registration_endpoint` truthfully, bound SECURITY.md and `docs/dynamic-registration.md` to the shipped slice, and close v1.5 with an end-to-end scenario test and 100% traceability.
@@ -59,10 +59,10 @@
 - [x] 26-01-PLAN.md — Wave 0 foundations: promote `Lockspire.Clients.generate_client_id/0` to public, tighten `Lockspire.Admin.Clients.actor_from_attrs/1` to raise on missing actor.type (D-22), and create six Wave-0 stub test files
 - [x] 26-02-PLAN.md — `Lockspire.Protocol.RegistrationAccessToken` (RAT primitives — generate / hash / verify, no side effects)
 - [x] 26-03-PLAN.md — `Lockspire.Protocol.InitialAccessToken.redeem/1` + atomic `Repository.redeem_initial_access_token/2` with concurrent-redemption proof (DCR-11)
-- [ ] 26-04-PLAN.md — DCR test fixtures (`Lockspire.Test.Fixtures.DcrFixtures` — RFC 7591 metadata maps + `register_request/1` builder)
+- [x] 26-04-PLAN.md — DCR test fixtures (`Lockspire.Test.Fixtures.DcrFixtures` — RFC 7591 metadata maps + `register_request/1` builder)
 - [x] 26-05-PLAN.md — `Lockspire.Protocol.Registration.register/1` intake orchestrator with private validator pipeline (DCR-02, DCR-03, DCR-04)
 - [x] 26-06-PLAN.md — `Lockspire.Protocol.RegistrationManagement` RFC 7592 read/update/delete + RAT rotation + `Repository.get_client_by_registration_access_token_hash/1`
-- [ ] 26-07-PLAN.md — Cross-cutting closing tests: DCR audit attribution regression sweep (DCR-22) + DCR telemetry redaction single-sweep (DCR-23, D-27, D-28)
+- [x] 26-07-PLAN.md — Cross-cutting closing tests: DCR audit attribution regression sweep (DCR-22) + DCR telemetry redaction single-sweep (DCR-23, D-27, D-28)
 
 #### Phase 27: HTTP Surface — Registration and Management Controllers
 **Goal**: Partners can call the four DCR endpoints over HTTP — `POST /register` with policy gating, `GET /register/:client_id` with RAT authentication, `PUT /register/:client_id` with full-replace and RAT rotation, `DELETE /register/:client_id` with soft-disable — and the success body matches RFC 7591 §3.2.1 exactly.
@@ -106,7 +106,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 25. DCR Storage Skeleton, Domain Types, and Policy Resolver | 0/8 | Not started | - |
-| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 6/7 | In progress | - |
+| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 7/7 | Complete    | 2026-04-26 |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
 | 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/0 | Not started | - |

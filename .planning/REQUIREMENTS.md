@@ -103,16 +103,16 @@ Explicitly excluded. Documented to prevent scope creep and to keep public suppor
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DCR-01 | Phase 27 | Pending |
-| DCR-02 | Phase 26 | Pending |
-| DCR-03 | Phase 26 | Pending |
-| DCR-04 | Phase 26 | Pending |
+| DCR-02 | Phase 26 | Complete |
+| DCR-03 | Phase 26 | Complete |
+| DCR-04 | Phase 26 | Complete |
 | DCR-05 | Phase 27 | Pending |
 | DCR-06 | Phase 25 | Pending |
 | DCR-07 | Phase 25 | Pending |
 | DCR-08 | Phase 25 | Pending |
 | DCR-09 | Phase 25 | Pending |
 | DCR-10 | Phase 25 | Pending |
-| DCR-11 | Phase 26 | Pending |
+| DCR-11 | Phase 26 | Complete |
 | DCR-12 | Phase 28 | Pending |
 | DCR-13 | Phase 27 | Pending |
 | DCR-14 | Phase 27 | Pending |
@@ -123,8 +123,8 @@ Explicitly excluded. Documented to prevent scope creep and to keep public suppor
 | DCR-19 | Phase 28 | Pending |
 | DCR-20 | Phase 28 | Pending |
 | DCR-21 | Phase 28 | Pending |
-| DCR-22 | Phase 26 | Pending |
-| DCR-23 | Phase 26 | Pending |
+| DCR-22 | Phase 26 | Complete |
+| DCR-23 | Phase 26 | Complete |
 | DCR-24 | Phase 29 | Pending |
 | DCR-25 | Phase 29 | Pending |
 | DCR-26 | Phase 29 | Pending |
