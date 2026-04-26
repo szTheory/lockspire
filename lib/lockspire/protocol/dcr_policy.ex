@@ -120,7 +120,16 @@ defmodule Lockspire.Protocol.DcrPolicy do
   defp intersect_axis(field, requested_list, server_allowlist, iat_override_list) do
     requested = MapSet.new(requested_list || [])
     server_set = MapSet.new(server_allowlist || [])
-    iat_set = if iat_override_list, do: MapSet.new(iat_override_list), else: server_set
+
+    # Explicit nil check (not truthy) so that an IAT override like
+    # `%{"allowed_scopes" => []}` correctly narrows the axis to the empty set rather than
+    # being treated as "no override" — and so that a future change to `override_for/2`
+    # which returns `[]` for "absent" cannot silently flip the meaning.
+    iat_set =
+      case iat_override_list do
+        nil -> server_set
+        list when is_list(list) -> MapSet.new(list)
+      end
 
     case requested |> MapSet.difference(server_set) |> MapSet.to_list() do
       [] ->
