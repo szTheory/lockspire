@@ -53,5 +53,6 @@ defmodule Lockspire.Web.Router do
     )
 
     live("/admin/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
+    live("/admin/policies/dcr", Lockspire.Web.Live.Admin.PoliciesLive.Dcr, :show)
   end
 end

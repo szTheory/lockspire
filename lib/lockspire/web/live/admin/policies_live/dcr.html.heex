@@ -1,0 +1,72 @@
+<Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.section_card
+    title="Global DCR policy"
+    subtitle={"Current mode is #{@policy.registration_policy}. This governs Dynamic Client Registration."}
+  >
+    <.form for={@form} phx-submit="save_policy">
+      <div class="lockspire-admin-field">
+        <label for={@form[:registration_policy].id}>Enforcement mode</label>
+        <select id={@form[:registration_policy].id} name={@form[:registration_policy].name}>
+          <option value="disabled" selected={@form[:registration_policy].value == :disabled}>Disabled</option>
+          <option value="initial_access_token" selected={@form[:registration_policy].value == :initial_access_token}>Initial Access Token</option>
+          <option value="open" selected={@form[:registration_policy].value == :open}>Open</option>
+        </select>
+        <p class="lockspire-admin-help">
+          <strong>Disabled:</strong> Dynamic client registration is completely disabled.
+          <br />
+          <strong>Initial Access Token:</strong> Registration requires a valid Initial Access Token (RFC 7592).
+          <br />
+          <strong>Open:</strong> Anyone can register clients. Use with extreme caution.
+        </p>
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_scopes].id}>Allowed Scopes</label>
+        <input type="text" id={@form[:dcr_allowed_scopes].id} name={@form[:dcr_allowed_scopes].name <> "[]"} value={Enum.join(@form[:dcr_allowed_scopes].value || [], ", ")} />
+        <p class="lockspire-admin-help">Comma-separated list of allowed scopes.</p>
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_grant_types].id}>Allowed Grant Types</label>
+        <input type="text" id={@form[:dcr_allowed_grant_types].id} name={@form[:dcr_allowed_grant_types].name <> "[]"} value={Enum.join(@form[:dcr_allowed_grant_types].value || [], ", ")} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_response_types].id}>Allowed Response Types</label>
+        <input type="text" id={@form[:dcr_allowed_response_types].id} name={@form[:dcr_allowed_response_types].name <> "[]"} value={Enum.join(@form[:dcr_allowed_response_types].value || [], ", ")} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_redirect_uri_schemes].id}>Allowed Redirect URI Schemes</label>
+        <input type="text" id={@form[:dcr_allowed_redirect_uri_schemes].id} name={@form[:dcr_allowed_redirect_uri_schemes].name <> "[]"} value={Enum.join(@form[:dcr_allowed_redirect_uri_schemes].value || [], ", ")} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_redirect_uri_hosts].id}>Allowed Redirect URI Hosts</label>
+        <input type="text" id={@form[:dcr_allowed_redirect_uri_hosts].id} name={@form[:dcr_allowed_redirect_uri_hosts].name <> "[]"} value={Enum.join(@form[:dcr_allowed_redirect_uri_hosts].value || [], ", ")} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_allowed_token_endpoint_auth_methods].id}>Allowed Token Endpoint Auth Methods</label>
+        <input type="text" id={@form[:dcr_allowed_token_endpoint_auth_methods].id} name={@form[:dcr_allowed_token_endpoint_auth_methods].name <> "[]"} value={Enum.join(@form[:dcr_allowed_token_endpoint_auth_methods].value || [], ", ")} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_default_client_lifetime_seconds].id}>Default Client Lifetime (seconds)</label>
+        <input type="number" id={@form[:dcr_default_client_lifetime_seconds].id} name={@form[:dcr_default_client_lifetime_seconds].name} value={@form[:dcr_default_client_lifetime_seconds].value} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_default_client_secret_lifetime_seconds].id}>Default Client Secret Lifetime (seconds)</label>
+        <input type="number" id={@form[:dcr_default_client_secret_lifetime_seconds].id} name={@form[:dcr_default_client_secret_lifetime_seconds].name} value={@form[:dcr_default_client_secret_lifetime_seconds].value} />
+      </div>
+
+      <div class="lockspire-admin-field">
+        <label for={@form[:dcr_default_registration_access_token_lifetime_seconds].id}>Default Registration Access Token Lifetime (seconds)</label>
+        <input type="number" id={@form[:dcr_default_registration_access_token_lifetime_seconds].id} name={@form[:dcr_default_registration_access_token_lifetime_seconds].name} value={@form[:dcr_default_registration_access_token_lifetime_seconds].value} />
+      </div>
+
+      <button class="lockspire-admin-btn-primary" type="submit">Save global DCR policy</button>
+    </.form>
+  </Lockspire.Web.Components.AdminComponents.section_card>
+</Lockspire.Web.Live.AdminLayoutLive.shell>
