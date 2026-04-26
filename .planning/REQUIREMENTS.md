@@ -13,7 +13,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 ### Intake (POST /register)
 
 - [ ] **DCR-01**: `POST /register` is mounted in the Lockspire router and accepts RFC 7591 client metadata as JSON, gated by the effective registration policy (`Lockspire.Protocol.DcrPolicy`).
-- [ ] **DCR-02**: Intake validation rejects mutually-exclusive or incoherent metadata: `jwks_uri` is rejected with `invalid_client_metadata` ("not supported in this slice"); `jwks` and `jwks_uri` cannot both be present; `grant_types` and `response_types` must satisfy RFC 7591 §2 coherence; `redirect_uris` are validated through the existing `Lockspire.Clients.validate_redirect_uris/1` (exact-match parity with operator-created clients).
+- [x] **DCR-02
+**: Intake validation rejects mutually-exclusive or incoherent metadata: `jwks_uri` is rejected with `invalid_client_metadata` ("not supported in this slice"); `jwks` and `jwks_uri` cannot both be present; `grant_types` and `response_types` must satisfy RFC 7591 §2 coherence; `redirect_uris` are validated through the existing `Lockspire.Clients.validate_redirect_uris/1` (exact-match parity with operator-created clients).
 - [x] **DCR-03
 **: Self-registered clients are PKCE-required by floor; the intake refuses any metadata that would lower PKCE for a DCR client, and the resulting `Domain.Client` row has `pkce_required: true`.
 - [x] **DCR-04
