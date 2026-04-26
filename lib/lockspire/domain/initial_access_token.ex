@@ -21,6 +21,28 @@ defmodule Lockspire.Domain.InitialAccessToken do
   `MapSet.intersection/2` naturally drops it — never widens.
   """
 
+  @typedoc """
+  Operator-controlled per-IAT narrowing of the resolver's effective DCR allowlists.
+
+  String-keyed map (the resolver's `override_for/2` looks up string keys) where each value
+  is a list of strings (the resolver's `intersect_axis/4` only lets list values pass
+  through; non-list values are treated as "no override"). Known keys mirror the
+  `dcr_allowed_*` axes:
+
+    - "allowed_scopes"
+    - "allowed_grant_types"
+    - "allowed_response_types"
+    - "allowed_redirect_uri_schemes"
+    - "allowed_redirect_uri_hosts"
+    - "allowed_token_endpoint_auth_methods"
+
+  Pinning the shape here lets Dialyzer catch drift between admin-mint (Phase 28) and
+  resolve-time (Phase 25 `Lockspire.Protocol.DcrPolicy.resolve/3`). A malformed
+  `%{atom_key: "string"}` would silently bypass every override under the looser
+  `map() | nil` typespec — see DCR-09 and the WR-09 follow-up invariant test (Phase 28).
+  """
+  @type policy_overrides :: %{optional(String.t()) => [String.t()]}
+
   @type t :: %__MODULE__{
           id: integer() | nil,
           token_hash: String.t() | nil,
@@ -28,7 +50,7 @@ defmodule Lockspire.Domain.InitialAccessToken do
           single_use: boolean(),
           used_at: DateTime.t() | nil,
           revoked_at: DateTime.t() | nil,
-          policy_overrides: map() | nil,
+          policy_overrides: policy_overrides() | nil,
           created_by: String.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
