@@ -16,6 +16,8 @@ At archive time, the package version in `mix.exs` is `0.2.0`, the protected rele
 
 Lockspire can now accept pushed authorization requests at `/par`, consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, enforce global and per-client PAR policy controls, and validate the shipped JAR request-object slice while keeping JAR-04 decryption deferred.
 
+Phase 26 complete — implemented RFC 7591 intake and RFC 7592 management.
+
 ## Current Milestone: v1.5 Dynamic Client Registration
 
 **Goal:** Turn Lockspire from operator-tended into partner-buildable by adding RFC 7591/7592 dynamic client registration with operator policy controls, without widening the embedded-library shape.
@@ -43,12 +45,12 @@ Lockspire can now accept pushed authorization requests at `/par`, consume its ow
 - PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15.
 - Discovery, support docs, and SECURITY wording now describe only the shipped PAR slice, validated in Phase 15.
 - PAR milestone closure and release-runtime hygiene were validated in Phase 16, including warning-free checked-in release automation.
+- Deliver RFC 7591 `POST /register` intake bounded by operator policy without widening the embedded-library shape. Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
+- Deliver operator policy controls for self-registration (allowlists, defaults, on/off, optional initial access tokens). Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
+- Deliver RFC 7592 client configuration management with `registration_access_token` rotation and admin-UI provenance. Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
 
 ### Active
 
-- [ ] Deliver RFC 7591 `POST /register` intake bounded by operator policy without widening the embedded-library shape.
-- [ ] Deliver operator policy controls for self-registration (allowlists, defaults, on/off, optional initial access tokens).
-- [ ] Deliver RFC 7592 client configuration management with `registration_access_token` rotation and admin-UI provenance.
 - [ ] Advertise `registration_endpoint` in discovery and bound SECURITY/support docs to the shipped DCR slice.
 - [ ] Close v1.5 with end-to-end verification, telemetry/audit coverage, and full traceability for shipped DCR requirements.
 
@@ -111,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 at v1.5 Dynamic Client Registration milestone start.*
+*Last updated: 2026-04-26*
