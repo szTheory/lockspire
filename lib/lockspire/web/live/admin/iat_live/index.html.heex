@@ -1,0 +1,35 @@
+<Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.section_card
+    title="Initial Access Tokens"
+    subtitle="Manage dynamic client registration intake tokens."
+  >
+    <div class="lockspire-admin-actions" style="margin-bottom: 1rem;">
+      <a href={iat_new_path()} class="button">Mint IAT</a>
+    </div>
+
+    <%= if @tokens == [] do %>
+      <Lockspire.Web.Components.AdminComponents.empty_state
+        title="No initial access tokens minted"
+        body="Mint a token to allow partners to dynamically register clients."
+      />
+    <% else %>
+      <ul class="lockspire-admin-token-list">
+        <%= for token <- @tokens do %>
+          <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid #eee;">
+            <div>
+              <strong>ID:</strong> {token.id} <br/>
+              <small>Created by: {token.created_by}</small> <br/>
+              <small>Single use: {if token.single_use, do: "Yes", else: "No"}</small>
+            </div>
+            <div>
+              <Lockspire.Web.Components.AdminComponents.status_badge status={iat_status(token)} />
+              <%= if iat_status(token) == :active do %>
+                <button phx-click="revoke" phx-value-id={token.id} data-confirm="Are you sure you want to revoke this IAT?" class="button button-small" style="margin-left: 1rem;">Revoke</button>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </Lockspire.Web.Components.AdminComponents.section_card>
+</Lockspire.Web.Live.AdminLayoutLive.shell>

@@ -1,0 +1,37 @@
+<Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.section_card
+    title="Mint Initial Access Token"
+    subtitle="Generate a new token to allow dynamic client registration."
+  >
+    <%= if @iat_secret do %>
+      <div class="lockspire-admin-alert lockspire-admin-alert-warning" style="background-color: #fff3cd; color: #856404; padding: 1rem; border: 1px solid #ffeeba; border-radius: 0.25rem; margin-bottom: 1rem;">
+        <h4 style="margin-top: 0;">⚠️ Secret Revealed</h4>
+        <p>This is the <strong>only time</strong> this token secret will be displayed. Please copy it now and store it securely.</p>
+        <div style="background-color: #f8f9fa; padding: 1rem; border: 1px solid #dee2e6; margin: 1rem 0; font-family: monospace; word-break: break-all;">
+          {@iat_secret}
+        </div>
+        <button phx-click="acknowledge_copy" class="button button-primary">I have copied this secret</button>
+      </div>
+    <% else %>
+      <form phx-submit="mint" style="max-width: 400px;">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Single Use</label>
+          <select name="single_use" style="width: 100%; padding: 0.5rem;">
+            <option value="true" selected={@form["single_use"].value == "true"}>Yes (Recommended)</option>
+            <option value="false" selected={@form["single_use"].value == "false"}>No (Multi-use)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Expires in (days)</label>
+          <input type="number" name="expires_in_days" value={@form["expires_in_days"].value || "30"} required min="1" style="width: 100%; padding: 0.5rem;"/>
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
+          <button type="submit" class="button button-primary">Mint IAT</button>
+          <a href={iat_index_path()} class="button button-outline">Cancel</a>
+        </div>
+      </form>
+    <% end %>
+  </Lockspire.Web.Components.AdminComponents.section_card>
+</Lockspire.Web.Live.AdminLayoutLive.shell>
