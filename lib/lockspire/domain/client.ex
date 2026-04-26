@@ -9,6 +9,7 @@ defmodule Lockspire.Domain.Client do
   @type subject_type :: :public | :pairwise
   @type signing_alg :: :RS256 | :ES256 | :EdDSA
   @type par_policy :: :inherit | :required | :optional
+  @type provenance :: :operator | :self_registered
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -41,6 +42,12 @@ defmodule Lockspire.Domain.Client do
           disabled_by: String.t() | nil,
           last_secret_rotated_at: DateTime.t() | nil,
           metadata: map(),
+          provenance: provenance(),
+          registration_access_token_hash: String.t() | nil,
+          registration_client_uri: String.t() | nil,
+          initial_access_token_id: integer() | nil,
+          client_id_issued_at: DateTime.t() | nil,
+          client_secret_expires_at: DateTime.t() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -76,6 +83,12 @@ defmodule Lockspire.Domain.Client do
     disabled_by: nil,
     last_secret_rotated_at: nil,
     metadata: %{},
+    provenance: :operator,
+    registration_access_token_hash: nil,
+    registration_client_uri: nil,
+    initial_access_token_id: nil,
+    client_id_issued_at: nil,
+    client_secret_expires_at: nil,
     inserted_at: nil,
     updated_at: nil
   ]
