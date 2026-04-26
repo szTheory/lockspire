@@ -20,13 +20,16 @@ defmodule Lockspire.Protocol.Registration do
   `%Error{code: :invalid_token}` (the discriminator stays in telemetry).
   """
 
+  alias Lockspire.Admin
   alias Lockspire.Clients
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.InitialAccessToken, as: IatDomain
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Observability
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.DcrPolicy.Resolved
   alias Lockspire.Protocol.InitialAccessToken
+  alias Lockspire.Protocol.RegistrationAccessToken
 
   defmodule Success do
     @type t :: %__MODULE__{
@@ -174,15 +177,114 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp generate_credentials do
-    # Task 2b: full implementation
-    raise "generate_credentials/0 stub — Task 2b implements"
+    {client_secret_hash, client_secret} = Clients.rotate_secret_hash()
+    {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
+    client_id = Clients.generate_client_id()
+
+    %{
+      client_id: client_id,
+      client_secret: client_secret,
+      client_secret_hash: client_secret_hash,
+      rat: rat_plaintext,
+      rat_hash: rat_hash
+    }
   end
 
-  defp persist_client(_metadata, _resolved, _iat_record, _credentials, _source) do
-    # Task 2b: full implementation
-    {:error, %Error{code: :persistence_error, reason: :not_implemented}}
+  defp persist_client(metadata, %Resolved{} = resolved, iat_record, credentials, source) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    iat_id = iat_record && Map.get(iat_record, :id)
+
+    auth_method = atomize_auth_method(Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic"))
+    client_type = client_type_from_auth_method(auth_method)
+
+    client = %Client{
+      client_id: credentials.client_id,
+      client_secret_hash: credentials.client_secret_hash,
+      client_type: client_type,
+      name: Map.get(metadata, "client_name"),
+      redirect_uris: Map.get(metadata, "redirect_uris", []),
+      allowed_scopes: parse_scope(Map.get(metadata, "scope", "")),
+      allowed_grant_types: Map.get(metadata, "grant_types", ["authorization_code"]),
+      allowed_response_types: Map.get(metadata, "response_types", ["code"]),
+      token_endpoint_auth_method: auth_method,
+      pkce_required: true,
+      subject_type: :public,
+      logo_uri: Map.get(metadata, "logo_uri"),
+      tos_uri: Map.get(metadata, "tos_uri"),
+      policy_uri: Map.get(metadata, "policy_uri"),
+      contacts: Map.get(metadata, "contacts", []),
+      jwks: Map.get(metadata, "jwks"),
+      active: true,
+      provenance: :self_registered,
+      registration_access_token_hash: credentials.rat_hash,
+      initial_access_token_id: iat_id,
+      client_id_issued_at: now,
+      client_secret_expires_at:
+        DateTime.add(now, resolved.default_client_secret_lifetime_seconds || 0, :second),
+      metadata: build_extension_metadata(metadata)
+    }
+
+    attrs = %{
+      client: client,
+      actor: %{
+        type: :dcr,
+        id: iat_id_or_anonymous(iat_id),
+        display: source[:ip] || source["ip"]
+      }
+    }
+
+    case Admin.Clients.create_dcr_client(attrs) do
+      {:ok, %Client{} = persisted} -> {:ok, persisted}
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, %Error{code: :persistence_error, reason: changeset}}
+      {:error, reason} -> {:error, %Error{code: :persistence_error, reason: reason}}
+    end
   end
 
-  defp emit_succeeded(_client, _iat_record, _source), do: :ok
-  defp emit_rejected(_error, _source), do: :ok
+  defp iat_id_or_anonymous(nil), do: "anonymous"
+  defp iat_id_or_anonymous(id), do: to_string(id)
+
+  defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
+  defp atomize_auth_method("client_secret_post"), do: :client_secret_post
+  defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt
+  defp atomize_auth_method("none"), do: :none
+  defp atomize_auth_method(_), do: :client_secret_basic
+
+  defp client_type_from_auth_method(:none), do: :public
+  defp client_type_from_auth_method(_), do: :confidential
+
+  defp parse_scope(scope) when is_binary(scope) do
+    scope |> String.split(" ", trim: true) |> Enum.uniq()
+  end
+
+  defp parse_scope(_), do: []
+
+  # RFC 7591 §2.3 software_statement is silently ignored (RESEARCH Q6 RESOLVED).
+  # Only RFC 7591 extension fields we explicitly support land in :metadata JSONB.
+  defp build_extension_metadata(metadata) when is_map(metadata) do
+    metadata
+    |> Map.take(["client_uri"])
+    |> Map.reject(fn {_k, v} -> is_nil(v) end)
+  end
+
+  defp emit_succeeded(%Client{} = client, iat_record, source) do
+    iat_id = iat_record && Map.get(iat_record, :id)
+
+    Observability.emit(:dcr_registration_succeeded, %{count: 1}, %{
+      actor_type: :dcr,
+      actor_id: iat_id_or_anonymous(iat_id),
+      client_id: client.client_id,
+      iat_id: iat_id,
+      source_ip: source[:ip] || source["ip"]
+    })
+  end
+
+  defp emit_rejected(%Error{} = error, source) do
+    Observability.emit(:dcr_registration_rejected, %{count: 1}, %{
+      actor_type: :dcr,
+      reason_code: error.code,
+      field: error.field,
+      reason: error.reason,
+      source_ip: source[:ip] || source["ip"]
+    })
+  end
 end

@@ -72,6 +72,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @spec get_client_by_registration_access_token_hash(String.t()) ::
+          {:ok, Lockspire.Domain.Client.t() | nil} | {:error, term()}
+  def get_client_by_registration_access_token_hash(rat_hash) when is_binary(rat_hash) do
+    ClientRecord
+    |> where([client], client.registration_access_token_hash == ^rat_hash)
+    |> repo_one(sensitive: true)
+    |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
   @impl ClientStore
   def update_client(%Client{id: id}, attrs) when is_integer(id) and is_map(attrs) do
     transact(fn ->
