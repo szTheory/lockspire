@@ -46,6 +46,16 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:last_secret_rotated_at, :utc_datetime_usec)
     field(:metadata, :map, default: %{})
 
+    # D-08 + D-09: provenance Ecto.Enum cast against the text column from Plan 05 migration.
+    # Two-value form (:operator | :self_registered); the 3-value form is deferred.
+    # Pitfall 4: text column + Ecto.Enum cast pairing is mandatory.
+    field(:provenance, Ecto.Enum, values: [:operator, :self_registered], default: :operator)
+    field(:registration_access_token_hash, :string)
+    field(:registration_client_uri, :string)
+    field(:initial_access_token_id, :integer)
+    field(:client_id_issued_at, :utc_datetime_usec)
+    field(:client_secret_expires_at, :utc_datetime_usec)
+
     timestamps()
   end
 
@@ -80,7 +90,13 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :disabled_at,
       :disabled_by,
       :last_secret_rotated_at,
-      :metadata
+      :metadata,
+      :provenance,
+      :registration_access_token_hash,
+      :registration_client_uri,
+      :initial_access_token_id,
+      :client_id_issued_at,
+      :client_secret_expires_at
     ])
     |> validate_required([
       :client_id,
@@ -92,7 +108,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :token_endpoint_auth_method,
       :pkce_required,
       :subject_type,
-      :active
+      :active,
+      :provenance
     ])
     |> unique_constraint(:client_id)
   end
@@ -154,6 +171,12 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       disabled_by: record.disabled_by,
       last_secret_rotated_at: record.last_secret_rotated_at,
       metadata: record.metadata || %{},
+      provenance: record.provenance,
+      registration_access_token_hash: record.registration_access_token_hash,
+      registration_client_uri: record.registration_client_uri,
+      initial_access_token_id: record.initial_access_token_id,
+      client_id_issued_at: record.client_id_issued_at,
+      client_secret_expires_at: record.client_secret_expires_at,
       inserted_at: record.inserted_at,
       updated_at: record.updated_at
     }
