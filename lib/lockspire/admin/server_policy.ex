@@ -32,9 +32,10 @@ defmodule Lockspire.Admin.ServerPolicy do
   @spec put_server_policy(atom() | String.t()) ::
           {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
   def put_server_policy(mode) do
-    with {:ok, normalized_mode} <- normalize_par_policy(mode),
-         {:ok, %ServerPolicy{} = current} <- Repository.get_server_policy() do
-      Repository.put_server_policy(%ServerPolicy{current | par_policy: normalized_mode})
+    with {:ok, normalized_mode} <- normalize_par_policy(mode) do
+      Repository.update_server_policy(fn %ServerPolicy{} = current ->
+        %ServerPolicy{current | par_policy: normalized_mode}
+      end)
     end
   end
 
@@ -63,10 +64,10 @@ defmodule Lockspire.Admin.ServerPolicy do
   @spec put_dcr_policy(map()) ::
           {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
   def put_dcr_policy(attrs) when is_map(attrs) do
-    with {:ok, normalized_attrs} <- normalize_dcr_attrs(attrs),
-         {:ok, current} <- Repository.get_server_policy() do
-      merged = Map.merge(current, normalized_attrs)
-      Repository.put_server_policy(merged)
+    with {:ok, normalized_attrs} <- normalize_dcr_attrs(attrs) do
+      Repository.update_server_policy(fn %ServerPolicy{} = current ->
+        Map.merge(current, normalized_attrs)
+      end)
     end
   end
 

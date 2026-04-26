@@ -127,6 +127,46 @@ defmodule Lockspire.Admin.ServerPolicyTest do
              ServerPolicy.put_dcr_policy(%{registration_policy: :bogus})
   end
 
+  test "concurrent put_server_policy/1 and put_dcr_policy/1 do not lose updates" do
+    # Seed an initial baseline so both setters update an existing row.
+    assert {:ok, _} =
+             ServerPolicy.put_dcr_policy(%{
+               registration_policy: :open,
+               dcr_allowed_scopes: ["openid"]
+             })
+
+    # Drive interleaved writes from multiple processes. Each task uses its own sandbox
+    # checkout (allow_concurrency through `Sandbox.allow/3`) so the read-merge-write
+    # cycles can race the way they would in production.
+    parent = self()
+
+    tasks =
+      for i <- 1..16 do
+        Task.async(fn ->
+          :ok = Ecto.Adapters.SQL.Sandbox.allow(Lockspire.TestRepo, parent, self())
+
+          if rem(i, 2) == 0 do
+            ServerPolicy.put_server_policy(:required)
+          else
+            ServerPolicy.put_dcr_policy(%{registration_policy: :initial_access_token})
+          end
+        end)
+      end
+
+    for task <- tasks do
+      assert {:ok, %DomainServerPolicy{}} = Task.await(task, 5_000)
+    end
+
+    # After all writes settle, both fields must reflect the *last* successful write of each
+    # axis — not a stale value reverted by a concurrent read-merge-write race. The
+    # update_server_policy/1 mutator runs under FOR UPDATE so each task observes the
+    # latest committed state before merging its own delta.
+    assert {:ok, %DomainServerPolicy{} = final} = Repository.get_server_policy()
+    assert final.par_policy == :required
+    assert final.registration_policy == :initial_access_token
+    assert final.dcr_allowed_scopes == ["openid"]
+  end
+
   test "put_dcr_policy/1 accepts string-keyed input (admin form simulation)" do
     attrs = %{
       "registration_policy" => "open",

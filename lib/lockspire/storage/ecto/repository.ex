@@ -107,24 +107,39 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl ServerPolicyStore
   def put_server_policy(%ServerPolicy{} = policy) do
+    update_server_policy(fn _current -> policy end)
+  end
+
+  @impl ServerPolicyStore
+  def update_server_policy(mutator) when is_function(mutator, 1) do
     transact(fn ->
       singleton_id = ServerPolicyRecord.singleton_id()
 
-      ServerPolicyRecord
-      |> where([stored_policy], stored_policy.id == ^singleton_id)
-      |> lock("FOR UPDATE")
-      |> repo().one()
-      |> case do
+      current_record =
+        ServerPolicyRecord
+        |> where([stored_policy], stored_policy.id == ^singleton_id)
+        |> lock("FOR UPDATE")
+        |> repo().one()
+
+      current =
+        case current_record do
+          nil -> %ServerPolicy{id: singleton_id}
+          %ServerPolicyRecord{} = record -> ServerPolicyRecord.to_domain(record)
+        end
+
+      new_policy = mutator.(current)
+
+      case current_record do
         nil ->
           %ServerPolicyRecord{}
-          |> ServerPolicyRecord.changeset(%ServerPolicy{policy | id: singleton_id})
+          |> ServerPolicyRecord.changeset(%ServerPolicy{new_policy | id: singleton_id})
           |> repo_insert()
           |> map_one(&ServerPolicyRecord.to_domain/1)
           |> unwrap_or_rollback()
 
         %ServerPolicyRecord{} = record ->
           record
-          |> ServerPolicyRecord.changeset(%ServerPolicy{policy | id: singleton_id})
+          |> ServerPolicyRecord.changeset(%ServerPolicy{new_policy | id: singleton_id})
           |> repo_update([])
           |> map_one(&ServerPolicyRecord.to_domain/1)
           |> unwrap_or_rollback()
