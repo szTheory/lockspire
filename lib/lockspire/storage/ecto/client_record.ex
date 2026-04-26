@@ -114,6 +114,20 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> unique_constraint(:client_id)
   end
 
+  # Phase 25 note: DCR-related fields are deliberately excluded from update_changeset/2.
+  #
+  #   :provenance — D-09: create-time-only; covered by client_record_test.exs:87-124.
+  #   :registration_access_token_hash
+  #   :registration_client_uri
+  #   :initial_access_token_id
+  #   :client_id_issued_at
+  #   :client_secret_expires_at
+  #
+  # Phase 26 will introduce a separate `dcr_management_changeset/2` for RAT rotation and
+  # client_secret rotation under the `:self_registered` provenance (RFC 7592 management).
+  # Do NOT add these fields to update_changeset/2 — that would expose them to the
+  # operator-admin path (set_client_active, list_clients update flows), which must remain
+  # unable to mutate RFC 7592 management state.
   def update_changeset(record, attrs) do
     record
     |> cast(attrs, [
