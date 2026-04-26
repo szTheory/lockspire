@@ -54,6 +54,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     ClientRecord
     |> maybe_filter_client_search(Keyword.get(opts, :search))
     |> maybe_filter_client_status(Keyword.get(opts, :active))
+    |> maybe_filter_client_provenance(Keyword.get(opts, :provenance))
     |> order_by([client], asc: client.name, asc: client.client_id)
     |> maybe_limit_clients(Keyword.get(opts, :limit))
     |> repo().all()
@@ -854,6 +855,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_filter_client_status(query, active) when is_boolean(active) do
     where(query, [client], client.active == ^active)
+  end
+
+  defp maybe_filter_client_provenance(query, nil), do: query
+
+  defp maybe_filter_client_provenance(query, provenance) when provenance in [:operator, :self_registered] do
+    where(query, [client], client.provenance == ^provenance)
   end
 
   defp maybe_filter_consent_account(query, nil), do: query

@@ -17,7 +17,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        page_title: "Clients",
        current_section: :clients,
        clients: [],
-       filters: %{"q" => "", "status" => "all", "page" => "1"},
+       filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
        created_result: nil
      )}
@@ -75,6 +75,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
           </select>
 
+          <label for="client_provenance">Provenance</label>
+          <select id="client_provenance" name="provenance">
+            <option value="all" selected={@filters["provenance"] == "all"}>All</option>
+            <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+            <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>Self-Registered</option>
+          </select>
+
           <button type="submit">Apply</button>
         </form>
 
@@ -92,6 +99,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                 <a href={client_show_path(client.client_id)}>{client.name || client.client_id}</a>
                 <span>{client.client_id}</span>
                 <AdminComponents.status_badge status={status_for(client)} />
+                <AdminComponents.status_badge status={client.provenance} />
               </li>
             <% end %>
           </ul>
@@ -121,6 +129,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     opts =
       [search: blank_to_nil(filters["q"])]
       |> put_status_filter(filters["status"])
+      |> put_provenance_filter(filters["provenance"])
 
     case Admin.list_clients(opts) do
       {:ok, clients} -> clients
@@ -137,6 +146,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     %{
       "q" => Map.get(params, "q", ""),
       "status" => normalize_status(Map.get(params, "status", "all")),
+      "provenance" => normalize_provenance(Map.get(params, "provenance", "all")),
       "page" => Integer.to_string(parse_page(Map.get(params, "page", "1")))
     }
   end
@@ -163,8 +173,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp put_status_filter(opts, "disabled"), do: Keyword.put(opts, :active, false)
   defp put_status_filter(opts, _status), do: opts
 
+  defp put_provenance_filter(opts, "operator"), do: Keyword.put(opts, :provenance, :operator)
+  defp put_provenance_filter(opts, "self_registered"), do: Keyword.put(opts, :provenance, :self_registered)
+  defp put_provenance_filter(opts, _provenance), do: opts
+
   defp normalize_status(status) when status in ["all", "active", "disabled"], do: status
   defp normalize_status(_status), do: "all"
+
+  defp normalize_provenance(provenance) when provenance in ["all", "operator", "self_registered"], do: provenance
+  defp normalize_provenance(_provenance), do: "all"
 
   defp parse_page(page) when is_binary(page) do
     case Integer.parse(page) do
