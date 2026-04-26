@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: milestone
 status: executing
-stopped_at: Completed 26-04-PLAN.md
-last_updated: "2026-04-26T20:45:57.455Z"
+stopped_at: Completed 26-06-PLAN.md
+last_updated: "2026-04-26T20:55:10.358Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 13
-  percent: 87
+  completed_plans: 14
+  percent: 93
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-26)
 
 Phase: 26 (protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co) — EXECUTING
 
-Plan: 6 of 7
+Plan: 7 of 7
 
 Status: Ready to execute
 
@@ -58,6 +58,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Collapsed all 4 rejection axes to {:error, :invalid_token} in public protocol entry point (DCR-11) while preserving discriminators in telemetry only.
 - Mirrored mark_authorization_code_redeemed/2 pattern using DB-level lock("FOR UPDATE") for atomic IAT redemption.
 - None - followed plan as specified
+- Mismatch between URL client_id and RAT-bound client.client_id ALWAYS collapses to {:error, :invalid_token} to prevent client-id enumeration.
+- update/2 public arity strictly adhered to (client_id_from_url, request_map) to keep the protocol pure.
 
 ### Blockers/Concerns
 
@@ -70,7 +72,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 26-04-PLAN.md
+**Stopped at:** Completed 26-06-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

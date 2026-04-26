@@ -60,8 +60,8 @@
 - [x] 26-02-PLAN.md — `Lockspire.Protocol.RegistrationAccessToken` (RAT primitives — generate / hash / verify, no side effects)
 - [x] 26-03-PLAN.md — `Lockspire.Protocol.InitialAccessToken.redeem/1` + atomic `Repository.redeem_initial_access_token/2` with concurrent-redemption proof (DCR-11)
 - [ ] 26-04-PLAN.md — DCR test fixtures (`Lockspire.Test.Fixtures.DcrFixtures` — RFC 7591 metadata maps + `register_request/1` builder)
-- [ ] 26-05-PLAN.md — `Lockspire.Protocol.Registration.register/1` intake orchestrator with private validator pipeline (DCR-02, DCR-03, DCR-04)
-- [ ] 26-06-PLAN.md — `Lockspire.Protocol.RegistrationManagement` RFC 7592 read/update/delete + RAT rotation + `Repository.get_client_by_registration_access_token_hash/1`
+- [x] 26-05-PLAN.md — `Lockspire.Protocol.Registration.register/1` intake orchestrator with private validator pipeline (DCR-02, DCR-03, DCR-04)
+- [x] 26-06-PLAN.md — `Lockspire.Protocol.RegistrationManagement` RFC 7592 read/update/delete + RAT rotation + `Repository.get_client_by_registration_access_token_hash/1`
 - [ ] 26-07-PLAN.md — Cross-cutting closing tests: DCR audit attribution regression sweep (DCR-22) + DCR telemetry redaction single-sweep (DCR-23, D-27, D-28)
 
 #### Phase 27: HTTP Surface — Registration and Management Controllers
@@ -106,7 +106,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 25. DCR Storage Skeleton, Domain Types, and Policy Resolver | 0/8 | Not started | - |
-| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 3/7 | In progress | - |
+| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 6/7 | In progress | - |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
 | 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/0 | Not started | - |
