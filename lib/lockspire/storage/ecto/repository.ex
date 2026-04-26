@@ -601,6 +601,31 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
+  def list_initial_access_tokens(_opts \\ []) do
+    InitialAccessTokenRecord
+    |> order_by([iat], desc: iat.inserted_at)
+    |> repo().all()
+    |> Enum.map(&InitialAccessTokenRecord.to_domain/1)
+    |> then(&{:ok, &1})
+  end
+
+  def save_initial_access_token(%Lockspire.Domain.InitialAccessToken{} = iat) do
+    %InitialAccessTokenRecord{}
+    |> InitialAccessTokenRecord.changeset(iat)
+    |> repo().insert()
+    |> map_one(&InitialAccessTokenRecord.to_domain/1)
+  end
+
+  def revoke_initial_access_token(id, revoked_at) when is_integer(id) and is_struct(revoked_at, DateTime) do
+    InitialAccessTokenRecord
+    |> where([iat], iat.id == ^id)
+    |> repo().update_all(set: [revoked_at: revoked_at, updated_at: DateTime.utc_now()])
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :not_found}
+    end
+  end
+
   @impl KeyStore
   def publish_key(%SigningKey{} = key) do
     %SigningKeyRecord{}
