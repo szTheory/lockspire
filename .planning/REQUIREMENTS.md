@@ -16,7 +16,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 - [ ] **DCR-02**: Intake validation rejects mutually-exclusive or incoherent metadata: `jwks_uri` is rejected with `invalid_client_metadata` ("not supported in this slice"); `jwks` and `jwks_uri` cannot both be present; `grant_types` and `response_types` must satisfy RFC 7591 §2 coherence; `redirect_uris` are validated through the existing `Lockspire.Clients.validate_redirect_uris/1` (exact-match parity with operator-created clients).
 - [x] **DCR-03
 **: Self-registered clients are PKCE-required by floor; the intake refuses any metadata that would lower PKCE for a DCR client, and the resulting `Domain.Client` row has `pkce_required: true`.
-- [ ] **DCR-04**: Successful registration issues `client_id`, `client_secret`, and `registration_access_token`; `client_secret` and `registration_access_token` are hashed at rest using `Lockspire.Security.Policy` and returned in plaintext exactly once in the registration response.
+- [x] **DCR-04
+**: Successful registration issues `client_id`, `client_secret`, and `registration_access_token`; `client_secret` and `registration_access_token` are hashed at rest using `Lockspire.Security.Policy` and returned in plaintext exactly once in the registration response.
 - [ ] **DCR-05**: The success response conforms to RFC 7591 §3.2.1 including `client_id_issued_at`, `client_secret_expires_at`, and `registration_client_uri`.
 
 ### Operator Policy Controls
@@ -29,7 +30,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 ### Initial Access Tokens
 
 - [ ] **DCR-10**: `Lockspire.Domain.InitialAccessToken` and the `lockspire_initial_access_tokens` table persist IATs with hash-at-rest, expiry, single-use default, and a nullable `policy_overrides` JSONB column.
-- [ ] **DCR-11**: `Lockspire.Protocol.InitialAccessToken.redeem/1` is atomic; expired, revoked, or already-used IATs are rejected with `401 invalid_token`, and successful redemption marks the IAT used in the same transaction.
+- [x] **DCR-11
+**: `Lockspire.Protocol.InitialAccessToken.redeem/1` is atomic; expired, revoked, or already-used IATs are rejected with `401 invalid_token`, and successful redemption marks the IAT used in the same transaction.
 - [ ] **DCR-12**: Operators can mint and revoke IATs from the admin LiveView; IAT plaintext is shown copy-once at mint time only.
 
 ### RFC 7592 Management
