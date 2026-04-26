@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: Dynamic Client Registration
-status: planning
-stopped_at: null
-last_updated: "2026-04-26T00:00:00Z"
-last_activity: 2026-04-26
+milestone: v1.4
+milestone_name: milestone
+status: Roadmap defined; ready for `/gsd-discuss-phase 25`
+stopped_at: Phase 25 context gathered (assumptions mode)
+last_updated: "2026-04-26T14:33:40.311Z"
+last_activity: 2026-04-26 — v1.5 roadmap defined, 27/27 DCR requirements mapped across Phase 25 — Phase 29
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 0
 ---
 
 # Project State
@@ -63,9 +62,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Run `/gsd-discuss-phase 25` to enter Phase 25 (DCR Storage Skeleton, Domain Types, and Policy Resolver) discussion before planning.
 
-**Resume file:** None
+**Resume file:** --resume-file
 
-**Stopped at:** v1.5 roadmap defined — ready for Phase 25 discussion
+**Stopped at:** Phase 25 context gathered (assumptions mode)
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
