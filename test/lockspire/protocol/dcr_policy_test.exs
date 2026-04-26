@@ -178,6 +178,38 @@ defmodule Lockspire.Protocol.DcrPolicyTest do
              DcrPolicy.resolve(open_policy(), nil, inbound)
   end
 
+  test "resolve/3 rejects unparseable redirect_uris (relative path)" do
+    inbound = %{"redirect_uris" => ["/callback"]}
+
+    assert {:error, :invalid_client_metadata,
+            %{field: :redirect_uris, reason: :unparseable, allowed: []}} =
+             DcrPolicy.resolve(open_policy(), nil, inbound)
+  end
+
+  test "resolve/3 rejects unparseable redirect_uris (empty string)" do
+    inbound = %{"redirect_uris" => [""]}
+
+    assert {:error, :invalid_client_metadata,
+            %{field: :redirect_uris, reason: :unparseable, allowed: []}} =
+             DcrPolicy.resolve(open_policy(), nil, inbound)
+  end
+
+  test "resolve/3 rejects unparseable redirect_uris (free text)" do
+    inbound = %{"redirect_uris" => ["not a uri"]}
+
+    assert {:error, :invalid_client_metadata,
+            %{field: :redirect_uris, reason: :unparseable, allowed: []}} =
+             DcrPolicy.resolve(open_policy(), nil, inbound)
+  end
+
+  test "resolve/3 rejects redirect_uris with scheme but missing host (e.g., javascript:)" do
+    inbound = %{"redirect_uris" => ["javascript:alert(1)"]}
+
+    assert {:error, :invalid_client_metadata,
+            %{field: :redirect_uris, reason: :unparseable, allowed: []}} =
+             DcrPolicy.resolve(open_policy(), nil, inbound)
+  end
+
   test "resolve/3 ignores unknown inbound keys and missing optional keys" do
     inbound = %{
       "scope" => "openid",

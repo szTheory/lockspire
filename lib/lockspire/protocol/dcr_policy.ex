@@ -150,14 +150,26 @@ defmodule Lockspire.Protocol.DcrPolicy do
       |> List.wrap()
       |> Enum.map(&URI.parse/1)
 
-    requested_schemes = parsed |> Enum.map(& &1.scheme) |> Enum.reject(&is_nil/1) |> Enum.uniq()
-    requested_hosts = parsed |> Enum.map(& &1.host) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+    case Enum.find(parsed, fn uri -> is_nil(uri.scheme) or is_nil(uri.host) end) do
+      %URI{} ->
+        {:error, :invalid_client_metadata,
+         %{field: :redirect_uris, reason: :unparseable, allowed: []}}
 
-    with {:ok, schemes} <-
-           intersect_axis(:redirect_uri_scheme, requested_schemes, server_schemes, iat_schemes),
-         {:ok, hosts} <-
-           intersect_axis(:redirect_uri_host, requested_hosts, server_hosts, iat_hosts) do
-      {:ok, schemes, hosts}
+      nil ->
+        requested_schemes = parsed |> Enum.map(& &1.scheme) |> Enum.uniq()
+        requested_hosts = parsed |> Enum.map(& &1.host) |> Enum.uniq()
+
+        with {:ok, schemes} <-
+               intersect_axis(
+                 :redirect_uri_scheme,
+                 requested_schemes,
+                 server_schemes,
+                 iat_schemes
+               ),
+             {:ok, hosts} <-
+               intersect_axis(:redirect_uri_host, requested_hosts, server_hosts, iat_hosts) do
+          {:ok, schemes, hosts}
+        end
     end
   end
 
