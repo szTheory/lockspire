@@ -28,6 +28,22 @@ defmodule Lockspire.Protocol.DcrPolicy do
 
   Mirrors `Lockspire.Protocol.ParPolicy` shape (the only existing resolver precedent in
   the repo).
+
+  ## Empty allowlist semantics (operator UX hazard)
+
+  Migration A defaults every `dcr_allowed_*` axis to `[]` (Postgres `DEFAULT '{}'`). A host
+  app that runs the migration but never runs an operator-mint script will, by default,
+  reject **every** DCR request with `{:error, :invalid_client_metadata,
+  %{reason: :not_in_allowlist, allowed: []}}`. The empty `allowed` list tells the
+  registrant "no values are allowed" — not "the operator hasn't configured DCR yet."
+
+  This is intended secure-by-default behaviour (D-06: operator must explicitly populate)
+  but is operator-confusing if paired with `registration_policy != :disabled`. Phase 26's
+  intake validator should detect "registration_policy != :disabled AND every
+  dcr_allowed_* is `[]`" and emit a more informative error (`reason: :dcr_unconfigured`)
+  to disambiguate from a legitimate per-axis allowlist rejection. Until then, operators
+  diagnosing "every DCR request returns :not_in_allowlist with allowed: []" should check
+  the server-policy DCR fields are populated.
   """
 
   alias Lockspire.Domain.ServerPolicy
