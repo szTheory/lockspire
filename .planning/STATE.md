@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: milestone
 status: planning
-stopped_at: Phase 27 context gathered (assumptions mode)
-last_updated: "2026-04-26T21:08:29.536Z"
+stopped_at: Completed 27-01-PLAN.md
+last_updated: "2026-04-26T21:26:22.854Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_plans: 17
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -61,6 +61,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Mismatch between URL client_id and RAT-bound client.client_id ALWAYS collapses to {:error, :invalid_token} to prevent client-id enumeration.
 - update/2 public arity strictly adhered to (client_id_from_url, request_map) to keep the protocol pure.
 - Decided to inspect the entire row instead of row.payload since payload doesn't exist on AuditEventRecord.
+- Decided to strictly follow RFC 7591 serialization without extraneous secrets leaks.
 
 ### Blockers/Concerns
 
@@ -71,9 +72,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Run `/gsd-discuss-phase 25` to enter Phase 25 (DCR Storage Skeleton, Domain Types, and Policy Resolver) discussion before planning.
 
-**Resume file:** --resume-file
+**Resume file:** None
 
-**Stopped at:** Phase 27 context gathered (assumptions mode)
+**Stopped at:** Completed 27-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
@@ -81,4 +82,4 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Completed Milestone:** v1.4 (JAR and Request Objects) — archived to `.planning/milestones/v1.4-*`.
 
-**Planned Phase:** 26 (Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core) — 7 plans — 2026-04-26T20:05:46.785Z
+**Planned Phase:** 27 (HTTP Surface — Registration and Management Controllers) — 2 plans — 2026-04-26T21:22:35.670Z

@@ -19,7 +19,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 **: Self-registered clients are PKCE-required by floor; the intake refuses any metadata that would lower PKCE for a DCR client, and the resulting `Domain.Client` row has `pkce_required: true`.
 - [x] **DCR-04
 **: Successful registration issues `client_id`, `client_secret`, and `registration_access_token`; `client_secret` and `registration_access_token` are hashed at rest using `Lockspire.Security.Policy` and returned in plaintext exactly once in the registration response.
-- [ ] **DCR-05**: The success response conforms to RFC 7591 §3.2.1 including `client_id_issued_at`, `client_secret_expires_at`, and `registration_client_uri`.
+- [x] **DCR-05
+**: The success response conforms to RFC 7591 §3.2.1 including `client_id_issued_at`, `client_secret_expires_at`, and `registration_client_uri`.
 
 ### Operator Policy Controls
 
