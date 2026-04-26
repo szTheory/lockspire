@@ -4,13 +4,14 @@ milestone: v1.4
 milestone_name: milestone
 status: Roadmap defined; ready for `/gsd-discuss-phase 25`
 stopped_at: Phase 25 context gathered (assumptions mode)
-last_updated: "2026-04-26T14:33:40.311Z"
+last_updated: "2026-04-26T15:33:18.994Z"
 last_activity: 2026-04-26 — v1.5 roadmap defined, 27/27 DCR requirements mapped across Phase 25 — Phase 29
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 8
   completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -71,3 +72,5 @@ See `PROJECT.md` Key Decisions and archived milestones.
 **Completed Milestone:** v1.3 (PAR Policy Controls) — archived to `.planning/milestones/v1.3-*`.
 
 **Completed Milestone:** v1.4 (JAR and Request Objects) — archived to `.planning/milestones/v1.4-*`.
+
+**Planned Phase:** 25 (DCR Storage Skeleton, Domain Types, and Policy Resolver) — 8 plans — 2026-04-26T15:33:18.989Z
