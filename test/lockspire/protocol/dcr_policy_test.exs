@@ -178,6 +178,39 @@ defmodule Lockspire.Protocol.DcrPolicyTest do
              DcrPolicy.resolve(open_policy(), nil, inbound)
   end
 
+  test "resolve/3 redirect_uri host comparison is case-insensitive (RFC 3986 §3.2.2)" do
+    inbound = %{"redirect_uris" => ["https://Partner.Example.com/callback"]}
+
+    assert {:ok, %Resolved{} = resolved} = DcrPolicy.resolve(open_policy(), nil, inbound)
+    assert resolved.allowed_redirect_uri_hosts == ["partner.example.com"]
+    assert resolved.allowed_redirect_uri_schemes == ["https"]
+  end
+
+  test "resolve/3 redirect_uri scheme comparison is case-insensitive (RFC 3986 §3.1)" do
+    inbound = %{"redirect_uris" => ["HTTPS://partner.example.com/callback"]}
+
+    assert {:ok, %Resolved{} = resolved} = DcrPolicy.resolve(open_policy(), nil, inbound)
+    assert resolved.allowed_redirect_uri_schemes == ["https"]
+  end
+
+  test "resolve/3 mixed-case operator allowlist accepts lowercased inbound" do
+    server = %ServerPolicy{
+      registration_policy: :open,
+      dcr_allowed_scopes: ["openid"],
+      dcr_allowed_grant_types: ["authorization_code"],
+      dcr_allowed_response_types: ["code"],
+      dcr_allowed_redirect_uri_schemes: ["HTTPS"],
+      dcr_allowed_redirect_uri_hosts: ["PARTNER.EXAMPLE.COM"],
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic"]
+    }
+
+    inbound = %{"redirect_uris" => ["https://partner.example.com/callback"]}
+
+    assert {:ok, %Resolved{} = resolved} = DcrPolicy.resolve(server, nil, inbound)
+    assert resolved.allowed_redirect_uri_hosts == ["partner.example.com"]
+    assert resolved.allowed_redirect_uri_schemes == ["https"]
+  end
+
   test "resolve/3 rejects unparseable redirect_uris (relative path)" do
     inbound = %{"redirect_uris" => ["/callback"]}
 

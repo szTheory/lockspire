@@ -138,6 +138,13 @@ defmodule Lockspire.Protocol.DcrPolicy do
     end
   end
 
+  # RFC 3986 §3.1 (scheme) and §3.2.2 (host) declare both case-insensitive. We canonicalise
+  # to lowercase on both sides of the intersection so operator allowlists like
+  # `["partner.example.com"]` accept inbound `"https://Partner.Example.com/cb"`, and so an
+  # operator who happens to seed mixed-case `"PARTNER.EXAMPLE.COM"` does not silently brick
+  # the DCR endpoint for every correctly-lowercased registrant. Both lists must be downcased
+  # — canonicalising only the inbound side perpetuates the bug when the operator stores
+  # mixed case.
   defp intersect_redirect_uris(
          redirect_uris,
          server_schemes,
@@ -156,22 +163,30 @@ defmodule Lockspire.Protocol.DcrPolicy do
          %{field: :redirect_uris, reason: :unparseable, allowed: []}}
 
       nil ->
-        requested_schemes = parsed |> Enum.map(& &1.scheme) |> Enum.uniq()
-        requested_hosts = parsed |> Enum.map(& &1.host) |> Enum.uniq()
+        requested_schemes = parsed |> Enum.map(&String.downcase(&1.scheme)) |> Enum.uniq()
+        requested_hosts = parsed |> Enum.map(&String.downcase(&1.host)) |> Enum.uniq()
 
         with {:ok, schemes} <-
                intersect_axis(
                  :redirect_uri_scheme,
                  requested_schemes,
-                 server_schemes,
-                 iat_schemes
+                 downcase_list(server_schemes),
+                 downcase_list(iat_schemes)
                ),
              {:ok, hosts} <-
-               intersect_axis(:redirect_uri_host, requested_hosts, server_hosts, iat_hosts) do
+               intersect_axis(
+                 :redirect_uri_host,
+                 requested_hosts,
+                 downcase_list(server_hosts),
+                 downcase_list(iat_hosts)
+               ) do
           {:ok, schemes, hosts}
         end
     end
   end
+
+  defp downcase_list(nil), do: nil
+  defp downcase_list(list) when is_list(list), do: Enum.map(list, &String.downcase/1)
 
   defp scope_inbound(%{"scope" => scope}) when is_binary(scope),
     do: String.split(scope, " ", trim: true)
