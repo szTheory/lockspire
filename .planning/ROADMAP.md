@@ -35,7 +35,15 @@
   2. `Lockspire.Domain.ServerPolicy` exposes a 3-mode `registration_policy` (`:disabled` default | `:initial_access_token` | `:open`) plus DCR allowlists (scopes, grant_types, response_types, redirect-URI hosts/schemes, `token_endpoint_auth_method`) and DCR defaults (client lifetime, `client_secret` expiry, RAT lifetime), all readable through `Admin.ServerPolicy`.
   3. `Lockspire.Protocol.DcrPolicy.resolve(server_policy, iat_overrides_or_nil, inbound_metadata)` returns an effective policy that is the intersection of all three inputs, never widens any field, and rejects metadata that exceeds an allowlist with a result tagged `invalid_client_metadata`.
   4. An invariant test asserts that the set of `token_endpoint_auth_method` values DCR accepts equals the intersection of `ServerPolicy.dcr_allowed_token_endpoint_auth_methods` and `Lockspire.Protocol.Discovery.token_endpoint_auth_methods_supported/0` (and fails if either side drifts).
-**Plans**: TBD
+**Plans**: 8 plans
+- [ ] 25-01-PLAN.md — Discovery `/0` accessor extraction (unblocks invariant test)
+- [ ] 25-02-PLAN.md — Migration A: extend `lockspire_server_policies` with 10 DCR columns
+- [ ] 25-03-PLAN.md — Migration B: create `lockspire_initial_access_tokens` with `unique_index([:token_hash])`
+- [ ] 25-04-PLAN.md — Domain layer extensions (`ServerPolicy`, `Client`, new `InitialAccessToken`) + IAT fixture
+- [ ] 25-05-PLAN.md — Migration C: extend `lockspire_clients` (FK to IAT) + record schema widening
+- [ ] 25-06-PLAN.md — `Admin.ServerPolicy.{get,put}_dcr_policy/0,1` with read-merge-write preservation
+- [ ] 25-07-PLAN.md — `Lockspire.Protocol.DcrPolicy.resolve/3` intersection-only resolver + unit tests
+- [ ] 25-08-PLAN.md — Discovery-binding invariant test (D-19)
 
 #### Phase 26: Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core
 **Goal**: All RFC 7591/7592 protocol behavior — intake validation, RAT/IAT issuance, atomic IAT redemption, hash-at-rest, and DCR-flavored audit attribution — is implemented as `Plug.Conn`-free protocol modules with telemetry redaction proven by test, ready for thin HTTP adapters.
@@ -90,7 +98,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 25. DCR Storage Skeleton, Domain Types, and Policy Resolver | 0/0 | Not started | - |
+| 25. DCR Storage Skeleton, Domain Types, and Policy Resolver | 0/8 | Not started | - |
 | 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 0/0 | Not started | - |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
