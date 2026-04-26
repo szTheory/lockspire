@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: JAR and Request Objects
-status: completed
-stopped_at: Archived v1.4 milestone
-last_updated: "2026-04-26T01:15:37Z"
+milestone: v1.5
+milestone_name: Dynamic Client Registration
+status: planning
+stopped_at: null
+last_updated: "2026-04-26T00:00:00Z"
 last_activity: 2026-04-26
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 18
-  completed_plans: 18
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,26 +22,22 @@ See: `.planning/PROJECT.md` (updated 2026-04-26)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Milestone v1.4 is archived; start the next milestone with `$gsd-new-milestone`.
+**Current focus:** Milestone v1.5 — Dynamic Client Registration. Define requirements and roadmap, then begin Phase 25 planning.
 
 ## Current Position
 
-Milestone: v1.4 — JAR and Request Objects
+Phase: Not started (defining requirements)
 
-Phase: 24
+Plan: —
 
-Plan: 02
+Status: Defining requirements
 
-Status: Completed
-
-Last activity: 2026-04-26
+Last activity: 2026-04-26 — Milestone v1.5 started
 
 ## Performance Metrics
 
-- Phases completed: 4/4 (v1.4)
-- Plans completed: 18/18 (v1.4)
-- Recorded tasks completed: 15 (v1.4)
-- Timeline: 2026-04-24 -> 2026-04-26
+- Phases completed: 0/0 (v1.5)
+- Plans completed: 0/0 (v1.5)
 
 ## Accumulated Context
 
@@ -50,33 +46,22 @@ Last activity: 2026-04-26
 See `PROJECT.md` Key Decisions and archived milestones.
 
 - Milestone v1.3 successfully established PAR policy controls (Global/Client/Effective) and hardened the truthful PAR support surface.
-- Milestone v1.4 expands interoperability via JWT Secured Authorization Requests (JAR - RFC 9101).
-- Phase 21 structure: 01 (Foundation/Parsing), 02 (Signatures), 03 (Security Claims).
-- Reuse existing client key infrastructure for request object signature validation.
-- Use JOSE.JWT.peek_payload and JOSE.JWS.peek_protected for initial unverified JAR decoding.
-- Represent JAR as a struct with :claims and :header fields.
-- Consume signed request objects before `validate_with_client/3` so the existing `/authorize` pipeline stays unchanged after projection.
-- Treat `request` + `request_uri` as a sealed-envelope conflict and pin the request-object reason-code matrix at the protocol seam.
-- Use a fresh JAR-capable client fixture in the controller test describe block because client updates do not persist jwks.
-- Assert the browser-error page by its rendered headline and the valid-JAR handoff by the existing /sign-in redirect shape.
-- Treat the happy-path redirect as the redirect-safe proof because D-16 makes JAR-failure redirect safety unreachable at this seam.
-- Extend the existing Phase 15 PAR e2e file with one JAR-via-PAR branch instead of creating a parallel phase22 JAR e2e file.
-- Valid Basic auth remains required at /par; JAR signing is additive and does not replace client authentication.
-- Proved the JAR request object composes through /par, /authorize, consent, and /token without changing the downstream PAR flow.
-- Final v1.4 closure records all shipped JAR requirements as complete while preserving JAR-04 as deferred.
+- Milestone v1.4 expanded interoperability via JWT Secured Authorization Requests (JAR — RFC 9101); JAR-04 (encrypted request objects) intentionally deferred.
+- Milestone v1.5 adopts Dynamic Client Registration (RFC 7591/7592) with operator policy controls as the next narrow protocol wedge — turns Lockspire from operator-tended into partner-buildable for the partner-ecosystem core target.
+- v1.5 explicitly excludes software statements (RFC 7591 §2.3), external-IdP federation, FAPI policy bundles, and JAR-04 encryption to preserve truthful support claims and embedded-library shape.
 
 ### Blockers/Concerns
 
 - No current execution blockers.
-- Milestone v1.4 is complete and ready for archive handoff.
+- v1.5 requirements and roadmap not yet defined.
 
 ## Session Continuity
 
-**Next action:** Start the next milestone planning step.
+**Next action:** Define v1.5 requirements, then run `/gsd-plan-phase 25` once roadmap is approved.
 
 **Resume file:** None
 
-**Stopped at:** Archived v1.4 milestone
+**Stopped at:** Milestone v1.5 started — defining requirements
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
