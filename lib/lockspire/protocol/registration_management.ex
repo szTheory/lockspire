@@ -136,6 +136,61 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     end
   end
 
+  @spec rotate_registration_access_token(Client.t()) ::
+          {:ok, String.t(), Client.t()} | {:error, term()}
+  def rotate_registration_access_token(%Client{} = client) do
+    {new_rat_plaintext, new_rat_hash} = RegistrationAccessToken.generate()
+
+    result =
+      Repository.transact(fn ->
+        repo = Config.repo!()
+
+        ClientRecord
+        |> where([c], c.id == ^client.id)
+        |> lock("FOR UPDATE")
+        |> repo.one()
+        |> case do
+          nil ->
+            repo.rollback(:not_found)
+
+          record ->
+            record
+            |> Ecto.Changeset.change(
+              registration_access_token_hash: new_rat_hash,
+              updated_at: DateTime.utc_now()
+            )
+            |> repo.update()
+            |> case do
+              {:ok, updated_record} ->
+                audit_attrs = %{
+                  action: :dcr_management_rat_rotated,
+                  outcome: :success,
+                  actor: %{type: :operator, id: "admin-ui"},
+                  resource: %{type: :client, id: client.client_id},
+                  metadata: %{}
+                }
+
+                case Repository.append_audit_event(audit_attrs) do
+                  {:ok, _} -> ClientRecord.to_domain(updated_record)
+                  {:error, reason} -> repo.rollback(reason)
+                end
+
+              {:error, reason} ->
+                repo.rollback(reason)
+            end
+        end
+      end)
+
+    case result do
+      {:ok, updated_client} ->
+        emit_rat_rotated(updated_client)
+        {:ok, new_rat_plaintext, updated_client}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # Private Helpers
 
   defp persist_update(%Client{} = client, metadata, new_rat_hash) do

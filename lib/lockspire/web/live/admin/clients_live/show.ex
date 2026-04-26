@@ -26,7 +26,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        effective_par_policy: nil,
        form_errors: [],
        rotation_errors: [],
-       revealed_secret: nil
+       revealed_secret: nil,
+       revealed_rat: nil
      )}
   end
 
@@ -102,6 +103,31 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
      assign(socket,
        rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
      )}
+  end
+
+  def handle_event("rotate_rat", %{"rotate" => %{"confirm" => "true"}}, socket) do
+    case Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(socket.assigns.client) do
+      {:ok, plaintext, updated_client} ->
+        {:noreply, assign(socket, client: updated_client, revealed_rat: plaintext, rotation_errors: [])}
+
+      {:error, errors} when is_list(errors) ->
+        {:noreply, assign(socket, rotation_errors: errors)}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket, rotation_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+    end
+  end
+
+  def handle_event("rotate_rat", _params, socket) do
+    {:noreply,
+     assign(socket,
+       rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
+     )}
+  end
+
+  def handle_event("acknowledge_rat", _params, socket) do
+    {:noreply, assign(socket, revealed_rat: nil)}
   end
 
   def handle_event(
@@ -187,6 +213,53 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
+        :if={@client.provenance == :self_registered}
+        title="Self-registered client (DCR)"
+        subtitle="This client was dynamically registered by a third party."
+      >
+        <p>Registration Client URI: <code>{@client.registration_client_uri || "N/A"}</code></p>
+        <div class="lockspire-admin-actions">
+          <.link patch={show_path(@client.client_id, :rotate_registration_access_token)}>
+            Rotate Registration Access Token (RAT)
+          </.link>
+        </div>
+      </AdminComponents.section_card>
+
+      <AdminComponents.section_card
+        :if={@action == :rotate_registration_access_token}
+        title="Rotate Registration Access Token (RAT)"
+        subtitle="Rotation is explicit and reveals the new RAT once."
+      >
+        <section class="lockspire-admin-form-shell">
+          <header>
+            <p>Lockspire reveals the new RAT once. It is redacted immediately after this state.</p>
+          </header>
+
+          <ul :if={@rotation_errors != []} class="lockspire-admin-errors">
+            <%= for error <- @rotation_errors do %>
+              <li>{inspect(error)}</li>
+            <% end %>
+          </ul>
+
+          <div :if={@revealed_rat} class="lockspire-admin-secret-reveal">
+            <h3>New Registration Access Token</h3>
+            <code>{@revealed_rat}</code>
+            <p>Copy it now. Lockspire does not store or re-show plaintext tokens.</p>
+            <button type="button" phx-click="acknowledge_rat">I have copied the token</button>
+          </div>
+
+          <form :if={is_nil(@revealed_rat)} phx-submit="rotate_rat">
+            <label>
+              <input type="checkbox" name="rotate[confirm]" value="true" />
+              I understand the previous RAT stops being the current credential after rotation.
+            </label>
+
+            <button type="submit">Rotate RAT</button>
+          </form>
+        </section>
+      </AdminComponents.section_card>
+
+      <AdminComponents.section_card
         :if={@action == :rotate_secret}
         title="Secret rotation"
         subtitle="Rotation is explicit and reveals the new secret once."
@@ -252,7 +325,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   defp normalize_action(action)
-       when action in [:show, :edit, :redirects, :rotate_secret, :par_policy],
+       when action in [:show, :edit, :redirects, :rotate_secret, :par_policy, :rotate_registration_access_token],
        do: action
 
   defp normalize_action(_action), do: :show
@@ -262,6 +335,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp show_path(client_id, :par_policy), do: show_path(client_id, :show) <> "/par-policy"
   defp show_path(client_id, :redirects), do: show_path(client_id, :show) <> "/redirects"
   defp show_path(client_id, :rotate_secret), do: show_path(client_id, :show) <> "/rotate-secret"
+  defp show_path(client_id, :rotate_registration_access_token), do: show_path(client_id, :show) <> "/rotate-registration-access-token"
 
   defp split_csv(value) when is_binary(value) do
     value

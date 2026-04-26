@@ -54,6 +54,12 @@ defmodule Lockspire.Web.Router do
       :rotate_secret
     )
 
+    live(
+      "/admin/clients/:client_id/rotate-registration-access-token",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :rotate_registration_access_token
+    )
+
     live("/admin/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
     live("/admin/policies/dcr", Lockspire.Web.Live.Admin.PoliciesLive.Dcr, :show)
   end
