@@ -3,13 +3,11 @@ defmodule Lockspire.Protocol.RegistrationTest do
   import Ecto.Query
 
   alias Lockspire.Domain.Client
-  alias Lockspire.Domain.InitialAccessToken, as: IatDomain
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.Registration.Error
   alias Lockspire.Protocol.Registration.Success
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
-  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
 
