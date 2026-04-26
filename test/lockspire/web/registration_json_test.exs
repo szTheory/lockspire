@@ -33,7 +33,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
 
   test "read_response/1 formats UNIX epochs but omits secrets" do
     result = RegistrationJSON.read_response(@client)
-    
+
     assert result.client_id == "test-client-123"
     refute Map.has_key?(result, :client_secret)
     refute Map.has_key?(result, :registration_access_token)
@@ -48,7 +48,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     }
 
     result = RegistrationJSON.update_response(update_success)
-    
+
     assert result.client_id == "test-client-123"
     refute Map.has_key?(result, :client_secret)
     assert result.registration_access_token == "rat-456"
@@ -56,7 +56,12 @@ defmodule Lockspire.Web.RegistrationJSONTest do
   end
 
   test "error_response/1 maps code to error string" do
-    error = %Registration.Error{code: :invalid_client_metadata, field: :redirect_uris, reason: :invalid_uri}
+    error = %Registration.Error{
+      code: :invalid_client_metadata,
+      field: :redirect_uris,
+      reason: :invalid_uri
+    }
+
     result = RegistrationJSON.error_response(error)
 
     assert result.error == "invalid_client_metadata"
