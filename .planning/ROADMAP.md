@@ -72,6 +72,27 @@ Plans:
 
 **Goal**: Final end-to-end verification and traceability for Milestone v1.4.
 
+### Phase 24: Verification and Milestone Closure
+
+**Goal**: Final end-to-end verification and traceability for Milestone v1.4.
+
+**Depends on**: Phase 23 (JAR Operator UX and Discovery)
+
+**Plans:** 2 closure plans
+
+**Requirements:** `JAR-01`, `JAR-02`, `JAR-03`, `JAR-05`, `JAR-06`
+
+Plans:
+
+- [x] 24-01-PLAN.md — Produce final verification and validation reports for v1.4
+- [x] 24-02-PLAN.md — Reconcile traceability, planning state, and milestone closeout records
+
+Success criteria:
+
+1. Every shipped JAR requirement has exact traceability to implementation and tests, with JAR-04 remaining deferred.
+2. The milestone closure evidence is durable, aligned with the verification/validation artifacts, and recorded in the phase 24 summaries.
+3. The roadmap and state reflect the completed milestone without presenting Phase 24 as an open next action.
+
 ## Reference
 
 - Milestone archive: [`.planning/milestones/v1.3-ROADMAP.md`](milestones/v1.3-ROADMAP.md)

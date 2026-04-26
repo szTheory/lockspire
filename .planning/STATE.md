@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: JAR and Request Objects
-status: executing
-stopped_at: Completed 22-07-PLAN.md
-last_updated: "2026-04-25T21:58:28.365Z"
-last_activity: 2026-04-25
+status: completed
+stopped_at: Completed 24-02-SUMMARY.md
+last_updated: "2026-04-26T00:42:36Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 4
+  total_plans: 18
+  completed_plans: 18
   percent: 100
 ---
 
@@ -22,26 +22,26 @@ See: `.planning/PROJECT.md` (updated 2026-04-24)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 22 — Request Object Integration
+**Current focus:** Milestone v1.4 is closed; archive handoff pending.
 
 ## Current Position
 
 Milestone: v1.4 — JAR and Request Objects
 
-Phase: 22
+Phase: 24
 
-Plan: 07
+Plan: 02
 
 Status: Completed
 
-Last activity: 2026-04-25
+Last activity: 2026-04-26
 
 ## Performance Metrics
 
-- Phases completed: 0/4 (v1.4)
-- Plans completed: 6/10 (v1.4)
-- Recorded tasks completed: 9 (v1.4)
-- Timeline: 2026-04-24 -> present
+- Phases completed: 4/4 (v1.4)
+- Plans completed: 18/18 (v1.4)
+- Recorded tasks completed: 15 (v1.4)
+- Timeline: 2026-04-24 -> 2026-04-26
 
 ## Accumulated Context
 
@@ -63,21 +63,23 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Extend the existing Phase 15 PAR e2e file with one JAR-via-PAR branch instead of creating a parallel phase22 JAR e2e file.
 - Valid Basic auth remains required at /par; JAR signing is additive and does not replace client authentication.
 - Proved the JAR request object composes through /par, /authorize, consent, and /token without changing the downstream PAR flow.
+- Final v1.4 closure records all shipped JAR requirements as complete while preserving JAR-04 as deferred.
 
 ### Blockers/Concerns
 
 - No current execution blockers.
+- Milestone v1.4 is complete and ready for archive handoff.
 
 ## Session Continuity
 
-**Next action:** Continue with remaining Phase 22 work or milestone verification.
+**Next action:** Archive or transition to the next milestone planning step.
 
 **Resume file:** None
 
-**Stopped at:** Completed 22-07-PLAN.md
+**Stopped at:** Completed 24-02-SUMMARY.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
 **Completed Milestone:** v1.3 (PAR Policy Controls) — archived to `.planning/milestones/v1.3-*`.
 
-**Planned Phase:** 22 (Request Object Integration) — 7 plans — 2026-04-25T16:08:21.045Z
+**Planned Phase:** 24 (Verification and Milestone Closure) — 2 plans — 2026-04-26T00:42:36Z
