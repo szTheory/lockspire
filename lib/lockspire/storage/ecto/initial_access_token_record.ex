@@ -32,10 +32,15 @@ defmodule Lockspire.Storage.Ecto.InitialAccessTokenRecord do
     timestamps()
   end
 
+  # `:id` is intentionally NOT cast here. `lockspire_initial_access_tokens` uses Postgres
+  # autoincrement IDs (unlike the singleton `lockspire_server_policies` row, where ID is
+  # fixed at 1 and ServerPolicyRecord.changeset/2 must cast it). Letting a caller pass a
+  # `%InitialAccessToken{id: 5}` through the cast list would allow fixtures or admin code
+  # to silently override the generated ID and collide with an existing row, surfacing as a
+  # unique-constraint violation that is hard to diagnose.
   def changeset(record, %InitialAccessToken{} = iat) do
     record
     |> cast(Map.from_struct(iat), [
-      :id,
       :token_hash,
       :expires_at,
       :single_use,
