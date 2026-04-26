@@ -55,6 +55,19 @@ Plans:
 
 **Goal**: Expose JAR capabilities in discovery metadata and provide operator controls for required-JAR policies.
 
+**Plans:** 6 plans
+
+**Requirements:** `JAR-05`, `JAR-06`
+
+Plans:
+
+- [ ] 23-01-PLAN.md — Publish truthful JAR discovery metadata
+- [ ] 23-02-PLAN.md — Persist the global JAR policy default
+- [ ] 23-03-PLAN.md — Resolve and administer global JAR enforcement
+- [ ] 23-04-PLAN.md — Persist and validate client JAR overrides
+- [ ] 23-05-PLAN.md — Add the global JAR policy admin page
+- [ ] 23-06-PLAN.md — Add client JAR override workflow and docs
+
 ### Phase 24: Verification and Milestone Closure
 
 **Goal**: Final end-to-end verification and traceability for Milestone v1.4.
