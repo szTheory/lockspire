@@ -94,43 +94,41 @@ Explicitly excluded. Documented to prevent scope creep and to keep public suppor
 
 ## Traceability
 
-Empty initially; populated by the roadmapper when phases are mapped.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DCR-01 | TBD | Pending |
-| DCR-02 | TBD | Pending |
-| DCR-03 | TBD | Pending |
-| DCR-04 | TBD | Pending |
-| DCR-05 | TBD | Pending |
-| DCR-06 | TBD | Pending |
-| DCR-07 | TBD | Pending |
-| DCR-08 | TBD | Pending |
-| DCR-09 | TBD | Pending |
-| DCR-10 | TBD | Pending |
-| DCR-11 | TBD | Pending |
-| DCR-12 | TBD | Pending |
-| DCR-13 | TBD | Pending |
-| DCR-14 | TBD | Pending |
-| DCR-15 | TBD | Pending |
-| DCR-16 | TBD | Pending |
-| DCR-17 | TBD | Pending |
-| DCR-18 | TBD | Pending |
-| DCR-19 | TBD | Pending |
-| DCR-20 | TBD | Pending |
-| DCR-21 | TBD | Pending |
-| DCR-22 | TBD | Pending |
-| DCR-23 | TBD | Pending |
-| DCR-24 | TBD | Pending |
-| DCR-25 | TBD | Pending |
-| DCR-26 | TBD | Pending |
-| DCR-27 | TBD | Pending |
+| DCR-01 | Phase 27 | Pending |
+| DCR-02 | Phase 26 | Pending |
+| DCR-03 | Phase 26 | Pending |
+| DCR-04 | Phase 26 | Pending |
+| DCR-05 | Phase 27 | Pending |
+| DCR-06 | Phase 25 | Pending |
+| DCR-07 | Phase 25 | Pending |
+| DCR-08 | Phase 25 | Pending |
+| DCR-09 | Phase 25 | Pending |
+| DCR-10 | Phase 25 | Pending |
+| DCR-11 | Phase 26 | Pending |
+| DCR-12 | Phase 28 | Pending |
+| DCR-13 | Phase 27 | Pending |
+| DCR-14 | Phase 27 | Pending |
+| DCR-15 | Phase 27 | Pending |
+| DCR-16 | Phase 29 | Pending |
+| DCR-17 | Phase 29 | Pending |
+| DCR-18 | Phase 28 | Pending |
+| DCR-19 | Phase 28 | Pending |
+| DCR-20 | Phase 28 | Pending |
+| DCR-21 | Phase 28 | Pending |
+| DCR-22 | Phase 26 | Pending |
+| DCR-23 | Phase 26 | Pending |
+| DCR-24 | Phase 29 | Pending |
+| DCR-25 | Phase 29 | Pending |
+| DCR-26 | Phase 29 | Pending |
+| DCR-27 | Phase 29 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 27 total
-- Mapped to phases: 0 (pending roadmapper)
-- Unmapped: 27 ⚠️ (will be resolved by ROADMAP.md generation)
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 at v1.5 milestone start.*
+*Last updated: 2026-04-26 at v1.5 roadmap definition (Phase 25 — Phase 29 mapped).*
