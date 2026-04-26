@@ -51,8 +51,10 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 ### Telemetry & Audit
 
 - [ ] **DCR-21**: DCR lifecycle telemetry events are emitted for the full register / read / update / delete / RAT-rotate / unauthorized-management surface and the IAT mint / use / revoke surface; event names are namespaced under `[:lockspire, :dcr, ...]` and `[:lockspire, :iat, ...]`.
-- [ ] **DCR-22**: `Lockspire.Admin.Clients.actor_from_attrs/1` is tightened so DCR codepaths attribute `:dcr` or `:self_registered_client` actors and never fall through to the `:operator` default; an explicit test fails if a DCR write logs an `:operator`-flavored audit event.
-- [ ] **DCR-23**: Telemetry redaction tests cover RAT, IAT, and `client_secret` plaintext — these values must never appear in telemetry payloads, audit rows, or log lines.
+- [x] **DCR-22
+**: `Lockspire.Admin.Clients.actor_from_attrs/1` is tightened so DCR codepaths attribute `:dcr` or `:self_registered_client` actors and never fall through to the `:operator` default; an explicit test fails if a DCR write logs an `:operator`-flavored audit event.
+- [x] **DCR-23
+**: Telemetry redaction tests cover RAT, IAT, and `client_secret` plaintext — these values must never appear in telemetry payloads, audit rows, or log lines.
 
 ### SECURITY, Docs & Closure
 
