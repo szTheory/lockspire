@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: milestone
-status: execution
-stopped_at: Completed 27-02-PLAN.md
-last_updated: "2026-04-26T21:30:00.000Z"
+status: planning
+stopped_at: Completed 28-01-PLAN.md
+last_updated: "2026-04-26T22:06:37.289Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 17
-  completed_plans: 17
-  percent: 100
+  total_plans: 21
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State
@@ -62,6 +62,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Decided to inspect the entire row instead of row.payload since payload doesn't exist on AuditEventRecord.
 - Decided to strictly follow RFC 7591 serialization without extraneous secrets leaks.
 - Phase 27 completed: Implemented RegistrationJSON formatting and RegistrationController handling RFC 7591/7592 requests.
+- Used an embedded Ecto schema for the DCR policy form to safely parse and validate JSON-like lists from a UI representation.
 
 ### Blockers/Concerns
 
@@ -73,7 +74,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 27-02-PLAN.md
+**Stopped at:** Completed 28-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
