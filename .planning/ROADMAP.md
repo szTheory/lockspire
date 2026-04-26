@@ -55,7 +55,14 @@
   3. `Lockspire.Protocol.InitialAccessToken.redeem/1` is atomic — expired, revoked, or already-used IATs return `{:error, :invalid_token}` (mapped to `401 invalid_token` at the HTTP edge later), and successful redemption marks the IAT used in the same DB transaction with no observable race window.
   4. `Lockspire.Admin.Clients.actor_from_attrs/1` attributes DCR codepaths as `:dcr` or `:self_registered_client` (never falls through to `:operator`); a regression test fails if any DCR write emits an `:operator`-flavored audit event.
   5. Telemetry redaction tests prove that RAT plaintext, IAT plaintext, and `client_secret` plaintext never appear in any `[:lockspire, :dcr, ...]` or `[:lockspire, :iat, ...]` event payload, audit row, or log line emitted by the new pipeline.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 26-01-PLAN.md — Wave 0 foundations: promote `Lockspire.Clients.generate_client_id/0` to public, tighten `Lockspire.Admin.Clients.actor_from_attrs/1` to raise on missing actor.type (D-22), and create six Wave-0 stub test files
+- [ ] 26-02-PLAN.md — `Lockspire.Protocol.RegistrationAccessToken` (RAT primitives — generate / hash / verify, no side effects)
+- [ ] 26-03-PLAN.md — `Lockspire.Protocol.InitialAccessToken.redeem/1` + atomic `Repository.redeem_initial_access_token/2` with concurrent-redemption proof (DCR-11)
+- [ ] 26-04-PLAN.md — DCR test fixtures (`Lockspire.Test.Fixtures.DcrFixtures` — RFC 7591 metadata maps + `register_request/1` builder)
+- [ ] 26-05-PLAN.md — `Lockspire.Protocol.Registration.register/1` intake orchestrator with private validator pipeline (DCR-02, DCR-03, DCR-04)
+- [ ] 26-06-PLAN.md — `Lockspire.Protocol.RegistrationManagement` RFC 7592 read/update/delete + RAT rotation + `Repository.get_client_by_registration_access_token_hash/1`
+- [ ] 26-07-PLAN.md — Cross-cutting closing tests: DCR audit attribution regression sweep (DCR-22) + DCR telemetry redaction single-sweep (DCR-23, D-27, D-28)
 
 #### Phase 27: HTTP Surface — Registration and Management Controllers
 **Goal**: Partners can call the four DCR endpoints over HTTP — `POST /register` with policy gating, `GET /register/:client_id` with RAT authentication, `PUT /register/:client_id` with full-replace and RAT rotation, `DELETE /register/:client_id` with soft-disable — and the success body matches RFC 7591 §3.2.1 exactly.
@@ -99,7 +106,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 25. DCR Storage Skeleton, Domain Types, and Policy Resolver | 0/8 | Not started | - |
-| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 0/0 | Not started | - |
+| 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 0/7 | Not started | - |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
 | 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/0 | Not started | - |
