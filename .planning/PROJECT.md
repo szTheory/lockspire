@@ -10,11 +10,11 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived three planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, and v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring.
+Lockspire has now archived five planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice without widening the embedded-library shape.
 
 At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
-Lockspire can now accept pushed authorization requests at `/par`, consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, reject expired/replayed/wrong-client references safely, and publish only the narrow PAR slice it actually ships through discovery and public docs.
+Lockspire can now accept pushed authorization requests at `/par`, consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, enforce global and per-client PAR policy controls, and validate the shipped JAR request-object slice while keeping JAR-04 decryption deferred.
 
 ## Next Milestone Goals
 
@@ -101,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after archiving the v1.2 PAR Foundation milestone.*
+*Last updated: 2026-04-26 after archiving the v1.4 JAR and Request Objects milestone.*

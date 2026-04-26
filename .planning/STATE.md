@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: JAR and Request Objects
 status: completed
-stopped_at: Completed 24-02-SUMMARY.md
-last_updated: "2026-04-26T00:42:36Z"
+stopped_at: Archived v1.4 milestone
+last_updated: "2026-04-26T01:15:37Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 4
@@ -18,11 +18,11 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-04-24)
+See: `.planning/PROJECT.md` (updated 2026-04-26)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Milestone v1.4 is closed; archive handoff pending.
+**Current focus:** Milestone v1.4 is archived; start the next milestone with `$gsd-new-milestone`.
 
 ## Current Position
 
@@ -72,14 +72,14 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Archive or transition to the next milestone planning step.
+**Next action:** Start the next milestone planning step.
 
 **Resume file:** None
 
-**Stopped at:** Completed 24-02-SUMMARY.md
+**Stopped at:** Archived v1.4 milestone
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
 **Completed Milestone:** v1.3 (PAR Policy Controls) — archived to `.planning/milestones/v1.3-*`.
 
-**Planned Phase:** 24 (Verification and Milestone Closure) — 2 plans — 2026-04-26T00:42:36Z
+**Completed Milestone:** v1.4 (JAR and Request Objects) — archived to `.planning/milestones/v1.4-*`.

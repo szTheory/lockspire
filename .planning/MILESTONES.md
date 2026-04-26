@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.4 JAR and Request Objects (Shipped + archived: 2026-04-26)
+
+**Phases completed:** **4** (**21-24**), **18** plans, **5** shipped requirements (**JAR-01**, **JAR-02**, **JAR-03**, **JAR-05**, **JAR-06**); **JAR-04** remains deferred.
+
+**Package posture:** `lockspire 0.2.0` remains preview at archive time, but the shipped surface now includes the verified JAR request-object slice on top of the earlier PAR and PAR-policy work.
+
+**Key accomplishments:**
+
+- Added signed JAR request-object support with client-key signature validation and RFC 9101 claim checks.
+- Integrated request objects into the existing authorization-code, PAR, and browser-boundary flow without widening the embedded-library shape.
+- Published truthful JAR discovery and operator policy controls for the shipped request-object slice.
+- Closed the milestone with explicit verification, validation, and traceability evidence while preserving JAR-04 as deferred.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone validation: [`.planning/phases/24-verification-and-milestone-closure/24-VALIDATION.md`](phases/24-verification-and-milestone-closure/24-VALIDATION.md) (`passed` with JAR-04 deferred and no boundary drift).
+
+**Archives:** `milestones/v1.4-ROADMAP.md`, `milestones/v1.4-REQUIREMENTS.md` · **Git tag:** `v1.4`
+
+---
+
 ## v1.2 PAR Foundation (Shipped + archived: 2026-04-24)
 
 **Phases completed:** **3** (**14-16**), **8** plans, **5** requirements (**PAR-01**-**PAR-04**, **RELS-04**)
