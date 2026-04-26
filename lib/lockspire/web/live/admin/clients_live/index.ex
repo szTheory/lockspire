@@ -148,7 +148,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       token_endpoint_auth_method: params["token_endpoint_auth_method"],
       redirect_uris: split_lines(params["redirect_uris"]),
       allowed_scopes: split_csv(params["allowed_scopes"]),
-      allowed_grant_types: ["authorization_code", "refresh_token"]
+      allowed_grant_types: ["authorization_code", "refresh_token"],
+      actor: %{type: :operator, id: "admin-ui"}
     }
   end
 

@@ -44,9 +44,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def handle_event("save_client", %{"client" => params}, socket) do
     result =
       case params["mode"] do
-        "edit" -> Admin.update_client(socket.assigns.client_id, edit_attrs(params))
-        "redirects" -> Admin.update_client(socket.assigns.client_id, redirect_attrs(params))
-        "par_policy" -> Admin.update_client(socket.assigns.client_id, %{par_policy: params["par_policy"]})
+        "edit" -> Admin.update_client(socket.assigns.client_id, edit_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"}))
+        "redirects" -> Admin.update_client(socket.assigns.client_id, redirect_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"}))
+        "par_policy" -> Admin.update_client(socket.assigns.client_id, %{par_policy: params["par_policy"], actor: %{type: :operator, id: "admin-ui"}})
       end
 
     case result do
@@ -63,7 +63,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   def handle_event("rotate_secret", %{"rotate" => %{"confirm" => "true"}}, socket) do
-    case Admin.rotate_client_secret(socket.assigns.client_id) do
+    case Admin.rotate_client_secret(socket.assigns.client_id, %{actor: %{type: :operator, id: "admin-ui"}}) do
       {:ok, %{client: client, client_secret: secret}} ->
         {:noreply, assign(socket, client: client, revealed_secret: secret, rotation_errors: [])}
 
@@ -200,9 +200,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp apply_toggle(socket, active) do
     result =
       if active do
-        Admin.enable_client(socket.assigns.client_id)
+        Admin.enable_client(socket.assigns.client_id, %{actor: %{type: :operator, id: "admin-ui"}})
       else
-        Admin.disable_client(socket.assigns.client_id)
+        Admin.disable_client(socket.assigns.client_id, %{actor: %{type: :operator, id: "admin-ui"}})
       end
 
     case result do

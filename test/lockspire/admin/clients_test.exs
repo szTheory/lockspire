@@ -44,6 +44,105 @@ defmodule Lockspire.Admin.ClientsTest do
     %{handler_id: handler_id}
   end
 
+  describe "actor_from_attrs/1 enforcement (D-22)" do
+    test "missing actor.type raises ArgumentError" do
+      assert_raise ArgumentError, ~r/actor\.type is required/, fn ->
+        Clients.create_client(%{client_id: "test-no-actor"})
+      end
+    end
+
+    test "nil actor.type raises ArgumentError" do
+      assert_raise ArgumentError, ~r/actor\.type is required/, fn ->
+        Clients.create_client(%{client_id: "test-no-actor", actor: %{type: nil, id: "x"}})
+      end
+    end
+
+    test "blank actor.type raises ArgumentError" do
+      assert_raise ArgumentError, ~r/actor\.type cannot be blank/, fn ->
+        Clients.create_client(%{client_id: "test-no-actor", actor: %{type: "  ", id: "x"}})
+      end
+    end
+
+    test "non-atom/non-string actor.type raises ArgumentError" do
+      assert_raise ArgumentError, ~r/actor\.type must be an atom or non-blank string/, fn ->
+        Clients.create_client(%{client_id: "test-no-actor", actor: %{type: 12345, id: "x"}})
+      end
+    end
+
+    test "valid operator actor.type passes (regression sentinel)" do
+      assert {:ok, %RegistrationResult{client: client}} =
+               Clients.create_client(%{
+                 client_id: "new-client-valid",
+                 name: "New Client",
+                 client_type: :confidential,
+                 redirect_uris: ["https://new.example.com/callback"],
+                 allowed_scopes: ["profile"],
+                 allowed_grant_types: ["authorization_code"],
+                 token_endpoint_auth_method: :client_secret_basic,
+                 actor: %{
+                   type: :operator,
+                   id: "ops-123"
+                 }
+               })
+
+      assert client.client_id == "new-client-valid"
+    end
+  end
+
+  describe "create_dcr_client/1 (DCR-aware persistence)" do
+    test "preserves DCR fields verbatim" do
+      iat_id = nil
+      now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+      expires = DateTime.add(now, 90 * 24 * 3600, :second)
+      rat_hash = Lockspire.Security.Policy.hash_token("test_rat_plaintext_for_fixture")
+      {client_secret_hash, _plaintext} = Lockspire.Clients.rotate_secret_hash()
+
+      client = %Lockspire.Domain.Client{
+        client_id: "ls_dcr_test_" <> Integer.to_string(System.unique_integer([:positive])),
+        client_secret_hash: client_secret_hash,
+        client_type: :confidential,
+        redirect_uris: ["https://app.example.test/cb"],
+        allowed_scopes: ["openid", "profile"],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        provenance: :self_registered,
+        registration_access_token_hash: rat_hash,
+        initial_access_token_id: iat_id,
+        client_id_issued_at: now,
+        client_secret_expires_at: expires,
+        active: true
+      }
+
+      {:ok, persisted} =
+        Lockspire.Admin.Clients.create_dcr_client(%{
+          client: client,
+          actor: %{type: :dcr, id: "none", display: "127.0.0.1"}
+        })
+
+      assert persisted.provenance == :self_registered
+      assert persisted.registration_access_token_hash == rat_hash
+      assert persisted.initial_access_token_id == iat_id
+      assert DateTime.compare(persisted.client_id_issued_at, now) in [:eq, :gt]
+      assert DateTime.compare(persisted.client_secret_expires_at, expires) in [:eq, :gt]
+      assert persisted.client_secret_hash == client_secret_hash
+      assert Lockspire.Security.Policy.verify_client_secret(persisted.client_secret_hash, _plaintext)
+    end
+
+    test "raises ArgumentError when actor is missing" do
+      client = %Lockspire.Domain.Client{
+        client_id: "ls_dcr_test_no_actor",
+        client_type: :confidential
+      }
+
+      assert_raise ArgumentError, ~r/actor\.type is required/, fn ->
+        Lockspire.Admin.Clients.create_dcr_client(%{client: client})
+      end
+    end
+  end
+
   test "create_client/1 reuses canonical registration, emits telemetry, and appends operator audit" do
     assert {:ok, %RegistrationResult{client: client, client_secret: secret}} =
              Clients.create_client(%{

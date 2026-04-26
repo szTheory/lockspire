@@ -72,6 +72,36 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
+  @spec create_dcr_client(%{required(:client) => Client.t(), required(:actor) => map()}) ::
+          {:ok, Client.t()} | {:error, term()}
+  def create_dcr_client(%{client: %Client{} = client} = attrs) when is_map(attrs) do
+    actor = actor_from_attrs(attrs)
+
+    audit_event =
+      client_audit_event(:dcr_client_created, :succeeded, client, actor, %{
+        client_id: client.client_id,
+        provenance: client.provenance
+      })
+
+    case Repository.transact_with_audit(audit_event, fn -> Repository.register_client(client) end) do
+      {:ok, %Client{} = persisted} ->
+        Observability.emit(:dcr_client_created, %{}, %{
+          actor_type: actor[:type],
+          actor_id: actor[:id],
+          client_id: persisted.client_id,
+          provenance: persisted.provenance
+        })
+
+        {:ok, persisted}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec update_client(String.t(), map() | keyword()) ::
           {:ok, Client.t()} | {:error, [error_detail()]} | {:error, term()}
   def update_client(client_id, attrs) when is_binary(client_id) and is_list(attrs) do
@@ -404,17 +434,25 @@ defmodule Lockspire.Admin.Clients do
     }
   end
 
-  defp normalize_actor_type(nil), do: :operator
+  defp normalize_actor_type(nil) do
+    raise ArgumentError,
+          "actor.type is required; pass attrs[:actor][:type] explicitly. " <>
+            "Allowed: :operator | :system | :host_app | :dcr | :self_registered_client"
+  end
+
   defp normalize_actor_type(value) when is_atom(value), do: value
 
   defp normalize_actor_type(value) when is_binary(value) do
     value
     |> String.trim()
     |> case do
-      "" -> :operator
+      "" -> raise ArgumentError, "actor.type cannot be blank"
       normalized -> normalized
     end
   end
 
-  defp normalize_actor_type(_value), do: :operator
+  defp normalize_actor_type(other) do
+    raise ArgumentError,
+          "actor.type must be an atom or non-blank string, got: " <> inspect(other)
+  end
 end
