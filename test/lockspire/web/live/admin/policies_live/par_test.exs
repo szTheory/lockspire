@@ -16,6 +16,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "")
 
+    on_exit(fn ->
+      Application.put_env(:lockspire, :mount_path, "/lockspire")
+    end)
+
     Application.put_env(:lockspire, Lockspire.Web.Endpoint,
       secret_key_base: String.duplicate("a", 64),
       render_errors: [view: Lockspire.Web.ErrorView, accepts: ~w(html json)],
@@ -33,9 +37,26 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     # Register a few clients with different overrides to test summary counts
-    {:ok, _c1} = Repository.register_client(%Client{client_id: "c1", client_type: :confidential, par_policy: :inherit})
-    {:ok, _c2} = Repository.register_client(%Client{client_id: "c2", client_type: :public, par_policy: :required})
-    {:ok, _c3} = Repository.register_client(%Client{client_id: "c3", client_type: :public, par_policy: :optional})
+    {:ok, _c1} =
+      Repository.register_client(%Client{
+        client_id: "c1",
+        client_type: :confidential,
+        par_policy: :inherit
+      })
+
+    {:ok, _c2} =
+      Repository.register_client(%Client{
+        client_id: "c2",
+        client_type: :public,
+        par_policy: :required
+      })
+
+    {:ok, _c3} =
+      Repository.register_client(%Client{
+        client_id: "c3",
+        client_type: :public,
+        par_policy: :optional
+      })
 
     :ok
   end

@@ -3,10 +3,22 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
   @release_workflow_path Path.expand("../../.github/workflows/release.yml", __DIR__)
-  @release_please_action_path Path.expand("../../.github/actions/release-please/action.yml", __DIR__)
-  @release_please_runtime_package_path Path.expand("../../.github/actions/release-please/runtime/package.json", __DIR__)
-  @release_please_runtime_lock_path Path.expand("../../.github/actions/release-please/runtime/package-lock.json", __DIR__)
-  @release_please_runtime_index_path Path.expand("../../.github/actions/release-please/runtime/index.js", __DIR__)
+  @release_please_action_path Path.expand(
+                                "../../.github/actions/release-please/action.yml",
+                                __DIR__
+                              )
+  @release_please_runtime_package_path Path.expand(
+                                         "../../.github/actions/release-please/runtime/package.json",
+                                         __DIR__
+                                       )
+  @release_please_runtime_lock_path Path.expand(
+                                      "../../.github/actions/release-please/runtime/package-lock.json",
+                                      __DIR__
+                                    )
+  @release_please_runtime_index_path Path.expand(
+                                       "../../.github/actions/release-please/runtime/index.js",
+                                       __DIR__
+                                     )
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
@@ -15,8 +27,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
-  @roadmap_path Path.expand("../../.planning/ROADMAP.md", __DIR__)
-  @requirements_path Path.expand("../../.planning/REQUIREMENTS.md", __DIR__)
+  @roadmap_path Path.expand("../../.planning/milestones/v1.3-ROADMAP.md", __DIR__)
+  @requirements_path Path.expand("../../.planning/milestones/v1.3-REQUIREMENTS.md", __DIR__)
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
@@ -71,7 +83,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "exact 40-character commit SHA or an existing tag"
     assert release_workflow =~ "workflow_dispatch is recovery-only"
     assert release_workflow =~ "ref: ${{ needs.recovery-validation.outputs.checkout_ref }}"
-    assert release_workflow =~ "Confirm recovery checkout is detached to the validated immutable ref"
+
+    assert release_workflow =~
+             "Confirm recovery checkout is detached to the validated immutable ref"
+
     assert release_workflow =~ "git checkout --detach HEAD"
     assert release_workflow =~ "Release Please generated PRs are review-only"
     assert release_workflow =~ "id: release"
@@ -180,6 +195,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "inside its existing app"
     assert readme =~ "The public support contract"
     assert readme =~ "Generator-backed install flow for Phoenix hosts"
+
     assert readme =~
              "Pushed authorization requests through Lockspire-issued `request_uri` references"
 
@@ -192,6 +208,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
 
     assert supported_surface =~ "Authorization code flow with PKCE S256"
+
     assert supported_surface =~
              "Pushed authorization requests only as Lockspire-issued `request_uri` references"
 
@@ -199,7 +216,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "Lockspire does not use a demo app"
     assert supported_surface =~ "A `v0.1` preview claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
-    assert supported_surface =~ "Generic external `request_uri` handling outside Lockspire's own PAR endpoint"
+
+    assert supported_surface =~
+             "Generic external `request_uri` handling outside Lockspire's own PAR endpoint"
 
     refute readme =~ "production-ready"
   end
@@ -215,11 +234,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "Open a GitHub Security Advisory draft"
     assert security =~ "supported security surface is limited"
     assert security =~ "authorization code + PKCE"
+
     assert security =~
              "pushed authorization requests only through Lockspire-issued `request_uri` references"
 
     assert security =~ "PKCE S256 required by default"
     assert security =~ "no `alg=none`"
+
     assert security =~
              "request-object-by-value support, generic external `request_uri` handling, device flow, and dynamic client registration"
 
@@ -255,17 +276,22 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~ "Current Milestone: v1.3 PAR Policy Controls"
+    assert project =~ "Current Milestone: v1.5 Dynamic Client Registration"
     assert project =~ "v1.2 delivered the narrow PAR wedge"
-    assert project =~ "v1.3 should not blur into JAR-by-value" || project =~ "v1.3 limited to PAR policy controls"
+
+    assert project =~ "v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice"
 
     assert roadmap =~ "v1.3 PAR Policy Controls"
     assert roadmap =~ "Phase 19: Operator UX and Truthful Surface"
-    assert roadmap =~ "19-02: Update discovery/docs/contract tests so support claims match the shipped policy slice"
+
+    assert roadmap =~
+             "19-02: Update discovery/docs/contract tests so support claims match the shipped policy slice"
 
     assert requirements =~ "v1.3 PAR Policy Controls"
     assert requirements =~ "PARPOL-04"
-    assert requirements =~ "Integrators and maintainers can discover the shipped PAR policy slice through truthful metadata and docs"
+
+    assert requirements =~
+             "Integrators and maintainers can discover the shipped PAR policy slice through truthful metadata and docs"
 
     assert readme =~
              "Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path"

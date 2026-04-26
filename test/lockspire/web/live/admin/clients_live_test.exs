@@ -17,6 +17,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "")
 
+    on_exit(fn ->
+      Application.put_env(:lockspire, :mount_path, "/lockspire")
+    end)
+
     Application.put_env(:lockspire, Lockspire.Web.Endpoint,
       secret_key_base: String.duplicate("a", 64),
       render_errors: [view: Lockspire.Web.ErrorView, accepts: ~w(html json)],
@@ -98,7 +102,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   test "client detail shows stored override and effective PAR policy state" do
     assert {:ok, _policy} = ServerPolicy.put_server_policy(:optional)
 
-    assert {:ok, alpha_socket} = Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
+    assert {:ok, alpha_socket} =
+             Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
 
     assert {:noreply, alpha_socket} =
              Show.handle_params(
@@ -115,7 +120,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert alpha_html =~ "Effective PAR requirement"
     assert alpha_html =~ "Not required"
 
-    assert {:ok, beta_socket} = Show.mount(%{"client_id" => "beta-client"}, %{}, socket_for(:show))
+    assert {:ok, beta_socket} =
+             Show.mount(%{"client_id" => "beta-client"}, %{}, socket_for(:show))
 
     assert {:noreply, beta_socket} =
              Show.handle_params(
@@ -143,7 +149,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     |> render_click()
 
     view
-    |> form("form[phx-submit=save_client]", %{client: %{mode: "par_policy", par_policy: "required"}})
+    |> form("form[phx-submit=save_client]", %{
+      client: %{mode: "par_policy", par_policy: "required"}
+    })
     |> render_submit()
 
     assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
