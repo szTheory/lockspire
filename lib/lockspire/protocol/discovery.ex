@@ -23,6 +23,14 @@ defmodule Lockspire.Protocol.Discovery do
   @subject_types_supported ["public"]
   @id_token_signing_alg_values_supported ["RS256"]
 
+  @doc """
+  Returns the static list of `token_endpoint_auth_method` values this issuer's discovery
+  document advertises, regardless of mounted-route truthfulness. Phase 25 invariant test
+  binds DCR-accepted methods to this list (intersection with ServerPolicy DCR allowlist).
+  """
+  @spec token_endpoint_auth_methods_supported() :: [String.t()]
+  def token_endpoint_auth_methods_supported, do: @token_endpoint_auth_methods_supported
+
   @spec openid_configuration() :: map()
   def openid_configuration do
     issuer = Config.issuer!()
