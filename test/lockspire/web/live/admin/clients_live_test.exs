@@ -71,6 +71,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         metadata: %{}
       })
 
+    {:ok, _gamma} =
+      Repository.register_client(%Client{
+        client_id: "gamma-client",
+        client_type: :confidential,
+        name: "Gamma Client",
+        redirect_uris: ["https://gamma.example.com/callback"],
+        allowed_scopes: ["email"],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{},
+        provenance: :self_registered,
+        registration_client_uri: "https://lockspire.example.com/register/gamma-client",
+        registration_access_token_hash: "sha256:gamma:rat"
+      })
+
     :ok
   end
 
@@ -97,6 +116,69 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Beta Client"
     refute html =~ "Overview"
     assert html =~ "Register client"
+
+    # Test provenance filter
+    assert {:noreply, socket} =
+             Index.handle_params(%{"provenance" => "self_registered"}, "/admin?provenance=self_registered", socket)
+
+    html = rendered_to_string(Index.render(socket.assigns))
+    assert html =~ "Gamma Client"
+    refute html =~ "Alpha Client"
+    refute html =~ "Beta Client"
+  end
+
+  test "client detail shows self-registered panel for DCR clients" do
+    assert {:ok, alpha_socket} =
+             Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
+    assert {:noreply, alpha_socket} =
+             Show.handle_params(%{"client_id" => "alpha-client"}, "/admin/clients/alpha-client", alpha_socket)
+    alpha_html = rendered_to_string(Show.render(alpha_socket.assigns))
+
+    refute alpha_html =~ "Self-registered client (DCR)"
+
+    assert {:ok, gamma_socket} =
+             Show.mount(%{"client_id" => "gamma-client"}, %{}, socket_for(:show))
+    assert {:noreply, gamma_socket} =
+             Show.handle_params(%{"client_id" => "gamma-client"}, "/admin/clients/gamma-client", gamma_socket)
+    gamma_html = rendered_to_string(Show.render(gamma_socket.assigns))
+
+    assert gamma_html =~ "Self-registered client (DCR)"
+    assert gamma_html =~ "Rotate Registration Access Token (RAT)"
+  end
+
+  test "RAT rotation workflow renders plaintext copy-once and explicit clear" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/gamma-client")
+
+    view
+    |> element("a", "Rotate Registration Access Token (RAT)")
+    |> render_click()
+
+    assert render(view) =~ "Rotate Registration Access Token (RAT)"
+
+    # Reject without confirm
+    view
+    |> form("form[phx-submit=rotate_rat]", %{})
+    |> render_submit()
+
+    assert render(view) =~ "confirmation required"
+
+    # Rotate
+    view
+    |> form("form[phx-submit=rotate_rat]", %{rotate: %{confirm: "true"}})
+    |> render_submit()
+
+    html = render(view)
+    assert html =~ "New Registration Access Token"
+    assert html =~ "I have copied the token"
+
+    # Explicit clear
+    view
+    |> element("button", "I have copied the token")
+    |> render_click()
+
+    html_cleared = render(view)
+    refute html_cleared =~ "New Registration Access Token"
+    refute html_cleared =~ "I have copied the token"
   end
 
   test "client detail shows stored override and effective PAR policy state" do
