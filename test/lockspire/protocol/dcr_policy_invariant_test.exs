@@ -50,39 +50,39 @@ defmodule Lockspire.Protocol.DcrPolicyInvariantTest do
 
     expected_set = MapSet.intersection(MapSet.new(server_allowlist), discovery_set)
 
-    # Compose discovery + server allowlist externally: every method advertised by discovery
-    # AND in the server allowlist should be acceptable by the resolver. We probe one
-    # representative value (any element of expected_set) to assert the resolver does not
-    # reject the discovery-supported intersection.
-    representative_method = expected_set |> MapSet.to_list() |> List.first()
-
-    assert representative_method != nil,
+    assert MapSet.size(expected_set) > 0,
            "test setup invariant: server_allowlist intersects discovery non-trivially"
 
-    inbound = %{
+    inbound_template = %{
       "scope" => "openid",
       "grant_types" => ["authorization_code"],
       "response_types" => ["code"],
-      "redirect_uris" => ["https://partner.example.com/callback"],
-      "token_endpoint_auth_method" => representative_method
+      "redirect_uris" => ["https://partner.example.com/callback"]
     }
 
-    {:ok, resolved} = DcrPolicy.resolve(server_policy, nil, inbound)
+    # Equality (not subset) binding: iterate every method in expected_set and assert the
+    # resolver accepts each one verbatim. List.first/1 only proved the resolver does not
+    # reject the first representative — drift on any other method would have slipped past
+    # a subset assertion.
+    for method <- expected_set do
+      inbound = Map.put(inbound_template, "token_endpoint_auth_method", method)
 
-    accepted_for_inbound = MapSet.new(resolved.allowed_token_endpoint_auth_methods)
+      {:ok, resolved} = DcrPolicy.resolve(server_policy, nil, inbound)
+      accepted_for_inbound = MapSet.new(resolved.allowed_token_endpoint_auth_methods)
 
-    assert MapSet.subset?(accepted_for_inbound, expected_set),
-           drift_message(:accepted_outside_intersection, %{
-             discovery: discovery_set,
-             server: server_allowlist,
-             expected: expected_set,
-             accepted: accepted_for_inbound
-           })
+      assert accepted_for_inbound == MapSet.new([method]),
+             drift_message(:accepted_outside_intersection, %{
+               discovery: discovery_set,
+               server: server_allowlist,
+               expected: expected_set,
+               accepted: accepted_for_inbound
+             })
+    end
 
-    # Now probe that an "advertised by discovery" method that IS NOT in the server
-    # allowlist would be rejected. Skip this branch if the intersection equals the
-    # discovery set (every discovery method is in the allowlist) — the rejection check
-    # only makes sense if there is something in discovery NOT in the allowlist.
+    # Probe that an "advertised by discovery" method that IS NOT in the server allowlist
+    # would be rejected. Skip this branch if every discovery method is in the allowlist —
+    # the rejection check only makes sense if there is something in discovery NOT in the
+    # allowlist.
     discovery_only = MapSet.difference(discovery_set, MapSet.new(server_allowlist))
 
     if MapSet.size(discovery_only) > 0 do
@@ -93,14 +93,18 @@ defmodule Lockspire.Protocol.DcrPolicyInvariantTest do
                DcrPolicy.resolve(
                  server_policy,
                  nil,
-                 Map.put(inbound, "token_endpoint_auth_method", probe)
+                 Map.put(inbound_template, "token_endpoint_auth_method", probe)
                )
     end
 
-    # And probe that an "in server allowlist but NOT advertised by discovery" method
-    # would be rejected by the composed system. The resolver alone might accept it
-    # (it intersects against server allowlist only); the FULL intersection-with-discovery
-    # bound is what this invariant captures.
+    # And probe that an "in server allowlist but NOT advertised by discovery" method is a
+    # known boundary that Phase 27's HTTP surface MUST filter through
+    # `MapSet.intersection(_, discovery_set)`. The resolver alone DOES accept it (it
+    # intersects against the server allowlist only) — so the resolver-accepted set for
+    # that probe must be exactly `MapSet.new([probe])`, and intersecting that with
+    # discovery_set must yield the empty set. This is the key non-trivial assertion: it
+    # proves the resolver accepts the value (so Phase 27's filter is load-bearing) AND
+    # that the filter discards it.
     server_only =
       MapSet.difference(MapSet.new(server_allowlist), discovery_set) |> MapSet.to_list()
 
@@ -109,19 +113,22 @@ defmodule Lockspire.Protocol.DcrPolicyInvariantTest do
         DcrPolicy.resolve(
           server_policy,
           nil,
-          Map.put(inbound, "token_endpoint_auth_method", probe)
+          Map.put(inbound_template, "token_endpoint_auth_method", probe)
         )
 
       probe_accepted = MapSet.new(probe_resolved.allowed_token_endpoint_auth_methods)
 
-      # Crucially: the resolver alone does NOT bound by discovery.
-      # The composed bound (resolver ∩ discovery) is what DCR's HTTP surface (Phase 27)
-      # MUST enforce. This invariant test pins the contract: anything the resolver
-      # accepts that is NOT in discovery is a known boundary that Phase 27 must
-      # additionally filter through `MapSet.intersection(_, discovery_set)`.
+      assert probe_accepted == MapSet.new([probe]),
+             drift_message(:server_only_not_accepted_by_resolver, %{
+               discovery: discovery_set,
+               server: server_allowlist,
+               expected: expected_set,
+               accepted: probe_accepted
+             })
+
       bounded_by_discovery = MapSet.intersection(probe_accepted, discovery_set)
 
-      assert MapSet.subset?(bounded_by_discovery, expected_set),
+      assert MapSet.equal?(bounded_by_discovery, MapSet.new()),
              drift_message(:bounded_diverged, %{
                discovery: discovery_set,
                server: server_allowlist,
