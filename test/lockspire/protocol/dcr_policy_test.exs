@@ -1,6 +1,7 @@
 defmodule Lockspire.Protocol.DcrPolicyTest do
   use ExUnit.Case, async: true
 
+  alias Lockspire.Domain.InitialAccessToken
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.DcrPolicy.Resolved
@@ -176,6 +177,18 @@ defmodule Lockspire.Protocol.DcrPolicyTest do
 
     assert {:error, :invalid_client_metadata, %{field: :scope}} =
              DcrPolicy.resolve(open_policy(), nil, inbound)
+  end
+
+  test "resolve/3 raises FunctionClauseError when iat_overrides is a struct" do
+    # Phase 26 footgun guard: a caller that passes the IAT struct itself instead of its
+    # policy_overrides field must NOT silently get "no overrides applied" — the guard on
+    # resolve/3 rejects structs explicitly.
+    iat_struct = %InitialAccessToken{}
+    inbound = %{"scope" => "openid"}
+
+    assert_raise FunctionClauseError, fn ->
+      DcrPolicy.resolve(open_policy(), iat_struct, inbound)
+    end
   end
 
   test "resolve/3 redirect_uri host comparison is case-insensitive (RFC 3986 §3.2.2)" do

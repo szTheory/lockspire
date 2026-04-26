@@ -62,8 +62,16 @@ defmodule Lockspire.Protocol.DcrPolicy do
 
   @spec resolve(ServerPolicy.t(), map() | nil, map()) ::
           {:ok, Resolved.t()} | {:error, :invalid_client_metadata, error_detail()}
+  # `iat_overrides` MUST be a plain map or nil. Structs are maps in Elixir, so without the
+  # `not is_struct(iat_overrides)` guard a caller could pass an `%InitialAccessToken{}`
+  # struct directly (instead of `iat_struct.policy_overrides`) and the resolver would
+  # silently treat the IAT as "no overrides" because `Map.get(struct, "allowed_scopes")`
+  # returns nil for atom-keyed struct fields. Phase 26's `redeem/1` integration would have
+  # this footgun if the guard were not tight here.
   def resolve(%ServerPolicy{} = server_policy, iat_overrides, inbound_metadata)
-      when (is_map(iat_overrides) or is_nil(iat_overrides)) and is_map(inbound_metadata) do
+      when (is_nil(iat_overrides) or
+              (is_map(iat_overrides) and not is_struct(iat_overrides))) and
+             is_map(inbound_metadata) do
     with {:ok, scopes} <-
            intersect_axis(
              :scope,
