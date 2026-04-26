@@ -381,7 +381,8 @@ defmodule Lockspire.Clients do
     Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
   end
 
-  defp generate_client_id do
+  @spec generate_client_id() :: String.t()
+  def generate_client_id do
     "ls_" <> generate_token(@client_id_bytes)
   end
 
