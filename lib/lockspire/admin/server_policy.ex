@@ -3,6 +3,8 @@ defmodule Lockspire.Admin.ServerPolicy do
   Query and command boundary for Lockspire server policy.
   """
 
+  require Logger
+
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -91,21 +93,36 @@ defmodule Lockspire.Admin.ServerPolicy do
   end
 
   defp normalize_dcr_attrs(attrs) do
-    atomized =
-      attrs
-      |> Enum.reduce(%{}, fn
-        {key, value}, acc when is_atom(key) ->
-          if key in @dcr_field_keys, do: Map.put(acc, key, value), else: acc
+    {atomized, unknown_keys} =
+      Enum.reduce(attrs, {%{}, []}, fn
+        {key, value}, {acc, unknown} when is_atom(key) ->
+          if key in @dcr_field_keys do
+            {Map.put(acc, key, value), unknown}
+          else
+            {acc, [key | unknown]}
+          end
 
-        {key, value}, acc when is_binary(key) ->
+        {key, value}, {acc, unknown} when is_binary(key) ->
           case atomize_dcr_key(key) do
-            nil -> acc
-            atom_key -> Map.put(acc, atom_key, value)
+            nil -> {acc, [key | unknown]}
+            atom_key -> {Map.put(acc, atom_key, value), unknown}
           end
 
         _other, acc ->
           acc
       end)
+
+    if unknown_keys != [] do
+      # Phase 28 admin LiveView: silent drops of typo'd field names is a known operator-UX
+      # hazard. Logging here gives operators a breadcrumb when an admin form sends an
+      # unexpected key (e.g., :dcr_allowed_scope vs :dcr_allowed_scopes); a future iteration
+      # may upgrade this to a structured `{:error, [%{field: :unknown, ...}]}` return once
+      # the LiveView surface lands and can render the validation error.
+      Logger.warning(
+        "Lockspire.Admin.ServerPolicy.put_dcr_policy/1 dropped unknown keys: " <>
+          inspect(Enum.reverse(unknown_keys))
+      )
+    end
 
     case Map.fetch(atomized, :registration_policy) do
       {:ok, value} ->
