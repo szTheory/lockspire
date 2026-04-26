@@ -24,25 +24,50 @@ defmodule Lockspire.Protocol.Discovery do
   @id_token_signing_alg_values_supported ["RS256"]
 
   @doc """
-  Returns the static list of `token_endpoint_auth_method` values this issuer's discovery
-  document advertises, regardless of mounted-route truthfulness. Phase 25 invariant test
-  binds DCR-accepted methods to this list (intersection with ServerPolicy DCR allowlist).
+  Returns the **static** module attribute list of `token_endpoint_auth_method` values this
+  issuer can advertise — the maximum set, irrespective of mounted-route truthfulness.
+
+  This is what the DCR invariant test (Phase 25) pins against because it must remain a
+  pure 0-arity (no router lookup, no DB). It is the upper bound: the actually-published
+  discovery document at `/.well-known/openid-configuration` may publish `[]` instead when
+  the host app does not mount the `token_endpoint` route. Use
+  `published_token_endpoint_auth_methods_supported/0` for the truth-based set; that is
+  what Phase 27's HTTP DCR surface MUST filter the resolver's accepted methods through.
   """
   @spec token_endpoint_auth_methods_supported() :: [String.t()]
   def token_endpoint_auth_methods_supported, do: @token_endpoint_auth_methods_supported
 
+  @doc """
+  Returns the truth-based list of `token_endpoint_auth_method` values this issuer's
+  `openid-configuration` document actually publishes — i.e., `[]` when the
+  `token_endpoint` route is not mounted, otherwise the full static list.
+
+  Phase 27's HTTP DCR surface MUST filter the resolver's accepted
+  `allowed_token_endpoint_auth_methods` through this set (e.g.,
+  `MapSet.intersection(_, MapSet.new(published_token_endpoint_auth_methods_supported()))`)
+  to avoid accepting methods the discovery document does not advertise.
+  """
+  @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
+  def published_token_endpoint_auth_methods_supported do
+    token_endpoint_auth_methods_supported(mounted_endpoint_metadata())
+  end
+
+  defp mounted_endpoint_metadata do
+    issuer = Config.issuer!()
+
+    mounted_route_paths()
+    |> Enum.reduce(%{}, fn path, acc ->
+      case endpoint_metadata_entry(issuer, path) do
+        nil -> acc
+        {key, value} -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
   @spec openid_configuration() :: map()
   def openid_configuration do
     issuer = Config.issuer!()
-
-    endpoint_metadata =
-      mounted_route_paths()
-      |> Enum.reduce(%{}, fn path, acc ->
-        case endpoint_metadata_entry(issuer, path) do
-          nil -> acc
-          {key, value} -> Map.put(acc, key, value)
-        end
-      end)
+    endpoint_metadata = mounted_endpoint_metadata()
 
     %{
       "issuer" => issuer,
