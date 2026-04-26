@@ -32,6 +32,31 @@ defmodule Lockspire.Test.Fixtures.InitialAccessTokenFixtures do
   end
 
   @doc """
+  Persists an `InitialAccessToken` to the database.
+  """
+  def persist(attrs \\ %{}) do
+    iat = initial_access_token(attrs)
+
+    %Lockspire.Storage.Ecto.InitialAccessTokenRecord{}
+    |> Lockspire.Storage.Ecto.InitialAccessTokenRecord.changeset(iat)
+    |> Lockspire.TestRepo.insert()
+    |> case do
+      {:ok, record} -> {:ok, Lockspire.Storage.Ecto.InitialAccessTokenRecord.to_domain(record)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Persists an `InitialAccessToken` to the database and returns `{plaintext, struct}`.
+  """
+  def persist_with_plaintext(attrs \\ %{}) do
+    plaintext = Map.get(attrs, :plaintext, default_plaintext())
+    attrs = Map.put(attrs, :plaintext, plaintext)
+    {:ok, record} = persist(attrs)
+    {plaintext, record}
+  end
+
+  @doc """
   Default random plaintext (32 bytes, base64url, no padding). Mirrors the random-token
   idiom used elsewhere in the codebase.
   """
