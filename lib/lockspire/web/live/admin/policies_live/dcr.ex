@@ -13,7 +13,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
      socket
      |> assign(
        page_title: "DCR policy",
-       current_section: :policies
+       current_section: :policies,
+       form_errors: []
      )
      |> load_policy()}
   end
@@ -29,37 +30,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
 
     if changeset.valid? do
       policy_attrs = Ecto.Changeset.apply_changes(changeset)
-
-      # Convert the struct map to a map that can be passed to the domain logic.
-      # Wait, put_dcr_policy might take a map of attrs. Let's check Admin module.
       attrs = Map.from_struct(policy_attrs)
 
       case Admin.put_dcr_policy(attrs) do
         {:ok, %ServerPolicy{} = policy} ->
           {:noreply,
            socket
-           |> assign(policy: policy)
-           |> assign_form(policy)
+           |> assign(policy: policy, form_errors: [])
            |> put_flash(:info, "Global DCR policy updated")}
 
         {:error, errors} when is_list(errors) ->
-          # Generic form errors from backend, if any
-          {:noreply,
-           assign(socket,
-             form:
-               Ecto.Changeset.add_error(changeset, :registration_policy, "Request failed",
-                 detail: errors
-               )
-           )}
+          {:noreply, assign(socket, form_errors: errors)}
 
         {:error, _reason} ->
           {:noreply,
            assign(socket,
-             form: Ecto.Changeset.add_error(changeset, :registration_policy, "Request failed")
+             form_errors: [%{field: :registration_policy, reason: :request_failed, detail: nil}]
            )}
       end
     else
-      {:noreply, assign(socket, form: to_form(changeset))}
+      errors = format_changeset_errors(changeset)
+      {:noreply, assign(socket, form_errors: errors)}
     end
   end
 
@@ -70,28 +61,17 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
         {:error, _reason} -> %ServerPolicy{registration_policy: :disabled}
       end
 
-    socket
-    |> assign(policy: policy)
-    |> assign_form(policy)
+    assign(socket, policy: policy)
   end
 
-  defp assign_form(socket, %ServerPolicy{} = policy) do
-    attrs = %{
-      registration_policy: policy.registration_policy,
-      dcr_allowed_scopes: policy.dcr_allowed_scopes,
-      dcr_allowed_grant_types: policy.dcr_allowed_grant_types,
-      dcr_allowed_response_types: policy.dcr_allowed_response_types,
-      dcr_allowed_redirect_uri_schemes: policy.dcr_allowed_redirect_uri_schemes,
-      dcr_allowed_redirect_uri_hosts: policy.dcr_allowed_redirect_uri_hosts,
-      dcr_allowed_token_endpoint_auth_methods: policy.dcr_allowed_token_endpoint_auth_methods,
-      dcr_default_client_lifetime_seconds: policy.dcr_default_client_lifetime_seconds,
-      dcr_default_client_secret_lifetime_seconds:
-        policy.dcr_default_client_secret_lifetime_seconds,
-      dcr_default_registration_access_token_lifetime_seconds:
-        policy.dcr_default_registration_access_token_lifetime_seconds
-    }
-
-    changeset = PolicyForm.changeset(%PolicyForm{}, attrs)
-    assign(socket, form: to_form(changeset))
+  defp format_changeset_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> Enum.map(fn {field, messages} ->
+      %{field: field, reason: Enum.join(messages, ", "), detail: nil}
+    end)
   end
 end

@@ -8,7 +8,6 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Live.Admin.PoliciesLive.Par
-  alias Lockspire.Web.Router
 
   @endpoint Lockspire.Web.Endpoint
 

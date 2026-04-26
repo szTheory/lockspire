@@ -46,7 +46,7 @@ defmodule Lockspire.Web.RegistrationController do
         end
 
       {:error, :invalid_token} ->
-        handle_error(conn, {:error, :invalid_token})
+        handle_error(conn, :invalid_token)
     end
   end
 
@@ -71,7 +71,7 @@ defmodule Lockspire.Web.RegistrationController do
         end
 
       {:error, :invalid_token} ->
-        handle_error(conn, {:error, :invalid_token})
+        handle_error(conn, :invalid_token)
     end
   end
 
@@ -87,7 +87,7 @@ defmodule Lockspire.Web.RegistrationController do
         end
 
       {:error, :invalid_token} ->
-        handle_error(conn, {:error, :invalid_token})
+        handle_error(conn, :invalid_token)
     end
   end
 
@@ -130,7 +130,7 @@ defmodule Lockspire.Web.RegistrationController do
     |> send_resp(401, "")
   end
 
-  defp handle_error(conn, {:error, :invalid_token}) do
+  defp handle_error(conn, :invalid_token) do
     conn
     |> put_status(401)
     |> put_resp_header(
