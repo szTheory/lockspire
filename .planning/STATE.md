@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: milestone
-status: Roadmap defined; ready for `/gsd-discuss-phase 25`
+status: executing
 stopped_at: Phase 25 context gathered (assumptions mode)
-last_updated: "2026-04-26T15:33:18.994Z"
-last_activity: 2026-04-26 — v1.5 roadmap defined, 27/27 DCR requirements mapped across Phase 25 — Phase 29
+last_updated: "2026-04-26T15:37:11.485Z"
+last_activity: 2026-04-26 -- Phase 25 execution started
 progress:
   total_phases: 5
   completed_phases: 0
@@ -22,17 +22,17 @@ See: `.planning/PROJECT.md` (updated 2026-04-26)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Milestone v1.5 — Dynamic Client Registration. Roadmap defined (Phase 25 — Phase 29); ready to begin Phase 25 planning.
+**Current focus:** Phase 25 — dcr-storage-skeleton-domain-types-and-policy-resolver
 
 ## Current Position
 
-Phase: Phase 25 — DCR Storage Skeleton, Domain Types, and Policy Resolver
+Phase: 25 (dcr-storage-skeleton-domain-types-and-policy-resolver) — EXECUTING
 
-Plan: —
+Plan: 1 of 8
 
-Status: Roadmap defined; ready for `/gsd-discuss-phase 25`
+Status: Executing Phase 25
 
-Last activity: 2026-04-26 — v1.5 roadmap defined, 27/27 DCR requirements mapped across Phase 25 — Phase 29
+Last activity: 2026-04-26 -- Phase 25 execution started
 
 ## Performance Metrics
 
