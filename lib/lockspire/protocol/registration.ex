@@ -125,9 +125,8 @@ defmodule Lockspire.Protocol.Registration do
   def validate_intake_metadata(metadata, %Resolved{} = _resolved) when is_map(metadata) do
     with :ok <- validate_jwks(metadata),
          :ok <- validate_grant_response_coherence(metadata),
-         :ok <- validate_redirect_uris(metadata),
-         :ok <- validate_pkce_floor(metadata) do
-      :ok
+         :ok <- validate_redirect_uris(metadata) do
+      validate_pkce_floor(metadata)
     end
   end
 

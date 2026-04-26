@@ -163,7 +163,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
           )
         )
 
-      assert length(rows) > 0
+      assert rows != []
       refute Enum.any?(rows, &(&1.actor_type == "operator"))
       assert Enum.all?(rows, &(&1.actor_type == "dcr"))
     end
@@ -275,7 +275,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
           )
         )
 
-      assert length(rows) > 0
+      assert rows != []
       assert Enum.all?(rows, &(&1.actor_id == "anonymous"))
     end
   end

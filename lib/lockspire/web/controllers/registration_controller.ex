@@ -7,17 +7,23 @@ defmodule Lockspire.Web.RegistrationController do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.RegistrationJSON
 
-  plug :ensure_dcr_enabled
+  plug(:ensure_dcr_enabled)
 
   def create(conn, params) do
     source = %{
       ip: to_string(:inet.ntoa(conn.remote_ip)),
       user_agent: List.first(get_req_header(conn, "user-agent"))
     }
+
     iat = extract_bearer_token(conn)
     {:ok, server_policy} = Repository.get_server_policy()
 
-    case Registration.register(%{metadata: params, server_policy: server_policy, source: source, iat: iat}) do
+    case Registration.register(%{
+           metadata: params,
+           server_policy: server_policy,
+           source: source,
+           iat: iat
+         }) do
       {:ok, success} ->
         conn
         |> put_status(:created)
@@ -34,7 +40,7 @@ defmodule Lockspire.Web.RegistrationController do
         case RegistrationManagement.read(client_id, client) do
           {:ok, client} ->
             json(conn, RegistrationJSON.read_response(client))
-            
+
           {:error, error} ->
             handle_error(conn, error)
         end
@@ -49,7 +55,7 @@ defmodule Lockspire.Web.RegistrationController do
       {:ok, client} ->
         {:ok, server_policy} = Repository.get_server_policy()
         metadata = Map.delete(params, "client_id")
-        
+
         request_map = %{
           metadata: metadata,
           server_policy: server_policy,
@@ -59,7 +65,7 @@ defmodule Lockspire.Web.RegistrationController do
         case RegistrationManagement.update(client_id, request_map) do
           {:ok, success} ->
             json(conn, RegistrationJSON.update_response(success))
-            
+
           {:error, error} ->
             handle_error(conn, error)
         end
@@ -75,7 +81,7 @@ defmodule Lockspire.Web.RegistrationController do
         case RegistrationManagement.delete(client_id, client) do
           :ok ->
             send_resp(conn, 204, "")
-            
+
           {:error, error} ->
             handle_error(conn, error)
         end
@@ -87,7 +93,7 @@ defmodule Lockspire.Web.RegistrationController do
 
   defp ensure_dcr_enabled(conn, _opts) do
     {:ok, server_policy} = Repository.get_server_policy()
-    
+
     if server_policy.registration_policy == :disabled do
       conn
       |> send_resp(404, "")
@@ -117,14 +123,20 @@ defmodule Lockspire.Web.RegistrationController do
   defp handle_error(conn, %Registration.Error{code: :invalid_token}) do
     conn
     |> put_status(401)
-    |> put_resp_header("www-authenticate", "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\"")
+    |> put_resp_header(
+      "www-authenticate",
+      "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+    )
     |> send_resp(401, "")
   end
 
   defp handle_error(conn, {:error, :invalid_token}) do
     conn
     |> put_status(401)
-    |> put_resp_header("www-authenticate", "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\"")
+    |> put_resp_header(
+      "www-authenticate",
+      "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+    )
     |> send_resp(401, "")
   end
 
@@ -133,7 +145,7 @@ defmodule Lockspire.Web.RegistrationController do
     |> put_status(400)
     |> json(RegistrationJSON.error_response(e))
   end
-  
+
   defp handle_error(conn, %Registration.Error{code: code} = e) do
     status =
       case code do
@@ -144,7 +156,7 @@ defmodule Lockspire.Web.RegistrationController do
         :server_error -> 500
         _ -> 400
       end
-      
+
     conn
     |> put_status(status)
     |> json(RegistrationJSON.error_response(e))

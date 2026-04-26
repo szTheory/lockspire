@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: milestone
-status: planning
-stopped_at: Completed 27-01-PLAN.md
-last_updated: "2026-04-26T21:26:22.854Z"
+status: execution
+stopped_at: Completed 27-02-PLAN.md
+last_updated: "2026-04-26T21:30:00.000Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -22,11 +22,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-26)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 26 — protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
+**Current focus:** Phase 27 — HTTP Surface — Registration and Management Controllers
 
 ## Current Position
 
-Phase: 27
+Phase: 28
 
 Plan: Not started
 
@@ -36,8 +36,8 @@ Last activity: 2026-04-26
 
 ## Performance Metrics
 
-- Phases completed: 0/5 (v1.5)
-- Plans completed: 0/0 (v1.5)
+- Phases completed: 1/5 (v1.5)
+- Plans completed: 2/17 (v1.5)
 
 ## Accumulated Context
 
@@ -57,24 +57,23 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Uses 32 bytes of CSPRNG entropy matching operator-token baseline.
 - Collapsed all 4 rejection axes to {:error, :invalid_token} in public protocol entry point (DCR-11) while preserving discriminators in telemetry only.
 - Mirrored mark_authorization_code_redeemed/2 pattern using DB-level lock("FOR UPDATE") for atomic IAT redemption.
-- None - followed plan as specified
 - Mismatch between URL client_id and RAT-bound client.client_id ALWAYS collapses to {:error, :invalid_token} to prevent client-id enumeration.
 - update/2 public arity strictly adhered to (client_id_from_url, request_map) to keep the protocol pure.
 - Decided to inspect the entire row instead of row.payload since payload doesn't exist on AuditEventRecord.
 - Decided to strictly follow RFC 7591 serialization without extraneous secrets leaks.
+- Phase 27 completed: Implemented RegistrationJSON formatting and RegistrationController handling RFC 7591/7592 requests.
 
 ### Blockers/Concerns
 
 - No current execution blockers.
-- v1.5 roadmap is defined; Phase 25 planning is the next gate.
 
 ## Session Continuity
 
-**Next action:** Run `/gsd-discuss-phase 25` to enter Phase 25 (DCR Storage Skeleton, Domain Types, and Policy Resolver) discussion before planning.
+**Next action:** Run `/gsd-plan-phase 28` to enter Phase 28 planning.
 
 **Resume file:** None
 
-**Stopped at:** Completed 27-01-PLAN.md
+**Stopped at:** Completed 27-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
@@ -82,4 +81,4 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Completed Milestone:** v1.4 (JAR and Request Objects) — archived to `.planning/milestones/v1.4-*`.
 
-**Planned Phase:** 27 (HTTP Surface — Registration and Management Controllers) — 2 plans — 2026-04-26T21:22:35.670Z
+**Completed Phase:** 27 (HTTP Surface — Registration and Management Controllers)
