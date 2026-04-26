@@ -74,7 +74,9 @@
   3. `GET /register/:client_id` is RAT-authenticated, URL-`client_id`-bound (the URL `client_id` and the RAT-bearing client must match in a single query), returns the current RFC 7591 metadata for self-registered clients only, and returns RFC 7592-shaped errors for invalid/expired/mismatched RATs.
   4. `PUT /register/:client_id` validates the full replacement through the same validator as `POST /register`, rotates `registration_access_token` on success, returns the new plaintext exactly once, and the prior RAT is rejected on the next call.
   5. `DELETE /register/:client_id` soft-disables the client via `Lockspire.Admin.Clients.disable_client_with_audit/4` with `disabled_by: "dcr_self_delete"`, and the same `client_id` cannot be reused for a future registration.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 27-01-PLAN.md — Registration JSON Serialization
+- [ ] 27-02-PLAN.md — Registration Controller & Router Integration
 **UI hint**: yes
 
 #### Phase 28: Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry
