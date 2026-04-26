@@ -127,7 +127,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
           %ServerPolicyRecord{} = record -> ServerPolicyRecord.to_domain(record)
         end
 
-      new_policy = mutator.(current)
+      %ServerPolicy{} = new_policy = mutator.(current)
 
       case current_record do
         nil ->
