@@ -52,7 +52,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 - [x] **DCR-18
 **: `Lockspire.Web.Live.Admin.PoliciesLive.Dcr` is the global DCR policy page, mirroring `PoliciesLive.Par` and `PoliciesLive.Jar` shape; it surfaces mode, allowlists, and defaults.
 - [ ] **DCR-19**: `IatLive.Index` and `IatLive.New` cover IAT mint, list, and revoke; minted IATs display copy-once plaintext.
-- [ ] **DCR-20**: `ClientsLive.Index` adds a provenance column and filter (`:operator_created` vs `:self_registered`); `ClientsLive.Show` adds a self-registered panel and a `:rotate_registration_access_token` live_action with operator confirmation.
+- [x] **DCR-20
+**: `ClientsLive.Index` adds a provenance column and filter (`:operator_created` vs `:self_registered`); `ClientsLive.Show` adds a self-registered panel and a `:rotate_registration_access_token` live_action with operator confirmation.
 
 ### Telemetry & Audit
 
