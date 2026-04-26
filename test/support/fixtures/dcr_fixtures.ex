@@ -44,8 +44,8 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
 
   @spec invalid_redirect_uri_metadata() :: map()
   def invalid_redirect_uri_metadata do
-    # ftp:// is rejected by Lockspire.Clients.validate_redirect_uris/1
-    Map.put(@valid_metadata, "redirect_uris", ["ftp://app.example.test/callback"])
+    # Fragments are rejected by Lockspire.Clients.validate_redirect_uris/1
+    Map.put(@valid_metadata, "redirect_uris", ["https://app.example.test/callback#fragment"])
   end
 
   @spec pkce_required_false_metadata() :: map()

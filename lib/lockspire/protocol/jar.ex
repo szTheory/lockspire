@@ -177,7 +177,9 @@ defmodule Lockspire.Protocol.Jar do
   # Per CONTEXT.md D-11, anything else rejected as :invalid_typ — closes JWT-type confusion
   # (RFC 9101 §10.8) the moment JAR is HTTP-reachable in Phase 22.
   defp check_typ(%{"typ" => typ}) when is_binary(typ) do
-    if String.downcase(typ) in ["oauth-authz-req+jwt", "jwt"], do: :ok, else: {:error, :invalid_typ}
+    if String.downcase(typ) in ["oauth-authz-req+jwt", "jwt"],
+      do: :ok,
+      else: {:error, :invalid_typ}
   end
 
   defp check_typ(_), do: :ok

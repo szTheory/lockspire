@@ -110,7 +110,9 @@ defmodule Lockspire.Protocol.RequestObject do
 
   defp decode_step(jwt) do
     case Jar.decode(jwt) do
-      {:ok, %Jar{} = jar} -> {:ok, jar}
+      {:ok, %Jar{} = jar} ->
+        {:ok, jar}
+
       {:error, :invalid_jwt} ->
         {:browser_error,
          browser_error(
@@ -123,7 +125,9 @@ defmodule Lockspire.Protocol.RequestObject do
 
   defp verify_step(jwt, client) do
     case Jar.verify_signature(jwt, client) do
-      {:ok, %Jar{} = jar} -> {:ok, jar}
+      {:ok, %Jar{} = jar} ->
+        {:ok, jar}
+
       {:error, :invalid_signature} ->
         {:browser_error,
          browser_error(
@@ -160,7 +164,9 @@ defmodule Lockspire.Protocol.RequestObject do
 
   defp validate(%Jar{} = jar, %Client{} = client, opts) do
     case Jar.validate_claims(jar, jar_opts(client, opts)) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, :invalid_issuer} ->
         {:browser_error,
          browser_error(

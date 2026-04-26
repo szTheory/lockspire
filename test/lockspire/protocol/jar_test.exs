@@ -57,7 +57,12 @@ defmodule Lockspire.Protocol.JarTest do
       private_jwk: private_jwk,
       pub_jwk_map: pub_jwk_map
     } do
-      claims = %{"iss" => "client_id", "aud" => "https://server.example.com", "response_type" => "code"}
+      claims = %{
+        "iss" => "client_id",
+        "aud" => "https://server.example.com",
+        "response_type" => "code"
+      }
+
       jwt = sign_jwt(private_jwk, claims)
       client = client_with_single_jwk(pub_jwk_map)
 
@@ -98,7 +103,9 @@ defmodule Lockspire.Protocol.JarTest do
       pub_jwk_map: pub_jwk_map
     } do
       # Craft an alg=none JWT manually (JOSE will not sign with none)
-      none_header = Base.url_encode64(Jason.encode!(%{"alg" => "none", "typ" => "JWT"}), padding: false)
+      none_header =
+        Base.url_encode64(Jason.encode!(%{"alg" => "none", "typ" => "JWT"}), padding: false)
+
       none_payload = Base.url_encode64(Jason.encode!(%{"iss" => "client_id"}), padding: false)
       none_jwt = none_header <> "." <> none_payload <> "."
 
@@ -150,7 +157,12 @@ defmodule Lockspire.Protocol.JarTest do
 
       # Tamper: replace the payload segment with different data
       [header_seg, _payload_seg, sig_seg] = String.split(jwt, ".")
-      tampered_payload = Base.url_encode64(Jason.encode!(%{"iss" => "attacker", "response_type" => "code token"}), padding: false)
+
+      tampered_payload =
+        Base.url_encode64(Jason.encode!(%{"iss" => "attacker", "response_type" => "code token"}),
+          padding: false
+        )
+
       tampered_jwt = header_seg <> "." <> tampered_payload <> "." <> sig_seg
 
       client = client_with_single_jwk(pub_jwk_map)
@@ -190,10 +202,11 @@ defmodule Lockspire.Protocol.JarTest do
       assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
     end
 
-    test "returns {:ok, %Jar{}} for JWT with no typ header (permissive default per RFC 9101 SHOULD)", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
-    } do
+    test "returns {:ok, %Jar{}} for JWT with no typ header (permissive default per RFC 9101 SHOULD)",
+         %{
+           private_jwk: private_jwk,
+           pub_jwk_map: pub_jwk_map
+         } do
       claims = %{"iss" => "client_id"}
       jwt = sign_jwt(private_jwk, claims)
       client = client_with_single_jwk(pub_jwk_map)
@@ -291,7 +304,9 @@ defmodule Lockspire.Protocol.JarTest do
     # exp
     test "returns {:error, :missing_expiration} when exp is missing" do
       claims = Map.delete(valid_claims(), "exp")
-      assert {:error, :missing_expiration} = Jar.validate_claims(jar_with(claims), validate_opts())
+
+      assert {:error, :missing_expiration} =
+               Jar.validate_claims(jar_with(claims), validate_opts())
     end
 
     test "returns {:error, :expired_token} when exp is in the past" do

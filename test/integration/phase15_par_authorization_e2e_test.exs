@@ -90,8 +90,8 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
   test "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
        %{
-    client: client
-  } do
+         client: client
+       } do
     put_server_policy!(:required)
     signing_key = publish_signing_key("phase15-onboarding-kid")
     code_verifier = "phase15-onboarding-verifier"
@@ -122,7 +122,10 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
     assert direct_error_uri.host == "client.example.com"
     assert direct_error_params["error"] == "invalid_request"
-    assert direct_error_params["error_description"] == "request_uri from the PAR endpoint is required"
+
+    assert direct_error_params["error_description"] ==
+             "request_uri from the PAR endpoint is required"
+
     assert direct_error_params["state"] == "phase15-state"
 
     par_conn =
@@ -229,8 +232,8 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
   test "client signs JAR, posts to /par with Basic auth, completes /authorize + /token via the issued request_uri (Phase 22 JAR-via-PAR-via-Lockspire end-to-end)",
        %{
-    client: _client
-  } do
+         client: _client
+       } do
     put_server_policy!(:required)
     signing_key = publish_signing_key("phase22-jar-onboarding-kid")
 
@@ -286,7 +289,8 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
       |> put_req_header("accept", "application/json")
       |> put_req_header(
         "authorization",
-        "Basic " <> Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
+        "Basic " <>
+          Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
       )
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
@@ -295,7 +299,11 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     par_response = Jason.decode!(par_conn.resp_body)
     assert request_uri = par_response["request_uri"]
     assert is_integer(par_response["expires_in"])
-    assert String.starts_with?(request_uri, Lockspire.Domain.PushedAuthorizationRequest.request_uri_prefix())
+
+    assert String.starts_with?(
+             request_uri,
+             Lockspire.Domain.PushedAuthorizationRequest.request_uri_prefix()
+           )
 
     authorize_conn =
       build_conn(:get, "/authorize", %{
@@ -352,7 +360,8 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
       |> put_req_header("accept", "application/json")
       |> put_req_header(
         "authorization",
-        "Basic " <> Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
+        "Basic " <>
+          Base.encode64("#{URI.encode_www_form(client.client_id)}:#{URI.encode_www_form(secret)}")
       )
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
@@ -496,7 +505,9 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
   end
 
   defp update_client_par_policy!(client, mode) do
-    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    assert {:ok, %Client{} = updated_client} =
+             Repository.update_client(client, %{par_policy: mode})
+
     updated_client
   end
 end

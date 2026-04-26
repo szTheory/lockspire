@@ -51,7 +51,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
          {:ok, %AuthorizationRequest.Validated{} = validated} <-
            validate_request(post_jar_params, client),
          {:ok, %PushedAuthorizationRequestState{} = pushed_request} <-
-            persist_pushed_request(validated, request, now) do
+           persist_pushed_request(validated, request, now) do
       {:ok,
        %Success{
          request_uri: pushed_request.request_uri,

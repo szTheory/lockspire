@@ -140,6 +140,7 @@ defmodule Lockspire.ConfigTest do
 
   test "jar_max_age_seconds/0 returns 600 by default and honors configured override" do
     original = Application.get_env(:lockspire, :jar_max_age_seconds)
+
     on_exit(fn ->
       if is_nil(original) do
         Application.delete_env(:lockspire, :jar_max_age_seconds)

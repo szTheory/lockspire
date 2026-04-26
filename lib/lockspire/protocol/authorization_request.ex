@@ -158,7 +158,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp resolve_authorization_params(%{"request_uri" => request_uri} = params, %Client{} = client)
-        when is_binary(request_uri) and request_uri != "" do
+       when is_binary(request_uri) and request_uri != "" do
     with :ok <- reject_request_uri_and_request_conflict(params),
          :ok <- reject_request_uri_conflicts(params),
          :ok <- validate_lockspire_request_uri(request_uri),
@@ -170,7 +170,10 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   defp resolve_authorization_params(params, %Client{}), do: {:ok, params}
 
-  defp reject_request_uri_and_request_conflict(%{"request_uri" => request_uri, "request" => request}) do
+  defp reject_request_uri_and_request_conflict(%{
+         "request_uri" => request_uri,
+         "request" => request
+       }) do
     if present?(request_uri) and present?(request) do
       {:browser_error,
        browser_error(

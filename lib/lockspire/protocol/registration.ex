@@ -32,6 +32,7 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.Protocol.RegistrationAccessToken
 
   defmodule Success do
+    @moduledoc false
     @type t :: %__MODULE__{
             client: Client.t(),
             client_secret_plaintext: String.t() | nil,
@@ -41,6 +42,7 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defmodule Error do
+    @moduledoc false
     @type t :: %__MODULE__{
             code: atom(),
             field: atom() | nil,
@@ -63,7 +65,8 @@ defmodule Lockspire.Protocol.Registration do
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved),
          credentials <- generate_credentials(),
-         {:ok, %Client{} = client} <- persist_client(metadata, resolved, iat_record, credentials, source) do
+         {:ok, %Client{} = client} <-
+           persist_client(metadata, resolved, iat_record, credentials, source) do
       emit_succeeded(client, iat_record, source)
 
       {:ok,
@@ -81,7 +84,10 @@ defmodule Lockspire.Protocol.Registration do
 
   # Reject anonymous registration when server policy demands an IAT.
   # Fired BEFORE maybe_redeem_iat/1 so no IAT-redemption-failure telemetry is emitted on this axis.
-  defp require_iat_when_policy_demands(%ServerPolicy{registration_policy: :initial_access_token}, nil) do
+  defp require_iat_when_policy_demands(
+         %ServerPolicy{registration_policy: :initial_access_token},
+         nil
+       ) do
     {:error, %Error{code: :invalid_token, field: :iat, reason: :missing}}
   end
 
@@ -130,10 +136,16 @@ defmodule Lockspire.Protocol.Registration do
   defp validate_jwks(metadata) do
     cond do
       Map.has_key?(metadata, "jwks_uri") ->
-        {:error, %Error{code: :invalid_client_metadata, field: :jwks_uri, reason: :unsupported_in_slice}}
+        {:error,
+         %Error{code: :invalid_client_metadata, field: :jwks_uri, reason: :unsupported_in_slice}}
 
       Map.has_key?(metadata, "jwks") and Map.has_key?(metadata, "jwks_uri") ->
-        {:error, %Error{code: :invalid_client_metadata, field: :jwks, reason: :mutually_exclusive_with_jwks_uri}}
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :jwks,
+           reason: :mutually_exclusive_with_jwks_uri
+         }}
 
       true ->
         :ok
@@ -147,10 +159,12 @@ defmodule Lockspire.Protocol.Registration do
 
     cond do
       "refresh_token" in grant_types and "authorization_code" not in grant_types ->
-        {:error, %Error{code: :invalid_client_metadata, field: :grant_types, reason: :incoherent_pair}}
+        {:error,
+         %Error{code: :invalid_client_metadata, field: :grant_types, reason: :incoherent_pair}}
 
       "code" in response_types and "authorization_code" not in grant_types ->
-        {:error, %Error{code: :invalid_client_metadata, field: :response_types, reason: :incoherent_pair}}
+        {:error,
+         %Error{code: :invalid_client_metadata, field: :response_types, reason: :incoherent_pair}}
 
       true ->
         :ok
@@ -159,20 +173,30 @@ defmodule Lockspire.Protocol.Registration do
 
   defp validate_redirect_uris(metadata) do
     redirect_uris = Map.get(metadata, "redirect_uris", [])
+
     case Clients.validate_redirect_uris(redirect_uris) do
       :ok ->
         :ok
 
       {:error, _reason} ->
-        {:error, %Error{code: :invalid_client_metadata, field: :redirect_uris, reason: :invalid_uri}}
+        {:error,
+         %Error{code: :invalid_client_metadata, field: :redirect_uris, reason: :invalid_uri}}
     end
   end
 
   # D-15: explicit `pkce_required: false` is rejected (not silently coerced).
   defp validate_pkce_floor(metadata) do
     case Map.get(metadata, "pkce_required") do
-      false -> {:error, %Error{code: :invalid_client_metadata, field: :pkce_required, reason: :pkce_floor_required_for_dcr}}
-      _ -> :ok
+      false ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :pkce_required,
+           reason: :pkce_floor_required_for_dcr
+         }}
+
+      _ ->
+        :ok
     end
   end
 
@@ -194,7 +218,9 @@ defmodule Lockspire.Protocol.Registration do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
     iat_id = iat_record && Map.get(iat_record, :id)
 
-    auth_method = atomize_auth_method(Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic"))
+    auth_method =
+      atomize_auth_method(Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic"))
+
     client_type = client_type_from_auth_method(auth_method)
 
     client = %Client{
@@ -234,9 +260,14 @@ defmodule Lockspire.Protocol.Registration do
     }
 
     case Admin.Clients.create_dcr_client(attrs) do
-      {:ok, %Client{} = persisted} -> {:ok, persisted}
-      {:error, %Ecto.Changeset{} = changeset} -> {:error, %Error{code: :persistence_error, reason: changeset}}
-      {:error, reason} -> {:error, %Error{code: :persistence_error, reason: reason}}
+      {:ok, %Client{} = persisted} ->
+        {:ok, persisted}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, %Error{code: :persistence_error, reason: changeset}}
+
+      {:error, reason} ->
+        {:error, %Error{code: :persistence_error, reason: reason}}
     end
   end
 

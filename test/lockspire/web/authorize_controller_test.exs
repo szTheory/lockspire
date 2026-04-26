@@ -553,7 +553,9 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   end
 
   defp update_client_par_policy!(client, mode) do
-    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    assert {:ok, %Client{} = updated_client} =
+             Repository.update_client(client, %{par_policy: mode})
+
     updated_client
   end
 end

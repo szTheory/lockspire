@@ -128,7 +128,11 @@ defmodule Lockspire.Admin.ClientsTest do
       assert DateTime.compare(persisted.client_id_issued_at, now) in [:eq, :gt]
       assert DateTime.compare(persisted.client_secret_expires_at, expires) in [:eq, :gt]
       assert persisted.client_secret_hash == client_secret_hash
-      assert Lockspire.Security.Policy.verify_client_secret(persisted.client_secret_hash, _plaintext)
+
+      assert Lockspire.Security.Policy.verify_client_secret(
+               persisted.client_secret_hash,
+               _plaintext
+             )
     end
 
     test "raises ArgumentError when actor is missing" do

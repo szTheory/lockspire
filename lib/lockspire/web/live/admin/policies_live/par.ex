@@ -43,7 +43,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, form_errors: [%{field: :par_policy, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           form_errors: [%{field: :par_policy, reason: :request_failed, detail: nil}]
+         )}
     end
   end
 
@@ -119,7 +121,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
     {:ok, clients} = Admin.list_clients()
 
     summary =
-      Enum.reduce(clients, %{inherit: 0, required: 0, optional: 0}, fn %Client{par_policy: mode}, acc ->
+      Enum.reduce(clients, %{inherit: 0, required: 0, optional: 0}, fn %Client{par_policy: mode},
+                                                                       acc ->
         Map.update!(acc, mode, &(&1 + 1))
       end)
 

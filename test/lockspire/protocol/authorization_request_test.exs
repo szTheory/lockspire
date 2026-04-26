@@ -191,17 +191,26 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.state == "state-123"
 
     assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
-                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: true}}
+                     %{
+                       client_id: ^client_id,
+                       reason_code: :par_required_request_uri,
+                       redirect_safe: true
+                     }}
 
     assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
-                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: true}}
+                     %{
+                       client_id: ^client_id,
+                       reason_code: :par_required_request_uri,
+                       redirect_safe: true
+                     }}
 
     :telemetry.detach(handler_id)
   end
 
-  test "required global par policy keeps missing redirect_uri on the browser-safe error surface", %{
-    client: client
-  } do
+  test "required global par policy keeps missing redirect_uri on the browser-safe error surface",
+       %{
+         client: client
+       } do
     handler_id = attach_events(self())
     put_server_policy!(:required)
     client_id = client.client_id
@@ -218,17 +227,26 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.state == nil
 
     assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
-                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: false}}
+                     %{
+                       client_id: ^client_id,
+                       reason_code: :par_required_request_uri,
+                       redirect_safe: false
+                     }}
 
     assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
-                     %{client_id: ^client_id, reason_code: :par_required_request_uri, redirect_safe: false}}
+                     %{
+                       client_id: ^client_id,
+                       reason_code: :par_required_request_uri,
+                       redirect_safe: false
+                     }}
 
     :telemetry.detach(handler_id)
   end
 
-  test "required global par policy keeps mismatched redirect_uri on the browser-safe error surface", %{
-    client: client
-  } do
+  test "required global par policy keeps mismatched redirect_uri on the browser-safe error surface",
+       %{
+         client: client
+       } do
     put_server_policy!(:required)
 
     params =
@@ -349,9 +367,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_uri
   end
 
-  test "required par policy preserves invalid_request_uri semantics for expired request_uri values", %{
-    client: client
-  } do
+  test "required par policy preserves invalid_request_uri semantics for expired request_uri values",
+       %{
+         client: client
+       } do
     put_server_policy!(:required)
 
     request_uri =
@@ -486,9 +505,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :request_uri_conflict
   end
 
-  test "accepts a signed request object and projects its claims into the authorization pipeline", %{
-    client: client
-  } do
+  test "accepts a signed request object and projects its claims into the authorization pipeline",
+       %{
+         client: client
+       } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} =
@@ -540,7 +560,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert validated.code_challenge == String.duplicate("a", 43)
   end
 
-  test "rejects raw params mixed into a request object as sealed-envelope conflicts", %{client: _client} do
+  test "rejects raw params mixed into a request object as sealed-envelope conflicts", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -558,7 +580,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :request_object_conflict
   end
 
-  test "rejects request and request_uri collisions with the request-object reason code", %{client: _client} do
+  test "rejects request and request_uri collisions with the request-object reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -578,7 +602,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :request_object_and_request_uri_conflict
   end
 
-  test "maps malformed request objects to the invalid_request_object_jwt reason code", %{client: _client} do
+  test "maps malformed request objects to the invalid_request_object_jwt reason code", %{
+    client: _client
+  } do
     %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
 
@@ -591,7 +617,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_object_jwt
   end
 
-  test "maps invalid request object typ headers to the invalid_request_object_typ reason code", %{client: _client} do
+  test "maps invalid request object typ headers to the invalid_request_object_typ reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -608,7 +636,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_object_typ
   end
 
-  test "maps invalid signatures to the invalid_request_object_signature reason code", %{client: _client} do
+  test "maps invalid signatures to the invalid_request_object_signature reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
     other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
 
@@ -617,7 +647,8 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
                "client_id" => client.client_id,
-               "request" => JarTestHelpers.sign_jar(other_private_jwk, jar_claims(client.client_id))
+               "request" =>
+                 JarTestHelpers.sign_jar(other_private_jwk, jar_claims(client.client_id))
              })
 
     assert error.reason_code == :invalid_request_object_signature
@@ -635,7 +666,9 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :client_jwks_missing
   end
 
-  test "maps expired request objects to the invalid_request_object_expired reason code", %{client: _client} do
+  test "maps expired request objects to the invalid_request_object_expired reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -643,11 +676,14 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
                "client_id" => client.client_id,
-                "request" =>
-                  JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id,
-                    exp: DateTime.utc_now() |> DateTime.add(-5, :second) |> DateTime.to_unix()
-                  ))
-              })
+               "request" =>
+                 JarTestHelpers.sign_jar(
+                   private_jwk,
+                   jar_claims(client.client_id,
+                     exp: DateTime.utc_now() |> DateTime.add(-5, :second) |> DateTime.to_unix()
+                   )
+                 )
+             })
 
     assert error.reason_code == :invalid_request_object_expired
   end
@@ -660,14 +696,15 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
                "client_id" => client.client_id,
-               "request" =>
-                 JarTestHelpers.sign_jar(private_jwk, jar_claims("other-client"))
+               "request" => JarTestHelpers.sign_jar(private_jwk, jar_claims("other-client"))
              })
 
     assert error.reason_code == :invalid_request_object_iss
   end
 
-  test "maps audience mismatches to the invalid_request_object_aud reason code", %{client: _client} do
+  test "maps audience mismatches to the invalid_request_object_aud reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -676,30 +713,18 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
              AuthorizationRequest.validate(%{
                "client_id" => client.client_id,
                "request" =>
-                 JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id, aud: "https://other.example.com"))
+                 JarTestHelpers.sign_jar(
+                   private_jwk,
+                   jar_claims(client.client_id, aud: "https://other.example.com")
+                 )
              })
 
     assert error.reason_code == :invalid_request_object_aud
   end
 
-  test "maps max-age violations to the invalid_request_object_max_age reason code", %{client: _client} do
-    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
-
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
-
-    assert {:browser_error, %Error{} = error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-                "request" =>
-                  JarTestHelpers.sign_jar(private_jwk, jar_claims(client.client_id,
-                    exp: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
-                  ))
-              })
-
-    assert error.reason_code == :invalid_request_object_max_age
-  end
-
-  test "maps invalid claim shapes to the invalid_request_object_claims reason code", %{client: _client} do
+  test "maps max-age violations to the invalid_request_object_max_age reason code", %{
+    client: _client
+  } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -708,13 +733,35 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
              AuthorizationRequest.validate(%{
                "client_id" => client.client_id,
                "request" =>
-                  JarTestHelpers.sign_jar(
-                    private_jwk,
-                    jar_claims(client.client_id,
-                      nbf: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
-                    )
-                  )
-              })
+                 JarTestHelpers.sign_jar(
+                   private_jwk,
+                   jar_claims(client.client_id,
+                     exp: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
+                   )
+                 )
+             })
+
+    assert error.reason_code == :invalid_request_object_max_age
+  end
+
+  test "maps invalid claim shapes to the invalid_request_object_claims reason code", %{
+    client: _client
+  } do
+    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+
+    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+
+    assert {:browser_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request" =>
+                 JarTestHelpers.sign_jar(
+                   private_jwk,
+                   jar_claims(client.client_id,
+                     nbf: DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix()
+                   )
+                 )
+             })
 
     assert error.reason_code == :invalid_request_object_claims
   end
@@ -793,11 +840,14 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   end
 
   defp put_server_policy!(mode) do
-    assert {:ok, %ServerPolicy{} = _policy} = Repository.put_server_policy(%ServerPolicy{par_policy: mode})
+    assert {:ok, %ServerPolicy{} = _policy} =
+             Repository.put_server_policy(%ServerPolicy{par_policy: mode})
   end
 
   defp update_client_par_policy!(client, mode) do
-    assert {:ok, %Client{} = updated_client} = Repository.update_client(client, %{par_policy: mode})
+    assert {:ok, %Client{} = updated_client} =
+             Repository.update_client(client, %{par_policy: mode})
+
     updated_client
   end
 

@@ -279,7 +279,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert project =~ "Current Milestone: v1.5 Dynamic Client Registration"
     assert project =~ "v1.2 delivered the narrow PAR wedge"
 
-    assert project =~ "v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice"
+    assert project =~
+             "v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice"
 
     assert roadmap =~ "v1.3 PAR Policy Controls"
     assert roadmap =~ "Phase 19: Operator UX and Truthful Surface"
