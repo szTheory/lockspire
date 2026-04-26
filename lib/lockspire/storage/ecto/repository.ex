@@ -19,6 +19,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
+  alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
   alias Lockspire.Storage.Ecto.ServerPolicyRecord
@@ -552,6 +553,39 @@ defmodule Lockspire.Storage.Ecto.Repository do
           |> repo_update(sensitive: true)
           |> map_one(&TokenRecord.to_domain/1)
           |> unwrap_or_rollback()
+      end
+    end)
+  end
+
+  def redeem_initial_access_token(token_hash, redeemed_at)
+      when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
+    transact(fn ->
+      InitialAccessTokenRecord
+      |> where([iat], iat.token_hash == ^token_hash)
+      |> lock("FOR UPDATE")
+      |> repo_one(sensitive: true)
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        record ->
+          cond do
+            record.revoked_at != nil ->
+              repo().rollback(:revoked)
+
+            record.expires_at != nil and DateTime.compare(record.expires_at, redeemed_at) != :gt ->
+              repo().rollback(:expired)
+
+            record.used_at != nil ->
+              repo().rollback(:already_used)
+
+            true ->
+              record
+              |> Ecto.Changeset.change(used_at: redeemed_at, updated_at: DateTime.utc_now())
+              |> repo_update(sensitive: true)
+              |> map_one(&InitialAccessTokenRecord.to_domain/1)
+              |> unwrap_or_rollback()
+          end
       end
     end)
   end
