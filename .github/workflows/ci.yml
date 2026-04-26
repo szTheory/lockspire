@@ -93,6 +93,11 @@ jobs:
       - name: Run fast tests
         run: mix test.fast
 
+      - name: Verify migration reversibility
+        run: |
+          MIX_ENV=test mix ecto.rollback --all
+          MIX_ENV=test mix ecto.migrate
+
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
