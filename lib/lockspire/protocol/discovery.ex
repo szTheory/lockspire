@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.Discovery do
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
     "pushed_authorization_request_endpoint" => "/par",
+    "registration_endpoint" => "/register",
     "token_endpoint" => "/token",
     "userinfo_endpoint" => "/userinfo",
     "jwks_uri" => "/jwks",
@@ -94,9 +95,21 @@ defmodule Lockspire.Protocol.Discovery do
   defp endpoint_metadata_entry(issuer, path) do
     Enum.find_value(@endpoint_paths, fn {key, route_path} ->
       if route_path == path do
-        {key, issuer_url(issuer, route_path)}
+        if key == "registration_endpoint" and
+             registration_disabled?() do
+          nil
+        else
+          {key, issuer_url(issuer, route_path)}
+        end
       end
     end)
+  end
+
+  defp registration_disabled? do
+    case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+      {:ok, policy} -> policy.registration_policy == :disabled
+      _ -> true # Safe fallback
+    end
   end
 
   defp scopes_supported do
