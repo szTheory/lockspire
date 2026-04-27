@@ -45,8 +45,10 @@ Unsupported or out-of-scope surfaces include:
 - host login/session implementations
 - third-party IdP integrations not shipped in this repo
 - hosted auth as a separate service
-- request-object-by-value support, generic external `request_uri` handling, device flow, and dynamic client registration
+- request-object-by-value support, generic external `request_uri` handling, and device flow
 - SAML, LDAP, or generic federation features
+- DCR scope limits: software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, JAR-04 encryption, and `jwks_uri` outbound fetch
+- DCR rate limiting: Lockspire does NOT provide built-in rate limiting for dynamic client registration endpoints. It is the host application's responsibility to protect these endpoints via Plug.
 
 ## Secure defaults
 

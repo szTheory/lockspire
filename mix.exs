@@ -123,6 +123,7 @@ defmodule Lockspire.MixProject do
         "docs/getting-started.md",
         "docs/install-and-onboard.md",
         "docs/operator-admin.md",
+        "docs/dynamic-registration.md",
         "docs/supported-surface.md",
         "docs/maintainer-release.md",
         "docs/sigra-companion-host.md"
@@ -132,6 +133,7 @@ defmodule Lockspire.MixProject do
           "docs/getting-started.md",
           "docs/install-and-onboard.md",
           "docs/operator-admin.md",
+          "docs/dynamic-registration.md",
           "docs/supported-surface.md",
           "docs/sigra-companion-host.md"
         ],
