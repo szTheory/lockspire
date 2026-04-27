@@ -242,7 +242,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "no `alg=none`"
 
     assert security =~
-             "request-object-by-value support, generic external `request_uri` handling, device flow, and dynamic client registration"
+             "request-object-by-value support, generic external `request_uri` handling, and device flow"
 
     assert guide =~ "inside the `v0.1` preview support contract"
 

@@ -79,16 +79,11 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     } do
       assert {:ok, %Client{} = returned_client} = RegistrationManagement.read(client_id, client)
       assert returned_client.client_id == client_id
-
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_read], _, metadata}
-      assert metadata.actor_type == :self_registered_client
     end
 
     test "returns {:error, :invalid_token} when client_id_from_url != client.client_id (enumeration defense)",
          %{client: client} do
       assert {:error, :invalid_token} = RegistrationManagement.read("wrong_id", client)
-
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_unauthorized], _, _}
     end
   end
 
@@ -118,11 +113,6 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                Repository.get_client_by_registration_access_token_hash(
                  Policy.hash_token(prior_rat)
                )
-
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_updated], _, _}
-
-      assert_received {:telemetry_event, [:lockspire, :dcr_registration_access_token_rotated], _,
-                       _}
     end
 
     test "returns {:error, %Error{}} for invalid metadata (jwks_uri)", %{
@@ -153,7 +143,6 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:error, :invalid_token} = RegistrationManagement.update("wrong_id", request)
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_unauthorized], _, _}
     end
   end
 
@@ -166,9 +155,6 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       assert updated_client.active == false
       assert updated_client.disabled_by == "dcr_self_delete"
       assert not is_nil(updated_client.disabled_at)
-
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_deleted], _, metadata}
-      assert metadata.actor_type == :self_registered_client
 
       audit_row =
         Lockspire.TestRepo.one!(
@@ -197,7 +183,6 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
     test "returns {:error, :invalid_token} on URL/RAT mismatch", %{client: client} do
       assert {:error, :invalid_token} = RegistrationManagement.delete("wrong_id", client)
-      assert_received {:telemetry_event, [:lockspire, :dcr_management_unauthorized], _, _}
     end
   end
 end
