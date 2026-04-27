@@ -16,6 +16,7 @@ defmodule Lockspire.Web.Router do
     get("/register/:client_id", Lockspire.Web.RegistrationController, :show)
     put("/register/:client_id", Lockspire.Web.RegistrationController, :update)
     delete("/register/:client_id", Lockspire.Web.RegistrationController, :delete)
+    post("/device/code", Lockspire.Web.DeviceAuthorizationController, :create)
     post("/token", Lockspire.Web.TokenController, :create)
     post("/revoke", Lockspire.Web.RevocationController, :create)
     post("/introspect", Lockspire.Web.IntrospectionController, :create)
