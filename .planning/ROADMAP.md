@@ -101,7 +101,10 @@
   3. `docs/dynamic-registration.md` exists, covers operator setup, IAT lifecycle, and partner integration shape, and is registered in `mix.exs` `:extras`.
   4. An executable end-to-end DCR scenario test exercises register → token issuance via the new client → `GET /register/:client_id` → `PUT` (RAT rotation) → DELETE → re-attempt-with-old-RAT (must fail) and passes in CI.
   5. The v1.5 closure record exists, `audit-open` is clean, and the REQUIREMENTS.md traceability matrix shows 27/27 DCR requirements mapped to phases with closing status.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 29-01-PLAN.md — Truthful Discovery Advertising and Alignment Contract Test
+- [ ] 29-02-PLAN.md — Update documentation surface and scope limits for DCR
+- [ ] 29-03-PLAN.md — Execute end-to-end scenario test and complete milestone closure
 
 ### Progress
 
@@ -111,7 +114,7 @@
 | 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 7/7 | Complete    | 2026-04-26 |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
-| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/0 | Not started | - |
+| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/3 | Planning    | - |
 
 ## Reference
 
