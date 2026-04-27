@@ -114,7 +114,7 @@
 | 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 7/7 | Complete    | 2026-04-26 |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
-| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 0/3 | Planning    | - |
+| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 3/3 | Complete    | 2024-05-18 |
 
 ## Reference
 
