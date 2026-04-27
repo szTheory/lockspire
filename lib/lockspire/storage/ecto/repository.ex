@@ -9,6 +9,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
+  alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.ServerPolicy
@@ -16,9 +17,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
+  alias Lockspire.Storage.DeviceAuthorizationStore
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
+  alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
@@ -37,6 +40,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour TokenStore
   @behaviour KeyStore
   @behaviour PushedAuthorizationRequestStore
+  @behaviour DeviceAuthorizationStore
   @behaviour ServerPolicyStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
@@ -288,6 +292,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
       {:error, :invalid_client_binding} -> {:ok, nil}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  @impl DeviceAuthorizationStore
+  def put_device_authorization(%DeviceAuthorization{} = auth) do
+    %DeviceAuthorizationRecord{}
+    |> DeviceAuthorizationRecord.changeset(auth)
+    |> repo_insert()
+    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
   end
 
   @spec append_audit_event(Event.t() | map()) :: {:ok, Event.t()} | {:error, term()}

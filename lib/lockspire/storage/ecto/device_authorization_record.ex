@@ -36,4 +36,22 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
     |> unique_constraint(:device_code_hash)
     |> unique_constraint(:user_code_hash)
   end
+
+  def update_changeset(record, attrs) when is_map(attrs) do
+    record
+    |> cast(attrs, [
+      :expires_at
+    ])
+  end
+
+  def to_domain(%__MODULE__{} = record, extra \\ []) do
+    %DeviceAuthorization{
+      device_code_hash: record.device_code_hash,
+      user_code_hash: record.user_code_hash,
+      client_id: record.client_id,
+      scopes: record.scopes,
+      expires_at: record.expires_at
+    }
+    |> Map.merge(Enum.into(extra, %{}))
+  end
 end

@@ -276,7 +276,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~ "Current Milestone: v1.5 Dynamic Client Registration"
+    assert project =~ "v1.5 delivered Dynamic Client Registration"
     assert project =~ "v1.2 delivered the narrow PAR wedge"
 
     assert project =~
