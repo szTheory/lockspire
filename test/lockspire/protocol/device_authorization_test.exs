@@ -6,8 +6,8 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
   alias Lockspire.Protocol.DeviceAuthorization
 
   defmodule FakeClientStore do
-    def get_client("valid_client"), do: {:ok, %Client{client_id: "valid_client", token_endpoint_auth_method: "none"}}
-    def get_client(_), do: {:error, :not_found}
+    def fetch_client_by_id("valid_client"), do: {:ok, %Client{client_id: "valid_client", token_endpoint_auth_method: :none}}
+    def fetch_client_by_id(_), do: {:ok, nil}
   end
 
   defmodule FakeDeviceStore do
