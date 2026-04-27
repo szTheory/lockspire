@@ -19,10 +19,8 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
     :telemetry.attach_many(
       handler_id,
       [
-        [:lockspire, :iat_redeemed],
-        [:lockspire, :iat_redemption_failed],
-        [:lockspire, :audit, :iat_redeemed],
-        [:lockspire, :audit, :iat_redemption_failed]
+        [:lockspire, :iat, :use],
+        [:lockspire, :audit, :iat, :use]
       ],
       &__MODULE__.handle_event/4,
       self()
@@ -48,7 +46,8 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
       assert Lockspire.TestRepo.get(Lockspire.Storage.Ecto.InitialAccessTokenRecord, iat.id).used_at !=
                nil
 
-      assert_receive {:telemetry_event, [:lockspire, :iat_redeemed], _measurements, metadata}
+      assert_receive {:telemetry_event, [:lockspire, :iat, :use], _measurements, metadata}
+      assert metadata.status == :success
       refute Map.has_key?(metadata, :plaintext)
       refute Map.has_key?(metadata, :token)
       refute Map.has_key?(metadata, :initial_access_token)
@@ -58,10 +57,10 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
       plaintext = "iat_unknown_test"
       assert {:error, :invalid_token} = InitialAccessToken.redeem(plaintext)
 
-      assert_receive {:telemetry_event, [:lockspire, :iat_redemption_failed], measurements,
-                      metadata}
+      assert_receive {:telemetry_event, [:lockspire, :iat, :use], _measurements, metadata}
 
-      assert measurements.failure_reason == :not_found
+      assert metadata.status == :failure
+      assert metadata.failure_reason == :not_found
       refute Map.has_key?(metadata, :plaintext)
     end
 
@@ -74,10 +73,10 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
 
       assert {:error, :invalid_token} = InitialAccessToken.redeem(plaintext)
 
-      assert_receive {:telemetry_event, [:lockspire, :iat_redemption_failed], measurements,
-                      metadata}
+      assert_receive {:telemetry_event, [:lockspire, :iat, :use], _measurements, metadata}
 
-      assert measurements.failure_reason == :revoked
+      assert metadata.status == :failure
+      assert metadata.failure_reason == :revoked
       refute Map.has_key?(metadata, :plaintext)
     end
 
@@ -88,10 +87,10 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
 
       assert {:error, :invalid_token} = InitialAccessToken.redeem(plaintext)
 
-      assert_receive {:telemetry_event, [:lockspire, :iat_redemption_failed], measurements,
-                      metadata}
+      assert_receive {:telemetry_event, [:lockspire, :iat, :use], _measurements, metadata}
 
-      assert measurements.failure_reason == :expired
+      assert metadata.status == :failure
+      assert metadata.failure_reason == :expired
       refute Map.has_key?(metadata, :plaintext)
     end
 
@@ -102,10 +101,10 @@ defmodule Lockspire.Protocol.InitialAccessTokenTest do
 
       assert {:error, :invalid_token} = InitialAccessToken.redeem(plaintext)
 
-      assert_receive {:telemetry_event, [:lockspire, :iat_redemption_failed], measurements,
-                      metadata}
+      assert_receive {:telemetry_event, [:lockspire, :iat, :use], _measurements, metadata}
 
-      assert measurements.failure_reason == :already_used
+      assert metadata.status == :failure
+      assert metadata.failure_reason == :already_used
       refute Map.has_key?(metadata, :plaintext)
     end
   end

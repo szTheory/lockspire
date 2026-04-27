@@ -28,6 +28,38 @@ defmodule Lockspire.Observability do
     :ok
   end
 
+  @spec emit_dcr(event_name(), measurements(), metadata()) :: :ok
+  def emit_dcr(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
+    redacted_metadata = redact(metadata)
+    normalized_measurements = Map.put_new(measurements, :count, 1)
+
+    :telemetry.execute(@audit_prefix ++ [:dcr, event_name], normalized_measurements, redacted_metadata)
+
+    :telemetry.execute(
+      @telemetry_prefix ++ [:dcr, event_name],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :ok
+  end
+
+  @spec emit_iat(event_name(), measurements(), metadata()) :: :ok
+  def emit_iat(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
+    redacted_metadata = redact(metadata)
+    normalized_measurements = Map.put_new(measurements, :count, 1)
+
+    :telemetry.execute(@audit_prefix ++ [:iat, event_name], normalized_measurements, redacted_metadata)
+
+    :telemetry.execute(
+      @telemetry_prefix ++ [:iat, event_name],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :ok
+  end
+
   @spec redact(metadata()) :: metadata()
   def redact(metadata) when is_map(metadata) do
     Redaction.for_telemetry(metadata)

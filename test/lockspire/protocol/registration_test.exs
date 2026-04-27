@@ -26,10 +26,8 @@ defmodule Lockspire.Protocol.RegistrationTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :dcr_registration_succeeded],
-          [:lockspire, :dcr_registration_rejected],
-          [:lockspire, :audit, :dcr_registration_succeeded],
-          [:lockspire, :audit, :dcr_registration_rejected]
+          [:lockspire, :dcr, :register],
+          [:lockspire, :audit, :dcr, :register]
         ],
         fn event, measurements, metadata, pid ->
           send(pid, {:telemetry_event, event, measurements, metadata})
@@ -141,10 +139,10 @@ defmodule Lockspire.Protocol.RegistrationTest do
       request = DcrFixtures.register_request()
       assert {:ok, _} = Registration.register(request)
 
-      assert_receive {:telemetry_event, [:lockspire, :dcr_registration_succeeded], %{count: 1},
-                      metadata},
+      assert_receive {:telemetry_event, [:lockspire, :dcr, :register], %{count: 1}, metadata},
                      500
 
+      assert metadata.status == :success
       assert metadata.actor_type == :dcr
       refute Map.has_key?(metadata, :plaintext)
       refute Map.has_key?(metadata, :client_secret)
@@ -184,9 +182,10 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
       Registration.register(request)
 
-      assert_receive {:telemetry_event, [:lockspire, :dcr_registration_rejected], _, metadata},
+      assert_receive {:telemetry_event, [:lockspire, :dcr, :register], _, metadata},
                      500
 
+      assert metadata.status == :failure
       assert metadata.reason_code == :invalid_token
       assert metadata.field == :iat
       assert metadata.reason == :missing
@@ -350,10 +349,10 @@ defmodule Lockspire.Protocol.RegistrationTest do
       request = DcrFixtures.register_request(metadata: DcrFixtures.pkce_required_false_metadata())
       assert {:error, _} = Registration.register(request)
 
-      assert_receive {:telemetry_event, [:lockspire, :dcr_registration_rejected], %{count: 1},
-                      metadata},
+      assert_receive {:telemetry_event, [:lockspire, :dcr, :register], %{count: 1}, metadata},
                      500
 
+      assert metadata.status == :failure
       assert metadata.reason == :pkce_floor_required_for_dcr
       refute Map.has_key?(metadata, :plaintext)
     end

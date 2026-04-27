@@ -43,8 +43,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   @spec read(String.t(), Client.t()) :: {:ok, Client.t()} | {:error, :invalid_token}
   def read(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    if client_id_from_url == client.client_id do
-      Observability.emit(:dcr_management_read, %{count: 1}, %{
+    if client_id_from_url == client.client_id and client.active do
+      Observability.emit_dcr(:read, %{count: 1}, %{
+        status: :success,
         actor_type: :self_registered_client,
         actor_id: client.client_id,
         client_id: client.client_id
@@ -68,7 +69,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         } = _request
       )
       when is_binary(client_id_from_url) and is_map(metadata) do
-    if client_id_from_url != client.client_id do
+    if client_id_from_url != client.client_id or not client.active do
       emit_unauthorized(client_id_from_url, client)
       {:error, :invalid_token}
     else
@@ -110,7 +111,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   @spec delete(String.t(), Client.t()) :: :ok | {:error, :invalid_token | term()}
   def delete(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    if client_id_from_url != client.client_id do
+    if client_id_from_url != client.client_id or not client.active do
       emit_unauthorized(client_id_from_url, client)
       {:error, :invalid_token}
     else
@@ -122,12 +123,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
       case Admin.Clients.disable_client(client.client_id, attrs) do
         {:ok, %Client{}} ->
-          Observability.emit(:dcr_management_deleted, %{count: 1}, %{
+          Observability.emit_dcr(:delete, %{count: 1}, %{
+            status: :success,
             actor_type: :self_registered_client,
             actor_id: client.client_id,
             client_id: client.client_id
           })
-
           :ok
 
         {:error, reason} ->
@@ -278,7 +279,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp emit_updated(%Client{} = client) do
-    Observability.emit(:dcr_management_updated, %{count: 1}, %{
+    Observability.emit_dcr(:update, %{count: 1}, %{
+      status: :success,
       actor_type: :self_registered_client,
       actor_id: client.client_id,
       client_id: client.client_id
@@ -286,7 +288,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp emit_rat_rotated(%Client{} = client) do
-    Observability.emit(:dcr_registration_access_token_rotated, %{count: 1}, %{
+    Observability.emit_dcr(:rotate, %{count: 1}, %{
+      status: :success,
       actor_type: :self_registered_client,
       actor_id: client.client_id,
       client_id: client.client_id
@@ -294,7 +297,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp emit_update_rejected(%Client{} = client, %Registration.Error{} = error) do
-    Observability.emit(:dcr_management_updated, %{count: 1, rejected: 1}, %{
+    Observability.emit_dcr(:update, %{count: 1, rejected: 1}, %{
+      status: :failure,
       actor_type: :self_registered_client,
       actor_id: client.client_id,
       client_id: client.client_id,
@@ -305,7 +309,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp emit_unauthorized(client_id_from_url, %Client{} = client) do
-    Observability.emit(:dcr_management_unauthorized, %{count: 1}, %{
+    Observability.emit_dcr(:unauthorized, %{count: 1}, %{
+      status: :failure,
+      reason_code: :unauthorized,
       actor_type: :self_registered_client,
       actor_id: client.client_id,
       client_id_from_url: client_id_from_url,

@@ -25,18 +25,18 @@ defmodule Lockspire.Protocol.InitialAccessToken do
 
     case Repository.redeem_initial_access_token(hash, DateTime.utc_now()) do
       {:ok, %Domain{} = iat} ->
-        Observability.emit(:iat_redeemed, %{count: 1}, %{iat_id: iat.id})
+        Observability.emit_iat(:use, %{count: 1}, %{status: :success, iat_id: iat.id})
         {:ok, iat}
 
       {:error, reason} when reason in [:not_found, :revoked, :expired, :already_used] ->
-        Observability.emit(:iat_redemption_failed, %{count: 1, failure_reason: reason}, %{})
+        Observability.emit_iat(:use, %{count: 1}, %{status: :failure, failure_reason: reason})
         {:error, :invalid_token}
 
       {:error, other} ->
-        Observability.emit(
-          :iat_redemption_failed,
-          %{count: 1, failure_reason: :unexpected},
-          %{detail: inspect(other)}
+        Observability.emit_iat(
+          :use,
+          %{count: 1},
+          %{status: :failure, failure_reason: :unexpected, detail: inspect(other)}
         )
 
         {:error, :invalid_token}
