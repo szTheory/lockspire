@@ -108,7 +108,8 @@ defmodule Lockspire.Protocol.Discovery do
   defp registration_disabled? do
     case Lockspire.Storage.Ecto.Repository.get_server_policy() do
       {:ok, policy} -> policy.registration_policy == :disabled
-      _ -> true # Safe fallback
+      # Safe fallback
+      _ -> true
     end
   end
 

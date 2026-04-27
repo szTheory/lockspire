@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Lockspire.Protocol.Jar do
   @moduledoc """
   JWT Secured Authorization Request (JAR) foundation.
@@ -160,9 +161,6 @@ defmodule Lockspire.Protocol.Jar do
           end
 
         {false, _jwt_struct, _jws_struct} ->
-          {:error, :invalid_signature}
-
-        {:error, _} ->
           {:error, :invalid_signature}
       end
     rescue

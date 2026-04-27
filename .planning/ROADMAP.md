@@ -2,6 +2,8 @@
 
 ## Shipped Milestones
 
+- [x] **v1.5 milestone** - completed 2026-04-27 ([archive](milestones/v1.5-ROADMAP.md), [requirements](milestones/v1.5-REQUIREMENTS.md)); delivered Dynamic Client Registration (DCR) RFC 7591/7592 with 27/27 requirements closed.
+
 - [x] **v1.4 milestone** - completed 2026-04-26 ([archive](milestones/v1.4-ROADMAP.md), [requirements](milestones/v1.4-REQUIREMENTS.md)); delivered the four-phase JAR and request-object milestone with all 18 plans complete, all 5 shipped JAR requirements closed, and JAR-04 preserved as deferred.
 - [x] **v1.3 milestone** - completed 2026-04-24 ([archive](milestones/v1.3-ROADMAP.md), [requirements](milestones/v1.3-REQUIREMENTS.md)); delivered the four-phase PAR Policy milestone with all 8 plans complete, all 6 requirements closed, and consolidated integration proof for global/client/effective policy enforcement.
 - [x] **v1.2 milestone** - completed 2026-04-24 ([archive](milestones/v1.2-ROADMAP.md), [requirements](milestones/v1.2-REQUIREMENTS.md), [audit](milestones/v1.2-MILESTONE-AUDIT.md)); delivered the three-phase PAR foundation milestone with all 8 plans complete, all 5 requirements closed, and the deferred Release Please runtime warning removed without widening the preview support contract.

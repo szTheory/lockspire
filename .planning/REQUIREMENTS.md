@@ -123,33 +123,33 @@ Explicitly excluded. Documented to prevent scope creep and to keep public suppor
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DCR-01 | Phase 27 | Pending |
+| DCR-01 | Phase 27 | Complete |
 | DCR-02 | Phase 26 | Complete |
 | DCR-03 | Phase 26 | Complete |
 | DCR-04 | Phase 26 | Complete |
-| DCR-05 | Phase 27 | Pending |
-| DCR-06 | Phase 25 | Pending |
-| DCR-07 | Phase 25 | Pending |
-| DCR-08 | Phase 25 | Pending |
-| DCR-09 | Phase 25 | Pending |
-| DCR-10 | Phase 25 | Pending |
+| DCR-05 | Phase 27 | Complete |
+| DCR-06 | Phase 25 | Complete |
+| DCR-07 | Phase 25 | Complete |
+| DCR-08 | Phase 25 | Complete |
+| DCR-09 | Phase 25 | Complete |
+| DCR-10 | Phase 25 | Complete |
 | DCR-11 | Phase 26 | Complete |
-| DCR-12 | Phase 28 | Pending |
-| DCR-13 | Phase 27 | Pending |
-| DCR-14 | Phase 27 | Pending |
-| DCR-15 | Phase 27 | Pending |
-| DCR-16 | Phase 29 | Pending |
-| DCR-17 | Phase 29 | Pending |
-| DCR-18 | Phase 28 | Pending |
-| DCR-19 | Phase 28 | Pending |
-| DCR-20 | Phase 28 | Pending |
-| DCR-21 | Phase 28 | Pending |
+| DCR-12 | Phase 28 | Complete |
+| DCR-13 | Phase 27 | Complete |
+| DCR-14 | Phase 27 | Complete |
+| DCR-15 | Phase 27 | Complete |
+| DCR-16 | Phase 29 | Complete |
+| DCR-17 | Phase 29 | Complete |
+| DCR-18 | Phase 28 | Complete |
+| DCR-19 | Phase 28 | Complete |
+| DCR-20 | Phase 28 | Complete |
+| DCR-21 | Phase 28 | Complete |
 | DCR-22 | Phase 26 | Complete |
 | DCR-23 | Phase 26 | Complete |
-| DCR-24 | Phase 29 | Pending |
-| DCR-25 | Phase 29 | Pending |
-| DCR-26 | Phase 29 | Pending |
-| DCR-27 | Phase 29 | Pending |
+| DCR-24 | Phase 29 | Complete |
+| DCR-25 | Phase 29 | Complete |
+| DCR-26 | Phase 29 | Complete |
+| DCR-27 | Phase 29 | Complete |
 
 **Coverage:**
 - v1.5 requirements: 27 total

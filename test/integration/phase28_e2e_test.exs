@@ -14,7 +14,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
-    
+
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
@@ -70,7 +70,9 @@ defmodule Lockspire.Integration.Phase28E2ETest do
 
     # 1. Mint IAT
     expires_at = DateTime.utc_now() |> DateTime.add(3600, :second)
-    {:ok, iat, iat_secret} = InitialAccessTokens.mint_iat(%{single_use: true, expires_at: expires_at})
+
+    {:ok, iat, iat_secret} =
+      InitialAccessTokens.mint_iat(%{single_use: true, expires_at: expires_at})
 
     assert_receive {:telemetry_event, [:lockspire, :iat, :mint], _meas, meta}
     assert meta.iat_id == iat.id
@@ -87,8 +89,6 @@ defmodule Lockspire.Integration.Phase28E2ETest do
       |> put_req_header("authorization", "Bearer #{iat_secret}")
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-    IO.inspect(register_conn.resp_body, label: "REGISTER ERROR")
-
     assert register_conn.status == 201
 
     assert_receive {:telemetry_event, [:lockspire, :iat, :use], _meas, iat_meta}
@@ -104,7 +104,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
     response = Jason.decode!(register_conn.resp_body)
     rat = response["registration_access_token"]
     assert rat != nil
-    
+
     # 3. Read Client
     read_conn =
       build_conn(:get, "/register/#{client_id}")
@@ -180,6 +180,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
         100 -> :ok
       end
     end
+
     flush_mailbox.(flush_mailbox)
 
     # Need to verify no secrets leaked - checking process state could be flaky,

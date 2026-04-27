@@ -149,7 +149,11 @@ defmodule Lockspire.Integration.MilestoneV13VerificationTest do
     test "direct authorize is rejected when client override is required (even if global is optional)",
          %{client: client} do
       Admin.put_server_policy(:optional)
-      Admin.update_client(client.client_id, %{par_policy: :required, actor: %{type: :operator, id: "operator"}})
+
+      Admin.update_client(client.client_id, %{
+        par_policy: :required,
+        actor: %{type: :operator, id: "operator"}
+      })
 
       # Rejected for this client
       conn = build_authorize_conn(client)
@@ -184,7 +188,11 @@ defmodule Lockspire.Integration.MilestoneV13VerificationTest do
     test "direct authorize SUCCEEDS for client with :optional override despite global :required",
          %{client: client} do
       Admin.put_server_policy(:required)
-      Admin.update_client(client.client_id, %{par_policy: :optional, actor: %{type: :operator, id: "operator"}})
+
+      Admin.update_client(client.client_id, %{
+        par_policy: :optional,
+        actor: %{type: :operator, id: "operator"}
+      })
 
       conn = build_authorize_conn(client)
       assert conn.status in [302, 303]

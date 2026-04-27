@@ -81,9 +81,6 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
 
       {:browser_error, %AuthorizationRequest.Error{} = error} ->
         {:error, wrap_jar_error(error)}
-
-      {:redirect_error, %AuthorizationRequest.Error{} = error} ->
-        {:error, wrap_jar_error(error)}
     end
   end
 

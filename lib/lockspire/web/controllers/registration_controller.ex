@@ -113,7 +113,8 @@ defmodule Lockspire.Web.RegistrationController do
   defp lookup_client_by_rat(conn) do
     with token when is_binary(token) <- extract_bearer_token(conn),
          hash <- RegistrationAccessToken.hash(token),
-         {:ok, %Lockspire.Domain.Client{} = client} <- Repository.get_client_by_registration_access_token_hash(hash) do
+         {:ok, %Lockspire.Domain.Client{} = client} <-
+           Repository.get_client_by_registration_access_token_hash(hash) do
       {:ok, client}
     else
       _ -> {:error, :invalid_token}

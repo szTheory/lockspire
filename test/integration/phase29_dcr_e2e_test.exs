@@ -112,7 +112,9 @@ defmodule Lockspire.Integration.Phase29DcrE2ETest do
 
     # 1. Mint IAT
     expires_at = DateTime.utc_now() |> DateTime.add(3600, :second)
-    {:ok, iat, iat_secret} = InitialAccessTokens.mint_iat(%{single_use: true, expires_at: expires_at})
+
+    {:ok, iat, iat_secret} =
+      InitialAccessTokens.mint_iat(%{single_use: true, expires_at: expires_at})
 
     assert_receive {:telemetry_event, [:lockspire, :iat, :mint], _meas, meta}
     assert meta.iat_id == iat.id

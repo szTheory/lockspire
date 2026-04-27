@@ -1,5 +1,15 @@
 # Milestones
 
+## v1.5 Dynamic Client Registration (Shipped + archived: 2026-04-27)
+
+**Phases completed:** **5** (**25-29**), **27** requirements mapped and closed.
+
+**Key accomplishments:**
+
+- Added full RFC 7591/7592 dynamic client registration lifecycle.
+- Implemented operator policy controls and Initial Access Tokens.
+- Truthful discovery and security documentation.
+
 ## v1.4 JAR and Request Objects (Shipped + archived: 2026-04-26)
 
 **Phases completed:** **4** (**21-24**), **18** plans, **5** shipped requirements (**JAR-01**, **JAR-02**, **JAR-03**, **JAR-05**, **JAR-06**); **JAR-04** remains deferred.

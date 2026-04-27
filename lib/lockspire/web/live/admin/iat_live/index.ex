@@ -30,18 +30,23 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   end
 
   defp load_tokens do
-    case InitialAccessTokens.list_iats() do
-      {:ok, tokens} -> tokens
-      {:error, _reason} -> []
-    end
+    {:ok, tokens} = InitialAccessTokens.list_iats()
+    tokens
   end
 
   def iat_status(token) do
     cond do
-      token.revoked_at != nil -> :revoked
-      token.used_at != nil -> :used
-      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) == :lt -> :expired
-      true -> :active
+      token.revoked_at != nil ->
+        :revoked
+
+      token.used_at != nil ->
+        :used
+
+      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) == :lt ->
+        :expired
+
+      true ->
+        :active
     end
   end
 

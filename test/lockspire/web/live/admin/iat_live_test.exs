@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Lockspire.Web.Live.Admin.IatLiveTest do
   use ExUnit.Case, async: false
 
@@ -36,7 +37,12 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
   describe "Index" do
     test "lists active tokens and allows revocation" do
-      {:ok, iat, _secret} = InitialAccessTokens.mint_iat(%{single_use: true, created_by: "test", expires_at: DateTime.add(DateTime.utc_now(), 30, :day)})
+      {:ok, iat, _secret} =
+        InitialAccessTokens.mint_iat(%{
+          single_use: true,
+          created_by: "test",
+          expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+        })
 
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 

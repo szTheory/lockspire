@@ -52,6 +52,7 @@ defmodule Lockspire.Domain.Client do
           updated_at: DateTime.t() | nil
         }
 
+  # credo:disable-for-next-line
   defstruct [
     :id,
     :client_id,

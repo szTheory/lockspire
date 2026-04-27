@@ -119,7 +119,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     # Test provenance filter
     assert {:noreply, socket} =
-             Index.handle_params(%{"provenance" => "self_registered"}, "/admin?provenance=self_registered", socket)
+             Index.handle_params(
+               %{"provenance" => "self_registered"},
+               "/admin?provenance=self_registered",
+               socket
+             )
 
     html = rendered_to_string(Index.render(socket.assigns))
     assert html =~ "Gamma Client"
@@ -130,16 +134,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   test "client detail shows self-registered panel for DCR clients" do
     assert {:ok, alpha_socket} =
              Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
+
     assert {:noreply, alpha_socket} =
-             Show.handle_params(%{"client_id" => "alpha-client"}, "/admin/clients/alpha-client", alpha_socket)
+             Show.handle_params(
+               %{"client_id" => "alpha-client"},
+               "/admin/clients/alpha-client",
+               alpha_socket
+             )
+
     alpha_html = rendered_to_string(Show.render(alpha_socket.assigns))
 
     refute alpha_html =~ "Self-registered client (DCR)"
 
     assert {:ok, gamma_socket} =
              Show.mount(%{"client_id" => "gamma-client"}, %{}, socket_for(:show))
+
     assert {:noreply, gamma_socket} =
-             Show.handle_params(%{"client_id" => "gamma-client"}, "/admin/clients/gamma-client", gamma_socket)
+             Show.handle_params(
+               %{"client_id" => "gamma-client"},
+               "/admin/clients/gamma-client",
+               gamma_socket
+             )
+
     gamma_html = rendered_to_string(Show.render(gamma_socket.assigns))
 
     assert gamma_html =~ "Self-registered client (DCR)"

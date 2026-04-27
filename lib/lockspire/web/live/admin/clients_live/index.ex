@@ -174,13 +174,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp put_status_filter(opts, _status), do: opts
 
   defp put_provenance_filter(opts, "operator"), do: Keyword.put(opts, :provenance, :operator)
-  defp put_provenance_filter(opts, "self_registered"), do: Keyword.put(opts, :provenance, :self_registered)
+
+  defp put_provenance_filter(opts, "self_registered"),
+    do: Keyword.put(opts, :provenance, :self_registered)
+
   defp put_provenance_filter(opts, _provenance), do: opts
 
   defp normalize_status(status) when status in ["all", "active", "disabled"], do: status
   defp normalize_status(_status), do: "all"
 
-  defp normalize_provenance(provenance) when provenance in ["all", "operator", "self_registered"], do: provenance
+  defp normalize_provenance(provenance) when provenance in ["all", "operator", "self_registered"],
+    do: provenance
+
   defp normalize_provenance(_provenance), do: "all"
 
   defp parse_page(page) when is_binary(page) do

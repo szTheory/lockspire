@@ -106,9 +106,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   def handle_event("rotate_rat", %{"rotate" => %{"confirm" => "true"}}, socket) do
-    case Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(socket.assigns.client) do
+    case Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(
+           socket.assigns.client
+         ) do
       {:ok, plaintext, updated_client} ->
-        {:noreply, assign(socket, client: updated_client, revealed_rat: plaintext, rotation_errors: [])}
+        {:noreply,
+         assign(socket, client: updated_client, revealed_rat: plaintext, rotation_errors: [])}
 
       {:error, errors} when is_list(errors) ->
         {:noreply, assign(socket, rotation_errors: errors)}
@@ -325,7 +328,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   defp normalize_action(action)
-       when action in [:show, :edit, :redirects, :rotate_secret, :par_policy, :rotate_registration_access_token],
+       when action in [
+              :show,
+              :edit,
+              :redirects,
+              :rotate_secret,
+              :par_policy,
+              :rotate_registration_access_token
+            ],
        do: action
 
   defp normalize_action(_action), do: :show
@@ -335,7 +345,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp show_path(client_id, :par_policy), do: show_path(client_id, :show) <> "/par-policy"
   defp show_path(client_id, :redirects), do: show_path(client_id, :show) <> "/redirects"
   defp show_path(client_id, :rotate_secret), do: show_path(client_id, :show) <> "/rotate-secret"
-  defp show_path(client_id, :rotate_registration_access_token), do: show_path(client_id, :show) <> "/rotate-registration-access-token"
+
+  defp show_path(client_id, :rotate_registration_access_token),
+    do: show_path(client_id, :show) <> "/rotate-registration-access-token"
 
   defp split_csv(value) when is_binary(value) do
     value

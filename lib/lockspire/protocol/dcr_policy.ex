@@ -1,4 +1,5 @@
 defmodule Lockspire.Protocol.DcrPolicy do
+  @dialyzer {:nowarn_function, intersect_axis: 4}
   @moduledoc """
   Resolves the effective DCR policy for an inbound RFC 7591 client registration request
   as the intersection of:

@@ -617,7 +617,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> map_one(&InitialAccessTokenRecord.to_domain/1)
   end
 
-  def revoke_initial_access_token(id, revoked_at) when is_integer(id) and is_struct(revoked_at, DateTime) do
+  def revoke_initial_access_token(id, revoked_at)
+      when is_integer(id) and is_struct(revoked_at, DateTime) do
     InitialAccessTokenRecord
     |> where([iat], iat.id == ^id)
     |> repo().update_all(set: [revoked_at: revoked_at, updated_at: DateTime.utc_now()])
@@ -859,7 +860,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_filter_client_provenance(query, nil), do: query
 
-  defp maybe_filter_client_provenance(query, provenance) when provenance in [:operator, :self_registered] do
+  defp maybe_filter_client_provenance(query, provenance)
+       when provenance in [:operator, :self_registered] do
     where(query, [client], client.provenance == ^provenance)
   end
 

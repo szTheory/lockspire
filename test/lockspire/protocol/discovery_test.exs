@@ -12,7 +12,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "/lockspire")
-    
+
     # We must start the repo if it's not already started.
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -61,7 +61,9 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
 
     test "when registration_policy is :initial_access_token, endpoint is shown and router handles it" do
-      Repository.update_server_policy(fn policy -> %{policy | registration_policy: :initial_access_token} end)
+      Repository.update_server_policy(fn policy ->
+        %{policy | registration_policy: :initial_access_token}
+      end)
 
       config = Discovery.openid_configuration()
       assert config["registration_endpoint"] == "https://example.test/lockspire/register"

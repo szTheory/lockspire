@@ -129,6 +129,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
             actor_id: client.client_id,
             client_id: client.client_id
           })
+
           :ok
 
         {:error, reason} ->

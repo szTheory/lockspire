@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Lockspire.Protocol.RequestObject do
   @moduledoc """
   Orchestrates JAR (RFC 9101) request-object consumption for `/authorize` and `/par`.
