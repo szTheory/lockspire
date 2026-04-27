@@ -10,27 +10,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived five planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice without widening the embedded-library shape.
+Lockspire has now archived six planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice without widening the embedded-library shape.
 
 At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
 Lockspire can now accept pushed authorization requests at `/par`, consume its own PAR-issued `request_uri` values inside the existing authorization code + PKCE path, enforce global and per-client PAR policy controls, and validate the shipped JAR request-object slice while keeping JAR-04 decryption deferred.
 
-Phase 26 complete — implemented RFC 7591 intake and RFC 7592 management.
-
-## Current Milestone: v1.5 Dynamic Client Registration
-
-**Goal:** Turn Lockspire from operator-tended into partner-buildable by adding RFC 7591/7592 dynamic client registration with operator policy controls, without widening the embedded-library shape.
-
-**Target features:**
-- `POST /register` (RFC 7591) intake with metadata validation, reusing existing client storage and admin seams.
-- Operator policy controls: scope / redirect-URI / grant_types / response_types / token_endpoint_auth_method allowlists, default lifetimes, self-registration on/off, optional initial access tokens.
-- `GET/PUT/DELETE /register/:client_id` (RFC 7592) management with `registration_access_token` rotation.
-- Admin UI surfaces dynamically-registered clients with provenance, auditing, and revocation.
-- Discovery advertises `registration_endpoint` truthfully and SECURITY/docs document the policy-bounded slice only.
-- End-to-end verification and milestone closure with telemetry, audit coverage, and traceability.
-
-**Out of scope (by design):** software statements (RFC 7591 §2.3), external-IdP federation / initial access from upstream IdPs, FAPI-level policy bundles, JAR-04 encrypted request objects.
+v1.5 delivered Dynamic Client Registration (DCR) RFC 7591/7592 with operator policy controls, Initial Access Tokens, and truthful discovery without widening the embedded-library shape.
 
 ## Requirements
 
@@ -48,11 +34,12 @@ Phase 26 complete — implemented RFC 7591 intake and RFC 7592 management.
 - Deliver RFC 7591 `POST /register` intake bounded by operator policy without widening the embedded-library shape. Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
 - Deliver operator policy controls for self-registration (allowlists, defaults, on/off, optional initial access tokens). Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
 - Deliver RFC 7592 client configuration management with `registration_access_token` rotation and admin-UI provenance. Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
+- Advertise `registration_endpoint` truthfully and bound SECURITY/support docs to the shipped DCR slice. Validated in v1.5 milestone.
+- Close v1.5 with end-to-end verification, telemetry/audit coverage, and full traceability for shipped DCR requirements. Validated in v1.5 milestone.
 
 ### Active
 
-- [ ] Advertise `registration_endpoint` in discovery and bound SECURITY/support docs to the shipped DCR slice.
-- [ ] Close v1.5 with end-to-end verification, telemetry/audit coverage, and full traceability for shipped DCR requirements.
+(None currently)
 
 ### Out of Scope
 
@@ -113,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26*
+*Last updated: 2026-04-27 after v1.5 milestone*
