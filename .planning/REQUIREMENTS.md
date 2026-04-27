@@ -12,7 +12,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Intake (POST /register)
 
-- [ ] **DCR-01**: `POST /register` is mounted in the Lockspire router and accepts RFC 7591 client metadata as JSON, gated by the effective registration policy (`Lockspire.Protocol.DcrPolicy`).
+- [x] **DCR-01
+**: `POST /register` is mounted in the Lockspire router and accepts RFC 7591 client metadata as JSON, gated by the effective registration policy (`Lockspire.Protocol.DcrPolicy`).
 - [x] **DCR-02
 **: Intake validation rejects mutually-exclusive or incoherent metadata: `jwks_uri` is rejected with `invalid_client_metadata` ("not supported in this slice"); `jwks` and `jwks_uri` cannot both be present; `grant_types` and `response_types` must satisfy RFC 7591 §2 coherence; `redirect_uris` are validated through the existing `Lockspire.Clients.validate_redirect_uris/1` (exact-match parity with operator-created clients).
 - [x] **DCR-03
@@ -24,40 +25,53 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Operator Policy Controls
 
-- [ ] **DCR-06**: `Lockspire.Domain.ServerPolicy` exposes a 3-mode `registration_policy` field (`:disabled` default | `:initial_access_token` | `:open`) with a singleton row in `lockspire_server_policies`.
-- [ ] **DCR-07**: ServerPolicy DCR allowlists (scopes, grant_types, response_types, redirect-URI hosts/schemes, `token_endpoint_auth_method`) and DCR defaults (client lifetime, `client_secret` expiry, RAT lifetime) bind intake; metadata that exceeds an allowlist is rejected with `invalid_client_metadata`.
-- [ ] **DCR-08**: `Lockspire.Protocol.DcrPolicy.resolve/3` produces an effective policy as the intersection of server, IAT, and inbound metadata; the resolver is intersection-only and never widens.
-- [ ] **DCR-09**: The set of `token_endpoint_auth_method` values DCR will accept is the intersection of the ServerPolicy DCR allowlist and `Lockspire.Protocol.Discovery.token_endpoint_auth_methods_supported/0`; an invariant test asserts this binding.
+- [x] **DCR-06
+**: `Lockspire.Domain.ServerPolicy` exposes a 3-mode `registration_policy` field (`:disabled` default | `:initial_access_token` | `:open`) with a singleton row in `lockspire_server_policies`.
+- [x] **DCR-07
+**: ServerPolicy DCR allowlists (scopes, grant_types, response_types, redirect-URI hosts/schemes, `token_endpoint_auth_method`) and DCR defaults (client lifetime, `client_secret` expiry, RAT lifetime) bind intake; metadata that exceeds an allowlist is rejected with `invalid_client_metadata`.
+- [x] **DCR-08
+**: `Lockspire.Protocol.DcrPolicy.resolve/3` produces an effective policy as the intersection of server, IAT, and inbound metadata; the resolver is intersection-only and never widens.
+- [x] **DCR-09
+**: The set of `token_endpoint_auth_method` values DCR will accept is the intersection of the ServerPolicy DCR allowlist and `Lockspire.Protocol.Discovery.token_endpoint_auth_methods_supported/0`; an invariant test asserts this binding.
 
 ### Initial Access Tokens
 
-- [ ] **DCR-10**: `Lockspire.Domain.InitialAccessToken` and the `lockspire_initial_access_tokens` table persist IATs with hash-at-rest, expiry, single-use default, and a nullable `policy_overrides` JSONB column.
+- [x] **DCR-10
+**: `Lockspire.Domain.InitialAccessToken` and the `lockspire_initial_access_tokens` table persist IATs with hash-at-rest, expiry, single-use default, and a nullable `policy_overrides` JSONB column.
 - [x] **DCR-11
 **: `Lockspire.Protocol.InitialAccessToken.redeem/1` is atomic; expired, revoked, or already-used IATs are rejected with `401 invalid_token`, and successful redemption marks the IAT used in the same transaction.
-- [ ] **DCR-12**: Operators can mint and revoke IATs from the admin LiveView; IAT plaintext is shown copy-once at mint time only.
+- [x] **DCR-12
+**: Operators can mint and revoke IATs from the admin LiveView; IAT plaintext is shown copy-once at mint time only.
 
 ### RFC 7592 Management
 
-- [ ] **DCR-13**: `GET /register/:client_id` is RAT-authenticated, URL-`client_id`-bound, and returns the current RFC 7591 metadata for self-registered clients only.
-- [ ] **DCR-14**: `PUT /register/:client_id` is full-replace via the same validator as `POST /register`; on success it rotates `registration_access_token`, returns the new plaintext exactly once, and invalidates the prior RAT.
-- [ ] **DCR-15**: `DELETE /register/:client_id` soft-disables the client via `Lockspire.Admin.Clients.disable_client_with_audit/4` with `disabled_by: "dcr_self_delete"`; the `client_id` cannot be reused for a future registration.
+- [x] **DCR-13
+**: `GET /register/:client_id` is RAT-authenticated, URL-`client_id`-bound, and returns the current RFC 7591 metadata for self-registered clients only.
+- [x] **DCR-14
+**: `PUT /register/:client_id` is full-replace via the same validator as `POST /register`; on success it rotates `registration_access_token`, returns the new plaintext exactly once, and invalidates the prior RAT.
+- [x] **DCR-15
+**: `DELETE /register/:client_id` soft-disables the client via `Lockspire.Admin.Clients.disable_client_with_audit/4` with `disabled_by: "dcr_self_delete"`; the `client_id` cannot be reused for a future registration.
 
 ### Truthful Discovery
 
-- [ ] **DCR-16**: `Lockspire.Protocol.Discovery.openid_configuration/0` advertises `registration_endpoint` if and only if the registration route is mounted AND `registration_policy != :disabled`.
-- [ ] **DCR-17**: When `registration_policy = :disabled`, `POST /register` returns 404 (not 403); a contract test verifies discovery and runtime stay aligned across all three modes (`:disabled`, `:initial_access_token`, `:open`).
+- [x] **DCR-16
+**: `Lockspire.Protocol.Discovery.openid_configuration/0` advertises `registration_endpoint` if and only if the registration route is mounted AND `registration_policy != :disabled`.
+- [x] **DCR-17
+**: When `registration_policy = :disabled`, `POST /register` returns 404 (not 403); a contract test verifies discovery and runtime stay aligned across all three modes (`:disabled`, `:initial_access_token`, `:open`).
 
 ### Admin UI
 
 - [x] **DCR-18
 **: `Lockspire.Web.Live.Admin.PoliciesLive.Dcr` is the global DCR policy page, mirroring `PoliciesLive.Par` and `PoliciesLive.Jar` shape; it surfaces mode, allowlists, and defaults.
-- [ ] **DCR-19**: `IatLive.Index` and `IatLive.New` cover IAT mint, list, and revoke; minted IATs display copy-once plaintext.
+- [x] **DCR-19
+**: `IatLive.Index` and `IatLive.New` cover IAT mint, list, and revoke; minted IATs display copy-once plaintext.
 - [x] **DCR-20
 **: `ClientsLive.Index` adds a provenance column and filter (`:operator_created` vs `:self_registered`); `ClientsLive.Show` adds a self-registered panel and a `:rotate_registration_access_token` live_action with operator confirmation.
 
 ### Telemetry & Audit
 
-- [ ] **DCR-21**: DCR lifecycle telemetry events are emitted for the full register / read / update / delete / RAT-rotate / unauthorized-management surface and the IAT mint / use / revoke surface; event names are namespaced under `[:lockspire, :dcr, ...]` and `[:lockspire, :iat, ...]`.
+- [x] **DCR-21
+**: DCR lifecycle telemetry events are emitted for the full register / read / update / delete / RAT-rotate / unauthorized-management surface and the IAT mint / use / revoke surface; event names are namespaced under `[:lockspire, :dcr, ...]` and `[:lockspire, :iat, ...]`.
 - [x] **DCR-22
 **: `Lockspire.Admin.Clients.actor_from_attrs/1` is tightened so DCR codepaths attribute `:dcr` or `:self_registered_client` actors and never fall through to the `:operator` default; an explicit test fails if a DCR write logs an `:operator`-flavored audit event.
 - [x] **DCR-23
@@ -65,10 +79,14 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### SECURITY, Docs & Closure
 
-- [ ] **DCR-24**: SECURITY.md is updated to describe only the shipped DCR slice; software statements, external-IdP federation, FAPI bundles, JAR-04, `jwks_uri` outbound fetch, and built-in rate limiting are explicitly listed as out of scope, and the host-side rate-limit Plug seam is documented as a host responsibility.
-- [ ] **DCR-25**: `docs/dynamic-registration.md` is authored covering operator setup, IAT lifecycle, and partner integration shape, and is added to `mix.exs` `:extras`.
-- [ ] **DCR-26**: An end-to-end DCR scenario test exercises register → token issuance via the new client → `GET /register/:client_id` → `PUT` (RAT rotation) → DELETE → re-attempt-with-old-RAT (must fail).
-- [ ] **DCR-27**: Milestone v1.5 closes with a closure record, REQUIREMENTS.md traceability matrix at 100% coverage, and a clean `audit-open`.
+- [x] **DCR-24
+**: SECURITY.md is updated to describe only the shipped DCR slice; software statements, external-IdP federation, FAPI bundles, JAR-04, `jwks_uri` outbound fetch, and built-in rate limiting are explicitly listed as out of scope, and the host-side rate-limit Plug seam is documented as a host responsibility.
+- [x] **DCR-25
+**: `docs/dynamic-registration.md` is authored covering operator setup, IAT lifecycle, and partner integration shape, and is added to `mix.exs` `:extras`.
+- [x] **DCR-26
+**: An end-to-end DCR scenario test exercises register → token issuance via the new client → `GET /register/:client_id` → `PUT` (RAT rotation) → DELETE → re-attempt-with-old-RAT (must fail).
+- [x] **DCR-27
+**: Milestone v1.5 closes with a closure record, REQUIREMENTS.md traceability matrix at 100% coverage, and a clean `audit-open`.
 
 ## Future Requirements
 
