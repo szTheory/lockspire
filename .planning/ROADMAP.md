@@ -22,7 +22,7 @@
 - [x] **Phase 26: Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core** - Build HTTP-free protocol modules for intake validation, RAT/IAT issuance and atomic redemption, hash-at-rest, and tightened DCR-flavored audit attribution with telemetry redaction. (completed 2026-04-26)
 - [ ] **Phase 27: HTTP Surface — Registration and Management Controllers** - Mount `POST /register` and `GET/PUT/DELETE /register/:client_id` with RFC 7591 §3.2.1 response shape, RAT auth, RAT rotation on PUT, and soft-disable on DELETE.
 - [ ] **Phase 28: Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry** - Ship `PoliciesLive.Dcr`, `IatLive.{Index,New}`, ClientsLive provenance + RAT-rotate, and the full DCR/IAT lifecycle telemetry surface.
-- [ ] **Phase 29: Truthful Discovery, SECURITY/Docs, and Milestone Closure** - Advertise `registration_endpoint` truthfully, bound SECURITY.md and `docs/dynamic-registration.md` to the shipped slice, and close v1.5 with an end-to-end scenario test and 100% traceability.
+- [x] **Phase 29: Truthful Discovery, SECURITY/Docs, and Milestone Closure** - Advertise `registration_endpoint` truthfully, bound SECURITY.md and `docs/dynamic-registration.md` to the shipped slice, and close v1.5 with an end-to-end scenario test and 100% traceability.
 
 ### Phase Details
 
@@ -102,9 +102,9 @@
   4. An executable end-to-end DCR scenario test exercises register → token issuance via the new client → `GET /register/:client_id` → `PUT` (RAT rotation) → DELETE → re-attempt-with-old-RAT (must fail) and passes in CI.
   5. The v1.5 closure record exists, `audit-open` is clean, and the REQUIREMENTS.md traceability matrix shows 27/27 DCR requirements mapped to phases with closing status.
 **Plans**: 3 plans
-- [ ] 29-01-PLAN.md — Truthful Discovery Advertising and Alignment Contract Test
-- [ ] 29-02-PLAN.md — Update documentation surface and scope limits for DCR
-- [ ] 29-03-PLAN.md — Execute end-to-end scenario test and complete milestone closure
+- [x] 29-01-PLAN.md — Truthful Discovery Advertising and Alignment Contract Test
+- [x] 29-02-PLAN.md — Update documentation surface and scope limits for DCR
+- [x] 29-03-PLAN.md — Execute end-to-end scenario test and complete milestone closure
 
 ### Progress
 
@@ -114,7 +114,7 @@
 | 26. Protocol Pipeline — RFC 7591 Intake and RFC 7592 Management Core | 7/7 | Complete    | 2026-04-26 |
 | 27. HTTP Surface — Registration and Management Controllers | 0/0 | Not started | - |
 | 28. Operator Admin UI — DCR Policy, IAT Lifecycle, Provenance, RAT Rotation, Lifecycle Telemetry | 0/0 | Not started | - |
-| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 3/3 | Complete    | 2024-05-18 |
+| 29. Truthful Discovery, SECURITY/Docs, and Milestone Closure | 3/3 | Complete    | 2026-04-27 |
 
 ## Reference
 
