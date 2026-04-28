@@ -532,7 +532,12 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "client_id" => public_client.client_id,
                  "device_code" => "device-code-pending"
                },
-               opts: [device_authorization_store: Repository, token_store: Repository]
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository,
+                 now: fn -> pending.next_poll_allowed_at end
+               ]
              })
 
     assert pending_error.error == "authorization_pending"
@@ -552,6 +557,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                },
                authorization: basic_auth(confidential_client.client_id, confidential_secret),
                opts: [
+                 client_store: Repository,
                  device_authorization_store: Repository,
                  token_store: Repository,
                  now: fn -> DateTime.add(too_early.next_poll_allowed_at, -1, :second) end
@@ -575,7 +581,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "device_code" => "device-code-denied"
                },
                authorization: basic_auth(confidential_client.client_id, confidential_secret),
-               opts: [device_authorization_store: Repository, token_store: Repository]
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository
+               ]
              })
 
     assert denied_error.error == "access_denied"
@@ -595,7 +605,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "device_code" => "device-code-expired"
                },
                authorization: basic_auth(confidential_client.client_id, confidential_secret),
-               opts: [device_authorization_store: Repository, token_store: Repository]
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository
+               ]
              })
 
     assert expired_error.error == "expired_token"
@@ -608,7 +622,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "device_code" => "unknown-device-code"
                },
                authorization: basic_auth(confidential_client.client_id, confidential_secret),
-               opts: [device_authorization_store: Repository, token_store: Repository]
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository
+               ]
              })
 
     assert invalid_error.error == "invalid_grant"

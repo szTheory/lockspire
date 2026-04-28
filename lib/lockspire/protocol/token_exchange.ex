@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
@@ -63,12 +64,15 @@ defmodule Lockspire.Protocol.TokenExchange do
       "refresh_token" ->
         exchange_refresh_token(request)
 
+      "urn:ietf:params:oauth:grant-type:device_code" ->
+        exchange_device_code(request)
+
       _other ->
         {:error,
          oauth_error(
            400,
            "unsupported_grant_type",
-           "Only grant_type=authorization_code and grant_type=refresh_token are supported",
+           "Only grant_type=authorization_code, grant_type=refresh_token, and grant_type=urn:ietf:params:oauth:grant-type:device_code are supported",
            :unsupported_grant_type
          )}
     end
@@ -116,8 +120,25 @@ defmodule Lockspire.Protocol.TokenExchange do
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
+      {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
       {:ok, success}
+    end
+  end
+
+  defp exchange_device_code(request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
+
+    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
+         {:ok, %DeviceAuthorizationState{} = device_authorization} <-
+           fetch_device_authorization_for_exchange(params, client, request),
+         {:ok, %Success{} = success} <-
+           redeem_device_authorization(client, device_authorization, request) do
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
     end
   end
 
@@ -158,6 +179,111 @@ defmodule Lockspire.Protocol.TokenExchange do
       _other ->
         {:error, invalid_grant("Authorization code is required", :missing_authorization_code)}
     end
+  end
+
+  defp fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
+    with {:ok, device_code} <- fetch_presented_device_code(params),
+         {:ok, poll_outcome} <- record_device_poll(device_code, client, request) do
+      map_device_poll_outcome(poll_outcome)
+    end
+  end
+
+  defp fetch_presented_device_code(params) do
+    case normalize_optional_string(params["device_code"]) do
+      device_code when is_binary(device_code) ->
+        {:ok, device_code}
+
+      _other ->
+        {:error, invalid_grant("device_code is required", :missing_device_code)}
+    end
+  end
+
+  defp record_device_poll(device_code, %Client{} = client, request) do
+    device_code_hash = Policy.hash_token(device_code)
+
+    case device_authorization_store(request).record_device_poll(
+           device_code_hash,
+           client.client_id,
+           now(request)
+         ) do
+      {:ok, %{} = outcome} ->
+        {:ok, outcome}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to evaluate device authorization polling state",
+           :device_authorization_lookup_failed
+         )}
+    end
+  end
+
+  defp map_device_poll_outcome(%{
+         result: :approved_ready,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }),
+       do: {:ok, device_authorization}
+
+  defp map_device_poll_outcome(%{result: :pending}) do
+    {:error,
+     oauth_error(
+       400,
+       "authorization_pending",
+       "The device authorization is still pending approval",
+       :device_authorization_pending
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :slow_down}) do
+    {:error,
+     oauth_error(
+       400,
+       "slow_down",
+       "The client is polling too quickly",
+       :device_authorization_slow_down
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :denied}) do
+    {:error,
+     oauth_error(
+       400,
+       "access_denied",
+       "The device authorization was denied",
+       :device_authorization_denied
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :expired}) do
+    {:error,
+     oauth_error(
+       400,
+       "expired_token",
+       "The device authorization has expired",
+       :device_authorization_expired
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :client_mismatch}) do
+    {:error,
+     invalid_grant(
+       "The device authorization is invalid for this client",
+       :device_authorization_client_mismatch
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :consumed}) do
+    {:error,
+     invalid_grant(
+       "The device authorization has already been redeemed",
+       :device_authorization_consumed
+     )}
+  end
+
+  defp map_device_poll_outcome(%{result: :invalid_grant}) do
+    {:error, invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
   end
 
   defp validate_code_active(%Token{} = authorization_code, _code_hash) do
@@ -273,6 +399,99 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  defp redeem_device_authorization(
+         %Client{} = client,
+         %DeviceAuthorizationState{} = device_authorization,
+         request
+       ) do
+    with {:ok, %Token{} = device_grant} <- build_device_grant(device_authorization),
+         %Success{} = success <- redeem_device_grant(client, device_grant, device_authorization, request) do
+      emit_success(client, device_authorization, success)
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        maybe_append_failure_audit(error, client, device_authorization, request)
+        {:error, error}
+    end
+  end
+
+  defp build_device_grant(%DeviceAuthorizationState{} = device_authorization) do
+    cond do
+      not is_binary(device_authorization.subject_id) ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Approved device authorization is missing a bound subject",
+           :device_authorization_subject_missing
+         )}
+
+      true ->
+        {:ok,
+         %Token{
+           token_hash: device_authorization.device_code_hash,
+           token_type: :authorization_code,
+           client_id: device_authorization.client_id,
+           account_id: device_authorization.subject_id,
+           interaction_id: nil,
+           scopes: device_authorization.scopes,
+           audience: [],
+           issued_at: device_authorization.approved_at,
+           expires_at: device_authorization.expires_at
+         }}
+    end
+  end
+
+  defp redeem_device_grant(
+         %Client{} = client,
+         %Token{} = device_grant,
+         %DeviceAuthorizationState{} = device_authorization,
+         request
+       ) do
+    issued_at = now(request)
+    formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
+
+    {access_token, raw_access_token} =
+      build_access_token(client, device_grant, issued_at, formatted_refresh_token, request)
+
+    case persist_device_authorization_grant(
+           device_authorization,
+           issued_at,
+           access_token,
+           device_grant,
+           formatted_refresh_token,
+           request
+         ) do
+      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+        build_success_response(
+          client,
+          device_grant,
+          persisted_access_token,
+          raw_access_token,
+          formatted_token_type(),
+          issued_at,
+          Map.get(persisted_grant, :refresh_token_raw),
+          request
+        )
+
+      {:error, :invalid_state} ->
+        {:error,
+         invalid_grant(
+           "The device authorization has already been redeemed",
+           :device_authorization_consumed
+         )}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to redeem device authorization",
+           :device_authorization_redemption_failed
+         )}
+    end
+  end
+
   defp build_success_response(
          %Client{} = client,
          %Token{} = authorization_code,
@@ -304,7 +523,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          request
        ) do
     if "openid" in authorization_code.scopes do
-      with {:ok, %Interaction{} = interaction} <- fetch_interaction(authorization_code, request),
+      with {:ok, interaction_nonce} <- fetch_interaction_nonce(authorization_code, request),
            {:ok, %Claims{} = claims} <- resolve_claims(authorization_code, client, request),
            {:ok, signing_key} <- fetch_signing_key(request),
            {:ok, token} <-
@@ -312,7 +531,7 @@ defmodule Lockspire.Protocol.TokenExchange do
                client_id: client.client_id,
                issuer: Config.issuer!(),
                host_claims: claims,
-               interaction_nonce: interaction.nonce,
+               interaction_nonce: interaction_nonce,
                access_token: raw_access_token,
                issued_at: issued_at,
                signing_key: signing_key
@@ -326,6 +545,15 @@ defmodule Lockspire.Protocol.TokenExchange do
       {:ok, nil}
     end
   end
+
+  defp fetch_interaction_nonce(%Token{interaction_id: interaction_id} = authorization_code, request)
+       when is_binary(interaction_id) do
+    with {:ok, %Interaction{} = interaction} <- fetch_interaction(authorization_code, request) do
+      {:ok, interaction.nonce}
+    end
+  end
+
+  defp fetch_interaction_nonce(%Token{}, _request), do: {:ok, nil}
 
   defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
        when is_binary(interaction_id) do
@@ -408,6 +636,43 @@ defmodule Lockspire.Protocol.TokenExchange do
     emit_success(client, authorization_code)
   end
 
+  defp emit_success(
+         %Client{} = client,
+         %DeviceAuthorizationState{} = device_authorization,
+         %Success{refresh_token: refresh_token}
+       )
+       when is_binary(refresh_token) do
+    emit_device_authorization_success(client, device_authorization)
+
+    Observability.emit(:refresh_token_issued, %{}, %{
+      client_id: client.client_id,
+      subject_id: device_authorization.subject_id
+    })
+  end
+
+  defp emit_success(
+         %Client{} = client,
+         %DeviceAuthorizationState{} = device_authorization,
+         %Success{}
+       ) do
+    emit_device_authorization_success(client, device_authorization)
+  end
+
+  defp emit_device_authorization_success(
+         %Client{} = client,
+         %DeviceAuthorizationState{} = device_authorization
+       ) do
+    metadata = %{
+      client_id: client.client_id,
+      subject_id: device_authorization.subject_id,
+      device_authorization_id: device_authorization.id,
+      reason_code: :device_authorization_redeemed,
+      token_type: :access_token
+    }
+
+    Observability.emit(:access_token_issued, %{}, metadata)
+  end
+
   defp emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
     Observability.emit(:authorization_code_replay_detected, %{}, metadata)
@@ -474,6 +739,9 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp token_store(request),
     do: Keyword.get(request_options(request), :token_store, Config.repo!())
 
+  defp device_authorization_store(request),
+    do: Keyword.get(request_options(request), :device_authorization_store, Config.repo!())
+
   defp interaction_store(request),
     do: Keyword.get(request_options(request), :interaction_store, Config.repo!())
 
@@ -535,6 +803,87 @@ defmodule Lockspire.Protocol.TokenExchange do
     }
 
     {access_token, formatted_access_token.token}
+  end
+
+  defp persist_device_authorization_grant(
+         %DeviceAuthorizationState{} = device_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = device_grant,
+         nil,
+         request
+       ) do
+    audit_event =
+      device_redemption_audit_event(client_actor(device_grant.client_id), device_authorization)
+
+    transact_with_audit_event(token_store(request), audit_event, fn ->
+      with {:ok, %DeviceAuthorizationState{}} <-
+             device_authorization_store(request).consume_device_authorization(
+               device_authorization.verification_handle,
+               device_grant.client_id,
+               issued_at
+             ),
+           {:ok, %Token{} = persisted_access_token} <- token_store(request).store_token(access_token) do
+        %{access_token: persisted_access_token}
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> case do
+      {:ok, %{} = result} -> {:ok, result}
+      {:error, _reason} = error -> error
+      %{} = result -> {:ok, result}
+    end
+  end
+
+  defp persist_device_authorization_grant(
+         %DeviceAuthorizationState{} = device_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = device_grant,
+         formatted_refresh_token,
+         request
+       ) do
+    refresh_token = %Token{
+      token_hash: formatted_refresh_token.token_hash,
+      token_type: :refresh_token,
+      family_id: formatted_refresh_token.token_hash,
+      generation: 0,
+      client_id: device_grant.client_id,
+      account_id: device_grant.account_id,
+      interaction_id: device_grant.interaction_id,
+      scopes: device_grant.scopes,
+      audience: device_grant.audience,
+      issued_at: issued_at,
+      expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+    }
+
+    audit_event =
+      device_redemption_audit_event(client_actor(device_grant.client_id), device_authorization)
+
+    transact_with_audit_event(token_store(request), audit_event, fn ->
+      with {:ok, %DeviceAuthorizationState{}} <-
+             device_authorization_store(request).consume_device_authorization(
+               device_authorization.verification_handle,
+               device_grant.client_id,
+               issued_at
+             ),
+           {:ok, %Token{} = persisted_access_token} <- token_store(request).store_token(access_token),
+           {:ok, %Token{} = persisted_refresh_token} <- token_store(request).store_token(refresh_token) do
+        %{
+          access_token: persisted_access_token,
+          refresh_token: persisted_refresh_token,
+          refresh_token_raw: formatted_refresh_token.token
+        }
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> case do
+      {:ok, %{} = result} -> {:ok, result}
+      {:error, _reason} = error -> error
+      %{} = result -> {:ok, result}
+    end
   end
 
   defp persist_authorization_code_grant(
@@ -633,6 +982,19 @@ defmodule Lockspire.Protocol.TokenExchange do
     :ok
   end
 
+  defp maybe_append_failure_audit(
+         %Error{reason_code: reason_code},
+         %Client{} = client,
+         %DeviceAuthorizationState{} = device_authorization,
+         request
+       )
+       when reason_code in [:device_authorization_client_mismatch, :device_authorization_consumed] do
+    device_replay_audit_event(client_actor(client.client_id), device_authorization, reason_code)
+    |> then(&append_audit_event(token_store(request), &1))
+
+    :ok
+  end
+
   defp maybe_append_failure_audit(_error, _client, _authorization_code, _request), do: :ok
 
   defp load_authorization_code(request, code_hash) do
@@ -696,6 +1058,30 @@ defmodule Lockspire.Protocol.TokenExchange do
     )
   end
 
+  defp device_redemption_audit_event(actor, %DeviceAuthorizationState{} = device_authorization) do
+    device_audit_event(
+      :device_authorization_redeemed,
+      :succeeded,
+      :device_authorization_redeemed,
+      actor,
+      device_authorization
+    )
+  end
+
+  defp device_replay_audit_event(
+         actor,
+         %DeviceAuthorizationState{} = device_authorization,
+         reason_code
+       ) do
+    device_audit_event(
+      :device_authorization_replay_detected,
+      :denied,
+      reason_code,
+      actor,
+      device_authorization
+    )
+  end
+
   defp audit_event(action, outcome, reason_code, actor, %Token{} = authorization_code) do
     %{
       action: action,
@@ -710,6 +1096,30 @@ defmodule Lockspire.Protocol.TokenExchange do
         client_id: authorization_code.client_id,
         interaction_id: authorization_code.interaction_id,
         subject_id: authorization_code.account_id
+      }
+    }
+  end
+
+  defp device_audit_event(
+         action,
+         outcome,
+         reason_code,
+         actor,
+         %DeviceAuthorizationState{} = device_authorization
+       ) do
+    %{
+      action: action,
+      outcome: outcome,
+      reason_code: reason_code,
+      actor: actor,
+      resource: %{
+        type: :device_authorization,
+        id: to_string(device_authorization.id || device_authorization.verification_handle)
+      },
+      metadata: %{
+        client_id: device_authorization.client_id,
+        subject_id: device_authorization.subject_id,
+        verification_handle: device_authorization.verification_handle
       }
     }
   end
