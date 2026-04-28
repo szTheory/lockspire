@@ -10,7 +10,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived six planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice without widening the embedded-library shape.
+Lockspire has now archived seven planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice without widening the embedded-library shape.
 
 At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
@@ -18,7 +18,13 @@ Lockspire can now accept pushed authorization requests at `/par`, consume its ow
 
 v1.5 delivered Dynamic Client Registration (DCR) RFC 7591/7592 with operator policy controls, Initial Access Tokens, and truthful discovery without widening the embedded-library shape.
 
-v1.6 now ships the full Device Authorization Grant wedge: `POST /device/code`, the host-owned `/verify` seam, durable polling cadence enforcement, `POST /token` device-code redemption with RFC 8628 outcomes, truthful discovery metadata, and generated-host end-to-end proof without widening beyond the embedded Phoenix library shape.
+v1.6 now ships the full Device Authorization Grant wedge: `POST /device/code`, the host-owned `/verify` seam, durable polling cadence enforcement, `POST /token` device-code redemption with RFC 8628 outcomes, truthful discovery metadata, CSRF-protected generated verification forms, and generated-host end-to-end proof without widening beyond the embedded Phoenix library shape.
+
+## Next Milestone Goals
+
+- Select the next narrow protocol or hardening wedge without widening beyond the embedded-library shape.
+- Preserve preview-truth discipline: the next milestone should ship only what the repo can verify end to end.
+- Keep the host seam explicit and narrow for any follow-on browser or operator workflows.
 
 ## Requirements
 

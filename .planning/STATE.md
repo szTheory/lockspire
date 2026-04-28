@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
+milestone: v1.6
 milestone_name: milestone
 status: milestone_complete
 stopped_at: Completed 32-03-PLAN.md
-last_updated: "2026-04-28T12:31:27.609Z"
+last_updated: "2026-04-28T13:46:55Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 3
@@ -22,13 +22,13 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 32 — polling-token-issuance complete
+**Current focus:** v1.6 device authorization phases complete and verified
 
 ## Current Position
 
 Phase: 32 (polling-token-issuance) — COMPLETE
 Plan: 3 of 3
-Status: Verified and complete
+Status: Verified and complete; upstream Phase 30 automation/traceability reconciled
 Last activity: 2026-04-28
 
 ## Performance Metrics
@@ -58,6 +58,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Kept /token and /device/code controllers thin by injecting missing repository and config seams instead of duplicating device-flow logic in web adapters.
 - Published device grant and device_authorization_endpoint metadata only because the router already mounts both surfaces and the repo now proves them end-to-end.
 - Derived the generated-host verification URI from the issuer origin and the canonical /verify seam so device clients follow the documented host-owned path.
+- Phase 30 no longer depends on manual UAT; `mix test.phase30`, `mix test.integration`, and `30-VERIFICATION.md` provide the maintained proof surface.
 
 ### Blockers/Concerns
 

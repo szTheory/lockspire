@@ -1,32 +1,11 @@
 ---
 phase: 25-dcr-storage-skeleton-domain-types-and-policy-resolver
-verified: 2026-04-26T16:31:00Z
-status: gaps_found
-score: 3/4 must-haves verified (with caveat on SC-3)
+verified: 2026-04-28T14:30:00Z
+status: passed
+score: 4/4 must-haves verified
 overrides_applied: 0
-re_verification: null
-gaps:
-  - truth: "DcrPolicy.resolve/3 returns an effective policy that is the intersection of all three inputs, never widens any field, and rejects metadata that exceeds an allowlist with `invalid_client_metadata` (Success Criterion 3)."
-    status: partial
-    reason: |
-      The resolver implements intersection semantics correctly for the five well-formed
-      axes, but `intersect_redirect_uris/5` (lib/lockspire/protocol/dcr_policy.ex:141-162)
-      silently passes inbound `redirect_uris` whose `URI.parse/1` produces nil scheme or
-      nil host (e.g. `"/callback"`, `""`, `"not a uri"`, `"javascript:alert(1)"` for the
-      host axis). Such inputs contribute empty sets after `Enum.reject(&is_nil/1)`,
-      yielding `{:ok, %Resolved{}}` for inbound that the resolver's documented
-      "bound-checking" contract requires it to reject with `invalid_client_metadata`.
-      This is a security-relevant escape of the bound-checking responsibility entirely
-      to Phase 26 — but Success Criterion 3 says the resolver itself "rejects metadata
-      that exceeds an allowlist." Malformed redirect_uris that bypass the bound check
-      are a partial-rejection failure of the criterion as written.
-    artifacts:
-      - path: "lib/lockspire/protocol/dcr_policy.ex"
-        issue: "intersect_redirect_uris/5 silently accepts unparseable redirect_uris (lines 141-162); also case-sensitive scheme/host comparison (lines 153-154) violates RFC 3986 §3.1/§3.2.2"
-    missing:
-      - "Reject `redirect_uris` with nil scheme or nil host with `{:error, :invalid_client_metadata, %{field: :redirect_uris, reason: :unparseable, ...}}` before reaching intersect_axis."
-      - "Lowercase both inbound and server allowlist scheme + host before MapSet operations to honor RFC 3986 case-insensitivity."
-      - "Regression tests for `redirect_uris: [\"/cb\"]`, `redirect_uris: [\"\"]`, `redirect_uris: [\"javascript:alert(1)\"]`, and `redirect_uris: [\"https://Partner.Example.com/cb\"]` against an operator allowlist of `[\"partner.example.com\"]`."
+re_verification: 2026-04-28T14:30:00Z
+gaps: []
 deferred: []
 human_verification: []
 ---
@@ -36,8 +15,8 @@ human_verification: []
 **Phase Goal:** Operators have a durable, migrated DCR policy store, the domain layer carries `ServerPolicy` DCR fields, `Client` provenance fields, and `InitialAccessToken` (with `policy_overrides` JSONB), and `Lockspire.Protocol.DcrPolicy.resolve/3` produces an intersection-only effective policy that is bound at discovery via an invariant test.
 
 **Verified:** 2026-04-26T16:31:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** passed
+**Re-verification:** Yes — Phase 25 review fixes and targeted proof rerun
 
 ## Goal Achievement
 

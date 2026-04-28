@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.6 Device Authorization Grant (Shipped + archived: 2026-04-28)
+
+**Phases completed:** **3** (**30-32**), **10** plans, **9** requirements closed.
+
+**Package posture:** `lockspire 0.2.0` remains preview at archive time, but the shipped surface now includes the full repo-proven Device Authorization Grant wedge on top of the earlier PAR, JAR, and DCR work.
+
+**Key accomplishments:**
+
+- Added the full Device Authorization Grant flow: mounted `POST /device/code`, durable hashed storage, Base20 user codes, and strict TTLs.
+- Generated and documented the host-owned `/verify` seam with explicit anti-phishing behavior, CSRF-protected forms, and rate-limit guidance that stays on the host side.
+- Added durable poll pacing, RFC 8628 continuation outcomes on `/token`, truthful discovery metadata, and generated-host end-to-end proof for `/device/code -> /verify -> /token`.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.6-MILESTONE-AUDIT.md`](milestones/v1.6-MILESTONE-AUDIT.md) (`passed` with no requirement, integration, flow, or Nyquist gaps).
+
+**Archives:** `milestones/v1.6-ROADMAP.md`, `milestones/v1.6-REQUIREMENTS.md`, `milestones/v1.6-MILESTONE-AUDIT.md` · **Git tag:** `v1.6`
+
+---
+
 ## v1.5 Dynamic Client Registration (Shipped + archived: 2026-04-27)
 
 **Phases completed:** **5** (**25-29**), **27** requirements mapped and closed.

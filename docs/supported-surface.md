@@ -1,12 +1,12 @@
 # Supported Surface
 
-Lockspire `v0.1` is a preview release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
+Lockspire `v0.2.0` is a preview release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
 
 This page is the canonical preview contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
 
 ## Supported in scope
 
-Lockspire `v0.1` preview currently supports this repo-proven surface:
+Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
@@ -25,7 +25,7 @@ Lockspire `v0.1` preview currently supports this repo-proven surface:
 
 ## Explicitly out of scope
 
-Lockspire `v0.1` preview does not currently support:
+Lockspire `v0.2.0` preview does not currently support:
 
 - Implicit flow
 - Request-object-by-value support
@@ -41,7 +41,7 @@ Lockspire `v0.1` preview does not currently support:
 
 ## Trust posture
 
-Lockspire stays at `v0.1` preview because public claims are limited to what this repo can prove today. Repo-owned proof for this preview posture lives in:
+Lockspire stays at `v0.2.0` preview because public claims are limited to what this repo can prove today. Repo-owned proof for this preview posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
@@ -55,7 +55,7 @@ Lockspire does not use a demo app, certification language, or external folklore 
 
 ## Preview bar
 
-A `v0.1` preview claim can honestly say:
+A `v0.2.0` preview claim can honestly say:
 
 - there is one canonical Phoenix onboarding path
 - secure OAuth/OIDC defaults are enforced inside the supported surface
@@ -64,7 +64,7 @@ A `v0.1` preview claim can honestly say:
 - contributor and release workflows are versioned in the repo
 - a private disclosure path exists for supported security issues
 
-A `v0.1` preview claim should not say:
+A `v0.2.0` preview claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
 - Lockspire supports broader request-object modes, generic external `request_uri` handling, dynamic client registration, SAML, or LDAP
