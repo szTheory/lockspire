@@ -4,17 +4,40 @@ defmodule Lockspire.Protocol.DPoPTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.JarTestHelpers
 
+  @reference_time ~U[2026-04-28 15:00:00Z]
+  @reference_unix DateTime.to_unix(@reference_time)
+  @target_uri "https://server.example.com/token"
+
+  defp valid_claims(overrides \\ %{}) do
+    Map.merge(
+      %{
+        "htm" => "POST",
+        "htu" => @target_uri,
+        "iat" => @reference_unix,
+        "jti" => Ecto.UUID.generate()
+      },
+      overrides
+    )
+  end
+
+  defp validation_opts(overrides \\ []) do
+    Keyword.merge(
+      [
+        method: "POST",
+        target_uri: @target_uri,
+        now: @reference_time,
+        max_age: 300,
+        clock_skew: 30
+      ],
+      overrides
+    )
+  end
+
   describe "decode/1" do
     setup do
       keys = JarTestHelpers.generate_ec_keys()
 
-      proof =
-        JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
-          "htm" => "POST",
-          "htu" => "https://server.example.com/token",
-          "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-          "jti" => Ecto.UUID.generate()
-        })
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims())
 
       %{keys: keys, proof: proof}
     end
@@ -35,13 +58,7 @@ defmodule Lockspire.Protocol.DPoPTest do
   describe "validate_proof/2" do
     setup do
       keys = JarTestHelpers.generate_ec_keys()
-
-      claims = %{
-        "htm" => "POST",
-        "htu" => "https://server.example.com/token",
-        "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-        "jti" => Ecto.UUID.generate()
-      }
+      claims = valid_claims()
 
       %{keys: keys, claims: claims}
     end
@@ -117,6 +134,91 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert {:ok, ^thumbprint} = DPoP.thumbprint(keys.pub_jwk_map)
       assert is_binary(thumbprint)
       refute thumbprint == ""
+    end
+  end
+
+  describe "validate_proof/2 claim checks" do
+    setup do
+      keys = JarTestHelpers.generate_ec_keys()
+      %{keys: keys}
+    end
+
+    test "accepts a proof whose htm, htu, iat, and jti match the request context", %{keys: keys} do
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims())
+
+      assert {:ok, %DPoP{claims: claims, jkt: jkt}} = DPoP.validate_proof(proof, validation_opts())
+      assert claims["htm"] == "POST"
+      assert claims["htu"] == @target_uri
+      assert claims["iat"] == @reference_unix
+      assert is_binary(jkt)
+    end
+
+    test "returns a typed reason for later invalid_dpop_proof mapping when htm mismatches", %{
+      keys: keys
+    } do
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(%{"htm" => "GET"}))
+
+      assert {:error, :invalid_htm} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason for later invalid_dpop_proof mapping when htu mismatches", %{
+      keys: keys
+    } do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{"htu" => "https://server.example.com/userinfo"})
+        )
+
+      assert {:error, :invalid_htu} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason for later invalid_dpop_proof mapping when iat is stale", %{
+      keys: keys
+    } do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{"iat" => @reference_unix - 301})
+        )
+
+      assert {:error, :stale_iat} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason for later invalid_dpop_proof mapping when iat is too far in the future",
+         %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{"iat" => @reference_unix + 31})
+        )
+
+      assert {:error, :future_iat} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason for later invalid_dpop_proof mapping when jti is missing", %{
+      keys: keys
+    } do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          Map.delete(valid_claims(), "jti")
+        )
+
+      assert {:error, :missing_jti} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason when the proof signature is invalid", %{keys: keys} do
+      other_keys = JarTestHelpers.generate_ec_keys()
+      proof = JarTestHelpers.sign_dpop_proof(other_keys.private_jwk, valid_claims(), jwk: keys.pub_jwk_map)
+
+      assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "returns a typed reason when the proof header omits jwk", %{keys: keys} do
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(), extra_header: %{"jwk" => nil})
+
+      assert {:error, :missing_jwk} = DPoP.validate_proof(proof, validation_opts())
     end
   end
 end
