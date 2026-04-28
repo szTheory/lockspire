@@ -19,6 +19,12 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     def record_dpop_proof(_replay), do: {:ok, :replay}
   end
 
+  setup_all do
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    :ok
+  end
+
   test "validates a DPoP-bound token with matching scheme proof ath and cnf thumbprint" do
     %{request: request, token: token} = dpop_request_fixture()
 
@@ -39,14 +45,14 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       :missing_dpop_proof
     )
 
-    missing_ath_proof = proof_fixture(%{"ath" => nil})
+    %{jwt: missing_ath_proof} = proof_fixture(%{"ath" => nil})
 
     assert_invalid_token(
       ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: missing_ath_proof}),
       :missing_dpop_ath
     )
 
-    wrong_ath_proof = proof_fixture(%{"ath" => DPoP.access_token_ath("other-access-token")})
+    %{jwt: wrong_ath_proof} = proof_fixture(%{"ath" => DPoP.access_token_ath("other-access-token")})
 
     assert_invalid_token(
       ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: wrong_ath_proof}),

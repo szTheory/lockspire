@@ -36,6 +36,18 @@ defmodule Lockspire.Protocol.DPoP do
   @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
   @required_typ "dpop+jwt"
 
+  # Exported as `def signing_alg_values_supported/0` for later discovery/challenge reuse.
+  @spec signing_alg_values_supported() :: [String.t()]
+  def signing_alg_values_supported(), do: @allowed_algorithms
+
+  # Exported as `def access_token_ath/1` so ath hashing stays canonical across surfaces.
+  @spec access_token_ath(String.t()) :: String.t()
+  def access_token_ath(access_token) when is_binary(access_token) do
+    access_token
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.url_encode64(padding: false)
+  end
+
   @spec decode(String.t()) :: {:ok, t()} | {:error, :invalid_jwt}
   def decode(jwt) when is_binary(jwt) do
     try do
