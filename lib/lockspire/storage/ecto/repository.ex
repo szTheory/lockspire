@@ -302,6 +302,39 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> map_one(&DeviceAuthorizationRecord.to_domain/1)
   end
 
+  @impl DeviceAuthorizationStore
+  def fetch_device_authorization_by_user_code_hash(user_code_hash)
+      when is_binary(user_code_hash) do
+    DeviceAuthorizationRecord
+    |> where([authorization], authorization.user_code_hash == ^user_code_hash)
+    |> repo_one(sensitive: true)
+    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl DeviceAuthorizationStore
+  def fetch_device_authorization_by_verification_handle(verification_handle)
+      when is_binary(verification_handle) do
+    DeviceAuthorizationRecord
+    |> where([authorization], authorization.verification_handle == ^verification_handle)
+    |> repo_one(sensitive: true)
+    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl DeviceAuthorizationStore
+  def transition_device_authorization(verification_handle, expected_statuses, attrs)
+      when is_binary(verification_handle) and is_list(expected_statuses) and is_map(attrs) do
+    transact(fn ->
+      verification_handle
+      |> locked_device_authorization_query()
+      |> repo().one()
+      |> transition_device_authorization_record(expected_statuses, attrs)
+    end)
+  end
+
   @spec append_audit_event(Event.t() | map()) :: {:ok, Event.t()} | {:error, term()}
   def append_audit_event(%Event{} = event) do
     %AuditEventRecord{}
@@ -1001,6 +1034,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> lock("FOR UPDATE")
   end
 
+  defp locked_device_authorization_query(verification_handle) do
+    DeviceAuthorizationRecord
+    |> where([authorization], authorization.verification_handle == ^verification_handle)
+    |> lock("FOR UPDATE")
+  end
+
   defp locked_refresh_token_query(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
@@ -1026,6 +1065,25 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
       |> repo().update()
       |> map_one(&InteractionRecord.to_domain/1)
+      |> unwrap_or_rollback()
+    else
+      repo().rollback(:invalid_state)
+    end
+  end
+
+  defp transition_device_authorization_record(nil, _expected_statuses, _attrs),
+    do: repo().rollback(:not_found)
+
+  defp transition_device_authorization_record(
+         %DeviceAuthorizationRecord{} = record,
+         expected_statuses,
+         attrs
+       ) do
+    if record.status in expected_statuses do
+      record
+      |> DeviceAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
+      |> repo().update()
+      |> map_one(&DeviceAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
     else
       repo().rollback(:invalid_state)
