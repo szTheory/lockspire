@@ -188,7 +188,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "mix hex.publish --yes"
   end
 
-  test "preview docs keep the v0.1 embedded Phoenix wedge explicit" do
+  test "preview docs keep the embedded Phoenix wedge explicit and pin the narrow DPoP surface" do
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
 
@@ -203,7 +203,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~
              "Request-object-by-value support, generic external `request_uri` handling, device flow, or dynamic client registration"
 
-    assert supported_surface =~ "Lockspire `v0.1` is a preview release"
+    assert supported_surface =~ "Lockspire `v0.2.0` is a preview release"
 
     assert supported_surface =~
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
@@ -217,7 +217,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "Lockspire does not use a demo app"
-    assert supported_surface =~ "A `v0.1` preview claim should not say:"
+    assert supported_surface =~ "A `v0.2.0` preview claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
 
     assert supported_surface =~
@@ -225,6 +225,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
+    assert supported_surface =~ "DPoP on token requests and the Lockspire-owned `userinfo` endpoint"
+    assert supported_surface =~ "bearer clients remain unchanged by default"
+    assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
 
     refute readme =~ "production-ready"
   end
@@ -334,8 +337,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert project =~ "v1.5 delivered Dynamic Client Registration"
     assert project =~ "v1.2 delivered the narrow PAR wedge"
 
-    assert project =~
-             "v1.3 added PAR policy controls, and v1.4 added the narrow JAR request-object slice"
+    assert project =~ "v1.3 added PAR policy controls"
+    assert project =~ "v1.4 added the narrow JAR request-object slice"
 
     assert roadmap =~ "v1.3 PAR Policy Controls"
     assert roadmap =~ "Phase 19: Operator UX and Truthful Surface"
