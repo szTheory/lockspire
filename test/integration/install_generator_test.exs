@@ -32,6 +32,15 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(get "/authorized-apps", AuthorizedAppsController, :index)
 
+    router = File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
+
+    assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
+    assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
+    assert router =~ ~s(post "/verify/:handle/approve", LockspireVerificationController, :approve)
+    assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
+    assert router =~ "prefill-only"
+    assert router =~ "device-flow-host-guide.md"
+
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
 
@@ -77,9 +86,31 @@ defmodule Lockspire.InstallGeneratorTest do
              )
            ) =~ "Host-owned account settings page"
 
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
+             )
+           ) =~ "def lookup"
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_html.ex"
+             )
+           ) =~ "embed_templates"
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_html/index.html.heex"
+             )
+           ) =~ "Review device request"
+
     assert output =~ "Lockspire canonical onboarding next steps"
     assert output =~ "Import `config/lockspire.exs`"
     assert output =~ "auth-code + PKCE flow"
+    assert output =~ "docs/device-flow-host-guide.md"
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
@@ -106,6 +137,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert rerun_output =~ "* unchanged lib/generated_host_app_web/router/lockspire.ex"
     assert rerun_output =~ "* unchanged config/lockspire.exs"
+    assert rerun_output =~
+             "* unchanged lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
     assert rerun_output =~ "Lockspire canonical onboarding next steps"
   end
 
@@ -116,6 +149,27 @@ defmodule Lockspire.InstallGeneratorTest do
 
     router_path = Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
     File.write!(router_path, File.read!(router_path) <> "\n# host customization\n")
+
+    assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
+      File.cd!(@fixture_root, fn ->
+        Mix.Task.reenable("lockspire.install")
+        Mix.Tasks.Lockspire.Install.run(base_args())
+      end)
+    end
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    verification_path =
+      Path.join(
+        @fixture_root,
+        "lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
+      )
+
+    File.write!(verification_path, File.read!(verification_path) <> "\n# host verification customization\n")
 
     assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
       File.cd!(@fixture_root, fn ->
