@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: milestone
-status: planning
-stopped_at: Phase 35 context gathered (assumptions mode)
-last_updated: "2026-04-28T18:18:35.497Z"
+status: executing
+stopped_at: Completed 35-03-PLAN.md
+last_updated: "2026-04-28T19:42:26.902Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 9
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -22,13 +22,13 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 35 — Owned Endpoint Consumption and Truthful Surface
+**Current focus:** Phase 35 — owned-endpoint-consumption-and-truthful-surface
 
 ## Current Position
 
-Phase: 35
-Plan: Not started
-Status: Context gathered, ready to plan
+Phase: 35 (owned-endpoint-consumption-and-truthful-surface) — EXECUTING
+Plan: 3 of 3
+Status: Ready to execute
 Last activity: 2026-04-28
 
 ## Performance Metrics
@@ -58,6 +58,10 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Generated-host DPoP replay proof uses a fresh proof on second redemption to isolate consumed device_code invalid_grant behavior from proof replay rejection.
 - Refresh exchange now derives DPoP mode from the presented refresh token's durable cnf and requires a valid proof only for bound families.
 - Refresh proof-object and replay failures remain invalid_dpop_proof, while repository key mismatches collapse publicly to invalid_grant.
+- Drive userinfo DPoP enforcement from durable token cnf.jkt state instead of client or server policy lookups.
+- Collapse userinfo DPoP proof failures to public invalid_token while using WWW-Authenticate to advertise DPoP capability and accepted algorithms.
+- Self-registered clients now resolve omitted or false dpop_bound_access_tokens to explicit bearer policy instead of inheriting future server defaults.
+- The DPoP operator surface stays intentionally parallel to PAR: one global policy page plus the existing client edit workflow.
 
 ### Blockers/Concerns
 
@@ -68,9 +72,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Run `$gsd-plan-phase 35`
 
-**Resume file:** `.planning/phases/35-owned-endpoint-consumption-and-truthful-surface/35-CONTEXT.md`
+**Resume file:** None
 
-**Stopped at:** Phase 35 context gathered (assumptions mode)
+**Stopped at:** Completed 35-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

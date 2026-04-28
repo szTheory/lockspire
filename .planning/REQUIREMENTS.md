@@ -26,9 +26,11 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Owned Endpoint Consumption and Surface Truth
 
-- [ ] **DPoP-09**: `userinfo` accepts DPoP-bound access tokens only when the accompanying proof validates against the token's stored binding state.
+- [x] **DPoP-09
+**: `userinfo` accepts DPoP-bound access tokens only when the accompanying proof validates against the token's stored binding state.
 - [ ] **DPoP-10**: Discovery metadata and support docs advertise only the shipped DPoP slice, including truthful supported proof signing algorithms and endpoint behavior.
-- [ ] **DPoP-11**: Operator and DCR flows can explicitly configure client token mode for bearer vs DPoP without repo-internal edits.
+- [x] **DPoP-11
+**: Operator and DCR flows can explicitly configure client token mode for bearer vs DPoP without repo-internal edits.
 
 ### Proof, Observability, and Closure
 
