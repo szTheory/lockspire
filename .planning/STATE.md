@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: milestone
-status: milestone_complete
-stopped_at: Completed 36-end-to-end-proof-and-milestone-closure-02-PLAN.md
-last_updated: "2026-04-28T20:49:47.386Z"
+milestone: v1.8
+milestone_name: Protocol Surface Completeness
+status: milestone_started
+last_updated: "2026-04-28T21:00:00.000Z"
 last_activity: 2026-04-28
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 12
-  completed_plans: 10
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,19 +21,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 36 — End-to-End Proof and Milestone Closure
+**Current focus:** Not started (defining requirements)
 
 ## Current Position
 
-Phase: 36
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-04-28
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-28 — Milestone v1.8 started
 
 ## Performance Metrics
 
-- Phases completed: 4/4 (v1.7)
-- Plans completed: 12/12 (active execution window)
+- Phases completed: 0/0 (v1.8)
+- Plans completed: 0/0 (v1.8)
 
 ## Accumulated Context
 
@@ -70,17 +69,16 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ### Blockers/Concerns
 
-- No current execution blockers.
-- DPoP replay protection and proof-validation boundaries need deliberate scope control so the milestone stays narrow and repo-verifiable.
+- None. Milestone complete.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-plan-phase 36`
+**Next action:** Run `$gsd-new-milestone` or `$gsd-plan-phase` to start the next iteration.
 
 **Resume file:** None
 
-**Stopped at:** Completed 36-end-to-end-proof-and-milestone-closure-02-PLAN.md
+**Stopped at:** Milestone complete
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** 36 — End-to-End Proof and Milestone Closure
+**Planned Phase:** None
