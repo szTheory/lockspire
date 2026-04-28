@@ -1,0 +1,23 @@
+<section class="host-verification-shell">
+  <header>
+    <p>Host-owned device verification seam</p>
+    <h1><%%= @page_title %></h1>
+    <p>
+      Enter the code shown on your device. `verification_uri_complete` is prefill-only and
+      nothing is approved until the user explicitly continues.
+    </p>
+  </header>
+
+  <%%= if @error_message do %>
+    <section>
+      <p><%%= @error_message %></p>
+    </section>
+  <%% end %>
+
+  <form action={~p"/verify"} method="post">
+    <label for="verification-user-code">Device code</label>
+    <input id="verification-user-code" name="user_code" value={@user_code} />
+    <p>Review device request</p>
+    <button type="submit">Review device request</button>
+  </form>
+</section>

@@ -84,6 +84,8 @@ defmodule Lockspire.Generators.Install do
       consent_live_module: "#{web_module}.LockspireConsentLive",
       authorized_apps_controller_module: "#{web_module}.AuthorizedAppsController",
       authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
+      verification_controller_module: "#{web_module}.LockspireVerificationController",
+      verification_html_module: "#{web_module}.LockspireVerificationHTML",
       sigra_host: Keyword.get(opts, :sigra_host, false)
     }
   end
@@ -97,7 +99,8 @@ defmodule Lockspire.Generators.Install do
       3. Call `lockspire_routes()` where your host wants the authorized-apps surface.
       4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
       5. Point your login flow back through `#{assigns.interaction_handler_module}`.
-      6. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
+      6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
+      7. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
     """
   end
 end

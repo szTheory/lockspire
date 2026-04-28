@@ -2,11 +2,11 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
   use ExUnit.Case, async: true
 
   @controller_template Path.expand(
-                         "../../../priv/templates/lockspire.install/verification_controller.ex",
+                         "../../../../priv/templates/lockspire.install/verification_controller.ex",
                          __DIR__
                        )
   @html_template Path.expand(
-                   "../../../priv/templates/lockspire.install/verification_html/index.html.heex",
+                   "../../../../priv/templates/lockspire.install/verification_html/index.html.heex",
                    __DIR__
                  )
 

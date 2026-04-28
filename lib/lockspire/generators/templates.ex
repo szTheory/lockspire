@@ -37,6 +37,18 @@ defmodule Lockspire.Generators.Templates do
       %{
         template: "authorized_apps/index.html.heex",
         output: &"lib/#{&1.web_path}/controllers/authorized_apps_html/index.html.heex"
+      },
+      %{
+        template: "verification_controller.ex",
+        output: &"lib/#{&1.web_path}/controllers/lockspire_verification_controller.ex"
+      },
+      %{
+        template: "verification_html.ex",
+        output: &"lib/#{&1.web_path}/controllers/lockspire_verification_html.ex"
+      },
+      %{
+        template: "verification_html/index.html.heex",
+        output: &"lib/#{&1.web_path}/controllers/lockspire_verification_html/index.html.heex"
       }
     ]
   end
