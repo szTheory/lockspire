@@ -32,8 +32,10 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Proof, Observability, and Closure
 
-- [ ] **DPoP-12**: End-to-end tests prove at least one authorization-code DPoP flow and one public/CLI-oriented DPoP flow.
-- [ ] **DPoP-13**: Introspection and related runtime surfaces expose truthful DPoP-bound token state where needed, including `cnf` on active DPoP-bound tokens.
+- [x] **DPoP-12
+**: End-to-end tests prove at least one authorization-code DPoP flow and one public/CLI-oriented DPoP flow.
+- [x] **DPoP-13
+**: Introspection and related runtime surfaces expose truthful DPoP-bound token state where needed, including `cnf` on active DPoP-bound tokens.
 - [ ] **DPoP-14**: The v1.7 milestone closes with synchronized docs, traceability, and an updated epic-arc record so future milestone selection builds from current repo truth.
 
 ## Future Requirements

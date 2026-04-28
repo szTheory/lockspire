@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: DPoP Core for Public and CLI Clients
+milestone: v1.6
+milestone_name: milestone
 status: planning
-stopped_at: Phase 35 execution and verification complete
-last_updated: "2026-04-28T19:59:00Z"
+stopped_at: Completed 36-end-to-end-proof-and-milestone-closure-02-PLAN.md
+last_updated: "2026-04-28T20:49:47.386Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 12
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -64,6 +64,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - The DPoP operator surface stays intentionally parallel to PAR: one global policy page plus the existing client edit workflow.
 - Discovery now publishes DPoP algorithm metadata only when both `/token` and Lockspire-owned `/userinfo` are mounted.
 - Public support docs now claim DPoP only for token requests and Lockspire-owned `userinfo`, with generic host protected-resource middleware explicitly out of scope.
+- Extend active introspection response to expose persisted cnf state
+- Do not relax caller authentication or inactive/collapsed introspection behavior
+- Promote the Phase 32 generated-host DPoP device testing client to :confidential client type so it can introspect its own token in the same harness
 
 ### Blockers/Concerns
 
@@ -74,9 +77,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Run `$gsd-plan-phase 36`
 
-**Resume file:** `.planning/ROADMAP.md`
+**Resume file:** None
 
-**Stopped at:** Phase 35 execution and verification complete
+**Stopped at:** Completed 36-end-to-end-proof-and-milestone-closure-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
