@@ -225,8 +225,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
-    assert supported_surface =~ "DPoP on token requests and the Lockspire-owned `userinfo` endpoint"
-    assert supported_surface =~ "bearer clients remain unchanged by default"
+    assert supported_surface =~ "DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens"
+    assert supported_surface =~ "bearer clients remaining unchanged by default"
     assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
 
     refute readme =~ "production-ready"

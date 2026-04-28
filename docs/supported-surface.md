@@ -18,7 +18,7 @@ Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 - Revocation
 - Introspection
 - Refresh token rotation
-- DPoP on token requests and the Lockspire-owned `userinfo` endpoint, with bearer clients remain unchanged by default unless they explicitly opt into DPoP mode
+- DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - Host-owned login redirects and consent handoff seams
