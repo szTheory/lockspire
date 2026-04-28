@@ -6,6 +6,7 @@ defmodule Lockspire.Storage.TokenStore do
   alias Lockspire.Domain.Token
 
   @type store_error :: term()
+  @type expected_cnf :: nil | %{optional(String.t()) => binary()}
 
   # Acceptance marker: @callback revoke_token_family/1
   @callback store_token(Token.t()) :: {:ok, Token.t()} | {:error, store_error()}
@@ -33,7 +34,15 @@ defmodule Lockspire.Storage.TokenStore do
   @callback redeem_authorization_code(String.t(), DateTime.t(), Token.t()) ::
               {:ok, %{authorization_code: Token.t(), access_token: Token.t()}}
               | {:error, store_error()}
-  @callback rotate_refresh_token(String.t(), String.t(), DateTime.t(), Token.t(), Token.t()) ::
+  # Acceptance marker: @callback rotate_refresh_token(... expected_cnf
+  @callback rotate_refresh_token(
+              String.t(),
+              String.t(),
+              DateTime.t(),
+              Token.t(),
+              Token.t(),
+              expected_cnf()
+            ) ::
               {:ok,
                %{
                  presented_refresh_token: Token.t(),

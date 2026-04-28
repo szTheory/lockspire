@@ -918,7 +918,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
-  @impl TokenStore
+  # Acceptance marker: def rotate_refresh_token(... expected_cnf
+  @impl false
   def rotate_refresh_token(
         token_hash,
         client_id,
@@ -927,13 +928,27 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %Token{} = access_token
       )
       when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
+    rotate_refresh_token(token_hash, client_id, rotated_at, refresh_token, access_token, nil)
+  end
+
+  @impl TokenStore
+  def rotate_refresh_token(
+        token_hash,
+        client_id,
+        rotated_at,
+        %Token{} = refresh_token,
+        %Token{} = access_token,
+        expected_cnf
+      )
+      when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
     case repo().transaction(fn ->
            run_rotate_refresh_token(
              token_hash,
              client_id,
              rotated_at,
              refresh_token,
-             access_token
+             access_token,
+             expected_cnf
            )
          end) do
       {:ok, {:ok, result}} -> {:ok, result}
@@ -1342,7 +1357,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
          client_id,
          rotated_at,
          %Token{} = refresh_token,
-         %Token{} = access_token
+         %Token{} = access_token,
+         expected_cnf
        ) do
     now = DateTime.utc_now()
 
@@ -1364,12 +1380,21 @@ defmodule Lockspire.Storage.Ecto.Repository do
           {:error, reason} -> repo().rollback(reason)
         end
 
+      record.cnf != expected_cnf ->
+        {:error, :dpop_binding_mismatch}
+
       true ->
         with {:ok, presented_refresh_token} <- revoke_presented_refresh_token(record, rotated_at),
              {:ok, stored_refresh_token} <-
-               store_rotated_refresh_token(record, refresh_token, rotated_at),
+               store_rotated_refresh_token(record, refresh_token, rotated_at, expected_cnf),
              {:ok, stored_access_token} <-
-               store_rotated_access_token(record, stored_refresh_token, access_token, rotated_at) do
+               store_rotated_access_token(
+                 record,
+                 stored_refresh_token,
+                 access_token,
+                 rotated_at,
+                 expected_cnf
+               ) do
           {:ok,
            %{
              presented_refresh_token: presented_refresh_token,
@@ -1485,13 +1510,27 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end
   end
 
-  defp run_rotate_refresh_token(token_hash, client_id, rotated_at, refresh_token, access_token) do
+  defp run_rotate_refresh_token(
+         token_hash,
+         client_id,
+         rotated_at,
+         refresh_token,
+         access_token,
+         expected_cnf
+       ) do
     case token_hash |> locked_refresh_token_query() |> repo_one(sensitive: true) do
       nil ->
         {:error, :not_found}
 
       %TokenRecord{} = record ->
-        rotate_refresh_token_record(record, client_id, rotated_at, refresh_token, access_token)
+        rotate_refresh_token_record(
+          record,
+          client_id,
+          rotated_at,
+          refresh_token,
+          access_token,
+          expected_cnf
+        )
     end
   end
 
@@ -1531,7 +1570,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  defp store_rotated_refresh_token(%TokenRecord{} = record, %Token{} = refresh_token, rotated_at) do
+  defp store_rotated_refresh_token(
+         %TokenRecord{} = record,
+         %Token{} = refresh_token,
+         rotated_at,
+         expected_cnf
+       ) do
     %Token{
       refresh_token
       | family_id: record.family_id,
@@ -1543,6 +1587,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         scopes: if(refresh_token.scopes == [], do: record.scopes, else: refresh_token.scopes),
         audience:
           if(refresh_token.audience == [], do: record.audience, else: refresh_token.audience),
+        cnf: expected_cnf,
         issued_at: refresh_token.issued_at || rotated_at
     }
     |> store_token_record()
@@ -1552,7 +1597,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
          %TokenRecord{} = record,
          %Token{} = stored_refresh_token,
          %Token{} = access_token,
-         rotated_at
+         rotated_at,
+         expected_cnf
        ) do
     %Token{
       access_token
@@ -1565,6 +1611,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         scopes: if(access_token.scopes == [], do: record.scopes, else: access_token.scopes),
         audience:
           if(access_token.audience == [], do: record.audience, else: access_token.audience),
+        cnf: expected_cnf,
         issued_at: access_token.issued_at || rotated_at
     }
     |> store_token_record()
