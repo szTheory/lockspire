@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Protocol Surface Completeness
-status: milestone_started
-last_updated: "2026-04-28T21:00:00.000Z"
+status: roadmap_created
+last_updated: "2026-04-28T21:05:00.000Z"
 last_activity: 2026-04-28
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,18 +21,18 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Not started (defining requirements)
+**Current focus:** Phase 37: Protocol Strictness & Conformance
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 37
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-28 — Milestone v1.8 started
+Status: Ready for planning
+Last activity: 2026-04-28 — Roadmap created for v1.8
 
 ## Performance Metrics
 
-- Phases completed: 0/0 (v1.8)
+- Phases completed: 0/4 (v1.8)
 - Plans completed: 0/0 (v1.8)
 
 ## Accumulated Context
@@ -69,16 +69,16 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ### Blockers/Concerns
 
-- None. Milestone complete.
+- None.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` or `$gsd-plan-phase` to start the next iteration.
+**Next action:** Run `$gsd-plan-phase 37` to start planning the first phase of milestone v1.8.
 
 **Resume file:** None
 
-**Stopped at:** Milestone complete
+**Stopped at:** Roadmap created
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** None
+**Planned Phase:** Phase 37

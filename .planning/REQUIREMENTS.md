@@ -40,22 +40,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONF-01 | Phase [N] | Pending |
-| CONF-02 | Phase [N] | Pending |
-| CONF-03 | Phase [N] | Pending |
-| CONF-04 | Phase [N] | Pending |
-| SLO-01 | Phase [N] | Pending |
-| SLO-02 | Phase [N] | Pending |
-| SLO-03 | Phase [N] | Pending |
-| SLO-04 | Phase [N] | Pending |
-| AUTHZ-01 | Phase [N] | Pending |
-| AUTHZ-02 | Phase [N] | Pending |
+| CONF-01 | Phase 37 | Pending |
+| CONF-02 | Phase 37 | Pending |
+| CONF-03 | Phase 37 | Pending |
+| CONF-04 | Phase 37 | Pending |
+| SLO-01 | Phase 38 | Pending |
+| SLO-02 | Phase 38 | Pending |
+| SLO-03 | Phase 39 | Pending |
+| SLO-04 | Phase 39 | Pending |
+| AUTHZ-01 | Phase 40 | Pending |
+| AUTHZ-02 | Phase 40 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-28*
-*Last updated: 2026-04-28 after initial definition*
+*Last updated: 2026-04-28 after roadmap creation*
