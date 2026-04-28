@@ -8,6 +8,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   import Plug.Conn
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
@@ -187,7 +188,7 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert body == %{
              "error" => "unsupported_grant_type",
              "error_description" =>
-               "Only grant_type=authorization_code and grant_type=refresh_token are supported"
+               "Only grant_type=authorization_code, grant_type=refresh_token, and grant_type=urn:ietf:params:oauth:grant-type:device_code are supported"
            }
   end
 
@@ -310,6 +311,200 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert body["error_description"] =~ "reuse detected"
   end
 
+  test "POST /token returns authorization_pending for a compliant device poll" do
+    secret = "device-pending-secret"
+    {:ok, client} = register_device_client("controller-device-pending", secret)
+
+    {:ok, authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-pending",
+        user_code: "PEND-ING1"
+      )
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-pending"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 400
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["error"] == "authorization_pending"
+
+    assert {:ok, stored} =
+             Repository.fetch_device_authorization_by_verification_handle(
+               authorization.verification_handle
+             )
+
+    assert stored.status == :pending
+  end
+
+  test "POST /token returns slow_down for a too-early device poll" do
+    secret = "device-slow-down-secret"
+    {:ok, client} = register_device_client("controller-device-slow-down", secret)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-too-early",
+        user_code: "SLOW-DOWN"
+      )
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-too-early"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 400
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["error"] == "slow_down"
+  end
+
+  test "POST /token returns the standard token shape for an approved device poll" do
+    secret = "device-approved-secret"
+    {:ok, client} = register_device_client("controller-device-approved", secret)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-approved",
+        user_code: "APPR-OVED",
+        scopes: ["email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-public"
+        }
+      )
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-approved"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert Map.keys(body) |> Enum.sort() == ["access_token", "expires_in", "scope", "token_type"]
+    assert body["token_type"] == "Bearer"
+    assert body["scope"] == "email profile"
+  end
+
+  test "POST /token returns access_denied for a denied device authorization" do
+    secret = "device-denied-secret"
+    {:ok, client} = register_device_client("controller-device-denied", secret)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-denied",
+        user_code: "DENI-ED01",
+        transition: %{status: :denied, denied_at: DateTime.utc_now()}
+      )
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-denied"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 400
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["error"] == "access_denied"
+  end
+
+  test "POST /token returns expired_token for an expired device authorization" do
+    secret = "device-expired-secret"
+    {:ok, client} = register_device_client("controller-device-expired", secret)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-expired",
+        user_code: "EXPI-RED1",
+        transition: %{status: :expired, expired_at: DateTime.utc_now()}
+      )
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-expired"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 400
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["error"] == "expired_token"
+  end
+
+  test "POST /token returns invalid_grant when an approved device authorization is replayed" do
+    secret = "device-replay-secret"
+    {:ok, client} = register_device_client("controller-device-replay", secret)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-replay",
+        user_code: "REPL-AY01",
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-public"
+        }
+      )
+
+    first_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-replay"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert first_conn.status == 200
+
+    replay_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-replay"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert replay_conn.status == 400
+
+    body = Jason.decode!(replay_conn.resp_body)
+    assert body["error"] == "invalid_grant"
+  end
+
   defp code_challenge(verifier) do
     :crypto.hash(:sha256, verifier)
     |> Base.url_encode64(padding: false)
@@ -343,6 +538,53 @@ defmodule Lockspire.Web.TokenControllerTest do
 
   defp basic_auth(client_id, client_secret) do
     "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
+  end
+
+  defp register_device_client(client_id, secret) do
+    Repository.register_client(%Client{
+      client_id: client_id,
+      client_secret_hash: client_secret_hash(secret),
+      client_type: :confidential,
+      name: "Device Controller Client",
+      redirect_uris: [],
+      allowed_scopes: ["openid", "email", "profile", "offline_access"],
+      allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now(),
+      metadata: %{}
+    })
+  end
+
+  defp create_device_authorization(client, opts) do
+    now = Keyword.get(opts, :now, DateTime.utc_now())
+
+    authorization =
+      DeviceAuthorization.issue(
+        %{
+          client_id: client.client_id,
+          device_code: Keyword.fetch!(opts, :device_code),
+          user_code: Keyword.fetch!(opts, :user_code),
+          scopes: Keyword.get(opts, :scopes, ["email", "profile"])
+        },
+        now: now
+      )
+
+    with {:ok, stored} <- Repository.put_device_authorization(authorization) do
+      case Keyword.get(opts, :transition) do
+        nil ->
+          {:ok, stored}
+
+        attrs ->
+          Repository.transition_device_authorization(
+            stored.verification_handle,
+            [stored.status],
+            attrs
+          )
+      end
+    end
   end
 
   defp create_openid_authorization_code(client, raw_code, verifier, nonce) do
