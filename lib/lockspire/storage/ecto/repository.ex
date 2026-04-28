@@ -314,6 +314,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl DeviceAuthorizationStore
+  def fetch_device_authorization_by_device_code_hash(device_code_hash)
+      when is_binary(device_code_hash) do
+    DeviceAuthorizationRecord
+    |> where([authorization], authorization.device_code_hash == ^device_code_hash)
+    |> repo_one(sensitive: true)
+    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl DeviceAuthorizationStore
   def fetch_device_authorization_by_verification_handle(verification_handle)
       when is_binary(verification_handle) do
     DeviceAuthorizationRecord
@@ -322,6 +333,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
+  end
+
+  @impl DeviceAuthorizationStore
+  def record_device_poll(device_code_hash, client_id, now)
+      when is_binary(device_code_hash) and is_binary(client_id) and is_struct(now, DateTime) do
+    transact(fn ->
+      device_code_hash
+      |> locked_device_authorization_by_device_code_query()
+      |> repo_one(sensitive: true)
+      |> evaluate_device_poll(client_id, now)
+    end)
+  end
+
+  @impl DeviceAuthorizationStore
+  def consume_device_authorization(verification_handle, client_id, now)
+      when is_binary(verification_handle) and is_binary(client_id) and is_struct(now, DateTime) do
+    transact(fn ->
+      verification_handle
+      |> locked_device_authorization_query()
+      |> repo().one()
+      |> consume_device_authorization_record(client_id, now)
+    end)
   end
 
   @impl DeviceAuthorizationStore
@@ -1040,6 +1073,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> lock("FOR UPDATE")
   end
 
+  defp locked_device_authorization_by_device_code_query(device_code_hash) do
+    DeviceAuthorizationRecord
+    |> where([authorization], authorization.device_code_hash == ^device_code_hash)
+    |> lock("FOR UPDATE")
+  end
+
   defp locked_refresh_token_query(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
@@ -1088,6 +1127,108 @@ defmodule Lockspire.Storage.Ecto.Repository do
     else
       repo().rollback(:invalid_state)
     end
+  end
+
+  defp evaluate_device_poll(nil, _client_id, _now) do
+    %{result: :invalid_grant}
+  end
+
+  defp evaluate_device_poll(%DeviceAuthorizationRecord{client_id: stored_client_id}, client_id, _now)
+       when stored_client_id != client_id do
+    %{result: :client_mismatch}
+  end
+
+  defp evaluate_device_poll(%DeviceAuthorizationRecord{} = record, client_id, now) do
+    cond do
+      record.status == :denied ->
+        device_poll_outcome(:denied, record)
+
+      record.status == :expired ->
+        device_poll_outcome(:expired, record)
+
+      record.status == :consumed ->
+        device_poll_outcome(:consumed, record)
+
+      record.status == :approved ->
+        device_poll_outcome(:approved_ready, record)
+
+      record.status == :pending and DateTime.compare(record.expires_at, now) != :gt ->
+        record
+        |> DeviceAuthorizationRecord.update_changeset(%{
+          status: :expired,
+          expired_at: now,
+          updated_at: DateTime.utc_now()
+        })
+        |> repo_update(sensitive: true)
+        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+        |> unwrap_or_rollback()
+        |> then(&device_poll_outcome(:expired, &1))
+
+      record.status == :pending and DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
+        next_interval = record.effective_poll_interval_seconds + 5
+        next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
+
+        record
+        |> DeviceAuthorizationRecord.update_changeset(%{
+          effective_poll_interval_seconds: next_interval,
+          next_poll_allowed_at: next_poll_allowed_at,
+          updated_at: DateTime.utc_now()
+        })
+        |> repo_update(sensitive: true)
+        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+        |> unwrap_or_rollback()
+        |> then(&device_poll_outcome(:slow_down, &1))
+
+      record.status == :pending ->
+        device_poll_outcome(:pending, record)
+
+      true ->
+        %{result: :invalid_grant, reason: {:unexpected_status, record.status, client_id}}
+    end
+  end
+
+  defp consume_device_authorization_record(nil, _client_id, _now),
+    do: repo().rollback(:invalid_state)
+
+  defp consume_device_authorization_record(
+         %DeviceAuthorizationRecord{client_id: stored_client_id},
+         client_id,
+         _now
+       )
+       when stored_client_id != client_id,
+       do: repo().rollback(:invalid_state)
+
+  defp consume_device_authorization_record(
+         %DeviceAuthorizationRecord{status: :approved} = record,
+         _client_id,
+         now
+       ) do
+    record
+    |> DeviceAuthorizationRecord.update_changeset(%{
+      status: :consumed,
+      consumed_at: now,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+  end
+
+  defp consume_device_authorization_record(%DeviceAuthorizationRecord{}, _client_id, _now),
+    do: repo().rollback(:invalid_state)
+
+  defp device_poll_outcome(result, %DeviceAuthorizationRecord{} = record) do
+    result
+    |> device_poll_outcome(DeviceAuthorizationRecord.to_domain(record))
+  end
+
+  defp device_poll_outcome(result, %DeviceAuthorization{} = device_authorization) do
+    %{
+      result: result,
+      device_authorization: device_authorization,
+      effective_poll_interval_seconds: device_authorization.effective_poll_interval_seconds,
+      next_poll_allowed_at: device_authorization.next_poll_allowed_at
+    }
   end
 
   defp run_transaction_fun(fun) do

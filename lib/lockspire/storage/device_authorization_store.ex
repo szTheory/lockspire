@@ -6,10 +6,11 @@ defmodule Lockspire.Storage.DeviceAuthorizationStore do
   alias Lockspire.Domain.DeviceAuthorization
 
   @type device_poll_result ::
-          :approved_ready
-          | :consumed
-          | :denied
-          | :expired
+    :approved_ready
+    | :client_mismatch
+    | :consumed
+    | :denied
+    | :expired
           | :invalid_grant
           | :pending
           | :slow_down
