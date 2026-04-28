@@ -886,6 +886,115 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
              )
   end
 
+  test "redeems an approved DPoP device authorization with token_type DPoP and persisted cnf" do
+    secret = "device-dpop-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-dpop-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
+        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-dpop-approved",
+        user_code: "DP0P-000",
+        scopes: ["email", "profile", "offline_access"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    %{jwt: proof_jwt, validated: validated_proof} = dpop_proof_fixture()
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                  "device_code" => "device-code-dpop-approved"
+                },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_jwt,
+               method: "POST",
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 server_policy_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "device-dpop-access-token" end,
+                 refresh_token_generator: fn -> "device-dpop-refresh-token" end
+               ]
+             })
+
+    assert success.token_type == "DPoP"
+
+    assert {:ok, %Token{} = persisted_refresh_token} =
+             Repository.fetch_refresh_token(TokenFormatter.hash_token("device-dpop-refresh-token"))
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("device-dpop-access-token")
+        )
+      )
+
+    assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
+    assert persisted_refresh_token.cnf["jkt"] == validated_proof.jkt
+  end
+
+  test "preserves bearer token_type for approved bearer-mode device authorization" do
+    secret = "device-bearer-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-bearer-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-bearer-approved",
+        user_code: "BEAR-000",
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                  "device_code" => "device-code-bearer-approved"
+                },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 access_token_generator: fn -> "device-bearer-access-token" end
+               ]
+             })
+
+    assert success.token_type == "Bearer"
+  end
+
   test "device grants redeem once, collapse replay to invalid_grant, and append durable device audit rows" do
     secret = "device-replay-secret"
 
