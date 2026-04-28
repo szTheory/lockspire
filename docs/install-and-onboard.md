@@ -43,6 +43,12 @@ Implement the generated interaction and consent modules in the host app where yo
 
 Implement the generated `LockspireVerificationController` and `lockspire_verification_html` files as a host-owned `/verify` seam. Keep your session and account pipeline in front of the approval routes, treat `verification_uri_complete` as prefill-only, and keep GET side-effect free.
 
+If you plan to support device login, keep that host-owned `/verify` seam paired with Lockspire's shipped device endpoints:
+
+- `POST /device/code` issues the device authorization and tells clients to begin with a 5-second poll interval.
+- `POST /token` accepts `grant_type=urn:ietf:params:oauth:grant-type:device_code`, returns `authorization_pending` while approval is still pending, and returns `slow_down` when the client polls too aggressively.
+- Approval still happens only through the host-owned `/verify` seam; Lockspire does not take over your browser UX.
+
 ## 4. Run migrations
 
 Run:
@@ -73,7 +79,7 @@ Before you expose `/verify` publicly:
 - Wire host auth and session behavior around the generated `LockspireVerificationController`.
 - Add host-owned rate limiting for both `GET /verify` and `POST /verify`.
 - Keep approve and deny behind explicit signed-in user actions.
-- Read `docs/device-flow-host-guide.md` for the full verification security contract, including anti-phishing rules, trusted proxy IP guidance, `Retry-After`, and normalized-code limiter keys.
+- Read `docs/device-flow-host-guide.md` for the full verification security contract, including anti-phishing rules, trusted proxy IP guidance, the 5-second device polling baseline, `slow_down` backoff, `Retry-After`, and normalized-code limiter keys.
 
 ## Sigra companion path
 

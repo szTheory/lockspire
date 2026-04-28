@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
+    "device_authorization_endpoint" => "/device/code",
     "pushed_authorization_request_endpoint" => "/par",
     "registration_endpoint" => "/register",
     "token_endpoint" => "/token",
@@ -18,7 +19,11 @@ defmodule Lockspire.Protocol.Discovery do
 
   @response_types_supported ["code"]
   @response_modes_supported ["query"]
-  @grant_types_supported ["authorization_code", "refresh_token"]
+  @grant_types_supported [
+    "authorization_code",
+    "refresh_token",
+    "urn:ietf:params:oauth:grant-type:device_code"
+  ]
   @token_endpoint_auth_methods_supported ["none", "client_secret_basic", "client_secret_post"]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]

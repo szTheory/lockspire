@@ -4,6 +4,33 @@ Lockspire's Phase 31 device verification slice is a generated, host-owned `/veri
 
 Lockspire does not provide built-in rate limiting for `GET /verify` or `POST /verify`. Treat the generated controller or LiveView as a starting point that must be wrapped in host-owned anti-phishing, trusted-IP, and throttling rules before you ship it.
 
+## Polling and token redemption contract
+
+Lockspire now ships the OAuth 2.0 device authorization and token polling endpoints as embedded library routes:
+
+- `POST /device/code` issues `device_code`, `user_code`, `verification_uri`, and a base `interval` of 5 seconds.
+- `POST /token` accepts `grant_type=urn:ietf:params:oauth:grant-type:device_code` and enforces the durable poll timing stored by Lockspire.
+
+The happy path is:
+
+1. The device client requests a device authorization from `POST /device/code`.
+2. The user completes the host-owned `/verify` seam and explicitly approves the request.
+3. The device client polls `POST /token` no faster than every 5 seconds until Lockspire returns tokens.
+
+Polling rules:
+
+- The base poll interval is 5 seconds.
+- A compliant poll before host approval returns `authorization_pending`.
+- If the client polls too early, Lockspire returns `slow_down`; the client must back off before polling again.
+- After approval, the next compliant poll redeems the device authorization once and returns the normal token response shape.
+
+Terminal polling rules:
+
+- Stop polling on `access_denied`.
+- Stop polling on `expired_token`.
+- Stop polling on `invalid_grant`, including replay after a successful redemption.
+- Do not treat `slow_down` as terminal; increase the delay and continue polling.
+
 ## Host-owned verification seam
 
 The supported shape is:
@@ -171,3 +198,4 @@ Before you expose `/verify` publicly:
 - Confirm `normalized_user_code` keys strip separators and whitespace + uppercase.
 - Confirm `429` responses include `Retry-After` and neutral copy.
 - Confirm logs and audit trails use fingerprints instead of raw codes.
+- Confirm device clients are documented to start with a 5-second poll interval and to honor `slow_down` backoff.

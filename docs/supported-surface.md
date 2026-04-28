@@ -17,7 +17,8 @@ Lockspire `v0.1` preview currently supports this repo-proven surface:
 - Revocation
 - Introspection
 - Refresh token rotation
-- A generated, host-owned device verification seam for `/verify` in Phase 31, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
+- Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
+- A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - Host-owned login redirects and consent handoff seams
 - LiveView and admin workflows for clients, consents, tokens, keys, and PAR policies
 - Phoenix-first onboarding docs and generated host integration files
@@ -29,8 +30,8 @@ Lockspire `v0.1` preview does not currently support:
 - Implicit flow
 - Request-object-by-value support
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
-- Device flow polling and token issuance
 - Dynamic client registration
+- Lockspire-owned device verification browser UI or hosted approval pages
 - Hosted auth as a separate required service
 - SAML
 - LDAP or Active Directory federation
@@ -59,14 +60,14 @@ A `v0.1` preview claim can honestly say:
 - there is one canonical Phoenix onboarding path
 - secure OAuth/OIDC defaults are enforced inside the supported surface
 - executable install and onboarding proof is checked into the repo
-- the shipped device verification support is a narrow host-owned device verification seam, not a Lockspire-owned browser UI
+- the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - contributor and release workflows are versioned in the repo
 - a private disclosure path exists for supported security issues
 
 A `v0.1` preview claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
-- Lockspire supports broader request-object modes, generic external `request_uri` handling, full device flow, dynamic client registration, SAML, or LDAP
+- Lockspire supports broader request-object modes, generic external `request_uri` handling, dynamic client registration, SAML, or LDAP
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 
