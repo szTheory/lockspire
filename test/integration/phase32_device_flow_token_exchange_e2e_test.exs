@@ -115,12 +115,16 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
   end
 
   test "host-approved DPoP device authorization binds only on /token and collapses replay to invalid_grant" do
+    client_secret = "dpop-device-secret"
+    basic_auth = "Basic " <> Base.encode64("phase32-device-dpop-client:#{client_secret}")
+
     {:ok, client} =
       Repository.register_client(%Client{
         client_id: "phase32-device-dpop-client",
+        client_secret_hash: "sha256:static-salt:" <> Base.encode64(:crypto.hash(:sha256, "static-salt" <> client_secret)),
         name: "CLI Device",
-        client_type: :public,
-        token_endpoint_auth_method: :none,
+        client_type: :confidential,
+        token_endpoint_auth_method: :client_secret_basic,
         allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
         allowed_scopes: ["profile", "email", "offline_access"],
         dpop_policy: :dpop,
@@ -129,6 +133,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
 
     device_code_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth)
       |> post("/lockspire/device/code", %{
         "client_id" => client.client_id,
         "scope" => "profile email offline_access"
@@ -152,10 +157,12 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     assert approve_conn.status in [302, 303]
     assert redirected_to(approve_conn) == "/verify"
 
-    proof = dpop_proof_fixture()
+    keys = JarTestHelpers.generate_ec_keys()
+    proof = dpop_proof_fixture(keys)
 
     first_token_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth)
       |> put_req_header("dpop", proof)
       |> post("/lockspire/token", %{
         "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
@@ -168,8 +175,24 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     first_token_body = Jason.decode!(first_token_conn.resp_body)
     assert first_token_body["token_type"] == "DPoP"
 
+    {:ok, expected_jkt} = Lockspire.Protocol.DPoP.thumbprint(keys.pub_jwk_map)
+
+    introspection_conn =
+      build_conn()
+      |> put_req_header("authorization", basic_auth)
+      |> put_req_header("accept", "application/json")
+      |> post("/lockspire/introspect", %{"token" => first_token_body["access_token"]})
+
+    assert introspection_conn.status == 200
+
+    introspection_body = Jason.decode!(introspection_conn.resp_body)
+    assert introspection_body["active"] == true
+    assert introspection_body["token_type"] == "access_token"
+    assert introspection_body["cnf"] == %{"jkt" => expected_jkt}
+
     replay_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth)
       |> put_req_header("dpop", dpop_proof_fixture())
       |> post("/lockspire/token", %{
         "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
@@ -217,8 +240,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     end
   end
 
-  defp dpop_proof_fixture do
-    keys = JarTestHelpers.generate_ec_keys()
+  defp dpop_proof_fixture(keys \\ JarTestHelpers.generate_ec_keys()) do
     now = DateTime.utc_now()
 
     JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
