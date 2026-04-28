@@ -664,6 +664,13 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     public_client =
       create_public_client("device-public-client", ["urn:ietf:params:oauth:grant-type:device_code"])
 
+    dpop_public_client =
+      create_public_client("device-dpop-public-client", [
+        "urn:ietf:params:oauth:grant-type:device_code"
+      ])
+
+    update_client_dpop_policy!(dpop_public_client.client_id, :dpop)
+
     confidential_secret = "device-confidential-secret"
 
     {:ok, confidential_client} =
@@ -697,6 +704,30 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     assert pending_error.error == "authorization_pending"
     assert pending_error.reason_code == :device_authorization_pending
+
+    {:ok, dpop_pending} =
+      create_device_authorization(dpop_public_client,
+        device_code: "device-code-dpop-pending",
+        user_code: "DPND-ING1"
+      )
+
+    assert {:error, dpop_pending_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "client_id" => dpop_public_client.client_id,
+                 "device_code" => "device-code-dpop-pending"
+               },
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository,
+                 now: fn -> dpop_pending.next_poll_allowed_at end
+               ]
+             })
+
+    assert dpop_pending_error.error == "authorization_pending"
+    assert dpop_pending_error.reason_code == :device_authorization_pending
 
     {:ok, too_early} =
       create_device_authorization(confidential_client,
@@ -1344,6 +1375,13 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           )
       end
     end
+  end
+
+  defp update_client_dpop_policy!(client_id, policy) do
+    from(client in Lockspire.Storage.Ecto.ClientRecord, where: client.client_id == ^client_id)
+    |> Lockspire.TestRepo.update_all(set: [dpop_policy: policy])
+
+    :ok
   end
 
   defp publish_signing_key(kid) do

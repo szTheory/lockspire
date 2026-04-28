@@ -134,9 +134,9 @@ defmodule Lockspire.Protocol.TokenExchange do
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %DeviceAuthorizationState{} = device_authorization} <-
            fetch_device_authorization_for_exchange(params, client, request),
+         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %Success{} = success} <-
            redeem_device_authorization(client, device_authorization, issuance_context, request) do
       {:ok, success}
