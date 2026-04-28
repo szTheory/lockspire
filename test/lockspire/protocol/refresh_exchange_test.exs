@@ -82,6 +82,157 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
     assert rotated_refresh_token.account_id == "subject-refresh"
   end
 
+  test "repository rotation preserves matching expected cnf on rotated children", %{
+    client: client,
+    now: now
+  } do
+    cnf = %{"jkt" => "refresh-proof-thumbprint"}
+    presented_hash = TokenFormatter.hash_token("dpop-refresh-token")
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: presented_hash,
+               token_type: :refresh_token,
+               family_id: "family-refresh-dpop",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: cnf,
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    rotated_at = DateTime.add(now, 60, :second)
+
+    assert {:ok, result} =
+             Repository.rotate_refresh_token(
+               presented_hash,
+               client.client_id,
+               rotated_at,
+               %Token{
+                 token_hash: TokenFormatter.hash_token("dpop-child-refresh-token"),
+                 token_type: :refresh_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 86_400, :second)
+               },
+               %Token{
+                 token_hash: TokenFormatter.hash_token("dpop-child-access-token"),
+                 token_type: :access_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 3_600, :second)
+               },
+               cnf
+             )
+
+    assert result.refresh_token.cnf["jkt"] == cnf["jkt"]
+    assert result.access_token.cnf["jkt"] == cnf["jkt"]
+  end
+
+  test "repository rotation rejects mismatched expected cnf without mutating the family", %{
+    client: client,
+    now: now
+  } do
+    presented_hash = TokenFormatter.hash_token("mismatch-refresh-token")
+
+    assert {:ok, presented_refresh_token} =
+             Repository.store_token(%Token{
+               token_hash: presented_hash,
+               token_type: :refresh_token,
+               family_id: "family-refresh-mismatch",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => "expected-jkt"},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    rotated_at = DateTime.add(now, 60, :second)
+
+    assert {:error, :dpop_binding_mismatch} =
+             Repository.rotate_refresh_token(
+               presented_hash,
+               client.client_id,
+               rotated_at,
+               %Token{
+                 token_hash: TokenFormatter.hash_token("mismatch-child-refresh-token"),
+                 token_type: :refresh_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 86_400, :second)
+               },
+               %Token{
+                 token_hash: TokenFormatter.hash_token("mismatch-child-access-token"),
+                 token_type: :access_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 3_600, :second)
+               },
+               %{"jkt" => "wrong-jkt"}
+             )
+
+    assert {:ok, %Token{} = unchanged_refresh_token} =
+             Repository.fetch_refresh_token(presented_hash)
+
+    assert unchanged_refresh_token.id == presented_refresh_token.id
+    assert unchanged_refresh_token.redeemed_at == nil
+    assert unchanged_refresh_token.revoked_at == nil
+
+    assert {:ok, family_tokens} = Repository.list_token_family("family-refresh-mismatch")
+    assert Enum.count(family_tokens) == 1
+  end
+
+  test "repository rotation still succeeds for bearer families when expected cnf is nil", %{
+    client: client,
+    now: now
+  } do
+    presented_hash = TokenFormatter.hash_token("bearer-refresh-token")
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: presented_hash,
+               token_type: :refresh_token,
+               family_id: "family-refresh-bearer",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    rotated_at = DateTime.add(now, 60, :second)
+
+    assert {:ok, result} =
+             Repository.rotate_refresh_token(
+               presented_hash,
+               client.client_id,
+               rotated_at,
+               %Token{
+                 token_hash: TokenFormatter.hash_token("bearer-child-refresh-token"),
+                 token_type: :refresh_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 86_400, :second)
+               },
+               %Token{
+                 token_hash: TokenFormatter.hash_token("bearer-child-access-token"),
+                 token_type: :access_token,
+                 client_id: client.client_id,
+                 expires_at: DateTime.add(rotated_at, 3_600, :second)
+               },
+               nil
+             )
+
+    assert result.refresh_token.cnf == nil
+    assert result.access_token.cnf == nil
+  end
+
   test "replaying a refresh token revokes the family and returns invalid_grant", %{client: client} do
     assert {:ok, _success} =
              RefreshExchange.exchange_refresh_token(client, %{
