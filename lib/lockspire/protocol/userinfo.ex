@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.Userinfo do
   alias Lockspire.Config
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
+  alias Lockspire.Protocol.ProtectedResourceDPoP
   alias Lockspire.Protocol.TokenFormatter
 
   @scope_claims %{
@@ -35,8 +36,9 @@ defmodule Lockspire.Protocol.Userinfo do
 
   @spec fetch_claims(map()) :: result()
   def fetch_claims(request) when is_map(request) do
-    with {:ok, bearer_token} <- parse_bearer_token(request),
-         {:ok, %Token{} = access_token} <- fetch_access_token(bearer_token, request),
+    with {:ok, authorization_scheme, raw_access_token} <- parse_authorization(request),
+         {:ok, %Token{} = access_token} <- fetch_access_token(raw_access_token, request),
+         :ok <- validate_access_mode(access_token, authorization_scheme, raw_access_token, request),
          {:ok, %Claims{} = claims} <- resolve_claims(access_token),
          userinfo_claims <- build_userinfo_claims(claims, access_token.scopes) do
       {:ok, userinfo_claims}
@@ -45,15 +47,37 @@ defmodule Lockspire.Protocol.Userinfo do
     end
   end
 
-  defp parse_bearer_token(request) do
+  defp parse_authorization(request) do
     case Map.get(request, :authorization, Map.get(request, "authorization")) do
       "Bearer " <> token when byte_size(token) > 0 ->
-        {:ok, token}
+        {:ok, "Bearer", token}
+
+      "DPoP " <> token when byte_size(token) > 0 ->
+        {:ok, "DPoP", token}
 
       _other ->
         {:error,
          error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
     end
+  end
+
+  # DPoP enforcement is driven by durable Token.cnf["jkt"] state, not client policy lookups.
+  defp validate_access_mode(%Token{cnf: %{"jkt" => _jkt}} = access_token, authorization_scheme, raw_access_token, request) do
+    request =
+      request
+      |> Map.put(:authorization_scheme, authorization_scheme)
+      |> Map.put(:access_token, raw_access_token)
+
+    case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
+      {:ok, _proof} -> :ok
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
+
+  defp validate_access_mode(%Token{}, "Bearer", _raw_access_token, _request), do: :ok
+
+  defp validate_access_mode(%Token{}, _authorization_scheme, _raw_access_token, _request) do
+    {:error, error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
   end
 
   defp fetch_access_token(token, request) do
