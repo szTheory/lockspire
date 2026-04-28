@@ -635,6 +635,50 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     refute pending.verification_handle == denied.verification_handle
   end
 
+  test "maps approved-but-expired device authorizations to expired_token" do
+    secret = "device-approved-expired-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-approved-expired-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    issued_at = DateTime.add(DateTime.utc_now(), -310, :second)
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-approved-expired",
+        user_code: "EXPR-APPR",
+        now: issued_at,
+        transition: %{
+          status: :approved,
+          approved_at: issued_at,
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:error, expired_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-approved-expired"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 device_authorization_store: Repository,
+                 token_store: Repository,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert expired_error.error == "expired_token"
+    assert expired_error.reason_code == :device_authorization_expired
+  end
+
   test "redeems an approved device authorization through the shared token success pipeline" do
     secret = "device-success-secret"
 

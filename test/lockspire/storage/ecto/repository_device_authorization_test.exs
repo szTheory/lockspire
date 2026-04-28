@@ -254,7 +254,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
       assert slowed_again.effective_poll_interval_seconds == 15
     end
 
-    test "returns pending for compliant polls without widening the interval" do
+    test "returns pending for compliant polls and advances the next allowed poll window" do
       now = DateTime.utc_now()
       stored = issue_device_authorization(%{now: now})
 
@@ -271,11 +271,34 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
       assert pending.id == stored.id
       assert pending.effective_poll_interval_seconds == 5
-      assert pending.next_poll_allowed_at == stored.next_poll_allowed_at
+      assert DateTime.diff(pending.next_poll_allowed_at, stored.next_poll_allowed_at, :second) == 5
 
       persisted = fetch_by_verification_handle!(stored.verification_handle)
       assert persisted.effective_poll_interval_seconds == 5
-      assert persisted.next_poll_allowed_at == stored.next_poll_allowed_at
+      assert persisted.next_poll_allowed_at == pending.next_poll_allowed_at
+    end
+
+    test "enforces the advanced poll window after a compliant pending poll" do
+      now = DateTime.utc_now()
+      stored = issue_device_authorization(%{now: now})
+
+      assert {:ok,
+              %{
+                result: :pending,
+                device_authorization: %DeviceAuthorization{} = pending
+              }} =
+               Repository.record_device_poll(
+                 stored.device_code_hash,
+                 stored.client_id,
+                 stored.next_poll_allowed_at
+               )
+
+      assert {:ok, %{result: :slow_down, effective_poll_interval_seconds: 10}} =
+               Repository.record_device_poll(
+                 stored.device_code_hash,
+                 stored.client_id,
+                 DateTime.add(pending.next_poll_allowed_at, -1, :second)
+               )
     end
 
     test "returns a typed client mismatch outcome without exposing another record" do
@@ -361,6 +384,41 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
       assert ready.id == approved.id
       assert ready.status == :approved
       assert is_nil(ready.consumed_at)
+    end
+
+    test "expires approved rows before redemption after ttl elapses" do
+      now = DateTime.utc_now()
+      issued_at = DateTime.add(now, -310, :second)
+      stored = issue_device_authorization(%{now: issued_at})
+
+      assert {:ok, %DeviceAuthorization{} = approved} =
+               Repository.transition_device_authorization(
+                 stored.verification_handle,
+                 [:pending],
+                 %{status: :approved, subject_id: "subject_123", approved_at: issued_at}
+               )
+
+      assert {:ok,
+              %{
+                result: :expired,
+                device_authorization: %DeviceAuthorization{} = expired
+              }} =
+               Repository.record_device_poll(
+                 stored.device_code_hash,
+                 stored.client_id,
+                 now
+               )
+
+      assert expired.id == approved.id
+      assert expired.status == :expired
+      assert %DateTime{} = expired.expired_at
+
+      assert {:error, :invalid_state} =
+               Repository.consume_device_authorization(
+                 approved.verification_handle,
+                 approved.client_id,
+                 now
+               )
     end
 
     test "consume can win only once from approved to consumed" do

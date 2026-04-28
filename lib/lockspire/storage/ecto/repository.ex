@@ -1149,6 +1149,18 @@ defmodule Lockspire.Storage.Ecto.Repository do
       record.status == :consumed ->
         device_poll_outcome(:consumed, record)
 
+      record.status == :approved and DateTime.compare(record.expires_at, now) != :gt ->
+        record
+        |> DeviceAuthorizationRecord.update_changeset(%{
+          status: :expired,
+          expired_at: now,
+          updated_at: DateTime.utc_now()
+        })
+        |> repo_update(sensitive: true)
+        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+        |> unwrap_or_rollback()
+        |> then(&device_poll_outcome(:expired, &1))
+
       record.status == :approved ->
         device_poll_outcome(:approved_ready, record)
 
@@ -1180,7 +1192,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
         |> then(&device_poll_outcome(:slow_down, &1))
 
       record.status == :pending ->
-        device_poll_outcome(:pending, record)
+        next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
+
+        record
+        |> DeviceAuthorizationRecord.update_changeset(%{
+          next_poll_allowed_at: next_poll_allowed_at,
+          updated_at: DateTime.utc_now()
+        })
+        |> repo_update(sensitive: true)
+        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+        |> unwrap_or_rollback()
+        |> then(&device_poll_outcome(:pending, &1))
 
       true ->
         %{result: :invalid_grant, reason: {:unexpected_status, record.status, client_id}}
@@ -1203,15 +1225,19 @@ defmodule Lockspire.Storage.Ecto.Repository do
          _client_id,
          now
        ) do
-    record
-    |> DeviceAuthorizationRecord.update_changeset(%{
-      status: :consumed,
-      consumed_at: now,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
+    if DateTime.compare(record.expires_at, now) == :gt do
+      record
+      |> DeviceAuthorizationRecord.update_changeset(%{
+        status: :consumed,
+        consumed_at: now,
+        updated_at: DateTime.utc_now()
+      })
+      |> repo_update(sensitive: true)
+      |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+      |> unwrap_or_rollback()
+    else
+      repo().rollback(:invalid_state)
+    end
   end
 
   defp consume_device_authorization_record(%DeviceAuthorizationRecord{}, _client_id, _now),
