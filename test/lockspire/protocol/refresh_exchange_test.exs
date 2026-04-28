@@ -5,12 +5,16 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
+  alias Lockspire.JarTestHelpers
+  alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
 
     start_supervised!(Lockspire.TestRepo)
@@ -73,6 +77,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
     assert success.access_token == "rotated-access-token"
     assert success.refresh_token == "rotated-refresh-token"
+    assert success.token_type == "Bearer"
     assert success.scope == "email offline_access"
 
     assert {:ok, %Token{} = rotated_refresh_token} =
@@ -233,6 +238,172 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
     assert result.access_token.cnf == nil
   end
 
+  test "rotates a DPoP-bound refresh token with token_type DPoP and preserves cnf", %{
+    client: client,
+    now: now
+  } do
+    %{jwt: proof_jwt, validated: validated_proof} = dpop_proof_fixture(now)
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("dpop-exchange-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-exchange-dpop",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => validated_proof.jkt},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               dpop: proof_jwt,
+               params: %{"refresh_token" => "dpop-exchange-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "dpop-rotated-access-token" end,
+                 refresh_token_generator: fn -> "dpop-rotated-refresh-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert success.token_type == "DPoP"
+
+    assert {:ok, %Token{} = rotated_access_token} =
+             Repository.fetch_active_access_token(
+               TokenFormatter.hash_token("dpop-rotated-access-token")
+             )
+
+    assert {:ok, %Token{} = rotated_refresh_token} =
+             Repository.fetch_refresh_token(TokenFormatter.hash_token("dpop-rotated-refresh-token"))
+
+    assert rotated_access_token.cnf["jkt"] == validated_proof.jkt
+    assert rotated_refresh_token.cnf["jkt"] == validated_proof.jkt
+  end
+
+  test "returns invalid_grant when a DPoP-bound refresh token is presented with the wrong key", %{
+    client: client,
+    now: now
+  } do
+    %{validated: stored_proof} = dpop_proof_fixture(now)
+    %{jwt: wrong_key_proof} = dpop_proof_fixture(now)
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("wrong-key-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-wrong-key",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => stored_proof.jkt},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:error, error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               dpop: wrong_key_proof,
+               params: %{"refresh_token" => "wrong-key-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "wrong-key-access-token" end,
+                 refresh_token_generator: fn -> "wrong-key-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert error.error == "invalid_grant"
+    assert error.reason_code == :refresh_dpop_binding_mismatch
+  end
+
+  test "returns invalid_dpop_proof when a DPoP-bound refresh token is missing proof", %{
+    client: client,
+    now: now
+  } do
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("missing-proof-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-missing-proof",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => "missing-proof-jkt"},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:error, error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               params: %{"refresh_token" => "missing-proof-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "missing-proof-access-token" end,
+                 refresh_token_generator: fn -> "missing-proof-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert error.error == "invalid_dpop_proof"
+    assert error.reason_code == :missing_dpop_proof
+  end
+
+  test "returns invalid_dpop_proof when a DPoP-bound refresh token has a malformed proof", %{
+    client: client,
+    now: now
+  } do
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("malformed-proof-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-malformed-proof",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => "malformed-proof-jkt"},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:error, error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               dpop: "not-a-jwt",
+               params: %{"refresh_token" => "malformed-proof-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "malformed-proof-access-token" end,
+                 refresh_token_generator: fn -> "malformed-proof-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert error.error == "invalid_dpop_proof"
+    assert error.reason_code == :invalid_jwt
+  end
+
   test "replaying a refresh token revokes the family and returns invalid_grant", %{client: client} do
     assert {:ok, _success} =
              RefreshExchange.exchange_refresh_token(client, %{
@@ -345,5 +516,29 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
              })
 
     assert error.reason_code == :client_mismatch
+  end
+
+  defp dpop_proof_fixture(now) do
+    keys = JarTestHelpers.generate_ec_keys()
+    target_uri = "https://example.test/lockspire/token"
+
+    proof =
+      JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
+        "htm" => "POST",
+        "htu" => target_uri,
+        "iat" => DateTime.to_unix(now),
+        "jti" => Ecto.UUID.generate()
+      })
+
+    assert {:ok, %DPoP{} = validated} =
+             DPoP.validate_proof(proof,
+               method: "POST",
+               target_uri: target_uri,
+               now: now,
+               max_age: 300,
+               clock_skew: 30
+             )
+
+    %{jwt: proof, validated: validated}
   end
 end
