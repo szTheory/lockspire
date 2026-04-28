@@ -62,6 +62,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         </div>
 
         <div :if={@mode in [:new, :edit]}>
+          <label :if={@mode == :edit} for="client_name">Name</label>
+          <input
+            :if={@mode == :edit}
+            id="client_name"
+            name="client[name]"
+            type="text"
+            value={@defaults.name}
+          />
+
           <label for="client_allowed_scopes">Allowed scopes</label>
           <input
             id="client_allowed_scopes"

@@ -284,6 +284,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert client.par_policy == :inherit
   end
 
+  test "saving client DPoP override preserves the existing client name when omitted from params" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{mode: "edit", dpop_policy: "bearer", allowed_scopes: "email"}
+    })
+    |> render_submit()
+
+    assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
+    assert client.name == "Alpha Client"
+    assert client.dpop_policy == :bearer
+  end
+
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
   end

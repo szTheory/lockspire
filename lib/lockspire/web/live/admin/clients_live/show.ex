@@ -48,7 +48,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         "edit" ->
           Admin.update_client(
             socket.assigns.client_id,
-            edit_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+            edit_attrs(params, socket.assigns.client)
+            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
           )
 
         "redirects" ->
@@ -310,9 +311,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     end
   end
 
-  defp edit_attrs(params) do
+  defp edit_attrs(params, %Client{} = client) do
     %{
-      name: params["name"],
+      name: Map.get(params, "name", client.name),
       allowed_scopes: split_csv(params["allowed_scopes"]),
       dpop_policy: params["dpop_policy"],
       contacts: split_csv(params["contacts"]),

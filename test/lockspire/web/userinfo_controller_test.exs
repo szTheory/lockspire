@@ -233,6 +233,20 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     assert_dpop_challenge(wrong_key_conn)
   end
 
+  test "GET /userinfo returns a DPoP-aware challenge for malformed DPoP proofs", %{
+    dpop_access_token: access_token
+  } do
+    conn =
+      build_conn(:get, "/userinfo")
+      |> put_req_header("authorization", "DPoP " <> access_token)
+      |> put_req_header("dpop", "not-a-jwt")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+    assert_dpop_challenge(conn)
+  end
+
   defp assert_dpop_challenge(conn) do
     [challenge] = get_resp_header(conn, "www-authenticate")
     assert challenge =~ "DPoP realm=\"Lockspire Userinfo\""
