@@ -5,29 +5,51 @@ defmodule Lockspire.Domain.DeviceAuthorization do
 
   alias Lockspire.Security.Policy
 
+  @statuses [:pending, :approved, :denied, :consumed, :expired]
+  @verification_handle_bytes 32
   @enforce_keys [
     :device_code_hash,
     :user_code_hash,
+    :verification_handle,
     :client_id,
+    :status,
     :expires_at
   ]
   defstruct [
+    :id,
     :device_code,
     :user_code,
     :device_code_hash,
     :user_code_hash,
+    :verification_handle,
     :client_id,
     :scopes,
+    :status,
+    :subject_id,
+    :approved_at,
+    :denied_at,
+    :consumed_at,
+    :expired_at,
     :expires_at
   ]
 
+  @type status :: :pending | :approved | :denied | :consumed | :expired
+
   @type t :: %__MODULE__{
+          id: integer() | nil,
           device_code: String.t() | nil,
           user_code: String.t() | nil,
           device_code_hash: String.t(),
           user_code_hash: String.t(),
+          verification_handle: String.t(),
           client_id: String.t(),
           scopes: [String.t()],
+          status: status(),
+          subject_id: String.t() | nil,
+          approved_at: DateTime.t() | nil,
+          denied_at: DateTime.t() | nil,
+          consumed_at: DateTime.t() | nil,
+          expired_at: DateTime.t() | nil,
           expires_at: DateTime.t()
         }
 
@@ -42,15 +64,47 @@ defmodule Lockspire.Domain.DeviceAuthorization do
 
     device_code = Map.fetch!(attrs, :device_code)
     user_code = Map.fetch!(attrs, :user_code)
+    canonical_user_code = canonicalize_user_code(user_code)
 
     %__MODULE__{
       device_code: device_code,
       device_code_hash: Policy.hash_token(device_code),
       user_code: user_code,
-      user_code_hash: Policy.hash_token(user_code),
+      user_code_hash: Policy.hash_token(canonical_user_code),
+      verification_handle: generate_verification_handle(),
       client_id: Map.fetch!(attrs, :client_id),
       scopes: List.wrap(Map.get(attrs, :scopes, [])),
+      status: :pending,
+      subject_id: nil,
+      approved_at: nil,
+      denied_at: nil,
+      consumed_at: nil,
+      expired_at: nil,
       expires_at: DateTime.add(now, ttl, :second)
     }
+  end
+
+  @spec canonicalize_user_code(String.t()) :: String.t()
+  def canonicalize_user_code(user_code) when is_binary(user_code) do
+    # Canonicalize user codes by stripping separators and whitespace, then uppercase.
+    user_code
+    |> String.replace(~r/[^[:alnum:]]/u, "")
+    |> String.upcase()
+  end
+
+  @spec hash_user_code(String.t()) :: String.t()
+  def hash_user_code(user_code) when is_binary(user_code) do
+    user_code
+    |> canonicalize_user_code()
+    |> Policy.hash_token()
+  end
+
+  @spec statuses() :: [status(), ...]
+  def statuses, do: @statuses
+
+  defp generate_verification_handle do
+    @verification_handle_bytes
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
   end
 end
