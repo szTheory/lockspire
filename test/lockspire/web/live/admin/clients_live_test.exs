@@ -99,6 +99,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/par-policy", Show))
+    assert Enum.any?(routes, &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop))
     refute Enum.any?(routes, &(&1.path == "/admin/overview"))
   end
 
@@ -254,6 +255,33 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
     assert client.par_policy == :required
+  end
+
+  test "edit client renders a DPoP policy selector with inherit bearer and dpop" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    html = render(view)
+
+    assert html =~ "Client DPoP override"
+    assert html =~ "Inherit from global policy"
+    assert html =~ "Use bearer access tokens"
+    assert html =~ "Require DPoP-bound access tokens"
+  end
+
+  test "saving client DPoP override persists change without affecting PAR workflow" do
+    assert {:ok, _policy} = ServerPolicy.put_server_policy(:optional)
+
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{mode: "edit", dpop_policy: "dpop", allowed_scopes: "email"}
+    })
+    |> render_submit()
+
+    assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
+    assert client.dpop_policy == :dpop
+    assert client.par_policy == :inherit
   end
 
   defp conn_for_admin do
