@@ -44,11 +44,14 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
          {:ok, %DeviceAuthorizationState{} = device_auth} <-
            persist_device_authorization(params, client, request, now) do
+      verification_uri = verification_uri(request)
+
       {:ok,
        %Success{
          device_code: device_auth.device_code,
          user_code: device_auth.user_code,
-         verification_uri: verification_uri(request),
+         verification_uri: verification_uri,
+         verification_uri_complete: verification_uri_complete(verification_uri, device_auth.user_code),
          expires_in: DateTime.diff(device_auth.expires_at, now, :second)
        }}
     else
@@ -91,7 +94,12 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
 
     case device_authorization_store(request).put_device_authorization(device_auth) do
       {:ok, %DeviceAuthorizationState{} = stored_auth} ->
-        {:ok, stored_auth}
+        {:ok,
+         %DeviceAuthorizationState{
+           stored_auth
+           | device_code: device_auth.device_code,
+             user_code: device_auth.user_code
+         }}
 
       {:error, _reason} ->
         {:error, oauth_error(500, "server_error", "Unable to persist device authorization", :device_store_failed)}
@@ -123,6 +131,21 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
     request
     |> request_opts()
     |> Keyword.get(:verification_uri, "https://example.com/device")
+  end
+
+  defp verification_uri_complete(verification_uri, user_code)
+       when is_binary(verification_uri) and is_binary(user_code) do
+    uri = URI.parse(verification_uri)
+    query =
+      case uri.query do
+        nil -> %{}
+        query -> URI.decode_query(query)
+      end
+      |> Map.put("user_code", user_code)
+
+    uri
+    |> Map.put(:query, URI.encode_query(query))
+    |> URI.to_string()
   end
 
   defp now(request) do
