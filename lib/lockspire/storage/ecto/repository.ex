@@ -10,6 +10,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.DeviceAuthorization
+  alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.ServerPolicy
@@ -18,10 +19,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.DeviceAuthorizationStore
+  alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
+  alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
@@ -41,6 +44,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour KeyStore
   @behaviour PushedAuthorizationRequestStore
   @behaviour DeviceAuthorizationStore
+  @behaviour DpopReplayStore
   @behaviour ServerPolicyStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
@@ -355,6 +359,59 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> repo().one()
       |> consume_device_authorization_record(client_id, now)
     end)
+  end
+
+  @impl DpopReplayStore
+  def record_dpop_proof(%DpopReplay{} = replay) do
+    transact(fn ->
+      prune_expired_dpop_replay_records(replay.seen_at)
+
+      changeset = DpopReplayRecord.changeset(%DpopReplayRecord{}, replay)
+
+      if changeset.valid? do
+        case insert_dpop_replay_record(replay) do
+          1 ->
+            :accepted
+
+          0 ->
+            :replay
+
+          _other ->
+            repo().rollback(:dpop_replay_insert_failed)
+        end
+      else
+        repo().rollback(changeset)
+      end
+    end)
+  end
+
+  defp insert_dpop_replay_record(%DpopReplay{} = replay) do
+    now = DateTime.utc_now()
+    seen_at = DateTime.truncate(replay.seen_at, :microsecond)
+    expires_at = DateTime.truncate(replay.expires_at, :microsecond)
+
+    {count, _rows} =
+      repo().insert_all(
+        DpopReplayRecord,
+        [
+          %{
+            replay_key: replay.replay_key,
+            jti: replay.jti,
+            htm: replay.htm,
+            htu: replay.htu,
+            jkt: replay.jkt,
+            seen_at: seen_at,
+            expires_at: expires_at,
+            inserted_at: now,
+            updated_at: now
+          }
+        ],
+        on_conflict: :nothing,
+        conflict_target: [:replay_key],
+        log: false
+      )
+
+    count
   end
 
   @impl DeviceAuthorizationStore
@@ -1242,6 +1299,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp consume_device_authorization_record(%DeviceAuthorizationRecord{}, _client_id, _now),
     do: repo().rollback(:invalid_state)
+
+  defp prune_expired_dpop_replay_records(%DateTime{} = seen_at) do
+    DpopReplayRecord
+    |> where([replay], replay.expires_at <= ^seen_at)
+    |> repo().delete_all(log: false)
+
+    :ok
+  end
 
   defp device_poll_outcome(result, %DeviceAuthorizationRecord{} = record) do
     result
