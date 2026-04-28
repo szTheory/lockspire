@@ -1,52 +1,137 @@
-# Research Summary: Lockspire (RFC 8628 - Device Flow)
+# Project Research Summary
 
-**Domain:** OAuth 2.0 Device Authorization Grant (Embedded Elixir Provider)
-**Researched:** 2026-04-27
-**Overall confidence:** HIGH
+**Project:** Lockspire
+**Domain:** Embedded OAuth/OIDC Authorization Server
+**Researched:** 2025-03-08
+**Confidence:** HIGH
 
 ## Executive Summary
 
-RFC 8628 (OAuth 2.0 Device Authorization Grant) is designed for input-constrained devices (CLI tools, Smart TVs) that lack a suitable browser for standard OAuth flows. Instead of a redirect, the device receives a high-entropy `device_code` (for polling) and a low-entropy `user_code` (for the user to type into a secondary device like a smartphone). 
+Lockspire is an embedded OAuth/OIDC Authorization Server built in Elixir. Recent research highlights that Lockspire must focus on OIDC Core Conformance, Back-Channel Logout, and optionally Front-Channel Logout and JAR Decryption (JWE) for financial-grade deployments. The recommended approach relies heavily on Lockspire's existing Elixir/Phoenix and Ecto/Postgres stack while introducing `req` for reliable server-to-server webhooks and utilizing the OpenID Foundation (OIDF) Conformance Suite to prove strict specification adherence. The architectural strategy strictly enforces a Host-Owned Session Clearing Seam, avoiding stateful session management within Lockspire itself. 
 
-For Lockspire, this milestone represents a strategic expansion to support CLI and partner integrations. The primary challenges in implementing this in Elixir revolve around managing high-frequency polling on the `/token` endpoint without crushing the database, and securing the low-entropy `user_code` against brute-force and remote phishing attacks. Since Lockspire avoids requiring external infrastructure like Redis, the polling and state management must be handled efficiently via Ecto/Postgres with proper indexing and backpressure mechanisms.
+The most critical risk involves session management and single sign-out (SLO). Modern browsers aggressively block third-party cookies, fundamentally breaking Front-Channel Logout for cross-domain relying parties. To mitigate this, Lockspire must prioritize Back-Channel Logout (stateless server-to-server JWTs) requiring robust `sid` (Session ID) tracking across tokens and the database. Additionally, achieving official OIDC Core Conformance demands rigorous enforcement of JSON types (e.g., integer timestamps) and nested JWTs for secure JAR decryption to prevent common security traps.
 
 ## Key Findings
 
-**Stack:** Phoenix for endpoints, Ecto/Postgres for state, and strict rate-limiting for brute-force prevention.
-**Architecture:** A polling-based token issuance model heavily reliant on efficient database reads and the `slow_down` backpressure signal.
-**Critical pitfall:** Remote phishing attacks and brute-forcing of the low-entropy `user_code`.
+### Recommended Stack
+
+Lockspire will build upon its existing Phoenix and Ecto foundations, adding specific tools for outgoing requests and spec validation.
+
+**Core technologies:**
+- **Phoenix (~> 1.8.5):** OP Web Surface — Natively handles Front-Channel Logout iframes, redirects, and session handoffs.
+- **Ecto/Postgres (~> 3.13):** State Management — Tracks logout status and session bindings (`sid`) required for back/front-channel logout.
+- **OIDF Conformance Suite:** OIDC Core Testing — The official "referee" tool to verify edge cases, type strictness, and OpenID Certification.
+- **req (~> 0.5):** Back-Channel Logout POSTs — Standard Elixir HTTP client for reliable, automated retries and JSON encoding for outbound webhooks.
+- **erlang-jose (~> 1.11):** JAR Decryption — Already in the project, natively supports `JOSE.JWE` for block/key decryption.
+
+### Expected Features
+
+**Must have (table stakes):**
+- **OIDC Core Conformance (Strict)** — Exact behaviors for parameters and integer data types to ensure off-the-shelf client compatibility.
+- **Back-Channel Logout** — Reliable Single Sign-Out (SLO) via direct server-to-server JWT webhooks, bypassing fragile browser cookie restrictions.
+
+**Should have (competitive):**
+- **JAR Decryption (JWE)** — Protects sensitive PII via encrypted authorization requests, required for high-security / FAPI profiles.
+- **Front-Channel Logout** — HTML/iframe-based logout for legacy RPs or SPAs, though inherently fragile in modern browser environments.
+
+**Defer (v2+):**
+- **Implicit Flow / Form Post** — Deprecated by OAuth 2.1 BCPs due to token leakage. 
+- **Stateful OP Sessions in Lockspire Core** — The host app must manage the Phoenix session; Lockspire relies on a handoff seam.
+- **Custom Logout Protocols** — Avoid proprietary webhooks.
+
+### Architecture Approach
+
+The architecture isolates protocol processing from host session state, leveraging a handoff seam to clear cookies.
+
+**Major components:**
+1. **`Protocol.Jar`** — Decrypts JWE using AS private keys, then verifies the inner JWS signature (Sign-then-Encrypt pattern).
+2. **`Protocol.BackChannelLogout`** — Orchestrates async HTTP POSTs to client `backchannel_logout_uri`s without blocking web requests.
+3. **`Host.AccountResolver` / `Web.EndSessionController`** — The seam where Lockspire passes control back to the Host Phoenix App to clear the actual web session cookie.
+
+### Critical Pitfalls
+
+1. **Front-Channel Logout Broken by Third-Party Cookies** — Browsers block cross-domain iframe cookie access. Prioritize Back-Channel Logout and clearly document Front-Channel limitations.
+2. **The Back-Channel Logout "Cookie Trap"** — The RP receives a webhook, not a browser request. RPs must invalidate the session in their backend store via `sid` instead of trying to clear a browser cookie.
+3. **The JWE "Encryption-Only" Trap** — Encryption does not guarantee source authentication. Enforce the nested "Sign-then-Encrypt" pattern, verifying an inner JWS after decrypting the outer JWE.
+4. **OIDC Conformance Type Strictness** — The OIDF Suite strictly fails string timestamps. Ensure `iat`, `exp`, and other numeric claims are strictly encoded as integers.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure for the v1.6 milestone:
+Based on research, suggested phase structure:
 
-1. **Phase A: Core Device Authorization Endpoint & Storage** - Establishes the foundation.
-   - Addresses: `POST /device/code` endpoint, generating Base20 user codes, Ecto schema for tracking pending device codes.
-   - Avoids: DB bloat by implementing strict TTLs/expiration (5-10 minutes) for device codes.
+### Phase 1: Domain & Storage Foundation
+**Rationale:** Database tracking is a prerequisite for generating correct tokens and issuing webhooks.
+**Delivers:** Ecto schema updates for `sid` on Tokens/Interactions, and configuration fields for Back/Front-Channel URIs on Client records.
+**Addresses:** Back-Channel Logout, Front-Channel Logout.
+**Avoids:** Global logout mistakes by strictly tying sessions to an identifiable `sid`.
 
-2. **Phase B: Host-Owned Verification UI Seam** - The user-facing component.
-   - Addresses: `GET /verify` and `POST /verify` integration, passing device context to the consent screen.
-   - Avoids: Remote phishing by requiring explicit user interaction (no auto-submit on `verification_uri_complete`).
+### Phase 2: OIDC Session Tracking & RP-Initiated Logout
+**Rationale:** The `GET /end_session` endpoint is the trigger for all subsequent logout workflows.
+**Delivers:** The `Web.EndSessionController`, ID Token `sid` claim injection, and the `Host.AccountResolver.redirect_for_logout` seam.
+**Uses:** Phoenix redirects.
+**Implements:** The Host-Owned Session Clearing Seam (Architecture Component).
+**Avoids:** Anti-Pattern 1: Lockspire directly managing or clearing the host app's session cookie.
 
-3. **Phase C: Polling & Token Issuance** - Closing the loop.
-   - Addresses: `POST /token` support for `grant_type=urn:ietf:params:oauth:grant-type:device_code`, handling `authorization_pending`, `slow_down`, and token issuance upon authorization.
-   - Avoids: The "Polling Storm" by strictly enforcing polling intervals and using efficient Ecto indexes.
+### Phase 3: Back-Channel & Front-Channel Logout Delivery
+**Rationale:** Implements the core SLO logic now that the session trigger and data models exist.
+**Delivers:** Asynchronous `Protocol.LogoutToken` generation, HTTP POST dispatch via `req`, and synchronous Front-Channel `<iframe>` rendering.
+**Addresses:** Back-Channel Logout, Front-Channel Logout.
+**Avoids:** Blocking HTTP requests by using `Task.Supervisor` or an async queue for outbound Back-Channel POSTs.
 
-**Phase ordering rationale:**
-- Storage and generation must exist before users can verify codes. Verification must exist before the device can successfully poll for a token.
+### Phase 4: JAR Decryption (JWE) Core
+**Rationale:** Essential for FAPI but conceptually independent from SLO.
+**Delivers:** Updates to `Storage.KeyStore` for asymmetric encryption keys, `JOSE.JWE` decryption logic, and nested JWT validation in `Protocol.Jar`.
+**Addresses:** JAR Decryption (JWE).
+**Avoids:** JWE "Encryption-Only" Trap and asymmetric key rotation lockout via overlap windows.
 
-**Research flags for phases:**
-- Phase B: Needs careful documentation on how host apps should implement rate-limiting on their verification screens, as this falls into the host's domain but is critical for protocol security.
+### Phase 5: Core Conformance & Final Polish
+**Rationale:** "Death by a thousand cuts" spec compliance, best handled once core features are functionally complete.
+**Delivers:** Type strictness fixes (integer timestamps), exact redirect URI matching enforcement, and rigorous testing against the OIDF Conformance Suite.
+**Addresses:** OIDC Core Conformance (Strict).
+**Avoids:** OIDC Conformance Type Strictness pitfall.
+
+### Phase Ordering Rationale
+- **Dependencies:** Schema (`sid`) → End Session Trigger → Logout Execution. This logical flow prevents regressions during development.
+- **Architecture:** Ensuring the Host Seam is built early clarifies the boundary between Lockspire protocol logic and Host authentication state.
+- **Pitfalls:** Phasing Conformance at the end focuses purely on spec edge cases without blocking the foundational protocol work.
+
+### Research Flags
+
+Phases likely needing deeper research during planning:
+- **Phase 3 (Logout Delivery):** Needs research on the preferred async task execution strategy in Elixir context (e.g., `Task.Supervisor` vs Oban) for high-scale environments.
+- **Phase 5 (Conformance):** Needs research on automating the OIDF Conformance Suite via Docker for integration into CI pipelines.
+
+Phases with standard patterns (skip research-phase):
+- **Phase 1 & 2:** Standard Ecto and Phoenix Controller/LiveView patterns.
+- **Phase 4:** Standard `JOSE` library implementations; nested JWT logic is well-documented.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Ecto/Postgres is already the standard for Lockspire; no external dependencies needed. |
-| Features | HIGH | RFC 8628 is a stable standard with clear requirements. |
-| Architecture | HIGH | Polling patterns in Elixir are well-understood. |
-| Pitfalls | HIGH | Recent security analyses heavily document Device Code phishing (e.g., Storm-2372). |
+| Stack | HIGH | Based on verified Elixir/Phoenix ecosystem standards and official foundation tools. |
+| Features | HIGH | Directly maps to OpenID Connect Core and Logout specifications. |
+| Architecture | HIGH | Clear, idiomatic separation between OP logic and Host web session state. |
+| Pitfalls | HIGH | Sourced from known industry realities regarding modern browsers and OIDC security. |
 
-## Gaps to Address
+**Overall confidence:** HIGH
 
-- **Rate Limiting Mechanism:** Lockspire relies on the host app for UI. We need to define if Lockspire should provide a built-in rate limiter (e.g., using `Registry` or ETS) or if it relies entirely on the host's existing rate-limiting solution (like `Hammer` or `Rack::Attack` equivalent) to protect the `/verify` endpoint.
+### Gaps to Address
+
+- **Async Task Queuing:** Determine if `Task.Supervisor` is sufficient for Back-Channel webhooks or if a durable queue like Oban must be a required host dependency for production-scale reliability.
+
+## Sources
+
+### Primary (HIGH confidence)
+- OpenID Connect Core 1.0 Specification — OIDC Core Conformance and Signatures/Encryption
+- OpenID Connect Back-Channel Logout 1.0 — Logout implementation standard
+- OpenID Connect Front-Channel Logout 1.0 — Limitations and iframe implementation
+- RFC 9101 (JWT-Secured Authorization Request - JAR) — Nested JWT requirements
+- Official OIDF Conformance Suite documentation — Type strictness and certification
+
+### Secondary (MEDIUM confidence)
+- req Elixir Library Documentation — Standard HTTP client features and integrations
+
+---
+*Research completed: 2025-03-08*
+*Ready for roadmap: yes*

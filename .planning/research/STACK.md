@@ -1,38 +1,54 @@
 # Technology Stack
 
 **Project:** Lockspire
-**Researched:** 2026-04-27
+**Researched:** 2025-03-08
 
 ## Recommended Stack
 
 ### Core Framework
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Elixir/Phoenix | Existing | Endpoints (`/device/code`, `/token`) | Fits naturally into the existing Lockspire ecosystem. Elixir's concurrency model handles polling efficiently. |
+| Phoenix | ~> 1.8.5 | OP Web Surface | Already in use. Handles Front-Channel Logout natively via standard HTML/LiveView redirects, iframes, and session management. No new framework needed. |
 
 ### Database
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Ecto/Postgres | Existing | State management for `device_code` and `user_code` | Maintains Lockspire's "no external dependencies" constraint. While Redis is often used for short-lived codes, Ecto is sufficient if properly indexed and pruned. |
+| Ecto/Postgres | ~> 3.13 | State Management | Already in use. Will track logout status and session bindings required for back/front-channel logout. |
+
+### Infrastructure
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| OIDF Conformance Suite | Latest | OIDC Core Testing | Official tool required to verify OpenID Certification. Acts as the "referee" testing the OP against edge cases. Should be run via Docker locally or used via the hosted certification service. |
 
 ### Supporting Libraries
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| None required | - | - | Built-in Elixir modules (`Crypto`, `Process`) can handle code generation and timing. Rate-limiting should ideally hook into the host app's existing solution. |
+| erlang-jose (`jose`) | ~> 1.11 | JAR Decryption | Already in project. Has native `JOSE.JWE` support for block/key decryption. Use to decrypt encrypted Request Objects without adding new dependencies. |
+| req | ~> 0.5 | Back-Channel Logout POSTs | Use for OP-to-RP server-to-server outbound calls (sending logout tokens). The 2024 Elixir standard with built-in retries and JSON support. |
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| State Storage | Ecto/Postgres | Redis / Nebulex | Violates Lockspire's constraint of not forcing external infrastructure on the host Phoenix app. |
-| Polling Control | Ecto DB Reads | ETS (Erlang Term Storage) | ETS is lost on application restart. Since OAuth flows can outlive a deploy, Ecto ensures durability. DB load is mitigated by the 5+ second polling interval and `slow_down` responses. |
+| HTTP Client | `req` | `finch` | Finch is great for high-throughput connection pooling, but Req (built on Finch) handles retries, JSON encoding, and error handling natively, reducing boilerplate for OP-to-RP logout POSTs. |
+| HTTP Client | `req` | `httpoison` | HTTPoison is based on Hackney (process-per-request) and is considered legacy. The Elixir ecosystem has moved to the Mint stack (Finch/Req). |
+| JWE Library | `erlang-jose` | `joken` | Joken provides a high-level JWT wrapper, but Lockspire already uses `jose` directly for JWS/JWKS. Adding Joken for JWE would be redundant since `jose` handles JWE directly. |
+| Testing | OIDF Suite | Custom ExUnit | Custom unit tests cannot replace the official OpenID Foundation Conformance Suite for proving specification compliance, as the suite specifically tests complex negative/edge-case paths required for OIDC Core compliance. |
 
-## Implementation Notes
+## Installation
 
-- **Code Generation:** Use `Base 20` (`BCDFGHJKLMNPQRSTVWXZ`) for user codes to avoid ambiguous characters (0/O, 1/I) and vowels (preventing accidental profanity).
-- **Format:** Group user codes with dashes (e.g., `WDJB-MJHT`) for readability.
+```bash
+# Add to mix.exs
+defp deps do
+  [
+    # ... existing deps ...
+    {:req, "~> 0.5"} # New dependency for Back-Channel Logout POSTs
+  ]
+end
+```
 
 ## Sources
 
-- RFC 8628 (OAuth 2.0 Device Authorization Grant)
-- Industry best practices for 2024 (phishing resistance, Base20 user codes).
+- https://hexdocs.pm/jose/JOSE.JWE.html (HIGH confidence - Verified in codebase)
+- https://github.com/wojtekmach/req (HIGH confidence - Elixir HTTP client standard 2024)
+- https://gitlab.com/openid/conformance-suite (HIGH confidence - Official OpenID Foundation tool)
