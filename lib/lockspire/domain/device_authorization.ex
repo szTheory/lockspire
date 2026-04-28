@@ -30,6 +30,8 @@ defmodule Lockspire.Domain.DeviceAuthorization do
     :denied_at,
     :consumed_at,
     :expired_at,
+    :effective_poll_interval_seconds,
+    :next_poll_allowed_at,
     :expires_at
   ]
 
@@ -50,10 +52,13 @@ defmodule Lockspire.Domain.DeviceAuthorization do
           denied_at: DateTime.t() | nil,
           consumed_at: DateTime.t() | nil,
           expired_at: DateTime.t() | nil,
+          effective_poll_interval_seconds: pos_integer(),
+          next_poll_allowed_at: DateTime.t(),
           expires_at: DateTime.t()
         }
 
   @default_ttl 300 # 5 minutes
+  @default_poll_interval_seconds 5
 
   @doc """
   Issues a new Device Authorization struct.
@@ -80,9 +85,14 @@ defmodule Lockspire.Domain.DeviceAuthorization do
       denied_at: nil,
       consumed_at: nil,
       expired_at: nil,
+      effective_poll_interval_seconds: @default_poll_interval_seconds,
+      next_poll_allowed_at: initial_next_poll_allowed_at(now),
       expires_at: DateTime.add(now, ttl, :second)
     }
   end
+
+  @spec default_poll_interval_seconds() :: pos_integer()
+  def default_poll_interval_seconds, do: @default_poll_interval_seconds
 
   @spec canonicalize_user_code(String.t()) :: String.t()
   def canonicalize_user_code(user_code) when is_binary(user_code) do
@@ -101,6 +111,11 @@ defmodule Lockspire.Domain.DeviceAuthorization do
 
   @spec statuses() :: [status(), ...]
   def statuses, do: @statuses
+
+  @spec initial_next_poll_allowed_at(DateTime.t()) :: DateTime.t()
+  def initial_next_poll_allowed_at(%DateTime{} = issued_at) do
+    DateTime.add(issued_at, @default_poll_interval_seconds, :second)
+  end
 
   defp generate_verification_handle do
     @verification_handle_bytes

@@ -19,6 +19,8 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
     field(:denied_at, :utc_datetime_usec)
     field(:consumed_at, :utc_datetime_usec)
     field(:expired_at, :utc_datetime_usec)
+    field(:effective_poll_interval_seconds, :integer, default: 5)
+    field(:next_poll_allowed_at, :utc_datetime_usec)
     field(:expires_at, :utc_datetime_usec)
 
     timestamps()
@@ -40,6 +42,8 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
       :denied_at,
       :consumed_at,
       :expired_at,
+      :effective_poll_interval_seconds,
+      :next_poll_allowed_at,
       :expires_at
     ])
     |> validate_required([
@@ -48,6 +52,8 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
       :verification_handle,
       :client_id,
       :status,
+      :effective_poll_interval_seconds,
+      :next_poll_allowed_at,
       :expires_at
     ])
     |> unique_constraint(:device_code_hash)
@@ -64,6 +70,8 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
       :denied_at,
       :consumed_at,
       :expired_at,
+      :effective_poll_interval_seconds,
+      :next_poll_allowed_at,
       :updated_at,
       :expires_at
     ])
@@ -84,6 +92,8 @@ defmodule Lockspire.Storage.Ecto.DeviceAuthorizationRecord do
       denied_at: record.denied_at,
       consumed_at: record.consumed_at,
       expired_at: record.expired_at,
+      effective_poll_interval_seconds: record.effective_poll_interval_seconds,
+      next_poll_allowed_at: record.next_poll_allowed_at,
       expires_at: record.expires_at
     }
     |> Map.merge(Enum.into(extra, %{}))
