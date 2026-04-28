@@ -79,7 +79,7 @@ Explicitly excluded. Documented to prevent scope creep and keep public support c
 | DPoP-04 | Phase 33 | Completed |
 | DPoP-05 | Phase 34 | Completed |
 | DPoP-06 | Phase 34 | Completed |
-| DPoP-07 | Phase 34 | Pending |
+| DPoP-07 | Phase 34 | Complete |
 | DPoP-08 | Phase 34 | Completed |
 | DPoP-09 | Phase 35 | Pending |
 | DPoP-10 | Phase 35 | Pending |

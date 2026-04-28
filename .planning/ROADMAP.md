@@ -21,7 +21,7 @@
 ### Phases
 
 - [x] **Phase 33: DPoP Proof Validation and Replay State** - completed 2026-04-28; delivered DPoP proof parsing, JOSE validation, thumbprint derivation, durable replay detection, and explicit client/server DPoP policy state.
-- [ ] **Phase 34: Token Issuance and Refresh/Device Binding** - Thread DPoP through authorization-code, refresh-token, and device-code exchange so Lockspire can issue DPoP-bound tokens with stable binding semantics.
+- [x] **Phase 34: Token Issuance and Refresh/Device Binding** - Thread DPoP through authorization-code, refresh-token, and device-code exchange so Lockspire can issue DPoP-bound tokens with stable binding semantics. (completed 2026-04-28)
 - [ ] **Phase 35: Owned Endpoint Consumption and Truthful Surface** - Make `userinfo`, discovery, docs, and operator/DCR configuration truthful and usable for the shipped DPoP slice.
 - [ ] **Phase 36: End-to-End Proof and Milestone Closure** - Add cross-flow executable proof, close traceability, and leave the repo ready for the next adoption-hardening or deeper protocol milestone.
 
@@ -52,7 +52,7 @@
   4. Successful DPoP token responses are truthfully shaped, including `token_type: "DPoP"`, while bearer clients remain unchanged.
 **Plans**: 3 plans
 - [x] 34-01-PLAN.md — Add the shared token-endpoint DPoP context plus truthful auth-code issuance and durable `cnf` persistence
-- [ ] 34-02-PLAN.md — Add atomic refresh-token binding checks, DPoP-aware rotation, and `invalid_grant` collapse for proof-key mismatch
+- [x] 34-02-PLAN.md — Add atomic refresh-token binding checks, DPoP-aware rotation, and `invalid_grant` collapse for proof-key mismatch
 - [x] 34-03-PLAN.md — Reuse the shared issuance path for device-code DPoP redemption and generated-host integration proof
 
 #### Phase 35: Owned Endpoint Consumption and Truthful Surface
@@ -86,7 +86,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 33. DPoP Proof Validation and Replay State | 3/3 | Complete | 2026-04-28 |
-| 34. Token Issuance and Refresh/Device Binding | 2/3 | In progress | - |
+| 34. Token Issuance and Refresh/Device Binding | 3/3 | Complete    | 2026-04-28 |
 | 35. Owned Endpoint Consumption and Truthful Surface | 0/3 | Not started | - |
 | 36. End-to-End Proof and Milestone Closure | 0/3 | Not started | - |
 
