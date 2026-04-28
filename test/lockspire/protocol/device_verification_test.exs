@@ -9,13 +9,13 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
     alias Lockspire.Domain.DeviceAuthorization
 
     def fetch_device_authorization_by_user_code_hash(hash) do
-      case hash do
-        "pending-hash" -> {:ok, pending_authorization()}
-        "expired-hash" -> {:ok, expired_authorization()}
-        "approved-hash" -> {:ok, approved_authorization()}
-        "missing-client-hash" -> {:ok, missing_client_authorization()}
-        "missing-hash" -> {:ok, nil}
-        "store-error-hash" -> {:error, :store_unavailable}
+      cond do
+        hash == DeviceAuthorization.hash_user_code("WDJB-MJHT") -> {:ok, pending_authorization()}
+        hash == DeviceAuthorization.hash_user_code("EXPR-IRED") -> {:ok, expired_authorization()}
+        hash == DeviceAuthorization.hash_user_code("APPR-OVED") -> {:ok, approved_authorization()}
+        hash == DeviceAuthorization.hash_user_code("ABCD-EFGH") -> {:ok, missing_client_authorization()}
+        hash == DeviceAuthorization.hash_user_code("MISS-ING1") -> {:ok, nil}
+        true -> {:error, :store_unavailable}
       end
     end
 
@@ -49,7 +49,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
       %DeviceAuthorization{
         id: 1,
         device_code_hash: "device-hash",
-        user_code_hash: "pending-hash",
+        user_code_hash: DeviceAuthorization.hash_user_code("WDJB-MJHT"),
         verification_handle: "pending-handle",
         client_id: "client-123",
         scopes: ["openid", "profile"],
@@ -63,13 +63,13 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
       %DeviceAuthorization{
         id: 2,
         device_code_hash: "expired-device-hash",
-        user_code_hash: "expired-hash",
+        user_code_hash: DeviceAuthorization.hash_user_code("EXPR-IRED"),
         verification_handle: "expired-handle",
         client_id: "client-123",
         scopes: ["openid"],
         status: :pending,
         expires_at: ~U[2026-04-28 10:59:59Z],
-        user_code: "WDJB-MJHT"
+        user_code: "EXPR-IRED"
       }
     end
 
@@ -77,7 +77,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
       %DeviceAuthorization{
         id: 3,
         device_code_hash: "approved-device-hash",
-        user_code_hash: "approved-hash",
+        user_code_hash: DeviceAuthorization.hash_user_code("APPR-OVED"),
         verification_handle: "approved-handle",
         client_id: "client-123",
         scopes: ["openid"],
@@ -85,7 +85,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
         subject_id: "subject-123",
         approved_at: ~U[2026-04-28 10:30:00Z],
         expires_at: ~U[2026-04-28 15:00:00Z],
-        user_code: "WDJB-MJHT"
+        user_code: "APPR-OVED"
       }
     end
 
@@ -93,7 +93,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
       %DeviceAuthorization{
         id: 4,
         device_code_hash: "missing-client-device-hash",
-        user_code_hash: "missing-client-hash",
+        user_code_hash: DeviceAuthorization.hash_user_code("ABCD-EFGH"),
         verification_handle: "missing-client-handle",
         client_id: "client-without-name",
         scopes: [],
@@ -141,17 +141,17 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
 
     test "returns :expired when the authorization is no longer active by time" do
       assert {:error, :expired} =
-               DeviceVerification.lookup_pending_device_authorization("expired-hash", @opts)
+               DeviceVerification.lookup_pending_device_authorization("expr-ired", @opts)
     end
 
     test "returns :not_active for non-pending authorizations" do
       assert {:error, :not_active} =
-               DeviceVerification.lookup_pending_device_authorization("approved-hash", @opts)
+               DeviceVerification.lookup_pending_device_authorization("appr-oved", @opts)
     end
 
     test "returns :not_found when no authorization matches the code" do
       assert {:error, :not_found} =
-               DeviceVerification.lookup_pending_device_authorization("missing-hash", @opts)
+               DeviceVerification.lookup_pending_device_authorization("miss-ing1", @opts)
     end
   end
 
