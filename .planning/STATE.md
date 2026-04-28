@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: milestone
 status: executing
-stopped_at: Completed 32-01-PLAN.md
-last_updated: "2026-04-28T12:04:05.256Z"
+stopped_at: Completed 32-02-PLAN.md
+last_updated: "2026-04-28T12:20:22.753Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 32 (polling-token-issuance) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-28
 
@@ -52,6 +52,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Device authorizations now carry both effective poll interval seconds and next_poll_allowed_at so polling truth stays durable across nodes and deploys.
 - Too-early polls widen the next window from the current allowed timestamp, not from wall-clock now, to preserve sticky RFC 8628 slow_down behavior.
 - Approved device authorizations remain poll-readable as approved_ready and are consumed only through a separate row-locked callback.
+- Device polling now enters TokenExchange as a first-class device_code grant that reuses the existing client-auth and token issuance pipeline.
+- Approved device authorizations can issue access tokens, refresh tokens, and optional id_tokens through shared token success helpers, with replay evidence appended as durable device_authorization audit rows.
+- Public device polling errors collapse to RFC 8628 and OAuth names while preserving private reason codes such as device_authorization_consumed and device_authorization_client_mismatch.
 
 ### Blockers/Concerns
 
@@ -63,7 +66,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 32-01-PLAN.md
+**Stopped at:** Completed 32-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

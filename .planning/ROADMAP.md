@@ -45,7 +45,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] `32-01-PLAN.md` — Extend device-authorization storage with durable poll-window state, sticky `slow_down`, and single-winner consume semantics. (completed 2026-04-28)
-- [ ] `32-02-PLAN.md` — Add the device grant branch to `TokenExchange` and reuse shared token issuance for RFC-shaped polling outcomes.
+- [x] `32-02-PLAN.md` — Add the device grant branch to `TokenExchange` and reuse shared token issuance for RFC-shaped polling outcomes. (completed 2026-04-28)
 - [ ] `32-03-PLAN.md` — Prove the HTTP/discovery/docs contract and add end-to-end device-flow token redemption coverage.
 
 ## Progress
@@ -54,7 +54,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 30. Core Device Authorization Endpoint & Storage | 0/3 | Not started | - |
 | 31. Host-Owned Verification UI Seam | 4/4 | Complete   | 2026-04-28 |
-| 32. Polling & Token Issuance | 1/3 | In Progress | - |
+| 32. Polling & Token Issuance | 2/3 | In Progress | - |
 
 ## Shipped Milestones
 
