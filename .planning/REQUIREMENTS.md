@@ -26,11 +26,9 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Owned Endpoint Consumption and Surface Truth
 
-- [x] **DPoP-09
-**: `userinfo` accepts DPoP-bound access tokens only when the accompanying proof validates against the token's stored binding state.
-- [ ] **DPoP-10**: Discovery metadata and support docs advertise only the shipped DPoP slice, including truthful supported proof signing algorithms and endpoint behavior.
-- [x] **DPoP-11
-**: Operator and DCR flows can explicitly configure client token mode for bearer vs DPoP without repo-internal edits.
+- [x] **DPoP-09**: `userinfo` accepts DPoP-bound access tokens only when the accompanying proof validates against the token's stored binding state.
+- [x] **DPoP-10**: Discovery metadata and support docs advertise only the shipped DPoP slice, including truthful supported proof signing algorithms and endpoint behavior.
+- [x] **DPoP-11**: Operator and DCR flows can explicitly configure client token mode for bearer vs DPoP without repo-internal edits.
 
 ### Proof, Observability, and Closure
 
@@ -83,9 +81,9 @@ Explicitly excluded. Documented to prevent scope creep and keep public support c
 | DPoP-06 | Phase 34 | Completed |
 | DPoP-07 | Phase 34 | Complete |
 | DPoP-08 | Phase 34 | Completed |
-| DPoP-09 | Phase 35 | Pending |
-| DPoP-10 | Phase 35 | Pending |
-| DPoP-11 | Phase 35 | Pending |
+| DPoP-09 | Phase 35 | Completed |
+| DPoP-10 | Phase 35 | Completed |
+| DPoP-11 | Phase 35 | Completed |
 | DPoP-12 | Phase 36 | Pending |
 | DPoP-13 | Phase 36 | Pending |
 | DPoP-14 | Phase 36 | Pending |
@@ -97,4 +95,4 @@ Explicitly excluded. Documented to prevent scope creep and keep public support c
 
 ---
 *Requirements defined: 2026-04-28*
-*Last updated: 2026-04-28 after Phase 33 completion.*
+*Last updated: 2026-04-28 after Phase 35 completion.*

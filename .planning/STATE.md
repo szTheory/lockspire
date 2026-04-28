@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: milestone
-status: executing
-stopped_at: Completed 35-03-PLAN.md
-last_updated: "2026-04-28T19:42:26.902Z"
+milestone: v1.7
+milestone_name: DPoP Core for Public and CLI Clients
+status: planning
+stopped_at: Phase 35 execution and verification complete
+last_updated: "2026-04-28T19:59:00Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 35 — owned-endpoint-consumption-and-truthful-surface
+**Current focus:** Phase 36 — End-to-End Proof and Milestone Closure
 
 ## Current Position
 
-Phase: 35 (owned-endpoint-consumption-and-truthful-surface) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
+Phase: 36
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-04-28
 
 ## Performance Metrics
 
-- Phases completed: 1/4 (v1.7)
-- Plans completed: 5/6 (active execution window)
+- Phases completed: 3/4 (v1.7)
+- Plans completed: 9/9 (active execution window)
 
 ## Accumulated Context
 
@@ -62,6 +62,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Collapse userinfo DPoP proof failures to public invalid_token while using WWW-Authenticate to advertise DPoP capability and accepted algorithms.
 - Self-registered clients now resolve omitted or false dpop_bound_access_tokens to explicit bearer policy instead of inheriting future server defaults.
 - The DPoP operator surface stays intentionally parallel to PAR: one global policy page plus the existing client edit workflow.
+- Discovery now publishes DPoP algorithm metadata only when both `/token` and Lockspire-owned `/userinfo` are mounted.
+- Public support docs now claim DPoP only for token requests and Lockspire-owned `userinfo`, with generic host protected-resource middleware explicitly out of scope.
 
 ### Blockers/Concerns
 
@@ -70,12 +72,12 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-plan-phase 35`
+**Next action:** Run `$gsd-plan-phase 36`
 
-**Resume file:** None
+**Resume file:** `.planning/ROADMAP.md`
 
-**Stopped at:** Completed 35-03-PLAN.md
+**Stopped at:** Phase 35 execution and verification complete
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** 35 — Owned Endpoint Consumption and Truthful Surface
+**Planned Phase:** 36 — End-to-End Proof and Milestone Closure

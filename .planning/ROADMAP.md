@@ -22,7 +22,7 @@
 
 - [x] **Phase 33: DPoP Proof Validation and Replay State** - completed 2026-04-28; delivered DPoP proof parsing, JOSE validation, thumbprint derivation, durable replay detection, and explicit client/server DPoP policy state.
 - [x] **Phase 34: Token Issuance and Refresh/Device Binding** - Thread DPoP through authorization-code, refresh-token, and device-code exchange so Lockspire can issue DPoP-bound tokens with stable binding semantics. (completed 2026-04-28)
-- [ ] **Phase 35: Owned Endpoint Consumption and Truthful Surface** - Make `userinfo`, discovery, docs, and operator/DCR configuration truthful and usable for the shipped DPoP slice.
+- [x] **Phase 35: Owned Endpoint Consumption and Truthful Surface** - Make `userinfo`, discovery, docs, and operator/DCR configuration truthful and usable for the shipped DPoP slice. (completed 2026-04-28)
 - [ ] **Phase 36: End-to-End Proof and Milestone Closure** - Add cross-flow executable proof, close traceability, and leave the repo ready for the next adoption-hardening or deeper protocol milestone.
 
 ### Phase Details
@@ -64,9 +64,9 @@
   2. Discovery advertises the DPoP slice truthfully and only because the mounted repo-proven surface supports it.
   3. Admin and DCR flows can explicitly place clients into bearer or DPoP mode without repo-internal edits.
 **Plans**: 3 plans
-- [ ] 35-01: Add DPoP-aware userinfo validation and response tests
-- [ ] 35-02: Update discovery metadata, supported-surface docs, and release contract tests
-- [ ] 35-03: Add operator and DCR configuration for client token mode
+- [x] 35-01: Add DPoP-aware userinfo validation and response tests
+- [x] 35-02: Update discovery metadata, supported-surface docs, and release contract tests
+- [x] 35-03: Add operator and DCR configuration for client token mode
 
 #### Phase 36: End-to-End Proof and Milestone Closure
 **Goal**: The shipped DPoP slice is end-to-end provable, traceable, and cleanly bounded so the next milestone can choose adoption hardening or deeper protocol scope from a stable base.
@@ -87,7 +87,7 @@
 |-------|----------------|--------|-----------|
 | 33. DPoP Proof Validation and Replay State | 3/3 | Complete | 2026-04-28 |
 | 34. Token Issuance and Refresh/Device Binding | 3/3 | Complete    | 2026-04-28 |
-| 35. Owned Endpoint Consumption and Truthful Surface | 0/3 | Not started | - |
+| 35. Owned Endpoint Consumption and Truthful Surface | 3/3 | Complete | 2026-04-28 |
 | 36. End-to-End Proof and Milestone Closure | 0/3 | Not started | - |
 
 ## Reference
