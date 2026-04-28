@@ -41,6 +41,16 @@ defmodule Lockspire.Admin.ServerPolicy do
     end
   end
 
+  @spec put_dpop_policy(atom() | String.t()) ::
+          {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
+  def put_dpop_policy(mode) do
+    with {:ok, normalized_mode} <- normalize_dpop_policy(mode) do
+      Repository.update_server_policy(fn %ServerPolicy{} = current ->
+        %ServerPolicy{current | dpop_policy: normalized_mode}
+      end)
+    end
+  end
+
   @doc """
   Returns the current DCR policy view as a `%Domain.ServerPolicy{}` (the same struct
   used by `get_server_policy/0` — DCR fields land on the singleton row per D-04).
@@ -90,6 +100,25 @@ defmodule Lockspire.Admin.ServerPolicy do
 
   defp invalid_par_policy(value) do
     {:error, [%{field: :par_policy, reason: :invalid_par_policy, detail: value}]}
+  end
+
+  defp normalize_dpop_policy(:bearer), do: {:ok, :bearer}
+  defp normalize_dpop_policy(:dpop), do: {:ok, :dpop}
+
+  defp normalize_dpop_policy(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "bearer" -> {:ok, :bearer}
+      "dpop" -> {:ok, :dpop}
+      _other -> invalid_dpop_policy(value)
+    end
+  end
+
+  defp normalize_dpop_policy(value), do: invalid_dpop_policy(value)
+
+  defp invalid_dpop_policy(value) do
+    {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: value}]}
   end
 
   defp normalize_dcr_attrs(attrs) do

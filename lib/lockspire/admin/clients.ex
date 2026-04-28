@@ -9,7 +9,7 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Observability
   alias Lockspire.Storage.Ecto.Repository
 
-  @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts par_policy metadata)a
+  @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts par_policy dpop_policy metadata)a
   @immutable_fields ~w(
     client_id
     client_type
@@ -194,7 +194,9 @@ defmodule Lockspire.Admin.Clients do
   defp validate_safe_update(attrs) do
     with :ok <- validate_redirects_if_present(attrs),
          :ok <- validate_scopes_if_present(attrs) do
-      validate_par_policy_if_present(attrs)
+      with :ok <- validate_par_policy_if_present(attrs) do
+        validate_dpop_policy_if_present(attrs)
+      end
     end
   end
 
@@ -230,6 +232,22 @@ defmodule Lockspire.Admin.Clients do
 
           :error ->
             {:error, [%{field: :par_policy, reason: :invalid_par_policy, detail: value}]}
+        end
+    end
+  end
+
+  defp validate_dpop_policy_if_present(attrs) do
+    case fetch_mutable_attr(attrs, :dpop_policy) do
+      :error ->
+        :ok
+
+      {:ok, value} ->
+        case normalize_dpop_policy(value) do
+          {:ok, _policy} ->
+            :ok
+
+          :error ->
+            {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: value}]}
         end
     end
   end
@@ -276,6 +294,13 @@ defmodule Lockspire.Admin.Clients do
 
   defp normalize_mutable_field(:par_policy, value) do
     case normalize_par_policy(value) do
+      {:ok, policy} -> policy
+      :error -> value
+    end
+  end
+
+  defp normalize_mutable_field(:dpop_policy, value) do
+    case normalize_dpop_policy(value) do
       {:ok, policy} -> policy
       :error -> value
     end
@@ -329,6 +354,23 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_par_policy(_value), do: :error
+
+  defp normalize_dpop_policy(:inherit), do: {:ok, :inherit}
+  defp normalize_dpop_policy(:bearer), do: {:ok, :bearer}
+  defp normalize_dpop_policy(:dpop), do: {:ok, :dpop}
+
+  defp normalize_dpop_policy(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "inherit" -> {:ok, :inherit}
+      "bearer" -> {:ok, :bearer}
+      "dpop" -> {:ok, :dpop}
+      _other -> :error
+    end
+  end
+
+  defp normalize_dpop_policy(_value), do: :error
 
   defp normalize_field_name(value) when is_atom(value), do: value
 

@@ -4,11 +4,13 @@ defmodule Lockspire.Domain.ServerPolicy do
   """
 
   @type par_policy :: :optional | :required
+  @type dpop_policy :: :bearer | :dpop
   @type registration_policy :: :disabled | :initial_access_token | :open
 
   @type t :: %__MODULE__{
           id: integer() | nil,
           par_policy: par_policy(),
+          dpop_policy: dpop_policy(),
           registration_policy: registration_policy(),
           dcr_allowed_scopes: [String.t()],
           dcr_allowed_grant_types: [String.t()],
@@ -25,6 +27,7 @@ defmodule Lockspire.Domain.ServerPolicy do
 
   defstruct id: nil,
             par_policy: :optional,
+            dpop_policy: :bearer,
             registration_policy: :disabled,
             dcr_allowed_scopes: [],
             dcr_allowed_grant_types: [],

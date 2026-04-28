@@ -9,6 +9,7 @@ defmodule Lockspire.Domain.Client do
   @type subject_type :: :public | :pairwise
   @type signing_alg :: :RS256 | :ES256 | :EdDSA
   @type par_policy :: :inherit | :required | :optional
+  @type dpop_policy :: :inherit | :bearer | :dpop
   @type provenance :: :operator | :self_registered
 
   @type t :: %__MODULE__{
@@ -25,6 +26,7 @@ defmodule Lockspire.Domain.Client do
           token_endpoint_auth_method: token_endpoint_auth_method(),
           pkce_required: boolean(),
           par_policy: par_policy(),
+          dpop_policy: dpop_policy(),
           subject_type: subject_type(),
           sector_identifier_uri: String.t() | nil,
           id_token_signed_response_alg: signing_alg() | nil,
@@ -67,6 +69,7 @@ defmodule Lockspire.Domain.Client do
     token_endpoint_auth_method: :client_secret_basic,
     pkce_required: true,
     par_policy: :inherit,
+    dpop_policy: :inherit,
     subject_type: :public,
     sector_identifier_uri: nil,
     id_token_signed_response_alg: nil,

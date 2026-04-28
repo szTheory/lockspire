@@ -28,6 +28,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
 
     field(:pkce_required, :boolean, default: true)
     field(:par_policy, Ecto.Enum, values: [:inherit, :required, :optional], default: :inherit)
+    field(:dpop_policy, Ecto.Enum, values: [:inherit, :bearer, :dpop], default: :inherit)
     field(:subject_type, Ecto.Enum, values: [:public, :pairwise])
     field(:sector_identifier_uri, :string)
     field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
@@ -74,6 +75,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :token_endpoint_auth_method,
       :pkce_required,
       :par_policy,
+      :dpop_policy,
       :subject_type,
       :sector_identifier_uri,
       :id_token_signed_response_alg,
@@ -139,6 +141,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :policy_uri,
       :contacts,
       :par_policy,
+      :dpop_policy,
       :metadata,
       :active,
       :disabled_at,
@@ -168,6 +171,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       token_endpoint_auth_method: record.token_endpoint_auth_method,
       pkce_required: record.pkce_required,
       par_policy: record.par_policy,
+      dpop_policy: record.dpop_policy,
       subject_type: record.subject_type,
       sector_identifier_uri: record.sector_identifier_uri,
       id_token_signed_response_alg: record.id_token_signed_response_alg,
