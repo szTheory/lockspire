@@ -315,7 +315,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
-    refute supported_surface =~ "Lockspire-owned browser UI"
+    assert supported_surface =~ "not a Lockspire-owned browser UI"
   end
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
