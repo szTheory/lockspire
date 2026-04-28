@@ -22,6 +22,16 @@ defmodule Lockspire.Protocol.DPoP do
           | :invalid_typ
           | :missing_jwk
           | :invalid_jwk
+          | :invalid_claims_options
+          | :missing_htm
+          | :invalid_htm
+          | :missing_htu
+          | :invalid_htu
+          | :missing_iat
+          | :invalid_iat
+          | :stale_iat
+          | :future_iat
+          | :missing_jti
 
   @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
   @required_typ "dpop+jwt"
@@ -46,11 +56,12 @@ defmodule Lockspire.Protocol.DPoP do
 
   @spec validate_proof(String.t(), keyword()) :: {:ok, t()} | {:error, validate_reason()}
   def validate_proof(jwt, opts \\ [])
-  def validate_proof(jwt, _opts) when is_binary(jwt) do
+  def validate_proof(jwt, opts) when is_binary(jwt) do
     with {:ok, %__MODULE__{} = decoded} <- decode(jwt),
          :ok <- check_typ(decoded.header),
          {:ok, public_jwk} <- header_public_jwk(decoded.header),
-         {:ok, %__MODULE__{} = verified} <- verify_signature(jwt, public_jwk) do
+         {:ok, %__MODULE__{} = verified} <- verify_signature(jwt, public_jwk),
+         :ok <- validate_claims(verified.claims, opts) do
       {:ok,
        %__MODULE__{
          verified
@@ -78,6 +89,20 @@ defmodule Lockspire.Protocol.DPoP do
   end
 
   def thumbprint(_), do: {:error, :invalid_jwk}
+
+  defp validate_claims(_claims, []), do: :ok
+
+  defp validate_claims(claims, opts) when is_map(claims) and is_list(opts) do
+    with {:ok, method, target_uri, now, max_age, clock_skew} <- parse_validation_opts(opts),
+         :ok <- check_htm(claims, method),
+         :ok <- check_htu(claims, target_uri),
+         :ok <- check_iat(claims, now, max_age, clock_skew),
+         :ok <- check_jti(claims) do
+      :ok
+    end
+  end
+
+  defp validate_claims(_claims, _opts), do: {:error, :invalid_claims_options}
 
   defp verify_signature(jwt, public_jwk) do
     try do
@@ -128,6 +153,85 @@ defmodule Lockspire.Protocol.DPoP do
   end
 
   defp parse_header_jwk(_), do: {:error, :invalid_jwk}
+
+  defp parse_validation_opts(opts) do
+    method = Keyword.get(opts, :method)
+    target_uri = Keyword.get(opts, :target_uri)
+    now = Keyword.get(opts, :now)
+    max_age = Keyword.get(opts, :max_age)
+    clock_skew = Keyword.get(opts, :clock_skew, 0)
+
+    cond do
+      not (is_binary(method) and method != "") ->
+        {:error, :invalid_claims_options}
+
+      not (is_binary(target_uri) and target_uri != "") ->
+        {:error, :invalid_claims_options}
+
+      not match?(%DateTime{}, now) ->
+        {:error, :invalid_claims_options}
+
+      not (is_integer(max_age) and max_age >= 0) ->
+        {:error, :invalid_claims_options}
+
+      not (is_integer(clock_skew) and clock_skew >= 0) ->
+        {:error, :invalid_claims_options}
+
+      true ->
+        {:ok, String.upcase(method), canonical_htu(target_uri), now, max_age, clock_skew}
+    end
+  end
+
+  defp check_htm(%{"htm" => htm}, expected_method) when is_binary(htm) do
+    if String.upcase(htm) == expected_method, do: :ok, else: {:error, :invalid_htm}
+  end
+
+  defp check_htm(%{"htm" => _}, _expected_method), do: {:error, :invalid_htm}
+  defp check_htm(_claims, _expected_method), do: {:error, :missing_htm}
+
+  defp check_htu(%{"htu" => htu}, expected_htu) when is_binary(htu) do
+    if canonical_htu(htu) == expected_htu, do: :ok, else: {:error, :invalid_htu}
+  rescue
+    _ -> {:error, :invalid_htu}
+  end
+
+  defp check_htu(%{"htu" => _}, _expected_htu), do: {:error, :invalid_htu}
+  defp check_htu(_claims, _expected_htu), do: {:error, :missing_htu}
+
+  defp check_iat(%{"iat" => iat}, now, max_age, clock_skew) when is_integer(iat) do
+    now_unix = DateTime.to_unix(now)
+
+    cond do
+      iat > now_unix + clock_skew -> {:error, :future_iat}
+      iat < now_unix - max_age -> {:error, :stale_iat}
+      true -> :ok
+    end
+  end
+
+  defp check_iat(%{"iat" => _}, _now, _max_age, _clock_skew), do: {:error, :invalid_iat}
+  defp check_iat(_claims, _now, _max_age, _clock_skew), do: {:error, :missing_iat}
+
+  defp check_jti(%{"jti" => jti}) when is_binary(jti) and jti != "", do: :ok
+  defp check_jti(_claims), do: {:error, :missing_jti}
+
+  defp canonical_htu(uri) do
+    %URI{scheme: scheme, host: host} = parsed = URI.parse(uri)
+
+    if is_nil(scheme) or is_nil(host) do
+      raise ArgumentError, "invalid absolute URI"
+    end
+
+    normalized_host = String.downcase(host)
+    port = normalized_port(parsed)
+    path = if parsed.path in [nil, ""], do: "/", else: parsed.path
+    authority = if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
+
+    scheme <> "://" <> authority <> path
+  end
+
+  defp normalized_port(%URI{scheme: "https", port: 443}), do: nil
+  defp normalized_port(%URI{scheme: "http", port: 80}), do: nil
+  defp normalized_port(%URI{port: port}), do: port
 
   defp thumbprint!(%JOSE.JWK{} = jwk) do
     jwk
