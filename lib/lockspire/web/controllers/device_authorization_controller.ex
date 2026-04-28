@@ -5,6 +5,7 @@ defmodule Lockspire.Web.DeviceAuthorizationController do
 
   use Phoenix.Controller, formats: [:json]
 
+  alias Lockspire.Config
   alias Lockspire.Protocol.DeviceAuthorization
   alias Lockspire.Protocol.DeviceAuthorization.Error
   alias Lockspire.Protocol.DeviceAuthorization.Success
@@ -17,7 +18,11 @@ defmodule Lockspire.Web.DeviceAuthorizationController do
     case DeviceAuthorization.authorize(%{
            params: params,
            authorization: authorization,
-           opts: [client_store: Repository, device_code_store: Repository]
+           opts: [
+             client_store: Repository,
+             device_authorization_store: Repository,
+             verification_uri: Config.device_verification_uri()
+           ]
          }) do
       {:ok, %Success{} = success} ->
         conn

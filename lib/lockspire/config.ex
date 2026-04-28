@@ -56,6 +56,16 @@ defmodule Lockspire.Config do
     |> List.wrap()
   end
 
+  @spec device_verification_uri() :: String.t()
+  def device_verification_uri do
+    issuer!()
+    |> URI.parse()
+    |> Map.put(:path, "/verify")
+    |> Map.put(:query, nil)
+    |> Map.put(:fragment, nil)
+    |> URI.to_string()
+  end
+
   @jar_max_age_default 600
 
   @doc """

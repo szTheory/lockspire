@@ -52,7 +52,8 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
          user_code: device_auth.user_code,
          verification_uri: verification_uri,
          verification_uri_complete: verification_uri_complete(verification_uri, device_auth.user_code),
-         expires_in: DateTime.diff(device_auth.expires_at, now, :second)
+         expires_in: DateTime.diff(device_auth.expires_at, now, :second),
+         interval: device_auth.effective_poll_interval_seconds
        }}
     else
       {:error, %Error{} = error} ->
