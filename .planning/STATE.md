@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: milestone
-status: milestone_complete
-stopped_at: Completed 32-03-PLAN.md
-last_updated: "2026-04-28T13:46:55Z"
-last_activity: 2026-04-28
+milestone: v1.7
+milestone_name: dpop-core
+status: executing
+stopped_at: Completed 33-03-PLAN.md
+last_updated: "2026-04-28T15:26:00Z"
+last_activity: 2026-04-28 -- Phase 33 execution completed
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 12
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.6 device authorization phases complete and verified
+**Current focus:** Phase 34 — token issuance and refresh/device binding
 
 ## Current Position
 
-Phase: 32 (polling-token-issuance) — COMPLETE
-Plan: 3 of 3
-Status: Verified and complete; upstream Phase 30 automation/traceability reconciled
-Last activity: 2026-04-28
+Phase: 34 (token-issuance-and-refresh-device-binding) — NOT STARTED
+Plan: —
+Status: Phase 33 complete; Phase 34 is next
+Last activity: 2026-04-28 -- Phase 33 execution completed
 
 ## Performance Metrics
 
-- Phases completed: 3/3 (v1.6)
-- Plans completed: 10/10 (v1.6)
+- Phases completed: 1/4 (v1.7)
+- Plans completed: 3/12 (v1.7)
 
 ## Accumulated Context
 
@@ -42,36 +42,30 @@ Last activity: 2026-04-28
 
 See `PROJECT.md` Key Decisions and archived milestones.
 
-- **v1.6 Device Authorization (RFC 8628)**: Adopting the Device Authorization Grant to support CLI and partner integrations.
-- Storage and generation of Base20 codes handled in Ecto/Postgres without requiring external infrastructure like Redis.
-- No built-in rate limiting; the host-side Plug seam is documentation only (following DCR v1.5 precedent).
-- Strict enforcement of `slow_down` backpressure signal to protect the `/token` endpoint from polling storms.
-- Focus on host-owned verification UI seam designed to prevent remote phishing (no auto-submit on `verification_uri_complete`).
-- Storage of pending device codes uses SHA256 hashing to prevent exposure of bearer tokens on DB leak.
-- A strict TTL of 300 seconds (5 minutes) is enforced at the domain level and supported by the database.
-- Device authorizations now carry both effective poll interval seconds and next_poll_allowed_at so polling truth stays durable across nodes and deploys.
-- Too-early polls widen the next window from the current allowed timestamp, not from wall-clock now, to preserve sticky RFC 8628 slow_down behavior.
-- Approved device authorizations remain poll-readable as approved_ready and are consumed only through a separate row-locked callback.
-- Device polling now enters TokenExchange as a first-class device_code grant that reuses the existing client-auth and token issuance pipeline.
-- Approved device authorizations can issue access tokens, refresh tokens, and optional id_tokens through shared token success helpers, with replay evidence appended as durable device_authorization audit rows.
-- Public device polling errors collapse to RFC 8628 and OAuth names while preserving private reason codes such as device_authorization_consumed and device_authorization_client_mismatch.
-- Kept /token and /device/code controllers thin by injecting missing repository and config seams instead of duplicating device-flow logic in web adapters.
-- Published device grant and device_authorization_endpoint metadata only because the router already mounts both surfaces and the repo now proves them end-to-end.
-- Derived the generated-host verification URI from the issuer origin and the canonical /verify seam so device clients follow the documented host-owned path.
-- Phase 30 no longer depends on manual UAT; `mix test.phase30`, `mix test.integration`, and `30-VERIFICATION.md` provide the maintained proof surface.
+- **v1.7 DPoP Core**: The next milestone should strengthen the real-client trust story rather than add breadth for its own sake.
+- The next wedge should optimize first for public and CLI-oriented clients because that is where sender-constrained tokens most improve the current preview surface.
+- DPoP is preferred over mTLS for this milestone because it composes with the embedded Phoenix library shape and the device-flow path without introducing enterprise PKI assumptions.
+- The first DPoP milestone should be a usable core: proof validation, token binding, replay protection, owned-surface consumption, and truthful discovery/docs.
+- The longer-range milestone arc should be persisted in `.planning/EPIC.md` so future milestone selection compounds from repo truth.
+- Phase 33-02 keeps DPoP replay storage narrow and durable around a unique replay key plus explicit proof claims instead of a generic cache abstraction.
+- Phase 33-02 rejects replayed proofs on the token-endpoint preflight seam now, while leaving cnf binding and token_type work for Phase 34.
+- Model DPoP enablement as explicit durable enums instead of metadata so bearer-default behavior and later admin/DCR truth remain deterministic.
+- Keep server policy as :bearer | :dpop and client policy as :inherit | :bearer | :dpop so existing clients stay inherited while explicit overrides can narrow or opt in.
+- Make the resolver return explicit invalid-policy errors instead of silently coercing malformed state into bearer behavior.
 
 ### Blockers/Concerns
 
 - No current execution blockers.
+- DPoP replay protection and proof-validation boundaries need deliberate scope control so the milestone stays narrow and repo-verifiable.
 
 ## Session Continuity
 
-**Next action:** Start milestone wrap-up or plan the next milestone.
+**Next action:** Start `$gsd-plan-phase 34`
 
 **Resume file:** None
 
-**Stopped at:** Completed 32-03-PLAN.md
+**Stopped at:** Completed 33-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** None active — Phase 32 completed 2026-04-28
+**Planned Phase:** 34 — Token issuance and refresh/device binding
