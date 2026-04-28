@@ -1,12 +1,38 @@
 defmodule Lockspire.Web.DiscoveryControllerTest do
   use ExUnit.Case, async: false
 
-  import Phoenix.ConnTest
+  import Phoenix.ConnTest, only: [build_conn: 2]
   import Plug.Conn
+
+  alias Lockspire.Protocol.DPoP
+
+  defmodule TokenAndUserinfoRouter do
+    use Phoenix.Router
+
+    scope "/" do
+      post("/token", StubController, :create)
+      get("/userinfo", StubController, :show)
+    end
+  end
+
+  defmodule TokenOnlyRouter do
+    use Phoenix.Router
+
+    scope "/" do
+      post("/token", StubController, :create)
+    end
+  end
+
+  defmodule StubController do
+    use Phoenix.Controller, formats: [:json]
+
+    def create(conn, _params), do: json(conn, %{})
+    def show(conn, _params), do: json(conn, %{})
+  end
 
   setup do
     original_env =
-      for key <- [:issuer, :mount_path, :known_scopes], into: %{} do
+      for key <- [:issuer, :mount_path, :known_scopes, :discovery_router], into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
 
@@ -74,5 +100,29 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "request_object_encryption_alg_values_supported")
     refute Map.has_key?(body, "request_object_encryption_enc_values_supported")
     refute Map.has_key?(body, "require_pushed_authorization_requests")
+  end
+
+  test "GET /.well-known/openid-configuration publishes dpop metadata only when /token and /userinfo are both mounted" do
+    Application.put_env(:lockspire, :discovery_router, TokenAndUserinfoRouter)
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["dpop_signing_alg_values_supported"] == DPoP.signing_alg_values_supported()
+
+    Application.put_env(:lockspire, :discovery_router, TokenOnlyRouter)
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    body = Jason.decode!(conn.resp_body)
+
+    refute Map.has_key?(body, "dpop_signing_alg_values_supported")
   end
 end

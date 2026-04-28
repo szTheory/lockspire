@@ -1,13 +1,38 @@
 defmodule Lockspire.Protocol.DiscoveryTest do
   use ExUnit.Case, async: false
 
-  import Phoenix.ConnTest
+  import Phoenix.ConnTest, only: [build_conn: 3]
   import Plug.Conn
 
   alias Lockspire.Protocol.Discovery
+  alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
   @static_methods ["none", "client_secret_basic", "client_secret_post"]
+
+  defmodule TokenAndUserinfoRouter do
+    use Phoenix.Router
+
+    scope "/" do
+      post("/token", StubController, :create)
+      get("/userinfo", StubController, :show)
+    end
+  end
+
+  defmodule TokenOnlyRouter do
+    use Phoenix.Router
+
+    scope "/" do
+      post("/token", StubController, :create)
+    end
+  end
+
+  defmodule StubController do
+    use Phoenix.Controller, formats: [:json]
+
+    def create(conn, _params), do: json(conn, %{})
+    def show(conn, _params), do: json(conn, %{})
+  end
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -22,6 +47,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
   setup do
     original = Application.get_env(:lockspire, :issuer)
+    original_router = Application.get_env(:lockspire, :discovery_router)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
 
     on_exit(fn ->
@@ -29,6 +55,12 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         Application.delete_env(:lockspire, :issuer)
       else
         Application.put_env(:lockspire, :issuer, original)
+      end
+
+      if is_nil(original_router) do
+        Application.delete_env(:lockspire, :discovery_router)
+      else
+        Application.put_env(:lockspire, :discovery_router, original_router)
       end
     end)
 
@@ -56,6 +88,22 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
     assert config["device_authorization_endpoint"] ==
              "https://example.test/lockspire/device/code"
+  end
+
+  test "openid_configuration/0 publishes dpop metadata when /token and /userinfo are both mounted" do
+    Application.put_env(:lockspire, :discovery_router, TokenAndUserinfoRouter)
+
+    config = Discovery.openid_configuration()
+
+    assert config["dpop_signing_alg_values_supported"] == DPoP.signing_alg_values_supported()
+  end
+
+  test "openid_configuration/0 omits dpop metadata when the owned userinfo surface is not mounted" do
+    Application.put_env(:lockspire, :discovery_router, TokenOnlyRouter)
+
+    config = Discovery.openid_configuration()
+
+    refute Map.has_key?(config, "dpop_signing_alg_values_supported")
   end
 
   describe "truthful discovery for registration_endpoint" do
