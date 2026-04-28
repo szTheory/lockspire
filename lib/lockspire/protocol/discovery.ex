@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.Discovery do
   """
 
   alias Lockspire.Config
+  alias Lockspire.Protocol.DPoP
 
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
@@ -88,13 +89,18 @@ defmodule Lockspire.Protocol.Discovery do
       "id_token_signing_alg_values_supported" => @id_token_signing_alg_values_supported
     }
     |> Map.merge(endpoint_metadata)
+    |> maybe_put_dpop_metadata(endpoint_metadata)
   end
 
   defp mounted_route_paths do
-    Lockspire.Web.Router
+    discovery_router()
     |> Phoenix.Router.routes()
     |> Enum.map(& &1.path)
     |> MapSet.new()
+  end
+
+  defp discovery_router do
+    Application.get_env(:lockspire, :discovery_router, Lockspire.Web.Router)
   end
 
   defp endpoint_metadata_entry(issuer, path) do
@@ -146,6 +152,23 @@ defmodule Lockspire.Protocol.Discovery do
     else
       []
     end
+  end
+
+  defp maybe_put_dpop_metadata(metadata, endpoint_metadata) do
+    if dpop_supported_surface_mounted?(endpoint_metadata) do
+      Map.put(
+        metadata,
+        "dpop_signing_alg_values_supported",
+        DPoP.signing_alg_values_supported()
+      )
+    else
+      metadata
+    end
+  end
+
+  defp dpop_supported_surface_mounted?(endpoint_metadata) do
+    Map.has_key?(endpoint_metadata, "token_endpoint") and
+      Map.has_key?(endpoint_metadata, "userinfo_endpoint")
   end
 
   defp issuer_url(issuer, path) do

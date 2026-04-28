@@ -1,3 +1,33 @@
+defmodule Lockspire.Web.DiscoveryControllerTest.TokenAndUserinfoController do
+  use Phoenix.Controller, formats: [:json]
+
+  def create(conn, _params), do: json(conn, %{})
+  def show(conn, _params), do: json(conn, %{})
+end
+
+defmodule Lockspire.Web.DiscoveryControllerTest.TokenOnlyController do
+  use Phoenix.Controller, formats: [:json]
+
+  def create(conn, _params), do: json(conn, %{})
+end
+
+defmodule Lockspire.Web.DiscoveryControllerTest.TokenAndUserinfoRouter do
+  use Phoenix.Router
+
+  scope "/" do
+    post("/token", Lockspire.Web.DiscoveryControllerTest.TokenAndUserinfoController, :create)
+    get("/userinfo", Lockspire.Web.DiscoveryControllerTest.TokenAndUserinfoController, :show)
+  end
+end
+
+defmodule Lockspire.Web.DiscoveryControllerTest.TokenOnlyRouter do
+  use Phoenix.Router
+
+  scope "/" do
+    post("/token", Lockspire.Web.DiscoveryControllerTest.TokenOnlyController, :create)
+  end
+end
+
 defmodule Lockspire.Web.DiscoveryControllerTest do
   use ExUnit.Case, async: false
 
@@ -5,30 +35,6 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   import Plug.Conn
 
   alias Lockspire.Protocol.DPoP
-
-  defmodule TokenAndUserinfoRouter do
-    use Phoenix.Router
-
-    scope "/" do
-      post("/token", StubController, :create)
-      get("/userinfo", StubController, :show)
-    end
-  end
-
-  defmodule TokenOnlyRouter do
-    use Phoenix.Router
-
-    scope "/" do
-      post("/token", StubController, :create)
-    end
-  end
-
-  defmodule StubController do
-    use Phoenix.Controller, formats: [:json]
-
-    def create(conn, _params), do: json(conn, %{})
-    def show(conn, _params), do: json(conn, %{})
-  end
 
   setup do
     original_env =
@@ -103,7 +109,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   end
 
   test "GET /.well-known/openid-configuration publishes dpop metadata only when /token and /userinfo are both mounted" do
-    Application.put_env(:lockspire, :discovery_router, TokenAndUserinfoRouter)
+    Application.put_env(
+      :lockspire,
+      :discovery_router,
+      Lockspire.Web.DiscoveryControllerTest.TokenAndUserinfoRouter
+    )
 
     conn =
       build_conn(:get, "/.well-known/openid-configuration")
@@ -114,7 +124,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
 
     assert body["dpop_signing_alg_values_supported"] == DPoP.signing_alg_values_supported()
 
-    Application.put_env(:lockspire, :discovery_router, TokenOnlyRouter)
+    Application.put_env(
+      :lockspire,
+      :discovery_router,
+      Lockspire.Web.DiscoveryControllerTest.TokenOnlyRouter
+    )
 
     conn =
       build_conn(:get, "/.well-known/openid-configuration")
