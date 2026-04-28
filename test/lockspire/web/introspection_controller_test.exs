@@ -107,6 +107,19 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
         expires_at: DateTime.add(now, -3600, :second)
       })
 
+    {:ok, _bound_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("controller-introspect-bound"),
+        token_type: :access_token,
+        client_id: client.client_id,
+        account_id: "subject-controller-introspection-bound",
+        interaction_id: "interaction-controller-introspection-bound",
+        scopes: ["email"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 3600, :second),
+        cnf: %{"jkt" => "controller-test-thumbprint"}
+      })
+
     %{client: client, secret: secret, public_client: public_client, other_client: other_client}
   end
 
@@ -130,6 +143,23 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
     assert body["client_id"] == client.client_id
     assert body["token_type"] == "access_token"
     assert body["sub"] == "subject-controller-introspection"
+  end
+
+  test "POST /introspect returns cnf for DPoP-bound tokens", %{
+    client: client,
+    secret: secret
+  } do
+    conn =
+      build_conn(:post, "/introspect", %{"token" => "controller-introspect-bound"})
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["active"] == true
+    assert body["cnf"] == %{"jkt" => "controller-test-thumbprint"}
   end
 
   test "POST /introspect collapses unauthorized public callers to active false", %{

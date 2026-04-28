@@ -135,6 +135,7 @@ defmodule Lockspire.Protocol.Introspection do
       iat: maybe_unix(token.issued_at)
     }
     |> maybe_put(:jti, token.jti)
+    |> maybe_put(:cnf, token.cnf)
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end

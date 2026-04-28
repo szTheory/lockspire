@@ -130,6 +130,19 @@ defmodule Lockspire.Protocol.IntrospectionTest do
         revoked_at: now
       })
 
+    {:ok, _bound_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("introspect-bound-token"),
+        token_type: :access_token,
+        client_id: confidential_client.client_id,
+        account_id: "subject-introspection-bound",
+        interaction_id: "interaction-introspection-bound",
+        scopes: ["email"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 3600, :second),
+        cnf: %{"jkt" => "test-thumbprint"}
+      })
+
     %{
       confidential_client: confidential_client,
       secret: secret,
@@ -155,6 +168,21 @@ defmodule Lockspire.Protocol.IntrospectionTest do
     assert response.scope == "email"
     assert response.sub == "subject-introspection"
     assert response.aud == ["api.example.com"]
+  end
+
+  test "returns cnf when token is DPoP-bound", %{
+    confidential_client: client,
+    secret: secret
+  } do
+    assert {:ok, response} =
+             Introspection.introspect(%{
+               params: %{"token" => "introspect-bound-token"},
+               authorization: basic_auth(client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert response.active == true
+    assert response.cnf == %{"jkt" => "test-thumbprint"}
   end
 
   test "returns inactive false for unauthorized public callers", %{public_client: client} do
