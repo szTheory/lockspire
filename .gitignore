@@ -5,7 +5,13 @@
 **/.DS_Store
 /doc/
 /priv/plts/
-/.planning/
+/.planning/*
+!/.planning/PROJECT.md
+!/.planning/ROADMAP.md
+!/.planning/STATE.md
+!/.planning/MILESTONES.md
+!/.planning/REQUIREMENTS.md
+!/.planning/EPIC.md
 /prompts/
 /lockspire-idea.md
 *.tar

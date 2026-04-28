@@ -298,12 +298,13 @@ end)
 | A3 | Recommended per-client shape is `Client.dpop_bound_access_tokens :: boolean`, default `false`, mapped directly to RFC 9449 client metadata. [ASSUMED] | Architecture Patterns; Standard Stack | If the team prefers an internal token-mode enum, DCR/admin mapping tasks change even though bearer-default intent remains the same. |
 | A4 | Recommended helper module names are `Lockspire.Protocol.DpopProof`, `Lockspire.Protocol.EndpointUri`, and `Lockspire.Storage.DpopReplayStore`. [ASSUMED] | Recommended Project Structure | Naming drift is low-risk, but plan tasks and file targets will need minor adjustment. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What exact proof-age window should Lockspire ship first?**
    - What we know: RFC 9449 requires a limited proof lifetime and suggests seconds or minutes, and the phase requires bounded `iat` checking plus durable replay protection. [CITED: https://datatracker.ietf.org/doc/html/rfc9449] [VERIFIED: .planning/ROADMAP.md]
    - What's unclear: The milestone docs do not lock a specific `iat` age/skew constant. [VERIFIED: roadmap grep]
-   - Recommendation: Plan with a fixed constant in Phase 33 rather than a new operator setting; `120s` max age and `5s` future skew is a coherent first default, but treat it as a confirmable assumption until the phase is discussed or implemented. [ASSUMED]
+   - Resolution: Phase 33 should lock a fixed default of `120s` maximum proof age with up to `5s` future skew rather than introducing a new operator-facing setting in this milestone. [RESOLVED]
+   - Why this is acceptable: it is narrow enough to keep replay exposure short, broad enough to tolerate modest client/network jitter, and concrete enough for protocol tests, replay TTL behavior, and later token-endpoint wiring to share one security-significant constant. [VERIFIED: research synthesis]
 
 ## Environment Availability
 
