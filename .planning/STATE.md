@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: milestone
-status: executing
-stopped_at: Completed 34-01-PLAN.md
-last_updated: "2026-04-28T17:38:13.021Z"
+status: verifying
+stopped_at: Completed 34-03-PLAN.md
+last_updated: "2026-04-28T17:44:41.010Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -28,13 +28,13 @@ See: `.planning/PROJECT.md`
 
 Phase: 34 — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-28
 
 ## Performance Metrics
 
 - Phases completed: 1/4 (v1.7)
-- Plans completed: 4/6 (active execution window)
+- Plans completed: 5/6 (active execution window)
 
 ## Accumulated Context
 
@@ -54,6 +54,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Make the resolver return explicit invalid-policy errors instead of silently coercing malformed state into bearer behavior.
 - Authorization-code exchange now resolves one protocol-owned issuance_context and threads it through builders and persistence instead of using grant-local DPoP flags.
 - Server-policy and replay-store defaults fall back to the request's repository adapter seam so token-endpoint DPoP resolution stays truthful in embedded and test environments.
+- Device-code exchange now resolves TokenEndpointDPoP before approved redemption so DPoP binding stays at the Lockspire-owned /token boundary.
+- Generated-host DPoP replay proof uses a fresh proof on second redemption to isolate consumed device_code invalid_grant behavior from proof replay rejection.
 
 ### Blockers/Concerns
 
@@ -66,7 +68,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 34-01-PLAN.md
+**Stopped at:** Completed 34-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
