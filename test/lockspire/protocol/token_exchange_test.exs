@@ -687,6 +687,193 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
              )
   end
 
+  test "device grants redeem once, collapse replay to invalid_grant, and append durable device audit rows" do
+    secret = "device-replay-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-replay-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, authorization} =
+      create_device_authorization(client,
+        device_code: "device-code-replay",
+        user_code: "REPL-AY01",
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    request = %{
+      params: %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "device-code-replay"
+      },
+      authorization: basic_auth(client.client_id, secret),
+      opts: [
+        client_store: Repository,
+        token_store: Repository,
+        interaction_store: Repository,
+        key_store: Repository,
+        device_authorization_store: Repository,
+        access_token_generator: fn -> "device-replay-access-token" end
+      ]
+    }
+
+    assert {:ok, _success} = TokenExchange.exchange(request)
+    assert {:error, replay_error} = TokenExchange.exchange(request)
+    assert replay_error.error == "invalid_grant"
+    assert replay_error.reason_code == :device_authorization_consumed
+
+    audits =
+      Lockspire.TestRepo.all(AuditEventRecord)
+      |> Enum.filter(&(&1.actor_id == client.client_id))
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "device_authorization_redeemed" and
+               audit.resource_type == "device_authorization" and
+               audit.resource_id == Integer.to_string(authorization.id) and
+               audit.reason_code == "device_authorization_redeemed"
+           end)
+
+    assert Enum.any?(audits, fn audit ->
+             audit.action == "device_authorization_replay_detected" and
+               audit.resource_type == "device_authorization" and
+               audit.resource_id == Integer.to_string(authorization.id) and
+               audit.reason_code == "device_authorization_consumed"
+           end)
+  end
+
+  test "device grants preserve shared refresh and id_token policy while collapsing client mismatch to invalid_grant" do
+    publish_signing_key("kid-device-openid")
+
+    refresh_secret = "device-openid-secret"
+
+    {:ok, refresh_client} =
+      create_client(
+        "device-openid-client",
+        :client_secret_basic,
+        refresh_secret,
+        ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]
+      )
+
+    {:ok, _approved_openid} =
+      create_device_authorization(refresh_client,
+        device_code: "device-code-openid",
+        user_code: "OPEN-ID01",
+        scopes: ["openid", "email", "offline_access"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, refresh_success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-openid"
+               },
+               authorization: basic_auth(refresh_client.client_id, refresh_secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 access_token_generator: fn -> "device-openid-access-token" end,
+                 refresh_token_generator: fn -> "device-openid-refresh-token" end
+               ]
+             })
+
+    assert refresh_success.refresh_token == "device-openid-refresh-token"
+    assert is_binary(refresh_success.id_token)
+
+    {:ok, no_refresh_client} =
+      create_client(
+        "device-no-refresh-client",
+        :client_secret_basic,
+        "device-no-refresh-secret",
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _approved_no_refresh} =
+      create_device_authorization(no_refresh_client,
+        device_code: "device-code-no-refresh",
+        user_code: "NORE-FRSH",
+        scopes: ["offline_access"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, no_refresh_success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-no-refresh"
+               },
+               authorization: basic_auth(no_refresh_client.client_id, "device-no-refresh-secret"),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository
+               ]
+             })
+
+    assert no_refresh_success.refresh_token == nil
+
+    mismatch_secret = "device-mismatch-secret"
+
+    {:ok, other_client} =
+      create_client(
+        "device-other-client",
+        :client_secret_basic,
+        mismatch_secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _mismatch_approved} =
+      create_device_authorization(refresh_client,
+        device_code: "device-code-mismatch",
+        user_code: "MISM-ATCH",
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:error, mismatch_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-mismatch"
+               },
+               authorization: basic_auth(other_client.client_id, mismatch_secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository
+               ]
+             })
+
+    assert mismatch_error.error == "invalid_grant"
+    assert mismatch_error.reason_code == :device_authorization_client_mismatch
+  end
+
   defp exchange(params, opts \\ []) do
     exchange_with_store(params, Repository, opts)
   end
