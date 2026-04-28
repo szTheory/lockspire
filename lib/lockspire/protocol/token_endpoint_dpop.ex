@@ -219,10 +219,16 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   end
 
   defp server_policy_store(request),
-    do: Keyword.get(request_options(request), :server_policy_store, Config.repo!())
+    do:
+      Keyword.get_lazy(request_options(request), :server_policy_store, fn ->
+        Keyword.get(request_options(request), :client_store, Config.repo!())
+      end)
 
   defp dpop_replay_store(request),
-    do: Keyword.get(request_options(request), :dpop_replay_store, Config.repo!())
+    do:
+      Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
+        Keyword.get(request_options(request), :client_store, Config.repo!())
+      end)
 
   defp now(request),
     do:

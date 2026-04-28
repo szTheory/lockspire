@@ -21,6 +21,8 @@ defmodule Lockspire.Web.TokenController do
            method: conn.method,
            opts:
              [client_store: Repository, token_store: Repository]
+             |> Keyword.put(:server_policy_store, Repository)
+             |> Keyword.put(:dpop_replay_store, Repository)
              |> Keyword.put(:device_authorization_store, Repository)
              |> Keyword.put(:interaction_store, Repository)
              |> Keyword.put(:key_store, Repository)

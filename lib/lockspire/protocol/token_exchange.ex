@@ -6,7 +6,6 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
-  alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
@@ -14,6 +13,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.RefreshExchange
+  alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
 
@@ -86,10 +86,10 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     with :ok <- validate_grant_type(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         :ok <- validate_dpop_preflight(request),
+         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %Token{} = authorization_code, code_hash} <-
            fetch_authorization_code(params, request) do
-      handle_code_exchange(client, authorization_code, code_hash, params, request)
+      handle_code_exchange(client, authorization_code, code_hash, params, issuance_context, request)
     else
       {:error, %Error{} = error} ->
         emit_failure(error, params, request)
@@ -102,11 +102,13 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = authorization_code,
          code_hash,
          params,
+         issuance_context,
          request
        ) do
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
-         %Success{} = success <- redeem_code(client, authorization_code, code_hash, request) do
+         %Success{} = success <-
+           redeem_code(client, authorization_code, code_hash, issuance_context, request) do
       emit_success(client, authorization_code, success)
       {:ok, success}
     else
@@ -171,138 +173,6 @@ defmodule Lockspire.Protocol.TokenExchange do
          }}
     end
   end
-
-  defp validate_dpop_preflight(request) do
-    required? = Keyword.get(request_options(request), :dpop_required, false)
-    validated_proof = Keyword.get(request_options(request), :dpop_proof)
-
-    cond do
-      is_nil(validated_proof) and not required? ->
-        :ok
-
-      is_nil(validated_proof) ->
-        {:error,
-         invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-
-      true ->
-        record_dpop_proof_use(validated_proof, request)
-    end
-  end
-
-  defp record_dpop_proof_use(%Lockspire.Protocol.DPoP{} = validated_proof, request) do
-    with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
-         {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
-      case result do
-        :accepted ->
-          :ok
-
-        :replay ->
-          {:error,
-           invalid_dpop_proof("The DPoP proof has already been used", :dpop_proof_replayed)}
-      end
-    else
-      {:error, %Error{} = error} ->
-        {:error, error}
-
-      {:error, _reason} ->
-        {:error,
-         oauth_error(
-           500,
-           "server_error",
-           "Unable to evaluate DPoP replay state",
-           :dpop_replay_store_failed
-         )}
-    end
-  end
-
-  defp record_dpop_proof_use(_other, _request) do
-    {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
-  end
-
-  defp build_dpop_replay(%Lockspire.Protocol.DPoP{claims: claims, jkt: jkt}, request)
-       when is_map(claims) and is_binary(jkt) do
-    with {:ok, htm} <- fetch_dpop_claim(claims, "htm"),
-         {:ok, htu} <- fetch_dpop_claim(claims, "htu"),
-         {:ok, jti} <- fetch_dpop_claim(claims, "jti"),
-         {:ok, iat} <- fetch_dpop_iat(claims),
-         {:ok, expires_at} <- dpop_replay_expiration(iat, request) do
-      normalized_htm = String.upcase(htm)
-      normalized_htu = canonical_dpop_htu(htu)
-
-      {:ok,
-       %DpopReplay{
-         replay_key: dpop_replay_key(jkt, jti, normalized_htm, normalized_htu),
-         jti: jti,
-         htm: normalized_htm,
-         htu: normalized_htu,
-         jkt: jkt,
-         seen_at: now(request),
-         expires_at: expires_at
-       }}
-    else
-      :error ->
-        {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
-
-      {:error, _reason} ->
-        {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
-    end
-  end
-
-  defp build_dpop_replay(_proof, _request) do
-    {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
-  end
-
-  defp fetch_dpop_claim(claims, key) do
-    case Map.get(claims, key) do
-      value when is_binary(value) and value != "" -> {:ok, value}
-      _other -> :error
-    end
-  end
-
-  defp fetch_dpop_iat(claims) do
-    case Map.get(claims, "iat") do
-      value when is_integer(value) -> {:ok, value}
-      _other -> :error
-    end
-  end
-
-  defp dpop_replay_expiration(iat, request) when is_integer(iat) do
-    max_age = Keyword.get(request_options(request), :dpop_max_age, 300)
-    clock_skew = Keyword.get(request_options(request), :dpop_clock_skew, 30)
-
-    case DateTime.from_unix((iat + max_age + clock_skew) * 1_000_000, :microsecond) do
-      {:ok, expires_at} -> {:ok, expires_at}
-      {:error, _reason} -> {:error, :invalid_dpop_expiration}
-    end
-  end
-
-  defp dpop_replay_key(jkt, jti, htm, htu) do
-    [jkt, jti, htm, htu]
-    |> Enum.join("\n")
-    |> then(&:crypto.hash(:sha256, &1))
-    |> Base.url_encode64(padding: false)
-  end
-
-  defp canonical_dpop_htu(uri) do
-    %URI{scheme: scheme, host: host} = parsed = URI.parse(uri)
-
-    if is_nil(scheme) or is_nil(host) do
-      raise ArgumentError, "invalid absolute URI"
-    end
-
-    normalized_host = String.downcase(host)
-    port = normalized_dpop_port(parsed)
-    path = if parsed.path in [nil, ""], do: "/", else: parsed.path
-
-    authority =
-      if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
-
-    scheme <> "://" <> authority <> path
-  end
-
-  defp normalized_dpop_port(%URI{scheme: "https", port: 443}), do: nil
-  defp normalized_dpop_port(%URI{scheme: "http", port: 80}), do: nil
-  defp normalized_dpop_port(%URI{port: port}), do: port
 
   defp fetch_authorization_code(params, request) do
     case normalize_optional_string(params["code"]) do
@@ -521,12 +391,25 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp redeem_code(%Client{} = client, %Token{} = authorization_code, code_hash, request) do
+  defp redeem_code(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         code_hash,
+         issuance_context,
+         request
+       ) do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
 
     {access_token, raw_access_token} =
-      build_access_token(client, authorization_code, issued_at, formatted_refresh_token, request)
+      build_access_token(
+        client,
+        authorization_code,
+        issued_at,
+        formatted_refresh_token,
+        issuance_context,
+        request
+      )
 
     case persist_authorization_code_grant(
            code_hash,
@@ -534,6 +417,7 @@ defmodule Lockspire.Protocol.TokenExchange do
            access_token,
            authorization_code,
            formatted_refresh_token,
+           issuance_context,
            request
          ) do
       {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
@@ -542,7 +426,7 @@ defmodule Lockspire.Protocol.TokenExchange do
           authorization_code,
           persisted_access_token,
           raw_access_token,
-          formatted_token_type(),
+          issuance_context,
           issued_at,
           Map.get(persisted_grant, :refresh_token_raw),
           request
@@ -617,9 +501,17 @@ defmodule Lockspire.Protocol.TokenExchange do
        ) do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
+    issuance_context = bearer_issuance_context()
 
     {access_token, raw_access_token} =
-      build_access_token(client, device_grant, issued_at, formatted_refresh_token, request)
+      build_access_token(
+        client,
+        device_grant,
+        issued_at,
+        formatted_refresh_token,
+        issuance_context,
+        request
+      )
 
     case persist_device_authorization_grant(
            device_authorization,
@@ -627,6 +519,7 @@ defmodule Lockspire.Protocol.TokenExchange do
            access_token,
            device_grant,
            formatted_refresh_token,
+           issuance_context,
            request
          ) do
       {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
@@ -635,7 +528,7 @@ defmodule Lockspire.Protocol.TokenExchange do
           device_grant,
           persisted_access_token,
           raw_access_token,
-          formatted_token_type(),
+          issuance_context,
           issued_at,
           Map.get(persisted_grant, :refresh_token_raw),
           request
@@ -664,7 +557,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = authorization_code,
          %Token{} = persisted_access_token,
          raw_access_token,
-         token_type,
+         issuance_context,
          issued_at,
          raw_refresh_token,
          request
@@ -675,7 +568,7 @@ defmodule Lockspire.Protocol.TokenExchange do
         access_token: raw_access_token,
         refresh_token: raw_refresh_token,
         id_token: id_token,
-        token_type: token_type,
+        token_type: issuance_context.token_type,
         expires_in: @access_token_ttl,
         scope: Enum.join(persisted_access_token.scopes, " ")
       }
@@ -889,10 +782,6 @@ defmodule Lockspire.Protocol.TokenExchange do
     oauth_error(400, "invalid_grant", description, reason_code)
   end
 
-  defp invalid_dpop_proof(description, reason_code) do
-    oauth_error(400, "invalid_dpop_proof", description, reason_code)
-  end
-
   defp oauth_error(status, error, description, reason_code) do
     %Error{
       status: status,
@@ -912,9 +801,6 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp device_authorization_store(request),
     do: Keyword.get(request_options(request), :device_authorization_store, Config.repo!())
-
-  defp dpop_replay_store(request),
-    do: Keyword.get(request_options(request), :dpop_replay_store, Config.repo!())
 
   defp interaction_store(request),
     do: Keyword.get(request_options(request), :interaction_store, Config.repo!())
@@ -955,6 +841,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = authorization_code,
          issued_at,
          formatted_refresh_token,
+         issuance_context,
          request
        ) do
     family_id = if formatted_refresh_token, do: formatted_refresh_token.token_hash
@@ -972,6 +859,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       interaction_id: authorization_code.interaction_id,
       scopes: authorization_code.scopes,
       audience: authorization_code.audience,
+      cnf: issuance_context.cnf,
       issued_at: issued_at,
       expires_at: DateTime.add(issued_at, @access_token_ttl, :second)
     }
@@ -985,6 +873,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = access_token,
          %Token{} = device_grant,
          nil,
+         _issuance_context,
          request
        ) do
     audit_event =
@@ -1016,6 +905,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = access_token,
          %Token{} = device_grant,
          formatted_refresh_token,
+         issuance_context,
          request
        ) do
     refresh_token = %Token{
@@ -1028,6 +918,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       interaction_id: device_grant.interaction_id,
       scopes: device_grant.scopes,
       audience: device_grant.audience,
+      cnf: issuance_context.cnf,
       issued_at: issued_at,
       expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
     }
@@ -1066,6 +957,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = access_token,
          %Token{} = authorization_code,
          nil,
+         _issuance_context,
          request
        ) do
     audit_event =
@@ -1088,6 +980,7 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = access_token,
          %Token{} = authorization_code,
          formatted_refresh_token,
+         issuance_context,
          request
        ) do
     refresh_token = %Token{
@@ -1100,6 +993,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       interaction_id: authorization_code.interaction_id,
       scopes: authorization_code.scopes,
       audience: authorization_code.audience,
+      cnf: issuance_context.cnf,
       issued_at: issued_at,
       expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
     }
@@ -1311,7 +1205,9 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp formatted_token_type, do: "Bearer"
+  defp bearer_issuance_context do
+    %{mode: :bearer, proof: nil, jkt: nil, cnf: nil, token_type: "Bearer"}
+  end
 
   defp request_options(request), do: Map.get(request, :opts, [])
 
