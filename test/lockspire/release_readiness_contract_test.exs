@@ -214,12 +214,17 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Pushed authorization requests only as Lockspire-issued `request_uri` references"
 
     assert supported_surface =~ "OIDC discovery and JWKS"
+    assert supported_surface =~ "host-owned device verification seam"
+    assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "Lockspire does not use a demo app"
     assert supported_surface =~ "A `v0.1` preview claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
 
     assert supported_surface =~
              "Generic external `request_uri` handling outside Lockspire's own PAR endpoint"
+
+    assert supported_surface =~ "polling"
+    assert supported_surface =~ "token issuance"
 
     refute readme =~ "production-ready"
   end
@@ -259,10 +264,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
     assert onboarding =~ "authorization-code + PKCE exchange"
+    assert onboarding =~ "LockspireVerificationController"
+    assert onboarding =~ "lockspire_verification_html"
+    assert onboarding =~ "docs/device-flow-host-guide.md"
+    assert onboarding =~ "rate limiting"
     assert onboarding =~ "The executable repo proof lives in:"
     assert onboarding =~ "test/integration/install_generator_test.exs"
     assert onboarding =~ "test/integration/phase6_onboarding_e2e_test.exs"
-    refute Regex.match?(~r/## 5\\..*\\n(?:- .*\\n)*- .*\\bdevice flow\\b/m, onboarding)
     refute onboarding =~ "production-ready"
 
     assert ci_workflow =~ "run: mix docs.verify"
@@ -291,6 +299,23 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Lockspire does not provide built-in rate limiting"
     assert guide =~ "Hammer-style"
     assert guide =~ "PlugAttack-style"
+  end
+
+  test "phase 31 onboarding and supported surface point to the verification seam truthfully" do
+    onboarding = File.read!(@install_and_onboard_path)
+    supported_surface = File.read!(@supported_surface_path)
+
+    assert onboarding =~ "LockspireVerificationController"
+    assert onboarding =~ "lockspire_verification_html"
+    assert onboarding =~ "docs/device-flow-host-guide.md"
+    assert onboarding =~ "rate limiting"
+    assert onboarding =~ "verification"
+
+    assert supported_surface =~ "host-owned device verification seam"
+    assert supported_surface =~ "docs/device-flow-host-guide.md"
+    assert supported_surface =~ "polling"
+    assert supported_surface =~ "token issuance"
+    refute supported_surface =~ "Lockspire-owned browser UI"
   end
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
