@@ -1,0 +1,248 @@
+defmodule Lockspire.Protocol.TokenEndpointDPoP do
+  @moduledoc """
+  Resolves shared DPoP issuance context for token-endpoint exchanges.
+  """
+
+  alias Lockspire.Config
+  alias Lockspire.Domain.Client
+  alias Lockspire.Domain.DpopReplay
+  alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DpopPolicy
+  alias Lockspire.Protocol.TokenExchange.Error
+
+  @type issuance_context :: %{
+          mode: :bearer | :dpop,
+          proof: DPoP.t() | nil,
+          jkt: String.t() | nil,
+          cnf: map() | nil,
+          token_type: String.t()
+        }
+
+  @spec resolve_context(Client.t(), map()) ::
+          {:ok, issuance_context()} | {:error, Error.t()}
+  def resolve_context(%Client{} = client, request) do
+    with {:ok, resolved_policy} <- resolve_policy(client, request),
+         {:ok, proof} <- validate_proof(resolved_policy, request),
+         :ok <- record_dpop_proof_use(proof, request) do
+      {:ok, issuance_context(resolved_policy.effective_policy, proof)}
+    end
+  end
+
+  defp resolve_policy(%Client{} = client, request) do
+    with {:ok, server_policy} <- server_policy_store(request).get_server_policy(),
+         {:ok, resolved_policy} <- DpopPolicy.resolve_effective_policy(server_policy, client) do
+      {:ok, resolved_policy}
+    else
+      {:error, _reason} ->
+        {:error, oauth_error(500, "server_error", "Unable to resolve DPoP policy", :dpop_policy_unavailable)}
+    end
+  end
+
+  defp validate_proof(%{dpop_required?: false}, request) do
+    case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+      nil -> {:ok, nil}
+      proof -> validate_proof_value(proof, request)
+    end
+  end
+
+  defp validate_proof(%{dpop_required?: true}, request) do
+    case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+      nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+      proof -> validate_proof_value(proof, request)
+    end
+  end
+
+  defp validate_proof_value(proof, request) do
+    case DPoP.validate_proof(
+           proof,
+           method: request_method(request),
+           target_uri: token_endpoint_uri(),
+           now: now(request),
+           max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
+           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30)
+         ) do
+      {:ok, %DPoP{} = validated_proof} ->
+        {:ok, validated_proof}
+
+      {:error, _reason} ->
+        {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
+    end
+  end
+
+  defp record_dpop_proof_use(nil, _request), do: :ok
+
+  defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
+    with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
+         {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
+      case result do
+        :accepted ->
+          :ok
+
+        :replay ->
+          {:error,
+           invalid_dpop_proof("The DPoP proof has already been used", :dpop_proof_replayed)}
+      end
+    else
+      {:error, %Error{} = error} ->
+        {:error, error}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to evaluate DPoP replay state",
+           :dpop_replay_store_failed
+         )}
+    end
+  end
+
+  defp issuance_context(:dpop, %DPoP{} = proof) do
+    %{mode: :dpop, proof: proof, jkt: proof.jkt, cnf: %{"jkt" => proof.jkt}, token_type: "DPoP"}
+  end
+
+  defp issuance_context(_mode, _proof) do
+    %{mode: :bearer, proof: nil, jkt: nil, cnf: nil, token_type: "Bearer"}
+  end
+
+  defp token_endpoint_uri do
+    issuer = URI.parse(Config.issuer!())
+    path = Path.join(issuer.path || "/", "token")
+
+    issuer
+    |> Map.put(:path, path)
+    |> Map.put(:query, nil)
+    |> Map.put(:fragment, nil)
+    |> URI.to_string()
+  end
+
+  defp request_method(request) do
+    request
+    |> Map.get(:method, Map.get(request, "method", "POST"))
+    |> to_string()
+    |> String.upcase()
+  end
+
+  defp build_dpop_replay(%DPoP{claims: claims, jkt: jkt}, request)
+       when is_map(claims) and is_binary(jkt) do
+    with {:ok, htm} <- fetch_dpop_claim(claims, "htm"),
+         {:ok, htu} <- fetch_dpop_claim(claims, "htu"),
+         {:ok, jti} <- fetch_dpop_claim(claims, "jti"),
+         {:ok, iat} <- fetch_dpop_iat(claims),
+         {:ok, expires_at} <- dpop_replay_expiration(iat, request) do
+      normalized_htm = String.upcase(htm)
+      normalized_htu = canonical_dpop_htu(htu)
+
+      {:ok,
+       %DpopReplay{
+         replay_key: dpop_replay_key(jkt, jti, normalized_htm, normalized_htu),
+         jti: jti,
+         htm: normalized_htm,
+         htu: normalized_htu,
+         jkt: jkt,
+         seen_at: now(request),
+         expires_at: expires_at
+       }}
+    else
+      _other ->
+        {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
+    end
+  end
+
+  defp build_dpop_replay(_proof, _request) do
+    {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
+  end
+
+  defp fetch_dpop_claim(claims, key) do
+    case Map.get(claims, key) do
+      value when is_binary(value) and value != "" -> {:ok, value}
+      _other -> :error
+    end
+  end
+
+  defp fetch_dpop_iat(claims) do
+    case Map.get(claims, "iat") do
+      value when is_integer(value) -> {:ok, value}
+      _other -> :error
+    end
+  end
+
+  defp dpop_replay_expiration(iat, request) when is_integer(iat) do
+    max_age = Keyword.get(request_options(request), :dpop_max_age, 300)
+    clock_skew = Keyword.get(request_options(request), :dpop_clock_skew, 30)
+
+    case DateTime.from_unix((iat + max_age + clock_skew) * 1_000_000, :microsecond) do
+      {:ok, expires_at} -> {:ok, expires_at}
+      {:error, _reason} -> {:error, :invalid_dpop_expiration}
+    end
+  end
+
+  defp dpop_replay_key(jkt, jti, htm, htu) do
+    [jkt, jti, htm, htu]
+    |> Enum.join("\n")
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.url_encode64(padding: false)
+  end
+
+  defp canonical_dpop_htu(uri) do
+    %URI{scheme: scheme, host: host} = parsed = URI.parse(uri)
+
+    if is_nil(scheme) or is_nil(host) do
+      raise ArgumentError, "invalid absolute URI"
+    end
+
+    normalized_host = String.downcase(host)
+    port = normalized_dpop_port(parsed)
+    path = if parsed.path in [nil, ""], do: "/", else: parsed.path
+
+    authority =
+      if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
+
+    scheme <> "://" <> authority <> path
+  end
+
+  defp normalized_dpop_port(%URI{scheme: "https", port: 443}), do: nil
+  defp normalized_dpop_port(%URI{scheme: "http", port: 80}), do: nil
+  defp normalized_dpop_port(%URI{port: port}), do: port
+
+  defp invalid_dpop_proof(description, reason_code) do
+    oauth_error(400, "invalid_dpop_proof", description, reason_code)
+  end
+
+  defp oauth_error(status, error, description, reason_code) do
+    %Error{
+      status: status,
+      error: error,
+      error_description: description,
+      reason_code: reason_code
+    }
+  end
+
+  defp server_policy_store(request),
+    do: Keyword.get(request_options(request), :server_policy_store, Config.repo!())
+
+  defp dpop_replay_store(request),
+    do: Keyword.get(request_options(request), :dpop_replay_store, Config.repo!())
+
+  defp now(request),
+    do:
+      request
+      |> request_options()
+      |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
+      |> then(& &1.())
+
+  defp request_options(request) do
+    Map.get(request, :opts, Map.get(request, "opts", []))
+  end
+
+  defp normalize_optional_string(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_optional_string(_value), do: nil
+end

@@ -17,6 +17,8 @@ defmodule Lockspire.Web.TokenController do
     case TokenExchange.exchange(%{
            params: params,
            authorization: authorization,
+           dpop: List.first(get_req_header(conn, "dpop")),
+           method: conn.method,
            opts:
              [client_store: Repository, token_store: Repository]
              |> Keyword.put(:device_authorization_store, Repository)
