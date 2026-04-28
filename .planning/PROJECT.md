@@ -18,6 +18,8 @@ Lockspire can now accept pushed authorization requests at `/par`, consume its ow
 
 v1.5 delivered Dynamic Client Registration (DCR) RFC 7591/7592 with operator policy controls, Initial Access Tokens, and truthful discovery without widening the embedded-library shape.
 
+v1.6 now ships the full Device Authorization Grant wedge: `POST /device/code`, the host-owned `/verify` seam, durable polling cadence enforcement, `POST /token` device-code redemption with RFC 8628 outcomes, truthful discovery metadata, and generated-host end-to-end proof without widening beyond the embedded Phoenix library shape.
+
 ## Requirements
 
 ### Validated
@@ -36,6 +38,12 @@ v1.5 delivered Dynamic Client Registration (DCR) RFC 7591/7592 with operator pol
 - Deliver RFC 7592 client configuration management with `registration_access_token` rotation and admin-UI provenance. Validated in Phase 26: protocol-pipeline-rfc-7591-intake-and-rfc-7592-management-co
 - Advertise `registration_endpoint` truthfully and bound SECURITY/support docs to the shipped DCR slice. Validated in v1.5 milestone.
 - Close v1.5 with end-to-end verification, telemetry/audit coverage, and full traceability for shipped DCR requirements. Validated in v1.5 milestone.
+- Implement `POST /device/code` endpoint to initiate device authorization. Validated by Phase 32: polling-token-issuance, with prior storage and host-seam prerequisites delivered in phases 30 and 31.
+- Generate high-entropy `device_code` and low-entropy `user_code` (Base20). Validated by Phase 32 end-to-end proof over the shipped device authorization and token redemption path.
+- Create Ecto schema and storage for tracking pending device codes with strict TTLs (5-10 minutes). Validated by Phase 32 durable polling and redemption verification.
+- Implement `POST /token` support for `grant_type=urn:ietf:params:oauth:grant-type:device_code`. Validated in Phase 32: polling-token-issuance.
+- Handle `authorization_pending`, `slow_down`, and token issuance on the `/token` endpoint. Validated in Phase 32: polling-token-issuance.
+- Enforce polling intervals and prevent database crush via efficient Ecto queries. Validated in Phase 32: polling-token-issuance.
 
 ### Active
 
@@ -81,6 +89,7 @@ Lockspire is a greenfield OSS library project with a substantial prep corpus in 
 | Wrap Release Please in a checked-in composite action | Future runtime migrations should stay behind a stable, reviewable workflow contract | Adopted and delivered by Phase 16 |
 | Make Dynamic Client Registration the v1.5 wedge | DCR turns Lockspire from operator-tended into partner-buildable, which is the gating capability for the partner-ecosystem and integration-marketplace core target; it reuses the established narrow-protocol-plus-operator-policy pattern from PAR/PAR-policy/JAR | Adopted at v1.5 milestone start |
 | Bound v1.5 to RFC 7591/7592 with operator policy and exclude software statements, external-IdP federation, and FAPI bundles | Preserves truthful support claims and avoids importing CIAM-suite breadth into the first DCR slice | Adopted at v1.5 milestone start |
+| Make Device Authorization Grant the v1.6 wedge | Device flow extends the embedded provider into CLI and partner-device use cases while preserving the host-owned verification seam and shared token pipeline | Adopted and delivered by Phase 32 |
 
 ## Evolution
 
@@ -100,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 after v1.5 milestone*
+*Last updated: 2026-04-28 after Phase 32 completion*

@@ -27,6 +27,6 @@
 | DEV-04 | Phase 31 | Pending |
 | DEV-05 | Phase 31 | Pending |
 | DEV-06 | Phase 31 | Pending |
-| DEV-07 | Phase 32 | Pending |
-| DEV-08 | Phase 32 | Pending |
+| DEV-07 | Phase 32 | Complete |
+| DEV-08 | Phase 32 | Complete |
 | DEV-09 | Phase 32 | Complete (32-01) |

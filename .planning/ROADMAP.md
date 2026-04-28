@@ -4,7 +4,7 @@
 
 - [ ] **Phase 30: Core Device Authorization Endpoint & Storage** - The provider can receive device authorization requests, generate codes, and store them securely with TTLs.
 - [x] **Phase 31: Host-Owned Verification UI Seam** - The host application has the integration seams and documentation needed to build a secure user verification UI. (completed 2026-04-28)
-- [ ] **Phase 32: Polling & Token Issuance** - Devices can poll the token endpoint and receive tokens once the user authorizes the request.
+- [x] **Phase 32: Polling & Token Issuance** - Devices can poll the token endpoint and receive tokens once the user authorizes the request. (completed 2026-04-28)
 
 ## Phase Details
 
@@ -46,7 +46,7 @@ Plans:
 Plans:
 - [x] `32-01-PLAN.md` — Extend device-authorization storage with durable poll-window state, sticky `slow_down`, and single-winner consume semantics. (completed 2026-04-28)
 - [x] `32-02-PLAN.md` — Add the device grant branch to `TokenExchange` and reuse shared token issuance for RFC-shaped polling outcomes. (completed 2026-04-28)
-- [ ] `32-03-PLAN.md` — Prove the HTTP/discovery/docs contract and add end-to-end device-flow token redemption coverage.
+- [x] `32-03-PLAN.md` — Prove the HTTP/discovery/docs contract and add end-to-end device-flow token redemption coverage. (completed 2026-04-28)
 
 ## Progress
 
@@ -54,7 +54,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 30. Core Device Authorization Endpoint & Storage | 0/3 | Not started | - |
 | 31. Host-Owned Verification UI Seam | 4/4 | Complete   | 2026-04-28 |
-| 32. Polling & Token Issuance | 2/3 | In Progress | - |
+| 32. Polling & Token Issuance | 3/3 | Complete    | 2026-04-28 |
 
 ## Shipped Milestones
 
