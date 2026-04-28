@@ -14,6 +14,7 @@ Lockspire already has a substantial embedded-provider preview surface:
 - JAR request-object support (with decryption deferred)
 - Dynamic Client Registration (RFC 7591/7592)
 - Device Authorization Grant
+- DPoP core for public and CLI clients (proof validation, replay protection, token binding)
 - Generated host seams and Phoenix-native operator workflows
 - Repo-truth release, support, and preview-posture discipline
 
@@ -32,7 +33,7 @@ The priority order is:
 
 ## Planned Arc
 
-### 1. v1.7 — DPoP Core for Public and CLI Clients
+### 1. v1.7 — DPoP Core for Public and CLI Clients (Shipped)
 
 Why next:
 - Highest leverage security/trust wedge for the already-shipped browser, DCR, and device/CLI paths.
@@ -51,7 +52,7 @@ Scope:
 ### 2. Adoption-Hardening Milestone
 
 Why likely next:
-- Once DPoP lands, the biggest remaining gap may be not another RFC, but making the release/support/onboarding story boring enough to trust repeatedly.
+- Now that DPoP has landed, the biggest remaining gap may be not another RFC, but making the release/support/onboarding story boring enough to trust repeatedly.
 
 Likely scope:
 - Repeated green release proof

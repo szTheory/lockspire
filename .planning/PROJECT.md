@@ -14,7 +14,7 @@ Lockspire has now archived seven planning milestones. The embedded provider foun
 
 At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
-Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects, DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
+Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects, DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
 
 ## Current Milestone: v1.7 DPoP Core for Public and CLI Clients
 
@@ -44,6 +44,8 @@ Lockspire can now support a substantial embedded-provider preview surface: autho
 - Deliver RFC 7592 client configuration management with `registration_access_token` rotation and admin-UI provenance. Validated in Phases 26-28.
 - Implement `POST /device/code`, host-owned `/verify`, durable polling cadence enforcement, and `POST /token` device-code redemption with RFC 8628 outcomes. Validated across Phases 30-32.
 - Generated-host proof, security posture, and support-truth docs for the device-flow slice were delivered and archived in the v1.6 milestone.
+- Deliver DPoP core: proof validation, token binding, replay protection, and DPoP-aware issuance for authorization-code, refresh, and device-code exchanges. Validated across Phases 33-36.
+- End-to-end proof, security posture, and support-truth docs for the shipped DPoP slice were delivered and archived in the v1.7 milestone.
 
 ### Active
 

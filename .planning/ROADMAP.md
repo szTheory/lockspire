@@ -78,8 +78,8 @@
   3. REQUIREMENTS.md traceability closes at 100%, milestone docs stay truthful, and `.planning/EPIC.md` is synchronized with milestone outcomes.
 **Plans**: 3 plans
 - [ ] 36-01: Add auth-code DPoP end-to-end proof
-- [ ] 36-02: Add device/CLI DPoP end-to-end proof and introspection alignment
-- [ ] 36-03: Close docs, traceability, and milestone verification
+- [x] 36-02: Add device/CLI DPoP end-to-end proof and introspection alignment
+- [x] 36-03: Close docs, traceability, and milestone verification
 
 ### Progress
 
@@ -88,7 +88,7 @@
 | 33. DPoP Proof Validation and Replay State | 3/3 | Complete | 2026-04-28 |
 | 34. Token Issuance and Refresh/Device Binding | 3/3 | Complete    | 2026-04-28 |
 | 35. Owned Endpoint Consumption and Truthful Surface | 3/3 | Complete | 2026-04-28 |
-| 36. End-to-End Proof and Milestone Closure | 0/3 | Not started | - |
+| 36. End-to-End Proof and Milestone Closure | 3/3 | Complete | 2026-04-28 |
 
 ## Reference
 

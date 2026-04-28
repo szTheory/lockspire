@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.7 DPoP Core for Public and CLI Clients (Shipped: 2026-04-28)
+
+**Phases completed:** **4** (**33-36**), **12** plans, **14** requirements closed.
+
+**Package posture:** `lockspire 0.2.0` remains preview at archive time, but the shipped surface now includes the full repo-proven DPoP core on top of the earlier device-flow, PAR, JAR, and DCR work.
+
+**Key accomplishments:**
+
+- Added DPoP proof validation, replay protection, and thumbprint derivation for token binding.
+- Implemented DPoP-aware authorization-code, refresh-token, and device-code exchanges without breaking the bearer default.
+- Added DPoP enforcement on the Lockspire-owned `userinfo` endpoint and aligned discovery, docs, and operator/DCR configurations to the shipped slice.
+- End-to-end proof and introspection behavior validate the truthful support claim.
+
+**Pre-close audit:** Formal milestone archive handoff handled by `$gsd-complete-milestone`.
+
+**Archives:** `milestones/v1.7-ROADMAP.md`, `milestones/v1.7-REQUIREMENTS.md` · **Git tag:** `v1.7`
+
+---
+
 ## v1.6 Device Authorization Grant (Shipped + archived: 2026-04-28)
 
 **Phases completed:** **3** (**30-32**), **10** plans, **9** requirements closed.

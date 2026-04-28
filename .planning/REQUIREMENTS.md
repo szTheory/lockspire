@@ -36,7 +36,7 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 **: End-to-end tests prove at least one authorization-code DPoP flow and one public/CLI-oriented DPoP flow.
 - [x] **DPoP-13
 **: Introspection and related runtime surfaces expose truthful DPoP-bound token state where needed, including `cnf` on active DPoP-bound tokens.
-- [ ] **DPoP-14**: The v1.7 milestone closes with synchronized docs, traceability, and an updated epic-arc record so future milestone selection builds from current repo truth.
+- [x] **DPoP-14**: The v1.7 milestone closes with synchronized docs, traceability, and an updated epic-arc record so future milestone selection builds from current repo truth.
 
 ## Future Requirements
 
@@ -86,9 +86,9 @@ Explicitly excluded. Documented to prevent scope creep and keep public support c
 | DPoP-09 | Phase 35 | Completed |
 | DPoP-10 | Phase 35 | Completed |
 | DPoP-11 | Phase 35 | Completed |
-| DPoP-12 | Phase 36 | Pending |
-| DPoP-13 | Phase 36 | Pending |
-| DPoP-14 | Phase 36 | Pending |
+| DPoP-12 | Phase 36 | Completed |
+| DPoP-13 | Phase 36 | Completed |
+| DPoP-14 | Phase 36 | Completed |
 
 **Coverage:**
 - v1.7 requirements: 14 total
