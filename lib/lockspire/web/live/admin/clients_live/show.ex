@@ -314,6 +314,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     %{
       name: params["name"],
       allowed_scopes: split_csv(params["allowed_scopes"]),
+      dpop_policy: params["dpop_policy"],
       contacts: split_csv(params["contacts"]),
       logo_uri: params["logo_uri"],
       tos_uri: params["tos_uri"],

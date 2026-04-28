@@ -70,6 +70,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             value={@defaults.allowed_scopes}
           />
 
+          <label :if={@mode == :edit} for="client_dpop_policy">Client DPoP override</label>
+          <select :if={@mode == :edit} id="client_dpop_policy" name="client[dpop_policy]">
+            <option value="inherit" selected={@defaults.dpop_policy == "inherit"}>
+              Inherit from global policy
+            </option>
+            <option value="bearer" selected={@defaults.dpop_policy == "bearer"}>
+              Use bearer access tokens
+            </option>
+            <option value="dpop" selected={@defaults.dpop_policy == "dpop"}>
+              Require DPoP-bound access tokens
+            </option>
+          </select>
+
           <label :if={@mode == :edit} for="client_contacts">Contacts</label>
           <input
             :if={@mode == :edit}
@@ -179,6 +192,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp defaults_for(:edit, %Client{} = client) do
     %{
       allowed_scopes: Enum.join(client.allowed_scopes, ", "),
+      dpop_policy: Atom.to_string(client.dpop_policy),
       contacts: Enum.join(client.contacts, ", "),
       logo_uri: client.logo_uri,
       tos_uri: client.tos_uri,
