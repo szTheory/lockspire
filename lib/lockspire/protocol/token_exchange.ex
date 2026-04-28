@@ -184,7 +184,14 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
     with {:ok, device_code} <- fetch_presented_device_code(params),
          {:ok, poll_outcome} <- record_device_poll(device_code, client, request) do
-      map_device_poll_outcome(poll_outcome)
+      case map_device_poll_outcome(poll_outcome, client) do
+        {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization, %Client{} = audit_client} ->
+          maybe_append_failure_audit(error, audit_client, device_authorization, request)
+          {:error, error}
+
+        other ->
+          other
+      end
     end
   end
 
@@ -223,50 +230,73 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp map_device_poll_outcome(%{
          result: :approved_ready,
          device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }),
+       }, _client),
        do: {:ok, device_authorization}
 
-  defp map_device_poll_outcome(%{result: :pending}) do
+  defp map_device_poll_outcome(%{
+         result: :pending,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
     {:error,
      oauth_error(
        400,
        "authorization_pending",
        "The device authorization is still pending approval",
        :device_authorization_pending
-     )}
+     ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :slow_down}) do
+  defp map_device_poll_outcome(%{
+         result: :slow_down,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
     {:error,
      oauth_error(
        400,
        "slow_down",
        "The client is polling too quickly",
        :device_authorization_slow_down
-     )}
+     ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :denied}) do
+  defp map_device_poll_outcome(%{
+         result: :denied,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
     {:error,
      oauth_error(
        400,
        "access_denied",
        "The device authorization was denied",
        :device_authorization_denied
-     )}
+     ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :expired}) do
+  defp map_device_poll_outcome(%{
+         result: :expired,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
     {:error,
      oauth_error(
        400,
        "expired_token",
        "The device authorization has expired",
        :device_authorization_expired
-     )}
+     ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :client_mismatch}) do
+  defp map_device_poll_outcome(%{
+         result: :client_mismatch,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
+    {:error,
+     invalid_grant(
+       "The device authorization is invalid for this client",
+       :device_authorization_client_mismatch
+     ), device_authorization, client}
+  end
+
+  defp map_device_poll_outcome(%{result: :client_mismatch}, _client) do
     {:error,
      invalid_grant(
        "The device authorization is invalid for this client",
@@ -274,15 +304,18 @@ defmodule Lockspire.Protocol.TokenExchange do
      )}
   end
 
-  defp map_device_poll_outcome(%{result: :consumed}) do
+  defp map_device_poll_outcome(%{
+         result: :consumed,
+         device_authorization: %DeviceAuthorizationState{} = device_authorization
+       }, %Client{} = client) do
     {:error,
      invalid_grant(
        "The device authorization has already been redeemed",
        :device_authorization_consumed
-     )}
+     ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :invalid_grant}) do
+  defp map_device_poll_outcome(%{result: :invalid_grant}, _client) do
     {:error, invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
   end
 
