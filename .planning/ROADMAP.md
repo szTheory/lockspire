@@ -23,7 +23,7 @@
 - [x] **Phase 33: DPoP Proof Validation and Replay State** - completed 2026-04-28; delivered DPoP proof parsing, JOSE validation, thumbprint derivation, durable replay detection, and explicit client/server DPoP policy state.
 - [x] **Phase 34: Token Issuance and Refresh/Device Binding** - Thread DPoP through authorization-code, refresh-token, and device-code exchange so Lockspire can issue DPoP-bound tokens with stable binding semantics. (completed 2026-04-28)
 - [x] **Phase 35: Owned Endpoint Consumption and Truthful Surface** - Make `userinfo`, discovery, docs, and operator/DCR configuration truthful and usable for the shipped DPoP slice. (completed 2026-04-28)
-- [ ] **Phase 36: End-to-End Proof and Milestone Closure** - Add cross-flow executable proof, close traceability, and leave the repo ready for the next adoption-hardening or deeper protocol milestone.
+- [x] **Phase 36: End-to-End Proof and Milestone Closure** - Add cross-flow executable proof, close traceability, and leave the repo ready for the next adoption-hardening or deeper protocol milestone. (completed 2026-04-28)
 
 ### Phase Details
 
@@ -77,7 +77,7 @@
   2. Introspection and docs reflect the shipped binding truth, including `cnf` on active DPoP-bound tokens where appropriate.
   3. REQUIREMENTS.md traceability closes at 100%, milestone docs stay truthful, and `.planning/EPIC.md` is synchronized with milestone outcomes.
 **Plans**: 3 plans
-- [ ] 36-01: Add auth-code DPoP end-to-end proof
+- [x] 36-01: Add auth-code DPoP end-to-end proof
 - [x] 36-02: Add device/CLI DPoP end-to-end proof and introspection alignment
 - [x] 36-03: Close docs, traceability, and milestone verification
 
@@ -88,7 +88,7 @@
 | 33. DPoP Proof Validation and Replay State | 3/3 | Complete | 2026-04-28 |
 | 34. Token Issuance and Refresh/Device Binding | 3/3 | Complete    | 2026-04-28 |
 | 35. Owned Endpoint Consumption and Truthful Surface | 3/3 | Complete | 2026-04-28 |
-| 36. End-to-End Proof and Milestone Closure | 3/3 | Complete | 2026-04-28 |
+| 36. End-to-End Proof and Milestone Closure | 3/3 | Complete    | 2026-04-28 |
 
 ## Reference
 
