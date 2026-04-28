@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
+  alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenFormatter
@@ -56,11 +57,14 @@ defmodule Lockspire.Protocol.RefreshExchange do
 
   defp rotate_refresh_token(%Client{} = client, refresh_token_hash, request) do
     with {:ok, %Token{} = presented_refresh_token} <-
-           fetch_presented_refresh_token(refresh_token_hash, request) do
+           fetch_presented_refresh_token(refresh_token_hash, request),
+         {:ok, context} <-
+           TokenEndpointDPoP.resolve_refresh_context(client, presented_refresh_token, request) do
       rotate_refresh_token_with_audit(
         client,
         refresh_token_hash,
         presented_refresh_token,
+        context,
         request
       )
     end
@@ -70,12 +74,13 @@ defmodule Lockspire.Protocol.RefreshExchange do
          %Client{} = client,
          refresh_token_hash,
          %Token{} = presented_refresh_token,
+         context,
          request
        ) do
     {formatted_access_token, formatted_refresh_token} = format_refresh_rotation_tokens(request)
     rotated_at = now(request)
-    access_token = build_rotated_access_token(client, formatted_access_token, rotated_at)
-    refresh_token = build_rotated_refresh_token(client, formatted_refresh_token, rotated_at)
+    access_token = build_rotated_access_token(client, formatted_access_token, rotated_at, context)
+    refresh_token = build_rotated_refresh_token(client, formatted_refresh_token, rotated_at, context)
 
     case transact_with_audit_outcome(token_store(request), fn ->
            handle_refresh_rotation(
@@ -85,7 +90,8 @@ defmodule Lockspire.Protocol.RefreshExchange do
              rotated_at,
              refresh_token,
              access_token,
-             presented_refresh_token
+             presented_refresh_token,
+             context
            )
          end) do
       {:ok,
@@ -101,7 +107,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
            access_token: persisted_access_token,
            raw_access_token: formatted_access_token.token,
            raw_refresh_token: formatted_refresh_token.token,
-           token_type: formatted_access_token.token_type
+           token_type: context.token_type
          }}
 
       {:error, %Error{} = error} ->
@@ -231,22 +237,24 @@ defmodule Lockspire.Protocol.RefreshExchange do
     }
   end
 
-  defp build_rotated_access_token(%Client{} = client, formatted_access_token, rotated_at) do
+  defp build_rotated_access_token(%Client{} = client, formatted_access_token, rotated_at, context) do
     %Token{
       token_hash: formatted_access_token.token_hash,
       token_type: :access_token,
       client_id: client.client_id,
       account_id: nil,
+      cnf: context.cnf,
       expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
     }
   end
 
-  defp build_rotated_refresh_token(%Client{} = client, formatted_refresh_token, rotated_at) do
+  defp build_rotated_refresh_token(%Client{} = client, formatted_refresh_token, rotated_at, context) do
     %Token{
       token_hash: formatted_refresh_token.token_hash,
       token_type: :refresh_token,
       client_id: client.client_id,
       account_id: nil,
+      cnf: context.cnf,
       expires_at: DateTime.add(rotated_at, @refresh_token_ttl, :second)
     }
   end
@@ -258,14 +266,18 @@ defmodule Lockspire.Protocol.RefreshExchange do
          rotated_at,
          %Token{} = refresh_token,
          %Token{} = access_token,
-         %Token{} = presented_refresh_token
+         %Token{} = presented_refresh_token,
+         context
        ) do
+    expected_cnf = context.cnf
+
     case store.rotate_refresh_token(
            refresh_token_hash,
            client.client_id,
            rotated_at,
            refresh_token,
-           access_token
+           access_token,
+           expected_cnf
          ) do
       {:ok,
        %{
@@ -292,6 +304,9 @@ defmodule Lockspire.Protocol.RefreshExchange do
 
   defp refresh_rotation_error(:client_mismatch),
     do: invalid_grant("Refresh token was not issued to this client", :client_mismatch)
+
+  defp refresh_rotation_error(:dpop_binding_mismatch),
+    do: invalid_grant("Refresh token is invalid", :refresh_dpop_binding_mismatch)
 
   defp refresh_rotation_error(:expired),
     do: invalid_grant("Refresh token has expired", :refresh_token_expired)

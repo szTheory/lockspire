@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DpopReplay
+  alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.TokenExchange.Error
@@ -25,6 +26,18 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
          {:ok, proof} <- validate_proof(resolved_policy, request),
          :ok <- record_dpop_proof_use(proof, request) do
       {:ok, issuance_context(resolved_policy.effective_policy, proof)}
+    end
+  end
+
+  @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
+          {:ok, issuance_context()} | {:error, Error.t()}
+  def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
+    _ = client
+
+    with {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
+         {:ok, proof} <- validate_refresh_proof(expected_cnf, request),
+         :ok <- record_dpop_proof_use(proof, request) do
+      {:ok, issuance_context(refresh_binding_mode(expected_cnf), proof)}
     end
   end
 
@@ -64,9 +77,28 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       {:ok, %DPoP{} = validated_proof} ->
         {:ok, validated_proof}
 
-      {:error, _reason} ->
-        {:error, invalid_dpop_proof("The DPoP proof is invalid", :invalid_dpop_proof)}
+      {:error, reason} when is_atom(reason) ->
+        {:error, invalid_dpop_proof("The DPoP proof is invalid", reason)}
     end
+  end
+
+  defp validate_refresh_proof(nil, _request), do: {:ok, nil}
+
+  defp validate_refresh_proof(%{"jkt" => jkt}, request) when is_binary(jkt) do
+    case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+      nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+      proof -> validate_proof_value(proof, request)
+    end
+  end
+
+  defp validate_refresh_proof(_expected_cnf, _request) do
+    {:error,
+     oauth_error(
+       500,
+       "server_error",
+       "Stored refresh token binding is invalid",
+       :invalid_refresh_token_binding
+     )}
   end
 
   defp record_dpop_proof_use(nil, _request), do: :ok
@@ -204,6 +236,22 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   defp normalized_dpop_port(%URI{scheme: "https", port: 443}), do: nil
   defp normalized_dpop_port(%URI{scheme: "http", port: 80}), do: nil
   defp normalized_dpop_port(%URI{port: port}), do: port
+
+  defp refresh_binding_cnf(%Token{cnf: nil}), do: {:ok, nil}
+  defp refresh_binding_cnf(%Token{cnf: %{"jkt" => jkt} = cnf}) when is_binary(jkt), do: {:ok, cnf}
+
+  defp refresh_binding_cnf(%Token{}) do
+    {:error,
+     oauth_error(
+       500,
+       "server_error",
+       "Stored refresh token binding is invalid",
+       :invalid_refresh_token_binding
+     )}
+  end
+
+  defp refresh_binding_mode(nil), do: :bearer
+  defp refresh_binding_mode(_cnf), do: :dpop
 
   defp invalid_dpop_proof(description, reason_code) do
     oauth_error(400, "invalid_dpop_proof", description, reason_code)
