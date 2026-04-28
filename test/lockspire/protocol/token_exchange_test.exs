@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   import Ecto.Query
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
@@ -504,6 +505,170 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert auth_error.reason_code == :unsupported_token_endpoint_auth_method
   end
 
+  test "maps pending, slow_down, denied, expired, and unknown device polls into RFC 8628 token errors" do
+    public_client =
+      create_public_client("device-public-client", ["urn:ietf:params:oauth:grant-type:device_code"])
+
+    confidential_secret = "device-confidential-secret"
+
+    {:ok, confidential_client} =
+      create_client(
+        "device-confidential-client",
+        :client_secret_basic,
+        confidential_secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, pending} =
+      create_device_authorization(public_client,
+        device_code: "device-code-pending",
+        user_code: "PEND-ING1"
+      )
+
+    assert {:error, pending_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "client_id" => public_client.client_id,
+                 "device_code" => "device-code-pending"
+               },
+               opts: [device_authorization_store: Repository, token_store: Repository]
+             })
+
+    assert pending_error.error == "authorization_pending"
+    assert pending_error.reason_code == :device_authorization_pending
+
+    {:ok, too_early} =
+      create_device_authorization(confidential_client,
+        device_code: "device-code-too-early",
+        user_code: "SLOW-DOWN"
+      )
+
+    assert {:error, slow_down_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-too-early"
+               },
+               authorization: basic_auth(confidential_client.client_id, confidential_secret),
+               opts: [
+                 device_authorization_store: Repository,
+                 token_store: Repository,
+                 now: fn -> DateTime.add(too_early.next_poll_allowed_at, -1, :second) end
+               ]
+             })
+
+    assert slow_down_error.error == "slow_down"
+    assert slow_down_error.reason_code == :device_authorization_slow_down
+
+    {:ok, denied} =
+      create_device_authorization(confidential_client,
+        device_code: "device-code-denied",
+        user_code: "DENI-ED01",
+        transition: %{status: :denied, denied_at: DateTime.utc_now()}
+      )
+
+    assert {:error, denied_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-denied"
+               },
+               authorization: basic_auth(confidential_client.client_id, confidential_secret),
+               opts: [device_authorization_store: Repository, token_store: Repository]
+             })
+
+    assert denied_error.error == "access_denied"
+    assert denied_error.reason_code == :device_authorization_denied
+
+    {:ok, _expired} =
+      create_device_authorization(confidential_client,
+        device_code: "device-code-expired",
+        user_code: "EXPI-RED1",
+        transition: %{status: :expired, expired_at: DateTime.utc_now()}
+      )
+
+    assert {:error, expired_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-expired"
+               },
+               authorization: basic_auth(confidential_client.client_id, confidential_secret),
+               opts: [device_authorization_store: Repository, token_store: Repository]
+             })
+
+    assert expired_error.error == "expired_token"
+    assert expired_error.reason_code == :device_authorization_expired
+
+    assert {:error, invalid_error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "unknown-device-code"
+               },
+               authorization: basic_auth(confidential_client.client_id, confidential_secret),
+               opts: [device_authorization_store: Repository, token_store: Repository]
+             })
+
+    assert invalid_error.error == "invalid_grant"
+    assert invalid_error.reason_code == :device_authorization_not_found
+
+    refute pending.verification_handle == denied.verification_handle
+  end
+
+  test "redeems an approved device authorization through the shared token success pipeline" do
+    secret = "device-success-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-success-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-approved",
+        user_code: "APPR-OVED",
+        scopes: ["email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-approved"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 access_token_generator: fn -> "device-flow-access-token" end
+               ]
+             })
+
+    assert success.access_token == "device-flow-access-token"
+    assert success.token_type == "Bearer"
+    assert success.scope == "email profile"
+    assert success.refresh_token == nil
+    assert success.id_token == nil
+
+    assert {:ok, %DeviceAuthorization{status: :consumed}} =
+             Repository.fetch_device_authorization_by_device_code_hash(
+               TokenFormatter.hash_token("device-code-approved")
+             )
+  end
+
   defp exchange(params, opts \\ []) do
     exchange_with_store(params, Repository, opts)
   end
@@ -529,23 +694,43 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
          client_id,
          auth_method,
          client_secret,
-         allowed_grant_types \\ ["authorization_code"]
+         allowed_grant_types \\ ["authorization_code"],
+         attrs \\ %{}
        ) do
     Repository.register_client(%Client{
       client_id: client_id,
       client_secret_hash: client_secret_hash(client_secret),
-      client_type: :confidential,
-      name: "Client #{client_id}",
-      redirect_uris: ["https://client.example.com/callback"],
-      allowed_scopes: ["email", "profile"],
+      client_type: Map.get(attrs, :client_type, :confidential),
+      name: Map.get(attrs, :name, "Client #{client_id}"),
+      redirect_uris: Map.get(attrs, :redirect_uris, ["https://client.example.com/callback"]),
+      allowed_scopes: Map.get(attrs, :allowed_scopes, ["email", "profile", "openid"]),
       allowed_grant_types: allowed_grant_types,
-      allowed_response_types: ["code"],
+      allowed_response_types: Map.get(attrs, :allowed_response_types, ["code"]),
       token_endpoint_auth_method: auth_method,
-      pkce_required: true,
-      subject_type: :public,
+      pkce_required: Map.get(attrs, :pkce_required, true),
+      subject_type: Map.get(attrs, :subject_type, :public),
       created_at: DateTime.utc_now(),
       metadata: %{}
     })
+  end
+
+  defp create_public_client(client_id, allowed_grant_types) do
+    {:ok, client} =
+      create_client(
+        client_id,
+        :none,
+        "unused-public-secret",
+        allowed_grant_types,
+        %{
+          client_type: :public,
+          allowed_response_types: [],
+          pkce_required: false,
+          redirect_uris: [],
+          name: "Public Client #{client_id}"
+        }
+      )
+
+    client
   end
 
   defp create_authorization_code(client, opts) do
@@ -586,6 +771,35 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       issued_at: now,
       expires_at: Keyword.get(opts, :expires_at, DateTime.add(now, 300, :second))
     })
+  end
+
+  defp create_device_authorization(client, opts) do
+    now = Keyword.get(opts, :now, DateTime.utc_now())
+
+    authorization =
+      DeviceAuthorization.issue(
+        %{
+          client_id: client.client_id,
+          device_code: Keyword.fetch!(opts, :device_code),
+          user_code: Keyword.fetch!(opts, :user_code),
+          scopes: Keyword.get(opts, :scopes, ["email", "profile"])
+        },
+        now: now
+      )
+
+    with {:ok, stored} <- Repository.put_device_authorization(authorization) do
+      case Keyword.get(opts, :transition) do
+        nil ->
+          {:ok, stored}
+
+        attrs ->
+          Repository.transition_device_authorization(
+            stored.verification_handle,
+            [stored.status],
+            attrs
+          )
+      end
+    end
   end
 
   defp publish_signing_key(kid) do
