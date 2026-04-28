@@ -19,8 +19,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Token Issuance and Binding
 
-- [ ] **DPoP-05**: `POST /token` supports DPoP-bound authorization-code exchange for DPoP-mode clients and returns truthful DPoP token responses.
-- [ ] **DPoP-06**: DPoP-bound access tokens persist confirmation (`cnf`) state that is sufficient for later validation on Lockspire-owned endpoints.
+- [x] **DPoP-05**: `POST /token` supports DPoP-bound authorization-code exchange for DPoP-mode clients and returns truthful DPoP token responses.
+- [x] **DPoP-06**: DPoP-bound access tokens persist confirmation (`cnf`) state that is sufficient for later validation on Lockspire-owned endpoints.
 - [ ] **DPoP-07**: Refresh-token exchange preserves DPoP binding semantics and rejects refresh attempts that present the wrong proof key or no valid proof.
 - [ ] **DPoP-08**: Device-code exchange supports DPoP mode for public and CLI-oriented clients without widening the host-owned verification seam.
 
@@ -77,8 +77,8 @@ Explicitly excluded. Documented to prevent scope creep and keep public support c
 | DPoP-02 | Phase 33 | Completed |
 | DPoP-03 | Phase 33 | Completed |
 | DPoP-04 | Phase 33 | Completed |
-| DPoP-05 | Phase 34 | Pending |
-| DPoP-06 | Phase 34 | Pending |
+| DPoP-05 | Phase 34 | Completed |
+| DPoP-06 | Phase 34 | Completed |
 | DPoP-07 | Phase 34 | Pending |
 | DPoP-08 | Phase 34 | Pending |
 | DPoP-09 | Phase 35 | Pending |

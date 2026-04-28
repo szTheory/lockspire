@@ -51,7 +51,7 @@
   3. Device-code exchange supports DPoP mode for public and CLI-oriented clients without widening the host-owned verification seam.
   4. Successful DPoP token responses are truthfully shaped, including `token_type: "DPoP"`, while bearer clients remain unchanged.
 **Plans**: 3 plans
-- [ ] 34-01-PLAN.md — Add the shared token-endpoint DPoP context plus truthful auth-code issuance and durable `cnf` persistence
+- [x] 34-01-PLAN.md — Add the shared token-endpoint DPoP context plus truthful auth-code issuance and durable `cnf` persistence
 - [ ] 34-02-PLAN.md — Add atomic refresh-token binding checks, DPoP-aware rotation, and `invalid_grant` collapse for proof-key mismatch
 - [ ] 34-03-PLAN.md — Reuse the shared issuance path for device-code DPoP redemption and generated-host integration proof
 
@@ -86,7 +86,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 33. DPoP Proof Validation and Replay State | 3/3 | Complete | 2026-04-28 |
-| 34. Token Issuance and Refresh/Device Binding | 0/3 | Not started | - |
+| 34. Token Issuance and Refresh/Device Binding | 1/3 | In progress | - |
 | 35. Owned Endpoint Consumption and Truthful Surface | 0/3 | Not started | - |
 | 36. End-to-End Proof and Milestone Closure | 0/3 | Not started | - |
 

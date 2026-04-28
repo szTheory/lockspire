@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: dpop-core
+milestone: v1.6
+milestone_name: milestone
 status: executing
-stopped_at: Completed 33-03-PLAN.md
-last_updated: "2026-04-28T15:26:00Z"
-last_activity: 2026-04-28 -- Phase 33 execution completed
+stopped_at: Completed 34-01-PLAN.md
+last_updated: "2026-04-28T17:38:13.021Z"
+last_activity: 2026-04-28
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 12
-  completed_plans: 3
-  percent: 25
+  total_plans: 6
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 34 — token issuance and refresh/device binding
+**Current focus:** Phase 34 — Token issuance and refresh/device binding
 
 ## Current Position
 
-Phase: 34 (token-issuance-and-refresh-device-binding) — NOT STARTED
-Plan: —
-Status: Phase 33 complete; Phase 34 is next
-Last activity: 2026-04-28 -- Phase 33 execution completed
+Phase: 34 — EXECUTING
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-04-28
 
 ## Performance Metrics
 
 - Phases completed: 1/4 (v1.7)
-- Plans completed: 3/12 (v1.7)
+- Plans completed: 4/6 (active execution window)
 
 ## Accumulated Context
 
@@ -52,6 +52,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Model DPoP enablement as explicit durable enums instead of metadata so bearer-default behavior and later admin/DCR truth remain deterministic.
 - Keep server policy as :bearer | :dpop and client policy as :inherit | :bearer | :dpop so existing clients stay inherited while explicit overrides can narrow or opt in.
 - Make the resolver return explicit invalid-policy errors instead of silently coercing malformed state into bearer behavior.
+- Authorization-code exchange now resolves one protocol-owned issuance_context and threads it through builders and persistence instead of using grant-local DPoP flags.
+- Server-policy and replay-store defaults fall back to the request's repository adapter seam so token-endpoint DPoP resolution stays truthful in embedded and test environments.
 
 ### Blockers/Concerns
 
@@ -60,11 +62,11 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Start `$gsd-plan-phase 34`
+**Next action:** Execute `34-02-PLAN.md`
 
 **Resume file:** None
 
-**Stopped at:** Completed 33-03-PLAN.md
+**Stopped at:** Completed 34-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
