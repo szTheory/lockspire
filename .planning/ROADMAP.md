@@ -51,9 +51,9 @@
   3. Device-code exchange supports DPoP mode for public and CLI-oriented clients without widening the host-owned verification seam.
   4. Successful DPoP token responses are truthfully shaped, including `token_type: "DPoP"`, while bearer clients remain unchanged.
 **Plans**: 3 plans
-- [ ] 34-01: Thread DPoP through authorization-code token exchange and token persistence
-- [ ] 34-02: Add DPoP-aware refresh rotation and error handling
-- [ ] 34-03: Add DPoP-aware device-code redemption and integration proof
+- [ ] 34-01-PLAN.md — Add the shared token-endpoint DPoP context plus truthful auth-code issuance and durable `cnf` persistence
+- [ ] 34-02-PLAN.md — Add atomic refresh-token binding checks, DPoP-aware rotation, and `invalid_grant` collapse for proof-key mismatch
+- [ ] 34-03-PLAN.md — Reuse the shared issuance path for device-code DPoP redemption and generated-host integration proof
 
 #### Phase 35: Owned Endpoint Consumption and Truthful Surface
 **Goal**: The Lockspire-owned protected-resource and support surfaces agree with the shipped DPoP slice.
