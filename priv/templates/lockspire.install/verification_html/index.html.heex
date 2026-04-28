@@ -14,10 +14,56 @@
     </section>
   <%% end %>
 
-  <form action={~p"/verify"} method="post">
-    <label for="verification-user-code">Device code</label>
-    <input id="verification-user-code" name="user_code" value={@user_code} />
-    <p>Review device request</p>
-    <button type="submit">Review device request</button>
-  </form>
+  <%%= unless @review_step? do %>
+    <form action={~p"/verify"} method="post">
+      <label for="verification-user-code">Device code</label>
+      <input id="verification-user-code" name="user_code" value={@user_code} />
+      <p>
+        Type the code shown on your device. The page stays side-effect free until you submit
+        Review device request yourself.
+      </p>
+      <button type="submit">Review device request</button>
+    </form>
+  <%% else %>
+    <section class="verification-review">
+      <p>Before approval, confirm the code matches the requesting device.</p>
+
+      <section class="verification-code-chip">
+        <p>Device code</p>
+        <strong><%%= @user_code %></strong>
+      </section>
+
+      <section>
+        <h2>Client</h2>
+        <p><%%= @client_name %></p>
+      </section>
+
+      <section>
+        <h2>Requested scopes</h2>
+        <%%= if @scopes == [] do %>
+          <p>No additional scopes were requested.</p>
+        <%% else %>
+          <ul>
+            <%%= for scope <- @scopes do %>
+              <li><%%= scope %></li>
+            <%% end %>
+          </ul>
+        <%% end %>
+      </section>
+
+      <p :if={@account_subject}>
+        Approving will bind this request to signed-in subject <code><%%= @account_subject %></code>.
+      </p>
+
+      <div class="verification-actions">
+        <form action={~p"/verify/#{@verification_handle}/approve"} method="post">
+          <button type="submit">Approve device</button>
+        </form>
+
+        <form action={~p"/verify/#{@verification_handle}/deny"} method="post">
+          <button type="submit">Deny request</button>
+        </form>
+      </div>
+    </section>
+  <%% end %>
 </section>

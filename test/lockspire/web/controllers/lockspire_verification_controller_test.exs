@@ -12,13 +12,14 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
 
   test "show remains prefill-only and GET-safe" do
     contents = File.read!(@controller_template)
+    [show_block | _rest] = String.split(contents, "def lookup", parts: 2)
 
-    assert contents =~ "def show"
-    assert contents =~ ~s(params["user_code"])
-    assert contents =~ "prefill-only"
-    refute contents =~ "lookup_pending_device_authorization("
-    refute contents =~ "approve_device_authorization("
-    refute contents =~ "deny_device_authorization("
+    assert show_block =~ "def show"
+    assert show_block =~ ~s(params["user_code"])
+    assert show_block =~ "prefill-only"
+    refute show_block =~ "lookup_pending_device_authorization("
+    refute show_block =~ "approve_device_authorization("
+    refute show_block =~ "deny_device_authorization("
   end
 
   test "controller template wires lookup and explicit approve or deny mutations" do
