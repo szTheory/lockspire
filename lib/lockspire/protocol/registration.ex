@@ -240,6 +240,7 @@ defmodule Lockspire.Protocol.Registration do
       contacts: Map.get(metadata, "contacts", []),
       jwks: Map.get(metadata, "jwks"),
       active: true,
+      dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,
       registration_access_token_hash: credentials.rat_hash,
       initial_access_token_id: iat_id,
@@ -287,6 +288,13 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp parse_scope(_), do: []
+
+  defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
+    case Map.get(metadata, "dpop_bound_access_tokens", false) do
+      true -> :dpop
+      _other -> :bearer
+    end
+  end
 
   # RFC 7591 §2.3 software_statement is silently ignored (RESEARCH Q6 RESOLVED).
   # Only RFC 7591 extension fields we explicitly support land in :metadata JSONB.

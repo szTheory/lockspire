@@ -54,6 +54,7 @@ defmodule Lockspire.Web.RegistrationJSON do
         else: 0
       )
     )
+    |> Map.put(:dpop_bound_access_tokens, client.dpop_policy == :dpop)
     |> Map.put(:registration_client_uri, Config.issuer!() <> "/register/" <> client.client_id)
   end
 

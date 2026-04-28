@@ -275,8 +275,16 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         policy_uri: Map.get(metadata, "policy_uri"),
         contacts: Map.get(metadata, "contacts", []),
         jwks: Map.get(metadata, "jwks"),
+        dpop_policy: dpop_policy_from_metadata(metadata),
         metadata: extension_metadata
     }
+  end
+
+  defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
+    case Map.get(metadata, "dpop_bound_access_tokens", false) do
+      true -> :dpop
+      _other -> :bearer
+    end
   end
 
   defp emit_updated(%Client{} = client) do
