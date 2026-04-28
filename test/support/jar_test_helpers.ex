@@ -95,8 +95,8 @@ defmodule Lockspire.JarTestHelpers do
       end
 
     header =
-      extra_header
-      |> Map.merge(%{"alg" => alg, "typ" => typ, "jwk" => jwk_map})
+      %{"alg" => alg, "typ" => typ, "jwk" => jwk_map}
+      |> Map.merge(extra_header)
 
     private_jwk
     |> JOSE.JWT.sign(header, claims)

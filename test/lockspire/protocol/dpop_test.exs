@@ -57,10 +57,10 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert %JOSE.JWK{} = public_jwk
     end
 
-    test "rejects alg=none unsigned proofs", %{claims: claims} do
+    test "rejects alg=none unsigned proofs", %{claims: claims, keys: keys} do
       none_header =
         Base.url_encode64(
-          Jason.encode!(%{"alg" => "none", "typ" => "dpop+jwt", "jwk" => %{"kty" => "RSA"}}),
+          Jason.encode!(%{"alg" => "none", "typ" => "dpop+jwt", "jwk" => keys.pub_jwk_map}),
           padding: false
         )
 
