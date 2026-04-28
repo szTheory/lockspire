@@ -318,7 +318,8 @@ defmodule Lockspire.Web.TokenControllerTest do
     {:ok, authorization} =
       create_device_authorization(client,
         device_code: "controller-device-code-pending",
-        user_code: "PEND-ING1"
+        user_code: "PEND-ING1",
+        now: DateTime.add(DateTime.utc_now(), -10, :second)
       )
 
     conn =
@@ -381,6 +382,7 @@ defmodule Lockspire.Web.TokenControllerTest do
         device_code: "controller-device-code-approved",
         user_code: "APPR-OVED",
         scopes: ["email", "profile"],
+        now: DateTime.add(DateTime.utc_now(), -10, :second),
         transition: %{
           status: :approved,
           approved_at: DateTime.utc_now(),
@@ -403,7 +405,13 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     body = Jason.decode!(conn.resp_body)
 
-    assert Map.keys(body) |> Enum.sort() == ["access_token", "expires_in", "scope", "token_type"]
+    assert Map.keys(body) |> Enum.sort() == [
+             "access_token",
+             "expires_in",
+             "refresh_token",
+             "scope",
+             "token_type"
+           ]
     assert body["token_type"] == "Bearer"
     assert body["scope"] == "email profile"
   end
@@ -472,6 +480,7 @@ defmodule Lockspire.Web.TokenControllerTest do
       create_device_authorization(client,
         device_code: "controller-device-code-replay",
         user_code: "REPL-AY01",
+        now: DateTime.add(DateTime.utc_now(), -10, :second),
         transition: %{
           status: :approved,
           approved_at: DateTime.utc_now(),

@@ -1,6 +1,6 @@
 defmodule Lockspire.Web.TokenController do
   @moduledoc """
-  Thin `/token` delivery adapter for authorization code exchange.
+  Thin `/token` delivery adapter for OAuth token exchange.
   """
 
   use Phoenix.Controller, formats: [:json]
@@ -19,6 +19,7 @@ defmodule Lockspire.Web.TokenController do
            authorization: authorization,
            opts:
              [client_store: Repository, token_store: Repository]
+             |> Keyword.put(:device_authorization_store, Repository)
              |> Keyword.put(:interaction_store, Repository)
              |> Keyword.put(:key_store, Repository)
          }) do
