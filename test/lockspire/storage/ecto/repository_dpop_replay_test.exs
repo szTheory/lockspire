@@ -6,6 +6,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.DpopReplayRecord
+  alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -18,6 +19,20 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+  end
+
+  defp replay_fixture(attrs \\ %{}) do
+    now = Map.get(attrs, :seen_at, DateTime.utc_now())
+
+    %DpopReplay{
+      replay_key: Map.get(attrs, :replay_key, "replay:proof:123"),
+      jti: Map.get(attrs, :jti, "proof-jti"),
+      htm: Map.get(attrs, :htm, "POST"),
+      htu: Map.get(attrs, :htu, "https://server.example.com/lockspire/token"),
+      jkt: Map.get(attrs, :jkt, "thumbprint"),
+      seen_at: now,
+      expires_at: Map.get(attrs, :expires_at, DateTime.add(now, 300, :second))
+    }
   end
 
   test "exposes a first-class durable replay domain shape" do
@@ -91,5 +106,47 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
     index_names = Enum.map(rows, &List.first/1)
 
     assert "lockspire_dpop_replay_replay_key_index" in index_names
+  end
+
+  describe "record_dpop_proof/1" do
+    test "accepts the first proof presentation and rejects an immediate replay" do
+      replay = replay_fixture()
+
+      assert {:ok, :accepted} = Repository.record_dpop_proof(replay)
+      assert {:ok, :replay} = Repository.record_dpop_proof(replay)
+    end
+
+    test "classifies a replay durably across fresh repository calls" do
+      replay = replay_fixture(%{replay_key: "replay:proof:persisted", jti: "persisted-jti"})
+
+      assert {:ok, :accepted} = Repository.record_dpop_proof(replay)
+
+      assert {:ok, :replay} =
+               replay
+               |> Map.put(:seen_at, DateTime.add(replay.seen_at, 5, :second))
+               |> Repository.record_dpop_proof()
+    end
+
+    test "allows a new proof once prior replay state has expired" do
+      initial_seen_at = DateTime.utc_now()
+
+      assert {:ok, :accepted} =
+               replay_fixture(%{
+                 replay_key: "replay:proof:expired-window",
+                 jti: "expired-window-jti",
+                 seen_at: initial_seen_at,
+                 expires_at: DateTime.add(initial_seen_at, 1, :second)
+               })
+               |> Repository.record_dpop_proof()
+
+      assert {:ok, :accepted} =
+               replay_fixture(%{
+                 replay_key: "replay:proof:expired-window",
+                 jti: "expired-window-jti",
+                 seen_at: DateTime.add(initial_seen_at, 2, :second),
+                 expires_at: DateTime.add(initial_seen_at, 302, :second)
+               })
+               |> Repository.record_dpop_proof()
+    end
   end
 end
