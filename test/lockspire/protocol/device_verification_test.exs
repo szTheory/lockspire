@@ -1,9 +1,23 @@
 defmodule Lockspire.Protocol.DeviceVerificationTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Protocol.DeviceVerification
+  alias Lockspire.Storage.Ecto.Repository
+
+  setup_all do
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+
+    start_supervised!(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+
+    :ok
+  end
+
+  setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+  end
 
   defmodule FakeDeviceAuthorizationStore do
     alias Lockspire.Domain.DeviceAuthorization
@@ -152,6 +166,39 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
     test "returns :not_found when no authorization matches the code" do
       assert {:error, :not_found} =
                DeviceVerification.lookup_pending_device_authorization("miss-ing1", @opts)
+    end
+
+    test "preserves a displayable verification code for repository-backed lookups" do
+      now = ~U[2026-04-28 11:00:00Z]
+
+      assert {:ok, _client} =
+               Repository.register_client(%Client{
+                 client_id: "repo-device-client",
+                 name: "Desk TV",
+                 client_type: :public,
+                 token_endpoint_auth_method: :none,
+                 allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+                 created_at: now
+               })
+
+      authorization =
+        DeviceAuthorization.issue(
+          %{
+            device_code: "repo-dev-123",
+            user_code: "WDJB-MJHT",
+            client_id: "repo-device-client",
+            scopes: ["openid"]
+          },
+          now: now
+        )
+
+      assert {:ok, _stored} = Repository.put_device_authorization(authorization)
+
+      assert {:ok, %DeviceVerification.PendingAuthorization{} = pending} =
+               DeviceVerification.lookup_pending_device_authorization("wdjb-mjht", now: now)
+
+      assert pending.user_code == "WDJBMJHT"
+      assert pending.client_name == "Desk TV"
     end
   end
 

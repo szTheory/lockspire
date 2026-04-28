@@ -1,20 +1,20 @@
 <section class="host-verification-shell">
   <header>
     <p>Host-owned device verification seam</p>
-    <h1><%%= @page_title %></h1>
+    <h1><%= @page_title %></h1>
     <p>
       Enter the code shown on your device. `verification_uri_complete` is prefill-only and
       nothing is approved until the user explicitly continues.
     </p>
   </header>
 
-  <%%= if @error_message do %>
+  <%= if @error_message do %>
     <section>
-      <p><%%= @error_message %></p>
+      <p><%= @error_message %></p>
     </section>
-  <%% end %>
+  <% end %>
 
-  <%%= unless @review_step? do %>
+  <%= unless @review_step? do %>
     <form action={~p"/verify"} method="post">
       <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
       <label for="verification-user-code">Device code</label>
@@ -25,35 +25,35 @@
       </p>
       <button type="submit">Review device request</button>
     </form>
-  <%% else %>
+  <% else %>
     <section class="verification-review">
       <p>Before approval, confirm the code matches the requesting device.</p>
 
       <section class="verification-code-chip">
         <p>Device code</p>
-        <strong><%%= @user_code %></strong>
+        <strong><%= @user_code %></strong>
       </section>
 
       <section>
         <h2>Client</h2>
-        <p><%%= @client_name %></p>
+        <p><%= @client_name %></p>
       </section>
 
       <section>
         <h2>Requested scopes</h2>
-        <%%= if @scopes == [] do %>
+        <%= if @scopes == [] do %>
           <p>No additional scopes were requested.</p>
-        <%% else %>
+        <% else %>
           <ul>
-            <%%= for scope <- @scopes do %>
-              <li><%%= scope %></li>
-            <%% end %>
+            <%= for scope <- @scopes do %>
+              <li><%= scope %></li>
+            <% end %>
           </ul>
-        <%% end %>
+        <% end %>
       </section>
 
       <p :if={@account_subject}>
-        Approving will bind this request to signed-in subject <code><%%= @account_subject %></code>.
+        Approving will bind this request to signed-in subject <code><%= @account_subject %></code>.
       </p>
 
       <div class="verification-actions">
@@ -68,5 +68,5 @@
         </form>
       </div>
     </section>
-  <%% end %>
+  <% end %>
 </section>

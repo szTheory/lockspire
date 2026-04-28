@@ -66,6 +66,10 @@ defmodule Lockspire.MixProject do
         "test.setup",
         "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs"
       ],
+      "test.phase30": [
+        "test.setup",
+        "test --include integration test/integration/phase30_device_authorization_e2e_test.exs test/lockspire/domain/device_authorization_test.exs test/lockspire/security/device_code_test.exs test/lockspire/protocol/device_authorization_test.exs test/lockspire/storage/ecto/repository_device_authorization_test.exs test/lockspire/web/controllers/device_authorization_controller_test.exs"
+      ],
       "test.phase3": [
         "test.setup",
         "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/userinfo_controller_test.exs"
@@ -102,6 +106,7 @@ defmodule Lockspire.MixProject do
       "test.integration": :test,
       "test.phase6.e2e": :test,
       "test.phase3.e2e": :test,
+      "test.phase30": :test,
       "test.phase3": :test,
       qa: :dev,
       "docs.verify": :dev,

@@ -4,6 +4,7 @@ defmodule Lockspire.InstallGeneratorTest do
   import ExUnit.CaptureIO
 
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
+  @runtime_fixture_root Path.expand("../support/generated_host_app_web", __DIR__)
 
   setup do
     reset_fixture!()
@@ -96,6 +97,19 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(
              Path.join(
                @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
+             )
+           ) ==
+             File.read!(
+               Path.join(
+                 @runtime_fixture_root,
+                 "controllers/lockspire_verification_controller.ex"
+               )
+             )
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
                "lib/generated_host_app_web/controllers/lockspire_verification_html.ex"
              )
            ) =~ "embed_templates"
@@ -103,9 +117,35 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(
              Path.join(
                @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_html.ex"
+             )
+           ) ==
+             File.read!(
+               Path.join(@runtime_fixture_root, "controllers/lockspire_verification_html.ex")
+             )
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
                "lib/generated_host_app_web/controllers/lockspire_verification_html/index.html.heex"
              )
            ) =~ "Review device request"
+
+    assert File.read!(
+             Path.join(
+               @fixture_root,
+               "lib/generated_host_app_web/controllers/lockspire_verification_html/index.html.heex"
+             )
+           ) ==
+             File.read!(
+               Path.join(
+                 @runtime_fixture_root,
+                 "controllers/lockspire_verification_html/index.html.heex"
+               )
+             )
+
+    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) ==
+             File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
 
     assert output =~ "Lockspire canonical onboarding next steps"
     assert output =~ "Import `config/lockspire.exs`"

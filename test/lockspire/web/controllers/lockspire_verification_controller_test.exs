@@ -40,6 +40,7 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
     assert contents =~ "approve_device_authorization"
     assert contents =~ "deny_device_authorization"
     assert contents =~ "Do not auto-submit"
+    assert contents =~ "alias Lockspire.Protocol.DeviceVerification"
   end
 
   test "html template shows visible code confirmation and explicit review actions" do
@@ -51,6 +52,8 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
     assert contents =~ "Deny request"
     assert contents =~ "Client"
     assert contents =~ "Requested scopes"
+    assert contents =~ ~s(name="_csrf_token")
+    assert contents =~ "Plug.CSRFProtection.get_csrf_token()"
   end
 
   test "generated verification seam stays free of auto-submit markers" do
@@ -61,7 +64,7 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
   defp assert_no_auto_submit!(contents) do
     refute contents =~ "window.onload"
     refute contents =~ "phx-mounted"
-    refute contents =~ ~s(type="hidden")
+    refute contents =~ ~s(type="hidden" name="auto_submit")
     refute contents =~ "submit()"
   end
 end

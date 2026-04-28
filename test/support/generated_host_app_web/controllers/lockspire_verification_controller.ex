@@ -1,4 +1,4 @@
-defmodule <%= @verification_controller_module %> do
+defmodule GeneratedHostAppWeb.LockspireVerificationController do
   use Phoenix.Controller, formats: [:html]
 
   alias Lockspire.Host.Claims

@@ -31,7 +31,10 @@ defmodule Lockspire.Protocol.DeviceVerification do
     normalized_user_code = DeviceAuthorization.canonicalize_user_code(user_code)
     user_code_hash = DeviceAuthorization.hash_user_code(normalized_user_code)
 
-    with {:ok, authorization} <- device_authorization_store(opts).fetch_device_authorization_by_user_code_hash(user_code_hash) do
+    with {:ok, authorization} <-
+           device_authorization_store(opts).fetch_device_authorization_by_user_code_hash(
+             user_code_hash
+           ) do
       classify_lookup_result(authorization, normalized_user_code, opts)
     end
   end
@@ -69,7 +72,7 @@ defmodule Lockspire.Protocol.DeviceVerification do
 
   defp classify_lookup_result(nil, _normalized_user_code, _opts), do: {:error, :not_found}
 
-  defp classify_lookup_result(%DeviceAuthorization{} = authorization, _normalized_user_code, opts) do
+  defp classify_lookup_result(%DeviceAuthorization{} = authorization, normalized_user_code, opts) do
     cond do
       authorization.status != :pending ->
         {:error, :not_active}
@@ -78,16 +81,20 @@ defmodule Lockspire.Protocol.DeviceVerification do
         {:error, :expired}
 
       true ->
-        build_pending_authorization(authorization, opts)
+        build_pending_authorization(authorization, normalized_user_code, opts)
     end
   end
 
-  defp build_pending_authorization(%DeviceAuthorization{} = authorization, opts) do
+  defp build_pending_authorization(
+         %DeviceAuthorization{} = authorization,
+         normalized_user_code,
+         opts
+       ) do
     with {:ok, client_name} <- client_name(authorization.client_id, opts) do
       {:ok,
        %PendingAuthorization{
          verification_handle: authorization.verification_handle,
-         user_code: user_code_for_display(authorization),
+         user_code: normalized_user_code,
          client_id: authorization.client_id,
          client_name: client_name,
          scopes: List.wrap(authorization.scopes)
@@ -108,18 +115,6 @@ defmodule Lockspire.Protocol.DeviceVerification do
     do: {:ok, subject_id}
 
   defp actor_subject_id(_actor_context), do: {:error, :invalid_actor_context}
-
-  defp user_code_for_display(%DeviceAuthorization{user_code: user_code})
-       when is_binary(user_code) and user_code != "" do
-    DeviceAuthorization.canonicalize_user_code(user_code)
-  end
-
-  defp user_code_for_display(%DeviceAuthorization{user_code_hash: _hash} = authorization) do
-    authorization
-    |> Map.get(:user_code)
-    |> to_string()
-    |> DeviceAuthorization.canonicalize_user_code()
-  end
 
   defp expired?(%DeviceAuthorization{expires_at: expires_at}, opts) do
     DateTime.compare(expires_at, now(opts)) != :gt
