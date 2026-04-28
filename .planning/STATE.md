@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: milestone
-status: executing
-stopped_at: Completed 32-02-PLAN.md
-last_updated: "2026-04-28T12:20:22.753Z"
+status: verifying
+stopped_at: Completed 32-03-PLAN.md
+last_updated: "2026-04-28T12:31:27.609Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md`
 
 Phase: 32 (polling-token-issuance) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-28
 
 ## Performance Metrics
@@ -55,6 +55,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Device polling now enters TokenExchange as a first-class device_code grant that reuses the existing client-auth and token issuance pipeline.
 - Approved device authorizations can issue access tokens, refresh tokens, and optional id_tokens through shared token success helpers, with replay evidence appended as durable device_authorization audit rows.
 - Public device polling errors collapse to RFC 8628 and OAuth names while preserving private reason codes such as device_authorization_consumed and device_authorization_client_mismatch.
+- Kept /token and /device/code controllers thin by injecting missing repository and config seams instead of duplicating device-flow logic in web adapters.
+- Published device grant and device_authorization_endpoint metadata only because the router already mounts both surfaces and the repo now proves them end-to-end.
+- Derived the generated-host verification URI from the issuer origin and the canonical /verify seam so device clients follow the documented host-owned path.
 
 ### Blockers/Concerns
 
@@ -66,7 +69,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 32-02-PLAN.md
+**Stopped at:** Completed 32-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
