@@ -99,6 +99,29 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert client.provenance == :self_registered
     end
 
+    test "persists dpop_policy: :dpop when dpop_bound_access_tokens is true" do
+      metadata = Map.put(DcrFixtures.valid_metadata(), "dpop_bound_access_tokens", true)
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.dpop_policy == :dpop
+    end
+
+    test "persists explicit dpop_policy: :bearer when dpop_bound_access_tokens is false" do
+      metadata = Map.put(DcrFixtures.valid_metadata(), "dpop_bound_access_tokens", false)
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.dpop_policy == :bearer
+    end
+
+    test "persists explicit dpop_policy: :bearer when dpop_bound_access_tokens is omitted" do
+      request = DcrFixtures.register_request()
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.dpop_policy == :bearer
+    end
+
     test "persisted Domain.Client has initial_access_token_id matching the redeemed IAT's id when iat is non-nil" do
       iat_plaintext =
         "iat_test_#{:crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)}"

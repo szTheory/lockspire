@@ -10,6 +10,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     client_id: "test-client-123",
     inserted_at: @now,
     client_secret_expires_at: nil,
+    dpop_policy: :dpop,
     metadata: %{"client_name" => "Test App", "client_uri" => "https://example.com"}
   }
 
@@ -28,6 +29,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result.client_secret_expires_at == 0
     assert result["client_name"] == "Test App"
     assert result["client_uri"] == "https://example.com"
+    assert result.dpop_bound_access_tokens == true
     assert String.ends_with?(result.registration_client_uri, "/register/test-client-123")
   end
 
@@ -39,6 +41,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     refute Map.has_key?(result, :registration_access_token)
     assert result.client_id_issued_at == DateTime.to_unix(@now)
     assert result.client_secret_expires_at == 0
+    assert result.dpop_bound_access_tokens == true
   end
 
   test "update_response/1 includes RAT but omits client_secret" do
@@ -53,6 +56,13 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     refute Map.has_key?(result, :client_secret)
     assert result.registration_access_token == "rat-456"
     assert result.client_id_issued_at == DateTime.to_unix(@now)
+    assert result.dpop_bound_access_tokens == true
+  end
+
+  test "responses expose dpop_bound_access_tokens as false for bearer clients" do
+    bearer_client = %Client{@client | dpop_policy: :bearer}
+
+    assert RegistrationJSON.read_response(bearer_client).dpop_bound_access_tokens == false
   end
 
   test "error_response/1 maps code to error string" do

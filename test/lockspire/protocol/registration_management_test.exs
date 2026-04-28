@@ -144,6 +144,44 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
       assert {:error, :invalid_token} = RegistrationManagement.update("wrong_id", request)
     end
+
+    test "updates self-registered client dpop_policy to :dpop from dpop_bound_access_tokens", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      new_metadata = Map.put(DcrFixtures.valid_metadata(), "dpop_bound_access_tokens", true)
+
+      request = %{
+        metadata: new_metadata,
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.dpop_policy == :dpop
+    end
+
+    test "updates self-registered client dpop_policy to :bearer when dpop_bound_access_tokens is false", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      new_metadata = Map.put(DcrFixtures.valid_metadata(), "dpop_bound_access_tokens", false)
+
+      request = %{
+        metadata: new_metadata,
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.dpop_policy == :bearer
+    end
   end
 
   describe "delete/2" do
