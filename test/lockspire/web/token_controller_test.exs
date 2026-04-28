@@ -12,7 +12,9 @@ defmodule Lockspire.Web.TokenControllerTest do
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
+  alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
@@ -168,6 +170,92 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     assert Map.has_key?(body, "id_token")
     assert body["token_type"] == "Bearer"
+  end
+
+  test "POST /token returns token_type DPoP for DPoP-mode clients" do
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client-public-dpop",
+        client_secret_hash: nil,
+        client_type: :public,
+        name: "Public DPoP App",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "profile"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :none,
+        pkce_required: true,
+        dpop_policy: :dpop,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    now = DateTime.utc_now()
+    interaction_id = "interaction-public-dpop"
+
+    {:ok, _interaction} =
+      Repository.put_interaction(%Interaction{
+        interaction_id: interaction_id,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        scopes_requested: ["email", "profile"],
+        redirect_uri: "https://client.example.com/callback",
+        return_to: "/authorize",
+        state: "state-public-dpop",
+        code_challenge: code_challenge("public-dpop-verifier"),
+        code_challenge_method: :S256,
+        status: :completed,
+        completed_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
+
+    {:ok, _code} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("public-dpop-code"),
+        token_type: :authorization_code,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        interaction_id: interaction_id,
+        redirect_uri: "https://client.example.com/callback",
+        scopes: ["email", "profile"],
+        code_challenge: code_challenge("public-dpop-verifier"),
+        code_challenge_method: :S256,
+        issued_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
+
+    %{jwt: proof_jwt, validated: validated_proof} = dpop_proof_fixture()
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "client_id" => client.client_id,
+        "code" => "public-dpop-code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => "public-dpop-verifier"
+      })
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("dpop", proof_jwt)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["token_type"] == "DPoP"
+
+    persisted_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token(body["access_token"])
+        )
+      )
+
+    assert persisted_token.cnf["jkt"] == validated_proof.jkt
   end
 
   test "POST /token returns oauth-safe error json for unsupported grant types", %{
@@ -539,6 +627,31 @@ defmodule Lockspire.Web.TokenControllerTest do
       activated_at: DateTime.utc_now(),
       metadata: %{}
     })
+  end
+
+  defp dpop_proof_fixture do
+    keys = JarTestHelpers.generate_ec_keys()
+    now = DateTime.utc_now()
+    target_uri = "https://example.test/lockspire/token"
+
+    proof =
+      JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
+        "htm" => "POST",
+        "htu" => target_uri,
+        "iat" => DateTime.to_unix(now),
+        "jti" => Ecto.UUID.generate()
+      })
+
+    assert {:ok, %DPoP{} = validated} =
+             DPoP.validate_proof(proof,
+               method: "POST",
+               target_uri: target_uri,
+               now: now,
+               max_age: 300,
+               clock_skew: 30
+             )
+
+    %{jwt: proof, validated: validated}
   end
 
   defp client_secret_hash(secret) do

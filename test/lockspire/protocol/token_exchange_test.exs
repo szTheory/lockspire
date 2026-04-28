@@ -120,6 +120,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     assert persisted_token.account_id == "subject-123"
     assert persisted_token.token_hash == TokenFormatter.hash_token(success.access_token)
+    assert persisted_token.cnf == nil
     refute persisted_token.token_hash == success.access_token
 
     event_names = recorded_event_names(events)
@@ -189,7 +190,10 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "rejects authorization-code exchange with invalid_dpop_proof when DPoP is required but missing" do
     secret = "missing-dpop-secret"
-    {:ok, client} = create_client("client-dpop-missing", :client_secret_basic, secret)
+    {:ok, client} =
+      create_client("client-dpop-missing", :client_secret_basic, secret, ["authorization_code"], %{
+        dpop_policy: :dpop
+      })
 
     _code =
       create_authorization_code(client,
@@ -203,20 +207,77 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-missing",
                  "redirect_uri" => "https://client.example.com/callback",
-                 "code_verifier" => "verifier-dpop-missing"
+               "code_verifier" => "verifier-dpop-missing"
                },
-               authorization: basic_auth(client.client_id, secret),
-               dpop_required: true,
-               dpop_replay_store: Repository
+               authorization: basic_auth(client.client_id, secret)
              )
 
     assert error.error == "invalid_dpop_proof"
     assert error.reason_code == :missing_dpop_proof
   end
 
+  test "returns token_type DPoP and persists matching cnf on access and refresh tokens" do
+    secret = "dpop-issue-secret"
+
+    {:ok, client} =
+      create_client(
+        "client-dpop-issue",
+        :client_secret_basic,
+        secret,
+        ["authorization_code", "refresh_token"],
+        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+      )
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-dpop-issue",
+        code_verifier: "verifier-dpop-issue",
+        scopes: ["email", "profile", "offline_access"]
+      )
+
+    %{jwt: proof_jwt, validated: validated_proof} = dpop_proof_fixture()
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-dpop-issue",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-dpop-issue"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_jwt,
+               dpop_replay_store: Repository,
+               method: "POST",
+               access_token_generator: fn -> "issued-dpop-access-token" end,
+               refresh_token_generator: fn -> "issued-dpop-refresh-token" end
+             )
+
+    assert success.token_type == "DPoP"
+
+    assert {:ok, %Token{} = persisted_refresh_token} =
+             Repository.fetch_refresh_token(TokenFormatter.hash_token("issued-dpop-refresh-token"))
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("issued-dpop-access-token")
+        )
+      )
+
+    assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
+    assert persisted_refresh_token.cnf["jkt"] == validated_proof.jkt
+  end
+
   test "accepts the first validated proof and rejects a replayed proof as invalid_dpop_proof" do
     secret = "replayed-dpop-secret"
-    {:ok, client} = create_client("client-dpop-replay", :client_secret_basic, secret)
+    {:ok, client} =
+      create_client("client-dpop-replay", :client_secret_basic, secret, ["authorization_code"], %{
+        dpop_policy: :dpop
+      })
 
     _first_code =
       create_authorization_code(client,
@@ -230,7 +291,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         code_verifier: "verifier-dpop-second"
       )
 
-    validated_proof = validated_dpop_proof()
+    %{jwt: proof_jwt} = dpop_proof_fixture()
 
     assert {:ok, success} =
              exchange(
@@ -238,15 +299,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-first",
                  "redirect_uri" => "https://client.example.com/callback",
-                 "code_verifier" => "verifier-dpop-first"
+               "code_verifier" => "verifier-dpop-first"
                },
                authorization: basic_auth(client.client_id, secret),
-               dpop_required: true,
-               dpop_proof: validated_proof,
-               dpop_replay_store: Repository
+               dpop: proof_jwt,
+               dpop_replay_store: Repository,
+               method: "POST"
              )
 
-    assert success.token_type == "Bearer"
+    assert success.token_type == "DPoP"
 
     assert {:error, error} =
              exchange(
@@ -254,12 +315,12 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-second",
                  "redirect_uri" => "https://client.example.com/callback",
-                 "code_verifier" => "verifier-dpop-second"
+               "code_verifier" => "verifier-dpop-second"
                },
                authorization: basic_auth(client.client_id, secret),
-               dpop_required: true,
-               dpop_proof: validated_proof,
-               dpop_replay_store: Repository
+               dpop: proof_jwt,
+               dpop_replay_store: Repository,
+               method: "POST"
              )
 
     assert error.error == "invalid_dpop_proof"
@@ -300,6 +361,19 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert {:ok, %Token{} = persisted_refresh_token} =
              Repository.fetch_refresh_token(TokenFormatter.hash_token("issued-refresh-token"))
 
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("issued-access-token")
+        )
+      )
+
+    assert success.token_type == "Bearer"
+    assert persisted_access_token.cnf == nil
+    assert persisted_refresh_token.cnf == nil
     assert persisted_refresh_token.family_id == TokenFormatter.hash_token("issued-refresh-token")
     assert persisted_refresh_token.scopes == ["email", "offline_access"]
   end
@@ -1007,13 +1081,14 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     TokenExchange.exchange_authorization_code(%{
       params: params,
       authorization: Keyword.get(opts, :authorization),
+      dpop: Keyword.get(opts, :dpop),
+      method: Keyword.get(opts, :method, "POST"),
       opts: [
         client_store: Repository,
         token_store: token_store,
         interaction_store: Repository,
         key_store: Repository,
-        dpop_required: Keyword.get(opts, :dpop_required, false),
-        dpop_proof: Keyword.get(opts, :dpop_proof),
+        server_policy_store: Keyword.get(opts, :server_policy_store, Repository),
         dpop_replay_store: Keyword.get(opts, :dpop_replay_store),
         now: Keyword.get(opts, :now, fn -> DateTime.utc_now() end),
         access_token_generator:
@@ -1042,6 +1117,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       allowed_response_types: Map.get(attrs, :allowed_response_types, ["code"]),
       token_endpoint_auth_method: auth_method,
       pkce_required: Map.get(attrs, :pkce_required, true),
+      dpop_policy: Map.get(attrs, :dpop_policy, :inherit),
       subject_type: Map.get(attrs, :subject_type, :public),
       created_at: DateTime.utc_now(),
       metadata: %{}
@@ -1107,7 +1183,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     })
   end
 
-  defp validated_dpop_proof do
+  defp dpop_proof_fixture do
     keys = JarTestHelpers.generate_ec_keys()
     now = DateTime.utc_now()
     target_uri = "https://example.test/lockspire/token"
@@ -1129,7 +1205,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                clock_skew: 30
              )
 
-    validated
+    %{jwt: proof, validated: validated}
   end
 
   defp create_device_authorization(client, opts) do
