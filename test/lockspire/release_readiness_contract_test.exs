@@ -26,6 +26,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
+  @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @roadmap_path Path.expand("../../.planning/milestones/v1.3-ROADMAP.md", __DIR__)
   @requirements_path Path.expand("../../.planning/milestones/v1.3-REQUIREMENTS.md", __DIR__)
@@ -266,6 +267,30 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert ci_workflow =~ "run: mix docs.verify"
     assert release_workflow =~ "environment: hex-publish"
+  end
+
+  test "device-flow host guide keeps the verification seam abuse-control contract explicit" do
+    guide = File.read!(@device_flow_host_guide_path)
+
+    assert guide =~ "## Host-owned verification seam"
+    assert guide =~ "## Anti-phishing rules for `verification_uri_complete`"
+    assert guide =~ "verification_uri_complete is prefill-only"
+    assert guide =~ "re-display the code"
+    assert guide =~ "never approve on GET"
+    assert guide =~ "## Rate limiting /verify"
+    assert guide =~ "GET /verify"
+    assert guide =~ "POST /verify"
+    assert guide =~ "trusted IP"
+    assert guide =~ "strip separators and whitespace + uppercase"
+    assert guide =~ "normalized_user_code"
+    assert guide =~ "{normalized_user_code, ip}"
+    assert guide =~ "Retry-After"
+    assert guide =~ "short `Retry-After`"
+    assert guide =~ "stepped or exponential backoff"
+    assert guide =~ "fingerprints instead of raw codes"
+    assert guide =~ "Lockspire does not provide built-in rate limiting"
+    assert guide =~ "Hammer-style"
+    assert guide =~ "PlugAttack-style"
   end
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
