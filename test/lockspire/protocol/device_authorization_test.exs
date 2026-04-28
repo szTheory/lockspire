@@ -34,6 +34,8 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
       assert is_binary(success.user_code)
       assert String.length(success.user_code) == 8
       assert success.verification_uri == "https://example.com/device"
+      assert success.verification_uri_complete ==
+               "https://example.com/device?user_code=#{success.user_code}"
       assert success.expires_in == 300
     end
 

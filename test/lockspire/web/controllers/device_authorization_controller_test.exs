@@ -61,6 +61,9 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
     assert Map.has_key?(body, "device_code")
     assert Map.has_key?(body, "user_code")
     assert Map.has_key?(body, "verification_uri")
+    assert Map.has_key?(body, "verification_uri_complete")
+    assert body["verification_uri_complete"] ==
+             "#{body["verification_uri"]}?user_code=#{body["user_code"]}"
     assert Map.has_key?(body, "expires_in")
   end
 
