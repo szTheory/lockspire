@@ -310,11 +310,16 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "docs/device-flow-host-guide.md"
     assert onboarding =~ "rate limiting"
     assert onboarding =~ "verification"
+    assert onboarding =~ "device polling"
+    assert onboarding =~ "`slow_down`"
+    assert onboarding =~ "host-owned `/verify` seam"
 
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
-    assert supported_surface =~ "polling"
-    assert supported_surface =~ "token issuance"
+    assert supported_surface =~ "Device authorization flow"
+    assert supported_surface =~ "device polling"
+    assert supported_surface =~ "device authorization endpoint"
+    assert supported_surface =~ "token redemption"
     assert supported_surface =~ "not a Lockspire-owned browser UI"
   end
 
@@ -382,8 +387,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "global"
     assert supported_surface =~ "client"
 
-    # Explicit exclusions preserved
-    for doc <- [readme, supported_surface, security] do
+    # Explicit exclusions preserved where the repo has not shipped support.
+    for doc <- [readme, security] do
       doc_down = String.downcase(doc)
       assert doc_down =~ "request-object-by-value"
       assert doc_down =~ "generic external `request_uri`"
@@ -391,5 +396,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       assert doc_down =~ "device flow"
       assert doc_down =~ "hosted auth"
     end
+
+    supported_surface_down = String.downcase(supported_surface)
+    assert supported_surface_down =~ "device flow"
+    assert supported_surface_down =~ "hosted auth"
+    refute supported_surface_down =~ "device flow polling and token issuance"
   end
 end

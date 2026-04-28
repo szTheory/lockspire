@@ -49,7 +49,12 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["scopes_supported"] == ["openid", "profile", "email"]
     assert body["response_types_supported"] == ["code"]
     assert body["response_modes_supported"] == ["query"]
-    assert body["grant_types_supported"] == ["authorization_code", "refresh_token"]
+    assert body["grant_types_supported"] == [
+             "authorization_code",
+             "refresh_token",
+             "urn:ietf:params:oauth:grant-type:device_code"
+           ]
+    assert body["device_authorization_endpoint"] == "https://example.test/lockspire/device/code"
 
     assert body["token_endpoint_auth_methods_supported"] == [
              "none",
@@ -62,7 +67,6 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["id_token_signing_alg_values_supported"] == ["RS256"]
 
     refute Map.has_key?(body, "registration_endpoint")
-    refute Map.has_key?(body, "device_authorization_endpoint")
     refute Map.has_key?(body, "end_session_endpoint")
     refute Map.has_key?(body, "request_parameter_supported")
     refute Map.has_key?(body, "request_uri_parameter_supported")

@@ -45,6 +45,19 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert Discovery.published_token_endpoint_auth_methods_supported() == @static_methods
   end
 
+  test "openid_configuration/0 publishes the shipped device grant and device authorization endpoint truth" do
+    config = Discovery.openid_configuration()
+
+    assert config["grant_types_supported"] == [
+             "authorization_code",
+             "refresh_token",
+             "urn:ietf:params:oauth:grant-type:device_code"
+           ]
+
+    assert config["device_authorization_endpoint"] ==
+             "https://example.test/lockspire/device/code"
+  end
+
   describe "truthful discovery for registration_endpoint" do
     test "when registration_policy is :disabled, endpoint is hidden and router returns 404" do
       Repository.update_server_policy(fn policy -> %{policy | registration_policy: :disabled} end)
