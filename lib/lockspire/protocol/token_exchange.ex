@@ -134,10 +134,11 @@ defmodule Lockspire.Protocol.TokenExchange do
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
+         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %DeviceAuthorizationState{} = device_authorization} <-
            fetch_device_authorization_for_exchange(params, client, request),
          {:ok, %Success{} = success} <-
-           redeem_device_authorization(client, device_authorization, request) do
+           redeem_device_authorization(client, device_authorization, issuance_context, request) do
       {:ok, success}
     else
       {:error, %Error{} = error} ->
@@ -453,10 +454,18 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp redeem_device_authorization(
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization,
+         issuance_context,
          request
        ) do
     with {:ok, %Token{} = device_grant} <- build_device_grant(device_authorization),
-         %Success{} = success <- redeem_device_grant(client, device_grant, device_authorization, request) do
+         %Success{} = success <-
+           redeem_device_grant(
+             client,
+             device_grant,
+             device_authorization,
+             issuance_context,
+             request
+           ) do
       emit_success(client, device_authorization, success)
       {:ok, success}
     else
@@ -497,11 +506,11 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Client{} = client,
          %Token{} = device_grant,
          %DeviceAuthorizationState{} = device_authorization,
+         issuance_context,
          request
        ) do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
-    issuance_context = bearer_issuance_context()
 
     {access_token, raw_access_token} =
       build_access_token(
@@ -1203,10 +1212,6 @@ defmodule Lockspire.Protocol.TokenExchange do
       nil -> []
       generator -> [token_generator: generator]
     end
-  end
-
-  defp bearer_issuance_context do
-    %{mode: :bearer, proof: nil, jkt: nil, cnf: nil, token_type: "Bearer"}
   end
 
   defp request_options(request), do: Map.get(request, :opts, [])
