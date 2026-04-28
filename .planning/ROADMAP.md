@@ -26,7 +26,11 @@
   1. Host app can resolve pending device authorizations using the low-entropy user code via provided context functions/seams.
   2. The integration explicitly requires user action to complete the flow, mitigating remote phishing.
   3. Documentation clearly guides the host app on implementing rate-limiting for the verification endpoints.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] `31-01-PLAN.md` — Extend device-authorization lifecycle state, opaque verification-handle transitions, and prefill response fields.
+- [ ] `31-02-PLAN.md` — Generate the host-owned `/verify` router and controller starter seam with explicit anti-phishing behavior.
+- [ ] `31-03-PLAN.md` — Publish the device-flow host guide and wire onboarding/supported-surface docs to the Phase 31 seam.
 **UI hint**: yes
 
 ### Phase 32: Polling & Token Issuance
