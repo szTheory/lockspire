@@ -256,6 +256,42 @@ defmodule Lockspire.Admin.ClientsTest do
              })
   end
 
+  test "registered clients default to inherited DPoP policy and updates round-trip explicit modes" do
+    assert {:ok, %Client{} = fetched_client} = Repository.fetch_client_by_id("admin-client")
+    assert fetched_client.dpop_policy == :inherit
+
+    assert {:ok, %Client{} = dpop_client} =
+             Clients.update_client("admin-client", %{
+               dpop_policy: "dpop"
+             })
+
+    assert dpop_client.dpop_policy == :dpop
+
+    assert {:ok, %Client{} = stored_dpop_client} = Repository.fetch_client_by_id("admin-client")
+    assert stored_dpop_client.dpop_policy == :dpop
+
+    assert {:ok, %Client{} = bearer_client} =
+             Clients.update_client("admin-client", %{
+               dpop_policy: :bearer
+             })
+
+    assert bearer_client.dpop_policy == :bearer
+
+    assert {:ok, %Client{} = inherited_client} =
+             Clients.update_client("admin-client", %{
+               dpop_policy: :inherit
+             })
+
+    assert inherited_client.dpop_policy == :inherit
+  end
+
+  test "update_client/2 accepts only inherit, bearer, and dpop for dpop_policy" do
+    assert {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: "strict"}]} =
+             Clients.update_client("admin-client", %{
+               dpop_policy: "strict"
+             })
+  end
+
   test "rotate_client_secret/2 returns a plaintext secret once, emits telemetry, and appends operator audit" do
     assert {:ok, %{client: %Client{} = client, client_secret: secret}} =
              Clients.rotate_client_secret("admin-client", %{

@@ -22,6 +22,7 @@ defmodule Lockspire.Admin.ServerPolicyTest do
   test "get_server_policy/0 returns an optional default when no durable row exists" do
     assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.get_server_policy()
     assert policy.par_policy == :optional
+    assert policy.dpop_policy == :bearer
   end
 
   test "put_server_policy/1 persists optional and required modes across fresh fetches" do
@@ -48,6 +49,27 @@ defmodule Lockspire.Admin.ServerPolicyTest do
   test "put_server_policy/1 rejects modes outside optional and required" do
     assert {:error, [%{field: :par_policy, reason: :invalid_par_policy, detail: :inherit}]} =
              ServerPolicy.put_server_policy(:inherit)
+  end
+
+  test "put_dpop_policy/1 persists bearer and dpop modes across fresh fetches" do
+    assert {:ok, %DomainServerPolicy{} = dpop_policy} = ServerPolicy.put_dpop_policy(:dpop)
+    assert dpop_policy.dpop_policy == :dpop
+
+    assert {:ok, %DomainServerPolicy{} = admin_policy} = ServerPolicy.get_server_policy()
+    assert admin_policy.dpop_policy == :dpop
+
+    assert {:ok, %DomainServerPolicy{} = stored_policy} = Repository.get_server_policy()
+    assert stored_policy.dpop_policy == :dpop
+
+    assert {:ok, %DomainServerPolicy{} = bearer_policy} =
+             ServerPolicy.put_dpop_policy("bearer")
+
+    assert bearer_policy.dpop_policy == :bearer
+  end
+
+  test "put_dpop_policy/1 rejects modes outside bearer and dpop" do
+    assert {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: :inherit}]} =
+             ServerPolicy.put_dpop_policy(:inherit)
   end
 
   test "get_dcr_policy/0 returns disabled defaults when no durable row exists" do
