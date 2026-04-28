@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 30-03-PLAN.md
-last_updated: "2026-04-27T21:22:15.877Z"
-last_activity: 2026-04-27
+status: executing
+stopped_at: Completed 32-01-PLAN.md
+last_updated: "2026-04-28T12:04:05.256Z"
+last_activity: 2026-04-28
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.6 Device Authorization Grant (RFC 8628)
+**Current focus:** Phase 32 — polling-token-issuance
 
 ## Current Position
 
-Phase: 30 (Core Device Authorization Endpoint & Storage)
-Plan: 30-01-PLAN.md
-Status: in_progress
-Last activity: 2026-04-27
+Phase: 32 (polling-token-issuance) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-28
 
 ## Performance Metrics
 
 - Phases completed: 0/3 (v1.6)
-- Plans completed: 1/3 (v1.6)
+- Plans completed: 2/3 (v1.6)
 
 ## Accumulated Context
 
@@ -49,6 +49,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Focus on host-owned verification UI seam designed to prevent remote phishing (no auto-submit on `verification_uri_complete`).
 - Storage of pending device codes uses SHA256 hashing to prevent exposure of bearer tokens on DB leak.
 - A strict TTL of 300 seconds (5 minutes) is enforced at the domain level and supported by the database.
+- Device authorizations now carry both effective poll interval seconds and next_poll_allowed_at so polling truth stays durable across nodes and deploys.
+- Too-early polls widen the next window from the current allowed timestamp, not from wall-clock now, to preserve sticky RFC 8628 slow_down behavior.
+- Approved device authorizations remain poll-readable as approved_ready and are consumed only through a separate row-locked callback.
 
 ### Blockers/Concerns
 
@@ -56,10 +59,12 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Continue execution of Phase 30 plans.
+**Next action:** Continue execution of Phase 32 plans.
 
 **Resume file:** None
 
-**Stopped at:** Completed 30-03-PLAN.md
+**Stopped at:** Completed 32-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
+
+**Planned Phase:** 32 (Polling & Token Issuance) — 3 plans — 2026-04-28T09:32:26.215Z

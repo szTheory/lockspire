@@ -3,7 +3,7 @@
 ## Phases
 
 - [ ] **Phase 30: Core Device Authorization Endpoint & Storage** - The provider can receive device authorization requests, generate codes, and store them securely with TTLs.
-- [ ] **Phase 31: Host-Owned Verification UI Seam** - The host application has the integration seams and documentation needed to build a secure user verification UI.
+- [x] **Phase 31: Host-Owned Verification UI Seam** - The host application has the integration seams and documentation needed to build a secure user verification UI. (completed 2026-04-28)
 - [ ] **Phase 32: Polling & Token Issuance** - Devices can poll the token endpoint and receive tokens once the user authorizes the request.
 
 ## Phase Details
@@ -26,11 +26,12 @@
   1. Host app can resolve pending device authorizations using the low-entropy user code via provided context functions/seams.
   2. The integration explicitly requires user action to complete the flow, mitigating remote phishing.
   3. Documentation clearly guides the host app on implementing rate-limiting for the verification endpoints.
-**Plans**: 3 plans
+**Plans**: 4 plans
 Plans:
-- [ ] `31-01-PLAN.md` — Extend device-authorization lifecycle state, opaque verification-handle transitions, and prefill response fields.
+- [ ] `31-01-PLAN.md` — Extend device-authorization lifecycle state and race-safe repository transitions for verification.
 - [ ] `31-02-PLAN.md` — Generate the host-owned `/verify` router and controller starter seam with explicit anti-phishing behavior.
 - [ ] `31-03-PLAN.md` — Publish the device-flow host guide and wire onboarding/supported-surface docs to the Phase 31 seam.
+- [ ] `31-04-PLAN.md` — Add the narrow verification protocol API, prefill response field, and executable response-surface proof.
 **UI hint**: yes
 
 ### Phase 32: Polling & Token Issuance
@@ -41,15 +42,19 @@ Plans:
   1. Devices receive `authorization_pending` when polling before user action.
   2. Devices receive `slow_down` if polling too frequently, respecting enforced intervals.
   3. Devices successfully receive access and refresh tokens once the host app marks the request as authorized.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] `32-01-PLAN.md` — Extend device-authorization storage with durable poll-window state, sticky `slow_down`, and single-winner consume semantics. (completed 2026-04-28)
+- [ ] `32-02-PLAN.md` — Add the device grant branch to `TokenExchange` and reuse shared token issuance for RFC-shaped polling outcomes.
+- [ ] `32-03-PLAN.md` — Prove the HTTP/discovery/docs contract and add end-to-end device-flow token redemption coverage.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Core Device Authorization Endpoint & Storage | 0/3 | Not started | - |
-| 31. Host-Owned Verification UI Seam | 0/3 | Not started | - |
-| 32. Polling & Token Issuance | 0/3 | Not started | - |
+| 31. Host-Owned Verification UI Seam | 4/4 | Complete   | 2026-04-28 |
+| 32. Polling & Token Issuance | 1/3 | In Progress | - |
 
 ## Shipped Milestones
 
