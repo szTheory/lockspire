@@ -225,6 +225,61 @@ defmodule Lockspire.Admin.ClientsTest do
     assert Enum.any?(errors, &(&1.field == :redirect_uris and &1.reason == :invalid_redirect_uri))
   end
 
+  test "update_client/2 validates and persists post_logout_redirect_uris" do
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               post_logout_redirect_uris: ["https://admin.example.com/logout"]
+             })
+
+    assert client.post_logout_redirect_uris == ["https://admin.example.com/logout"]
+
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               post_logout_redirect_uris: ["https://*.example.com/logout"]
+             })
+
+    assert Enum.any?(
+             errors,
+             &(&1.field == :post_logout_redirect_uris and &1.reason == :invalid_redirect_uri)
+           )
+  end
+
+  test "repository round-trips typed logout propagation fields" do
+    client_id = "logout-client-#{System.unique_integer([:positive])}"
+
+    assert {:ok, %Client{} = created} =
+             Repository.register_client(%Client{
+               client_id: client_id,
+               client_secret_hash: "sha256:logout-salt:logout-hash",
+               client_type: :confidential,
+               name: "Logout Client",
+               redirect_uris: ["https://logout.example.com/callback"],
+               allowed_scopes: ["email"],
+               allowed_grant_types: ["authorization_code", "refresh_token"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               backchannel_logout_uri: "https://logout.example.com/backchannel",
+               backchannel_logout_session_required: true,
+               frontchannel_logout_uri: "https://logout.example.com/frontchannel",
+               frontchannel_logout_session_required: true,
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    assert created.backchannel_logout_uri == "https://logout.example.com/backchannel"
+    assert created.backchannel_logout_session_required == true
+    assert created.frontchannel_logout_uri == "https://logout.example.com/frontchannel"
+    assert created.frontchannel_logout_session_required == true
+
+    assert {:ok, %Client{} = fetched} = Repository.fetch_client_by_id(client_id)
+    assert fetched.backchannel_logout_uri == "https://logout.example.com/backchannel"
+    assert fetched.backchannel_logout_session_required == true
+    assert fetched.frontchannel_logout_uri == "https://logout.example.com/frontchannel"
+    assert fetched.frontchannel_logout_session_required == true
+  end
+
   test "update_client/2 accepts only inherit, required, and optional for par_policy" do
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{
