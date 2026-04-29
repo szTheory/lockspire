@@ -161,6 +161,16 @@ No new network endpoints, auth paths, or unplanned trust boundaries introduced. 
 - Plan 03 can extract sid from ID tokens via the "sid" claim for logout token matching
 - Plan 04's post_logout_redirect_uris client field does not depend on Plan 02 output
 
+## Self-Check: PASSED
+
+- FOUND: priv/repo/migrations/20260429000001_add_sid_to_lockspire_interactions.exs
+- FOUND: priv/repo/migrations/20260429000002_add_sid_to_lockspire_tokens.exs
+- FOUND: lib/lockspire/protocol/id_token.ex
+- FOUND: lib/lockspire/storage/ecto/repository.ex
+- FOUND: .planning/phases/38-session-tracking-rp-initiated-logout/38-02-SUMMARY.md
+- FOUND: commit bc60128 (Task 1)
+- FOUND: commit 7d779ad (Task 2)
+
 ---
 *Phase: 38-session-tracking-rp-initiated-logout*
 *Completed: 2026-04-29*
