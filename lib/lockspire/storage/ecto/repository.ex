@@ -12,6 +12,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Interaction
+  alias Lockspire.Domain.LogoutDelivery
+  alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
@@ -27,12 +29,15 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.InteractionRecord
+  alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
+  alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
   alias Lockspire.Storage.Ecto.ServerPolicyRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.InteractionStore
   alias Lockspire.Storage.KeyStore
+  alias Lockspire.Storage.LogoutStore
   alias Lockspire.Storage.PushedAuthorizationRequestStore
   alias Lockspire.Storage.ServerPolicyStore
   alias Lockspire.Storage.TokenStore
@@ -46,6 +51,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour DeviceAuthorizationStore
   @behaviour DpopReplayStore
   @behaviour ServerPolicyStore
+  @behaviour LogoutStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -619,6 +625,29 @@ defmodule Lockspire.Storage.Ecto.Repository do
     {:ok, count}
   rescue
     error -> {:error, error}
+  end
+
+  @impl LogoutStore
+  def persist_logout_propagation(%LogoutEvent{} = event) do
+    transact(fn ->
+      stored_event =
+        event
+        |> normalize_logout_event()
+        |> store_logout_event_record()
+        |> unwrap_or_rollback()
+
+      deliveries =
+        event.sid
+        |> snapshot_logout_clients()
+        |> build_logout_deliveries(stored_event.id)
+        |> Enum.map(fn delivery ->
+          delivery
+          |> store_logout_delivery_record()
+          |> unwrap_or_rollback()
+        end)
+
+      %{event: stored_event, deliveries: deliveries}
+    end)
   end
 
   @impl TokenStore
@@ -1641,6 +1670,88 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> TokenRecord.changeset(token)
     |> repo_insert(sensitive: true)
     |> map_one(&TokenRecord.to_domain/1)
+  end
+
+  defp store_logout_event_record(%LogoutEvent{} = event) do
+    %LogoutEventRecord{}
+    |> LogoutEventRecord.changeset(event)
+    |> repo_insert()
+    |> map_one(&LogoutEventRecord.to_domain/1)
+  end
+
+  defp store_logout_delivery_record(%LogoutDelivery{} = delivery) do
+    %LogoutDeliveryRecord{}
+    |> LogoutDeliveryRecord.changeset(delivery)
+    |> repo_insert()
+    |> map_one(&LogoutDeliveryRecord.to_domain/1)
+  end
+
+  defp normalize_logout_event(%LogoutEvent{} = event) do
+    %LogoutEvent{
+      event
+      | event_id: event.event_id || Ecto.UUID.generate(),
+        completed_at: event.completed_at || DateTime.utc_now()
+    }
+  end
+
+  defp snapshot_logout_clients(nil), do: []
+
+  defp snapshot_logout_clients(sid) when is_binary(sid) do
+    client_ids =
+      TokenRecord
+      |> where([token], token.sid == ^sid)
+      |> where([token], token.token_type in [:access_token, :refresh_token])
+      |> where([token], is_nil(token.revoked_at))
+      |> select([token], token.client_id)
+      |> distinct(true)
+      |> repo().all(repo_log_options(sensitive: true))
+
+    ClientRecord
+    |> where([client], client.client_id in ^client_ids)
+    |> where(
+      [client],
+      not is_nil(client.backchannel_logout_uri) or not is_nil(client.frontchannel_logout_uri)
+    )
+    |> order_by([client], asc: client.client_id)
+    |> repo().all()
+  end
+
+  defp build_logout_deliveries(client_records, logout_event_id) when is_list(client_records) do
+    Enum.flat_map(client_records, fn client ->
+      []
+      |> maybe_append_logout_delivery(
+        client.client_id,
+        logout_event_id,
+        :backchannel,
+        client.backchannel_logout_uri,
+        client.backchannel_logout_session_required
+      )
+      |> maybe_append_logout_delivery(
+        client.client_id,
+        logout_event_id,
+        :frontchannel,
+        client.frontchannel_logout_uri,
+        client.frontchannel_logout_session_required
+      )
+    end)
+  end
+
+  defp maybe_append_logout_delivery(deliveries, _client_id, _logout_event_id, _channel, nil, _session_required),
+    do: deliveries
+
+  defp maybe_append_logout_delivery(deliveries, client_id, logout_event_id, channel, target_uri, session_required)
+       when is_binary(target_uri) do
+    deliveries ++
+      [
+        %LogoutDelivery{
+          delivery_id: Ecto.UUID.generate(),
+          logout_event_id: logout_event_id,
+          client_id: client_id,
+          channel: channel,
+          target_uri: target_uri,
+          session_required: session_required
+        }
+      ]
   end
 
   defp repo_one(query, opts \\ []) do
