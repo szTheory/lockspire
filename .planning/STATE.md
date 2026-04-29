@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 38 plans created and verified
-last_updated: "2026-04-29T00:00:00.000Z"
-last_activity: 2026-04-29 -- Phase 38 planning complete (4 plans)
+stopped_at: Completed 39-01-PLAN.md
+last_updated: "2026-04-29T19:00:48.317Z"
+last_activity: 2026-04-29
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 4
-  percent: 50
+  completed_phases: 2
+  total_plans: 14
+  completed_plans: 9
+  percent: 64
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase --phase — 37
+**Current focus:** Phase 39 — automated-rp-logout-propagation
 
 ## Current Position
 
-Phase: --phase (37) — EXECUTING
-Plan: 1 of --name
-Status: Executing Phase --phase
-Last activity: 2026-04-29 -- Phase --phase execution started
+Phase: 39 (automated-rp-logout-propagation) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-04-29
 
 ## Performance Metrics
 
-- Phases completed: 0/4 (v1.8)
-- Plans completed: 3/4 (v1.8)
+- Phases completed: 2/4 (v1.8)
+- Plans completed: 8/8 (v1.8)
 
 ## Accumulated Context
 
@@ -74,19 +74,23 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Durable interaction rows now own max_age and auth_time request truth, and only explicit host auth_time input can advance auth_time on login resume.
 - prompt=none now returns redirect-safe OIDC errors from AuthorizationFlow before any host login or Lockspire consent UI can execute.
 - TokenExchange reads nonce and conditional auth_time from persisted interaction state while keeping OpenID device grants interaction-optional.
+- Keep Phase 39 Wave 0 logout propagation coverage compile-safe with skipped placeholders only.
+- Extend discovery_test.exs in place so Phase 38 live truth stays green while Phase 39 logout booleans remain explicitly skipped.
 
 ### Blockers/Concerns
 
-- None.
+- Remaining non-Phase-38 baseline failures are in signing key lifecycle tests:
+  - `Lockspire.Web.Live.Admin.KeysLiveTest`
+  - `Lockspire.Admin.KeysTest`
 
 ## Session Continuity
 
-**Next action:** Run `/gsd-execute-phase 38` to execute the four Phase 38 plans.
+**Next action:** Investigate and fix the remaining key-lifecycle baseline failures before starting Phase 39.
 
-**Resume file:** --resume-file
+**Resume file:** None
 
-**Stopped at:** Phase 38 plans created and verified (4 plans, 3 waves)
+**Stopped at:** Completed 39-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
-**Planned Phase:** Phase 38
+**Planned Phase:** Phase 39
