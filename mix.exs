@@ -40,6 +40,7 @@ defmodule Lockspire.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.6"},
       {:oban, "~> 2.21"},
+      {:req, "~> 0.5"},
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
       {:opentelemetry_api, "~> 1.5"},

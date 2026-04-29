@@ -8,8 +8,7 @@ defmodule Lockspire.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Library-owned services will be added here as protocol, storage, and telemetry
-      # components are introduced in later phases.
+      {Lockspire.Oban, Lockspire.Oban.runtime_config!()}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Lockspire.Supervisor)

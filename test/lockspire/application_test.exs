@@ -24,13 +24,12 @@ defmodule Lockspire.ApplicationTest do
 
   describe "start/2" do
     test "starts the Lockspire-owned Oban supervision child when valid queue config is present" do
-      assert is_pid(Process.whereis(Lockspire.Oban))
-
       assert Enum.any?(Supervisor.which_children(Lockspire.Supervisor), fn
-               {Lockspire.Oban, pid, :worker, [Lockspire.Oban]} when is_pid(pid) -> true
+               {Lockspire.Oban, pid, :supervisor, [Elixir.Oban]} when is_pid(pid) -> true
                _other -> false
              end)
 
+      assert Lockspire.Oban.config!().name == Lockspire.Oban
       assert Oban.config!().repo == Lockspire.TestRepo
     end
 
