@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Protocol Surface Completeness
 status: executing
-stopped_at: Completed 37-01-PLAN.md
-last_updated: "2026-04-29T00:52:20.904Z"
-last_activity: 2026-04-29 -- Completed 37-01 protocol strictness timestamp slice
+stopped_at: Completed 37-02-PLAN.md
+last_updated: "2026-04-29T00:59:26.851Z"
+last_activity: 2026-04-29 -- Completed 37-02 authorize request strictness slice
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 37 (protocol-strictness-conformance) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Executing Phase 37
-Last activity: 2026-04-29 -- Completed 37-01 protocol strictness timestamp slice
+Last activity: 2026-04-29 -- Completed 37-02 authorize request strictness slice
 
 ## Performance Metrics
 
@@ -69,6 +69,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Promote the Phase 32 generated-host DPoP device testing client to :confidential client type so it can introspect its own token in the same harness
 - Keep auth_time protocol-owned by validating it in IdToken.sign/1 and filtering it from host claim maps.
 - Preserve DPoP runtime strictness and lock it with regression coverage instead of changing proof validation behavior.
+- AuthorizationRequest now parses prompt=none, max_age, and auth_time claim demand centrally while preserving exact redirect-uri and nonce enforcement.
+- AuthorizeController remained tuple-driven; controller coverage expanded without moving request parsing out of the protocol layer.
 
 ### Blockers/Concerns
 
@@ -80,7 +82,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 37-01-PLAN.md
+**Stopped at:** Completed 37-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

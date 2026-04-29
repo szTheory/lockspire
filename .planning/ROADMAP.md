@@ -18,7 +18,12 @@
   2. Authorization endpoint rejects requests where `redirect_uri` does not exactly match the registered client URI.
   3. Requests with invalid `prompt=none`, `max_age`, or `nonce` are rejected with appropriate OIDC errors.
   4. An automated test pipeline successfully runs against the OIDF Conformance Test Suite without failures.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 37-01-PLAN.md - Reserve protocol-owned auth_time claim handling and integer-only ID token emission
+- [x] 37-02-PLAN.md - Tighten authorize request parsing for prompt=none, max_age, and auth_time demand
+- [ ] 37-03-PLAN.md - Persist durable auth_time state and enforce silent prompt=none outcomes
+- [ ] 37-04-PLAN.md - Add repo-native and hosted OIDF conformance proof lanes
 
 ### Phase 38: Session Tracking & RP-Initiated Logout
 **Goal**: The authorization server tracks interactions and supports standard RP-initiated logout workflows
@@ -57,7 +62,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 37. Protocol Strictness & Conformance | 0/0 | Not started | - |
+| 37. Protocol Strictness & Conformance | 2/4 | Executing | - |
 | 38. Session Tracking & RP-Initiated Logout | 0/0 | Not started | - |
 | 39. Automated RP Logout Propagation | 0/0 | Not started | - |
 | 40. JWE Support for Request Objects | 0/0 | Not started | - |
