@@ -305,7 +305,7 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
           |> Map.put("kid", kid)
           |> Map.put("alg", "RS256")
           |> Map.put("use", "sig"),
-        private_jwk_encrypted: :erlang.term_to_binary(Map.put(jwk, "kid", kid)),
+        private_jwk_encrypted: Jason.encode!(Map.put(jwk, "kid", kid)),
         status: :active,
         published_at: DateTime.utc_now(),
         activated_at: DateTime.utc_now(),
