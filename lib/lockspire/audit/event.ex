@@ -5,6 +5,35 @@ defmodule Lockspire.Audit.Event do
 
   alias Lockspire.Redaction
 
+  @logout_lifecycle %{
+    requested: %{action: "logout_requested", outcome: "requested", resource_type: "logout_event"},
+    delivery_enqueued: %{
+      action: "logout_delivery_enqueued",
+      outcome: "enqueued",
+      resource_type: "logout_delivery"
+    },
+    delivery_attempted: %{
+      action: "logout_delivery_attempted",
+      outcome: "attempted",
+      resource_type: "logout_delivery"
+    },
+    delivery_succeeded: %{
+      action: "logout_delivery_succeeded",
+      outcome: "succeeded",
+      resource_type: "logout_delivery"
+    },
+    delivery_failed: %{
+      action: "logout_delivery_failed",
+      outcome: "failed",
+      resource_type: "logout_delivery"
+    },
+    delivery_discarded: %{
+      action: "logout_delivery_discarded",
+      outcome: "discarded",
+      resource_type: "logout_delivery"
+    }
+  }
+
   @enforce_keys [:action, :outcome, :resource_type, :resource_id]
   defstruct [
     :id,
@@ -76,6 +105,23 @@ defmodule Lockspire.Audit.Event do
     }
   end
 
+  @spec logout_lifecycle(atom(), map()) :: t()
+  def logout_lifecycle(stage, metadata) when is_atom(stage) and is_map(metadata) do
+    %{action: action, outcome: outcome, resource_type: resource_type} = Map.fetch!(@logout_lifecycle, stage)
+    resource_id = lifecycle_resource_id!(stage, metadata, resource_type)
+
+    %__MODULE__{
+      action: action,
+      outcome: outcome,
+      reason_code: Atom.to_string(stage),
+      actor_type: "system",
+      resource_type: resource_type,
+      resource_id: resource_id,
+      metadata: lifecycle_metadata(metadata)
+    }
+    |> normalize()
+  end
+
   defp get_value(map, key, default \\ nil) when is_map(map) do
     Map.get(map, key, Map.get(map, Atom.to_string(key), default))
   end
@@ -133,4 +179,29 @@ defmodule Lockspire.Audit.Event do
   defp normalize_metadata_key(key) when is_atom(key), do: Atom.to_string(key)
   defp normalize_metadata_key(key) when is_binary(key), do: key
   defp normalize_metadata_key(key), do: to_string(key)
+
+  defp lifecycle_resource_id!(stage, metadata, "logout_event") do
+    metadata
+    |> Map.get(:logout_event_id, Map.get(metadata, "logout_event_id"))
+    |> normalize_optional_value()
+    |> case do
+      nil -> raise ArgumentError, "logout lifecycle #{stage} audit requires logout_event_id"
+      value -> value
+    end
+  end
+
+  defp lifecycle_resource_id!(stage, metadata, "logout_delivery") do
+    metadata
+    |> Map.get(:logout_delivery_id, Map.get(metadata, "logout_delivery_id"))
+    |> normalize_optional_value()
+    |> case do
+      nil -> raise ArgumentError, "logout lifecycle #{stage} audit requires logout_delivery_id"
+      value -> value
+    end
+  end
+
+  defp lifecycle_metadata(metadata) do
+    metadata
+    |> Map.drop([:logout_event_id, "logout_event_id", :logout_delivery_id, "logout_delivery_id"])
+  end
 end

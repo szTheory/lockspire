@@ -11,6 +11,14 @@ defmodule Lockspire.Observability do
 
   @audit_prefix [:lockspire, :audit]
   @telemetry_prefix [:lockspire]
+  @logout_lifecycle %{
+    requested: :logout_requested,
+    delivery_enqueued: :logout_delivery_enqueued,
+    delivery_attempted: :logout_delivery_attempted,
+    delivery_succeeded: :logout_delivery_succeeded,
+    delivery_failed: :logout_delivery_failed,
+    delivery_discarded: :logout_delivery_discarded
+  }
 
   @spec emit(event_name(), measurements(), metadata()) :: :ok
   def emit(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
@@ -66,6 +74,21 @@ defmodule Lockspire.Observability do
     )
 
     :ok
+  end
+
+  @spec emit_logout(atom(), measurements(), metadata()) :: :ok
+  def emit_logout(stage, measurements \\ %{}, metadata \\ %{}) when is_atom(stage) do
+    emit(logout_event_name!(stage), measurements, metadata)
+  end
+
+  @spec logout_event_name!(atom()) :: atom()
+  def logout_event_name!(stage) when is_atom(stage) do
+    Map.fetch!(@logout_lifecycle, stage)
+  end
+
+  @spec logout_lifecycle_events() :: [atom()]
+  def logout_lifecycle_events do
+    Map.values(@logout_lifecycle)
   end
 
   @spec redact(metadata()) :: metadata()

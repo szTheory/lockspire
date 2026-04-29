@@ -16,7 +16,9 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
   import Ecto.Query
 
   alias Ecto.Changeset
+  alias Lockspire.Audit.Event
   alias Lockspire.Config
+  alias Lockspire.Observability
   alias Lockspire.Protocol.LogoutToken
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
@@ -30,9 +32,11 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       when is_integer(logout_delivery_id) do
     with {:ok, delivery_record} <- fetch_delivery(logout_delivery_id),
          :ok <- ensure_backchannel_delivery(delivery_record),
-         {:ok, signing_key} <- fetch_signing_key(),
          attempted_at = DateTime.utc_now(),
          {:ok, attempted_record} <- mark_attempted(delivery_record, attempted_at) do
+      emit_lifecycle(:delivery_attempted, attempted_record, %{attempt_count: attempted_record.attempt_count})
+
+      with {:ok, signing_key} <- fetch_signing_key() do
       case LogoutToken.sign(%{
              issuer: Config.issuer!(),
              logout_event: LogoutEventRecord.to_domain(attempted_record.logout_event),
@@ -43,7 +47,13 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
         {:ok, logout_token, logout_token_jti} ->
           case deliver_logout_token(attempted_record.target_uri, logout_token) do
             {:ok, response} ->
-              finalize_response(attempted_record, attempted_at, logout_token_jti, response)
+              finalize_response(
+                attempted_record,
+                attempted_at,
+                logout_token_jti,
+                logout_token,
+                response
+              )
 
             {:error, %Req.TransportError{reason: reason}} ->
               mark_retryable(
@@ -53,12 +63,24 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
                 "request_failed:#{reason}"
               )
 
+              emit_lifecycle(:delivery_failed, attempted_record, %{
+                failure_reason: "request_failed:#{reason}",
+                logout_token: logout_token
+              })
+
               {:error, {:request_failed, reason}}
           end
 
         {:error, :invalid_signing_key} ->
           mark_discarded(attempted_record, attempted_at, nil, "invalid_signing_key")
+          emit_lifecycle(:delivery_discarded, attempted_record, %{failure_reason: "invalid_signing_key"})
           {:discard, :invalid_signing_key}
+      end
+      else
+        {:error, :missing_signing_key} ->
+          mark_discarded(attempted_record, attempted_at, nil, "missing_signing_key")
+          emit_lifecycle(:delivery_discarded, attempted_record, %{failure_reason: "missing_signing_key"})
+          {:discard, :missing_signing_key}
       end
     else
       {:error, :not_found} ->
@@ -66,9 +88,6 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
 
       {:error, :invalid_channel} ->
         {:discard, :invalid_channel}
-
-      {:error, :missing_signing_key} ->
-        {:discard, :missing_signing_key}
     end
   end
 
@@ -121,18 +140,42 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     end
   end
 
-  defp finalize_response(%LogoutDeliveryRecord{} = delivery_record, attempted_at, logout_token_jti, response) do
+  defp finalize_response(
+         %LogoutDeliveryRecord{} = delivery_record,
+         attempted_at,
+         logout_token_jti,
+         logout_token,
+         response
+       ) do
     cond do
       response.status in 200..299 ->
         mark_succeeded(delivery_record, attempted_at, logout_token_jti, response.status)
+        emit_lifecycle(:delivery_succeeded, delivery_record, %{
+          http_status: response.status,
+          logout_token: logout_token,
+          response_body: response.body,
+          logout_token_jti: logout_token_jti
+        })
         :ok
 
       response.status in 400..499 ->
         mark_discarded(delivery_record, attempted_at, response.status, "http_error:#{response.status}")
+        emit_lifecycle(:delivery_discarded, delivery_record, %{
+          http_status: response.status,
+          logout_token: logout_token,
+          response_body: response.body,
+          failure_reason: "http_error:#{response.status}"
+        })
         {:discard, {:http_error, response.status}}
 
       true ->
         mark_retryable(delivery_record, attempted_at, response.status, "http_error:#{response.status}")
+        emit_lifecycle(:delivery_failed, delivery_record, %{
+          http_status: response.status,
+          logout_token: logout_token,
+          response_body: response.body,
+          failure_reason: "http_error:#{response.status}"
+        })
         {:error, {:http_error, response.status}}
     end
   end
@@ -187,5 +230,22 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
 
   defp repo do
     Config.repo!()
+  end
+
+  defp emit_lifecycle(stage, %LogoutDeliveryRecord{} = delivery_record, metadata) when is_map(metadata) do
+    event_metadata =
+      metadata
+      |> Map.merge(%{
+        channel: delivery_record.channel,
+        client_id: delivery_record.client_id,
+        logout_delivery_id: delivery_record.id,
+        logout_event_id: delivery_record.logout_event_id,
+        session_required: delivery_record.session_required,
+        target_uri: delivery_record.target_uri
+      })
+
+    Observability.emit_logout(stage, %{}, event_metadata)
+    _ = Repository.append_audit_event(Event.logout_lifecycle(stage, event_metadata))
+    :ok
   end
 end

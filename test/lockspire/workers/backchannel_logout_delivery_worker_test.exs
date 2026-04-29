@@ -5,11 +5,14 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
 
   @moduletag :integration
 
+  alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Domain.SigningKey
   alias Lockspire.JarTestHelpers
+  alias Lockspire.Observability
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.Repository
@@ -31,6 +34,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     Req.Test.set_req_test_from_context(context)
 
     original_req_opts = Application.get_env(:lockspire, :backchannel_logout_req)
+    handler_id = "logout-delivery-worker-test-#{System.unique_integer([:positive])}"
 
     on_exit(fn ->
       if is_nil(original_req_opts) do
@@ -38,9 +42,25 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       else
         Application.put_env(:lockspire, :backchannel_logout_req, original_req_opts)
       end
+
+      :telemetry.detach(handler_id)
     end)
 
-    :ok
+    :telemetry.attach_many(
+      handler_id,
+      Enum.flat_map(Observability.logout_lifecycle_events(), fn event_name ->
+        [
+          [:lockspire, event_name],
+          [:lockspire, :audit, event_name]
+        ]
+      end),
+      fn event, measurements, metadata, pid ->
+        send(pid, {:telemetry_event, event, measurements, metadata})
+      end,
+      self()
+    )
+
+    {:ok, handler_id: handler_id}
   end
 
   describe "perform/1" do
@@ -84,6 +104,28 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert %DateTime{} = stored_delivery.last_attempted_at
       assert %DateTime{} = stored_delivery.delivered_at
       assert %DateTime{} = stored_delivery.finalized_at
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_attempted], %{count: 1},
+                      attempted_metadata}
+
+      assert attempted_metadata.logout_delivery_id == delivery.id
+      refute Map.has_key?(attempted_metadata, :logout_token)
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_succeeded], %{count: 1},
+                      succeeded_metadata}
+
+      assert succeeded_metadata.http_status == 200
+      assert succeeded_metadata.logout_token_jti == stored_delivery.logout_token_jti
+      refute Map.has_key?(succeeded_metadata, :logout_token)
+      refute Map.has_key?(succeeded_metadata, :response_body)
+
+      assert latest_audit!("logout_delivery_attempted").resource_id == Integer.to_string(delivery.id)
+
+      assert %AuditEventRecord{} = success_audit = latest_audit!("logout_delivery_succeeded")
+      assert success_audit.resource_id == Integer.to_string(delivery.id)
+      assert success_audit.outcome == "succeeded"
+      refute Map.has_key?(success_audit.metadata, "logout_token")
+      refute Map.has_key?(success_audit.metadata, "response_body")
     end
 
     test "marks transient network or 5xx failures retryable while keeping the delivery pending for later attempts" do
@@ -111,6 +153,16 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert %DateTime{} = stored_delivery.last_attempted_at
       assert is_nil(stored_delivery.delivered_at)
       assert is_nil(stored_delivery.finalized_at)
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_failed], %{count: 1},
+                      failed_metadata}
+
+      assert failed_metadata.failure_reason == "request_failed:timeout"
+      refute Map.has_key?(failed_metadata, :logout_token)
+
+      assert %AuditEventRecord{} = failed_audit = latest_audit!("logout_delivery_failed")
+      assert failed_audit.outcome == "failed"
+      assert failed_audit.metadata["failure_reason"] == "request_failed:timeout"
     end
 
     test "converges repeated 4xx or invalid client configuration failures to a terminal discarded state" do
@@ -138,6 +190,16 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert stored_delivery.failure_reason == "http_error:400"
       assert %DateTime{} = stored_delivery.last_attempted_at
       assert %DateTime{} = stored_delivery.finalized_at
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_discarded], %{count: 1},
+                      discarded_metadata}
+
+      assert discarded_metadata.http_status == 400
+      refute Map.has_key?(discarded_metadata, :logout_token)
+
+      assert %AuditEventRecord{} = discarded_audit = latest_audit!("logout_delivery_discarded")
+      assert discarded_audit.outcome == "discarded"
+      assert discarded_audit.metadata["http_status"] == 400
     end
 
     test "records attempted and succeeded as separate durable/auditable transitions" do
@@ -159,6 +221,46 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert %DateTime{} = stored_delivery.last_attempted_at
       assert %DateTime{} = stored_delivery.delivered_at
       assert stored_delivery.last_attempted_at <= stored_delivery.delivered_at
+    end
+
+    test "defines requested and enqueued lifecycle stages with redaction-safe metadata" do
+      assert Observability.logout_event_name!(:requested) == :logout_requested
+      assert Observability.logout_event_name!(:delivery_enqueued) == :logout_delivery_enqueued
+
+      Observability.emit_logout(:requested, %{}, %{
+        logout_event_id: "evt-requested",
+        logout_token: "secret-logout-token",
+        response_body: "should-drop"
+      })
+
+      Observability.emit_logout(:delivery_enqueued, %{}, %{
+        logout_delivery_id: 123,
+        logout_token: "secret-logout-token",
+        response_body: "should-drop"
+      })
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_requested], %{count: 1},
+                      requested_metadata}
+
+      refute Map.has_key?(requested_metadata, :logout_token)
+      refute Map.has_key?(requested_metadata, :response_body)
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_enqueued], %{count: 1},
+                      enqueued_metadata}
+
+      refute Map.has_key?(enqueued_metadata, :logout_token)
+      refute Map.has_key?(enqueued_metadata, :response_body)
+
+      requested_audit =
+        Event.logout_lifecycle(:requested, %{
+          logout_event_id: "evt-requested",
+          logout_token: "secret-logout-token",
+          response_body: "should-drop"
+        })
+
+      assert requested_audit.action == "logout_requested"
+      refute Map.has_key?(requested_audit.metadata, "logout_token")
+      refute Map.has_key?(requested_audit.metadata, "response_body")
     end
 
     test "redacts raw logout_token and response body material from logs, telemetry, and failure metadata" do
@@ -183,6 +285,16 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert stored_delivery.failure_reason == "http_error:500"
       refute Map.has_key?(Map.from_struct(stored_delivery), :logout_token)
       refute Map.has_key?(Map.from_struct(stored_delivery), :response_body)
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_failed], %{count: 1},
+                      failed_metadata}
+
+      refute Map.has_key?(failed_metadata, :logout_token)
+      refute Map.has_key?(failed_metadata, :response_body)
+
+      assert %AuditEventRecord{} = failed_audit = latest_audit!("logout_delivery_failed")
+      refute Map.has_key?(failed_audit.metadata, "logout_token")
+      refute Map.has_key?(failed_audit.metadata, "response_body")
     end
   end
 
@@ -253,5 +365,13 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   defp decode_unverified_claims(jwt) do
     %JOSE.JWT{fields: claims} = JOSE.JWT.peek_payload(jwt)
     claims
+  end
+
+  defp latest_audit!(action) do
+    AuditEventRecord
+    |> where([audit], audit.action == ^action)
+    |> order_by([audit], desc: audit.inserted_at, desc: audit.id)
+    |> limit(1)
+    |> Lockspire.TestRepo.one!()
   end
 end
