@@ -16,15 +16,13 @@ At archive time, the package version in `mix.exs` is `0.2.0`, the protected rele
 
 Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects, DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
 
-## Current Milestone: v1.7 DPoP Core for Public and CLI Clients
+## Current Milestone: v1.9 JAR Decryption (JWE Support)
 
-**Goal:** Raise the real-client trust story by shipping a truthful DPoP core across the Lockspire-owned token and protected-resource surfaces, while preserving the narrow embedded Phoenix library shape.
+**Goal:** Support nested encrypted JWTs for request objects, allowing clients to securely transmit sensitive parameters using JWE and JWS.
 
 **Target features:**
-- Add DPoP proof validation and replay protection at the token endpoint for authorization-code, refresh-token, and device-code exchanges.
-- Issue DPoP-bound access tokens using durable confirmation (`cnf`) state and return truthful DPoP token responses.
-- Make the Lockspire-owned `userinfo` surface usable with DPoP-bound access tokens and keep discovery, docs, and operator/DCR controls aligned to the shipped slice.
-- Record the longer-range project arc in `.planning/EPIC.md` so future milestone selection compounds instead of restarting from scratch.
+- Add RSA/EC encryption keypairs to the server's KeyStore and JWKS endpoints.
+- Implement nested JWT validation (Sign-then-Encrypt) in the `Protocol.Jar` layer.
 
 ## Requirements
 
@@ -46,13 +44,16 @@ Lockspire can now support a substantial embedded-provider preview surface: autho
 - Generated-host proof, security posture, and support-truth docs for the device-flow slice were delivered and archived in the v1.6 milestone.
 - Deliver DPoP core: proof validation, token binding, replay protection, and DPoP-aware issuance for authorization-code, refresh, and device-code exchanges. Validated across Phases 33-36.
 - End-to-end proof, security posture, and support-truth docs for the shipped DPoP slice were delivered and archived in the v1.7 milestone.
+- Session Management & RP-Initiated Logout workflows were verified and archived in the v1.8 milestone.
+- Automated Back-Channel and Front-Channel Logout propagation mechanisms were verified and archived in the v1.8 milestone.
+- Strict OIDC protocol validation and integer enforcement for timestamps were verified and archived in the v1.8 milestone.
 
 ### Active
 
-- Ship a DPoP core that is usable for public and CLI-oriented clients on Lockspire-owned surfaces without forcing enterprise PKI or hosted infrastructure.
-- Preserve truthful preview claims by supporting only the DPoP slice the repo can verify end to end.
-- Keep DPoP rollout explicit and narrow through client/operator policy rather than silently changing all existing clients.
-- Capture the multi-milestone path from serious preview to real integrator-ready preview and then to a credible 1.0 bar.
+- Implement RSA/EC encryption key management in `Storage.KeyStore` and advertise via JWKS.
+- Implement nested JWT validation (Sign-then-Encrypt) in `Protocol.Jar`.
+- Preserve the existing embedded Phoenix library shape while adding decryption capabilities.
+- Maintain backwards compatibility with unencrypted JWS JAR objects.
 
 ### Out of Scope
 

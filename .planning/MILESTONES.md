@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.8 Session Management & Conformance (Shipped + archived: 2026-04-29)
+
+**Phases completed:** **3** (**37-39**), **14** plans, **8** requirements closed (CONF-04 deferred).
+
+**Package posture:** `lockspire 0.2.0` remains preview. The shipped surface now includes full RP-Initiated logout, automated back-channel and front-channel logout propagation, and strict protocol validation for auth_time and max_age.
+
+**Key accomplishments:**
+
+- Added strict protocol validation for integers and URL match exactness.
+- EndSession endpoint implementation with generated host seams for RP-initiated logout.
+- Back-channel logout implementation using Oban and HTTP request propagation.
+- Front-channel logout rendering of invisible iframes based on relying party registration metadata.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.8-MILESTONE-AUDIT.md`](milestones/v1.8-MILESTONE-AUDIT.md) (`passed` with CONF-04 deferred).
+
+**Archives:** `milestones/v1.8-ROADMAP.md`, `milestones/v1.8-REQUIREMENTS.md`, `milestones/v1.8-MILESTONE-AUDIT.md` · **Git tag:** `v1.8`
+
+---
+
 ## v1.7 DPoP Core for Public and CLI Clients (Shipped: 2026-04-28)
 
 **Phases completed:** **4** (**33-36**), **12** plans, **14** requirements closed.

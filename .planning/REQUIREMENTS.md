@@ -1,25 +1,9 @@
 # Requirements: Lockspire
 
-**Defined:** 2026-04-28
+**Defined:** 2026-04-29
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
 ## v1 Requirements
-
-### Protocol Conformance
-
-- [x] **CONF-01**: Implement strict numeric type enforcement (integer vs string) for token timestamps (iat, exp, auth_time).
-- [x] **CONF-02**: Enforce exact `redirect_uri` matching for authorization requests per OIDC specifications.
-- [x] **CONF-03**: Enforce strict validation of `prompt=none`, `max_age`, and `nonce` parameters.
-- [ ] **CONF-04**: Setup verifiable automated integration with the OIDF Conformance Test Suite.
-
-### Session and Logout
-
-- [ ] **SLO-01**: Add durable Session ID (`sid`) tracking to interaction and token records.
-- [ ] **SLO-02**: Implement `GET /end_session` (RP-Initiated Logout) with host-owned session clearing seam.
-- [x] **SLO-03
-**: Implement Back-Channel Logout webhook dispatch (server-to-server POST) via `req`.
-- [x] **SLO-04
-**: Implement Front-Channel Logout asynchronous iframe rendering on host return.
 
 ### Authorization
 
@@ -42,22 +26,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONF-01 | Phase 37 | Completed |
-| CONF-02 | Phase 37 | Completed |
-| CONF-03 | Phase 37 | Completed |
-| CONF-04 | Phase 37 | Pending |
-| SLO-01 | Phase 38 | Pending |
-| SLO-02 | Phase 38 | Pending |
-| SLO-03 | Phase 39 | Completed |
-| SLO-04 | Phase 39 | Complete |
 | AUTHZ-01 | Phase 40 | Pending |
 | AUTHZ-02 | Phase 40 | Pending |
 
 **Coverage:**
-- v1 requirements: 10 total
-- Mapped to phases: 10
+- v1 requirements: 2 total
+- Mapped to phases: 2
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-04-28*
-*Last updated: 2026-04-28 after roadmap creation*
+*Requirements defined: 2026-04-29*
+*Last updated: 2026-04-29 after milestone archive*

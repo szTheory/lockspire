@@ -49,27 +49,27 @@ Scope:
 - Truthful discovery/docs
 - Explicit operator/DCR rollout controls
 
-### 2. Adoption-Hardening Milestone
+### 2. v1.8 — Session Management & Conformance (Shipped)
 
-Why likely next:
-- Now that DPoP has landed, the biggest remaining gap may be not another RFC, but making the release/support/onboarding story boring enough to trust repeatedly.
+Why next:
+- Real-world integration demanded reliable backend-initiated session termination (RP-Initiated, Back-Channel, and Front-Channel Logout).
+- Essential protocol strictness fixes for timestamps and OIDC compliance were required for a robust provider surface.
 
-Likely scope:
-- Repeated green release proof
-- Support/runbook hardening
-- Compatibility/onboarding clarity
-- Doc/install truth over time
-- Sharper 1.0 gate definition
+Scope:
+- RP-Initiated Logout (`/end_session`)
+- Durable Session IDs
+- Automated Back-Channel Logout webhook propagation
+- Front-Channel Logout iframe rendering
+- OIDC timestamp enforcement
 
-### 3. Next Protocol-Depth Milestone
+### 3. v1.9 — JAR Decryption (Active)
 
-Choose based on real demand after v1.7:
+Why next:
+- Partner interoperability pressure centers on request-object completeness, specifically encrypted transmission of PII or sensitive claims.
 
-- **JAR decryption** if partner interoperability pressure centers on request-object completeness.
-- **SSRF-guarded `jwks_uri` fetch** if DCR adoption pressure centers on easier client key management.
-
-Selection rule:
-- Pick the wedge that most improves real integration outcomes for the supported embedded Phoenix path.
+Scope:
+- JWKS `enc` key publication and storage
+- Nested JWT validation (JWE + JWS) in `Protocol.Jar`
 
 ### 4. Post-1.0 / Advanced Security and Conformance
 
