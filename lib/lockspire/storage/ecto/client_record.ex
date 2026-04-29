@@ -16,6 +16,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:name, :string)
     field(:redirect_uris, {:array, :string}, default: [])
     field(:post_logout_redirect_uris, {:array, :string}, default: [])
+    field(:backchannel_logout_uri, :string)
+    field(:backchannel_logout_session_required, :boolean, default: false)
+    field(:frontchannel_logout_uri, :string)
+    field(:frontchannel_logout_session_required, :boolean, default: false)
     field(:allowed_scopes, {:array, :string}, default: [])
     field(:allowed_grant_types, {:array, :string}, default: [])
     field(:allowed_response_types, {:array, :string}, default: [])
@@ -69,6 +73,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :name,
       :redirect_uris,
       :post_logout_redirect_uris,
+      :backchannel_logout_uri,
+      :backchannel_logout_session_required,
+      :frontchannel_logout_uri,
+      :frontchannel_logout_session_required,
       :allowed_scopes,
       :allowed_grant_types,
       :allowed_response_types,
@@ -135,6 +143,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> cast(attrs, [
       :name,
       :redirect_uris,
+      :post_logout_redirect_uris,
+      :backchannel_logout_uri,
+      :backchannel_logout_session_required,
+      :frontchannel_logout_uri,
+      :frontchannel_logout_session_required,
       :allowed_scopes,
       :logo_uri,
       :tos_uri,
@@ -165,6 +178,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       name: record.name,
       redirect_uris: record.redirect_uris,
       post_logout_redirect_uris: record.post_logout_redirect_uris,
+      backchannel_logout_uri: record.backchannel_logout_uri,
+      backchannel_logout_session_required: record.backchannel_logout_session_required,
+      frontchannel_logout_uri: record.frontchannel_logout_uri,
+      frontchannel_logout_session_required: record.frontchannel_logout_session_required,
       allowed_scopes: record.allowed_scopes,
       allowed_grant_types: record.allowed_grant_types,
       allowed_response_types: record.allowed_response_types,
