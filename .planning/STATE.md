@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Protocol Surface Completeness
-status: roadmap_created
-last_updated: "2026-04-28T21:05:00.000Z"
-last_activity: 2026-04-28
+status: executing
+stopped_at: Completed 37-01-PLAN.md
+last_updated: "2026-04-29T00:52:20.904Z"
+last_activity: 2026-04-29 -- Completed 37-01 protocol strictness timestamp slice
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 4
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -21,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 37: Protocol Strictness & Conformance
+**Current focus:** Phase 37 — protocol-strictness-conformance
 
 ## Current Position
 
-Phase: 37
-Plan: —
-Status: Ready for planning
-Last activity: 2026-04-28 — Roadmap created for v1.8
+Phase: 37 (protocol-strictness-conformance) — EXECUTING
+Plan: 2 of 4
+Status: Executing Phase 37
+Last activity: 2026-04-29 -- Completed 37-01 protocol strictness timestamp slice
 
 ## Performance Metrics
 
 - Phases completed: 0/4 (v1.8)
-- Plans completed: 0/0 (v1.8)
+- Plans completed: 1/4 (v1.8)
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Extend active introspection response to expose persisted cnf state
 - Do not relax caller authentication or inactive/collapsed introspection behavior
 - Promote the Phase 32 generated-host DPoP device testing client to :confidential client type so it can introspect its own token in the same harness
+- Keep auth_time protocol-owned by validating it in IdToken.sign/1 and filtering it from host claim maps.
+- Preserve DPoP runtime strictness and lock it with regression coverage instead of changing proof validation behavior.
 
 ### Blockers/Concerns
 
@@ -73,11 +76,11 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-plan-phase 37` to start planning the first phase of milestone v1.8.
+**Next action:** Continue `$gsd-execute-phase 37` to complete the four Phase 37 plans.
 
 **Resume file:** None
 
-**Stopped at:** Roadmap created
+**Stopped at:** Completed 37-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

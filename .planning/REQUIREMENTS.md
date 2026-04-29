@@ -7,7 +7,7 @@
 
 ### Protocol Conformance
 
-- [ ] **CONF-01**: Implement strict numeric type enforcement (integer vs string) for token timestamps (iat, exp, auth_time).
+- [x] **CONF-01**: Implement strict numeric type enforcement (integer vs string) for token timestamps (iat, exp, auth_time).
 - [ ] **CONF-02**: Enforce exact `redirect_uri` matching for authorization requests per OIDC specifications.
 - [ ] **CONF-03**: Enforce strict validation of `prompt=none`, `max_age`, and `nonce` parameters.
 - [ ] **CONF-04**: Setup verifiable automated integration with the OIDF Conformance Test Suite.
