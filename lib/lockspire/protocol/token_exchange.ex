@@ -857,11 +857,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp refresh_scope_policy_allows?(scopes) when is_list(scopes) do
-    if "offline_access" in scopes do
-      true
-    else
-      true
-    end
+    "offline_access" in scopes
   end
 
   defp build_access_token(
