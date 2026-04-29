@@ -603,6 +603,25 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def revoke_by_sid(nil), do: {:ok, 0}
+
+  def revoke_by_sid(sid) when is_binary(sid) do
+    {count, _records} =
+      TokenRecord
+      |> where([token], token.sid == ^sid)
+      |> where([token], is_nil(token.revoked_at))
+      |> where([token], is_nil(token.redeemed_at))
+      |> repo_update_all(
+        [set: [revoked_at: DateTime.utc_now(), updated_at: DateTime.utc_now()]],
+        sensitive: true
+      )
+
+    {:ok, count}
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl TokenStore
   def fetch_authorization_code(token_hash) when is_binary(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)

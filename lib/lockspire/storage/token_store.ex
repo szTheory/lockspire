@@ -9,6 +9,7 @@ defmodule Lockspire.Storage.TokenStore do
   @type expected_cnf :: nil | %{optional(String.t()) => binary()}
 
   # Acceptance marker: @callback revoke_token_family/1
+  @optional_callbacks [revoke_by_sid: 1]
   @callback store_token(Token.t()) :: {:ok, Token.t()} | {:error, store_error()}
   @callback list_lifecycle_tokens(keyword()) ::
               {:ok, [Token.t()]} | {:error, store_error()}
@@ -17,6 +18,7 @@ defmodule Lockspire.Storage.TokenStore do
   @callback list_token_family(String.t()) ::
               {:ok, [Token.t()]} | {:error, store_error()}
   @callback revoke_token_family(String.t()) :: {:ok, non_neg_integer()} | {:error, store_error()}
+  @callback revoke_by_sid(String.t()) :: {:ok, non_neg_integer()} | {:error, store_error()}
   @callback fetch_authorization_code(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_lifecycle_token(String.t()) ::

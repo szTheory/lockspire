@@ -19,6 +19,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
     field(:client_id, :string)
     field(:account_id, :string)
     field(:interaction_id, :string)
+    field(:sid, :string)
     field(:redirect_uri, :string)
     field(:scopes, {:array, :string}, default: [])
     field(:audience, {:array, :string}, default: [])
@@ -46,6 +47,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
       :client_id,
       :account_id,
       :interaction_id,
+      :sid,
       :redirect_uri,
       :scopes,
       :audience,
@@ -74,6 +76,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
       client_id: record.client_id,
       account_id: record.account_id,
       interaction_id: record.interaction_id,
+      sid: record.sid,
       redirect_uri: record.redirect_uri,
       scopes: record.scopes,
       audience: record.audience,

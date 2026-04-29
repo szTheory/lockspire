@@ -10,6 +10,7 @@ defmodule Lockspire.Domain.Interaction do
   @type t :: %__MODULE__{
           id: integer() | nil,
           interaction_id: String.t(),
+          sid: String.t() | nil,
           client_id: String.t(),
           account_id: String.t() | nil,
           scopes_requested: [String.t()],
@@ -39,6 +40,7 @@ defmodule Lockspire.Domain.Interaction do
   defstruct [
     :id,
     :interaction_id,
+    :sid,
     :client_id,
     :account_id,
     :return_to,

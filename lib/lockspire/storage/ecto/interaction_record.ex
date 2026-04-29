@@ -13,6 +13,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
 
   schema "lockspire_interactions" do
     field(:interaction_id, :string)
+    field(:sid, :string)
     field(:client_id, :string)
     field(:account_id, :string)
     field(:scopes_requested, {:array, :string}, default: [])
@@ -50,6 +51,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     record
     |> cast(attrs, [
       :interaction_id,
+      :sid,
       :client_id,
       :account_id,
       :scopes_requested,
@@ -98,6 +100,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     %Interaction{
       id: record.id,
       interaction_id: record.interaction_id,
+      sid: record.sid,
       client_id: record.client_id,
       account_id: record.account_id,
       scopes_requested: record.scopes_requested,
