@@ -124,8 +124,12 @@ defmodule Lockspire.Protocol.TokenExchange do
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-      {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
+         {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
       {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
     end
   end
 
