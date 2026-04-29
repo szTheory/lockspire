@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 39-04-PLAN.md
-last_updated: "2026-04-29T19:41:55.243Z"
+stopped_at: Completed 39-05-PLAN.md
+last_updated: "2026-04-29T19:58:03.920Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 12
-  percent: 86
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 39 (automated-rp-logout-propagation) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-04-29
 
@@ -85,6 +85,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Lockspire starts a named Oban runtime and raises immediately when :lockspire repo or Oban runtime config is missing or invalid.
 - Back-channel logout delivery treats the persisted logout_delivery snapshot as the authoritative dispatch contract instead of re-resolving live client state.
 - Logout lifecycle telemetry and audit surfaces use explicit requested, enqueued, attempted, succeeded, failed, and discarded stages with raw tokens and raw response payloads redacted at emission time.
+- Replay-safe logout completion is keyed by signed event_id values carried through the host return token.
+- Backchannel enqueue now persists oban_jobs rows inside the same completion transaction as logout event and delivery state.
 
 ### Blockers/Concerns
 
@@ -98,7 +100,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 39-04-PLAN.md
+**Stopped at:** Completed 39-05-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
