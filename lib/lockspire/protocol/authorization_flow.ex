@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
+  alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias Lockspire.Protocol.ConsentPolicy
   alias Lockspire.Security.Policy
@@ -18,17 +19,23 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
           {:login_required, Interaction.t()}
           | {:consent_required, Interaction.t()}
           | {:consent_reused, String.t()}
+          | {:redirect_error, Error.t()}
           | {:error, term()}
   def start_authorization(%Validated{} = validated, subject_context, opts \\ []) do
     now = now(opts)
     interaction_id = generate_interaction_id(opts)
 
-    if login_required?(validated, subject_context, now) do
+    cond do
+      silent_prompt?(validated.prompt) ->
+        start_silent_authorization(validated, subject_context, interaction_id, now, opts)
+
+      login_required?(validated, subject_context, now) ->
       validated
       |> build_interaction(interaction_id, nil, :pending_login, now)
       |> persist_login_required(opts)
-    else
-      start_subject_authorization(validated, subject_context, interaction_id, now, opts)
+
+      true ->
+        start_subject_authorization(validated, subject_context, interaction_id, now, opts)
     end
   end
 
@@ -117,6 +124,43 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
+  defp start_silent_authorization(validated, subject_context, interaction_id, now, opts) do
+    cond do
+      login_required?(validated, subject_context, now) ->
+        {:redirect_error, silent_error(validated, "login_required", :login_required)}
+
+      ui_required?(subject_context) ->
+        {:redirect_error,
+         silent_error(validated, "interaction_required", :interaction_required)}
+
+      true ->
+        start_silent_subject_authorization(validated, subject_context, interaction_id, now, opts)
+    end
+  end
+
+  defp start_silent_subject_authorization(validated, subject_context, interaction_id, now, opts) do
+    subject_id = subject_id!(subject_context)
+    auth_time = subject_auth_time(subject_context)
+
+    interaction =
+      validated
+      |> build_interaction(interaction_id, subject_id, :pending_consent, now)
+      |> Map.put(:auth_time, auth_time)
+
+    case silent_consent_outcome(interaction, validated, subject_id, opts) do
+      :consent_required ->
+        {:redirect_error, silent_error(validated, "consent_required", :consent_required)}
+
+      {:ok, %Interaction{} = persisted} ->
+        emit(:interaction_started, persisted, subject_id)
+        emit(:consent_reused, persisted, subject_id)
+        finalize_reused_consent(persisted, subject_id, opts)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp start_subject_authorization(validated, subject_context, interaction_id, now, opts) do
     subject_id = subject_id!(subject_context)
     auth_time = subject_auth_time(subject_context)
@@ -139,6 +183,22 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         subject_id,
         opts
       )
+    end
+  end
+
+  defp silent_consent_outcome(%Interaction{} = interaction, validated, subject_id, opts) do
+    case consent_store(opts).list_reusable_consents(subject_id, validated.client_id) do
+      {:ok, grants} ->
+        case ConsentPolicy.reusable_grant(grants, validated.scopes, validated.prompt) do
+          {:reuse, _grant} ->
+            interaction_store(opts).put_interaction(interaction)
+
+          :consent_required ->
+            :consent_required
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -580,6 +640,25 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       %DateTime{} = auth_time -> Map.put(attrs, :auth_time, auth_time)
       nil -> attrs
     end
+  end
+
+  defp silent_prompt?(["none"]), do: true
+  defp silent_prompt?(_prompt), do: false
+
+  defp ui_required?(subject_context) when is_map(subject_context) do
+    not is_nil(Map.get(subject_context, :ui_required, Map.get(subject_context, "ui_required")))
+  end
+
+  defp ui_required?(_subject_context), do: false
+
+  defp silent_error(%Validated{} = validated, error, reason_code) do
+    %Error{
+      error: error,
+      error_description: "Unable to complete the authorization request without user interaction",
+      reason_code: reason_code,
+      state: validated.state,
+      redirect_uri: validated.redirect_uri
+    }
   end
 
   defp default_return_to(interaction_id), do: "/lockspire/interactions/#{interaction_id}"

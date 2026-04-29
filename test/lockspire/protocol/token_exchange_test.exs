@@ -166,6 +166,96 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert claims["at_hash"] == at_hash(success.access_token)
   end
 
+  test "token exchange emits auth_time only when openid was granted and max_age was persisted on the interaction" do
+    secret = "openid-auth-time-secret"
+    {:ok, client} = create_client("client-openid-auth-time", :client_secret_basic, secret)
+    publish_signing_key("kid-openid-auth-time")
+    auth_time = DateTime.add(DateTime.utc_now(), -45, :second)
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-openid-auth-time",
+        code_verifier: "verifier-openid-auth-time",
+        scopes: ["openid", "email"],
+        auth_time: auth_time,
+        max_age: 120
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-openid-auth-time",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-openid-auth-time"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    claims = decode_jwt_section(success.id_token, 1)
+    assert claims["auth_time"] == DateTime.to_unix(auth_time)
+  end
+
+  test "token exchange emits auth_time for explicit auth_time_requested and preserves nonce unchanged" do
+    secret = "openid-auth-time-requested-secret"
+    {:ok, client} = create_client("client-openid-auth-time-requested", :client_secret_basic, secret)
+    publish_signing_key("kid-openid-auth-time-requested")
+    auth_time = DateTime.add(DateTime.utc_now(), -30, :second)
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-openid-auth-time-requested",
+        code_verifier: "verifier-openid-auth-time-requested",
+        scopes: ["openid", "email"],
+        nonce: "nonce-with-auth-time",
+        auth_time: auth_time,
+        auth_time_requested: true
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-openid-auth-time-requested",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-openid-auth-time-requested"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    claims = decode_jwt_section(success.id_token, 1)
+    assert claims["auth_time"] == DateTime.to_unix(auth_time)
+    assert claims["nonce"] == "nonce-with-auth-time"
+  end
+
+  test "token exchange fails closed with missing_interaction_auth_time when auth_time was requested but missing" do
+    secret = "openid-auth-time-missing-secret"
+    {:ok, client} = create_client("client-openid-auth-time-missing", :client_secret_basic, secret)
+    publish_signing_key("kid-openid-auth-time-missing")
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-openid-auth-time-missing",
+        code_verifier: "verifier-openid-auth-time-missing",
+        scopes: ["openid", "email"],
+        max_age: 120
+      )
+
+    assert {:error, error} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-openid-auth-time-missing",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-openid-auth-time-missing"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert error.error == "server_error"
+    assert error.reason_code == :missing_interaction_auth_time
+  end
+
   test "does not issue an id token when openid is not granted" do
     secret = "oauth-secret"
     {:ok, client} = create_client("client-oauth", :client_secret_basic, secret)
@@ -1298,6 +1388,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         account_id: "subject-123",
         scopes_requested: Keyword.get(opts, :scopes, ["email", "profile"]),
         nonce: Keyword.get(opts, :nonce),
+        auth_time: Keyword.get(opts, :auth_time),
+        max_age: Keyword.get(opts, :max_age),
+        auth_time_requested: Keyword.get(opts, :auth_time_requested, false),
         redirect_uri: "https://client.example.com/callback",
         return_to: "/authorize",
         state: "state-123",

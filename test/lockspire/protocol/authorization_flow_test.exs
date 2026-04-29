@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.AuthorizationFlow
+  alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias __MODULE__.Store
 
@@ -105,6 +106,101 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert persisted.max_age == 120
     assert persisted.auth_time_requested == true
     assert persisted.auth_time == nil
+  end
+
+  test "prompt=none with no subject returns redirect-safe login_required and never starts interactive login" do
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["none"]),
+               nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               interaction_id_generator: fn -> "interaction-prompt-none-login-required" end
+             )
+
+    assert error.error == "login_required"
+    assert error.redirect_uri == "https://client.example.com/callback"
+    assert error.state == "state-123"
+
+    assert {:ok, nil} = Store.fetch_interaction("interaction-prompt-none-login-required")
+  end
+
+  test "prompt=none with stale auth_time under max_age returns redirect-safe login_required" do
+    stale_auth_time = DateTime.add(fixed_now(), -600, :second)
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["none"], max_age: 60),
+               %{subject_id: "subject_123", auth_time: stale_auth_time},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0
+             )
+
+    assert error.error == "login_required"
+  end
+
+  test "prompt=none with missing reusable consent returns redirect-safe consent_required" do
+    auth_time = DateTime.add(fixed_now(), -30, :second)
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["none"], max_age: 120),
+               %{subject_id: "subject_123", auth_time: auth_time},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0
+             )
+
+    assert error.error == "consent_required"
+  end
+
+  test "prompt=none maps non-interactive policy blockers to redirect-safe interaction_required" do
+    auth_time = DateTime.add(fixed_now(), -30, :second)
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["none"], max_age: 120),
+               %{subject_id: "subject_123", auth_time: auth_time, ui_required: :account_selection},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0
+             )
+
+    assert error.error == "interaction_required"
+  end
+
+  test "prompt=none succeeds without UI only when durable truthful state satisfies authentication freshness and consent" do
+    auth_time = DateTime.add(fixed_now(), -30, :second)
+
+    assert {:ok, _grant} =
+             Store.grant_consent(%ConsentGrant{
+               account_id: "subject_123",
+               client_id: "client_123",
+               scopes: ["email", "profile"],
+               granted_at: fixed_now(),
+               status: :active,
+               kind: :remembered
+             })
+
+    assert {:consent_reused, redirect_uri} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["none"], max_age: 120),
+               %{subject_id: "subject_123", auth_time: auth_time},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "silent-success-code" end
+             )
+
+    %{query: query} = parse_redirect(redirect_uri)
+    assert query["code"] == "silent-success-code"
   end
 
   test "remembered consent is reused only for same-or-subset scopes unless prompt=consent forces the screen" do

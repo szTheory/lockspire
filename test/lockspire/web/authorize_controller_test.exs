@@ -370,6 +370,27 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert location =~ "return_to=%2Flockspire%2Fconsent%2F"
   end
 
+  test "prompt=none with no subject redirects to the client with login_required and never calls redirect_for_login" do
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("prompt", "none")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+    refute redirect_location(conn) =~ "/sign-in"
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    params = URI.decode_query(uri.query || "")
+
+    assert params["error"] == "login_required"
+    assert params["state"] == "state-123"
+  end
+
   test "authenticated requests without reusable consent redirect to the consent surface" do
     Application.put_env(
       :lockspire,
@@ -386,6 +407,33 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert conn.status in [302, 303]
     assert location = redirect_location(conn)
     assert location =~ "/lockspire/consent/"
+  end
+
+  test "prompt=none with missing reusable consent redirects to the client with consent_required" do
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      Lockspire.Web.AuthorizeControllerAuthenticatedResolver
+    )
+
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("prompt", "none")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+    refute redirect_location(conn) =~ "/lockspire/consent/"
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    params = URI.decode_query(uri.query || "")
+
+    assert params["error"] == "consent_required"
+    assert params["state"] == "state-123"
   end
 
   test "authenticated requests with reusable consent redirect back to the client" do

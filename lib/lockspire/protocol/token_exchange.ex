@@ -589,10 +589,11 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = authorization_code,
          raw_access_token,
          issued_at,
-         request
+       request
        ) do
     if "openid" in authorization_code.scopes do
-      with {:ok, interaction_nonce} <- fetch_interaction_nonce(authorization_code, request),
+      with {:ok, interaction} <- fetch_optional_interaction(authorization_code, request),
+           {:ok, auth_time} <- resolve_interaction_auth_time(interaction),
            {:ok, %Claims{} = claims} <- resolve_claims(authorization_code, client, request),
            {:ok, signing_key} <- fetch_signing_key(request),
            {:ok, token} <-
@@ -600,7 +601,8 @@ defmodule Lockspire.Protocol.TokenExchange do
                client_id: client.client_id,
                issuer: Config.issuer!(),
                host_claims: claims,
-               interaction_nonce: interaction_nonce,
+               interaction_nonce: interaction_nonce(interaction),
+               auth_time: auth_time,
                access_token: raw_access_token,
                issued_at: issued_at,
                signing_key: signing_key
@@ -614,15 +616,6 @@ defmodule Lockspire.Protocol.TokenExchange do
       {:ok, nil}
     end
   end
-
-  defp fetch_interaction_nonce(%Token{interaction_id: interaction_id} = authorization_code, request)
-       when is_binary(interaction_id) do
-    with {:ok, %Interaction{} = interaction} <- fetch_interaction(authorization_code, request) do
-      {:ok, interaction.nonce}
-    end
-  end
-
-  defp fetch_interaction_nonce(%Token{}, _request), do: {:ok, nil}
 
   defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
        when is_binary(interaction_id) do
@@ -639,6 +632,32 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp fetch_interaction(_authorization_code, _request), do: {:error, :interaction_not_found}
+
+  defp fetch_optional_interaction(%Token{interaction_id: interaction_id} = authorization_code, request)
+       when is_binary(interaction_id),
+       do: fetch_interaction(authorization_code, request)
+
+  defp fetch_optional_interaction(%Token{}, _request), do: {:ok, nil}
+
+  defp interaction_nonce(%Interaction{} = interaction), do: interaction.nonce
+  defp interaction_nonce(nil), do: nil
+
+  defp resolve_interaction_auth_time(%Interaction{
+         max_age: max_age,
+         auth_time_requested: auth_time_requested,
+         auth_time: auth_time
+       }) do
+    if is_integer(max_age) or auth_time_requested do
+      case auth_time do
+        %DateTime{} = value -> {:ok, value}
+        _other -> {:error, :missing_interaction_auth_time}
+      end
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp resolve_interaction_auth_time(nil), do: {:ok, nil}
 
   defp resolve_claims(%Token{} = authorization_code, %Client{} = client, _request) do
     resolver = Config.account_resolver!()

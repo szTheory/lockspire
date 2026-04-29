@@ -59,6 +59,10 @@ defmodule Lockspire.Web.AuthorizeController do
     redirect_to_result(conn, login_result)
   end
 
+  defp handle_authorization_outcome(conn, {:redirect_error, %Error{} = error}) do
+    redirect(conn, external: redirect_location(error))
+  end
+
   defp handle_authorization_outcome(conn, {:consent_required, interaction}) do
     redirect(conn, to: consent_path(interaction.interaction_id))
   end
@@ -85,7 +89,12 @@ defmodule Lockspire.Web.AuthorizeController do
       {:ok, account} ->
         case resolver.build_claims(account, context) do
           {:ok, %Claims{} = claims} ->
-            {:ok, %{subject_id: claims.subject}}
+            {:ok,
+             %{
+               subject_id: claims.subject,
+               auth_time: account_auth_time(account),
+               ui_required: account_ui_required(account)
+             }}
 
           {:error, _reason} ->
             {:error,
@@ -171,4 +180,14 @@ defmodule Lockspire.Web.AuthorizeController do
       token_store: Repository
     ]
   end
+
+  defp account_auth_time(account) when is_map(account),
+    do: Map.get(account, :auth_time, Map.get(account, "auth_time"))
+
+  defp account_auth_time(_account), do: nil
+
+  defp account_ui_required(account) when is_map(account),
+    do: Map.get(account, :ui_required, Map.get(account, "ui_required"))
+
+  defp account_ui_required(_account), do: nil
 end
