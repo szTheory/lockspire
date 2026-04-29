@@ -155,6 +155,113 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :duplicate_prompt
   end
 
+  test "prompt=none is accepted only as a standalone value", %{client: client} do
+    assert {:ok, %Validated{} = validated} =
+             client.client_id
+             |> valid_params()
+             |> Map.put("prompt", "none")
+             |> AuthorizationRequest.validate()
+
+    assert validated.prompt == ["none"]
+    assert validated.max_age == nil
+    refute validated.auth_time_requested?
+  end
+
+  test "prompt=none rejects combinations with other prompt values" do
+    for prompt <- ["none consent", "none login"] do
+      assert {:redirect_error, %Error{} = error} =
+               "client_123"
+               |> valid_params()
+               |> Map.put("prompt", prompt)
+               |> AuthorizationRequest.validate()
+
+      assert error.error == "invalid_request"
+      assert error.reason_code == :prompt_none_conflict
+    end
+  end
+
+  test "max_age accepts only digit-only strings and stores an integer", %{client: client} do
+    assert {:ok, %Validated{} = validated} =
+             client.client_id
+             |> valid_params()
+             |> Map.put("max_age", "600")
+             |> AuthorizationRequest.validate()
+
+    assert validated.max_age == 600
+
+    for max_age <- ["", "-1", "12.5", "abc", " 10"] do
+      assert {:redirect_error, %Error{} = error} =
+               "client_123"
+               |> valid_params()
+               |> Map.put("max_age", max_age)
+               |> AuthorizationRequest.validate()
+
+      assert error.error == "invalid_request"
+      assert error.reason_code == :invalid_max_age
+    end
+  end
+
+  test "claims supports only id_token.auth_time.essential=true" do
+    valid_claims = ~s({"id_token":{"auth_time":{"essential":true}}})
+
+    assert {:ok, %Validated{} = validated} =
+             "client_123"
+             |> valid_params()
+             |> Map.put("claims", valid_claims)
+             |> AuthorizationRequest.validate()
+
+    assert validated.auth_time_requested?
+
+    invalid_claims_values = [
+      "",
+      "not-json",
+      ~s({"userinfo":{"auth_time":{"essential":true}}}),
+      ~s({"id_token":{"auth_time":{"essential":false}}}),
+      ~s({"id_token":{"auth_time":{"value":true}}}),
+      ~s({"id_token":{"email":{"essential":true}}}),
+      ~s({"id_token":"bad"})
+    ]
+
+    for claims <- invalid_claims_values do
+      assert {:redirect_error, %Error{} = error} =
+               "client_123"
+               |> valid_params()
+               |> Map.put("claims", claims)
+               |> AuthorizationRequest.validate()
+
+      assert error.error == "invalid_request"
+      assert error.reason_code == :invalid_claims_parameter
+    end
+  end
+
+  test "openid requests without nonce still fail with stable reason code while valid nonce is preserved",
+       %{client: client} do
+    missing_nonce_params =
+      valid_params(client.client_id)
+      |> Map.put("scope", "openid email profile")
+      |> Map.put("prompt", "none")
+      |> Map.put("max_age", "60")
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationRequest.validate(missing_nonce_params)
+
+    assert error.reason_code == :missing_nonce
+
+    assert {:ok, %Validated{} = validated} =
+             client.client_id
+             |> valid_params()
+             |> Map.put("scope", "openid email profile")
+             |> Map.put("prompt", "none")
+             |> Map.put("max_age", "60")
+             |> Map.put("nonce", "nonce-preserved-123")
+             |> AuthorizationRequest.validate()
+
+    assert validated.scopes == ["openid", "email", "profile"]
+    assert validated.prompt == ["none"]
+    assert validated.max_age == 60
+    assert validated.nonce == "nonce-preserved-123"
+  end
+
   test "missing pkce returns a redirect error" do
     params =
       valid_params("client_123")
