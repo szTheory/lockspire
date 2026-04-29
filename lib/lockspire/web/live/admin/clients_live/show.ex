@@ -22,6 +22,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        page_title: "Client detail",
        current_section: :clients,
        client_id: client_id,
+       form_mode: nil,
        client: nil,
        effective_par_policy: nil,
        form_errors: [],
@@ -34,10 +35,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   @impl true
   def handle_params(params, _uri, socket) do
     action = normalize_action(socket.assigns.live_action || :show)
+    form_mode = resolve_form_mode(action, params)
 
     {:noreply,
      socket
-     |> assign(action: action, form_errors: [], rotation_errors: [])
+     |> assign(action: action, form_mode: form_mode, form_errors: [], rotation_errors: [])
      |> load_client(Map.get(params, "client_id", socket.assigns.client_id))}
   end
 
@@ -55,7 +57,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         "redirects" ->
           Admin.update_client(
             socket.assigns.client_id,
-            redirect_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+            redirect_attrs(params, socket.assigns.client, :redirects)
+            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+          )
+
+        "logout_uris" ->
+          Admin.update_client(
+            socket.assigns.client_id,
+            redirect_attrs(params, socket.assigns.client, :logout_uris)
+            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
           )
 
         "par_policy" ->
@@ -63,6 +73,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             par_policy: params["par_policy"],
             actor: %{type: :operator, id: "admin-ui"}
           })
+
+        "logout_propagation" ->
+          Admin.update_client(
+            socket.assigns.client_id,
+            logout_propagation_attrs(params)
+            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+          )
       end
 
     case result do
@@ -183,6 +200,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           <% end %>
         </ul>
 
+        <h3>Post-logout redirect URIs</h3>
+        <ul>
+          <%= for uri <- @client.post_logout_redirect_uris do %>
+            <li>{uri}</li>
+          <% end %>
+        </ul>
+
+        <h3>Logout propagation</h3>
+        <p>Back-channel logout URI: <code>{value_or_not_configured(@client.backchannel_logout_uri)}</code></p>
+        <p>
+          Back-channel session required:
+          <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
+        </p>
+        <p>Front-channel logout URI: <code>{value_or_not_configured(@client.frontchannel_logout_uri)}</code></p>
+        <p>
+          Front-channel session required:
+          <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
+        </p>
+        <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
+
         <h3>Allowed scopes</h3>
         <ul>
           <%= for scope <- @client.allowed_scopes do %>
@@ -192,8 +229,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <div class="lockspire-admin-actions">
           <.link patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
+          <.link patch={show_path(@client.client_id, :logout_propagation)}>
+            Edit logout propagation
+          </.link>
           <.link patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
           <.link patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+          <.link patch={show_path(@client.client_id, :logout_uris)}>
+            Edit post-logout redirect URIs
+          </.link>
           <.link :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
             Rotate secret
           </.link>
@@ -204,12 +247,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        :if={@action in [:edit, :redirects, :par_policy]}
+        :if={not is_nil(@form_mode)}
         title="Safe edit workflow"
         subtitle="Only the allowed shape for this workflow is editable."
       >
         <FormComponent.client_form
-          mode={@action}
+          mode={@form_mode}
           client={@client}
           effective_par_policy={@effective_par_policy}
           errors={@form_errors}
@@ -323,9 +366,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     }
   end
 
-  defp redirect_attrs(params) do
+  defp redirect_attrs(params, %Client{} = client, :redirects) do
     %{
-      redirect_uris: split_lines(params["redirect_uris"])
+      redirect_uris: split_lines(params["redirect_uris"]),
+      post_logout_redirect_uris: client.post_logout_redirect_uris
+    }
+  end
+
+  defp redirect_attrs(params, %Client{} = client, :logout_uris) do
+    %{
+      redirect_uris: client.redirect_uris,
+      post_logout_redirect_uris: split_lines(params["post_logout_redirect_uris"])
+    }
+  end
+
+  defp logout_propagation_attrs(params) do
+    %{
+      backchannel_logout_uri: params["backchannel_logout_uri"],
+      backchannel_logout_session_required: params["backchannel_logout_session_required"],
+      frontchannel_logout_uri: params["frontchannel_logout_uri"],
+      frontchannel_logout_session_required: params["frontchannel_logout_session_required"]
     }
   end
 
@@ -334,6 +394,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               :show,
               :edit,
               :redirects,
+              :logout_uris,
               :rotate_secret,
               :par_policy,
               :rotate_registration_access_token
@@ -342,10 +403,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp normalize_action(_action), do: :show
 
+  defp resolve_form_mode(:edit, %{"workflow" => "logout-propagation"}), do: :logout_propagation
+  defp resolve_form_mode(action, _params) when action in [:edit, :redirects, :logout_uris, :par_policy], do: action
+  defp resolve_form_mode(_action, _params), do: nil
+
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
+  defp show_path(client_id, :logout_propagation),
+    do: show_path(client_id, :edit) <> "?workflow=logout-propagation"
   defp show_path(client_id, :par_policy), do: show_path(client_id, :show) <> "/par-policy"
   defp show_path(client_id, :redirects), do: show_path(client_id, :show) <> "/redirects"
+  defp show_path(client_id, :logout_uris), do: show_path(client_id, :show) <> "/logout-uris"
   defp show_path(client_id, :rotate_secret), do: show_path(client_id, :show) <> "/rotate-secret"
 
   defp show_path(client_id, :rotate_registration_access_token),
@@ -389,4 +457,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
+
+  defp boolean_label(true), do: "true"
+  defp boolean_label(false), do: "false"
+
+  defp value_or_not_configured(nil), do: "Not configured"
+  defp value_or_not_configured(value), do: value
 end

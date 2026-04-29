@@ -134,6 +134,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <textarea id="client_redirect_uris" name="client[redirect_uris]" rows="4"><%= @defaults.redirect_uris %></textarea>
         </div>
 
+        <div :if={@mode in [:new, :logout_uris]}>
+          <label for="client_post_logout_redirect_uris">Post-Logout Redirect URIs</label>
+          <textarea id="client_post_logout_redirect_uris" name="client[post_logout_redirect_uris]" rows="4"><%= @defaults.post_logout_redirect_uris %></textarea>
+        </div>
+
         <div :if={@mode == :par_policy}>
           <label for="client_par_policy">Client PAR override</label>
           <select id="client_par_policy" name="client[par_policy]">
@@ -157,6 +162,51 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 do: "Required",
                 else: "Not required"}
             </p>
+          </div>
+        </div>
+
+        <div :if={@mode == :logout_propagation}>
+          <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
+          <input
+            id="client_backchannel_logout_uri"
+            name="client[backchannel_logout_uri]"
+            type="text"
+            value={@defaults.backchannel_logout_uri}
+          />
+
+          <label for="client_backchannel_logout_session_required">
+            <input
+              id="client_backchannel_logout_session_required"
+              name="client[backchannel_logout_session_required]"
+              type="checkbox"
+              value="true"
+              checked={@defaults.backchannel_logout_session_required}
+            />
+            Include `sid` in back-channel logout tokens
+          </label>
+
+          <label for="client_frontchannel_logout_uri">Front-channel logout URI</label>
+          <input
+            id="client_frontchannel_logout_uri"
+            name="client[frontchannel_logout_uri]"
+            type="text"
+            value={@defaults.frontchannel_logout_uri}
+          />
+
+          <label for="client_frontchannel_logout_session_required">
+            <input
+              id="client_frontchannel_logout_session_required"
+              name="client[frontchannel_logout_session_required]"
+              type="checkbox"
+              value="true"
+              checked={@defaults.frontchannel_logout_session_required}
+            />
+            Include `sid` in front-channel iframe requests
+          </label>
+
+          <div class="lockspire-admin-help">
+            <p><strong>Separate concern:</strong> these URIs control RP logout propagation, not post-logout redirects.</p>
+            <p><strong>Truth model:</strong> front-channel logout stays best effort because browsers can block cross-site cleanup.</p>
           </div>
         </div>
 
@@ -184,6 +234,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       client_type: "confidential",
       token_endpoint_auth_method: "client_secret_basic",
       redirect_uris: nil,
+      post_logout_redirect_uris: nil,
       allowed_scopes: nil,
       contacts: nil,
       logo_uri: nil,
@@ -195,6 +246,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp defaults_for(:redirects, %Client{} = client) do
     %{
       redirect_uris: Enum.join(client.redirect_uris, "\n")
+    }
+  end
+
+  defp defaults_for(:logout_uris, %Client{} = client) do
+    %{
+      post_logout_redirect_uris: Enum.join(client.post_logout_redirect_uris, "\n")
     }
   end
 
@@ -216,9 +273,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     }
   end
 
+  defp defaults_for(:logout_propagation, %Client{} = client) do
+    %{
+      backchannel_logout_uri: client.backchannel_logout_uri,
+      backchannel_logout_session_required: client.backchannel_logout_session_required,
+      frontchannel_logout_uri: client.frontchannel_logout_uri,
+      frontchannel_logout_session_required: client.frontchannel_logout_session_required
+    }
+  end
+
   defp title_for(:new), do: "Register client"
   defp title_for(:edit), do: "Update safe metadata"
+  defp title_for(:logout_propagation), do: "Update logout propagation"
   defp title_for(:redirects), do: "Update redirect URIs"
+  defp title_for(:logout_uris), do: "Update post-logout redirect URIs"
   defp title_for(:par_policy), do: "Update PAR policy"
 
   defp subtitle_for(:new), do: "Create a client using the canonical secure registration path."
@@ -226,14 +294,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp subtitle_for(:edit),
     do: "Change only the operator-safe metadata Lockspire allows in place."
 
+  defp subtitle_for(:logout_propagation),
+    do: "Configure back-channel and front-channel logout separately from post-logout redirects."
+
   defp subtitle_for(:redirects), do: "Redirect URIs stay explicit and exact-match validated."
+
+  defp subtitle_for(:logout_uris),
+    do: "Post-logout redirect URIs stay explicit and exact-match validated."
 
   defp subtitle_for(:par_policy),
     do: "Override the global PAR requirement for this specific client."
 
   defp button_for(:new), do: "Create client"
   defp button_for(:edit), do: "Save metadata"
+  defp button_for(:logout_propagation), do: "Save logout propagation"
   defp button_for(:redirects), do: "Save redirect URIs"
+  defp button_for(:logout_uris), do: "Save post-logout redirect URIs"
   defp button_for(:par_policy), do: "Save PAR policy"
 
   defp format_error(%{field: field, reason: reason, detail: detail}) do

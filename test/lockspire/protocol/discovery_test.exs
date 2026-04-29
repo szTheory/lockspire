@@ -121,23 +121,23 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     refute Map.has_key?(config, "dpop_signing_alg_values_supported")
   end
 
-  describe "openid_configuration/0 — Phase 38 session/logout fields" do
+  describe "openid_configuration/0 — shipped session/logout fields" do
     test "includes end_session_endpoint pointing to /end_session" do
       config = Discovery.openid_configuration()
 
       assert config["end_session_endpoint"] == "https://example.test/lockspire/end_session"
     end
 
-    test "backchannel_logout_supported is false (truthful Phase 38 placeholder, D-19)" do
+    test "backchannel_logout_supported is truthful for the shipped Phase 39 surface" do
       config = Discovery.openid_configuration()
 
-      assert config["backchannel_logout_supported"] == false
+      assert config["backchannel_logout_supported"] == true
     end
 
-    test "frontchannel_logout_supported is false (truthful Phase 38 placeholder, D-19)" do
+    test "frontchannel_logout_supported is truthful for the shipped Phase 39 surface" do
       config = Discovery.openid_configuration()
 
-      assert config["frontchannel_logout_supported"] == false
+      assert config["frontchannel_logout_supported"] == true
     end
   end
 

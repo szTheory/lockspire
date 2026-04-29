@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.Discovery do
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
     "device_authorization_endpoint" => "/device/code",
+    "end_session_endpoint" => "/end_session",
     "pushed_authorization_request_endpoint" => "/par",
     "registration_endpoint" => "/register",
     "token_endpoint" => "/token",
@@ -90,6 +91,7 @@ defmodule Lockspire.Protocol.Discovery do
     }
     |> Map.merge(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
+    |> put_bcl_fcl_metadata()
   end
 
   defp mounted_route_paths do
@@ -169,6 +171,15 @@ defmodule Lockspire.Protocol.Discovery do
   defp dpop_supported_surface_mounted?(endpoint_metadata) do
     Map.has_key?(endpoint_metadata, "token_endpoint") and
       Map.has_key?(endpoint_metadata, "userinfo_endpoint")
+  end
+
+  defp put_bcl_fcl_metadata(metadata) do
+    Map.merge(metadata, %{
+      "backchannel_logout_supported" => true,
+      "backchannel_logout_session_supported" => true,
+      "frontchannel_logout_supported" => true,
+      "frontchannel_logout_session_supported" => true
+    })
   end
 
   defp issuer_url(issuer, path) do
