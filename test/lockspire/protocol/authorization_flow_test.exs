@@ -83,6 +83,30 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert consent_interaction.consent_requested_at == fixed_now()
   end
 
+  test "validated requests persist max_age and auth_time_requested metadata on the interaction" do
+    assert {:login_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(max_age: 120, auth_time_requested?: true),
+               nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-auth-metadata" end
+             )
+
+    assert interaction.max_age == 120
+    assert interaction.auth_time_requested == true
+
+    assert {:ok, %Interaction{} = persisted} =
+             Store.fetch_interaction("interaction-auth-metadata")
+
+    assert persisted.max_age == 120
+    assert persisted.auth_time_requested == true
+    assert persisted.auth_time == nil
+  end
+
   test "remembered consent is reused only for same-or-subset scopes unless prompt=consent forces the screen" do
     assert {:ok, _grant} =
              Store.grant_consent(%ConsentGrant{
@@ -147,6 +171,130 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
 
     assert escalated_interaction.status == :pending_consent
+  end
+
+  test "consent reuse and silent reuse do not advance auth_time without a fresh end-user authentication event" do
+    fresh_auth_time = DateTime.add(fixed_now(), -30, :second)
+
+    assert {:ok, _grant} =
+             Store.grant_consent(%ConsentGrant{
+               account_id: "subject_123",
+               client_id: "client_123",
+               scopes: ["email", "profile"],
+               granted_at: fixed_now(),
+               status: :active,
+               kind: :remembered
+             })
+
+    assert {:login_required, %Interaction{} = login_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(prompt: ["login"], max_age: 120),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-fresh-auth" end
+             )
+
+    assert {:consent_reused, _redirect_uri} =
+             AuthorizationFlow.resume_interaction(
+               login_interaction.interaction_id,
+               %{subject_id: "subject_123", auth_time: fresh_auth_time},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "reuse-code" end
+             )
+
+    assert {:ok, %Interaction{} = resumed} =
+             Store.fetch_interaction(login_interaction.interaction_id)
+
+    assert DateTime.compare(resumed.auth_time, fresh_auth_time) == :eq
+
+    assert {:consent_reused, _redirect_uri} =
+             AuthorizationFlow.start_authorization(
+               validated_request(max_age: 120, state: "silent-reuse"),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "reuse-code-2" end,
+               interaction_id_generator: fn -> "interaction-silent-reuse" end
+             )
+
+    assert {:ok, %Interaction{} = silent_reuse} =
+             Store.fetch_interaction("interaction-silent-reuse")
+
+    assert DateTime.compare(silent_reuse.auth_time, fresh_auth_time) == :eq
+  end
+
+  test "interactive max_age requests move to pending_login when auth_time is missing or stale" do
+    stale_auth_time = DateTime.add(fixed_now(), -600, :second)
+
+    assert {:login_required, %Interaction{} = missing_auth_time} =
+             AuthorizationFlow.start_authorization(
+               validated_request(max_age: 60, state: "missing-auth-time"),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-missing-auth-time" end
+             )
+
+    assert missing_auth_time.status == :pending_login
+    assert missing_auth_time.account_id == nil
+
+    assert {:login_required, %Interaction{} = stale_auth_time_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(max_age: 60, state: "stale-auth-time"),
+               %{subject_id: "subject_123", auth_time: stale_auth_time},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-stale-auth-time" end
+             )
+
+    assert stale_auth_time_interaction.status == :pending_login
+    assert stale_auth_time_interaction.account_id == nil
+  end
+
+  test "resuming a pending_login interaction stores subject_context auth_time as durable protocol-owned auth_time" do
+    auth_time = DateTime.add(fixed_now(), -45, :second)
+
+    assert {:login_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(max_age: 120, auth_time_requested?: true),
+               nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-resume-auth-time" end
+             )
+
+    assert {:consent_required, %Interaction{} = resumed} =
+             AuthorizationFlow.resume_interaction(
+               interaction.interaction_id,
+               %{"auth_time" => auth_time, subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0
+             )
+
+    assert resumed.status == :pending_consent
+    assert DateTime.compare(resumed.auth_time, auth_time) == :eq
+    assert resumed.max_age == 120
+    assert resumed.auth_time_requested == true
   end
 
   test "approval issues hashed authorization codes, denial redirects safely, and expired or duplicate finalization fails" do
@@ -416,6 +564,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       scopes: ["email", "profile"],
       prompt: [],
       state: "state-123",
+      max_age: nil,
+      auth_time_requested?: false,
       code_challenge: "challenge-123",
       code_challenge_method: :S256
     }
