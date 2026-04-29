@@ -13,6 +13,7 @@ SUITE_MTLS_URL="${OIDF_CONFORMANCE_SERVER_MTLS:-https://localhost.emobix.co.uk:8
 SUITE_IMAGE_TAG="${OIDF_IMAGE_TAG:-latest}"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/lockspire-phase37-suite.XXXXXX")"
 FIXTURE_PID=""
+SOURCE_SUITE_DIR=""
 
 cleanup() {
   local exit_code=$?
@@ -26,8 +27,37 @@ cleanup() {
     IMAGE_TAG="${SUITE_IMAGE_TAG}" docker compose -f "${WORK_DIR}/docker-compose-prebuilt.yml" down -v >/dev/null 2>&1 || true
   fi
 
+  if [[ -n "${SOURCE_SUITE_DIR}" ]]; then
+    docker compose -f "${SOURCE_SUITE_DIR}/docker-compose.yml" down -v >/dev/null 2>&1 || true
+  fi
+
   rm -rf "${WORK_DIR}"
   exit "${exit_code}"
+}
+
+start_suite() {
+  if IMAGE_TAG="${SUITE_IMAGE_TAG}" docker compose -f "${WORK_DIR}/docker-compose-prebuilt.yml" up -d >"${LOG_DIR}/suite-compose.log" 2>&1; then
+    return 0
+  fi
+
+  {
+    echo "Prebuilt suite bootstrap failed. Falling back to the official source build."
+    cat "${LOG_DIR}/suite-compose.log"
+  } >>"${LOG_DIR}/suite-compose.log"
+
+  IMAGE_TAG="${SUITE_IMAGE_TAG}" docker compose -f "${WORK_DIR}/docker-compose-prebuilt.yml" down -v >/dev/null 2>&1 || true
+
+  curl -fsSL https://gitlab.com/openid/conformance-suite/-/archive/master/conformance-suite-master.tar.gz -o "${WORK_DIR}/conformance-suite.tar.gz"
+  tar -xzf "${WORK_DIR}/conformance-suite.tar.gz" -C "${WORK_DIR}"
+  SOURCE_SUITE_DIR="$(find "${WORK_DIR}" -maxdepth 1 -type d -name 'conformance-suite-*' | head -n 1)"
+
+  if [[ -z "${SOURCE_SUITE_DIR}" ]]; then
+    echo "Could not unpack conformance suite source archive" >>"${LOG_DIR}/suite-compose.log"
+    return 1
+  fi
+
+  MAVEN_CACHE="${WORK_DIR}/m2" docker compose -f "${SOURCE_SUITE_DIR}/builder-compose.yml" run --rm builder >>"${LOG_DIR}/suite-compose.log" 2>&1
+  docker compose -f "${SOURCE_SUITE_DIR}/docker-compose.yml" up -d >>"${LOG_DIR}/suite-compose.log" 2>&1
 }
 
 trap cleanup EXIT
@@ -69,6 +99,7 @@ start_local_fixture() {
   Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
     secret_key_base: String.duplicate(\"a\", 64),
     server: true,
+    adapter: Bandit.PhoenixAdapter,
     http: [ip: {127, 0, 0, 1}, port: ${fixture_port}],
     url: [scheme: \"http\", host: \"host.docker.internal\", port: ${fixture_port}]
   )
@@ -78,7 +109,9 @@ start_local_fixture() {
   Application.put_env(:lockspire, :known_scopes, [\"openid\", \"email\", \"profile\"])
   Application.put_env(:lockspire, :account_resolver, GeneratedHostApp.Lockspire.TestAccountResolver)
 
-  {:ok, _} = Application.ensure_all_started(:lockspire)
+  {:ok, _} = Application.ensure_all_started(:logger)
+  {:ok, _repo_pid} = Lockspire.TestRepo.start_link()
+  {:ok, _endpoint_pid} = GeneratedHostAppWeb.Endpoint.start_link()
   Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :auto)
 
   alias Lockspire.Domain.SigningKey
@@ -155,8 +188,9 @@ else
   FIXTURE_PORT="${LOCKSPIRE_PHASE37_PORT:-4011}"
   PROVIDER_BASE_URL="${LOCKSPIRE_PHASE37_PROVIDER_BASE_URL:-http://host.docker.internal:${FIXTURE_PORT}}"
   PROVIDER_DISCOVERY_URL="${LOCKSPIRE_PHASE37_PROVIDER_DISCOVERY_URL:-${PROVIDER_BASE_URL}/lockspire/.well-known/openid-configuration}"
+  LOCAL_PROVIDER_DISCOVERY_URL="http://127.0.0.1:${FIXTURE_PORT}/lockspire/.well-known/openid-configuration"
   start_local_fixture "${FIXTURE_PORT}" "${PROVIDER_BASE_URL}/lockspire"
-  wait_for_url "${PROVIDER_DISCOVERY_URL}" false 60
+  wait_for_url "${LOCAL_PROVIDER_DISCOVERY_URL}" false 60
 fi
 
 python3 - <<'PY' "${PLAN_PATH}" "${WORK_DIR}/provider-config.json" "${WORK_DIR}/plan-strings.txt" "${PROVIDER_DISCOVERY_URL}" "${PROVIDER_BASE_URL}"
@@ -245,7 +279,7 @@ PY
 cp "${WORK_DIR}/provider-config.json" "${ARTIFACT_DIR}/provider-config.json"
 cp "${WORK_DIR}/plan-strings.txt" "${ARTIFACT_DIR}/plan-strings.txt"
 
-IMAGE_TAG="${SUITE_IMAGE_TAG}" docker compose -f "${WORK_DIR}/docker-compose-prebuilt.yml" up -d >"${LOG_DIR}/suite-compose.log" 2>&1
+start_suite
 wait_for_url "${SUITE_BASE_URL}" true 120
 
 export CONFORMANCE_SERVER="${SUITE_BASE_URL}"

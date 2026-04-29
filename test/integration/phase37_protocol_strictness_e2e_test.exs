@@ -10,6 +10,7 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.SigningKeyRecord
 
   defmodule GeneratedHostAuthTimeResolver do
     @behaviour Lockspire.Host.AccountResolver
@@ -72,6 +73,7 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Lockspire.TestRepo.delete_all(SigningKeyRecord)
 
     {:ok, client} =
       Repository.register_client(%Client{
