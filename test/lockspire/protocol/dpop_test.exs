@@ -185,6 +185,18 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert {:error, :stale_iat} = DPoP.validate_proof(proof, validation_opts())
     end
 
+    test "returns a typed reason for later invalid_dpop_proof mapping when iat is a string", %{
+      keys: keys
+    } do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{"iat" => Integer.to_string(@reference_unix)})
+        )
+
+      assert {:error, :invalid_iat} = DPoP.validate_proof(proof, validation_opts())
+    end
+
     test "returns a typed reason for later invalid_dpop_proof mapping when iat is too far in the future",
          %{keys: keys} do
       proof =

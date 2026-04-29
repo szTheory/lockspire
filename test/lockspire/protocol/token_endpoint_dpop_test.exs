@@ -76,27 +76,50 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
     assert error.reason_code == :missing_dpop_proof
   end
 
-  defp dpop_proof_fixture do
+  test "returns invalid_dpop_proof when proof iat is a string" do
+    client = %Client{client_id: "client-dpop-invalid-iat", dpop_policy: :inherit}
+    %{jwt: proof_jwt} = dpop_proof_fixture(iat: Integer.to_string(DateTime.utc_now() |> DateTime.to_unix()))
+
+    assert {:error, error} =
+             TokenEndpointDPoP.resolve_context(client, %{
+               method: "POST",
+               dpop: proof_jwt,
+               opts: [
+                 server_policy_store: DpopServerPolicyStore,
+                 dpop_replay_store: AcceptingReplayStore,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert error.error == "invalid_dpop_proof"
+    assert error.reason_code == :invalid_iat
+  end
+
+  defp dpop_proof_fixture(overrides \\ []) do
     keys = JarTestHelpers.generate_ec_keys()
     now = DateTime.utc_now()
     target_uri = "https://example.test/lockspire/token"
+    iat = Keyword.get(overrides, :iat, DateTime.to_unix(now))
 
     proof =
       JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
         "htm" => "POST",
         "htu" => target_uri,
-        "iat" => DateTime.to_unix(now),
+        "iat" => iat,
         "jti" => Ecto.UUID.generate()
       })
 
-    assert {:ok, %DPoP{} = validated} =
-             DPoP.validate_proof(proof,
-               method: "POST",
-               target_uri: target_uri,
-               now: now,
-               max_age: 300,
-               clock_skew: 30
-             )
+    validated =
+      case DPoP.validate_proof(proof,
+             method: "POST",
+             target_uri: target_uri,
+             now: now,
+             max_age: 300,
+             clock_skew: 30
+           ) do
+        {:ok, %DPoP{} = proof_struct} -> proof_struct
+        _other -> nil
+      end
 
     %{jwt: proof, validated: validated}
   end
