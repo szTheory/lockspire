@@ -3,7 +3,7 @@ defmodule Lockspire.Host.Claims do
   Structured claim material returned by the host account resolver.
   """
 
-  @protocol_claims ~w(iss aud exp iat nonce at_hash sub)
+  @protocol_claims ~w(iss aud exp iat nonce at_hash auth_time sub)
 
   @type claim_set :: map()
 
