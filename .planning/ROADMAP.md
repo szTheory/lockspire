@@ -4,7 +4,7 @@
 
 - [ ] **Phase 37: Protocol Strictness & Conformance** - Enforce strict OIDC validation and automated conformance testing
 - [x] **Phase 38: Session Tracking & RP-Initiated Logout** - Track user sessions and support relying-party initiated logout
-- [ ] **Phase 39: Automated RP Logout Propagation** - Implement Back-Channel and Front-Channel logout mechanisms
+- [x] **Phase 39: Automated RP Logout Propagation** - Implement Back-Channel and Front-Channel logout mechanisms (completed 2026-04-29)
 - [ ] **Phase 40: JWE Support for Request Objects** - Add encryption key management and nested JWT validation
 
 ## Phase Details
@@ -55,8 +55,8 @@ Plans:
 - [x] 39-02-PLAN.md - Add typed client logout metadata, operator validation, and DCR rejection
 - [x] 39-03-PLAN.md - Create durable logout event/delivery storage and pre-revocation snapshot helpers
 - [x] 39-04-PLAN.md - Wire Req, named Oban startup, snapshot-authoritative worker delivery, and lifecycle instrumentation
-- [ ] 39-05-PLAN.md - Make /end_session/complete transactionally persist, revoke, and enqueue propagation work
-- [ ] 39-06-PLAN.md - Ship front-channel UX, discovery/admin truth surfaces, docs, and end-to-end proof
+- [x] 39-05-PLAN.md - Make /end_session/complete transactionally persist, revoke, and enqueue propagation work
+- [x] 39-06-PLAN.md - Ship front-channel UX, discovery/admin truth surfaces, docs, and end-to-end proof
 **UI hint**: yes
 
 ### Phase 40: JWE Support for Request Objects
@@ -75,5 +75,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 37. Protocol Strictness & Conformance | 3/4 | Executing | - |
 | 38. Session Tracking & RP-Initiated Logout | 4/4 | Complete | 2026-04-29 |
-| 39. Automated RP Logout Propagation | 4/6 | Executing | - |
+| 39. Automated RP Logout Propagation | 6/6 | Complete    | 2026-04-29 |
 | 40. JWE Support for Request Objects | 0/0 | Not started | - |
