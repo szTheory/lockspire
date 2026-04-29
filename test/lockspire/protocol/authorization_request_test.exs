@@ -102,6 +102,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
     assert {:browser_error, %Error{} = error} = AuthorizationRequest.validate(params)
     assert error.reason_code == :invalid_redirect_uri
+    assert error.error_description == "redirect_uri must match a registered URI"
   end
 
   test "unknown scopes return redirect errors with preserved state" do
