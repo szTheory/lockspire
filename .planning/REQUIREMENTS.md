@@ -48,7 +48,7 @@
 | CONF-04 | Phase 37 | Pending |
 | SLO-01 | Phase 38 | Pending |
 | SLO-02 | Phase 38 | Pending |
-| SLO-03 | Phase 39 | Pending |
+| SLO-03 | Phase 39 | Completed |
 | SLO-04 | Phase 39 | Pending |
 | AUTHZ-01 | Phase 40 | Pending |
 | AUTHZ-02 | Phase 40 | Pending |

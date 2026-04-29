@@ -51,10 +51,10 @@ Plans:
   3. The server tracks and logs logout requested, enqueued, attempted, succeeded, and failed/discarded propagation stages truthfully.
 **Plans**: 6 plans
 Plans:
-- [ ] 39-01-PLAN.md - Create Wave 0 validation scaffolding for propagation, startup, and discovery truth
-- [ ] 39-02-PLAN.md - Add typed client logout metadata, operator validation, and DCR rejection
-- [ ] 39-03-PLAN.md - Create durable logout event/delivery storage and pre-revocation snapshot helpers
-- [ ] 39-04-PLAN.md - Wire Req, named Oban startup, snapshot-authoritative worker delivery, and lifecycle instrumentation
+- [x] 39-01-PLAN.md - Create Wave 0 validation scaffolding for propagation, startup, and discovery truth
+- [x] 39-02-PLAN.md - Add typed client logout metadata, operator validation, and DCR rejection
+- [x] 39-03-PLAN.md - Create durable logout event/delivery storage and pre-revocation snapshot helpers
+- [x] 39-04-PLAN.md - Wire Req, named Oban startup, snapshot-authoritative worker delivery, and lifecycle instrumentation
 - [ ] 39-05-PLAN.md - Make /end_session/complete transactionally persist, revoke, and enqueue propagation work
 - [ ] 39-06-PLAN.md - Ship front-channel UX, discovery/admin truth surfaces, docs, and end-to-end proof
 **UI hint**: yes
@@ -75,5 +75,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 37. Protocol Strictness & Conformance | 3/4 | Executing | - |
 | 38. Session Tracking & RP-Initiated Logout | 4/4 | Complete | 2026-04-29 |
-| 39. Automated RP Logout Propagation | 0/6 | Planned | - |
+| 39. Automated RP Logout Propagation | 4/6 | Executing | - |
 | 40. JWE Support for Request Objects | 0/0 | Not started | - |
