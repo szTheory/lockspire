@@ -174,8 +174,10 @@ defmodule Lockspire.Web.EndSessionControllerTest do
         build_conn(:get, "/end_session/complete", %{"token" => token})
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-      assert conn.status in [302, 303]
-      assert redirect_location(conn) == "https://client.example.com/logged-out?state=after-logout"
+      assert conn.status == 200
+      assert conn.resp_body =~ "Signing you out of connected apps"
+      assert conn.resp_body =~ ~s(href="https://client.example.com/logged-out")
+      assert conn.resp_body =~ "lockspire-frontchannel-logout-logout-client"
 
       revoked_count =
         TokenRecord
@@ -199,7 +201,7 @@ defmodule Lockspire.Web.EndSessionControllerTest do
 
       assert Enum.map(persisted_deliveries, & &1.channel) == [:backchannel, :frontchannel]
       assert Enum.find(persisted_deliveries, &(&1.channel == :backchannel)).status == :enqueued
-      assert Enum.find(persisted_deliveries, &(&1.channel == :frontchannel)).status == :pending
+      assert Enum.find(persisted_deliveries, &(&1.channel == :frontchannel)).status == :rendered
       assert Lockspire.TestRepo.aggregate(Job, :count, :id) == 1
     end
 
@@ -224,10 +226,12 @@ defmodule Lockspire.Web.EndSessionControllerTest do
         build_conn(:get, "/end_session/complete", %{"token" => token})
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-      assert first_conn.status in [302, 303]
-      assert second_conn.status in [302, 303]
-      assert redirect_location(first_conn) == "https://client.example.com/logged-out?state=after-logout"
-      assert redirect_location(second_conn) == "https://client.example.com/logged-out?state=after-logout"
+      assert first_conn.status == 200
+      assert second_conn.status == 200
+      assert first_conn.resp_body =~ "Signing you out of connected apps"
+      assert second_conn.resp_body =~ "Signing you out of connected apps"
+      assert first_conn.resp_body =~ ~s(href="https://client.example.com/logged-out")
+      assert second_conn.resp_body =~ ~s(href="https://client.example.com/logged-out")
 
       assert Lockspire.TestRepo.aggregate(LogoutEventRecord, :count, :id) == 1
       assert Lockspire.TestRepo.aggregate(LogoutDeliveryRecord, :count, :id) == 2
@@ -262,8 +266,9 @@ defmodule Lockspire.Web.EndSessionControllerTest do
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
       assert conn.status == 200
-      assert conn.resp_body =~ "You have been signed out"
-      assert conn.resp_body =~ "lockspire-logged-out"
+      assert conn.resp_body =~ "Signing you out of connected apps"
+      assert conn.resp_body =~ ~s(href="#logout-complete")
+      assert conn.resp_body =~ "lockspire-frontchannel-logout-logout-client"
     end
   end
 
