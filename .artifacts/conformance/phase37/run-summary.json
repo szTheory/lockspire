@@ -1,0 +1,40 @@
+{
+  "description": "Lockspire Phase 37 strictness subset against the OpenID Foundation conformance suite",
+  "mode": "local-integration-only",
+  "skipped": "OIDF Docker suite skipped (LOCKSPIRE_PHASE37_SKIP_SUITE=true). Integration tests passed.",
+  "generated_at": "2026-04-29T02:01:53.663587+00:00",
+  "artifact_dir": "/Users/jon/projects/lockspire/.claude/worktrees/agent-ad79da2beca404d24/.artifacts/conformance/phase37",
+  "exported_files": [],
+  "modules": [
+    {
+      "name": "browser-safe redirect and silent-auth rejection",
+      "suite_plan": "oidcc-test-plan",
+      "variants": {
+        "client_auth_type": "none",
+        "response_type": "code",
+        "response_mode": "default",
+        "client_registration": "dynamic_client"
+      },
+      "modules": [
+        "oidcc-prompt-none-not-logged-in",
+        "oidcc-ensure-registered-redirect-uri",
+        "oidcc-redirect-uri-query-mismatch",
+        "oidcc-redirect-uri-query-OK"
+      ]
+    },
+    {
+      "name": "fresh-session auth_time and prompt=none success",
+      "suite_plan": "oidcc-test-plan",
+      "variants": {
+        "client_auth_type": "none",
+        "response_type": "code",
+        "response_mode": "default",
+        "client_registration": "dynamic_client"
+      },
+      "modules": [
+        "oidcc-prompt-none-logged-in",
+        "oidcc-max-age-10000"
+      ]
+    }
+  ]
+}
