@@ -30,9 +30,9 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         start_silent_authorization(validated, subject_context, interaction_id, now, opts)
 
       login_required?(validated, subject_context, now) ->
-      validated
-      |> build_interaction(interaction_id, nil, :pending_login, now)
-      |> persist_login_required(opts)
+        validated
+        |> build_interaction(interaction_id, nil, :pending_login, now)
+        |> persist_login_required(opts)
 
       true ->
         start_subject_authorization(validated, subject_context, interaction_id, now, opts)
