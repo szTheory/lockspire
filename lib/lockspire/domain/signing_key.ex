@@ -4,7 +4,7 @@ defmodule Lockspire.Domain.SigningKey do
   """
 
   @type key_type :: :RSA | :EC | :OKP
-  @type use_type :: :sig
+  @type use_type :: :sig | :enc
   @type status :: :upcoming | :active | :retiring | :retired
 
   @type t :: %__MODULE__{

@@ -79,6 +79,19 @@ defmodule Lockspire.Web.JwksControllerTest do
                published_at: now
              })
 
+    assert {:ok, _key} =
+             Repository.publish_key(%SigningKey{
+               kid: "kid_enc",
+               kty: :RSA,
+               alg: "RS256",
+               use: :enc,
+               public_jwk: %{"kid" => "kid_enc", "kty" => "RSA", "alg" => "RS256", "use" => "enc"},
+               private_jwk_encrypted: <<1, 2, 3>>,
+               status: :active,
+               published_at: now,
+               activated_at: now
+             })
+
     :ok
   end
 
@@ -93,10 +106,10 @@ defmodule Lockspire.Web.JwksControllerTest do
 
     body = Jason.decode!(conn.resp_body)
     assert %{"keys" => keys} = body
-    assert Enum.map(keys, & &1["kid"]) == ["kid_active", "kid_retiring", "kid_upcoming"]
+    assert Enum.map(keys, & &1["kid"]) == ["kid_active", "kid_retiring", "kid_upcoming", "kid_enc"]
 
     assert Enum.all?(keys, fn key ->
-             key["alg"] == "RS256" and key["kty"] == "RSA" and key["use"] == "sig"
+             key["alg"] == "RS256" and key["kty"] == "RSA" and key["use"] in ["sig", "enc"]
            end)
 
     refute Enum.any?(keys, &Map.has_key?(&1, "d"))

@@ -116,6 +116,18 @@ defmodule Lockspire.Admin.KeysTest do
     assert retired_audit.actor_id == "ops-retire"
   end
 
+  test "generate_key creates new keys for specific use" do
+    assert {:ok, sig_view} = Keys.generate_key(:sig)
+    assert sig_view.key.use == :sig
+    assert sig_view.key.status == :upcoming
+    assert sig_view.key.kty == :RSA
+
+    assert {:ok, enc_view} = Keys.generate_key(:enc)
+    assert enc_view.key.use == :enc
+    assert enc_view.key.status == :upcoming
+    assert enc_view.key.kty == :RSA
+  end
+
   def handle_event(event, _measurements, metadata, pid) do
     send(pid, {:telemetry_event, event, metadata})
   end

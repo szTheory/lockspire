@@ -27,6 +27,7 @@ defmodule Lockspire.Protocol.RequestObject do
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.Jar
+  alias Lockspire.Storage.Ecto.Repository
 
   @type result ::
           {:ok, map()}
@@ -40,11 +41,27 @@ defmodule Lockspire.Protocol.RequestObject do
     with :ok <- reject_request_uri_collision(params),
          :ok <- reject_outer_param_conflicts(params),
          {:ok, jwt} <- fetch_request(params),
+         {:ok, jws_string} <- decrypt_request(jwt),
          :ok <- require_client_jwks(client),
-         {:ok, %Jar{} = jar} <- decode_and_verify(jwt, client),
+         {:ok, %Jar{} = jar} <- decode_and_verify(jws_string, client),
          :ok <- validate(jar, client, opts),
          {:ok, projected} <- project_to_params(jar, client) do
       {:ok, projected}
+    end
+  end
+
+  defp decrypt_request(jwt) do
+    with {:ok, dec_keys} <- Repository.list_decryption_keys(),
+         {:ok, jws_string} <- Jar.decrypt(jwt, dec_keys) do
+      {:ok, jws_string}
+    else
+      _ ->
+        {:browser_error,
+         browser_error(
+           :invalid_request_object,
+           "Request object decryption failed",
+           :invalid_request_object_decryption
+         )}
     end
   end
 

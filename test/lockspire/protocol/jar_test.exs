@@ -3,6 +3,45 @@ defmodule Lockspire.Protocol.JarTest do
   alias Lockspire.Protocol.Jar
   alias Lockspire.Domain.Client
 
+  describe "decrypt/2" do
+    test "ignores 3-part JWS strings and returns them unaltered" do
+      jws = "header.payload.signature"
+      assert {:ok, ^jws} = Jar.decrypt(jws, [%Lockspire.Domain.SigningKey{}])
+    end
+
+    test "correctly decrypts a 5-part JWE with a matching private key" do
+      enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+      sig_jwk = JOSE.JWK.generate_key({:ec, "P-256"})
+
+      jws = JOSE.JWT.sign(sig_jwk, %{"alg" => "ES256"}, %{"iss" => "client"})
+      {_, jws_compact} = JOSE.JWS.compact(jws)
+
+      jwe = JOSE.JWE.block_encrypt(enc_jwk, jws_compact, %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      {_, jwe_compact} = JOSE.JWE.compact(jwe)
+
+      key = %Lockspire.Domain.SigningKey{
+        private_jwk_encrypted: :erlang.term_to_binary(JOSE.JWK.to_map(enc_jwk) |> elem(1))
+      }
+
+      assert {:ok, plain_text} = Jar.decrypt(jwe_compact, [key])
+      assert plain_text == jws_compact
+    end
+
+    test "returns {:error, :decryption_failed} if no provided keys can decrypt the JWE" do
+      enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+      other_enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+
+      jwe = JOSE.JWE.block_encrypt(enc_jwk, "plain_text", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      {_, jwe_compact} = JOSE.JWE.compact(jwe)
+
+      key = %Lockspire.Domain.SigningKey{
+        private_jwk_encrypted: :erlang.term_to_binary(JOSE.JWK.to_map(other_enc_jwk) |> elem(1))
+      }
+
+      assert {:error, :decryption_failed} = Jar.decrypt(jwe_compact, [key])
+    end
+  end
+
   describe "decode/1" do
     test "successfully decodes a valid JWT string" do
       claims = %{"iss" => "client_id", "aud" => "server", "response_type" => "code"}

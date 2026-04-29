@@ -894,9 +894,24 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl KeyStore
+  def list_decryption_keys do
+    SigningKeyRecord
+    |> where([key], key.use == :enc)
+    |> where([key], key.status in [:active, :retiring])
+    |> order_by([key], asc: key.inserted_at)
+    |> repo().all()
+    |> then(fn records ->
+      {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)}
+    end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl KeyStore
   def fetch_active_signing_key do
     SigningKeyRecord
     |> where([key], key.status == :active)
+    |> where([key], key.use == :sig)
     |> order_by([key], asc: key.inserted_at)
     |> limit(1)
     |> repo().one()
@@ -1515,7 +1530,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     do: repo().rollback(:not_published)
 
   defp activate_signing_key_record(%SigningKeyRecord{} = selected_record, activated_at) do
-    case fetch_active_signing_key_records() do
+    case fetch_active_signing_key_records(selected_record.use) do
       [] ->
         %{
           activated_key: activate_selected_signing_key(selected_record, activated_at),
@@ -1533,9 +1548,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end
   end
 
-  defp fetch_active_signing_key_records do
+  defp fetch_active_signing_key_records(use) do
     SigningKeyRecord
     |> where([key], key.status == :active)
+    |> where([key], key.use == ^use)
     |> lock("FOR UPDATE")
     |> repo().all()
   end

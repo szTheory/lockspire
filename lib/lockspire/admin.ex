@@ -30,6 +30,7 @@ defmodule Lockspire.Admin do
   defdelegate revoke_token_family(token_id, attrs \\ %{}), to: Tokens
   defdelegate list_keys(opts \\ []), to: Keys
   defdelegate get_key(key_id), to: Keys
+  defdelegate generate_key(use \\ :sig), to: Keys
   defdelegate publish_key(key_id, attrs \\ %{}), to: Keys
   defdelegate activate_key(key_id, attrs \\ %{}), to: Keys
   defdelegate retire_key(key_id, attrs \\ %{}), to: Keys

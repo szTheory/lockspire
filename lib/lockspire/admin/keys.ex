@@ -31,6 +31,44 @@ defmodule Lockspire.Admin.Keys do
     end
   end
 
+  @spec generate_key(SigningKey.use_type()) :: {:ok, key_view()} | {:error, term()}
+  def generate_key(use \\ :sig) do
+    jwk = JOSE.JWK.generate_key({:rsa, 2048})
+    {_, public_jwk_map} = JOSE.JWK.to_map(JOSE.JWK.to_public(jwk))
+    {_, private_jwk_map} = JOSE.JWK.to_map(jwk)
+
+    kid = Base.encode16(:crypto.strong_rand_bytes(8))
+    
+    public_jwk_map =
+      public_jwk_map
+      |> Map.put("use", Atom.to_string(use))
+      |> Map.put("kid", kid)
+      
+    private_jwk_map = Map.put(private_jwk_map, "kid", kid)
+
+    key = %SigningKey{
+      kid: kid,
+      kty: :RSA,
+      alg: "RS256",
+      use: use,
+      public_jwk: public_jwk_map,
+      private_jwk_encrypted: :erlang.term_to_binary(private_jwk_map),
+      status: :upcoming,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
+    }
+
+    with {:ok, published_key} <- transact_with_audit(
+             fn -> Repository.publish_key(key) end,
+             fn %SigningKey{} = k ->
+               key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})
+             end
+           ) do
+      emit(:key_generated, published_key, actor_from_attrs(%{}))
+      {:ok, to_view(published_key)}
+    end
+  end
+
   @spec publish_key(integer(), map() | keyword()) :: {:ok, key_view()} | {:error, term()}
   def publish_key(key_id, attrs \\ %{})
 

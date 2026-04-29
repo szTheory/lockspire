@@ -13,7 +13,7 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
     field(:kid, :string)
     field(:kty, Ecto.Enum, values: [:RSA, :EC, :OKP])
     field(:alg, :string)
-    field(:use, Ecto.Enum, values: [:sig])
+    field(:use, Ecto.Enum, values: [:sig, :enc])
     field(:public_jwk, :map)
     field(:private_jwk_encrypted, :binary)
     field(:status, Ecto.Enum, values: [:upcoming, :active, :retiring, :retired])

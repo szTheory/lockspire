@@ -34,6 +34,32 @@ defmodule Lockspire.Protocol.Jar do
   @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
 
   @doc """
+  Decrypts a nested JWE request object to return the inner JWS string.
+  If the input is not a JWE (e.g. it is a 3-part JWS), it returns `{:ok, jwt}` immediately.
+  """
+  @spec decrypt(String.t(), [Lockspire.Domain.SigningKey.t()]) :: {:ok, String.t()} | {:error, :decryption_failed}
+  def decrypt(jwt, decryption_keys) when is_binary(jwt) do
+    if length(String.split(jwt, ".")) == 5 do
+      Enum.reduce_while(decryption_keys, {:error, :decryption_failed}, fn key, _acc ->
+        try do
+          jwk_map = :erlang.binary_to_term(key.private_jwk_encrypted)
+          jwk = JOSE.JWK.from_map(jwk_map)
+          case JOSE.JWK.block_decrypt(jwt, jwk) do
+            {plain_text, %JOSE.JWE{}} -> {:halt, {:ok, plain_text}}
+            _ -> {:cont, {:error, :decryption_failed}}
+          end
+        rescue
+          _ -> {:cont, {:error, :decryption_failed}}
+        catch
+          _, _ -> {:cont, {:error, :decryption_failed}}
+        end
+      end)
+    else
+      {:ok, jwt}
+    end
+  end
+
+  @doc """
   Decodes a JWT string without signature verification.
   """
   @spec decode(String.t()) :: {:ok, t()} | {:error, :invalid_jwt}

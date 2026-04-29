@@ -30,6 +30,20 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   end
 
   @impl true
+  def handle_event("generate", %{"use" => use}, socket) do
+    use_atom = String.to_existing_atom(use)
+
+    case Admin.generate_key(use_atom) do
+      {:ok, _key_view} ->
+        keys = load_keys()
+        {:noreply, assign(socket, keys: keys, total_keys: length(keys))}
+
+      {:error, _reason} ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
@@ -37,6 +51,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
         title="Signing key lifecycle"
         subtitle="Inspect upcoming, active, retiring, and retired keys without exposing raw status editing."
       >
+        <div class="lockspire-admin-actions" style="margin-bottom: 1rem; display: flex; gap: 1rem;">
+          <button phx-click="generate" phx-value-use="sig" class="button">Generate Signing Key</button>
+          <button phx-click="generate" phx-value-use="enc" class="button button-secondary">Generate Encryption Key</button>
+        </div>
+
         <p>Total keys in durable storage: {@total_keys}</p>
 
         <%= if @keys == [] do %>
@@ -50,6 +69,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
               <li>
                 <a href={key_show_path(entry.key.id)}>{entry.key.kid}</a>
                 <span>{entry.key.alg} / {entry.key.kty}</span>
+                <span>Use: {entry.key.use}</span>
                 <AdminComponents.status_badge status={entry.key.status} />
                 <span>JWKS {if entry.publishable, do: "visible", else: "hidden"}</span>
                 <span>Next action {format_actions(entry.next_actions)}</span>
