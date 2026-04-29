@@ -40,9 +40,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONF-01 | Phase 37 | Pending |
-| CONF-02 | Phase 37 | Pending |
-| CONF-03 | Phase 37 | Pending |
+| CONF-01 | Phase 37 | Completed |
+| CONF-02 | Phase 37 | Completed |
+| CONF-03 | Phase 37 | Completed |
 | CONF-04 | Phase 37 | Pending |
 | SLO-01 | Phase 38 | Pending |
 | SLO-02 | Phase 38 | Pending |

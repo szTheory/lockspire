@@ -22,7 +22,7 @@
 Plans:
 - [x] 37-01-PLAN.md - Reserve protocol-owned auth_time claim handling and integer-only ID token emission
 - [x] 37-02-PLAN.md - Tighten authorize request parsing for prompt=none, max_age, and auth_time demand
-- [ ] 37-03-PLAN.md - Persist durable auth_time state and enforce silent prompt=none outcomes
+- [x] 37-03-PLAN.md - Persist durable auth_time state and enforce silent prompt=none outcomes
 - [ ] 37-04-PLAN.md - Add repo-native and hosted OIDF conformance proof lanes
 
 ### Phase 38: Session Tracking & RP-Initiated Logout
@@ -62,7 +62,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 37. Protocol Strictness & Conformance | 2/4 | Executing | - |
+| 37. Protocol Strictness & Conformance | 3/4 | Executing | - |
 | 38. Session Tracking & RP-Initiated Logout | 0/0 | Not started | - |
 | 39. Automated RP Logout Propagation | 0/0 | Not started | - |
 | 40. JWE Support for Request Objects | 0/0 | Not started | - |

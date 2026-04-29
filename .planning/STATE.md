@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Protocol Surface Completeness
 status: executing
-stopped_at: Completed 37-02-PLAN.md
-last_updated: "2026-04-29T00:59:26.851Z"
-last_activity: 2026-04-29 -- Completed 37-02 authorize request strictness slice
+stopped_at: Completed 37-03-PLAN.md
+last_updated: "2026-04-29T01:14:22.127Z"
+last_activity: 2026-04-29 -- Completed 37-03 durable auth_time + silent authorization slice
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -27,14 +27,14 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 37 (protocol-strictness-conformance) — EXECUTING
-Plan: 3 of 4
-Status: Executing Phase 37
-Last activity: 2026-04-29 -- Completed 37-02 authorize request strictness slice
+Plan: 4 of 4
+Status: Ready to execute
+Last activity: 2026-04-29 -- Completed 37-03 durable auth_time + silent authorization slice
 
 ## Performance Metrics
 
 - Phases completed: 0/4 (v1.8)
-- Plans completed: 1/4 (v1.8)
+- Plans completed: 3/4 (v1.8)
 
 ## Accumulated Context
 
@@ -71,6 +71,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Preserve DPoP runtime strictness and lock it with regression coverage instead of changing proof validation behavior.
 - AuthorizationRequest now parses prompt=none, max_age, and auth_time claim demand centrally while preserving exact redirect-uri and nonce enforcement.
 - AuthorizeController remained tuple-driven; controller coverage expanded without moving request parsing out of the protocol layer.
+- Durable interaction rows now own max_age and auth_time request truth, and only explicit host auth_time input can advance auth_time on login resume.
+- prompt=none now returns redirect-safe OIDC errors from AuthorizationFlow before any host login or Lockspire consent UI can execute.
+- TokenExchange reads nonce and conditional auth_time from persisted interaction state while keeping OpenID device grants interaction-optional.
 
 ### Blockers/Concerns
 
@@ -82,7 +85,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 37-02-PLAN.md
+**Stopped at:** Completed 37-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
