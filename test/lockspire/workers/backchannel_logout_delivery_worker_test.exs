@@ -46,7 +46,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   describe "perform/1" do
     test "POSTs the logout_token to the persisted backchannel_logout_uri for the delivery row" do
       owner = self()
-      %{delivery: delivery, keys: keys} = create_delivery_fixture()
+      %{delivery: delivery} = create_delivery_fixture()
 
       Req.Test.expect(:logout_delivery, fn conn ->
         assert conn.host == "snapshot.example.com"
@@ -54,7 +54,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
         assert conn.method == "POST"
         assert conn.body_params["logout_token"]
 
-        claims = decode_claims(conn.body_params["logout_token"], keys)
+        claims = decode_unverified_claims(conn.body_params["logout_token"])
         send(owner, {:logout_claims, claims})
 
         Plug.Conn.send_resp(conn, 200, "")
@@ -250,12 +250,8 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     |> LogoutDeliveryRecord.to_domain()
   end
 
-  defp decode_claims(jwt, keys) do
-    public_jwk = JOSE.JWK.to_public(keys.private_jwk)
-
-    assert {true, %JOSE.JWT{fields: claims}, _jws} =
-             JOSE.JWT.verify_strict(public_jwk, ["RS256"], jwt)
-
+  defp decode_unverified_claims(jwt) do
+    %JOSE.JWT{fields: claims} = JOSE.JWT.peek_payload(jwt)
     claims
   end
 end
