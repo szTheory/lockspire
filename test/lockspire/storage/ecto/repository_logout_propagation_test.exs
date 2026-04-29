@@ -3,6 +3,9 @@ defmodule Lockspire.Storage.Ecto.RepositoryLogoutPropagationTest do
 
   @moduletag :integration
 
+  alias Lockspire.Domain.LogoutDelivery
+  alias Lockspire.Domain.LogoutEvent
+  alias Lockspire.Storage.LogoutStore
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -16,6 +19,45 @@ defmodule Lockspire.Storage.Ecto.RepositoryLogoutPropagationTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+  end
+
+  describe "logout domain/storage contracts" do
+    test "logout events expose explicit durable protocol fields" do
+      event = %LogoutEvent{
+        event_id: "evt_123",
+        sid: "sid_123",
+        account_id: "account_123",
+        subject: "subject_123",
+        initiated_by: :rp_initiated_logout,
+        post_logout_redirect_uri: "https://rp.example.com/logout-complete",
+        frontchannel_continue_to: "/logout/continue"
+      }
+
+      assert event.event_id == "evt_123"
+      assert event.initiated_by == :rp_initiated_logout
+      assert event.frontchannel_continue_to == "/logout/continue"
+    end
+
+    test "logout deliveries model explicit channel and lifecycle state" do
+      delivery = %LogoutDelivery{
+        delivery_id: "ld_123",
+        client_id: "client_123",
+        channel: :backchannel,
+        target_uri: "https://rp.example.com/backchannel-logout",
+        session_required: true
+      }
+
+      assert delivery.status == :pending
+      assert delivery.attempt_count == 0
+      assert delivery.channel == :backchannel
+      assert delivery.target_uri == "https://rp.example.com/backchannel-logout"
+    end
+
+    test "logout store behaviour exposes durable persistence contract" do
+      callbacks = LogoutStore.behaviour_info(:callbacks)
+
+      assert {:persist_logout_propagation, 1} in callbacks
+    end
   end
 
   describe "persist_logout_propagation/1" do
