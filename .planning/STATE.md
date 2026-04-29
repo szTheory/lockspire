@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Completed 39-06-PLAN.md
-last_updated: "2026-04-29T20:11:36.398Z"
+status: planning
+stopped_at: Phase 40 context gathered (assumptions mode)
+last_updated: "2026-04-29T20:26:49.111Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 4
-  completed_phases: 4
+  completed_phases: 3
   total_plans: 14
   completed_plans: 14
   percent: 100
@@ -100,9 +100,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Investigate and fix the remaining key-lifecycle baseline failures before starting Phase 39.
 
-**Resume file:** None
+**Resume file:** --resume-file
 
-**Stopped at:** Completed 39-06-PLAN.md
+**Stopped at:** Phase 40 context gathered (assumptions mode)
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
