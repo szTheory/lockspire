@@ -10,6 +10,7 @@ Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
+- The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
 - global and client-specific PAR requirement policies (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
@@ -50,6 +51,7 @@ Lockspire stays at `v0.2.0` preview because public claims are limited to what th
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `test/integration/install_generator_test.exs` for generator-backed install proof
 - `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow
+- `test/integration/phase37_protocol_strictness_e2e_test.exs` for the generated-host strictness proof covering `prompt=none`, `max_age`, `auth_time`, and exact redirect behavior
 - `test/lockspire/release_readiness_contract_test.exs` for narrow release and docs posture checks
 - `.github/workflows/ci.yml` and `.github/workflows/release.yml` for maintained contributor and protected release lanes
 - `docs/maintainer-release.md` and `SECURITY.md` for versioned release and disclosure guidance

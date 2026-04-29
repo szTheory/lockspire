@@ -9,7 +9,6 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.SigningKey
-  alias Lockspire.Host.Claims
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule GeneratedHostAuthTimeResolver do
@@ -208,7 +207,7 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
     assert supported_surface =~ "max_age"
     assert supported_surface =~ "auth_time"
     assert supported_surface =~ "test/integration/phase37_protocol_strictness_e2e_test.exs"
-    refute supported_surface =~ "broad certification coverage"
+    assert supported_surface =~ "broad certification or conformance coverage"
   end
 
   defp run_authorization_code_flow(conn, client, flow_key, params) do
@@ -216,7 +215,6 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
     authorize_conn =
       conn
-      |> recycle()
       |> get(
         "/lockspire/authorize",
         params
