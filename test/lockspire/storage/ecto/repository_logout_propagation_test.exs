@@ -6,6 +6,8 @@ defmodule Lockspire.Storage.Ecto.RepositoryLogoutPropagationTest do
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Storage.LogoutStore
+  alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
+  alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -61,6 +63,62 @@ defmodule Lockspire.Storage.Ecto.RepositoryLogoutPropagationTest do
   end
 
   describe "persist_logout_propagation/1" do
+    test "logout event and delivery records round-trip durable snapshot fields" do
+      event =
+        %LogoutEvent{
+          event_id: "evt_record_#{System.unique_integer([:positive])}",
+          sid: "sid_record_#{System.unique_integer([:positive])}",
+          account_id: "account_record",
+          subject: "subject_record",
+          post_logout_redirect_uri: "https://rp.example.com/logout-complete",
+          frontchannel_continue_to: "/logout/continue",
+          completed_at: DateTime.utc_now()
+        }
+
+      assert {:ok, stored_event} =
+               %LogoutEventRecord{}
+               |> LogoutEventRecord.changeset(event)
+               |> Lockspire.TestRepo.insert()
+
+      stored_event = LogoutEventRecord.to_domain(stored_event)
+
+      delivery =
+        %LogoutDelivery{
+          delivery_id: "ld_record_#{System.unique_integer([:positive])}",
+          logout_event_id: stored_event.id,
+          client_id: "client_record",
+          channel: :frontchannel,
+          target_uri: "https://rp.example.com/frontchannel-logout",
+          session_required: true,
+          rendered_at: DateTime.utc_now(),
+          finalized_at: DateTime.utc_now(),
+          logout_token_jti: "logout-jti-record"
+        }
+
+      assert {:ok, stored_delivery} =
+               %LogoutDeliveryRecord{}
+               |> LogoutDeliveryRecord.changeset(delivery)
+               |> Lockspire.TestRepo.insert()
+
+      stored_delivery = LogoutDeliveryRecord.to_domain(stored_delivery)
+
+      assert stored_event.frontchannel_continue_to == "/logout/continue"
+      assert stored_delivery.channel == :frontchannel
+      assert stored_delivery.status == :pending
+      assert stored_delivery.target_uri == "https://rp.example.com/frontchannel-logout"
+      assert stored_delivery.session_required == true
+      assert stored_delivery.logout_token_jti == "logout-jti-record"
+    end
+
+    test "logout delivery records stay redaction-safe and never persist raw logout artifacts" do
+      fields = LogoutDeliveryRecord.__schema__(:fields)
+
+      assert :logout_token_jti in fields
+      refute :logout_token in fields
+      refute :response_body in fields
+      refute :response_headers in fields
+    end
+
     @tag :skip
     test "stores one logout event with backchannel and frontchannel delivery rows transactionally" do
       # Plan 39 repository work must persist event truth and delivery snapshots
