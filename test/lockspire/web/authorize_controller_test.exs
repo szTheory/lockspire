@@ -202,6 +202,70 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert location =~ "state=state-123"
   end
 
+  test "invalid prompt=none combinations redirect to the trusted callback with preserved state" do
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("prompt", "none consent")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    params = URI.decode_query(uri.query || "")
+
+    assert "#{uri.scheme}://#{uri.host}#{uri.path}" == "https://client.example.com/callback"
+    assert params["error"] == "invalid_request"
+    assert params["state"] == "state-123"
+  end
+
+  test "invalid max_age stays redirect-safe and returns oauth invalid_request" do
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("max_age", "12.5")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    params = URI.decode_query(uri.query || "")
+
+    assert "#{uri.scheme}://#{uri.host}#{uri.path}" == "https://client.example.com/callback"
+    assert params["error"] == "invalid_request"
+    assert params["state"] == "state-123"
+  end
+
+  test "missing nonce on openid requests remains redirect-safe with preserved state" do
+    conn =
+      "client_123"
+      |> valid_params()
+      |> Map.put("scope", "openid email profile")
+      |> Map.delete("nonce")
+      |> call_authorize()
+
+    assert conn.status in [302, 303]
+
+    uri =
+      conn
+      |> redirect_location()
+      |> URI.parse()
+
+    params = URI.decode_query(uri.query || "")
+
+    assert "#{uri.scheme}://#{uri.host}#{uri.path}" == "https://client.example.com/callback"
+    assert params["error"] == "invalid_request"
+    assert params["state"] == "state-123"
+  end
+
   test "redirect-safe validation failures merge existing redirect query params canonically" do
     conn =
       "client_123"
