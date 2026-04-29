@@ -34,8 +34,12 @@ Plans:
   2. Relying parties can redirect to `/end_session` to initiate logout.
   3. Host apps receive the logout intent and clear the user's web session securely.
   4. Users are correctly redirected to the `post_logout_redirect_uri` after logout.
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+Plans:
+- [ ] 38-01-PLAN.md - Create Wave 0 test stubs for EndSession protocol, controller, and integration tests
+- [ ] 38-02-PLAN.md - Migrations, sid generation, revoke_by_sid, and ID token sid claim (SLO-01)
+- [ ] 38-03-PLAN.md - EndSessionProtocol, EndSessionController, host logout seam, and router wiring (SLO-02)
+- [ ] 38-04-PLAN.md - Discovery update, admin UI (token sid + client post_logout_redirect_uris), and generator template
 
 ### Phase 39: Automated RP Logout Propagation
 **Goal**: The authorization server actively propagates logout events to connected relying parties
@@ -63,6 +67,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 37. Protocol Strictness & Conformance | 3/4 | Executing | - |
-| 38. Session Tracking & RP-Initiated Logout | 0/0 | Not started | - |
+| 38. Session Tracking & RP-Initiated Logout | 0/4 | Planned | - |
 | 39. Automated RP Logout Propagation | 0/0 | Not started | - |
 | 40. JWE Support for Request Objects | 0/0 | Not started | - |
