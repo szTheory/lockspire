@@ -13,7 +13,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
-  @unsupported_params ~w(claims resource response_mode)
+  @unsupported_params ~w(resource response_mode)
 
   defmodule Validated do
     @moduledoc """
@@ -30,6 +30,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
             prompt: [String.t()],
             nonce: String.t() | nil,
             state: String.t() | nil,
+            max_age: non_neg_integer() | nil,
+            auth_time_requested?: boolean(),
             code_challenge: String.t(),
             code_challenge_method: :S256
           }
@@ -40,10 +42,12 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       :redirect_uri,
       :nonce,
       :state,
+      :max_age,
       :code_challenge,
       :code_challenge_method,
       scopes: [],
-      prompt: []
+      prompt: [],
+      auth_time_requested?: false
     ]
   end
 
@@ -236,11 +240,13 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, redirect_uri} <- validate_redirect_uri(client, params),
          {:ok, scopes} <- validate_scopes(client, params),
          {:ok, prompt} <- validate_prompt(params),
+         {:ok, max_age} <- validate_max_age(params),
          :ok <- validate_response_type(params),
          :ok <- validate_nonce(params, scopes),
          :ok <- validate_pkce(client, params),
+         {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          :ok <- reject_unsupported_params(params) do
-      {:ok, build_validated(params, client, redirect_uri, scopes, prompt)}
+      {:ok, build_validated(params, client, redirect_uri, scopes, prompt, max_age, auth_time_requested?)}
     end
   end
 
@@ -314,7 +320,19 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
            :duplicate_prompt
          )}
 
-      Enum.any?(prompt, &(&1 in ["none", "select_account"])) ->
+      "none" in prompt and length(prompt) > 1 ->
+        {:redirect_error,
+         redirect_error(
+           params,
+           :invalid_request,
+           "prompt=none must not be combined with other prompt values",
+           :prompt_none_conflict
+         )}
+
+      prompt == ["none"] ->
+        {:ok, ["none"]}
+
+      "select_account" in prompt ->
         {:redirect_error,
          redirect_error(
            params,
@@ -329,6 +347,33 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       true ->
         {:redirect_error,
          redirect_error(params, :invalid_request, "prompt value is invalid", :invalid_prompt)}
+    end
+  end
+
+  defp validate_max_age(params) do
+    case Map.get(params, "max_age") do
+      nil ->
+        {:ok, nil}
+
+      max_age when is_binary(max_age) ->
+        if max_age != String.trim(max_age) do
+          invalid_max_age(params)
+        else
+          case normalize_optional_string(max_age) do
+            nil ->
+              invalid_max_age(params)
+
+            normalized ->
+              if Regex.match?(~r/^\d+$/, normalized) do
+                {:ok, String.to_integer(normalized)}
+              else
+                invalid_max_age(params)
+              end
+          end
+        end
+
+      _other ->
+        invalid_max_age(params)
     end
   end
 
@@ -395,6 +440,24 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp validate_pkce(_client, params) do
     {:redirect_error,
      redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
+  end
+
+  defp validate_claims_parameter(params) do
+    case Map.get(params, "claims") do
+      nil ->
+        {:ok, false}
+
+      claims when is_binary(claims) ->
+        with {:ok, decoded} <- Jason.decode(claims),
+             :ok <- ensure_supported_claims_structure(decoded) do
+          {:ok, true}
+        else
+          _reason -> invalid_claims_parameter(params)
+        end
+
+      _other ->
+        invalid_claims_parameter(params)
+    end
   end
 
   defp maybe_validate_pushed_client_id(_params, _client, false), do: :ok
@@ -549,7 +612,15 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     })
   end
 
-  defp build_validated(params, %Client{} = client, redirect_uri, scopes, prompt) do
+  defp build_validated(
+         params,
+         %Client{} = client,
+         redirect_uri,
+         scopes,
+         prompt,
+         max_age,
+         auth_time_requested?
+       ) do
     %Validated{
       client: client,
       client_id: client.client_id,
@@ -558,9 +629,35 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       prompt: prompt,
       nonce: normalize_optional_string(params["nonce"]),
       state: normalize_optional_string(params["state"]),
+      max_age: max_age,
+      auth_time_requested?: auth_time_requested?,
       code_challenge: params["code_challenge"],
       code_challenge_method: :S256
     }
+  end
+
+  defp ensure_supported_claims_structure(%{
+         "id_token" => %{"auth_time" => %{"essential" => true}}
+       } = claims)
+       when map_size(claims) == 1 do
+    :ok
+  end
+
+  defp ensure_supported_claims_structure(_claims), do: :unsupported
+
+  defp invalid_max_age(params) do
+    {:redirect_error,
+     redirect_error(params, :invalid_request, "max_age must be a non-negative integer", :invalid_max_age)}
+  end
+
+  defp invalid_claims_parameter(params) do
+    {:redirect_error,
+     redirect_error(
+       params,
+       :invalid_request,
+       "claims supports only id_token.auth_time.essential=true",
+       :invalid_claims_parameter
+     )}
   end
 
   defp to_scope_list(nil), do: []
