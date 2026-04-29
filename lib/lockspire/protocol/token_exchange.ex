@@ -693,6 +693,7 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  @spec emit_success(Client.t(), Token.t()) :: :ok
   defp emit_success(%Client{} = client, %Token{} = authorization_code) do
     metadata = %{
       client_id: client.client_id,
