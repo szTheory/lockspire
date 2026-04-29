@@ -42,8 +42,13 @@ defmodule GeneratedHostAppWeb.SessionController do
       |> put_session("current_account_id", login)
       |> maybe_put_auth_time(params["auth_time_seconds_ago"])
 
-    redirect(conn, to: return_to)
+    redirect(conn, to: safe_return_to(return_to))
   end
+
+  defp safe_return_to(nil), do: "/lockspire/authorize"
+  defp safe_return_to(""), do: "/lockspire/authorize"
+  defp safe_return_to("/" <> _ = path), do: path
+  defp safe_return_to(_), do: "/lockspire/authorize"
 
   defp maybe_put_auth_time(conn, nil), do: conn
   defp maybe_put_auth_time(conn, ""), do: delete_session(conn, "current_auth_time_unix")
