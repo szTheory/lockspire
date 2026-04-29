@@ -22,10 +22,11 @@ defmodule Lockspire.Protocol.IdToken do
         access_token: access_token,
         issued_at: %DateTime{} = issued_at,
         signing_key: %{kid: kid, alg: "RS256", private_jwk_encrypted: private_jwk}
-      })
+      } = params)
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
-    with {:ok, jwk_map} <- decode_private_jwk(private_jwk),
-         claims <- build_claims(host_claims, issuer, client_id, nonce, access_token, issued_at),
+    with {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
+         {:ok, jwk_map} <- decode_private_jwk(private_jwk),
+         claims <- build_claims(host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time),
          {_, compact} <-
            JOSE.JWT.sign(
              JOSE.JWK.from_map(jwk_map),
@@ -41,18 +42,26 @@ defmodule Lockspire.Protocol.IdToken do
 
   def sign(_params), do: {:error, :invalid_signing_key}
 
-  defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at) do
+  defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time) do
     protocol_claims = %{
       "iss" => issuer,
       "aud" => client_id,
       "iat" => DateTime.to_unix(issued_at),
       "exp" => DateTime.add(issued_at, @id_token_ttl, :second) |> DateTime.to_unix(),
       "nonce" => nonce,
-      "at_hash" => at_hash(access_token)
+      "at_hash" => at_hash(access_token),
+      "auth_time" => encode_auth_time(auth_time)
     }
 
     Claims.build_id_token_claims(host_claims, protocol_claims)
   end
+
+  defp validate_auth_time(nil), do: {:ok, nil}
+  defp validate_auth_time(%DateTime{} = auth_time), do: {:ok, auth_time}
+  defp validate_auth_time(_auth_time), do: {:error, :invalid_auth_time}
+
+  defp encode_auth_time(nil), do: nil
+  defp encode_auth_time(%DateTime{} = auth_time), do: DateTime.to_unix(auth_time)
 
   defp at_hash(access_token) do
     <<left::binary-size(16), _rest::binary>> = :crypto.hash(:sha256, access_token)
