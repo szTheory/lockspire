@@ -52,7 +52,7 @@ defmodule Lockspire.Domain.Interaction do
     redirect_uri: nil,
     state: nil,
     code_challenge: nil,
-    code_challenge_method: :S256,
+    code_challenge_method: nil,
     status: :pending_login,
     login_required_at: nil,
     consent_requested_at: nil,
