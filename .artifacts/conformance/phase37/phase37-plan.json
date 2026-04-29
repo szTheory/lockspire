@@ -1,0 +1,36 @@
+{
+  "description": "Lockspire Phase 37 strictness subset against the OpenID Foundation conformance suite",
+  "artifact_dir": ".artifacts/conformance/phase37",
+  "plans": [
+    {
+      "name": "browser-safe redirect and silent-auth rejection",
+      "suite_plan": "oidcc-test-plan",
+      "variants": {
+        "client_auth_type": "none",
+        "response_type": "code",
+        "response_mode": "default",
+        "client_registration": "dynamic_client"
+      },
+      "modules": [
+        "oidcc-prompt-none-not-logged-in",
+        "oidcc-ensure-registered-redirect-uri",
+        "oidcc-redirect-uri-query-mismatch",
+        "oidcc-redirect-uri-query-OK"
+      ]
+    },
+    {
+      "name": "fresh-session auth_time and prompt=none success",
+      "suite_plan": "oidcc-test-plan",
+      "variants": {
+        "client_auth_type": "none",
+        "response_type": "code",
+        "response_mode": "default",
+        "client_registration": "dynamic_client"
+      },
+      "modules": [
+        "oidcc-prompt-none-logged-in",
+        "oidcc-max-age-10000"
+      ]
+    }
+  ]
+}
