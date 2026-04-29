@@ -10,7 +10,13 @@ defmodule GeneratedHostApp.Lockspire.TestAccountResolver do
   def resolve_current_account(%Plug.Conn{} = conn, context) do
     case Plug.Conn.get_session(conn, "current_account_id") do
       account_id when is_binary(account_id) and account_id != "" ->
-        {:ok, %{id: account_id}}
+        {:ok,
+         %{
+           id: account_id,
+           auth_time: session_auth_time(conn)
+         }
+         |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+         |> Map.new()}
 
       _ ->
         {:redirect, redirect_for_login(conn, context)}
@@ -47,5 +53,12 @@ defmodule GeneratedHostApp.Lockspire.TestAccountResolver do
         |> Map.take([:verification_handle, "verification_handle"])
         |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
     }
+  end
+
+  defp session_auth_time(conn) do
+    case Plug.Conn.get_session(conn, "current_auth_time_unix") do
+      unix when is_integer(unix) -> DateTime.from_unix!(unix)
+      _other -> nil
+    end
   end
 end

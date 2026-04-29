@@ -72,12 +72,12 @@ defmodule Lockspire.Web.ConsentLive do
           <input type="checkbox" name="remember" value="true" checked />
           Remember this consent for future matching requests
         </label>
-        <button type="submit">Approve access</button>
+        <button type="submit" class="approve-submit">Approve access</button>
       </form>
 
       <form action={@finalize_path} method="post">
         <input type="hidden" name="decision" value="deny" />
-        <button type="submit">Deny access</button>
+        <button type="submit" class="deny-submit">Deny access</button>
       </form>
     </section>
     """

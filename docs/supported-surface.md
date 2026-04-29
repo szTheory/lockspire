@@ -49,6 +49,7 @@ Lockspire stays at `v0.2.0` preview because public claims are limited to what th
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
+- `docs/maintainer-conformance.md`, `scripts/conformance/phase37-plan.json`, and `mix conformance.phase37` for the repo-native Phase 37 conformance lane and its `.artifacts/conformance/phase37` proof bundle
 - `test/integration/install_generator_test.exs` for generator-backed install proof
 - `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow
 - `test/integration/phase37_protocol_strictness_e2e_test.exs` for the generated-host strictness proof covering `prompt=none`, `max_age`, `auth_time`, and exact redirect behavior

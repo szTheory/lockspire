@@ -1,0 +1,124 @@
+name: OIDF Conformance
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_hosted_lane:
+        description: "Also run the hosted or staging provider lane"
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  ELIXIR_VERSION: "1.19.5"
+  OTP_VERSION: "28"
+
+jobs:
+  repo-native-phase37:
+    name: Repo-Native Phase 37 Lane
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
+      LOCKSPIRE_TEST_DB_PORT: "5432"
+      LOCKSPIRE_TEST_DB_USER: lockspire
+      LOCKSPIRE_TEST_DB_PASSWORD: lockspire
+      LOCKSPIRE_TEST_DB_NAME: lockspire_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1.24.0
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run Phase 37 conformance lane
+        run: MIX_ENV=test mix conformance.phase37
+
+      - name: Upload Phase 37 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase37-conformance
+          path: .artifacts/conformance/phase37
+
+  hosted-maintainer-lane:
+    name: Hosted Maintainer Lane
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || inputs.run_hosted_lane
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
+      LOCKSPIRE_TEST_DB_PORT: "5432"
+      LOCKSPIRE_TEST_DB_USER: lockspire
+      LOCKSPIRE_TEST_DB_PASSWORD: lockspire
+      LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      LOCKSPIRE_PHASE37_MODE: hosted
+      LOCKSPIRE_PHASE37_PROVIDER_DISCOVERY_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_DISCOVERY_URL }}
+      LOCKSPIRE_PHASE37_PROVIDER_BASE_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_BASE_URL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1.24.0
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run hosted maintainer lane
+        run: bash scripts/conformance/run_phase37_suite.sh
+
+      - name: Upload hosted artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase37-conformance-hosted
+          path: .artifacts/conformance/phase37

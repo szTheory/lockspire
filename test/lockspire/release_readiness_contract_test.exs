@@ -20,10 +20,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                        __DIR__
                                      )
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
+  @oidf_conformance_workflow_path Path.expand("../../.github/workflows/oidf-conformance.yml", __DIR__)
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
   @readme_path Path.expand("../../README.md", __DIR__)
   @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
+  @maintainer_conformance_path Path.expand("../../docs/maintainer-conformance.md", __DIR__)
+  @phase37_conformance_script_path Path.expand("../../scripts/conformance/run_phase37_suite.sh", __DIR__)
+  @phase37_conformance_plan_path Path.expand("../../scripts/conformance/phase37-plan.json", __DIR__)
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
@@ -160,6 +164,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   test "workflow files keep contributor proof separate from the protected publish lane" do
     ci_workflow = File.read!(@ci_workflow_path)
     release_workflow = File.read!(@release_workflow_path)
+    oidf_conformance_workflow = File.read!(@oidf_conformance_workflow_path)
     mixfile = File.read!("mix.exs")
 
     assert mixfile =~ "ci: ["
@@ -184,8 +189,19 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       assert ci_workflow =~ command
     end
 
+    assert mixfile =~ "\"conformance.phase37\": ["
+    assert mixfile =~ "test/integration/phase37_protocol_strictness_e2e_test.exs"
+    assert mixfile =~ "cmd bash scripts/conformance/run_phase37_suite.sh"
+    assert mixfile =~ "\"conformance.phase37\": :test"
+
     assert release_workflow =~ "mix release.preflight"
     assert release_workflow =~ "mix hex.publish --yes"
+
+    assert oidf_conformance_workflow =~ "workflow_dispatch:"
+    assert oidf_conformance_workflow =~ "schedule:"
+    assert oidf_conformance_workflow =~ "MIX_ENV=test mix conformance.phase37"
+    assert oidf_conformance_workflow =~ "LOCKSPIRE_PHASE37_MODE: hosted"
+    refute oidf_conformance_workflow =~ "pull_request:"
   end
 
   test "preview docs keep the embedded Phoenix wedge explicit and pin the narrow DPoP surface" do
@@ -404,5 +420,39 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface_down =~ "device flow"
     assert supported_surface_down =~ "hosted auth"
     refute supported_surface_down =~ "device flow polling and token issuance"
+  end
+
+  test "phase 37 conformance docs and wiring stay tied to executable proof" do
+    supported_surface = File.read!(@supported_surface_path)
+    maintainer_conformance = File.read!(@maintainer_conformance_path)
+    workflow = File.read!(@oidf_conformance_workflow_path)
+    script = File.read!(@phase37_conformance_script_path)
+    plan = File.read!(@phase37_conformance_plan_path)
+    mixfile = File.read!("mix.exs")
+
+    assert supported_surface =~ "docs/maintainer-conformance.md"
+    assert supported_surface =~ "scripts/conformance/phase37-plan.json"
+    assert supported_surface =~ "mix conformance.phase37"
+    assert supported_surface =~ ".artifacts/conformance/phase37"
+
+    assert maintainer_conformance =~ "phase37_protocol_strictness_e2e_test.exs"
+    assert maintainer_conformance =~ ".artifacts/conformance/phase37"
+    assert maintainer_conformance =~ "third-party cookie"
+    assert maintainer_conformance =~ "browser cookie"
+    assert maintainer_conformance =~ "LOCKSPIRE_TEST_DB_HOST"
+    assert maintainer_conformance =~ "OIDF_CONFORMANCE_SERVER"
+
+    assert workflow =~ "workflow_dispatch:"
+    assert workflow =~ "schedule:"
+    assert workflow =~ "MIX_ENV=test mix conformance.phase37"
+    assert workflow =~ "bash scripts/conformance/run_phase37_suite.sh"
+
+    assert script =~ ".artifacts/conformance/phase37"
+    assert script =~ "phase37-plan.json"
+    assert script =~ "run-test-plan.py"
+    assert plan =~ "oidcc-prompt-none-not-logged-in"
+    assert plan =~ "oidcc-max-age-10000"
+
+    assert mixfile =~ "\"conformance.phase37\": ["
   end
 end
