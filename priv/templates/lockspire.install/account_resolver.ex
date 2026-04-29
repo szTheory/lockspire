@@ -51,4 +51,15 @@ defmodule <%= @resolver_module %> do
       }
     }
   end
+
+  @impl true
+  def redirect_for_logout(_conn_or_socket, context) do
+    %InteractionResult{
+      login_path: "/logout",
+      return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
+      params: %{
+        "account_id" => Map.get(context, :account_id) || Map.get(context, "account_id")
+      }
+    }
+  end
 end

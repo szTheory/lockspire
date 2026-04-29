@@ -118,6 +118,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Client: <code>Token UI Client</code>"
     assert html =~ "Account: <code>account_"
     assert html =~ "Family: <code>family_"
+    assert html =~ "Session ID: <code>Not recorded</code>"
     assert html =~ "Parent token: <code>Not recorded</code>"
     refute html =~ "token-ui-refresh-hash"
     refute html =~ "family-ui-123"

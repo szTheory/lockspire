@@ -32,6 +32,15 @@ defmodule Lockspire.TestAccountResolver do
       params: %{"interaction_id" => "interaction-123"}
     }
   end
+
+  @impl true
+  def redirect_for_logout(_conn_or_socket, context) do
+    %InteractionResult{
+      login_path: "/sign-out",
+      return_to: Map.get(context, :return_to),
+      params: %{"account_id" => Map.get(context, :account_id)}
+    }
+  end
 end
 
 defmodule Lockspire.ConfigTest do
@@ -39,7 +48,7 @@ defmodule Lockspire.ConfigTest do
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :oban, :signing_alg],
+      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban, :signing_alg],
           into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
@@ -62,12 +71,14 @@ defmodule Lockspire.ConfigTest do
     Application.put_env(:lockspire, :account_resolver, Lockspire.TestAccountResolver)
     Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
     Application.put_env(:lockspire, :mount_path, "/oauth")
+    Application.put_env(:lockspire, :logout_path, "/sign-out")
     Application.put_env(:lockspire, :oban, repo: Lockspire.TestRepo, queues: false)
 
     assert Lockspire.Config.repo!() == Lockspire.TestRepo
     assert Lockspire.Config.account_resolver!() == Lockspire.TestAccountResolver
     assert Lockspire.Config.issuer!() == "https://example.test/oauth"
     assert Lockspire.Config.mount_path() == "/oauth"
+    assert Lockspire.Config.logout_path() == "/sign-out"
     assert Lockspire.Config.oban_config() == [repo: Lockspire.TestRepo, queues: false]
 
     assert Lockspire.config() == %{
@@ -75,11 +86,13 @@ defmodule Lockspire.ConfigTest do
              account_resolver: Lockspire.TestAccountResolver,
              issuer: "https://example.test/oauth",
              mount_path: "/oauth",
+             logout_path: "/sign-out",
              oban: [repo: Lockspire.TestRepo, queues: false]
            }
 
     assert Lockspire.issuer() == "https://example.test/oauth"
     assert Lockspire.mount_path() == "/oauth"
+    assert Lockspire.logout_path() == "/sign-out"
     assert Lockspire.account_resolver!() == Lockspire.TestAccountResolver
   end
 
@@ -99,6 +112,14 @@ defmodule Lockspire.ConfigTest do
                  fn ->
                    Lockspire.Config.account_resolver!()
                  end
+  end
+
+  test "logout_path/0 raises a clear error when logout_path config is missing" do
+    Application.delete_env(:lockspire, :logout_path)
+
+    assert_raise ArgumentError, ~r/missing required config :logout_path for :lockspire/, fn ->
+      Lockspire.Config.logout_path()
+    end
   end
 
   test "issuer!/0 validates absolute issuer urls that match mount_path" do
@@ -173,5 +194,14 @@ defmodule Lockspire.ConfigTest do
              return_to: "/authorize"
            } =
              Lockspire.TestAccountResolver.redirect_for_login(%{}, %{return_to: "/authorize"})
+
+    assert %Lockspire.Host.InteractionResult{
+             login_path: "/sign-out",
+             return_to: "/logout/complete"
+           } =
+             Lockspire.TestAccountResolver.redirect_for_logout(%{}, %{
+               return_to: "/logout/complete",
+               account_id: "account-456"
+             })
   end
 end

@@ -22,4 +22,8 @@ defmodule Lockspire.Host.AccountResolver do
 
   @callback redirect_for_login(conn_or_socket :: term(), context()) ::
               InteractionResult.t()
+
+  @optional_callbacks [redirect_for_logout: 2]
+  @callback redirect_for_logout(conn_or_socket :: term(), context()) ::
+              InteractionResult.t()
 end

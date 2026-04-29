@@ -49,6 +49,19 @@ defmodule Lockspire.Config do
     end
   end
 
+  @spec logout_path() :: String.t()
+  def logout_path do
+    case Application.get_env(@app, :logout_path) do
+      value when is_binary(value) and value != "" ->
+        value
+
+      _missing ->
+        raise ArgumentError,
+              "missing required config :logout_path for :lockspire. " <>
+                "Set it in config/runtime.exs or config/*.exs."
+    end
+  end
+
   @spec known_scopes() :: [String.t()]
   def known_scopes do
     @app

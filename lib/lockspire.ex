@@ -10,6 +10,7 @@ defmodule Lockspire do
           account_resolver: module(),
           issuer: String.t(),
           mount_path: String.t(),
+          logout_path: String.t(),
           oban: keyword()
         }
   def config do
@@ -18,6 +19,7 @@ defmodule Lockspire do
       account_resolver: Config.account_resolver!(),
       issuer: Config.issuer!(),
       mount_path: Config.mount_path(),
+      logout_path: Config.logout_path(),
       oban: Config.oban_config()
     }
   end
@@ -30,6 +32,11 @@ defmodule Lockspire do
   @spec mount_path() :: String.t()
   def mount_path do
     Config.mount_path()
+  end
+
+  @spec logout_path() :: String.t()
+  def logout_path do
+    Config.logout_path()
   end
 
   @spec account_resolver!() :: module()

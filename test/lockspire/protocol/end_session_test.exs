@@ -1,72 +1,190 @@
+defmodule Lockspire.Protocol.EndSessionTest.ClientStore do
+  def fetch_client_by_id(client_id) do
+    {:ok, Process.get({__MODULE__, client_id})}
+  end
+end
+
+defmodule Lockspire.Protocol.EndSessionTest.KeyStore do
+  def list_publishable_keys do
+    {:ok, Process.get(__MODULE__, [])}
+  end
+end
+
 defmodule Lockspire.Protocol.EndSessionTest do
   use ExUnit.Case, async: true
 
-  # EndSessionProtocol does not exist yet — stubs are pre-implementation.
-  # All cases are @tag :skip until Plan 03 implements Protocol.EndSession.
-  # Each test case description matches VALIDATION.md 38-xx-hint, 38-xx-redirect-uri, 38-xx-aud rows.
+  alias Lockspire.Domain.Client
+  alias Lockspire.Domain.SigningKey
+  alias Lockspire.JarTestHelpers
+  alias Lockspire.Protocol.EndSession
 
-  describe "validate/1 — id_token_hint" do
-    @tag :skip
+  describe "validate/1 - id_token_hint" do
     test "valid signature with non-expired token passes and extracts sid and sub" do
-      # Plan 03: EndSession.validate(%{params: %{"id_token_hint" => valid_jwt, ...}})
-      # => {:ok, %EndSession.Result{sid: sid, account_id: sub, ...}}
-      flunk("not yet implemented")
+      key = register_signing_key()
+      register_client("client-123")
+
+      request = request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
+
+      assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
+      assert result.sid == "sid-123"
+      assert result.account_id == "subject-123"
     end
 
-    @tag :skip
-    test "valid signature with expired token passes (tolerates expiry per D-14 / OIDC spec)" do
-      # id_token_hint with exp in the past must still pass signature validation
-      # and return {:ok, result} — NOT {:error, ...}
-      flunk("not yet implemented")
+    test "valid signature with expired token passes" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request =
+        request(%{
+          "id_token_hint" =>
+            id_token_hint(key.private_jwk, %{
+              "aud" => "client-123",
+              "exp" => DateTime.utc_now() |> DateTime.add(-300, :second) |> DateTime.to_unix()
+            })
+        })
+
+      assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
+      assert result.sid == "sid-123"
+      assert result.account_id == "subject-123"
     end
 
-    @tag :skip
     test "invalid signature returns error" do
-      # A JWT signed with a different key must return {:error, %EndSession.Error{reason_code: :invalid_id_token_hint}}
-      flunk("not yet implemented")
+      register_signing_key()
+
+      other_key = JarTestHelpers.generate_keys()
+
+      request = request(%{"id_token_hint" => id_token_hint(other_key.private_jwk, %{"aud" => "client-123"})})
+
+      assert {:error, %EndSession.Error{} = error} = EndSession.validate(request)
+      assert error.reason_code == :invalid_id_token_hint
+      assert error.status == 400
     end
 
-    @tag :skip
-    test "missing id_token_hint proceeds with nil sid (D-16)" do
-      # EndSession.validate(%{params: %{}}) => {:ok, %EndSession.Result{sid: nil, ...}}
-      flunk("not yet implemented")
+    test "missing id_token_hint proceeds with nil sid" do
+      assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request(%{}))
+      assert is_nil(result.sid)
+      assert is_nil(result.account_id)
     end
   end
 
-  describe "validate/1 — post_logout_redirect_uri" do
-    @tag :skip
-    test "registered URI passes exact match and is returned in result (D-15)" do
-      # EndSession.validate with post_logout_redirect_uri in client.post_logout_redirect_uris
-      # => {:ok, %Result{post_logout_redirect_uri: uri}}
-      flunk("not yet implemented")
+  describe "validate/1 - post_logout_redirect_uri" do
+    test "registered URI passes exact match and is returned in result" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request =
+        request(%{
+          "id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"}),
+          "post_logout_redirect_uri" => "https://client.example.com/logged-out"
+        })
+
+      assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
+      assert result.post_logout_redirect_uri == "https://client.example.com/logged-out"
     end
 
-    @tag :skip
-    test "unregistered URI is rejected — prevents open redirect (D-15, T-38-03)" do
-      # post_logout_redirect_uri NOT in client.post_logout_redirect_uris
-      # => {:error, %Error{reason_code: :unregistered_post_logout_redirect_uri}}
-      flunk("not yet implemented")
+    test "unregistered URI is rejected" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request =
+        request(%{
+          "id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"}),
+          "post_logout_redirect_uri" => "https://evil.example.com/logout"
+        })
+
+      assert {:error, %EndSession.Error{} = error} = EndSession.validate(request)
+      assert error.reason_code == :unregistered_post_logout_redirect_uri
     end
 
-    @tag :skip
-    test "missing post_logout_redirect_uri returns nil in result (D-17)" do
-      # No post_logout_redirect_uri param => {:ok, %Result{post_logout_redirect_uri: nil}}
-      flunk("not yet implemented")
+    test "missing post_logout_redirect_uri returns nil in result" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request = request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
+
+      assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
+      assert is_nil(result.post_logout_redirect_uri)
     end
   end
 
-  describe "validate/1 — client_id / aud cross-check" do
-    @tag :skip
-    test "client_id present in id_token_hint aud passes (D-20)" do
-      # JWT aud includes client_id => :ok
-      flunk("not yet implemented")
+  describe "validate/1 - client_id / aud cross-check" do
+    test "client_id present in id_token_hint aud passes" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request =
+        request(%{
+          "client_id" => "client-123",
+          "id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => ["client-123", "other-client"]})
+        })
+
+      assert {:ok, %EndSession.Result{sid: "sid-123"}} = EndSession.validate(request)
     end
 
-    @tag :skip
-    test "client_id not in id_token_hint aud is rejected (D-20, T-38-04)" do
-      # JWT aud does not include the client_id param
-      # => {:error, %Error{reason_code: :client_id_not_in_aud}}
-      flunk("not yet implemented")
+    test "client_id not in id_token_hint aud is rejected" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      request =
+        request(%{
+          "client_id" => "client-123",
+          "id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => ["other-client"]})
+        })
+
+      assert {:error, %EndSession.Error{} = error} = EndSession.validate(request)
+      assert error.reason_code == :client_id_not_in_aud
     end
+  end
+
+  defp request(params) do
+    %{
+      params: params,
+      opts: [
+        client_store: Lockspire.Protocol.EndSessionTest.ClientStore,
+        key_store: Lockspire.Protocol.EndSessionTest.KeyStore
+      ]
+    }
+  end
+
+  defp register_signing_key do
+    keys = JarTestHelpers.generate_keys()
+    public_jwk = JOSE.JWK.to_public_map(keys.private_jwk) |> elem(1)
+
+    signing_key = %SigningKey{
+      kid: "kid-123",
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk: Map.put(public_jwk, "kid", "kid-123")
+    }
+
+    Process.put(Lockspire.Protocol.EndSessionTest.KeyStore, [signing_key])
+    %{private_jwk: keys.private_jwk, signing_key: signing_key}
+  end
+
+  defp register_client(client_id) do
+    Process.put(
+      {Lockspire.Protocol.EndSessionTest.ClientStore, client_id},
+      %Client{
+        client_id: client_id,
+        post_logout_redirect_uris: ["https://client.example.com/logged-out"]
+      }
+    )
+  end
+
+  defp id_token_hint(private_jwk, overrides) do
+    claims =
+      %{
+        "aud" => "client-123",
+        "sub" => "subject-123",
+        "sid" => "sid-123",
+        "exp" => DateTime.utc_now() |> DateTime.add(300, :second) |> DateTime.to_unix()
+      }
+      |> Map.merge(overrides)
+
+    private_jwk
+    |> JOSE.JWT.sign(%{"alg" => "RS256", "typ" => "JWT"}, claims)
+    |> JOSE.JWS.compact()
+    |> elem(1)
   end
 end

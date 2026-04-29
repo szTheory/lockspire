@@ -109,6 +109,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         <p>Expires at: <AdminComponents.timestamp value={@token_detail.token.expires_at} /></p>
         <p>Revoked at: <AdminComponents.timestamp value={@token_detail.token.revoked_at} /></p>
         <p>Reuse detected at: <AdminComponents.timestamp value={@token_detail.token.reuse_detected_at} /></p>
+        <p>Session ID: <code>{Map.get(@token_detail.token, :sid) || "Not recorded"}</code></p>
         <p>Family: <code>{@token_detail.token.family_handle || "Not recorded"}</code></p>
         <p>Generation: <code>{@token_detail.token.generation}</code></p>
         <p>Parent token: <code>{@token_detail.token.parent_handle || "Not recorded"}</code></p>

@@ -24,4 +24,9 @@ config :lockspire,
   ecto_repos: [Lockspire.TestRepo],
   repo: Lockspire.TestRepo,
   account_resolver: Lockspire.TestAccountResolver,
-  issuer: "https://example.test/lockspire"
+  issuer: "https://example.test/lockspire",
+  logout_path: "/sign-out"
+
+config :lockspire, Lockspire.Web.Endpoint,
+  secret_key_base: String.duplicate("a", 64),
+  live_view: [signing_salt: "lockspire_salt"]

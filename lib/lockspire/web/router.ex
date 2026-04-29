@@ -21,6 +21,9 @@ defmodule Lockspire.Web.Router do
     post("/revoke", Lockspire.Web.RevocationController, :create)
     post("/introspect", Lockspire.Web.IntrospectionController, :create)
     get("/userinfo", Lockspire.Web.UserinfoController, :show)
+    get("/end_session", Lockspire.Web.EndSessionController, :show)
+    post("/end_session", Lockspire.Web.EndSessionController, :create)
+    get("/end_session/complete", Lockspire.Web.EndSessionController, :complete)
     get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
     post("/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete)
     live("/consent/:interaction_id", Lockspire.Web.ConsentLive, :show)
@@ -47,6 +50,12 @@ defmodule Lockspire.Web.Router do
       "/admin/clients/:client_id/redirects",
       Lockspire.Web.Live.Admin.ClientsLive.Show,
       :redirects
+    )
+
+    live(
+      "/admin/clients/:client_id/logout-uris",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :logout_uris
     )
 
     live(
