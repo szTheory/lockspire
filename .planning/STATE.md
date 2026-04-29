@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 39-02-PLAN.md
-last_updated: "2026-04-29T19:10:38.152Z"
+stopped_at: Completed 39-03-PLAN.md
+last_updated: "2026-04-29T19:21:48.700Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 10
-  percent: 71
+  completed_plans: 11
+  percent: 79
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 39 (automated-rp-logout-propagation) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-04-29
 
@@ -79,6 +79,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Logout propagation fields remain typed client state with URI presence as the only opt-in.
 - Operator logout validation stays offline and enforces same-origin front-channel checks against registered redirect URIs.
 - Phase 39 DCR keeps logout metadata explicitly unsupported instead of silently ignoring it.
+- Logout propagation persists one event row and separate per-channel delivery rows instead of deriving history from jobs or live client config.
+- Repository snapshot selection keys off active access and refresh tokens by sid, then dedupes to distinct client ids before building delivery rows.
+- The earlier plan-owned client-field migration was kept as a compatibility no-op because Phase 39-02 had already shipped the real additive migration under version 20260429193000.
 
 ### Blockers/Concerns
 
@@ -92,7 +95,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 39-02-PLAN.md
+**Stopped at:** Completed 39-03-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
