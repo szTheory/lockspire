@@ -344,6 +344,66 @@ defmodule Lockspire.Protocol.RegistrationTest do
               %Error{code: :invalid_client_metadata, field: :redirect_uris, reason: :invalid_uri}} =
                Registration.register(request)
     end
+
+    test "rejects backchannel_logout_uri as unsupported in this slice" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("backchannel_logout_uri", "https://rp.example.com/backchannel-logout")
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_uri,
+                reason: :unsupported_in_slice
+              }} = Registration.register(request)
+    end
+
+    test "rejects backchannel_logout_session_required as unsupported in this slice" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("backchannel_logout_session_required", true)
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_session_required,
+                reason: :unsupported_in_slice
+              }} = Registration.register(request)
+    end
+
+    test "rejects frontchannel_logout_uri as unsupported in this slice" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("frontchannel_logout_uri", "https://rp.example.com/frontchannel-logout")
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :frontchannel_logout_uri,
+                reason: :unsupported_in_slice
+              }} = Registration.register(request)
+    end
+
+    test "rejects frontchannel_logout_session_required as unsupported in this slice" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("frontchannel_logout_session_required", true)
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :frontchannel_logout_session_required,
+                reason: :unsupported_in_slice
+              }} = Registration.register(request)
+    end
   end
 
   describe "register/1 — D-15 PKCE floor" do

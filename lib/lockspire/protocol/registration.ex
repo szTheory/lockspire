@@ -123,10 +123,50 @@ defmodule Lockspire.Protocol.Registration do
   @doc false
   @spec validate_intake_metadata(map(), Resolved.t()) :: :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved) when is_map(metadata) do
-    with :ok <- validate_jwks(metadata),
+    with :ok <- validate_unsupported_logout_metadata(metadata),
+         :ok <- validate_jwks(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata) do
       validate_pkce_floor(metadata)
+    end
+  end
+
+  defp validate_unsupported_logout_metadata(metadata) do
+    cond do
+      Map.has_key?(metadata, "backchannel_logout_uri") ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :backchannel_logout_uri,
+           reason: :unsupported_in_slice
+         }}
+
+      Map.has_key?(metadata, "backchannel_logout_session_required") ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :backchannel_logout_session_required,
+           reason: :unsupported_in_slice
+         }}
+
+      Map.has_key?(metadata, "frontchannel_logout_uri") ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :frontchannel_logout_uri,
+           reason: :unsupported_in_slice
+         }}
+
+      Map.has_key?(metadata, "frontchannel_logout_session_required") ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :frontchannel_logout_session_required,
+           reason: :unsupported_in_slice
+         }}
+
+      true ->
+        :ok
     end
   end
 
