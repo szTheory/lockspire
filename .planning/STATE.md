@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 39-05-PLAN.md
-last_updated: "2026-04-29T19:58:03.920Z"
+status: verifying
+stopped_at: Completed 39-06-PLAN.md
+last_updated: "2026-04-29T20:11:36.398Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md`
 
 Phase: 39 (automated-rp-logout-propagation) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-29
 
 ## Performance Metrics
@@ -87,6 +87,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Logout lifecycle telemetry and audit surfaces use explicit requested, enqueued, attempted, succeeded, failed, and discarded stages with raw tokens and raw response payloads redacted at emission time.
 - Replay-safe logout completion is keyed by signed event_id values carried through the host return token.
 - Backchannel enqueue now persists oban_jobs rows inside the same completion transaction as logout event and delivery state.
+- Front-channel completion now renders only local browser dispatch truth and marks front-channel rows as rendered, never succeeded.
+- Admin logout propagation uses a dedicated workflow on the existing client edit route so propagation settings stay separate from post-logout redirect editing without widening router scope.
 
 ### Blockers/Concerns
 
@@ -100,7 +102,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 39-05-PLAN.md
+**Stopped at:** Completed 39-06-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
