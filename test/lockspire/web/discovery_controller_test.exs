@@ -87,6 +87,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
              "urn:ietf:params:oauth:grant-type:device_code"
            ]
     assert body["device_authorization_endpoint"] == "https://example.test/lockspire/device/code"
+    assert body["end_session_endpoint"] == "https://example.test/lockspire/end_session"
+    assert body["backchannel_logout_supported"] == true
+    assert body["backchannel_logout_session_supported"] == true
+    assert body["frontchannel_logout_supported"] == true
+    assert body["frontchannel_logout_session_supported"] == true
 
     assert body["token_endpoint_auth_methods_supported"] == [
              "none",
@@ -99,7 +104,6 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["id_token_signing_alg_values_supported"] == ["RS256"]
 
     refute Map.has_key?(body, "registration_endpoint")
-    refute Map.has_key?(body, "end_session_endpoint")
     refute Map.has_key?(body, "request_parameter_supported")
     refute Map.has_key?(body, "request_uri_parameter_supported")
     refute Map.has_key?(body, "request_object_signing_alg_values_supported")

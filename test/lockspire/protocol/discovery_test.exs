@@ -141,37 +141,14 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
   end
 
-  describe "openid_configuration/0 — Phase 39 logout propagation truth stubs" do
-    @tag :skip
-    test "backchannel_logout_supported is published together with the rest of the shipped Phase 39 logout metadata" do
-      # Phase 39 implementation must flip all logout propagation booleans as one
-      # truthful metadata surface, not in partial slices.
-      _config = Discovery
-      flunk("not yet implemented")
-    end
+  describe "openid_configuration/0 — Phase 39 logout propagation truth" do
+    test "publishes all four shipped logout booleans together" do
+      config = Discovery.openid_configuration()
 
-    @tag :skip
-    test "backchannel_logout_session_supported describes sid-aware logout token support truthfully" do
-      # This boolean must track the shipped session-aware back-channel behavior
-      # rather than remaining an undocumented placeholder.
-      _config = Discovery
-      flunk("not yet implemented")
-    end
-
-    @tag :skip
-    test "frontchannel_logout_supported is published together with the rest of the shipped Phase 39 logout metadata" do
-      # Front-channel support truth must move in lockstep with back-channel and
-      # the two session-supported booleans.
-      _config = Discovery
-      flunk("not yet implemented")
-    end
-
-    @tag :skip
-    test "frontchannel_logout_session_supported describes sid-aware iframe logout support truthfully" do
-      # The completion-page iframe flow may be best effort, but discovery still
-      # needs a precise published contract for session-aware behavior.
-      _config = Discovery
-      flunk("not yet implemented")
+      assert config["backchannel_logout_supported"] == true
+      assert config["backchannel_logout_session_supported"] == true
+      assert config["frontchannel_logout_supported"] == true
+      assert config["frontchannel_logout_session_supported"] == true
     end
   end
 

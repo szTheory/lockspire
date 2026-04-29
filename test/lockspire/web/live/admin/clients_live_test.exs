@@ -99,6 +99,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/par-policy", Show))
+    assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/logout-uris", Show))
     assert Enum.any?(routes, &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop))
     refute Enum.any?(routes, &(&1.path == "/admin/overview"))
   end
@@ -146,6 +147,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     alpha_html = rendered_to_string(Show.render(alpha_socket.assigns))
 
     refute alpha_html =~ "Self-registered client (DCR)"
+    assert alpha_html =~ "Post-logout redirect URIs"
+    assert alpha_html =~ "Logout propagation"
+    assert alpha_html =~ "Front-channel logout remains best effort"
+    assert alpha_html =~ "Edit logout propagation"
+    assert alpha_html =~ "Edit post-logout redirect URIs"
 
     assert {:ok, gamma_socket} =
              Show.mount(%{"client_id" => "gamma-client"}, %{}, socket_for(:show))
@@ -296,6 +302,51 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
     assert client.name == "Alpha Client"
     assert client.dpop_policy == :bearer
+  end
+
+  test "saving post-logout redirect URIs persists the new list" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/alpha-client/logout-uris")
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        mode: "logout_uris",
+        post_logout_redirect_uris:
+          "https://alpha.example.com/logout\nhttps://alpha.example.com/logout/complete"
+      }
+    })
+    |> render_submit()
+
+    assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
+
+    assert client.post_logout_redirect_uris == [
+             "https://alpha.example.com/logout",
+             "https://alpha.example.com/logout/complete"
+           ]
+  end
+
+  test "saving dedicated logout propagation settings persists backchannel and frontchannel fields separately from post-logout redirects" do
+    assert {:ok, view, _html} =
+             live(conn_for_admin(), "/admin/clients/alpha-client/edit?workflow=logout-propagation")
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        mode: "logout_propagation",
+        backchannel_logout_uri: "https://alpha.example.com/backchannel-logout",
+        backchannel_logout_session_required: "true",
+        frontchannel_logout_uri: "https://alpha.example.com/frontchannel-logout",
+        frontchannel_logout_session_required: "true"
+      }
+    })
+    |> render_submit()
+
+    assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
+    assert client.backchannel_logout_uri == "https://alpha.example.com/backchannel-logout"
+    assert client.backchannel_logout_session_required == true
+    assert client.frontchannel_logout_uri == "https://alpha.example.com/frontchannel-logout"
+    assert client.frontchannel_logout_session_required == true
+    assert client.post_logout_redirect_uris == []
   end
 
   defp conn_for_admin do
