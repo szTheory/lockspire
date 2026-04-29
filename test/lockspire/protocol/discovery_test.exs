@@ -121,6 +121,30 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     refute Map.has_key?(config, "dpop_signing_alg_values_supported")
   end
 
+  describe "openid_configuration/0 — Phase 38 session/logout fields" do
+    @tag :skip
+    test "includes end_session_endpoint pointing to /end_session" do
+      # config = Discovery.openid_configuration()
+      # assert Map.has_key?(config, "end_session_endpoint")
+      # assert String.ends_with?(config["end_session_endpoint"], "/end_session")
+      flunk("not yet implemented — Plan 04 adds end_session to @endpoint_paths")
+    end
+
+    @tag :skip
+    test "backchannel_logout_supported is false (truthful Phase 38 placeholder, D-19)" do
+      # config = Discovery.openid_configuration()
+      # assert config["backchannel_logout_supported"] == false
+      flunk("not yet implemented — Plan 04 adds BCL/FCL metadata")
+    end
+
+    @tag :skip
+    test "frontchannel_logout_supported is false (truthful Phase 38 placeholder, D-19)" do
+      # config = Discovery.openid_configuration()
+      # assert config["frontchannel_logout_supported"] == false
+      flunk("not yet implemented — Plan 04 adds BCL/FCL metadata")
+    end
+  end
+
   describe "truthful discovery for registration_endpoint" do
     test "when registration_policy is :disabled, endpoint is hidden and router returns 404" do
       Repository.update_server_policy(fn policy -> %{policy | registration_policy: :disabled} end)
