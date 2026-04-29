@@ -18,6 +18,9 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     field(:scopes_requested, {:array, :string}, default: [])
     field(:prompt, {:array, :string}, default: [])
     field(:nonce, :string)
+    field(:auth_time, :utc_datetime_usec)
+    field(:max_age, :integer)
+    field(:auth_time_requested, :boolean, default: false)
     field(:redirect_uri, :string)
     field(:return_to, :string)
     field(:state, :string)
@@ -52,6 +55,9 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       :scopes_requested,
       :prompt,
       :nonce,
+      :auth_time,
+      :max_age,
+      :auth_time_requested,
       :redirect_uri,
       :return_to,
       :state,
@@ -76,6 +82,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     |> cast(attrs, [
       :account_id,
       :status,
+      :auth_time,
       :login_required_at,
       :consent_requested_at,
       :completed_at,
@@ -96,6 +103,9 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       scopes_requested: record.scopes_requested,
       prompt: record.prompt,
       nonce: record.nonce,
+      auth_time: record.auth_time,
+      max_age: record.max_age,
+      auth_time_requested: record.auth_time_requested,
       redirect_uri: record.redirect_uri,
       return_to: record.return_to,
       state: record.state,

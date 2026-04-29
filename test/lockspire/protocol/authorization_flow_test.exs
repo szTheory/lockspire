@@ -175,6 +175,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
   test "consent reuse and silent reuse do not advance auth_time without a fresh end-user authentication event" do
     fresh_auth_time = DateTime.add(fixed_now(), -30, :second)
+    reused_session_auth_time = DateTime.add(fixed_now(), -15, :second)
 
     assert {:ok, _grant} =
              Store.grant_consent(%ConsentGrant{
@@ -217,7 +218,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert {:consent_reused, _redirect_uri} =
              AuthorizationFlow.start_authorization(
                validated_request(max_age: 120, state: "silent-reuse"),
-               %{subject_id: "subject_123"},
+               %{subject_id: "subject_123", auth_time: reused_session_auth_time},
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
@@ -229,7 +230,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert {:ok, %Interaction{} = silent_reuse} =
              Store.fetch_interaction("interaction-silent-reuse")
 
-    assert DateTime.compare(silent_reuse.auth_time, fresh_auth_time) == :eq
+    assert DateTime.compare(silent_reuse.auth_time, reused_session_auth_time) == :eq
+    refute DateTime.compare(silent_reuse.auth_time, fixed_now()) == :eq
   end
 
   test "interactive max_age requests move to pending_login when auth_time is missing or stale" do

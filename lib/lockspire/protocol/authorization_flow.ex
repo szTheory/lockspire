@@ -23,7 +23,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     now = now(opts)
     interaction_id = generate_interaction_id(opts)
 
-    if login_required?(validated.prompt, subject_context) do
+    if login_required?(validated, subject_context, now) do
       validated
       |> build_interaction(interaction_id, nil, :pending_login, now)
       |> persist_login_required(opts)
@@ -44,7 +44,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
       case interaction.status do
         :pending_login ->
-          transition_pending_login(interaction, subject_id, opts)
+          transition_pending_login(interaction, subject_id, subject_context, opts)
 
         :pending_consent ->
           {:consent_required, interaction}
@@ -119,9 +119,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp start_subject_authorization(validated, subject_context, interaction_id, now, opts) do
     subject_id = subject_id!(subject_context)
+    auth_time = subject_auth_time(subject_context)
 
     validated
     |> build_interaction(interaction_id, subject_id, :pending_consent, now)
+    |> Map.put(:auth_time, auth_time)
     |> persist_subject_authorization(validated, subject_id, opts)
   end
 
@@ -192,6 +194,9 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       scopes_requested: validated.scopes,
       prompt: validated.prompt,
       nonce: validated.nonce,
+      auth_time: nil,
+      max_age: validated.max_age,
+      auth_time_requested: validated.auth_time_requested?,
       redirect_uri: validated.redirect_uri,
       return_to: default_return_to(interaction_id),
       state: validated.state,
@@ -242,10 +247,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     consent_store(opts).grant_consent(grant)
   end
 
-  defp transition_pending_login(%Interaction{} = interaction, subject_id, opts) do
-    case interaction_store(opts).transact(fn ->
-           move_login_to_pending_consent(interaction, subject_id, opts)
-         end) do
+  defp transition_pending_login(%Interaction{} = interaction, subject_id, subject_context, opts) do
+    case move_login_to_pending_consent(interaction, subject_id, subject_context, opts) do
       {:ok, %Interaction{} = pending_consent} ->
         handle_subject_consent(
           pending_consent,
@@ -256,11 +259,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
           opts
         )
 
-      {:error, :invalid_state} ->
-        {:error, :interaction_not_active}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:error, :invalid_state} -> {:error, :interaction_not_active}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -435,7 +435,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
-  defp move_login_to_pending_consent(%Interaction{} = interaction, subject_id, opts) do
+  defp move_login_to_pending_consent(%Interaction{} = interaction, subject_id, subject_context, opts) do
     interaction_store(opts).transition_interaction(
       interaction.interaction_id,
       [:pending_login],
@@ -444,6 +444,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         account_id: subject_id,
         consent_requested_at: now(opts)
       }
+      |> maybe_put_auth_time(subject_context)
     )
   end
 
@@ -530,8 +531,20 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     |> then(& &1.())
   end
 
-  defp login_required?(prompt, nil) when is_list(prompt), do: true
-  defp login_required?(prompt, _subject_context), do: "login" in prompt
+  defp login_required?(%Validated{} = validated, subject_context, now) do
+    is_nil(subject_context) or
+      "login" in validated.prompt or
+      stale_auth_time?(validated.max_age, subject_context, now)
+  end
+
+  defp stale_auth_time?(nil, _subject_context, _now), do: false
+
+  defp stale_auth_time?(max_age, subject_context, now) when is_integer(max_age) do
+    case subject_auth_time(subject_context) do
+      %DateTime{} = auth_time -> DateTime.diff(now, auth_time, :second) > max_age
+      nil -> true
+    end
+  end
 
   defp load_active_interaction(interaction_id, opts) do
     case interaction_store(opts).fetch_active_interaction(interaction_id) do
@@ -551,6 +564,22 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp subject_id!(_subject_context) do
     raise ArgumentError, "missing required :subject_id in authenticated subject context"
+  end
+
+  defp subject_auth_time(subject_context) when is_map(subject_context) do
+    case Map.get(subject_context, :auth_time, Map.get(subject_context, "auth_time")) do
+      %DateTime{} = auth_time -> auth_time
+      _other -> nil
+    end
+  end
+
+  defp subject_auth_time(_subject_context), do: nil
+
+  defp maybe_put_auth_time(attrs, subject_context) do
+    case subject_auth_time(subject_context) do
+      %DateTime{} = auth_time -> Map.put(attrs, :auth_time, auth_time)
+      nil -> attrs
+    end
   end
 
   defp default_return_to(interaction_id), do: "/lockspire/interactions/#{interaction_id}"
