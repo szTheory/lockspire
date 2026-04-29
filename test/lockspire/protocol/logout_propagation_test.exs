@@ -30,6 +30,7 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
 
     handler_id = "logout-propagation-test-#{System.unique_integer([:positive])}"
 
@@ -46,6 +47,8 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
     )
 
     on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual) end)
 
     :ok
   end
@@ -116,7 +119,7 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
       assert %Job{id: ^backchannel_job_id, worker: worker, args: %{"logout_delivery_id" => logout_delivery_id}} =
                fetch_job!(backchannel_job_id)
 
-      assert worker == to_string(BackchannelLogoutDeliveryWorker)
+      assert worker == inspect(BackchannelLogoutDeliveryWorker)
       assert Enum.any?(persisted_deliveries, &(&1.id == logout_delivery_id and &1.channel == :backchannel))
 
       revoked_count =
