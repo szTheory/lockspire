@@ -636,8 +636,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   defp ensure_supported_claims_structure(%{
          "id_token" => %{"auth_time" => %{"essential" => true}}
-       } = claims)
-       when map_size(claims) == 1 do
+       }) do
     :ok
   end
 
