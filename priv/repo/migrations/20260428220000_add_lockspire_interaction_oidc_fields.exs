@@ -1,4 +1,4 @@
-defmodule Lockspire.TestRepo.Migrations.AddLockspireInteractionOidcFields do
+defmodule Lockspire.Repo.Migrations.AddLockspireInteractionOidcFields do
   use Ecto.Migration
 
   def change do

@@ -124,8 +124,12 @@ defmodule Lockspire.Protocol.TokenExchange do
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-      {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
+         {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
       {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
     end
   end
 
@@ -693,6 +697,7 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  @spec emit_success(Client.t(), Token.t()) :: :ok
   defp emit_success(%Client{} = client, %Token{} = authorization_code) do
     metadata = %{
       client_id: client.client_id,
@@ -857,11 +862,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp refresh_scope_policy_allows?(scopes) when is_list(scopes) do
-    if "offline_access" in scopes do
-      true
-    else
-      true
-    end
+    "offline_access" in scopes
   end
 
   defp build_access_token(

@@ -69,10 +69,9 @@ defmodule Lockspire.Protocol.IdToken do
   end
 
   defp decode_private_jwk(binary) when is_binary(binary) do
-    cond do
-      json_jwk = decode_json_jwk(binary) -> {:ok, json_jwk}
-      term_jwk = decode_term_jwk(binary) -> {:ok, term_jwk}
-      true -> {:error, :invalid_signing_key}
+    case decode_json_jwk(binary) do
+      %{} = jwk -> {:ok, jwk}
+      nil -> {:error, :invalid_signing_key}
     end
   end
 
@@ -83,11 +82,5 @@ defmodule Lockspire.Protocol.IdToken do
       {:ok, %{} = jwk} -> jwk
       _other -> nil
     end
-  end
-
-  defp decode_term_jwk(binary) do
-    :erlang.binary_to_term(binary, [:safe])
-  rescue
-    _error -> nil
   end
 end

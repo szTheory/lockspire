@@ -414,32 +414,30 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp validate_pkce(
-         client,
+         _client,
          %{"code_challenge" => challenge, "code_challenge_method" => "S256"} = params
        )
        when is_binary(challenge) and challenge != "" do
-    cond do
-      not client.pkce_required ->
-        {:redirect_error,
-         redirect_error(params, :invalid_request, "PKCE is required", :pkce_required)}
-
-      not valid_code_challenge?(challenge) ->
-        {:redirect_error,
-         redirect_error(
-           params,
-           :invalid_request,
-           "code_challenge is invalid",
-           :invalid_code_challenge
-         )}
-
-      true ->
-        :ok
+    if valid_code_challenge?(challenge) do
+      :ok
+    else
+      {:redirect_error,
+       redirect_error(
+         params,
+         :invalid_request,
+         "code_challenge is invalid",
+         :invalid_code_challenge
+       )}
     end
   end
 
-  defp validate_pkce(_client, params) do
-    {:redirect_error,
-     redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
+  defp validate_pkce(client, params) do
+    if client.pkce_required do
+      {:redirect_error,
+       redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
+    else
+      :ok
+    end
   end
 
   defp validate_claims_parameter(params) do
@@ -638,8 +636,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   defp ensure_supported_claims_structure(%{
          "id_token" => %{"auth_time" => %{"essential" => true}}
-       } = claims)
-       when map_size(claims) == 1 do
+       }) do
     :ok
   end
 
