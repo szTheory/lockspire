@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signing out of connected apps - Lockspire</title>
+  </head>
+  <body>
+    <main id="logout-complete">
+      <section class="lockspire-frontchannel-logout">
+        <h1>Signing you out of connected apps</h1>
+        <p>
+          Lockspire is asking connected apps to clear their sessions now. This is best effort
+          browser choreography, not a verified remote logout.
+        </p>
+
+        <ul>
+          <%= for note <- @best_effort_notes do %>
+            <li>{note}</li>
+          <% end %>
+        </ul>
+
+        <p>
+          <a id="lockspire-frontchannel-continue" href={@continue_to || "#logout-complete"}>
+            Continue
+          </a>
+        </p>
+
+        <div aria-hidden="true" hidden>
+          <%= for iframe <- @frontchannel_iframes do %>
+            <iframe
+              id={"lockspire-frontchannel-logout-#{iframe.client_id}"}
+              name="lockspire-frontchannel-logout"
+              src={iframe.src}
+              tabindex="-1"
+              title={"Front-channel logout for #{iframe.client_id}"}
+            >
+            </iframe>
+          <% end %>
+        </div>
+      </section>
+    </main>
+
+    <script :if={@auto_continue?}>
+      (function () {
+        var continueLink = document.getElementById("lockspire-frontchannel-continue");
+
+        if (!continueLink) {
+          return;
+        }
+
+        window.setTimeout(function () {
+          window.location.assign(continueLink.href);
+        }, <%= @auto_continue_ms %>);
+      })();
+    </script>
+  </body>
+</html>

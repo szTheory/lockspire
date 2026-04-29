@@ -5,14 +5,19 @@ defmodule Lockspire.Web.EndSessionController do
 
   use Phoenix.Controller, formats: [:html]
 
+  import Ecto.Query
+
   alias Lockspire.Config
   alias Lockspire.Host.InteractionResult
+  alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Protocol.EndSession
   alias Lockspire.Protocol.LogoutPropagation
+  alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Web.EndSessionHTML
 
   @token_salt "lockspire_logout"
   @token_max_age 600
+  @frontchannel_auto_continue_ms 1500
 
   def show(conn, params), do: handle_end_session(conn, params)
   def create(conn, params), do: handle_end_session(conn, params)
@@ -24,7 +29,7 @@ defmodule Lockspire.Web.EndSessionController do
         |> complete_logout()
         |> case do
           {:ok, result} ->
-            redirect_or_render_logged_out(conn, result.post_logout_redirect_uri, result.state)
+            redirect_or_render_completed_logout(conn, result)
 
           {:error, _reason} ->
             redirect_or_render_logged_out(
@@ -86,8 +91,41 @@ defmodule Lockspire.Web.EndSessionController do
     |> send_resp(200, logged_out_page())
   end
 
+  defp redirect_or_render_completed_logout(
+         conn,
+         %LogoutPropagation.Result{frontchannel_deliveries: [_ | _]} = result
+       ) do
+    result.frontchannel_deliveries
+    |> mark_frontchannel_deliveries_rendered()
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, frontchannel_logout_page(result))
+  end
+
+  defp redirect_or_render_completed_logout(conn, %LogoutPropagation.Result{} = result) do
+    redirect_or_render_logged_out(conn, result.post_logout_redirect_uri, result.state)
+  end
+
   defp logged_out_page do
     EndSessionHTML.logged_out(%{})
+    |> Phoenix.HTML.Safe.to_iodata()
+    |> IO.iodata_to_binary()
+  end
+
+  defp frontchannel_logout_page(%LogoutPropagation.Result{} = result) do
+    continue_to = frontchannel_continue_to(result)
+
+    EndSessionHTML.frontchannel_logout(%{
+      frontchannel_iframes: build_frontchannel_iframes(result.frontchannel_deliveries, result.event.sid),
+      continue_to: continue_to,
+      auto_continue_ms: @frontchannel_auto_continue_ms,
+      auto_continue?: is_binary(continue_to),
+      best_effort_notes: [
+        "Front-channel logout is best effort browser choreography only.",
+        "Connected apps may stay signed in if browser storage, cookie, CSP, or frame settings block the request."
+      ]
+    })
     |> Phoenix.HTML.Safe.to_iodata()
     |> IO.iodata_to_binary()
   end
@@ -151,5 +189,45 @@ defmodule Lockspire.Web.EndSessionController do
         payload["post_logout_redirect_uri"] || payload[:post_logout_redirect_uri],
       state: payload["state"] || payload[:state]
     })
+  end
+
+  defp mark_frontchannel_deliveries_rendered(deliveries) when is_list(deliveries) do
+    now = DateTime.utc_now()
+
+    Enum.each(deliveries, fn
+      %LogoutDelivery{id: id, channel: :frontchannel} when is_integer(id) ->
+        LogoutDeliveryRecord
+        |> where([delivery], delivery.id == ^id and delivery.channel == :frontchannel)
+        |> Config.repo!().update_all(
+          set: [status: :rendered, rendered_at: now, updated_at: now]
+        )
+
+      _other ->
+        :ok
+    end)
+  end
+
+  defp build_frontchannel_iframes(deliveries, sid) when is_list(deliveries) do
+    Enum.map(deliveries, fn %LogoutDelivery{} = delivery ->
+      %{
+        client_id: delivery.client_id,
+        src: frontchannel_iframe_src(delivery, sid)
+      }
+    end)
+  end
+
+  defp frontchannel_iframe_src(%LogoutDelivery{} = delivery, sid) do
+    delivery.target_uri
+    |> append_query_param("iss", Config.issuer!())
+    |> maybe_append_sid(delivery, sid)
+  end
+
+  defp maybe_append_sid(path, %LogoutDelivery{session_required: true}, sid) when is_binary(sid),
+    do: append_query_param(path, "sid", sid)
+
+  defp maybe_append_sid(path, _delivery, _sid), do: path
+
+  defp frontchannel_continue_to(%LogoutPropagation.Result{} = result) do
+    result.frontchannel_continue_to || result.post_logout_redirect_uri
   end
 end

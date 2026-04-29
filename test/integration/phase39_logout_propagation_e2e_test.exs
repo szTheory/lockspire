@@ -77,9 +77,10 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
       assert conn.resp_body =~ "Signing you out of connected apps"
       assert conn.resp_body =~ "best effort"
       assert conn.resp_body =~ ~s(name="lockspire-frontchannel-logout")
-      assert conn.resp_body =~ ~s(src="https://rp.example.com/frontchannel-logout")
+      assert conn.resp_body =~
+               ~s(src="https://rp.example.com/frontchannel-logout?iss=https%3A%2F%2Fexample.test%2Flockspire&amp;sid=#{sid}")
       assert conn.resp_body =~ "Continue"
-      assert conn.resp_body =~ "/signed-out"
+      assert conn.resp_body =~ ~s(href="https://rp.example.com/logged-out")
 
       persisted_event = fetch_event!(event_id)
       persisted_deliveries = fetch_deliveries!(persisted_event.id)
@@ -119,7 +120,8 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       assert conn.status == 200
       assert conn.resp_body =~ "best effort"
-      assert conn.resp_body =~ ~s(src="https://snapshot.example.com/frontchannel-logout")
+      assert conn.resp_body =~
+               ~s(src="https://snapshot.example.com/frontchannel-logout?iss=https%3A%2F%2Fexample.test%2Flockspire&amp;sid=#{sid}")
 
       persisted_event = fetch_event!(event_id)
       [backchannel_delivery, frontchannel_delivery] = fetch_deliveries!(persisted_event.id)
@@ -174,8 +176,10 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       assert first_conn.status == 200
       assert second_conn.status == 200
-      assert first_conn.resp_body =~ ~s(src="https://rp.example.com/frontchannel-repeat")
-      assert second_conn.resp_body =~ ~s(src="https://rp.example.com/frontchannel-repeat")
+      assert first_conn.resp_body =~
+               ~s(src="https://rp.example.com/frontchannel-repeat?iss=https%3A%2F%2Fexample.test%2Flockspire")
+      assert second_conn.resp_body =~
+               ~s(src="https://rp.example.com/frontchannel-repeat?iss=https%3A%2F%2Fexample.test%2Flockspire")
       assert Lockspire.TestRepo.aggregate(LogoutEventRecord, :count, :id) == 1
       assert Lockspire.TestRepo.aggregate(LogoutDeliveryRecord, :count, :id) == 2
       assert Lockspire.TestRepo.aggregate(Job, :count, :id) == 1
@@ -269,7 +273,7 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
     Phoenix.Token.sign(Lockspire.Web.Endpoint, "lockspire_logout", %{
       event_id: event_id,
       sid: sid,
-      post_logout_redirect_uri: nil,
+      post_logout_redirect_uri: "https://rp.example.com/logged-out",
       state: nil
     })
   end
