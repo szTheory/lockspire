@@ -249,6 +249,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp build_interaction(%Validated{} = validated, interaction_id, subject_id, status, now) do
     %Interaction{
       interaction_id: interaction_id,
+      sid: generate_sid(),
       client_id: validated.client_id,
       account_id: subject_id,
       scopes_requested: validated.scopes,
@@ -280,6 +281,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       client_id: interaction.client_id,
       account_id: subject_id,
       interaction_id: interaction.interaction_id,
+      sid: interaction.sid,
       redirect_uri: interaction.redirect_uri,
       scopes: interaction.scopes_requested,
       code_challenge: interaction.code_challenge,
@@ -583,6 +585,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     32
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
+  end
+
+  defp generate_sid do
+    :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end
 
   defp now(opts) do

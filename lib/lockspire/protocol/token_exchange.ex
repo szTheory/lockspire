@@ -607,6 +607,7 @@ defmodule Lockspire.Protocol.TokenExchange do
                host_claims: claims,
                interaction_nonce: interaction_nonce(interaction),
                auth_time: auth_time,
+               sid: authorization_code.sid,
                access_token: raw_access_token,
                issued_at: issued_at,
                signing_key: signing_key
@@ -886,6 +887,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       client_id: client.client_id,
       account_id: authorization_code.account_id,
       interaction_id: authorization_code.interaction_id,
+      sid: authorization_code.sid,
       scopes: authorization_code.scopes,
       audience: authorization_code.audience,
       cnf: issuance_context.cnf,
@@ -1020,6 +1022,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       client_id: authorization_code.client_id,
       account_id: authorization_code.account_id,
       interaction_id: authorization_code.interaction_id,
+      sid: authorization_code.sid,
       scopes: authorization_code.scopes,
       audience: authorization_code.audience,
       cnf: issuance_context.cnf,

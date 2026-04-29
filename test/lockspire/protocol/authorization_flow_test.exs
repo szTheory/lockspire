@@ -643,6 +643,45 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              end)
   end
 
+  test "sid is generated at interaction creation time and is non-nil" do
+    assert {:login_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(validated_request(), nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-sid-test" end
+             )
+
+    assert is_binary(interaction.sid)
+    assert byte_size(interaction.sid) > 0
+  end
+
+  test "each interaction gets a unique sid" do
+    assert {:login_required, %Interaction{} = interaction_a} =
+             AuthorizationFlow.start_authorization(validated_request(), nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-sid-a" end
+             )
+
+    assert {:login_required, %Interaction{} = interaction_b} =
+             AuthorizationFlow.start_authorization(validated_request(state: "state-2"), nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-sid-b" end
+             )
+
+    refute interaction_a.sid == interaction_b.sid
+  end
+
   defp validated_request(overrides \\ []) do
     defaults = %{
       client_id: "client_123",

@@ -33,6 +33,22 @@ defmodule Lockspire.Protocol.IdTokenTest do
     assert {:error, :invalid_auth_time} = IdToken.sign(signing_params(auth_time: "1714315500"))
   end
 
+  test "sign/1 includes sid claim when caller supplies a sid string" do
+    %{jwt: jwt, keys: keys} = sign_id_token(sid: "test-session-id-123")
+
+    claims = decode_claims(jwt, keys)
+
+    assert claims["sid"] == "test-session-id-123"
+  end
+
+  test "sign/1 omits sid claim when sid is nil" do
+    %{jwt: jwt, keys: keys} = sign_id_token()
+
+    claims = decode_claims(jwt, keys)
+
+    refute Map.has_key?(claims, "sid")
+  end
+
   defp sign_id_token(overrides \\ []) do
     keys = JarTestHelpers.generate_keys()
 

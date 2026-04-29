@@ -25,8 +25,9 @@ defmodule Lockspire.Protocol.IdToken do
       } = params)
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
     with {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
+         sid <- Map.get(params, :sid),
          {:ok, jwk_map} <- decode_private_jwk(private_jwk),
-         claims <- build_claims(host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time),
+         claims <- build_claims(host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time, sid),
          {_, compact} <-
            JOSE.JWT.sign(
              JOSE.JWK.from_map(jwk_map),
@@ -42,7 +43,7 @@ defmodule Lockspire.Protocol.IdToken do
 
   def sign(_params), do: {:error, :invalid_signing_key}
 
-  defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time) do
+  defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time, sid) do
     protocol_claims = %{
       "iss" => issuer,
       "aud" => client_id,
@@ -50,7 +51,8 @@ defmodule Lockspire.Protocol.IdToken do
       "exp" => DateTime.add(issued_at, @id_token_ttl, :second) |> DateTime.to_unix(),
       "nonce" => nonce,
       "at_hash" => at_hash(access_token),
-      "auth_time" => encode_auth_time(auth_time)
+      "auth_time" => encode_auth_time(auth_time),
+      "sid" => sid
     }
 
     Claims.build_id_token_claims(host_claims, protocol_claims)
