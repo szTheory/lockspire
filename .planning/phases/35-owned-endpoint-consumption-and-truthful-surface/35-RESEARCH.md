@@ -379,17 +379,15 @@ payload =
 
 All claims in this research were verified or cited — no user confirmation needed.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `userinfo` return dual `WWW-Authenticate` challenges or only `DPoP` when a bound token is missing proof?**
    - What we know: RFC 9449 allows `DPoP` challenges and notes that a resource supporting both bearer and DPoP may return multiple challenges; current Lockspire `userinfo` only returns a single Bearer challenge. [VERIFIED: lib/lockspire/web/controllers/userinfo_controller.ex] [CITED: https://datatracker.ietf.org/doc/html/rfc9449]
-   - What's unclear: The repo has no prior challenge-construction helper for mixed bearer/DPoP surfaces. [VERIFIED: lib/lockspire/web/controllers/userinfo_controller.ex]
-   - Recommendation: Keep Phase 35 narrow by returning a DPoP challenge for bound-token failures and preserving the current Bearer challenge for unbound-token failures unless the planner sees clear compatibility value in dual challenges. [VERIFIED: .planning/phases/35-owned-endpoint-consumption-and-truthful-surface/35-CONTEXT.md]
+   - Resolved: Keep Phase 35 narrow by returning a DPoP challenge for bound-token failures and preserving the current Bearer challenge for unbound-token failures. Do not add dual challenges in this phase because the repo has no existing mixed-challenge helper and the narrower split is already consistent with the phase context. [VERIFIED: .planning/phases/35-owned-endpoint-consumption-and-truthful-surface/35-CONTEXT.md]
 
 2. **Should discovery publish DPoP metadata when `/userinfo` is mounted but DPoP is only opt-in by policy?**
    - What we know: Discovery already publishes capabilities, not per-client effective policy, and Phase 35 wants truthful advertisement of the shipped slice rather than “required for everyone” semantics. [VERIFIED: lib/lockspire/protocol/discovery.ex] [VERIFIED: .planning/phases/35-owned-endpoint-consumption-and-truthful-surface/35-CONTEXT.md]
-   - What's unclear: Whether maintainers want docs to emphasize “supported capability” vs “globally required mode” in the same way PAR docs do today. [VERIFIED: docs/supported-surface.md] [VERIFIED: test/lockspire/release_readiness_contract_test.exs]
-   - Recommendation: Publish DPoP capability once the repo-owned surfaces support it and keep policy-specific requirement semantics in admin/DCR docs, mirroring the PAR truth pattern. [VERIFIED: lib/lockspire/web/live/admin/policies_live/par.ex] [VERIFIED: test/lockspire/release_readiness_contract_test.exs]
+   - Resolved: Publish DPoP capability once the repo-owned surfaces support it and keep policy-specific requirement semantics in admin/DCR docs, mirroring the PAR truth pattern. Discovery stays capability-oriented; policy remains operator/client-specific. [VERIFIED: lib/lockspire/web/live/admin/policies_live/par.ex] [VERIFIED: test/lockspire/release_readiness_contract_test.exs]
 
 ## Environment Availability
 

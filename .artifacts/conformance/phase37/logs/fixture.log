@@ -1,0 +1,23 @@
+
+21:49:53.422 [info] Running GeneratedHostAppWeb.Endpoint with Bandit 1.10.4 at 127.0.0.1:4011 (http)
+
+21:49:53.424 [info] Access GeneratedHostAppWeb.Endpoint at http://host.docker.internal:4011
+
+21:49:53.451 [debug] QUERY OK source="lockspire_signing_keys" db=4.5ms decode=0.5ms queue=1.9ms
+SELECT l0."id", l0."kid", l0."kty", l0."alg", l0."use", l0."public_jwk", l0."private_jwk_encrypted", l0."status", l0."published_at", l0."activated_at", l0."retiring_at", l0."retired_at", l0."tenant_id", l0."metadata", l0."inserted_at", l0."updated_at" FROM "lockspire_signing_keys" AS l0 WHERE (l0."status" = 'active') ORDER BY l0."inserted_at" LIMIT 1 []
+
+21:49:54.856 [debug] Processing with Lockspire.Web.Router
+  Parameters: %{}
+  Pipelines: []
+
+21:49:54.857 [debug] Processing with Lockspire.Web.DiscoveryController.show/2
+  Parameters: %{}
+  Pipelines: []
+
+21:49:54.872 [debug] QUERY OK source="lockspire_server_policies" db=1.1ms queue=0.9ms
+SELECT l0."id", l0."par_policy", l0."dpop_policy", l0."registration_policy", l0."dcr_allowed_scopes", l0."dcr_allowed_grant_types", l0."dcr_allowed_response_types", l0."dcr_allowed_redirect_uri_schemes", l0."dcr_allowed_redirect_uri_hosts", l0."dcr_allowed_token_endpoint_auth_methods", l0."dcr_default_client_lifetime_seconds", l0."dcr_default_client_secret_lifetime_seconds", l0."dcr_default_registration_access_token_lifetime_seconds", l0."inserted_at", l0."updated_at" FROM "lockspire_server_policies" AS l0 WHERE (l0."id" = $1) [1]
+
+21:51:27.769 [notice] SIGTERM received - shutting down
+
+** (EXIT from #PID<0.94.0>) shutdown
+

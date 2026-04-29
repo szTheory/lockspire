@@ -1,0 +1,144 @@
+{
+  "description": "Lockspire Phase 37 strictness subset against the OpenID Foundation conformance suite",
+  "server": {
+    "discoveryUrl": "http://host.docker.internal:4011/lockspire/.well-known/openid-configuration"
+  },
+  "client": {
+    "client_name": "lockspire-phase37-local-client"
+  },
+  "browser": [
+    {
+      "match": "http://host.docker.internal:4011/lockspire/authorize*",
+      "tasks": [
+        {
+          "task": "Login",
+          "optional": true,
+          "match": "http://host.docker.internal:4011/login*",
+          "commands": [
+            [
+              "text",
+              "name",
+              "login",
+              "generated-host-user",
+              "optional"
+            ],
+            [
+              "text",
+              "name",
+              "password",
+              "phase37-password",
+              "optional"
+            ],
+            [
+              "text",
+              "name",
+              "auth_time_seconds_ago",
+              "30",
+              "optional"
+            ],
+            [
+              "click",
+              "class",
+              "login-submit"
+            ]
+          ]
+        },
+        {
+          "task": "Consent",
+          "optional": true,
+          "match": "http://host.docker.internal:4011/lockspire/consent/*",
+          "commands": [
+            [
+              "click",
+              "class",
+              "approve-submit"
+            ]
+          ]
+        },
+        {
+          "task": "Verify Complete",
+          "match": "*/test/*/callback*",
+          "commands": [
+            [
+              "wait",
+              "id",
+              "submission_complete",
+              10
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "override": {
+    "oidcc-ensure-registered-redirect-uri": {
+      "browser": [
+        {
+          "match": "http://host.docker.internal:4011/lockspire/authorize*",
+          "tasks": [
+            {
+              "task": "Expect authorization rejection",
+              "match": "http://host.docker.internal:4011/lockspire/authorize*",
+              "commands": [
+                [
+                  "wait",
+                  "xpath",
+                  "//*",
+                  10,
+                  "Authorization request rejected",
+                  "update-image-placeholder"
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "oidcc-redirect-uri-query-mismatch": {
+      "browser": [
+        {
+          "match": "http://host.docker.internal:4011/lockspire/authorize*",
+          "tasks": [
+            {
+              "task": "Expect authorization rejection",
+              "match": "http://host.docker.internal:4011/lockspire/authorize*",
+              "commands": [
+                [
+                  "wait",
+                  "xpath",
+                  "//*",
+                  10,
+                  "Authorization request rejected",
+                  "update-image-placeholder"
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "oidcc-redirect-uri-query-added": {
+      "browser": [
+        {
+          "match": "http://host.docker.internal:4011/lockspire/authorize*",
+          "tasks": [
+            {
+              "task": "Expect authorization rejection",
+              "match": "http://host.docker.internal:4011/lockspire/authorize*",
+              "commands": [
+                [
+                  "wait",
+                  "xpath",
+                  "//*",
+                  10,
+                  "Authorization request rejected",
+                  "update-image-placeholder"
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

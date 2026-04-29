@@ -1,8 +1,8 @@
 # Phase 39: Automated RP Logout Propagation - Research
 
-**Researched:** 2026-04-29
-**Domain:** OIDC Back-Channel Logout, Front-Channel Logout, durable logout delivery, embedded Oban integration
-**Confidence:** HIGH
+**Researched:** 2026-04-29 [VERIFIED: `date +%F`]
+**Domain:** OIDC Back-Channel Logout, OIDC Front-Channel Logout, durable delivery orchestration in an embedded Phoenix library [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [VERIFIED: repo reads]
+**Confidence:** HIGH [CITED: official OIDC specs + Oban docs] [VERIFIED: current repo state]
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -60,344 +60,333 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| SLO-03 | Implement Back-Channel Logout webhook dispatch (server-to-server POST) via `req`. | Use durable `logout_events` + `logout_deliveries`, `Req` form POST with `logout_token`, unique Oban worker jobs, bounded retry rules, and truthful delivery states. [VERIFIED: .planning/REQUIREMENTS.md] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://hexdocs.pm/req/Req.Steps.html] [CITED: https://hexdocs.pm/oban/unique_jobs.html] |
-| SLO-04 | Implement Front-Channel Logout asynchronous iframe rendering on host return. | Extend `/end_session/complete` to render a plain HEEx completion page with hidden iframes, bounded auto-continue, and truthful best-effort copy driven by durable `frontchannel` delivery rows. [VERIFIED: .planning/REQUIREMENTS.md] [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
+| SLO-03 | Implement Back-Channel Logout webhook dispatch (server-to-server POST) via `req`. | Durable `logout_events` + `logout_deliveries`, `Req` for POSTing `logout_token`, Oban-backed unique delivery jobs, bounded retry policy, audit/telemetry separation, and integration tests that drain the queue and inspect persisted outcomes. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Worker.html] [VERIFIED: repo reads] |
+| SLO-04 | Implement Front-Channel Logout asynchronous iframe rendering on host return. | Plain controller-rendered completion page, iframe fan-out from durable delivery rows, `iss`/`sid` query composition when required, truthful browser limitation copy, and controller/integration tests that assert rendered iframes rather than fictitious remote acknowledgement. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [VERIFIED: repo reads] |
 </phase_requirements>
 
 ## Summary
 
-Phase 39 should treat Back-Channel Logout as the reliable protocol primitive and Front-Channel Logout as browser-mediated best effort. The official specs explicitly allow both mechanisms to be combined, require server-to-server logout as an HTTP form POST carrying a signed `logout_token`, and warn that front-channel iframe logout can be blocked by modern third-party storage restrictions. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-rpinitiated-1_0.html]
+Phase 39 should treat logout propagation as two different channels with different truth models: Back-Channel Logout is the reliable protocol primitive, while Front-Channel Logout is browser-mediated best effort. The OIDC Back-Channel spec requires an OP to send an HTTP `POST` with `logout_token` to each registered `backchannel_logout_uri`, and the Front-Channel spec defines iframe rendering plus explicit browser limitations around third-party state access. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
 
-Lockspire already has the right architectural seams for this work: `/end_session/complete` is the completion hook, `sid` and `account_id` already flow through `Lockspire.Protocol.EndSession.Result`, discovery already publishes placeholder logout booleans, client records already carry typed logout-related fields for post-logout redirects, and the library already centralizes telemetry, audit, redaction, and Ecto transactions. [VERIFIED: lib/lockspire/protocol/end_session.ex] [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [VERIFIED: lib/lockspire/protocol/discovery.ex] [VERIFIED: lib/lockspire/domain/client.ex] [VERIFIED: lib/lockspire/admin/clients.ex] [VERIFIED: lib/lockspire/observability.ex] [VERIFIED: lib/lockspire/audit/event.ex] [VERIFIED: lib/lockspire/redaction.ex] [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
+The current Lockspire code already gives Phase 39 the right seam: `/end_session/complete` is the authoritative completion point, `sid` is persisted on interactions and tokens, `EndSessionController` already revokes by `sid`, discovery still truthfully publishes `backchannel_logout_supported: false` and `frontchannel_logout_supported: false`, Oban is already a dependency but is not yet started in `Lockspire.Application`, and the repo has audit, telemetry, and redaction seams that can be reused. [VERIFIED: `lib/lockspire/web/controllers/end_session_controller.ex`] [VERIFIED: `lib/lockspire/protocol/discovery.ex`] [VERIFIED: `lib/lockspire/application.ex`] [VERIFIED: `mix.exs`] [VERIFIED: `mix.lock`] [VERIFIED: `lib/lockspire/observability.ex`] [VERIFIED: `lib/lockspire/audit/event.ex`] [VERIFIED: `lib/lockspire/redaction.ex`]
 
-The implementation boundary should stay narrow: build a logout-propagation subsystem, not a generic webhook engine. Persist one `logout_event` per completion attempt, persist one `logout_delivery` per client/channel target, enqueue only back-channel deliveries into Oban, record front-channel rows as rendered or skipped without pretending remote success, and advertise discovery booleans only when the code, tests, and operator surfaces all ship together. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+The implementation-ready recommendation is to persist one durable `logout_event` per completed OP logout, persist one durable `logout_delivery` per client/channel snapshot, enqueue only back-channel deliveries onto a named Lockspire-owned Oban instance, and render front-channel deliveries from the completion page using the stored snapshot rows. That keeps retries, audit truth, operator inspection, and browser limitations explicit instead of burying them inside controller state or `oban_jobs`. [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Job.html] [CITED: https://hexdocs.pm/oban/2.21.1/unique_jobs.html] [VERIFIED: repo architecture and phase context]
 
-**Primary recommendation:** Implement a protocol-owned logout propagation service that snapshots target RPs into durable rows before token revocation, enqueues unique Oban jobs for back-channel POST delivery through `Req`, renders front-channel iframes from the same durable snapshot, and drives admin/discovery truth from that persisted state. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [VERIFIED: lib/lockspire/storage/ecto/repository.ex] [CITED: https://hexdocs.pm/oban/unique_jobs.html] [CITED: https://hexdocs.pm/req/Req.Steps.html]
+**Primary recommendation:** Use durable `logout_events` + `logout_deliveries` as protocol truth, a Lockspire-owned named Oban instance for back-channel execution, strict operator-only client metadata with DCR rejection, and a truthful best-effort iframe completion page for front-channel logout. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
 
 ## Architectural Responsibility Map
 
 | Capability | Primary Tier | Secondary Tier | Rationale |
 |------------|-------------|----------------|-----------|
-| Resolve logout propagation targets from durable token history | API / Backend | Database / Storage | The back-channel spec requires the OP to remember logged-in RPs, and Lockspire already persists `sid` and `client_id` on token rows. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: lib/lockspire/storage/ecto/repository.ex] |
-| Persist `logout_events` and `logout_deliveries` | Database / Storage | API / Backend | The phase decisions require durable first-class state in Postgres, not in request memory. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] |
-| Enqueue and execute back-channel POST delivery | API / Backend | Database / Storage | Oban jobs are backend work items backed by the repo; outbound HTTP must happen after persistence, outside controller transactions. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://hexdocs.pm/oban/Oban.html] |
-| Render front-channel iframes and auto-continue page | Frontend Server (SSR) | Browser / Client | The front-channel spec is explicitly user-agent mediated and the phase locks the UX to a controller-rendered HEEx page. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
-| Publish truthful discovery metadata | API / Backend | — | Discovery booleans are server metadata and must reflect what Lockspire actually ships. [VERIFIED: lib/lockspire/protocol/discovery.ex] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
-| Validate and persist client logout metadata | API / Backend | Database / Storage | Strict URI/session-required validation belongs in domain/admin validation before records are updated. [VERIFIED: lib/lockspire/admin/clients.ex] [VERIFIED: lib/lockspire/storage/ecto/client_record.ex] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
-| Present truthful operator configuration and delivery status | Frontend Server (SSR) | Database / Storage | The operator UX should read durable state and show configured-versus-effective behavior without overclaiming remote success. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [VERIFIED: lib/lockspire/web/live/admin/clients_live/show.ex] |
+| Persist logout event truth | Database / Storage [VERIFIED: project storage thesis] | API / Backend [VERIFIED: controller already delegates] | Retryable fan-out, audit history, and operator inspection need durable rows rather than request memory. [VERIFIED: `.planning/PROJECT.md`] [VERIFIED: `lib/lockspire/web/controllers/end_session_controller.ex`] |
+| Back-channel logout token creation | API / Backend [CITED: spec defines OP POST + logout token] | Database / Storage [VERIFIED: event snapshot feeds payload] | The OP constructs the protocol artifact; storage only supplies event and client snapshot state. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] |
+| Back-channel delivery execution | Frontend Server / OTP worker tier [CITED: Oban worker lifecycle] | Database / Storage [CITED: Oban jobs persist in DB] | HTTP dispatch belongs in a background worker, not the controller transaction. [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Worker.html] |
+| Front-channel iframe rendering | Frontend Server / Phoenix controller [VERIFIED: existing completion page is controller-rendered] | Browser / Client [CITED: spec uses iframe via user agent] | Lockspire renders the completion document; the browser executes the iframe requests. [VERIFIED: `lib/lockspire/web/controllers/end_session_controller.ex`] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
+| Host session clearing | Host app seam [VERIFIED: Phase 38 seam] | — | Host ownership remains unchanged and precedes propagation. [VERIFIED: `.planning/phases/38-session-tracking-rp-initiated-logout/38-CONTEXT.md`] |
+| Discovery truth | API / Backend [VERIFIED: `Discovery.openid_configuration/0`] | — | Published booleans must match what the mounted feature actually does. [VERIFIED: `lib/lockspire/protocol/discovery.ex`] [CITED: both OIDC logout specs] |
+| Client logout metadata validation | API / Backend [VERIFIED: `Lockspire.Admin.Clients` and `Registration`] | Database / Storage [VERIFIED: first-class fields live on client schema] | Validation and DCR rejection already live in admin/protocol seams, not LiveView. [VERIFIED: `lib/lockspire/admin/clients.ex`] [VERIFIED: `lib/lockspire/protocol/registration.ex`] [VERIFIED: `lib/lockspire/storage/ecto/client_record.ex`] |
 
 ## Standard Stack
 
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| Oban | `2.21.1` locked, `~> 2.22` latest Hex line [VERIFIED: mix.lock] [VERIFIED: `mix hex.info oban`] | Durable async back-channel job dispatch | Matches the repo’s existing dependency and provides unique jobs, retry states, queue control, and test modes without inventing a job system. [VERIFIED: mix.exs] [CITED: https://hexdocs.pm/oban/unique_jobs.html] [CITED: https://hexdocs.pm/oban/Oban.html] |
-| Req | `0.5.17` [VERIFIED: `mix hex.info req`] | Back-channel HTTP POST with form encoding and retry controls | SLO-03 explicitly calls for `req`, and Req natively encodes `application/x-www-form-urlencoded` bodies plus configurable retry logic. [VERIFIED: .planning/REQUIREMENTS.md] [CITED: https://hexdocs.pm/req/Req.Steps.html] |
-| JOSE | `~> 1.11` [VERIFIED: mix.exs] | Signing Logout Tokens with the same signing key flow used for ID tokens | The spec requires signed Logout Tokens and Lockspire already uses JOSE for token signing. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: mix.exs] |
-| Ecto SQL | `3.13.5` [VERIFIED: mix.lock] [VERIFIED: `mix hex.info ecto_sql`] | Durable event/delivery persistence and transactional enqueue staging | The project’s durable-truth pattern is already Ecto/Postgres-first. [VERIFIED: .planning/PROJECT.md] [VERIFIED: lib/lockspire/storage/ecto/repository.ex] |
-| Phoenix | `1.8.5` [VERIFIED: mix.lock] [VERIFIED: `mix hex.info phoenix`] | Controller + HEEx completion page and discovery/controller adapters | The existing logout path and discovery adapters are Phoenix controllers, and the phase locks the completion UX to plain controller rendering. [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] |
+| `oban` | `2.21.1` locked in repo; `2.22.0` latest on Hex at research time [VERIFIED: `mix.lock`] [VERIFIED: `mix hex.info oban`] | Durable background execution, retries, unique jobs, queue draining in tests | Already a project dependency; supports transactional enqueue, unique jobs, durable retries, and named instances. [VERIFIED: `mix.exs`] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] |
+| `req` | `0.5.17` latest on Hex at research time [VERIFIED: `mix hex.info req`] | Server-to-server HTTP `POST` for back-channel logout | The phase requirement explicitly calls for `req`; official docs show first-class POST APIs and structured responses. [CITED: https://hexdocs.pm/req/Req.html] |
+| `jose` | `~> 1.11` [VERIFIED: `mix.exs`] | Sign the back-channel logout token as a JWT | Lockspire already uses JOSE for ID tokens, JAR, and DPoP; logout tokens are JWTs by spec. [VERIFIED: repo grep] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] |
+| `ecto_sql` | `~> 3.13.5` [VERIFIED: `mix.exs`] | Durable event/delivery tables and repository updates | Project-wide durable truth layer. [VERIFIED: `.planning/PROJECT.md`] |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| Phoenix LiveView | `1.1.28` locked [VERIFIED: mix.lock] [VERIFIED: `mix hex.info phoenix_live_view`] | Admin client edit/show workflows | Extend the existing admin client pages with typed logout propagation fields and truthful status copy. [VERIFIED: lib/lockspire/web/live/admin/clients_live/show.ex] [VERIFIED: lib/lockspire/web/live/admin/clients_live/form_component.ex] |
-| Telemetry / OpenTelemetry API | `telemetry ~> 1.3`, `opentelemetry_api 1.5.0` [VERIFIED: mix.exs] [VERIFIED: `mix hex.info opentelemetry_api`] | Enqueue/attempt/success/failure instrumentation | Reuse the shared observability seam instead of adding a new event pipeline. [VERIFIED: lib/lockspire/observability.ex] |
-| Phoenix.Token | bundled through Phoenix use [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] | Existing signed completion handoff | Keep using it for host return-to completion state; do not repurpose it for back-channel Logout Tokens. [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] |
+| Phoenix Controller / HEEx | `~> 1.8.5` [VERIFIED: `mix.exs`] | Completion-page rendering and `/end_session/complete` extension | Use for front-channel iframe page and operator-safe fallback copy. [VERIFIED: `lib/lockspire/web/controllers/end_session_controller.ex`] |
+| `Oban.Testing` + `drain_queue/2` | bundled with Oban [CITED: Oban testing docs] | Assert enqueued jobs and run delivery workers in sandboxed tests | Use in unit and integration tests for SLO-03 without waiting on real queue polling. [CITED: https://hexdocs.pm/oban/testing.html] [CITED: https://hexdocs.pm/oban/testing_queues.html] [CITED: https://hexdocs.pm/oban/Oban.Testing.html] |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| Oban delivery workers | `Task.Supervisor` or raw `Task` | Rejected because the phase locks delivery to durable async state with retries and uniqueness, which tasks do not provide. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] |
-| Req | Finch directly | Finch is lower-level and already powers Req, but SLO-03 explicitly names `req` and Req already solves form encoding and retry policy composition. [VERIFIED: .planning/REQUIREMENTS.md] [CITED: https://hexdocs.pm/req/Req.Steps.html] |
-| Controller-rendered completion page | LiveView completion page | Rejected because the phase explicitly locks the UX to a plain controller-rendered HEEx page and LiveView adds no protocol value here. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] |
+| Oban-backed durable worker pipeline [CITED: Oban docs] | Inline controller HTTP or `Task.Supervisor` [VERIFIED: current code has no worker infra] | Inline or in-memory dispatch loses durable retries, clustered coordination, and operator truth; it contradicts locked Decisions D-01 through D-07. [VERIFIED: `lib/lockspire/application.ex`] [VERIFIED: `39-CONTEXT.md`] |
+| `req` [VERIFIED: `mix hex.info req`] | `:httpc` or Finch directly [ASSUMED] | `req` is the requested slice and gives a higher-level API; lower-level clients add ceremony without phase value. |
 
-**Installation:**
+**Installation:** [VERIFIED: repo dependency state] [VERIFIED: `mix hex.info req`]
 ```bash
-# add Req to mix.exs, then fetch deps
-mix deps.get
+mix deps.add req --version "~> 0.5.17"
 ```
-
-**Version verification:** The repo already locks `phoenix 1.8.5`, `phoenix_live_view 1.1.28`, `ecto_sql 3.13.5`, and `oban 2.21.1`; `Req 0.5.17` is available on Hex but is not currently in `mix.exs`. [VERIFIED: mix.lock] [VERIFIED: mix.exs] [VERIFIED: `mix hex.info req`] [VERIFIED: `mix hex.info oban`]
 
 ## Architecture Patterns
 
 ### System Architecture Diagram
 
 ```text
-RP -> /end_session -> Host logout seam -> /end_session/complete
-                               |
-                               v
-                    LogoutPropagation.create_from_completion
-                               |
-                 +-------------+------------------+
-                 |                                |
-                 v                                v
-        snapshot target clients            persist logout_event
-        from durable token history         + logout_deliveries
-                 |                                |
-                 +-------------+------------------+
-                               |
-                               v
-                    revoke sid/account token state
-                               |
-               +---------------+-------------------+
-               |                                   |
-               v                                   v
-   enqueue unique Oban jobs for          render front-channel page
-   `backchannel` deliveries              from `frontchannel` deliveries
-               |                                   |
-               v                                   v
-      worker signs logout token            hidden iframes + auto-continue
-      and POSTs via Req                    no remote success claim
-               |
-               v
-    durable delivery status + telemetry + audit
+RP -> /end_session -> host logout -> /end_session/complete
+                                  |
+                                  v
+                    persist logout_event (one per OP logout)
+                                  |
+                    persist logout_deliveries (one per client/channel snapshot)
+                          |                             |
+                          v                             v
+        enqueue back-channel deliveries in Oban     render front-channel page
+                          |                             |
+                          v                             v
+        Req POST logout_token to RP callback      invisible iframes + visible continue link
+                          |                             |
+                          v                             v
+        update delivery status + audit/telemetry  mark rendered-at snapshot only
 ```
 
 ### Recommended Project Structure
 ```text
 lib/lockspire/
-├── domain/
-│   ├── logout_event.ex          # durable event aggregate
-│   └── logout_delivery.ex       # durable per-client per-channel delivery state
+├── application.ex                         # start Lockspire.Oban and fail fast on invalid config
+├── oban.ex                                # named Oban facade: use Oban, otp_app: :lockspire
 ├── protocol/
-│   ├── logout_propagation.ex    # completion-time orchestration
-│   └── logout_token.ex          # JOSE-backed back-channel logout token builder
-├── storage/
-│   ├── logout_store.ex          # contract for event/delivery persistence
-│   └── ecto/
-│       ├── logout_event_record.ex
-│       └── logout_delivery_record.ex
+│   ├── logout_propagation.ex              # event creation, client fan-out selection, URL building
+│   └── discovery.ex                       # truthful logout booleans
 ├── workers/
-│   └── backchannel_logout_worker.ex
-└── web/
-    ├── controllers/end_session_controller.ex
-    └── controllers/end_session_html/
-        └── frontchannel_logout.html.heex
+│   └── backchannel_logout_delivery_worker.ex
+├── domain/
+│   ├── logout_event.ex
+│   └── logout_delivery.ex
+├── storage/ecto/
+│   ├── logout_event_record.ex
+│   └── logout_delivery_record.ex
+└── web/controllers/end_session_html/
+    └── logged_out.html.heex               # upgraded completion page with iframe fan-out
+
+priv/repo/migrations/
+├── *_create_lockspire_logout_events.exs
+├── *_create_lockspire_logout_deliveries.exs
+└── *_add_logout_propagation_fields_to_lockspire_clients.exs
 ```
 
-### Pattern 1: Snapshot targets before revocation
-**What:** Build `logout_event` and `logout_delivery` rows from durable token history before calling `revoke_by_sid/1` or equivalent subject-wide revocation helpers. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
+### Pattern 1: Event row as the authoritative logout fact
+**What:** Persist a single `logout_event` after `/end_session/complete` revokes `sid`-scoped tokens and before any outbound work is attempted. [VERIFIED: current completion flow] [VERIFIED: `39-CONTEXT.md`]
+**When to use:** Every successful completion where Lockspire has enough identity/session context to propagate logout. [CITED: Back-Channel logout token needs `sub` or `sid`] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
+**Recommended shape:** [CITED: durable audit needs snapshots] [VERIFIED: repo storage/audit patterns]
 
-**When to use:** Always at `/end_session/complete`, because post-revocation state is no longer a reliable source of target-client truth. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
+| Field | Recommendation | Why |
+|------|----------------|-----|
+| `event_id` | UUID string, unique, public-safe handle [ASSUMED] | Stable correlation key across audit, telemetry, and deliveries. |
+| `sid` | nullable string, indexed [VERIFIED: Phase 38 already persists `sid`] | Primary propagation pivot for this phase’s session-scoped model. [VERIFIED: `lib/lockspire/domain/token.ex`] |
+| `subject` / `account_id` | nullable string snapshot [VERIFIED: EndSession.Result includes account_id] | Lets logout tokens include `sub` when available and preserves operator context. [VERIFIED: `lib/lockspire/protocol/end_session.ex`] |
+| `initiated_by` | `:rp_initiated_logout` enum/text [VERIFIED: phase scope] | Distinguishes future logout sources without schema churn. |
+| `post_logout_redirect_uri` | nullable string snapshot [VERIFIED: current completion flow carries it] | Operator truth for what the user-facing completion page was targeting. |
+| `frontchannel_continue_to` | nullable string snapshot [ASSUMED] | Prevents later page rendering from depending on mutable request state. |
+| `inserted_at` / `completed_at` | timestamps [VERIFIED: existing repo patterns] | Supports audit ordering and phase success checks. |
 
-**Example:**
+**Recommendation:** do not store the raw logout JWT on `logout_events`. Store only correlation metadata such as `logout_token_jti` on delivery rows, because the spec requires the RP-facing artifact to be a signed JWT and the phase context forbids persisting sensitive artifacts. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: `39-CONTEXT.md`] [VERIFIED: `lib/lockspire/redaction.ex`]
+
+### Pattern 2: Delivery rows as per-client, per-channel snapshots
+**What:** Persist one `logout_delivery` row for each `(logout_event, client_id, channel)` combination, including a snapshot of the URI and session-required flags at event time. [VERIFIED: locked D-03, D-08, D-14] [VERIFIED: current client metadata model]
+**When to use:** Always for eligible clients; never derive delivery state solely from `oban_jobs` or from the rendered page. [CITED: Oban retains job rows but they are queue mechanics, not domain truth] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
+**Recommended shape:** [VERIFIED: operator-truth requirement] [CITED: specs define distinct client metadata per channel]
+
+| Field | Recommendation | Why |
+|------|----------------|-----|
+| `logout_event_id` | FK + index [VERIFIED: standard repo pattern] | Groups all fan-out work under one logout. |
+| `client_id` | string + index [VERIFIED: repo client identity is client_id] | Stable operator-facing identifier. |
+| `channel` | `:backchannel | :frontchannel` enum/text [CITED: two specs define separate channels] | A single table preserves one operator timeline while keeping behavior explicit. |
+| `target_uri` | string snapshot [CITED: both specs define registered URIs] | Client edits after logout must not rewrite history. |
+| `session_required` | boolean snapshot [CITED: both specs define `*_session_required`] | Explains why `sid` and `iss` were or were not attached. |
+| `status` | text enum: `pending`, `enqueued`, `attempted`, `succeeded`, `retryable`, `discarded`, `rendered`, `skipped` [ASSUMED] | Distinguishes protocol execution from best-effort browser rendering. |
+| `attempt_count` | integer default `0` [CITED: Oban retries are attempt-based] | Keeps operator truth after Oban jobs are pruned. |
+| `last_attempted_at`, `delivered_at`, `rendered_at`, `finalized_at` | timestamps [VERIFIED: repo uses UTC timestamps] | Needed for retries, audit timelines, and UI truth. |
+| `http_status` | nullable integer [VERIFIED: Req response has `status`] | Durable record of RP HTTP outcome for back-channel rows only. [CITED: https://hexdocs.pm/req/Req.Response.html] |
+| `failure_reason` | nullable text/atom-string [VERIFIED: repo audit pattern uses reason codes] | Bounded retry logic needs machine-readable terminal reasons. |
+| `logout_token_jti` | nullable string snapshot [CITED: logout token may include `jti`; replay detection is optional for RPs] | Correlates deliveries without storing the raw JWT. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] |
+| `oban_job_id` | nullable integer [ASSUMED] | Useful correlation from domain truth to queue mechanics; not the source of truth. |
+
+**Recommended durable rule:** front-channel rows stop at `rendered` or `skipped`; they never claim `succeeded`, because the OP does not receive a cross-origin proof of RP logout completion. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+
+### Pattern 3: Named Oban instance owned by Lockspire, configured by the host
+**What:** Add `Lockspire.Oban` as a facade module and start it in `Lockspire.Application`, sourcing config from `config :lockspire, Lockspire.Oban` or a merged `Config.oban_config()` seam. [CITED: Oban facade + supervision pattern] [VERIFIED: current app has no children yet] [VERIFIED: current config exposes `oban`]
+**When to use:** Always for Phase 39 back-channel dispatch. [VERIFIED: locked D-04]
+**Example:** [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
 ```elixir
-# Source: Lockspire pattern adapted from Repository.transact/1 and EndSession completion
-# [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
-# [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex]
-Repository.transact(fn ->
-  targets = LogoutStore.list_targets_for_logout(%{sid: sid, account_id: account_id})
-  {:ok, event} = LogoutStore.insert_logout_event(build_event(result, targets))
-  {:ok, deliveries} = LogoutStore.insert_logout_deliveries(event, targets)
-  {:ok, _revoked} = Repository.revoke_by_sid(sid)
-  %{event: event, deliveries: deliveries}
-end)
-```
+defmodule Lockspire.Oban do
+  use Oban, otp_app: :lockspire
+end
 
-### Pattern 2: Back-channel worker owns HTTP, not the controller
-**What:** Persist delivery state first, then enqueue one unique job per `logout_delivery` and let the worker sign the Logout Token and POST it through Req. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://hexdocs.pm/oban/unique_jobs.html] [CITED: https://hexdocs.pm/req/Req.Steps.html]
+def start(_type, _args) do
+  children = [
+    Lockspire.Oban
+  ]
 
-**When to use:** For every back-channel delivery row with a configured `backchannel_logout_uri`. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
-
-**Example:**
-```elixir
-# Source: Oban unique job pattern + Req form encoding
-# https://hexdocs.pm/oban/unique_jobs.html
-# https://hexdocs.pm/req/Req.Steps.html
-defmodule Lockspire.Workers.BackchannelLogoutWorker do
-  use Oban.Worker,
-    queue: :lockspire_logout,
-    max_attempts: 5,
-    unique: [period: :infinity, fields: [:worker, :args], keys: [:logout_delivery_id], states: :all]
-
-  @impl true
-  def perform(%Oban.Job{args: %{"logout_delivery_id" => id}}) do
-    with {:ok, delivery} <- LogoutStore.fetch_delivery(id),
-         {:ok, logout_token} <- LogoutToken.sign(delivery),
-         {:ok, response} <-
-           Req.post(delivery.destination_uri,
-             form: [logout_token: logout_token],
-             retry: :transient
-           ) do
-      DeliveryResult.classify_and_persist(delivery, response)
-    end
-  end
+  Supervisor.start_link(children, strategy: :one_for_one, name: Lockspire.Supervisor)
 end
 ```
 
-### Pattern 3: Front-channel page is truthful best effort
-**What:** Render hidden iframes from durable `frontchannel` delivery rows, mark them `rendered`, and auto-continue after a short bounded delay with a visible manual continue link. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+**Execution ownership boundary:** the host owns repo wiring, queue concurrency, plugins, and deploy/runtime health; Lockspire owns queue names, worker modules, job args shape, retry classification, and when propagation is enqueued. That preserves the embedded-library shape without making protocol correctness optional. [CITED: Oban facade config pattern] [VERIFIED: `.planning/PROJECT.md`] [VERIFIED: `lib/lockspire/application.ex`] [VERIFIED: `lib/lockspire/config.ex`]
 
-**When to use:** Only after the host returns to `/end_session/complete`. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-
-**Example:**
-```heex
-<!-- Source: OIDC front-channel iframe model -->
-<!-- https://openid.net/specs/openid-connect-frontchannel-1_0.html -->
-<main>
-  <h1>Signing you out of connected apps…</h1>
-  <p>This step is best effort and may be limited by browser privacy settings.</p>
-
-  <%= for delivery <- @frontchannel_deliveries do %>
-    <iframe
-      src={delivery.dispatch_url}
-      title={"Logout for " <> delivery.client_id}
-      hidden
-      tabindex="-1"
-      aria-hidden="true"
-    />
-  <% end %>
-
-  <p><a href={@continue_to}>Continue</a></p>
-  <meta http-equiv="refresh" content={"3;url=" <> @continue_to} />
-</main>
-```
+### Pattern 4: Enqueue inside the same transaction that persists deliveries
+**What:** Insert `logout_event`, insert `logout_delivery` snapshots, and enqueue back-channel jobs through `Oban.insert/5` in the same `Ecto.Multi` or repository transaction. [CITED: Oban supports `insert/5` into `Ecto.Multi`; jobs only trigger after successful transaction] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Job.html]
+**When to use:** Every time `/end_session/complete` creates propagation state. [VERIFIED: locked D-02 and D-06]
+**Why:** it prevents the controller from claiming work exists when the rows never committed, and it prevents orphaned rows with no queued execution. [CITED: Oban transactional control] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
 
 ### Anti-Patterns to Avoid
-- **Inline HTTP in `EndSessionController.complete/2`:** It violates D-01 and D-06, stretches request latency, and ties protocol completion to third-party availability. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-- **Deriving target clients from only active, unrevoked tokens after revocation:** `/end_session/complete` already revokes `sid`-scoped tokens, so target selection must happen before revocation from historical session evidence. [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
-- **Using `Oban.insert_all/2` for back-channel delivery fan-out:** Oban’s per-job uniqueness checks apply to `insert` paths, not to bulk insert patterns used like `insert_all`. [CITED: https://hexdocs.pm/oban/unique_jobs.html] [CITED: https://hexdocs.pm/oban/Oban.html]
-- **Claiming front-channel success based on `iframe.onload`:** The front-channel spec defines browser-mediated logout, not cross-origin completion proof, and modern browsers can block third-party session access entirely. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+- **Inline HTTP from `EndSessionController.complete/2`:** blocks user completion on RP latency and violates locked D-01, D-02, and D-06. [VERIFIED: `39-CONTEXT.md`]
+- **Using `oban_jobs` as the only audit record:** Oban job retention is queue-mechanics truth, not operator-facing logout truth. Persist delivery rows separately. [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
+- **Treating front-channel iframe load as success:** the spec only defines browser-mediated rendering and separately documents third-party storage blocking. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+- **Advertising only `*_supported` without `*_session_supported`:** locked D-13 forbids half-truth discovery, and Phase 38 already emits `sid` in ID tokens. [VERIFIED: `39-CONTEXT.md`] [VERIFIED: `test/lockspire/protocol/id_token_test.exs`] [CITED: both OIDC logout specs]
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Durable async retries | Custom GenServer/task retry loop | Oban worker + unique jobs + bounded attempts | Oban already models retryable, completed, cancelled, and discarded job states and exposes testing modes. [CITED: https://hexdocs.pm/oban/Oban.html] [CITED: https://hexdocs.pm/oban/Oban.Worker.html] |
-| Back-channel HTTP form POST | Manual body encoding and ad hoc retry glue | `Req.post(..., form: ..., retry: ...)` | Req already encodes `application/x-www-form-urlencoded` and exposes transient retry controls. [CITED: https://hexdocs.pm/req/Req.Steps.html] |
-| Generic webhook platform | Multi-purpose webhook/event framework | Phase-specific `logout_event` + `logout_delivery` models | The phase scope explicitly forbids broadening into a generic outbound webhook engine. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] |
-| Remote success verification for front-channel | Cross-origin JS acknowledgement protocol | Truthful “rendered/best-effort” status only | The front-channel spec and browser privacy model do not guarantee iframe access to RP session state. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
+| Durable retries and clustered job dispatch | `Task.Supervisor`, `send_after`, process dictionaries [VERIFIED: repo has no queue infra yet] | Oban workers + named queue [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] | Oban already provides persistence, retry state, uniqueness, queue control, and test helpers. |
+| HTTP transport for logout callbacks | raw `:httpc` wrapper [ASSUMED] | `Req.post/2` with explicit timeout and form body [CITED: https://hexdocs.pm/req/Req.html] | The phase requirement calls for `req`, and `Req` gives structured responses for status-based retry logic. |
+| JWT signing for logout tokens | custom JOSE wrapper from scratch [VERIFIED: JOSE already used] | existing JOSE signing patterns reused from ID token code [VERIFIED: repo grep] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] | Logout tokens are JWTs and should reuse the repo’s signing-key lifecycle. |
+| Browser completion acknowledgement | cross-origin `postMessage` protocol or `iframe.onload` heuristics [CITED: browser limitations section] | bounded delay + continue link + truthful copy [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] | The OP cannot reliably prove front-channel success across origins. |
 
-**Key insight:** Hand-rolled durability, retry, or browser acknowledgement logic would either duplicate Oban/Req capabilities or push Lockspire outside its embedded-library boundary. [VERIFIED: .planning/PROJECT.md] [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
+**Key insight:** use Oban as execution infrastructure and `logout_deliveries` as domain truth; using only one of them leaves either retries or operator truth underspecified. [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] [VERIFIED: phase decisions]
 
 ## Common Pitfalls
 
-### Pitfall 1: Forgetting that logged-in RP memory is part of the protocol
-**What goes wrong:** Logout completion revokes tokens, but no durable target set is captured, so Lockspire cannot know which RPs to notify. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
-**Why it happens:** The spec says the OP must remember logged-in RPs, and the current repo only remembers them implicitly through token rows. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
-**How to avoid:** Add a query that resolves distinct target clients from token history before revocation and persists the snapshot into `logout_deliveries`. [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
-**Warning signs:** Re-running `/end_session/complete` after revocation yields a different or empty target set. [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
+### Pitfall 1: Treating repeated `/end_session/complete` hits as harmless duplicates
+**What goes wrong:** duplicate completion requests can create duplicate fan-out and duplicate audit noise. [VERIFIED: current controller would sign/reuse completion tokens without durable dedupe]
+**Why it happens:** browser retries, users reopening the host return URL, or clustered workers all re-enter the same logical logout. [ASSUMED]
+**How to avoid:** persist a unique `logout_event` correlation key per completion token and make each back-channel job unique by delivery id across incomplete states. [CITED: https://hexdocs.pm/oban/2.21.1/unique_jobs.html]
+**Warning signs:** multiple delivery rows for the same `(event, client, channel)` or repeated `logout_requested` telemetry for the same `sid`. [ASSUMED]
 
-### Pitfall 2: Treating back-channel and front-channel as the same success model
-**What goes wrong:** UI and telemetry claim “logout succeeded” for front-channel merely because iframes were rendered. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-**Why it happens:** The front-channel spec defines iframe rendering, while the back-channel spec defines a direct POST plus RP-side validation. Those are not equivalent delivery guarantees. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
-**How to avoid:** Use channel-specific terminal states: `succeeded` for back-channel HTTP success; `rendered` or `skipped` for front-channel. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-**Warning signs:** Admin copy uses the same “successful delivery” label for both channels. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
+### Pitfall 2: Letting client edits rewrite historical delivery truth
+**What goes wrong:** operator UI shows a URI that did not receive the logout. [VERIFIED: client config is mutable in admin path]
+**Why it happens:** reading live client metadata at render/worker time instead of snapshotting `target_uri` and `session_required` onto delivery rows. [ASSUMED]
+**How to avoid:** snapshot per-delivery metadata at event creation and drive workers/pages from those rows. [VERIFIED: current admin fields are mutable] [CITED: specs register URIs as client metadata]
+**Warning signs:** historical pages or audit records change after a client edit. [ASSUMED]
 
-### Pitfall 3: Using job uniqueness as if it were execution serialization
-**What goes wrong:** Duplicate inserts are prevented, but multiple distinct deliveries still run concurrently and code incorrectly assumes sequence. [CITED: https://hexdocs.pm/oban/unique_jobs.html]
-**Why it happens:** Oban uniqueness is enforced at insert time, not as a concurrency lock. [CITED: https://hexdocs.pm/oban/unique_jobs.html]
-**How to avoid:** Make each job unique by `logout_delivery_id` and treat delivery row locking/state transitions as the source of correctness. [CITED: https://hexdocs.pm/oban/unique_jobs.html] [VERIFIED: lib/lockspire/storage/ecto/repository.ex]
-**Warning signs:** Worker code depends on one-at-a-time processing instead of checking durable delivery state. [CITED: https://hexdocs.pm/oban/unique_jobs.html]
+### Pitfall 3: Assuming front-channel logout is remotely verifiable
+**What goes wrong:** UI or audit overstates success even when browser privacy features prevent iframe state access. [CITED: front-channel browser limitation section]
+**Why it happens:** confusing “iframe rendered” with “RP session cleared.” [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+**How to avoid:** mark rows `rendered`, not `succeeded`; copy should say “best effort.” [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+**Warning signs:** tests asserting on `onload` or cross-origin callbacks instead of rendered HTML. [ASSUMED]
 
-### Pitfall 4: Retrying stable 4xx responses forever
-**What goes wrong:** Misconfigured clients create permanent queue churn and misleading operator noise. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-**Why it happens:** Req can retry transient failures, but application code still must classify permanent client-side failures. [CITED: https://hexdocs.pm/req/Req.Steps.html]
-**How to avoid:** Persist response classification rules: retry transport errors and `408/429/5xx`; mark repeated `400/401/403/404/410/422` as permanent failure or discard. [CITED: https://hexdocs.pm/req/Req.Steps.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
-**Warning signs:** `attempt_count` climbs while `last_http_status` stays in a stable 4xx band. [CITED: https://hexdocs.pm/oban/Oban.Worker.html]
-
-### Pitfall 5: Logging raw logout material
-**What goes wrong:** Telemetry or audit rows capture raw `logout_token`, RP response bodies, or query strings containing session identifiers. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-**Why it happens:** The existing redaction lists do not yet mention logout-specific keys. [VERIFIED: lib/lockspire/redaction.ex]
-**How to avoid:** Extend redaction drop lists for logout artifacts and store only stable handles, URI origins, statuses, and reason codes. [VERIFIED: lib/lockspire/redaction.ex] [VERIFIED: lib/lockspire/observability.ex] [VERIFIED: lib/lockspire/audit/event.ex]
-**Warning signs:** Tests need to assert that metadata lacks `logout_token`, `request_body`, `response_body`, and raw front-channel URLs. [VERIFIED: lib/lockspire/redaction.ex]
+### Pitfall 4: Retrying permanent 4xx failures forever
+**What goes wrong:** noisy queues, repeated outbound traffic, and misleading “still retrying” operator state. [VERIFIED: locked D-07]
+**Why it happens:** treating every non-2xx response as transient. [ASSUMED]
+**How to avoid:** classify network errors and `5xx` as retryable; classify stable `4xx` and invalid snapshot state as terminal `discarded`/`skipped`. [VERIFIED: `39-CONTEXT.md`] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Worker.html]
+**Warning signs:** attempt counts climbing on `400`/`401`/`404` responses. [ASSUMED]
 
 ## Code Examples
 
-Verified patterns from official sources:
-
-### Unique delivery enqueue
+### Back-channel delivery worker shape
 ```elixir
-# Source: https://hexdocs.pm/oban/unique_jobs.html
-use Oban.Worker,
-  queue: :lockspire_logout,
-  unique: [
-    period: :infinity,
-    fields: [:worker, :args],
-    keys: [:logout_delivery_id],
-    states: :all
-  ]
+# Source: Oban worker options and result semantics
+# https://hexdocs.pm/oban/2.21.1/Oban.Worker.html
+defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
+  use Oban.Worker,
+    queue: :lockspire_logout,
+    max_attempts: 5,
+    unique: [period: :infinity, keys: [:delivery_id], states: :incomplete]
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"delivery_id" => delivery_id}}) do
+    with {:ok, delivery} <- LogoutDeliveries.fetch_pending_backchannel(delivery_id),
+         {:ok, token} <- LogoutTokens.sign(delivery),
+         {:ok, response} <-
+           Req.post(
+             url: delivery.target_uri,
+             form: [logout_token: token],
+             receive_timeout: 5_000
+           ) do
+      case response.status do
+        status when status in 200..299 -> LogoutDeliveries.mark_succeeded(delivery, status)
+        status when status in 500..599 -> {:error, {:http_retryable, status}}
+        status -> {:cancel, {:http_terminal, status}}
+      end
+    end
+  end
+end
 ```
 
-### Req form POST for `logout_token`
+### Front-channel logout URL composition
 ```elixir
-# Source: https://hexdocs.pm/req/Req.Steps.html
-Req.post!(delivery.destination_uri,
-  form: [logout_token: logout_token],
-  retry: :transient
-)
-```
+# Source: OIDC Front-Channel Logout 1.0, §2 and §3.1
+# https://openid.net/specs/openid-connect-frontchannel-1_0.html
+def build_frontchannel_url(target_uri, issuer, sid, true) do
+  target_uri
+  |> append_query_param("iss", issuer)
+  |> append_query_param("sid", sid)
+end
 
-### Front-channel iframe URI shape
-```text
-# Source: https://openid.net/specs/openid-connect-frontchannel-1_0.html
-https://rp.example.org/frontchannel_logout
-https://rp.example.org/frontchannel_logout?iss=https%3A%2F%2Fserver.example.com&sid=08a5019c...
+def build_frontchannel_url(target_uri, _issuer, _sid, false), do: target_uri
 ```
 
 ## State of the Art
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Browser-only logout propagation | Back-channel first, front-channel supplemental | OIDC Front-/Back-Channel Logout finalized in September 2022. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] | Lockspire should treat server-to-server delivery as the authoritative path and front-channel as cleanup. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] |
-| Front-channel assumed reliable | Browser privacy restrictions can block third-party iframe access | The front-channel spec’s implementation notes already warn about this modern browser reality. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] | Operator copy and discovery truth must not promise remote session cleanup proof. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
-| Best-effort in-process background tasks | Durable DB-backed jobs with explicit retry/discard states | The repo already ships Oban and the phase explicitly locks it in. [VERIFIED: mix.exs] [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] | Delivery state can be audited, retried, and surfaced truthfully in admin UX. [CITED: https://hexdocs.pm/oban/Oban.html] |
+| RP-initiated logout stops after host session clear + token revocation [VERIFIED: Phase 38] | OP also propagates logout to registered RPs over back-channel and front-channel [CITED: OIDC logout specs] | Phase 39 scope [VERIFIED: ROADMAP.md] | Connected apps are actively notified instead of inferring logout only from token expiry or next request. |
+| Discovery advertises `backchannel_logout_supported: false` and `frontchannel_logout_supported: false` [VERIFIED: `lib/lockspire/protocol/discovery.ex`] | Discovery flips all four logout booleans truthfully once Phase 39 is live [CITED: both OIDC logout specs] | Phase 39 [VERIFIED: `39-CONTEXT.md`] | RPs can register and rely on shipped logout behavior. |
+| No library-owned worker services in `Lockspire.Application` [VERIFIED: `lib/lockspire/application.ex`] | Lockspire starts a named Oban instance for protocol-owned background execution [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html] | Phase 39 recommendation | Background delivery becomes a first-class library capability instead of host ad hoc wiring. |
 
 **Deprecated/outdated:**
-- Inline logout webhook dispatch from the controller is outdated for this phase because it contradicts the locked durable async design and couples user logout latency to RP availability. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-- Advertising only `*_logout_supported` without the matching `*_logout_session_supported` booleans is outdated for Lockspire because Phase 38 already emits `sid` in ID tokens and discovery must stay fully truthful. [VERIFIED: lib/lockspire/protocol/discovery.ex] [VERIFIED: .planning/phases/38-session-tracking-rp-initiated-logout/38-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
+- Inline best-effort logout fan-out from the controller is outdated for this phase because it contradicts the locked durable pipeline decisions. [VERIFIED: `39-CONTEXT.md`]
 
-## Open Questions
+## Assumptions Log
 
-1. **Should Phase 39 also add a first-pass read-only admin view for recent `logout_events` and `logout_deliveries`, or only enrich client configuration surfaces?**
-   - What we know: The phase locks durable state, truthful operator UX, and dedicated client configuration fields, but it does not explicitly require a new event browser. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-   - What's unclear: Whether “truthful admin UX” for this slice means client configuration only or also recent delivery visibility. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md]
-   - Recommendation: Plan client configuration and stored status fields as required work; treat a dedicated event index/detail page as optional only if it can be delivered without starving SLO-03/SLO-04 proof. [VERIFIED: .planning/ROADMAP.md]
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | `logout_event.event_id` should be a UUID string rather than an integer-only internal id. | Architecture Patterns | Low — an integer PK still works if a separate correlation key is added later. |
+| A2 | `logout_delivery.status` should use the exact enum set `pending/enqueued/attempted/succeeded/retryable/discarded/rendered/skipped`. | Architecture Patterns | Low — naming can change if the state distinctions remain. |
+| A3 | Persisting `frontchannel_continue_to` on the event row is worth the extra column. | Architecture Patterns | Low — can be recomputed from existing redirect data if the planner prefers. |
+| A4 | `oban_job_id` should be stored on delivery rows for correlation. | Architecture Patterns | Low — observability can rely on telemetry correlation only if needed. |
+| A5 | Warning-sign examples that mention repeated telemetry for the same `sid` assume telemetry consumers will key by `sid` or event id. | Common Pitfalls | Low — affects ops ergonomics, not protocol correctness. |
+
+## Resolved Decision
+
+1. **Phase 39 will hard-fail startup when required Oban runtime config is missing or invalid.**
+   - What we know: the repo already fail-fast validates required config such as `logout_path`, and `Lockspire.Application` currently has no worker children. [VERIFIED: `lib/lockspire/config.ex`] [VERIFIED: `lib/lockspire/application.ex`]
+   - Resolution: treat Oban as required protocol infrastructure for the shipped Phase 39 surface rather than a truth-based feature toggle. [VERIFIED: `39-CONTEXT.md`]
+   - Planner implication: `Lockspire.Application`/`Lockspire.Oban` startup must surface a clear configuration error instead of silently hiding discovery booleans or degrading logout propagation. [VERIFIED: project fail-fast pattern] [CITED: https://hexdocs.pm/oban/2.21.1/Oban.html]
 
 ## Environment Availability
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| Elixir | Build, tests, worker/runtime code | ✓ [VERIFIED: `elixir --version`] | `1.19.5` [VERIFIED: `elixir --version`] | — |
-| Mix | Dependency install and test commands | ✓ [VERIFIED: `mix --version`] | `1.19.5` [VERIFIED: `mix --version`] | — |
-| PostgreSQL CLI | Local inspection/debugging of Oban and durable state | ✓ [VERIFIED: `psql --version`] | `14.17` [VERIFIED: `psql --version`] | — |
-| Oban Hex dependency | Durable back-channel jobs | ✓ in repo [VERIFIED: mix.exs] | `2.21.1` locked [VERIFIED: mix.lock] | — |
-| Req Hex dependency | SLO-03 HTTP dispatch | ✗ in repo [VERIFIED: mix.exs] | `0.5.17` available [VERIFIED: `mix hex.info req`] | Add `{:req, "~> 0.5.17"}` to `mix.exs` and fetch deps. [VERIFIED: `mix hex.info req`] |
+| Mix | adding `req`, compiling, tests | ✓ [VERIFIED: `mix --version`] | `1.19.5` [VERIFIED: `mix --version`] | — |
+| PostgreSQL | Oban persistence and repo-backed tests | ✓ [VERIFIED: `pg_isready`] | `14.17` client; local server accepting connections on `/tmp:5432` [VERIFIED: `psql --version`] [VERIFIED: `pg_isready`] | — |
+| Oban | back-channel job execution | ✓ in repo [VERIFIED: `mix.exs`] [VERIFIED: `mix.lock`] | locked `2.21.1` [VERIFIED: `mix.lock`] | — |
+| Req | back-channel HTTP transport | ✗ in repo today [VERIFIED: `mix.exs` missing `req`] | latest `0.5.17` on Hex [VERIFIED: `mix hex.info req`] | none — add dependency |
 
 **Missing dependencies with no fallback:**
-- None, provided Phase 39 adds `Req` as a new dependency. [VERIFIED: mix.exs] [VERIFIED: `mix hex.info req`]
+- `req` is not yet declared in `mix.exs`; Phase 39 should add it before implementing SLO-03. [VERIFIED: `mix.exs`] [VERIFIED: `mix hex.info req`]
 
 **Missing dependencies with fallback:**
-- None. SLO-03 explicitly names `req`, so Finch-only or `:httpc` substitutions would conflict with the requirement. [VERIFIED: .planning/REQUIREMENTS.md]
+- None. [VERIFIED: current repo + environment checks]
 
 ## Validation Architecture
 
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | ExUnit on `MIX_ENV=test`. [VERIFIED: test/test_helper.exs] |
-| Config file | `test/test_helper.exs`; no standalone `ex_unit.exs` config file detected. [VERIFIED: test/test_helper.exs] |
-| Quick run command | `MIX_ENV=test mix test test/lockspire/protocol/logout_propagation_test.exs test/lockspire/workers/backchannel_logout_worker_test.exs test/lockspire/web/end_session_controller_phase39_test.exs -x` [VERIFIED: mix.exs] |
-| Full suite command | `MIX_ENV=test mix test.fast && MIX_ENV=test mix test.integration` [VERIFIED: mix.exs] |
+| Framework | ExUnit with Phoenix/Ecto sandbox tests [VERIFIED: `test/test_helper.exs`] [VERIFIED: existing test files] |
+| Config file | `test/test_helper.exs` [VERIFIED: file read] |
+| Quick run command | `MIX_ENV=test mix test test/lockspire/protocol/logout_propagation_test.exs test/lockspire/workers/backchannel_logout_delivery_worker_test.exs test/lockspire/web/end_session_controller_test.exs` [ASSUMED] |
+| Full suite command | `MIX_ENV=test mix test.fast` plus targeted integration `MIX_ENV=test mix test --include integration test/integration/phase39_logout_propagation_e2e_test.exs` [VERIFIED: `mix.exs` aliases] [ASSUMED: new phase39 test file path] |
 
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| SLO-03 | Completion persists durable logout event/deliveries, enqueues unique Oban jobs, POSTs `logout_token`, and records retry/success/failure truthfully. | unit + integration | `MIX_ENV=test mix test test/lockspire/protocol/logout_propagation_test.exs test/lockspire/workers/backchannel_logout_worker_test.exs test/integration/phase39_logout_propagation_e2e_test.exs -x` | ❌ Wave 0 |
-| SLO-04 | Completion renders front-channel iframes, marks front-channel rows truthfully, and auto-continues with fallback UI after host return. | controller + integration | `MIX_ENV=test mix test test/lockspire/web/end_session_controller_phase39_test.exs test/integration/phase39_logout_propagation_e2e_test.exs -x` | ❌ Wave 0 |
+| SLO-03 | `/end_session/complete` persists a logout event, persists back-channel delivery rows, enqueues exactly one unique job per back-channel delivery, and does not block on outbound HTTP. [VERIFIED: locked D-01 through D-06] | controller + enqueue integration | `MIX_ENV=test mix test test/lockspire/web/end_session_controller_test.exs` [VERIFIED: file exists] | ✅ existing file, needs new cases |
+| SLO-03 | worker posts `logout_token`, classifies 2xx as success, retries transient failures, and marks permanent failures terminal. [CITED: back-channel spec + Oban retry semantics] | worker unit/integration | `MIX_ENV=test mix test test/lockspire/workers/backchannel_logout_delivery_worker_test.exs` [ASSUMED] | ❌ Wave 0 |
+| SLO-03 | DCR rejects logout propagation metadata as unsupported in this slice. [VERIFIED: locked D-10] | protocol unit | `MIX_ENV=test mix test test/lockspire/protocol/registration_test.exs` [VERIFIED: file exists] | ✅ existing file, needs new cases |
+| SLO-03 | admin validation persists first-class logout fields and rejects invalid URI/session-required combinations. [VERIFIED: admin client seam] | admin unit | `MIX_ENV=test mix test test/lockspire/admin/clients_test.exs` [VERIFIED: file exists] | ✅ existing file, needs new cases |
+| SLO-03 | discovery publishes all four truthful logout booleans once the feature is live. [VERIFIED: locked D-13] | protocol + controller unit | `MIX_ENV=test mix test test/lockspire/protocol/discovery_test.exs test/lockspire/web/discovery_controller_test.exs` [VERIFIED: files exist] | ✅ existing files, needs new cases |
+| SLO-04 | completion page renders one invisible iframe per eligible front-channel delivery, includes `iss` and `sid` only when required, and shows a visible continue fallback. [CITED: front-channel spec] | controller/template unit | `MIX_ENV=test mix test test/lockspire/web/end_session_controller_test.exs` [VERIFIED: file exists] | ✅ existing file, needs new cases |
+| SLO-03 + SLO-04 | end-to-end logout completion revokes tokens, enqueues/drains back-channel work, records durable outcomes, and renders front-channel iframe HTML from the same event. [VERIFIED: current Phase 38 e2e analog] | integration | `MIX_ENV=test mix test --include integration test/integration/phase39_logout_propagation_e2e_test.exs` [ASSUMED] | ❌ Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** Run the targeted Phase 39 test files plus any touched unit tests. [VERIFIED: mix.exs]
-- **Per wave merge:** Run `MIX_ENV=test mix test.fast` and the dedicated Phase 39 integration file. [VERIFIED: mix.exs]
-- **Phase gate:** Full repo test pass plus Phase 39 integration proof before `/gsd-verify-work`. [VERIFIED: .planning/PROJECT.md]
+- **Per task commit:** targeted unit/controller tests for touched seam. [VERIFIED: repo has fine-grained tests]
+- **Per wave merge:** run back-channel worker tests plus discovery/controller tests and one phase integration drain. [ASSUMED]
+- **Phase gate:** targeted Phase 39 integration plus relevant existing Phase 38 logout e2e regression before `/gsd-verify-work`. [VERIFIED: `test/integration/phase38_session_logout_e2e_test.exs`]
 
 ### Wave 0 Gaps
-- [ ] `test/lockspire/protocol/logout_propagation_test.exs` — target resolution, event/delivery creation, DCR rejection, discovery booleans. [VERIFIED: lib/lockspire/protocol/end_session.ex] [VERIFIED: lib/lockspire/protocol/discovery.ex]
-- [ ] `test/lockspire/workers/backchannel_logout_worker_test.exs` — Req stub, response classification, retry/permanent-failure paths, redaction assertions. [CITED: https://hexdocs.pm/req/Req.Steps.html] [CITED: https://hexdocs.pm/oban/Oban.Worker.html]
-- [ ] `test/lockspire/web/end_session_controller_phase39_test.exs` — front-channel completion page, continue fallback, no fake success signaling. [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex]
-- [ ] `test/integration/phase39_logout_propagation_e2e_test.exs` — end-to-end host return, Oban drain, back-channel stub capture, front-channel iframe markup, discovery flip. [VERIFIED: test/integration/phase38_session_logout_e2e_test.exs] [CITED: https://hexdocs.pm/oban/Oban.html]
-- [ ] Shared Oban test helper or fixture setup using `testing: :manual` and `Oban.drain_queue/2`; none exists yet in `test/support/`. [VERIFIED: `rg -n 'Oban.Testing|drain_queue|assert_enqueued' test`] [CITED: https://hexdocs.pm/oban/Oban.html]
+- [ ] `test/lockspire/workers/backchannel_logout_delivery_worker_test.exs` — covers SLO-03 delivery execution, retry classification, and redaction.
+- [ ] `test/lockspire/protocol/logout_propagation_test.exs` — covers client fan-out selection, logout token claims, and front-channel URL construction.
+- [ ] `test/lockspire/storage/ecto/repository_logout_propagation_test.exs` — covers event/delivery persistence helpers and snapshot updates.
+- [ ] `test/integration/phase39_logout_propagation_e2e_test.exs` — covers durable enqueue + drain + iframe rendering on one logout event.
+- [ ] test Oban setup in `config/test.exs` or helper bootstrap — use `testing: :manual` and `use Oban.Testing, repo: Lockspire.TestRepo`. [CITED: https://hexdocs.pm/oban/testing.html] [CITED: https://hexdocs.pm/oban/Oban.Testing.html]
 
 ## Security Domain
 
@@ -405,74 +394,45 @@ https://rp.example.org/frontchannel_logout?iss=https%3A%2F%2Fserver.example.com&
 
 | ASVS Category | Applies | Standard Control |
 |---------------|---------|-----------------|
-| V2 Authentication | yes [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] | Signed Logout Tokens validated against Lockspire signing keys and exact client audience. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: lib/lockspire/protocol/end_session.ex] |
-| V3 Session Management | yes [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] | `sid`-scoped logout propagation plus host-owned web session clearing seam. [VERIFIED: .planning/phases/38-session-tracking-rp-initiated-logout/38-CONTEXT.md] |
-| V4 Access Control | no direct new surface [VERIFIED: lib/lockspire/web/router.ex] | Existing operator/admin access model remains in host app scope. [VERIFIED: .planning/PROJECT.md] |
-| V5 Input Validation | yes [VERIFIED: lib/lockspire/admin/clients.ex] | Strict URI validation, no fragments, front-channel origin match, session-required coherence, DCR rejection. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
-| V6 Cryptography | yes [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] | JOSE-signed Logout Tokens, no `alg=none`, reuse existing signing-key controls. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: mix.exs] |
+| V2 Authentication | yes [CITED: logout tokens are signed JWTs from the OP] | Verify logout tokens are signed with Lockspire signing keys; do not emit `alg=none`. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: project security defaults] |
+| V3 Session Management | yes [VERIFIED: phase scope is logout/session propagation] | Use persisted `sid`, session-required metadata, and token revocation before fan-out. [VERIFIED: Phase 38 code and context] |
+| V4 Access Control | yes [VERIFIED: operator-managed metadata only] | Keep logout propagation fields in admin-only surfaces; DCR rejects them in Phase 39. [VERIFIED: `39-CONTEXT.md`] [VERIFIED: `lib/lockspire/protocol/registration.ex`] |
+| V5 Input Validation | yes [CITED: specs define URI constraints] | Reuse strict URI validation, forbid fragments, require front-channel same scheme/host/port as a registered redirect URI, and reject `*_session_required` without the corresponding URI. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: existing `Clients.validate_redirect_uris/1`] |
+| V6 Cryptography | yes [CITED: logout token is JWT-based] | Sign logout tokens with JOSE and existing Lockspire signing-key lifecycle; never persist raw JWTs in audit or telemetry. [VERIFIED: repo JOSE usage] [VERIFIED: `lib/lockspire/redaction.ex`] |
 
-### Known Threat Patterns for Lockspire logout propagation
+### Known Threat Patterns for this Stack
 
 | Pattern | STRIDE | Standard Mitigation |
 |---------|--------|---------------------|
-| Forged back-channel logout token | Spoofing | Sign Logout Tokens with existing signing keys; set `aud` to client ID; never allow `alg=none`; persist only redacted telemetry. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [VERIFIED: lib/lockspire/redaction.ex] |
-| Replay or duplicate delivery enqueue | Tampering | Unique Oban jobs keyed by `logout_delivery_id` plus durable delivery state checks before execution. [CITED: https://hexdocs.pm/oban/unique_jobs.html] |
-| Permanent misconfiguration causing retry storms | Denial of Service | Classify stable 4xx responses as terminal failures and cap `max_attempts`. [CITED: https://hexdocs.pm/req/Req.Steps.html] [CITED: https://hexdocs.pm/oban/Oban.Worker.html] |
-| Leakage of raw logout token or session identifiers | Information Disclosure | Extend shared redaction lists and audit normalization to drop raw bodies and tokens. [VERIFIED: lib/lockspire/redaction.ex] [VERIFIED: lib/lockspire/audit/event.ex] |
-| False operator claim that front-channel logout succeeded remotely | Repudiation | Persist `rendered`/`skipped` for front-channel instead of `succeeded`, and surface truthful copy in UI/docs. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
+| Malicious or misconfigured RP logout URI causing SSRF | Tampering / Info Disclosure | Accept only operator-managed URIs, validate them offline, never live-probe on save, and keep DCR unsupported for these fields in Phase 39. [VERIFIED: locked D-10 and D-11] |
+| Raw logout token leakage in logs or audit | Information Disclosure | Store only `jti`, status, client id, URI snapshot, and redacted reason metadata; extend redaction keys if needed for `logout_token`. [VERIFIED: `lib/lockspire/redaction.ex`] [VERIFIED: locked D-22] |
+| Duplicate dispatch from repeated completion or clustered workers | Tampering / DoS | Unique Oban jobs keyed by delivery id plus unique delivery rows per `(event, client, channel)`. [CITED: https://hexdocs.pm/oban/2.21.1/unique_jobs.html] |
+| Slow or failing RPs exhausting request time | DoS | Run outbound work in Oban with low per-request timeouts, bounded `max_attempts`, and terminal handling for stable `4xx`. [CITED: https://hexdocs.pm/oban/2.21.1/Oban.Worker.html] [CITED: https://hexdocs.pm/req/Req.html] |
+| Browser privacy features preventing front-channel cleanup | Repudiation / Reliability | Document best-effort semantics and never mark front-channel rows `succeeded`. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `https://openid.net/specs/openid-connect-backchannel-1_0.html` - logout token requirements, POST format, RP memory requirement, discovery booleans, retry semantics.
-- `https://openid.net/specs/openid-connect-frontchannel-1_0.html` - iframe flow, URI/session-required rules, discovery booleans, browser privacy limitations.
-- `https://openid.net/specs/openid-connect-rpinitiated-1_0.html` - composition of RP-initiated logout with front-/back-channel propagation.
-- `https://hexdocs.pm/oban/unique_jobs.html` - unique job semantics, conflict handling, replacement rules.
-- `https://hexdocs.pm/oban/Oban.html` - test modes, queue disabling, drain execution, instance configuration.
-- `https://hexdocs.pm/oban/Oban.Worker.html` - worker return values and retry/backoff semantics.
-- `https://hexdocs.pm/req/Req.Steps.html` - form encoding and retry configuration.
-- Local code: `mix.exs`, `mix.lock`, `lib/lockspire/protocol/end_session.ex`, `lib/lockspire/web/controllers/end_session_controller.ex`, `lib/lockspire/protocol/discovery.ex`, `lib/lockspire/admin/clients.ex`, `lib/lockspire/storage/ecto/repository.ex`, `lib/lockspire/observability.ex`, `lib/lockspire/audit/event.ex`, `lib/lockspire/redaction.ex`, `lib/lockspire/application.ex`, `lib/lockspire/web/live/admin/clients_live/show.ex`, `lib/lockspire/web/live/admin/clients_live/form_component.ex`, `test/integration/phase38_session_logout_e2e_test.exs`.
+- OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1 — support booleans, RP metadata, logout token claims, POST semantics, and RP validation steps. https://openid.net/specs/openid-connect-backchannel-1_0.html
+- OpenID Connect Front-Channel Logout 1.0 — iframe flow, RP metadata, `iss`/`sid` rules, discovery booleans, and browser limitation section. https://openid.net/specs/openid-connect-frontchannel-1_0.html
+- Oban v2.21.1 docs — named instances, supervision, transactional enqueue, worker retry/backoff semantics, and queue draining in tests. https://hexdocs.pm/oban/2.21.1/Oban.html
+- Oban.Worker v2.21.1 — `max_attempts`, `unique`, return semantics, and `backoff/1`. https://hexdocs.pm/oban/2.21.1/Oban.Worker.html
+- Oban unique jobs guide — insertion-time uniqueness semantics and state scoping. https://hexdocs.pm/oban/2.21.1/unique_jobs.html
+- Repo code and planning artifacts read during this session — Phase 38/39 docs, current logout code, discovery, admin clients, audit, redaction, tests, and mix metadata. [VERIFIED: file reads listed in this session]
 
 ### Secondary (MEDIUM confidence)
-- None.
+- Req docs/readme for POST and response handling. https://hexdocs.pm/req/Req.html
+- Hex package info for current `oban` and `req` release availability. [VERIFIED: `mix hex.info oban`] [VERIFIED: `mix hex.info req`]
 
 ### Tertiary (LOW confidence)
-- None.
+- None. All material protocol/runtime claims above were either verified in the repo or cited from official docs.
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH - Repo-pinned versions and Hex verification exist for all recommended dependencies; only `Req` is new, and its current Hex release was verified directly. [VERIFIED: mix.exs] [VERIFIED: mix.lock] [VERIFIED: `mix hex.info req`]
-- Architecture: HIGH - The phase boundary, code seams, and official logout specs are aligned and concrete. [VERIFIED: .planning/phases/39-automated-rp-logout-propagation/39-CONTEXT.md] [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html] [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
-- Pitfalls: HIGH - The main failure modes are explicit in the specs, Oban docs, and current repo seams. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html] [CITED: https://hexdocs.pm/oban/unique_jobs.html] [VERIFIED: lib/lockspire/redaction.ex]
+- Standard stack: HIGH — repo-pinned dependencies, Hex package verification, and official docs align. [VERIFIED: `mix.exs`] [VERIFIED: `mix.lock`] [VERIFIED: `mix hex.info oban`] [VERIFIED: `mix hex.info req`]
+- Architecture: HIGH — recommendations are directly constrained by locked Phase 39 decisions, existing Phase 38 seams, and Oban/OIDC normative behavior. [VERIFIED: `39-CONTEXT.md`] [VERIFIED: repo reads] [CITED: official specs/docs]
+- Pitfalls: MEDIUM — the retry/browser pitfalls are strongly supported by docs, while some warning-sign examples are operational inference. [CITED: official specs/docs] [ASSUMED: operational examples]
 
-**Research date:** 2026-04-29
-**Valid until:** 2026-05-29 for local-code findings; re-check official docs sooner if Oban or Req versions are bumped.
-
-## RESEARCH COMPLETE
-
-**Phase:** 39 - automated-rp-logout-propagation
-**Confidence:** HIGH
-
-### Key Findings
-- Back-channel delivery should be modeled as durable per-delivery work, not inline controller HTTP, and the official spec requires `application/x-www-form-urlencoded` POSTs with a signed `logout_token`. [CITED: https://openid.net/specs/openid-connect-backchannel-1_0.html]
-- Front-channel logout must stay explicitly best effort because the spec warns that third-party browser storage restrictions can prevent iframe-based RP logout from accessing session state. [CITED: https://openid.net/specs/openid-connect-frontchannel-1_0.html]
-- Lockspire already has the right seams for this phase: `EndSessionController.complete/2`, `EndSession.Result`, discovery placeholders, typed client fields, shared redaction/observability, and an exposed `oban` config seam. [VERIFIED: lib/lockspire/web/controllers/end_session_controller.ex] [VERIFIED: lib/lockspire/protocol/end_session.ex] [VERIFIED: lib/lockspire/protocol/discovery.ex] [VERIFIED: lib/lockspire/config.ex]
-- The repo does not currently depend on `Req`, so Phase 39 needs to add it before implementing SLO-03. [VERIFIED: mix.exs] [VERIFIED: `mix hex.info req`]
-- There is no existing Oban testing helper in `test/support/`, so Wave 0 should add manual Oban test setup and targeted Phase 39 proof files. [VERIFIED: `rg -n 'Oban.Testing|drain_queue|assert_enqueued' test`] [CITED: https://hexdocs.pm/oban/Oban.html]
-
-### File Created
-`.planning/phases/39-automated-rp-logout-propagation/39-RESEARCH.md`
-
-### Confidence Assessment
-| Area | Level | Reason |
-|------|-------|--------|
-| Standard Stack | HIGH | Repo versions and Hex package metadata were verified directly. |
-| Architecture | HIGH | Spec rules and existing code seams line up cleanly. |
-| Pitfalls | HIGH | The relevant delivery, browser, and redaction pitfalls are explicit in the specs and current code. |
-
-### Open Questions
-- Decide during planning whether Phase 39 includes only client-config truth or also a first-pass read-only logout delivery browser.
-
-### Ready for Planning
-Research complete. Planner can now create PLAN.md files.
+**Research date:** 2026-04-29 [VERIFIED: `date +%F`]
+**Valid until:** 2026-05-29 for repo-shape guidance; re-check before implementation if Oban is upgraded beyond `2.21.1` or if logout scope changes. [VERIFIED: `mix.lock`] [VERIFIED: `mix hex.info oban`]
