@@ -16,8 +16,10 @@
 
 - [ ] **SLO-01**: Add durable Session ID (`sid`) tracking to interaction and token records.
 - [ ] **SLO-02**: Implement `GET /end_session` (RP-Initiated Logout) with host-owned session clearing seam.
-- [ ] **SLO-03**: Implement Back-Channel Logout webhook dispatch (server-to-server POST) via `req`.
-- [ ] **SLO-04**: Implement Front-Channel Logout asynchronous iframe rendering on host return.
+- [x] **SLO-03
+**: Implement Back-Channel Logout webhook dispatch (server-to-server POST) via `req`.
+- [x] **SLO-04
+**: Implement Front-Channel Logout asynchronous iframe rendering on host return.
 
 ### Authorization
 

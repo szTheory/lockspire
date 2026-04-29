@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 39-01-PLAN.md
-last_updated: "2026-04-29T19:00:48.317Z"
+stopped_at: Completed 39-02-PLAN.md
+last_updated: "2026-04-29T19:10:38.152Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
-  percent: 64
+  completed_plans: 10
+  percent: 71
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 39 (automated-rp-logout-propagation) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-04-29
 
@@ -76,6 +76,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - TokenExchange reads nonce and conditional auth_time from persisted interaction state while keeping OpenID device grants interaction-optional.
 - Keep Phase 39 Wave 0 logout propagation coverage compile-safe with skipped placeholders only.
 - Extend discovery_test.exs in place so Phase 38 live truth stays green while Phase 39 logout booleans remain explicitly skipped.
+- Logout propagation fields remain typed client state with URI presence as the only opt-in.
+- Operator logout validation stays offline and enforces same-origin front-channel checks against registered redirect URIs.
+- Phase 39 DCR keeps logout metadata explicitly unsupported instead of silently ignoring it.
 
 ### Blockers/Concerns
 
@@ -89,7 +92,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 39-01-PLAN.md
+**Stopped at:** Completed 39-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
