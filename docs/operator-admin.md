@@ -11,8 +11,25 @@ Lockspire ships a library-owned operator surface for protocol state, while the h
 - Publish, activate, and retire signing keys
 - Manage Global PAR policy at `/admin/policies/par`
 - Manage Client PAR override at `/admin/clients/:client_id/par-policy`
+- Edit post-logout redirect URIs separately from logout propagation settings
+- Manage client logout propagation from the dedicated workflow at `/admin/clients/:client_id/edit?workflow=logout-propagation`
 
 These routes live under the embedded Lockspire router and are meant for application operators.
+
+## Logout propagation workflow
+
+Operators now have two separate logout-related surfaces on each client:
+
+- **Post-logout redirect URIs**: where the RP may send the browser after RP-initiated logout completes.
+- **Logout propagation**: the `backchannel_logout_uri`, `frontchannel_logout_uri`, and their `*_session_required` flags.
+
+Keep those concerns separate. Redirect URIs are browser destinations; logout propagation URIs are RP cleanup endpoints.
+
+Lockspire's shipped truth model is:
+
+- Back-channel logout is the reliable path. `/end_session/complete` persists delivery intent, then Oban runs Req-based POST delivery out of band.
+- Front-channel logout is best effort only. Lockspire renders invisible iframes and a bounded continue page, but it does not claim remote success.
+- Dynamic Client Registration does not accept logout propagation metadata in this slice. Operators configure those fields explicitly in admin.
 
 ## PAR Policy Management
 

@@ -22,8 +22,9 @@ Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 - DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
+- RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams
-- LiveView and admin workflows for clients, consents, tokens, keys, and PAR/DPoP/DCR policies
+- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
 - Phoenix-first onboarding docs and generated host integration files
 
 ## Explicitly out of scope
@@ -36,6 +37,7 @@ Lockspire `v0.2.0` preview does not currently support:
 - Generic host protected-resource middleware remains out of scope
 - DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints
 - Lockspire-owned device verification browser UI or hosted approval pages
+- Dynamic Client Registration support for `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, or `frontchannel_logout_session_required` remains unsupported in this slice
 - Hosted auth as a separate required service
 - SAML
 - LDAP or Active Directory federation
@@ -68,6 +70,7 @@ A `v0.2.0` preview claim can honestly say:
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - the shipped DPoP proof surface is narrow: `/token` issuance plus the Lockspire-owned `userinfo` endpoint, not generic host protected resources
+- the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only
 - contributor and release workflows are versioned in the repo
 - a private disclosure path exists for supported security issues
 
@@ -75,6 +78,7 @@ A `v0.2.0` preview claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
 - Lockspire supports broader request-object modes, generic external `request_uri` handling, generic host protected-resource middleware, SAML, or LDAP
+- Lockspire accepts DCR logout metadata or proves front-channel logout success remotely
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 
