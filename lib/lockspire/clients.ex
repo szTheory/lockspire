@@ -18,6 +18,7 @@ defmodule Lockspire.Clients do
           :invalid_client_type
           | :invalid_token_endpoint_auth_method
           | :invalid_redirect_uri
+          | :invalid_logout_uri
           | :invalid_scope
           | :invalid_grant_type
           | :invalid_response_type
@@ -46,6 +47,32 @@ defmodule Lockspire.Clients do
     case Enum.reverse(errors) do
       [] -> :ok
       invalid -> {:error, invalid}
+    end
+  end
+
+  @spec validate_logout_uri(String.t() | nil) :: :ok | {:error, error_detail()}
+  def validate_logout_uri(uri) do
+    case validate_redirect_uri(normalize_optional_string(uri || "")) do
+      :ok ->
+        :ok
+
+      reason ->
+        {:error, %{field: :logout_uri, reason: :invalid_logout_uri, detail: reason}}
+    end
+  end
+
+  @spec frontchannel_logout_origin_matches_redirect_uri?(String.t(), [String.t()]) :: boolean()
+  def frontchannel_logout_origin_matches_redirect_uri?(logout_uri, redirect_uris)
+      when is_binary(logout_uri) and is_list(redirect_uris) do
+    with {:ok, logout_origin} <- uri_origin(logout_uri) do
+      Enum.any?(redirect_uris, fn redirect_uri ->
+        case uri_origin(redirect_uri) do
+          {:ok, redirect_origin} -> redirect_origin == logout_origin
+          :error -> false
+        end
+      end)
+    else
+      :error -> false
     end
   end
 
@@ -376,6 +403,20 @@ defmodule Lockspire.Clients do
 
   defp normalize_metadata(value) when is_map(value), do: value
   defp normalize_metadata(_value), do: %{}
+
+  defp uri_origin(uri) do
+    case URI.parse(uri) do
+      %URI{scheme: scheme, host: host, port: port}
+      when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+        {:ok, {scheme, host, port || default_port(scheme)}}
+
+      _other ->
+        :error
+    end
+  end
+
+  defp default_port("http"), do: 80
+  defp default_port("https"), do: 443
 
   defp fetch_required_list(attrs, key) do
     Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))

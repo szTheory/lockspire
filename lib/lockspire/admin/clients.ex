@@ -9,7 +9,23 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Observability
   alias Lockspire.Storage.Ecto.Repository
 
-  @mutable_fields ~w(name redirect_uris allowed_scopes logo_uri tos_uri policy_uri contacts par_policy dpop_policy metadata)a
+  @mutable_fields ~w(
+    name
+    redirect_uris
+    post_logout_redirect_uris
+    backchannel_logout_uri
+    backchannel_logout_session_required
+    frontchannel_logout_uri
+    frontchannel_logout_session_required
+    allowed_scopes
+    logo_uri
+    tos_uri
+    policy_uri
+    contacts
+    par_policy
+    dpop_policy
+    metadata
+  )a
   @immutable_fields ~w(
     client_id
     client_type
@@ -111,7 +127,7 @@ defmodule Lockspire.Admin.Clients do
   def update_client(client_id, attrs) when is_binary(client_id) and is_map(attrs) do
     with {:ok, %Client{} = client} <- get_client(client_id),
          :ok <- reject_immutable_changes(attrs),
-         :ok <- validate_safe_update(attrs) do
+         :ok <- validate_safe_update(client, attrs) do
       Repository.update_client(client, normalize_update_attrs(attrs))
     else
       {:error, :not_found} = error -> error
@@ -191,12 +207,19 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
-  defp validate_safe_update(attrs) do
-    with :ok <- validate_redirects_if_present(attrs),
-         :ok <- validate_scopes_if_present(attrs) do
-      with :ok <- validate_par_policy_if_present(attrs) do
-        validate_dpop_policy_if_present(attrs)
-      end
+  defp validate_safe_update(%Client{} = client, attrs) do
+    errors =
+      []
+      |> maybe_append_errors(validate_redirects_if_present(attrs))
+      |> maybe_append_errors(validate_post_logout_redirects_if_present(attrs))
+      |> maybe_append_errors(validate_logout_propagation(attrs, effective_redirect_uris(client, attrs)))
+      |> maybe_append_errors(validate_scopes_if_present(attrs))
+      |> maybe_append_errors(validate_par_policy_if_present(attrs))
+      |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
+
+    case errors do
+      [] -> :ok
+      _errors -> {:error, errors}
     end
   end
 
@@ -218,6 +241,32 @@ defmodule Lockspire.Admin.Clients do
       allowed_scopes ->
         Clients.validate_allowed_scopes(allowed_scopes)
     end
+  end
+
+  defp validate_post_logout_redirects_if_present(attrs) do
+    case fetch_attr(attrs, :post_logout_redirect_uris) do
+      nil ->
+        :ok
+
+      post_logout_redirect_uris ->
+        case Clients.validate_redirect_uris(post_logout_redirect_uris) do
+          :ok ->
+            :ok
+
+          {:error, errors} ->
+            {:error, Enum.map(errors, &Map.put(&1, :field, :post_logout_redirect_uris))}
+        end
+    end
+  end
+
+  defp validate_logout_propagation(attrs, redirect_uris) do
+    []
+    |> maybe_add_logout_uri_error(attrs, :backchannel_logout_uri)
+    |> maybe_add_logout_uri_error(attrs, :frontchannel_logout_uri)
+    |> maybe_add_session_required_error(attrs, :backchannel_logout_uri, :backchannel_logout_session_required)
+    |> maybe_add_session_required_error(attrs, :frontchannel_logout_uri, :frontchannel_logout_session_required)
+    |> maybe_add_frontchannel_origin_error(attrs, redirect_uris)
+    |> Enum.reverse()
   end
 
   defp validate_par_policy_if_present(attrs) do
@@ -281,14 +330,18 @@ defmodule Lockspire.Admin.Clients do
   defp normalize_update_attrs(attrs) do
     Enum.reduce(@mutable_fields, %{}, fn field, acc ->
       case fetch_mutable_attr(attrs, field) do
-        {:ok, value} -> Map.put(acc, field, normalize_mutable_field(field, value))
+        {:ok, value} ->
+          normalized = normalize_mutable_field(field, value)
+          acc = Map.put(acc, field, normalized)
+          maybe_reset_logout_session_required(acc, field, normalized)
+
         :error -> acc
       end
     end)
   end
 
   defp normalize_mutable_field(field, value)
-       when field in [:redirect_uris, :allowed_scopes, :contacts] do
+       when field in [:redirect_uris, :post_logout_redirect_uris, :allowed_scopes, :contacts] do
     normalize_string_list(value)
   end
 
@@ -308,6 +361,10 @@ defmodule Lockspire.Admin.Clients do
 
   defp normalize_mutable_field(:metadata, value) when is_map(value), do: value
   defp normalize_mutable_field(:metadata, _value), do: %{}
+  defp normalize_mutable_field(field, value)
+       when field in [:backchannel_logout_session_required, :frontchannel_logout_session_required] do
+    normalize_boolean(value)
+  end
   defp normalize_mutable_field(_field, value), do: normalize_string(value)
 
   defp normalize_string_list(nil), do: []
@@ -337,6 +394,10 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_string(_value), do: nil
+
+  defp normalize_boolean(value) when value in [true, "true", 1, "1"], do: true
+  defp normalize_boolean(value) when value in [false, "false", 0, "0", nil, ""], do: false
+  defp normalize_boolean(_value), do: false
 
   defp normalize_par_policy(:inherit), do: {:ok, :inherit}
   defp normalize_par_policy(:required), do: {:ok, :required}
@@ -396,7 +457,16 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp fetch_attr(attrs, key) do
-    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+    case Map.fetch(attrs, key) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        case Map.fetch(attrs, Atom.to_string(key)) do
+          {:ok, value} -> value
+          :error -> nil
+        end
+    end
   end
 
   defp fetch_mutable_attr(attrs, field) do
@@ -405,6 +475,70 @@ defmodule Lockspire.Admin.Clients do
       :error -> Map.fetch(attrs, Atom.to_string(field))
     end
   end
+
+  defp maybe_append_errors(errors, :ok), do: errors
+  defp maybe_append_errors(errors, []), do: errors
+  defp maybe_append_errors(errors, {:error, new_errors}), do: errors ++ new_errors
+  defp maybe_append_errors(errors, new_errors) when is_list(new_errors), do: errors ++ new_errors
+
+  defp maybe_add_logout_uri_error(errors, attrs, field) do
+    case fetch_attr(attrs, field) do
+      nil ->
+        errors
+
+      uri ->
+        case Clients.validate_logout_uri(uri) do
+          :ok ->
+            errors
+
+          {:error, error} ->
+            [Map.put(error, :field, field) | errors]
+        end
+    end
+  end
+
+  defp maybe_add_session_required_error(errors, attrs, uri_field, session_field) do
+    session_required = normalize_boolean(fetch_attr(attrs, session_field))
+    uri = normalize_string(fetch_attr(attrs, uri_field))
+
+    if session_required and is_nil(uri) do
+      [%{field: session_field, reason: :logout_uri_required, detail: uri_field} | errors]
+    else
+      errors
+    end
+  end
+
+  defp maybe_add_frontchannel_origin_error(errors, attrs, redirect_uris) do
+    case normalize_string(fetch_attr(attrs, :frontchannel_logout_uri)) do
+      nil ->
+        errors
+
+      uri ->
+        if Clients.frontchannel_logout_origin_matches_redirect_uri?(uri, redirect_uris) do
+          errors
+        else
+          [
+            %{field: :frontchannel_logout_uri, reason: :frontchannel_logout_origin_mismatch, detail: uri}
+            | errors
+          ]
+        end
+    end
+  end
+
+  defp effective_redirect_uris(%Client{} = client, attrs) do
+    case fetch_attr(attrs, :redirect_uris) do
+      nil -> client.redirect_uris
+      redirect_uris -> normalize_string_list(redirect_uris)
+    end
+  end
+
+  defp maybe_reset_logout_session_required(attrs, :backchannel_logout_uri, nil),
+    do: Map.put(attrs, :backchannel_logout_session_required, false)
+
+  defp maybe_reset_logout_session_required(attrs, :frontchannel_logout_uri, nil),
+    do: Map.put(attrs, :frontchannel_logout_session_required, false)
+
+  defp maybe_reset_logout_session_required(attrs, _field, _value), do: attrs
 
   defp rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
     transact_with_audit(

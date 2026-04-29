@@ -280,6 +280,59 @@ defmodule Lockspire.Admin.ClientsTest do
     assert fetched.frontchannel_logout_session_required == true
   end
 
+  test "update_client/2 persists normalized logout propagation settings" do
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               backchannel_logout_uri: " https://admin.example.com/backchannel ",
+               backchannel_logout_session_required: "true",
+               frontchannel_logout_uri: " https://admin.example.com/frontchannel ",
+               frontchannel_logout_session_required: true
+             })
+
+    assert client.backchannel_logout_uri == "https://admin.example.com/backchannel"
+    assert client.backchannel_logout_session_required == true
+    assert client.frontchannel_logout_uri == "https://admin.example.com/frontchannel"
+    assert client.frontchannel_logout_session_required == true
+
+    assert {:ok, %Client{} = fetched} = Repository.fetch_client_by_id("admin-client")
+    assert fetched.backchannel_logout_uri == "https://admin.example.com/backchannel"
+    assert fetched.backchannel_logout_session_required == true
+    assert fetched.frontchannel_logout_uri == "https://admin.example.com/frontchannel"
+    assert fetched.frontchannel_logout_session_required == true
+  end
+
+  test "update_client/2 rejects invalid logout propagation combinations with field-specific errors" do
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               backchannel_logout_session_required: true,
+               frontchannel_logout_uri: "https://logout.example.com/frontchannel#fragment",
+               frontchannel_logout_session_required: true
+             })
+
+    assert Enum.any?(
+             errors,
+             &(&1.field == :backchannel_logout_session_required and
+                 &1.reason == :logout_uri_required)
+           )
+
+    assert Enum.any?(
+             errors,
+             &(&1.field == :frontchannel_logout_uri and &1.reason == :invalid_logout_uri and
+                 &1.detail == :fragment_not_allowed)
+           )
+
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               frontchannel_logout_uri: "https://other.example.com/frontchannel"
+             })
+
+    assert Enum.any?(
+             errors,
+             &(&1.field == :frontchannel_logout_uri and
+                 &1.reason == :frontchannel_logout_origin_mismatch)
+           )
+  end
+
   test "update_client/2 accepts only inherit, required, and optional for par_policy" do
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{
