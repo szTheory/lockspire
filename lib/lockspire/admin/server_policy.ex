@@ -51,6 +51,16 @@ defmodule Lockspire.Admin.ServerPolicy do
     end
   end
 
+  @spec put_security_profile(atom() | String.t()) ::
+          {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
+  def put_security_profile(profile) do
+    with {:ok, normalized_profile} <- normalize_security_profile(profile) do
+      Repository.update_server_policy(fn %ServerPolicy{} = current ->
+        %ServerPolicy{current | security_profile: normalized_profile}
+      end)
+    end
+  end
+
   @doc """
   Returns the current DCR policy view as a `%Domain.ServerPolicy{}` (the same struct
   used by `get_server_policy/0` — DCR fields land on the singleton row per D-04).
@@ -119,6 +129,25 @@ defmodule Lockspire.Admin.ServerPolicy do
 
   defp invalid_dpop_policy(value) do
     {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: value}]}
+  end
+
+  defp normalize_security_profile(:none), do: {:ok, :none}
+  defp normalize_security_profile(:fapi_2_0_security), do: {:ok, :fapi_2_0_security}
+
+  defp normalize_security_profile(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "none" -> {:ok, :none}
+      "fapi_2_0_security" -> {:ok, :fapi_2_0_security}
+      _other -> invalid_security_profile(value)
+    end
+  end
+
+  defp normalize_security_profile(value), do: invalid_security_profile(value)
+
+  defp invalid_security_profile(value) do
+    {:error, [%{field: :security_profile, reason: :invalid_security_profile, detail: value}]}
   end
 
   defp normalize_dcr_attrs(attrs) do

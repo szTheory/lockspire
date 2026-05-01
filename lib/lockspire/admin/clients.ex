@@ -24,6 +24,7 @@ defmodule Lockspire.Admin.Clients do
     contacts
     par_policy
     dpop_policy
+    security_profile
     metadata
   )a
   @immutable_fields ~w(
@@ -216,6 +217,7 @@ defmodule Lockspire.Admin.Clients do
       |> maybe_append_errors(validate_scopes_if_present(attrs))
       |> maybe_append_errors(validate_par_policy_if_present(attrs))
       |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
+      |> maybe_append_errors(validate_security_profile_if_present(attrs))
 
     case errors do
       [] -> :ok
@@ -301,6 +303,22 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
+  defp validate_security_profile_if_present(attrs) do
+    case fetch_mutable_attr(attrs, :security_profile) do
+      :error ->
+        :ok
+
+      {:ok, value} ->
+        case normalize_security_profile(value) do
+          {:ok, _profile} ->
+            :ok
+
+          :error ->
+            {:error, [%{field: :security_profile, reason: :invalid_security_profile, detail: value}]}
+        end
+    end
+  end
+
   defp reject_immutable_changes(attrs) do
     attempted =
       attrs
@@ -355,6 +373,13 @@ defmodule Lockspire.Admin.Clients do
   defp normalize_mutable_field(:dpop_policy, value) do
     case normalize_dpop_policy(value) do
       {:ok, policy} -> policy
+      :error -> value
+    end
+  end
+
+  defp normalize_mutable_field(:security_profile, value) do
+    case normalize_security_profile(value) do
+      {:ok, profile} -> profile
       :error -> value
     end
   end
@@ -432,6 +457,23 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_dpop_policy(_value), do: :error
+
+  defp normalize_security_profile(:inherit), do: {:ok, :inherit}
+  defp normalize_security_profile(:fapi_2_0_security), do: {:ok, :fapi_2_0_security}
+  defp normalize_security_profile(:none), do: {:ok, :none}
+
+  defp normalize_security_profile(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "inherit" -> {:ok, :inherit}
+      "fapi_2_0_security" -> {:ok, :fapi_2_0_security}
+      "none" -> {:ok, :none}
+      _other -> :error
+    end
+  end
+
+  defp normalize_security_profile(_value), do: :error
 
   defp normalize_field_name(value) when is_atom(value), do: value
 

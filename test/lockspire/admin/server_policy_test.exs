@@ -201,4 +201,40 @@ defmodule Lockspire.Admin.ServerPolicyTest do
     assert persisted.dcr_allowed_scopes == ["openid"]
     assert persisted.dcr_allowed_grant_types == ["authorization_code"]
   end
+
+  # security_profile admin command tests (Phase 41 Task 3)
+
+  test "put_security_profile/1 persists :fapi_2_0_security and returns updated policy" do
+    assert {:ok, %DomainServerPolicy{} = policy} =
+             ServerPolicy.put_security_profile(:fapi_2_0_security)
+
+    assert policy.security_profile == :fapi_2_0_security
+
+    assert {:ok, %DomainServerPolicy{} = stored} = Repository.get_server_policy()
+    assert stored.security_profile == :fapi_2_0_security
+  end
+
+  test "put_security_profile/1 accepts string form 'none' from LiveView form post" do
+    assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.put_security_profile("none")
+
+    assert policy.security_profile == :none
+  end
+
+  test "put_security_profile/1 rejects unknown atom :strict with canonical error shape" do
+    assert {:error,
+            [
+              %{
+                field: :security_profile,
+                reason: :invalid_security_profile,
+                detail: :strict
+              }
+            ]} = ServerPolicy.put_security_profile(:strict)
+  end
+
+  test "Lockspire.Admin.put_security_profile/1 is delegated to Admin.ServerPolicy (facade test)" do
+    assert {:ok, %DomainServerPolicy{} = policy} =
+             Lockspire.Admin.put_security_profile(:fapi_2_0_security)
+
+    assert policy.security_profile == :fapi_2_0_security
+  end
 end

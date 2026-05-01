@@ -18,6 +18,8 @@ defmodule Lockspire.Admin do
   defdelegate enable_client(client_id, attrs \\ %{}), to: Clients
   defdelegate get_server_policy(), to: ServerPolicy
   defdelegate put_server_policy(mode), to: ServerPolicy
+  defdelegate put_dpop_policy(mode), to: ServerPolicy
+  defdelegate put_security_profile(profile), to: ServerPolicy
   defdelegate get_dcr_policy(), to: ServerPolicy
   defdelegate put_dcr_policy(attrs), to: ServerPolicy
   defdelegate list_consents(opts \\ []), to: Consents

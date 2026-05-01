@@ -400,6 +400,53 @@ defmodule Lockspire.Admin.ClientsTest do
              })
   end
 
+  test "update_client/2 with security_profile 'fapi_2_0_security' persists and returns :fapi_2_0_security" do
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               security_profile: "fapi_2_0_security",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert client.security_profile == :fapi_2_0_security
+
+    assert {:ok, %Client{} = fetched} = Repository.fetch_client_by_id("admin-client")
+    assert fetched.security_profile == :fapi_2_0_security
+  end
+
+  test "update_client/2 with security_profile 'bogus' returns error with :invalid_security_profile reason" do
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               security_profile: "bogus",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert Enum.any?(errors, fn err ->
+             err.field == :security_profile and err.reason == :invalid_security_profile
+           end)
+  end
+
+  test "update_client/2 updating :security_profile does not clobber other mutable fields" do
+    # First set redirect_uris to a known value
+    assert {:ok, _} =
+             Clients.update_client("admin-client", %{
+               redirect_uris: ["https://admin.example.com/callback"],
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    # Now update only security_profile — redirect_uris must remain unchanged
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               security_profile: :none,
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert client.security_profile == :none
+    assert client.redirect_uris == ["https://admin.example.com/callback"]
+
+    assert {:ok, %Client{} = fetched} = Repository.fetch_client_by_id("admin-client")
+    assert fetched.redirect_uris == ["https://admin.example.com/callback"]
+  end
+
   test "rotate_client_secret/2 returns a plaintext secret once, emits telemetry, and appends operator audit" do
     assert {:ok, %{client: %Client{} = client, client_secret: secret}} =
              Clients.rotate_client_secret("admin-client", %{
