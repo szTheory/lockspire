@@ -14,7 +14,7 @@
 **Success:** When the FAPI 2.0 profile is enabled, requests without PAR, requests missing DPoP, and non-S256 PKCE are aggressively rejected at the Plug boundary.
 **Plans:** 4 plans
 Plans:
-- [ ] 41-01-PLAN.md — Domain + storage + admin command boundary for security_profile (FAPI-01)
+- [x] 41-01-PLAN.md — Domain + storage + admin command boundary for security_profile (FAPI-01)
 - [ ] 41-02-PLAN.md — FAPI20EnforcerPlug + router pipeline (FAPI-02, FAPI-03)
 - [ ] 41-03-PLAN.md — Admin LiveViews for global + per-client security_profile (FAPI-01)
 - [ ] 41-04-PLAN.md — End-to-end integration test + conformance script + maintainer doc (FAPI-01, FAPI-02, FAPI-03)
@@ -33,6 +33,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| Phase 41 | 4 | in-progress | |
+| Phase 41 | 1/4 | in-progress | |
 | Phase 42 | 1 | in-progress | |
 | Phase 43 | 0 | upcoming | |
