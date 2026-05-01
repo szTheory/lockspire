@@ -2,15 +2,12 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlugTest do
   use ExUnit.Case, async: false
 
   import Plug.Conn
-  import Phoenix.ConnTest
+  import Phoenix.ConnTest, only: [build_conn: 2, build_conn: 3]
 
   alias Lockspire.Domain.Client
-  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.FAPI20EnforcerPlug
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
-
-  @endpoint Lockspire.Web.Endpoint
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -41,7 +38,10 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlugTest do
       Repository.put_server_policy(%{policy | security_profile: :none})
 
       conn =
-        build_conn(:get, "/authorize", %{"client_id" => "unknown", "redirect_uri" => "https://client.example.com/cb"})
+        build_conn(:get, "/authorize", %{
+          "client_id" => "unknown",
+          "redirect_uri" => "https://client.example.com/cb"
+        })
         |> Map.put(:path_info, ["authorize"])
         |> FAPI20EnforcerPlug.call([])
 
