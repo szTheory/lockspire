@@ -7,9 +7,12 @@ defmodule Lockspire.Web.Router do
 
   import Phoenix.LiveView.Router
 
+  pipeline :fapi_boundary do
+    plug(Lockspire.Protocol.FAPI20EnforcerPlug)
+  end
+
   scope "/" do
     get("/.well-known/openid-configuration", Lockspire.Web.DiscoveryController, :show)
-    get("/authorize", Lockspire.Web.AuthorizeController, :show)
     get("/jwks", Lockspire.Web.JwksController, :index)
     post("/par", Lockspire.Web.PushedAuthorizationRequestController, :create)
     post("/register", Lockspire.Web.RegistrationController, :create)
@@ -17,10 +20,8 @@ defmodule Lockspire.Web.Router do
     put("/register/:client_id", Lockspire.Web.RegistrationController, :update)
     delete("/register/:client_id", Lockspire.Web.RegistrationController, :delete)
     post("/device/code", Lockspire.Web.DeviceAuthorizationController, :create)
-    post("/token", Lockspire.Web.TokenController, :create)
     post("/revoke", Lockspire.Web.RevocationController, :create)
     post("/introspect", Lockspire.Web.IntrospectionController, :create)
-    get("/userinfo", Lockspire.Web.UserinfoController, :show)
     get("/end_session", Lockspire.Web.EndSessionController, :show)
     post("/end_session", Lockspire.Web.EndSessionController, :create)
     get("/end_session/complete", Lockspire.Web.EndSessionController, :complete)
@@ -71,7 +72,23 @@ defmodule Lockspire.Web.Router do
     )
 
     live("/admin/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
+
+    live(
+      "/admin/policies/security-profile",
+      Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile,
+      :show
+    )
+
     live("/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop, :show)
     live("/admin/policies/dcr", Lockspire.Web.Live.Admin.PoliciesLive.Dcr, :show)
+
+    # FAPI 2.0 boundary-guarded routes
+    scope "/" do
+      pipe_through(:fapi_boundary)
+
+      get("/authorize", Lockspire.Web.AuthorizeController, :show)
+      post("/token", Lockspire.Web.TokenController, :create)
+      get("/userinfo", Lockspire.Web.UserinfoController, :show)
+    end
   end
 end
