@@ -79,4 +79,48 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecordTest do
     assert out.dcr_default_client_secret_lifetime_seconds == nil
     assert out.dcr_default_registration_access_token_lifetime_seconds == nil
   end
+
+  # security_profile field tests (Phase 41)
+
+  test "changeset/2 accepts :fapi_2_0_security and produces a valid changeset" do
+    domain = %ServerPolicy{
+      id: ServerPolicyRecord.singleton_id(),
+      security_profile: :fapi_2_0_security
+    }
+
+    changeset = ServerPolicyRecord.changeset(%ServerPolicyRecord{}, domain)
+
+    assert changeset.valid?
+    assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_security
+  end
+
+  test "changeset/2 with default :none round-trips through to_domain/1 as :none" do
+    repo = Lockspire.TestRepo
+
+    domain = %ServerPolicy{id: ServerPolicyRecord.singleton_id(), security_profile: :none}
+
+    {:ok, inserted} =
+      %ServerPolicyRecord{}
+      |> ServerPolicyRecord.changeset(domain)
+      |> repo.insert()
+
+    out = ServerPolicyRecord.to_domain(repo.get!(ServerPolicyRecord, inserted.id))
+
+    assert out.security_profile == :none
+  end
+
+  test "cast of invalid security_profile string 'strict' produces a validation error on :security_profile" do
+    changeset =
+      %ServerPolicyRecord{}
+      |> Ecto.Changeset.cast(%{security_profile: "strict", id: 1}, [
+        :security_profile,
+        :id,
+        :par_policy,
+        :dpop_policy,
+        :registration_policy
+      ])
+
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :security_profile)
+  end
 end

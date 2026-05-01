@@ -13,6 +13,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
   schema "lockspire_server_policies" do
     field(:par_policy, Ecto.Enum, values: [:optional, :required], default: :optional)
     field(:dpop_policy, Ecto.Enum, values: [:bearer, :dpop], default: :bearer)
+    field(:security_profile, Ecto.Enum, values: [:none, :fapi_2_0_security], default: :none)
 
     # D-05: tri-state Ecto.Enum cast against the text column from Plan 02 migration.
     # Pitfall 4: every text-enum column MUST have a matching Ecto.Enum field, or code
@@ -46,6 +47,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :id,
       :par_policy,
       :dpop_policy,
+      :security_profile,
       :registration_policy,
       :dcr_allowed_scopes,
       :dcr_allowed_grant_types,
@@ -57,7 +59,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :dcr_default_client_secret_lifetime_seconds,
       :dcr_default_registration_access_token_lifetime_seconds
     ])
-    |> validate_required([:id, :par_policy, :dpop_policy, :registration_policy])
+    |> validate_required([:id, :par_policy, :dpop_policy, :security_profile, :registration_policy])
   end
 
   def to_domain(%__MODULE__{} = record) do
@@ -65,6 +67,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       id: record.id,
       par_policy: record.par_policy,
       dpop_policy: record.dpop_policy,
+      security_profile: record.security_profile,
       registration_policy: record.registration_policy,
       dcr_allowed_scopes: record.dcr_allowed_scopes,
       dcr_allowed_grant_types: record.dcr_allowed_grant_types,
