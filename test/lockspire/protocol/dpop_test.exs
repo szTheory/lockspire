@@ -2,6 +2,7 @@ defmodule Lockspire.Protocol.DPoPTest do
   use ExUnit.Case, async: true
 
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.JarTestHelpers
 
   @reference_time ~U[2026-04-28 15:00:00Z]
@@ -55,6 +56,26 @@ defmodule Lockspire.Protocol.DPoPTest do
     end
   end
 
+  describe "signing_alg_values_supported" do
+    test "returns ES256 and PS256 for FAPI profile" do
+      assert ["ES256", "PS256"] =
+               DPoP.signing_alg_values_supported(%SecurityProfile.Resolved{
+                 effective_profile: :fapi_2_0_security
+               })
+    end
+
+    test "returns broader list for :none profile" do
+      assert ["RS256", "ES256", "PS256", "EdDSA"] =
+               DPoP.signing_alg_values_supported(%SecurityProfile.Resolved{
+                 effective_profile: :none
+               })
+    end
+
+    test "signing_alg_values_supported/0 returns the legacy list" do
+      assert ["RS256", "ES256", "PS256", "EdDSA"] = DPoP.signing_alg_values_supported()
+    end
+  end
+
   describe "validate_proof/2" do
     setup do
       keys = JarTestHelpers.generate_ec_keys()
@@ -72,6 +93,25 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert verified_claims == claims
       assert header["alg"] == "ES256"
       assert %JOSE.JWK{} = public_jwk
+    end
+
+    test "rejects RS256 proofs under FAPI-effective behavior", %{claims: claims} do
+      keys = JarTestHelpers.generate_keys()
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims, alg: "RS256")
+
+      fapi_profile = %SecurityProfile.Resolved{effective_profile: :fapi_2_0_security}
+
+      assert {:error, :unsupported_signing_algorithm} =
+               DPoP.validate_proof(proof, validation_opts(security_profile: fapi_profile))
+    end
+
+    test "allows RS256 proofs under legacy :none profile", %{claims: claims} do
+      keys = JarTestHelpers.generate_keys()
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims, alg: "RS256")
+
+      none_profile = %SecurityProfile.Resolved{effective_profile: :none}
+
+      assert {:ok, %DPoP{}} = DPoP.validate_proof(proof, validation_opts(security_profile: none_profile))
     end
 
     test "rejects alg=none unsigned proofs", %{claims: claims, keys: keys} do

@@ -36,12 +36,11 @@ defmodule Lockspire.Protocol.DPoP do
           | :missing_jti
           | :unsupported_signing_algorithm
 
-  @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
   @required_typ "dpop+jwt"
 
   # Exported as `def signing_alg_values_supported/0` for later discovery/challenge reuse.
   @spec signing_alg_values_supported() :: [String.t()]
-  def signing_alg_values_supported(), do: @allowed_algorithms
+  def signing_alg_values_supported(), do: SecurityProfile.allowed_signing_algorithms(:none)
 
   @spec signing_alg_values_supported(SecurityProfile.Resolved.t() | :fapi_2_0_security | :none) ::
           [String.t()]
