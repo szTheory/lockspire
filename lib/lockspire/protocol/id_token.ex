@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.IdToken do
   """
 
   alias Lockspire.Host.Claims
+  alias Lockspire.Protocol.SecurityProfile
 
   @id_token_ttl 3600
 
@@ -21,17 +22,31 @@ defmodule Lockspire.Protocol.IdToken do
         interaction_nonce: nonce,
         access_token: access_token,
         issued_at: %DateTime{} = issued_at,
-        signing_key: %{kid: kid, alg: "RS256", private_jwk_encrypted: private_jwk}
+        signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
       } = params)
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
-    with {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
+    security_profile = Map.get(params, :security_profile, :none)
+    allowed_algs = SecurityProfile.allowed_signing_algorithms(security_profile)
+
+    with :ok <- ensure_allowed_alg(alg, allowed_algs),
+         {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
          sid <- Map.get(params, :sid),
          {:ok, jwk_map} <- decode_private_jwk(private_jwk),
-         claims <- build_claims(host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time, sid),
+         claims <-
+           build_claims(
+             host_claims,
+             issuer,
+             client_id,
+             nonce,
+             access_token,
+             issued_at,
+             auth_time,
+             sid
+           ),
          {_, compact} <-
            JOSE.JWT.sign(
              JOSE.JWK.from_map(jwk_map),
-             %{"alg" => "RS256", "kid" => kid, "typ" => "JWT"},
+             %{"alg" => alg, "kid" => kid, "typ" => "JWT"},
              claims
            )
            |> JOSE.JWS.compact() do
@@ -42,6 +57,14 @@ defmodule Lockspire.Protocol.IdToken do
   end
 
   def sign(_params), do: {:error, :invalid_signing_key}
+
+  defp ensure_allowed_alg(alg, allowed_algs) do
+    if alg in allowed_algs do
+      :ok
+    else
+      {:error, :unsupported_signing_algorithm}
+    end
+  end
 
   defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time, sid) do
     protocol_claims = %{
@@ -73,7 +96,7 @@ defmodule Lockspire.Protocol.IdToken do
   defp decode_private_jwk(binary) when is_binary(binary) do
     case decode_json_jwk(binary) do
       %{} = jwk -> {:ok, jwk}
-      nil -> {:error, :invalid_signing_key}
+      nil -> decode_erlang_jwk(binary)
     end
   end
 
@@ -83,6 +106,17 @@ defmodule Lockspire.Protocol.IdToken do
     case Jason.decode(binary) do
       {:ok, %{} = jwk} -> jwk
       _other -> nil
+    end
+  end
+
+  defp decode_erlang_jwk(binary) do
+    try do
+      case :erlang.binary_to_term(binary) do
+        %{} = jwk -> {:ok, jwk}
+        _other -> {:error, :invalid_signing_key}
+      end
+    rescue
+      _ -> {:error, :invalid_signing_key}
     end
   end
 end
