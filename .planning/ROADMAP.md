@@ -34,9 +34,18 @@ Plans:
 - [x] 42-07-PLAN.md — Logout, end-session, and DPoP runtime cleanup aligned to the canonical FAPI policy (FAPI-04)
 
 ### Phase 43: End-to-End FAPI 2.0 Validation and Release Posture
-**Goal:** Complete the implementation with generated host-seam tests and documentation.
+**Goal:** Close v1.10 with executable repo-truth proof that Lockspire enforces FAPI 2.0 end-to-end: zero-tolerance redirect URI matching (FAPI-05), RFC 9207 iss emission and truthful FAPI 2.0 discovery keys (FAPI-06), a working OIDF conformance preflight Mix task, a host-owned FAPI smoke template, and truthful FAPI 2.0 claim language locked by the release-readiness contract test.
 **Requirements:** FAPI-05, FAPI-06
 **Success:** The `v1.10` milestone can be archived with proven repo-truth that Lockspire protects applications against the FAPI 2.0 threat model.
+**Plans:** 7 plans
+Plans:
+- [ ] 43-01-iss-emission-PLAN.md — RFC 9207 iss on every authorization-response redirect (FAPI-06)
+- [ ] 43-02-discovery-keys-PLAN.md — authorization_response_iss_parameter_supported + conditional require_pushed_authorization_requests (FAPI-06)
+- [ ] 43-03-oidf-conformance-task-PLAN.md — mix lockspire.oidf_conformance task + pinned fapi2-plan.json + maintainer doc (FAPI-06)
+- [ ] 43-04-host-test-template-PLAN.md — Host-owned FAPI smoke E2E install template + generator wiring (FAPI-05, FAPI-06)
+- [ ] 43-05-truthful-claim-docs-PLAN.md — FAPI 2.0 claim language in SECURITY.md, README.md, supported-surface.md (FAPI-05, FAPI-06)
+- [ ] 43-06-phase43-e2e-test-PLAN.md — Phase 43 E2E proof: redirect rejection + iss + discovery toggling (FAPI-05, FAPI-06)
+- [ ] 43-07-truth-in-docs-contract-PLAN.md — release_readiness_contract_test extension for Phase 43 milestone claims (FAPI-05, FAPI-06)
 
 ## Progress
 
@@ -44,4 +53,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | Phase 41 | 4/4 | complete | 2026-05-01 |
 | Phase 42 | 7/7 | complete | 2026-05-02 |
-| Phase 43 | 0 | upcoming | | 
+| Phase 43 | 0/7 | planned | |
