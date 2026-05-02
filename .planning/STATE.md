@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: executing
-stopped_at: Completed 42-04-PLAN.md
-last_updated: "2026-05-02T15:09:11.616Z"
+stopped_at: Completed 42-06-PLAN.md
+last_updated: "2026-05-02T15:53:24.040Z"
 last_activity: 2026-05-02
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
-  percent: 73
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 42 (fapi-2-0-advanced-cryptography-and-oidf-test-suite-prep) — EXECUTING
-Plan: 5 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-05-02
 
@@ -47,6 +47,10 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - **Phase 41 Plan 02**: policy_fn option in Plug opts used for fail-closed test injection (not meck/mox). /userinfo enforcement is header-shape only (no token decode in Plug). Per-client :none escape hatch (D-01) verified by test G2.
 - **Phase 41 Plan 03**: security profile operator workflows stay inside the existing admin LiveView shape, with a visible mixed-mode warning instead of hiding the override semantics.
 - **Phase 41 Plan 04**: Phase 41 verification is defined by PAR + DPoP enforcement and mixed-mode proof; algorithm lockdown is deferred to Phase 42.
+- Discovery and JWKS metadata now advertise only the algorithms actually supported by the resolved FAPI runtime profile.
+- DPoP WWW-Authenticate challenge header derives its acceptable algorithms directly from the validator configuration.
+- Exposed check_fapi_signing_readiness in Admin.Clients to allow reuse in protocol layer.
+- Aligned FAPI check order in DCR validation to check algorithm before server readiness.
 
 ### Blockers/Concerns
 
@@ -60,7 +64,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 42-04-PLAN.md
+**Stopped at:** Completed 42-06-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
