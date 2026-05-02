@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Observability
   alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Protocol.RequestObject
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -74,10 +75,11 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   def validate(params) when is_map(params) do
     with {:ok, %Client{} = client} <- fetch_client(params),
          {:ok, resolved_par_policy} <- resolve_effective_par_policy(client),
-         :ok <- maybe_require_pushed_authorization_request(params, client, resolved_par_policy),
+         {:ok, resolved_security_profile} <- resolve_effective_security_profile(client),
+         :ok <- maybe_require_pushed_authorization_request(params, client, resolved_par_policy, resolved_security_profile),
          {:ok, resolved_params} <- resolve_authorization_params(params, client),
-         {:ok, resolved_params} <- maybe_consume_request_object(resolved_params, client),
-         {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client) do
+         {:ok, resolved_params} <- maybe_consume_request_object(resolved_params, client, security_profile: resolved_security_profile),
+         {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client, security_profile: resolved_security_profile) do
       validated = %Validated{validated | client: client}
 
       Observability.emit(:authorization_request_accepted, %{}, %{
@@ -99,15 +101,17 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   @spec validate_pushed(map(), Client.t()) :: {:ok, Validated.t()} | {:error, Error.t()}
   def validate_pushed(params, %Client{} = client) when is_map(params) do
-    case validate_with_client(params, client, pushed?: true) do
-      {:ok, %Validated{} = validated} ->
-        {:ok, validated}
+    with {:ok, resolved_security_profile} <- resolve_effective_security_profile(client) do
+      case validate_with_client(params, client, pushed?: true, security_profile: resolved_security_profile) do
+        {:ok, %Validated{} = validated} ->
+          {:ok, validated}
 
-      {:browser_error, %Error{} = error} ->
-        {:error, error}
+        {:browser_error, %Error{} = error} ->
+          {:error, error}
 
-      {:redirect_error, %Error{} = error} ->
-        {:error, error}
+        {:redirect_error, %Error{} = error} ->
+          {:error, error}
+      end
     end
   end
 
@@ -144,17 +148,33 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
+  defp resolve_effective_security_profile(%Client{} = client) do
+    case Repository.get_server_policy() do
+      {:ok, server_policy} ->
+        {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
+
+      {:error, _reason} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "Unable to load server policy",
+           :server_policy_lookup_failed
+         )}
+    end
+  end
+
   defp maybe_require_pushed_authorization_request(
          %{"request_uri" => request_uri},
          %Client{},
-         _resolved_par_policy
+         _resolved_par_policy,
+         _resolved_security_profile
        )
        when is_binary(request_uri) and request_uri != "" do
     :ok
   end
 
-  defp maybe_require_pushed_authorization_request(params, %Client{} = client, resolved_par_policy) do
-    if resolved_par_policy.par_required? do
+  defp maybe_require_pushed_authorization_request(params, %Client{} = client, resolved_par_policy, resolved_security_profile) do
+    if resolved_par_policy.par_required? or resolved_security_profile.fapi_2_0_security? do
       par_required_error(params, client)
     else
       :ok
@@ -232,8 +252,9 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
      browser_error(:invalid_request, "Missing redirect_uri", :missing_redirect_uri)}
   end
 
-  defp validate_with_client(params, %Client{} = client, opts \\ []) do
+  defp validate_with_client(params, %Client{} = client, opts) do
     pushed? = Keyword.get(opts, :pushed?, false)
+    security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
     with :ok <- maybe_validate_pushed_client_id(params, client, pushed?),
          :ok <- maybe_reject_inbound_request_uri(params, pushed?),
@@ -243,19 +264,20 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, max_age} <- validate_max_age(params),
          :ok <- validate_response_type(params),
          :ok <- validate_nonce(params, scopes),
-         :ok <- validate_pkce(client, params),
+         :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          :ok <- reject_unsupported_params(params) do
       {:ok, build_validated(params, client, redirect_uri, scopes, prompt, max_age, auth_time_requested?)}
     end
   end
 
-  defp maybe_consume_request_object(%{"request" => request} = params, %Client{} = client)
+  defp maybe_consume_request_object(%{"request" => request} = params, %Client{} = client, opts)
        when is_binary(request) and request != "" do
-    RequestObject.consume(params, client, jar_opts())
+    security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
+    RequestObject.consume(params, client, Keyword.put(jar_opts(), :security_profile, security_profile))
   end
 
-  defp maybe_consume_request_object(params, _client), do: {:ok, params}
+  defp maybe_consume_request_object(params, _client, _opts), do: {:ok, params}
 
   defp jar_opts do
     [
@@ -415,7 +437,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   defp validate_pkce(
          _client,
-         %{"code_challenge" => challenge, "code_challenge_method" => "S256"} = params
+         %{"code_challenge" => challenge, "code_challenge_method" => "S256"} = params,
+         _opts
        )
        when is_binary(challenge) and challenge != "" do
     if valid_code_challenge?(challenge) do
@@ -431,12 +454,20 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp validate_pkce(client, params) do
-    if client.pkce_required do
-      {:redirect_error,
-       redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
-    else
-      :ok
+  defp validate_pkce(client, params, opts) do
+    security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
+
+    cond do
+      security_profile.fapi_2_0_security? ->
+        {:redirect_error,
+         redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
+
+      client.pkce_required ->
+        {:redirect_error,
+         redirect_error(params, :invalid_request, "PKCE S256 is required", :missing_pkce)}
+
+      true ->
+        :ok
     end
   end
 

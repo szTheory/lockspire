@@ -84,7 +84,7 @@ defmodule Lockspire.Protocol.DPoPTest do
       none_payload = Base.url_encode64(Jason.encode!(claims), padding: false)
       proof = none_header <> "." <> none_payload <> "."
 
-      assert {:error, :invalid_signature} = DPoP.validate_proof(proof, [])
+      assert {:error, :unsupported_signing_algorithm} = DPoP.validate_proof(proof, [])
     end
 
     test "rejects proofs with a non-dpop typ header", %{keys: keys, claims: claims} do

@@ -27,6 +27,7 @@ defmodule Lockspire.Protocol.RequestObject do
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.Jar
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
 
   @type result ::
@@ -38,12 +39,14 @@ defmodule Lockspire.Protocol.RequestObject do
 
   @spec consume(map(), Client.t(), keyword()) :: result()
   def consume(params, %Client{} = client, opts \\ []) when is_map(params) and is_list(opts) do
+    security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
+
     with :ok <- reject_request_uri_collision(params),
-         :ok <- reject_outer_param_conflicts(params),
+          :ok <- reject_outer_param_conflicts(params),
          {:ok, jwt} <- fetch_request(params),
          {:ok, jws_string} <- decrypt_request(jwt),
          :ok <- require_client_jwks(client),
-         {:ok, %Jar{} = jar} <- decode_and_verify(jws_string, client),
+         {:ok, %Jar{} = jar} <- decode_and_verify(jws_string, client, security_profile),
          :ok <- validate(jar, client, opts),
          {:ok, projected} <- project_to_params(jar, client) do
       {:ok, projected}
@@ -119,9 +122,9 @@ defmodule Lockspire.Protocol.RequestObject do
      )}
   end
 
-  defp decode_and_verify(jwt, %Client{} = client) do
+  defp decode_and_verify(jwt, %Client{} = client, security_profile) do
     with {:ok, %Jar{} = _decoded} <- decode_step(jwt),
-         {:ok, %Jar{} = verified_jar} <- verify_step(jwt, client) do
+         {:ok, %Jar{} = verified_jar} <- verify_step(jwt, client, security_profile) do
       {:ok, verified_jar}
     end
   end
@@ -141,8 +144,10 @@ defmodule Lockspire.Protocol.RequestObject do
     end
   end
 
-  defp verify_step(jwt, client) do
-    case Jar.verify_signature(jwt, client) do
+  defp verify_step(jwt, client, security_profile) do
+    allowed_algs = SecurityProfile.allowed_signing_algorithms(security_profile.effective_profile)
+
+    case Jar.verify_signature(jwt, client, allowed_algs) do
       {:ok, %Jar{} = jar} ->
         {:ok, jar}
 

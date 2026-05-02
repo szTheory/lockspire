@@ -7,7 +7,9 @@ defmodule Lockspire.Protocol.Userinfo do
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
   alias Lockspire.Protocol.ProtectedResourceDPoP
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.Ecto.Repository
 
   @scope_claims %{
     "profile" =>
@@ -61,23 +63,30 @@ defmodule Lockspire.Protocol.Userinfo do
     end
   end
 
-  # DPoP enforcement is driven by durable Token.cnf["jkt"] state, not client policy lookups.
-  defp validate_access_mode(%Token{cnf: %{"jkt" => _jkt}} = access_token, authorization_scheme, raw_access_token, request) do
-    request =
-      request
-      |> Map.put(:authorization_scheme, authorization_scheme)
-      |> Map.put(:access_token, raw_access_token)
+  defp validate_access_mode(%Token{} = access_token, authorization_scheme, raw_access_token, request) do
+    with {:ok, resolved_security_profile} <- resolve_security_profile(access_token, request) do
+      request =
+        request
+        |> Map.put(:authorization_scheme, authorization_scheme)
+        |> Map.put(:access_token, raw_access_token)
+        |> Map.update(:opts, [security_profile: resolved_security_profile], fn opts ->
+          Keyword.put(opts, :security_profile, resolved_security_profile)
+        end)
 
-    case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
-      {:ok, _proof} -> :ok
-      {:error, %Error{} = error} -> {:error, error}
+      cond do
+        present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
+          case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
+            {:ok, _proof} -> :ok
+            {:error, %Error{} = error} -> {:error, error}
+          end
+
+        authorization_scheme == "Bearer" ->
+          :ok
+
+        true ->
+          {:error, error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+      end
     end
-  end
-
-  defp validate_access_mode(%Token{}, "Bearer", _raw_access_token, _request), do: :ok
-
-  defp validate_access_mode(%Token{}, _authorization_scheme, _raw_access_token, _request) do
-    {:error, error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
   end
 
   defp fetch_access_token(token, request) do
@@ -127,6 +136,8 @@ defmodule Lockspire.Protocol.Userinfo do
     |> Map.new()
   end
 
+  defp present?(value), do: is_binary(value) and value != ""
+
   defp error(status, error, description, reason_code) do
     %Error{
       status: status,
@@ -135,6 +146,22 @@ defmodule Lockspire.Protocol.Userinfo do
       reason_code: reason_code
     }
   end
+
+  defp resolve_security_profile(%Token{client_id: client_id}, request) do
+    with {:ok, client} <- Repository.fetch_client_by_id(client_id),
+         {:ok, server_policy} <- server_policy_store(request).get_server_policy() do
+      {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
+    else
+      _other ->
+        {:error, error(500, "server_error", "Unable to resolve security profile", :security_profile_unavailable)}
+    end
+  end
+
+  defp server_policy_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get(:server_policy_store, Config.repo!())
 
   defp token_store(request),
     do:

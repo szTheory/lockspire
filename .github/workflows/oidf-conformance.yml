@@ -62,6 +62,9 @@ jobs:
       - name: Run Phase 37 conformance lane
         run: MIX_ENV=test mix conformance.phase37
 
+      - name: Run Preparatory OIDF Conformance Lane
+        run: mix lockspire.oidf_conformance --validate-env
+
       - name: Upload Phase 37 artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -89,6 +89,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
+    now = DateTime.utc_now()
+    Lockspire.Storage.Ecto.Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "fapi-compliant-key-3",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-compliant-key-3", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
     view
     |> form("form[phx-submit=save_policy]", %{policy: %{security_profile: "fapi_2_0_security"}})
     |> render_submit()

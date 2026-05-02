@@ -1,88 +1,98 @@
-# Maintainer Conformance
+# Maintainer Conformance Workflow
 
-The Phase 37 conformance lane is the narrow proof path for Lockspire's strict OIDC behavior around exact `redirect_uri` validation, `prompt=none`, `max_age`, and `auth_time`. It stays separate from normal PR CI on purpose.
+This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, and does not imply support for mTLS or `private_key_jwt`.
 
-## Command path
+1. Run the fast local boundary probe script.
+2. Run the OpenID Foundation (OIDF) Conformance Suite for definitive verification.
 
-Run the deterministic local lane with:
+## Prerequisites
+
+- A local host app mounting Lockspire and serving it over HTTP
+- A registered Lockspire client you can target during verification
+- Docker and Docker Compose for the OIDF suite
+
+## Step 1: Enable the FAPI 2.0 security profile
+
+The probe script assumes the effective `security_profile` is `:fapi_2_0_security` for the client under test.
+
+Enable it either:
+
+- Globally in the admin UI at `/admin/policies/security-profile`
+- Or from `iex` in the host app:
+
+```elixir
+Lockspire.Admin.put_security_profile(:fapi_2_0_security)
+```
+
+If you are testing a per-client opt-in, leave the global profile at `:none` and set the client override to `:fapi_2_0_security` instead.
+
+## Step 2: Run the local boundary probe script
+
+The script sends three live probes:
+
+- Direct `/authorize` without `request_uri`
+- `/token` without a `DPoP` header
+- `/userinfo` with `Authorization: Bearer ...` and no `DPoP` header
+
+Example:
 
 ```bash
-MIX_ENV=test mix conformance.phase37
+LOCKSPIRE_BASE_URL=http://127.0.0.1:4000/lockspire \
+LOCKSPIRE_CLIENT_ID=my-fapi-client \
+./scripts/conformance/fapi2-check.sh
 ```
 
-That command always runs `test/integration/phase37_protocol_strictness_e2e_test.exs` first. The slower OpenID Foundation suite subset only starts after the generated-host proof is green.
+Expected result:
 
-## What the local lane does
+- `/authorize` returns `302` with `error=invalid_request`
+- `/token` returns `400` with `invalid_dpop_proof`
+- `/userinfo` returns `401` with `invalid_token`
 
-`scripts/conformance/run_phase37_suite.sh` is the one obvious entrypoint.
+This script is a fast smoke check for the boundary Plug and resource enforcement. It is not a substitute for full standards conformance.
 
-It:
+You can also run the `mix lockspire.oidf_conformance` task to perform this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set if not in dry-run.
 
-1. boots the generated-host Phoenix fixture on a local port
-2. downloads the official OpenID Foundation conformance runner helpers and prebuilt Docker compose file
-3. runs the checked-in Phase 37 subset from `scripts/conformance/phase37-plan.json`
-4. exports proof artifacts under `.artifacts/conformance/phase37`
+## Step 3: Run the OIDF Conformance Suite
 
-The checked-in plan is intentionally narrow. It covers the strictness slice the repo publicly claims today and does not claim broad certification coverage.
+1. Clone the suite:
 
-## Artifact location
-
-The local and hosted lanes both write proof into:
-
-```text
-.artifacts/conformance/phase37
+```bash
+git clone https://gitlab.com/openid/conformance-suite.git
+cd conformance-suite
 ```
 
-Expect at least:
+2. Start the suite using the prebuilt images:
 
-- `phase37-plan.json`
-- `provider-config.json`
-- `plan-strings.txt`
-- `run-summary.json`
-- `artifact-files.txt`
-- exported suite bundles under `.artifacts/conformance/phase37/exports`
-- logs under `.artifacts/conformance/phase37/logs`
+```bash
+docker-compose -f docker-compose-prebuilt.yml up
+```
 
-## Required environment
+3. Open `https://localhost:8443/` and accept the local certificate warning.
 
-The local lane needs a working test database plus Docker:
+## Reaching the local Lockspire instance from Docker
 
-- `LOCKSPIRE_TEST_DB_HOST`
-- `LOCKSPIRE_TEST_DB_PORT`
-- `LOCKSPIRE_TEST_DB_USER`
-- `LOCKSPIRE_TEST_DB_PASSWORD`
-- `LOCKSPIRE_TEST_DB_NAME`
+If the suite cannot reach your host app, add an `extra_hosts` entry to `docker-compose-prebuilt.yml`:
 
-Optional local overrides:
+```yaml
+services:
+  server:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
 
-- `LOCKSPIRE_PHASE37_PORT`
-- `LOCKSPIRE_PHASE37_PROVIDER_BASE_URL`
-- `LOCKSPIRE_PHASE37_ARTIFACT_DIR`
-- `OIDF_IMAGE_TAG`
-- `OIDF_CONFORMANCE_SERVER`
-- `OIDF_CONFORMANCE_SERVER_MTLS`
+Then use these values in the OIDF UI:
 
-The hosted maintainer lane reuses the same script in hosted mode and additionally requires:
+- Server URL: `http://host.docker.internal:4000/lockspire`
+- Discovery URL: `http://host.docker.internal:4000/lockspire/.well-known/openid-configuration`
 
-- `LOCKSPIRE_PHASE37_MODE=hosted`
-- `LOCKSPIRE_PHASE37_PROVIDER_DISCOVERY_URL`
-- `LOCKSPIRE_PHASE37_PROVIDER_BASE_URL` when discovery is served behind a different browser-visible origin
+## Phase 37 Protocol Strictness
 
-## Browser and cookie caveats
+The suite ensures strict protocol behavior as tested in `phase37_protocol_strictness_e2e_test.exs`.
+Results from `mix conformance.phase37` and this lane are saved to `.artifacts/conformance/phase37`.
+browser cookie and third-party cookie configuration is handled per the environment.
 
-The repo-native lane uses the suite's browser automation against the generated host's `/login` and consent pages. The wider hosted lane is sensitive to browser cookie partitioning and third-party cookie behavior when the maintainer reproduces results outside the repo-native Docker path.
+## FAPI 2.0 notes
 
-If a hosted run flakes:
-
-- check whether browser cookie isolation changed between runs
-- confirm third-party cookie handling did not block the OP session from surviving the callback loop
-- compare the hosted behavior against the repo-native artifact bundle before widening any support claim
-
-## Hosted maintainer lane
-
-`.github/workflows/oidf-conformance.yml` defines two non-PR jobs:
-
-- the repo-native Docker-first lane that runs `MIX_ENV=test mix conformance.phase37`
-- the broader hosted or staging lane that reruns `scripts/conformance/run_phase37_suite.sh` against a maintainer-provided discovery URL
-
-Use the hosted lane for wider operator confidence, not as contributor CI.
+- Select an appropriate `FAPI2` plan in the OIDF UI.
+- Use clients and keys that match the phase’s supported FAPI posture.
+- Treat `scripts/conformance/fapi2-check.sh` as the quick preflight and the OIDF suite as the release gate.

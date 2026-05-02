@@ -441,6 +441,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "browser cookie"
     assert maintainer_conformance =~ "LOCKSPIRE_TEST_DB_HOST"
     assert maintainer_conformance =~ "OIDF_CONFORMANCE_SERVER"
+    
+    assert maintainer_conformance =~ "preparatory"
+    refute maintainer_conformance =~ "certified"
+    refute maintainer_conformance =~ "completed certification"
+    assert maintainer_conformance =~ "mTLS"
+    assert maintainer_conformance =~ "private_key_jwt"
 
     assert workflow =~ "workflow_dispatch:"
     assert workflow =~ "schedule:"
@@ -454,5 +460,24 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert plan =~ "oidcc-max-age-10000"
 
     assert mixfile =~ "\"conformance.phase37\": ["
+  end
+
+  test "phase 42 preparatory lane docs stay truthful about certification and feature support" do
+    maintainer_conformance = File.read!(@maintainer_conformance_path)
+    workflow = File.read!(@oidf_conformance_workflow_path)
+
+    # Must contain "preparatory" wording and unsupported feature disclaimers
+    assert maintainer_conformance =~ "preparatory OIDF lane"
+    assert maintainer_conformance =~ "Phase 42 wires the lane for Phase 43 consumption"
+    assert maintainer_conformance =~ "does not claim pass-ready certification"
+    assert maintainer_conformance =~ "does not imply support for mTLS or `private_key_jwt`"
+    
+    # Must not over-claim
+    refute maintainer_conformance =~ "fully certified"
+    refute maintainer_conformance =~ "Phase 43 completion"
+
+    # Artifact/CI truth
+    assert workflow =~ "uses: actions/upload-artifact@v4"
+    assert workflow =~ "mix lockspire.oidf_conformance"
   end
 end

@@ -7,6 +7,8 @@ defmodule Lockspire.Protocol.DPoP do
   token and protected-resource flows can depend on one validator.
   """
 
+  alias Lockspire.Protocol.SecurityProfile
+
   defstruct [:claims, :header, :public_jwk, :jkt]
 
   @type t :: %__MODULE__{
@@ -32,6 +34,7 @@ defmodule Lockspire.Protocol.DPoP do
           | :stale_iat
           | :future_iat
           | :missing_jti
+          | :unsupported_signing_algorithm
 
   @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
   @required_typ "dpop+jwt"
@@ -39,6 +42,14 @@ defmodule Lockspire.Protocol.DPoP do
   # Exported as `def signing_alg_values_supported/0` for later discovery/challenge reuse.
   @spec signing_alg_values_supported() :: [String.t()]
   def signing_alg_values_supported(), do: @allowed_algorithms
+
+  @spec signing_alg_values_supported(SecurityProfile.Resolved.t() | :fapi_2_0_security | :none) ::
+          [String.t()]
+  def signing_alg_values_supported(%SecurityProfile.Resolved{effective_profile: profile}),
+    do: SecurityProfile.allowed_signing_algorithms(profile)
+
+  def signing_alg_values_supported(profile) when is_atom(profile),
+    do: SecurityProfile.allowed_signing_algorithms(profile)
 
   # Exported as `def access_token_ath/1` so ath hashing stays canonical across surfaces.
   @spec access_token_ath(String.t()) :: String.t()
@@ -69,10 +80,12 @@ defmodule Lockspire.Protocol.DPoP do
   @spec validate_proof(String.t(), keyword()) :: {:ok, t()} | {:error, validate_reason()}
   def validate_proof(jwt, opts \\ [])
   def validate_proof(jwt, opts) when is_binary(jwt) do
+    security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
+
     with {:ok, %__MODULE__{} = decoded} <- decode(jwt),
          :ok <- check_typ(decoded.header),
          {:ok, public_jwk} <- header_public_jwk(decoded.header),
-         {:ok, %__MODULE__{} = verified} <- verify_signature(jwt, public_jwk),
+         {:ok, %__MODULE__{} = verified} <- verify_signature(jwt, public_jwk, security_profile),
          :ok <- validate_claims(verified.claims, opts) do
       {:ok,
        %__MODULE__{
@@ -116,9 +129,11 @@ defmodule Lockspire.Protocol.DPoP do
 
   defp validate_claims(_claims, _opts), do: {:error, :invalid_claims_options}
 
-  defp verify_signature(jwt, public_jwk) do
+  defp verify_signature(jwt, public_jwk, %SecurityProfile.Resolved{effective_profile: profile}) do
+    allowed_algs = SecurityProfile.allowed_signing_algorithms(profile)
+
     try do
-      case JOSE.JWT.verify_strict(public_jwk, @allowed_algorithms, jwt) do
+      case JOSE.JWT.verify_strict(public_jwk, allowed_algs, jwt) do
         {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
           {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
           {_modules, header} = JOSE.JWS.to_map(jws_struct)
@@ -129,7 +144,15 @@ defmodule Lockspire.Protocol.DPoP do
           end
 
         {false, _jwt_struct, _jws_struct} ->
-          {:error, :invalid_signature}
+          # verify_strict returns false if the algorithm is not in the list
+          {_modules, header} = JOSE.JWS.to_map(JOSE.JWT.peek_protected(jwt))
+          alg = Map.get(header, "alg")
+
+          if alg not in allowed_algs do
+            {:error, :unsupported_signing_algorithm}
+          else
+            {:error, :invalid_signature}
+          end
       end
     rescue
       _ -> {:error, :invalid_signature}

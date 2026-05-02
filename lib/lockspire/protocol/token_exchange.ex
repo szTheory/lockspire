@@ -576,7 +576,14 @@ defmodule Lockspire.Protocol.TokenExchange do
          request
        ) do
     with {:ok, id_token} <-
-           maybe_issue_id_token(client, authorization_code, raw_access_token, issued_at, request) do
+           maybe_issue_id_token(
+             client,
+             authorization_code,
+             raw_access_token,
+             issued_at,
+             issuance_context,
+             request
+           ) do
       %Success{
         access_token: raw_access_token,
         refresh_token: raw_refresh_token,
@@ -593,7 +600,8 @@ defmodule Lockspire.Protocol.TokenExchange do
          %Token{} = authorization_code,
          raw_access_token,
          issued_at,
-       request
+         issuance_context,
+         request
        ) do
     if "openid" in authorization_code.scopes do
       with {:ok, interaction} <- fetch_optional_interaction(authorization_code, request),
@@ -610,7 +618,8 @@ defmodule Lockspire.Protocol.TokenExchange do
                sid: authorization_code.sid,
                access_token: raw_access_token,
                issued_at: issued_at,
-               signing_key: signing_key
+               signing_key: signing_key,
+               security_profile: issuance_context.security_profile.effective_profile
              }) do
         {:ok, token}
       else
@@ -621,7 +630,6 @@ defmodule Lockspire.Protocol.TokenExchange do
       {:ok, nil}
     end
   end
-
   defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
        when is_binary(interaction_id) do
     case interaction_store(request).fetch_interaction(interaction_id) do
@@ -683,8 +691,8 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp fetch_signing_key(request) do
     case key_store(request).fetch_active_signing_key() do
-      {:ok, %{alg: "RS256", private_jwk_encrypted: private_jwk} = key}
-      when is_binary(private_jwk) ->
+      {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
+      when is_binary(private_jwk) and is_binary(alg) ->
         {:ok, key}
 
       {:ok, nil} ->

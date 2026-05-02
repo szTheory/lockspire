@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DpopPolicy
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenExchange.Error
 
   @type issuance_context :: %{
@@ -16,28 +17,44 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
           proof: DPoP.t() | nil,
           jkt: String.t() | nil,
           cnf: map() | nil,
-          token_type: String.t()
+          token_type: String.t(),
+          security_profile: SecurityProfile.Resolved.t()
         }
 
   @spec resolve_context(Client.t(), map()) ::
           {:ok, issuance_context()} | {:error, Error.t()}
   def resolve_context(%Client{} = client, request) do
-    with {:ok, resolved_policy} <- resolve_policy(client, request),
-         {:ok, proof} <- validate_proof(resolved_policy, request),
-         :ok <- record_dpop_proof_use(proof, request) do
-      {:ok, issuance_context(resolved_policy.effective_policy, proof)}
+    with {:ok, resolved_dpop_policy} <- resolve_policy(client, request),
+         {:ok, resolved_security_profile} <- resolve_security_profile(client, request) do
+      effective_dpop_required =
+        resolved_dpop_policy.dpop_required? or resolved_security_profile.fapi_2_0_security?
+
+      effective_mode =
+        if effective_dpop_required, do: :dpop, else: resolved_dpop_policy.effective_policy
+
+      with {:ok, proof} <- validate_proof_with_flag(effective_dpop_required, request),
+           :ok <- record_dpop_proof_use(proof, request) do
+        {:ok, issuance_context(effective_mode, proof, resolved_security_profile)}
+      end
     end
   end
+
+  defp validate_proof_with_flag(true, request), do: validate_proof(%{dpop_required?: true}, request)
+  defp validate_proof_with_flag(false, request), do: validate_proof(%{dpop_required?: false}, request)
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
           {:ok, issuance_context()} | {:error, Error.t()}
   def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
-    _ = client
-
-    with {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
-         {:ok, proof} <- validate_refresh_proof(expected_cnf, request),
+    with {:ok, resolved_security_profile} <- resolve_security_profile(client, request),
+         {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
+         {:ok, proof} <- validate_refresh_proof(expected_cnf, resolved_security_profile, request),
          :ok <- record_dpop_proof_use(proof, request) do
-      {:ok, issuance_context(refresh_binding_mode(expected_cnf), proof)}
+      effective_mode =
+        if resolved_security_profile.fapi_2_0_security? or refresh_binding_mode(expected_cnf) == :dpop,
+          do: :dpop,
+          else: :bearer
+
+      {:ok, issuance_context(effective_mode, proof, resolved_security_profile)}
     end
   end
 
@@ -48,6 +65,15 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     else
       {:error, _reason} ->
         {:error, oauth_error(500, "server_error", "Unable to resolve DPoP policy", :dpop_policy_unavailable)}
+    end
+  end
+
+  defp resolve_security_profile(%Client{} = client, request) do
+    with {:ok, server_policy} <- server_policy_store(request).get_server_policy() do
+      {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
+    else
+      {:error, _reason} ->
+        {:error, oauth_error(500, "server_error", "Unable to resolve security profile", :security_profile_unavailable)}
     end
   end
 
@@ -82,23 +108,33 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     end
   end
 
-  defp validate_refresh_proof(nil, _request), do: {:ok, nil}
+  defp validate_refresh_proof(expected_cnf, resolved_security_profile, request) do
+    cond do
+      resolved_security_profile.fapi_2_0_security? ->
+        # FAPI 2.0 requires DPoP for all token requests, even if the refresh token was bearer.
+        case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+          nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+          proof -> validate_proof_value(proof, request)
+        end
 
-  defp validate_refresh_proof(%{"jkt" => jkt}, request) when is_binary(jkt) do
-    case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
-      nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-      proof -> validate_proof_value(proof, request)
+      is_nil(expected_cnf) ->
+        {:ok, nil}
+
+      match?(%{"jkt" => jkt} when is_binary(jkt), expected_cnf) ->
+        case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+          nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+          proof -> validate_proof_value(proof, request)
+        end
+
+      true ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Stored refresh token binding is invalid",
+           :invalid_refresh_token_binding
+         )}
     end
-  end
-
-  defp validate_refresh_proof(_expected_cnf, _request) do
-    {:error,
-     oauth_error(
-       500,
-       "server_error",
-       "Stored refresh token binding is invalid",
-       :invalid_refresh_token_binding
-     )}
   end
 
   defp record_dpop_proof_use(nil, _request), do: :ok
@@ -129,12 +165,26 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     end
   end
 
-  defp issuance_context(:dpop, %DPoP{} = proof) do
-    %{mode: :dpop, proof: proof, jkt: proof.jkt, cnf: %{"jkt" => proof.jkt}, token_type: "DPoP"}
+  defp issuance_context(:dpop, %DPoP{} = proof, security_profile) do
+    %{
+      mode: :dpop,
+      proof: proof,
+      jkt: proof.jkt,
+      cnf: %{"jkt" => proof.jkt},
+      token_type: "DPoP",
+      security_profile: security_profile
+    }
   end
 
-  defp issuance_context(_mode, _proof) do
-    %{mode: :bearer, proof: nil, jkt: nil, cnf: nil, token_type: "Bearer"}
+  defp issuance_context(_mode, _proof, security_profile) do
+    %{
+      mode: :bearer,
+      proof: nil,
+      jkt: nil,
+      cnf: nil,
+      token_type: "Bearer",
+      security_profile: security_profile
+    }
   end
 
   defp token_endpoint_uri do

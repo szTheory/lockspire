@@ -7,13 +7,16 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.Userinfo.Error
 
   @spec validate_userinfo_access(Token.t(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
   def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
+    security_profile = Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
+
     with :ok <- validate_authorization_scheme(request),
          {:ok, raw_access_token} <- fetch_access_token(request),
-         {:ok, proof} <- validate_proof(request),
+         {:ok, proof} <- validate_proof(request, security_profile),
          :ok <- validate_ath(proof, raw_access_token),
          :ok <- validate_token_binding(token, proof),
          :ok <- record_dpop_proof_use(proof, request) do
@@ -35,7 +38,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     end
   end
 
-  defp validate_proof(request) do
+  defp validate_proof(request, security_profile) do
     case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
       nil ->
         {:error, invalid_token("A valid DPoP proof is required", :missing_dpop_proof)}
@@ -47,7 +50,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
                target_uri: userinfo_endpoint_uri(),
                now: now(request),
                max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
-               clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30)
+               clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
+               security_profile: security_profile
              ) do
           {:ok, %DPoP{} = validated_proof} ->
             {:ok, validated_proof}

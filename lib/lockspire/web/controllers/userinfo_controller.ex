@@ -17,7 +17,11 @@ defmodule Lockspire.Web.UserinfoController do
            authorization: authorization,
            dpop: List.first(get_req_header(conn, "dpop")),
            method: conn.method,
-           opts: [token_store: Repository, dpop_replay_store: Repository]
+           opts: [
+             token_store: Repository,
+             dpop_replay_store: Repository,
+             server_policy_store: Repository
+           ]
          }) do
       {:ok, claims} ->
         conn
