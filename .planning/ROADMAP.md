@@ -3,7 +3,7 @@
 ## Phases
 
 - [x] **Phase 41: FAPI 2.0 Profile Configuration and Strict Enforcement**
-- [ ] **Phase 42: FAPI 2.0 Advanced Cryptography and OIDF Test Suite Prep**
+- [x] **Phase 42: FAPI 2.0 Advanced Cryptography and OIDF Test Suite Prep**
 - [ ] **Phase 43: End-to-End FAPI 2.0 Validation and Release Posture**
 
 ## Phase Details
@@ -31,7 +31,7 @@ Plans:
 - [ ] 42-04-PLAN.md — OIDF harness prep, executable maintainer docs, CI truth, and release-contract coverage (FAPI-04)
 - [ ] 42-05-PLAN.md — Discovery, JWKS, and DPoP publication truth aligned to runtime policy (FAPI-04)
 - [ ] 42-06-PLAN.md — DCR and registration-management rejection/remediation wiring over the Phase 42 readiness contract (FAPI-04)
-- [ ] 42-07-PLAN.md — Logout, end-session, and DPoP runtime cleanup aligned to the canonical FAPI policy (FAPI-04)
+- [x] 42-07-PLAN.md — Logout, end-session, and DPoP runtime cleanup aligned to the canonical FAPI policy (FAPI-04)
 
 ### Phase 43: End-to-End FAPI 2.0 Validation and Release Posture
 **Goal:** Complete the implementation with generated host-seam tests and documentation.
@@ -43,5 +43,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | Phase 41 | 4/4 | complete | 2026-05-01 |
-| Phase 42 | 0/7 | not started | |
+| Phase 42 | 7/7 | complete | 2026-05-02 |
 | Phase 43 | 0 | upcoming | | 
