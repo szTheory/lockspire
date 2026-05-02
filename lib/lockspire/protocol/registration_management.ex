@@ -74,7 +74,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       {:error, :invalid_token}
     else
       with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
-           :ok <- Registration.validate_intake_metadata(metadata, resolved),
+           :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy),
            {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
            {:ok, updated_client} <- persist_update(client, metadata, new_rat_hash) do
         emit_updated(updated_client)
@@ -275,10 +275,23 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         policy_uri: Map.get(metadata, "policy_uri"),
         contacts: Map.get(metadata, "contacts", []),
         jwks: Map.get(metadata, "jwks"),
+        id_token_signed_response_alg:
+          atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
+        security_profile: atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
         dpop_policy: dpop_policy_from_metadata(metadata),
         metadata: extension_metadata
     }
   end
+
+  defp atomize_alg("RS256"), do: :RS256
+  defp atomize_alg("ES256"), do: :ES256
+  defp atomize_alg("PS256"), do: :PS256
+  defp atomize_alg("EdDSA"), do: :EdDSA
+  defp atomize_alg(_), do: nil
+
+  defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
+  defp atomize_security_profile("none"), do: :none
+  defp atomize_security_profile(_), do: :inherit
 
   defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
     case Map.get(metadata, "dpop_bound_access_tokens", false) do
