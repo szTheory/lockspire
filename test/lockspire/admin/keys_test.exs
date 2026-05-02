@@ -5,6 +5,7 @@ defmodule Lockspire.Admin.KeysTest do
 
   alias Lockspire.Admin.Keys
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
@@ -116,16 +117,87 @@ defmodule Lockspire.Admin.KeysTest do
     assert retired_audit.actor_id == "ops-retire"
   end
 
-  test "generate_key creates new keys for specific use" do
+  test "generate_key creates baseline keys for each use" do
     assert {:ok, sig_view} = Keys.generate_key(:sig)
     assert sig_view.key.use == :sig
     assert sig_view.key.status == :upcoming
-    assert sig_view.key.kty == :RSA
+    assert sig_view.key.kty == :EC
+    assert sig_view.key.alg == "ES256"
 
     assert {:ok, enc_view} = Keys.generate_key(:enc)
     assert enc_view.key.use == :enc
     assert enc_view.key.status == :upcoming
     assert enc_view.key.kty == :RSA
+    assert enc_view.key.alg == "RS256"
+  end
+
+  test "generate_key defaults to a FAPI-compliant signing key when the server profile requires it" do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{security_profile: :fapi_2_0_security})
+
+    assert {:ok, sig_view} = Keys.generate_key(:sig)
+
+    assert sig_view.key.use == :sig
+    assert sig_view.key.kty == :EC
+    assert sig_view.key.alg == "ES256"
+    assert sig_view.key.public_jwk["alg"] == "ES256"
+  end
+
+  test "activate_key rejects non-compliant FAPI signing keys with remediation guidance", %{now: now} do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{security_profile: :fapi_2_0_security})
+
+    assert {:ok, weak_key} =
+             Repository.publish_key(
+               signing_key("kid-weak-fapi", :upcoming, now,
+                 published_at: now,
+                 alg: "RS256",
+                 public_jwk: %{
+                   "kty" => "RSA",
+                   "kid" => "kid-weak-fapi",
+                   "alg" => "RS256",
+                   "use" => "sig",
+                   "n" => Base.url_encode64(:binary.copy(<<1>>, 128), padding: false)
+                 }
+               )
+             )
+
+    assert {:error, {:non_compliant_signing_key, {:non_compliant_algorithm, "RS256"}, message}} =
+             Keys.activate_key(weak_key.id, %{activated_at: DateTime.add(now, 20, :second)})
+
+    assert message =~ "Generate and publish an ES256 or PS256 signing key"
+  end
+
+  test "FAPI-aware publishable and active selection filters out legacy signing keys", %{now: now} do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{security_profile: :fapi_2_0_security})
+
+    assert {:ok, _legacy_key} =
+             Repository.publish_key(
+               signing_key("kid-fapi-legacy", :active, now,
+                 published_at: now,
+                 activated_at: now
+               )
+             )
+
+    assert {:ok, _compliant_key} =
+             Repository.publish_key(
+               ec_signing_key("kid-fapi-es256", :active, now,
+                 published_at: now,
+                 activated_at: now
+               )
+             )
+
+    assert {:ok, publishable_keys} =
+             Repository.list_publishable_keys(security_profile: :fapi_2_0_security)
+
+    assert Enum.any?(publishable_keys, &(&1.kid == "kid-fapi-es256"))
+    refute Enum.any?(publishable_keys, &(&1.kid in ["kid-active", "kid-upcoming", "kid-fapi-legacy"]))
+
+    assert {:ok, active_key} =
+             Repository.fetch_active_signing_key(security_profile: :fapi_2_0_security)
+
+    assert active_key.kid == "kid-fapi-es256"
   end
 
   def handle_event(event, _measurements, metadata, pid) do
@@ -172,6 +244,22 @@ defmodule Lockspire.Admin.KeysTest do
       alg: "RS256",
       use: :sig,
       public_jwk: %{"kty" => "RSA", "kid" => kid, "alg" => "RS256", "use" => "sig"},
+      private_jwk_encrypted: :erlang.term_to_binary(%{"kid" => kid}),
+      status: status,
+      inserted_at: now
+    }
+    |> Map.merge(attrs)
+  end
+
+  defp ec_signing_key(kid, status, now, attrs \\ []) do
+    attrs = Enum.into(attrs, %{})
+
+    %SigningKey{
+      kid: kid,
+      kty: :EC,
+      alg: "ES256",
+      use: :sig,
+      public_jwk: %{"kty" => "EC", "kid" => kid, "alg" => "ES256", "use" => "sig", "crv" => "P-256"},
       private_jwk_encrypted: :erlang.term_to_binary(%{"kid" => kid}),
       status: status,
       inserted_at: now

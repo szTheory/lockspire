@@ -6,6 +6,7 @@ defmodule Lockspire.Admin.Keys do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Observability
   alias Lockspire.Redaction
+  alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   @type lifecycle_action :: :publish | :activate | :retire
@@ -33,26 +34,31 @@ defmodule Lockspire.Admin.Keys do
 
   @spec generate_key(SigningKey.use_type()) :: {:ok, key_view()} | {:error, term()}
   def generate_key(use \\ :sig) do
-    jwk = JOSE.JWK.generate_key({:rsa, 2048})
+    {:ok, server_policy} = Repository.get_server_policy()
+
+    {jwk, kty, alg} =
+      signing_key_defaults(server_policy.security_profile, use)
+
     {_, public_jwk_map} = JOSE.JWK.to_map(JOSE.JWK.to_public(jwk))
     {_, private_jwk_map} = JOSE.JWK.to_map(jwk)
 
     kid = Base.encode16(:crypto.strong_rand_bytes(8))
-    
+
     public_jwk_map =
       public_jwk_map
       |> Map.put("use", Atom.to_string(use))
       |> Map.put("kid", kid)
-      
+      |> Map.put("alg", alg)
+
     private_jwk_map = Map.put(private_jwk_map, "kid", kid)
 
     key = %SigningKey{
       kid: kid,
-      kty: :RSA,
-      alg: "RS256",
+      kty: kty,
+      alg: alg,
       use: use,
       public_jwk: public_jwk_map,
-      private_jwk_encrypted: :erlang.term_to_binary(private_jwk_map),
+      private_jwk_encrypted: Jason.encode!(private_jwk_map),
       status: :upcoming,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now()
@@ -103,7 +109,10 @@ defmodule Lockspire.Admin.Keys do
     activated_at = Map.get(attrs, :activated_at, DateTime.utc_now())
     actor = actor_from_attrs(attrs)
 
-    with {:ok, %{activated_key: key}} <-
+    with {:ok, server_policy} <- Repository.get_server_policy(),
+         {:ok, %SigningKey{} = key_to_activate} <- Repository.fetch_signing_key_by_id(key_id),
+         :ok <- validate_activation_compliance(key_to_activate, server_policy.security_profile),
+         {:ok, %{activated_key: key}} <-
            transact_with_audit(
              fn -> Repository.activate_signing_key(key_id, activated_at) end,
              fn %{activated_key: %SigningKey{} = activated_key, retiring_key: retiring_key} ->
@@ -143,6 +152,27 @@ defmodule Lockspire.Admin.Keys do
 
   defp maybe_detail_view(nil), do: nil
   defp maybe_detail_view(%SigningKey{} = key), do: to_detail_view(key)
+
+  defp signing_key_defaults(:fapi_2_0_security, :sig),
+    do: {JOSE.JWK.generate_key({:ec, "P-256"}), :EC, "ES256"}
+
+  defp signing_key_defaults(_profile, :enc),
+    do: {JOSE.JWK.generate_key({:rsa, 2048}), :RSA, "RS256"}
+
+  defp signing_key_defaults(_profile, _use),
+    do: {JOSE.JWK.generate_key({:ec, "P-256"}), :EC, "ES256"}
+
+  defp validate_activation_compliance(%SigningKey{} = key, security_profile) do
+    case Policy.validate_key_compliance(key, security_profile) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        {:error,
+         {:non_compliant_signing_key, reason,
+          "Generate and publish an ES256 or PS256 signing key before activating FAPI mode."}}
+    end
+  end
 
   defp to_view(%SigningKey{} = key) do
     %{

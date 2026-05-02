@@ -18,6 +18,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
+  alias Lockspire.Security.Policy
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.DeviceAuthorizationStore
@@ -877,7 +879,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl KeyStore
-  def list_publishable_keys do
+  def list_publishable_keys(opts \\ []) when is_list(opts) do
     SigningKeyRecord
     |> where(
       [key],
@@ -887,7 +889,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> order_by([key], asc: key.inserted_at)
     |> repo().all()
     |> then(fn records ->
-      {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
+      records
+      |> Enum.map(&(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))
+      |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
+      |> then(&{:ok, &1})
     end)
   rescue
     error -> {:error, error}
@@ -908,17 +913,30 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl KeyStore
-  def fetch_active_signing_key do
+  def fetch_active_signing_key(opts \\ []) when is_list(opts) do
     SigningKeyRecord
     |> where([key], key.status == :active)
     |> where([key], key.use == :sig)
     |> order_by([key], asc: key.inserted_at)
-    |> limit(1)
-    |> repo().one()
-    |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
+    |> repo().all()
+    |> Enum.map(&SigningKeyRecord.to_domain/1)
+    |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
+    |> List.first()
+    |> then(&{:ok, &1})
   rescue
     error -> {:error, error}
   end
+
+  defp filter_keys_for_security_profile(keys, :fapi_2_0_security) do
+    allowed_algs = SecurityProfile.allowed_signing_algorithms(:fapi_2_0_security)
+
+    Enum.filter(keys, fn %SigningKey{alg: alg, use: use} = key ->
+      use == :sig and alg in allowed_algs and
+        Policy.validate_key_compliance(key, :fapi_2_0_security) == :ok
+    end)
+  end
+
+  defp filter_keys_for_security_profile(keys, _profile), do: keys
 
   @impl KeyStore
   def fetch_signing_key_by_id(id) when is_integer(id) do
