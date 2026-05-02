@@ -34,8 +34,8 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FAPI-01 | Phase 41 | complete (Plan 41-01) |
-| FAPI-02 | Phase 41 | open |
-| FAPI-03 | Phase 41 | open |
+| FAPI-02 | Phase 41 | complete (Plan 41-02) |
+| FAPI-03 | Phase 41 | complete (Plan 41-02) |
 | FAPI-04 | Phase 42 | open |
 | FAPI-05 | Phase 42 | open |
 | FAPI-06 | Phase 43 | open |
