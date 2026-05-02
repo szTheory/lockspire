@@ -87,6 +87,46 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     end
   end
 
+  describe "update/2 — FAPI 2.0 readiness contract" do
+    test "rejects update when client algorithm metadata is incompatible with FAPI", %{
+      client: client,
+      client_id: client_id
+    } do
+      server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
+      
+      new_metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+      request = %{metadata: new_metadata, server_policy: server_policy, client: client}
+
+      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :id_token_signed_response_alg, reason: :incompatible_with_fapi_2_0}} =
+               RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when server is missing compliant keys for FAPI", %{
+      client: client,
+      client_id: client_id
+    } do
+      server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
+      Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
+      
+      request = %{metadata: Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "ES256"), server_policy: server_policy, client: client}
+
+      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :security_profile, reason: :missing_compliant_publishable_key}} =
+               RegistrationManagement.update(client.client_id, request)
+    end
+
+    test "allows non-FAPI update to store legacy algorithm metadata", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      new_metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+      request = %{metadata: new_metadata, server_policy: server_policy, client: client}
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} = RegistrationManagement.update(client_id, request)
+      assert updated_client.id_token_signed_response_alg == :RS256
+    end
+  end
+
   describe "update/2 — RAT rotation" do
     test "accepts (client_id_from_url, %{metadata, server_policy, client}) and returns UpdateSuccess",
          %{client: client, client_id: client_id, server_policy: server_policy, rat: prior_rat} do

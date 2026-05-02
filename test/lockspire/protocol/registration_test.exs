@@ -302,6 +302,48 @@ defmodule Lockspire.Protocol.RegistrationTest do
     end
   end
 
+  describe "register/1 — FAPI 2.0 readiness contract" do
+    test "rejects security_profile: :fapi_2_0_security when client algorithm metadata is incompatible" do
+      server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
+      
+      metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+      request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :id_token_signed_response_alg,
+                reason: :incompatible_with_fapi_2_0
+              }} = Registration.register(request)
+    end
+
+    test "rejects security_profile: :fapi_2_0_security when server is missing compliant keys" do
+      server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
+      
+      Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
+
+      request = DcrFixtures.register_request(server_policy: server_policy)
+      request = %{request | metadata: Map.put(request.metadata, "id_token_signed_response_alg", "ES256")}
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :security_profile,
+                reason: :missing_compliant_publishable_key
+              }} = Registration.register(request)
+    end
+
+    test "allows non-FAPI clients to store legacy algorithm metadata" do
+      server_policy = DcrFixtures.server_policy(%{security_profile: :none})
+      
+      metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+      request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.id_token_signed_response_alg == :RS256
+    end
+  end
+
   describe "register/1 — D-14 validator" do
     test "rejects metadata with jwks_uri" do
       request = DcrFixtures.register_request(metadata: DcrFixtures.invalid_jwks_uri_metadata())

@@ -63,7 +63,7 @@ defmodule Lockspire.Protocol.Registration do
     with :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
-         :ok <- validate_intake_metadata(metadata, resolved),
+         :ok <- validate_intake_metadata(metadata, resolved, server_policy),
          credentials <- generate_credentials(),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
@@ -121,13 +121,43 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   @doc false
-  @spec validate_intake_metadata(map(), Resolved.t()) :: :ok | {:error, Error.t()}
-  def validate_intake_metadata(metadata, %Resolved{} = _resolved) when is_map(metadata) do
+  @spec validate_intake_metadata(map(), Resolved.t(), ServerPolicy.t()) :: :ok | {:error, Error.t()}
+  def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy) when is_map(metadata) do
     with :ok <- validate_unsupported_logout_metadata(metadata),
          :ok <- validate_jwks(metadata),
          :ok <- validate_grant_response_coherence(metadata),
-         :ok <- validate_redirect_uris(metadata) do
+         :ok <- validate_redirect_uris(metadata),
+         :ok <- validate_fapi_2_0_readiness(metadata, server_policy) do
       validate_pkce_floor(metadata)
+    end
+  end
+
+  defp validate_fapi_2_0_readiness(metadata, server_policy) do
+    client_profile = atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
+    resolved_profile = Lockspire.Protocol.SecurityProfile.resolve_effective_profile(server_policy, %{security_profile: client_profile})
+
+    if resolved_profile.fapi_2_0_security? do
+      alg = atomize_alg(Map.get(metadata, "id_token_signed_response_alg"))
+      if alg not in [:ES256, :PS256] do
+        {:error, %Error{
+          code: :invalid_client_metadata,
+          field: :id_token_signed_response_alg,
+          reason: :incompatible_with_fapi_2_0
+        }}
+      else
+        with :ok <- Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security) do
+          :ok
+        else
+          {:error, reason} when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+            {:error, %Error{
+              code: :invalid_client_metadata,
+              field: :security_profile,
+              reason: reason
+            }}
+        end
+      end
+    else
+      :ok
     end
   end
 
@@ -284,6 +314,8 @@ defmodule Lockspire.Protocol.Registration do
       provenance: :self_registered,
       registration_access_token_hash: credentials.rat_hash,
       initial_access_token_id: iat_id,
+      id_token_signed_response_alg: atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
+      security_profile: atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
       client_secret_expires_at:
         DateTime.add(now, resolved.default_client_secret_lifetime_seconds || 0, :second),
@@ -313,6 +345,16 @@ defmodule Lockspire.Protocol.Registration do
 
   defp iat_id_or_anonymous(nil), do: "anonymous"
   defp iat_id_or_anonymous(id), do: to_string(id)
+
+  defp atomize_alg("RS256"), do: :RS256
+  defp atomize_alg("ES256"), do: :ES256
+  defp atomize_alg("PS256"), do: :PS256
+  defp atomize_alg("EdDSA"), do: :EdDSA
+  defp atomize_alg(_), do: nil
+
+  defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
+  defp atomize_security_profile("none"), do: :none
+  defp atomize_security_profile(_), do: :inherit
 
   defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post

@@ -322,11 +322,12 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
-  defp check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
-  defp check_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
+  @doc false
+  def check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
+  def check_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
     Repository.validate_fapi_signing_readiness()
   end
-  defp check_fapi_signing_readiness(_old_profile, _new_profile), do: :ok
+  def check_fapi_signing_readiness(_old_profile, _new_profile), do: :ok
 
   defp reject_immutable_changes(attrs) do
     attempted =
