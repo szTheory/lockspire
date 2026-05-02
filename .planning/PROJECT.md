@@ -10,19 +10,15 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived seven planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, and v1.6 delivered the full Device Authorization Grant wedge.
+Lockspire has now archived eight planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, and v1.9 delivered JWE support for request objects.
 
 At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
 
-Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects, DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
+Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
 
-## Current Milestone: v1.9 JAR Decryption (JWE Support)
+## Current Milestone: v1.10 FAPI 2.0 Security Profile Readiness
 
-**Goal:** Support nested encrypted JWTs for request objects, allowing clients to securely transmit sensitive parameters using JWE and JWS.
-
-**Target features:**
-- Add RSA/EC encryption keypairs to the server's KeyStore and JWKS endpoints.
-- Implement nested JWT validation (Sign-then-Encrypt) in the `Protocol.Jar` layer.
+**Goal:** Provide an ergonomic, highly secure mode (`security_profile: :fapi_2_0_security`) that asserts compliance with the FAPI 2.0 Security Profile. This leverages our prior work on PAR and DPoP to raise real-client trust and prove Lockspire's readiness for high-value enterprise integrations.
 
 ## Requirements
 
@@ -47,13 +43,16 @@ Lockspire can now support a substantial embedded-provider preview surface: autho
 - Session Management & RP-Initiated Logout workflows were verified and archived in the v1.8 milestone.
 - Automated Back-Channel and Front-Channel Logout propagation mechanisms were verified and archived in the v1.8 milestone.
 - Strict OIDC protocol validation and integer enforcement for timestamps were verified and archived in the v1.8 milestone.
+- Implement RSA/EC encryption key management in `Storage.KeyStore` and advertise via JWKS, validated in Phase 40.
+- Implement nested JWT validation (Sign-then-Encrypt) in `Protocol.Jar`, validated in Phase 40.
+- Deliver single-flag configuration (`security_profile: :fapi_2_0_security`) to enable strict mode globally or per-client, validated in Phase 41.
+- Enforce mandatory PAR usage and DPoP sender-constraining for token and userinfo endpoints when the profile is active, validated in Phase 41.
 
 ### Active
 
-- Implement RSA/EC encryption key management in `Storage.KeyStore` and advertise via JWKS.
-- Implement nested JWT validation (Sign-then-Encrypt) in `Protocol.Jar`.
-- Preserve the existing embedded Phoenix library shape while adding decryption capabilities.
-- Maintain backwards compatibility with unencrypted JWS JAR objects.
+- Target **v1.10 FAPI 2.0 Security Profile Readiness** to provide an ergonomic strict mode for high-value APIs.
+- Restrict cryptographic algorithms to `PS256` or `ES256` exclusively under the profile.
+- Strictly enforce exact redirect URI matching and expose FAPI 2.0 compliance in discovery metadata.
 
 ### Out of Scope
 

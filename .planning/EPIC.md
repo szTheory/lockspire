@@ -62,7 +62,7 @@ Scope:
 - Front-Channel Logout iframe rendering
 - OIDC timestamp enforcement
 
-### 3. v1.9 — JAR Decryption (Active)
+### 3. v1.9 — JAR Decryption (Shipped)
 
 Why next:
 - Partner interoperability pressure centers on request-object completeness, specifically encrypted transmission of PII or sensitive claims.
@@ -71,13 +71,27 @@ Scope:
 - JWKS `enc` key publication and storage
 - Nested JWT validation (JWE + JWS) in `Protocol.Jar`
 
-### 4. Post-1.0 / Advanced Security and Conformance
+### 4. v1.10 — FAPI 2.0 Security Profile Readiness (Active)
 
-Only after the core adoption story is stable:
+Why next:
+- Provides a massive leap in "real-integrator trust" without the infrastructural complexity of mTLS.
+- Capitalizes perfectly on our already-shipped PAR and DPoP features.
+- Enables Lockspire to be used in high-value environments (banking, healthcare) while preserving the simple embedded-library ergonomics via a single `security_profile: :fapi_2_0_security` option.
 
-- mTLS-bound tokens
+Scope:
+- Single-flag strict mode enforcement.
+- Mandatory PAR and DPoP enforcement.
+- Cryptographic restrictions (PS256/ES256 only).
+- Strict redirect URI matching.
+- Truthful FAPI 2.0 discovery metadata.
+
+### 5. Post-1.0 / Advanced Security and Conformance
+
+Only after the core adoption story and FAPI 2.0 readiness are stable:
+
+- mTLS-bound tokens (deferred due to proxy termination complexity in standard Phoenix deployments)
+- Rich Authorization Requests (RAR)
 - Broader sender-constrained modes
-- Stronger conformance/certification profiles
 - Additional logout/session-management families if they still fit the embedded-library thesis
 
 ## Milestone Selection Rules

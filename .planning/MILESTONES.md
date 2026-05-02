@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.9 JAR Decryption (JWE Support) (Shipped + archived: 2026-04-29)
+
+**Phases completed:** **1** (**40**), **0** plans, **2** requirements closed.
+
+**Package posture:** `lockspire 0.2.0` remains preview. The shipped surface now includes nested JWE support for request objects.
+
+**Key accomplishments:**
+
+- Added RSA/EC encryption keypairs (`enc`) to `Storage.KeyStore` and JWKS endpoints.
+- Implemented nested JWT validation (Sign-then-Encrypt) in `Protocol.Jar` using `JOSE.JWE` and `JOSE.JWS`.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.9-MILESTONE-AUDIT.md`](milestones/v1.9-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.9-ROADMAP.md`, `milestones/v1.9-REQUIREMENTS.md`, `milestones/v1.9-MILESTONE-AUDIT.md` · **Git tag:** `v1.9`
+
+---
+
 ## v1.8 Session Management & Conformance (Shipped + archived: 2026-04-29)
 
 **Phases completed:** **3** (**37-39**), **14** plans, **8** requirements closed (CONF-04 deferred).
