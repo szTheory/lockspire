@@ -51,6 +51,6 @@ defmodule Lockspire.Protocol.SecurityProfile do
   defp effective_profile(_global_profile, :none), do: :none
 
   @spec allowed_signing_algorithms(ServerPolicy.security_profile()) :: [String.t()]
-  def allowed_signing_algorithms(:fapi_2_0_security), do: ["ES256", "PS256", "EdDSA"]
+  def allowed_signing_algorithms(:fapi_2_0_security), do: ["ES256", "PS256"]
   def allowed_signing_algorithms(:none), do: ["RS256", "ES256", "PS256", "EdDSA"]
 end

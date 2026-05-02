@@ -1,6 +1,7 @@
 defmodule Lockspire.Protocol.SecurityPolicyTest do
   use ExUnit.Case, async: true
 
+  alias Lockspire.Domain.SigningKey
   alias Lockspire.Security.Policy
 
   test "boot-time helpers validate required values and issuer alignment" do
@@ -47,8 +48,76 @@ defmodule Lockspire.Protocol.SecurityPolicyTest do
     assert :ok = Policy.ensure_supported_token_endpoint_auth_method(:client_secret_basic)
 
     assert {:error, :invalid_signing_alg} = Policy.ensure_signing_alg("none")
-    assert {:error, :invalid_signing_alg} = Policy.ensure_signing_alg(:ES256)
+    assert :ok = Policy.ensure_signing_alg(:ES256)
     assert :ok = Policy.ensure_signing_alg("RS256")
     assert :ok = Policy.ensure_signing_alg(:RS256)
+  end
+
+  describe "validate_key_compliance/2" do
+    test "accepts ES256 and PS256 keys with FAPI-compliant strength" do
+      assert :ok = Policy.validate_key_compliance(ec_signing_key(), :fapi_2_0_security)
+      assert :ok = Policy.validate_key_compliance(rsa_signing_key(), :fapi_2_0_security)
+    end
+
+    test "rejects non-FAPI algorithms with typed errors" do
+      assert {:error, {:non_compliant_algorithm, "RS256"}} =
+               Policy.validate_key_compliance(
+                 %SigningKey{rsa_signing_key() | alg: "RS256"},
+                 :fapi_2_0_security
+               )
+
+      assert {:error, {:non_compliant_algorithm, "EdDSA"}} =
+               Policy.validate_key_compliance(
+                 %SigningKey{okp_signing_key() | alg: "EdDSA"},
+                 :fapi_2_0_security
+               )
+    end
+
+    test "rejects weak RSA and unsupported curves with typed errors" do
+      assert {:error, :insufficient_rsa_key_size} =
+               Policy.validate_key_compliance(weak_rsa_signing_key(), :fapi_2_0_security)
+
+      assert {:error, {:unsupported_curve, "P-224"}} =
+               Policy.validate_key_compliance(
+                 %SigningKey{ec_signing_key() | public_jwk: %{"crv" => "P-224"}},
+                 :fapi_2_0_security
+               )
+    end
+  end
+
+  defp ec_signing_key do
+    %SigningKey{
+      kty: :EC,
+      alg: "ES256",
+      public_jwk: %{"crv" => "P-256"}
+    }
+  end
+
+  defp rsa_signing_key do
+    modulus = :binary.copy(<<1>>, 256)
+
+    %SigningKey{
+      kty: :RSA,
+      alg: "PS256",
+      public_jwk: %{"n" => Base.url_encode64(modulus, padding: false)}
+    }
+  end
+
+  defp weak_rsa_signing_key do
+    modulus = :binary.copy(<<1>>, 128)
+
+    %SigningKey{
+      kty: :RSA,
+      alg: "PS256",
+      public_jwk: %{"n" => Base.url_encode64(modulus, padding: false)}
+    }
+  end
+
+  defp okp_signing_key do
+    %SigningKey{
+      kty: :OKP,
+      alg: "EdDSA",
+      public_jwk: %{"crv" => "Ed25519"}
+    }
   end
 end

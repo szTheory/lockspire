@@ -3,9 +3,55 @@ defmodule Lockspire.Security.Policy do
   Shared security invariants for boot-time posture and protocol/runtime checks.
   """
 
+  alias Lockspire.Domain.SigningKey
+  alias Lockspire.Protocol.SecurityProfile
+
   @supported_token_endpoint_auth_methods [:none, :client_secret_basic, :client_secret_post]
   @supported_response_types ["code"]
-  @supported_signing_algs ["RS256", :RS256]
+  @supported_signing_algs ["RS256", "ES256", "PS256", "EdDSA", :RS256, :ES256, :PS256, :EdDSA]
+
+  @spec validate_key_compliance(SigningKey.t(), :fapi_2_0_security | :none) :: :ok | {:error, term()}
+  def validate_key_compliance(%SigningKey{alg: alg} = key, :fapi_2_0_security) do
+    with :ok <- ensure_fapi_compliant_alg(alg),
+         :ok <- ensure_fapi_compliant_strength(key) do
+      :ok
+    end
+  end
+
+  def validate_key_compliance(%SigningKey{}, :none), do: :ok
+
+  defp ensure_fapi_compliant_alg(alg) when alg in ["ES256", "PS256", :ES256, :PS256], do: :ok
+  defp ensure_fapi_compliant_alg(alg) when is_atom(alg), do: ensure_fapi_compliant_alg(Atom.to_string(alg))
+  defp ensure_fapi_compliant_alg(alg) when is_binary(alg) do
+    if alg in SecurityProfile.allowed_signing_algorithms(:fapi_2_0_security) do
+      :ok
+    else
+      {:error, {:non_compliant_algorithm, alg}}
+    end
+  end
+
+  defp ensure_fapi_compliant_alg(alg), do: {:error, {:non_compliant_algorithm, alg}}
+
+  defp ensure_fapi_compliant_strength(%SigningKey{kty: :RSA, public_jwk: %{"n" => n}}) do
+    # RSA keys must be at least 2048 bits.
+    # Base64URL length of 'n' is approx 4/3 of the byte length.
+    # 2048 bits = 256 bytes. Base64URL length should be >= 341.
+    case Base.url_decode64(n, padding: false) do
+      {:ok, decoded_n} when byte_size(decoded_n) >= 256 -> :ok
+      _other -> {:error, :insufficient_rsa_key_size}
+    end
+  end
+
+  defp ensure_fapi_compliant_strength(%SigningKey{kty: :EC, public_jwk: %{"crv" => crv}}) do
+    # EC keys must have strength >= 224 bits. P-256 (256 bits) is fine.
+    if crv in ["P-256", "P-384", "P-521"] do
+      :ok
+    else
+      {:error, {:unsupported_curve, crv}}
+    end
+  end
+
+  defp ensure_fapi_compliant_strength(_key), do: {:error, :unsupported_key_type}
 
   @spec fetch_required_config!(atom(), term()) :: term()
   def fetch_required_config!(key, value) do

@@ -99,7 +99,7 @@ defmodule Lockspire.Protocol.SecurityProfileTest do
     test "allowed_signing_algorithms(:fapi_2_0_security) returns restricted FAPI 2.0 algorithms" do
       algorithms = SecurityProfile.allowed_signing_algorithms(:fapi_2_0_security)
 
-      assert algorithms == ["ES256", "PS256", "EdDSA"]
+      assert algorithms == ["ES256", "PS256"]
     end
 
     test "allowed_signing_algorithms(:none) returns full algorithm set" do
