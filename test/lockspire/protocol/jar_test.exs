@@ -1,7 +1,9 @@
 defmodule Lockspire.Protocol.JarTest do
   use ExUnit.Case, async: true
-  alias Lockspire.Protocol.Jar
   alias Lockspire.Domain.Client
+  alias Lockspire.JarTestHelpers
+  alias Lockspire.Protocol.Jar
+  alias Lockspire.Protocol.SecurityProfile
 
   describe "decrypt/2" do
     test "ignores 3-part JWS strings and returns them unaltered" do
@@ -70,18 +72,28 @@ defmodule Lockspire.Protocol.JarTest do
     end
   end
 
-  describe "verify_signature/2" do
-    # Generate a fresh RSA key pair shared across tests in this describe block
+  describe "verify_signature/3" do
     setup do
-      private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
-      {_, pub_jwk_map} = JOSE.JWK.to_public_map(private_jwk)
-      {_, priv_jwk_map} = JOSE.JWK.to_map(private_jwk)
-      %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map, priv_jwk_map: priv_jwk_map}
+      rsa_keys = JarTestHelpers.generate_keys()
+      ec_keys = JarTestHelpers.generate_ec_keys()
+      eddsa_private_jwk = JOSE.JWK.generate_key({:okp, :Ed25519})
+      {_, eddsa_pub_jwk_map} = JOSE.JWK.to_public_map(eddsa_private_jwk)
+
+      %{
+        rsa_keys: rsa_keys,
+        ec_keys: ec_keys,
+        eddsa_private_jwk: eddsa_private_jwk,
+        eddsa_pub_jwk_map: eddsa_pub_jwk_map
+      }
     end
 
     defp sign_jwt(private_jwk, claims, alg \\ "RS256", extra_header \\ %{}) do
       header = Map.merge(%{"alg" => alg}, extra_header)
       JOSE.JWT.sign(private_jwk, header, claims) |> JOSE.JWS.compact() |> elem(1)
+    end
+
+    defp verify_signature(jwt, client, profile \\ :none) do
+      Jar.verify_signature(jwt, client, SecurityProfile.allowed_signing_algorithms(profile))
     end
 
     defp client_with_single_jwk(pub_jwk_map) do
@@ -93,8 +105,7 @@ defmodule Lockspire.Protocol.JarTest do
     end
 
     test "returns {:ok, %Jar{}} for a validly signed JWT with matching client JWK", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{
         "iss" => "client_id",
@@ -105,27 +116,25 @@ defmodule Lockspire.Protocol.JarTest do
       jwt = sign_jwt(private_jwk, claims)
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:ok, %Jar{claims: verified_claims, header: header}} =
-               Jar.verify_signature(jwt, client)
+      assert {:ok, %Jar{claims: verified_claims, header: header}} = verify_signature(jwt, client)
 
       assert verified_claims == claims
       assert header["alg"] == "RS256"
     end
 
     test "returns {:ok, %Jar{}} when client JWKS is a JWK Set with matching key", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{"iss" => "client_id", "sub" => "user"}
       jwt = sign_jwt(private_jwk, claims)
       client = client_with_jwks_set(pub_jwk_map)
 
-      assert {:ok, %Jar{claims: verified_claims}} = Jar.verify_signature(jwt, client)
+      assert {:ok, %Jar{claims: verified_claims}} = verify_signature(jwt, client)
       assert verified_claims == claims
     end
 
     test "returns {:error, :invalid_signature} when JWT is signed with a different key", %{
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{pub_jwk_map: pub_jwk_map}
     } do
       # Sign with a different private key
       other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
@@ -135,11 +144,11 @@ defmodule Lockspire.Protocol.JarTest do
       # But client has the original key — mismatch
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:error, :invalid_signature} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_signature} = verify_signature(jwt, client)
     end
 
     test "returns {:error, :invalid_signature} for JWT with alg=none (unsigned)", %{
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{pub_jwk_map: pub_jwk_map}
     } do
       # Craft an alg=none JWT manually (JOSE will not sign with none)
       none_header =
@@ -150,7 +159,7 @@ defmodule Lockspire.Protocol.JarTest do
 
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:error, :invalid_signature} = Jar.verify_signature(none_jwt, client)
+      assert {:error, :invalid_signature} = verify_signature(none_jwt, client)
     end
 
     test "returns {:error, :invalid_client_keys} when client has nil jwks" do
@@ -158,7 +167,7 @@ defmodule Lockspire.Protocol.JarTest do
       jwt = sign_jwt(jwk, %{"iss" => "client_id"})
       client = %Client{jwks: nil}
 
-      assert {:error, :invalid_client_keys} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_client_keys} = verify_signature(jwt, client)
     end
 
     test "returns {:error, :invalid_client_keys} when client jwks is not a map" do
@@ -166,7 +175,7 @@ defmodule Lockspire.Protocol.JarTest do
       jwt = sign_jwt(jwk, %{"iss" => "client_id"})
       client = %Client{jwks: "not_a_map"}
 
-      assert {:error, :invalid_client_keys} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_client_keys} = verify_signature(jwt, client)
     end
 
     test "returns {:error, :invalid_client_keys} when client jwks is an empty map" do
@@ -174,22 +183,21 @@ defmodule Lockspire.Protocol.JarTest do
       jwt = sign_jwt(jwk, %{"iss" => "client_id"})
       client = %Client{jwks: %{}}
 
-      assert {:error, :invalid_client_keys} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_client_keys} = verify_signature(jwt, client)
     end
 
     test "returns {:error, :invalid_client_keys} when client jwks has invalid structure", %{
-      private_jwk: private_jwk
+      rsa_keys: %{private_jwk: private_jwk}
     } do
       jwt = sign_jwt(private_jwk, %{"iss" => "client_id"})
       # A map that looks like JSON but is not a valid JWK
       client = %Client{jwks: %{"foo" => "bar", "baz" => 123}}
 
-      assert {:error, :invalid_client_keys} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_client_keys} = verify_signature(jwt, client)
     end
 
     test "returns {:error, :invalid_signature} for a tampered JWT payload", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{"iss" => "client_id", "response_type" => "code"}
       jwt = sign_jwt(private_jwk, claims)
@@ -205,52 +213,102 @@ defmodule Lockspire.Protocol.JarTest do
       tampered_jwt = header_seg <> "." <> tampered_payload <> "." <> sig_seg
 
       client = client_with_single_jwk(pub_jwk_map)
-      assert {:error, :invalid_signature} = Jar.verify_signature(tampered_jwt, client)
+      assert {:error, :invalid_signature} = verify_signature(tampered_jwt, client)
     end
 
     test "returns {:error, :invalid_typ} for JWT with typ=JWT-bearer (cross-JWT confusion)", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
       jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "JWT-bearer"})
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:error, :invalid_typ} = Jar.verify_signature(jwt, client)
+      assert {:error, :invalid_typ} = verify_signature(jwt, client)
     end
 
     test "returns {:ok, %Jar{}} for JWT with typ=oauth-authz-req+jwt (canonical RFC 9101 typ)", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      ec_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
-      jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "oauth-authz-req+jwt"})
+      jwt = sign_jwt(private_jwk, claims, "ES256", %{"typ" => "oauth-authz-req+jwt"})
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+      assert {:ok, %Jar{}} = verify_signature(jwt, client, :fapi_2_0_security)
     end
 
     test "returns {:ok, %Jar{}} for JWT with typ=jwt (lowercase legacy)", %{
-      private_jwk: private_jwk,
-      pub_jwk_map: pub_jwk_map
+      rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
     } do
       claims = %{"iss" => "client_id"}
       jwt = sign_jwt(private_jwk, claims, "RS256", %{"typ" => "jwt"})
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+      assert {:ok, %Jar{}} = verify_signature(jwt, client)
     end
 
     test "returns {:ok, %Jar{}} for JWT with no typ header (permissive default per RFC 9101 SHOULD)",
          %{
-           private_jwk: private_jwk,
-           pub_jwk_map: pub_jwk_map
+           rsa_keys: %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map}
          } do
       claims = %{"iss" => "client_id"}
       jwt = sign_jwt(private_jwk, claims)
       client = client_with_single_jwk(pub_jwk_map)
 
-      assert {:ok, %Jar{}} = Jar.verify_signature(jwt, client)
+      assert {:ok, %Jar{}} = verify_signature(jwt, client)
+    end
+
+    test "rejects RS256 and EdDSA request objects under FAPI-effective behavior", %{
+      rsa_keys: %{private_jwk: rsa_private_jwk, pub_jwk_map: rsa_pub_jwk_map},
+      eddsa_private_jwk: eddsa_private_jwk,
+      eddsa_pub_jwk_map: eddsa_pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
+
+      rs256_jwt = sign_jwt(rsa_private_jwk, claims, "RS256", %{"typ" => "oauth-authz-req+jwt"})
+      eddsa_jwt = sign_jwt(eddsa_private_jwk, claims, "EdDSA", %{"typ" => "oauth-authz-req+jwt"})
+
+      assert {:error, :invalid_signature} =
+               verify_signature(rs256_jwt, client_with_single_jwk(rsa_pub_jwk_map), :fapi_2_0_security)
+
+      assert {:error, :invalid_signature} =
+               verify_signature(
+                 eddsa_jwt,
+                 client_with_single_jwk(eddsa_pub_jwk_map),
+                 :fapi_2_0_security
+               )
+    end
+
+    test "accepts ES256 and PS256 request objects under FAPI-effective behavior", %{
+      rsa_keys: %{private_jwk: rsa_private_jwk, pub_jwk_map: rsa_pub_jwk_map},
+      ec_keys: %{private_jwk: ec_private_jwk, pub_jwk_map: ec_pub_jwk_map}
+    } do
+      claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
+
+      es256_jwt = sign_jwt(ec_private_jwk, claims, "ES256", %{"typ" => "oauth-authz-req+jwt"})
+      ps256_jwt = sign_jwt(rsa_private_jwk, claims, "PS256", %{"typ" => "oauth-authz-req+jwt"})
+
+      assert {:ok, %Jar{header: %{"alg" => "ES256"}}} =
+               verify_signature(es256_jwt, client_with_single_jwk(ec_pub_jwk_map), :fapi_2_0_security)
+
+      assert {:ok, %Jar{header: %{"alg" => "PS256"}}} =
+               verify_signature(ps256_jwt, client_with_single_jwk(rsa_pub_jwk_map), :fapi_2_0_security)
+    end
+
+    test "preserves the broader legacy allow-list only when the effective profile is :none", %{
+      rsa_keys: %{private_jwk: rsa_private_jwk, pub_jwk_map: rsa_pub_jwk_map},
+      eddsa_private_jwk: eddsa_private_jwk,
+      eddsa_pub_jwk_map: eddsa_pub_jwk_map
+    } do
+      claims = %{"iss" => "client_id", "aud" => "https://server.example.com"}
+
+      rs256_jwt = sign_jwt(rsa_private_jwk, claims, "RS256", %{"typ" => "oauth-authz-req+jwt"})
+      eddsa_jwt = sign_jwt(eddsa_private_jwk, claims, "EdDSA", %{"typ" => "oauth-authz-req+jwt"})
+
+      assert {:ok, %Jar{header: %{"alg" => "RS256"}}} =
+               verify_signature(rs256_jwt, client_with_single_jwk(rsa_pub_jwk_map), :none)
+
+      assert {:ok, %Jar{header: %{"alg" => "EdDSA"}}} =
+               verify_signature(eddsa_jwt, client_with_single_jwk(eddsa_pub_jwk_map), :none)
     end
   end
 

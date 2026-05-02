@@ -29,10 +29,6 @@ defmodule Lockspire.Protocol.Jar do
           | :invalid_not_before
           | :invalid_issued_at
 
-  # Algorithms explicitly permitted for JAR request objects.
-  # "none" is never permitted — it would allow unsigned requests to bypass auth.
-  @allowed_algorithms ~w(RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512 EdDSA)
-
   @doc """
   Decrypts a nested JWE request object to return the inner JWS string.
   If the input is not a JWE (e.g. it is a 3-part JWS), it returns `{:ok, jwt}` immediately.
@@ -42,10 +38,11 @@ defmodule Lockspire.Protocol.Jar do
     if length(String.split(jwt, ".")) == 5 do
       Enum.reduce_while(decryption_keys, {:error, :decryption_failed}, fn key, _acc ->
         try do
-          jwk_map = :erlang.binary_to_term(key.private_jwk_encrypted)
-          jwk = JOSE.JWK.from_map(jwk_map)
-          case JOSE.JWK.block_decrypt(jwt, jwk) do
-            {plain_text, %JOSE.JWE{}} -> {:halt, {:ok, plain_text}}
+          with {:ok, jwk_map} <- decode_private_jwk(key.private_jwk_encrypted),
+               jwk <- JOSE.JWK.from_map(jwk_map),
+               {plain_text, %JOSE.JWE{}} <- JOSE.JWK.block_decrypt(jwt, jwk) do
+            {:halt, {:ok, plain_text}}
+          else
             _ -> {:cont, {:error, :decryption_failed}}
           end
         rescue
@@ -56,6 +53,24 @@ defmodule Lockspire.Protocol.Jar do
       end)
     else
       {:ok, jwt}
+    end
+  end
+
+  defp decode_private_jwk(binary) when is_binary(binary) do
+    case Jason.decode(binary) do
+      {:ok, %{} = jwk} -> {:ok, jwk}
+      _other -> decode_erlang_jwk(binary)
+    end
+  end
+
+  defp decode_erlang_jwk(binary) do
+    try do
+      case :erlang.binary_to_term(binary) do
+        %{} = jwk -> {:ok, jwk}
+        _other -> {:error, :invalid_signing_key}
+      end
+    rescue
+      _ -> {:error, :invalid_signing_key}
     end
   end
 
@@ -99,24 +114,25 @@ defmodule Lockspire.Protocol.Jar do
   Security: `alg=none` is never accepted. Only algorithms in the explicit allow-list are
   permitted, mitigating T-21-03 (Spoofing) and T-21-04 (Tampering).
   """
-  @spec verify_signature(String.t(), Client.t()) ::
+  @spec verify_signature(String.t(), Client.t(), [String.t()]) ::
           {:ok, t()}
           | {:error, :invalid_signature | :no_matching_key | :invalid_client_keys | :invalid_typ}
-  def verify_signature(jwt, %Client{jwks: jwks}) when is_binary(jwt) and is_map(jwks) do
+  def verify_signature(jwt, %Client{jwks: jwks}, allowed_algorithms)
+      when is_binary(jwt) and is_map(jwks) and is_list(allowed_algorithms) do
     case extract_public_keys(jwks) do
       {:ok, []} ->
         {:error, :no_matching_key}
 
       {:ok, public_keys} ->
-        verify_against_keys(jwt, public_keys)
+        verify_against_keys(jwt, public_keys, allowed_algorithms)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  def verify_signature(_jwt, %Client{jwks: _}), do: {:error, :invalid_client_keys}
-  def verify_signature(_jwt, _client), do: {:error, :invalid_client_keys}
+  def verify_signature(_jwt, %Client{jwks: _}, _allowed), do: {:error, :invalid_client_keys}
+  def verify_signature(_jwt, _client, _allowed), do: {:error, :invalid_client_keys}
 
   # ---------------------------------------------------------------------------
   # Private helpers
@@ -164,9 +180,9 @@ defmodule Lockspire.Protocol.Jar do
   # Returns {:error, :invalid_signature} if all keys fail.
   # Returns {:error, :invalid_typ} immediately if the typ header is rejected — this is a
   # definitive rejection, not a "try next key" situation (WR-01 / T-22-01).
-  defp verify_against_keys(jwt, public_keys) do
+  defp verify_against_keys(jwt, public_keys, allowed_algorithms) do
     Enum.reduce_while(public_keys, {:error, :invalid_signature}, fn jwk, _acc ->
-      case verify_with_single_jwk(jwt, jwk) do
+      case verify_with_single_jwk(jwt, jwk, allowed_algorithms) do
         {:ok, _} = ok -> {:halt, ok}
         {:error, :invalid_typ} = err -> {:halt, err}
         {:error, :invalid_signature} -> {:cont, {:error, :invalid_signature}}
@@ -174,9 +190,9 @@ defmodule Lockspire.Protocol.Jar do
     end)
   end
 
-  defp verify_with_single_jwk(jwt, public_jwk) do
+  defp verify_with_single_jwk(jwt, public_jwk, allowed_algorithms) do
     try do
-      case JOSE.JWT.verify_strict(public_jwk, @allowed_algorithms, jwt) do
+      case JOSE.JWT.verify_strict(public_jwk, allowed_algorithms, jwt) do
         {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
           {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
           {_modules, header} = JOSE.JWS.to_map(jws_struct)
