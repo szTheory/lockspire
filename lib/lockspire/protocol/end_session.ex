@@ -6,7 +6,6 @@ defmodule Lockspire.Protocol.EndSession do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.SigningKey
 
-  @allowed_algorithms ["RS256"]
   @public_jwk_members ~w(alg crv e kid key_ops kty n use x x5c x5t x5t#S256 y)
 
   defmodule Error do
@@ -72,6 +71,16 @@ defmodule Lockspire.Protocol.EndSession do
   defp validate_id_token_hint(_params, _request), do: {:ok, nil}
 
   defp verify_id_token_hint(compact_jwt, request) do
+    security_profile =
+      request
+      |> request_opts()
+      |> Keyword.get(:security_profile, %Lockspire.Protocol.SecurityProfile.Resolved{})
+
+    allowed_algorithms =
+      Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(
+        security_profile.effective_profile
+      )
+
     case key_store(request).list_publishable_keys() do
       {:ok, signing_keys} when is_list(signing_keys) ->
         default_error = invalid_request("id_token_hint signature is invalid", :invalid_id_token_hint)
@@ -80,7 +89,7 @@ defmodule Lockspire.Protocol.EndSession do
           case build_public_jwk(key) do
             {:ok, public_jwk} ->
               try do
-                case JOSE.JWT.verify_strict(public_jwk, @allowed_algorithms, compact_jwt) do
+                case JOSE.JWT.verify_strict(public_jwk, allowed_algorithms, compact_jwt) do
                   {true, %JOSE.JWT{} = jwt_struct, _jws} ->
                     {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
                     {:halt, {:ok, claims}}

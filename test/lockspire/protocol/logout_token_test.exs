@@ -60,6 +60,22 @@ defmodule Lockspire.Protocol.LogoutTokenTest do
              })
   end
 
+  test "sign/1 rejects non-compliant signing algorithm under FAPI-effective behavior" do
+    keys = JarTestHelpers.generate_keys()
+
+    assert {:error, :unsupported_signing_algorithm} =
+             LogoutToken.sign(%{
+               issuer: "https://example.test/lockspire",
+               logout_event: logout_event(),
+               delivery: logout_delivery(session_required: true),
+               issued_at: @issued_at,
+               signing_key: signing_key(keys),
+               security_profile: %Lockspire.Protocol.SecurityProfile.Resolved{
+                 effective_profile: :fapi_2_0_security
+               }
+             })
+  end
+
   defp logout_event do
     %LogoutEvent{
       event_id: "evt-123",

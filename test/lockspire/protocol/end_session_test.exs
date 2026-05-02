@@ -60,6 +60,25 @@ defmodule Lockspire.Protocol.EndSessionTest do
       assert error.status == 400
     end
 
+    test "FAPI-effective behavior rejects RS256 id_token_hint" do
+      key = register_signing_key()
+      register_client("client-123")
+
+      # Generate an RS256 token
+      compact_jwt = id_token_hint(key.private_jwk, %{"aud" => "client-123"})
+
+      # Request with FAPI security profile
+      fapi_request =
+        request(%{"id_token_hint" => compact_jwt})
+        |> put_in([:opts, :security_profile], %Lockspire.Protocol.SecurityProfile.Resolved{
+          effective_profile: :fapi_2_0_security
+        })
+
+      assert {:error, %EndSession.Error{} = error} = EndSession.validate(fapi_request)
+      assert error.reason_code == :invalid_id_token_hint
+      assert error.status == 400
+    end
+
     test "missing id_token_hint proceeds with nil sid" do
       assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request(%{}))
       assert is_nil(result.sid)

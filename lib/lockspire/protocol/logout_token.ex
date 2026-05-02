@@ -14,15 +14,26 @@ defmodule Lockspire.Protocol.LogoutToken do
         logout_event: %LogoutEvent{} = logout_event,
         delivery: %LogoutDelivery{} = delivery,
         issued_at: %DateTime{} = issued_at,
-        signing_key: %{kid: kid, alg: "RS256", private_jwk_encrypted: private_jwk}
-      })
+        signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+      } = params)
       when is_binary(issuer) do
-    with {:ok, jwk_map} <- decode_private_jwk(private_jwk),
+    security_profile = Map.get(params, :security_profile, :none)
+    
+    effective_profile = 
+      case security_profile do
+        %Lockspire.Protocol.SecurityProfile.Resolved{effective_profile: profile} -> profile
+        profile when is_atom(profile) -> profile
+      end
+
+    allowed_algs = Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(effective_profile)
+
+    with :ok <- ensure_allowed_alg(alg, allowed_algs),
+         {:ok, jwk_map} <- decode_private_jwk(private_jwk),
          {:ok, claims} <- build_claims(issuer, logout_event, delivery, issued_at),
          {_, compact} <-
            JOSE.JWT.sign(
              JOSE.JWK.from_map(jwk_map),
-             %{"alg" => "RS256", "kid" => kid, "typ" => "logout+jwt"},
+             %{"alg" => alg, "kid" => kid, "typ" => "logout+jwt"},
              claims
            )
            |> JOSE.JWS.compact() do
@@ -33,6 +44,14 @@ defmodule Lockspire.Protocol.LogoutToken do
   end
 
   def sign(_params), do: {:error, :invalid_signing_key}
+
+  defp ensure_allowed_alg(alg, allowed_algs) do
+    if alg in allowed_algs do
+      :ok
+    else
+      {:error, :unsupported_signing_algorithm}
+    end
+  end
 
   defp build_claims(issuer, %LogoutEvent{} = logout_event, %LogoutDelivery{} = delivery, issued_at) do
     subject = normalize_optional_string(logout_event.subject)
