@@ -217,7 +217,7 @@ defmodule Lockspire.Admin.Clients do
       |> maybe_append_errors(validate_scopes_if_present(attrs))
       |> maybe_append_errors(validate_par_policy_if_present(attrs))
       |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
-      |> maybe_append_errors(validate_security_profile_if_present(attrs))
+      |> maybe_append_errors(validate_security_profile_if_present(client, attrs))
 
     case errors do
       [] -> :ok
@@ -303,21 +303,30 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
-  defp validate_security_profile_if_present(attrs) do
+  defp validate_security_profile_if_present(client, attrs) do
     case fetch_mutable_attr(attrs, :security_profile) do
       :error ->
         :ok
 
       {:ok, value} ->
-        case normalize_security_profile(value) do
-          {:ok, _profile} ->
-            :ok
-
+        with {:ok, profile} <- normalize_security_profile(value),
+             :ok <- check_fapi_signing_readiness(client.security_profile, profile) do
+          :ok
+        else
           :error ->
             {:error, [%{field: :security_profile, reason: :invalid_security_profile, detail: value}]}
+
+          {:error, reason} when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+            {:error, [%{field: :security_profile, reason: reason, detail: :fapi_2_0_security}]}
         end
     end
   end
+
+  defp check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
+  defp check_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
+    Repository.validate_fapi_signing_readiness()
+  end
+  defp check_fapi_signing_readiness(_old_profile, _new_profile), do: :ok
 
   defp reject_immutable_changes(attrs) do
     attempted =

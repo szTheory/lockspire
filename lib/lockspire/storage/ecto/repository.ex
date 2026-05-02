@@ -912,6 +912,21 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @spec validate_fapi_signing_readiness() ::
+          :ok | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
+  def validate_fapi_signing_readiness do
+    with {:publishable, {:ok, [_ | _]}} <-
+           {:publishable, list_publishable_keys(security_profile: :fapi_2_0_security)},
+         {:active, {:ok, %SigningKey{}}} <-
+           {:active, fetch_active_signing_key(security_profile: :fapi_2_0_security)} do
+      :ok
+    else
+      {:publishable, {:ok, []}} -> {:error, :missing_compliant_publishable_key}
+      {:active, {:ok, nil}} -> {:error, :missing_compliant_active_key}
+      {_, {:error, reason}} -> {:error, reason}
+    end
+  end
+
   @impl KeyStore
   def fetch_active_signing_key(opts \\ []) when is_list(opts) do
     SigningKeyRecord

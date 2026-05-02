@@ -69,6 +69,11 @@ defmodule Lockspire.Config do
     |> List.wrap()
   end
 
+  @spec security_profile() :: :none | :fapi_2_0_security
+  def security_profile do
+    Application.get_env(@app, :security_profile, :none)
+  end
+
   @spec device_verification_uri() :: String.t()
   def device_verification_uri do
     issuer!()

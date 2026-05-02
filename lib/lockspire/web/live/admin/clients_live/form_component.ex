@@ -8,6 +8,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   attr(:mode, :atom, required: true)
   attr(:client, Client, default: nil)
   attr(:effective_par_policy, :map, default: nil)
+  attr(:effective_security_profile, :map, default: nil)
   attr(:errors, :list, default: [])
 
   def client_form(assigns) do
@@ -165,6 +166,36 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
+        <div :if={@mode == :security_profile}>
+          <label for="client_security_profile">Client security profile override</label>
+          <select id="client_security_profile" name="client[security_profile]">
+            <option value="inherit" selected={@defaults.security_profile == "inherit"}>
+              Inherit from global policy
+            </option>
+            <option
+              value="fapi_2_0_security"
+              selected={@defaults.security_profile == "fapi_2_0_security"}
+            >
+              FAPI 2.0 Security Profile
+            </option>
+            <option value="none" selected={@defaults.security_profile == "none"}>
+              None (Standard OIDC)
+            </option>
+          </select>
+
+          <div :if={@effective_security_profile} class="lockspire-admin-help">
+            <p>
+              <strong>Global policy:</strong> {@effective_security_profile.global_profile}
+            </p>
+            <p>
+              <strong>Effective profile:</strong> {if @effective_security_profile.effective_profile ==
+                                                       :fapi_2_0_security,
+                do: "FAPI 2.0 Security Profile",
+                else: "None (Standard OIDC)"}
+            </p>
+          </div>
+        </div>
+
         <div :if={@mode == :logout_propagation}>
           <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
           <input
@@ -273,6 +304,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     }
   end
 
+  defp defaults_for(:security_profile, %Client{} = client) do
+    %{
+      security_profile: Atom.to_string(client.security_profile)
+    }
+  end
+
   defp defaults_for(:logout_propagation, %Client{} = client) do
     %{
       backchannel_logout_uri: client.backchannel_logout_uri,
@@ -288,6 +325,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp title_for(:redirects), do: "Update redirect URIs"
   defp title_for(:logout_uris), do: "Update post-logout redirect URIs"
   defp title_for(:par_policy), do: "Update PAR policy"
+  defp title_for(:security_profile), do: "Update security profile"
 
   defp subtitle_for(:new), do: "Create a client using the canonical secure registration path."
 
@@ -305,12 +343,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp subtitle_for(:par_policy),
     do: "Override the global PAR requirement for this specific client."
 
+  defp subtitle_for(:security_profile),
+    do: "Override the global security profile requirement for this specific client."
+
   defp button_for(:new), do: "Create client"
   defp button_for(:edit), do: "Save metadata"
   defp button_for(:logout_propagation), do: "Save logout propagation"
   defp button_for(:redirects), do: "Save redirect URIs"
   defp button_for(:logout_uris), do: "Save post-logout redirect URIs"
   defp button_for(:par_policy), do: "Save PAR policy"
+  defp button_for(:security_profile), do: "Save security profile"
 
   defp format_error(%{field: field, reason: reason, detail: detail}) do
     "#{field} #{reason} #{inspect(detail)}"

@@ -48,6 +48,12 @@ defmodule Lockspire.Web.Router do
     )
 
     live(
+      "/admin/clients/:client_id/security-profile",
+      Lockspire.Web.Live.Admin.ClientsLive.Show,
+      :security_profile
+    )
+
+    live(
       "/admin/clients/:client_id/redirects",
       Lockspire.Web.Live.Admin.ClientsLive.Show,
       :redirects

@@ -123,6 +123,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :active,
       :provenance
     ])
+    |> validate_fapi_metadata()
     |> unique_constraint(:client_id)
   end
 
@@ -174,6 +175,22 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_scopes,
       :active
     ])
+    |> validate_fapi_metadata()
+  end
+
+  defp validate_fapi_metadata(changeset) do
+    profile = get_field(changeset, :security_profile)
+    alg = get_field(changeset, :id_token_signed_response_alg)
+
+    if profile == :fapi_2_0_security and alg not in [nil, :ES256] do
+      add_error(
+        changeset,
+        :id_token_signed_response_alg,
+        "is incompatible with FAPI 2.0 security profile"
+      )
+    else
+      changeset
+    end
   end
 
   def to_domain(%__MODULE__{} = record) do

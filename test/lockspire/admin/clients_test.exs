@@ -401,6 +401,19 @@ defmodule Lockspire.Admin.ClientsTest do
   end
 
   test "update_client/2 with security_profile 'fapi_2_0_security' persists and returns :fapi_2_0_security" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "fapi-update-ready",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-update-ready", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{
                security_profile: "fapi_2_0_security",
@@ -411,6 +424,19 @@ defmodule Lockspire.Admin.ClientsTest do
 
     assert {:ok, %Client{} = fetched} = Repository.fetch_client_by_id("admin-client")
     assert fetched.security_profile == :fapi_2_0_security
+  end
+
+  test "update_client/2 rejects security_profile 'fapi_2_0_security' when signing posture is not compliant" do
+    # Do not publish a key for this test
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               security_profile: "fapi_2_0_security",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert Enum.any?(errors, fn err ->
+             err.field == :security_profile and err.reason in [:missing_compliant_active_key, :missing_compliant_publishable_key]
+           end)
   end
 
   test "update_client/2 with security_profile 'bogus' returns error with :invalid_security_profile reason" do

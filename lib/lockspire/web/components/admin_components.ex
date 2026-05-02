@@ -44,6 +44,26 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
+  def policy_nav(assigns) do
+    assigns =
+      assign(assigns, :items, [
+        %{label: "PAR", href: policy_path("/par")},
+        %{label: "Security Profile", href: policy_path("/security-profile")},
+        %{label: "DPoP", href: policy_path("/dpop")},
+        %{label: "DCR", href: policy_path("/dcr")}
+      ])
+
+    ~H"""
+    <nav aria-label="Policy sections" class="lockspire-admin-secondary-nav">
+      <%= for item <- @items do %>
+        <.link href={item.href}>{item.label}</.link>
+      <% end %>
+    </nav>
+    """
+  end
+
+  defp policy_path(path), do: Lockspire.mount_path() <> "/admin/policies" <> path
+
   attr(:value, :any, default: nil)
 
   def timestamp(assigns) do

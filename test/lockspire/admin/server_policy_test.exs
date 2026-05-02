@@ -204,7 +204,20 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   # security_profile admin command tests (Phase 41 Task 3)
 
-  test "put_security_profile/1 persists :fapi_2_0_security and returns updated policy" do
+  test "put_security_profile/1 persists :fapi_2_0_security when signing readiness is met" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "fapi-ready",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-ready", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
     assert {:ok, %DomainServerPolicy{} = policy} =
              ServerPolicy.put_security_profile(:fapi_2_0_security)
 
@@ -214,7 +227,41 @@ defmodule Lockspire.Admin.ServerPolicyTest do
     assert stored.security_profile == :fapi_2_0_security
   end
 
-  test "put_security_profile/1 accepts string form 'none' from LiveView form post" do
+  test "put_security_profile/1 rejects :fapi_2_0_security when active signing key is missing" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "fapi-publishable-only",
+      use: :sig,
+      status: :upcoming,
+      published_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-publishable-only", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert {:error,
+            [
+              %{
+                field: :security_profile,
+                reason: :missing_compliant_active_key,
+                detail: :fapi_2_0_security
+              }
+            ]} = ServerPolicy.put_security_profile(:fapi_2_0_security)
+  end
+
+  test "put_security_profile/1 rejects :fapi_2_0_security when publishable signing key is missing" do
+    assert {:error,
+            [
+              %{
+                field: :security_profile,
+                reason: :missing_compliant_publishable_key,
+                detail: :fapi_2_0_security
+              }
+            ]} = ServerPolicy.put_security_profile(:fapi_2_0_security)
+  end
+
+  test "put_security_profile/1 allows :none even without compliant keys" do
     assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.put_security_profile("none")
 
     assert policy.security_profile == :none
@@ -232,6 +279,19 @@ defmodule Lockspire.Admin.ServerPolicyTest do
   end
 
   test "Lockspire.Admin.put_security_profile/1 is delegated to Admin.ServerPolicy (facade test)" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "fapi-facade",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-facade", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
     assert {:ok, %DomainServerPolicy{} = policy} =
              Lockspire.Admin.put_security_profile(:fapi_2_0_security)
 

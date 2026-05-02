@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.ParPolicy
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
   alias Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent
@@ -25,6 +26,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        form_mode: nil,
        client: nil,
        effective_par_policy: nil,
+       effective_security_profile: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
@@ -74,6 +76,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             actor: %{type: :operator, id: "admin-ui"}
           })
 
+        "security_profile" ->
+          Admin.update_client(socket.assigns.client_id, %{
+            security_profile: params["security_profile"],
+            actor: %{type: :operator, id: "admin-ui"}
+          })
+
         "logout_propagation" ->
           Admin.update_client(
             socket.assigns.client_id,
@@ -88,6 +96,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
          assign(socket,
            client: client,
            effective_par_policy: resolve_effective_par_policy(client),
+           effective_security_profile: resolve_effective_security_profile(client),
            form_errors: []
          )}
 
@@ -186,6 +195,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Type: <code>{@client.client_type}</code></p>
         <p>Token auth: <code>{@client.token_endpoint_auth_method}</code></p>
         <p>PKCE required: <code>{to_string(@client.pkce_required)}</code></p>
+        <p>Global security profile: <code>{security_profile_label(@effective_security_profile.global_profile)}</code></p>
+        <p>Client security override: <code>{security_profile_label(@client.security_profile)}</code></p>
+        <p>Effective security profile: <strong>{security_verdict_for(@effective_security_profile)}</strong></p>
+        <div
+          :if={mixed_mode_override?(@effective_security_profile)}
+          class="lockspire-admin-warning"
+          role="alert"
+        >
+          <strong>Warning:</strong> This client overrides the global FAPI 2.0 Security Profile
+          to None. FAPI 2.0 boundary checks (PAR, DPoP) will NOT be enforced for this client.
+          This is an intentional mixed-mode bypass. Confirm the client genuinely needs standard
+          OIDC.
+        </div>
         <p>Global PAR policy: <code>{par_policy_label(@effective_par_policy.global_policy)}</code></p>
         <p>Client PAR override: <code>{par_policy_label(@client.par_policy)}</code></p>
         <p>Effective PAR requirement: <strong>{verdict_for(@effective_par_policy)}</strong></p>
@@ -232,6 +254,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           <.link patch={show_path(@client.client_id, :logout_propagation)}>
             Edit logout propagation
           </.link>
+          <.link patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
           <.link patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
           <.link patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
           <.link patch={show_path(@client.client_id, :logout_uris)}>
@@ -255,6 +278,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           mode={@form_mode}
           client={@client}
           effective_par_policy={@effective_par_policy}
+          effective_security_profile={@effective_security_profile}
           errors={@form_errors}
         />
       </AdminComponents.section_card>
@@ -330,11 +354,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         assign(socket,
           client_id: client_id,
           client: client,
-          effective_par_policy: resolve_effective_par_policy(client)
+          effective_par_policy: resolve_effective_par_policy(client),
+          effective_security_profile: resolve_effective_security_profile(client)
         )
 
       {:error, _reason} ->
-        assign(socket, client_id: client_id, client: nil, effective_par_policy: nil)
+        assign(socket,
+          client_id: client_id,
+          client: nil,
+          effective_par_policy: nil,
+          effective_security_profile: nil
+        )
     end
   end
 
@@ -397,6 +427,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               :logout_uris,
               :rotate_secret,
               :par_policy,
+              :security_profile,
               :rotate_registration_access_token
             ],
        do: action
@@ -404,13 +435,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp normalize_action(_action), do: :show
 
   defp resolve_form_mode(:edit, %{"workflow" => "logout-propagation"}), do: :logout_propagation
-  defp resolve_form_mode(action, _params) when action in [:edit, :redirects, :logout_uris, :par_policy], do: action
+
+  defp resolve_form_mode(action, _params)
+       when action in [:edit, :redirects, :logout_uris, :par_policy, :security_profile],
+       do: action
+
   defp resolve_form_mode(_action, _params), do: nil
 
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
+
   defp show_path(client_id, :logout_propagation),
     do: show_path(client_id, :edit) <> "?workflow=logout-propagation"
+
+  defp show_path(client_id, :security_profile),
+    do: show_path(client_id, :show) <> "/security-profile"
+
   defp show_path(client_id, :par_policy), do: show_path(client_id, :show) <> "/par-policy"
   defp show_path(client_id, :redirects), do: show_path(client_id, :show) <> "/redirects"
   defp show_path(client_id, :logout_uris), do: show_path(client_id, :show) <> "/logout-uris"
@@ -448,12 +488,40 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     ParPolicy.resolve_effective_policy(server_policy, client)
   end
 
+  defp resolve_effective_security_profile(%Client{} = client) do
+    server_policy =
+      case Admin.get_server_policy() do
+        {:ok, %ServerPolicy{} = policy} -> policy
+        {:error, _reason} -> %ServerPolicy{}
+      end
+
+    SecurityProfile.resolve_effective_profile(server_policy, client)
+  end
+
   defp par_policy_label(policy) when policy in [:inherit, :required, :optional] do
     Atom.to_string(policy)
   end
 
+  defp security_profile_label(profile) when profile in [:inherit, :fapi_2_0_security, :none] do
+    Atom.to_string(profile)
+  end
+
   defp verdict_for(%{par_required?: true}), do: "Required"
   defp verdict_for(%{par_required?: false}), do: "Not required"
+
+  defp security_verdict_for(%{effective_profile: :fapi_2_0_security}),
+    do: "FAPI 2.0 Security Profile"
+
+  defp security_verdict_for(%{effective_profile: :none}), do: "None (Standard OIDC)"
+
+  defp mixed_mode_override?(%{
+         global_profile: :fapi_2_0_security,
+         effective_profile: :none,
+         client_profile: :none
+       }),
+       do: true
+
+  defp mixed_mode_override?(_resolved), do: false
 
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)

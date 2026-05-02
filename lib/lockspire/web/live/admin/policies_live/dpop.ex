@@ -54,6 +54,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.policy_nav />
+
       <AdminComponents.section_card
         title="Global DPoP policy"
         subtitle={"Current mode is #{@policy.dpop_policy}. This governs all clients that inherit their policy."}

@@ -243,4 +243,89 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     refute changeset.valid?
     assert Keyword.has_key?(changeset.errors, :security_profile)
   end
+
+  test "changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_security is enabled" do
+    client = %Client{
+      client_id: "fapi_rs256_client",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_security,
+      id_token_signed_response_alg: :RS256
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
+
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)
+  end
+
+  test "update_changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_security is enabled" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "update_fapi_rs256_client",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_security,
+      id_token_signed_response_alg: :ES256
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    changeset =
+      ClientRecord.update_changeset(inserted, %{
+        id_token_signed_response_alg: "RS256"
+      })
+
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)
+  end
+
+  test "update_changeset/2 allows RS256 id_token_signed_response_alg when security_profile is not fapi_2_0_security" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "update_none_rs256_client",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :none,
+      id_token_signed_response_alg: :ES256
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    changeset =
+      ClientRecord.update_changeset(inserted, %{
+        id_token_signed_response_alg: "RS256"
+      })
+
+    assert changeset.valid?
+  end
 end

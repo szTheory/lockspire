@@ -897,6 +897,60 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert sig_key.kid == "sig_active_iso"
   end
 
+  test "validate_fapi_signing_readiness/0 fails when there are no keys" do
+    assert {:error, :missing_compliant_publishable_key} = Repository.validate_fapi_signing_readiness()
+  end
+
+  test "validate_fapi_signing_readiness/0 fails when only publishable ES256 key exists but no active" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%SigningKey{
+      kid: "pub-only",
+      use: :sig,
+      status: :upcoming,
+      published_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "pub-only", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert {:error, :missing_compliant_active_key} = Repository.validate_fapi_signing_readiness()
+  end
+
+  test "validate_fapi_signing_readiness/0 fails when active key is RS256 (not FAPI compliant)" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%SigningKey{
+      kid: "active-rs256",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "RSA", "kid" => "active-rs256", "alg" => "RS256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :RSA,
+      alg: "RS256"
+    })
+
+    assert {:error, :missing_compliant_publishable_key} = Repository.validate_fapi_signing_readiness()
+  end
+
+  test "validate_fapi_signing_readiness/0 succeeds when there is an active compliant key" do
+    now = DateTime.utc_now()
+    Repository.publish_key(%SigningKey{
+      kid: "active-es256",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "active-es256", "alg" => "ES256", "use" => "sig"},
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert :ok = Repository.validate_fapi_signing_readiness()
+  end
+
   defp errors_on(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
       Regex.replace(~r"%{(\w+)}", message, fn _, key ->

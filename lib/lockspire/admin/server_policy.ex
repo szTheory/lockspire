@@ -54,12 +54,35 @@ defmodule Lockspire.Admin.ServerPolicy do
   @spec put_security_profile(atom() | String.t()) ::
           {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
   def put_security_profile(profile) do
-    with {:ok, normalized_profile} <- normalize_security_profile(profile) do
+    with {:ok, normalized_profile} <- normalize_security_profile(profile),
+         :ok <- validate_fapi_signing_readiness(normalized_profile) do
       Repository.update_server_policy(fn %ServerPolicy{} = current ->
         %ServerPolicy{current | security_profile: normalized_profile}
       end)
     end
   end
+
+  defp validate_fapi_signing_readiness(:fapi_2_0_security) do
+    case Repository.validate_fapi_signing_readiness() do
+      :ok ->
+        :ok
+
+      {:error, reason} when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+        {:error,
+         [
+           %{
+             field: :security_profile,
+             reason: reason,
+             detail: :fapi_2_0_security
+           }
+         ]}
+
+      {:error, _term} = err ->
+        err
+    end
+  end
+
+  defp validate_fapi_signing_readiness(_profile), do: :ok
 
   @doc """
   Returns the current DCR policy view as a `%Domain.ServerPolicy{}` (the same struct
