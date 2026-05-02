@@ -33,11 +33,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FAPI-01 | Phase 41 | complete (Plan 41-01) |
-| FAPI-02 | Phase 41 | complete (Plan 41-02) |
-| FAPI-03 | Phase 41 | complete (Plan 41-02) |
+| FAPI-01 | Phase 41 | complete (Plans 41-01, 41-03, 41-04) |
+| FAPI-02 | Phase 41 | complete (Plans 41-02, 41-04) |
+| FAPI-03 | Phase 41 | complete (Plans 41-02, 41-04) |
 | FAPI-04 | Phase 42 | open |
-| FAPI-05 | Phase 42 | open |
+| FAPI-05 | Phase 43 | open |
 | FAPI-06 | Phase 43 | open |
 
 **Coverage:**
@@ -47,4 +47,4 @@
 
 ---
 *Requirements defined: 2026-04-29*
-*Last updated: 2026-04-29 after v1.10 FAPI 2.0 definition*
+*Last updated: 2026-05-01 after Phase 42 revision iteration 2 traceability sync*
