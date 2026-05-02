@@ -101,7 +101,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
 
     assert body["code_challenge_methods_supported"] == ["S256"]
     assert body["subject_types_supported"] == ["public"]
-    assert body["id_token_signing_alg_values_supported"] == ["RS256"]
+    assert body["id_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
 
     refute Map.has_key?(body, "registration_endpoint")
     refute Map.has_key?(body, "request_parameter_supported")

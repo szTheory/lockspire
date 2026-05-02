@@ -29,7 +29,6 @@ defmodule Lockspire.Protocol.Discovery do
   @token_endpoint_auth_methods_supported ["none", "client_secret_basic", "client_secret_post"]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
-  @id_token_signing_alg_values_supported ["RS256"]
 
   @doc """
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
@@ -87,11 +86,21 @@ defmodule Lockspire.Protocol.Discovery do
         token_endpoint_auth_methods_supported(endpoint_metadata),
       "code_challenge_methods_supported" => code_challenge_methods_supported(endpoint_metadata),
       "subject_types_supported" => @subject_types_supported,
-      "id_token_signing_alg_values_supported" => @id_token_signing_alg_values_supported
+      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
     }
     |> Map.merge(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> put_bcl_fcl_metadata()
+  end
+
+  defp id_token_signing_alg_values_supported do
+    profile =
+      case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+        {:ok, policy} -> policy.security_profile
+        _ -> :none
+      end
+
+    Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(profile)
   end
 
   defp mounted_route_paths do

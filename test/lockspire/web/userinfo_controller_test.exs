@@ -254,6 +254,43 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     assert challenge =~ "algs=\""
   end
 
+  describe "DPoP WWW-Authenticate dynamic algorithm filtering" do
+    setup do
+      # Ensure clean policy state
+      {:ok, policy} = Lockspire.Storage.Ecto.Repository.get_server_policy()
+      Lockspire.Storage.Ecto.Repository.put_server_policy(%{policy | security_profile: :none})
+      :ok
+    end
+
+    test "advertises broader legacy list when no profile is active", %{dpop_access_token: access_token} do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ "DPoP realm=\"Lockspire Userinfo\""
+      assert challenge =~ "algs=\"RS256 ES256 PS256 EdDSA\""
+    end
+
+    test "advertises FAPI-effective algs when FAPI 2.0 profile is active", %{dpop_access_token: access_token} do
+      Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{security_profile: :fapi_2_0_security})
+
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ "DPoP realm=\"Lockspire Userinfo\""
+      assert challenge =~ "algs=\"ES256 PS256 EdDSA\""
+    end
+  end
+
   defp dpop_proof_fixture(access_token, now, claim_overrides \\ %{}, key_seed \\ :default) do
     keys =
       case key_seed do

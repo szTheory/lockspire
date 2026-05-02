@@ -152,6 +152,26 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
   end
 
+  describe "openid_configuration/0 — id_token_signing_alg_values_supported truth" do
+    test "publishes the legacy broad list when the server profile is :none" do
+      Repository.update_server_policy(fn policy ->
+        %{policy | security_profile: :none}
+      end)
+
+      config = Discovery.openid_configuration()
+      assert config["id_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
+    end
+
+    test "publishes the restricted list when the server profile is :fapi_2_0_security" do
+      Repository.update_server_policy(fn policy ->
+        %{policy | security_profile: :fapi_2_0_security}
+      end)
+
+      config = Discovery.openid_configuration()
+      assert config["id_token_signing_alg_values_supported"] == ["ES256", "PS256"]
+    end
+  end
+
   describe "truthful discovery for registration_endpoint" do
     test "when registration_policy is :disabled, endpoint is hidden and router returns 404" do
       Repository.update_server_policy(fn policy -> %{policy | registration_policy: :disabled} end)

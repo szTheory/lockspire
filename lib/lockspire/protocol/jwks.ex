@@ -11,7 +11,13 @@ defmodule Lockspire.Protocol.Jwks do
   def public_jwk_set(opts \\ []) do
     key_store = Keyword.get(opts, :key_store, Lockspire.Storage.Ecto.Repository)
 
-    with {:ok, keys} <- key_store.list_publishable_keys() do
+    security_profile =
+      case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+        {:ok, policy} -> policy.security_profile
+        _ -> :none
+      end
+
+    with {:ok, keys} <- key_store.list_publishable_keys(security_profile: security_profile) do
       {:ok, %{"keys" => Enum.map(keys, &to_public_jwk/1)}}
     end
   end

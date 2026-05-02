@@ -114,4 +114,22 @@ defmodule Lockspire.Web.JwksControllerTest do
 
     refute Enum.any?(keys, &Map.has_key?(&1, "d"))
   end
+
+  test "GET /jwks filters out RS256 keys when server profile is fapi_2_0_security" do
+    Repository.update_server_policy(fn policy ->
+      %{policy | security_profile: :fapi_2_0_security}
+    end)
+
+    conn =
+      build_conn(:get, "/jwks")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+    body = Jason.decode!(conn.resp_body)
+    assert %{"keys" => keys} = body
+    
+    # All inserted keys are RS256, they should all be filtered out
+    assert keys == []
+  end
 end

@@ -75,7 +75,13 @@ defmodule Lockspire.Web.UserinfoController do
          :future_iat,
          :missing_jti
        ] do
-    algorithms = Enum.join(Lockspire.Protocol.DPoP.signing_alg_values_supported(), " ")
+    profile =
+      case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+        {:ok, policy} -> policy.security_profile
+        _ -> :none
+      end
+
+    algorithms = Enum.join(Lockspire.Protocol.DPoP.signing_alg_values_supported(profile), " ")
     ~s(DPoP realm="Lockspire Userinfo", error="invalid_token", algs="#{algorithms}")
   end
 
