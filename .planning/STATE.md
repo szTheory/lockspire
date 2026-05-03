@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
-status: completed
-stopped_at: Completed 43-05-PLAN.md
-last_updated: "2026-05-03T12:45:58Z"
+status: in_progress
+stopped_at: Completed 43-02-discovery-keys-PLAN.md
+last_updated: "2026-05-03T12:46:31Z"
 last_activity: 2026-05-03
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 18
-  completed_plans: 14
-  percent: 78
+  completed_plans: 15
+  percent: 83
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 42 — fapi-2-0-advanced-cryptography-and-oidf-test-suite-prep
+**Current focus:** Phase 43 — end-to-end-fapi-2-0-validation-and-release-posture
 
 ## Current Position
 
-Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — PLANNING
-Plan: 0 of 0
-Status: Phase complete — moving to next phase
-Last activity: 2026-05-02
+Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — EXECUTION
+Plan: 3 of 7
+Status: In progress
+Last activity: 2026-05-03
 
 ## Performance Metrics
 
-- Phases completed: 1/3
-- Plans completed: 7/11
+- Phases completed: 2/3
+- Plans completed: 15/18
 
 ## Accumulated Context
 
@@ -57,6 +57,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - [Phase 43]: Truth-in-docs FAPI language is additive and pinned verbatim across SECURITY, README, and supported-surface docs. — Plan 07 will assert the exact strings, so public release posture must share one locked vocabulary.
 - [Phase 43 Plan 01]: RFC 9207 `iss` emission is unconditional across AuthorizationFlow success/denial and AuthorizeController redirect-safe error redirects.
 - [Phase 43 Plan 01]: Authorization-response `iss` is sourced from `Lockspire.Config.issuer!/0` in both redirect emission seams to keep runtime truth aligned.
+- [Phase 43 Plan 02]: Discovery publishes `require_pushed_authorization_requests` from the global server policy only; per-client FAPI overrides do not change server-wide metadata.
+- [Phase 43 Plan 02]: Discovery metadata now shares `global_security_profile/0` so FAPI algorithm publication and PAR-required metadata read the same policy source.
 
 ### Blockers/Concerns
 
@@ -66,11 +68,11 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 ## Session Continuity
 
-**Next action:** Plan Phase 43
+**Next action:** Execute remaining Phase 43 plans
 
 **Resume file:** None
 
-**Stopped at:** Completed 43-05-PLAN.md
+**Stopped at:** Completed 43-02-discovery-keys-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
