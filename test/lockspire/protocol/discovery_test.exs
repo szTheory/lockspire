@@ -172,6 +172,22 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
   end
 
+  describe "openid_configuration/0 — FAPI 2.0 discovery truth" do
+    test "publishes authorization_response_iss_parameter_supported unconditionally" do
+      metadata = Discovery.openid_configuration()
+
+      assert metadata["authorization_response_iss_parameter_supported"] == true
+    end
+
+    test "does NOT publish mTLS, JARM, or signed_metadata keys (D-09)" do
+      metadata = Discovery.openid_configuration()
+
+      refute Map.has_key?(metadata, "tls_client_certificate_bound_access_tokens")
+      refute Map.has_key?(metadata, "authorization_signing_alg_values_supported")
+      refute Map.has_key?(metadata, "signed_metadata")
+    end
+  end
+
   describe "truthful discovery for registration_endpoint" do
     test "when registration_policy is :disabled, endpoint is hidden and router returns 404" do
       Repository.update_server_policy(fn policy -> %{policy | registration_policy: :disabled} end)
