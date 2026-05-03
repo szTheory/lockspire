@@ -18,6 +18,11 @@ defmodule Lockspire.InstallGeneratorTest do
         install_fixture!()
       end)
 
+    # Sanity check: total templates rendered. Update this constant if a future plan
+    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the FAPI
+    # smoke template makes it 12.
+    assert length(Lockspire.Generators.Templates.all()) == 12
+
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "config :lockspire"
 
@@ -147,6 +152,33 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) ==
              File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
 
+    fapi_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs")
+
+    assert File.exists?(fapi_smoke_path),
+           "Expected FAPI smoke E2E test to be rendered to host fixture"
+
+    fapi_smoke = File.read!(fapi_smoke_path)
+
+    assert fapi_smoke =~ "defmodule GeneratedHostApp.Lockspire.FapiSmokeE2ETest"
+    assert fapi_smoke =~ "Lockspire.Web.Router"
+    assert fapi_smoke =~ "Lockspire.Clients.register_client"
+    assert fapi_smoke =~ "Lockspire.issuer()"
+    assert fapi_smoke =~ "FAPI 2.0"
+    assert fapi_smoke =~ "redirect_uri must match a registered URI"
+
+    refute fapi_smoke =~ "Lockspire.TestRepo"
+    refute fapi_smoke =~ "Lockspire.Storage"
+    refute fapi_smoke =~ "Lockspire.Domain"
+    refute fapi_smoke =~ "Lockspire.Security"
+    refute fapi_smoke =~ "Application.compile_env"
+
+    :code.purge(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
+    :code.delete(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
+
+    assert [{GeneratedHostApp.Lockspire.FapiSmokeE2ETest, _binary} | _rest] =
+             Code.compile_string(fapi_smoke, fapi_smoke_path)
+
     assert output =~ "Lockspire canonical onboarding next steps"
     assert output =~ "Import `config/lockspire.exs`"
     assert output =~ "auth-code + PKCE flow"
@@ -238,6 +270,7 @@ defmodule Lockspire.InstallGeneratorTest do
   defp reset_fixture! do
     File.rm_rf!(Path.join(@fixture_root, "config"))
     File.rm_rf!(Path.join(@fixture_root, "lib"))
+    File.rm_rf!(Path.join(@fixture_root, "test"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
   end
