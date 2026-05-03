@@ -34,6 +34,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   import Phoenix.ConnTest, only: [build_conn: 3]
   import Plug.Conn
 
+  alias Lockspire.Clients
   alias Lockspire.Protocol.Discovery
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
@@ -186,6 +187,46 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       refute Map.has_key?(metadata, "authorization_signing_alg_values_supported")
       refute Map.has_key?(metadata, "signed_metadata")
     end
+
+    test "publishes require_pushed_authorization_requests when global profile is :fapi_2_0_security" do
+      put_server_security_profile!(:fapi_2_0_security)
+
+      metadata = Discovery.openid_configuration()
+
+      assert metadata["require_pushed_authorization_requests"] == true
+    end
+
+    test "omits require_pushed_authorization_requests key when global profile is :none" do
+      put_server_security_profile!(:none)
+
+      metadata = Discovery.openid_configuration()
+
+      refute Map.has_key?(metadata, "require_pushed_authorization_requests")
+    end
+
+    test "per-client :fapi_2_0_security override does NOT flip discovery PAR key when global is :none" do
+      put_server_security_profile!(:none)
+
+      {:ok, %{client: client}} =
+        Clients.register_client(%{
+          name: "discovery per-client override fixture",
+          client_type: :confidential,
+          redirect_uris: ["https://override.example.com/cb"],
+          allowed_scopes: ["profile"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic
+        })
+
+      {:ok, _updated} =
+        Repository.update_client(client, %{
+          security_profile: :fapi_2_0_security
+        })
+
+      metadata = Discovery.openid_configuration()
+
+      refute Map.has_key?(metadata, "require_pushed_authorization_requests")
+    end
   end
 
   describe "truthful discovery for registration_endpoint" do
@@ -234,5 +275,10 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       # Should return 400 (bad request due to missing body), not 404
       assert conn.status == 400
     end
+  end
+
+  defp put_server_security_profile!(profile) do
+    {:ok, policy} = Repository.get_server_policy()
+    Repository.put_server_policy(%{policy | security_profile: profile})
   end
 end
