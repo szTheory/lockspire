@@ -26,6 +26,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
   import Plug.Conn
 
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Observability
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
 
@@ -78,6 +79,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
     if present?(request_uri) do
       conn
     else
+      emit_fapi_failure(conn, :missing_request_uri)
       reject_authorize(conn)
     end
   end
@@ -88,6 +90,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
     if dpop_present?(dpop_header) do
       conn
     else
+      emit_fapi_failure(conn, :missing_dpop_proof)
       reject_token(conn)
     end
   end
@@ -100,8 +103,21 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
     if dpop_present?(dpop_header) and auth_scheme_is_dpop? do
       conn
     else
+      emit_fapi_failure(conn, :missing_dpop_proof_or_auth_scheme)
       reject_userinfo(conn)
     end
+  end
+
+  defp emit_fapi_failure(conn, reason) do
+    client_id = Map.get(conn.params, "client_id")
+
+    metadata = %{
+      client_id: client_id,
+      reason: reason,
+      path_info: conn.path_info
+    }
+
+    Observability.emit(:fapi20, :failed, %{}, metadata)
   end
 
   # ---------------------------------------------------------------------------
