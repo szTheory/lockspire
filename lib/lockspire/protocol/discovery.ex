@@ -92,16 +92,18 @@ defmodule Lockspire.Protocol.Discovery do
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> put_bcl_fcl_metadata()
     |> put_iss_parameter_metadata()
+    |> maybe_put_par_required_metadata()
   end
 
   defp id_token_signing_alg_values_supported do
-    profile =
-      case Lockspire.Storage.Ecto.Repository.get_server_policy() do
-        {:ok, policy} -> policy.security_profile
-        _ -> :none
-      end
+    Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(global_security_profile())
+  end
 
-    Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(profile)
+  defp global_security_profile do
+    case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+      {:ok, policy} -> policy.security_profile
+      _ -> :none
+    end
   end
 
   defp mounted_route_paths do
@@ -194,6 +196,14 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp put_iss_parameter_metadata(metadata) do
     Map.put(metadata, "authorization_response_iss_parameter_supported", true)
+  end
+
+  defp maybe_put_par_required_metadata(metadata) do
+    if global_security_profile() == :fapi_2_0_security do
+      Map.put(metadata, "require_pushed_authorization_requests", true)
+    else
+      metadata
+    end
   end
 
   defp issuer_url(issuer, path) do
