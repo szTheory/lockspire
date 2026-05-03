@@ -38,6 +38,9 @@ Lockspire's supported security surface is limited to the embedded OAuth/OIDC pro
 - refresh token rotation
 - generator-backed Phoenix install flow
 - operator workflows for clients, consents, tokens, keys, and PAR policies
+- FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens at /token and /userinfo, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
+- RFC 9207 `iss` parameter on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
+- Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` (always true) and `require_pushed_authorization_requests` (true only when the global server policy is `:fapi_2_0_security`)
 
 Unsupported or out-of-scope surfaces include:
 
@@ -59,5 +62,16 @@ Unsupported or out-of-scope surfaces include:
 - refresh-token family revocation on reuse
 - no implicit flow
 - no `alg=none`
+
+## FAPI 2.0 posture
+
+Lockspire ships the FAPI 2.0 Security Profile enforcement stack listed above and pins the
+canonical OIDF FAPI 2.0 plan (`fapi2-security-profile-final-test-plan`) plus its variant
+axes in `scripts/conformance/fapi2-plan.json` and `docs/maintainer-conformance.md`.
+
+Lockspire does NOT claim:
+
+- external OIDF FAPI 2.0 conformance suite certification (the harness is wired and pinned, but the live Docker run remains a manual maintainer step and is not a CI pass-gate)
+- mTLS client authentication or mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism; mTLS is permanently out of scope)
 
 This file does not broaden the public preview contract. For the full supported and out-of-scope surface, see `docs/supported-surface.md`.
