@@ -26,10 +26,10 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: unassigned
-Plan: unassigned
-Status: Idle — ready for next milestone
-Last activity: 2026-05-03 — Archived milestone v1.10
+Phase: S02-automated-token-and-nonce-pruning
+Plan: 01
+Status: Completed
+Last activity: 2024-05-03 — Completed S02-01-PLAN.md
 
 ## Performance Metrics
 
@@ -39,6 +39,9 @@ Last activity: 2026-05-03 — Archived milestone v1.10
 ## Accumulated Context
 
 ### Decisions
+
+- **S02-01**: Configured pruning interval via `pruner_schedule/0` defaulting to `@hourly`.
+- **S02-01**: Implemented chunked `LIMIT 1000` deletion to prevent table lock escalation during pruning.
 
 See `PROJECT.md` Key Decisions and archived milestones.
 
@@ -55,7 +58,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Milestone v1.10 complete
+**Stopped at:** Completed S02-01-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
