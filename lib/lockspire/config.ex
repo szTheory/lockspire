@@ -109,6 +109,11 @@ defmodule Lockspire.Config do
     Application.get_env(@app, :oban, [])
   end
 
+  @spec pruner_schedule() :: String.t() | false
+  def pruner_schedule do
+    Application.get_env(@app, :pruner_schedule, "@hourly")
+  end
+
   defp fetch_required!(key) do
     Policy.fetch_required_config!(key, Application.get_env(@app, key))
   end

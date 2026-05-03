@@ -14,7 +14,7 @@ defmodule Lockspire.Oban do
       |> Application.get_env(:oban, [])
       |> Keyword.merge(name: __MODULE__)
       |> Keyword.put_new(:repo, repo!())
-      |> Keyword.put_new(:plugins, false)
+      |> apply_plugins()
       |> Keyword.put_new(:queues, @default_queues)
       |> maybe_put_testing_mode()
 
@@ -49,5 +49,21 @@ defmodule Lockspire.Oban do
     else
       config
     end
+  end
+
+  defp apply_plugins(config) do
+    base_plugins = Keyword.get(config, :plugins, false)
+
+    plugins =
+      case Lockspire.Config.pruner_schedule() do
+        schedule when is_binary(schedule) and schedule != "" ->
+          base_list = if base_plugins == false, do: [], else: List.wrap(base_plugins)
+          base_list ++ [{Oban.Plugins.Cron, crontab: [{schedule, Lockspire.Workers.Pruner}]}]
+
+        _ ->
+          base_plugins
+      end
+
+    Keyword.put(config, :plugins, plugins)
   end
 end
