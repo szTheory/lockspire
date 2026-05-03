@@ -47,10 +47,10 @@ defmodule Lockspire.ClientsTest do
 
     client_id = client.client_id
 
-    assert_received {:telemetry_event, [:lockspire, :client_registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_succeeded],
                      %{client_id: ^client_id}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :client_registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :audit, :client, :registration_succeeded],
                      %{client_id: ^client_id}}
 
     detach_events(events)
@@ -71,7 +71,7 @@ defmodule Lockspire.ClientsTest do
     assert Enum.any?(errors, &(&1.reason == :invalid_redirect_uri))
     assert Enum.any?(errors, &(&1.reason == :invalid_scope))
 
-    assert_received {:telemetry_event, [:lockspire, :client_registration_rejected],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_rejected],
                      %{reason_codes: reason_codes}}
 
     assert :invalid_redirect_uri in reason_codes
@@ -127,9 +127,9 @@ defmodule Lockspire.ClientsTest do
     handler_id = "clients-test-#{System.unique_integer([:positive])}"
 
     events = [
-      [:lockspire, :client_registration_succeeded],
-      [:lockspire, :audit, :client_registration_succeeded],
-      [:lockspire, :client_registration_rejected]
+      [:lockspire, :client, :registration_succeeded],
+      [:lockspire, :audit, :client, :registration_succeeded],
+      [:lockspire, :client, :registration_rejected]
     ]
 
     :ok =

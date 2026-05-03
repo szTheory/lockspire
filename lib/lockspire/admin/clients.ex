@@ -77,7 +77,7 @@ defmodule Lockspire.Admin.Clients do
            end
          ) do
       {:ok, %RegistrationResult{client: client} = result} ->
-        emit(:client_created, client, actor, %{
+        emit(:client, :created, client, actor, %{
           client_type: client.client_type,
           token_endpoint_auth_method: client.token_endpoint_auth_method
         })
@@ -102,7 +102,7 @@ defmodule Lockspire.Admin.Clients do
 
     case Repository.transact_with_audit(audit_event, fn -> Repository.register_client(client) end) do
       {:ok, %Client{} = persisted} ->
-        Observability.emit(:dcr_client_created, %{}, %{
+        Observability.emit(:dcr, :client_created, %{}, %{
           actor_type: actor[:type],
           actor_id: actor[:id],
           client_id: persisted.client_id,
@@ -157,7 +157,7 @@ defmodule Lockspire.Admin.Clients do
 
       case rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
         {:ok, %Client{} = updated_client} ->
-          emit(:client_secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
+          emit(:client, :secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
           {:ok, %{client: updated_client, client_secret: plaintext_secret}}
 
         {:error, reason} ->
@@ -185,7 +185,7 @@ defmodule Lockspire.Admin.Clients do
     with {:ok, %Client{} = client} <- get_client(client_id) do
       case disable_client_with_audit(client, disabled_at, disabled_by, actor) do
         {:ok, %Client{} = updated_client} ->
-          emit(:client_disabled, updated_client, actor, %{disabled_at: disabled_at})
+          emit(:client, :disabled, updated_client, actor, %{disabled_at: disabled_at})
           {:ok, updated_client}
 
         {:error, reason} ->
@@ -627,15 +627,16 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
-  defp emit(event, %Client{} = client, actor, metadata) do
+  defp emit(entity, action, %Client{} = client, actor, metadata) do
     Observability.emit(
-      event,
+      entity,
+      action,
       %{},
       %{
         actor_type: actor[:type],
         actor_id: actor[:id],
         client_id: client.client_id,
-        reason_code: event
+        reason_code: action
       }
       |> Map.merge(metadata)
     )

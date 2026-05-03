@@ -32,12 +32,12 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     :telemetry.attach_many(
       "authorization-flow-test-handler",
       [
-        [:lockspire, :consent_approved],
-        [:lockspire, :consent_denied],
-        [:lockspire, :authorization_completed],
-        [:lockspire, :audit, :consent_approved],
-        [:lockspire, :audit, :consent_denied],
-        [:lockspire, :audit, :authorization_completed]
+        [:lockspire, :consent, :approved],
+        [:lockspire, :consent, :denied],
+        [:lockspire, :authorization, :completed],
+        [:lockspire, :audit, :consent, :approved],
+        [:lockspire, :audit, :consent, :denied],
+        [:lockspire, :audit, :authorization, :completed]
       ],
       fn event, _measurements, metadata, agent ->
         Agent.update(agent, fn current -> [{event, metadata} | current] end)
@@ -630,19 +630,19 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     recorded = recorded_events(events)
 
-    assert {[:lockspire, :consent_approved], %{reason_code: :consent_approved}} =
+    assert {[:lockspire, :consent, :approved], %{reason_code: :consent_approved}} =
              Enum.find(recorded, fn {event, _metadata} ->
-               event == [:lockspire, :consent_approved]
+               event == [:lockspire, :consent, :approved]
              end)
 
-    assert {[:lockspire, :consent_denied], %{reason_code: :access_denied}} =
+    assert {[:lockspire, :consent, :denied], %{reason_code: :access_denied}} =
              Enum.find(recorded, fn {event, _metadata} ->
-               event == [:lockspire, :consent_denied]
+               event == [:lockspire, :consent, :denied]
              end)
 
-    assert {[:lockspire, :authorization_completed], %{reason_code: :consent_reused}} =
+    assert {[:lockspire, :authorization, :completed], %{reason_code: :consent_reused}} =
              Enum.find(recorded, fn {event, metadata} ->
-               event == [:lockspire, :authorization_completed] and
+               event == [:lockspire, :authorization, :completed] and
                  metadata[:reason_code] == :consent_reused
              end)
   end

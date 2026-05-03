@@ -79,8 +79,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
       case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
         {:ok, {completed, redirect_uri}} ->
-          emit(:consent_approved, completed, subject_id, %{reason_code: :consent_approved})
-          emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_approved})
+          emit(:consent, :approved, completed, subject_id, %{reason_code: :consent_approved})
+          emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_approved})
           {:approved, redirect_uri}
 
         {:error, :invalid_state} ->
@@ -104,7 +104,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
       case deny_with_audit(interaction_id, audit_event, opts) do
         {:ok, %Interaction{} = denied} ->
-          emit(:consent_denied, denied, subject_id, %{reason_code: :access_denied})
+          emit(:consent, :denied, denied, subject_id, %{reason_code: :access_denied})
           {:denied, denial_redirect(interaction)}
 
         {:error, :invalid_state} ->
@@ -118,8 +118,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp persist_login_required(%Interaction{} = interaction, opts) do
     with {:ok, persisted} <- interaction_store(opts).put_interaction(interaction) do
-      emit(:interaction_started, persisted, nil)
-      emit(:login_required, persisted, nil)
+      emit(:interaction, :started, persisted, nil)
+      emit(:interaction, :login_required, persisted, nil)
       {:login_required, persisted}
     end
   end
@@ -152,8 +152,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         {:redirect_error, silent_error(validated, "consent_required", :consent_required)}
 
       {:ok, %Interaction{} = persisted} ->
-        emit(:interaction_started, persisted, subject_id)
-        emit(:consent_reused, persisted, subject_id)
+        emit(:interaction, :started, persisted, subject_id)
+        emit(:consent, :reused, persisted, subject_id)
         finalize_reused_consent(persisted, subject_id, opts)
 
       {:error, reason} ->
@@ -173,7 +173,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp persist_subject_authorization(%Interaction{} = interaction, validated, subject_id, opts) do
     with {:ok, persisted} <- interaction_store(opts).put_interaction(interaction) do
-      emit(:interaction_started, persisted, subject_id)
+      emit(:interaction, :started, persisted, subject_id)
 
       handle_subject_consent(
         persisted,
@@ -214,11 +214,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       {:ok, grants} ->
         case ConsentPolicy.reusable_grant(grants, scopes, prompt) do
           {:reuse, _grant} ->
-            emit(:consent_reused, interaction, subject_id)
+            emit(:consent, :reused, interaction, subject_id)
             finalize_reused_consent(interaction, subject_id, opts)
 
           :consent_required ->
-            emit(:consent_shown, interaction, subject_id)
+            emit(:consent, :shown, interaction, subject_id)
             {:consent_required, interaction}
         end
 
@@ -235,7 +235,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
            complete_reused_consent(interaction, subject_id, opts)
          end) do
       {:ok, {%Interaction{} = completed, redirect_uri}} ->
-        emit(:authorization_completed, completed, subject_id, %{reason_code: :consent_reused})
+        emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_reused})
         {:consent_reused, redirect_uri}
 
       {:error, :invalid_state} ->
@@ -291,7 +291,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     }
 
     with {:ok, stored_token} <- token_store(opts).store_token(token) do
-      emit(:authorization_code_issued, interaction, subject_id, %{token_id: stored_token.id})
+      emit(:authorization_code, :issued, interaction, subject_id, %{token_id: stored_token.id})
       {:ok, approval_redirect(interaction, raw_code)}
     end
   end
@@ -403,9 +403,10 @@ end
     |> URI.to_string()
   end
 
-  defp emit(event, %Interaction{} = interaction, subject_id, extra \\ %{}) do
+  defp emit(entity, action, %Interaction{} = interaction, subject_id, extra \\ %{}) do
     observability_module().emit(
-      event,
+      entity,
+      action,
       %{},
       Map.merge(extra, %{
         client_id: interaction.client_id,

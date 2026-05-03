@@ -77,10 +77,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert validated.nonce == nil
     assert validated.code_challenge_method == :S256
 
-    assert_received {:telemetry_event, [:lockspire, :authorization_request_accepted],
+    assert_received {:telemetry_event, [:lockspire, :authorization_request, :accepted],
                      %{client_id: ^client_id, redirect_safe: true}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_accepted],
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request, :accepted],
                      %{client_id: ^client_id, redirect_safe: true}}
 
     :telemetry.detach(handler_id)
@@ -117,10 +117,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :unknown_scope
     assert error.state == "state-123"
 
-    assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :authorization_request, :rejected],
                      %{reason_code: :unknown_scope, redirect_safe: true}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request, :rejected],
                      %{reason_code: :unknown_scope, redirect_safe: true}}
 
     :telemetry.detach(handler_id)
@@ -298,14 +298,14 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.redirect_uri == "https://client.example.com/callback"
     assert error.state == "state-123"
 
-    assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :authorization_request, :rejected],
                      %{
                        client_id: ^client_id,
                        reason_code: :par_required_request_uri,
                        redirect_safe: true
                      }}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request, :rejected],
                      %{
                        client_id: ^client_id,
                        reason_code: :par_required_request_uri,
@@ -334,14 +334,14 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.redirect_uri == nil
     assert error.state == nil
 
-    assert_received {:telemetry_event, [:lockspire, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :authorization_request, :rejected],
                      %{
                        client_id: ^client_id,
                        reason_code: :par_required_request_uri,
                        redirect_safe: false
                      }}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request_rejected],
+    assert_received {:telemetry_event, [:lockspire, :audit, :authorization_request, :rejected],
                      %{
                        client_id: ^client_id,
                        reason_code: :par_required_request_uri,
@@ -970,10 +970,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :authorization_request_accepted],
-          [:lockspire, :audit, :authorization_request_accepted],
-          [:lockspire, :authorization_request_rejected],
-          [:lockspire, :audit, :authorization_request_rejected]
+          [:lockspire, :authorization_request, :accepted],
+          [:lockspire, :audit, :authorization_request, :accepted],
+          [:lockspire, :authorization_request, :rejected],
+          [:lockspire, :audit, :authorization_request, :rejected]
         ],
         &__MODULE__.handle_event/4,
         pid

@@ -96,7 +96,7 @@ defmodule Lockspire.Clients do
         client_secret: normalized.plaintext_secret
       }
 
-      Observability.emit(:client_registration_succeeded, %{}, %{
+      Observability.emit(:client, :registration_succeeded, %{}, %{
         client_id: persisted_client.client_id,
         client_type: persisted_client.client_type,
         token_endpoint_auth_method: persisted_client.token_endpoint_auth_method
@@ -105,7 +105,7 @@ defmodule Lockspire.Clients do
       {:ok, result}
     else
       {:error, errors} ->
-        Observability.emit(:client_registration_rejected, %{}, %{
+        Observability.emit(:client, :registration_rejected, %{}, %{
           reason_codes: Enum.map(errors, & &1.reason),
           field_errors: Enum.map(errors, &Map.take(&1, [:field, :reason]))
         })

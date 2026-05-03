@@ -142,8 +142,8 @@ defmodule Lockspire.Protocol.RefreshExchange do
       previous_refresh_token_id: presented_refresh_token.id
     }
 
-    Observability.emit(:access_token_issued, %{}, metadata)
-    Observability.emit(:refresh_token_issued, %{}, metadata)
+    Observability.emit(:token, :issued, %{}, metadata)
+    Observability.emit(:refresh_token, :issued, %{}, metadata)
   end
 
   defp emit_failure(%Client{} = client, %Error{} = error) do
@@ -155,10 +155,10 @@ defmodule Lockspire.Protocol.RefreshExchange do
     }
 
     if error.reason_code == :refresh_token_reuse_detected do
-      Observability.emit(:refresh_token_reuse_detected, %{}, metadata)
+      Observability.emit(:refresh_token, :reuse_detected, %{}, metadata)
     end
 
-    Observability.emit(:token_exchange_failed, %{}, metadata)
+    Observability.emit(:token_exchange, :failed, %{}, metadata)
   end
 
   defp invalid_grant(description, reason_code) do

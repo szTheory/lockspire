@@ -169,10 +169,10 @@ defmodule Lockspire.Admin.ClientsTest do
     assert is_binary(secret)
     assert client.client_secret_hash
 
-    assert_received {:telemetry_event, [:lockspire, :client_created],
+    assert_received {:telemetry_event, [:lockspire, :client, :created],
                      %{client_id: "new-client", actor_type: :operator, actor_id: "ops-123"}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :client_created],
+    assert_received {:telemetry_event, [:lockspire, :audit, :client, :created],
                      %{client_id: "new-client", actor_type: :operator, actor_id: "ops-123"}}
 
     assert %AuditEventRecord{} = audit = latest_audit!("client_created")
@@ -488,7 +488,7 @@ defmodule Lockspire.Admin.ClientsTest do
     assert stored_client.client_secret_hash == client.client_secret_hash
     refute stored_client.client_secret_hash == secret
 
-    assert_received {:telemetry_event, [:lockspire, :client_secret_rotated],
+    assert_received {:telemetry_event, [:lockspire, :client, :secret_rotated],
                      %{client_id: "admin-client", actor_id: "ops-rotate"}}
 
     assert %AuditEventRecord{} = audit = latest_audit!("client_secret_rotated")
@@ -516,7 +516,7 @@ defmodule Lockspire.Admin.ClientsTest do
     assert is_nil(enabled_client.disabled_at)
     assert is_nil(enabled_client.disabled_by)
 
-    assert_received {:telemetry_event, [:lockspire, :client_disabled],
+    assert_received {:telemetry_event, [:lockspire, :client, :disabled],
                      %{client_id: "admin-client", actor_id: "ops-disable"}}
 
     assert %AuditEventRecord{} = audit = latest_audit!("client_disabled")
@@ -536,12 +536,12 @@ defmodule Lockspire.Admin.ClientsTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :client_created],
-          [:lockspire, :audit, :client_created],
-          [:lockspire, :client_secret_rotated],
-          [:lockspire, :audit, :client_secret_rotated],
-          [:lockspire, :client_disabled],
-          [:lockspire, :audit, :client_disabled]
+          [:lockspire, :client, :created],
+          [:lockspire, :audit, :client, :created],
+          [:lockspire, :client, :secret_rotated],
+          [:lockspire, :audit, :client, :secret_rotated],
+          [:lockspire, :client, :disabled],
+          [:lockspire, :audit, :client, :disabled]
         ],
         &__MODULE__.handle_event/4,
         pid

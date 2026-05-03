@@ -82,7 +82,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client, security_profile: resolved_security_profile) do
       validated = %Validated{validated | client: client}
 
-      Observability.emit(:authorization_request_accepted, %{}, %{
+      Observability.emit(:authorization_request, :accepted, %{}, %{
         client_id: client.client_id,
         redirect_safe: true
       })
@@ -634,7 +634,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp emit_rejection(client_id, %Error{} = error, redirect_safe) do
-    Observability.emit(:authorization_request_rejected, %{}, %{
+    Observability.emit(:authorization_request, :rejected, %{}, %{
       client_id: client_id,
       reason_code: error.reason_code,
       redirect_safe: redirect_safe

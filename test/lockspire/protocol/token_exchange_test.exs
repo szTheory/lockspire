@@ -67,10 +67,10 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     :telemetry.attach_many(
       "token-exchange-test-handler",
       [
-        [:lockspire, :authorization_code_redeemed],
-        [:lockspire, :access_token_issued],
-        [:lockspire, :authorization_code_replay_detected],
-        [:lockspire, :token_exchange_failed]
+        [:lockspire, :authorization_code, :redeemed],
+        [:lockspire, :token, :issued],
+        [:lockspire, :authorization_code, :replay_detected],
+        [:lockspire, :token_exchange, :failed]
       ],
       fn event, _measurements, metadata, pid ->
         Agent.update(pid, fn current -> [{event, metadata} | current] end)
@@ -124,8 +124,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     refute persisted_token.token_hash == success.access_token
 
     event_names = recorded_event_names(events)
-    assert [:lockspire, :authorization_code_redeemed] in event_names
-    assert [:lockspire, :access_token_issued] in event_names
+    assert [:lockspire, :authorization_code, :redeemed] in event_names
+    assert [:lockspire, :token, :issued] in event_names
   end
 
   test "issues an RS256 id token for openid code flow using the linked interaction nonce" do
@@ -527,7 +527,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     assert error.error == "invalid_grant"
     assert error.reason_code == :authorization_code_replayed
-    assert [:lockspire, :authorization_code_replay_detected] in recorded_event_names(events)
+    assert [:lockspire, :authorization_code, :replay_detected] in recorded_event_names(events)
   end
 
   test "successful redemption and replay attempts append durable audit rows with client attribution",
@@ -582,17 +582,17 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                audit.reason_code == "authorization_code_replayed"
            end)
 
-    assert {[:lockspire, :authorization_code_redeemed],
+    assert {[:lockspire, :authorization_code, :redeemed],
             %{reason_code: :authorization_code_redeemed}} =
              Enum.find(recorded_events(events), fn {event, metadata} ->
-               event == [:lockspire, :authorization_code_redeemed] and
+               event == [:lockspire, :authorization_code, :redeemed] and
                  metadata[:reason_code] == :authorization_code_redeemed
              end)
 
-    assert {[:lockspire, :authorization_code_replay_detected],
+    assert {[:lockspire, :authorization_code, :replay_detected],
             %{reason_code: :authorization_code_replayed}} =
              Enum.find(recorded_events(events), fn {event, metadata} ->
-               event == [:lockspire, :authorization_code_replay_detected] and
+               event == [:lockspire, :authorization_code, :replay_detected] and
                  metadata[:reason_code] == :authorization_code_replayed
              end)
   end

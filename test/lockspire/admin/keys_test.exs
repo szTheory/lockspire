@@ -70,7 +70,7 @@ defmodule Lockspire.Admin.KeysTest do
     assert published_key.publishable
     assert published_key.next_actions == [:activate]
 
-    assert_received {:telemetry_event, [:lockspire, :key_published],
+    assert_received {:telemetry_event, [:lockspire, :key, :published],
                      %{key_id: ^upcoming_key_id, actor_id: "ops-publish"}}
 
     assert %AuditEventRecord{} = published_audit = latest_audit!("key_published")
@@ -88,7 +88,7 @@ defmodule Lockspire.Admin.KeysTest do
     assert active_view.key.status == :active
     assert active_view.next_actions == []
 
-    assert_received {:telemetry_event, [:lockspire, :key_activated],
+    assert_received {:telemetry_event, [:lockspire, :key, :activated],
                      %{key_id: ^upcoming_key_id, actor_id: "ops-activate"}}
 
     assert %AuditEventRecord{} = activated_audit = latest_audit!("key_activated")
@@ -109,7 +109,7 @@ defmodule Lockspire.Admin.KeysTest do
     assert retired_view.next_actions == []
     assert {:error, :invalid_state} = Keys.activate_key(active_key.id)
 
-    assert_received {:telemetry_event, [:lockspire, :key_retired],
+    assert_received {:telemetry_event, [:lockspire, :key, :retired],
                      %{key_id: ^active_key_id, actor_id: "ops-retire"}}
 
     assert %AuditEventRecord{} = retired_audit = latest_audit!("key_retired")
@@ -211,12 +211,12 @@ defmodule Lockspire.Admin.KeysTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :key_published],
-          [:lockspire, :audit, :key_published],
-          [:lockspire, :key_activated],
-          [:lockspire, :audit, :key_activated],
-          [:lockspire, :key_retired],
-          [:lockspire, :audit, :key_retired]
+          [:lockspire, :key, :published],
+          [:lockspire, :audit, :key, :published],
+          [:lockspire, :key, :activated],
+          [:lockspire, :audit, :key, :activated],
+          [:lockspire, :key, :retired],
+          [:lockspire, :audit, :key, :retired]
         ],
         &__MODULE__.handle_event/4,
         pid

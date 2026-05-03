@@ -717,8 +717,8 @@ defmodule Lockspire.Protocol.TokenExchange do
       token_type: :access_token
     }
 
-    Observability.emit(:authorization_code_redeemed, %{}, metadata)
-    Observability.emit(:access_token_issued, %{}, metadata)
+    Observability.emit(:authorization_code, :redeemed, %{}, metadata)
+    Observability.emit(:token, :issued, %{}, metadata)
   end
 
   defp emit_success(%Client{} = client, %Token{} = authorization_code, %Success{
@@ -727,7 +727,7 @@ defmodule Lockspire.Protocol.TokenExchange do
        when is_binary(refresh_token) do
     emit_success(client, authorization_code)
 
-    Observability.emit(:refresh_token_issued, %{}, %{
+    Observability.emit(:refresh_token, :issued, %{}, %{
       client_id: client.client_id,
       interaction_id: authorization_code.interaction_id,
       subject_id: authorization_code.account_id
@@ -746,7 +746,7 @@ defmodule Lockspire.Protocol.TokenExchange do
        when is_binary(refresh_token) do
     emit_device_authorization_success(client, device_authorization)
 
-    Observability.emit(:refresh_token_issued, %{}, %{
+    Observability.emit(:refresh_token, :issued, %{}, %{
       client_id: client.client_id,
       subject_id: device_authorization.subject_id
     })
@@ -772,17 +772,17 @@ defmodule Lockspire.Protocol.TokenExchange do
       token_type: :access_token
     }
 
-    Observability.emit(:access_token_issued, %{}, metadata)
+    Observability.emit(:token, :issued, %{}, metadata)
   end
 
   defp emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
-    Observability.emit(:authorization_code_replay_detected, %{}, metadata)
-    Observability.emit(:token_exchange_failed, %{}, metadata)
+    Observability.emit(:authorization_code, :replay_detected, %{}, metadata)
+    Observability.emit(:token_exchange, :failed, %{}, metadata)
   end
 
   defp emit_failure(%Error{} = error, params, request) do
-    Observability.emit(:token_exchange_failed, %{}, failure_metadata(error, params, request))
+    Observability.emit(:token_exchange, :failed, %{}, failure_metadata(error, params, request))
   end
 
   defp failure_metadata(%Error{} = error, params, request) do

@@ -91,11 +91,11 @@ defmodule Lockspire.Protocol.Revocation do
       outcome: if(is_struct(revoked_token, Token), do: :revoked, else: :no_match)
     }
 
-    Observability.emit(:token_revoked, %{}, metadata)
+    Observability.emit(:token, :revoked, %{}, metadata)
   end
 
   defp emit_failure(%Error{} = error, params) do
-    Observability.emit(:revocation_failed, %{}, %{
+    Observability.emit(:revocation, :failed, %{}, %{
       reason_code: error.reason_code,
       error: error.error,
       token_type_hint: Map.get(params, "token_type_hint")

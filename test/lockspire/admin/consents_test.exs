@@ -90,7 +90,7 @@ defmodule Lockspire.Admin.ConsentsTest do
     assert revoked.grant.revoked_reason == "account_revoked"
     assert revoked.grant.revoked_at
 
-    assert_received {:telemetry_event, [:lockspire, :consent_revoked],
+    assert_received {:telemetry_event, [:lockspire, :consent, :revoked],
                      %{grant_id: grant_id, actor_id: "ops-consent"}}
 
     assert grant_id == grant.id
@@ -126,8 +126,8 @@ defmodule Lockspire.Admin.ConsentsTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :consent_revoked],
-          [:lockspire, :audit, :consent_revoked]
+          [:lockspire, :consent, :revoked],
+          [:lockspire, :audit, :consent, :revoked]
         ],
         &__MODULE__.handle_event/4,
         pid

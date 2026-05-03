@@ -58,7 +58,7 @@ defmodule Lockspire.Admin.Tokens do
                revoke_audit_event(revoked_token, actor, revoked_reason)
              end
            ) do
-      emit(:token_revoked, token, actor, %{
+      emit(:token, :revoked, token, actor, %{
         token_id: token.id,
         reason_code: revoked_reason || :token_revoked
       })
@@ -83,7 +83,7 @@ defmodule Lockspire.Admin.Tokens do
                revoke_family_audit_event(token, actor, count, revoked_reason)
              end
            ) do
-      emit(:token_family_revoked, token, actor, %{
+      emit(:token, :family_revoked, token, actor, %{
         family_id: family_id,
         revoked_count: count,
         reason_code: revoked_reason || :token_family_revoked
@@ -273,7 +273,7 @@ defmodule Lockspire.Admin.Tokens do
     end
   end
 
-  defp emit(event, %Token{} = token, actor, metadata) do
+  defp emit(entity, action, %Token{} = token, actor, metadata) do
     raw_metadata =
       %{
         actor_type: actor[:type],
@@ -287,8 +287,8 @@ defmodule Lockspire.Admin.Tokens do
       |> Observability.redact()
       |> restore_unredacted_ids(raw_metadata)
 
-    :telemetry.execute([:lockspire, :audit, event], %{count: 1}, final_metadata)
-    :telemetry.execute([:lockspire, event], %{count: 1}, final_metadata)
+    :telemetry.execute([:lockspire, :audit, entity, action], %{count: 1}, final_metadata)
+    :telemetry.execute([:lockspire, entity, action], %{count: 1}, final_metadata)
   end
 
   defp restore_unredacted_ids(metadata, raw_metadata) do

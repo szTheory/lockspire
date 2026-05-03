@@ -27,7 +27,7 @@ defmodule Lockspire.Admin.InitialAccessTokens do
     }
 
     with {:ok, saved_iat} <- Repository.save_initial_access_token(iat) do
-      Observability.emit_iat(:mint, %{count: 1}, %{iat_id: saved_iat.id})
+      Observability.emit(:iat, :mint, %{count: 1}, %{iat_id: saved_iat.id})
       {:ok, saved_iat, plaintext_secret}
     end
   end
@@ -37,7 +37,7 @@ defmodule Lockspire.Admin.InitialAccessTokens do
     revoked_at = DateTime.utc_now()
 
     with :ok <- Repository.revoke_initial_access_token(id, revoked_at) do
-      Observability.emit_iat(:revoke, %{count: 1}, %{iat_id: id})
+      Observability.emit(:iat, :revoke, %{count: 1}, %{iat_id: id})
       :ok
     end
   end

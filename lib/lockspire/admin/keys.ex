@@ -70,7 +70,7 @@ defmodule Lockspire.Admin.Keys do
                key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})
              end
            ) do
-      emit(:key_generated, published_key, actor_from_attrs(%{}))
+      emit(:key, :generated, published_key, actor_from_attrs(%{}))
       {:ok, to_view(published_key)}
     end
   end
@@ -93,7 +93,7 @@ defmodule Lockspire.Admin.Keys do
                key_audit_event(:key_published, published_key, actor, %{published_at: published_at})
              end
            ) do
-      emit(:key_published, key, actor)
+      emit(:key, :published, key, actor)
       {:ok, to_detail_view(key)}
     end
   end
@@ -122,7 +122,7 @@ defmodule Lockspire.Admin.Keys do
                })
              end
            ) do
-      emit(:key_activated, key, actor)
+      emit(:key, :activated, key, actor)
       {:ok, to_detail_view(key)}
     end
   end
@@ -145,7 +145,7 @@ defmodule Lockspire.Admin.Keys do
                key_audit_event(:key_retired, retired_key, actor, %{retired_at: retired_at})
              end
            ) do
-      emit(:key_retired, key, actor)
+      emit(:key, :retired, key, actor)
       {:ok, to_detail_view(key)}
     end
   end
@@ -258,8 +258,8 @@ defmodule Lockspire.Admin.Keys do
     end
   end
 
-  defp emit(event, %SigningKey{} = key, actor) do
-    Observability.emit(event, %{}, %{
+  defp emit(entity, action, %SigningKey{} = key, actor) do
+    Observability.emit(entity, action, %{}, %{
       actor_type: actor[:type],
       actor_id: actor[:id],
       key_id: key.id,

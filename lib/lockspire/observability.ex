@@ -5,7 +5,8 @@ defmodule Lockspire.Observability do
 
   alias Lockspire.Redaction
 
-  @type event_name :: atom()
+  @type entity :: atom()
+  @type action :: atom()
   @type measurements :: map()
   @type metadata :: map()
 
@@ -20,55 +21,15 @@ defmodule Lockspire.Observability do
     delivery_discarded: :logout_delivery_discarded
   }
 
-  @spec emit(event_name(), measurements(), metadata()) :: :ok
-  def emit(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
+  @spec emit(entity(), action(), measurements(), metadata()) :: :ok
+  def emit(entity, action, measurements \\ %{}, metadata \\ %{}) when is_atom(entity) and is_atom(action) do
     redacted_metadata = redact(metadata)
     normalized_measurements = Map.put_new(measurements, :count, 1)
 
-    :telemetry.execute(@audit_prefix ++ [event_name], normalized_measurements, redacted_metadata)
+    :telemetry.execute(@audit_prefix ++ [entity, action], normalized_measurements, redacted_metadata)
 
     :telemetry.execute(
-      @telemetry_prefix ++ [event_name],
-      normalized_measurements,
-      redacted_metadata
-    )
-
-    :ok
-  end
-
-  @spec emit_dcr(event_name(), measurements(), metadata()) :: :ok
-  def emit_dcr(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
-    redacted_metadata = redact(metadata)
-    normalized_measurements = Map.put_new(measurements, :count, 1)
-
-    :telemetry.execute(
-      @audit_prefix ++ [:dcr, event_name],
-      normalized_measurements,
-      redacted_metadata
-    )
-
-    :telemetry.execute(
-      @telemetry_prefix ++ [:dcr, event_name],
-      normalized_measurements,
-      redacted_metadata
-    )
-
-    :ok
-  end
-
-  @spec emit_iat(event_name(), measurements(), metadata()) :: :ok
-  def emit_iat(event_name, measurements \\ %{}, metadata \\ %{}) when is_atom(event_name) do
-    redacted_metadata = redact(metadata)
-    normalized_measurements = Map.put_new(measurements, :count, 1)
-
-    :telemetry.execute(
-      @audit_prefix ++ [:iat, event_name],
-      normalized_measurements,
-      redacted_metadata
-    )
-
-    :telemetry.execute(
-      @telemetry_prefix ++ [:iat, event_name],
+      @telemetry_prefix ++ [entity, action],
       normalized_measurements,
       redacted_metadata
     )
@@ -78,7 +39,7 @@ defmodule Lockspire.Observability do
 
   @spec emit_logout(atom(), measurements(), metadata()) :: :ok
   def emit_logout(stage, measurements \\ %{}, metadata \\ %{}) when is_atom(stage) do
-    emit(logout_event_name!(stage), measurements, metadata)
+    emit(:logout, stage, measurements, metadata)
   end
 
   @spec logout_event_name!(atom()) :: atom()

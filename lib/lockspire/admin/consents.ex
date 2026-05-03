@@ -50,7 +50,7 @@ defmodule Lockspire.Admin.Consents do
          ) do
       {:ok, %ConsentGrant{} = grant} ->
         consent = enrich_consent(grant)
-        emit(:consent_revoked, consent.grant, actor)
+        emit(:consent, :revoked, consent.grant, actor)
         {:ok, consent}
 
       {:error, reason} ->
@@ -111,14 +111,14 @@ defmodule Lockspire.Admin.Consents do
     end
   end
 
-  defp emit(event, %ConsentGrant{} = grant, actor) do
-    Observability.emit(event, %{}, %{
+  defp emit(entity, action, %ConsentGrant{} = grant, actor) do
+    Observability.emit(entity, action, %{}, %{
       actor_type: actor[:type],
       actor_id: actor[:id],
       grant_id: grant.id,
       client_id: grant.client_id,
       account_id: grant.account_id,
-      reason_code: grant.revoked_reason || event
+      reason_code: grant.revoked_reason || action
     })
   end
 

@@ -131,7 +131,7 @@ defmodule Lockspire.Admin.TokensTest do
     assert detail.token.revoked_at
     assert detail.status == :revoked
 
-    assert_received {:telemetry_event, [:lockspire, :token_revoked],
+    assert_received {:telemetry_event, [:lockspire, :token, :revoked],
                      %{token_id: ^access_token_id, actor_id: "ops-token"}}
 
     assert %AuditEventRecord{} = token_audit = latest_audit!("token_revoked")
@@ -151,7 +151,7 @@ defmodule Lockspire.Admin.TokensTest do
     assert count >= 0
     assert family_detail.family_revoked_count >= 1
 
-    assert_received {:telemetry_event, [:lockspire, :token_family_revoked],
+    assert_received {:telemetry_event, [:lockspire, :token, :family_revoked],
                      %{family_id: "family-admin-123", actor_id: "ops-family"}}
 
     assert %AuditEventRecord{} = family_audit = latest_audit!("token_family_revoked")
@@ -177,10 +177,10 @@ defmodule Lockspire.Admin.TokensTest do
       :telemetry.attach_many(
         handler_id,
         [
-          [:lockspire, :token_revoked],
-          [:lockspire, :audit, :token_revoked],
-          [:lockspire, :token_family_revoked],
-          [:lockspire, :audit, :token_family_revoked]
+          [:lockspire, :token, :revoked],
+          [:lockspire, :audit, :token, :revoked],
+          [:lockspire, :token, :family_revoked],
+          [:lockspire, :audit, :token, :family_revoked]
         ],
         &__MODULE__.handle_event/4,
         pid

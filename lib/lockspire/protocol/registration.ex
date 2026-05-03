@@ -389,7 +389,7 @@ defmodule Lockspire.Protocol.Registration do
   defp emit_succeeded(%Client{} = client, iat_record, source) do
     iat_id = iat_record && Map.get(iat_record, :id)
 
-    Observability.emit_dcr(:register, %{count: 1}, %{
+    Observability.emit(:dcr, :register, %{count: 1}, %{
       status: :success,
       actor_type: :dcr,
       actor_id: iat_id_or_anonymous(iat_id),
@@ -400,7 +400,7 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp emit_rejected(%Error{} = error, source) do
-    Observability.emit_dcr(:register, %{count: 1}, %{
+    Observability.emit(:dcr, :register, %{count: 1}, %{
       status: :failure,
       actor_type: :dcr,
       reason_code: error.code,

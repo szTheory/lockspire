@@ -163,11 +163,11 @@ defmodule Lockspire.Protocol.Introspection do
 
   defp emit_result(%Client{} = client, %{"active" => _} = _response) do
     # unreachable because controller-facing responses use atom keys, but keep clause for completeness
-    Observability.emit(:token_introspected, %{}, %{client_id: client.client_id, active: false})
+    Observability.emit(:token, :introspected, %{}, %{client_id: client.client_id, active: false})
   end
 
   defp emit_result(%Client{} = client, %{active: active} = response) do
-    Observability.emit(:token_introspected, %{}, %{
+    Observability.emit(:token, :introspected, %{}, %{
       client_id: client.client_id,
       active: active,
       token_type: Map.get(response, :token_type),
@@ -176,7 +176,7 @@ defmodule Lockspire.Protocol.Introspection do
   end
 
   defp emit_failure(%Error{} = error) do
-    Observability.emit(:introspection_failed, %{}, %{
+    Observability.emit(:introspection, :failed, %{}, %{
       reason_code: error.reason_code,
       error: error.error
     })
