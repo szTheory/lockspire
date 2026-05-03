@@ -26,6 +26,9 @@ Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 - Host-owned login redirects and consent handoff seams
 - LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
 - Phoenix-first onboarding docs and generated host integration files
+- FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
+- RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
+- Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
 
 ## Explicitly out of scope
 
@@ -44,6 +47,8 @@ Lockspire `v0.2.0` preview does not currently support:
 - Full CIAM or workforce identity platform scope
 - Lockspire-owned account database, passwords, or login UX
 - Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
+- External OIDF FAPI 2.0 conformance suite certification — Lockspire pins the canonical OIDF FAPI 2.0 plan (`fapi2-security-profile-final-test-plan`) and variant axes in `scripts/conformance/fapi2-plan.json` and `docs/maintainer-conformance.md`, but the live Docker run remains a documented manual maintainer step and is not a CI pass-gate
+- mTLS client authentication and mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism for FAPI 2.0; mTLS is permanently out of scope per the v1.10 milestone)
 
 ## Trust posture
 
