@@ -34,6 +34,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @roadmap_path Path.expand("../../.planning/milestones/v1.3-ROADMAP.md", __DIR__)
   @requirements_path Path.expand("../../.planning/milestones/v1.3-REQUIREMENTS.md", __DIR__)
+  @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
+  @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
@@ -478,6 +480,69 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     # Artifact/CI truth
     assert workflow =~ "uses: actions/upload-artifact@v4"
+    assert workflow =~ "mix lockspire.oidf_conformance"
+  end
+
+  test "phase 43 FAPI 2.0 milestone claims stay truthful and bounded (D-12, D-19, D-20)" do
+    security = File.read!(@security_policy_path)
+    readme = File.read!(@readme_path)
+    supported_surface = File.read!(@supported_surface_path)
+    maintainer_conformance = File.read!(@maintainer_conformance_path)
+    fapi2_plan = File.read!(@fapi2_conformance_plan_path)
+    templates_registry = File.read!(@templates_registry_path)
+    workflow = File.read!(@oidf_conformance_workflow_path)
+
+    positive_pinned_strings = [
+      "FAPI 2.0 Security Profile",
+      "PAR",
+      "DPoP",
+      "ES256/PS256",
+      "exact-match redirect URIs",
+      "RFC 9207",
+      "authorization_response_iss_parameter_supported",
+      "require_pushed_authorization_requests"
+    ]
+
+    for {doc_name, doc_text} <- [
+          {"SECURITY.md", security},
+          {"README.md", readme},
+          {"docs/supported-surface.md", supported_surface}
+        ] do
+      for pinned <- positive_pinned_strings do
+        assert doc_text =~ pinned,
+               "expected #{doc_name} to contain pinned positive FAPI 2.0 string #{inspect(pinned)}"
+      end
+
+      refute Regex.match?(~r/\bcertified\b/, doc_text),
+             "#{doc_name} must NOT contain the literal word 'certified'"
+
+      assert doc_text =~ "mTLS",
+             "#{doc_name} must mention mTLS in negative-claim context"
+
+      assert doc_text =~ "OIDF",
+             "#{doc_name} must mention OIDF in negative-claim context"
+    end
+
+    oidf_plan_pins = [
+      "fapi2-security-profile-final-test-plan",
+      "plain_fapi",
+      "private_key_jwt",
+      "dpop",
+      "unsigned",
+      "plain_response"
+    ]
+
+    for pinned <- oidf_plan_pins do
+      assert maintainer_conformance =~ pinned,
+             "expected docs/maintainer-conformance.md to pin #{inspect(pinned)}"
+
+      assert fapi2_plan =~ pinned,
+             "expected scripts/conformance/fapi2-plan.json to pin #{inspect(pinned)}"
+    end
+
+    assert templates_registry =~ "fapi_smoke_e2e_test.exs",
+           "expected templates registry to register the FAPI smoke E2E test template"
+
     assert workflow =~ "mix lockspire.oidf_conformance"
   end
 end
