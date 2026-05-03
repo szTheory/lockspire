@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 43-02-discovery-keys-PLAN.md
-last_updated: "2026-05-03T12:46:31Z"
+stopped_at: Completed 43-03-oidf-conformance-task-PLAN.md
+last_updated: "2026-05-03T12:46:57Z"
 last_activity: 2026-05-03
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 18
-  completed_plans: 15
-  percent: 83
+  completed_plans: 16
+  percent: 89
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — EXECUTION
-Plan: 3 of 7
+Plan: 4 of 7 completed
 Status: In progress
-Last activity: 2026-05-03
+Last activity: 2026-05-03 — Completed Plan 43-03 OIDF conformance preflight
 
 ## Performance Metrics
 
@@ -59,6 +59,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - [Phase 43 Plan 01]: Authorization-response `iss` is sourced from `Lockspire.Config.issuer!/0` in both redirect emission seams to keep runtime truth aligned.
 - [Phase 43 Plan 02]: Discovery publishes `require_pushed_authorization_requests` from the global server policy only; per-client FAPI overrides do not change server-wide metadata.
 - [Phase 43 Plan 02]: Discovery metadata now shares `global_security_profile/0` so FAPI algorithm publication and PAR-required metadata read the same policy source.
+- [Phase 43 Plan 03]: `mix lockspire.oidf_conformance` is a deterministic preflight that validates env, PATH commands, and pinned artifacts without invoking the live suite.
+- [Phase 43 Plan 03]: Missing-command and missing-artifact coverage use a narrow Application env override seam so Mix task tests stay local and deterministic.
 
 ### Blockers/Concerns
 
@@ -72,7 +74,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 43-02-discovery-keys-PLAN.md
+**Stopped at:** Completed 43-03-oidf-conformance-task-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
