@@ -1,0 +1,18 @@
+{
+  "description": "Lockspire Phase 43 FAPI 2.0 Security Profile Final test plan",
+  "artifact_dir": ".artifacts/conformance/fapi2",
+  "plans": [
+    {
+      "name": "fapi-2-0-security-profile-final",
+      "suite_plan": "fapi2-security-profile-final-test-plan",
+      "variants": {
+        "fapi_profile": "plain_fapi",
+        "client_auth_type": "private_key_jwt",
+        "sender_constrain": "dpop",
+        "fapi_request_method": "unsigned",
+        "fapi_response_mode": "plain_response"
+      },
+      "modules": []
+    }
+  ]
+}
