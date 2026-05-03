@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Config
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Token
+  alias Lockspire.Observability
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.Userinfo.Error
@@ -21,6 +22,16 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
          :ok <- validate_token_binding(token, proof),
          :ok <- record_dpop_proof_use(proof, request) do
       {:ok, proof}
+    else
+      {:error, %Error{reason_code: reason} = error} ->
+        metadata = %{
+          client_id: token.client_id,
+          account_id: token.account_id,
+          reason: reason
+        }
+
+        Observability.emit(:dpop, :failed, %{}, metadata)
+        {:error, error}
     end
   end
 
