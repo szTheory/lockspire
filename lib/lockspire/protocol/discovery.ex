@@ -91,6 +91,7 @@ defmodule Lockspire.Protocol.Discovery do
     |> Map.merge(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> put_bcl_fcl_metadata()
+    |> put_iss_parameter_metadata()
   end
 
   defp id_token_signing_alg_values_supported do
@@ -189,6 +190,10 @@ defmodule Lockspire.Protocol.Discovery do
       "frontchannel_logout_supported" => true,
       "frontchannel_logout_session_supported" => true
     })
+  end
+
+  defp put_iss_parameter_metadata(metadata) do
+    Map.put(metadata, "authorization_response_iss_parameter_supported", true)
   end
 
   defp issuer_url(issuer, path) do
