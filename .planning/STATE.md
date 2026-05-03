@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: completed
-stopped_at: Phase 43 context gathered (assumptions mode)
-last_updated: "2026-05-02T19:55:49.601Z"
-last_activity: 2026-05-02
+stopped_at: Completed 43-05-PLAN.md
+last_updated: "2026-05-03T12:45:58Z"
+last_activity: 2026-05-03
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 18
-  completed_plans: 11
-  percent: 61
+  completed_plans: 14
+  percent: 78
 ---
 
 # Project State
@@ -54,6 +54,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - Exposed check_fapi_signing_readiness in Admin.Clients to allow reuse in protocol layer.
 - Aligned FAPI check order in DCR validation to check algorithm before server readiness.
 - Consumed canonical algorithm policy across logout token signing, end-session validation, and DPoP proof validation.
+- [Phase 43]: Truth-in-docs FAPI language is additive and pinned verbatim across SECURITY, README, and supported-surface docs. — Plan 07 will assert the exact strings, so public release posture must share one locked vocabulary.
+- [Phase 43 Plan 01]: RFC 9207 `iss` emission is unconditional across AuthorizationFlow success/denial and AuthorizeController redirect-safe error redirects.
+- [Phase 43 Plan 01]: Authorization-response `iss` is sourced from `Lockspire.Config.issuer!/0` in both redirect emission seams to keep runtime truth aligned.
 
 ### Blockers/Concerns
 
@@ -65,9 +68,9 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Next action:** Plan Phase 43
 
-**Resume file:** --resume-file
+**Resume file:** None
 
-**Stopped at:** Phase 43 context gathered (assumptions mode)
+**Stopped at:** Completed 43-05-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
