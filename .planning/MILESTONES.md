@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.10 FAPI 2.0 Security Profile (Shipped + archived: 2026-05-03)
+
+**Phases completed:** **3** (**41-43**), **18** plans, **6** requirements closed.
+
+**Package posture:** `lockspire` now includes a FAPI 2.0 strict mode. When enabled, requests without PAR, without DPoP, or lacking compliant cryptography are strictly rejected.
+
+**Key accomplishments:**
+
+- Added `security_profile: :fapi_2_0_security` operator option (global and per-client).
+- Implemented `FAPI20EnforcerPlug` boundary for zero-tolerance PAR and DPoP checking.
+- Locked down cryptography to strictly `ES256` and `PS256` under the FAPI profile.
+- Strict RFC 9207 `iss` emission on all authorization responses.
+- Truthful discovery and security documentation reflecting the FAPI 2.0 claims.
+- Provided `mix lockspire.oidf_conformance` preflight tooling for formal conformance suite execution.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.10-MILESTONE-AUDIT.md`](milestones/v1.10-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.10-ROADMAP.md`, `milestones/v1.10-REQUIREMENTS.md`, `milestones/v1.10-MILESTONE-AUDIT.md` · **Git tag:** `v1.10`
+
+---
+
 ## v1.9 JAR Decryption (JWE Support) (Shipped + archived: 2026-04-29)
 
 **Phases completed:** **1** (**40**), **0** plans, **2** requirements closed.
