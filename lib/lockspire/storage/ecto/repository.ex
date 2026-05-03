@@ -1441,6 +1441,30 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp consume_device_authorization_record(%DeviceAuthorizationRecord{}, _client_id, _now),
     do: repo().rollback(:invalid_state)
 
+  @doc """
+  Deletes expired records in chunks of 1000 to prevent table locking.
+  """
+  @spec prune_expired_records(module(), DateTime.t(), non_neg_integer()) :: non_neg_integer()
+  def prune_expired_records(schema, now \\ DateTime.utc_now(), count \\ 0) do
+    ids =
+      schema
+      |> where([r], r.expires_at < ^now)
+      |> select([r], r.id)
+      |> limit(1000)
+      |> repo().all(log: false)
+
+    if ids == [] do
+      count
+    else
+      {deleted, _} =
+        schema
+        |> where([r], r.id in ^ids)
+        |> repo().delete_all(log: false)
+
+      prune_expired_records(schema, now, count + deleted)
+    end
+  end
+
   defp prune_expired_dpop_replay_records(%DateTime{} = seen_at) do
     DpopReplayRecord
     |> where([replay], replay.expires_at <= ^seen_at)

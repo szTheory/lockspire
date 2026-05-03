@@ -951,6 +951,46 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert :ok = Repository.validate_fapi_signing_readiness()
   end
 
+  test "prune_expired_records/3 chunks deletions recursively" do
+    now = DateTime.utc_now()
+    past = DateTime.add(now, -100, :second)
+    future = DateTime.add(now, 100, :second)
+
+    expired_records =
+      for i <- 1..1500 do
+        %{
+          token_hash: "exp_#{i}",
+          token_type: :access_token,
+          client_id: "c1",
+          expires_at: past,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    future_records =
+      for i <- 1..50 do
+        %{
+          token_hash: "fut_#{i}",
+          token_type: :access_token,
+          client_id: "c1",
+          expires_at: future,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    Lockspire.TestRepo.insert_all(Lockspire.Storage.Ecto.TokenRecord, expired_records)
+    Lockspire.TestRepo.insert_all(Lockspire.Storage.Ecto.TokenRecord, future_records)
+
+    total_deleted = Repository.prune_expired_records(Lockspire.Storage.Ecto.TokenRecord, now)
+
+    assert total_deleted == 1500
+
+    remaining = Lockspire.TestRepo.aggregate(Lockspire.Storage.Ecto.TokenRecord, :count)
+    assert remaining == 50
+  end
+
   defp errors_on(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
       Regex.replace(~r"%{(\w+)}", message, fn _, key ->
