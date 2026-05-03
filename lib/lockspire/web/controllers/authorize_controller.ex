@@ -5,6 +5,7 @@ defmodule Lockspire.Web.AuthorizeController do
 
   use Phoenix.Controller, formats: [:html]
 
+  alias Lockspire.Config
   alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
   alias Lockspire.Protocol.AuthorizationFlow
@@ -134,7 +135,8 @@ defmodule Lockspire.Web.AuthorizeController do
       %{
         "error" => error.error,
         "error_description" => error.error_description,
-        "state" => error.state
+        "state" => error.state,
+        "iss" => Config.issuer!()
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
