@@ -70,6 +70,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Application.put_env(:lockspire, :issuer, "https://issuer.test/lockspire")
 
     Application.put_env(
       :lockspire,
@@ -221,6 +222,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert "#{uri.scheme}://#{uri.host}#{uri.path}" == "https://client.example.com/callback"
     assert params["error"] == "invalid_request"
     assert params["state"] == "state-123"
+    assert params["iss"] == "https://issuer.test/lockspire"
   end
 
   test "invalid max_age stays redirect-safe and returns oauth invalid_request" do
