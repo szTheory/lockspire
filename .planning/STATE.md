@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 43-04-host-test-template-PLAN.md
-last_updated: "2026-05-03T12:48:43Z"
+status: completed
+stopped_at: Phase 43 complete
+last_updated: "2026-05-03T13:05:00Z"
 last_activity: 2026-05-03
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 18
-  completed_plans: 17
-  percent: 94
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 43 — end-to-end-fapi-2-0-validation-and-release-posture
+**Current focus:** Milestone v1.10 wrap-up
 
 ## Current Position
 
-Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — EXECUTION
-Plan: 5 of 7 completed
-Status: In progress
-Last activity: 2026-05-03 — Completed Plan 43-04 host FAPI smoke install template
+Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — COMPLETE
+Plan: 7 of 7 completed
+Status: Phase complete — ready for milestone wrap-up
+Last activity: 2026-05-03 — Verified and completed Phase 43
 
 ## Performance Metrics
 
-- Phases completed: 2/3
-- Plans completed: 17/18
+- Phases completed: 3/3
+- Plans completed: 18/18
 
 ## Accumulated Context
 
@@ -63,20 +63,22 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - [Phase 43 Plan 03]: Missing-command and missing-artifact coverage use a narrow Application env override seam so Mix task tests stay local and deterministic.
 - [Phase 43 Plan 04]: The install generator now emits one host-owned FAPI smoke test bounded to `/authorize` negative-path proof so host apps get executable FAPI evidence without internal-module coupling.
 - [Phase 43 Plan 04]: In the install-generator fixture harness, the generated host FAPI test derives its namespace/path from `scope_module` because `app_module/app_path` still resolve to the library project during render.
+- [Phase 43 Plan 06]: Milestone E2E proof now pins exact redirect rejection literals across `/authorize`, `/par`, `/token`, and `/end_session`, plus `iss` emission and discovery-mode truth.
+- [Phase 43 Plan 07]: Release-readiness contract now locks the public FAPI 2.0 claim vocabulary and the OIDF plan pin while explicitly preserving the preflight-only, non-`private_key_jwt` runtime posture.
 
 ### Blockers/Concerns
 
-- **Manual conformance still pending**: `scripts/conformance/fapi2-check.sh` has been implemented and syntax-checked, but it still needs to be run against a live mounted Lockspire instance before any release claim.
-- **Broader repo gates still pending**: targeted Phase 41 tests are green, but no full-suite regression pass or code-review gate has been recorded in `.planning` yet.
+- **Manual OIDF Docker run still pending**: `mix lockspire.oidf_conformance --validate-env` now verifies prerequisites, but the live OIDF suite remains a documented manual maintainer step and is not a CI pass-gate.
+- **Full-suite regression pass still pending**: targeted Phase 43 regression coverage and the Phase 43 code review gate passed on 2026-05-03, but no full `mix test` sweep has been recorded in `.planning` yet.
 - **Pre-existing failures remain tracked** in `.planning/phases/41-fapi-2-0-profile-configuration/deferred-items.md` for follow-up during later FAPI phases as needed.
 
 ## Session Continuity
 
-**Next action:** Execute remaining Phase 43 plans
+**Next action:** Archive v1.10 milestone or run the live OIDF Docker suite as a manual maintainer check
 
 **Resume file:** None
 
-**Stopped at:** Completed 43-04-host-test-template-PLAN.md
+**Stopped at:** Phase 43 complete
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 

@@ -473,6 +473,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "Phase 42 wires the lane for Phase 43 consumption"
     assert maintainer_conformance =~ "does not claim pass-ready certification"
     assert maintainer_conformance =~ "does not imply support for mTLS or `private_key_jwt`"
+    assert maintainer_conformance =~ "validate the prerequisites for this check"
+    assert maintainer_conformance =~ "does NOT execute `scripts/conformance/fapi2-check.sh`"
     
     # Must not over-claim
     refute maintainer_conformance =~ "fully certified"
@@ -539,6 +541,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       assert fapi2_plan =~ pinned,
              "expected scripts/conformance/fapi2-plan.json to pin #{inspect(pinned)}"
     end
+
+    assert maintainer_conformance =~
+             "documentation truth for the upstream plan shape, not an executable claim about the current runtime surface"
 
     assert templates_registry =~ "fapi_smoke_e2e_test.exs",
            "expected templates registry to register the FAPI smoke E2E test template"

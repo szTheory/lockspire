@@ -50,7 +50,7 @@ Expected result:
 
 This script is a fast smoke check for the boundary Plug and resource enforcement. It is not a substitute for full standards conformance.
 
-You can also run the `mix lockspire.oidf_conformance` task to perform this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set.
+You can also run `mix lockspire.oidf_conformance --validate-env` to validate the prerequisites for this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set, but it does NOT execute `scripts/conformance/fapi2-check.sh` or send live HTTP probes.
 
 ## Step 3: Run the OIDF Conformance Suite
 
@@ -107,7 +107,8 @@ Use the `fapi2-security-profile-final-test-plan` plan in the OIDF UI, with these
 - `fapi_request_method`: `unsigned`
 - `fapi_response_mode`: `plain_response`
 
-The same plan and variants are pinned in `scripts/conformance/fapi2-plan.json`.
+The same plan and variants are pinned in `scripts/conformance/fapi2-plan.json` as the canonical upstream OIDF reference.
+Lockspire does NOT currently support `private_key_jwt`, so this pinned variant is documentation truth for the upstream plan shape, not an executable claim about the current runtime surface.
 The live Docker run remains a manual maintainer step; CI does not gate on it.
 
 Run `mix lockspire.oidf_conformance --validate-env` to verify your environment, dependencies,
