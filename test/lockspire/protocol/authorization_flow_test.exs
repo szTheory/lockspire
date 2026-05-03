@@ -11,6 +11,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
   alias __MODULE__.Store
 
   setup do
+    Application.put_env(:lockspire, :issuer, "https://issuer.test/lockspire")
+
     {:ok, pid} =
       Agent.start_link(fn ->
         %{
@@ -423,6 +425,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     %{query: approved_query} = parse_redirect(approved_redirect)
     assert approved_query["state"] == "state-123"
     assert approved_query["code"] == "approval-code-123"
+    assert approved_query["iss"] == "https://issuer.test/lockspire"
 
     [stored_code] =
       Store.stored_tokens()
@@ -477,6 +480,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     %{query: denied_query} = parse_redirect(denied_redirect)
     assert denied_query["error"] == "access_denied"
     assert denied_query["state"] == "deny-state"
+    assert denied_query["iss"] == "https://issuer.test/lockspire"
 
     assert {:consent_required, %Interaction{} = expired_interaction} =
              AuthorizationFlow.start_authorization(
