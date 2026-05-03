@@ -44,6 +44,7 @@ defmodule Lockspire.MixProject do
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
       {:opentelemetry_api, "~> 1.5"},
+      {:phoenix_live_dashboard, "~> 0.8", optional: true},
       {:telemetry, "~> 1.3"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
