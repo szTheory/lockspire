@@ -373,19 +373,21 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp ensure_resume_subject(%Interaction{} = interaction, subject_context),
     do: ensure_subject_match(interaction, subject_context)
 
-  defp approval_redirect(%Interaction{} = interaction, raw_code) do
-    build_redirect(interaction.redirect_uri, %{
-      "code" => raw_code,
-      "state" => interaction.state
-    })
-  end
+defp approval_redirect(%Interaction{} = interaction, raw_code) do
+  build_redirect(interaction.redirect_uri, %{
+    "code" => raw_code,
+    "state" => interaction.state,
+    "iss" => Config.issuer!()
+  })
+end
 
-  defp denial_redirect(%Interaction{} = interaction) do
-    build_redirect(interaction.redirect_uri, %{
-      "error" => "access_denied",
-      "state" => interaction.state
-    })
-  end
+defp denial_redirect(%Interaction{} = interaction) do
+  build_redirect(interaction.redirect_uri, %{
+    "error" => "access_denied",
+    "state" => interaction.state,
+    "iss" => Config.issuer!()
+  })
+end
 
   defp build_redirect(base_uri, params) when is_binary(base_uri) and is_map(params) do
     uri = URI.parse(base_uri)
