@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 43-03-oidf-conformance-task-PLAN.md
-last_updated: "2026-05-03T12:46:57Z"
+stopped_at: Completed 43-04-host-test-template-PLAN.md
+last_updated: "2026-05-03T12:48:43Z"
 last_activity: 2026-05-03
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 18
-  completed_plans: 16
-  percent: 89
+  completed_plans: 17
+  percent: 94
 ---
 
 # Project State
@@ -27,14 +27,14 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 43 (end-to-end-fapi-2-0-validation-and-release-posture) — EXECUTION
-Plan: 4 of 7 completed
+Plan: 5 of 7 completed
 Status: In progress
-Last activity: 2026-05-03 — Completed Plan 43-03 OIDF conformance preflight
+Last activity: 2026-05-03 — Completed Plan 43-04 host FAPI smoke install template
 
 ## Performance Metrics
 
 - Phases completed: 2/3
-- Plans completed: 15/18
+- Plans completed: 17/18
 
 ## Accumulated Context
 
@@ -61,6 +61,8 @@ See `PROJECT.md` Key Decisions and archived milestones.
 - [Phase 43 Plan 02]: Discovery metadata now shares `global_security_profile/0` so FAPI algorithm publication and PAR-required metadata read the same policy source.
 - [Phase 43 Plan 03]: `mix lockspire.oidf_conformance` is a deterministic preflight that validates env, PATH commands, and pinned artifacts without invoking the live suite.
 - [Phase 43 Plan 03]: Missing-command and missing-artifact coverage use a narrow Application env override seam so Mix task tests stay local and deterministic.
+- [Phase 43 Plan 04]: The install generator now emits one host-owned FAPI smoke test bounded to `/authorize` negative-path proof so host apps get executable FAPI evidence without internal-module coupling.
+- [Phase 43 Plan 04]: In the install-generator fixture harness, the generated host FAPI test derives its namespace/path from `scope_module` because `app_module/app_path` still resolve to the library project during render.
 
 ### Blockers/Concerns
 
@@ -74,7 +76,7 @@ See `PROJECT.md` Key Decisions and archived milestones.
 
 **Resume file:** None
 
-**Stopped at:** Completed 43-03-oidf-conformance-task-PLAN.md
+**Stopped at:** Completed 43-04-host-test-template-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
 
