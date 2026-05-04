@@ -78,7 +78,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       # ── 2. Exercise: register failure (D-14 jwks_uri axis) ─────────────────
       {:error, _} =
         Registration.register(
-          DcrFixtures.register_request(metadata: DcrFixtures.invalid_jwks_uri_metadata())
+          DcrFixtures.register_request(metadata: DcrFixtures.invalid_redirect_uri_metadata())
         )
 
       # ── 3. Exercise: IAT redemption failure (already used) ──────────────────

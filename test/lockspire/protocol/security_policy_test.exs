@@ -42,7 +42,7 @@ defmodule Lockspire.Protocol.SecurityPolicyTest do
 
     assert :ok = Policy.ensure_supported_response_type("code")
 
-    assert {:error, :unsupported_token_endpoint_auth_method} =
+    assert :ok =
              Policy.ensure_supported_token_endpoint_auth_method(:private_key_jwt)
 
     assert :ok = Policy.ensure_supported_token_endpoint_auth_method(:client_secret_basic)

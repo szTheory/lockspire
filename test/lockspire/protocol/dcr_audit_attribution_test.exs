@@ -32,7 +32,7 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
       # ── 2. Intake failures (every D-14/D-15 axis) ───────────────────────────
       {:error, _} =
         Registration.register(
-          DcrFixtures.register_request(metadata: DcrFixtures.invalid_jwks_uri_metadata())
+          DcrFixtures.register_request(metadata: DcrFixtures.invalid_redirect_uri_metadata())
         )
 
       {:error, _} =
@@ -81,7 +81,7 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
 
       {:error, %Registration.Error{}} =
         RegistrationManagement.update(update_success.client.client_id, %{
-          metadata: DcrFixtures.invalid_jwks_uri_metadata(),
+          metadata: DcrFixtures.invalid_redirect_uri_metadata(),
           server_policy: server_policy,
           client: update_success.client
         })

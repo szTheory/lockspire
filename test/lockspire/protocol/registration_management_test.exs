@@ -155,7 +155,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                )
     end
 
-    test "returns {:error, %Error{}} for invalid metadata (jwks_uri)", %{
+    test "returns {:error, %Error{}} for invalid metadata (redirect_uris)", %{
       client: client,
       client_id: client_id,
       server_policy: server_policy

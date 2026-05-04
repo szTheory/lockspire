@@ -6,7 +6,7 @@ defmodule Lockspire.Security.Policy do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Protocol.SecurityProfile
 
-  @supported_token_endpoint_auth_methods [:none, :client_secret_basic, :client_secret_post]
+  @supported_token_endpoint_auth_methods [:none, :client_secret_basic, :client_secret_post, :private_key_jwt]
   @supported_response_types ["code"]
   @supported_signing_algs ["RS256", "ES256", "PS256", "EdDSA", :RS256, :ES256, :PS256, :EdDSA]
 
