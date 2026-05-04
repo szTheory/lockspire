@@ -242,6 +242,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl InteractionStore
+  def list_interactions(_opts \\ []) do
+    InteractionRecord
+    |> order_by(desc: :inserted_at)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &InteractionRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl InteractionStore
   def transition_interaction(interaction_id, expected_statuses, attrs)
       when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
     transact(fn ->

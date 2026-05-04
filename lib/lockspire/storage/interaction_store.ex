@@ -16,4 +16,5 @@ defmodule Lockspire.Storage.InteractionStore do
   @callback transition_interaction(String.t(), [Interaction.status()], map()) ::
               {:ok, Interaction.t()} | {:error, store_error()}
   @callback transact((-> term())) :: {:ok, term()} | {:error, store_error()}
+  @callback list_interactions(keyword()) :: {:ok, [Interaction.t()]} | {:error, store_error()}
 end
