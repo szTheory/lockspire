@@ -7,16 +7,25 @@ defmodule Lockspire.Config do
 
   @app :lockspire
 
+  @doc """
+  Returns the configured Ecto repo module, or raises if missing.
+  """
   @spec repo!() :: module()
   def repo! do
     fetch_required!(:repo)
   end
 
+  @doc """
+  Returns the configured account resolver module, or raises if missing.
+  """
   @spec account_resolver!() :: module()
   def account_resolver! do
     fetch_required!(:account_resolver)
   end
 
+  @doc """
+  Returns the validated configured issuer string, or raises if invalid/missing.
+  """
   @spec issuer!() :: String.t()
   def issuer! do
     issuer = fetch_required!(:issuer)
@@ -49,6 +58,9 @@ defmodule Lockspire.Config do
     end
   end
 
+  @doc """
+  Returns the configured logout path.
+  """
   @spec logout_path() :: String.t()
   def logout_path do
     case Application.get_env(@app, :logout_path) do
@@ -62,6 +74,9 @@ defmodule Lockspire.Config do
     end
   end
 
+  @doc """
+  Returns the list of known scopes.
+  """
   @spec known_scopes() :: [String.t()]
   def known_scopes do
     @app
@@ -69,11 +84,17 @@ defmodule Lockspire.Config do
     |> List.wrap()
   end
 
+  @doc """
+  Returns the security profile configuration.
+  """
   @spec security_profile() :: :none | :fapi_2_0_security
   def security_profile do
     Application.get_env(@app, :security_profile, :none)
   end
 
+  @doc """
+  Returns the computed device verification URI.
+  """
   @spec device_verification_uri() :: String.t()
   def device_verification_uri do
     issuer!()
@@ -104,11 +125,17 @@ defmodule Lockspire.Config do
     Application.get_env(@app, :jar_max_age_seconds, @jar_max_age_default)
   end
 
+  @doc """
+  Returns the Oban configuration keyword list.
+  """
   @spec oban_config() :: keyword()
   def oban_config do
     Application.get_env(@app, :oban, [])
   end
 
+  @doc """
+  Returns the schedule string for the pruner, or false if disabled.
+  """
   @spec pruner_schedule() :: String.t() | false
   def pruner_schedule do
     Application.get_env(@app, :pruner_schedule, "@hourly")

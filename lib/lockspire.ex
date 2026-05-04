@@ -5,6 +5,9 @@ defmodule Lockspire do
 
   alias Lockspire.Config
 
+  @doc """
+  Returns a consolidated map of all Lockspire configuration.
+  """
   @spec config() :: %{
           repo: module(),
           account_resolver: module(),
@@ -24,6 +27,9 @@ defmodule Lockspire do
     }
   end
 
+  @doc """
+  Returns the configured OIDC issuer string.
+  """
   @spec issuer() :: String.t()
   def issuer do
     Config.issuer!()
@@ -34,11 +40,17 @@ defmodule Lockspire do
     Config.mount_path()
   end
 
+  @doc """
+  Returns the configured logout path.
+  """
   @spec logout_path() :: String.t()
   def logout_path do
     Config.logout_path()
   end
 
+  @doc """
+  Returns the configured account resolver module, or raises if missing.
+  """
   @spec account_resolver!() :: module()
   def account_resolver! do
     Config.account_resolver!()
