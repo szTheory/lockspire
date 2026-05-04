@@ -4,10 +4,11 @@ defmodule Lockspire.Host.AccountResolver do
   """
 
   alias Lockspire.Host.Claims
+  alias Lockspire.Host.Context
   alias Lockspire.Host.InteractionResult
 
   @type account :: term()
-  @type context :: map()
+  @type context :: Context.t()
 
   # @callback resolve_current_account/2
   @callback resolve_current_account(conn_or_socket :: term(), context()) ::
