@@ -95,6 +95,13 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
 
     case device_authorization_store(request).put_device_authorization(device_auth) do
       {:ok, %DeviceAuthorizationState{} = stored_auth} ->
+        Lockspire.Observability.emit(
+          :device_authorization,
+          :created,
+          %{},
+          %{client_id: client.client_id, verification_handle: stored_auth.verification_handle}
+        )
+
         {:ok,
          %DeviceAuthorizationState{
            stored_auth

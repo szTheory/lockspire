@@ -42,31 +42,56 @@ defmodule Lockspire.Protocol.DeviceVerification do
   @spec approve_device_authorization(String.t(), map(), keyword()) :: transition_result()
   def approve_device_authorization(verification_handle, actor_context, opts \\ [])
       when is_binary(verification_handle) and is_map(actor_context) and is_list(opts) do
-    with {:ok, subject_id} <- actor_subject_id(actor_context) do
-      device_authorization_store(opts).transition_device_authorization(
-        verification_handle,
-        [:pending],
+    with {:ok, subject_id} <- actor_subject_id(actor_context),
+         {:ok, approved} <-
+           device_authorization_store(opts).transition_device_authorization(
+             verification_handle,
+             [:pending],
+             %{
+               status: :approved,
+               subject_id: subject_id,
+               approved_at: now(opts)
+             }
+           ) do
+      Lockspire.Observability.emit(
+        :device_authorization,
+        :approved,
+        %{},
         %{
-          status: :approved,
-          subject_id: subject_id,
-          approved_at: now(opts)
+          verification_handle: verification_handle,
+          client_id: approved.client_id,
+          subject_id: subject_id
         }
       )
+
+      {:ok, approved}
     end
   end
 
   @spec deny_device_authorization(String.t(), map(), keyword()) :: transition_result()
   def deny_device_authorization(verification_handle, actor_context, opts \\ [])
       when is_binary(verification_handle) and is_map(actor_context) and is_list(opts) do
-    with {:ok, _subject_id} <- actor_subject_id(actor_context) do
-      device_authorization_store(opts).transition_device_authorization(
-        verification_handle,
-        [:pending],
+    with {:ok, _subject_id} <- actor_subject_id(actor_context),
+         {:ok, denied} <-
+           device_authorization_store(opts).transition_device_authorization(
+             verification_handle,
+             [:pending],
+             %{
+               status: :denied,
+               denied_at: now(opts)
+             }
+           ) do
+      Lockspire.Observability.emit(
+        :device_authorization,
+        :denied,
+        %{},
         %{
-          status: :denied,
-          denied_at: now(opts)
+          verification_handle: verification_handle,
+          client_id: denied.client_id
         }
       )
+
+      {:ok, denied}
     end
   end
 
