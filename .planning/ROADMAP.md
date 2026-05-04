@@ -45,7 +45,7 @@
 **Plans**: 3 plans
 - [x] 46-01-PLAN.md — Integrate security auditing tooling
 - [x] 46-02-PLAN.md — Finalize public API documentation
-- [ ] 46-03-PLAN.md — Update 1.0 readiness markdown guides
+- [x] 46-03-PLAN.md — Update 1.0 readiness markdown guides
 
 ### Phase 47: 1.0 GA Release Readiness
 **Goal**: Lockspire transitions from preview to a stable 1.0 GA release.

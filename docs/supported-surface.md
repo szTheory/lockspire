@@ -32,7 +32,7 @@ Lockspire `v0.2.0` preview currently supports this repo-proven surface:
 
 ## Explicitly out of scope
 
-Lockspire `v0.2.0` preview does not currently support:
+Lockspire does not currently support:
 
 - Implicit flow
 - Request-object-by-value support
@@ -87,6 +87,8 @@ A `v0.2.0` preview claim should not say:
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 
+
+
 ## 1.0 bar
 
 A `1.0` claim should require everything in the preview bar plus:
@@ -95,3 +97,4 @@ A `1.0` claim should require everything in the preview bar plus:
 - maintainer runbooks that match real release operations
 - stable support expectations for the documented embedded-library surface
 - evidence that public docs, workflows, and shipped behavior still agree over time
+ime

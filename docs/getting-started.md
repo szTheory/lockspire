@@ -20,6 +20,6 @@ Do not use Lockspire as:
 2. Run `mix lockspire.install`.
 3. Review and wire the generated host-owned files.
 4. Run migrations.
-5. Register a client and prove the flow with discovery, JWKS, and an authorization-code + PKCE exchange.
+5. Register a client (manually or via DCR) and prove the flow with discovery, JWKS, and an authorization-code + PKCE or Device Flow exchange.
 
 The generated files stay host-owned by design. Lockspire provides the protocol core; your app keeps ownership of login UX, branding, policy, and account data.

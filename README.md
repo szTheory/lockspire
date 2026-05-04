@@ -4,11 +4,13 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 It lets a Phoenix SaaS team become an OAuth/OIDC provider inside its existing app without moving accounts, login UX, branding, or product policy into a separate auth service.
 
-The public support contract for the current `v0.1` preview lives in [`docs/supported-surface.md`](docs/supported-surface.md).
+The public support contract for the current release lives in [`docs/supported-surface.md`](docs/supported-surface.md).
 
-## What v0.1 includes
+## What v1.0 includes
 
 - Authorization code + PKCE
+- Device Flow authorization
+- Dynamic Client Registration (DCR)
 - Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Userinfo, revocation, introspection, and refresh rotation
@@ -19,10 +21,10 @@ The public support contract for the current `v0.1` preview lives in [`docs/suppo
 - RFC 9207 `iss` parameter on every authorization-response redirect for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration` (`authorization_response_iss_parameter_supported` always; `require_pushed_authorization_requests` only when the global server policy is `:fapi_2_0_security`)
 
-## What v0.1 does not include
+## What v1.0 does not include
 
 - Hosted auth as a separate service
-- Request-object-by-value support, generic external `request_uri` handling, device flow, or dynamic client registration
+- Request-object-by-value support and generic external `request_uri` handling
 - SAML or LDAP federation
 - A full CIAM suite
 - Lockspire-owned account tables or login UX
