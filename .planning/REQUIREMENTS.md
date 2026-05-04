@@ -15,7 +15,7 @@
 |-------------|-------|--------|
 | STAB-01 | Phase 44 | Pending |
 | STAB-02 | Phase 46 | Pending |
-| STAB-03 | Phase 45 | In Progress |
-| STAB-04 | Phase 45 | Pending |
+| STAB-03 | Phase 45 | Completed |
+| STAB-04 | Phase 45 | Completed |
 | STAB-05 | Phase 46 | Pending |
 | STAB-06 | Phase 47 | Pending |
