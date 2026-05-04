@@ -43,8 +43,8 @@
   2. A formal security and API surface audit is conducted, and any critical findings are addressed.
   3. The project README and guides accurately reflect the 1.0 architecture and capabilities.
 **Plans**: 3 plans
-- [ ] 46-01-PLAN.md — Integrate security auditing tooling
-- [ ] 46-02-PLAN.md — Finalize public API documentation
+- [x] 46-01-PLAN.md — Integrate security auditing tooling
+- [x] 46-02-PLAN.md — Finalize public API documentation
 - [ ] 46-03-PLAN.md — Update 1.0 readiness markdown guides
 
 ### Phase 47: 1.0 GA Release Readiness
@@ -63,5 +63,5 @@
 |-------|----------------|--------|-----------|
 | 44. API Stabilization & Typespecs | 0/2 | Not started | - |
 | 45. Observability & Operator Seams | 3/3 | Completed | 2026-05-04 |
-| 46. Documentation & Security Audit | 0/3 | Not started | - |
+| 46. Documentation & Security Audit | 2/3 | In Progress | - |
 | 47. 1.0 GA Release Readiness | 0/0 | Not started | - |

@@ -26,21 +26,23 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 45. Observability & Operator Seams
-Plan: 3/3
-Status: Completed
-Last activity: 2026-05-04 — Executed Plan 45-03
+Phase: 46. Documentation & Security Audit
+Plan: 2/3
+Status: In Progress
+Last activity: 2026-05-04 — Executed Plan 46-02
 
 ## Performance Metrics
 
 - Phases completed: 1/4
-- Plans completed: 3/5
+- Plans completed: 5/8
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 45. Observability & Operator Seams | 45-01 | 15m | 1 | 4 |
 | 45. Observability & Operator Seams | 45-02 | 10m | 2 | 3 |
 | 45. Observability & Operator Seams | 45-03 | 5m | 2 | 5 |
+| 46. Documentation & Security Audit | 46-01 | 5m | 2 | 2 |
+| 46. Documentation & Security Audit | 46-02 | 10m | 3 | 13 |
 
 ## Accumulated Context
 
@@ -51,6 +53,7 @@ Last activity: 2026-05-04 — Executed Plan 45-03
 - Used `Observability.emit/4` for device authorization created, approved, and denied transitions.
 - Included `client_id`, `verification_handle` and `subject_id` (where applicable) in telemetry metadata to assist operators without logging sensitive user codes.
 - Mapped telemetry documentation according to existing Observability.emit implementation mapping.
+- Replaced hidden `t()` types with `struct()` or `map()` in public `@spec` definitions to ensure clean ExDoc generation.
 
 ### Blockers/Concerns
 
@@ -58,10 +61,10 @@ Last activity: 2026-05-04 — Executed Plan 45-03
 
 ## Session Continuity
 
-**Next action:** Execute Phase 46 Plan 01
+**Next action:** Execute Phase 46 Plan 03
 
 **Resume file:** None
 
-**Stopped at:** Completed 45-observability-operator-seams-03-PLAN.md
+**Stopped at:** Completed 46-02-PLAN.md
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
