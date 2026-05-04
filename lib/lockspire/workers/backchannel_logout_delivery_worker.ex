@@ -193,8 +193,6 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     |> repo().update!()
   end
 
-  defp mark_retryable(nil, _attempted_at, _http_status, _failure_reason), do: :ok
-
   defp mark_retryable(%LogoutDeliveryRecord{} = delivery_record, attempted_at, http_status, failure_reason) do
     delivery_record
     |> Changeset.change(
@@ -208,8 +206,6 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     |> repo().update!()
   end
 
-  defp mark_discarded(nil, _attempted_at, _http_status, _failure_reason), do: :ok
-
   defp mark_discarded(%LogoutDeliveryRecord{} = delivery_record, attempted_at, http_status, failure_reason) do
     delivery_record
     |> Changeset.change(
@@ -221,8 +217,6 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     |> maybe_put_attempted_at(attempted_at)
     |> repo().update!()
   end
-
-  defp maybe_put_attempted_at(changeset, nil), do: changeset
 
   defp maybe_put_attempted_at(changeset, attempted_at) do
     Changeset.put_change(changeset, :last_attempted_at, attempted_at)

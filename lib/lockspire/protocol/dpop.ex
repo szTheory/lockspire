@@ -186,8 +186,6 @@ defmodule Lockspire.Protocol.DPoP do
     end
   end
 
-  defp parse_header_jwk(_), do: {:error, :invalid_jwk}
-
   defp parse_validation_opts(opts) do
     method = Keyword.get(opts, :method)
     target_uri = Keyword.get(opts, :target_uri)
