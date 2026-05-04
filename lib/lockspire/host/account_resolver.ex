@@ -8,23 +8,22 @@ defmodule Lockspire.Host.AccountResolver do
   alias Lockspire.Host.InteractionResult
 
   @type account :: term()
+  @type connection :: Plug.Conn.t() | Phoenix.LiveView.Socket.t() | term()
   @type context :: Context.t()
 
-  # @callback resolve_current_account/2
-  @callback resolve_current_account(conn_or_socket :: term(), context()) ::
+  @callback resolve_current_account(conn_or_socket :: connection(), context()) ::
               {:ok, account()} | {:redirect, InteractionResult.t()}
 
   @callback resolve_account(account_reference :: term(), context()) ::
               {:ok, account()} | {:error, :not_found | term()}
 
-  # @callback build_claims/2
   @callback build_claims(account(), context()) ::
               {:ok, Claims.t()} | {:error, term()}
 
-  @callback redirect_for_login(conn_or_socket :: term(), context()) ::
+  @callback redirect_for_login(conn_or_socket :: connection(), context()) ::
               InteractionResult.t()
 
   @optional_callbacks [redirect_for_logout: 2]
-  @callback redirect_for_logout(conn_or_socket :: term(), context()) ::
+  @callback redirect_for_logout(conn_or_socket :: connection(), context()) ::
               InteractionResult.t()
 end
