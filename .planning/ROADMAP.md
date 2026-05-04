@@ -3,7 +3,7 @@
 ## Phases
 - [ ] **Phase 44: API Stabilization & Typespecs** - Finalize and strictly type the public API contract
 - [x] **Phase 45: Observability & Operator Seams** - Ensure telemetry and operator workflows are consistent and reliable
-- [ ] **Phase 46: Documentation & Security Audit** - Complete public documentation and conduct a formal 1.0 readiness audit
+- [x] **Phase 46: Documentation & Security Audit** - Complete public documentation and conduct a formal 1.0 readiness audit
 - [ ] **Phase 47: 1.0 GA Release Readiness** - Transition package posture from preview to 1.0 GA
 
 ## Phase Details
@@ -65,3 +65,4 @@
 | 45. Observability & Operator Seams | 3/3 | Completed | 2026-05-04 |
 | 46. Documentation & Security Audit | 2/3 | In Progress | - |
 | 47. 1.0 GA Release Readiness | 0/0 | Not started | - |
+ | - |
