@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: unassigned
-milestone_name: 
-status: idle
-stopped_at: v1.10 FAPI 2.0 Security Profile milestone completed and archived.
-last_updated: "2026-05-03T19:20:00Z"
-last_activity: 2026-05-03
+milestone: v1.11
+milestone_name: "1.0 GA Release — The Stabilization Epoch"
+status: planned
+stopped_at: "Roadmap generated for v1.11 milestone"
+last_updated: "2026-05-04T12:00:00Z"
+last_activity: 2026-05-04
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -22,44 +22,39 @@ See: `.planning/PROJECT.md`
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Next milestone planning
+**Current focus:** v1.11 / 1.0 GA Release — The Stabilization Epoch
 
 ## Current Position
 
-Phase: S02-automated-token-and-nonce-pruning
-Plan: 01
-Status: Completed
-Last activity: 2024-05-03 — Completed S02-01-PLAN.md
+Phase: 44. API Stabilization & Typespecs
+Plan: 1/2
+Status: Executing Phase 44
+Last activity: 2026-05-04 — Executed Plan 44-01
 
 ## Performance Metrics
 
-- Phases completed: 0/0
-- Plans completed: 0/0
+- Phases completed: 0/4
+- Plans completed: 0/2
 
 ## Accumulated Context
 
 ### Decisions
 
-- **S02-01**: Configured pruning interval via `pruner_schedule/0` defaulting to `@hourly`.
-- **S02-01**: Implemented chunked `LIMIT 1000` deletion to prevent table lock escalation during pruning.
-
-See `PROJECT.md` Key Decisions and archived milestones.
-
-(Cleared previous milestone context; refer to v1.10 archives for previous context.)
+- Transitioning from preview posture to 1.0 GA release.
+- Focusing on stabilizing API contracts, standardizing telemetry, ensuring consistency in operator seams, and finalizing documentation.
 
 ### Blockers/Concerns
 
-- **Manual OIDF Docker run still pending**: `mix lockspire.oidf_conformance --validate-env` verifies prerequisites, but the live OIDF suite remains a documented manual maintainer step.
-- **Pre-existing failures remain tracked** in `.planning/phases/41-fapi-2-0-profile-configuration/deferred-items.md` for follow-up during later FAPI phases as needed.
+- None currently identified.
 
 ## Session Continuity
 
-**Next action:** Plan next milestone
+**Next action:** Execute Plan 44-02 (`/gsd-execute-plan 44-02`)
 
 **Resume file:** None
 
-**Stopped at:** Completed S02-01-PLAN.md
+**Stopped at:** Executed Plan 44-01
 
 **Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
-
-**Planned Phase:** unassigned
+YSTEM-SIGRA.md`
+Ecosystem:** `.planning/ECOSYSTEM-SIGRA.md`
