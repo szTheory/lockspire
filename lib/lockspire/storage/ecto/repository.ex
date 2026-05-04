@@ -703,6 +703,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
+  @spec list_all_logout_deliveries() :: {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  def list_all_logout_deliveries do
+    LogoutDeliveryRecord
+    |> order_by(desc: :inserted_at)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &LogoutDeliveryRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
   @spec list_logout_deliveries(integer()) :: {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
   def list_logout_deliveries(logout_event_id) when is_integer(logout_event_id) do
     LogoutDeliveryRecord

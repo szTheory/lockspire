@@ -15,7 +15,8 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         %{label: "Consents", key: :consents, href: admin_path("/consents"), enabled: true},
         %{label: "Tokens", key: :tokens, href: admin_path("/tokens"), enabled: true},
         %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true},
-        %{label: "Interactions", key: :interactions, href: admin_path("/interactions"), enabled: true}
+        %{label: "Interactions", key: :interactions, href: admin_path("/interactions"), enabled: true},
+        %{label: "Logouts", key: :logouts, href: admin_path("/logouts"), enabled: true}
       ])
 
     ~H"""

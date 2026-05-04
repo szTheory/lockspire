@@ -38,6 +38,7 @@ defmodule Lockspire.Web.Router do
     live("/admin/keys", Lockspire.Web.Live.Admin.KeysLive.Index, :index)
     live("/admin/keys/:id", Lockspire.Web.Live.Admin.KeysLive.Show, :show)
     live("/admin/interactions", Lockspire.Web.Live.Admin.InteractionsLive.Index, :index)
+    live("/admin/logouts", Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index, :index)
     live("/admin/iats", Lockspire.Web.Live.Admin.IatLive.Index, :index)
     live("/admin/iats/new", Lockspire.Web.Live.Admin.IatLive.New, :new)
     live("/admin/clients/:client_id/edit", Lockspire.Web.Live.Admin.ClientsLive.Show, :edit)
