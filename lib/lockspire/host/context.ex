@@ -3,7 +3,8 @@ defmodule Lockspire.Host.Context do
   Contextual information passed to host integration callbacks.
   """
 
-  @type interaction_type :: :login | :consent | :logout | :refresh | :exchange | :userinfo | term()
+  @type interaction_type ::
+          :login | :consent | :logout | :refresh | :exchange | :userinfo | term()
 
   @type t :: %__MODULE__{
           interaction_type: interaction_type() | nil,

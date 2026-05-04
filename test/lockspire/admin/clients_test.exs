@@ -402,13 +402,20 @@ defmodule Lockspire.Admin.ClientsTest do
 
   test "update_client/2 with security_profile 'fapi_2_0_security' persists and returns :fapi_2_0_security" do
     now = DateTime.utc_now()
+
     Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-update-ready",
       use: :sig,
       status: :active,
       published_at: now,
       activated_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-update-ready", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-update-ready",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"
@@ -435,7 +442,8 @@ defmodule Lockspire.Admin.ClientsTest do
              })
 
     assert Enum.any?(errors, fn err ->
-             err.field == :security_profile and err.reason in [:missing_compliant_active_key, :missing_compliant_publishable_key]
+             err.field == :security_profile and
+               err.reason in [:missing_compliant_active_key, :missing_compliant_publishable_key]
            end)
   end
 

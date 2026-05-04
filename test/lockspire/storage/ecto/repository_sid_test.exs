@@ -43,17 +43,19 @@ defmodule Lockspire.Storage.Ecto.RepositorySidTest do
     test "bulk-revokes all non-redeemed, non-revoked tokens for a given sid" do
       sid = "session-abc-#{System.unique_integer([:positive])}"
 
-      t1 = token_with_sid(%{
-        token_hash: "sid_t1_#{System.unique_integer([:positive])}",
-        family_id: "fam_t1_#{System.unique_integer([:positive])}",
-        sid: sid
-      })
+      t1 =
+        token_with_sid(%{
+          token_hash: "sid_t1_#{System.unique_integer([:positive])}",
+          family_id: "fam_t1_#{System.unique_integer([:positive])}",
+          sid: sid
+        })
 
-      t2 = token_with_sid(%{
-        token_hash: "sid_t2_#{System.unique_integer([:positive])}",
-        family_id: "fam_t2_#{System.unique_integer([:positive])}",
-        sid: sid
-      })
+      t2 =
+        token_with_sid(%{
+          token_hash: "sid_t2_#{System.unique_integer([:positive])}",
+          family_id: "fam_t2_#{System.unique_integer([:positive])}",
+          sid: sid
+        })
 
       assert {:ok, _stored_t1} = Repository.store_token(t1)
       assert {:ok, _stored_t2} = Repository.store_token(t2)
@@ -69,17 +71,19 @@ defmodule Lockspire.Storage.Ecto.RepositorySidTest do
       sid_a = "session-a-#{System.unique_integer([:positive])}"
       sid_b = "session-b-#{System.unique_integer([:positive])}"
 
-      t_a = token_with_sid(%{
-        token_hash: "sid_ta_#{System.unique_integer([:positive])}",
-        family_id: "fam_a_#{System.unique_integer([:positive])}",
-        sid: sid_a
-      })
+      t_a =
+        token_with_sid(%{
+          token_hash: "sid_ta_#{System.unique_integer([:positive])}",
+          family_id: "fam_a_#{System.unique_integer([:positive])}",
+          sid: sid_a
+        })
 
-      t_b = token_with_sid(%{
-        token_hash: "sid_tb_#{System.unique_integer([:positive])}",
-        family_id: "fam_b_#{System.unique_integer([:positive])}",
-        sid: sid_b
-      })
+      t_b =
+        token_with_sid(%{
+          token_hash: "sid_tb_#{System.unique_integer([:positive])}",
+          family_id: "fam_b_#{System.unique_integer([:positive])}",
+          sid: sid_b
+        })
 
       assert {:ok, _} = Repository.store_token(t_a)
       assert {:ok, _} = Repository.store_token(t_b)
@@ -94,11 +98,12 @@ defmodule Lockspire.Storage.Ecto.RepositorySidTest do
     test "stores token with sid field and retrieves it" do
       sid = "session-store-#{System.unique_integer([:positive])}"
 
-      t = token_with_sid(%{
-        token_hash: "sid_store_#{System.unique_integer([:positive])}",
-        family_id: "fam_store_#{System.unique_integer([:positive])}",
-        sid: sid
-      })
+      t =
+        token_with_sid(%{
+          token_hash: "sid_store_#{System.unique_integer([:positive])}",
+          family_id: "fam_store_#{System.unique_integer([:positive])}",
+          sid: sid
+        })
 
       assert {:ok, stored} = Repository.store_token(t)
       assert stored.sid == sid

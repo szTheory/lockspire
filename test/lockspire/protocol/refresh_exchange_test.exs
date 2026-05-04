@@ -282,7 +282,9 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
              )
 
     assert {:ok, %Token{} = rotated_refresh_token} =
-             Repository.fetch_refresh_token(TokenFormatter.hash_token("dpop-rotated-refresh-token"))
+             Repository.fetch_refresh_token(
+               TokenFormatter.hash_token("dpop-rotated-refresh-token")
+             )
 
     assert rotated_access_token.cnf["jkt"] == validated_proof.jkt
     assert rotated_refresh_token.cnf["jkt"] == validated_proof.jkt

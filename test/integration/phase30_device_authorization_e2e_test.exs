@@ -90,7 +90,9 @@ defmodule Lockspire.Integration.Phase30DeviceAuthorizationE2ETest do
     assert authorization.device_code_hash == device_code_hash
     assert authorization.user_code_hash == DeviceAuthorization.hash_user_code(body["user_code"])
     assert authorization.effective_poll_interval_seconds == 5
-    assert DateTime.diff(authorization.expires_at, authorization.next_poll_allowed_at, :second) == 295
+
+    assert DateTime.diff(authorization.expires_at, authorization.next_poll_allowed_at, :second) ==
+             295
   end
 
   test "POST /device/code rejects missing client identity with invalid_client and cache headers" do
@@ -102,7 +104,10 @@ defmodule Lockspire.Integration.Phase30DeviceAuthorizationE2ETest do
     assert conn.status == 401
     assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "pragma") == ["no-cache"]
-    assert get_resp_header(conn, "www-authenticate") == ["Basic realm=\"Lockspire Device Authorization Endpoint\""]
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Basic realm=\"Lockspire Device Authorization Endpoint\""
+           ]
 
     body = Jason.decode!(conn.resp_body)
     assert body["error"] == "invalid_client"

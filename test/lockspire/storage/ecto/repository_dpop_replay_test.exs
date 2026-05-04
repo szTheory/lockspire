@@ -75,7 +75,9 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
       expires_at: expires_at
     }
 
-    assert %Ecto.Changeset{valid?: true} = changeset = DpopReplayRecord.changeset(%DpopReplayRecord{}, replay)
+    assert %Ecto.Changeset{valid?: true} =
+             changeset = DpopReplayRecord.changeset(%DpopReplayRecord{}, replay)
+
     record = Ecto.Changeset.apply_changes(changeset)
 
     assert record.replay_key == replay.replay_key

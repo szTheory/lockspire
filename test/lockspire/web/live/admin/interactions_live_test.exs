@@ -59,7 +59,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert html =~ "Active interactions"
     assert html =~ "test-interaction-123"
     assert html =~ "test-client"
-    assert html =~ "pending_login"
+    assert html =~ "Pending login"
   end
 
   defp socket_for(action) do

@@ -64,7 +64,8 @@ defmodule Lockspire.Admin.Keys do
       updated_at: DateTime.utc_now()
     }
 
-    with {:ok, published_key} <- transact_with_audit(
+    with {:ok, published_key} <-
+           transact_with_audit(
              fn -> Repository.publish_key(key) end,
              fn %SigningKey{} = k ->
                key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})

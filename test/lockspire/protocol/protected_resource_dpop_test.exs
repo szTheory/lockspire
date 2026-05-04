@@ -36,7 +36,10 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     %{request: request, token: token} = dpop_request_fixture()
 
     assert_invalid_token(
-      ProtectedResourceDPoP.validate_userinfo_access(token, %{request | authorization_scheme: "Bearer"}),
+      ProtectedResourceDPoP.validate_userinfo_access(token, %{
+        request
+        | authorization_scheme: "Bearer"
+      }),
       :invalid_dpop_authorization_scheme
     )
 
@@ -52,7 +55,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       :missing_dpop_ath
     )
 
-    %{jwt: wrong_ath_proof} = proof_fixture(%{"ath" => DPoP.access_token_ath("other-access-token")})
+    %{jwt: wrong_ath_proof} =
+      proof_fixture(%{"ath" => DPoP.access_token_ath("other-access-token")})
 
     assert_invalid_token(
       ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: wrong_ath_proof}),

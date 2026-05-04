@@ -34,52 +34,62 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
          :ok <- ensure_backchannel_delivery(delivery_record),
          attempted_at = DateTime.utc_now(),
          {:ok, attempted_record} <- mark_attempted(delivery_record, attempted_at) do
-      emit_lifecycle(:delivery_attempted, attempted_record, %{attempt_count: attempted_record.attempt_count})
+      emit_lifecycle(:delivery_attempted, attempted_record, %{
+        attempt_count: attempted_record.attempt_count
+      })
 
       with {:ok, signing_key} <- fetch_signing_key() do
-      case LogoutToken.sign(%{
-             issuer: Config.issuer!(),
-             logout_event: LogoutEventRecord.to_domain(attempted_record.logout_event),
-             delivery: LogoutDeliveryRecord.to_domain(attempted_record),
-             issued_at: attempted_at,
-             signing_key: signing_key
-           }) do
-        {:ok, logout_token, logout_token_jti} ->
-          case deliver_logout_token(attempted_record.target_uri, logout_token) do
-            {:ok, response} ->
-              finalize_response(
-                attempted_record,
-                attempted_at,
-                logout_token_jti,
-                logout_token,
-                response
-              )
+        case LogoutToken.sign(%{
+               issuer: Config.issuer!(),
+               logout_event: LogoutEventRecord.to_domain(attempted_record.logout_event),
+               delivery: LogoutDeliveryRecord.to_domain(attempted_record),
+               issued_at: attempted_at,
+               signing_key: signing_key
+             }) do
+          {:ok, logout_token, logout_token_jti} ->
+            case deliver_logout_token(attempted_record.target_uri, logout_token) do
+              {:ok, response} ->
+                finalize_response(
+                  attempted_record,
+                  attempted_at,
+                  logout_token_jti,
+                  logout_token,
+                  response
+                )
 
-            {:error, %Req.TransportError{reason: reason}} ->
-              mark_retryable(
-                attempted_record,
-                attempted_at,
-                nil,
-                "request_failed:#{reason}"
-              )
+              {:error, %Req.TransportError{reason: reason}} ->
+                mark_retryable(
+                  attempted_record,
+                  attempted_at,
+                  nil,
+                  "request_failed:#{reason}"
+                )
 
-              emit_lifecycle(:delivery_failed, attempted_record, %{
-                failure_reason: "request_failed:#{reason}",
-                logout_token: logout_token
-              })
+                emit_lifecycle(:delivery_failed, attempted_record, %{
+                  failure_reason: "request_failed:#{reason}",
+                  logout_token: logout_token
+                })
 
-              {:error, {:request_failed, reason}}
-          end
+                {:error, {:request_failed, reason}}
+            end
 
-        {:error, :invalid_signing_key} ->
-          mark_discarded(attempted_record, attempted_at, nil, "invalid_signing_key")
-          emit_lifecycle(:delivery_discarded, attempted_record, %{failure_reason: "invalid_signing_key"})
-          {:discard, :invalid_signing_key}
-      end
+          {:error, :invalid_signing_key} ->
+            mark_discarded(attempted_record, attempted_at, nil, "invalid_signing_key")
+
+            emit_lifecycle(:delivery_discarded, attempted_record, %{
+              failure_reason: "invalid_signing_key"
+            })
+
+            {:discard, :invalid_signing_key}
+        end
       else
         {:error, :missing_signing_key} ->
           mark_discarded(attempted_record, attempted_at, nil, "missing_signing_key")
-          emit_lifecycle(:delivery_discarded, attempted_record, %{failure_reason: "missing_signing_key"})
+
+          emit_lifecycle(:delivery_discarded, attempted_record, %{
+            failure_reason: "missing_signing_key"
+          })
+
           {:discard, :missing_signing_key}
       end
     else
@@ -131,7 +141,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       Application.get_env(:lockspire, :backchannel_logout_req, [])
       |> Keyword.put_new(:retry, false)
       |> Keyword.put(:url, target_uri)
-      |> Keyword.put(:form, [logout_token: logout_token])
+      |> Keyword.put(:form, logout_token: logout_token)
 
     case Req.post(request_opts) do
       {:ok, response} -> {:ok, response}
@@ -150,37 +160,58 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     cond do
       response.status in 200..299 ->
         mark_succeeded(delivery_record, attempted_at, logout_token_jti, response.status)
+
         emit_lifecycle(:delivery_succeeded, delivery_record, %{
           http_status: response.status,
           logout_token: logout_token,
           response_body: response.body,
           logout_token_jti: logout_token_jti
         })
+
         :ok
 
       response.status in 400..499 ->
-        mark_discarded(delivery_record, attempted_at, response.status, "http_error:#{response.status}")
+        mark_discarded(
+          delivery_record,
+          attempted_at,
+          response.status,
+          "http_error:#{response.status}"
+        )
+
         emit_lifecycle(:delivery_discarded, delivery_record, %{
           http_status: response.status,
           logout_token: logout_token,
           response_body: response.body,
           failure_reason: "http_error:#{response.status}"
         })
+
         {:discard, {:http_error, response.status}}
 
       true ->
-        mark_retryable(delivery_record, attempted_at, response.status, "http_error:#{response.status}")
+        mark_retryable(
+          delivery_record,
+          attempted_at,
+          response.status,
+          "http_error:#{response.status}"
+        )
+
         emit_lifecycle(:delivery_failed, delivery_record, %{
           http_status: response.status,
           logout_token: logout_token,
           response_body: response.body,
           failure_reason: "http_error:#{response.status}"
         })
+
         {:error, {:http_error, response.status}}
     end
   end
 
-  defp mark_succeeded(%LogoutDeliveryRecord{} = delivery_record, attempted_at, logout_token_jti, http_status) do
+  defp mark_succeeded(
+         %LogoutDeliveryRecord{} = delivery_record,
+         attempted_at,
+         logout_token_jti,
+         http_status
+       ) do
     delivery_record
     |> Changeset.change(
       status: :succeeded,
@@ -193,7 +224,12 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     |> repo().update!()
   end
 
-  defp mark_retryable(%LogoutDeliveryRecord{} = delivery_record, attempted_at, http_status, failure_reason) do
+  defp mark_retryable(
+         %LogoutDeliveryRecord{} = delivery_record,
+         attempted_at,
+         http_status,
+         failure_reason
+       ) do
     delivery_record
     |> Changeset.change(
       status: :retryable,
@@ -206,7 +242,12 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     |> repo().update!()
   end
 
-  defp mark_discarded(%LogoutDeliveryRecord{} = delivery_record, attempted_at, http_status, failure_reason) do
+  defp mark_discarded(
+         %LogoutDeliveryRecord{} = delivery_record,
+         attempted_at,
+         http_status,
+         failure_reason
+       ) do
     delivery_record
     |> Changeset.change(
       status: :discarded,
@@ -226,7 +267,8 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     Config.repo!()
   end
 
-  defp emit_lifecycle(stage, %LogoutDeliveryRecord{} = delivery_record, metadata) when is_map(metadata) do
+  defp emit_lifecycle(stage, %LogoutDeliveryRecord{} = delivery_record, metadata)
+       when is_map(metadata) do
     event_metadata =
       metadata
       |> Map.merge(%{

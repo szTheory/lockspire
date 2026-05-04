@@ -33,7 +33,8 @@ defmodule Lockspire.Protocol.Jar do
   Decrypts a nested JWE request object to return the inner JWS string.
   If the input is not a JWE (e.g. it is a 3-part JWS), it returns `{:ok, jwt}` immediately.
   """
-  @spec decrypt(String.t(), [Lockspire.Domain.SigningKey.t()]) :: {:ok, String.t()} | {:error, :decryption_failed}
+  @spec decrypt(String.t(), [Lockspire.Domain.SigningKey.t()]) ::
+          {:ok, String.t()} | {:error, :decryption_failed}
   def decrypt(jwt, decryption_keys) when is_binary(jwt) do
     if length(String.split(jwt, ".")) == 5 do
       Enum.reduce_while(decryption_keys, {:error, :decryption_failed}, fn key, _acc ->
@@ -64,14 +65,12 @@ defmodule Lockspire.Protocol.Jar do
   end
 
   defp decode_erlang_jwk(binary) do
-    try do
-      case :erlang.binary_to_term(binary) do
-        %{} = jwk -> {:ok, jwk}
-        _other -> {:error, :invalid_signing_key}
-      end
-    rescue
-      _ -> {:error, :invalid_signing_key}
+    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
+      %{} = jwk -> {:ok, jwk}
+      _other -> {:error, :invalid_signing_key}
     end
+  rescue
+    _ -> {:error, :invalid_signing_key}
   end
 
   @doc """

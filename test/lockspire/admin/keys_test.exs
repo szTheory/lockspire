@@ -143,7 +143,9 @@ defmodule Lockspire.Admin.KeysTest do
     assert sig_view.key.public_jwk["alg"] == "ES256"
   end
 
-  test "activate_key rejects non-compliant FAPI signing keys with remediation guidance", %{now: now} do
+  test "activate_key rejects non-compliant FAPI signing keys with remediation guidance", %{
+    now: now
+  } do
     assert {:ok, _policy} =
              Repository.put_server_policy(%ServerPolicy{security_profile: :fapi_2_0_security})
 
@@ -192,7 +194,11 @@ defmodule Lockspire.Admin.KeysTest do
              Repository.list_publishable_keys(security_profile: :fapi_2_0_security)
 
     assert Enum.any?(publishable_keys, &(&1.kid == "kid-fapi-es256"))
-    refute Enum.any?(publishable_keys, &(&1.kid in ["kid-active", "kid-upcoming", "kid-fapi-legacy"]))
+
+    refute Enum.any?(
+             publishable_keys,
+             &(&1.kid in ["kid-active", "kid-upcoming", "kid-fapi-legacy"])
+           )
 
     assert {:ok, active_key} =
              Repository.fetch_active_signing_key(security_profile: :fapi_2_0_security)
@@ -259,7 +265,13 @@ defmodule Lockspire.Admin.KeysTest do
       kty: :EC,
       alg: "ES256",
       use: :sig,
-      public_jwk: %{"kty" => "EC", "kid" => kid, "alg" => "ES256", "use" => "sig", "crv" => "P-256"},
+      public_jwk: %{
+        "kty" => "EC",
+        "kid" => kid,
+        "alg" => "ES256",
+        "use" => "sig",
+        "crv" => "P-256"
+      },
       private_jwk_encrypted: :erlang.term_to_binary(%{"kid" => kid}),
       status: status,
       inserted_at: now

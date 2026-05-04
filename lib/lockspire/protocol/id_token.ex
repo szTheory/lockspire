@@ -15,15 +15,17 @@ defmodule Lockspire.Protocol.IdToken do
         }
 
   @spec sign(map()) :: {:ok, String.t()} | {:error, atom()}
-  def sign(%{
-        client_id: client_id,
-        issuer: issuer,
-        host_claims: %Claims{} = host_claims,
-        interaction_nonce: nonce,
-        access_token: access_token,
-        issued_at: %DateTime{} = issued_at,
-        signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
-      } = params)
+  def sign(
+        %{
+          client_id: client_id,
+          issuer: issuer,
+          host_claims: %Claims{} = host_claims,
+          interaction_nonce: nonce,
+          access_token: access_token,
+          issued_at: %DateTime{} = issued_at,
+          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+        } = params
+      )
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
     security_profile = Map.get(params, :security_profile, :none)
     allowed_algs = SecurityProfile.allowed_signing_algorithms(security_profile)
@@ -66,7 +68,16 @@ defmodule Lockspire.Protocol.IdToken do
     end
   end
 
-  defp build_claims(%Claims{} = host_claims, issuer, client_id, nonce, access_token, issued_at, auth_time, sid) do
+  defp build_claims(
+         %Claims{} = host_claims,
+         issuer,
+         client_id,
+         nonce,
+         access_token,
+         issued_at,
+         auth_time,
+         sid
+       ) do
     protocol_claims = %{
       "iss" => issuer,
       "aud" => client_id,
@@ -110,13 +121,11 @@ defmodule Lockspire.Protocol.IdToken do
   end
 
   defp decode_erlang_jwk(binary) do
-    try do
-      case :erlang.binary_to_term(binary) do
-        %{} = jwk -> {:ok, jwk}
-        _other -> {:error, :invalid_signing_key}
-      end
-    rescue
-      _ -> {:error, :invalid_signing_key}
+    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
+      %{} = jwk -> {:ok, jwk}
+      _other -> {:error, :invalid_signing_key}
     end
+  rescue
+    _ -> {:error, :invalid_signing_key}
   end
 end

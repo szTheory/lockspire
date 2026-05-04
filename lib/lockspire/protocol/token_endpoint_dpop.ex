@@ -39,8 +39,11 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     end
   end
 
-  defp validate_proof_with_flag(true, request), do: validate_proof(%{dpop_required?: true}, request)
-  defp validate_proof_with_flag(false, request), do: validate_proof(%{dpop_required?: false}, request)
+  defp validate_proof_with_flag(true, request),
+    do: validate_proof(%{dpop_required?: true}, request)
+
+  defp validate_proof_with_flag(false, request),
+    do: validate_proof(%{dpop_required?: false}, request)
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
           {:ok, issuance_context()} | {:error, Error.t()}
@@ -50,9 +53,10 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
          {:ok, proof} <- validate_refresh_proof(expected_cnf, resolved_security_profile, request),
          :ok <- record_dpop_proof_use(proof, request) do
       effective_mode =
-        if resolved_security_profile.fapi_2_0_security? or refresh_binding_mode(expected_cnf) == :dpop,
-          do: :dpop,
-          else: :bearer
+        if resolved_security_profile.fapi_2_0_security? or
+             refresh_binding_mode(expected_cnf) == :dpop,
+           do: :dpop,
+           else: :bearer
 
       {:ok, issuance_context(effective_mode, proof, resolved_security_profile)}
     end
@@ -64,7 +68,13 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       {:ok, resolved_policy}
     else
       {:error, _reason} ->
-        {:error, oauth_error(500, "server_error", "Unable to resolve DPoP policy", :dpop_policy_unavailable)}
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to resolve DPoP policy",
+           :dpop_policy_unavailable
+         )}
     end
   end
 
@@ -73,7 +83,13 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
     else
       {:error, _reason} ->
-        {:error, oauth_error(500, "server_error", "Unable to resolve security profile", :security_profile_unavailable)}
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to resolve security profile",
+           :security_profile_unavailable
+         )}
     end
   end
 
@@ -113,8 +129,11 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       resolved_security_profile.fapi_2_0_security? ->
         # FAPI 2.0 requires DPoP for all token requests, even if the refresh token was bearer.
         case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
-          nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-          proof -> validate_proof_value(proof, request)
+          nil ->
+            {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+
+          proof ->
+            validate_proof_value(proof, request)
         end
 
       is_nil(expected_cnf) ->
@@ -122,8 +141,11 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
 
       match?(%{"jkt" => jkt} when is_binary(jkt), expected_cnf) ->
         case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
-          nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-          proof -> validate_proof_value(proof, request)
+          nil ->
+            {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+
+          proof ->
+            validate_proof_value(proof, request)
         end
 
       true ->
@@ -278,7 +300,9 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     path = if parsed.path in [nil, ""], do: "/", else: parsed.path
 
     authority =
-      if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
+      if is_nil(port),
+        do: normalized_host,
+        else: normalized_host <> ":" <> Integer.to_string(port)
 
     scheme <> "://" <> authority <> path
   end

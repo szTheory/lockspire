@@ -215,7 +215,10 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     wrong_ath_conn =
       build_conn(:get, "/userinfo")
       |> put_req_header("authorization", "DPoP " <> access_token)
-      |> put_req_header("dpop", dpop_proof_fixture(access_token, now, %{"ath" => DPoP.access_token_ath("other-token")}).jwt)
+      |> put_req_header(
+        "dpop",
+        dpop_proof_fixture(access_token, now, %{"ath" => DPoP.access_token_ath("other-token")}).jwt
+      )
       |> put_req_header("accept", "application/json")
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
@@ -262,7 +265,9 @@ defmodule Lockspire.Web.UserinfoControllerTest do
       :ok
     end
 
-    test "advertises broader legacy list when no profile is active", %{dpop_access_token: access_token} do
+    test "advertises broader legacy list when no profile is active", %{
+      dpop_access_token: access_token
+    } do
       conn =
         build_conn(:get, "/userinfo")
         |> put_req_header("authorization", "Bearer " <> access_token)
@@ -275,8 +280,12 @@ defmodule Lockspire.Web.UserinfoControllerTest do
       assert challenge =~ "algs=\"RS256 ES256 PS256 EdDSA\""
     end
 
-    test "advertises FAPI-effective algs when FAPI 2.0 profile is active", %{dpop_access_token: access_token} do
-      Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{security_profile: :fapi_2_0_security})
+    test "advertises FAPI-effective algs when FAPI 2.0 profile is active", %{
+      dpop_access_token: access_token
+    } do
+      Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{
+        security_profile: :fapi_2_0_security
+      })
 
       conn =
         build_conn(:get, "/userinfo")

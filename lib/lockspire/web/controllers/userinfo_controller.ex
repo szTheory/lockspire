@@ -50,31 +50,32 @@ defmodule Lockspire.Web.UserinfoController do
 
   defp put_www_authenticate(conn, _error), do: conn
 
-  defp www_authenticate_value(%Error{reason_code: reason_code}) when reason_code in [
-         :invalid_dpop_authorization_scheme,
-         :missing_dpop_proof,
-         :invalid_jwt,
-         :invalid_dpop_proof,
-         :missing_dpop_ath,
-         :invalid_dpop_ath,
-         :dpop_binding_mismatch,
-         :invalid_access_token_binding,
-         :dpop_proof_replayed,
-         :invalid_signature,
-         :invalid_typ,
-         :missing_jwk,
-         :invalid_jwk,
-         :invalid_claims_options,
-         :missing_htm,
-         :invalid_htm,
-         :missing_htu,
-         :invalid_htu,
-         :missing_iat,
-         :invalid_iat,
-         :stale_iat,
-         :future_iat,
-         :missing_jti
-       ] do
+  defp www_authenticate_value(%Error{reason_code: reason_code})
+       when reason_code in [
+              :invalid_dpop_authorization_scheme,
+              :missing_dpop_proof,
+              :invalid_jwt,
+              :invalid_dpop_proof,
+              :missing_dpop_ath,
+              :invalid_dpop_ath,
+              :dpop_binding_mismatch,
+              :invalid_access_token_binding,
+              :dpop_proof_replayed,
+              :invalid_signature,
+              :invalid_typ,
+              :missing_jwk,
+              :invalid_jwk,
+              :invalid_claims_options,
+              :missing_htm,
+              :invalid_htm,
+              :missing_htu,
+              :invalid_htu,
+              :missing_iat,
+              :invalid_iat,
+              :stale_iat,
+              :future_iat,
+              :missing_jti
+            ] do
     profile =
       case Lockspire.Storage.Ecto.Repository.get_server_policy() do
         {:ok, policy} -> policy.security_profile

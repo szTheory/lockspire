@@ -40,7 +40,8 @@ defmodule Lockspire.Protocol.Userinfo do
   def fetch_claims(request) when is_map(request) do
     with {:ok, authorization_scheme, raw_access_token} <- parse_authorization(request),
          {:ok, %Token{} = access_token} <- fetch_access_token(raw_access_token, request),
-         :ok <- validate_access_mode(access_token, authorization_scheme, raw_access_token, request),
+         :ok <-
+           validate_access_mode(access_token, authorization_scheme, raw_access_token, request),
          {:ok, %Claims{} = claims} <- resolve_claims(access_token),
          userinfo_claims <- build_userinfo_claims(claims, access_token.scopes) do
       {:ok, userinfo_claims}
@@ -63,7 +64,12 @@ defmodule Lockspire.Protocol.Userinfo do
     end
   end
 
-  defp validate_access_mode(%Token{} = access_token, authorization_scheme, raw_access_token, request) do
+  defp validate_access_mode(
+         %Token{} = access_token,
+         authorization_scheme,
+         raw_access_token,
+         request
+       ) do
     with {:ok, resolved_security_profile} <- resolve_security_profile(access_token, request) do
       request =
         request
@@ -84,7 +90,8 @@ defmodule Lockspire.Protocol.Userinfo do
           :ok
 
         true ->
-          {:error, error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+          {:error,
+           error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
       end
     end
   end
@@ -153,7 +160,13 @@ defmodule Lockspire.Protocol.Userinfo do
       {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
     else
       _other ->
-        {:error, error(500, "server_error", "Unable to resolve security profile", :security_profile_unavailable)}
+        {:error,
+         error(
+           500,
+           "server_error",
+           "Unable to resolve security profile",
+           :security_profile_unavailable
+         )}
     end
   end
 

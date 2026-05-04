@@ -106,7 +106,13 @@ defmodule Lockspire.Web.JwksControllerTest do
 
     body = Jason.decode!(conn.resp_body)
     assert %{"keys" => keys} = body
-    assert Enum.map(keys, & &1["kid"]) == ["kid_active", "kid_retiring", "kid_upcoming", "kid_enc"]
+
+    assert Enum.map(keys, & &1["kid"]) == [
+             "kid_active",
+             "kid_retiring",
+             "kid_upcoming",
+             "kid_enc"
+           ]
 
     assert Enum.all?(keys, fn key ->
              key["alg"] == "RS256" and key["kty"] == "RSA" and key["use"] in ["sig", "enc"]
@@ -128,7 +134,7 @@ defmodule Lockspire.Web.JwksControllerTest do
     assert conn.status == 200
     body = Jason.decode!(conn.resp_body)
     assert %{"keys" => keys} = body
-    
+
     # All inserted keys are RS256, they should all be filtered out
     assert keys == []
   end

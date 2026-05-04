@@ -24,12 +24,23 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
 
     def fetch_device_authorization_by_user_code_hash(hash) do
       cond do
-        hash == DeviceAuthorization.hash_user_code("WDJB-MJHT") -> {:ok, pending_authorization()}
-        hash == DeviceAuthorization.hash_user_code("EXPR-IRED") -> {:ok, expired_authorization()}
-        hash == DeviceAuthorization.hash_user_code("APPR-OVED") -> {:ok, approved_authorization()}
-        hash == DeviceAuthorization.hash_user_code("ABCD-EFGH") -> {:ok, missing_client_authorization()}
-        hash == DeviceAuthorization.hash_user_code("MISS-ING1") -> {:ok, nil}
-        true -> {:error, :store_unavailable}
+        hash == DeviceAuthorization.hash_user_code("WDJB-MJHT") ->
+          {:ok, pending_authorization()}
+
+        hash == DeviceAuthorization.hash_user_code("EXPR-IRED") ->
+          {:ok, expired_authorization()}
+
+        hash == DeviceAuthorization.hash_user_code("APPR-OVED") ->
+          {:ok, approved_authorization()}
+
+        hash == DeviceAuthorization.hash_user_code("ABCD-EFGH") ->
+          {:ok, missing_client_authorization()}
+
+        hash == DeviceAuthorization.hash_user_code("MISS-ING1") ->
+          {:ok, nil}
+
+        true ->
+          {:error, :store_unavailable}
       end
     end
 
@@ -56,8 +67,11 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
     def transition_device_authorization("approved-handle", [:pending], _attrs),
       do: {:error, :invalid_state}
 
-    def transition_device_authorization("unknown-handle", [:pending], _attrs), do: {:error, :not_found}
-    def transition_device_authorization("store-error-handle", [:pending], _attrs), do: {:error, :store_unavailable}
+    def transition_device_authorization("unknown-handle", [:pending], _attrs),
+      do: {:error, :not_found}
+
+    def transition_device_authorization("store-error-handle", [:pending], _attrs),
+      do: {:error, :store_unavailable}
 
     defp pending_authorization do
       %DeviceAuthorization{
@@ -122,7 +136,9 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
     def fetch_client_by_id("client-123"),
       do: {:ok, %Client{client_id: "client-123", name: "Living Room TV"}}
 
-    def fetch_client_by_id("client-without-name"), do: {:ok, %Client{client_id: "client-without-name"}}
+    def fetch_client_by_id("client-without-name"),
+      do: {:ok, %Client{client_id: "client-without-name"}}
+
     def fetch_client_by_id("missing-client"), do: {:ok, nil}
     def fetch_client_by_id("store-error"), do: {:error, :store_unavailable}
   end

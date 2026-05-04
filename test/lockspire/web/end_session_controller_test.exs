@@ -97,7 +97,10 @@ defmodule Lockspire.Web.EndSessionControllerTest do
       assert {:ok, payload} = completion_payload(return_to)
       assert fetch_payload(payload, :sid) == "sid-123"
       assert is_binary(fetch_payload(payload, :event_id))
-      assert fetch_payload(payload, :post_logout_redirect_uri) == "https://client.example.com/logged-out"
+
+      assert fetch_payload(payload, :post_logout_redirect_uri) ==
+               "https://client.example.com/logged-out"
+
       assert fetch_payload(payload, :state) == "logout-state-123"
     end
 

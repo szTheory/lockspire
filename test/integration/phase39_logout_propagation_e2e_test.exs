@@ -60,12 +60,12 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       client =
         register_client!(
-        client_id: "phase39-client-#{System.unique_integer([:positive])}",
-        backchannel_logout_uri: "https://rp.example.com/backchannel-logout",
-        backchannel_logout_session_required: true,
-        frontchannel_logout_uri: "https://rp.example.com/frontchannel-logout",
-        frontchannel_logout_session_required: true
-      )
+          client_id: "phase39-client-#{System.unique_integer([:positive])}",
+          backchannel_logout_uri: "https://rp.example.com/backchannel-logout",
+          backchannel_logout_session_required: true,
+          frontchannel_logout_uri: "https://rp.example.com/frontchannel-logout",
+          frontchannel_logout_session_required: true
+        )
 
       store_session_tokens(client.client_id, sid)
 
@@ -77,8 +77,10 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
       assert conn.resp_body =~ "Signing you out of connected apps"
       assert conn.resp_body =~ "best effort"
       assert conn.resp_body =~ ~s(name="lockspire-frontchannel-logout")
+
       assert conn.resp_body =~
                ~s(src="https://rp.example.com/frontchannel-logout?iss=https%3A%2F%2Fexample.test%2Flockspire&amp;sid=#{sid}")
+
       assert conn.resp_body =~ "Continue"
       assert conn.resp_body =~ ~s(href="https://rp.example.com/logged-out")
 
@@ -105,12 +107,12 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       client =
         register_client!(
-        client_id: "phase39-drain-client-#{System.unique_integer([:positive])}",
-        backchannel_logout_uri: "https://snapshot.example.com/backchannel-logout",
-        backchannel_logout_session_required: true,
-        frontchannel_logout_uri: "https://snapshot.example.com/frontchannel-logout",
-        frontchannel_logout_session_required: true
-      )
+          client_id: "phase39-drain-client-#{System.unique_integer([:positive])}",
+          backchannel_logout_uri: "https://snapshot.example.com/backchannel-logout",
+          backchannel_logout_session_required: true,
+          frontchannel_logout_uri: "https://snapshot.example.com/frontchannel-logout",
+          frontchannel_logout_session_required: true
+        )
 
       store_session_tokens(client.client_id, sid)
 
@@ -120,6 +122,7 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       assert conn.status == 200
       assert conn.resp_body =~ "best effort"
+
       assert conn.resp_body =~
                ~s(src="https://snapshot.example.com/frontchannel-logout?iss=https%3A%2F%2Fexample.test%2Flockspire&amp;sid=#{sid}")
 
@@ -144,7 +147,8 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
       assert_receive {:backchannel_request, logout_token}
       assert is_binary(logout_token)
 
-      [updated_backchannel_delivery, updated_frontchannel_delivery] = fetch_deliveries!(persisted_event.id)
+      [updated_backchannel_delivery, updated_frontchannel_delivery] =
+        fetch_deliveries!(persisted_event.id)
 
       assert updated_backchannel_delivery.id == backchannel_delivery.id
       assert updated_backchannel_delivery.status == :succeeded
@@ -159,10 +163,10 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       client =
         register_client!(
-        client_id: "phase39-repeat-client-#{System.unique_integer([:positive])}",
-        backchannel_logout_uri: "https://rp.example.com/backchannel-repeat",
-        frontchannel_logout_uri: "https://rp.example.com/frontchannel-repeat"
-      )
+          client_id: "phase39-repeat-client-#{System.unique_integer([:positive])}",
+          backchannel_logout_uri: "https://rp.example.com/backchannel-repeat",
+          frontchannel_logout_uri: "https://rp.example.com/frontchannel-repeat"
+        )
 
       store_session_tokens(client.client_id, sid)
 
@@ -176,10 +180,13 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
 
       assert first_conn.status == 200
       assert second_conn.status == 200
+
       assert first_conn.resp_body =~
                ~s(src="https://rp.example.com/frontchannel-repeat?iss=https%3A%2F%2Fexample.test%2Flockspire")
+
       assert second_conn.resp_body =~
                ~s(src="https://rp.example.com/frontchannel-repeat?iss=https%3A%2F%2Fexample.test%2Flockspire")
+
       assert Lockspire.TestRepo.aggregate(LogoutEventRecord, :count, :id) == 1
       assert Lockspire.TestRepo.aggregate(LogoutDeliveryRecord, :count, :id) == 2
       assert Lockspire.TestRepo.aggregate(Job, :count, :id) == 1
@@ -197,9 +204,11 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
       redirect_uris: ["https://rp.example.com/callback"],
       post_logout_redirect_uris: ["https://rp.example.com/logged-out"],
       backchannel_logout_uri: Map.get(attrs, :backchannel_logout_uri),
-      backchannel_logout_session_required: Map.get(attrs, :backchannel_logout_session_required, false),
+      backchannel_logout_session_required:
+        Map.get(attrs, :backchannel_logout_session_required, false),
       frontchannel_logout_uri: Map.get(attrs, :frontchannel_logout_uri),
-      frontchannel_logout_session_required: Map.get(attrs, :frontchannel_logout_session_required, false),
+      frontchannel_logout_session_required:
+        Map.get(attrs, :frontchannel_logout_session_required, false),
       allowed_scopes: ["openid", "profile"],
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],

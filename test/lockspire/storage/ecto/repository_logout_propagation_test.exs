@@ -218,10 +218,12 @@ defmodule Lockspire.Storage.Ecto.RepositoryLogoutPropagationTest do
         end
 
       Enum.each(clients, fn client ->
-        assert {:ok, _} = Repository.store_token(build_token(client.client_id, sid, :refresh_token))
+        assert {:ok, _} =
+                 Repository.store_token(build_token(client.client_id, sid, :refresh_token))
       end)
 
-      assert {:ok, %{deliveries: deliveries}} = Repository.persist_logout_propagation(logout_event(sid))
+      assert {:ok, %{deliveries: deliveries}} =
+               Repository.persist_logout_propagation(logout_event(sid))
 
       delivery_ids = Enum.map(deliveries, & &1.delivery_id)
 

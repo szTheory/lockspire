@@ -206,13 +206,20 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   test "put_security_profile/1 persists :fapi_2_0_security when signing readiness is met" do
     now = DateTime.utc_now()
+
     Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-ready",
       use: :sig,
       status: :active,
       published_at: now,
       activated_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-ready", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-ready",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"
@@ -229,12 +236,19 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   test "put_security_profile/1 rejects :fapi_2_0_security when active signing key is missing" do
     now = DateTime.utc_now()
+
     Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-publishable-only",
       use: :sig,
       status: :upcoming,
       published_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-publishable-only", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-publishable-only",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"
@@ -280,13 +294,20 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   test "Lockspire.Admin.put_security_profile/1 is delegated to Admin.ServerPolicy (facade test)" do
     now = DateTime.utc_now()
+
     Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-facade",
       use: :sig,
       status: :active,
       published_at: now,
       activated_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-facade", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-facade",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"

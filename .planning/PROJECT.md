@@ -10,15 +10,15 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived eight planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, and v1.9 delivered JWE support for request objects.
+Lockspire has now archived ten planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, and v1.10 delivered the FAPI 2.0 Security Profile.
 
-At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Even so, the public product posture should still be treated as preview until repeated green release discipline makes a stronger claim boring.
+At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, Phoenix-native operator workflows, and a strict FAPI 2.0 security mode.
 
-Lockspire can now support a substantial embedded-provider preview surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, and Phoenix-native operator workflows. The next leverage point is not breadth for its own sake; it is increasing real-integrator trust without widening beyond the embedded-library shape.
+The next leverage point is no longer adding protocol breadth; it is stabilizing the entire API surface, finalizing documentation, standardizing telemetry, auditing the security posture, and formally cutting the 1.0 GA release.
 
-## Current Milestone: v1.10 FAPI 2.0 Security Profile Readiness
+## Current Milestone: v1.11 / 1.0 GA Release — The Stabilization Epoch
 
-**Goal:** Provide an ergonomic, highly secure mode (`security_profile: :fapi_2_0_security`) that asserts compliance with the FAPI 2.0 Security Profile. This leverages our prior work on PAR and DPoP to raise real-client trust and prove Lockspire's readiness for high-value enterprise integrations.
+**Goal:** Stabilize the API contract, finalize public documentation (`@moduledoc`, `@doc`, Typespecs), ensure telemetry events and operator seams are consistent, conduct a formal security/API audit, and transition from preview posture to 1.0 GA.
 
 ## Requirements
 
@@ -47,12 +47,18 @@ Lockspire can now support a substantial embedded-provider preview surface: autho
 - Implement nested JWT validation (Sign-then-Encrypt) in `Protocol.Jar`, validated in Phase 40.
 - Deliver single-flag configuration (`security_profile: :fapi_2_0_security`) to enable strict mode globally or per-client, validated in Phase 41.
 - Enforce mandatory PAR usage and DPoP sender-constraining for token and userinfo endpoints when the profile is active, validated in Phase 41.
+- Restrict cryptographic algorithms to `PS256` or `ES256` exclusively under the profile, validated in Phase 41.
+- Strictly enforce exact redirect URI matching and expose FAPI 2.0 compliance in discovery metadata, validated in Phase 42.
 
 ### Active
 
-- Target **v1.10 FAPI 2.0 Security Profile Readiness** to provide an ergonomic strict mode for high-value APIs.
-- Restrict cryptographic algorithms to `PS256` or `ES256` exclusively under the profile.
-- Strictly enforce exact redirect URI matching and expose FAPI 2.0 compliance in discovery metadata.
+- Target **v1.11 / 1.0 GA Release — The Stabilization Epoch** to finalize and lock the API for 1.0.
+- Stabilize the API contract (public modules and interfaces).
+- Finalize public documentation (`@moduledoc`, `@doc`, Typespecs) for all public-facing modules.
+- Ensure telemetry events are consistent, documented, and properly emitted.
+- Ensure operator seams (UI, admin panels, config) are consistent and documented.
+- Conduct a formal security and API audit before GA.
+- Transition package posture from preview to 1.0 GA (version bump, changelog update).
 
 ### Out of Scope
 
@@ -66,7 +72,7 @@ Lockspire can now support a substantial embedded-provider preview surface: autho
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.10 completed, we are now ready for the 1.0 GA release stabilization.
 
 ## Constraints
 
@@ -95,6 +101,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Make Device Authorization Grant the v1.6 wedge | Device flow extends the embedded provider into CLI and partner-device use cases while preserving the host-owned verification seam and shared token pipeline | Adopted and delivered by Phase 32 |
 | Make DPoP the v1.7 wedge | DPoP raises the real-integrator security story across existing public/CLI paths without requiring hosted infrastructure or enterprise PKI and composes directly with the shipped device and DCR surfaces | Adopted at v1.7 milestone start |
 | Persist the multi-milestone strategy in `.planning/EPIC.md` | Milestone selection should compound from repo truth and prior decisions rather than being rediscovered every cycle | Adopted at v1.7 milestone start |
+| Transition to 1.0 GA | After shipping FAPI 2.0 Security Profile, the library has the necessary features and security depth to confidently drop preview status | Adopted at v1.11 milestone start |
 
 ## Evolution
 
@@ -114,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after v1.8 milestone definition*
+*Last updated: 2026-05-04 after v1.11 milestone definition*

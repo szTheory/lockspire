@@ -63,13 +63,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
   test "client detail shows effective security profile and mixed-mode warning", %{client: client} do
     now = DateTime.utc_now()
+
     Lockspire.Storage.Ecto.Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-compliant-key-1",
       use: :sig,
       status: :active,
       published_at: now,
       activated_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-compliant-key-1", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-compliant-key-1",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"
@@ -103,13 +110,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "FAPI 2.0 Security Profile"
 
     now = DateTime.utc_now()
+
     Lockspire.Storage.Ecto.Repository.publish_key(%Lockspire.Domain.SigningKey{
       kid: "fapi-compliant-key-2",
       use: :sig,
       status: :active,
       published_at: now,
       activated_at: now,
-      public_jwk: %{"kty" => "EC", "crv" => "P-256", "kid" => "fapi-compliant-key-2", "alg" => "ES256", "use" => "sig"},
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "fapi-compliant-key-2",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
       private_jwk_encrypted: <<1>>,
       kty: :EC,
       alg: "ES256"

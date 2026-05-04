@@ -46,7 +46,8 @@ defmodule Lockspire.Protocol.ClientAuth do
     client_assertion = normalize_optional_string(params["client_assertion"])
     client_assertion_type = normalize_optional_string(params["client_assertion_type"])
 
-    is_jwt_bearer? = client_assertion_type == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+    is_jwt_bearer? =
+      client_assertion_type == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
     cond do
       has_header? and (present?(body_client_secret) or present?(client_assertion)) ->
@@ -84,7 +85,8 @@ defmodule Lockspire.Protocol.ClientAuth do
     with [_, payload_b64, _] <- String.split(assertion, "."),
          {:ok, payload_json} <- Base.url_decode64(payload_b64, padding: false),
          {:ok, payload} <- Jason.decode(payload_json),
-         client_id when is_binary(client_id) and client_id != "" <- payload["sub"] || payload["iss"] do
+         client_id when is_binary(client_id) and client_id != "" <-
+           payload["sub"] || payload["iss"] do
       {:ok, client_id}
     else
       _ -> :error
@@ -156,8 +158,13 @@ defmodule Lockspire.Protocol.ClientAuth do
      )}
   end
 
-  defp validate_client_secret(%Client{token_endpoint_auth_method: :none}, :none, _client_secret, _opts),
-    do: :ok
+  defp validate_client_secret(
+         %Client{token_endpoint_auth_method: :none},
+         :none,
+         _client_secret,
+         _opts
+       ),
+       do: :ok
 
   defp validate_client_secret(%Client{} = client, :private_key_jwt, client_assertion, opts) do
     with [_, payload_b64, _] <- String.split(client_assertion, "."),
@@ -169,6 +176,7 @@ defmodule Lockspire.Protocol.ClientAuth do
     else
       {:error, reason} ->
         {:error, invalid_client(reason, :invalid_client_assertion)}
+
       _ ->
         {:error, invalid_client("Invalid client_assertion", :invalid_client_assertion)}
     end
@@ -217,6 +225,7 @@ defmodule Lockspire.Protocol.ClientAuth do
       }
 
       store = Keyword.get(opts, :jti_store, client_store(opts))
+
       case store.record_used_jti(used_jti) do
         {:ok, :accepted} -> :ok
         {:ok, :replay} -> {:error, "client_assertion replay detected"}
@@ -226,7 +235,6 @@ defmodule Lockspire.Protocol.ClientAuth do
       {:error, "client_assertion missing jti"}
     end
   end
-
 
   defp client_store(opts) do
     Keyword.fetch!(opts, :client_store)

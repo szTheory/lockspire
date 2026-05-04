@@ -119,7 +119,8 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       refute Map.has_key?(succeeded_metadata, :logout_token)
       refute Map.has_key?(succeeded_metadata, :response_body)
 
-      assert latest_audit!("logout_delivery_attempted").resource_id == Integer.to_string(delivery.id)
+      assert latest_audit!("logout_delivery_attempted").resource_id ==
+               Integer.to_string(delivery.id)
 
       assert %AuditEventRecord{} = success_audit = latest_audit!("logout_delivery_succeeded")
       assert success_audit.resource_id == Integer.to_string(delivery.id)

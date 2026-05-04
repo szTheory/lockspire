@@ -80,7 +80,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
         {:ok, {completed, redirect_uri}} ->
           emit(:consent, :approved, completed, subject_id, %{reason_code: :consent_approved})
-          emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_approved})
+
+          emit(:authorization, :completed, completed, subject_id, %{
+            reason_code: :consent_approved
+          })
+
           {:approved, redirect_uri}
 
         {:error, :invalid_state} ->
@@ -130,8 +134,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         {:redirect_error, silent_error(validated, "login_required", :login_required)}
 
       ui_required?(subject_context) ->
-        {:redirect_error,
-         silent_error(validated, "interaction_required", :interaction_required)}
+        {:redirect_error, silent_error(validated, "interaction_required", :interaction_required)}
 
       true ->
         start_silent_subject_authorization(validated, subject_context, interaction_id, now, opts)
@@ -321,8 +324,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
           opts
         )
 
-      {:error, :invalid_state} -> {:error, :interaction_not_active}
-      {:error, reason} -> {:error, reason}
+      {:error, :invalid_state} ->
+        {:error, :interaction_not_active}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -373,21 +379,21 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp ensure_resume_subject(%Interaction{} = interaction, subject_context),
     do: ensure_subject_match(interaction, subject_context)
 
-defp approval_redirect(%Interaction{} = interaction, raw_code) do
-  build_redirect(interaction.redirect_uri, %{
-    "code" => raw_code,
-    "state" => interaction.state,
-    "iss" => Config.issuer!()
-  })
-end
+  defp approval_redirect(%Interaction{} = interaction, raw_code) do
+    build_redirect(interaction.redirect_uri, %{
+      "code" => raw_code,
+      "state" => interaction.state,
+      "iss" => Config.issuer!()
+    })
+  end
 
-defp denial_redirect(%Interaction{} = interaction) do
-  build_redirect(interaction.redirect_uri, %{
-    "error" => "access_denied",
-    "state" => interaction.state,
-    "iss" => Config.issuer!()
-  })
-end
+  defp denial_redirect(%Interaction{} = interaction) do
+    build_redirect(interaction.redirect_uri, %{
+      "error" => "access_denied",
+      "state" => interaction.state,
+      "iss" => Config.issuer!()
+    })
+  end
 
   defp build_redirect(base_uri, params) when is_binary(base_uri) and is_map(params) do
     uri = URI.parse(base_uri)
@@ -500,7 +506,12 @@ end
     end
   end
 
-  defp move_login_to_pending_consent(%Interaction{} = interaction, subject_id, subject_context, opts) do
+  defp move_login_to_pending_consent(
+         %Interaction{} = interaction,
+         subject_id,
+         subject_context,
+         opts
+       ) do
     interaction_store(opts).transition_interaction(
       interaction.interaction_id,
       [:pending_login],

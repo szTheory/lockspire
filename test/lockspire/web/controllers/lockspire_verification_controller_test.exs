@@ -26,8 +26,10 @@ defmodule Lockspire.Web.LockspireVerificationControllerTemplateTest do
     contents = File.read!(@controller_template)
 
     assert contents =~ "def lookup"
+
     assert contents =~
              "Lockspire.Protocol.DeviceVerification.lookup_pending_device_authorization"
+
     assert contents =~ ~s({:error, :not_found})
     assert contents =~ ~s({:error, :expired})
     assert contents =~ "invalid or expired code"

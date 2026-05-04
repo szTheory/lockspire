@@ -13,7 +13,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   @spec validate_userinfo_access(Token.t(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
   def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
-    security_profile = Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
+    security_profile =
+      Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
 
     with :ok <- validate_authorization_scheme(request),
          {:ok, raw_access_token} <- fetch_access_token(request),
@@ -37,15 +38,25 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp validate_authorization_scheme(request) do
     case Map.get(request, :authorization_scheme, Map.get(request, "authorization_scheme")) do
-      "DPoP" -> :ok
-      _other -> {:error, invalid_token("DPoP-bound access token requires Authorization: DPoP", :invalid_dpop_authorization_scheme)}
+      "DPoP" ->
+        :ok
+
+      _other ->
+        {:error,
+         invalid_token(
+           "DPoP-bound access token requires Authorization: DPoP",
+           :invalid_dpop_authorization_scheme
+         )}
     end
   end
 
   defp fetch_access_token(request) do
     case Map.get(request, :access_token, Map.get(request, "access_token")) do
-      token when is_binary(token) and token != "" -> {:ok, token}
-      _other -> {:error, invalid_token("DPoP-bound access token is invalid", :invalid_access_token)}
+      token when is_binary(token) and token != "" ->
+        {:ok, token}
+
+      _other ->
+        {:error, invalid_token("DPoP-bound access token is invalid", :invalid_access_token)}
     end
   end
 
@@ -79,7 +90,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
         if ath == DPoP.access_token_ath(raw_access_token) do
           :ok
         else
-          {:error, invalid_token("The DPoP proof access token hash is invalid", :invalid_dpop_ath)}
+          {:error,
+           invalid_token("The DPoP proof access token hash is invalid", :invalid_dpop_ath)}
         end
 
       _other ->
@@ -92,20 +104,28 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     if expected_jkt == actual_jkt do
       :ok
     else
-      {:error, invalid_token("The DPoP proof key does not match the access token binding", :dpop_binding_mismatch)}
+      {:error,
+       invalid_token(
+         "The DPoP proof key does not match the access token binding",
+         :dpop_binding_mismatch
+       )}
     end
   end
 
   defp validate_token_binding(%Token{}, _proof) do
-    {:error, invalid_token("The DPoP-bound access token is invalid", :invalid_access_token_binding)}
+    {:error,
+     invalid_token("The DPoP-bound access token is invalid", :invalid_access_token_binding)}
   end
 
   defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
     with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
          {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
       case result do
-        :accepted -> :ok
-        :replay -> {:error, invalid_token("The DPoP proof has already been used", :dpop_proof_replayed)}
+        :accepted ->
+          :ok
+
+        :replay ->
+          {:error, invalid_token("The DPoP proof has already been used", :dpop_proof_replayed)}
       end
     else
       {:error, %Error{} = error} ->
@@ -182,7 +202,11 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     normalized_host = String.downcase(host)
     port = normalized_dpop_port(parsed)
     path = if parsed.path in [nil, ""], do: "/", else: parsed.path
-    authority = if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
+
+    authority =
+      if is_nil(port),
+        do: normalized_host,
+        else: normalized_host <> ":" <> Integer.to_string(port)
 
     scheme <> "://" <> authority <> path
   end

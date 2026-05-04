@@ -27,12 +27,20 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     # Wait, how does one create a logout delivery for test?
     # I can use Lockspire.Storage.Ecto.Repository to insert a logout event and deliveries.
     # Let's check `persist_logout_propagation/1` in `Repository` or create the records via Ecto directly since we are in `TestRepo`.
-    
+
     # Wait, we can just insert via Repo for the test data.
-    Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "INSERT INTO lockspire_logout_events (event_id, sid, initiated_by, inserted_at, updated_at) VALUES ('test-logout-event-123', 'test-sid', 'rp_initiated_logout', $1, $1) RETURNING id", [now])
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "INSERT INTO lockspire_logout_events (event_id, sid, initiated_by, inserted_at, updated_at) VALUES ('test-logout-event-123', 'test-sid', 'rp_initiated_logout', $1, $1) RETURNING id",
+      [now]
+    )
     |> (fn result -> result.rows |> hd() |> hd() end).()
-    |> then(fn event_id -> 
-      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "INSERT INTO lockspire_logout_deliveries (delivery_id, logout_event_id, client_id, channel, target_uri, status, attempt_count, session_required, inserted_at, updated_at) VALUES ('test-delivery-123', $1, 'test-client', 'backchannel', 'http://example.com/logout', 'pending', 0, false, $2, $2)", [event_id, now])
+    |> then(fn event_id ->
+      Ecto.Adapters.SQL.query!(
+        Lockspire.TestRepo,
+        "INSERT INTO lockspire_logout_deliveries (delivery_id, logout_event_id, client_id, channel, target_uri, status, attempt_count, session_required, inserted_at, updated_at) VALUES ('test-delivery-123', $1, 'test-client', 'backchannel', 'http://example.com/logout', 'pending', 0, false, $2, $2)",
+        [event_id, now]
+      )
     end)
 
     :ok

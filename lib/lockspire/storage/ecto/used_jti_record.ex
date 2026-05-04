@@ -7,9 +7,9 @@ defmodule Lockspire.Storage.Ecto.UsedJtiRecord do
   import Ecto.Changeset
 
   schema "lockspire_used_jtis" do
-    field :client_id, :string
-    field :jti, :string
-    field :expires_at, :utc_datetime_usec
+    field(:client_id, :string)
+    field(:jti, :string)
+    field(:expires_at, :utc_datetime_usec)
 
     timestamps(type: :utc_datetime_usec)
   end

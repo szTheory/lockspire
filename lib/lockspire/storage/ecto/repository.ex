@@ -450,11 +450,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     now = DateTime.utc_now()
     expires_at = DateTime.truncate(used_jti.expires_at, :microsecond)
 
-    changeset = UsedJtiRecord.changeset(%UsedJtiRecord{}, %{
-      client_id: used_jti.client_id,
-      jti: used_jti.jti,
-      expires_at: expires_at
-    })
+    changeset =
+      UsedJtiRecord.changeset(%UsedJtiRecord{}, %{
+        client_id: used_jti.client_id,
+        jti: used_jti.jti,
+        expires_at: expires_at
+      })
 
     if changeset.valid? do
       {count, _rows} =
@@ -712,7 +713,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec list_all_logout_deliveries() :: {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  @spec list_all_logout_deliveries() ::
+          {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
   def list_all_logout_deliveries do
     LogoutDeliveryRecord
     |> order_by(desc: :inserted_at)
@@ -722,7 +724,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec list_logout_deliveries(integer()) :: {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  @spec list_logout_deliveries(integer()) ::
+          {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
   def list_logout_deliveries(logout_event_id) when is_integer(logout_event_id) do
     LogoutDeliveryRecord
     |> where([delivery], delivery.logout_event_id == ^logout_event_id)
@@ -747,7 +750,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
       %LogoutDeliveryRecord{} = record ->
         record
-        |> Ecto.Changeset.change(status: :enqueued, oban_job_id: oban_job_id, updated_at: DateTime.utc_now())
+        |> Ecto.Changeset.change(
+          status: :enqueued,
+          oban_job_id: oban_job_id,
+          updated_at: DateTime.utc_now()
+        )
         |> repo().update()
         |> map_one(&LogoutDeliveryRecord.to_domain/1)
     end
@@ -984,7 +991,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @spec validate_fapi_signing_readiness() ::
-          :ok | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
+          :ok
+          | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
   def validate_fapi_signing_readiness do
     with {:publishable, {:ok, [_ | _]}} <-
            {:publishable, list_publishable_keys(security_profile: :fapi_2_0_security)},
@@ -1389,7 +1397,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
        ) do
     if record.status in expected_statuses do
       record
-      |> DeviceAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
+      |> DeviceAuthorizationRecord.update_changeset(
+        Map.put(attrs, :updated_at, DateTime.utc_now())
+      )
       |> repo().update()
       |> map_one(&DeviceAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
@@ -1402,7 +1412,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
     %{result: :invalid_grant}
   end
 
-  defp evaluate_device_poll(%DeviceAuthorizationRecord{client_id: stored_client_id}, client_id, _now)
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{client_id: stored_client_id},
+         client_id,
+         _now
+       )
        when stored_client_id != client_id do
     %{result: :client_mismatch}
   end
@@ -1918,7 +1932,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end
   end
 
-  defp unwrap_or_fetch_existing_logout_event({:error, reason}, _event_id), do: repo().rollback(reason)
+  defp unwrap_or_fetch_existing_logout_event({:error, reason}, _event_id),
+    do: repo().rollback(reason)
 
   defp normalize_logout_event(%LogoutEvent{} = event) do
     %LogoutEvent{
@@ -1970,10 +1985,24 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
-  defp maybe_append_logout_delivery(deliveries, _client_id, _logout_event_id, _channel, nil, _session_required),
-    do: deliveries
+  defp maybe_append_logout_delivery(
+         deliveries,
+         _client_id,
+         _logout_event_id,
+         _channel,
+         nil,
+         _session_required
+       ),
+       do: deliveries
 
-  defp maybe_append_logout_delivery(deliveries, client_id, logout_event_id, channel, target_uri, session_required)
+  defp maybe_append_logout_delivery(
+         deliveries,
+         client_id,
+         logout_event_id,
+         channel,
+         target_uri,
+         session_required
+       )
        when is_binary(target_uri) do
     deliveries ++
       [

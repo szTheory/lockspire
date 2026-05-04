@@ -54,7 +54,12 @@ defmodule Lockspire.Protocol.RequestObjectTest do
     jwe = JOSE.JWE.block_encrypt(enc_jwk, jws_compact, %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
     {_, jwe_compact} = JOSE.JWE.compact(jwe)
 
-    assert {:ok, projected} = RequestObject.consume(%{"request" => jwe_compact, "client_id" => "client-123"}, client)
+    assert {:ok, projected} =
+             RequestObject.consume(
+               %{"request" => jwe_compact, "client_id" => "client-123"},
+               client
+             )
+
     assert projected["response_type"] == "code"
     assert projected["client_id"] == "client-123"
   end

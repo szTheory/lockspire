@@ -26,7 +26,9 @@ defmodule Lockspire.Web.DeviceAuthorizationJSON do
   end
 
   defp maybe_add_verification_uri_complete(response, nil), do: response
-  defp maybe_add_verification_uri_complete(response, uri), do: Map.put(response, :verification_uri_complete, uri)
+
+  defp maybe_add_verification_uri_complete(response, uri),
+    do: Map.put(response, :verification_uri_complete, uri)
 
   defp maybe_add_interval(response, nil), do: response
   defp maybe_add_interval(response, interval), do: Map.put(response, :interval, interval)

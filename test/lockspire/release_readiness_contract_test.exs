@@ -20,14 +20,23 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                        __DIR__
                                      )
   @ci_workflow_path Path.expand("../../.github/workflows/ci.yml", __DIR__)
-  @oidf_conformance_workflow_path Path.expand("../../.github/workflows/oidf-conformance.yml", __DIR__)
+  @oidf_conformance_workflow_path Path.expand(
+                                    "../../.github/workflows/oidf-conformance.yml",
+                                    __DIR__
+                                  )
   @release_please_config_path Path.expand("../../release-please-config.json", __DIR__)
   @release_please_manifest_path Path.expand("../../.release-please-manifest.json", __DIR__)
   @readme_path Path.expand("../../README.md", __DIR__)
   @supported_surface_path Path.expand("../../docs/supported-surface.md", __DIR__)
   @maintainer_conformance_path Path.expand("../../docs/maintainer-conformance.md", __DIR__)
-  @phase37_conformance_script_path Path.expand("../../scripts/conformance/run_phase37_suite.sh", __DIR__)
-  @phase37_conformance_plan_path Path.expand("../../scripts/conformance/phase37-plan.json", __DIR__)
+  @phase37_conformance_script_path Path.expand(
+                                     "../../scripts/conformance/run_phase37_suite.sh",
+                                     __DIR__
+                                   )
+  @phase37_conformance_plan_path Path.expand(
+                                   "../../scripts/conformance/phase37-plan.json",
+                                   __DIR__
+                                 )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
@@ -243,7 +252,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
-    assert supported_surface =~ "DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens"
+
+    assert supported_surface =~
+             "DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens"
+
     assert supported_surface =~ "bearer clients remaining unchanged by default"
     assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
 
@@ -443,7 +455,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "browser cookie"
     assert maintainer_conformance =~ "LOCKSPIRE_TEST_DB_HOST"
     assert maintainer_conformance =~ "OIDF_CONFORMANCE_SERVER"
-    
+
     assert maintainer_conformance =~ "preparatory"
     refute maintainer_conformance =~ "certified"
     refute maintainer_conformance =~ "completed certification"
@@ -475,7 +487,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "does not imply support for mTLS or `private_key_jwt`"
     assert maintainer_conformance =~ "validate the prerequisites for this check"
     assert maintainer_conformance =~ "does NOT execute `scripts/conformance/fapi2-check.sh`"
-    
+
     # Must not over-claim
     refute maintainer_conformance =~ "fully certified"
     refute maintainer_conformance =~ "Phase 43 completion"

@@ -48,7 +48,15 @@ defmodule Lockspire.ConfigTest do
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban, :signing_alg],
+      for key <- [
+            :repo,
+            :account_resolver,
+            :issuer,
+            :mount_path,
+            :logout_path,
+            :oban,
+            :signing_alg
+          ],
           into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
@@ -181,19 +189,29 @@ defmodule Lockspire.ConfigTest do
 
   test "test resolver satisfies the host seam behaviour without macros" do
     assert {:ok, %{id: "account-123"}} =
-             Lockspire.TestAccountResolver.resolve_current_account(%{}, %Lockspire.Host.Context{return_to: "/authorize"})
+             Lockspire.TestAccountResolver.resolve_current_account(%{}, %Lockspire.Host.Context{
+               return_to: "/authorize"
+             })
 
     assert {:ok, %{id: "account-456"}} =
-             Lockspire.TestAccountResolver.resolve_account("account-456", %Lockspire.Host.Context{})
+             Lockspire.TestAccountResolver.resolve_account(
+               "account-456",
+               %Lockspire.Host.Context{}
+             )
 
     assert {:ok, %Lockspire.Host.Claims{subject: "account-456"}} =
-             Lockspire.TestAccountResolver.build_claims(%{id: "account-456"}, %Lockspire.Host.Context{})
+             Lockspire.TestAccountResolver.build_claims(
+               %{id: "account-456"},
+               %Lockspire.Host.Context{}
+             )
 
     assert %Lockspire.Host.InteractionResult{
              login_path: "/sign-in",
              return_to: "/authorize"
            } =
-             Lockspire.TestAccountResolver.redirect_for_login(%{}, %Lockspire.Host.Context{return_to: "/authorize"})
+             Lockspire.TestAccountResolver.redirect_for_login(%{}, %Lockspire.Host.Context{
+               return_to: "/authorize"
+             })
 
     assert %Lockspire.Host.InteractionResult{
              login_path: "/sign-out",

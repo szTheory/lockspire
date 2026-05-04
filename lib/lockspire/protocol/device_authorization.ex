@@ -19,7 +19,14 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
             expires_in: pos_integer(),
             interval: pos_integer() | nil
           }
-    defstruct [:device_code, :user_code, :verification_uri, :verification_uri_complete, :expires_in, :interval]
+    defstruct [
+      :device_code,
+      :user_code,
+      :verification_uri,
+      :verification_uri_complete,
+      :expires_in,
+      :interval
+    ]
   end
 
   defmodule Error do
@@ -51,7 +58,8 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
          device_code: device_auth.device_code,
          user_code: device_auth.user_code,
          verification_uri: verification_uri,
-         verification_uri_complete: verification_uri_complete(verification_uri, device_auth.user_code),
+         verification_uri_complete:
+           verification_uri_complete(verification_uri, device_auth.user_code),
          expires_in: DateTime.diff(device_auth.expires_at, now, :second),
          interval: device_auth.effective_poll_interval_seconds
        }}
@@ -110,12 +118,19 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
          }}
 
       {:error, _reason} ->
-        {:error, oauth_error(500, "server_error", "Unable to persist device authorization", :device_store_failed)}
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to persist device authorization",
+           :device_store_failed
+         )}
     end
   end
 
   defp parse_scopes(nil), do: []
   defp parse_scopes(""), do: []
+
   defp parse_scopes(scopes) when is_binary(scopes) do
     scopes
     |> String.split(" ", trim: true)
@@ -144,6 +159,7 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
   defp verification_uri_complete(verification_uri, user_code)
        when is_binary(verification_uri) and is_binary(user_code) do
     uri = URI.parse(verification_uri)
+
     query =
       case uri.query do
         nil -> %{}

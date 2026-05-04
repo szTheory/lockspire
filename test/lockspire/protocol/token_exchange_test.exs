@@ -198,7 +198,10 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "token exchange emits auth_time for explicit auth_time_requested and preserves nonce unchanged" do
     secret = "openid-auth-time-requested-secret"
-    {:ok, client} = create_client("client-openid-auth-time-requested", :client_secret_basic, secret)
+
+    {:ok, client} =
+      create_client("client-openid-auth-time-requested", :client_secret_basic, secret)
+
     publish_signing_key("kid-openid-auth-time-requested")
     auth_time = DateTime.add(DateTime.utc_now(), -30, :second)
 
@@ -280,10 +283,17 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "rejects authorization-code exchange with invalid_dpop_proof when DPoP is required but missing" do
     secret = "missing-dpop-secret"
+
     {:ok, client} =
-      create_client("client-dpop-missing", :client_secret_basic, secret, ["authorization_code"], %{
-        dpop_policy: :dpop
-      })
+      create_client(
+        "client-dpop-missing",
+        :client_secret_basic,
+        secret,
+        ["authorization_code"],
+        %{
+          dpop_policy: :dpop
+        }
+      )
 
     _code =
       create_authorization_code(client,
@@ -297,7 +307,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-missing",
                  "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-dpop-missing"
+                 "code_verifier" => "verifier-dpop-missing"
                },
                authorization: basic_auth(client.client_id, secret)
              )
@@ -346,7 +356,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert success.token_type == "DPoP"
 
     assert {:ok, %Token{} = persisted_refresh_token} =
-             Repository.fetch_refresh_token(TokenFormatter.hash_token("issued-dpop-refresh-token"))
+             Repository.fetch_refresh_token(
+               TokenFormatter.hash_token("issued-dpop-refresh-token")
+             )
 
     persisted_access_token =
       Lockspire.TestRepo.one!(
@@ -364,6 +376,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "accepts the first validated proof and rejects a replayed proof as invalid_dpop_proof" do
     secret = "replayed-dpop-secret"
+
     {:ok, client} =
       create_client("client-dpop-replay", :client_secret_basic, secret, ["authorization_code"], %{
         dpop_policy: :dpop
@@ -389,7 +402,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-first",
                  "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-dpop-first"
+                 "code_verifier" => "verifier-dpop-first"
                },
                authorization: basic_auth(client.client_id, secret),
                dpop: proof_jwt,
@@ -405,7 +418,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  "grant_type" => "authorization_code",
                  "code" => "code-dpop-second",
                  "redirect_uri" => "https://client.example.com/callback",
-               "code_verifier" => "verifier-dpop-second"
+                 "code_verifier" => "verifier-dpop-second"
                },
                authorization: basic_auth(client.client_id, secret),
                dpop: proof_jwt,
@@ -752,7 +765,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "maps pending, slow_down, denied, expired, and unknown device polls into RFC 8628 token errors" do
     public_client =
-      create_public_client("device-public-client", ["urn:ietf:params:oauth:grant-type:device_code"])
+      create_public_client("device-public-client", [
+        "urn:ietf:params:oauth:grant-type:device_code"
+      ])
 
     dpop_public_client =
       create_public_client("device-dpop-public-client", [
@@ -1037,8 +1052,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
              TokenExchange.exchange(%{
                params: %{
                  "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
-                  "device_code" => "device-code-dpop-approved"
-                },
+                 "device_code" => "device-code-dpop-approved"
+               },
                authorization: basic_auth(client.client_id, secret),
                dpop: proof_jwt,
                method: "POST",
@@ -1058,7 +1073,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert success.token_type == "DPoP"
 
     assert {:ok, %Token{} = persisted_refresh_token} =
-             Repository.fetch_refresh_token(TokenFormatter.hash_token("device-dpop-refresh-token"))
+             Repository.fetch_refresh_token(
+               TokenFormatter.hash_token("device-dpop-refresh-token")
+             )
 
     persisted_access_token =
       Lockspire.TestRepo.one!(
@@ -1100,8 +1117,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
              TokenExchange.exchange(%{
                params: %{
                  "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
-                  "device_code" => "device-code-bearer-approved"
-                },
+                 "device_code" => "device-code-bearer-approved"
+               },
                authorization: basic_auth(client.client_id, secret),
                opts: [
                  client_store: Repository,

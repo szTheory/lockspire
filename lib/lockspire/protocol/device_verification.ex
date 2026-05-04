@@ -22,8 +22,10 @@ defmodule Lockspire.Protocol.DeviceVerification do
           }
   end
 
-  @type lookup_result :: {:ok, PendingAuthorization.t()} | {:error, :not_found | :expired | :not_active | term()}
-  @type transition_result :: {:ok, DeviceAuthorization.t()} | {:error, :invalid_actor_context | term()}
+  @type lookup_result ::
+          {:ok, PendingAuthorization.t()} | {:error, :not_found | :expired | :not_active | term()}
+  @type transition_result ::
+          {:ok, DeviceAuthorization.t()} | {:error, :invalid_actor_context | term()}
 
   @spec lookup_pending_device_authorization(String.t(), keyword()) :: lookup_result()
   def lookup_pending_device_authorization(user_code, opts \\ [])
@@ -136,8 +138,9 @@ defmodule Lockspire.Protocol.DeviceVerification do
     end
   end
 
-  defp actor_subject_id(%{subject_id: subject_id}) when is_binary(subject_id) and subject_id != "",
-    do: {:ok, subject_id}
+  defp actor_subject_id(%{subject_id: subject_id})
+       when is_binary(subject_id) and subject_id != "",
+       do: {:ok, subject_id}
 
   defp actor_subject_id(_actor_context), do: {:error, :invalid_actor_context}
 

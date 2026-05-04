@@ -46,10 +46,13 @@ defmodule Lockspire.MixProject do
       {:opentelemetry_api, "~> 1.5"},
       {:phoenix_live_dashboard, "~> 0.8", optional: true},
       {:telemetry, "~> 1.3"},
+      {:cachex, "~> 4.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false},
-      {:lazy_html, ">= 0.1.0", only: :test}
+      {:lazy_html, ">= 0.1.0", only: :test},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -86,10 +89,11 @@ defmodule Lockspire.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "credo --strict",
+        "sobelow --config",
         "dialyzer"
       ],
       "docs.verify": ["docs --warnings-as-errors"],
-      "deps.audit": ["hex.audit"],
+      "deps.audit": ["hex.audit", "deps.audit"],
       "package.build": ["hex.build"],
       "package.publish-dry-run": ["hex.publish --dry-run --yes"],
       "release.preflight": ["package.build", "package.publish-dry-run", "docs.verify"],

@@ -89,7 +89,14 @@ defmodule Lockspire.Protocol.TokenExchange do
          {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %Token{} = authorization_code, code_hash} <-
            fetch_authorization_code(params, request) do
-      handle_code_exchange(client, authorization_code, code_hash, params, issuance_context, request)
+      handle_code_exchange(
+        client,
+        authorization_code,
+        code_hash,
+        params,
+        issuance_context,
+        request
+      )
     else
       {:error, %Error{} = error} ->
         emit_failure(error, params, request)
@@ -194,7 +201,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     with {:ok, device_code} <- fetch_presented_device_code(params),
          {:ok, poll_outcome} <- record_device_poll(device_code, client, request) do
       case map_device_poll_outcome(poll_outcome, client) do
-        {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization, %Client{} = audit_client} ->
+        {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization,
+         %Client{} = audit_client} ->
           maybe_append_failure_audit(error, audit_client, device_authorization, request)
           {:error, error}
 
@@ -236,16 +244,22 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp map_device_poll_outcome(%{
-         result: :approved_ready,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, _client),
+  defp map_device_poll_outcome(
+         %{
+           result: :approved_ready,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         _client
+       ),
        do: {:ok, device_authorization}
 
-  defp map_device_poll_outcome(%{
-         result: :pending,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :pending,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      oauth_error(
        400,
@@ -255,10 +269,13 @@ defmodule Lockspire.Protocol.TokenExchange do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{
-         result: :slow_down,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :slow_down,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      oauth_error(
        400,
@@ -268,10 +285,13 @@ defmodule Lockspire.Protocol.TokenExchange do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{
-         result: :denied,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :denied,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      oauth_error(
        400,
@@ -281,10 +301,13 @@ defmodule Lockspire.Protocol.TokenExchange do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{
-         result: :expired,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :expired,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      oauth_error(
        400,
@@ -294,10 +317,13 @@ defmodule Lockspire.Protocol.TokenExchange do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{
-         result: :client_mismatch,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :client_mismatch,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      invalid_grant(
        "The device authorization is invalid for this client",
@@ -313,10 +339,13 @@ defmodule Lockspire.Protocol.TokenExchange do
      )}
   end
 
-  defp map_device_poll_outcome(%{
-         result: :consumed,
-         device_authorization: %DeviceAuthorizationState{} = device_authorization
-       }, %Client{} = client) do
+  defp map_device_poll_outcome(
+         %{
+           result: :consumed,
+           device_authorization: %DeviceAuthorizationState{} = device_authorization
+         },
+         %Client{} = client
+       ) do
     {:error,
      invalid_grant(
        "The device authorization has already been redeemed",
@@ -325,7 +354,8 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp map_device_poll_outcome(%{result: :invalid_grant}, _client) do
-    {:error, invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
+    {:error,
+     invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
   end
 
   defp validate_code_active(%Token{} = authorization_code, _code_hash) do
@@ -630,6 +660,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       {:ok, nil}
     end
   end
+
   defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
        when is_binary(interaction_id) do
     case interaction_store(request).fetch_interaction(interaction_id) do
@@ -646,7 +677,10 @@ defmodule Lockspire.Protocol.TokenExchange do
 
   defp fetch_interaction(_authorization_code, _request), do: {:error, :interaction_not_found}
 
-  defp fetch_optional_interaction(%Token{interaction_id: interaction_id} = authorization_code, request)
+  defp fetch_optional_interaction(
+         %Token{interaction_id: interaction_id} = authorization_code,
+         request
+       )
        when is_binary(interaction_id),
        do: fetch_interaction(authorization_code, request)
 
@@ -925,7 +959,8 @@ defmodule Lockspire.Protocol.TokenExchange do
                device_grant.client_id,
                issued_at
              ),
-           {:ok, %Token{} = persisted_access_token} <- token_store(request).store_token(access_token) do
+           {:ok, %Token{} = persisted_access_token} <-
+             token_store(request).store_token(access_token) do
         %{access_token: persisted_access_token}
       else
         {:error, reason} -> {:error, reason}
@@ -972,8 +1007,10 @@ defmodule Lockspire.Protocol.TokenExchange do
                device_grant.client_id,
                issued_at
              ),
-           {:ok, %Token{} = persisted_access_token} <- token_store(request).store_token(access_token),
-           {:ok, %Token{} = persisted_refresh_token} <- token_store(request).store_token(refresh_token) do
+           {:ok, %Token{} = persisted_access_token} <-
+             token_store(request).store_token(access_token),
+           {:ok, %Token{} = persisted_refresh_token} <-
+             token_store(request).store_token(refresh_token) do
         %{
           access_token: persisted_access_token,
           refresh_token: persisted_refresh_token,

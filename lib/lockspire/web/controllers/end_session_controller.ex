@@ -52,7 +52,14 @@ defmodule Lockspire.Web.EndSessionController do
     case EndSession.validate(%{params: params}) do
       {:ok, %EndSession.Result{} = result} ->
         completion_token = sign_completion_token(result)
-        completion_url = append_query_param(Config.mount_path() <> "/end_session/complete", "token", completion_token)
+
+        completion_url =
+          append_query_param(
+            Config.mount_path() <> "/end_session/complete",
+            "token",
+            completion_token
+          )
+
         redirect(conn, to: host_logout_destination(conn, result, completion_url))
 
       {:error, %EndSession.Error{} = error} ->
@@ -117,7 +124,8 @@ defmodule Lockspire.Web.EndSessionController do
     continue_to = frontchannel_continue_to(result)
 
     EndSessionHTML.frontchannel_logout(%{
-      frontchannel_iframes: build_frontchannel_iframes(result.frontchannel_deliveries, result.event.sid),
+      frontchannel_iframes:
+        build_frontchannel_iframes(result.frontchannel_deliveries, result.event.sid),
       continue_to: continue_to,
       auto_continue_ms: @frontchannel_auto_continue_ms,
       auto_continue?: is_binary(continue_to),
@@ -198,9 +206,7 @@ defmodule Lockspire.Web.EndSessionController do
       %LogoutDelivery{id: id, channel: :frontchannel} when is_integer(id) ->
         LogoutDeliveryRecord
         |> where([delivery], delivery.id == ^id and delivery.channel == :frontchannel)
-        |> Config.repo!().update_all(
-          set: [status: :rendered, rendered_at: now, updated_at: now]
-        )
+        |> Config.repo!().update_all(set: [status: :rendered, rendered_at: now, updated_at: now])
 
       _other ->
         :ok

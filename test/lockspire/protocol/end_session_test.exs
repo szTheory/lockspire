@@ -23,7 +23,8 @@ defmodule Lockspire.Protocol.EndSessionTest do
       key = register_signing_key()
       register_client("client-123")
 
-      request = request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
+      request =
+        request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
 
       assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
       assert result.sid == "sid-123"
@@ -53,7 +54,10 @@ defmodule Lockspire.Protocol.EndSessionTest do
 
       other_key = JarTestHelpers.generate_keys()
 
-      request = request(%{"id_token_hint" => id_token_hint(other_key.private_jwk, %{"aud" => "client-123"})})
+      request =
+        request(%{
+          "id_token_hint" => id_token_hint(other_key.private_jwk, %{"aud" => "client-123"})
+        })
 
       assert {:error, %EndSession.Error{} = error} = EndSession.validate(request)
       assert error.reason_code == :invalid_id_token_hint
@@ -119,7 +123,8 @@ defmodule Lockspire.Protocol.EndSessionTest do
       key = register_signing_key()
       register_client("client-123")
 
-      request = request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
+      request =
+        request(%{"id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => "client-123"})})
 
       assert {:ok, %EndSession.Result{} = result} = EndSession.validate(request)
       assert is_nil(result.post_logout_redirect_uri)
@@ -134,7 +139,8 @@ defmodule Lockspire.Protocol.EndSessionTest do
       request =
         request(%{
           "client_id" => "client-123",
-          "id_token_hint" => id_token_hint(key.private_jwk, %{"aud" => ["client-123", "other-client"]})
+          "id_token_hint" =>
+            id_token_hint(key.private_jwk, %{"aud" => ["client-123", "other-client"]})
         })
 
       assert {:ok, %EndSession.Result{sid: "sid-123"}} = EndSession.validate(request)

@@ -135,7 +135,9 @@ defmodule <%= @verification_controller_module %> do
   end
 
   defp render_review(conn, pending, account_subject) do
-    render(conn, :index,
+    render(
+      conn,
+      :index,
       base_assigns(
         review_step?: true,
         user_code: pending.user_code,

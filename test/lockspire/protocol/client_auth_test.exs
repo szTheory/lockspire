@@ -15,13 +15,15 @@ defmodule Lockspire.Protocol.ClientAuthTest do
   describe "authenticate/3 with private_key_jwt" do
     test "rejects if TTL is greater than 10 minutes (exp - iat > 600)" do
       now = System.system_time(:second)
+
       payload = %{
         "iss" => "test_client",
         "sub" => "test_client",
         "aud" => "https://lockspire.example.com",
         "jti" => "jti_1",
         "iat" => now - 100,
-        "exp" => now + 600 # 700 seconds TTL
+        # 700 seconds TTL
+        "exp" => now + 600
       }
 
       params = %{
@@ -43,13 +45,15 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
     test "rejects if TTL is greater than 10 minutes (exp - nbf > 600)" do
       now = System.system_time(:second)
+
       payload = %{
         "iss" => "test_client",
         "sub" => "test_client",
         "aud" => "https://lockspire.example.com",
         "jti" => "jti_2",
         "nbf" => now - 100,
-        "exp" => now + 600 # 700 seconds TTL
+        # 700 seconds TTL
+        "exp" => now + 600
       }
 
       params = %{
@@ -70,13 +74,15 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
     test "accepts valid assertion and records JTI, rejecting replay" do
       now = System.system_time(:second)
+
       payload = %{
         "iss" => "test_client",
         "sub" => "test_client",
         "aud" => "https://lockspire.example.com",
         "jti" => "jti_unique_#{now}",
         "iat" => now,
-        "exp" => now + 300 # 5 minutes
+        # 5 minutes
+        "exp" => now + 300
       }
 
       params = %{
@@ -101,6 +107,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
     test "rejects missing jti" do
       now = System.system_time(:second)
+
       payload = %{
         "iss" => "test_client",
         "sub" => "test_client",
@@ -119,7 +126,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       }
 
       assert {:error, %Error{reason_code: :invalid_client_assertion}} =
-               ClientAuth.authenticate(params, nil, [client_store: mock_store(client)])
+               ClientAuth.authenticate(params, nil, client_store: mock_store(client))
     end
 
     test "rejects missing exp or iat/nbf" do
@@ -140,7 +147,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       }
 
       assert {:error, %Error{reason_code: :invalid_client_assertion}} =
-               ClientAuth.authenticate(params, nil, [client_store: mock_store(client)])
+               ClientAuth.authenticate(params, nil, client_store: mock_store(client))
     end
   end
 

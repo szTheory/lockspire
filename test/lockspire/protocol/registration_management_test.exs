@@ -93,11 +93,18 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       client_id: client_id
     } do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
-      
-      new_metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+
+      new_metadata =
+        Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+
       request = %{metadata: new_metadata, server_policy: server_policy, client: client}
 
-      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :id_token_signed_response_alg, reason: :incompatible_with_fapi_2_0}} =
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :id_token_signed_response_alg,
+                reason: :incompatible_with_fapi_2_0
+              }} =
                RegistrationManagement.update(client_id, request)
     end
 
@@ -107,10 +114,19 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     } do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
       Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
-      
-      request = %{metadata: Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "ES256"), server_policy: server_policy, client: client}
 
-      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :security_profile, reason: :missing_compliant_publishable_key}} =
+      request = %{
+        metadata: Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "ES256"),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :security_profile,
+                reason: :missing_compliant_publishable_key
+              }} =
                RegistrationManagement.update(client.client_id, request)
     end
 
@@ -119,10 +135,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       client_id: client_id,
       server_policy: server_policy
     } do
-      new_metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+      new_metadata =
+        Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
+
       request = %{metadata: new_metadata, server_policy: server_policy, client: client}
 
-      assert {:ok, %UpdateSuccess{client: updated_client}} = RegistrationManagement.update(client_id, request)
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
       assert updated_client.id_token_signed_response_alg == :RS256
     end
   end
@@ -204,11 +224,12 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       assert updated_client.dpop_policy == :dpop
     end
 
-    test "updates self-registered client dpop_policy to :bearer when dpop_bound_access_tokens is false", %{
-      client: client,
-      client_id: client_id,
-      server_policy: server_policy
-    } do
+    test "updates self-registered client dpop_policy to :bearer when dpop_bound_access_tokens is false",
+         %{
+           client: client,
+           client_id: client_id,
+           server_policy: server_policy
+         } do
       new_metadata = Map.put(DcrFixtures.valid_metadata(), "dpop_bound_access_tokens", false)
 
       request = %{

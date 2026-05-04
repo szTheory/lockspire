@@ -59,7 +59,13 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :dcr_default_client_secret_lifetime_seconds,
       :dcr_default_registration_access_token_lifetime_seconds
     ])
-    |> validate_required([:id, :par_policy, :dpop_policy, :security_profile, :registration_policy])
+    |> validate_required([
+      :id,
+      :par_policy,
+      :dpop_policy,
+      :security_profile,
+      :registration_policy
+    ])
   end
 
   def to_domain(%__MODULE__{} = record) do

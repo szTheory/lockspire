@@ -22,11 +22,16 @@ defmodule Lockspire.Observability do
   }
 
   @spec emit(entity(), action(), measurements(), metadata()) :: :ok
-  def emit(entity, action, measurements \\ %{}, metadata \\ %{}) when is_atom(entity) and is_atom(action) do
+  def emit(entity, action, measurements \\ %{}, metadata \\ %{})
+      when is_atom(entity) and is_atom(action) do
     redacted_metadata = redact(metadata)
     normalized_measurements = Map.put_new(measurements, :count, 1)
 
-    :telemetry.execute(@audit_prefix ++ [entity, action], normalized_measurements, redacted_metadata)
+    :telemetry.execute(
+      @audit_prefix ++ [entity, action],
+      normalized_measurements,
+      redacted_metadata
+    )
 
     :telemetry.execute(
       @telemetry_prefix ++ [entity, action],

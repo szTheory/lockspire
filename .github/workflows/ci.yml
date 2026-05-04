@@ -81,10 +81,13 @@ jobs:
       - name: Run qa gate
         run: mix qa
 
+      - name: Run static application security testing
+        run: mix sobelow --config
+
       - name: Build docs
         run: mix docs.verify
 
-      - name: Audit retired dependencies
+      - name: Audit dependencies (retired + CVEs)
         run: mix deps.audit
 
       - name: Verify Hex package

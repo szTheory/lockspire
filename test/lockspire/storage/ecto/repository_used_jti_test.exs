@@ -47,6 +47,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryUsedJtiTest do
         jti: "jti-xyz",
         expires_at: DateTime.utc_now() |> DateTime.add(3600, :second)
       }
+
       jti2 = %UsedJti{
         client_id: "client-2",
         jti: "jti-xyz",

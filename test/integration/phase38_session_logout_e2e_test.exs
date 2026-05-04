@@ -82,8 +82,12 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
       issue_openid_session(client, verifier, signing_key)
 
     assert is_binary(interaction.sid)
-    assert {:ok, %Token{} = access_token} = lifecycle_token(interaction.interaction_id, :access_token)
-    assert {:ok, %Token{} = refresh_token} = lifecycle_token(interaction.interaction_id, :refresh_token)
+
+    assert {:ok, %Token{} = access_token} =
+             lifecycle_token(interaction.interaction_id, :access_token)
+
+    assert {:ok, %Token{} = refresh_token} =
+             lifecycle_token(interaction.interaction_id, :refresh_token)
 
     assert access_token.sid == interaction.sid
     assert refresh_token.sid == interaction.sid
@@ -143,7 +147,10 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
 
     active_revoked =
       TokenRecord
-      |> where([token], token.sid == ^"phase38-sid" and token.token_type in [:access_token, :refresh_token])
+      |> where(
+        [token],
+        token.sid == ^"phase38-sid" and token.token_type in [:access_token, :refresh_token]
+      )
       |> Lockspire.TestRepo.all()
 
     assert Enum.all?(active_revoked, & &1.revoked_at)
@@ -161,6 +168,7 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
     signing_key: signing_key
   } do
     verifier = String.duplicate("w", 43)
+
     %{interaction: interaction, success: success} =
       issue_openid_session(client, verifier, signing_key)
 
@@ -278,7 +286,11 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
              AuthorizationFlow.start_authorization(validated, subject_context, opts)
 
     assert {:approved, redirect_uri} =
-             AuthorizationFlow.approve_interaction(interaction.interaction_id, subject_context, opts)
+             AuthorizationFlow.approve_interaction(
+               interaction.interaction_id,
+               subject_context,
+               opts
+             )
 
     assert {:ok, %Lockspire.Domain.Interaction{} = issued_interaction} =
              Repository.fetch_interaction(interaction.interaction_id)
@@ -357,7 +369,10 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
 
   defp decode_id_token(jwt, public_jwk_map) do
     public_jwk = JOSE.JWK.from_map(public_jwk_map)
-    assert {true, %JOSE.JWT{fields: claims}, _jws} = JOSE.JWT.verify_strict(public_jwk, ["RS256"], jwt)
+
+    assert {true, %JOSE.JWT{fields: claims}, _jws} =
+             JOSE.JWT.verify_strict(public_jwk, ["RS256"], jwt)
+
     claims
   end
 

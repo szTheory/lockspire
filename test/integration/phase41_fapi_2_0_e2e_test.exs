@@ -400,7 +400,10 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
            }
   end
 
-  test "FAPI 2.0 profile rejects RS256 for runtime operations like ID Token generation", %{client: client, secret: secret} do
+  test "FAPI 2.0 profile rejects RS256 for runtime operations like ID Token generation", %{
+    client: client,
+    secret: secret
+  } do
     put_security_profile!(:fapi_2_0_security)
     publish_rs256_signing_key("phase41-rs256-kid")
 
@@ -429,6 +432,7 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert token_dpop_conn.status == 500
+
     assert Jason.decode!(token_dpop_conn.resp_body) == %{
              "error" => "server_error",
              "error_description" => "Unable to issue id_token"

@@ -7,7 +7,7 @@ defmodule Lockspire.Domain.DeviceAuthorizationTest do
   describe "issue/2" do
     test "creates a valid struct containing plaintext codes, hashed codes, and an expiration timestamp" do
       now = DateTime.utc_now()
-      
+
       attrs = %{
         device_code: "foo-device-code",
         user_code: "ABCD-WXYZ",

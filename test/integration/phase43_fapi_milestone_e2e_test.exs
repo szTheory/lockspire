@@ -201,7 +201,7 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
         })
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-      evidence = (conn |> get_resp_header("location") |> List.first()) || conn.resp_body || ""
+      evidence = conn |> get_resp_header("location") |> List.first() || conn.resp_body || ""
       assert evidence =~ @end_session_unregistered_literal
     end
 
@@ -216,7 +216,7 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
         })
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-      evidence = (conn |> get_resp_header("location") |> List.first()) || conn.resp_body || ""
+      evidence = conn |> get_resp_header("location") |> List.first() || conn.resp_body || ""
       assert evidence =~ @end_session_unregistered_literal
     end
 
@@ -231,7 +231,7 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
         })
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-      evidence = (conn |> get_resp_header("location") |> List.first()) || conn.resp_body || ""
+      evidence = conn |> get_resp_header("location") |> List.first() || conn.resp_body || ""
       refute evidence =~ @end_session_unregistered_literal
     end
   end
@@ -282,7 +282,6 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
       assert query["iss"] == @issuer
       assert query["state"] == "phase43-error-state"
     end
-
   end
 
   describe "FAPI-06: discovery published correctly under both modes (D-07, D-08, D-11c)" do
@@ -306,7 +305,9 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
       client: client
     } do
       put_security_profile!(:none)
-      assert {:ok, _client} = Repository.update_client(client, %{security_profile: :fapi_2_0_security})
+
+      assert {:ok, _client} =
+               Repository.update_client(client, %{security_profile: :fapi_2_0_security})
 
       metadata = Discovery.openid_configuration()
       refute Map.has_key?(metadata, "require_pushed_authorization_requests")

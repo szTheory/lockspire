@@ -79,8 +79,24 @@ defmodule Lockspire.Protocol.RefreshExchange do
        ) do
     {formatted_access_token, formatted_refresh_token} = format_refresh_rotation_tokens(request)
     rotated_at = now(request)
-    access_token = build_rotated_access_token(client, formatted_access_token, rotated_at, context, presented_refresh_token)
-    refresh_token = build_rotated_refresh_token(client, formatted_refresh_token, rotated_at, context, presented_refresh_token)
+
+    access_token =
+      build_rotated_access_token(
+        client,
+        formatted_access_token,
+        rotated_at,
+        context,
+        presented_refresh_token
+      )
+
+    refresh_token =
+      build_rotated_refresh_token(
+        client,
+        formatted_refresh_token,
+        rotated_at,
+        context,
+        presented_refresh_token
+      )
 
     case transact_with_audit_outcome(token_store(request), fn ->
            handle_refresh_rotation(
@@ -237,7 +253,13 @@ defmodule Lockspire.Protocol.RefreshExchange do
     }
   end
 
-  defp build_rotated_access_token(%Client{} = client, formatted_access_token, rotated_at, context, %Token{} = source_token) do
+  defp build_rotated_access_token(
+         %Client{} = client,
+         formatted_access_token,
+         rotated_at,
+         context,
+         %Token{} = source_token
+       ) do
     %Token{
       token_hash: formatted_access_token.token_hash,
       token_type: :access_token,
@@ -249,7 +271,13 @@ defmodule Lockspire.Protocol.RefreshExchange do
     }
   end
 
-  defp build_rotated_refresh_token(%Client{} = client, formatted_refresh_token, rotated_at, context, %Token{} = source_token) do
+  defp build_rotated_refresh_token(
+         %Client{} = client,
+         formatted_refresh_token,
+         rotated_at,
+         context,
+         %Token{} = source_token
+       ) do
     %Token{
       token_hash: formatted_refresh_token.token_hash,
       token_type: :refresh_token,

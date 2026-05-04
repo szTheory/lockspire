@@ -88,7 +88,10 @@ defmodule Lockspire.Protocol.LogoutPropagation do
     end
   end
 
-  defp maybe_enqueue_backchannel_delivery(%LogoutDelivery{channel: :backchannel} = delivery, logout_event_id) do
+  defp maybe_enqueue_backchannel_delivery(
+         %LogoutDelivery{channel: :backchannel} = delivery,
+         logout_event_id
+       ) do
     case insert_backchannel_job(delivery.id) do
       {:ok, %Oban.Job{id: job_id}} when is_integer(job_id) ->
         case Repository.mark_logout_delivery_enqueued(delivery.id, job_id) do
@@ -166,7 +169,10 @@ defmodule Lockspire.Protocol.LogoutPropagation do
       event: event,
       deliveries: deliveries,
       frontchannel_deliveries: Enum.filter(deliveries, &(&1.channel == :frontchannel)),
-      post_logout_redirect_uri: normalize_optional_string(attrs[:post_logout_redirect_uri] || attrs["post_logout_redirect_uri"]),
+      post_logout_redirect_uri:
+        normalize_optional_string(
+          attrs[:post_logout_redirect_uri] || attrs["post_logout_redirect_uri"]
+        ),
       state: normalize_optional_string(attrs[:state] || attrs["state"]),
       frontchannel_continue_to: event.frontchannel_continue_to
     }
@@ -174,14 +180,19 @@ defmodule Lockspire.Protocol.LogoutPropagation do
 
   defp build_logout_event(attrs) do
     %LogoutEvent{
-      event_id: normalize_optional_string(attrs[:event_id] || attrs["event_id"]) || Ecto.UUID.generate(),
+      event_id:
+        normalize_optional_string(attrs[:event_id] || attrs["event_id"]) || Ecto.UUID.generate(),
       sid: normalize_optional_string(attrs[:sid] || attrs["sid"]),
       account_id: normalize_optional_string(attrs[:account_id] || attrs["account_id"]),
       subject: normalize_optional_string(attrs[:subject] || attrs["subject"]),
       post_logout_redirect_uri:
-        normalize_optional_string(attrs[:post_logout_redirect_uri] || attrs["post_logout_redirect_uri"]),
+        normalize_optional_string(
+          attrs[:post_logout_redirect_uri] || attrs["post_logout_redirect_uri"]
+        ),
       frontchannel_continue_to:
-        normalize_optional_string(attrs[:frontchannel_continue_to] || attrs["frontchannel_continue_to"])
+        normalize_optional_string(
+          attrs[:frontchannel_continue_to] || attrs["frontchannel_continue_to"]
+        )
     }
   end
 

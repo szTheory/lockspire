@@ -9,23 +9,26 @@ defmodule Lockspire.Protocol.LogoutToken do
   @logout_event_uri "http://schemas.openid.net/event/backchannel-logout"
 
   @spec sign(map()) :: {:ok, String.t(), String.t()} | {:error, atom()}
-  def sign(%{
-        issuer: issuer,
-        logout_event: %LogoutEvent{} = logout_event,
-        delivery: %LogoutDelivery{} = delivery,
-        issued_at: %DateTime{} = issued_at,
-        signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
-      } = params)
+  def sign(
+        %{
+          issuer: issuer,
+          logout_event: %LogoutEvent{} = logout_event,
+          delivery: %LogoutDelivery{} = delivery,
+          issued_at: %DateTime{} = issued_at,
+          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+        } = params
+      )
       when is_binary(issuer) do
     security_profile = Map.get(params, :security_profile, :none)
-    
-    effective_profile = 
+
+    effective_profile =
       case security_profile do
         %Lockspire.Protocol.SecurityProfile.Resolved{effective_profile: profile} -> profile
         profile when is_atom(profile) -> profile
       end
 
-    allowed_algs = Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(effective_profile)
+    allowed_algs =
+      Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(effective_profile)
 
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
          {:ok, jwk_map} <- decode_private_jwk(private_jwk),
@@ -53,7 +56,12 @@ defmodule Lockspire.Protocol.LogoutToken do
     end
   end
 
-  defp build_claims(issuer, %LogoutEvent{} = logout_event, %LogoutDelivery{} = delivery, issued_at) do
+  defp build_claims(
+         issuer,
+         %LogoutEvent{} = logout_event,
+         %LogoutDelivery{} = delivery,
+         issued_at
+       ) do
     subject = normalize_optional_string(logout_event.subject)
     sid = maybe_sid(logout_event, delivery)
 
@@ -104,13 +112,11 @@ defmodule Lockspire.Protocol.LogoutToken do
   defp decode_private_jwk(_binary), do: {:error, :invalid_signing_key}
 
   defp decode_term_private_jwk(binary) do
-    try do
-      case :erlang.binary_to_term(binary, [:safe]) do
-        %{} = jwk_map -> {:ok, jwk_map}
-        _other -> {:error, :invalid_signing_key}
-      end
-    rescue
-      _error -> {:error, :invalid_signing_key}
+    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
+      %{} = jwk_map -> {:ok, jwk_map}
+      _other -> {:error, :invalid_signing_key}
     end
+  rescue
+    _error -> {:error, :invalid_signing_key}
   end
 end

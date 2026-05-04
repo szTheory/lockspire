@@ -8,7 +8,8 @@ defmodule Lockspire.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Lockspire.Oban, Lockspire.Oban.runtime_config!()}
+      {Lockspire.Oban, Lockspire.Oban.runtime_config!()},
+      Cachex.child_spec(name: :lockspire_jwks_cache)
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Lockspire.Supervisor)

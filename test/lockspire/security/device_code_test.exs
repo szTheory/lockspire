@@ -21,7 +21,8 @@ defmodule Lockspire.Security.DeviceCodeTest do
       code2 = DeviceCode.generate_device_code()
 
       assert is_binary(code1)
-      assert String.length(code1) >= 43 # 32 bytes base64 encoded is at least 43 chars
+      # 32 bytes base64 encoded is at least 43 chars
+      assert String.length(code1) >= 43
       assert code1 != code2
     end
   end

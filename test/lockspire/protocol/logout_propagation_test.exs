@@ -85,6 +85,7 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
       assert completed.post_logout_redirect_uri == "https://rp.example.com/logged-out"
       assert completed.state == "after-logout"
       assert completed.frontchannel_continue_to == "/signed-out"
+
       assert Enum.map(completed.frontchannel_deliveries, & &1.target_uri) == [
                "https://rp.example.com/frontchannel-logout"
              ]
@@ -116,11 +117,19 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
 
       assert is_integer(backchannel_job_id)
 
-      assert %Job{id: ^backchannel_job_id, worker: worker, args: %{"logout_delivery_id" => logout_delivery_id}} =
+      assert %Job{
+               id: ^backchannel_job_id,
+               worker: worker,
+               args: %{"logout_delivery_id" => logout_delivery_id}
+             } =
                fetch_job!(backchannel_job_id)
 
       assert worker == inspect(BackchannelLogoutDeliveryWorker)
-      assert Enum.any?(persisted_deliveries, &(&1.id == logout_delivery_id and &1.channel == :backchannel))
+
+      assert Enum.any?(
+               persisted_deliveries,
+               &(&1.id == logout_delivery_id and &1.channel == :backchannel)
+             )
 
       revoked_count =
         TokenRecord
@@ -202,7 +211,10 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
       assert {:ok, second_result} = LogoutPropagation.complete(attrs)
 
       assert second_result.event.id == first_result.event.id
-      assert Enum.map(second_result.deliveries, & &1.id) == Enum.map(first_result.deliveries, & &1.id)
+
+      assert Enum.map(second_result.deliveries, & &1.id) ==
+               Enum.map(first_result.deliveries, & &1.id)
+
       assert Enum.map(second_result.frontchannel_deliveries, & &1.id) ==
                Enum.map(first_result.frontchannel_deliveries, & &1.id)
 

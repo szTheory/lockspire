@@ -12,7 +12,8 @@ defmodule Lockspire.Storage.KeyStore do
   @callback list_signing_keys(keyword()) :: {:ok, [SigningKey.t()]} | {:error, store_error()}
   @callback list_publishable_keys(keyword()) :: {:ok, [SigningKey.t()]} | {:error, store_error()}
   @callback list_decryption_keys() :: {:ok, [SigningKey.t()]} | {:error, store_error()}
-  @callback fetch_active_signing_key(keyword()) :: {:ok, SigningKey.t() | nil} | {:error, store_error()}
+  @callback fetch_active_signing_key(keyword()) ::
+              {:ok, SigningKey.t() | nil} | {:error, store_error()}
   @callback fetch_signing_key_by_id(integer()) ::
               {:ok, SigningKey.t() | nil} | {:error, store_error()}
   @callback publish_signing_key(integer(), DateTime.t()) ::

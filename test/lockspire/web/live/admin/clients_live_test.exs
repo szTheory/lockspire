@@ -100,7 +100,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/par-policy", Show))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/logout-uris", Show))
-    assert Enum.any?(routes, &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop))
+
+    assert Enum.any?(
+             routes,
+             &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop)
+           )
+
     refute Enum.any?(routes, &(&1.path == "/admin/overview"))
   end
 
@@ -327,7 +332,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
   test "saving dedicated logout propagation settings persists backchannel and frontchannel fields separately from post-logout redirects" do
     assert {:ok, view, _html} =
-             live(conn_for_admin(), "/admin/clients/alpha-client/edit?workflow=logout-propagation")
+             live(
+               conn_for_admin(),
+               "/admin/clients/alpha-client/edit?workflow=logout-propagation"
+             )
 
     view
     |> form("form[phx-submit=save_client]", %{

@@ -68,7 +68,10 @@ defmodule Lockspire.Protocol.IdTokenTest do
     assert {:ok, es256_jwt} =
              IdToken.sign(
                signing_params(
-                 [security_profile: :fapi_2_0_security, signing_key: signing_key_params(ec_keys, "ES256")],
+                 [
+                   security_profile: :fapi_2_0_security,
+                   signing_key: signing_key_params(ec_keys, "ES256")
+                 ],
                  ec_keys
                )
              )
@@ -78,12 +81,16 @@ defmodule Lockspire.Protocol.IdTokenTest do
     assert {:ok, ps256_jwt} =
              IdToken.sign(
                signing_params(
-                 [security_profile: :fapi_2_0_security, signing_key: signing_key_params(ps256_keys, "PS256")],
+                 [
+                   security_profile: :fapi_2_0_security,
+                   signing_key: signing_key_params(ps256_keys, "PS256")
+                 ],
                  ps256_keys
                )
              )
 
-    assert decode_claims(ps256_jwt, ps256_keys, ["PS256"])["iss"] == "https://example.test/lockspire"
+    assert decode_claims(ps256_jwt, ps256_keys, ["PS256"])["iss"] ==
+             "https://example.test/lockspire"
   end
 
   defp sign_id_token(overrides \\ []) do

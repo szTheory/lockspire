@@ -64,6 +64,7 @@ defmodule Lockspire.Workers.PrunerTest do
 
     for model <- models do
       assert_receive {:telemetry, ^model, count}, 500
+
       if model in ["TokenRecord", "UsedJtiRecord"] do
         assert count >= 1
       else

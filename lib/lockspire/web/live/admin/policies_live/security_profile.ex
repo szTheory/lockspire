@@ -126,8 +126,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     {:ok, clients} = Admin.list_clients()
 
     summary =
-      Enum.reduce(clients, %{inherit: 0, fapi_2_0_security: 0, none: 0}, fn %Client{security_profile: mode},
-                                                                       acc ->
+      Enum.reduce(clients, %{inherit: 0, fapi_2_0_security: 0, none: 0}, fn %Client{
+                                                                              security_profile:
+                                                                                mode
+                                                                            },
+                                                                            acc ->
         Map.update!(acc, mode, &(&1 + 1))
       end)
 

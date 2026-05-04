@@ -42,7 +42,7 @@ defmodule Lockspire.Protocol.RequestObject do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
     with :ok <- reject_request_uri_collision(params),
-          :ok <- reject_outer_param_conflicts(params),
+         :ok <- reject_outer_param_conflicts(params),
          {:ok, jwt} <- fetch_request(params),
          {:ok, jws_string} <- decrypt_request(jwt),
          :ok <- require_client_jwks(client),

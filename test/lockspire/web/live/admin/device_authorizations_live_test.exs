@@ -35,6 +35,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     now = DateTime.utc_now()
+
     {:ok, _auth} =
       Repository.put_device_authorization(%DeviceAuthorization{
         device_code_hash: "hash1",

@@ -21,7 +21,12 @@ defmodule Lockspire.Integration.Phase31GeneratedHostVerificationE2ETest do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
     Application.put_env(:lockspire, :known_scopes, ["openid", "profile", "email"])
-    Application.put_env(:lockspire, :account_resolver, GeneratedHostApp.Lockspire.TestAccountResolver)
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
 
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(GeneratedHostAppWeb.Endpoint)
@@ -158,7 +163,11 @@ defmodule Lockspire.Integration.Phase31GeneratedHostVerificationE2ETest do
       |> prepare_form("/verify", %{"user_code" => "abcd-efgh"})
 
     deny_conn =
-      submit_from(deny_review_conn, "/verify/#{denied_authorization.verification_handle}/deny", %{})
+      submit_from(
+        deny_review_conn,
+        "/verify/#{denied_authorization.verification_handle}/deny",
+        %{}
+      )
 
     assert deny_conn.status in [302, 303]
     assert redirected_to(deny_conn) == "/verify"

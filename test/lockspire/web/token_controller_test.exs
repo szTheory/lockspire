@@ -575,6 +575,7 @@ defmodule Lockspire.Web.TokenControllerTest do
              "scope",
              "token_type"
            ]
+
     assert body["token_type"] == "Bearer"
     assert body["scope"] == "email profile"
   end

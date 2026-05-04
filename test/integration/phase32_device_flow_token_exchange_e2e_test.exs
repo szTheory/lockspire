@@ -21,7 +21,12 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
     Application.put_env(:lockspire, :known_scopes, ["openid", "profile", "email"])
-    Application.put_env(:lockspire, :account_resolver, GeneratedHostApp.Lockspire.TestAccountResolver)
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
 
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(GeneratedHostAppWeb.Endpoint)
@@ -66,7 +71,8 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
       build_conn()
       |> init_test_session(%{"current_account_id" => "generated-host-user"})
 
-    review_conn = prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
+    review_conn =
+      prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
 
     assert review_conn.status == 200
     assert review_conn.resp_body =~ "Approve device"
@@ -121,7 +127,9 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     {:ok, client} =
       Repository.register_client(%Client{
         client_id: "phase32-device-dpop-client",
-        client_secret_hash: "sha256:static-salt:" <> Base.encode64(:crypto.hash(:sha256, "static-salt" <> client_secret)),
+        client_secret_hash:
+          "sha256:static-salt:" <>
+            Base.encode64(:crypto.hash(:sha256, "static-salt" <> client_secret)),
         name: "CLI Device",
         client_type: :confidential,
         token_endpoint_auth_method: :client_secret_basic,
@@ -147,7 +155,9 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
       build_conn()
       |> init_test_session(%{"current_account_id" => "generated-host-user"})
 
-    review_conn = prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
+    review_conn =
+      prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
+
     assert review_conn.status == 200
 
     handle = fetch_handle(review_conn.resp_body)

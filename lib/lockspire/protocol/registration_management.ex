@@ -277,7 +277,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         jwks: Map.get(metadata, "jwks"),
         id_token_signed_response_alg:
           atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
-        security_profile: atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
+        security_profile:
+          atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
         dpop_policy: dpop_policy_from_metadata(metadata),
         metadata: extension_metadata
     }

@@ -78,7 +78,9 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
 
   test "returns invalid_dpop_proof when proof iat is a string" do
     client = %Client{client_id: "client-dpop-invalid-iat", dpop_policy: :inherit}
-    %{jwt: proof_jwt} = dpop_proof_fixture(iat: Integer.to_string(DateTime.utc_now() |> DateTime.to_unix()))
+
+    %{jwt: proof_jwt} =
+      dpop_proof_fixture(iat: Integer.to_string(DateTime.utc_now() |> DateTime.to_unix()))
 
     assert {:error, error} =
              TokenEndpointDPoP.resolve_context(client, %{

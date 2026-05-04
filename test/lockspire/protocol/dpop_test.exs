@@ -111,7 +111,8 @@ defmodule Lockspire.Protocol.DPoPTest do
 
       none_profile = %SecurityProfile.Resolved{effective_profile: :none}
 
-      assert {:ok, %DPoP{}} = DPoP.validate_proof(proof, validation_opts(security_profile: none_profile))
+      assert {:ok, %DPoP{}} =
+               DPoP.validate_proof(proof, validation_opts(security_profile: none_profile))
     end
 
     test "rejects alg=none unsigned proofs", %{claims: claims, keys: keys} do
@@ -186,7 +187,9 @@ defmodule Lockspire.Protocol.DPoPTest do
     test "accepts a proof whose htm, htu, iat, and jti match the request context", %{keys: keys} do
       proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims())
 
-      assert {:ok, %DPoP{claims: claims, jkt: jkt}} = DPoP.validate_proof(proof, validation_opts())
+      assert {:ok, %DPoP{claims: claims, jkt: jkt}} =
+               DPoP.validate_proof(proof, validation_opts())
+
       assert claims["htm"] == "POST"
       assert claims["htu"] == @target_uri
       assert claims["iat"] == @reference_unix
@@ -262,13 +265,20 @@ defmodule Lockspire.Protocol.DPoPTest do
 
     test "returns a typed reason when the proof signature is invalid", %{keys: keys} do
       other_keys = JarTestHelpers.generate_ec_keys()
-      proof = JarTestHelpers.sign_dpop_proof(other_keys.private_jwk, valid_claims(), jwk: keys.pub_jwk_map)
+
+      proof =
+        JarTestHelpers.sign_dpop_proof(other_keys.private_jwk, valid_claims(),
+          jwk: keys.pub_jwk_map
+        )
 
       assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
     end
 
     test "returns a typed reason when the proof header omits jwk", %{keys: keys} do
-      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(), extra_header: %{"jwk" => nil})
+      proof =
+        JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(),
+          extra_header: %{"jwk" => nil}
+        )
 
       assert {:error, :missing_jwk} = DPoP.validate_proof(proof, validation_opts())
     end

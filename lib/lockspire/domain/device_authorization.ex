@@ -57,7 +57,8 @@ defmodule Lockspire.Domain.DeviceAuthorization do
           expires_at: DateTime.t()
         }
 
-  @default_ttl 300 # 5 minutes
+  # 5 minutes
+  @default_ttl 300
   @default_poll_interval_seconds 5
 
   @doc """

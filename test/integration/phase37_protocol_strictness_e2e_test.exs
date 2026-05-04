@@ -27,11 +27,16 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
     end
 
     def resolve_current_account(conn_or_socket, context),
-      do: GeneratedHostApp.Lockspire.TestAccountResolver.resolve_current_account(conn_or_socket, context)
+      do:
+        GeneratedHostApp.Lockspire.TestAccountResolver.resolve_current_account(
+          conn_or_socket,
+          context
+        )
 
     @impl true
     def resolve_account(account_reference, context),
-      do: GeneratedHostApp.Lockspire.TestAccountResolver.resolve_account(account_reference, context)
+      do:
+        GeneratedHostApp.Lockspire.TestAccountResolver.resolve_account(account_reference, context)
 
     @impl true
     def build_claims(account, context),
@@ -39,7 +44,8 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
     @impl true
     def redirect_for_login(conn_or_socket, context),
-      do: GeneratedHostApp.Lockspire.TestAccountResolver.redirect_for_login(conn_or_socket, context)
+      do:
+        GeneratedHostApp.Lockspire.TestAccountResolver.redirect_for_login(conn_or_socket, context)
 
     defp maybe_put_auth_time(account, conn) do
       case Plug.Conn.get_session(conn, "current_auth_time_unix") do
@@ -119,7 +125,10 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
        %{client: client} do
     conn =
       build_conn()
-      |> get("/lockspire/authorize", Map.put(base_authorize_params(client.client_id), "prompt", "none"))
+      |> get(
+        "/lockspire/authorize",
+        Map.put(base_authorize_params(client.client_id), "prompt", "none")
+      )
 
     assert conn.status in [302, 303]
 
@@ -180,7 +189,8 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
     cases = [
       {"max_age", %{"max_age" => "60"}},
-      {"claims", %{"claims" => Jason.encode!(%{"id_token" => %{"auth_time" => %{"essential" => true}}})}}
+      {"claims",
+       %{"claims" => Jason.encode!(%{"id_token" => %{"auth_time" => %{"essential" => true}}})}}
     ]
 
     Enum.each(cases, fn {label, extra_params} ->

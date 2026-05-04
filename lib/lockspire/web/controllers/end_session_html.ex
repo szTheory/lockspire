@@ -3,5 +3,5 @@ defmodule Lockspire.Web.EndSessionHTML do
 
   use Phoenix.Component
 
-  embed_templates "end_session_html/*"
+  embed_templates("end_session_html/*")
 end

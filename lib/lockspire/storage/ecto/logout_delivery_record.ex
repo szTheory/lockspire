@@ -9,7 +9,16 @@ defmodule Lockspire.Storage.Ecto.LogoutDeliveryRecord do
 
   @timestamps_opts [type: :utc_datetime_usec]
   @channel_values [:backchannel, :frontchannel]
-  @status_values [:pending, :enqueued, :attempted, :succeeded, :retryable, :discarded, :rendered, :skipped]
+  @status_values [
+    :pending,
+    :enqueued,
+    :attempted,
+    :succeeded,
+    :retryable,
+    :discarded,
+    :rendered,
+    :skipped
+  ]
 
   schema "lockspire_logout_deliveries" do
     field(:delivery_id, :string)

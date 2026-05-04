@@ -305,7 +305,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
   describe "register/1 — FAPI 2.0 readiness contract" do
     test "rejects security_profile: :fapi_2_0_security when client algorithm metadata is incompatible" do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
-      
+
       metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
       request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
 
@@ -319,11 +319,15 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
     test "rejects security_profile: :fapi_2_0_security when server is missing compliant keys" do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
-      
+
       Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
 
       request = DcrFixtures.register_request(server_policy: server_policy)
-      request = %{request | metadata: Map.put(request.metadata, "id_token_signed_response_alg", "ES256")}
+
+      request = %{
+        request
+        | metadata: Map.put(request.metadata, "id_token_signed_response_alg", "ES256")
+      }
 
       assert {:error,
               %Error{
@@ -335,7 +339,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
     test "allows non-FAPI clients to store legacy algorithm metadata" do
       server_policy = DcrFixtures.server_policy(%{security_profile: :none})
-      
+
       metadata = Map.put(DcrFixtures.valid_metadata(), "id_token_signed_response_alg", "RS256")
       request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
 
@@ -346,10 +350,19 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
   describe "register/1 — D-14 validator" do
     test "rejects private_key_jwt without jwks or jwks_uri" do
-      server_policy = DcrFixtures.server_policy(%{
-        dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic", "client_secret_post", "none", "private_key_jwt"]
-      })
-      metadata = DcrFixtures.valid_metadata() |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+      server_policy =
+        DcrFixtures.server_policy(%{
+          dcr_allowed_token_endpoint_auth_methods: [
+            "client_secret_basic",
+            "client_secret_post",
+            "none",
+            "private_key_jwt"
+          ]
+        })
+
+      metadata =
+        DcrFixtures.valid_metadata() |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+
       request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
 
       assert {:error,

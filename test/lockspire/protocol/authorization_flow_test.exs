@@ -167,7 +167,11 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert {:redirect_error, %Error{} = error} =
              AuthorizationFlow.start_authorization(
                validated_request(prompt: ["none"], max_age: 120),
-               %{subject_id: "subject_123", auth_time: auth_time, ui_required: :account_selection},
+               %{
+                 subject_id: "subject_123",
+                 auth_time: auth_time,
+                 ui_required: :account_selection
+               },
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,

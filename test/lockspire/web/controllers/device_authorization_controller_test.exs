@@ -23,14 +23,15 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     # Insert a public client to test the device auth flow
-    {:ok, client} = Repository.register_client(%Lockspire.Domain.Client{
-      client_id: "device-client-123",
-      name: "Device Client",
-      client_type: :public,
-      token_endpoint_auth_method: :none,
-      allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
-      created_at: DateTime.utc_now()
-    })
+    {:ok, client} =
+      Repository.register_client(%Lockspire.Domain.Client{
+        client_id: "device-client-123",
+        name: "Device Client",
+        client_type: :public,
+        token_endpoint_auth_method: :none,
+        allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+        created_at: DateTime.utc_now()
+      })
 
     {:ok, client: client}
   end
@@ -45,7 +46,9 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
     |> Lockspire.Web.DeviceAuthorizationController.call(:create)
   end
 
-  test "returns 200 OK with device authorization fields and proper cache headers", %{client: client} do
+  test "returns 200 OK with device authorization fields and proper cache headers", %{
+    client: client
+  } do
     conn =
       build_conn(:post, "/device/code", %{"client_id" => client.client_id})
       |> dispatch()
@@ -62,8 +65,10 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
     assert Map.has_key?(body, "user_code")
     assert Map.has_key?(body, "verification_uri")
     assert Map.has_key?(body, "verification_uri_complete")
+
     assert body["verification_uri_complete"] ==
              "#{body["verification_uri"]}?user_code=#{body["user_code"]}"
+
     assert Map.has_key?(body, "expires_in")
   end
 
@@ -75,7 +80,7 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
     assert conn.status == 401
     assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "pragma") == ["no-cache"]
-    
+
     body = Jason.decode!(conn.resp_body)
     assert body["error"] == "invalid_client"
   end

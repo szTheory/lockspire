@@ -107,7 +107,9 @@ defmodule Lockspire.Audit.Event do
 
   @spec logout_lifecycle(atom(), map()) :: t()
   def logout_lifecycle(stage, metadata) when is_atom(stage) and is_map(metadata) do
-    %{action: action, outcome: outcome, resource_type: resource_type} = Map.fetch!(@logout_lifecycle, stage)
+    %{action: action, outcome: outcome, resource_type: resource_type} =
+      Map.fetch!(@logout_lifecycle, stage)
+
     resource_id = lifecycle_resource_id!(stage, metadata, resource_type)
 
     %__MODULE__{

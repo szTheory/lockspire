@@ -18,7 +18,9 @@ defmodule Lockspire.Protocol.JarTest do
       jws = JOSE.JWT.sign(sig_jwk, %{"alg" => "ES256"}, %{"iss" => "client"})
       {_, jws_compact} = JOSE.JWS.compact(jws)
 
-      jwe = JOSE.JWE.block_encrypt(enc_jwk, jws_compact, %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      jwe =
+        JOSE.JWE.block_encrypt(enc_jwk, jws_compact, %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+
       {_, jwe_compact} = JOSE.JWE.compact(jwe)
 
       key = %Lockspire.Domain.SigningKey{
@@ -33,7 +35,9 @@ defmodule Lockspire.Protocol.JarTest do
       enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
       other_enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
 
-      jwe = JOSE.JWE.block_encrypt(enc_jwk, "plain_text", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      jwe =
+        JOSE.JWE.block_encrypt(enc_jwk, "plain_text", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+
       {_, jwe_compact} = JOSE.JWE.compact(jwe)
 
       key = %Lockspire.Domain.SigningKey{
@@ -268,7 +272,11 @@ defmodule Lockspire.Protocol.JarTest do
       eddsa_jwt = sign_jwt(eddsa_private_jwk, claims, "EdDSA", %{"typ" => "oauth-authz-req+jwt"})
 
       assert {:error, :invalid_signature} =
-               verify_signature(rs256_jwt, client_with_single_jwk(rsa_pub_jwk_map), :fapi_2_0_security)
+               verify_signature(
+                 rs256_jwt,
+                 client_with_single_jwk(rsa_pub_jwk_map),
+                 :fapi_2_0_security
+               )
 
       assert {:error, :invalid_signature} =
                verify_signature(
@@ -288,10 +296,18 @@ defmodule Lockspire.Protocol.JarTest do
       ps256_jwt = sign_jwt(rsa_private_jwk, claims, "PS256", %{"typ" => "oauth-authz-req+jwt"})
 
       assert {:ok, %Jar{header: %{"alg" => "ES256"}}} =
-               verify_signature(es256_jwt, client_with_single_jwk(ec_pub_jwk_map), :fapi_2_0_security)
+               verify_signature(
+                 es256_jwt,
+                 client_with_single_jwk(ec_pub_jwk_map),
+                 :fapi_2_0_security
+               )
 
       assert {:ok, %Jar{header: %{"alg" => "PS256"}}} =
-               verify_signature(ps256_jwt, client_with_single_jwk(rsa_pub_jwk_map), :fapi_2_0_security)
+               verify_signature(
+                 ps256_jwt,
+                 client_with_single_jwk(rsa_pub_jwk_map),
+                 :fapi_2_0_security
+               )
     end
 
     test "preserves the broader legacy allow-list only when the effective profile is :none", %{

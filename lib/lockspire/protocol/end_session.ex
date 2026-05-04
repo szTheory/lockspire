@@ -83,7 +83,8 @@ defmodule Lockspire.Protocol.EndSession do
 
     case key_store(request).list_publishable_keys() do
       {:ok, signing_keys} when is_list(signing_keys) ->
-        default_error = invalid_request("id_token_hint signature is invalid", :invalid_id_token_hint)
+        default_error =
+          invalid_request("id_token_hint signature is invalid", :invalid_id_token_hint)
 
         Enum.reduce_while(signing_keys, {:error, default_error}, fn key, _acc ->
           case build_public_jwk(key) do
@@ -120,9 +121,14 @@ defmodule Lockspire.Protocol.EndSession do
 
       client_id ->
         case client_store(request).fetch_client_by_id(client_id) do
-          {:ok, %Client{} = client} -> {:ok, client}
-          {:ok, nil} -> {:ok, nil}
-          {:error, _reason} -> {:error, invalid_request("Unable to load client", :client_lookup_failed)}
+          {:ok, %Client{} = client} ->
+            {:ok, client}
+
+          {:ok, nil} ->
+            {:ok, nil}
+
+          {:error, _reason} ->
+            {:error, invalid_request("Unable to load client", :client_lookup_failed)}
         end
     end
   end

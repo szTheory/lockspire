@@ -56,7 +56,11 @@ defmodule GeneratedHostAppWeb.SessionController do
   defp maybe_put_auth_time(conn, value) do
     case Integer.parse(to_string(value)) do
       {seconds_ago, ""} when seconds_ago >= 0 ->
-        put_session(conn, "current_auth_time_unix", DateTime.utc_now() |> DateTime.add(-seconds_ago, :second) |> DateTime.to_unix())
+        put_session(
+          conn,
+          "current_auth_time_unix",
+          DateTime.utc_now() |> DateTime.add(-seconds_ago, :second) |> DateTime.to_unix()
+        )
 
       _other ->
         delete_session(conn, "current_auth_time_unix")

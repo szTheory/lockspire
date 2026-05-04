@@ -71,7 +71,7 @@ Scope:
 - JWKS `enc` key publication and storage
 - Nested JWT validation (JWE + JWS) in `Protocol.Jar`
 
-### 4. v1.10 — FAPI 2.0 Security Profile Readiness (Active)
+### 4. v1.10 — FAPI 2.0 Security Profile (Shipped)
 
 Why next:
 - Provides a massive leap in "real-integrator trust" without the infrastructural complexity of mTLS.
@@ -85,14 +85,32 @@ Scope:
 - Strict redirect URI matching.
 - Truthful FAPI 2.0 discovery metadata.
 
-### 5. Post-1.0 / Advanced Security and Conformance
+### 5. v1.11 / 1.0 GA Release — The Stabilization Epoch (Active)
 
-Only after the core adoption story and FAPI 2.0 readiness are stable:
+Why next:
+- Lockspire has massive capabilities (DPoP, FAPI 2.0, JAR, PAR, DCR) but requires a stable API contract, formal audits, and comprehensive documentation to establish trust for enterprise adopters.
+- You cannot build a house on shifting sand; all subsequent protocol additions must be built on a stable, semantic-versioned contract to prevent host-app churn.
 
-- mTLS-bound tokens (deferred due to proxy termination complexity in standard Phoenix deployments)
-- Rich Authorization Requests (RAR)
-- Broader sender-constrained modes
-- Additional logout/session-management families if they still fit the embedded-library thesis
+Scope:
+- Finalizing public APIs (`@moduledoc`, `@doc`, and Typespecs).
+- Ensuring telemetry events and operator seams are consistent.
+- Formal security audit and API contract lockdown.
+- Transition from preview posture to 1.0 GA.
+
+### 6. Post-1.0 — The Microservices & Real-Time Epoch
+
+**Token Exchange (RFC 8693):**
+- High demand for API gateways and service meshes (impersonation, delegation).
+- Will expose a Behaviour (e.g., `Lockspire.TokenExchangeValidator`) for host apps to provide domain-specific delegation logic without hardcoding policies.
+
+**OpenID Connect CIBA (Client Initiated Backchannel Authentication):**
+- Decoupled authentication maps perfectly to Elixir's concurrency and Phoenix PubSub/Channels.
+- Provides a massive competitive advantage over other ecosystem frameworks that struggle with decoupled real-time auth.
+
+### 7. Future Epochs — Advanced Security & Authorization
+
+- **Mutual TLS (RFC 8705):** Essential for FAPI 2.0 Advanced, but introduces significant infrastructural friction in standard Phoenix apps behind TLS-terminating proxies. Defer until core community proxy-header patterns are established.
+- **Rich Authorization Requests (RFC 9328):** Powerful for complex domains, but still bleeding edge. Wait for standard patterns to emerge and utilize Ecto `embedded_schema` for robust, type-safe validation.
 
 ## Milestone Selection Rules
 

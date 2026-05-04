@@ -78,6 +78,7 @@ defmodule Lockspire.Protocol.DPoP do
 
   @spec validate_proof(String.t(), keyword()) :: {:ok, t()} | {:error, validate_reason()}
   def validate_proof(jwt, opts \\ [])
+
   def validate_proof(jwt, opts) when is_binary(jwt) do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
@@ -256,7 +257,11 @@ defmodule Lockspire.Protocol.DPoP do
     normalized_host = String.downcase(host)
     port = normalized_port(parsed)
     path = if parsed.path in [nil, ""], do: "/", else: parsed.path
-    authority = if is_nil(port), do: normalized_host, else: normalized_host <> ":" <> Integer.to_string(port)
+
+    authority =
+      if is_nil(port),
+        do: normalized_host,
+        else: normalized_host <> ":" <> Integer.to_string(port)
 
     scheme <> "://" <> authority <> path
   end

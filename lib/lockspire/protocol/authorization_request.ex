@@ -76,10 +76,22 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     with {:ok, %Client{} = client} <- fetch_client(params),
          {:ok, resolved_par_policy} <- resolve_effective_par_policy(client),
          {:ok, resolved_security_profile} <- resolve_effective_security_profile(client),
-         :ok <- maybe_require_pushed_authorization_request(params, client, resolved_par_policy, resolved_security_profile),
+         :ok <-
+           maybe_require_pushed_authorization_request(
+             params,
+             client,
+             resolved_par_policy,
+             resolved_security_profile
+           ),
          {:ok, resolved_params} <- resolve_authorization_params(params, client),
-         {:ok, resolved_params} <- maybe_consume_request_object(resolved_params, client, security_profile: resolved_security_profile),
-         {:ok, %Validated{} = validated} <- validate_with_client(resolved_params, client, security_profile: resolved_security_profile) do
+         {:ok, resolved_params} <-
+           maybe_consume_request_object(resolved_params, client,
+             security_profile: resolved_security_profile
+           ),
+         {:ok, %Validated{} = validated} <-
+           validate_with_client(resolved_params, client,
+             security_profile: resolved_security_profile
+           ) do
       validated = %Validated{validated | client: client}
 
       Observability.emit(:authorization_request, :accepted, %{}, %{
@@ -102,7 +114,10 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   @spec validate_pushed(map(), Client.t()) :: {:ok, Validated.t()} | {:error, Error.t()}
   def validate_pushed(params, %Client{} = client) when is_map(params) do
     with {:ok, resolved_security_profile} <- resolve_effective_security_profile(client) do
-      case validate_with_client(params, client, pushed?: true, security_profile: resolved_security_profile) do
+      case validate_with_client(params, client,
+             pushed?: true,
+             security_profile: resolved_security_profile
+           ) do
         {:ok, %Validated{} = validated} ->
           {:ok, validated}
 
@@ -173,7 +188,12 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     :ok
   end
 
-  defp maybe_require_pushed_authorization_request(params, %Client{} = client, resolved_par_policy, resolved_security_profile) do
+  defp maybe_require_pushed_authorization_request(
+         params,
+         %Client{} = client,
+         resolved_par_policy,
+         resolved_security_profile
+       ) do
     if resolved_par_policy.par_required? or resolved_security_profile.fapi_2_0_security? do
       par_required_error(params, client)
     else
@@ -267,14 +287,28 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          :ok <- reject_unsupported_params(params) do
-      {:ok, build_validated(params, client, redirect_uri, scopes, prompt, max_age, auth_time_requested?)}
+      {:ok,
+       build_validated(
+         params,
+         client,
+         redirect_uri,
+         scopes,
+         prompt,
+         max_age,
+         auth_time_requested?
+       )}
     end
   end
 
   defp maybe_consume_request_object(%{"request" => request} = params, %Client{} = client, opts)
        when is_binary(request) and request != "" do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
-    RequestObject.consume(params, client, Keyword.put(jar_opts(), :security_profile, security_profile))
+
+    RequestObject.consume(
+      params,
+      client,
+      Keyword.put(jar_opts(), :security_profile, security_profile)
+    )
   end
 
   defp maybe_consume_request_object(params, _client, _opts), do: {:ok, params}
@@ -675,7 +709,12 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   defp invalid_max_age(params) do
     {:redirect_error,
-     redirect_error(params, :invalid_request, "max_age must be a non-negative integer", :invalid_max_age)}
+     redirect_error(
+       params,
+       :invalid_request,
+       "max_age must be a non-negative integer",
+       :invalid_max_age
+     )}
   end
 
   defp invalid_claims_parameter(params) do

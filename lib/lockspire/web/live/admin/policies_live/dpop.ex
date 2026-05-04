@@ -124,7 +124,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
     {:ok, clients} = Admin.list_clients()
 
     summary =
-      Enum.reduce(clients, %{inherit: 0, bearer: 0, dpop: 0}, fn %Client{dpop_policy: mode}, acc ->
+      Enum.reduce(clients, %{inherit: 0, bearer: 0, dpop: 0}, fn %Client{dpop_policy: mode},
+                                                                 acc ->
         Map.update!(acc, mode, &(&1 + 1))
       end)
 

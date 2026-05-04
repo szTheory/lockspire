@@ -160,7 +160,13 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       end)
 
       config = Discovery.openid_configuration()
-      assert config["id_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
+
+      assert config["id_token_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
     end
 
     test "publishes the restricted list when the server profile is :fapi_2_0_security" do

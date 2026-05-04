@@ -213,7 +213,9 @@ defmodule Lockspire.Admin.Clients do
       []
       |> maybe_append_errors(validate_redirects_if_present(attrs))
       |> maybe_append_errors(validate_post_logout_redirects_if_present(attrs))
-      |> maybe_append_errors(validate_logout_propagation(attrs, effective_redirect_uris(client, attrs)))
+      |> maybe_append_errors(
+        validate_logout_propagation(attrs, effective_redirect_uris(client, attrs))
+      )
       |> maybe_append_errors(validate_scopes_if_present(attrs))
       |> maybe_append_errors(validate_par_policy_if_present(attrs))
       |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
@@ -265,8 +267,16 @@ defmodule Lockspire.Admin.Clients do
     []
     |> maybe_add_logout_uri_error(attrs, :backchannel_logout_uri)
     |> maybe_add_logout_uri_error(attrs, :frontchannel_logout_uri)
-    |> maybe_add_session_required_error(attrs, :backchannel_logout_uri, :backchannel_logout_session_required)
-    |> maybe_add_session_required_error(attrs, :frontchannel_logout_uri, :frontchannel_logout_session_required)
+    |> maybe_add_session_required_error(
+      attrs,
+      :backchannel_logout_uri,
+      :backchannel_logout_session_required
+    )
+    |> maybe_add_session_required_error(
+      attrs,
+      :frontchannel_logout_uri,
+      :frontchannel_logout_session_required
+    )
     |> maybe_add_frontchannel_origin_error(attrs, redirect_uris)
     |> Enum.reverse()
   end
@@ -314,9 +324,11 @@ defmodule Lockspire.Admin.Clients do
           :ok
         else
           :error ->
-            {:error, [%{field: :security_profile, reason: :invalid_security_profile, detail: value}]}
+            {:error,
+             [%{field: :security_profile, reason: :invalid_security_profile, detail: value}]}
 
-          {:error, reason} when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+          {:error, reason}
+          when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
             {:error, [%{field: :security_profile, reason: reason, detail: :fapi_2_0_security}]}
         end
     end
@@ -324,9 +336,11 @@ defmodule Lockspire.Admin.Clients do
 
   @doc false
   def check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
+
   def check_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
     Repository.validate_fapi_signing_readiness()
   end
+
   def check_fapi_signing_readiness(_old_profile, _new_profile), do: :ok
 
   defp reject_immutable_changes(attrs) do
@@ -363,7 +377,8 @@ defmodule Lockspire.Admin.Clients do
           acc = Map.put(acc, field, normalized)
           maybe_reset_logout_session_required(acc, field, normalized)
 
-        :error -> acc
+        :error ->
+          acc
       end
     end)
   end
@@ -396,10 +411,12 @@ defmodule Lockspire.Admin.Clients do
 
   defp normalize_mutable_field(:metadata, value) when is_map(value), do: value
   defp normalize_mutable_field(:metadata, _value), do: %{}
+
   defp normalize_mutable_field(field, value)
        when field in [:backchannel_logout_session_required, :frontchannel_logout_session_required] do
     normalize_boolean(value)
   end
+
   defp normalize_mutable_field(_field, value), do: normalize_string(value)
 
   defp normalize_string_list(nil), do: []
@@ -570,7 +587,11 @@ defmodule Lockspire.Admin.Clients do
           errors
         else
           [
-            %{field: :frontchannel_logout_uri, reason: :frontchannel_logout_origin_mismatch, detail: uri}
+            %{
+              field: :frontchannel_logout_uri,
+              reason: :frontchannel_logout_origin_mismatch,
+              detail: uri
+            }
             | errors
           ]
         end

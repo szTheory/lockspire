@@ -14,9 +14,19 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         %{label: "Policies", key: :policies, href: admin_path("/policies/par"), enabled: true},
         %{label: "Consents", key: :consents, href: admin_path("/consents"), enabled: true},
         %{label: "Tokens", key: :tokens, href: admin_path("/tokens"), enabled: true},
-        %{label: "Device Auth", key: :device_authorizations, href: admin_path("/device_authorizations"), enabled: true},
+        %{
+          label: "Device Auth",
+          key: :device_authorizations,
+          href: admin_path("/device_authorizations"),
+          enabled: true
+        },
         %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true},
-        %{label: "Interactions", key: :interactions, href: admin_path("/interactions"), enabled: true},
+        %{
+          label: "Interactions",
+          key: :interactions,
+          href: admin_path("/interactions"),
+          enabled: true
+        },
         %{label: "Logouts", key: :logouts, href: admin_path("/logouts"), enabled: true}
       ])
 

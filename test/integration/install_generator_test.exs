@@ -38,7 +38,8 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(get "/authorized-apps", AuthorizedAppsController, :index)
 
-    router = File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
+    router =
+      File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
 
     assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
     assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
@@ -209,8 +210,10 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert rerun_output =~ "* unchanged lib/generated_host_app_web/router/lockspire.ex"
     assert rerun_output =~ "* unchanged config/lockspire.exs"
+
     assert rerun_output =~
              "* unchanged lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
+
     assert rerun_output =~ "Lockspire canonical onboarding next steps"
   end
 
@@ -241,7 +244,10 @@ defmodule Lockspire.InstallGeneratorTest do
         "lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
       )
 
-    File.write!(verification_path, File.read!(verification_path) <> "\n# host verification customization\n")
+    File.write!(
+      verification_path,
+      File.read!(verification_path) <> "\n# host verification customization\n"
+    )
 
     assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
       File.cd!(@fixture_root, fn ->

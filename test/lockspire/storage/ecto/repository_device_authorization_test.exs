@@ -48,11 +48,15 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
     test "inserts the record and returns it given a valid DeviceAuthorization struct" do
       now = DateTime.utc_now()
 
-      auth = DeviceAuthorization.issue(%{
-        device_code: "dev123",
-        user_code: "usr456",
-        client_id: "client_abc"
-      }, now: now)
+      auth =
+        DeviceAuthorization.issue(
+          %{
+            device_code: "dev123",
+            user_code: "usr456",
+            client_id: "client_abc"
+          },
+          now: now
+        )
 
       assert {:ok, result} = Repository.put_device_authorization(auth)
       assert %DeviceAuthorization{} = result
@@ -64,11 +68,15 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
     test "inserting a duplicate code hash yields a constraint error" do
       now = DateTime.utc_now()
 
-      auth = DeviceAuthorization.issue(%{
-        device_code: "dev123",
-        user_code: "usr456",
-        client_id: "client_abc"
-      }, now: now)
+      auth =
+        DeviceAuthorization.issue(
+          %{
+            device_code: "dev123",
+            user_code: "usr456",
+            client_id: "client_abc"
+          },
+          now: now
+        )
 
       assert {:ok, _} = Repository.put_device_authorization(auth)
 
@@ -123,9 +131,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
       stored = issue_device_authorization(%{device_code: "device-poll-code"})
 
       assert {:ok, %DeviceAuthorization{} = fetched} =
-               Repository.fetch_device_authorization_by_device_code_hash(
-                 stored.device_code_hash
-               )
+               Repository.fetch_device_authorization_by_device_code_hash(stored.device_code_hash)
 
       assert fetched.id == stored.id
       assert fetched.client_id == stored.client_id
@@ -221,7 +227,9 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
       assert slowed.id == stored.id
       assert slowed.effective_poll_interval_seconds == 10
-      assert DateTime.diff(slowed.next_poll_allowed_at, stored.next_poll_allowed_at, :second) == 10
+
+      assert DateTime.diff(slowed.next_poll_allowed_at, stored.next_poll_allowed_at, :second) ==
+               10
 
       persisted = fetch_by_verification_handle!(stored.verification_handle)
       assert persisted.effective_poll_interval_seconds == 10
@@ -271,7 +279,9 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
       assert pending.id == stored.id
       assert pending.effective_poll_interval_seconds == 5
-      assert DateTime.diff(pending.next_poll_allowed_at, stored.next_poll_allowed_at, :second) == 5
+
+      assert DateTime.diff(pending.next_poll_allowed_at, stored.next_poll_allowed_at, :second) ==
+               5
 
       persisted = fetch_by_verification_handle!(stored.verification_handle)
       assert persisted.effective_poll_interval_seconds == 5
@@ -323,7 +333,8 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
                  %{status: :denied, denied_at: now}
                )
 
-      expired = issue_device_authorization(%{device_code: "expired-device", user_code: "EXPR-CODE"})
+      expired =
+        issue_device_authorization(%{device_code: "expired-device", user_code: "EXPR-CODE"})
 
       assert {:ok, %DeviceAuthorization{}} =
                Repository.transition_device_authorization(

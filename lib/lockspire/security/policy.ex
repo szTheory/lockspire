@@ -6,11 +6,17 @@ defmodule Lockspire.Security.Policy do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Protocol.SecurityProfile
 
-  @supported_token_endpoint_auth_methods [:none, :client_secret_basic, :client_secret_post, :private_key_jwt]
+  @supported_token_endpoint_auth_methods [
+    :none,
+    :client_secret_basic,
+    :client_secret_post,
+    :private_key_jwt
+  ]
   @supported_response_types ["code"]
   @supported_signing_algs ["RS256", "ES256", "PS256", "EdDSA", :RS256, :ES256, :PS256, :EdDSA]
 
-  @spec validate_key_compliance(SigningKey.t(), :fapi_2_0_security | :none) :: :ok | {:error, term()}
+  @spec validate_key_compliance(SigningKey.t(), :fapi_2_0_security | :none) ::
+          :ok | {:error, term()}
   def validate_key_compliance(%SigningKey{alg: alg} = key, :fapi_2_0_security) do
     with :ok <- ensure_fapi_compliant_alg(alg),
          :ok <- ensure_fapi_compliant_strength(key) do
@@ -21,7 +27,10 @@ defmodule Lockspire.Security.Policy do
   def validate_key_compliance(%SigningKey{}, :none), do: :ok
 
   defp ensure_fapi_compliant_alg(alg) when alg in ["ES256", "PS256", :ES256, :PS256], do: :ok
-  defp ensure_fapi_compliant_alg(alg) when is_atom(alg), do: ensure_fapi_compliant_alg(Atom.to_string(alg))
+
+  defp ensure_fapi_compliant_alg(alg) when is_atom(alg),
+    do: ensure_fapi_compliant_alg(Atom.to_string(alg))
+
   defp ensure_fapi_compliant_alg(alg) when is_binary(alg) do
     if alg in SecurityProfile.allowed_signing_algorithms(:fapi_2_0_security) do
       :ok

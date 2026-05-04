@@ -67,7 +67,8 @@ defmodule Lockspire.Admin.ServerPolicy do
       :ok ->
         :ok
 
-      {:error, reason} when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+      {:error, reason}
+      when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
         {:error,
          [
            %{
