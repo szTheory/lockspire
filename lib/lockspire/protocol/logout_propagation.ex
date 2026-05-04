@@ -33,7 +33,7 @@ defmodule Lockspire.Protocol.LogoutPropagation do
     ]
   end
 
-  @type complete_result :: {:ok, Result.t()} | {:error, term()}
+  @type complete_result :: {:ok, struct()} | {:error, term()}
 
   @spec complete(map()) :: complete_result()
   def complete(attrs) when is_map(attrs) do

@@ -18,7 +18,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
           jkt: String.t() | nil,
           cnf: map() | nil,
           token_type: String.t(),
-          security_profile: SecurityProfile.Resolved.t()
+          security_profile: struct()
         }
 
   @spec resolve_context(Client.t(), map()) ::

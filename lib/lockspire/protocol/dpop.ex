@@ -42,7 +42,7 @@ defmodule Lockspire.Protocol.DPoP do
   @spec signing_alg_values_supported() :: [String.t()]
   def signing_alg_values_supported(), do: SecurityProfile.allowed_signing_algorithms(:none)
 
-  @spec signing_alg_values_supported(SecurityProfile.Resolved.t() | :fapi_2_0_security | :none) ::
+  @spec signing_alg_values_supported(struct() | :fapi_2_0_security | :none) ::
           [String.t()]
   def signing_alg_values_supported(%SecurityProfile.Resolved{effective_profile: profile}),
     do: SecurityProfile.allowed_signing_algorithms(profile)

@@ -23,7 +23,7 @@ defmodule Lockspire.Protocol.ParPolicy do
               par_required?: false
   end
 
-  @spec resolve_effective_policy(ServerPolicy.t(), struct() | map() | nil) :: Resolved.t()
+  @spec resolve_effective_policy(ServerPolicy.t(), struct() | map() | nil) :: struct()
   def resolve_effective_policy(%ServerPolicy{} = server_policy, client) do
     client_policy = normalize_client_policy(client)
     effective_policy = effective_policy(server_policy.par_policy, client_policy)

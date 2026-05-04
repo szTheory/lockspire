@@ -24,7 +24,7 @@ defmodule Lockspire.Protocol.DpopPolicy do
   end
 
   @spec resolve_effective_policy(ServerPolicy.t(), struct() | map() | nil) ::
-          {:ok, Resolved.t()} | {:error, :invalid_server_policy | :invalid_client_policy}
+          {:ok, struct()} | {:error, :invalid_server_policy | :invalid_client_policy}
   def resolve_effective_policy(%ServerPolicy{} = server_policy, client) do
     with {:ok, global_policy} <- normalize_server_policy(server_policy.dpop_policy),
          {:ok, client_policy} <- normalize_client_policy(client) do

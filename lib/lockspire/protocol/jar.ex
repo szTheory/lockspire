@@ -231,7 +231,7 @@ defmodule Lockspire.Protocol.Jar do
   - `:expected_audience` (binary) — the `aud` claim MUST contain this value.
 
   Optional options:
-  - `:now` — a `DateTime.t/0` representing the current time for `exp`/`nbf`/`iat`
+  - `:now` — a `DateTime.t()` representing the current time for `exp`/`nbf`/`iat`
     checks. Defaults to `DateTime.utc_now/0`.
   - `:leeway` (non-negative integer, seconds) — clock skew tolerance applied to
     time-based checks. Defaults to `0`.

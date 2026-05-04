@@ -52,7 +52,7 @@ defmodule Lockspire.Protocol.Registration do
     defstruct [:code, :field, :reason, :allowed]
   end
 
-  @type result :: {:ok, Success.t()} | {:error, Error.t()}
+  @type result :: {:ok, struct()} | {:error, struct()}
 
   @spec register(map()) :: result()
   def register(%{metadata: metadata, server_policy: %ServerPolicy{} = server_policy} = request)

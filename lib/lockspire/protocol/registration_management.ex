@@ -59,7 +59,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   @spec update(String.t(), update_request()) ::
-          {:ok, UpdateSuccess.t()} | {:error, Registration.Error.t()} | {:error, :invalid_token}
+          {:ok, struct()} | {:error, struct()} | {:error, :invalid_token}
   def update(
         client_id_from_url,
         %{

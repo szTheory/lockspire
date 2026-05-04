@@ -23,7 +23,7 @@ defmodule Lockspire.Protocol.SecurityProfile do
               fapi_2_0_security?: false
   end
 
-  @spec resolve_effective_profile(ServerPolicy.t(), struct() | map() | nil) :: Resolved.t()
+  @spec resolve_effective_profile(ServerPolicy.t(), struct() | map() | nil) :: struct()
   def resolve_effective_profile(%ServerPolicy{} = server_policy, client) do
     client_profile = normalize_client_profile(client)
     effective_profile = effective_profile(server_policy.security_profile, client_profile)
