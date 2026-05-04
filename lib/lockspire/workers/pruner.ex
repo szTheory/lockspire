@@ -18,6 +18,7 @@ defmodule Lockspire.Workers.Pruner do
   alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
+  alias Lockspire.Storage.Ecto.UsedJtiRecord
 
   @schemas [
     TokenRecord,
@@ -25,7 +26,8 @@ defmodule Lockspire.Workers.Pruner do
     PushedAuthorizationRequestRecord,
     InteractionRecord,
     DeviceAuthorizationRecord,
-    InitialAccessTokenRecord
+    InitialAccessTokenRecord,
+    UsedJtiRecord
   ]
 
   @impl Oban.Worker

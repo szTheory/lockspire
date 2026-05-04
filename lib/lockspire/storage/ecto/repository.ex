@@ -18,6 +18,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
+  alias Lockspire.Domain.UsedJti
   alias Lockspire.Security.Policy
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.ClientStore
@@ -37,12 +38,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.ServerPolicyRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
+  alias Lockspire.Storage.Ecto.UsedJtiRecord
   alias Lockspire.Storage.InteractionStore
   alias Lockspire.Storage.KeyStore
   alias Lockspire.Storage.LogoutStore
   alias Lockspire.Storage.PushedAuthorizationRequestStore
   alias Lockspire.Storage.ServerPolicyStore
   alias Lockspire.Storage.TokenStore
+  alias Lockspire.Storage.UsedJtiStore
 
   @behaviour ClientStore
   @behaviour InteractionStore
@@ -54,6 +57,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour DpopReplayStore
   @behaviour ServerPolicyStore
   @behaviour LogoutStore
+  @behaviour UsedJtiStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -420,6 +424,44 @@ defmodule Lockspire.Storage.Ecto.Repository do
       )
 
     count
+  end
+
+  @impl UsedJtiStore
+  def record_used_jti(%UsedJti{} = used_jti) do
+    now = DateTime.utc_now()
+    expires_at = DateTime.truncate(used_jti.expires_at, :microsecond)
+
+    changeset = UsedJtiRecord.changeset(%UsedJtiRecord{}, %{
+      client_id: used_jti.client_id,
+      jti: used_jti.jti,
+      expires_at: expires_at
+    })
+
+    if changeset.valid? do
+      {count, _rows} =
+        repo().insert_all(
+          UsedJtiRecord,
+          [
+            %{
+              client_id: used_jti.client_id,
+              jti: used_jti.jti,
+              expires_at: expires_at,
+              inserted_at: now,
+              updated_at: now
+            }
+          ],
+          on_conflict: :nothing,
+          conflict_target: [:client_id, :jti],
+          log: false
+        )
+
+      case count do
+        1 -> {:ok, :accepted}
+        0 -> {:ok, :replay}
+      end
+    else
+      {:error, changeset}
+    end
   end
 
   @impl DeviceAuthorizationStore

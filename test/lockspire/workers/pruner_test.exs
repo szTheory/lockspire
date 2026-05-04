@@ -32,6 +32,16 @@ defmodule Lockspire.Workers.PrunerTest do
       }
     ])
 
+    Lockspire.TestRepo.insert_all(Lockspire.Storage.Ecto.UsedJtiRecord, [
+      %{
+        client_id: "c1",
+        jti: "expired_jti",
+        expires_at: past,
+        inserted_at: past,
+        updated_at: past
+      }
+    ])
+
     test_pid = self()
 
     telemetry_handler = fn [:lockspire, :pruner, :completed], measurements, metadata, _config ->
@@ -48,12 +58,13 @@ defmodule Lockspire.Workers.PrunerTest do
       "PushedAuthorizationRequestRecord",
       "InteractionRecord",
       "DeviceAuthorizationRecord",
-      "InitialAccessTokenRecord"
+      "InitialAccessTokenRecord",
+      "UsedJtiRecord"
     ]
 
     for model <- models do
       assert_receive {:telemetry, ^model, count}, 500
-      if model == "TokenRecord" do
+      if model in ["TokenRecord", "UsedJtiRecord"] do
         assert count >= 1
       else
         assert is_integer(count)
