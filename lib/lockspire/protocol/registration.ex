@@ -200,20 +200,26 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
-  # D-14: jwks_uri rejected first (mutual-exclusion check is shadowed when both present
-  # because jwks_uri rule fires first; we still keep the explicit rule for spec clarity).
   defp validate_jwks(metadata) do
-    cond do
-      Map.has_key?(metadata, "jwks_uri") ->
-        {:error,
-         %Error{code: :invalid_client_metadata, field: :jwks_uri, reason: :unsupported_in_slice}}
+    has_jwks = Map.has_key?(metadata, "jwks")
+    has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
+    auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
 
-      Map.has_key?(metadata, "jwks") and Map.has_key?(metadata, "jwks_uri") ->
+    cond do
+      has_jwks and has_jwks_uri ->
         {:error,
          %Error{
            code: :invalid_client_metadata,
            field: :jwks,
            reason: :mutually_exclusive_with_jwks_uri
+         }}
+
+      auth_method == "private_key_jwt" and not has_jwks and not has_jwks_uri ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_method,
+           reason: :missing_cryptographic_material
          }}
 
       true ->

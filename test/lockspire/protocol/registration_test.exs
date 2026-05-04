@@ -345,14 +345,18 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — D-14 validator" do
-    test "rejects metadata with jwks_uri" do
-      request = DcrFixtures.register_request(metadata: DcrFixtures.invalid_jwks_uri_metadata())
+    test "rejects private_key_jwt without jwks or jwks_uri" do
+      server_policy = DcrFixtures.server_policy(%{
+        dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic", "client_secret_post", "none", "private_key_jwt"]
+      })
+      metadata = DcrFixtures.valid_metadata() |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+      request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
-                field: :jwks_uri,
-                reason: :unsupported_in_slice
+                field: :token_endpoint_auth_method,
+                reason: :missing_cryptographic_material
               }} = Registration.register(request)
     end
 
@@ -362,8 +366,8 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
-                field: :jwks_uri,
-                reason: :unsupported_in_slice
+                field: :jwks,
+                reason: :mutually_exclusive_with_jwks_uri
               }} = Registration.register(request)
     end
 
