@@ -320,6 +320,15 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end
   end
 
+  def list_device_authorizations(opts \\ []) when is_list(opts) do
+    DeviceAuthorizationRecord
+    |> order_by([auth], desc: auth.inserted_at)
+    |> repo().all()
+    |> then(fn records -> {:ok, Enum.map(records, &DeviceAuthorizationRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
   @impl DeviceAuthorizationStore
   def put_device_authorization(%DeviceAuthorization{} = auth) do
     %DeviceAuthorizationRecord{}

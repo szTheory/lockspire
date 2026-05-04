@@ -5,9 +5,13 @@ defmodule Lockspire.Admin do
 
   alias Lockspire.Admin.Clients
   alias Lockspire.Admin.Consents
+  alias Lockspire.Admin.DeviceAuthorizations
   alias Lockspire.Admin.Keys
   alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Admin.Tokens
+
+  @spec list_device_authorizations(keyword()) :: {:ok, [Lockspire.Domain.DeviceAuthorization.t()]} | {:error, term()}
+  defdelegate list_device_authorizations(opts \\ []), to: DeviceAuthorizations
 
   @spec list_clients(keyword()) :: {:ok, [Lockspire.Domain.Client.t()]} | {:error, term()}
   defdelegate list_clients(opts \\ []), to: Clients
