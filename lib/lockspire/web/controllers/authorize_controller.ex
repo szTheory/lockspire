@@ -79,7 +79,7 @@ defmodule Lockspire.Web.AuthorizeController do
   defp resolve_subject_context(conn, %Validated{} = validated) do
     resolver = Lockspire.account_resolver!()
 
-    context = %{
+    context = %Lockspire.Host.Context{
       interaction_id: nil,
       return_to: consent_path("pending"),
       client_id: validated.client_id,

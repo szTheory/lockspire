@@ -181,27 +181,26 @@ defmodule Lockspire.ConfigTest do
 
   test "test resolver satisfies the host seam behaviour without macros" do
     assert {:ok, %{id: "account-123"}} =
-             Lockspire.TestAccountResolver.resolve_current_account(%{}, %{return_to: "/authorize"})
+             Lockspire.TestAccountResolver.resolve_current_account(%{}, %Lockspire.Host.Context{return_to: "/authorize"})
 
     assert {:ok, %{id: "account-456"}} =
-             Lockspire.TestAccountResolver.resolve_account("account-456", %{})
+             Lockspire.TestAccountResolver.resolve_account("account-456", %Lockspire.Host.Context{})
 
     assert {:ok, %Lockspire.Host.Claims{subject: "account-456"}} =
-             Lockspire.TestAccountResolver.build_claims(%{id: "account-456"}, %{})
+             Lockspire.TestAccountResolver.build_claims(%{id: "account-456"}, %Lockspire.Host.Context{})
 
     assert %Lockspire.Host.InteractionResult{
              login_path: "/sign-in",
              return_to: "/authorize"
            } =
-             Lockspire.TestAccountResolver.redirect_for_login(%{}, %{return_to: "/authorize"})
+             Lockspire.TestAccountResolver.redirect_for_login(%{}, %Lockspire.Host.Context{return_to: "/authorize"})
 
     assert %Lockspire.Host.InteractionResult{
              login_path: "/sign-out",
              return_to: "/logout/complete"
            } =
-             Lockspire.TestAccountResolver.redirect_for_logout(%{}, %{
-               return_to: "/logout/complete",
-               account_id: "account-456"
+             Lockspire.TestAccountResolver.redirect_for_logout(%{}, %Lockspire.Host.Context{
+               return_to: "/logout/complete"
              })
   end
 end

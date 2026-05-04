@@ -139,7 +139,7 @@ defmodule Lockspire.Web.ConsentLive do
   defp resolve_subject_context(socket, interaction) do
     resolver = Lockspire.account_resolver!()
 
-    context = %{
+    context = %Lockspire.Host.Context{
       interaction_id: interaction.interaction_id,
       return_to: consent_path(interaction.interaction_id),
       client_id: interaction.client_id,

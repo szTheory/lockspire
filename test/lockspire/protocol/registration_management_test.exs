@@ -160,7 +160,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       client_id: client_id,
       server_policy: server_policy
     } do
-      new_metadata = Map.put(DcrFixtures.valid_metadata(), "jwks_uri", "https://example.com/jwks")
+      new_metadata = DcrFixtures.invalid_redirect_uri_metadata()
 
       request = %{
         metadata: new_metadata,
@@ -168,7 +168,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
         client: client
       }
 
-      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :jwks_uri}} =
+      assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :redirect_uris}} =
                RegistrationManagement.update(client_id, request)
     end
 
