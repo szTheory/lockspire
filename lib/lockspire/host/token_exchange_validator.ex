@@ -7,7 +7,7 @@ defmodule Lockspire.Host.TokenExchangeValidator do
 
   @doc """
   Validates a token exchange request.
-  
+
   Returns:
     - `:ok` to permit the exchange with default claims.
     - `{:ok, %{claims: claims}}` to permit and merge additional claims.

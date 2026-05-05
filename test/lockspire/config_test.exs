@@ -200,7 +200,9 @@ defmodule Lockspire.ConfigTest do
 
     # Default fallback
     Application.delete_env(:lockspire, :token_exchange_validator)
-    assert Lockspire.Config.token_exchange_validator() == Lockspire.Host.DefaultDenyTokenExchangeValidator
+
+    assert Lockspire.Config.token_exchange_validator() ==
+             Lockspire.Host.DefaultDenyTokenExchangeValidator
 
     # Configured
     Application.put_env(:lockspire, :token_exchange_validator, MyCustomValidator)

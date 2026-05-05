@@ -11,7 +11,8 @@ defmodule Lockspire.Host.DefaultDenyTokenExchangeValidatorTest do
         requested_scopes: ["read"]
       }
 
-      assert {:error, :exchange_not_configured} = DefaultDenyTokenExchangeValidator.validate(context)
+      assert {:error, :exchange_not_configured} =
+               DefaultDenyTokenExchangeValidator.validate(context)
     end
   end
 end

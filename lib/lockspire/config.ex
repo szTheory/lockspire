@@ -28,7 +28,11 @@ defmodule Lockspire.Config do
   """
   @spec token_exchange_validator() :: module()
   def token_exchange_validator do
-    Application.get_env(@app, :token_exchange_validator, Lockspire.Host.DefaultDenyTokenExchangeValidator)
+    Application.get_env(
+      @app,
+      :token_exchange_validator,
+      Lockspire.Host.DefaultDenyTokenExchangeValidator
+    )
   end
 
   @doc """

@@ -96,6 +96,25 @@ defmodule Lockspire.ClientsTest do
            end)
   end
 
+  test "register_client/1 accepts token-exchange grant type and rejects invalid grant types" do
+    assert {:error, errors} =
+             Clients.register_client(%{
+               client_type: :public,
+               redirect_uris: ["https://client.example.com/callback"],
+               allowed_grant_types: [
+                 "authorization_code",
+                 "urn:ietf:params:oauth:grant-type:token-exchange",
+                 "invalid_custom_grant"
+               ],
+               token_endpoint_auth_method: :none
+             })
+
+    assert Enum.any?(errors, fn error ->
+             error.field == :allowed_grant_types and error.reason == :invalid_grant_type and
+               error.detail == "invalid_custom_grant"
+           end)
+  end
+
   test "mix lockspire.client.create prints the plaintext secret once and persists only the hash" do
     output =
       capture_io(fn ->

@@ -14,6 +14,7 @@ defmodule Lockspire.Web.TokenJSON do
     }
     |> maybe_put_refresh_token(success.refresh_token)
     |> maybe_put_id_token(success.id_token)
+    |> maybe_put_issued_token_type(success.issued_token_type)
   end
 
   @spec error_response(Error.t()) :: map()
@@ -31,4 +32,9 @@ defmodule Lockspire.Web.TokenJSON do
 
   defp maybe_put_refresh_token(response, refresh_token),
     do: Map.put(response, :refresh_token, refresh_token)
+
+  defp maybe_put_issued_token_type(response, nil), do: response
+
+  defp maybe_put_issued_token_type(response, issued_token_type),
+    do: Map.put(response, :issued_token_type, issued_token_type)
 end

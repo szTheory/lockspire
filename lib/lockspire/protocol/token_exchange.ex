@@ -30,11 +30,20 @@ defmodule Lockspire.Protocol.TokenExchange do
             refresh_token: String.t() | nil,
             id_token: String.t() | nil,
             token_type: String.t(),
+            issued_token_type: String.t() | nil,
             expires_in: pos_integer(),
             scope: String.t()
           }
 
-    defstruct [:access_token, :refresh_token, :id_token, :token_type, :expires_in, :scope]
+    defstruct [
+      :access_token,
+      :refresh_token,
+      :id_token,
+      :token_type,
+      :issued_token_type,
+      :expires_in,
+      :scope
+    ]
   end
 
   defmodule Error do
@@ -68,12 +77,15 @@ defmodule Lockspire.Protocol.TokenExchange do
       "urn:ietf:params:oauth:grant-type:device_code" ->
         exchange_device_code(request)
 
+      "urn:ietf:params:oauth:grant-type:token-exchange" ->
+        exchange_rfc8693(request)
+
       _other ->
         {:error,
          oauth_error(
            400,
            "unsupported_grant_type",
-           "Only grant_type=authorization_code, grant_type=refresh_token, and grant_type=urn:ietf:params:oauth:grant-type:device_code are supported",
+           "Only grant_type=authorization_code, grant_type=refresh_token, grant_type=urn:ietf:params:oauth:grant-type:device_code, and grant_type=urn:ietf:params:oauth:grant-type:token-exchange are supported",
            :unsupported_grant_type
          )}
     end
@@ -150,6 +162,20 @@ defmodule Lockspire.Protocol.TokenExchange do
          {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
          {:ok, %Success{} = success} <-
            redeem_device_authorization(client, device_authorization, issuance_context, request) do
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
+    end
+  end
+
+  defp exchange_rfc8693(request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
+
+    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
+         {:ok, success} <- Lockspire.Protocol.Rfc8693Exchange.exchange(client, request) do
       {:ok, success}
     else
       {:error, %Error{} = error} ->

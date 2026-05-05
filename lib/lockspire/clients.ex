@@ -9,7 +9,12 @@ defmodule Lockspire.Clients do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
-  @allowed_grant_types MapSet.new(["authorization_code", "refresh_token"])
+  @allowed_grant_types MapSet.new([
+                         "authorization_code",
+                         "refresh_token",
+                         "urn:ietf:params:oauth:grant-type:device_code",
+                         "urn:ietf:params:oauth:grant-type:token-exchange"
+                       ])
   @allowed_response_types MapSet.new(["code"])
   @secret_bytes 32
   @client_id_bytes 24
