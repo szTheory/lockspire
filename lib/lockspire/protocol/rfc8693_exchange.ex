@@ -20,11 +20,14 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
 
     with {:ok, subject_token_string} <- fetch_subject_token(params),
          {:ok, %Token{} = subject_token} <- validate_subject_token(subject_token_string, request),
+         {:ok, actor_token_string} <- fetch_actor_token(params),
+         {:ok, actor_token_claims} <- validate_actor_token(actor_token_string, request),
          {:ok, requested_scopes} <- validate_scopes(params["scope"], subject_token),
+         :ok <- check_delegation_depth(actor_token_claims, client, request),
          context = %TokenExchangeContext{
            client_id: client.client_id,
            subject_token: subject_token,
-           actor_token: nil,
+           actor_token: actor_token_claims,
            requested_scopes: requested_scopes
          },
          {:ok, validation_result} <- validate_exchange(context, request),
@@ -97,6 +100,13 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
     end
   end
 
+  defp fetch_actor_token(params) do
+    case normalize_optional_string(params["actor_token"]) do
+      nil -> {:ok, nil}
+      token -> {:ok, token}
+    end
+  end
+
   defp validate_subject_token(token_string, request) do
     token_hash = Policy.hash_token(token_string)
 
@@ -110,6 +120,79 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
 
       _error ->
         {:error, invalid_grant_error(:invalid_subject_token)}
+    end
+  end
+
+  defp validate_actor_token(nil, _request), do: {:ok, nil}
+
+  defp validate_actor_token(token_string, request) do
+    token_hash = Policy.hash_token(token_string)
+
+    case token_store(request).fetch_lifecycle_token(token_hash) do
+      {:ok, %Token{} = token} ->
+        if token_valid?(token, now(request)) do
+          {:ok, extract_claims(token_string, token)}
+        else
+          {:error, invalid_grant_error(:invalid_actor_token)}
+        end
+
+      _error ->
+        {:error, invalid_grant_error(:invalid_actor_token)}
+    end
+  end
+
+  defp extract_claims(token_string, %Token{} = token) do
+    case decode_jwt_claims(token_string) do
+      {:ok, claims} ->
+        claims
+
+      :error ->
+        %{"sub" => token.account_id, "client_id" => token.client_id}
+    end
+  end
+
+  defp decode_jwt_claims(jwt) do
+    try do
+      payload_struct = JOSE.JWT.peek_payload(jwt)
+      {_modules, claims} = JOSE.JWT.to_map(payload_struct)
+      {:ok, claims}
+    rescue
+      _ -> :error
+    catch
+      _, _ -> :error
+    end
+  end
+
+  defp check_delegation_depth(nil, _client, _request), do: :ok
+
+  defp check_delegation_depth(actor_token_claims, client, request) do
+    policy = server_policy(request)
+    
+    case Lockspire.Protocol.TokenExchange.Delegation.check_depth(actor_token_claims, client, policy) do
+      :ok ->
+        :ok
+
+      {:error, error, error_description} ->
+        {:error,
+         %Error{
+           status: 400,
+           error: error,
+           error_description: error_description,
+           reason_code: :max_delegation_depth_exceeded
+         }}
+    end
+  end
+
+  defp server_policy(request) do
+    store =
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get(:server_policy_store, Config.repo!())
+
+    case store.get_server_policy() do
+      {:ok, policy} -> policy
+      %Lockspire.Domain.ServerPolicy{} = policy -> policy
+      _ -> nil
     end
   end
 

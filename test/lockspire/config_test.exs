@@ -187,7 +187,7 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.Config.jar_max_age_seconds() == 300
   end
 
-  test "token_exchange_validator/0 returns DefaultDenyTokenExchangeValidator by default" do
+  test "token_exchange_validator/0 returns DefaultDelegationValidator by default" do
     original = Application.get_env(:lockspire, :token_exchange_validator)
 
     on_exit(fn ->
@@ -202,7 +202,7 @@ defmodule Lockspire.ConfigTest do
     Application.delete_env(:lockspire, :token_exchange_validator)
 
     assert Lockspire.Config.token_exchange_validator() ==
-             Lockspire.Host.DefaultDenyTokenExchangeValidator
+             Lockspire.Host.DefaultDelegationValidator
 
     # Configured
     Application.put_env(:lockspire, :token_exchange_validator, MyCustomValidator)
