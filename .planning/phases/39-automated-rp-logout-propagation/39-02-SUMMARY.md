@@ -114,7 +114,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 
 - Client logout propagation state is now durable and truthful for later repository, worker, discovery, and UI slices.
-- DCR remains intentionally narrower than the operator surface, so future Phase 39 work can add runtime/logout propagation behavior without widening registration intake accidentally.
+- DCR remains intentionally narrower than the operator surface, so subsequent Phase 39 work can add runtime/logout propagation behavior without widening registration intake accidentally.
 
 ## Verification
 

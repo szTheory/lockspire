@@ -245,7 +245,7 @@ end
 
 **What:** Use the repository’s existing transaction style to guarantee one terminal transition wins and stale retries become typed `:invalid_state` outcomes. [VERIFIED: lib/lockspire/storage/ecto/repository.ex] [VERIFIED: lib/lockspire/protocol/authorization_flow.ex]
 
-**When to use:** Approval, denial, and future Phase 32 poll consumption. [VERIFIED: .planning/ROADMAP.md] [VERIFIED: .planning/phases/31-host-owned-verification-ui-seam/31-CONTEXT.md]
+**When to use:** Approval, denial, and subsequent Phase 32 poll consumption. [VERIFIED: .planning/ROADMAP.md] [VERIFIED: .planning/phases/31-host-owned-verification-ui-seam/31-CONTEXT.md]
 
 **Example:**
 ```elixir

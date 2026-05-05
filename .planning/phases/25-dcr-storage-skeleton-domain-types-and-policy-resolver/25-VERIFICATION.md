@@ -116,7 +116,7 @@ human_verification: []
 | `lib/lockspire/protocol/dcr_policy.ex` | 120-123 | Truthy guard `if iat_override_list` (handles `[]` correctly today; fragile to `override_for/2` refactor) | WARNING | WR-01: should be explicit `is_nil/1`. |
 | `test/lockspire/protocol/dcr_policy_invariant_test.exs` | 7-9, 100-132 | Docstring claims equality; test pins subset only | WARNING | WR-02: false confidence; refactor that breaks resolver-discovery binding for any non-`representative_method` would still pass. |
 | `lib/lockspire/storage/ecto/initial_access_token_record.ex` | 38-46 | `cast(:id)` from domain struct | WARNING | WR-03: footgun for fixtures (autoincrement table; admin code could collide). |
-| `lib/lockspire/protocol/dcr_policy.ex` | 65-66 | Guard `is_map(iat_overrides)` accepts structs silently | WARNING | WR-04: future Phase 26 footgun if `redeem/1` accidentally passes the IAT struct itself instead of `iat.policy_overrides`. |
+| `lib/lockspire/protocol/dcr_policy.ex` | 65-66 | Guard `is_map(iat_overrides)` accepts structs silently | WARNING | WR-04: subsequent Phase 26 footgun if `redeem/1` accidentally passes the IAT struct itself instead of `iat.policy_overrides`. |
 | `lib/lockspire/admin/server_policy.ex` | 92-119 | `normalize_dcr_attrs/1` silently drops unknown keys | WARNING | WR-05: admin form typos lose data without error. |
 | `lib/lockspire/protocol/discovery.ex` | 31-32 vs 90-96 | Public `/0` decoupled from mounted-route truth | WARNING | WR-06: Phase 27 must reconcile published vs static. |
 | `lib/lockspire/storage/ecto/client_record.ex` | 117-140 | `update_changeset/2` silently excludes 5 DCR fields without comment | WARNING | WR-07: Phase 26 implementer might extend `update_changeset/2` ad-hoc. |

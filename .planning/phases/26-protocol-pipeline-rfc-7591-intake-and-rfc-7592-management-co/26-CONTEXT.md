@@ -101,7 +101,7 @@ Requirements covered by this phase: **DCR-02, DCR-03, DCR-04, DCR-11, DCR-22, DC
 - **D-26:** **Event names are atom singletons in the `:dcr_*` and `:iat_*` family**, satisfying the `[:lockspire, :dcr, ...]` / `[:lockspire, :iat, ...]` namespace requirement of SC 5 via the established 2-segment `Observability.emit/3` shape. Event-name namespace inferred from atom prefix. **NO extension of `Observability.emit/3` to multi-segment paths** — this preserves project-wide telemetry convention and avoids forking the audit-mirror code path. Concrete event names:
   - **DCR family:** `:dcr_registration_succeeded`, `:dcr_registration_rejected`, `:dcr_management_read`, `:dcr_management_updated`, `:dcr_management_deleted`, `:dcr_management_unauthorized`, `:dcr_registration_access_token_rotated`.
   - **IAT family:** `:iat_redeemed`, `:iat_redemption_failed` (the `failure_reason` measurement carries the discriminating axis from D-11).
-- **D-27:** **Single-sweep redaction test** at `test/lockspire/protocol/dcr_telemetry_redaction_test.exs`. The test wires a `:telemetry` handler that captures every emitted `[:lockspire | _]` event during an exercise pass that covers `Registration.register/1` happy path, `Registration.register/1` invalid-metadata sad path, `RegistrationManagement.update/2` (with RAT rotation), `RegistrationManagement.delete/2`, and `InitialAccessToken.redeem/1` (success + every failure axis). The assertion is a single sweep: `refute Enum.any?(captured_events, fn ev -> String.contains?(inspect(ev), plaintext_secret) or String.contains?(inspect(ev), plaintext_rat) or String.contains?(inspect(ev), plaintext_iat) end)`. Survives event-name additions in future phases without losing coverage.
+- **D-27:** **Single-sweep redaction test** at `test/lockspire/protocol/dcr_telemetry_redaction_test.exs`. The test wires a `:telemetry` handler that captures every emitted `[:lockspire | _]` event during an exercise pass that covers `Registration.register/1` happy path, `Registration.register/1` invalid-metadata sad path, `RegistrationManagement.update/2` (with RAT rotation), `RegistrationManagement.delete/2`, and `InitialAccessToken.redeem/1` (success + every failure axis). The assertion is a single sweep: `refute Enum.any?(captured_events, fn ev -> String.contains?(inspect(ev), plaintext_secret) or String.contains?(inspect(ev), plaintext_rat) or String.contains?(inspect(ev), plaintext_iat) end)`. Survives event-name additions in subsequent phases without losing coverage.
 - **D-28:** Audit row redaction is enforced at the `Audit.Event.normalize/1` boundary — the same `Lockspire.Redaction` primitives flow through. The redaction test at D-27 reads back the `lockspire_audit_events` rows written during the sweep and applies the same `String.contains?` assertion against the persisted `payload` and `metadata` JSONB columns.
 
 ### Claude's Discretion
@@ -206,7 +206,7 @@ Requirements covered by this phase: **DCR-02, DCR-03, DCR-04, DCR-11, DCR-22, DC
 <specifics>
 ## Specific Ideas
 
-1. **The success criterion's `[:lockspire, :dcr, ...]` and `[:lockspire, :iat, ...]` shape is satisfied via atom-singleton event names**, NOT multi-segment paths (D-26). Event namespace is inferred from the `:dcr_*` / `:iat_*` atom prefix. This was the one genuinely Unclear assumption from the analyzer pass; user confirmed the project-convention path. If a future phase audits this and finds it doesn't satisfy a stricter reading of "namespace," the fix is one-shot: extend `Observability.emit/3` to accept a list event name.
+1. **The success criterion's `[:lockspire, :dcr, ...]` and `[:lockspire, :iat, ...]` shape is satisfied via atom-singleton event names**, NOT multi-segment paths (D-26). Event namespace is inferred from the `:dcr_*` / `:iat_*` atom prefix. This was the one genuinely Unclear assumption from the analyzer pass; user confirmed the project-convention path. If a subsequent phase audits this and finds it doesn't satisfy a stricter reading of "namespace," the fix is one-shot: extend `Observability.emit/3` to accept a list event name.
 
 2. **IAT redemption's four failure axes (`:not_found | :expired | :revoked | :already_used`) collapse to `{:error, :invalid_token}` in the public return** but the discriminator is preserved in telemetry as a `failure_reason` measurement (D-11, D-26). This is the IAT-enumeration defense — operators still see the diagnostic via telemetry; attackers don't.
 
@@ -231,7 +231,7 @@ Requirements covered by this phase: **DCR-02, DCR-03, DCR-04, DCR-11, DCR-22, DC
 - **Per-IAT `policy_overrides` admin UI** — DCR-FUT-03; column + resolver consumption ship in Phase 25, UI in v1.6+.
 - **`jwks_uri` outbound fetch with SSRF protections** — DCR-FUT-01; rejected at intake in this phase.
 - **Built-in rate limiting on `POST /register`** — DCR-FUT-04; host-side Plug seam documented in Phase 29.
-- **Per-event explicit redaction assertions** — rejected (D-27); single-sweep `String.contains?` test survives event-name additions in future phases.
+- **Per-event explicit redaction assertions** — rejected (D-27); single-sweep `String.contains?` test survives event-name additions in subsequent phases.
 
 ### Reviewed Todos (not folded)
 

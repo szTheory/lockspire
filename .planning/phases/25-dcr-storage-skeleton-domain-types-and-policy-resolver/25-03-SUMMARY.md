@@ -12,7 +12,7 @@ provides:
   - lockspire_initial_access_tokens table (9 columns + id + timestamps) per D-11
   - unique_index(:lockspire_initial_access_tokens, [:token_hash]) per D-03 (REQUIRED for Phase 26 atomic redemption)
   - FK target table for Plan 05's lockspire_clients.initial_access_token_id (D-08, D-10)
-  - jsonb policy_overrides column (opaque storage; intake validation deferred to Phase 26 / Phase 28)
+  - jsonb policy_overrides column (opaque storage; intake validation handled in Phase 26 / Phase 28)
 affects:
   - Plan 04 (Domain.InitialAccessToken defstruct mirrors this column set)
   - Plan 05 (Storage.Ecto.InitialAccessTokenRecord schema + lockspire_clients FK to id)
@@ -25,7 +25,7 @@ tech-stack:
   patterns:
     - "Hash-at-rest IAT storage (D-14): only token_hash persists, never plaintext"
     - "Soft-delete-only lifecycle (D-12): revoked_at + used_at, no hard-delete pathway"
-    - "Singular unique_index discipline: index only what downstream redemption needs (D-03); admin-listing indexes deferred to Phase 28 per Open Question 3"
+    - "Singular unique_index discipline: index only what downstream redemption needs (D-03); admin-listing indexes handled in Phase 28 per Open Question 3"
 
 key-files:
   created:
@@ -114,7 +114,7 @@ All 13 grep-based acceptance criteria from the plan pass (file exists, module na
 ## Confirmation: Indexing Discipline
 
 - ✅ Exactly ONE `create(unique_index(:lockspire_initial_access_tokens, [:token_hash]))` call.
-- ✅ ZERO non-unique `create(index(...))` calls — no `revoked_at`, `expires_at`, or `created_by` indexes shipped (deferred to Phase 28 per RESEARCH Open Question 3 — admin-listing indexes added when actual query patterns are visible).
+- ✅ ZERO non-unique `create(index(...))` calls — no `revoked_at`, `expires_at`, or `created_by` indexes shipped (handled in Phase 28 per RESEARCH Open Question 3 — admin-listing indexes added when actual query patterns are visible).
 - ✅ Threat T-25-11 (a future contributor swapping `unique_index` for `index`) actively guarded by the plan's grep acceptance criteria.
 
 ## Decisions Made
