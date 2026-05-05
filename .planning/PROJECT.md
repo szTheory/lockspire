@@ -10,15 +10,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived ten planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, and v1.10 delivered the FAPI 2.0 Security Profile.
+Lockspire has now archived twelve planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work needed to make repo-truth QA and trusted release claims defensible, v1.2 delivered the narrow PAR wedge plus the remaining release-runtime hygiene needed to keep the preview lane boring, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, and v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693).
 
-At archive time, the package version in `mix.exs` is `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, Phoenix-native operator workflows, and a strict FAPI 2.0 security mode.
+At archive time, the package version in `mix.exs` is `0.2.0` (pending release please automation to cut `1.0.0`), the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP on token requests and Lockspire-owned userinfo, generated host seams, Phoenix-native operator workflows, strict FAPI 2.0 security mode, and Token Exchange (Delegation and Impersonation).
 
-The next leverage point is no longer adding protocol breadth; it is stabilizing the entire API surface, finalizing documentation, standardizing telemetry, auditing the security posture, and formally cutting the 1.0 GA release.
+## Current Milestone: None
 
-## Current Milestone: v1.12 Token Exchange (RFC 8693)
-
-**Goal:** Stabilize the API contract, finalize public documentation (`@moduledoc`, `@doc`, Typespecs), ensure telemetry events and operator seams are consistent, conduct a formal security/API audit, and transition from preview posture to 1.0 GA.
+**Goal:** Pending next milestone definition.
 
 ## Requirements
 
@@ -49,16 +47,12 @@ The next leverage point is no longer adding protocol breadth; it is stabilizing 
 - Enforce mandatory PAR usage and DPoP sender-constraining for token and userinfo endpoints when the profile is active, validated in Phase 41.
 - Restrict cryptographic algorithms to `PS256` or `ES256` exclusively under the profile, validated in Phase 41.
 - Strictly enforce exact redirect URI matching and expose FAPI 2.0 compliance in discovery metadata, validated in Phase 42.
+- Delivered 1.0 GA stabilization including API contract lock, telemetry standardization, operator seams consistency, and formal security audit in the v1.11 milestone.
+- Delivered OAuth 2.0 Token Exchange (RFC 8693) with host policy behavior and delegation depth enforcement in the v1.12 milestone.
 
 ### Active
 
-- Target **v1.12 Token Exchange (RFC 8693)** to finalize and lock the API for 1.0.
-- Stabilize the API contract (public modules and interfaces).
-- Finalize public documentation (`@moduledoc`, `@doc`, Typespecs) for all public-facing modules.
-- Ensure telemetry events are consistent, documented, and properly emitted.
-- Ensure operator seams (UI, admin panels, config) are consistent and documented.
-- Conduct a formal security and API audit before GA.
-- Transition package posture from preview to 1.0 GA (version bump, changelog update).
+- None
 
 ### Out of Scope
 
@@ -102,6 +96,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Make DPoP the v1.7 wedge | DPoP raises the real-integrator security story across existing public/CLI paths without requiring hosted infrastructure or enterprise PKI and composes directly with the shipped device and DCR surfaces | Adopted at v1.7 milestone start |
 | Persist the multi-milestone strategy in `.planning/EPIC.md` | Milestone selection should compound from repo truth and prior decisions rather than being rediscovered every cycle | Adopted at v1.7 milestone start |
 | Transition to 1.0 GA | After shipping FAPI 2.0 Security Profile, the library has the necessary features and security depth to confidently drop preview status | Adopted at v1.11 milestone start |
+| Add Token Exchange (RFC 8693) | Provides standard delegation and impersonation primitives for microservice patterns without custom grant types | Adopted at v1.12 milestone start |
 
 ## Evolution
 

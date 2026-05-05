@@ -1,15 +1,20 @@
 # Milestones
 
-## v1.12 Token Exchange (RFC 8693) (Active)
+## v1.12 Token Exchange (RFC 8693) (Shipped + archived: 2026-05-05)
 
-**Phases planned:** **3** (**48-50**), **5** requirements.
+**Phases completed:** **3** (**48-50**), **7** plans, **5** requirements closed.
 
-**Package posture:** Implementing OAuth 2.0 Token Exchange for microservice patterns (Delegation and Impersonation).
+**Package posture:** `lockspire 1.0.0` or higher now includes OAuth 2.0 Token Exchange for microservice patterns (Delegation and Impersonation).
 
 **Key accomplishments:**
-- TBD
+- Added parsing and durable storage of RFC 8693 Token Exchange requests, tracking token lineage via `grant_id`.
+- Introduced the `Lockspire.TokenExchangeValidator` behaviour to give host apps explicit policy control over which clients and actors are allowed to perform exchanges.
+- Enforced domain-specific delegation boundaries via `max_delegation_depth` configuration to prevent arbitrary recursive token bloat.
+- Generated and verified `act` claims for nested delegation chains when `actor_token` is present.
 
-**Archives:** `milestones/v1.12-ROADMAP.md`, `milestones/v1.12-REQUIREMENTS.md`
+**Pre-close audit:** Handled by `$gsd-complete-milestone`.
+
+**Archives:** `milestones/v1.12-ROADMAP.md`, `milestones/v1.12-REQUIREMENTS.md` · **Git tag:** `v1.12`
 
 ---
 
