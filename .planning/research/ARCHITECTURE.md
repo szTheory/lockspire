@@ -1,46 +1,70 @@
 # Architecture Patterns
 
-**Domain:** Embedded OAuth/OIDC Provider for Elixir/Phoenix
-**Researched:** 2025-05-24
+**Domain:** Token Exchange (RFC 8693) for Lockspire
+**Researched:** 2026-05-XX
 
-## Component Boundaries
+## Recommended Architecture
+
+Token exchange fundamentally bridges the gap between **Cryptographic Protocol Validation** and **Domain Business Logic**.
+
+### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| Client Authenticator Plug | Validates client credentials (Secret, JWT, mTLS) | Token Endpoint, DCR |
-| Token Exchange Validator | Extensible behaviour for host apps to validate impersonation | Token Endpoint |
-| CIBA Backchannel | Initiates push/polling for decoupled auth | PubSub, Background Jobs (Oban) |
+| `Lockspire.Web.TokenEndpoint` | Parses the `grant_type=...token-exchange` payload. Validates token type URIs. | `Lockspire.Protocol.TokenExchange` |
+| `Lockspire.Protocol.TokenExchange` | Orchestrates the exchange. Cryptographically verifies the `subject_token` and `actor_token`. Constructs the context. | `HostApp.TokenExchangeValidator` (via Behaviour) |
+| `Lockspire.TokenExchangeValidator` (Behaviour) | **Host-defined module.** Evaluates business rules: "Is Client X allowed to impersonate User Y for Service Z?" | Host App Database / Domain Context |
+| `Lockspire.TokenMinter` | Generates the final JWT, embedding new scopes, audiences, and `act` (actor) claims based on host approval. | `Lockspire.Protocol.TokenExchange` |
+
+### Data Flow
+
+1. **Request:** Client calls `/oauth/token` with `grant_type=...token-exchange`, `subject_token=abc`, and `requested_token_type=...jwt`.
+2. **Verification:** Lockspire decrypts/verifies `subject_token` to ensure it is valid, unexpired, and issued by this server.
+3. **Delegation to Host:** Lockspire builds a struct (e.g., `Lockspire.TokenExchange.Context`) containing the validated original token claims, the requesting client ID, requested scopes, and requested audience.
+4. **Host Policy Execution:** Lockspire calls `HostApp.Validator.validate_exchange(context)`.
+5. **Host Decision:** The host app returns `{:ok, %{scopes: [...], aud: [...], act: %{...}}}` or `{:error, :unauthorized}`.
+6. **Token Issuance:** If `:ok`, Lockspire mints the new token with the approved constraints and returns it in the RFC 8693 response format.
 
 ## Patterns to Follow
 
-### Pattern 1: CIBA via Phoenix PubSub
-**What:** Using Elixir's native distributed PubSub to handle CIBA notification modes.
-**When:** When a consumption device initiates a CIBA request and the auth device is connected via LiveView or Channels.
-**Example:**
-Lockspire publishes `{:ciba_request, auth_req_id}` to a user-specific PubSub topic. The host app's LiveView subscribes to this topic and prompts the user on their phone. Once approved, the LiveView calls Lockspire API to approve, which signals the token endpoint poll.
-
-### Pattern 2: Token Exchange via Callbacks
-**What:** Host app provides a callback module implementing `Lockspire.TokenExchange.Validator`.
-**When:** The Identity Provider needs to know if User A is allowed to impersonate User B, or if Client X can exchange a token for Client Y.
+### Pattern 1: Explicit Host-Driven Policy (The Elixir Behaviour Pattern)
+**What:** Define a clear Elixir Behaviour that host applications must implement to govern token exchanges.
+**When:** Always for token exchange.
 **Example:**
 \`\`\`elixir
-defmodule MyApp.TokenExchangeValidator do
-  @behaviour Lockspire.TokenExchangeValidator
-
-  def validate_exchange(subject_token, requested_token_type, _conn) do
-    # Domain-specific logic
-  end
+defmodule Lockspire.TokenExchangeValidator do
+  @callback validate_exchange(context :: Lockspire.TokenExchange.Context.t()) :: 
+    {:ok, modifications :: map()} | {:error, reason :: atom()}
 end
+\`\`\`
+
+### Pattern 2: Delegation over Impersonation
+**What:** When a service needs to call another service on behalf of a user, use the `act` claim to preserve the identity of the calling service.
+**When:** Whenever the architecture resembles a service mesh or API gateway.
+**Example:**
+\`\`\`json
+{
+  "sub": "user_123",
+  "aud": "backend_billing_service",
+  "act": {
+    "sub": "api_gateway_client"
+  }
+}
 \`\`\`
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Strict `Plug.Conn.get_peer_data/1` for mTLS
-**What:** Attempting to read the client certificate directly from the Erlang SSL socket in a standard Phoenix app.
-**Why bad:** Phoenix apps are almost always deployed behind a TLS-terminating load balancer (ALB, Nginx, Fly.io edge). The socket will not have the client certificate.
-**Instead:** The application MUST read the certificate from a configurable HTTP header (e.g., `X-Forwarded-Client-Cert`), requiring the host app developer to ensure their proxy securely sets this and strips spoofed headers.
+### Anti-Pattern 1: Implicit Upscoping
+**What:** Automatically granting scopes or audiences requested by the client that were not present in the original `subject_token` without host approval.
+**Why bad:** Leads directly to privilege escalation where a compromised low-tier service can request an admin-level token.
+**Instead:** Default strictly to **downscoping** (intersection of original scopes and requested scopes). Require the `TokenExchangeValidator` to explicitly return `{:ok, %{expanded_scopes: [...]}}` if upscoping is truly intended.
 
-### Anti-Pattern 2: Hardcoding RAR Schemas
-**What:** Defining strict JSON schemas for `authorization_details` in Lockspire itself.
-**Why bad:** RAR is domain-specific. A banking app has different RAR structures than an IoT app.
-**Instead:** Provide a dynamic Ecto type or allow host apps to supply an `embedded_schema` module to validate incoming RAR structures.
+## Scalability Considerations
+
+| Concern | Approach |
+|---------|----------|
+| Token Introspection Load | Because exchanged tokens are typically short-lived and used rapidly by microservices, rely on stateless JWT validation rather than hitting the database for every hop, unless strictly revoked. |
+| Exchange Latency | Ensure the `validate_exchange/1` callback is highly optimized by the host app (e.g., using ETS for policy caching if necessary). |
+
+## Sources
+- [RFC 8693 Section 2 & 4](https://datatracker.ietf.org/doc/html/rfc8693) (HIGH confidence)

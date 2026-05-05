@@ -53,7 +53,7 @@ defmodule Lockspire.Host.DefaultDelegationValidatorTest do
                }
              }
     end
-    
+   
     test "ignores missing sub or client_id appropriately" do
       context = %TokenExchangeContext{
         client_id: "client1",

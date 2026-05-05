@@ -16,7 +16,7 @@ At archive time, the package version in `mix.exs` is `0.2.0`, the protected rele
 
 The next leverage point is no longer adding protocol breadth; it is stabilizing the entire API surface, finalizing documentation, standardizing telemetry, auditing the security posture, and formally cutting the 1.0 GA release.
 
-## Current Milestone: v1.11 / 1.0 GA Release — The Stabilization Epoch
+## Current Milestone: v1.12 Token Exchange (RFC 8693)
 
 **Goal:** Stabilize the API contract, finalize public documentation (`@moduledoc`, `@doc`, Typespecs), ensure telemetry events and operator seams are consistent, conduct a formal security/API audit, and transition from preview posture to 1.0 GA.
 
@@ -52,7 +52,7 @@ The next leverage point is no longer adding protocol breadth; it is stabilizing 
 
 ### Active
 
-- Target **v1.11 / 1.0 GA Release — The Stabilization Epoch** to finalize and lock the API for 1.0.
+- Target **v1.12 Token Exchange (RFC 8693)** to finalize and lock the API for 1.0.
 - Stabilize the API contract (public modules and interfaces).
 - Finalize public documentation (`@moduledoc`, `@doc`, Typespecs) for all public-facing modules.
 - Ensure telemetry events are consistent, documented, and properly emitted.

@@ -1,50 +1,51 @@
-# Research Summary: Lockspire Next Epic Milestones
+# Research Summary: Lockspire Token Exchange (RFC 8693)
 
-**Domain:** Embedded OAuth/OIDC Provider for Elixir/Phoenix
-**Researched:** 2025-05-24
+**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
+**Researched:** 2026-05-XX
 **Overall confidence:** HIGH
 
 ## Executive Summary
 
-Lockspire has already shipped a formidable foundational layer (Auth Code, PAR, JAR, DCR, Device Flow, DPoP, Session Management, FAPI 2.0 Draft). Evaluating the next "giant leaps" requires balancing advanced protocol features against ecosystem readiness, developer ergonomics (DX), and the stabilization necessary for broad adoption. 
+RFC 8693 defines the OAuth 2.0 Token Exchange grant type, which acts as a Security Token Service (STS) protocol. It enables microservices, API gateways, and service meshes to perform **impersonation** (acting as a user) and **delegation** (acting on behalf of a user). For an embedded Elixir provider like Lockspire, this milestone is crucial for integrating with modern, distributed backend architectures where a single frontend token should not be passed unmodified through deep service call chains.
 
-The five candidate milestones vary wildly in complexity and immediate value. A 1.0 GA release offers the highest return on investment by establishing a stable contract for early adopters. Token Exchange (RFC 8693) and CIBA offer high utility and showcase the strengths of the Elixir ecosystem (concurrency, PubSub). mTLS (RFC 8705) is crucial for true high-security (FAPI) setups but introduces severe infrastructural footguns for Phoenix deployments. Rich Authorization Requests (RAR) is powerful but remains a bleeding-edge specification with sparse native support across standard Identity Providers, though Keycloak and Duende are paving the way.
+The primary security challenge is preventing privilege escalation. By default, token exchange should be a "downscoping" operation. Any "upscoping" or audience pivoting must be strictly governed by host application business logic. To support this while remaining an unopinionated library, Lockspire must introduce a Behaviour (e.g., `Lockspire.TokenExchangeValidator`) that delegates the policy decision of *who can exchange what* to the host application, keeping Lockspire focused purely on protocol correctness and cryptographic validation.
 
 ## Key Findings
 
-**Stack:** Phoenix/Elixir/Plug architecture makes CIBA exceptionally idiomatic due to Channels/PubSub, but complicates mTLS due to reverse-proxy TLS termination.
-**Architecture:** Token Exchange and RAR require exposing highly extensible plugin systems for host apps to define domain-specific validation logic.
-**Critical pitfall:** Implementing mTLS without robustly warning and educating developers on reverse-proxy header stripping (e.g., `X-Client-Cert` spoofing).
+**Stack:** Standard Elixir/Phoenix ecosystem; relies on existing JWT (JOSE/Joken) capabilities to parse and mint nested `act` claims.
+**Architecture:** Protocol validation happens in Lockspire, but the authorization policy is delegated to a host-implemented Elixir Behaviour (`Lockspire.TokenExchangeValidator`).
+**Critical pitfall:** Privilege escalation via unauthorized scope expansion or audience pivoting, especially when confusing impersonation with delegation.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on research, suggested phase structure for Token Exchange:
 
-1. **Phase: 1.0 GA Release (Stabilization)** - Lockspire has massive surface area. Securing public APIs, auditing, and guaranteeing a stable contract will drive adoption faster than adding more niche RFCs.
-   - Addresses: Public APIs, Documentation, Audit, Migration paths.
-   - Avoids: Churning host app codebases with constant breaking changes.
+1. **Token Exchange Foundation** - Add support for the new `grant_type`, request/response parameters, and basic token-type URIs.
+   - Addresses: Standard RFC 8693 request parsing and basic downscoping.
+   - Avoids: Rushing into complex delegation before the core endpoints conform to the spec.
 
-2. **Phase: OAuth 2.0 Token Exchange (RFC 8693)** - Highly requested feature in microservices architectures.
-   - Addresses: Service-to-service impersonation and delegation.
+2. **Delegation & Impersonation (Host Behaviour)** - Introduce the `Lockspire.TokenExchangeValidator` Behaviour.
+   - Addresses: Allowing the host application to securely govern audience pivoting and scope expansion.
+   - Avoids: Hardcoding policy logic or RBAC into Lockspire.
 
-3. **Phase: OpenID Connect CIBA** - Showcases Elixir's concurrency and PubSub strengths perfectly.
-   - Addresses: Decoupled authentication flows.
-
-4. **Phase: Mutual TLS (mTLS) (RFC 8705)** - FAPI 2.0 requires it for full compliance, but it relies heavily on infrastructure layers outside Lockspire's control.
-
-5. **Phase: Rich Authorization Requests (RAR) (RFC 9328)** - Defer until standard patterns emerge more fully in the ecosystem.
+3. **Advanced Claims (`act` and `may_act`)** - Support for complex delegation chains.
+   - Addresses: Full compliance with the delegation profile of RFC 8693, providing an audit trail of actors in the `act` claim.
 
 **Phase ordering rationale:**
-- Stabilization (1.0 GA) is paramount after shipping FAPI 2.0. Users need a stable base. Token Exchange is standard for microservices. CIBA is an architectural win for Phoenix. mTLS is complex and infrastructural, best added when enterprise demand arises. RAR is too bleeding-edge and complex to prioritize over a 1.0 release.
+- Protocol parsing and foundational structures must exist before defining the Elixir Behaviour boundary. Complex claims come last once the validation boundary is proven.
 
 **Research flags for phases:**
-- Phase mTLS: Needs deep research on how Fly.io, Gigalixir, and AWS handle client cert forwarding.
+- Phase 2: Needs careful API design for the Behaviour to ensure developer ergonomics are optimal for Phoenix teams.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Validated via `apiac_auth_mtls` patterns in Elixir. |
-| Features | HIGH | Cross-referenced Keycloak, Duende, Ory Hydra support levels. |
-| Architecture | HIGH | Clear separation of concerns required for host extensibility. |
-| Pitfalls | HIGH | mTLS reverse proxy header spoofing is a well-documented critical risk. |
+| Stack | HIGH | No new infrastructure needed, leverages existing Erlang/Elixir crypto. |
+| Features | HIGH | RFC 8693 explicitly defines request/response shapes and token type URIs. |
+| Architecture | HIGH | The Elixir Behaviour pattern is a proven method for decoupling protocol state from business logic in Lockspire. |
+| Pitfalls | HIGH | Privilege escalation is a well-documented risk in token exchange literature. |
+
+## Gaps to Address
+
+- Determining the optimal data structure to pass to `Lockspire.TokenExchangeValidator` to give the host app enough context (e.g., original token claims, requested scopes, client info) without exposing internal Lockspire state.

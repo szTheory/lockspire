@@ -1,5 +1,18 @@
 # Milestones
 
+## v1.12 Token Exchange (RFC 8693) (Active)
+
+**Phases planned:** **3** (**48-50**), **5** requirements.
+
+**Package posture:** Implementing OAuth 2.0 Token Exchange for microservice patterns (Delegation and Impersonation).
+
+**Key accomplishments:**
+- TBD
+
+**Archives:** `milestones/v1.12-ROADMAP.md`, `milestones/v1.12-REQUIREMENTS.md`
+
+---
+
 ## v1.11 1.0 GA Release — The Stabilization Epoch (Shipped + archived: 2026-05-05)
 
 **Phases completed:** **4** (**44-47**), **6** requirements closed.
