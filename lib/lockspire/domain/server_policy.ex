@@ -23,6 +23,7 @@ defmodule Lockspire.Domain.ServerPolicy do
           dcr_default_client_lifetime_seconds: non_neg_integer() | nil,
           dcr_default_client_secret_lifetime_seconds: non_neg_integer() | nil,
           dcr_default_registration_access_token_lifetime_seconds: non_neg_integer() | nil,
+          max_delegation_depth: non_neg_integer(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -41,6 +42,7 @@ defmodule Lockspire.Domain.ServerPolicy do
             dcr_default_client_lifetime_seconds: nil,
             dcr_default_client_secret_lifetime_seconds: nil,
             dcr_default_registration_access_token_lifetime_seconds: nil,
+            max_delegation_depth: 3,
             inserted_at: nil,
             updated_at: nil
 end

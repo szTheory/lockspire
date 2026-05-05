@@ -66,6 +66,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:initial_access_token_id, :integer)
     field(:client_id_issued_at, :utc_datetime_usec)
     field(:client_secret_expires_at, :utc_datetime_usec)
+    field(:max_delegation_depth, :integer)
 
     timestamps()
   end
@@ -113,7 +114,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :registration_client_uri,
       :initial_access_token_id,
       :client_id_issued_at,
-      :client_secret_expires_at
+      :client_secret_expires_at,
+      :max_delegation_depth
     ])
     |> validate_required([
       :client_id,
@@ -173,7 +175,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :disabled_at,
       :disabled_by,
       :client_secret_hash,
-      :last_secret_rotated_at
+      :last_secret_rotated_at,
+      :max_delegation_depth
     ])
     |> validate_required([
       :redirect_uris,
@@ -242,6 +245,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       initial_access_token_id: record.initial_access_token_id,
       client_id_issued_at: record.client_id_issued_at,
       client_secret_expires_at: record.client_secret_expires_at,
+      max_delegation_depth: record.max_delegation_depth,
       inserted_at: record.inserted_at,
       updated_at: record.updated_at
     }

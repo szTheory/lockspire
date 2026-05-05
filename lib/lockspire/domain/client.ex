@@ -56,6 +56,7 @@ defmodule Lockspire.Domain.Client do
           initial_access_token_id: integer() | nil,
           client_id_issued_at: DateTime.t() | nil,
           client_secret_expires_at: DateTime.t() | nil,
+          max_delegation_depth: non_neg_integer() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -104,6 +105,7 @@ defmodule Lockspire.Domain.Client do
     initial_access_token_id: nil,
     client_id_issued_at: nil,
     client_secret_expires_at: nil,
+    max_delegation_depth: nil,
     inserted_at: nil,
     updated_at: nil
   ]

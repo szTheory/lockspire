@@ -35,6 +35,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
     field(:dcr_default_client_lifetime_seconds, :integer)
     field(:dcr_default_client_secret_lifetime_seconds, :integer)
     field(:dcr_default_registration_access_token_lifetime_seconds, :integer)
+    field(:max_delegation_depth, :integer, default: 3)
 
     timestamps()
   end
@@ -57,7 +58,8 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :dcr_allowed_token_endpoint_auth_methods,
       :dcr_default_client_lifetime_seconds,
       :dcr_default_client_secret_lifetime_seconds,
-      :dcr_default_registration_access_token_lifetime_seconds
+      :dcr_default_registration_access_token_lifetime_seconds,
+      :max_delegation_depth
     ])
     |> validate_required([
       :id,
