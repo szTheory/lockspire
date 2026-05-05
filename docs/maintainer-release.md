@@ -1,6 +1,6 @@
 # Maintainer And Release Guide
 
-Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the `v0.1` preview support contract defined in `docs/supported-surface.md`.
+Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
 ## Normal flow
 
@@ -60,7 +60,7 @@ If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal pu
 
 ## Release posture
 
-Preview releases should only claim the supported surface the repo can currently prove.
+Releases should only claim the supported surface the repo can currently prove.
 
 The repo should not claim full release readiness or broader protocol support until the docs, CI, support policy, and maintainer runbooks all agree with implemented behavior.
 
@@ -75,7 +75,7 @@ Before merging a release PR, confirm:
 - `mix ci`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
 - `.github/workflows/release.yml` still calls `./.github/actions/release-please` rather than a direct third-party Release Please action reference
-- `release-please-config.json` and `.release-please-manifest.json` still match the intended preview release policy
+- `release-please-config.json` and `.release-please-manifest.json` still match the intended release policy
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - trusted publish lane still runs `mix hex.publish --yes`

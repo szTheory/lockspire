@@ -75,4 +75,4 @@ Lockspire does NOT claim:
 - mTLS client authentication or mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism; mTLS is permanently out of scope)
 
 This file does not broaden the public support contract. For the full supported and out-of-scope surface, see `docs/supported-surface.md`.
-rted and out-of-scope surface, see `docs/supported-surface.md`.
+

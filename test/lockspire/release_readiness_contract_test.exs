@@ -163,7 +163,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     config = File.read!(@release_please_config_path)
     manifest = File.read!(@release_please_manifest_path)
 
-    assert config =~ "\"bump-minor-pre-major\": true"
+    assert config =~ "\"bump-minor-pre-major\": false"
     assert config =~ "\"packages\""
     assert config =~ "\".\""
     assert config =~ "\"release-type\": \"elixir\""
@@ -215,11 +215,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute oidf_conformance_workflow =~ "pull_request:"
   end
 
-  test "preview docs keep the embedded Phoenix wedge explicit and pin the narrow DPoP surface" do
+  test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow DPoP surface" do
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
 
-    assert readme =~ "current `v0.1` preview"
+    assert readme =~ "current release"
     assert readme =~ "inside its existing app"
     assert readme =~ "The public support contract"
     assert readme =~ "Generator-backed install flow for Phoenix hosts"
@@ -228,9 +228,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Pushed authorization requests through Lockspire-issued `request_uri` references"
 
     assert readme =~
-             "Request-object-by-value support, generic external `request_uri` handling, device flow, or dynamic client registration"
+             "Request-object-by-value support and generic external `request_uri` handling"
 
-    assert supported_surface =~ "Lockspire `v0.2.0` is a preview release"
+    assert supported_surface =~ "Lockspire `1.0.0` is a GA release"
 
     assert supported_surface =~
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
@@ -244,7 +244,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "Lockspire does not use a demo app"
-    assert supported_surface =~ "A `v0.2.0` preview claim should not say:"
+    assert supported_surface =~ "A 1.0 GA claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
 
     assert supported_surface =~
@@ -262,7 +262,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute readme =~ "production-ready"
   end
 
-  test "security and release posture stay inside the supported preview surface" do
+  test "security and release posture stay inside the supported GA surface" do
     security = File.read!(@security_policy_path)
     onboarding = File.read!(@install_and_onboard_path)
     guide = File.read!(@maintainer_guide_path)
@@ -283,10 +283,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~
              "request-object-by-value support, generic external `request_uri` handling, and device flow"
 
-    assert guide =~ "inside the `v0.1` preview support contract"
+    assert guide =~ "inside the 1.0 GA support contract"
 
     assert guide =~
-             "Preview releases should only claim the supported surface the repo can currently prove."
+             "Releases should only claim the supported surface the repo can currently prove."
 
     assert guide =~
              "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"

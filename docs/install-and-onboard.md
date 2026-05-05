@@ -1,6 +1,6 @@
 # Install And Onboard
 
-The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full `v0.1` preview support contract, see `docs/supported-surface.md`.
+The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full 1.0 GA support contract, see `docs/supported-surface.md`.
 
 ## 1. Add Lockspire
 

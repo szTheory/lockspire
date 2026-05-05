@@ -36,7 +36,7 @@ The public support contract for the current release lives in [`docs/supported-su
 - [Getting started](docs/getting-started.md)
 - [Install and onboard](docs/install-and-onboard.md)
 - [Operator and admin guide](docs/operator-admin.md)
-- [Supported surface and preview contract](docs/supported-surface.md)
+- [Supported surface and GA contract](docs/supported-surface.md)
 - [Maintainer and release guide](docs/maintainer-release.md)
 - [Sigra companion host](docs/sigra-companion-host.md)
 - [Security policy](SECURITY.md)

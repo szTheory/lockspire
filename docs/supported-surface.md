@@ -1,12 +1,12 @@
 # Supported Surface
 
-Lockspire `v0.2.0` is a preview release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
+Lockspire `1.0.0` is a GA release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
 
-This page is the canonical preview contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
+This page is the canonical support contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
 
 ## Supported in scope
 
-Lockspire `v0.2.0` preview currently supports this repo-proven surface:
+Lockspire `1.0.0` GA currently supports this repo-proven surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - Authorization code flow with PKCE S256
@@ -52,7 +52,7 @@ Lockspire does not currently support:
 
 ## Trust posture
 
-Lockspire stays at `v0.2.0` preview because public claims are limited to what this repo can prove today. Repo-owned proof for this preview posture lives in:
+Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
@@ -66,9 +66,9 @@ Lockspire stays at `v0.2.0` preview because public claims are limited to what th
 
 Lockspire does not use a demo app, certification language, or external folklore as its primary public proof story.
 
-## Preview bar
+## GA bar
 
-A `v0.2.0` preview claim can honestly say:
+A 1.0 GA claim honestly says:
 
 - there is one canonical Phoenix onboarding path
 - secure OAuth/OIDC defaults are enforced inside the supported surface
@@ -79,7 +79,7 @@ A `v0.2.0` preview claim can honestly say:
 - contributor and release workflows are versioned in the repo
 - a private disclosure path exists for supported security issues
 
-A `v0.2.0` preview claim should not say:
+A 1.0 GA claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
 - Lockspire supports broader request-object modes, generic external `request_uri` handling, generic host protected-resource middleware, SAML, or LDAP
@@ -87,14 +87,11 @@ A `v0.2.0` preview claim should not say:
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 
+## GA Criteria
 
-
-## 1.0 bar
-
-A `1.0` claim should require everything in the preview bar plus:
+A 1.0 GA claim requires everything in the GA bar plus:
 
 - repeated green release gates in the trusted publish lane
 - maintainer runbooks that match real release operations
 - stable support expectations for the documented embedded-library surface
 - evidence that public docs, workflows, and shipped behavior still agree over time
-ime
