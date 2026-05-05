@@ -77,7 +77,7 @@ defmodule Lockspire.Protocol.DcrPolicy do
 
   @type error_detail :: %{field: atom(), reason: atom(), allowed: list()}
 
-  @spec resolve(ServerPolicy.t(), map() | keyword(), map()) ::
+  @spec resolve(ServerPolicy.t(), map() | keyword() | nil, map()) ::
           {:ok, struct()} | {:error, :invalid_client_metadata, error_detail()}
   # `iat_overrides` MUST be a plain map or nil. Structs are maps in Elixir, so without the
   # `not is_struct(iat_overrides)` guard a caller could pass an `%InitialAccessToken{}`

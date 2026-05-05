@@ -12,9 +12,7 @@ defmodule Lockspire.Security.DeviceCode do
   """
   @spec generate_user_code() :: String.t()
   def generate_user_code do
-    1..8
-    |> Enum.map(fn _ -> Enum.random(@base20_alphabet) end)
-    |> Enum.join()
+    Enum.map_join(1..8, "", fn _ -> Enum.random(@base20_alphabet) end)
   end
 
   @doc """

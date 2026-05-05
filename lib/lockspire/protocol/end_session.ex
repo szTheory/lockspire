@@ -194,22 +194,20 @@ defmodule Lockspire.Protocol.EndSession do
   defp infer_client_id_from_aud(_claims), do: nil
 
   defp build_public_jwk(%SigningKey{} = key) do
-    try do
-      public_jwk =
-        key.public_jwk
-        |> Map.take(@public_jwk_members)
-        |> Map.put_new("kid", key.kid)
-        |> Map.put_new("kty", Atom.to_string(key.kty))
-        |> Map.put_new("alg", key.alg)
-        |> Map.put_new("use", Atom.to_string(key.use))
-        |> JOSE.JWK.from_map()
+    public_jwk =
+      key.public_jwk
+      |> Map.take(@public_jwk_members)
+      |> Map.put_new("kid", key.kid)
+      |> Map.put_new("kty", Atom.to_string(key.kty))
+      |> Map.put_new("alg", key.alg)
+      |> Map.put_new("use", Atom.to_string(key.use))
+      |> JOSE.JWK.from_map()
 
-      {:ok, public_jwk}
-    rescue
-      _ -> :error
-    catch
-      _, _ -> :error
-    end
+    {:ok, public_jwk}
+  rescue
+    _ -> :error
+  catch
+    _, _ -> :error
   end
 
   defp build_public_jwk(_key), do: :error

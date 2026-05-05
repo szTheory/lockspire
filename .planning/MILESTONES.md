@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.11 1.0 GA Release — The Stabilization Epoch (Shipped + archived: 2026-05-05)
+
+**Phases completed:** **4** (**44-47**), **6** requirements closed.
+
+**Package posture:** Lockspire transitions from preview to 1.0 GA release. `release-please` is configured to publish `1.0.0`.
+
+**Key accomplishments:**
+
+- Fixed Dialyzer and strict typing constraints across the codebase.
+- Standardized operator telemetry and LiveView seams.
+- Completed comprehensive ExDoc `@moduledoc` and `@doc` coverage.
+- Configured 1.0.0 GA posture in Release Please and scrubbed preview documentation.
+- Project CI passes all `credo`, `dialyzer`, and `sobelow` checks.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.11-MILESTONE-AUDIT.md`](milestones/v1.11-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.11-ROADMAP.md`, `milestones/v1.11-REQUIREMENTS.md`, `milestones/v1.11-MILESTONE-AUDIT.md` · **Git tag:** `v1.11`
+
+---
+
 ## v1.10 FAPI 2.0 Security Profile (Shipped + archived: 2026-05-03)
 
 **Phases completed:** **3** (**41-43**), **18** plans, **6** requirements closed.

@@ -48,47 +48,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   @impl true
   def handle_event("save_client", %{"client" => params}, socket) do
     result =
-      case params["mode"] do
-        "edit" ->
-          Admin.update_client(
-            socket.assigns.client_id,
-            edit_attrs(params, socket.assigns.client)
-            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
-          )
-
-        "redirects" ->
-          Admin.update_client(
-            socket.assigns.client_id,
-            redirect_attrs(params, socket.assigns.client, :redirects)
-            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
-          )
-
-        "logout_uris" ->
-          Admin.update_client(
-            socket.assigns.client_id,
-            redirect_attrs(params, socket.assigns.client, :logout_uris)
-            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
-          )
-
-        "par_policy" ->
-          Admin.update_client(socket.assigns.client_id, %{
-            par_policy: params["par_policy"],
-            actor: %{type: :operator, id: "admin-ui"}
-          })
-
-        "security_profile" ->
-          Admin.update_client(socket.assigns.client_id, %{
-            security_profile: params["security_profile"],
-            actor: %{type: :operator, id: "admin-ui"}
-          })
-
-        "logout_propagation" ->
-          Admin.update_client(
-            socket.assigns.client_id,
-            logout_propagation_attrs(params)
-            |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
-          )
-      end
+      Admin.update_client(
+        socket.assigns.client_id,
+        save_client_attrs(params, socket.assigns.client)
+      )
 
     case result do
       {:ok, %Client{} = client} ->
@@ -531,4 +494,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp value_or_not_configured(nil), do: "Not configured"
   defp value_or_not_configured(value), do: value
+
+  defp save_client_attrs(%{"mode" => "edit"} = params, client) do
+    edit_attrs(params, client) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+  end
+
+  defp save_client_attrs(%{"mode" => "redirects"} = params, client) do
+    redirect_attrs(params, client, :redirects)
+    |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+  end
+
+  defp save_client_attrs(%{"mode" => "logout_uris"} = params, client) do
+    redirect_attrs(params, client, :logout_uris)
+    |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+  end
+
+  defp save_client_attrs(%{"mode" => "par_policy"} = params, _client) do
+    %{par_policy: params["par_policy"], actor: %{type: :operator, id: "admin-ui"}}
+  end
+
+  defp save_client_attrs(%{"mode" => "security_profile"} = params, _client) do
+    %{security_profile: params["security_profile"], actor: %{type: :operator, id: "admin-ui"}}
+  end
+
+  defp save_client_attrs(%{"mode" => "logout_propagation"} = params, _client) do
+    logout_propagation_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
+  end
 end

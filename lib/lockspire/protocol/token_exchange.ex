@@ -510,29 +510,27 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp build_device_grant(%DeviceAuthorizationState{} = device_authorization) do
-    cond do
-      not is_binary(device_authorization.subject_id) ->
-        {:error,
-         oauth_error(
-           500,
-           "server_error",
-           "Approved device authorization is missing a bound subject",
-           :device_authorization_subject_missing
-         )}
-
-      true ->
-        {:ok,
-         %Token{
-           token_hash: device_authorization.device_code_hash,
-           token_type: :authorization_code,
-           client_id: device_authorization.client_id,
-           account_id: device_authorization.subject_id,
-           interaction_id: nil,
-           scopes: device_authorization.scopes,
-           audience: [],
-           issued_at: device_authorization.approved_at,
-           expires_at: device_authorization.expires_at
-         }}
+    if is_binary(device_authorization.subject_id) do
+      {:ok,
+       %Token{
+         token_hash: device_authorization.device_code_hash,
+         token_type: :authorization_code,
+         client_id: device_authorization.client_id,
+         account_id: device_authorization.subject_id,
+         interaction_id: nil,
+         scopes: device_authorization.scopes,
+         audience: [],
+         issued_at: device_authorization.approved_at,
+         expires_at: device_authorization.expires_at
+       }}
+    else
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Approved device authorization is missing a bound subject",
+         :device_authorization_subject_missing
+       )}
     end
   end
 

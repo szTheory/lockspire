@@ -363,10 +363,14 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
         value -> String.split(value, " ", trim: true)
       end
 
-    cond do
-      prompt == [] ->
-        {:ok, []}
+    evaluate_prompt(prompt, params)
+  end
 
+  defp evaluate_prompt([], _params), do: {:ok, []}
+  defp evaluate_prompt(["none"], _params), do: {:ok, ["none"]}
+
+  defp evaluate_prompt(prompt, params) do
+    cond do
       length(prompt) != length(Enum.uniq(prompt)) ->
         {:redirect_error,
          redirect_error(
@@ -376,7 +380,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
            :duplicate_prompt
          )}
 
-      "none" in prompt and length(prompt) > 1 ->
+      "none" in prompt ->
         {:redirect_error,
          redirect_error(
            params,
@@ -384,9 +388,6 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
            "prompt=none must not be combined with other prompt values",
            :prompt_none_conflict
          )}
-
-      prompt == ["none"] ->
-        {:ok, ["none"]}
 
       "select_account" in prompt ->
         {:redirect_error,

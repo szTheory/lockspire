@@ -38,51 +38,52 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
         attempt_count: attempted_record.attempt_count
       })
 
-      with {:ok, signing_key} <- fetch_signing_key() do
-        case LogoutToken.sign(%{
-               issuer: Config.issuer!(),
-               logout_event: LogoutEventRecord.to_domain(attempted_record.logout_event),
-               delivery: LogoutDeliveryRecord.to_domain(attempted_record),
-               issued_at: attempted_at,
-               signing_key: signing_key
-             }) do
-          {:ok, logout_token, logout_token_jti} ->
-            case deliver_logout_token(attempted_record.target_uri, logout_token) do
-              {:ok, response} ->
-                finalize_response(
-                  attempted_record,
-                  attempted_at,
-                  logout_token_jti,
-                  logout_token,
-                  response
-                )
+      case fetch_signing_key() do
+        {:ok, signing_key} ->
+          case LogoutToken.sign(%{
+                 issuer: Config.issuer!(),
+                 logout_event: LogoutEventRecord.to_domain(attempted_record.logout_event),
+                 delivery: LogoutDeliveryRecord.to_domain(attempted_record),
+                 issued_at: attempted_at,
+                 signing_key: signing_key
+               }) do
+            {:ok, logout_token, logout_token_jti} ->
+              case deliver_logout_token(attempted_record.target_uri, logout_token) do
+                {:ok, response} ->
+                  finalize_response(
+                    attempted_record,
+                    attempted_at,
+                    logout_token_jti,
+                    logout_token,
+                    response
+                  )
 
-              {:error, %Req.TransportError{reason: reason}} ->
-                mark_retryable(
-                  attempted_record,
-                  attempted_at,
-                  nil,
-                  "request_failed:#{reason}"
-                )
+                {:error, %Req.TransportError{reason: reason}} ->
+                  mark_retryable(
+                    attempted_record,
+                    attempted_at,
+                    nil,
+                    "request_failed:#{reason}"
+                  )
 
-                emit_lifecycle(:delivery_failed, attempted_record, %{
-                  failure_reason: "request_failed:#{reason}",
-                  logout_token: logout_token
-                })
+                  emit_lifecycle(:delivery_failed, attempted_record, %{
+                    failure_reason: "request_failed:#{reason}",
+                    logout_token: logout_token
+                  })
 
-                {:error, {:request_failed, reason}}
-            end
+                  {:error, {:request_failed, reason}}
+              end
 
-          {:error, :invalid_signing_key} ->
-            mark_discarded(attempted_record, attempted_at, nil, "invalid_signing_key")
+            {:error, :invalid_signing_key} ->
+              mark_discarded(attempted_record, attempted_at, nil, "invalid_signing_key")
 
-            emit_lifecycle(:delivery_discarded, attempted_record, %{
-              failure_reason: "invalid_signing_key"
-            })
+              emit_lifecycle(:delivery_discarded, attempted_record, %{
+                failure_reason: "invalid_signing_key"
+              })
 
-            {:discard, :invalid_signing_key}
-        end
-      else
+              {:discard, :invalid_signing_key}
+          end
+
         {:error, :missing_signing_key} ->
           mark_discarded(attempted_record, attempted_at, nil, "missing_signing_key")
 

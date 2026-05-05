@@ -44,9 +44,10 @@ defmodule Mix.Tasks.Lockspire.OidfConformance do
       Mix.raise("Unknown options: #{Enum.map_join(invalid, ", ", &elem(&1, 0))}")
     end
 
-    cond do
-      Keyword.get(opts, :help, false) -> Mix.shell().info(help())
-      true -> validate_env!()
+    if Keyword.get(opts, :help, false) do
+      Mix.shell().info(help())
+    else
+      validate_env!()
     end
   end
 

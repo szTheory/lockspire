@@ -79,9 +79,10 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   end
 
   defp resolve_security_profile(%Client{} = client, request) do
-    with {:ok, server_policy} <- server_policy_store(request).get_server_policy() do
-      {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
-    else
+    case server_policy_store(request).get_server_policy() do
+      {:ok, server_policy} ->
+        {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
+
       {:error, _reason} ->
         {:error,
          oauth_error(

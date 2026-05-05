@@ -1421,75 +1421,101 @@ defmodule Lockspire.Storage.Ecto.Repository do
     %{result: :client_mismatch}
   end
 
-  defp evaluate_device_poll(%DeviceAuthorizationRecord{} = record, client_id, now) do
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{status: :denied} = record,
+         _client_id,
+         _now
+       ),
+       do: device_poll_outcome(:denied, record)
+
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{status: :expired} = record,
+         _client_id,
+         _now
+       ),
+       do: device_poll_outcome(:expired, record)
+
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{status: :consumed} = record,
+         _client_id,
+         _now
+       ),
+       do: device_poll_outcome(:consumed, record)
+
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{status: :approved} = record,
+         _client_id,
+         now
+       ) do
+    if DateTime.compare(record.expires_at, now) != :gt do
+      expire_device_authorization(record, now)
+    else
+      device_poll_outcome(:approved_ready, record)
+    end
+  end
+
+  defp evaluate_device_poll(
+         %DeviceAuthorizationRecord{status: :pending} = record,
+         _client_id,
+         now
+       ) do
     cond do
-      record.status == :denied ->
-        device_poll_outcome(:denied, record)
+      DateTime.compare(record.expires_at, now) != :gt ->
+        expire_device_authorization(record, now)
 
-      record.status == :expired ->
-        device_poll_outcome(:expired, record)
-
-      record.status == :consumed ->
-        device_poll_outcome(:consumed, record)
-
-      record.status == :approved and DateTime.compare(record.expires_at, now) != :gt ->
-        record
-        |> DeviceAuthorizationRecord.update_changeset(%{
-          status: :expired,
-          expired_at: now,
-          updated_at: DateTime.utc_now()
-        })
-        |> repo_update(sensitive: true)
-        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-        |> unwrap_or_rollback()
-        |> then(&device_poll_outcome(:expired, &1))
-
-      record.status == :approved ->
-        device_poll_outcome(:approved_ready, record)
-
-      record.status == :pending and DateTime.compare(record.expires_at, now) != :gt ->
-        record
-        |> DeviceAuthorizationRecord.update_changeset(%{
-          status: :expired,
-          expired_at: now,
-          updated_at: DateTime.utc_now()
-        })
-        |> repo_update(sensitive: true)
-        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-        |> unwrap_or_rollback()
-        |> then(&device_poll_outcome(:expired, &1))
-
-      record.status == :pending and DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
-        next_interval = record.effective_poll_interval_seconds + 5
-        next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
-
-        record
-        |> DeviceAuthorizationRecord.update_changeset(%{
-          effective_poll_interval_seconds: next_interval,
-          next_poll_allowed_at: next_poll_allowed_at,
-          updated_at: DateTime.utc_now()
-        })
-        |> repo_update(sensitive: true)
-        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-        |> unwrap_or_rollback()
-        |> then(&device_poll_outcome(:slow_down, &1))
-
-      record.status == :pending ->
-        next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
-
-        record
-        |> DeviceAuthorizationRecord.update_changeset(%{
-          next_poll_allowed_at: next_poll_allowed_at,
-          updated_at: DateTime.utc_now()
-        })
-        |> repo_update(sensitive: true)
-        |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-        |> unwrap_or_rollback()
-        |> then(&device_poll_outcome(:pending, &1))
+      DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
+        slow_down_device_authorization(record, now)
 
       true ->
-        %{result: :invalid_grant, reason: {:unexpected_status, record.status, client_id}}
+        continue_pending_device_authorization(record, now)
     end
+  end
+
+  defp evaluate_device_poll(%DeviceAuthorizationRecord{status: status}, client_id, _now) do
+    %{result: :invalid_grant, reason: {:unexpected_status, status, client_id}}
+  end
+
+  defp expire_device_authorization(record, now) do
+    record
+    |> DeviceAuthorizationRecord.update_changeset(%{
+      status: :expired,
+      expired_at: now,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&device_poll_outcome(:expired, &1))
+  end
+
+  defp slow_down_device_authorization(record, _now) do
+    next_interval = record.effective_poll_interval_seconds + 5
+    next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
+
+    record
+    |> DeviceAuthorizationRecord.update_changeset(%{
+      effective_poll_interval_seconds: next_interval,
+      next_poll_allowed_at: next_poll_allowed_at,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&device_poll_outcome(:slow_down, &1))
+  end
+
+  defp continue_pending_device_authorization(record, now) do
+    next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
+
+    record
+    |> DeviceAuthorizationRecord.update_changeset(%{
+      next_poll_allowed_at: next_poll_allowed_at,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&device_poll_outcome(:pending, &1))
   end
 
   defp consume_device_authorization_record(nil, _client_id, _now),

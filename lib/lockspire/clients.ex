@@ -64,15 +64,17 @@ defmodule Lockspire.Clients do
   @spec frontchannel_logout_origin_matches_redirect_uri?(String.t(), [String.t()]) :: boolean()
   def frontchannel_logout_origin_matches_redirect_uri?(logout_uri, redirect_uris)
       when is_binary(logout_uri) and is_list(redirect_uris) do
-    with {:ok, logout_origin} <- uri_origin(logout_uri) do
-      Enum.any?(redirect_uris, fn redirect_uri ->
-        case uri_origin(redirect_uri) do
-          {:ok, redirect_origin} -> redirect_origin == logout_origin
-          :error -> false
-        end
-      end)
-    else
-      :error -> false
+    case uri_origin(logout_uri) do
+      {:ok, logout_origin} ->
+        Enum.any?(redirect_uris, fn redirect_uri ->
+          case uri_origin(redirect_uri) do
+            {:ok, redirect_origin} -> redirect_origin == logout_origin
+            :error -> false
+          end
+        end)
+
+      :error ->
+        false
     end
   end
 

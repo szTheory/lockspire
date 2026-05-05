@@ -18,9 +18,8 @@ defmodule Lockspire.Security.Policy do
   @spec validate_key_compliance(SigningKey.t(), :fapi_2_0_security | :none) ::
           :ok | {:error, term()}
   def validate_key_compliance(%SigningKey{alg: alg} = key, :fapi_2_0_security) do
-    with :ok <- ensure_fapi_compliant_alg(alg),
-         :ok <- ensure_fapi_compliant_strength(key) do
-      :ok
+    with :ok <- ensure_fapi_compliant_alg(alg) do
+      ensure_fapi_compliant_strength(key)
     end
   end
 

@@ -145,18 +145,11 @@ defmodule Lockspire.Protocol.Registration do
     if resolved_profile.fapi_2_0_security? do
       alg = atomize_alg(Map.get(metadata, "id_token_signed_response_alg"))
 
-      if alg not in [:ES256, :PS256] do
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :id_token_signed_response_alg,
-           reason: :incompatible_with_fapi_2_0
-         }}
-      else
-        with :ok <-
-               Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security) do
-          :ok
-        else
+      if alg in [:ES256, :PS256] do
+        case Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security) do
+          :ok ->
+            :ok
+
           {:error, reason}
           when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
             {:error,
@@ -166,6 +159,13 @@ defmodule Lockspire.Protocol.Registration do
                reason: reason
              }}
         end
+      else
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :id_token_signed_response_alg,
+           reason: :incompatible_with_fapi_2_0
+         }}
       end
     else
       :ok
@@ -302,7 +302,12 @@ defmodule Lockspire.Protocol.Registration do
 
   defp persist_client(metadata, %Resolved{} = resolved, iat_record, credentials, source) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-    iat_id = iat_record && Map.get(iat_record, :id)
+
+    iat_id =
+      case iat_record do
+        %{id: id} -> id
+        _ -> nil
+      end
 
     auth_method =
       atomize_auth_method(Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic"))
@@ -406,7 +411,11 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp emit_succeeded(%Client{} = client, iat_record, source) do
-    iat_id = iat_record && Map.get(iat_record, :id)
+    iat_id =
+      case iat_record do
+        %{id: id} -> id
+        _ -> nil
+      end
 
     Observability.emit(:dcr, :register, %{count: 1}, %{
       status: :success,

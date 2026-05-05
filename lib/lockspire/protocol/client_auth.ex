@@ -40,45 +40,56 @@ defmodule Lockspire.Protocol.ClientAuth do
   def supported_auth_methods, do: @supported_auth_methods
 
   defp parse_client_credentials(params, authorization) do
-    has_header? = present?(authorization)
-    body_client_id = normalize_optional_string(params["client_id"])
-    body_client_secret = normalize_optional_string(params["client_secret"])
-    client_assertion = normalize_optional_string(params["client_assertion"])
-    client_assertion_type = normalize_optional_string(params["client_assertion_type"])
+    auth_state = %{
+      has_header?: present?(authorization),
+      body_client_id: normalize_optional_string(params["client_id"]),
+      body_client_secret: normalize_optional_string(params["client_secret"]),
+      client_assertion: normalize_optional_string(params["client_assertion"]),
+      is_jwt_bearer?:
+        params["client_assertion_type"] ==
+          "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+      authorization: authorization
+    }
 
-    is_jwt_bearer? =
-      client_assertion_type == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+    evaluate_client_credentials(auth_state)
+  end
 
-    cond do
-      has_header? and (present?(body_client_secret) or present?(client_assertion)) ->
-        {:error,
-         invalid_client("Token endpoint authentication methods must not be mixed", :mixed_auth)}
+  defp evaluate_client_credentials(%{has_header?: true, body_client_secret: s})
+       when not is_nil(s), do: mixed_auth_error()
 
-      present?(body_client_secret) and present?(client_assertion) ->
-        {:error,
-         invalid_client("Token endpoint authentication methods must not be mixed", :mixed_auth)}
+  defp evaluate_client_credentials(%{has_header?: true, client_assertion: a}) when not is_nil(a),
+    do: mixed_auth_error()
 
-      has_header? ->
-        parse_basic_authorization(authorization)
+  defp evaluate_client_credentials(%{body_client_secret: s, client_assertion: a})
+       when not is_nil(s) and not is_nil(a), do: mixed_auth_error()
 
-      is_jwt_bearer? and present?(client_assertion) ->
-        case peek_jwt_client_id(client_assertion) do
-          {:ok, client_id} ->
-            {:ok, :private_key_jwt, client_id, client_assertion}
+  defp evaluate_client_credentials(%{has_header?: true, authorization: auth}),
+    do: parse_basic_authorization(auth)
 
-          :error ->
-            {:error, invalid_client("Malformed client_assertion", :invalid_client_assertion)}
-        end
-
-      present?(body_client_secret) and present?(body_client_id) ->
-        {:ok, :client_secret_post, body_client_id, body_client_secret}
-
-      present?(body_client_id) ->
-        {:ok, :none, body_client_id, nil}
-
-      true ->
-        {:error, invalid_client("Missing client authentication", :missing_client_auth)}
+  defp evaluate_client_credentials(%{is_jwt_bearer?: true, client_assertion: a})
+       when not is_nil(a) do
+    case peek_jwt_client_id(a) do
+      {:ok, client_id} -> {:ok, :private_key_jwt, client_id, a}
+      :error -> {:error, invalid_client("Malformed client_assertion", :invalid_client_assertion)}
     end
+  end
+
+  defp evaluate_client_credentials(%{body_client_id: id, body_client_secret: s})
+       when not is_nil(id) and not is_nil(s) do
+    {:ok, :client_secret_post, id, s}
+  end
+
+  defp evaluate_client_credentials(%{body_client_id: id}) when not is_nil(id) do
+    {:ok, :none, id, nil}
+  end
+
+  defp evaluate_client_credentials(_state) do
+    {:error, invalid_client("Missing client authentication", :missing_client_auth)}
+  end
+
+  defp mixed_auth_error do
+    {:error,
+     invalid_client("Token endpoint authentication methods must not be mixed", :mixed_auth)}
   end
 
   defp peek_jwt_client_id(assertion) do
