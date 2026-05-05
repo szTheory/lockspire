@@ -51,6 +51,14 @@ defmodule Lockspire.Admin.ServerPolicy do
     end
   end
 
+  @spec put_max_delegation_depth(integer()) ::
+          {:ok, ServerPolicy.t()} | {:error, %Ecto.Changeset{}} | {:error, term()}
+  def put_max_delegation_depth(depth) when is_integer(depth) do
+    Repository.update_server_policy(fn %ServerPolicy{} = current ->
+      %ServerPolicy{current | max_delegation_depth: depth}
+    end)
+  end
+
   @spec put_security_profile(atom() | String.t()) ::
           {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
   def put_security_profile(profile) do

@@ -67,6 +67,21 @@ defmodule Lockspire.Admin.ServerPolicyTest do
     assert bearer_policy.dpop_policy == :bearer
   end
 
+  test "put_max_delegation_depth/1 sets the depth" do
+    assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.put_max_delegation_depth(5)
+    assert policy.max_delegation_depth == 5
+  end
+
+  test "put_max_delegation_depth/1 enforces maximum depth of 5" do
+    assert {:error, %Ecto.Changeset{} = changeset} = ServerPolicy.put_max_delegation_depth(6)
+    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] = changeset.errors
+  end
+
+  test "put_max_delegation_depth/1 enforces minimum depth of 0" do
+    assert {:error, %Ecto.Changeset{} = changeset} = ServerPolicy.put_max_delegation_depth(-1)
+    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] = changeset.errors
+  end
+
   test "put_dpop_policy/1 rejects modes outside bearer and dpop" do
     assert {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: :inherit}]} =
              ServerPolicy.put_dpop_policy(:inherit)

@@ -333,6 +333,32 @@ defmodule Lockspire.Admin.ClientsTest do
            )
   end
 
+  test "update_client/2 accepts valid max_delegation_depth integers and string-integers" do
+    assert {:ok, client} =
+             Clients.update_client("admin-client", %{max_delegation_depth: 2})
+
+    assert client.max_delegation_depth == 2
+
+    assert {:ok, client} =
+             Clients.update_client("admin-client", %{max_delegation_depth: "3"})
+
+    assert client.max_delegation_depth == 3
+  end
+
+  test "update_client/2 rejects max_delegation_depth > 5" do
+    assert {:error, %Ecto.Changeset{} = changeset} =
+             Clients.update_client("admin-client", %{max_delegation_depth: 6})
+
+    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] = changeset.errors
+  end
+
+  test "update_client/2 rejects max_delegation_depth < 0" do
+    assert {:error, %Ecto.Changeset{} = changeset} =
+             Clients.update_client("admin-client", %{max_delegation_depth: -1})
+
+    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] = changeset.errors
+  end
+
   test "update_client/2 accepts only inherit, required, and optional for par_policy" do
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{

@@ -130,6 +130,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :active,
       :provenance
     ])
+    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
     |> validate_fapi_metadata()
     |> unique_constraint(:client_id)
   end
@@ -183,6 +184,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_scopes,
       :active
     ])
+    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
     |> validate_fapi_metadata()
   end
 

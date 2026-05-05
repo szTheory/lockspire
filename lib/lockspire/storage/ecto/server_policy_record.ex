@@ -68,6 +68,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :security_profile,
       :registration_policy
     ])
+    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
   end
 
   def to_domain(%__MODULE__{} = record) do
@@ -88,6 +89,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
         record.dcr_default_client_secret_lifetime_seconds,
       dcr_default_registration_access_token_lifetime_seconds:
         record.dcr_default_registration_access_token_lifetime_seconds,
+      max_delegation_depth: record.max_delegation_depth,
       inserted_at: record.inserted_at,
       updated_at: record.updated_at
     }

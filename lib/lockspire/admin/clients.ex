@@ -26,6 +26,7 @@ defmodule Lockspire.Admin.Clients do
     dpop_policy
     security_profile
     metadata
+    max_delegation_depth
   )a
   @immutable_fields ~w(
     client_id
@@ -416,6 +417,15 @@ defmodule Lockspire.Admin.Clients do
        when field in [:backchannel_logout_session_required, :frontchannel_logout_session_required] do
     normalize_boolean(value)
   end
+
+  defp normalize_mutable_field(:max_delegation_depth, value) when is_integer(value), do: value
+  defp normalize_mutable_field(:max_delegation_depth, value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, ""} -> int
+      _ -> value
+    end
+  end
+  defp normalize_mutable_field(:max_delegation_depth, _value), do: nil
 
   defp normalize_mutable_field(_field, value), do: normalize_string(value)
 
