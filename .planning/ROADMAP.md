@@ -55,7 +55,8 @@
   1. The `mix.exs` version is prepared for `1.0.0`.
   2. The CHANGELOG reflects the transition to 1.0.
   3. All release assets and documentation correctly present the 1.0 GA posture.
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 47-01-PLAN.md — Disable preview bumping, update version to 1.0.0, and upgrade documentation to GA posture
 
 ## Progress
 
@@ -63,6 +64,5 @@
 |-------|----------------|--------|-----------|
 | 44. API Stabilization & Typespecs | 0/2 | Not started | - |
 | 45. Observability & Operator Seams | 3/3 | Completed | 2026-05-04 |
-| 46. Documentation & Security Audit | 2/3 | In Progress | - |
-| 47. 1.0 GA Release Readiness | 0/0 | Not started | - |
- | - |
+| 46. Documentation & Security Audit | 3/3 | Completed | 2026-05-04 |
+| 47. 1.0 GA Release Readiness | 1/1 | Completed | 2026-05-05 |
