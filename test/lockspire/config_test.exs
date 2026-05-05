@@ -187,6 +187,26 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.Config.jar_max_age_seconds() == 300
   end
 
+  test "token_exchange_validator/0 returns DefaultDenyTokenExchangeValidator by default" do
+    original = Application.get_env(:lockspire, :token_exchange_validator)
+
+    on_exit(fn ->
+      if is_nil(original) do
+        Application.delete_env(:lockspire, :token_exchange_validator)
+      else
+        Application.put_env(:lockspire, :token_exchange_validator, original)
+      end
+    end)
+
+    # Default fallback
+    Application.delete_env(:lockspire, :token_exchange_validator)
+    assert Lockspire.Config.token_exchange_validator() == Lockspire.Host.DefaultDenyTokenExchangeValidator
+
+    # Configured
+    Application.put_env(:lockspire, :token_exchange_validator, MyCustomValidator)
+    assert Lockspire.Config.token_exchange_validator() == MyCustomValidator
+  end
+
   test "test resolver satisfies the host seam behaviour without macros" do
     assert {:ok, %{id: "account-123"}} =
              Lockspire.TestAccountResolver.resolve_current_account(%{}, %Lockspire.Host.Context{

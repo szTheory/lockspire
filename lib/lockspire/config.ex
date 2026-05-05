@@ -24,6 +24,14 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured token exchange validator module, or defaults to a secure deny-all implementation.
+  """
+  @spec token_exchange_validator() :: module()
+  def token_exchange_validator do
+    Application.get_env(@app, :token_exchange_validator, Lockspire.Host.DefaultDenyTokenExchangeValidator)
+  end
+
+  @doc """
   Returns the validated configured issuer string, or raises if invalid/missing.
   """
   @spec issuer!() :: String.t()
