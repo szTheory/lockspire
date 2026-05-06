@@ -138,6 +138,7 @@ defmodule Lockspire.MixProject do
         "README.md",
         "CHANGELOG.md",
         "SECURITY.md",
+        "docs/ecosystem-overview.md",
         "docs/getting-started.md",
         "docs/install-and-onboard.md",
         "docs/operator-admin.md",
@@ -149,6 +150,7 @@ defmodule Lockspire.MixProject do
       ],
       groups_for_extras: [
         Guides: [
+          "docs/ecosystem-overview.md",
           "docs/getting-started.md",
           "docs/install-and-onboard.md",
           "docs/operator-admin.md",
