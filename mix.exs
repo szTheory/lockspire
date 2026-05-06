@@ -43,6 +43,7 @@ defmodule Lockspire.MixProject do
       {:req, "~> 0.5"},
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
+      {:jcs, "~> 0.2"},
       {:opentelemetry_api, "~> 1.5"},
       {:phoenix_live_dashboard, "~> 0.8", optional: true},
       {:telemetry, "~> 1.3"},
@@ -52,7 +53,8 @@ defmodule Lockspire.MixProject do
       {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:stream_data, "~> 1.0", only: :test}
     ]
   end
 
@@ -141,6 +143,7 @@ defmodule Lockspire.MixProject do
         "docs/ecosystem-overview.md",
         "docs/getting-started.md",
         "docs/install-and-onboard.md",
+        "docs/rar-consent-host-guide.md",
         "docs/operator-admin.md",
         "docs/dynamic-registration.md",
         "docs/supported-surface.md",
@@ -153,6 +156,7 @@ defmodule Lockspire.MixProject do
           "docs/ecosystem-overview.md",
           "docs/getting-started.md",
           "docs/install-and-onboard.md",
+          "docs/rar-consent-host-guide.md",
           "docs/operator-admin.md",
           "docs/dynamic-registration.md",
           "docs/supported-surface.md",
