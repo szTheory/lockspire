@@ -16,6 +16,7 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    assert {:ok, %DomainServerPolicy{}} = Repository.put_server_policy(%DomainServerPolicy{id: 1})
     :ok
   end
 
@@ -215,6 +216,30 @@ defmodule Lockspire.Admin.ServerPolicyTest do
     assert persisted.registration_policy == :open
     assert persisted.dcr_allowed_scopes == ["openid"]
     assert persisted.dcr_allowed_grant_types == ["authorization_code"]
+  end
+
+  test "private_key_jwt_registration_truth/1 reports allowlist gate and default algorithms" do
+    policy = %DomainServerPolicy{
+      security_profile: :none,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic", "private_key_jwt"]
+    }
+
+    assert %{
+             self_registration_allowed?: true,
+             supported_assertion_signing_algorithms: ["RS256", "ES256", "PS256", "EdDSA"]
+           } = ServerPolicy.private_key_jwt_registration_truth(policy)
+  end
+
+  test "private_key_jwt_registration_truth/1 narrows algorithms under fapi and denies when absent" do
+    policy = %DomainServerPolicy{
+      security_profile: :fapi_2_0_security,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_post"]
+    }
+
+    assert %{
+             self_registration_allowed?: false,
+             supported_assertion_signing_algorithms: ["ES256", "PS256"]
+           } = ServerPolicy.private_key_jwt_registration_truth(policy)
   end
 
   # security_profile admin command tests (Phase 41 Task 3)

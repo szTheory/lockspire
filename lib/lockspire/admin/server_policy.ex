@@ -6,9 +6,14 @@ defmodule Lockspire.Admin.ServerPolicy do
   require Logger
 
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
 
   @type error_detail :: %{field: atom(), reason: atom(), detail: term()}
+  @type private_key_jwt_registration_truth :: %{
+          self_registration_allowed?: boolean(),
+          supported_assertion_signing_algorithms: [String.t()]
+        }
 
   @registration_policy_atoms [:disabled, :initial_access_token, :open]
   @registration_policy_strings ["disabled", "initial_access_token", "open"]
@@ -103,6 +108,16 @@ defmodule Lockspire.Admin.ServerPolicy do
   @spec get_dcr_policy() :: {:ok, ServerPolicy.t()} | {:error, term()}
   def get_dcr_policy do
     Repository.get_server_policy()
+  end
+
+  @spec private_key_jwt_registration_truth(ServerPolicy.t()) ::
+          private_key_jwt_registration_truth()
+  def private_key_jwt_registration_truth(%ServerPolicy{} = policy) do
+    %{
+      self_registration_allowed?: "private_key_jwt" in policy.dcr_allowed_token_endpoint_auth_methods,
+      supported_assertion_signing_algorithms:
+        SecurityProfile.allowed_signing_algorithms(policy.security_profile)
+    }
   end
 
   @doc """
