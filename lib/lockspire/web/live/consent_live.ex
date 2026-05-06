@@ -61,6 +61,18 @@ defmodule Lockspire.Web.ConsentLive do
         <% end %>
       </ul>
 
+      <%= if @authorization_details != [] do %>
+        <section class="lockspire-consent-rar">
+          <h2>authorization_details</h2>
+          <ul>
+            <%= for type <- @authorization_detail_types do %>
+              <li>{type}</li>
+            <% end %>
+          </ul>
+          <pre>{Jason.encode_to_iodata!(@authorization_details, pretty: true)}</pre>
+        </section>
+      <% end %>
+
       <p>
         Brand, copy, and product framing stay in the host app. Lockspire remains the authority
         for interaction validity and the final redirect.
@@ -95,6 +107,8 @@ defmodule Lockspire.Web.ConsentLive do
          client_name: client.name || interaction.client_id,
          client_id: interaction.client_id,
          requested_scopes: interaction.scopes_requested,
+         authorization_details: interaction.authorization_details,
+         authorization_detail_types: authorization_detail_types(interaction.authorization_details),
          subject_id: subject_context.subject_id,
          finalize_path: finalize_path(interaction.interaction_id),
          error: nil
@@ -235,5 +249,11 @@ defmodule Lockspire.Web.ConsentLive do
       consent_store: Repository,
       token_store: Repository
     ]
+  end
+
+  defp authorization_detail_types(authorization_details) do
+    authorization_details
+    |> Enum.map(&Map.get(&1, "type"))
+    |> Enum.reject(&is_nil/1)
   end
 end
