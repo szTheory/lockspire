@@ -323,9 +323,112 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
     end
   end
 
+  describe "FAPI-07: RAR remains bound to PAR and exact redirect matching (Phase 57)" do
+    test "direct /authorize with authorization_details is rejected when PAR is required", %{
+      client: client
+    } do
+      put_security_profile!(:fapi_2_0_security)
+      register_rar_validators(%{"payment_initiation" => Lockspire.Test.Rar.PassthroughValidator})
+
+      conn =
+        build_conn(:get, "/authorize", %{
+          "client_id" => client.client_id,
+          "response_type" => "code",
+          "redirect_uri" => "https://client.example.com/callback",
+          "scope" => "openid",
+          "authorization_details" => Jason.encode!([%{"type" => "payment_initiation"}]),
+          "state" => "phase43-rar-direct",
+          "nonce" => "phase43-rar-direct",
+          "code_challenge" => code_challenge("phase43-rar-direct"),
+          "code_challenge_method" => "S256"
+        })
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status in [302, 303]
+
+      query =
+        conn
+        |> get_resp_header("location")
+        |> List.first()
+        |> URI.parse()
+        |> Map.fetch!(:query)
+        |> URI.decode_query()
+
+      assert query["error"] == "invalid_request"
+      assert query["error_description"] == "request_uri from the PAR endpoint is required"
+      assert query["state"] == "phase43-rar-direct"
+    end
+
+    test "PAR-backed authorization_details succeeds with exact redirect matching", %{
+      client: client,
+      secret: secret
+    } do
+      put_security_profile!(:fapi_2_0_security)
+      register_rar_validators(%{"payment_initiation" => Lockspire.Test.Rar.PassthroughValidator})
+
+      par_conn =
+        build_conn(:post, "/par", %{
+          "client_id" => client.client_id,
+          "response_type" => "code",
+          "redirect_uri" => "https://client.example.com/callback",
+          "scope" => "openid",
+          "authorization_details" => Jason.encode!([%{"type" => "payment_initiation"}]),
+          "state" => "phase43-rar-par",
+          "nonce" => "phase43-rar-par",
+          "code_challenge" => code_challenge("phase43-rar-par"),
+          "code_challenge_method" => "S256"
+        })
+        |> put_req_header("authorization", basic_auth(client.client_id, secret))
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert par_conn.status == 201
+      request_uri = Jason.decode!(par_conn.resp_body)["request_uri"]
+
+      authorize_conn =
+        build_conn(:get, "/authorize", %{
+          "client_id" => client.client_id,
+          "request_uri" => request_uri
+        })
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert authorize_conn.status in [302, 303]
+
+      interaction_id =
+        authorize_conn
+        |> get_resp_header("location")
+        |> List.first()
+        |> URI.parse()
+        |> Map.fetch!(:path)
+        |> Path.basename()
+
+      complete_conn =
+        build_conn(:post, "/interactions/#{interaction_id}/complete", %{"decision" => "approve"})
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert complete_conn.status in [302, 303]
+
+      query =
+        complete_conn
+        |> get_resp_header("location")
+        |> List.first()
+        |> URI.parse()
+        |> Map.fetch!(:query)
+        |> URI.decode_query()
+
+      assert is_binary(query["code"])
+      assert query["state"] == "phase43-rar-par"
+      assert query["iss"] == @issuer
+    end
+  end
+
   defp put_security_profile!(profile) do
     {:ok, policy} = Repository.get_server_policy()
     Repository.put_server_policy(%{policy | security_profile: profile})
+  end
+
+  defp register_rar_validators(validators) do
+    Application.put_env(:lockspire, :rar_validators, validators)
+    on_exit(fn -> Application.delete_env(:lockspire, :rar_validators) end)
   end
 
   defp basic_auth(id, secret) do
