@@ -7,7 +7,7 @@
 ## Phases
 
 - [x] **Phase 54: Resource Indicators (RFC 8707)** - Implement targeted audience (`aud`) claims and resource parameter validation.
-- [ ] **Phase 55: RAR Protocol Intake** - Enable `authorization_details` support in PAR and Authorization pipelines.
+- [x] **Phase 55: RAR Protocol Intake** - Enable `authorization_details` support in PAR and Authorization pipelines. (completed 2026-05-06)
 - [ ] **Phase 56: RAR Domain Validation & Storage** - Deliver Ecto-based validation framework and durable storage for rich authorization.
 - [ ] **Phase 57: RAR Introspection & Verification** - Expose rich details to Resource Servers and verify end-to-end flows.
 - [ ] **Phase 58: Milestone Closure & Discovery** - Truthful discovery updates, executable docs, and final stabilization.
@@ -35,7 +35,7 @@
 **Plans**: 3 plans
 - [x] 55-01-PLAN.md — Database and Domain extension for RAR intake.
 - [x] 55-02-PLAN.md — Protocol validation, parsing, and PAR persistence logic.
-- [ ] 55-03-PLAN.md — End-to-end integration tests for RAR intake.
+- [x] 55-03-PLAN.md — End-to-end integration tests for RAR intake.
 
 ### Phase 56: RAR Domain Validation & Storage
 **Goal**: Host apps can define and validate custom RAR types using idiomatic Elixir patterns.
@@ -73,7 +73,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 54. Resource Indicators | 1/1 | Completed | 2026-05-05 |
-| 55. RAR Protocol Intake | 2/3 | In Progress|  |
+| 55. RAR Protocol Intake | 3/3 | Complete   | 2026-05-06 |
 | 56. RAR Domain Validation | 0/1 | Not started | - |
 | 57. RAR Introspection | 0/1 | Not started | - |
 | 58. Milestone Closure | 0/1 | Not started | - |
