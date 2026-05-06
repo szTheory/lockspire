@@ -15,6 +15,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
     field(:redirect_uri, :string)
     field(:scopes, {:array, :string}, default: [])
     field(:resources_requested, {:array, :string}, default: [])
+    field(:authorization_details, {:array, :map}, default: [])
     field(:prompt, {:array, :string}, default: [])
     field(:nonce, :string)
     field(:state, :string)
@@ -38,6 +39,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
       :redirect_uri,
       :scopes,
       :resources_requested,
+      :authorization_details,
       :prompt,
       :nonce,
       :state,
@@ -65,6 +67,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
       redirect_uri: record.redirect_uri,
       scopes: record.scopes,
       resources_requested: record.resources_requested,
+      authorization_details: record.authorization_details,
       prompt: record.prompt,
       nonce: record.nonce,
       state: record.state,
