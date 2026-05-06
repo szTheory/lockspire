@@ -3,7 +3,9 @@
 /.elixir_ls/
 /.DS_Store
 **/.DS_Store
+/.bg-shell/
 /doc/
+/.gsd/
 /priv/plts/
 /.planning/*
 !/.planning/PROJECT.md
@@ -13,6 +15,12 @@
 !/.planning/REQUIREMENTS.md
 !/.planning/EPIC.md
 !/.planning/milestones/
+!/.planning/phases/
+!/.planning/phases/*/*-SUMMARY.md
+/.planning/phases/*
+!/.planning/phases/*/
+/.planning/phases/*/*
+!/.planning/phases/*/*-SUMMARY.md
 /prompts/
 /lockspire-idea.md
 *.tar
