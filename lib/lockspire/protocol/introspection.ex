@@ -147,19 +147,28 @@ defmodule Lockspire.Protocol.Introspection do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp maybe_put_authorization_details(map, %Token{consent_grant_id: nil}, _request), do: map
-
-  defp maybe_put_authorization_details(map, %Token{consent_grant_id: consent_grant_id}, request) do
-    case consent_store(request).fetch_consent_grant(consent_grant_id) do
-      {:ok, %ConsentGrant{authorization_details: authorization_details}}
-      when is_list(authorization_details) and authorization_details != [] ->
-        Map.put(map, :authorization_details, authorization_details)
-
-      {:ok, _grant} ->
+  defp maybe_put_authorization_details(map, %Token{} = token, request) do
+    case Map.get(token, :consent_grant_id) do
+      nil ->
         map
 
-      {:error, _reason} ->
-        map
+      consent_grant_id ->
+        case consent_store(request).fetch_consent_grant(consent_grant_id) do
+          {:ok, %ConsentGrant{} = grant} ->
+            case Map.get(grant, :authorization_details) do
+              authorization_details when is_list(authorization_details) and authorization_details != [] ->
+                Map.put(map, :authorization_details, authorization_details)
+
+              _other ->
+                map
+            end
+
+          {:ok, _grant} ->
+            map
+
+          {:error, _reason} ->
+            map
+        end
     end
   end
 

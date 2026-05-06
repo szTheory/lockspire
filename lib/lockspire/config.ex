@@ -105,6 +105,16 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured RAR authorization detail types.
+  """
+  @spec rar_types_supported() :: [String.t()]
+  def rar_types_supported do
+    @app
+    |> Application.get_env(:rar_types_supported, [])
+    |> List.wrap()
+  end
+
+  @doc """
   Returns the security profile configuration.
   """
   @spec security_profile() :: :none | :fapi_2_0_security
