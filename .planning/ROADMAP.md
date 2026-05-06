@@ -73,7 +73,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 54. Resource Indicators | 1/1 | Completed | 2026-05-05 |
-| 55. RAR Protocol Intake | 3/3 | Complete   | 2026-05-06 |
+| 55. RAR Protocol Intake | 3/3 | Complete    | 2026-05-06 |
 | 56. RAR Domain Validation | 0/1 | Not started | - |
 | 57. RAR Introspection | 0/1 | Not started | - |
 | 58. Milestone Closure | 0/1 | Not started | - |

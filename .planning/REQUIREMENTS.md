@@ -40,7 +40,7 @@ This milestone focuses on raising real-client trust and providing high-leverage 
 | RES-01 | Phase 54 | Pending |
 | RES-02 | Phase 54 | Pending |
 | RES-03 | Phase 54 | Pending |
-| RAR-01 | Phase 55 | Pending |
+| RAR-01 | Phase 55 | Complete |
 | RAR-02 | Phase 56 | Pending |
 | RAR-03 | Phase 56 | Pending |
 | RAR-04 | Phase 57 | Pending |
