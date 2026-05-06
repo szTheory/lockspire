@@ -39,7 +39,8 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @static_methods ["none", "client_secret_basic", "client_secret_post"]
+  @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @introspection_methods ["client_secret_basic", "client_secret_post"]
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -89,6 +90,67 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
   test "published_token_endpoint_auth_methods_supported/0 reflects the static list when /token is mounted" do
     assert Discovery.published_token_endpoint_auth_methods_supported() == @static_methods
+  end
+
+  describe "openid_configuration/0 — endpoint auth metadata truth" do
+    test "publishes token and revocation auth metadata from the shared direct-client auth seam" do
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_methods_supported"] == @static_methods
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      assert config["revocation_endpoint_auth_methods_supported"] == @static_methods
+
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+    end
+
+    test "publishes narrower introspection auth metadata from current runtime behavior" do
+      config = Discovery.openid_configuration()
+
+      assert config["introspection_endpoint_auth_methods_supported"] == @introspection_methods
+      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+    end
+
+    test "omits revocation and introspection auth metadata when those routes are not mounted" do
+      Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
+
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_methods_supported"] == @static_methods
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      refute Map.has_key?(config, "revocation_endpoint_auth_methods_supported")
+      refute Map.has_key?(config, "revocation_endpoint_auth_signing_alg_values_supported")
+      refute Map.has_key?(config, "introspection_endpoint_auth_methods_supported")
+      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+    end
+
+    test "narrows published signing algorithms under the fapi 2.0 profile only where private_key_jwt is published" do
+      put_server_security_profile!(:fapi_2_0_security)
+
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+    end
   end
 
   test "openid_configuration/0 publishes the shipped device grant and device authorization endpoint truth" do
