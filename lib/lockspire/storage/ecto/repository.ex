@@ -7,6 +7,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   alias Lockspire.Audit.Event
   alias Lockspire.Config
+  alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.DeviceAuthorization
@@ -21,11 +22,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.UsedJti
   alias Lockspire.Security.Policy
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Storage.CibaAuthorizationStore
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.DeviceAuthorizationStore
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.CibaAuthorizationRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
@@ -54,6 +57,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour KeyStore
   @behaviour PushedAuthorizationRequestStore
   @behaviour DeviceAuthorizationStore
+  @behaviour CibaAuthorizationStore
   @behaviour DpopReplayStore
   @behaviour ServerPolicyStore
   @behaviour LogoutStore
@@ -492,6 +496,47 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> locked_device_authorization_query()
       |> repo().one()
       |> transition_device_authorization_record(expected_statuses, attrs)
+    end)
+  end
+
+  @impl CibaAuthorizationStore
+  def put_ciba_authorization(%CibaAuthorization{} = auth) do
+    %CibaAuthorizationRecord{}
+    |> CibaAuthorizationRecord.changeset(auth)
+    |> repo_insert()
+    |> map_one(&CibaAuthorizationRecord.to_domain/1)
+  end
+
+  @impl CibaAuthorizationStore
+  def fetch_ciba_authorization_by_auth_req_id_hash(auth_req_id_hash)
+      when is_binary(auth_req_id_hash) do
+    CibaAuthorizationRecord
+    |> where([authorization], authorization.auth_req_id_hash == ^auth_req_id_hash)
+    |> repo_one(sensitive: true)
+    |> then(fn record -> {:ok, maybe_map(record, &CibaAuthorizationRecord.to_domain/1)} end)
+  rescue
+    error -> {:error, error}
+  end
+
+  @impl CibaAuthorizationStore
+  def record_ciba_poll(auth_req_id_hash, client_id, now)
+      when is_binary(auth_req_id_hash) and is_binary(client_id) and is_struct(now, DateTime) do
+    transact(fn ->
+      auth_req_id_hash
+      |> locked_ciba_authorization_query()
+      |> repo_one(sensitive: true)
+      |> evaluate_ciba_poll(client_id, now)
+    end)
+  end
+
+  @impl CibaAuthorizationStore
+  def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs)
+      when is_binary(auth_req_id_hash) and is_list(expected_statuses) and is_map(attrs) do
+    transact(fn ->
+      auth_req_id_hash
+      |> locked_ciba_authorization_query()
+      |> repo().one()
+      |> transition_ciba_authorization_record(expected_statuses, attrs)
     end)
   end
 
@@ -1356,6 +1401,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> lock("FOR UPDATE")
   end
 
+  defp locked_ciba_authorization_query(auth_req_id_hash) do
+    CibaAuthorizationRecord
+    |> where([authorization], authorization.auth_req_id_hash == ^auth_req_id_hash)
+    |> lock("FOR UPDATE")
+  end
+
   defp locked_refresh_token_query(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
@@ -1402,6 +1453,27 @@ defmodule Lockspire.Storage.Ecto.Repository do
       )
       |> repo().update()
       |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+      |> unwrap_or_rollback()
+    else
+      repo().rollback(:invalid_state)
+    end
+  end
+
+  defp transition_ciba_authorization_record(nil, _expected_statuses, _attrs),
+    do: repo().rollback(:not_found)
+
+  defp transition_ciba_authorization_record(
+         %CibaAuthorizationRecord{} = record,
+         expected_statuses,
+         attrs
+       ) do
+    if record.status in expected_statuses do
+      record
+      |> CibaAuthorizationRecord.update_changeset(
+        Map.put(attrs, :updated_at, DateTime.utc_now())
+      )
+      |> repo().update()
+      |> map_one(&CibaAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
     else
       repo().rollback(:invalid_state)
@@ -1518,6 +1590,96 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(&device_poll_outcome(:pending, &1))
   end
 
+  defp evaluate_ciba_poll(nil, _client_id, _now) do
+    %{result: :invalid_grant}
+  end
+
+  defp evaluate_ciba_poll(
+         %CibaAuthorizationRecord{client_id: stored_client_id},
+         client_id,
+         _now
+       )
+       when stored_client_id != client_id do
+    %{result: :client_mismatch}
+  end
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :denied} = record, _client_id, _now),
+    do: ciba_poll_outcome(:denied, record)
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :expired} = record, _client_id, _now),
+    do: ciba_poll_outcome(:expired, record)
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :consumed} = record, _client_id, _now),
+    do: ciba_poll_outcome(:consumed, record)
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :approved} = record, _client_id, now) do
+    if DateTime.compare(record.expires_at, now) != :gt do
+      expire_ciba_authorization(record, now)
+    else
+      ciba_poll_outcome(:approved_ready, record)
+    end
+  end
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :pending} = record, _client_id, now) do
+    cond do
+      DateTime.compare(record.expires_at, now) != :gt ->
+        expire_ciba_authorization(record, now)
+
+      DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
+        slow_down_ciba_authorization(record, now)
+
+      true ->
+        continue_pending_ciba_authorization(record, now)
+    end
+  end
+
+  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: status}, client_id, _now) do
+    %{result: :invalid_grant, reason: {:unexpected_status, status, client_id}}
+  end
+
+  defp expire_ciba_authorization(record, now) do
+    record
+    |> CibaAuthorizationRecord.update_changeset(%{
+      status: :expired,
+      expired_at: now,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&CibaAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&ciba_poll_outcome(:expired, &1))
+  end
+
+  defp slow_down_ciba_authorization(record, _now) do
+    next_interval = record.effective_poll_interval_seconds + 5
+    next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
+
+    record
+    |> CibaAuthorizationRecord.update_changeset(%{
+      effective_poll_interval_seconds: next_interval,
+      next_poll_allowed_at: next_poll_allowed_at,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&CibaAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&ciba_poll_outcome(:slow_down, &1))
+  end
+
+  defp continue_pending_ciba_authorization(record, now) do
+    next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
+
+    record
+    |> CibaAuthorizationRecord.update_changeset(%{
+      next_poll_allowed_at: next_poll_allowed_at,
+      updated_at: DateTime.utc_now()
+    })
+    |> repo_update(sensitive: true)
+    |> map_one(&CibaAuthorizationRecord.to_domain/1)
+    |> unwrap_or_rollback()
+    |> then(&ciba_poll_outcome(:pending, &1))
+  end
+
   defp consume_device_authorization_record(nil, _client_id, _now),
     do: repo().rollback(:invalid_state)
 
@@ -1595,6 +1757,20 @@ defmodule Lockspire.Storage.Ecto.Repository do
       device_authorization: device_authorization,
       effective_poll_interval_seconds: device_authorization.effective_poll_interval_seconds,
       next_poll_allowed_at: device_authorization.next_poll_allowed_at
+    }
+  end
+
+  defp ciba_poll_outcome(result, %CibaAuthorizationRecord{} = record) do
+    result
+    |> ciba_poll_outcome(CibaAuthorizationRecord.to_domain(record))
+  end
+
+  defp ciba_poll_outcome(result, %CibaAuthorization{} = ciba_authorization) do
+    %{
+      result: result,
+      ciba_authorization: ciba_authorization,
+      effective_poll_interval_seconds: ciba_authorization.effective_poll_interval_seconds,
+      next_poll_allowed_at: ciba_authorization.next_poll_allowed_at
     }
   end
 

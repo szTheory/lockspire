@@ -5,7 +5,7 @@ defmodule Lockspire.Oban do
 
   use Oban, otp_app: :lockspire
 
-  @default_queues [logout_backchannel: 10]
+  @default_queues [logout_backchannel: 10, ciba_notification: 10]
 
   @spec runtime_config!() :: keyword()
   def runtime_config! do

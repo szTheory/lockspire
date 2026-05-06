@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.13 OpenID Connect CIBA (Shipped + archived: 2026-05-05)
+
+**Phases completed:** **3** (**51-53**), **8** plans, **7** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now includes full support for the OpenID Connect Client-Initiated Backchannel Authentication Flow (CIBA).
+
+**Key accomplishments:**
+- Implemented the `/bc-authorize` endpoint with robust validation and discovery metadata.
+- Added the CIBA token grant type to `/token` with durable polling state enforcement.
+- Support for Poll, Ping, and Push delivery modes using Oban for reliable, retriable webhook delivery.
+- Established the `Lockspire.Host` Behaviour for delegating out-of-band notifications and user consent to the host application.
+- Verified all flows with a comprehensive integration test suite covering asynchronous lifecycle events and background delivery.
+
+**Pre-close audit:** Handled by `$gsd-complete-milestone`.
+
+**Archives:** `milestones/v1.13-ROADMAP.md`, `milestones/v1.13-REQUIREMENTS.md` · **Git tag:** `milestone/v1.13`
+
+---
+
 ## v1.12 Token Exchange (RFC 8693) (Shipped + archived: 2026-05-05)
 
 **Phases completed:** **3** (**48-50**), **7** plans, **5** requirements closed.

@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   """
 
   alias Lockspire.Config
+  alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
   alias Lockspire.Domain.Interaction
@@ -16,6 +17,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.Ecto.Repository
 
   @access_token_ttl 3600
   @refresh_token_ttl 2_592_000
@@ -77,6 +79,9 @@ defmodule Lockspire.Protocol.TokenExchange do
       "urn:ietf:params:oauth:grant-type:device_code" ->
         exchange_device_code(request)
 
+      "urn:openid:params:grant-type:ciba" ->
+        exchange_ciba(request)
+
       "urn:ietf:params:oauth:grant-type:token-exchange" ->
         exchange_rfc8693(request)
 
@@ -85,10 +90,24 @@ defmodule Lockspire.Protocol.TokenExchange do
          oauth_error(
            400,
            "unsupported_grant_type",
-           "Only grant_type=authorization_code, grant_type=refresh_token, grant_type=urn:ietf:params:oauth:grant-type:device_code, and grant_type=urn:ietf:params:oauth:grant-type:token-exchange are supported",
+           "Only grant_type=authorization_code, grant_type=refresh_token, grant_type=urn:ietf:params:oauth:grant-type:device_code, grant_type=urn:openid:params:grant-type:ciba, and grant_type=urn:ietf:params:oauth:grant-type:token-exchange are supported",
            :unsupported_grant_type
          )}
     end
+  end
+
+  @doc """
+  Issues tokens for a CIBA authorization directly.
+  Used by the Push delivery mode worker.
+  """
+  @spec issue_ciba_tokens(Client.t(), CibaAuthorization.t(), map(), map()) :: result()
+  def issue_ciba_tokens(
+        %Client{} = client,
+        %CibaAuthorization{} = ciba_authorization,
+        issuance_context,
+        request
+      ) do
+    redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
   end
 
   @spec exchange_authorization_code(map()) :: result()
@@ -170,6 +189,24 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  defp exchange_ciba(request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
+
+    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
+         {:ok, %CibaAuthorization{} = ciba_authorization} <-
+           fetch_ciba_authorization_for_exchange(params, client, request),
+         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
+         {:ok, %Success{} = success} <-
+           redeem_ciba_authorization(client, ciba_authorization, issuance_context, request) do
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        emit_failure(error, params, request)
+        {:error, error}
+    end
+  end
+
   defp exchange_rfc8693(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
@@ -236,6 +273,167 @@ defmodule Lockspire.Protocol.TokenExchange do
           other
       end
     end
+  end
+
+  defp fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
+    with {:ok, auth_req_id} <- fetch_presented_auth_req_id(params),
+         {:ok, poll_outcome} <- record_ciba_poll(auth_req_id, client, request) do
+      case map_ciba_poll_outcome(poll_outcome, client) do
+        {:error, %Error{} = error, %CibaAuthorization{} = ciba_authorization,
+         %Client{} = audit_client} ->
+          maybe_append_failure_audit(error, audit_client, ciba_authorization, request)
+          {:error, error}
+
+        other ->
+          other
+      end
+    end
+  end
+
+  defp fetch_presented_auth_req_id(params) do
+    case normalize_optional_string(params["auth_req_id"]) do
+      auth_req_id when is_binary(auth_req_id) ->
+        {:ok, auth_req_id}
+
+      _other ->
+        {:error, invalid_grant("auth_req_id is required", :missing_auth_req_id)}
+    end
+  end
+
+  defp record_ciba_poll(auth_req_id, %Client{} = client, request) do
+    auth_req_id_hash = Policy.hash_token(auth_req_id)
+
+    case ciba_authorization_store(request).record_ciba_poll(
+           auth_req_id_hash,
+           client.client_id,
+           now(request)
+         ) do
+      {:ok, %{} = outcome} ->
+        {:ok, outcome}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to evaluate CIBA polling state",
+           :ciba_authorization_lookup_failed
+         )}
+    end
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :approved_ready,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         _client
+       ),
+       do: {:ok, ciba_authorization}
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :pending,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     oauth_error(
+       400,
+       "authorization_pending",
+       "The CIBA authorization is still pending approval",
+       :ciba_authorization_pending
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :slow_down,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     oauth_error(
+       400,
+       "slow_down",
+       "The client is polling too quickly",
+       :ciba_authorization_slow_down
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :denied,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     oauth_error(
+       400,
+       "access_denied",
+       "The CIBA authorization was denied",
+       :ciba_authorization_denied
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :expired,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     oauth_error(
+       400,
+       "expired_token",
+       "The CIBA authorization has expired",
+       :ciba_authorization_expired
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :client_mismatch,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization is invalid for this client",
+       :ciba_authorization_client_mismatch
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(%{result: :client_mismatch}, _client) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization is invalid for this client",
+       :ciba_authorization_client_mismatch
+     )}
+  end
+
+  defp map_ciba_poll_outcome(
+         %{
+           result: :consumed,
+           ciba_authorization: %CibaAuthorization{} = ciba_authorization
+         },
+         %Client{} = client
+       ) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization has already been redeemed",
+       :ciba_authorization_consumed
+     ), ciba_authorization, client}
+  end
+
+  defp map_ciba_poll_outcome(%{result: :invalid_grant}, _client) do
+    {:error,
+     invalid_grant("The CIBA authorization is invalid", :ciba_authorization_not_found)}
   end
 
   defp fetch_presented_device_code(params) do
@@ -535,6 +733,180 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  defp redeem_ciba_authorization(
+         %Client{} = client,
+         %CibaAuthorization{} = ciba_authorization,
+         issuance_context,
+         request
+       ) do
+    with {:ok, %Token{} = ciba_grant} <- build_ciba_grant(ciba_authorization),
+         %Success{} = success <-
+           redeem_ciba_grant(
+             client,
+             ciba_grant,
+             ciba_authorization,
+             issuance_context,
+             request
+           ) do
+      emit_success(client, ciba_authorization, success)
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        maybe_append_failure_audit(error, client, ciba_authorization, request)
+        {:error, error}
+
+      {:error, reason} ->
+        {:error, reason}
+
+      other ->
+        {:error, other}
+    end
+  end
+
+  defp build_ciba_grant(%CibaAuthorization{} = ciba_authorization) do
+    if is_binary(ciba_authorization.subject_id) do
+      {:ok,
+       %Token{
+         token_hash: ciba_authorization.auth_req_id_hash,
+         token_type: :authorization_code,
+         client_id: ciba_authorization.client_id,
+         account_id: ciba_authorization.subject_id,
+         interaction_id: nil,
+         scopes: ciba_authorization.scopes,
+         audience: [],
+         issued_at: ciba_authorization.approved_at,
+         expires_at: ciba_authorization.expires_at
+       }}
+    else
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Approved CIBA authorization is missing a bound subject",
+         :ciba_authorization_subject_missing
+       )}
+    end
+  end
+
+  defp redeem_ciba_grant(
+         %Client{} = client,
+         %Token{} = ciba_grant,
+         %CibaAuthorization{} = ciba_authorization,
+         issuance_context,
+         request
+       ) do
+    issued_at = now(request)
+    formatted_refresh_token = maybe_format_refresh_token(client, ciba_grant, request)
+
+    {access_token, raw_access_token} =
+      build_access_token(
+        client,
+        ciba_grant,
+        issued_at,
+        formatted_refresh_token,
+        issuance_context,
+        request
+      )
+
+    case persist_ciba_authorization_grant(
+           ciba_authorization,
+           issued_at,
+           access_token,
+           ciba_grant,
+           formatted_refresh_token,
+           issuance_context,
+           request
+         ) do
+      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+        build_success_response(
+          client,
+          ciba_grant,
+          persisted_access_token,
+          raw_access_token,
+          issuance_context,
+          issued_at,
+          Map.get(persisted_grant, :refresh_token_raw),
+          request
+        )
+
+      {:error, :invalid_state} ->
+        {:error,
+         invalid_grant(
+           "The CIBA authorization has already been redeemed",
+           :ciba_authorization_consumed
+         )}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to redeem CIBA authorization",
+           :ciba_authorization_redemption_failed
+         )}
+    end
+  end
+
+  defp persist_ciba_authorization_grant(
+         %CibaAuthorization{} = ciba_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = ciba_grant,
+         formatted_refresh_token,
+         issuance_context,
+         request
+       ) do
+    refresh_token = if formatted_refresh_token do
+      %Token{
+        token_hash: formatted_refresh_token.token_hash,
+        token_type: :refresh_token,
+        family_id: formatted_refresh_token.token_hash,
+        generation: 0,
+        client_id: ciba_grant.client_id,
+        account_id: ciba_grant.account_id,
+        interaction_id: ciba_grant.interaction_id,
+        scopes: ciba_grant.scopes,
+        audience: ciba_grant.audience,
+        cnf: issuance_context.cnf,
+        issued_at: issued_at,
+        expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+      }
+    else
+      nil
+    end
+
+    audit_event =
+      ciba_redemption_audit_event(client_actor(ciba_grant.client_id), ciba_authorization)
+
+    transact_with_audit_event(token_store(request), audit_event, fn ->
+      with {:ok, %CibaAuthorization{}} <-
+             ciba_authorization_store(request).transition_ciba_authorization(
+               ciba_authorization.auth_req_id_hash,
+               [:approved],
+               %{status: :consumed, consumed_at: issued_at}
+             ),
+           {:ok, %Token{} = persisted_access_token} <-
+             token_store(request).store_token(access_token),
+           {:ok, persisted_refresh_token} <- maybe_store_token(token_store(request), refresh_token) do
+        %{
+          access_token: persisted_access_token,
+          refresh_token: persisted_refresh_token,
+          refresh_token_raw: if(formatted_refresh_token, do: formatted_refresh_token.token)
+        }
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> case do
+      {:ok, %{} = result} -> {:ok, result}
+      {:error, _reason} = error -> error
+      %{} = result -> {:ok, result}
+    end
+  end
+
+  defp maybe_store_token(_store, nil), do: {:ok, nil}
+  defp maybe_store_token(store, token), do: store.store_token(token)
+
   defp build_device_grant(%DeviceAuthorizationState{} = device_authorization) do
     if is_binary(device_authorization.subject_id) do
       {:ok,
@@ -818,6 +1190,43 @@ defmodule Lockspire.Protocol.TokenExchange do
     emit_device_authorization_success(client, device_authorization)
   end
 
+  defp emit_success(
+         %Client{} = client,
+         %CibaAuthorization{} = ciba_authorization,
+         %Success{refresh_token: refresh_token}
+       )
+       when is_binary(refresh_token) do
+    emit_ciba_authorization_success(client, ciba_authorization)
+
+    Observability.emit(:refresh_token, :issued, %{}, %{
+      client_id: client.client_id,
+      subject_id: ciba_authorization.subject_id
+    })
+  end
+
+  defp emit_success(
+         %Client{} = client,
+         %CibaAuthorization{} = ciba_authorization,
+         %Success{}
+       ) do
+    emit_ciba_authorization_success(client, ciba_authorization)
+  end
+
+  defp emit_ciba_authorization_success(
+         %Client{} = client,
+         %CibaAuthorization{} = ciba_authorization
+       ) do
+    metadata = %{
+      client_id: client.client_id,
+      subject_id: ciba_authorization.subject_id,
+      ciba_authorization_id: ciba_authorization.id,
+      reason_code: :ciba_authorization_redeemed,
+      token_type: :access_token
+    }
+
+    Observability.emit(:token, :issued, %{}, metadata)
+  end
+
   defp emit_device_authorization_success(
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization
@@ -892,21 +1301,24 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp client_store(request),
-    do: Keyword.get(request_options(request), :client_store, Config.repo!())
+    do: Keyword.get(request_options(request), :client_store, Repository)
 
   defp client_auth_options(request), do: [client_store: client_store(request)]
 
   defp token_store(request),
-    do: Keyword.get(request_options(request), :token_store, Config.repo!())
+    do: Keyword.get(request_options(request), :token_store, Repository)
 
   defp device_authorization_store(request),
-    do: Keyword.get(request_options(request), :device_authorization_store, Config.repo!())
+    do: Keyword.get(request_options(request), :device_authorization_store, Repository)
+
+  defp ciba_authorization_store(request),
+    do: Keyword.get(request_options(request), :ciba_authorization_store, Repository)
 
   defp interaction_store(request),
-    do: Keyword.get(request_options(request), :interaction_store, Config.repo!())
+    do: Keyword.get(request_options(request), :interaction_store, Repository)
 
   defp key_store(request),
-    do: Keyword.get(request_options(request), :key_store, Config.repo!())
+    do: Keyword.get(request_options(request), :key_store, Repository)
 
   defp now(request),
     do:
@@ -1164,6 +1576,19 @@ defmodule Lockspire.Protocol.TokenExchange do
     :ok
   end
 
+  defp maybe_append_failure_audit(
+         %Error{reason_code: reason_code},
+         %Client{} = client,
+         %CibaAuthorization{} = ciba_authorization,
+         request
+       )
+       when reason_code in [:ciba_authorization_client_mismatch, :ciba_authorization_consumed] do
+    ciba_replay_audit_event(client_actor(client.client_id), ciba_authorization, reason_code)
+    |> then(&append_audit_event(token_store(request), &1))
+
+    :ok
+  end
+
   defp maybe_append_failure_audit(_error, _client, _authorization_code, _request), do: :ok
 
   defp load_authorization_code(request, code_hash) do
@@ -1251,6 +1676,30 @@ defmodule Lockspire.Protocol.TokenExchange do
     )
   end
 
+  defp ciba_redemption_audit_event(actor, %CibaAuthorization{} = ciba_authorization) do
+    ciba_audit_event(
+      :ciba_authorization_redeemed,
+      :succeeded,
+      :ciba_authorization_redeemed,
+      actor,
+      ciba_authorization
+    )
+  end
+
+  defp ciba_replay_audit_event(
+         actor,
+         %CibaAuthorization{} = ciba_authorization,
+         reason_code
+       ) do
+    ciba_audit_event(
+      :ciba_authorization_replay_detected,
+      :denied,
+      reason_code,
+      actor,
+      ciba_authorization
+    )
+  end
+
   defp audit_event(action, outcome, reason_code, actor, %Token{} = authorization_code) do
     %{
       action: action,
@@ -1289,6 +1738,30 @@ defmodule Lockspire.Protocol.TokenExchange do
         client_id: device_authorization.client_id,
         subject_id: device_authorization.subject_id,
         verification_handle: device_authorization.verification_handle
+      }
+    }
+  end
+
+  defp ciba_audit_event(
+         action,
+         outcome,
+         reason_code,
+         actor,
+         %CibaAuthorization{} = ciba_authorization
+       ) do
+    %{
+      action: action,
+      outcome: outcome,
+      reason_code: reason_code,
+      actor: actor,
+      resource: %{
+        type: :ciba_authorization,
+        id: to_string(ciba_authorization.id || ciba_authorization.auth_req_id_hash)
+      },
+      metadata: %{
+        client_id: ciba_authorization.client_id,
+        subject_id: ciba_authorization.subject_id,
+        auth_req_id_hash: ciba_authorization.auth_req_id_hash
       }
     }
   end

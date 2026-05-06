@@ -66,6 +66,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:initial_access_token_id, :integer)
     field(:client_id_issued_at, :utc_datetime_usec)
     field(:client_secret_expires_at, :utc_datetime_usec)
+    field(:backchannel_user_code_parameter, :boolean, default: false)
+    field(:backchannel_token_delivery_mode, Ecto.Enum, values: [:poll, :ping, :push], default: :poll)
+    field(:backchannel_client_notification_endpoint, :string)
     field(:max_delegation_depth, :integer)
 
     timestamps()
@@ -115,6 +118,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :initial_access_token_id,
       :client_id_issued_at,
       :client_secret_expires_at,
+      :backchannel_user_code_parameter,
+      :backchannel_token_delivery_mode,
+      :backchannel_client_notification_endpoint,
       :max_delegation_depth
     ])
     |> validate_required([
@@ -177,6 +183,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :disabled_by,
       :client_secret_hash,
       :last_secret_rotated_at,
+      :backchannel_user_code_parameter,
+      :backchannel_token_delivery_mode,
+      :backchannel_client_notification_endpoint,
       :max_delegation_depth
     ])
     |> validate_required([
@@ -247,6 +256,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       initial_access_token_id: record.initial_access_token_id,
       client_id_issued_at: record.client_id_issued_at,
       client_secret_expires_at: record.client_secret_expires_at,
+      backchannel_user_code_parameter: record.backchannel_user_code_parameter,
+      backchannel_token_delivery_mode: record.backchannel_token_delivery_mode,
+      backchannel_client_notification_endpoint: record.backchannel_client_notification_endpoint,
       max_delegation_depth: record.max_delegation_depth,
       inserted_at: record.inserted_at,
       updated_at: record.updated_at

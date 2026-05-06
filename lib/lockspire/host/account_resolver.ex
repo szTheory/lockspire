@@ -23,7 +23,17 @@ defmodule Lockspire.Host.AccountResolver do
   @callback redirect_for_login(conn_or_socket :: connection(), context()) ::
               InteractionResult.t()
 
-  @optional_callbacks [redirect_for_logout: 2]
+  @doc """
+  Verifies the CIBA user_code (PIN/password) provided by the client.
+  """
+  @callback verify_backchannel_user_code(
+              subject_id :: String.t(),
+              user_code :: String.t(),
+              context()
+            ) ::
+              :ok | {:error, :invalid_user_code | term()}
+
+  @optional_callbacks [redirect_for_logout: 2, verify_backchannel_user_code: 3]
   @callback redirect_for_logout(conn_or_socket :: connection(), context()) ::
               InteractionResult.t()
 end

@@ -24,6 +24,14 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured backchannel notification module, or nil if not set.
+  """
+  @spec backchannel_notification() :: module() | nil
+  def backchannel_notification do
+    Application.get_env(@app, :backchannel_notification)
+  end
+
+  @doc """
   Returns the configured token exchange validator module, or defaults to a delegation validator.
   """
   @spec token_exchange_validator() :: module()

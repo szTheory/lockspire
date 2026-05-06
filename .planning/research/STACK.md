@@ -1,33 +1,33 @@
-# Technology Stack
+# Technology Stack: CIBA implementation
 
-**Project:** Lockspire Token Exchange (RFC 8693)
-**Researched:** 2026-05-XX
+**Project:** Lockspire
+**Researched:** 2026-05-05
 
 ## Recommended Stack
 
 ### Core Framework
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Elixir | 1.14+ | Host Language | Core runtime for Lockspire. |
-| Phoenix | 1.7+ | Web Framework | Request/Response handling for the `/oauth/token` endpoint. |
-| JOSE / Joken | Current | JWT Manipulation | Required for decoding `subject_token`/`actor_token` and minting new tokens containing the `act` (actor) claims. |
+| Phoenix/Elixir | ~> 1.7 | HTTP Endpoints & Concurrency | The existing Lockspire foundation. Its actor model is perfect for managing asynchronous CIBA states. |
 
-### Supporting Standards (RFCs)
-| Standard | Purpose | When to Use |
-|----------|---------|-------------|
-| RFC 8693 | OAuth 2.0 Token Exchange | The primary specification for this milestone. |
-| RFC 7519 | JSON Web Token (JWT) | For standardizing the `urn:ietf:params:oauth:token-type:jwt` format exchanged in requests. |
+### Background Processing
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Oban | ~> 2.15 | Ping/Push Delivery | For Ping and Push CIBA modes, Lockspire must send HTTP requests to the client's notification endpoint. Oban provides durable queues, retries, and backoff out-of-the-box. |
+
+### Supporting Libraries
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| Joken/JOSE | ~> 2.0 | JWT Parsing/Signing | Used to validate the signed `request` parameter (if supported) and to issue the `login_hint_token` or `id_token` containing the `auth_req_id` claim in Push mode. |
+| Phoenix.PubSub | ~> 2.1 | Internal Signaling | (Optional) Can be used to wake up polling processes or notify LiveViews when a CIBA request transitions to a granted state. |
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Policy Engine | **Host App Behaviour** (`Lockspire.TokenExchangeValidator`) | Built-in OPA (Open Policy Agent) integration | Lockspire aims to be an embedded Elixir library, not a standalone service. Relying on host-app Elixir code allows developers to write idiomatic Elixir or integrate their own policy tools (including OPA if they choose). |
-
-## Installation
-
-No new installation dependencies are anticipated beyond the existing Lockspire core stack. The implementation will extend existing `Plug` pipelines and token minting modules.
+| Webhook Delivery | Oban | Task.Supervisor | Raw Tasks lack durability across node restarts and do not provide automatic exponential backoff for failing Ping/Push client endpoints. |
+| DB Polling | Registry/PubSub | Sleep Loops | For Poll mode, relying purely on DB queries via `Process.sleep` under heavy load can exhaust connections. Event-driven signaling via PubSub is more efficient in Elixir. |
 
 ## Sources
 
-- [RFC 8693: OAuth 2.0 Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693) (HIGH confidence)
+- CIBA Core 1.0 Specification: https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html

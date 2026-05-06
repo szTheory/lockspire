@@ -1,70 +1,78 @@
-# Architecture Patterns
+# Architecture Patterns: CIBA
 
-**Domain:** Token Exchange (RFC 8693) for Lockspire
-**Researched:** 2026-05-XX
+**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
+**Researched:** 2026-05-05
 
 ## Recommended Architecture
 
-Token exchange fundamentally bridges the gap between **Cryptographic Protocol Validation** and **Domain Business Logic**.
+CIBA in Lockspire requires a strict decoupling of the protocol state machine from the out-of-band communication channel, leveraging Elixir Behaviours and Oban for asynchronous operations.
 
 ### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| `Lockspire.Web.TokenEndpoint` | Parses the `grant_type=...token-exchange` payload. Validates token type URIs. | `Lockspire.Protocol.TokenExchange` |
-| `Lockspire.Protocol.TokenExchange` | Orchestrates the exchange. Cryptographically verifies the `subject_token` and `actor_token`. Constructs the context. | `HostApp.TokenExchangeValidator` (via Behaviour) |
-| `Lockspire.TokenExchangeValidator` (Behaviour) | **Host-defined module.** Evaluates business rules: "Is Client X allowed to impersonate User Y for Service Z?" | Host App Database / Domain Context |
-| `Lockspire.TokenMinter` | Generates the final JWT, embedding new scopes, audiences, and `act` (actor) claims based on host approval. | `Lockspire.Protocol.TokenExchange` |
+| `Lockspire.Web.CIBAController` | Handles POST to `/bc-authorize`. Validates hints, scopes, and client auth. | Ecto, `Lockspire.Host` |
+| `Lockspire.Domain.CIBARequest` | Database schema storing `auth_req_id`, expiration, requested scopes, and status (`pending`, `granted`, `denied`). | `Lockspire.Web.TokenController` |
+| `Lockspire.Host` (Behaviour) | Exposes `ciba_notify/1` callback. The Host app implements this to trigger SMS/Push to the end-user. | External Notification Services (FCM/APNs) |
+| `Lockspire.Workers.CIBADelivery` | Oban worker responsible for HTTP POSTs to the client's notification endpoint in Ping/Push modes. | External RPs |
 
 ### Data Flow
 
-1. **Request:** Client calls `/oauth/token` with `grant_type=...token-exchange`, `subject_token=abc`, and `requested_token_type=...jwt`.
-2. **Verification:** Lockspire decrypts/verifies `subject_token` to ensure it is valid, unexpired, and issued by this server.
-3. **Delegation to Host:** Lockspire builds a struct (e.g., `Lockspire.TokenExchange.Context`) containing the validated original token claims, the requesting client ID, requested scopes, and requested audience.
-4. **Host Policy Execution:** Lockspire calls `HostApp.Validator.validate_exchange(context)`.
-5. **Host Decision:** The host app returns `{:ok, %{scopes: [...], aud: [...], act: %{...}}}` or `{:error, :unauthorized}`.
-6. **Token Issuance:** If `:ok`, Lockspire mints the new token with the approved constraints and returns it in the RFC 8693 response format.
+**1. Initiation (Poll Mode):**
+- Client POSTs to `/bc-authorize` with `login_hint`.
+- Lockspire validates request and inserts `CIBARequest` into DB.
+- Lockspire asynchronously calls `Lockspire.Host.ciba_notify(request_details)`.
+- Lockspire synchronously returns `auth_req_id` and `expires_in` to the Client.
+
+**2. Out-of-Band Consent:**
+- Host app receives `ciba_notify` and sends a push notification to the user's phone.
+- User opens the Host app on their phone and clicks "Approve".
+- Host app calls `Lockspire.CIBA.grant_consent(auth_req_id, account_id)`.
+- Lockspire updates the `CIBARequest` status to `granted`.
+
+**3. Token Exchange (Poll Mode):**
+- Client polls `/token` with `grant_type=urn:openid:params:grant-type:ciba`.
+- If status is `pending`, Lockspire returns `authorization_pending`.
+- Once status is `granted`, Lockspire issues Access/ID Tokens and deletes/marks the `CIBARequest` as consumed.
+
+**4. Ping/Push Delivery (Optional):**
+- Upon the Host calling `grant_consent`, if the client requested Ping/Push, Lockspire enqueues an Oban job (`Lockspire.Workers.CIBADelivery`).
+- The worker executes and securely POSTs the notification or tokens to the RP.
 
 ## Patterns to Follow
 
-### Pattern 1: Explicit Host-Driven Policy (The Elixir Behaviour Pattern)
-**What:** Define a clear Elixir Behaviour that host applications must implement to govern token exchanges.
-**When:** Always for token exchange.
+### Pattern 1: Oban for Webhook Delivery
+**What:** Using Oban for guaranteed delivery of Ping/Push notifications.
+**When:** Implementing the Ping or Push delivery modes.
 **Example:**
-\`\`\`elixir
-defmodule Lockspire.TokenExchangeValidator do
-  @callback validate_exchange(context :: Lockspire.TokenExchange.Context.t()) :: 
-    {:ok, modifications :: map()} | {:error, reason :: atom()}
+```elixir
+def grant_consent(auth_req_id, account_id) do
+  # Update DB
+  request = Repo.get_by!(CIBARequest, auth_req_id: auth_req_id)
+  
+  if request.delivery_mode in [:ping, :push] do
+    %{auth_req_id: request.auth_req_id, mode: request.delivery_mode}
+    |> Lockspire.Workers.CIBADelivery.new()
+    |> Oban.insert()
+  end
 end
-\`\`\`
-
-### Pattern 2: Delegation over Impersonation
-**What:** When a service needs to call another service on behalf of a user, use the `act` claim to preserve the identity of the calling service.
-**When:** Whenever the architecture resembles a service mesh or API gateway.
-**Example:**
-\`\`\`json
-{
-  "sub": "user_123",
-  "aud": "backend_billing_service",
-  "act": {
-    "sub": "api_gateway_client"
-  }
-}
-\`\`\`
+```
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Implicit Upscoping
-**What:** Automatically granting scopes or audiences requested by the client that were not present in the original `subject_token` without host approval.
-**Why bad:** Leads directly to privilege escalation where a compromised low-tier service can request an admin-level token.
-**Instead:** Default strictly to **downscoping** (intersection of original scopes and requested scopes). Require the `TokenExchangeValidator` to explicitly return `{:ok, %{expanded_scopes: [...]}}` if upscoping is truly intended.
+### Anti-Pattern 1: Synchronous Notification Delivery
+**What:** Blocking the `/bc-authorize` endpoint response while waiting for the Host app to send an SMS or Push notification.
+**Why bad:** The CD (Consumption Device) will experience timeouts. The spec requires immediate return of the `auth_req_id`.
+**Instead:** The Host callback (`ciba_notify`) must be fired asynchronously, or the Host app must implement it in a non-blocking way (e.g., casting a GenServer or queuing its own Oban job). Lockspire should enforce or heavily document this expectation.
 
 ## Scalability Considerations
 
-| Concern | Approach |
-|---------|----------|
-| Token Introspection Load | Because exchanged tokens are typically short-lived and used rapidly by microservices, rely on stateless JWT validation rather than hitting the database for every hop, unless strictly revoked. |
-| Exchange Latency | Ensure the `validate_exchange/1` callback is highly optimized by the host app (e.g., using ETS for policy caching if necessary). |
+| Concern | At 100 users | At 10K users | At 1M users |
+|---------|--------------|--------------|-------------|
+| DB Polling | Simple indexed queries on `auth_req_id` are sufficient. | Standard database load. | High frequency polling could cause DB strain. Consider adding Phoenix.PubSub to notify the token endpoint polling process immediately when consent is granted, reducing empty DB queries. |
+| Webhook Retries | Standard Oban configuration. | Moderate queue sizes. | Requires dedicated Oban queues for external webhooks to prevent slow RP endpoints from blocking internal Lockspire jobs. |
 
 ## Sources
-- [RFC 8693 Section 2 & 4](https://datatracker.ietf.org/doc/html/rfc8693) (HIGH confidence)
+
+- Elixir/Oban Best Practices
+- CIBA Core 1.0 Specification

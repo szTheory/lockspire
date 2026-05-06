@@ -16,7 +16,8 @@ defmodule Lockspire.Protocol.Discovery do
     "userinfo_endpoint" => "/userinfo",
     "jwks_uri" => "/jwks",
     "revocation_endpoint" => "/revoke",
-    "introspection_endpoint" => "/introspect"
+    "introspection_endpoint" => "/introspect",
+    "backchannel_authentication_endpoint" => "/bc-authorize"
   }
 
   @response_types_supported ["code"]
@@ -24,7 +25,8 @@ defmodule Lockspire.Protocol.Discovery do
   @grant_types_supported [
     "authorization_code",
     "refresh_token",
-    "urn:ietf:params:oauth:grant-type:device_code"
+    "urn:ietf:params:oauth:grant-type:device_code",
+    "urn:openid:params:grant-type:ciba"
   ]
   @token_endpoint_auth_methods_supported ["none", "client_secret_basic", "client_secret_post"]
   @code_challenge_methods_supported ["S256"]
@@ -90,9 +92,21 @@ defmodule Lockspire.Protocol.Discovery do
     }
     |> Map.merge(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
+    |> maybe_put_ciba_metadata(endpoint_metadata)
     |> put_bcl_fcl_metadata()
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
+  end
+
+  defp maybe_put_ciba_metadata(metadata, endpoint_metadata) do
+    if Map.has_key?(endpoint_metadata, "backchannel_authentication_endpoint") do
+      Map.merge(metadata, %{
+        "backchannel_token_delivery_modes_supported" => ["poll"],
+        "backchannel_user_code_parameter_supported" => false
+      })
+    else
+      metadata
+    end
   end
 
   defp id_token_signing_alg_values_supported do

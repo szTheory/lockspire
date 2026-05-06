@@ -1,51 +1,51 @@
-# Research Summary: Lockspire Token Exchange (RFC 8693)
+# Research Summary: Lockspire OpenID Connect CIBA
 
 **Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
-**Researched:** 2026-05-XX
+**Researched:** 2026-05-05
 **Overall confidence:** HIGH
 
 ## Executive Summary
 
-RFC 8693 defines the OAuth 2.0 Token Exchange grant type, which acts as a Security Token Service (STS) protocol. It enables microservices, API gateways, and service meshes to perform **impersonation** (acting as a user) and **delegation** (acting on behalf of a user). For an embedded Elixir provider like Lockspire, this milestone is crucial for integrating with modern, distributed backend architectures where a single frontend token should not be passed unmodified through deep service call chains.
+Client-Initiated Backchannel Authentication (CIBA) Core 1.0 allows Relying Parties (RPs) to initiate authentication on behalf of a user without requiring browser redirects on the Consumption Device (CD). Instead, the user is authenticated via an Out-of-Band (OOB) mechanism on their Authentication Device (AD), such as a smartphone push notification. 
 
-The primary security challenge is preventing privilege escalation. By default, token exchange should be a "downscoping" operation. Any "upscoping" or audience pivoting must be strictly governed by host application business logic. To support this while remaining an unopinionated library, Lockspire must introduce a Behaviour (e.g., `Lockspire.TokenExchangeValidator`) that delegates the policy decision of *who can exchange what* to the host application, keeping Lockspire focused purely on protocol correctness and cryptographic validation.
+For Lockspire, CIBA represents a significant competitive advantage. Elixir's inherent concurrency, coupled with Oban for background processing, makes Ping and Push delivery modes trivial and resilient compared to other language ecosystems. However, as an embedded library, Lockspire must strictly separate protocol state (managing `auth_req_id`, polling intervals, token issuance) from the delivery mechanism. The host application remains entirely responsible for sending the actual push notification to the user and collecting their consent.
 
 ## Key Findings
 
-**Stack:** Standard Elixir/Phoenix ecosystem; relies on existing JWT (JOSE/Joken) capabilities to parse and mint nested `act` claims.
-**Architecture:** Protocol validation happens in Lockspire, but the authorization policy is delegated to a host-implemented Elixir Behaviour (`Lockspire.TokenExchangeValidator`).
-**Critical pitfall:** Privilege escalation via unauthorized scope expansion or audience pivoting, especially when confusing impersonation with delegation.
+**Stack:** Leverages existing Elixir concurrency primitives (Registry/PubSub) and Oban for guaranteed webhook delivery in Ping/Push modes.
+**Architecture:** Protocol validation happens in Lockspire (`/bc-authorize`), but out-of-band notification logic is delegated to the host application via a Behaviour.
+**Critical pitfall:** Allowing malicious clients to spam users with unsolicited push notifications. Strict validation of `login_hint_token` and enforcement of `user_code`/`binding_message` are necessary.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure for Token Exchange:
+Based on research, suggested phase structure for CIBA:
 
-1. **Token Exchange Foundation** - Add support for the new `grant_type`, request/response parameters, and basic token-type URIs.
-   - Addresses: Standard RFC 8693 request parsing and basic downscoping.
-   - Avoids: Rushing into complex delegation before the core endpoints conform to the spec.
+1. **CIBA Core Protocol & Poll Mode** - Implement the `/bc-authorize` endpoint, new `grant_type=urn:openid:params:grant-type:ciba`, and database schema for tracking CIBA requests.
+   - Addresses: Core specification compliance and the easiest delivery mode (Poll) for clients to adopt.
+   - Avoids: Infrastructure overhead of webhooks before the core state machine is proven.
 
-2. **Delegation & Impersonation (Host Behaviour)** - Introduce the `Lockspire.TokenExchangeValidator` Behaviour.
-   - Addresses: Allowing the host application to securely govern audience pivoting and scope expansion.
-   - Avoids: Hardcoding policy logic or RBAC into Lockspire.
+2. **Host Delegation & Notification Seams** - Define the `Lockspire.Host` callbacks to trigger host notifications and receive asynchronous consent results.
+   - Addresses: The boundary between Lockspire's protocol state and the host's push notification infrastructure.
 
-3. **Advanced Claims (`act` and `may_act`)** - Support for complex delegation chains.
-   - Addresses: Full compliance with the delegation profile of RFC 8693, providing an audit trail of actors in the `act` claim.
+3. **Ping and Push Delivery Modes (Oban Integration)** - Add support for outgoing webhooks to notify clients when authentication is complete.
+   - Addresses: The advanced CIBA delivery modes, utilizing Oban for retry logic and resilience.
+   - Avoids: Building custom HTTP retry loops, relying instead on established ecosystem tools.
 
 **Phase ordering rationale:**
-- Protocol parsing and foundational structures must exist before defining the Elixir Behaviour boundary. Complex claims come last once the validation boundary is proven.
+- Poll mode requires no outgoing HTTP calls from Lockspire and establishes the core database structures. The Host callback boundary must be defined before advanced Ping/Push delivery modes can be fully exercised.
 
 **Research flags for phases:**
-- Phase 2: Needs careful API design for the Behaviour to ensure developer ergonomics are optimal for Phoenix teams.
+- Phase 2: Needs careful API design to ensure the host can easily correlate asynchronous Push/WebSocket responses from the Authentication Device back to Lockspire's `auth_req_id`.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | No new infrastructure needed, leverages existing Erlang/Elixir crypto. |
-| Features | HIGH | RFC 8693 explicitly defines request/response shapes and token type URIs. |
-| Architecture | HIGH | The Elixir Behaviour pattern is a proven method for decoupling protocol state from business logic in Lockspire. |
-| Pitfalls | HIGH | Privilege escalation is a well-documented risk in token exchange literature. |
+| Stack | HIGH | Oban is already an established standard in the Phoenix ecosystem for background jobs. |
+| Features | HIGH | CIBA Core 1.0 is a stable specification with clear endpoint definitions. |
+| Architecture | HIGH | The Elixir Behaviour pattern has already proven successful for separating Lockspire logic from Host logic (e.g., Device Flow, DCR). |
+| Pitfalls | HIGH | The spec explicitly warns about unsolicited authentication requests and provides mechanisms (`user_code`) to mitigate them. |
 
 ## Gaps to Address
 
-- Determining the optimal data structure to pass to `Lockspire.TokenExchangeValidator` to give the host app enough context (e.g., original token claims, requested scopes, client info) without exposing internal Lockspire state.
+- Determining the exact schema requirements for the `login_hint_token` if Lockspire decides to validate it natively versus delegating the entire hint resolution to the host application.

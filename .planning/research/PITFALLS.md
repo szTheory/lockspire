@@ -1,44 +1,46 @@
-# Domain Pitfalls
+# Domain Pitfalls: CIBA
 
-**Domain:** Token Exchange (RFC 8693)
-**Researched:** 2026-05-XX
+**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
+**Researched:** 2026-05-05
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major security incidents.
+Mistakes that cause rewrites or major security issues.
 
-### Pitfall 1: Privilege Escalation (Token Upgrading)
-**What goes wrong:** A client exchanges a token intended for a low-security resource (or with limited scopes) and receives a token with broader scopes or targeting a high-security resource.
-**Why it happens:** The Authorization Server implicitly trusts the `scope` and `audience` parameters in the exchange request, failing to restrict them to a subset of the `subject_token`.
-**Consequences:** A compromised frontend or edge service can arbitrarily pivot to become an admin in backend systems.
-**Prevention:** Lockspire MUST default to strict downscoping (the intersection of requested scopes and original scopes). Any expansion MUST require explicit authorization from the host-implemented `Lockspire.TokenExchangeValidator` Behaviour.
-**Detection:** Security audits showing exchanged tokens possessing scopes not present in the original subject token without explicit policy logs.
+### Pitfall 1: Unsolicited Authentication Requests (User Fatigue)
+**What goes wrong:** A malicious or buggy client repeatedly sends CIBA requests for a user, causing their Authentication Device (AD) to be spammed with push notifications (MFA Fatigue/Prompt Bombing).
+**Why it happens:** The RP only needs a hint (like an email) to trigger the flow. If Lockspire and the Host blindly forward all requests, the user is bombarded.
+**Consequences:** User frustration, potential accidental approval by a fatigued user (security breach).
+**Prevention:** 
+1. Implement and enforce the `user_code` parameter. A secret code the user must type on the Consumption Device, which is then verified before notifying the AD.
+2. Implement strict rate limiting (`slow_down` error responses) for the `/bc-authorize` endpoint.
 
-### Pitfall 2: Silent Impersonation (Erasing the Actor)
-**What goes wrong:** A middle-tier service exchanges a user's token for a new token to call a backend service. The new token only contains the user's `sub`, dropping all evidence that the middle-tier service was involved.
-**Why it happens:** Implementing "Impersonation" semantics when "Delegation" semantics were required.
-**Consequences:** The backend service has no audit trail. If the middle-tier service goes rogue, logs only show the user performing malicious actions.
-**Prevention:** Guide integrators toward Delegation by making the generation of the `act` (actor) claim ergonomic and default when an `actor_token` is provided in the exchange request.
+### Pitfall 2: Token Endpoint Polling Exhaustion
+**What goes wrong:** RPs poll the token endpoint aggressively in Poll mode, overwhelming the Lockspire database.
+**Why it happens:** RPs ignore the `interval` parameter returned by `/bc-authorize` or the database queries for the pending request are unoptimized.
+**Consequences:** Denial of Service (DoS) on the provider database.
+**Prevention:**
+1. Lockspire must strictly enforce the `interval` parameter, returning a `slow_down` error if the RP polls too frequently.
+2. Ensure the `CIBARequest` table has a highly optimized index on `auth_req_id`.
 
 ## Moderate Pitfalls
 
-### Pitfall 3: Poorly Typed Token URIs
-**What goes wrong:** Failing to correctly validate or emit the standard RFC 8693 URNs (e.g., `urn:ietf:params:oauth:token-type:jwt`).
-**Prevention:** Use strictly matched Elixir string literals or module attributes for the required URNs. Return `invalid_request` if the client requests an unsupported token type.
+### Pitfall 1: Context Loss in the UI
+**What goes wrong:** The user receives a notification "Approve login?" but doesn't know *who* or *where* the request came from.
+**Prevention:** Utilize the `binding_message` parameter. The RP generates a visual code (e.g., "XYZ-123") displayed on the Consumption Device. Lockspire passes this to the Host app, which displays it on the Authentication Device. The user visually verifies the codes match before approving.
 
-## Minor Pitfalls
-
-### Pitfall 4: Infinite Exchange Loops
-**What goes wrong:** Exchanged tokens are exchanged again indefinitely, creating massive nested `act` claims or bypassing TTL reductions.
-**Prevention:** The host application should be able to inspect the original token's `act` chain in the `validate_exchange` Behaviour and reject excessive depth.
+### Pitfall 2: Webhook Delivery Failures (Ping/Push)
+**What goes wrong:** Lockspire attempts to notify the RP (Ping/Push) but the RP's endpoint is temporarily down. Lockspire drops the notification, and the transaction hangs indefinitely.
+**Prevention:** Always use a durable background job queue (Oban) with exponential backoff for outbound webhooks. Lockspire must also require `client_notification_token` to authenticate the webhook to the RP securely.
 
 ## Phase-Specific Warnings
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Host Behaviour API Design | Making the context struct too opaque, preventing the host from making safe policy decisions. | Ensure `Lockspire.TokenExchange.Context` clearly exposes the original token claims, the requesting client, and the requested scopes/audience. |
-| Token Minting | Forgetting to transfer critical standard claims (like `jti` bindings or `cnf` DPoP keys) to the new token. | Ensure the token exchange minter respects the DPoP and security profiles established in earlier Lockspire milestones. |
+| Core Protocol (Poll) | Not handling the `authorization_pending` state correctly, leading to 400 errors instead of the spec-defined response. | Strict unit tests against the OIDC CIBA conformance suite expectations for the token endpoint. |
+| Host Delegation | Creating a bottleneck by triggering host notifications synchronously. | Ensure the Host callback boundary explicitly expects asynchronous processing or handles the delegation in an Elixir Task. |
 
 ## Sources
 
-- [RFC 8693 Security Considerations (Section 6)](https://datatracker.ietf.org/doc/html/rfc8693) (HIGH confidence)
+- CIBA Core 1.0 Security Considerations (Section 13)
+- OIDF Conformance Suite CIBA Test Profiles

@@ -24,6 +24,7 @@ defmodule Lockspire.Web.TokenController do
              |> Keyword.put(:server_policy_store, Repository)
              |> Keyword.put(:dpop_replay_store, Repository)
              |> Keyword.put(:device_authorization_store, Repository)
+             |> Keyword.put(:ciba_authorization_store, Repository)
              |> Keyword.put(:interaction_store, Repository)
              |> Keyword.put(:key_store, Repository)
          }) do

@@ -11,6 +11,7 @@ defmodule Lockspire.Domain.Client do
   @type par_policy :: :inherit | :required | :optional
   @type dpop_policy :: :inherit | :bearer | :dpop
   @type security_profile :: :inherit | :fapi_2_0_security | :none
+  @type backchannel_token_delivery_mode :: :poll | :ping | :push
   @type provenance :: :operator | :self_registered
 
   @type t :: %__MODULE__{
@@ -56,6 +57,9 @@ defmodule Lockspire.Domain.Client do
           initial_access_token_id: integer() | nil,
           client_id_issued_at: DateTime.t() | nil,
           client_secret_expires_at: DateTime.t() | nil,
+          backchannel_user_code_parameter: boolean(),
+          backchannel_token_delivery_mode: backchannel_token_delivery_mode(),
+          backchannel_client_notification_endpoint: String.t() | nil,
           max_delegation_depth: non_neg_integer() | nil,
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -105,6 +109,9 @@ defmodule Lockspire.Domain.Client do
     initial_access_token_id: nil,
     client_id_issued_at: nil,
     client_secret_expires_at: nil,
+    backchannel_user_code_parameter: false,
+    backchannel_token_delivery_mode: :poll,
+    backchannel_client_notification_endpoint: nil,
     max_delegation_depth: nil,
     inserted_at: nil,
     updated_at: nil

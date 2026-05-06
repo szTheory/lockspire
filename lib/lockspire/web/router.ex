@@ -20,6 +20,7 @@ defmodule Lockspire.Web.Router do
     put("/register/:client_id", Lockspire.Web.RegistrationController, :update)
     delete("/register/:client_id", Lockspire.Web.RegistrationController, :delete)
     post("/device/code", Lockspire.Web.DeviceAuthorizationController, :create)
+    post("/bc-authorize", Lockspire.Web.BCAuthorizeController, :create)
     post("/revoke", Lockspire.Web.RevocationController, :create)
     post("/introspect", Lockspire.Web.IntrospectionController, :create)
     get("/end_session", Lockspire.Web.EndSessionController, :show)

@@ -1,49 +1,57 @@
-# Feature Landscape
+# Feature Landscape: CIBA
 
-**Domain:** Embedded OAuth/OIDC Provider (Token Exchange)
-**Researched:** 2026-05-XX
+**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
+**Researched:** 2026-05-05
 
 ## Table Stakes
 
-Features users expect. Missing = product feels incomplete and non-compliant with RFC 8693.
+Features users expect for basic CIBA compliance. Missing = product cannot claim CIBA support.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| `urn:ietf:params:oauth:grant-type:token-exchange` | Core spec requirement. | Low | Must be supported at the standard token endpoint. |
-| Token Type URIs | Required to identify `subject_token` and issued tokens. | Low | E.g., `urn:ietf:params:oauth:token-type:jwt` and `access_token`. |
-| Downscoping | Microservices need to reduce token scope for downstream calls. | Medium | Default behavior should strictly subset the requested scopes against the `subject_token` scopes. |
-| `subject_token` Validation | Must verify signature, expiration, and issuer. | Medium | Relies on existing token validation logic, but applied to the request payload rather than an Auth header. |
+| `/bc-authorize` Endpoint | Core entry point for CIBA requests. | Medium | Must handle hint resolution (`login_hint`, `login_hint_token`, `id_token_hint`), client authentication, and scope validation. |
+| Poll Delivery Mode | The baseline delivery mechanism for CIBA. | Low | Clients repeatedly poll the token endpoint with `grant_type=urn:openid:params:grant-type:ciba` and the `auth_req_id`. |
+| Host Consent Callback | Mechanism for the Host app to report the outcome. | Low | Must expose a function like `Lockspire.CIBA.grant(auth_req_id, account_id)` and `Lockspire.CIBA.deny(auth_req_id)`. |
+| CIBA Error Responses | Standardized errors (e.g., `authorization_pending`, `slow_down`). | Low | Essential for Poll mode clients to back off correctly. |
 
 ## Differentiators
 
-Features that set Lockspire apart in the Elixir ecosystem.
+Features that set Lockspire apart, taking advantage of Elixir's strengths.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| `Lockspire.TokenExchangeValidator` Behaviour | Gives Phoenix teams complete, type-safe control over audience pivoting and upscoping logic. | Medium | Decouples protocol parsing from domain business rules. |
-| Delegation `act` Claim Chain | Full support for complex delegation tracing. | High | Mints tokens that explicitly map the chain of custody (who acts for whom) to prevent stealth privilege escalation. |
+| Ping Delivery Mode | Eliminates client polling overhead by notifying them when auth is done. | Medium | Requires Oban to reliably deliver the HTTP POST to the client's registered notification endpoint. |
+| Push Delivery Mode | Delivers tokens directly to the client's endpoint, removing the need for a token endpoint call. | High | Requires secure transmission of tokens and complex token binding claims (`urn:openid:params:jwt:claim:auth_req_id`). |
+| Signed Authentication Requests | Enhances security by requiring clients to sign their CIBA initialization requests. | High | Prevents tampering and ensures authenticity of the request. Fits well with Lockspire's existing JAR capabilities. |
 
 ## Anti-Features
 
-Features to explicitly NOT build.
+Features to explicitly NOT build in Lockspire.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Hardcoded RBAC/Policies | Lockspire does not own the host app's domain logic or user roles. | Delegate to the host application via the Behaviour. |
-| Default Upscoping | Massive security risk (privilege escalation). | Strictly deny requests for larger scopes/different audiences unless explicitly approved by the host app's validator module. |
+| Push Notification Delivery | Lockspire does not own the user's devices (FCM, APNs, SMS). | Delegate the actual user notification to the Host application via a Behaviour callback (e.g., `Lockspire.Host.ciba_request/1`). |
+| Out-of-Band Consent UI | Lockspire shouldn't render the mobile or web view where the user clicks "Approve". | Host application builds the UI and calls Lockspire APIs to finalize the transaction. |
 
 ## Feature Dependencies
 
-`grant-type:token-exchange` parsing → `subject_token` validation → Host App Validator Behaviour → Token Minting (with `act` claims).
+```
+`/bc-authorize` Endpoint → Poll Mode
+`/bc-authorize` Endpoint → Host Consent Callback
+Host Consent Callback → Ping Delivery Mode
+Host Consent Callback → Push Delivery Mode
+```
 
 ## MVP Recommendation
 
 Prioritize:
-1. Parsing the `token-exchange` grant type and standardized token type URIs.
-2. Validating the `subject_token`.
-3. Implementing the `TokenExchangeValidator` Behaviour with a default policy of strict downscoping (only allowing a subset of original scopes/audiences).
+1. `/bc-authorize` Endpoint
+2. Poll Delivery Mode
+3. Host Consent Callback
 
-Defer: Deep, nested `act` claim chains (multi-hop delegation) until single-hop delegation and impersonation are proven.
+Defer: 
+- Push Delivery Mode: High complexity due to token delivery security and Oban dependencies. Can follow in a subsequent release once Poll is stable.
 
 ## Sources
-- [RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693) (HIGH confidence)
+
+- CIBA Core 1.0 Specification
