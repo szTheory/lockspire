@@ -90,7 +90,8 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert config["grant_types_supported"] == [
              "authorization_code",
              "refresh_token",
-             "urn:ietf:params:oauth:grant-type:device_code"
+             "urn:ietf:params:oauth:grant-type:device_code",
+             "urn:openid:params:grant-type:ciba"
            ]
 
     assert config["device_authorization_endpoint"] ==
