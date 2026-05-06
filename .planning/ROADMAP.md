@@ -1,15 +1,15 @@
 # Lockspire Roadmap — Milestone v1.14
 
 **Milestone:** v1.14: Advanced Authorization & Resource Targetting
-**Status:** Planning
+**Status:** In Progress
 **Goal:** Deliver Resource Indicators (RFC 8707) and Rich Authorization Requests (RAR - RFC 9396) to enable fine-grained, targeted authorization for complex domain integrations.
 
 ## Phases
 
 - [x] **Phase 54: Resource Indicators (RFC 8707)** - Implement targeted audience (`aud`) claims and resource parameter validation.
 - [x] **Phase 55: RAR Protocol Intake** - Enable `authorization_details` support in PAR and Authorization pipelines. (completed 2026-05-06)
-- [ ] **Phase 56: RAR Domain Validation & Storage** - Deliver Ecto-based validation framework and durable storage for rich authorization.
-- [ ] **Phase 57: RAR Introspection & Verification** - Expose rich details to Resource Servers and verify end-to-end flows.
+- [x] **Phase 56: RAR Domain Validation & Storage** - Deliver Ecto-based validation framework and durable storage for rich authorization. (completed 2026-05-06)
+- [x] **Phase 57: RAR Introspection & Verification** - Expose rich details to Resource Servers and verify end-to-end flows. (completed 2026-05-06)
 - [ ] **Phase 58: Milestone Closure & Discovery** - Truthful discovery updates, executable docs, and final stabilization.
 
 ## Phase Details
@@ -45,7 +45,13 @@
   1. Host app can register Ecto-based validators for specific RAR `type` values.
   2. Invalid RAR payloads are rejected with RFC-compliant error messages.
   3. Validated RAR details are stored in the database and associated with the issued grant/token.
-**Plans**: TBD
+**Plans**: 6 plans
+ - [x] 56-01-PLAN.md — scaffolding, validator fakes, retrofit inventory.
+ - [x] 56-02-PLAN.md — behaviour, config, error formatting, fingerprinting.
+ - [x] 56-03-PLAN.md — validator dispatcher and telemetry.
+ - [x] 56-04-PLAN.md — durable consent/token storage.
+ - [x] 56-05-PLAN.md — protocol integration and consent reuse fingerprinting.
+ - [x] 56-06-PLAN.md — E2E verification, retrofit, and full-suite stabilization.
 **UI hint**: yes
 
 ### Phase 57: RAR Introspection & Verification
@@ -56,7 +62,8 @@
   1. The `/introspection` response includes the `authorization_details` array.
   2. Access Tokens remain compact (not bloated with full RAR JSON) while preserving the reference to the grant.
   3. E2E tests verify that a complex RAR request results in correct consent UI and token introspection.
-**Plans**: TBD
+**Plans**: 1 plans
+- [x] 57-01-PLAN.md — Grant-backed RAR introspection, structural consent proof, and narrow verification/regressions.
 
 ### Phase 58: Milestone Closure & Discovery
 **Goal**: The system truthfully advertises its new capabilities and provides clear integrator guidance.
@@ -74,6 +81,6 @@
 |-------|----------------|--------|-----------|
 | 54. Resource Indicators | 1/1 | Completed | 2026-05-05 |
 | 55. RAR Protocol Intake | 3/3 | Complete    | 2026-05-06 |
-| 56. RAR Domain Validation | 0/1 | Not started | - |
-| 57. RAR Introspection | 0/1 | Not started | - |
+| 56. RAR Domain Validation | 6/6 | Complete | 2026-05-06 |
+| 57. RAR Introspection | 1/1 | Complete | 2026-05-06 |
 | 58. Milestone Closure | 0/1 | Not started | - |
