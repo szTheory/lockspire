@@ -51,12 +51,8 @@ defmodule Lockspire.Protocol.Discovery do
   @doc """
   Returns the truth-based list of `token_endpoint_auth_method` values this issuer's
   `openid-configuration` document actually publishes — i.e., `[]` when the
-  `token_endpoint` route is not mounted, otherwise the full static list.
-
-  Phase 27's HTTP DCR surface MUST filter the resolver's accepted
-  `allowed_token_endpoint_auth_methods` through this set (e.g.,
-  `MapSet.intersection(_, MapSet.new(published_token_endpoint_auth_methods_supported()))`)
-  to avoid accepting methods the discovery document does not advertise.
+  `token_endpoint` route is not mounted, otherwise the subset the current runtime can
+  truthfully verify on the token endpoint.
   """
   @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
   def published_token_endpoint_auth_methods_supported do
@@ -172,7 +168,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp token_endpoint_auth_methods_supported(endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "token_endpoint") do
-      token_endpoint_auth_methods_supported()
+      published_direct_client_auth_methods()
     else
       []
     end
@@ -223,7 +219,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp revocation_endpoint_auth_methods_supported(endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "revocation_endpoint") do
-      token_endpoint_auth_methods_supported()
+      published_direct_client_auth_methods()
     else
       []
     end
@@ -231,11 +227,16 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp introspection_endpoint_auth_methods_supported(endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "introspection_endpoint") do
-      token_endpoint_auth_methods_supported()
+      published_direct_client_auth_methods()
       |> Enum.filter(&(&1 in @introspection_supported_auth_methods))
     else
       []
     end
+  end
+
+  defp published_direct_client_auth_methods do
+    ClientAuth.supported_auth_method_names()
+    |> Enum.reject(&(&1 == "private_key_jwt"))
   end
 
   defp code_challenge_methods_supported(endpoint_metadata) do

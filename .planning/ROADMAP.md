@@ -18,9 +18,9 @@ v1.15 closes the strongest remaining confidential-client authentication gap in L
 
 Plans:
 
-- [ ] 59-01: DCR and RFC 7592 `jwks_uri` intake/update rules for the narrow client-auth slice
-- [ ] 59-02: Admin/policy truth for `private_key_jwt` and assertion signing algorithms
-- [ ] 59-03: Discovery, revocation, and introspection auth-method metadata alignment
+- [x] 59-01: DCR and RFC 7592 `jwks_uri` intake/update rules for the narrow client-auth slice
+- [x] 59-02: Admin/policy truth for `private_key_jwt` and assertion signing algorithms
+- [x] 59-03: Discovery, revocation, and introspection auth-method metadata alignment
 
 **Success criteria:**
 1. A confidential client can register or update `jwks_uri` only within the supported `private_key_jwt` slice.

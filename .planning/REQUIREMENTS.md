@@ -12,9 +12,9 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Registration & Policy Truth
 
-- [ ] **REG-01**: Dynamic registration and RFC 7592 client-management flows accept `jwks_uri` for confidential clients using `token_endpoint_auth_method=private_key_jwt`, enforce `jwks` xor `jwks_uri`, and reject unsupported combinations with explicit `invalid_client_metadata` reasons.
-- [ ] **REG-02**: `jwks_uri` acceptance is bounded to `https` URLs and Lockspire’s narrow client-auth slice; the milestone does not widen into generic remote metadata ingestion, software statements, or federation trust chains.
-- [ ] **REG-03**: Operator policy and admin surfaces truthfully expose whether `private_key_jwt` is allowed for self-registered clients and which signing algorithms the issuer will accept for JWT client assertions.
+- [x] **REG-01**: Dynamic registration and RFC 7592 client-management flows accept `jwks_uri` for confidential clients using `token_endpoint_auth_method=private_key_jwt`, enforce `jwks` xor `jwks_uri`, and reject unsupported combinations with explicit `invalid_client_metadata` reasons.
+- [x] **REG-02**: `jwks_uri` acceptance is bounded to `https` URLs and Lockspire’s narrow client-auth slice; the milestone does not widen into generic remote metadata ingestion, software statements, or federation trust chains.
+- [x] **REG-03**: Operator policy and admin surfaces truthfully expose whether `private_key_jwt` is allowed for self-registered clients and which signing algorithms the issuer will accept for JWT client assertions.
 
 ### Secure Remote JWKS Resolution
 
@@ -33,8 +33,8 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Discovery, Docs & Observability
 
-- [ ] **META-01**: Discovery metadata truthfully advertises `private_key_jwt` support for the token endpoint and publishes `token_endpoint_auth_signing_alg_values_supported` whenever that method is supported.
-- [ ] **META-02**: Revocation and introspection metadata truthfully advertise their supported client authentication methods and associated signing algorithms whenever `private_key_jwt` is accepted there.
+- [x] **META-01**: Discovery metadata truthfully advertises token-endpoint client authentication support and publishes endpoint signing-algorithm metadata only when the corresponding method is actually supported.
+- [x] **META-02**: Revocation and introspection metadata truthfully advertise their supported client authentication methods and associated signing algorithms whenever `private_key_jwt` is accepted there.
 - [ ] **DOC-01**: SECURITY and integrator-facing docs explain the supported `jwks_uri` / `private_key_jwt` slice, including remote-fetch boundaries, audience expectations, key rotation behavior, and explicit out-of-scope exclusions.
 - [ ] **OBS-01**: Telemetry, audit, and logs capture failure reasons for remote JWKS retrieval, signature validation, audience mismatch, and replay detection without leaking client assertions or private key material.
 
@@ -75,9 +75,9 @@ Explicitly excluded to keep v1.15 narrow and truthful.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REG-01 | Phase 59 | Planned |
-| REG-02 | Phase 59 | Planned |
-| REG-03 | Phase 59 | Planned |
+| REG-01 | Phase 59 | Completed |
+| REG-02 | Phase 59 | Completed |
+| REG-03 | Phase 59 | Completed |
 | JWKS-01 | Phase 60 | Planned |
 | JWKS-02 | Phase 60 | Planned |
 | JWKS-03 | Phase 60 | Planned |
@@ -87,8 +87,8 @@ Explicitly excluded to keep v1.15 narrow and truthful.
 | PKJWT-04 | Phase 61 | Planned |
 | PKJWT-05 | Phase 61 | Planned |
 | PKJWT-06 | Phase 61 | Planned |
-| META-01 | Phase 59 | Planned |
-| META-02 | Phase 59 | Planned |
+| META-01 | Phase 59 | Completed |
+| META-02 | Phase 59 | Completed |
 | DOC-01 | Phase 62 | Planned |
 | OBS-01 | Phase 61 | Planned |
 | V-01 | Phase 62 | Planned |

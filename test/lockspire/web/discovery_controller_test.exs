@@ -36,7 +36,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
 
   alias Lockspire.Protocol.DPoP
 
-  @shared_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @shared_methods ["none", "client_secret_basic", "client_secret_post"]
   @introspection_methods ["client_secret_basic", "client_secret_post"]
 
   setup do
@@ -102,25 +102,13 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["token_endpoint_auth_methods_supported"] == [
              "none",
              "client_secret_basic",
-             "client_secret_post",
-             "private_key_jwt"
+             "client_secret_post"
            ]
 
-    assert body["token_endpoint_auth_signing_alg_values_supported"] == [
-             "RS256",
-             "ES256",
-             "PS256",
-             "EdDSA"
-           ]
+    refute Map.has_key?(body, "token_endpoint_auth_signing_alg_values_supported")
 
     assert body["revocation_endpoint_auth_methods_supported"] == @shared_methods
-
-    assert body["revocation_endpoint_auth_signing_alg_values_supported"] == [
-             "RS256",
-             "ES256",
-             "PS256",
-             "EdDSA"
-           ]
+    refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")
 
     assert body["introspection_endpoint_auth_methods_supported"] == @introspection_methods
     refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
@@ -185,13 +173,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     body = Jason.decode!(conn.resp_body)
 
     assert body["token_endpoint_auth_methods_supported"] == @shared_methods
-
-    assert body["token_endpoint_auth_signing_alg_values_supported"] == [
-             "RS256",
-             "ES256",
-             "PS256",
-             "EdDSA"
-           ]
+    refute Map.has_key?(body, "token_endpoint_auth_signing_alg_values_supported")
 
     refute Map.has_key?(body, "revocation_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")

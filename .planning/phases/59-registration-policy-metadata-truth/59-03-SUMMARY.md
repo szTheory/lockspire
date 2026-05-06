@@ -44,13 +44,15 @@ Aligned Lockspire's discovery document with the current runtime truth of the dir
   - narrow introspection metadata to the endpoint's current runtime limitation,
   - publish endpoint-specific JWT client-auth signing algorithms from `SecurityProfile.allowed_signing_algorithms/1` only when `private_key_jwt` is actually advertised.
 - Stabilized the owned discovery protocol test fixture by restoring and explicitly setting `:rar_types_supported` alongside the existing RAR validator setup.
+- After phase verification exposed an overclaim, narrowed published token and revocation metadata to omit `private_key_jwt` and endpoint signing-algorithm fields until Phase 61 adds real JWT signature verification.
 
 ## Verification
 
 - `MIX_ENV=test mix test --warnings-as-errors test/lockspire/protocol/discovery_test.exs`
 - `MIX_ENV=test mix test --warnings-as-errors test/lockspire/protocol/discovery_test.exs test/lockspire/web/discovery_controller_test.exs`
+- `MIX_ENV=test mix test --warnings-as-errors test/lockspire/protocol/registration_test.exs test/lockspire/protocol/registration_management_test.exs test/lockspire/admin/server_policy_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs test/lockspire/web/live/admin/clients_live/show_test.exs test/lockspire/protocol/discovery_test.exs test/lockspire/web/discovery_controller_test.exs`
 
-Both commands passed after the discovery metadata refactor.
+All commands passed after the discovery metadata correction.
 
 ## Deviations from Plan
 
