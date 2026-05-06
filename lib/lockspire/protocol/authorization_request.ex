@@ -15,6 +15,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   @allowed_prompts MapSet.new(["login", "consent"])
   @unsupported_params ~w(response_mode)
+  @max_authorization_details_length 2048
 
   defmodule Validated do
     @moduledoc """
@@ -29,6 +30,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
             redirect_uri: String.t(),
             scopes: [String.t()],
             resources: [String.t()],
+            authorization_details: [map()],
             prompt: [String.t()],
             nonce: String.t() | nil,
             state: String.t() | nil,
@@ -49,6 +51,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       :code_challenge_method,
       scopes: [],
       resources: [],
+      authorization_details: [],
       prompt: [],
       auth_time_requested?: false
     ]
@@ -289,6 +292,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          {:ok, resources} <- validate_resources(params),
+         {:ok, authorization_details} <- validate_authorization_details(params, pushed?),
          :ok <- reject_unsupported_params(params) do
       {:ok,
        build_validated(
@@ -297,6 +301,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          redirect_uri,
          scopes,
          resources,
+         authorization_details,
          prompt,
          max_age,
          auth_time_requested?
@@ -562,6 +567,71 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
+  defp validate_authorization_details(params, pushed?) do
+    case Map.get(params, "authorization_details") do
+      nil ->
+        {:ok, []}
+
+      "" ->
+        {:ok, []}
+
+      value when is_binary(value) ->
+        with :ok <- validate_authorization_details_length(value, pushed?, params),
+             {:ok, decoded} <- decode_authorization_details(value, params) do
+          ensure_authorization_details_shape(decoded, params)
+        end
+
+      value when is_list(value) ->
+        ensure_authorization_details_shape(value, params)
+
+      _other ->
+        invalid_authorization_details(params)
+    end
+  end
+
+  defp validate_authorization_details_length(value, false, params) when is_binary(value) do
+    if byte_size(value) > @max_authorization_details_length do
+      {:redirect_error,
+       redirect_error(
+         params,
+         :invalid_request,
+         "authorization_details exceeds the maximum allowed size",
+         :authorization_details_too_large
+       )}
+    else
+      :ok
+    end
+  end
+
+  defp validate_authorization_details_length(_value, true, _params), do: :ok
+
+  defp decode_authorization_details(value, params) when is_binary(value) do
+    case Jason.decode(value) do
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, _reason} -> invalid_authorization_details(params)
+    end
+  end
+
+  defp ensure_authorization_details_shape(value, params) when is_list(value) do
+    if Enum.all?(value, &is_map/1) do
+      {:ok, value}
+    else
+      invalid_authorization_details(params)
+    end
+  end
+
+  defp ensure_authorization_details_shape(_value, params), do: invalid_authorization_details(params)
+
+  defp invalid_authorization_details(params) do
+    {:redirect_error,
+     redirect_error(
+       params,
+       :invalid_authorization_details,
+       "authorization_details must be a JSON array of objects",
+       :invalid_authorization_details
+     )}
+  end
+
   defp maybe_validate_pushed_client_id(_params, _client, false), do: :ok
 
   defp maybe_validate_pushed_client_id(%{"client_id" => client_id}, %Client{} = client, true)
@@ -657,6 +727,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       "response_type" => "code",
       "scope" => Enum.join(request.scopes, " "),
       "resource" => request.resources_requested,
+      "authorization_details" => request.authorization_details,
       "prompt" => prompt_param(request.prompt),
       "nonce" => request.nonce,
       "state" => request.state,
@@ -721,6 +792,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          redirect_uri,
          scopes,
          resources,
+         authorization_details,
          prompt,
          max_age,
          auth_time_requested?
@@ -731,6 +803,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       redirect_uri: redirect_uri,
       scopes: scopes,
       resources: resources,
+      authorization_details: authorization_details,
       prompt: prompt,
       nonce: normalize_optional_string(params["nonce"]),
       state: normalize_optional_string(params["state"]),
