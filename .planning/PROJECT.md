@@ -14,9 +14,9 @@ Lockspire has now archived thirteen planning milestones. The embedded provider f
 
 At archive time, the package version in `mix.exs` is `0.2.0` (pending release please automation to cut `1.0.0`), the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, and OIDC CIBA (Poll, Ping, and Push delivery modes).
 
-## Current Milestone: None
+## Current Milestone: v1.14 — Advanced Authorization & Resource Targetting
 
-**Goal:** Pending next milestone definition.
+**Goal:** Deliver Resource Indicators (RFC 8707) and Rich Authorization Requests (RAR - RFC 9396) to enable fine-grained, targeted authorization for complex domain integrations.
 
 ## Requirements
 
@@ -55,7 +55,11 @@ At archive time, the package version in `mix.exs` is `0.2.0` (pending release pl
 
 ### Active
 
-- None
+- Implement Resource Indicators (RFC 8707) for targeted audience claims and resource parameter validation (Phase 54).
+- Support Rich Authorization Requests (RAR - RFC 9396) intake in PAR and Authorization pipelines (Phase 55).
+- Deliver Ecto-based RAR validation framework and durable storage for rich authorization details (Phase 56).
+- Expose rich authorization details via introspection and verify end-to-end flows (Phase 57).
+- Update Discovery metadata and provide executable documentation for v1.14 features (Phase 58).
 
 ### Out of Scope
 
@@ -69,7 +73,7 @@ At archive time, the package version in `mix.exs` is `0.2.0` (pending release pl
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.10 completed, we are now ready for the 1.0 GA release stabilization.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.13 completed, we move to v1.14 to add advanced authorization capabilities.
 
 ## Constraints
 
@@ -102,6 +106,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Add Token Exchange (RFC 8693) | Provides standard delegation and impersonation primitives for microservice patterns without custom grant types | Adopted at v1.12 milestone start |
 | Add OpenID Connect CIBA | Provides decoupled authentication and real-time out-of-band notifications, leveraging Elixir's concurrency and Oban for resilient delivery | Adopted at v1.13 milestone start |
 | Use Oban for resilient delivery | Ensures that CIBA webhooks (Ping/Push) and back-channel logouts are retriable and durable across system restarts | Adopted for v1.13 CIBA implementation |
+| **Select RAR & Resource Indicators for v1.14** | Empowers Phoenix teams in complex domains (fintech, healthcare) and enables "Zero Trust" targeted tokens | Adopted at v1.14 milestone start |
 
 ## Evolution
 
@@ -121,4 +126,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-05 after v1.13 milestone closure*
+*Last updated: 2026-05-05 for v1.14 milestone start*
