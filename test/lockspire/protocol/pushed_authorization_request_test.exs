@@ -23,6 +23,12 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
 
     Application.put_env(:lockspire, :known_scopes, ["profile", "email", "openid"])
 
+    Application.put_env(:lockspire, :rar_validators, %{
+      "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator
+    })
+
+    on_exit(fn -> Application.delete_env(:lockspire, :rar_validators) end)
+
     {:ok, public_client} =
       Repository.register_client(%Client{
         client_id: "par-public",

@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Domain.PushedAuthorizationRequest
   alias Lockspire.Observability
   alias Lockspire.Protocol.ParPolicy
+  alias Lockspire.RAR.Dispatcher
   alias Lockspire.Protocol.RequestObject
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
@@ -292,20 +293,19 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          {:ok, resources} <- validate_resources(params),
-         {:ok, authorization_details} <- validate_authorization_details(params, pushed?),
+         {:ok, authorization_details} <-
+           validate_authorization_details(params, pushed?, scopes, resources),
          :ok <- reject_unsupported_params(params) do
       {:ok,
-       build_validated(
-         params,
-         client,
-         redirect_uri,
-         scopes,
-         resources,
-         authorization_details,
-         prompt,
-         max_age,
-         auth_time_requested?
-       )}
+       build_validated(params, client, %{
+         redirect_uri: redirect_uri,
+         scopes: scopes,
+         resources: resources,
+         authorization_details: authorization_details,
+         prompt: prompt,
+         max_age: max_age,
+         auth_time_requested?: auth_time_requested?
+       })}
     end
   end
 
@@ -567,7 +567,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp validate_authorization_details(params, pushed?) do
+  defp validate_authorization_details(params, pushed?, scopes, resources) do
     case Map.get(params, "authorization_details") do
       nil ->
         {:ok, []}
@@ -577,12 +577,15 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
       value when is_binary(value) ->
         with :ok <- validate_authorization_details_length(value, pushed?, params),
-             {:ok, decoded} <- decode_authorization_details(value, params) do
-          ensure_authorization_details_shape(decoded, params)
+             {:ok, decoded} <- decode_authorization_details(value, params),
+             {:ok, details} <- ensure_authorization_details_shape(decoded, params) do
+          dispatch_authorization_details(details, params, scopes, resources)
         end
 
       value when is_list(value) ->
-        ensure_authorization_details_shape(value, params)
+        with {:ok, details} <- ensure_authorization_details_shape(value, params) do
+          dispatch_authorization_details(details, params, scopes, resources)
+        end
 
       _other ->
         invalid_authorization_details(params)
@@ -620,7 +623,42 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp ensure_authorization_details_shape(_value, params), do: invalid_authorization_details(params)
+  defp ensure_authorization_details_shape(_value, params),
+    do: invalid_authorization_details(params)
+
+  defp dispatch_authorization_details([], params, _scopes, _resources) do
+    {:redirect_error,
+     redirect_error(
+       params,
+       :invalid_authorization_details,
+       "authorization_details must not be empty",
+       :empty_authorization_details
+     )}
+  end
+
+  defp dispatch_authorization_details(details, params, scopes, resources) do
+    ctx = %{
+      client_id: params["client_id"],
+      scopes_requested: scopes,
+      resources_requested: resources,
+      request: params,
+      pre_validated?: Map.get(params, :pre_validated_authorization_details?, false)
+    }
+
+    case Dispatcher.dispatch_each(details, ctx) do
+      {:ok, normalized_details} ->
+        {:ok, normalized_details}
+
+      {:error, {description, reason_code}} ->
+        {:redirect_error,
+         redirect_error(
+           params,
+           :invalid_authorization_details,
+           description,
+           reason_code
+         )}
+    end
+  end
 
   defp invalid_authorization_details(params) do
     {:redirect_error,
@@ -727,7 +765,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       "response_type" => "code",
       "scope" => Enum.join(request.scopes, " "),
       "resource" => request.resources_requested,
-      "authorization_details" => request.authorization_details,
+      "authorization_details" => empty_list_to_nil(request.authorization_details),
       "prompt" => prompt_param(request.prompt),
       "nonce" => request.nonce,
       "state" => request.state,
@@ -736,11 +774,15 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     }
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
+    |> Map.put(:pre_validated_authorization_details?, true)
   end
 
   defp prompt_param(nil), do: nil
   defp prompt_param(prompt) when is_binary(prompt), do: prompt
   defp prompt_param(prompt) when is_list(prompt), do: Enum.join(prompt, " ")
+
+  defp empty_list_to_nil([]), do: nil
+  defp empty_list_to_nil(value), do: value
 
   defp reject_unsupported_params(params) do
     case Enum.find(@unsupported_params, &present?(params[&1])) do
@@ -786,29 +828,19 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     })
   end
 
-  defp build_validated(
-         params,
-         %Client{} = client,
-         redirect_uri,
-         scopes,
-         resources,
-         authorization_details,
-         prompt,
-         max_age,
-         auth_time_requested?
-       ) do
+  defp build_validated(params, %Client{} = client, attrs) do
     %Validated{
       client: client,
       client_id: client.client_id,
-      redirect_uri: redirect_uri,
-      scopes: scopes,
-      resources: resources,
-      authorization_details: authorization_details,
-      prompt: prompt,
+      redirect_uri: attrs.redirect_uri,
+      scopes: attrs.scopes,
+      resources: attrs.resources,
+      authorization_details: attrs.authorization_details,
+      prompt: attrs.prompt,
       nonce: normalize_optional_string(params["nonce"]),
       state: normalize_optional_string(params["state"]),
-      max_age: max_age,
-      auth_time_requested?: auth_time_requested?,
+      max_age: attrs.max_age,
+      auth_time_requested?: attrs.auth_time_requested?,
       code_challenge: params["code_challenge"],
       code_challenge_method: :S256
     }

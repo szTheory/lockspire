@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   @moduletag :integration
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
@@ -69,6 +70,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "rotated-access-token" end,
                  refresh_token_generator: fn -> "rotated-refresh-token" end,
                  now: fn -> DateTime.utc_now() end
@@ -85,6 +87,62 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
     assert rotated_refresh_token.generation == 1
     assert rotated_refresh_token.account_id == "subject-refresh"
+  end
+
+  test "refresh rotation preserves consent_grant_id on both rotated children", %{
+    client: client,
+    now: now
+  } do
+    assert {:ok, grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "subject-refresh",
+               client_id: client.client_id,
+               scopes: ["email", "offline_access"],
+               granted_at: now
+             })
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("linked-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-linked",
+               generation: 0,
+               client_id: client.client_id,
+               consent_grant_id: grant.id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "linked-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 server_policy_store: Repository,
+                 access_token_generator: fn -> "linked-access-token" end,
+                 refresh_token_generator: fn -> "linked-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert success.refresh_token == "linked-refresh-child-token"
+
+    assert {:ok, %Token{} = rotated_refresh_token} =
+             Repository.fetch_refresh_token(
+               TokenFormatter.hash_token("linked-refresh-child-token")
+             )
+
+    assert {:ok, %Token{} = rotated_access_token} =
+             Repository.fetch_active_access_token(
+               TokenFormatter.hash_token("linked-access-token")
+             )
+
+    assert rotated_refresh_token.consent_grant_id == grant.id
+    assert rotated_access_token.consent_grant_id == grant.id
   end
 
   test "repository rotation preserves matching expected cnf on rotated children", %{
@@ -267,6 +325,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "dpop-exchange-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  dpop_replay_store: Repository,
                  access_token_generator: fn -> "dpop-rotated-access-token" end,
                  refresh_token_generator: fn -> "dpop-rotated-refresh-token" end,
@@ -320,6 +379,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "wrong-key-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  dpop_replay_store: Repository,
                  access_token_generator: fn -> "wrong-key-access-token" end,
                  refresh_token_generator: fn -> "wrong-key-refresh-child-token" end,
@@ -357,6 +417,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "missing-proof-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  dpop_replay_store: Repository,
                  access_token_generator: fn -> "missing-proof-access-token" end,
                  refresh_token_generator: fn -> "missing-proof-refresh-child-token" end,
@@ -395,6 +456,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "malformed-proof-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  dpop_replay_store: Repository,
                  access_token_generator: fn -> "malformed-proof-access-token" end,
                  refresh_token_generator: fn -> "malformed-proof-refresh-child-token" end,
@@ -412,6 +474,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "first-access-token" end,
                  refresh_token_generator: fn -> "first-refresh-token" end,
                  now: fn -> DateTime.utc_now() end
@@ -423,6 +486,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "second-access-token" end,
                  refresh_token_generator: fn -> "second-refresh-token" end,
                  now: fn -> DateTime.utc_now() end
@@ -445,6 +509,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "audit-access-token" end,
                  refresh_token_generator: fn -> "audit-refresh-token" end,
                  now: fn -> DateTime.utc_now() end
@@ -456,6 +521,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "audit-access-token-2" end,
                  refresh_token_generator: fn -> "audit-refresh-token-2" end,
                  now: fn -> DateTime.utc_now() end
@@ -511,6 +577,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
                params: %{"refresh_token" => "seed-refresh-token"},
                opts: [
                  token_store: Repository,
+                 server_policy_store: Repository,
                  access_token_generator: fn -> "other-access-token" end,
                  refresh_token_generator: fn -> "other-refresh-token" end,
                  now: fn -> now end

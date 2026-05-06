@@ -13,6 +13,7 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.Repository
 
   require Logger
@@ -417,6 +418,30 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert listed_grant.metadata == %{"source" => "consent-ui"}
   end
 
+  test "persists authorization_details and fingerprint on consent grants" do
+    details = [%{"type" => "payment_initiation", "actions" => ["initiate"]}]
+    fingerprint = :crypto.hash(:sha256, "rar-fingerprint")
+
+    assert {:ok, %ConsentGrant{} = stored_grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "account_rar",
+               client_id: "client_rar",
+               scopes: ["openid"],
+               granted_at: DateTime.utc_now(),
+               authorization_details: details,
+               authorization_details_fingerprint: fingerprint
+             })
+
+    assert stored_grant.authorization_details == details
+    assert stored_grant.authorization_details_fingerprint == fingerprint
+
+    assert {:ok, %ConsentGrant{} = fetched_grant} =
+             Repository.fetch_consent_grant(stored_grant.id)
+
+    assert fetched_grant.authorization_details == details
+    assert fetched_grant.authorization_details_fingerprint == fingerprint
+  end
+
   test "lists and fetches consents through filterable durable queries" do
     now = DateTime.utc_now()
 
@@ -558,6 +583,43 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert stored_token.family_id == "family_123"
 
     assert {:ok, 1} = Repository.revoke_token_family("family_123")
+  end
+
+  test "persists token consent_grant_id and nilifies it when the consent grant is deleted" do
+    assert {:ok, %ConsentGrant{} = grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "account_token_fk",
+               client_id: "client_123",
+               scopes: ["offline_access"],
+               granted_at: DateTime.utc_now()
+             })
+
+    assert {:ok, %Token{} = stored_token} =
+             Repository.store_token(%Token{
+               token_hash: "token_hash_consent_fk",
+               token_type: :refresh_token,
+               family_id: "family_consent_fk",
+               client_id: "client_123",
+               consent_grant_id: grant.id,
+               account_id: "account_token_fk",
+               scopes: ["offline_access"],
+               expires_at: DateTime.add(DateTime.utc_now(), 86_400, :second)
+             })
+
+    assert stored_token.consent_grant_id == grant.id
+
+    assert {:ok, %Token{} = fetched_token} =
+             Repository.fetch_refresh_token("token_hash_consent_fk")
+
+    assert fetched_token.consent_grant_id == grant.id
+
+    grant_record = Lockspire.TestRepo.get!(ConsentGrantRecord, grant.id)
+    assert %ConsentGrantRecord{} = Lockspire.TestRepo.delete!(grant_record)
+
+    assert {:ok, %Token{} = nilified_token} =
+             Repository.fetch_refresh_token("token_hash_consent_fk")
+
+    assert nilified_token.consent_grant_id == nil
   end
 
   test "rotates a refresh token into child refresh and access tokens transactionally" do

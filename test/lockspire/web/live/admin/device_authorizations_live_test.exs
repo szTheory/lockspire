@@ -57,7 +57,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
   end
 
   test "device authorizations index renders records" do
-    assert {:ok, view, html} = live(conn_for_admin(), "/admin/device_authorizations")
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/device_authorizations")
 
     assert html =~ "Device Authorizations"
     assert html =~ "test-client"

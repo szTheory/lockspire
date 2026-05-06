@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias Lockspire.Protocol.ConsentPolicy
+  alias Lockspire.RAR.Fingerprint
   alias Lockspire.Security.Policy
 
   @authorization_code_ttl 300
@@ -154,10 +155,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       :consent_required ->
         {:redirect_error, silent_error(validated, "consent_required", :consent_required)}
 
-      {:ok, %Interaction{} = persisted} ->
+      {:ok, {%Interaction{} = persisted, %ConsentGrant{} = grant}} ->
         emit(:interaction, :started, persisted, subject_id)
         emit(:consent, :reused, persisted, subject_id)
-        finalize_reused_consent(persisted, subject_id, opts)
+        finalize_reused_consent(persisted, subject_id, grant, opts)
 
       {:error, reason} ->
         {:error, reason}
@@ -182,6 +183,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
         persisted,
         validated.client_id,
         validated.scopes,
+        validated.authorization_details,
         validated.prompt,
         subject_id,
         opts
@@ -190,11 +192,20 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp silent_consent_outcome(%Interaction{} = interaction, validated, subject_id, opts) do
+    fingerprint = Fingerprint.compute(validated.authorization_details)
+
     case consent_store(opts).list_reusable_consents(subject_id, validated.client_id) do
       {:ok, grants} ->
-        case ConsentPolicy.reusable_grant(grants, validated.scopes, validated.prompt) do
-          {:reuse, _grant} ->
-            interaction_store(opts).put_interaction(interaction)
+        case ConsentPolicy.reusable_grant(
+               grants,
+               validated.scopes,
+               validated.prompt,
+               fingerprint
+             ) do
+          {:reuse, grant} ->
+            with {:ok, persisted} <- interaction_store(opts).put_interaction(interaction) do
+              {:ok, {persisted, grant}}
+            end
 
           :consent_required ->
             :consent_required
@@ -209,16 +220,19 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
          %Interaction{} = interaction,
          client_id,
          scopes,
+         authorization_details,
          prompt,
          subject_id,
          opts
        ) do
+    fingerprint = Fingerprint.compute(authorization_details)
+
     case consent_store(opts).list_reusable_consents(subject_id, client_id) do
       {:ok, grants} ->
-        case ConsentPolicy.reusable_grant(grants, scopes, prompt) do
-          {:reuse, _grant} ->
+        case ConsentPolicy.reusable_grant(grants, scopes, prompt, fingerprint) do
+          {:reuse, grant} ->
             emit(:consent, :reused, interaction, subject_id)
-            finalize_reused_consent(interaction, subject_id, opts)
+            finalize_reused_consent(interaction, subject_id, grant, opts)
 
           :consent_required ->
             emit(:consent, :shown, interaction, subject_id)
@@ -230,12 +244,17 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
-  defp finalize_reused_consent(%Interaction{} = interaction, subject_id, opts) do
+  defp finalize_reused_consent(
+         %Interaction{} = interaction,
+         subject_id,
+         %ConsentGrant{} = grant,
+         opts
+       ) do
     audit_event =
       authorization_completed_event(interaction, system_actor(), :consent_reused)
 
     case transact_with_audit(interaction_store(opts), [audit_event], fn ->
-           complete_reused_consent(interaction, subject_id, opts)
+           complete_reused_consent(interaction, subject_id, grant, opts)
          end) do
       {:ok, {%Interaction{} = completed, redirect_uri}} ->
         emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_reused})
@@ -275,7 +294,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     }
   end
 
-  defp issue_authorization_code(%Interaction{} = interaction, subject_id, opts) do
+  defp issue_authorization_code(%Interaction{} = interaction, subject_id, consent_grant_id, opts) do
     raw_code = generate_code(opts)
     now = now(opts)
     token_hash = Policy.hash_token(raw_code)
@@ -283,6 +302,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     token = %Token{
       token_hash: token_hash,
       token_type: :authorization_code,
+      consent_grant_id: consent_grant_id,
       client_id: interaction.client_id,
       account_id: subject_id,
       interaction_id: interaction.interaction_id,
@@ -307,6 +327,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       account_id: subject_id,
       client_id: interaction.client_id,
       scopes: interaction.scopes_requested,
+      authorization_details: interaction.authorization_details,
+      authorization_details_fingerprint: Fingerprint.compute(interaction.authorization_details),
       granted_at: now(opts),
       status: :active,
       kind: ConsentPolicy.approval_kind(remember?)
@@ -322,6 +344,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
           pending_consent,
           interaction.client_id,
           interaction.scopes_requested,
+          interaction.authorization_details,
           interaction.prompt,
           subject_id,
           opts
@@ -479,8 +502,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
              [:pending_consent],
              %{status: :completed, completed_at: now(opts)}
            ),
-         {:ok, _grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
-         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+         {:ok, grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
+         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, grant.id, opts) do
       {completed, redirect_uri}
     end
   end
@@ -497,14 +520,19 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     )
   end
 
-  defp complete_reused_consent(%Interaction{} = interaction, subject_id, opts) do
+  defp complete_reused_consent(
+         %Interaction{} = interaction,
+         subject_id,
+         %ConsentGrant{} = grant,
+         opts
+       ) do
     with {:ok, completed} <-
            interaction_store(opts).transition_interaction(
              interaction.interaction_id,
              [:pending_consent],
              %{status: :completed, completed_at: now(opts)}
            ),
-         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, grant.id, opts) do
       {completed, redirect_uri}
     end
   end

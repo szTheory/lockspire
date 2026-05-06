@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
+  alias Lockspire.RAR.Fingerprint
   alias Lockspire.Protocol.AuthorizationFlow
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
@@ -316,6 +317,37 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert escalated_interaction.status == :pending_consent
   end
 
+  test "remembered consent reuse requires a matching authorization_details fingerprint" do
+    existing_details = [%{"type" => "payment_initiation", "actions" => ["read"]}]
+    requested_details = [%{"type" => "payment_initiation", "actions" => ["initiate"]}]
+
+    assert {:ok, _grant} =
+             Store.grant_consent(%ConsentGrant{
+               account_id: "subject_123",
+               client_id: "client_123",
+               scopes: ["email", "profile"],
+               granted_at: fixed_now(),
+               status: :active,
+               kind: :remembered,
+               authorization_details: existing_details,
+               authorization_details_fingerprint: Fingerprint.compute(existing_details)
+             })
+
+    assert {:consent_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(authorization_details: requested_details),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-rar-mismatch" end
+             )
+
+    assert interaction.status == :pending_consent
+  end
+
   test "consent reuse and silent reuse do not advance auth_time without a fresh end-user authentication event" do
     fresh_auth_time = DateTime.add(fixed_now(), -30, :second)
     reused_session_auth_time = DateTime.add(fixed_now(), -15, :second)
@@ -485,6 +517,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       |> Enum.filter(&(&1.kind == :remembered))
 
     assert remembered_grant.scopes == ["email", "profile"]
+    assert remembered_grant.authorization_details == []
+    assert remembered_grant.authorization_details_fingerprint == Fingerprint.compute([])
+    assert stored_code.consent_grant_id == remembered_grant.id
 
     assert {:error, :interaction_not_active} =
              AuthorizationFlow.approve_interaction(

@@ -5,11 +5,10 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
   @endpoint Lockspire.Web.Endpoint
 
   import Phoenix.ConnTest
-  import Plug.Conn
+  import Plug.Conn, only: [get_resp_header: 2]
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
-  alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
   alias Lockspire.Host.Claims
   alias Lockspire.Storage.Ecto.Repository
@@ -33,10 +32,17 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
     end
 
     @impl true
-    def redirect_for_login(_conn_or_socket, _context), do: raise "not implemented"
+    def redirect_for_login(_conn_or_socket, _context), do: raise("not implemented")
   end
 
   setup_all do
+    previous_endpoint = Application.get_env(:lockspire, Lockspire.Web.Endpoint)
+    previous_repo = Application.get_env(:lockspire, :repo)
+    previous_issuer = Application.get_env(:lockspire, :issuer)
+    previous_mount_path = Application.get_env(:lockspire, :mount_path)
+    previous_known_scopes = Application.get_env(:lockspire, :known_scopes)
+    previous_account_resolver = Application.get_env(:lockspire, :account_resolver)
+
     Application.put_env(:lockspire, Lockspire.Web.Endpoint,
       secret_key_base: String.duplicate("a", 64),
       server: false
@@ -51,6 +57,15 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(Lockspire.Web.Endpoint)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+
+    on_exit(fn ->
+      restore_env(Lockspire.Web.Endpoint, previous_endpoint)
+      restore_env(:repo, previous_repo)
+      restore_env(:issuer, previous_issuer)
+      restore_env(:mount_path, previous_mount_path)
+      restore_env(:known_scopes, previous_known_scopes)
+      restore_env(:account_resolver, previous_account_resolver)
+    end)
 
     :ok
   end
@@ -249,4 +264,7 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
       assert Jason.decode!(fail_conn.resp_body)["error"] == "invalid_grant"
     end
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:lockspire, key)
+  defp restore_env(key, value), do: Application.put_env(:lockspire, key, value)
 end

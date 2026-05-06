@@ -349,14 +349,16 @@ defmodule Lockspire.Admin.ClientsTest do
     assert {:error, %Ecto.Changeset{} = changeset} =
              Clients.update_client("admin-client", %{max_delegation_depth: 6})
 
-    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] = changeset.errors
+    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "update_client/2 rejects max_delegation_depth < 0" do
     assert {:error, %Ecto.Changeset{} = changeset} =
              Clients.update_client("admin-client", %{max_delegation_depth: -1})
 
-    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] = changeset.errors
+    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "update_client/2 accepts only inherit, required, and optional for par_policy" do

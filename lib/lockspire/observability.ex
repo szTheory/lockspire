@@ -44,7 +44,23 @@ defmodule Lockspire.Observability do
 
   @spec emit_logout(atom(), measurements(), metadata()) :: :ok
   def emit_logout(stage, measurements \\ %{}, metadata \\ %{}) when is_atom(stage) do
-    emit(:logout, stage, measurements, metadata)
+    redacted_metadata = redact(metadata)
+    normalized_measurements = Map.put_new(measurements, :count, 1)
+    event_name = logout_event_name!(stage)
+
+    :telemetry.execute(
+      @audit_prefix ++ [event_name],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :telemetry.execute(
+      @telemetry_prefix ++ [event_name],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :ok
   end
 
   @spec logout_event_name!(atom()) :: atom()

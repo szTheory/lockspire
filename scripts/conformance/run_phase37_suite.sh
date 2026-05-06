@@ -32,6 +32,18 @@ cleanup() {
     docker compose -f "${SOURCE_SUITE_DIR}/docker-compose.yml" down -v >/dev/null 2>&1 || true
   fi
 
+  MIX_ENV=test mix run -e '
+  {:ok, _} = Application.ensure_all_started(:logger)
+  {:ok, _} = Lockspire.TestRepo.start_link()
+  import Ecto.Query
+
+  alias Lockspire.Storage.Ecto.SigningKeyRecord
+
+  Lockspire.TestRepo.delete_all(
+    from(key in SigningKeyRecord, where: key.kid == "phase37-conformance-kid")
+  )
+  ' >/dev/null 2>&1 || true
+
   rm -rf "${WORK_DIR}"
   exit "${exit_code}"
 }
@@ -112,6 +124,12 @@ start_local_fixture() {
 
   {:ok, _} = Application.ensure_all_started(:logger)
   {:ok, _repo_pid} = Lockspire.TestRepo.start_link()
+  {:ok, _policy} =
+    Lockspire.Storage.Ecto.Repository.put_server_policy(
+      Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{
+        dcr_allowed_redirect_uri_hosts: ["app.example.test", "localhost.emobix.co.uk"]
+      })
+    )
   {:ok, _endpoint_pid} = GeneratedHostAppWeb.Endpoint.start_link()
   Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :auto)
 
@@ -201,6 +219,8 @@ curl -fsSL https://gitlab.com/openid/conformance-suite/-/raw/master/docker-compo
 curl -fsSL https://gitlab.com/openid/conformance-suite/-/raw/master/scripts/run-test-plan.py -o "${WORK_DIR}/run-test-plan.py"
 curl -fsSL https://gitlab.com/openid/conformance-suite/-/raw/master/scripts/conformance.py -o "${WORK_DIR}/conformance.py"
 curl -fsSL https://gitlab.com/openid/conformance-suite/-/raw/master/scripts/test_plan_parser.py -o "${WORK_DIR}/test_plan_parser.py"
+curl -fsSL https://gitlab.com/openid/conformance-suite/-/raw/master/scripts/requirements.txt -o "${WORK_DIR}/requirements.txt"
+mkdir -p "${WORK_DIR}/certs-keys"
 
 PROVIDER_DISCOVERY_URL=""
 PROVIDER_BASE_URL=""
@@ -323,8 +343,10 @@ wait_for_url "${SUITE_BASE_URL}" true 120
 
 export CONFORMANCE_SERVER="${SUITE_BASE_URL}"
 export CONFORMANCE_SERVER_MTLS="${SUITE_MTLS_URL}"
+export CONFORMANCE_DEV_MODE=1
+python3 -m pip install --quiet --target "${WORK_DIR}/python-deps" -r "${WORK_DIR}/requirements.txt"
 
-python3 "${WORK_DIR}/run-test-plan.py" \
+PYTHONPATH="${WORK_DIR}/python-deps${PYTHONPATH:+:${PYTHONPATH}}" python3 "${WORK_DIR}/run-test-plan.py" \
   --no-parallel \
   --export-dir "${EXPORT_DIR}" \
   $(tr '\n' ' ' < "${WORK_DIR}/plan-strings.txt") \

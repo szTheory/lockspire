@@ -16,6 +16,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
     field(:family_id, :string)
     field(:generation, :integer, default: 0)
     field(:parent_token_id, :integer)
+    field(:consent_grant_id, :integer)
     field(:client_id, :string)
     field(:account_id, :string)
     field(:interaction_id, :string)
@@ -44,6 +45,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
       :family_id,
       :generation,
       :parent_token_id,
+      :consent_grant_id,
       :client_id,
       :account_id,
       :interaction_id,
@@ -73,6 +75,7 @@ defmodule Lockspire.Storage.Ecto.TokenRecord do
       family_id: record.family_id,
       generation: record.generation || 0,
       parent_token_id: record.parent_token_id,
+      consent_grant_id: record.consent_grant_id,
       client_id: record.client_id,
       account_id: record.account_id,
       interaction_id: record.interaction_id,

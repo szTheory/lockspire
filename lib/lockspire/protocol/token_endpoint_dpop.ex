@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenExchange.Error
+  alias Lockspire.Storage.Ecto.Repository
 
   @type issuance_context :: %{
           mode: :bearer | :dpop,
@@ -344,13 +345,13 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   defp server_policy_store(request),
     do:
       Keyword.get_lazy(request_options(request), :server_policy_store, fn ->
-        Keyword.get(request_options(request), :client_store, Config.repo!())
+        Repository
       end)
 
   defp dpop_replay_store(request),
     do:
       Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
-        Keyword.get(request_options(request), :client_store, Config.repo!())
+        Repository
       end)
 
   defp now(request),

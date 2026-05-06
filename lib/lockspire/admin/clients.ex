@@ -419,12 +419,14 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_mutable_field(:max_delegation_depth, value) when is_integer(value), do: value
+
   defp normalize_mutable_field(:max_delegation_depth, value) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} -> int
       _ -> value
     end
   end
+
   defp normalize_mutable_field(:max_delegation_depth, _value), do: nil
 
   defp normalize_mutable_field(_field, value), do: normalize_string(value)

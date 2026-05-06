@@ -351,7 +351,7 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert body == %{
              "error" => "unsupported_grant_type",
              "error_description" =>
-               "Only grant_type=authorization_code, grant_type=refresh_token, and grant_type=urn:ietf:params:oauth:grant-type:device_code are supported"
+               "Only grant_type=authorization_code, grant_type=refresh_token, grant_type=urn:ietf:params:oauth:grant-type:device_code, grant_type=urn:openid:params:grant-type:ciba, and grant_type=urn:ietf:params:oauth:grant-type:token-exchange are supported"
            }
   end
 
@@ -568,13 +568,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     body = Jason.decode!(conn.resp_body)
 
-    assert Map.keys(body) |> Enum.sort() == [
-             "access_token",
-             "expires_in",
-             "refresh_token",
-             "scope",
-             "token_type"
-           ]
+    assert Map.keys(body) |> Enum.sort() == ["access_token", "expires_in", "scope", "token_type"]
 
     assert body["token_type"] == "Bearer"
     assert body["scope"] == "email profile"

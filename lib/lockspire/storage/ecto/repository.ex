@@ -1469,9 +1469,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
        ) do
     if record.status in expected_statuses do
       record
-      |> CibaAuthorizationRecord.update_changeset(
-        Map.put(attrs, :updated_at, DateTime.utc_now())
-      )
+      |> CibaAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
       |> repo().update()
       |> map_one(&CibaAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
@@ -2021,6 +2019,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         parent_token_id: record.id,
         client_id: record.client_id,
         account_id: refresh_token.account_id || record.account_id,
+        consent_grant_id: refresh_token.consent_grant_id || record.consent_grant_id,
         interaction_id: refresh_token.interaction_id || record.interaction_id,
         scopes: if(refresh_token.scopes == [], do: record.scopes, else: refresh_token.scopes),
         audience:
@@ -2045,6 +2044,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         parent_token_id: stored_refresh_token.id,
         client_id: record.client_id,
         account_id: access_token.account_id || record.account_id,
+        consent_grant_id: access_token.consent_grant_id || record.consent_grant_id,
         interaction_id: access_token.interaction_id || record.interaction_id,
         scopes: if(access_token.scopes == [], do: record.scopes, else: access_token.scopes),
         audience:

@@ -68,7 +68,10 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :security_profile,
       :registration_policy
     ])
-    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
+    |> validate_number(:max_delegation_depth,
+      less_than_or_equal_to: 5,
+      greater_than_or_equal_to: 0
+    )
   end
 
   def to_domain(%__MODULE__{} = record) do

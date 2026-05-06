@@ -29,7 +29,8 @@ defmodule Lockspire.Protocol.TokenExchange.Delegation do
     case Map.get(claims, "act") do
       nil -> 0
       nested_act when is_map(nested_act) -> 1 + count_act_depth(nested_act)
-      _ -> 0 # invalid act claim, shouldn't increase depth but validator should handle format
+      # invalid act claim, shouldn't increase depth but validator should handle format
+      _ -> 0
     end
   end
 

@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   import Ecto.Query
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.SigningKey
@@ -479,6 +480,62 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert persisted_refresh_token.cnf == nil
     assert persisted_refresh_token.family_id == TokenFormatter.hash_token("issued-refresh-token")
     assert persisted_refresh_token.scopes == ["email", "offline_access"]
+  end
+
+  test "authorization-code exchange preserves consent_grant_id onto issued access and refresh tokens" do
+    secret = "consent-link-secret"
+
+    {:ok, client} =
+      create_client("client-consent-link", :client_secret_basic, secret, [
+        "authorization_code",
+        "refresh_token"
+      ])
+
+    {:ok, grant} =
+      Repository.grant_consent(%ConsentGrant{
+        account_id: "subject-123",
+        client_id: client.client_id,
+        scopes: ["email", "offline_access"],
+        granted_at: DateTime.utc_now()
+      })
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-consent-link",
+        code_verifier: "verifier-consent-link",
+        scopes: ["email", "offline_access"],
+        consent_grant_id: grant.id
+      )
+
+    assert {:ok, _success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-consent-link",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-consent-link"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               access_token_generator: fn -> "issued-consent-access-token" end,
+               refresh_token_generator: fn -> "issued-consent-refresh-token" end
+             )
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.token_hash == ^TokenFormatter.hash_token("issued-consent-access-token")
+        )
+      )
+
+    assert {:ok, %Token{} = persisted_refresh_token} =
+             Repository.fetch_refresh_token(
+               TokenFormatter.hash_token("issued-consent-refresh-token")
+             )
+
+    assert persisted_access_token.consent_grant_id == grant.id
+    assert persisted_refresh_token.consent_grant_id == grant.id
   end
 
   test "accepts form-encoded basic auth credentials containing reserved characters and colons" do
@@ -1422,6 +1479,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       token_hash: TokenFormatter.hash_token(raw_code),
       token_type: :authorization_code,
       client_id: client.client_id,
+      consent_grant_id: Keyword.get(opts, :consent_grant_id),
       account_id: "subject-123",
       interaction_id: interaction_id,
       redirect_uri: "https://client.example.com/callback",

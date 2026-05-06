@@ -14,6 +14,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :known_scopes, ["profile", "email", "offline_access"])
     Application.put_env(:lockspire, :issuer, "https://server.example.com/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
 
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -23,6 +24,13 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+
+    Application.put_env(:lockspire, :rar_validators, %{
+      "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator,
+      "account_information" => Lockspire.Test.Rar.PassthroughValidator
+    })
+
+    on_exit(fn -> Application.delete_env(:lockspire, :rar_validators) end)
 
     {:ok, client} =
       Repository.register_client(%Client{
@@ -615,7 +623,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
   test "accepts a signed request object and projects its claims into the authorization pipeline",
        %{
-         client: client
+         client: _client
        } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
@@ -747,7 +755,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   test "maps invalid signatures to the invalid_request_object_signature reason code", %{
     client: _client
   } do
-    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+    %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
     other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -971,7 +979,18 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert {:ok, %Validated{} = validated} =
              AuthorizationRequest.validate_pushed(params, client)
 
-    assert [%{"type" => "payment_initiation"}] = validated.authorization_details
+    assert [%{"type" => "payment_initiation", "padding" => _}] = validated.authorization_details
+  end
+
+  test "rejects empty authorization_details arrays", %{client: client} do
+    params =
+      client.client_id
+      |> valid_params()
+      |> Map.put("authorization_details", "[]")
+
+    assert {:redirect_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.error == "invalid_authorization_details"
+    assert error.reason_code == :empty_authorization_details
   end
 
   defp valid_params(client_id) do

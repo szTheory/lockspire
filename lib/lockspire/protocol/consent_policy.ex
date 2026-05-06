@@ -5,16 +5,16 @@ defmodule Lockspire.Protocol.ConsentPolicy do
 
   alias Lockspire.Domain.ConsentGrant
 
-  @spec reusable_grant([ConsentGrant.t()], [String.t()], [String.t()]) ::
+  @spec reusable_grant([ConsentGrant.t()], [String.t()], [String.t()], binary() | nil) ::
           {:reuse, ConsentGrant.t()} | :consent_required
-  def reusable_grant(grants, requested_scopes, prompt)
+  def reusable_grant(grants, requested_scopes, prompt, fingerprint)
       when is_list(grants) and is_list(requested_scopes) and is_list(prompt) do
     if "consent" in prompt do
       :consent_required
     else
       requested = MapSet.new(requested_scopes)
 
-      case Enum.find(grants, &reusable_grant?(&1, requested)) do
+      case Enum.find(grants, &reusable_grant?(&1, requested, fingerprint)) do
         nil -> :consent_required
         grant -> {:reuse, grant}
       end
@@ -30,12 +30,15 @@ defmodule Lockspire.Protocol.ConsentPolicy do
            status: :active,
            kind: :remembered,
            revoked_at: nil,
-           scopes: granted_scopes
+           scopes: granted_scopes,
+           authorization_details_fingerprint: granted_fingerprint
          },
-         requested
+         requested,
+         requested_fingerprint
        ) do
-    MapSet.subset?(requested, MapSet.new(granted_scopes))
+    MapSet.subset?(requested, MapSet.new(granted_scopes)) and
+      granted_fingerprint == requested_fingerprint
   end
 
-  defp reusable_grant?(_grant, _requested), do: false
+  defp reusable_grant?(_grant, _requested, _requested_fingerprint), do: false
 end

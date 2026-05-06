@@ -440,8 +440,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   end
 
   defp map_ciba_poll_outcome(%{result: :invalid_grant}, _client) do
-    {:error,
-     invalid_grant("The CIBA authorization is invalid", :ciba_authorization_not_found)}
+    {:error, invalid_grant("The CIBA authorization is invalid", :ciba_authorization_not_found)}
   end
 
   defp fetch_presented_device_code(params) do
@@ -793,12 +792,6 @@ defmodule Lockspire.Protocol.TokenExchange do
       {:error, %Error{} = error} ->
         maybe_append_failure_audit(error, client, ciba_authorization, request)
         {:error, error}
-
-      {:error, reason} ->
-        {:error, reason}
-
-      other ->
-        {:error, other}
     end
   end
 
@@ -895,24 +888,26 @@ defmodule Lockspire.Protocol.TokenExchange do
          issuance_context,
          request
        ) do
-    refresh_token = if formatted_refresh_token do
-      %Token{
-        token_hash: formatted_refresh_token.token_hash,
-        token_type: :refresh_token,
-        family_id: formatted_refresh_token.token_hash,
-        generation: 0,
-        client_id: ciba_grant.client_id,
-        account_id: ciba_grant.account_id,
-        interaction_id: ciba_grant.interaction_id,
-        scopes: ciba_grant.scopes,
-        audience: ciba_grant.audience,
-        cnf: issuance_context.cnf,
-        issued_at: issued_at,
-        expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
-      }
-    else
-      nil
-    end
+    refresh_token =
+      if formatted_refresh_token do
+        %Token{
+          token_hash: formatted_refresh_token.token_hash,
+          token_type: :refresh_token,
+          family_id: formatted_refresh_token.token_hash,
+          generation: 0,
+          client_id: ciba_grant.client_id,
+          account_id: ciba_grant.account_id,
+          consent_grant_id: ciba_grant.consent_grant_id,
+          interaction_id: ciba_grant.interaction_id,
+          scopes: ciba_grant.scopes,
+          audience: ciba_grant.audience,
+          cnf: issuance_context.cnf,
+          issued_at: issued_at,
+          expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+        }
+      else
+        nil
+      end
 
     audit_event =
       ciba_redemption_audit_event(client_actor(ciba_grant.client_id), ciba_authorization)
@@ -926,7 +921,8 @@ defmodule Lockspire.Protocol.TokenExchange do
              ),
            {:ok, %Token{} = persisted_access_token} <-
              token_store(request).store_token(access_token),
-           {:ok, persisted_refresh_token} <- maybe_store_token(token_store(request), refresh_token) do
+           {:ok, persisted_refresh_token} <-
+             maybe_store_token(token_store(request), refresh_token) do
         %{
           access_token: persisted_access_token,
           refresh_token: persisted_refresh_token,
@@ -1403,6 +1399,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       generation: 0,
       client_id: client.client_id,
       account_id: authorization_code.account_id,
+      consent_grant_id: authorization_code.consent_grant_id,
       interaction_id: authorization_code.interaction_id,
       sid: authorization_code.sid,
       scopes: authorization_code.scopes,
@@ -1464,6 +1461,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       generation: 0,
       client_id: device_grant.client_id,
       account_id: device_grant.account_id,
+      consent_grant_id: device_grant.consent_grant_id,
       interaction_id: device_grant.interaction_id,
       scopes: device_grant.scopes,
       audience: device_grant.audience,
@@ -1541,6 +1539,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       generation: 0,
       client_id: authorization_code.client_id,
       account_id: authorization_code.account_id,
+      consent_grant_id: authorization_code.consent_grant_id,
       interaction_id: authorization_code.interaction_id,
       sid: authorization_code.sid,
       scopes: authorization_code.scopes,

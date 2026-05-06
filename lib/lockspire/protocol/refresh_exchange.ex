@@ -301,6 +301,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       token_type: :access_token,
       client_id: client.client_id,
       account_id: nil,
+      consent_grant_id: source_token.consent_grant_id,
       sid: source_token.sid,
       audience: requested_resources,
       cnf: context.cnf,
@@ -320,6 +321,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       token_type: :refresh_token,
       client_id: client.client_id,
       account_id: nil,
+      consent_grant_id: source_token.consent_grant_id,
       sid: source_token.sid,
       cnf: context.cnf,
       expires_at: DateTime.add(rotated_at, @refresh_token_ttl, :second)

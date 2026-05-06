@@ -44,6 +44,24 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured per-type RAR validator map.
+  """
+  @spec rar_validators() :: %{optional(String.t()) => module()}
+  def rar_validators do
+    Application.get_env(@app, :rar_validators, %{})
+  end
+
+  @doc """
+  Returns the supported RAR `type` values derived from `:rar_validators`.
+  """
+  @spec rar_types_supported() :: [String.t()]
+  def rar_types_supported do
+    rar_validators()
+    |> Map.keys()
+    |> Enum.sort()
+  end
+
+  @doc """
   Returns the validated configured issuer string, or raises if invalid/missing.
   """
   @spec issuer!() :: String.t()

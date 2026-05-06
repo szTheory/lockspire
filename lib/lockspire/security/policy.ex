@@ -82,25 +82,42 @@ defmodule Lockspire.Security.Policy do
     normalized_issuer_path = if issuer_path == "/", do: "", else: issuer_path
     normalized_mount_path = if mount_path == "/", do: "", else: mount_path
 
-    cond do
-      not absolute_uri?(uri) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Expected an absolute URL with scheme and host."
+    validate_absolute_uri!(uri)
+    validate_issuer_query!(uri)
+    validate_issuer_fragment!(uri)
+    validate_issuer_path!(issuer_path, normalized_issuer_path, normalized_mount_path, mount_path)
 
-      present?(uri.query) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Query parameters are not allowed."
+    issuer
+  end
 
-      present?(uri.fragment) ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Fragments are not allowed."
+  defp validate_absolute_uri!(uri) do
+    if not absolute_uri?(uri) do
+      raise ArgumentError,
+            "invalid :issuer for :lockspire. Expected an absolute URL with scheme and host."
+    end
+  end
 
-      normalized_issuer_path != normalized_mount_path ->
-        raise ArgumentError,
-              "invalid :issuer for :lockspire. Issuer path #{inspect(issuer_path)} must match mount_path #{inspect(mount_path)}."
+  defp validate_issuer_query!(uri) do
+    if present?(uri.query) do
+      raise ArgumentError, "invalid :issuer for :lockspire. Query parameters are not allowed."
+    end
+  end
 
-      true ->
-        issuer
+  defp validate_issuer_fragment!(uri) do
+    if present?(uri.fragment) do
+      raise ArgumentError, "invalid :issuer for :lockspire. Fragments are not allowed."
+    end
+  end
+
+  defp validate_issuer_path!(
+         issuer_path,
+         normalized_issuer_path,
+         normalized_mount_path,
+         mount_path
+       ) do
+    if normalized_issuer_path != normalized_mount_path do
+      raise ArgumentError,
+            "invalid :issuer for :lockspire. Issuer path #{inspect(issuer_path)} must match mount_path #{inspect(mount_path)}."
     end
   end
 

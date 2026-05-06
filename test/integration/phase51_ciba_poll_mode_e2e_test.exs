@@ -81,7 +81,10 @@ defmodule Lockspire.Integration.Phase51CibaPollModeE2ETest do
     conn = build_conn() |> get("/.well-known/openid-configuration")
     assert conn.status == 200
     discovery = Jason.decode!(conn.resp_body)
-    assert discovery["backchannel_authentication_endpoint"] == "https://example.test/lockspire/bc-authorize"
+
+    assert discovery["backchannel_authentication_endpoint"] ==
+             "https://example.test/lockspire/bc-authorize"
+
     assert discovery["backchannel_token_delivery_modes_supported"] == ["poll"]
   end
 

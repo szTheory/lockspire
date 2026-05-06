@@ -110,7 +110,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
     test "rejects update when server is missing compliant keys for FAPI", %{
       client: client,
-      client_id: client_id
+      client_id: _client_id
     } do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
       Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
