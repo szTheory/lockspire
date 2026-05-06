@@ -109,8 +109,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     end
 
     test "rejects update when server is missing compliant keys for FAPI", %{
-      client: client,
-      client_id: client_id
+      client: client
     } do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
       Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
@@ -148,6 +147,74 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — RAT rotation" do
+    test "updates private_key_jwt client from inline jwks to jwks_uri and persists the new field",
+         %{
+           server_policy: _server_policy
+         } do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      {:ok, %Registration.Success{client: client}} =
+        Registration.register(%{
+          metadata: DcrFixtures.private_key_jwt_jwks_metadata(),
+          iat: nil,
+          server_policy: server_policy,
+          source: %{ip: "127.0.0.1"}
+        })
+
+      request = %{
+        metadata: DcrFixtures.private_key_jwt_jwks_uri_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client.client_id, request)
+
+      assert updated_client.client_id == client.client_id
+      assert updated_client.token_endpoint_auth_method == :private_key_jwt
+      assert updated_client.jwks_uri == "https://keys.example.test/client.jwks.json"
+      assert is_nil(updated_client.jwks)
+    end
+
+    test "rejects update when metadata includes both jwks and jwks_uri", %{
+      client: client,
+      client_id: client_id
+    } do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      request = %{
+        metadata: DcrFixtures.mutual_jwks_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks,
+                reason: :mutually_exclusive_with_jwks_uri
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when jwks_uri is paired with unsupported auth method", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata: DcrFixtures.invalid_jwks_uri_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks_uri,
+                reason: :unsupported_token_endpoint_auth_method
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
     test "accepts (client_id_from_url, %{metadata, server_policy, client}) and returns UpdateSuccess",
          %{client: client, client_id: client_id, server_policy: server_policy, rat: prior_rat} do
       new_metadata = Map.put(DcrFixtures.valid_metadata(), "client_name", "Updated Name")

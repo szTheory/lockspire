@@ -275,6 +275,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         policy_uri: Map.get(metadata, "policy_uri"),
         contacts: Map.get(metadata, "contacts", []),
         jwks: Map.get(metadata, "jwks"),
+        jwks_uri: Map.get(metadata, "jwks_uri"),
         id_token_signed_response_alg:
           atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
         security_profile:
