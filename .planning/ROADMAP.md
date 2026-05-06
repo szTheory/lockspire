@@ -33,7 +33,7 @@
   2. PAR correctly persists RAR details for subsequent authorization.
   3. Authorization requests without PAR are rejected if RAR details are too large (URI length protection).
 **Plans**: 3 plans
-- [ ] 55-01-PLAN.md — Database and Domain extension for RAR intake.
+- [x] 55-01-PLAN.md — Database and Domain extension for RAR intake.
 - [ ] 55-02-PLAN.md — Protocol validation, parsing, and PAR persistence logic.
 - [ ] 55-03-PLAN.md — End-to-end integration tests for RAR intake.
 
@@ -73,7 +73,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 54. Resource Indicators | 1/1 | Completed | 2026-05-05 |
-| 55. RAR Protocol Intake | 0/3 | Active | - |
+| 55. RAR Protocol Intake | 1/3 | In Progress|  |
 | 56. RAR Domain Validation | 0/1 | Not started | - |
 | 57. RAR Introspection | 0/1 | Not started | - |
 | 58. Milestone Closure | 0/1 | Not started | - |
