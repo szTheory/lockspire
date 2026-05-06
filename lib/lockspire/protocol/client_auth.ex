@@ -39,6 +39,11 @@ defmodule Lockspire.Protocol.ClientAuth do
   @spec supported_auth_methods() :: [atom()]
   def supported_auth_methods, do: @supported_auth_methods
 
+  @spec supported_auth_method_names() :: [String.t()]
+  def supported_auth_method_names do
+    Enum.map(@supported_auth_methods, &Atom.to_string/1)
+  end
+
   defp parse_client_credentials(params, authorization) do
     auth_state = %{
       has_header?: present?(authorization),

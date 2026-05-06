@@ -57,6 +57,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     original = Application.get_env(:lockspire, :issuer)
     original_router = Application.get_env(:lockspire, :discovery_router)
     original_rar_validators = Application.get_env(:lockspire, :rar_validators)
+    original_rar_types_supported = Application.get_env(:lockspire, :rar_types_supported)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
 
     on_exit(fn ->
@@ -76,6 +77,12 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         Application.delete_env(:lockspire, :rar_validators)
       else
         Application.put_env(:lockspire, :rar_validators, original_rar_validators)
+      end
+
+      if is_nil(original_rar_types_supported) do
+        Application.delete_env(:lockspire, :rar_types_supported)
+      else
+        Application.put_env(:lockspire, :rar_types_supported, original_rar_types_supported)
       end
     end)
 
@@ -198,6 +205,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator,
         "account_access" => Lockspire.Test.Rar.PassthroughValidator
       })
+      Application.put_env(:lockspire, :rar_types_supported, ["account_access", "payment_initiation"])
 
       config = Discovery.openid_configuration()
 
@@ -209,6 +217,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       Application.put_env(:lockspire, :rar_validators, %{
         "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator
       })
+      Application.put_env(:lockspire, :rar_types_supported, ["payment_initiation"])
 
       Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
 
@@ -220,6 +229,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
     test "omits authorization_details_types_supported instead of publishing an empty list" do
       Application.put_env(:lockspire, :rar_validators, %{})
+      Application.put_env(:lockspire, :rar_types_supported, [])
 
       config = Discovery.openid_configuration()
 

@@ -4,7 +4,9 @@ defmodule Lockspire.Protocol.Discovery do
   """
 
   alias Lockspire.Config
+  alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.SecurityProfile
 
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
@@ -28,9 +30,9 @@ defmodule Lockspire.Protocol.Discovery do
     "urn:ietf:params:oauth:grant-type:device_code",
     "urn:openid:params:grant-type:ciba"
   ]
-  @token_endpoint_auth_methods_supported ["none", "client_secret_basic", "client_secret_post"]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
+  @introspection_supported_auth_methods ["client_secret_basic", "client_secret_post"]
 
   @doc """
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
@@ -44,7 +46,7 @@ defmodule Lockspire.Protocol.Discovery do
   what Phase 27's HTTP DCR surface MUST filter the resolver's accepted methods through.
   """
   @spec token_endpoint_auth_methods_supported() :: [String.t()]
-  def token_endpoint_auth_methods_supported, do: @token_endpoint_auth_methods_supported
+  def token_endpoint_auth_methods_supported, do: ClientAuth.supported_auth_method_names()
 
   @doc """
   Returns the truth-based list of `token_endpoint_auth_method` values this issuer's
@@ -91,6 +93,7 @@ defmodule Lockspire.Protocol.Discovery do
       "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
     }
     |> Map.merge(endpoint_metadata)
+    |> put_endpoint_auth_metadata(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> maybe_put_ciba_metadata(endpoint_metadata)
     |> maybe_put_resource_indicators_metadata(endpoint_metadata)
@@ -112,7 +115,7 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp id_token_signing_alg_values_supported do
-    Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(global_security_profile())
+    SecurityProfile.allowed_signing_algorithms(global_security_profile())
   end
 
   defp global_security_profile do
@@ -169,7 +172,67 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp token_endpoint_auth_methods_supported(endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "token_endpoint") do
-      @token_endpoint_auth_methods_supported
+      token_endpoint_auth_methods_supported()
+    else
+      []
+    end
+  end
+
+  defp put_endpoint_auth_metadata(metadata, endpoint_metadata) do
+    metadata
+    |> maybe_put_endpoint_auth_methods(
+      "token_endpoint_auth_methods_supported",
+      token_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "token_endpoint_auth_methods_supported",
+      "token_endpoint_auth_signing_alg_values_supported"
+    )
+    |> maybe_put_endpoint_auth_methods(
+      "revocation_endpoint_auth_methods_supported",
+      revocation_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "revocation_endpoint_auth_methods_supported",
+      "revocation_endpoint_auth_signing_alg_values_supported"
+    )
+    |> maybe_put_endpoint_auth_methods(
+      "introspection_endpoint_auth_methods_supported",
+      introspection_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "introspection_endpoint_auth_methods_supported",
+      "introspection_endpoint_auth_signing_alg_values_supported"
+    )
+  end
+
+  defp maybe_put_endpoint_auth_methods(metadata, _key, []), do: metadata
+  defp maybe_put_endpoint_auth_methods(metadata, key, methods), do: Map.put(metadata, key, methods)
+
+  defp maybe_put_endpoint_auth_signing_algorithms(metadata, methods_key, algorithms_key) do
+    if "private_key_jwt" in Map.get(metadata, methods_key, []) do
+      Map.put(
+        metadata,
+        algorithms_key,
+        SecurityProfile.allowed_signing_algorithms(global_security_profile())
+      )
+    else
+      metadata
+    end
+  end
+
+  defp revocation_endpoint_auth_methods_supported(endpoint_metadata) do
+    if Map.has_key?(endpoint_metadata, "revocation_endpoint") do
+      token_endpoint_auth_methods_supported()
+    else
+      []
+    end
+  end
+
+  defp introspection_endpoint_auth_methods_supported(endpoint_metadata) do
+    if Map.has_key?(endpoint_metadata, "introspection_endpoint") do
+      token_endpoint_auth_methods_supported()
+      |> Enum.filter(&(&1 in @introspection_supported_auth_methods))
     else
       []
     end
