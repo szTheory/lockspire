@@ -9,12 +9,15 @@ The public support contract for the current release lives in [`docs/supported-su
 ## What v1.0 includes
 
 - Authorization code + PKCE
+- Resource Indicators (RFC 8707) on authorization and token requests
 - Device Flow authorization
 - Dynamic Client Registration (DCR)
 - Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Userinfo, revocation, introspection, and refresh rotation
 - Host-owned login and consent seams
+- Truthful discovery metadata for Resource Indicators and configured RAR types (`resource_indicators_supported` and `authorization_details_types_supported`)
+- Host-owned custom RAR consent guidance through [`docs/rar-consent-host-guide.md`](docs/rar-consent-host-guide.md)
 - LiveView admin surfaces for clients, consents, tokens, keys, and PAR policies
 - Generator-backed install flow for Phoenix hosts
 - FAPI 2.0 Security Profile enforcement (opt-in via `security_profile: :fapi_2_0_security` globally or per-client): PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs

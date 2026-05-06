@@ -40,6 +40,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
+  @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @roadmap_path Path.expand("../../.planning/milestones/v1.3-ROADMAP.md", __DIR__)
   @requirements_path Path.expand("../../.planning/milestones/v1.3-REQUIREMENTS.md", __DIR__)
@@ -241,6 +242,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Pushed authorization requests only as Lockspire-issued `request_uri` references"
 
     assert supported_surface =~ "OIDC discovery and JWKS"
+    assert supported_surface =~ "resource_indicators_supported"
+    assert supported_surface =~ "authorization_details_types_supported"
+    assert supported_surface =~ "docs/rar-consent-host-guide.md"
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "Lockspire does not use a demo app"
@@ -258,6 +262,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert supported_surface =~ "bearer clients remaining unchanged by default"
     assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
+    assert supported_surface =~ "Lockspire-owned semantic RAR consent rendering"
+
+    assert readme =~ "Resource Indicators (RFC 8707)"
+    assert readme =~ "resource_indicators_supported"
+    assert readme =~ "authorization_details_types_supported"
+    assert readme =~ "docs/rar-consent-host-guide.md"
 
     refute readme =~ "production-ready"
   end
@@ -300,6 +310,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "LockspireVerificationController"
     assert onboarding =~ "lockspire_verification_html"
     assert onboarding =~ "docs/device-flow-host-guide.md"
+    assert onboarding =~ "docs/rar-consent-host-guide.md"
+    assert onboarding =~ "custom RAR consent"
     assert onboarding =~ "rate limiting"
     assert onboarding =~ "The executable repo proof lives in:"
     assert onboarding =~ "test/integration/install_generator_test.exs"
@@ -354,6 +366,30 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "device authorization endpoint"
     assert supported_surface =~ "token redemption"
     assert supported_surface =~ "not a Lockspire-owned browser UI"
+  end
+
+  test "phase 58 docs and release contract pin the rar consent seam and discovery claims" do
+    guide = File.read!(@rar_consent_host_guide_path)
+    onboarding = File.read!(@install_and_onboard_path)
+    supported_surface = File.read!(@supported_surface_path)
+    mixfile = File.read!("mix.exs")
+
+    assert guide =~ "payment_initiation"
+    assert guide =~ "authorization_details"
+    assert guide =~ "host app owns the consent UX"
+    assert guide =~ "Lockspire validates and persists `authorization_details`"
+    assert guide =~ "lockspire_consent_live.ex"
+    assert guide =~ "interaction_handler.ex"
+
+    assert onboarding =~ "docs/rar-consent-host-guide.md"
+    assert onboarding =~ "generated `lockspire_consent_live.ex` seam"
+
+    assert supported_surface =~ "resource_indicators_supported"
+    assert supported_surface =~ "authorization_details_types_supported"
+    assert supported_surface =~ "docs/rar-consent-host-guide.md"
+    assert supported_surface =~ "payment_initiation"
+
+    assert mixfile =~ "\"docs/rar-consent-host-guide.md\""
   end
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do

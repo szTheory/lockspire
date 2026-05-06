@@ -14,6 +14,8 @@ Lockspire `1.0.0` GA currently supports this repo-proven surface:
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
 - global and client-specific PAR requirement policies (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
+- Resource Indicators on the authorization and token surface, with truthful discovery metadata via `resource_indicators_supported` only when the mounted authorization-code surface is actually usable
+- `authorization_details_types_supported` in discovery only when the mounted authorization-code surface is usable and the host has configured at least one RAR validator type
 - Userinfo
 - Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice
 - Revocation
@@ -22,6 +24,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven surface:
 - DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
+- A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams
 - LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
@@ -40,6 +43,7 @@ Lockspire does not currently support:
 - Generic host protected-resource middleware remains out of scope
 - DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints
 - Lockspire-owned device verification browser UI or hosted approval pages
+- Lockspire-owned semantic RAR consent rendering, renderer registries, or payment-product UI
 - Dynamic Client Registration support for `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, or `frontchannel_logout_session_required` remains unsupported in this slice
 - Hosted auth as a separate required service
 - SAML
@@ -55,6 +59,7 @@ Lockspire does not currently support:
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
+- `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `docs/maintainer-conformance.md`, `scripts/conformance/phase37-plan.json`, and `mix conformance.phase37` for the repo-native Phase 37 conformance lane and its `.artifacts/conformance/phase37` proof bundle
 - `test/integration/install_generator_test.exs` for generator-backed install proof
