@@ -1,78 +1,78 @@
-# Architecture Patterns: CIBA
+# Architecture Notes: JWKS URI & Private Key JWT
 
-**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
-**Researched:** 2026-05-05
+**Project:** Lockspire
+**Researched:** 2026-05-06
+**Milestone:** v1.15 JWKS URI & Private Key JWT Client Authentication
 
-## Recommended Architecture
+## Existing architecture fit
 
-CIBA in Lockspire requires a strict decoupling of the protocol state machine from the out-of-band communication channel, leveraging Elixir Behaviours and Oban for asynchronous operations.
+The repo already has the right boundary shape for this milestone:
+- `Lockspire.Protocol.Registration` already models `private_key_jwt`, `jwks`, and `jwks_uri`.
+- `Lockspire.Domain.Client` and `Lockspire.Storage.Ecto.ClientRecord` already persist `jwks_uri`.
+- `Lockspire.Protocol.ClientAuth` is the single shared seam for direct client authentication.
+- `Lockspire.JwksFetcher` already encapsulates remote JWKS retrieval and caching, but it is too permissive for v1.15 as-is.
 
-### Component Boundaries
+## Recommended architecture
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| `Lockspire.Web.CIBAController` | Handles POST to `/bc-authorize`. Validates hints, scopes, and client auth. | Ecto, `Lockspire.Host` |
-| `Lockspire.Domain.CIBARequest` | Database schema storing `auth_req_id`, expiration, requested scopes, and status (`pending`, `granted`, `denied`). | `Lockspire.Web.TokenController` |
-| `Lockspire.Host` (Behaviour) | Exposes `ciba_notify/1` callback. The Host app implements this to trigger SMS/Push to the end-user. | External Notification Services (FCM/APNs) |
-| `Lockspire.Workers.CIBADelivery` | Oban worker responsible for HTTP POSTs to the client's notification endpoint in Ping/Push modes. | External RPs |
+### 1. Keep trust resolution inside Lockspire
+Do not push remote key validation to the host app. The milestone’s value is that Lockspire owns the dangerous part:
+- resolve client key material from inline `jwks` or remote `jwks_uri`
+- verify `private_key_jwt` cryptographically
+- enforce replay, claim, and algorithm policy consistently
 
-### Data Flow
+### 2. Split assertion processing into explicit steps
+`Lockspire.Protocol.ClientAuth` should separate:
+1. unverified extraction of header and payload for `client_id` lookup
+2. registered-client auth-method validation
+3. key resolution from `jwks` or `jwks_uri`
+4. signature verification
+5. claim validation (`iss`, `sub`, `aud`, `exp`, `iat`/`nbf`, `jti`)
+6. replay recording
 
-**1. Initiation (Poll Mode):**
-- Client POSTs to `/bc-authorize` with `login_hint`.
-- Lockspire validates request and inserts `CIBARequest` into DB.
-- Lockspire asynchronously calls `Lockspire.Host.ciba_notify(request_details)`.
-- Lockspire synchronously returns `auth_req_id` and `expires_in` to the Client.
+This keeps failure reasons precise and preserves a narrow seam for tests.
 
-**2. Out-of-Band Consent:**
-- Host app receives `ciba_notify` and sends a push notification to the user's phone.
-- User opens the Host app on their phone and clicks "Approve".
-- Host app calls `Lockspire.CIBA.grant_consent(auth_req_id, account_id)`.
-- Lockspire updates the `CIBARequest` status to `granted`.
+### 3. Make JWKS resolution a dedicated sub-boundary
+Prefer a dedicated resolver module or a sharply expanded `Lockspire.JwksFetcher` contract:
+- validate `jwks_uri` eligibility before network access
+- fetch with safe Req options
+- parse and cache JWKS
+- optionally force-refresh once on key miss or signature mismatch
 
-**3. Token Exchange (Poll Mode):**
-- Client polls `/token` with `grant_type=urn:openid:params:grant-type:ciba`.
-- If status is `pending`, Lockspire returns `authorization_pending`.
-- Once status is `granted`, Lockspire issues Access/ID Tokens and deletes/marks the `CIBARequest` as consumed.
+### 4. Truthful metadata is part of the architecture
+If `private_key_jwt` is supported on an endpoint, discovery metadata must stay aligned:
+- `token_endpoint_auth_methods_supported`
+- `token_endpoint_auth_signing_alg_values_supported`
+- `revocation_endpoint_auth_methods_supported`
+- `revocation_endpoint_auth_signing_alg_values_supported`
+- `introspection_endpoint_auth_methods_supported`
+- `introspection_endpoint_auth_signing_alg_values_supported`
 
-**4. Ping/Push Delivery (Optional):**
-- Upon the Host calling `grant_consent`, if the client requested Ping/Push, Lockspire enqueues an Oban job (`Lockspire.Workers.CIBADelivery`).
-- The worker executes and securely POSTs the notification or tokens to the RP.
+Inference from RFC 8414 and current repo usage:
+because `ClientAuth` is reused by revocation and introspection today, metadata truth should cover those endpoints too, not just `/token`.
 
-## Patterns to Follow
+## Suggested phase build order
 
-### Pattern 1: Oban for Webhook Delivery
-**What:** Using Oban for guaranteed delivery of Ping/Push notifications.
-**When:** Implementing the Ping or Push delivery modes.
-**Example:**
-```elixir
-def grant_consent(auth_req_id, account_id) do
-  # Update DB
-  request = Repo.get_by!(CIBARequest, auth_req_id: auth_req_id)
-  
-  if request.delivery_mode in [:ping, :push] do
-    %{auth_req_id: request.auth_req_id, mode: request.delivery_mode}
-    |> Lockspire.Workers.CIBADelivery.new()
-    |> Oban.insert()
-  end
-end
-```
+1. Registration, policy, and discovery truth
+2. Guarded JWKS fetcher and cache behavior
+3. Shared `private_key_jwt` verification in `ClientAuth`
+4. Endpoint regressions, docs, and release-truth proof
 
-## Anti-Patterns to Avoid
+## What changes vs. what stays put
 
-### Anti-Pattern 1: Synchronous Notification Delivery
-**What:** Blocking the `/bc-authorize` endpoint response while waiting for the Host app to send an SMS or Push notification.
-**Why bad:** The CD (Consumption Device) will experience timeouts. The spec requires immediate return of the `auth_req_id`.
-**Instead:** The Host callback (`ciba_notify`) must be fired asynchronously, or the Host app must implement it in a non-blocking way (e.g., casting a GenServer or queuing its own Oban job). Lockspire should enforce or heavily document this expectation.
+### New or materially changed
+- `Lockspire.Protocol.ClientAuth`
+- `Lockspire.JwksFetcher` or a new client-key resolver beside it
+- discovery metadata builders
+- DCR/admin policy presentation
+- tests across direct-client endpoints
 
-## Scalability Considerations
+### Likely unchanged
+- core token storage model
+- host seam ownership of accounts/login/branding
+- operator/admin shape outside auth-method truth updates
 
-| Concern | At 100 users | At 10K users | At 1M users |
-|---------|--------------|--------------|-------------|
-| DB Polling | Simple indexed queries on `auth_req_id` are sufficient. | Standard database load. | High frequency polling could cause DB strain. Consider adding Phoenix.PubSub to notify the token endpoint polling process immediately when consent is granted, reducing empty DB queries. |
-| Webhook Retries | Standard Oban configuration. | Moderate queue sizes. | Requires dedicated Oban queues for external webhooks to prevent slow RP endpoints from blocking internal Lockspire jobs. |
-
-## Sources
-
-- Elixir/Oban Best Practices
-- CIBA Core 1.0 Specification
+## Primary sources
+- RFC 8414: https://datatracker.ietf.org/doc/html/rfc8414
+- RFC 7523: https://datatracker.ietf.org/doc/html/rfc7523
+- OpenID Connect Core 1.0 / Section 9 family: https://openid.net/specs/openid-connect-core-1_0-18.html
+- OpenID Foundation notice on `private_key_jwt` audience vulnerability (January 2025): https://openid.net/wp-content/uploads/2025/01/OIDF-Responsible-Disclosure-Notice-on-Security-Vulnerability-for-private_key_jwt.pdf

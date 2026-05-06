@@ -1,51 +1,62 @@
-# Research Summary: Lockspire OpenID Connect CIBA
+# Research Summary: JWKS URI & Private Key JWT
 
-**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
-**Researched:** 2026-05-05
+**Domain:** Embedded OAuth/OIDC provider for Phoenix/Elixir
+**Researched:** 2026-05-06
+**Milestone:** v1.15 JWKS URI & Private Key JWT Client Authentication
 **Overall confidence:** HIGH
 
 ## Executive Summary
 
-Client-Initiated Backchannel Authentication (CIBA) Core 1.0 allows Relying Parties (RPs) to initiate authentication on behalf of a user without requiring browser redirects on the Consumption Device (CD). Instead, the user is authenticated via an Out-of-Band (OOB) mechanism on their Authentication Device (AD), such as a smartphone push notification. 
+Lockspire already has most of the structural pieces for this milestone: the durable client model includes both `jwks` and `jwks_uri`, `Lockspire.JwksFetcher` already performs cached remote retrieval, and all direct-client endpoint flows already converge on `Lockspire.Protocol.ClientAuth`. The missing work is not new architecture so much as turning an incomplete auth method into a truthful, secure-by-default one.
 
-For Lockspire, CIBA represents a significant competitive advantage. Elixir's inherent concurrency, coupled with Oban for background processing, makes Ping and Push delivery modes trivial and resilient compared to other language ecosystems. However, as an embedded library, Lockspire must strictly separate protocol state (managing `auth_req_id`, polling intervals, token issuance) from the delivery mechanism. The host application remains entirely responsible for sending the actual push notification to the user and collecting their consent.
+The core product recommendation is:
+- support `jwks_uri` as the normal remote-key path for confidential clients
+- keep the fetcher intentionally narrow and SSRF-resistant
+- upgrade `private_key_jwt` from payload-shape validation to full signature and claim verification
+- publish endpoint metadata truthfully wherever the shared client-auth seam is used
 
-## Key Findings
+## Key findings
 
-**Stack:** Leverages existing Elixir concurrency primitives (Registry/PubSub) and Oban for guaranteed webhook delivery in Ping/Push modes.
-**Architecture:** Protocol validation happens in Lockspire (`/bc-authorize`), but out-of-band notification logic is delegated to the host application via a Behaviour.
-**Critical pitfall:** Allowing malicious clients to spam users with unsolicited push notifications. Strict validation of `login_hint_token` and enforcement of `user_code`/`binding_message` are necessary.
+### Stack additions
+- No new dependency is required.
+- Existing repo versions are sufficient: `Req 0.5.17`, `Cachex 4.1.1`, and `JOSE 1.11.12`.
+- The likely implementation center is `Lockspire.Protocol.ClientAuth` plus a hardened `Lockspire.JwksFetcher` path.
 
-## Implications for Roadmap
+### Feature table stakes
+- `jwks_uri` support must be mutually exclusive with inline `jwks`.
+- `private_key_jwt` must verify signature, `iss`, `sub`, `aud`, `exp`, and `jti`.
+- Replay protection must remain durable.
+- Discovery must publish the relevant auth-method and signing-alg metadata when these methods are supported.
 
-Based on research, suggested phase structure for CIBA:
+### Architecture recommendation
+- Keep key resolution and assertion verification Lockspire-owned.
+- Reuse the shared client-auth seam across token, PAR, revocation, introspection, device authorization, token exchange, and CIBA.
+- Isolate remote JWKS retrieval logic so fetch policy is testable independently of auth-claim logic.
 
-1. **CIBA Core Protocol & Poll Mode** - Implement the `/bc-authorize` endpoint, new `grant_type=urn:openid:params:grant-type:ciba`, and database schema for tracking CIBA requests.
-   - Addresses: Core specification compliance and the easiest delivery mode (Poll) for clients to adopt.
-   - Avoids: Infrastructure overhead of webhooks before the core state machine is proven.
+### Watch-outs
+- The January 2025 OpenID Foundation disclosure materially changes the audience story for `private_key_jwt`. The safer milestone choice is issuer-identifier audience validation rather than token-endpoint audience acceptance.
+- The current `Lockspire.JwksFetcher` is useful but too permissive for a security milestone.
+- Current `ClientAuth` tests prove replay and TTL behavior, but not cryptographic correctness.
 
-2. **Host Delegation & Notification Seams** - Define the `Lockspire.Host` callbacks to trigger host notifications and receive asynchronous consent results.
-   - Addresses: The boundary between Lockspire's protocol state and the host's push notification infrastructure.
+## Recommended roadmap shape
 
-3. **Ping and Push Delivery Modes (Oban Integration)** - Add support for outgoing webhooks to notify clients when authentication is complete.
-   - Addresses: The advanced CIBA delivery modes, utilizing Oban for retry logic and resilience.
-   - Avoids: Building custom HTTP retry loops, relying instead on established ecosystem tools.
+1. Registration and metadata truth for `jwks_uri` and `private_key_jwt`
+2. Guarded remote JWKS resolution with cache and refresh behavior
+3. Full `private_key_jwt` verification in the shared auth seam
+4. Endpoint regressions, docs, and release-truth closure
 
-**Phase ordering rationale:**
-- Poll mode requires no outgoing HTTP calls from Lockspire and establishes the core database structures. The Host callback boundary must be defined before advanced Ping/Push delivery modes can be fully exercised.
+## Milestone-specific decisions suggested by research
 
-**Research flags for phases:**
-- Phase 2: Needs careful API design to ensure the host can easily correlate asynchronous Push/WebSocket responses from the Authentication Device back to Lockspire's `auth_req_id`.
+- Choose `v1.15` and keep the wedge limited to `jwks_uri` plus `private_key_jwt`; do not add `client_secret_jwt`.
+- Enforce issuer-identifier audience binding for `private_key_jwt`.
+- Keep mTLS, federation, and signed metadata URIs out of scope.
 
-## Confidence Assessment
-
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Oban is already an established standard in the Phoenix ecosystem for background jobs. |
-| Features | HIGH | CIBA Core 1.0 is a stable specification with clear endpoint definitions. |
-| Architecture | HIGH | The Elixir Behaviour pattern has already proven successful for separating Lockspire logic from Host logic (e.g., Device Flow, DCR). |
-| Pitfalls | HIGH | The spec explicitly warns about unsolicited authentication requests and provides mechanisms (`user_code`) to mitigate them. |
-
-## Gaps to Address
-
-- Determining the exact schema requirements for the `login_hint_token` if Lockspire decides to validate it natively versus delegating the entire hint resolution to the host application.
+## Sources
+- RFC 7523: https://datatracker.ietf.org/doc/html/rfc7523
+- RFC 8414: https://datatracker.ietf.org/doc/html/rfc8414
+- OpenID Connect Registration 1.0: https://www.openid.net/specs/openid-connect-registration-1_0-39.html
+- OpenID Connect Core 1.0: https://openid.net/specs/openid-connect-core-1_0-18.html
+- OpenID Foundation responsible disclosure notice dated January 2025: https://openid.net/wp-content/uploads/2025/01/OIDF-Responsible-Disclosure-Notice-on-Security-Vulnerability-for-private_key_jwt.pdf
+- Req docs: https://hexdocs.pm/req/Req.html
+- Cachex docs: https://hexdocs.pm/cachex/Cachex.html
+- JOSE docs: https://hexdocs.pm/jose/JOSE.JWK.html
