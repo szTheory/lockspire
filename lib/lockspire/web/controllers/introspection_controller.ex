@@ -16,7 +16,7 @@ defmodule Lockspire.Web.IntrospectionController do
     case Introspection.introspect(%{
            params: params,
            authorization: authorization,
-           opts: [client_store: Repository, token_store: Repository]
+           opts: [client_store: Repository, token_store: Repository, consent_store: Repository]
          }) do
       {:ok, response} ->
         conn

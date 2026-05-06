@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.Introspection do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
   alias Lockspire.Protocol.ClientAuth
@@ -75,7 +76,7 @@ defmodule Lockspire.Protocol.Introspection do
   defp introspection_response(%Client{} = client, token_hash, request) do
     with {:ok, true} <- validate_confidential_caller(client),
          {:ok, token} <- fetch_lifecycle_token(token_hash, request) do
-      classify_token(client, token, now(request))
+      classify_token(client, token, now(request), request)
     else
       {:ok, false} -> inactive_response()
       {:error, :lookup_failed} -> raise_lookup_error()
@@ -99,7 +100,7 @@ defmodule Lockspire.Protocol.Introspection do
     end
   end
 
-  defp classify_token(%Client{} = client, %Token{} = token, now) do
+  defp classify_token(%Client{} = client, %Token{} = token, now, request) do
     cond do
       token.client_id != client.client_id ->
         inactive_response()
@@ -117,13 +118,13 @@ defmodule Lockspire.Protocol.Introspection do
         inactive_response()
 
       true ->
-        {:ok, active_response(token)}
+        {:ok, active_response(token, request)}
     end
   end
 
-  defp classify_token(_client, nil, _now), do: inactive_response()
+  defp classify_token(_client, nil, _now, _request), do: inactive_response()
 
-  defp active_response(%Token{} = token) do
+  defp active_response(%Token{} = token, request) do
     %{
       active: true,
       client_id: token.client_id,
@@ -134,6 +135,7 @@ defmodule Lockspire.Protocol.Introspection do
       exp: DateTime.to_unix(token.expires_at),
       iat: maybe_unix(token.issued_at)
     }
+    |> maybe_put_authorization_details(token, request)
     |> maybe_put(:jti, token.jti)
     |> maybe_put(:cnf, token.cnf)
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
@@ -144,6 +146,22 @@ defmodule Lockspire.Protocol.Introspection do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp maybe_put_authorization_details(map, %Token{consent_grant_id: nil}, _request), do: map
+
+  defp maybe_put_authorization_details(map, %Token{consent_grant_id: consent_grant_id}, request) do
+    case consent_store(request).fetch_consent_grant(consent_grant_id) do
+      {:ok, %ConsentGrant{authorization_details: authorization_details}}
+      when is_list(authorization_details) and authorization_details != [] ->
+        Map.put(map, :authorization_details, authorization_details)
+
+      {:ok, _grant} ->
+        map
+
+      {:error, _reason} ->
+        map
+    end
+  end
 
   defp empty_to_nil([]), do: nil
   defp empty_to_nil(value), do: value
@@ -202,6 +220,12 @@ defmodule Lockspire.Protocol.Introspection do
       request
       |> Map.get(:opts, [])
       |> Keyword.get(:token_store, Config.repo!())
+
+  defp consent_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get_lazy(:consent_store, fn -> token_store(request) end)
 
   defp now(request) do
     request
