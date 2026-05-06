@@ -52,7 +52,7 @@ The key insight: **the inbound session is the single source of truth for "who is
 
 ## The integration seam
 
-Lockspire defines one behaviour, `Lockspire.Host.AccountResolver`, with five callbacks: "who is logged in," "redirect to login," "build claims," "redirect to logout," and (for CIBA flows) "verify a backchannel user code."
+Lockspire defines one behaviour, `Lockspire.Host.AccountResolver`, with six callbacks: "who is logged in now," "look up an account by reference" (used during introspection and refresh), "redirect to login," "build claims," "redirect to logout," and (for CIBA flows) "verify a backchannel user code."
 
 The host writes a small glue module that satisfies this behaviour. For a Sigra-backed host the implementation is roughly 80 lines and mostly involves reading `conn.assigns.current_scope` and mapping the user's data into ID-token / userinfo claim sets.
 
