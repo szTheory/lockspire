@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
   @moduletag :integration
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.Introspection
   alias Lockspire.Protocol.RefreshExchange
@@ -77,6 +78,27 @@ defmodule Lockspire.Protocol.IntrospectionTest do
 
     now = DateTime.utc_now()
 
+    authorization_details = [
+      %{
+        "type" => "payment_initiation",
+        "locations" => ["https://resource.example.com/payments"],
+        "actions" => ["create"],
+        "instructedAmount" => %{"currency" => "USD", "amount" => "12.34"}
+      }
+    ]
+
+    {:ok, consent_grant} =
+      Repository.grant_consent(%ConsentGrant{
+        account_id: "subject-introspection",
+        client_id: confidential_client.client_id,
+        scopes: ["email", "offline_access"],
+        granted_at: now,
+        status: :active,
+        kind: :one_time,
+        authorization_details: authorization_details,
+        metadata: %{}
+      })
+
     {:ok, _access_token} =
       Repository.store_token(%Token{
         token_hash: TokenFormatter.hash_token("introspect-access-token"),
@@ -86,6 +108,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
         interaction_id: "interaction-introspection-access",
         scopes: ["email"],
         audience: ["api.example.com"],
+        consent_grant_id: consent_grant.id,
         issued_at: now,
         expires_at: DateTime.add(now, 3600, :second)
       })
@@ -101,8 +124,22 @@ defmodule Lockspire.Protocol.IntrospectionTest do
         interaction_id: "interaction-introspection-refresh",
         scopes: ["email", "offline_access"],
         audience: ["api.example.com"],
+        consent_grant_id: consent_grant.id,
         issued_at: now,
         expires_at: DateTime.add(now, 86_400, :second)
+      })
+
+    {:ok, _token_without_grant} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("introspect-no-grant-token"),
+        token_type: :access_token,
+        client_id: confidential_client.client_id,
+        account_id: "subject-introspection",
+        interaction_id: "interaction-introspection-no-grant",
+        scopes: ["email"],
+        audience: ["api.example.com"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 3600, :second)
       })
 
     {:ok, _expired_token} =
@@ -147,13 +184,16 @@ defmodule Lockspire.Protocol.IntrospectionTest do
       confidential_client: confidential_client,
       secret: secret,
       other_client: other_client,
-      public_client: public_client
+      public_client: public_client,
+      authorization_details: authorization_details,
+      consent_grant_id: consent_grant.id
     }
   end
 
   test "returns active token details for authorized confidential callers", %{
     confidential_client: client,
-    secret: secret
+    secret: secret,
+    authorization_details: authorization_details
   } do
     assert {:ok, response} =
              Introspection.introspect(%{
@@ -168,6 +208,46 @@ defmodule Lockspire.Protocol.IntrospectionTest do
     assert response.scope == "email"
     assert response.sub == "subject-introspection"
     assert response.aud == ["api.example.com"]
+    assert response.authorization_details == authorization_details
+  end
+
+  test "returns granted authorization_details for active refresh tokens", %{
+    confidential_client: client,
+    secret: secret,
+    authorization_details: authorization_details
+  } do
+    assert {:ok, response} =
+             Introspection.introspect(%{
+               params: %{"token" => "introspect-refresh-token"},
+               authorization: basic_auth(client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert response.active == true
+    assert response.token_type == "refresh_token"
+    assert response.authorization_details == authorization_details
+  end
+
+  test "keeps tokens compact-by-reference and omits authorization_details when the grant is missing", %{
+    confidential_client: client,
+    secret: secret,
+    consent_grant_id: consent_grant_id
+  } do
+    assert {:ok, %Token{} = token} =
+             Repository.fetch_lifecycle_token(TokenFormatter.hash_token("introspect-access-token"))
+
+    assert token.consent_grant_id == consent_grant_id
+    refute Map.has_key?(Map.from_struct(token), :authorization_details)
+
+    assert {:ok, response} =
+             Introspection.introspect(%{
+               params: %{"token" => "introspect-no-grant-token"},
+               authorization: basic_auth(client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert response.active == true
+    refute Map.has_key?(response, :authorization_details)
   end
 
   test "returns cnf when token is DPoP-bound", %{

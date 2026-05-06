@@ -7,6 +7,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
   import Plug.Conn
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
@@ -80,6 +81,27 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     now = DateTime.utc_now()
 
+    authorization_details = [
+      %{
+        "type" => "payment_initiation",
+        "locations" => ["https://resource.example.com/payments"],
+        "actions" => ["create"],
+        "instructedAmount" => %{"currency" => "USD", "amount" => "12.34"}
+      }
+    ]
+
+    {:ok, consent_grant} =
+      Repository.grant_consent(%ConsentGrant{
+        account_id: "subject-controller-introspection",
+        client_id: client.client_id,
+        scopes: ["email", "offline_access"],
+        granted_at: now,
+        status: :active,
+        kind: :one_time,
+        authorization_details: authorization_details,
+        metadata: %{}
+      })
+
     {:ok, _access_token} =
       Repository.store_token(%Token{
         token_hash: TokenFormatter.hash_token("controller-introspect-access"),
@@ -87,6 +109,36 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
         client_id: client.client_id,
         account_id: "subject-controller-introspection",
         interaction_id: "interaction-controller-introspection",
+        scopes: ["email"],
+        audience: ["api.example.com"],
+        consent_grant_id: consent_grant.id,
+        issued_at: now,
+        expires_at: DateTime.add(now, 3600, :second)
+      })
+
+    {:ok, _refresh_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("controller-introspect-refresh"),
+        token_type: :refresh_token,
+        family_id: "controller-introspect-refresh-family",
+        generation: 0,
+        client_id: client.client_id,
+        account_id: "subject-controller-introspection",
+        interaction_id: "interaction-controller-introspection-refresh",
+        scopes: ["email", "offline_access"],
+        audience: ["api.example.com"],
+        consent_grant_id: consent_grant.id,
+        issued_at: now,
+        expires_at: DateTime.add(now, 86_400, :second)
+      })
+
+    {:ok, _missing_grant_token} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("controller-introspect-missing-grant"),
+        token_type: :access_token,
+        client_id: client.client_id,
+        account_id: "subject-controller-introspection",
+        interaction_id: "interaction-controller-introspection-missing-grant",
         scopes: ["email"],
         audience: ["api.example.com"],
         issued_at: now,
@@ -120,12 +172,20 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
         cnf: %{"jkt" => "controller-test-thumbprint"}
       })
 
-    %{client: client, secret: secret, public_client: public_client, other_client: other_client}
+    %{
+      client: client,
+      secret: secret,
+      public_client: public_client,
+      other_client: other_client,
+      authorization_details: authorization_details,
+      consent_grant_id: consent_grant.id
+    }
   end
 
   test "POST /introspect returns active token metadata for authorized callers", %{
     client: client,
-    secret: secret
+    secret: secret,
+    authorization_details: authorization_details
   } do
     conn =
       build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"})
@@ -143,6 +203,52 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
     assert body["client_id"] == client.client_id
     assert body["token_type"] == "access_token"
     assert body["sub"] == "subject-controller-introspection"
+    assert body["authorization_details"] == authorization_details
+  end
+
+  test "POST /introspect returns grant-backed authorization_details for refresh tokens", %{
+    client: client,
+    secret: secret,
+    authorization_details: authorization_details
+  } do
+    conn =
+      build_conn(:post, "/introspect", %{"token" => "controller-introspect-refresh"})
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["active"] == true
+    assert body["token_type"] == "refresh_token"
+    assert body["authorization_details"] == authorization_details
+  end
+
+  test "POST /introspect keeps token storage compact-by-reference and omits missing grant payloads", %{
+    client: client,
+    secret: secret,
+    consent_grant_id: consent_grant_id
+  } do
+    assert {:ok, %Token{} = token} =
+             Repository.fetch_lifecycle_token(
+               TokenFormatter.hash_token("controller-introspect-access")
+             )
+
+    assert token.consent_grant_id == consent_grant_id
+    refute Map.has_key?(Map.from_struct(token), :authorization_details)
+
+    conn =
+      build_conn(:post, "/introspect", %{"token" => "controller-introspect-missing-grant"})
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 200
+
+    body = Jason.decode!(conn.resp_body)
+    assert body["active"] == true
+    refute Map.has_key?(body, "authorization_details")
   end
 
   test "POST /introspect returns cnf for DPoP-bound tokens", %{
