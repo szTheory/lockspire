@@ -91,7 +91,11 @@ defmodule Lockspire.Web.ConsentLiveTest do
   test "renders client and requested scope context for consent review" do
     {:ok, interaction} =
       Repository.put_interaction(
-        interaction_fixture(status: :pending_consent, account_id: "account-123")
+        interaction_fixture(
+          status: :pending_consent,
+          account_id: "account-123",
+          authorization_details: authorization_details_fixture()
+        )
       )
 
     assert {:ok, socket} =
@@ -106,9 +110,15 @@ defmodule Lockspire.Web.ConsentLiveTest do
     assert html =~ "Acme Integrations"
     assert html =~ "profile"
     assert html =~ "email"
+    assert html =~ "authorization_details"
+    assert html =~ "payment_initiation"
+    assert html =~ "account_access"
     assert html =~ "/lockspire/interactions/#{interaction.interaction_id}/complete"
     assert html =~ "Approve access"
     assert html =~ "Deny access"
+
+    assert socket.assigns.authorization_details == authorization_details_fixture()
+    assert socket.assigns.authorization_detail_types == ["payment_initiation", "account_access"]
   end
 
   test "pending login interactions resume into consent review for authenticated accounts" do
@@ -196,5 +206,22 @@ defmodule Lockspire.Web.ConsentLiveTest do
     }
 
     struct!(defaults, Enum.into(overrides, %{}))
+  end
+
+  defp authorization_details_fixture do
+    [
+      %{
+        "type" => "payment_initiation",
+        "locations" => ["https://resource.example.com/payments"],
+        "actions" => ["create"],
+        "instructedAmount" => %{"currency" => "USD", "amount" => "12.34"}
+      },
+      %{
+        "type" => "account_access",
+        "locations" => ["https://resource.example.com/accounts"],
+        "actions" => ["read"],
+        "datatypes" => ["balances", "transactions"]
+      }
+    ]
   end
 end
