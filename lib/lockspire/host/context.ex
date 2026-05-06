@@ -11,6 +11,7 @@ defmodule Lockspire.Host.Context do
           interaction_id: String.t() | nil,
           client_id: String.t() | nil,
           scopes: [String.t()] | nil,
+          resources: [String.t()] | nil,
           return_to: String.t() | nil,
           tenant_id: String.t() | nil,
           metadata: map()
@@ -21,6 +22,7 @@ defmodule Lockspire.Host.Context do
     :interaction_id,
     :client_id,
     :scopes,
+    :resources,
     :return_to,
     :tenant_id,
     metadata: %{}

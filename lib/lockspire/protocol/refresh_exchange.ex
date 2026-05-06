@@ -56,14 +56,19 @@ defmodule Lockspire.Protocol.RefreshExchange do
   end
 
   defp rotate_refresh_token(%Client{} = client, refresh_token_hash, request) do
+    params = Map.get(request, :params, Map.get(request, "params", request))
+
     with {:ok, %Token{} = presented_refresh_token} <-
            fetch_presented_refresh_token(refresh_token_hash, request),
+         {:ok, requested_resources} <-
+           validate_requested_resources(params, presented_refresh_token),
          {:ok, context} <-
            TokenEndpointDPoP.resolve_refresh_context(client, presented_refresh_token, request) do
       rotate_refresh_token_with_audit(
         client,
         refresh_token_hash,
         presented_refresh_token,
+        requested_resources,
         context,
         request
       )
@@ -74,6 +79,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
          %Client{} = client,
          refresh_token_hash,
          %Token{} = presented_refresh_token,
+         requested_resources,
          context,
          request
        ) do
@@ -86,7 +92,8 @@ defmodule Lockspire.Protocol.RefreshExchange do
         formatted_access_token,
         rotated_at,
         context,
-        presented_refresh_token
+        presented_refresh_token,
+        requested_resources
       )
 
     refresh_token =
@@ -142,6 +149,34 @@ defmodule Lockspire.Protocol.RefreshExchange do
       {:error, _reason} ->
         {:error,
          oauth_error(500, "server_error", "Unable to load refresh token", :refresh_lookup_failed)}
+    end
+  end
+
+  defp validate_requested_resources(params, %Token{} = presented_refresh_token) do
+    requested =
+      params
+      |> Map.get("resource")
+      |> List.wrap()
+      |> Enum.flat_map(fn
+        r when is_binary(r) -> [r]
+        _ -> []
+      end)
+
+    authorized = presented_refresh_token.audience
+
+    cond do
+      requested == [] ->
+        {:ok, authorized}
+
+      Enum.all?(requested, &(&1 in authorized)) ->
+        {:ok, requested}
+
+      true ->
+        {:error,
+         invalid_grant(
+           "The requested resource is invalid or was not authorized",
+           :invalid_resource
+         )}
     end
   end
 
@@ -258,7 +293,8 @@ defmodule Lockspire.Protocol.RefreshExchange do
          formatted_access_token,
          rotated_at,
          context,
-         %Token{} = source_token
+         %Token{} = source_token,
+         requested_resources
        ) do
     %Token{
       token_hash: formatted_access_token.token_hash,
@@ -266,6 +302,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       client_id: client.client_id,
       account_id: nil,
       sid: source_token.sid,
+      audience: requested_resources,
       cnf: context.cnf,
       expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
     }

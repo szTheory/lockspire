@@ -145,8 +145,16 @@ defmodule Lockspire.Protocol.TokenExchange do
        ) do
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
+         {:ok, requested_resources} <- validate_requested_resources(params, authorization_code),
          %Success{} = success <-
-           redeem_code(client, authorization_code, code_hash, issuance_context, request) do
+           redeem_code(
+             client,
+             authorization_code,
+             code_hash,
+             issuance_context,
+             request,
+             requested_resources
+           ) do
       emit_success(client, authorization_code, success)
       {:ok, success}
     else
@@ -650,12 +658,43 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  defp validate_requested_resources(params, %Token{} = authorization_code) do
+    requested =
+      params
+      |> Map.get("resource")
+      |> List.wrap()
+      |> Enum.flat_map(fn
+        r when is_binary(r) -> [r]
+        _ -> []
+      end)
+
+    authorized = authorization_code.audience
+
+    cond do
+      requested == [] ->
+        {:ok, authorized}
+
+      Enum.all?(requested, &(&1 in authorized)) ->
+        {:ok, requested}
+
+      true ->
+        {:error,
+         oauth_error(
+           400,
+           "invalid_target",
+           "The requested resource is invalid or was not authorized",
+           :invalid_resource
+         )}
+    end
+  end
+
   defp redeem_code(
          %Client{} = client,
          %Token{} = authorization_code,
          code_hash,
          issuance_context,
-         request
+         request,
+         requested_resources
        ) do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
@@ -663,7 +702,7 @@ defmodule Lockspire.Protocol.TokenExchange do
     {access_token, raw_access_token} =
       build_access_token(
         client,
-        authorization_code,
+        %Token{authorization_code | audience: requested_resources},
         issued_at,
         formatted_refresh_token,
         issuance_context,

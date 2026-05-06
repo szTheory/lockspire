@@ -109,6 +109,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
           client_id: validated.client_id,
           redirect_uri: validated.redirect_uri,
           scopes: validated.scopes,
+          resources_requested: validated.resources,
           prompt: validated.prompt,
           nonce: validated.nonce,
           state: validated.state,

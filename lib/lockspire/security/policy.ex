@@ -79,6 +79,8 @@ defmodule Lockspire.Security.Policy do
       when is_binary(issuer) and is_binary(mount_path) do
     uri = URI.parse(issuer)
     issuer_path = uri.path || "/"
+    normalized_issuer_path = if issuer_path == "/", do: "", else: issuer_path
+    normalized_mount_path = if mount_path == "/", do: "", else: mount_path
 
     cond do
       not absolute_uri?(uri) ->
@@ -93,7 +95,7 @@ defmodule Lockspire.Security.Policy do
         raise ArgumentError,
               "invalid :issuer for :lockspire. Fragments are not allowed."
 
-      issuer_path != mount_path ->
+      normalized_issuer_path != normalized_mount_path ->
         raise ArgumentError,
               "invalid :issuer for :lockspire. Issuer path #{inspect(issuer_path)} must match mount_path #{inspect(mount_path)}."
 

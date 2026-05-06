@@ -18,6 +18,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
           client_id: String.t(),
           redirect_uri: String.t(),
           scopes: [String.t()],
+          resources_requested: [String.t()],
           prompt: prompt(),
           nonce: String.t() | nil,
           state: String.t() | nil,
@@ -42,6 +43,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
     :inserted_at,
     :updated_at,
     scopes: [],
+    resources_requested: [],
     prompt: nil
   ]
 
@@ -62,6 +64,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
       client_id: Map.fetch!(attrs, :client_id),
       redirect_uri: Map.fetch!(attrs, :redirect_uri),
       scopes: List.wrap(Map.get(attrs, :scopes, [])),
+      resources_requested: List.wrap(Map.get(attrs, :resources_requested, [])),
       prompt: Map.get(attrs, :prompt),
       nonce: Map.get(attrs, :nonce),
       state: Map.get(attrs, :state),

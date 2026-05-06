@@ -17,6 +17,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     field(:client_id, :string)
     field(:account_id, :string)
     field(:scopes_requested, {:array, :string}, default: [])
+    field(:resources_requested, {:array, :string}, default: [])
     field(:prompt, {:array, :string}, default: [])
     field(:nonce, :string)
     field(:auth_time, :utc_datetime_usec)
@@ -55,6 +56,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       :client_id,
       :account_id,
       :scopes_requested,
+      :resources_requested,
       :prompt,
       :nonce,
       :auth_time,
@@ -104,6 +106,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       client_id: record.client_id,
       account_id: record.account_id,
       scopes_requested: record.scopes_requested,
+      resources_requested: record.resources_requested,
       prompt: record.prompt,
       nonce: record.nonce,
       auth_time: record.auth_time,

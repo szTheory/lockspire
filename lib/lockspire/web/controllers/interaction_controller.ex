@@ -105,7 +105,8 @@ defmodule Lockspire.Web.InteractionController do
       interaction_id: interaction.interaction_id,
       return_to: consent_path(interaction.interaction_id),
       client_id: interaction.client_id,
-      scopes: interaction.scopes_requested
+      scopes: interaction.scopes_requested,
+      resources: interaction.resources_requested
     }
 
     case resolver.resolve_current_account(conn, context) do

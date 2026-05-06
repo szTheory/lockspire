@@ -14,7 +14,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
-  @unsupported_params ~w(resource response_mode)
+  @unsupported_params ~w(response_mode)
 
   defmodule Validated do
     @moduledoc """
@@ -28,6 +28,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
             client_id: String.t(),
             redirect_uri: String.t(),
             scopes: [String.t()],
+            resources: [String.t()],
             prompt: [String.t()],
             nonce: String.t() | nil,
             state: String.t() | nil,
@@ -47,6 +48,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       :code_challenge,
       :code_challenge_method,
       scopes: [],
+      resources: [],
       prompt: [],
       auth_time_requested?: false
     ]
@@ -286,6 +288,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          :ok <- validate_nonce(params, scopes),
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
+         {:ok, resources} <- validate_resources(params),
          :ok <- reject_unsupported_params(params) do
       {:ok,
        build_validated(
@@ -293,6 +296,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          client,
          redirect_uri,
          scopes,
+         resources,
          prompt,
          max_age,
          auth_time_requested?
@@ -524,6 +528,40 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
+  defp validate_resources(params) do
+    resources =
+      params
+      |> Map.get("resource")
+      |> List.wrap()
+      |> Enum.flat_map(fn
+        r when is_binary(r) -> [r]
+        _ -> []
+      end)
+
+    if Enum.all?(resources, &valid_resource_uri?/1) do
+      {:ok, resources}
+    else
+      {:redirect_error,
+       redirect_error(
+         params,
+         :invalid_target,
+         "resource parameter must be an absolute URI without a fragment",
+         :invalid_resource
+       )}
+    end
+  end
+
+  defp valid_resource_uri?(resource) do
+    case URI.new(resource) do
+      {:ok, %URI{scheme: scheme, host: host, fragment: nil}}
+      when is_binary(scheme) and is_binary(host) ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
   defp maybe_validate_pushed_client_id(_params, _client, false), do: :ok
 
   defp maybe_validate_pushed_client_id(%{"client_id" => client_id}, %Client{} = client, true)
@@ -618,6 +656,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       "redirect_uri" => request.redirect_uri,
       "response_type" => "code",
       "scope" => Enum.join(request.scopes, " "),
+      "resource" => request.resources_requested,
       "prompt" => prompt_param(request.prompt),
       "nonce" => request.nonce,
       "state" => request.state,
@@ -681,6 +720,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          %Client{} = client,
          redirect_uri,
          scopes,
+         resources,
          prompt,
          max_age,
          auth_time_requested?
@@ -690,6 +730,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       client_id: client.client_id,
       redirect_uri: redirect_uri,
       scopes: scopes,
+      resources: resources,
       prompt: prompt,
       nonce: normalize_optional_string(params["nonce"]),
       state: normalize_optional_string(params["state"]),
