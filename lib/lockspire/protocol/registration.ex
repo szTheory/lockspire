@@ -215,6 +215,7 @@ defmodule Lockspire.Protocol.Registration do
     has_jwks = Map.has_key?(metadata, "jwks")
     has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
     auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
+    jwks_uri = Map.get(metadata, "jwks_uri")
 
     cond do
       has_jwks and has_jwks_uri ->
@@ -231,6 +232,22 @@ defmodule Lockspire.Protocol.Registration do
            code: :invalid_client_metadata,
            field: :token_endpoint_auth_method,
            reason: :missing_cryptographic_material
+         }}
+
+      has_jwks_uri and auth_method != "private_key_jwt" ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :jwks_uri,
+           reason: :unsupported_token_endpoint_auth_method
+         }}
+
+      has_jwks_uri and not https_uri?(jwks_uri) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :jwks_uri,
+           reason: :invalid_uri_scheme
          }}
 
       true ->
@@ -331,6 +348,7 @@ defmodule Lockspire.Protocol.Registration do
       policy_uri: Map.get(metadata, "policy_uri"),
       contacts: Map.get(metadata, "contacts", []),
       jwks: Map.get(metadata, "jwks"),
+      jwks_uri: Map.get(metadata, "jwks_uri"),
       active: true,
       dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,
@@ -394,6 +412,15 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp parse_scope(_), do: []
+
+  defp https_uri?(uri) when is_binary(uri) do
+    case URI.parse(uri) do
+      %URI{scheme: "https", host: host} when is_binary(host) and host != "" -> true
+      _ -> false
+    end
+  end
+
+  defp https_uri?(_uri), do: false
 
   defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
     case Map.get(metadata, "dpop_bound_access_tokens", false) do

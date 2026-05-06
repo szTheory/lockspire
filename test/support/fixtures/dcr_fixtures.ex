@@ -27,6 +27,20 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
     Map.put(@valid_metadata, "jwks_uri", "https://app.example.test/.well-known/jwks.json")
   end
 
+  @spec private_key_jwt_jwks_uri_metadata() :: map()
+  def private_key_jwt_jwks_uri_metadata do
+    @valid_metadata
+    |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+    |> Map.put("jwks_uri", "https://keys.example.test/client.jwks.json")
+  end
+
+  @spec private_key_jwt_jwks_metadata() :: map()
+  def private_key_jwt_jwks_metadata do
+    @valid_metadata
+    |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+    |> Map.put("jwks", %{"keys" => [%{"kty" => "RSA", "kid" => "rsa-1"}]})
+  end
+
   @spec mutual_jwks_metadata() :: map()
   def mutual_jwks_metadata do
     @valid_metadata
@@ -73,6 +87,21 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
     }
 
     struct!(base, attrs)
+  end
+
+  @spec private_key_jwt_server_policy(map()) :: ServerPolicy.t()
+  def private_key_jwt_server_policy(attrs \\ %{}) when is_map(attrs) do
+    server_policy(%{
+      dcr_allowed_token_endpoint_auth_methods: [
+        "client_secret_basic",
+        "client_secret_post",
+        "none",
+        "private_key_jwt"
+      ]
+    })
+    |> Map.from_struct()
+    |> Map.merge(attrs)
+    |> then(&struct!(ServerPolicy, &1))
   end
 
   @spec register_request(keyword()) :: map()

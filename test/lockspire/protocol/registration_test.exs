@@ -349,16 +349,24 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — D-14 validator" do
+    test "accepts private_key_jwt with https jwks_uri and persists jwks_uri" do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.private_key_jwt_jwks_uri_metadata(),
+          server_policy: server_policy
+        )
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.token_endpoint_auth_method == :private_key_jwt
+      assert client.client_type == :confidential
+      assert client.jwks_uri == "https://keys.example.test/client.jwks.json"
+      assert is_nil(client.jwks)
+    end
+
     test "rejects private_key_jwt without jwks or jwks_uri" do
-      server_policy =
-        DcrFixtures.server_policy(%{
-          dcr_allowed_token_endpoint_auth_methods: [
-            "client_secret_basic",
-            "client_secret_post",
-            "none",
-            "private_key_jwt"
-          ]
-        })
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
 
       metadata =
         DcrFixtures.valid_metadata() |> Map.put("token_endpoint_auth_method", "private_key_jwt")
@@ -374,13 +382,46 @@ defmodule Lockspire.Protocol.RegistrationTest do
     end
 
     test "rejects metadata with both jwks and jwks_uri" do
-      request = DcrFixtures.register_request(metadata: DcrFixtures.mutual_jwks_metadata())
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.mutual_jwks_metadata(),
+          server_policy: DcrFixtures.private_key_jwt_server_policy()
+        )
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
                 field: :jwks,
                 reason: :mutually_exclusive_with_jwks_uri
+              }} = Registration.register(request)
+    end
+
+    test "rejects jwks_uri when auth method is not private_key_jwt" do
+      request =
+        DcrFixtures.register_request(metadata: DcrFixtures.invalid_jwks_uri_metadata())
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :jwks_uri,
+                reason: :unsupported_token_endpoint_auth_method
+              }} = Registration.register(request)
+    end
+
+    test "rejects private_key_jwt jwks_uri that is not https" do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      metadata =
+        DcrFixtures.private_key_jwt_jwks_uri_metadata()
+        |> Map.put("jwks_uri", "http://keys.example.test/client.jwks.json")
+
+      request = DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :jwks_uri,
+                reason: :invalid_uri_scheme
               }} = Registration.register(request)
     end
 
