@@ -10,7 +10,7 @@
 - [x] **Phase 55: RAR Protocol Intake** - Enable `authorization_details` support in PAR and Authorization pipelines. (completed 2026-05-06)
 - [x] **Phase 56: RAR Domain Validation & Storage** - Deliver Ecto-based validation framework and durable storage for rich authorization. (completed 2026-05-06)
 - [x] **Phase 57: RAR Introspection & Verification** - Expose rich details to Resource Servers and verify end-to-end flows. (completed 2026-05-06)
-- [ ] **Phase 58: Milestone Closure & Discovery** - Truthful discovery updates, executable docs, and final stabilization.
+- [x] **Phase 58: Milestone Closure & Discovery** - Truthful discovery updates, executable docs, and final stabilization. (completed 2026-05-06)
 
 ## Phase Details
 
@@ -72,8 +72,9 @@
 **Success Criteria** (what must be TRUE):
   1. `.well-known/openid-configuration` includes `resource_indicators_supported` and `authorization_details_types_supported`.
   2. Documentation includes an executable example of a custom RAR "Payment Initiation" flow.
-  3. All v1.14 requirements are validated and archived.
-**Plans**: TBD
+  3. All v1.14 requirements are validated and ready for archival handoff.
+**Plans**: 1 plans
+- [x] 58-01-PLAN.md — Truthful discovery metadata, custom RAR host guide, and release-contract closure handoff.
 
 ## Progress Table
 
@@ -83,4 +84,4 @@
 | 55. RAR Protocol Intake | 3/3 | Complete    | 2026-05-06 |
 | 56. RAR Domain Validation | 6/6 | Complete | 2026-05-06 |
 | 57. RAR Introspection | 1/1 | Complete | 2026-05-06 |
-| 58. Milestone Closure | 0/1 | Not started | - |
+| 58. Milestone Closure | 1/1 | Complete | 2026-05-06 |
