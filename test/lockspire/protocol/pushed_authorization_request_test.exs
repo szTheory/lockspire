@@ -222,6 +222,32 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
              before_count
   end
 
+  test "push persists authorization_details from the validated request", %{
+    public_client: public_client
+  } do
+    detail = %{"type" => "payment_initiation", "actions" => ["initiate"]}
+    encoded = Jason.encode!([detail])
+
+    assert {:ok, success} =
+             PushedAuthorizationRequestProtocol.push(%{
+               params:
+                 valid_params(public_client.client_id)
+                 |> Map.put("authorization_details", encoded),
+               opts: [
+                 client_store: Repository,
+                 pushed_authorization_request_store: Repository,
+                 request_uri_generator: fn -> "rar-success" end
+               ]
+             })
+
+    assert {:ok, fetched} =
+             Repository.fetch_active_pushed_authorization_request(
+               Policy.hash_token(success.request_uri)
+             )
+
+    assert fetched.authorization_details == [detail]
+  end
+
   test "push rejects missing pkce without creating durable state", %{public_client: public_client} do
     before_count = Lockspire.TestRepo.aggregate(PushedAuthorizationRequestRecord, :count, :id)
 

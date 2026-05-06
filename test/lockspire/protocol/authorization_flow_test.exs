@@ -110,6 +110,47 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     assert persisted.auth_time == nil
   end
 
+  test "validated requests carry authorization_details into the persisted interaction" do
+    details = [
+      %{"type" => "payment_initiation", "actions" => ["initiate"]}
+    ]
+
+    assert {:login_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(authorization_details: details),
+               nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-rar" end
+             )
+
+    assert interaction.authorization_details == details
+
+    assert {:ok, %Interaction{} = persisted} =
+             Store.fetch_interaction("interaction-rar")
+
+    assert persisted.authorization_details == details
+  end
+
+  test "validated requests default authorization_details to [] when none are supplied" do
+    assert {:login_required, %Interaction{} = interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(),
+               nil,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-no-rar" end
+             )
+
+    assert interaction.authorization_details == []
+  end
+
   test "prompt=none with no subject returns redirect-safe login_required and never starts interactive login" do
     assert {:redirect_error, %Error{} = error} =
              AuthorizationFlow.start_authorization(

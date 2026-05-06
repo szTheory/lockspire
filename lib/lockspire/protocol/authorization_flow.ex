@@ -257,6 +257,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       account_id: subject_id,
       scopes_requested: validated.scopes,
       resources_requested: validated.resources,
+      authorization_details: validated.authorization_details,
       prompt: validated.prompt,
       nonce: validated.nonce,
       auth_time: nil,

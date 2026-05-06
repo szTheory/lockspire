@@ -874,6 +874,106 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_object_claims
   end
 
+  test "accepts a valid authorization_details JSON array on direct requests", %{client: client} do
+    detail = %{"type" => "payment_initiation", "actions" => ["initiate"]}
+    encoded = Jason.encode!([detail])
+
+    assert {:ok, %Validated{} = validated} =
+             client.client_id
+             |> valid_params()
+             |> Map.put("authorization_details", encoded)
+             |> AuthorizationRequest.validate()
+
+    assert validated.authorization_details == [detail]
+  end
+
+  test "defaults authorization_details to [] when absent", %{client: client} do
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(valid_params(client.client_id))
+
+    assert validated.authorization_details == []
+  end
+
+  test "rejects authorization_details longer than 2048 characters on direct requests", %{
+    client: client
+  } do
+    over_limit_payload =
+      [
+        %{
+          "type" => "payment_initiation",
+          "padding" => String.duplicate("x", 2100)
+        }
+      ]
+      |> Jason.encode!()
+
+    assert byte_size(over_limit_payload) > 2048
+
+    params =
+      client.client_id
+      |> valid_params()
+      |> Map.put("authorization_details", over_limit_payload)
+
+    assert {:redirect_error, %Error{} = error} = AuthorizationRequest.validate(params)
+    assert error.error == "invalid_request"
+    assert error.reason_code == :authorization_details_too_large
+  end
+
+  test "rejects authorization_details that is not a JSON array of objects", %{client: client} do
+    for invalid <- [
+          ~s({"type":"payment_initiation"}),
+          ~s(["not-an-object"]),
+          "not-json"
+        ] do
+      params =
+        client.client_id
+        |> valid_params()
+        |> Map.put("authorization_details", invalid)
+
+      assert {:redirect_error, %Error{} = error} = AuthorizationRequest.validate(params)
+      assert error.error == "invalid_authorization_details"
+      assert error.reason_code == :invalid_authorization_details
+    end
+  end
+
+  test "accepts authorization_details from a pre-decoded list (Request Object projection)", %{
+    client: client
+  } do
+    details = [
+      %{"type" => "account_information", "locations" => ["https://api.example.com/accounts"]}
+    ]
+
+    params =
+      client.client_id
+      |> valid_params()
+      |> Map.put("authorization_details", details)
+
+    assert {:ok, %Validated{} = validated} = AuthorizationRequest.validate(params)
+    assert validated.authorization_details == details
+  end
+
+  test "skips the 2048 character limit when invoked through the pushed pipeline", %{
+    client: client
+  } do
+    over_limit_payload =
+      [
+        %{
+          "type" => "payment_initiation",
+          "padding" => String.duplicate("x", 2100)
+        }
+      ]
+      |> Jason.encode!()
+
+    params =
+      client.client_id
+      |> valid_params()
+      |> Map.put("authorization_details", over_limit_payload)
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate_pushed(params, client)
+
+    assert [%{"type" => "payment_initiation"}] = validated.authorization_details
+  end
+
   defp valid_params(client_id) do
     %{
       "client_id" => client_id,
