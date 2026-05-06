@@ -10,13 +10,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived thirteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), and v1.13 delivered OpenID Connect CIBA.
+Lockspire has now archived fourteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, and v1.14 delivered Advanced Authorization & Resource Targetting.
 
-At archive time, the package version in `mix.exs` is `0.2.0` (pending release please automation to cut `1.0.0`), the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, and OIDC CIBA (Poll, Ping, and Push delivery modes).
+At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, and Rich Authorization Requests with durable validation and introspection proof.
 
-## Current Milestone: v1.14 — Advanced Authorization & Resource Targetting
+## Current Milestone: None
 
-**Goal:** Deliver Resource Indicators (RFC 8707) and Rich Authorization Requests (RAR - RFC 9396) to enable fine-grained, targeted authorization for complex domain integrations.
+**Goal:** Pending next milestone definition.
 
 ## Requirements
 
@@ -53,13 +53,14 @@ At archive time, the package version in `mix.exs` is `0.2.0` (pending release pl
 - Deliver resilient CIBA notifications: Oban-backed webhook delivery for both Ping and Push modes, including direct token delivery in Push mode. Validated across Phases 51-53.
 - Establish CIBA host seams: defined and integrated `Lockspire.Host` behaviours for out-of-band notification and user consent resolution. Validated across Phases 51-53.
 - Support Rich Authorization Requests (RAR - RFC 9396) intake in PAR and Authorization pipelines. Validated in Phase 55.
+- Deliver Resource Indicators (RFC 8707) for targeted audience claims and resource parameter validation. Validated in archived v1.14.
+- Deliver Ecto-based RAR validation framework and durable storage for rich authorization details. Validated in archived v1.14.
+- Expose rich authorization details via introspection and verify end-to-end flows. Validated in archived v1.14.
+- Update Discovery metadata and provide executable documentation for the v1.14 advanced authorization surface. Validated in archived v1.14.
 
 ### Active
 
-- Implement Resource Indicators (RFC 8707) for targeted audience claims and resource parameter validation (Phase 54 — implementation complete; phase artifacts pending).
-- Deliver Ecto-based RAR validation framework and durable storage for rich authorization details (Phase 56).
-- Expose rich authorization details via introspection and verify end-to-end flows (Phase 57).
-- Update Discovery metadata and provide executable documentation for v1.14 features (Phase 58).
+- None
 
 ### Out of Scope
 
@@ -73,7 +74,7 @@ At archive time, the package version in `mix.exs` is `0.2.0` (pending release pl
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.13 completed, we move to v1.14 to add advanced authorization capabilities.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.14 completed, the next milestone remains intentionally undefined until the next planning cycle.
 
 ## Constraints
 
@@ -126,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after Phase 55 (RAR Protocol Intake) completion*
+*Last updated: 2026-05-06 after v1.14 milestone closure*

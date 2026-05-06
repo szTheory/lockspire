@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.14 Advanced Authorization & Resource Targetting (Shipped + archived: 2026-05-06)
+
+**Phases completed:** **5** (**54-58**), **12** plans, **12** requirements closed.
+
+**Package posture:** `lockspire 0.2.0` remains preview at archive time, but the shipped surface now includes OAuth 2.0 Resource Indicators (RFC 8707) and Rich Authorization Requests (RFC 9396).
+
+**Key accomplishments:**
+- Added Resource Indicators validation and audience downscoping across authorization-code and refresh-token exchanges.
+- Added `authorization_details` intake on `/par` and `/authorize`, including durable PAR and interaction persistence.
+- Added host-owned RAR validator behaviors, normalization, fingerprinting, durable consent-grant storage, and token-to-grant linkage.
+- Added grant-backed RAR introspection, structural consent-surface proof, and narrow FAPI/PAR regression coverage.
+- Published truthful discovery metadata and an executable host-owned RAR consent guide pinned by release-contract tests.
+
+**Pre-close audit:** `audit-open` had 1 acknowledged deferred verification gap (`Phase 37: 37-VERIFICATION.md [gaps_found]`, recorded in `STATE.md`). Formal milestone audit: [`.planning/milestones/v1.14-MILESTONE-AUDIT.md`](milestones/v1.14-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.14-ROADMAP.md`, `milestones/v1.14-REQUIREMENTS.md`, `milestones/v1.14-MILESTONE-AUDIT.md` · **Git tag:** `v1.14`
+
+---
+
 ## v1.13 OpenID Connect CIBA (Shipped + archived: 2026-05-05)
 
 **Phases completed:** **3** (**51-53**), **8** plans, **7** requirements closed.
