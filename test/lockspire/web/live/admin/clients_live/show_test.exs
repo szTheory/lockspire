@@ -35,6 +35,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
+    assert {:ok, _policy} = Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{id: 1})
+
     {:ok, client} =
       Repository.register_client(%Client{
         client_id: "security-show-client",
@@ -141,6 +143,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     html_after = render(view)
     assert html_after =~ "Effective profile:"
     assert html_after =~ "FAPI 2.0 Security Profile"
+  end
+
+  test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{client: client} do
+    assert {:ok, _policy} = Admin.put_dcr_policy(%{dcr_allowed_token_endpoint_auth_methods: ["private_key_jwt"]})
+
+    assert {:ok, pkjwt_client} =
+             Repository.register_client(%Client{
+               client_id: "pkjwt-show-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "JWT Show Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :private_key_jwt,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: DateTime.utc_now(),
+               jwks_uri: "https://client.example.com/.well-known/jwks.json",
+               metadata: %{}
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{pkjwt_client.client_id}")
+
+    assert html =~ "Client assertion keys"
+    assert html =~ "Remote JWKS URI configured"
+    assert html =~ "https://client.example.com/.well-known/jwks.json"
+    assert html =~ "private_key_jwt"
+    assert html =~ "RS256, ES256, PS256, EdDSA"
+    refute html =~ "Edit JWKS"
+    refute html =~ "Test fetch"
   end
 
   defp conn_for_admin do

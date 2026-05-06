@@ -53,6 +53,18 @@
       <div class="lockspire-admin-field">
         <label for="dcr_allowed_token_endpoint_auth_methods">Allowed Token Endpoint Auth Methods</label>
         <input type="text" id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]" value={Enum.join(@policy.dcr_allowed_token_endpoint_auth_methods || [], ", ")} />
+        <p class="lockspire-admin-help">
+          <strong>private_key_jwt posture:</strong>
+          <%= if @private_key_jwt_truth.self_registration_allowed? do %>
+            Self-registered clients may use private_key_jwt when they register key material with inline <code>jwks</code> or a remote <code>jwks_uri</code>.
+          <% else %>
+            Self-registered clients may not use private_key_jwt until this auth method is present in the DCR allowlist.
+          <% end %>
+          <br />
+          Lockspire will accept JWT client assertions signed with <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code> under the current issuer security posture.
+          <br />
+          This page is descriptive only for this slice. It does not create a remote key-fetch or algorithm-management workflow.
+        </p>
       </div>
 
       <div class="lockspire-admin-field">

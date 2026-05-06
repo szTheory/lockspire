@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Admin.ServerPolicy, as: AdminServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.ParPolicy
@@ -27,6 +28,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        client: nil,
        effective_par_policy: nil,
        effective_security_profile: nil,
+       private_key_jwt_truth: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
@@ -178,6 +180,27 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Last secret rotation: {format_datetime(@client.last_secret_rotated_at)}</p>
         <AdminComponents.status_badge status={status_for(@client)} />
 
+        <section :if={private_key_jwt_client?(@client)}>
+          <h3>Client assertion keys</h3>
+          <p>
+            Remote JWKS URI configured:
+            <code>{value_or_not_configured(@client.jwks_uri)}</code>
+          </p>
+          <p>
+            Inline JWKS configured:
+            <code>{boolean_label(not is_nil(@client.jwks))}</code>
+          </p>
+          <p>
+            Issuer-supported assertion algorithms:
+            <code>{supported_assertion_algorithms(@private_key_jwt_truth)}</code>
+          </p>
+          <p>
+            This client uses <code>private_key_jwt</code>. Key material stays read-only in
+            Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
+            not by ad hoc admin actions.
+          </p>
+        </section>
+
         <h3>Redirect URIs</h3>
         <ul>
           <%= for redirect_uri <- @client.redirect_uris do %>
@@ -308,17 +331,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   defp load_client(socket, nil) do
-    assign(socket, client: nil, effective_par_policy: nil)
+    assign(socket, client: nil, effective_par_policy: nil, effective_security_profile: nil, private_key_jwt_truth: nil)
   end
 
   defp load_client(socket, client_id) do
     case Admin.get_client(client_id) do
       {:ok, %Client{} = client} ->
+        server_policy = server_policy()
+
         assign(socket,
           client_id: client_id,
           client: client,
           effective_par_policy: resolve_effective_par_policy(client),
-          effective_security_profile: resolve_effective_security_profile(client)
+          effective_security_profile: resolve_effective_security_profile(client),
+          private_key_jwt_truth: AdminServerPolicy.private_key_jwt_registration_truth(server_policy)
         )
 
       {:error, _reason} ->
@@ -326,7 +352,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client_id: client_id,
           client: nil,
           effective_par_policy: nil,
-          effective_security_profile: nil
+          effective_security_profile: nil,
+          private_key_jwt_truth: nil
         )
     end
   end
@@ -442,23 +469,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp status_for(%Client{}), do: :disabled
 
   defp resolve_effective_par_policy(%Client{} = client) do
-    server_policy =
-      case Admin.get_server_policy() do
-        {:ok, %ServerPolicy{} = policy} -> policy
-        {:error, _reason} -> %ServerPolicy{}
-      end
-
-    ParPolicy.resolve_effective_policy(server_policy, client)
+    ParPolicy.resolve_effective_policy(server_policy(), client)
   end
 
   defp resolve_effective_security_profile(%Client{} = client) do
-    server_policy =
-      case Admin.get_server_policy() do
-        {:ok, %ServerPolicy{} = policy} -> policy
-        {:error, _reason} -> %ServerPolicy{}
-      end
+    SecurityProfile.resolve_effective_profile(server_policy(), client)
+  end
 
-    SecurityProfile.resolve_effective_profile(server_policy, client)
+  defp server_policy do
+    case Admin.get_server_policy() do
+      {:ok, %ServerPolicy{} = policy} -> policy
+      {:error, _reason} -> %ServerPolicy{}
+    end
   end
 
   defp par_policy_label(policy) when policy in [:inherit, :required, :optional] do
@@ -485,6 +507,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        do: true
 
   defp mixed_mode_override?(_resolved), do: false
+
+  defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
+  defp private_key_jwt_client?(_client), do: false
+
+  defp supported_assertion_algorithms(nil), do: "Not available"
+
+  defp supported_assertion_algorithms(%{supported_assertion_signing_algorithms: algorithms}) do
+    Enum.join(algorithms, ", ")
+  end
 
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)

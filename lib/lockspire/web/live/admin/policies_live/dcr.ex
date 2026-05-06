@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Admin.ServerPolicy, as: AdminServerPolicy
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Web.Live.Admin.PoliciesLive.Dcr.PolicyForm
 
@@ -36,7 +37,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
         {:ok, %ServerPolicy{} = policy} ->
           {:noreply,
            socket
-           |> assign(policy: policy, form_errors: [])
+           |> assign(policy: policy, private_key_jwt_truth: dcr_private_key_jwt_truth(policy), form_errors: [])
            |> put_flash(:info, "Global DCR policy updated")}
 
         {:error, errors} when is_list(errors) ->
@@ -61,7 +62,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
         {:error, _reason} -> %ServerPolicy{registration_policy: :disabled}
       end
 
-    assign(socket, policy: policy)
+    assign(socket, policy: policy, private_key_jwt_truth: dcr_private_key_jwt_truth(policy))
+  end
+
+  defp dcr_private_key_jwt_truth(%ServerPolicy{} = policy) do
+    AdminServerPolicy.private_key_jwt_registration_truth(policy)
   end
 
   defp format_changeset_errors(changeset) do
