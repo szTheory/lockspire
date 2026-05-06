@@ -52,11 +52,11 @@ At archive time, the package version in `mix.exs` is `0.2.0` (pending release pl
 - Implement OIDC CIBA Core: `/bc-authorize` endpoint, CIBA token grant type, and durable polling state machine. Validated across Phases 51-53.
 - Deliver resilient CIBA notifications: Oban-backed webhook delivery for both Ping and Push modes, including direct token delivery in Push mode. Validated across Phases 51-53.
 - Establish CIBA host seams: defined and integrated `Lockspire.Host` behaviours for out-of-band notification and user consent resolution. Validated across Phases 51-53.
+- Support Rich Authorization Requests (RAR - RFC 9396) intake in PAR and Authorization pipelines. Validated in Phase 55.
 
 ### Active
 
-- Implement Resource Indicators (RFC 8707) for targeted audience claims and resource parameter validation (Phase 54).
-- Support Rich Authorization Requests (RAR - RFC 9396) intake in PAR and Authorization pipelines (Phase 55).
+- Implement Resource Indicators (RFC 8707) for targeted audience claims and resource parameter validation (Phase 54 — implementation complete; phase artifacts pending).
 - Deliver Ecto-based RAR validation framework and durable storage for rich authorization details (Phase 56).
 - Expose rich authorization details via introspection and verify end-to-end flows (Phase 57).
 - Update Discovery metadata and provide executable documentation for v1.14 features (Phase 58).
@@ -126,4 +126,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-05 for v1.14 milestone start*
+*Last updated: 2026-05-06 after Phase 55 (RAR Protocol Intake) completion*
