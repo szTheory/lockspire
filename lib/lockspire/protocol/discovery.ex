@@ -93,6 +93,8 @@ defmodule Lockspire.Protocol.Discovery do
     |> Map.merge(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> maybe_put_ciba_metadata(endpoint_metadata)
+    |> maybe_put_resource_indicators_metadata(endpoint_metadata)
+    |> maybe_put_authorization_details_metadata(endpoint_metadata)
     |> put_bcl_fcl_metadata()
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
@@ -192,6 +194,29 @@ defmodule Lockspire.Protocol.Discovery do
     else
       metadata
     end
+  end
+
+  defp maybe_put_resource_indicators_metadata(metadata, endpoint_metadata) do
+    if authorization_code_surface_mounted?(endpoint_metadata) do
+      Map.put(metadata, "resource_indicators_supported", true)
+    else
+      metadata
+    end
+  end
+
+  defp maybe_put_authorization_details_metadata(metadata, endpoint_metadata) do
+    case {authorization_code_surface_mounted?(endpoint_metadata), Config.rar_types_supported()} do
+      {true, [_ | _] = rar_types_supported} ->
+        Map.put(metadata, "authorization_details_types_supported", rar_types_supported)
+
+      _ ->
+        metadata
+    end
+  end
+
+  defp authorization_code_surface_mounted?(endpoint_metadata) do
+    Map.has_key?(endpoint_metadata, "authorization_endpoint") and
+      Map.has_key?(endpoint_metadata, "token_endpoint")
   end
 
   defp dpop_supported_surface_mounted?(endpoint_metadata) do

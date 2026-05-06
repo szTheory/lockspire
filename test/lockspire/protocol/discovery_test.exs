@@ -55,6 +55,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   setup do
     original = Application.get_env(:lockspire, :issuer)
     original_router = Application.get_env(:lockspire, :discovery_router)
+    original_rar_validators = Application.get_env(:lockspire, :rar_validators)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
 
     on_exit(fn ->
@@ -68,6 +69,12 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         Application.delete_env(:lockspire, :discovery_router)
       else
         Application.put_env(:lockspire, :discovery_router, original_router)
+      end
+
+      if is_nil(original_rar_validators) do
+        Application.delete_env(:lockspire, :rar_validators)
+      else
+        Application.put_env(:lockspire, :rar_validators, original_rar_validators)
       end
     end)
 
@@ -121,6 +128,42 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
     # Acceptance gate: refute Map.has_key(config, "dpop_signing_alg_values_supported")
     refute Map.has_key?(config, "dpop_signing_alg_values_supported")
+  end
+
+  describe "openid_configuration/0 — resource indicators and rar discovery truth" do
+    test "publishes resource indicators and sorted rar types when the authorization code surface is usable" do
+      Application.put_env(:lockspire, :rar_validators, %{
+        "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator,
+        "account_access" => Lockspire.Test.Rar.PassthroughValidator
+      })
+
+      config = Discovery.openid_configuration()
+
+      assert config["resource_indicators_supported"] == true
+      assert config["authorization_details_types_supported"] == ["account_access", "payment_initiation"]
+    end
+
+    test "omits both keys when the mounted surface cannot complete the authorization code flow" do
+      Application.put_env(:lockspire, :rar_validators, %{
+        "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator
+      })
+
+      Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
+
+      config = Discovery.openid_configuration()
+
+      refute Map.has_key?(config, "resource_indicators_supported")
+      refute Map.has_key?(config, "authorization_details_types_supported")
+    end
+
+    test "omits authorization_details_types_supported instead of publishing an empty list" do
+      Application.put_env(:lockspire, :rar_validators, %{})
+
+      config = Discovery.openid_configuration()
+
+      assert config["resource_indicators_supported"] == true
+      refute Map.has_key?(config, "authorization_details_types_supported")
+    end
   end
 
   describe "openid_configuration/0 — shipped session/logout fields" do
