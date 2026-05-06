@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: None
-milestone_name: "Pending Definition"
-status: idle
-stopped_at: "Completed v1.14 Advanced Authorization & Resource Targetting milestone"
+milestone: v1.15
+milestone_name: "JWKS URI & Private Key JWT Client Authentication"
+status: defining_requirements
+stopped_at: "Milestone v1.15 initialization in progress"
 last_updated: "2026-05-06T21:30:00Z"
 last_activity: 2026-05-06
 progress:
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Pending Definition
+**Current focus:** v1.15 JWKS URI & Private Key JWT Client Authentication
 
 ## Current Position
 
-Phase: None
-Plan: None
-Status: Idle
-Last activity: 2026-05-06 — Archived v1.14 milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-06 — Milestone v1.15 started
 
 ## Performance Metrics
 
@@ -63,10 +63,10 @@ Items acknowledged and deferred at milestone close on 2026-05-06:
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` or plan next work
+**Next action:** Finish milestone v1.15 requirements and roadmap
 
 **Resume file:** None
 
-**Stopped at:** Completed v1.14 milestone
+**Stopped at:** Milestone v1.15 initialization in progress
 
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

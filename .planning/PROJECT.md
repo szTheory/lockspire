@@ -14,9 +14,17 @@ Lockspire has now archived fourteen planning milestones. The embedded provider f
 
 At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, and Rich Authorization Requests with durable validation and introspection proof.
 
-## Current Milestone: None
+## Current Milestone: v1.15 JWKS URI & Private Key JWT Client Authentication
 
-**Goal:** Pending next milestone definition.
+**Goal:** Close the strongest remaining confidential-client authentication gap by adding safe `jwks_uri` support and repo-proven `private_key_jwt` validation across Lockspire-owned direct client-auth surfaces without widening the embedded-library shape.
+
+**Target features:**
+- SSRF-guarded `jwks_uri` retrieval, caching, and rotation-aware refresh for registered client keys.
+- Cryptographically verified `private_key_jwt` authentication on Lockspire-owned direct client-auth surfaces.
+- Truthful DCR, discovery, operator-policy, telemetry, and audit wiring for the shipped client-auth slice.
+- Executable docs and verification proving secure-by-default audience, replay, and algorithm enforcement.
+
+**Why now:** This compounds directly on DCR, JAR/JWE, FAPI 2.0, and the existing client/JWKS domain model while closing a real integrator need with less product-shape drift than a broader new protocol family.
 
 ## Requirements
 
@@ -60,7 +68,9 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 ### Active
 
-- None
+- Safe `jwks_uri` retrieval and caching for confidential clients must land with explicit SSRF and timeout boundaries rather than expanding the host seam.
+- `private_key_jwt` must move from payload-shape checks to full signature, claim, and replay verification across Lockspire-owned client-auth endpoints.
+- Discovery, DCR management, and security docs must advertise only the shipped authentication methods and signing algorithms the repo can verify end to end.
 
 ### Out of Scope
 
@@ -74,7 +84,7 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.14 completed, the next milestone remains intentionally undefined until the next planning cycle.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.14 completed, v1.15 now targets stronger confidential-client authentication by combining safe `jwks_uri` support with truthful `private_key_jwt` verification.
 
 ## Constraints
 
@@ -127,4 +137,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after v1.14 milestone closure*
+*Last updated: 2026-05-06 at v1.15 milestone start*
