@@ -2,13 +2,18 @@
 
 Lockspire `1.0.0` is a GA release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
 
-This page is the canonical support contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
+This page is the canonical public support contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
+
+README, `SECURITY.md`, and maintainer-only release guidance point back to this file. They do not broaden or replace it.
 
 ## Supported in scope
 
-Lockspire `1.0.0` GA currently supports this repo-proven surface:
+Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
+- One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology
+- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, and migrations
+- `mix lockspire.upgrade` for manifest-tracked Lockspire-managed scaffolding only
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
@@ -27,7 +32,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven surface:
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
-- Host-owned login redirects and consent handoff seams
+- Host-owned login redirects and consent handoff seams, including Sigra-shaped account resolution from `conn.assigns.current_scope.user`
 - LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
@@ -67,19 +72,22 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `docs/maintainer-conformance.md`, `scripts/conformance/phase37-plan.json`, and `mix conformance.phase37` for the repo-native Phase 37 conformance lane and its `.artifacts/conformance/phase37` proof bundle
 - `test/integration/install_generator_test.exs` for generator-backed install proof
-- `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow
+- `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow, including unauthenticated `/authorize`, host login, interaction resume, consent, and token exchange
 - `test/integration/phase37_protocol_strictness_e2e_test.exs` for the generated-host strictness proof covering `prompt=none`, `max_age`, `auth_time`, and exact redirect behavior
 - `test/lockspire/release_readiness_contract_test.exs` for narrow release and docs posture checks
 - `.github/workflows/ci.yml` and `.github/workflows/release.yml` for maintained contributor and protected release lanes
 - `docs/maintainer-release.md` and `SECURITY.md` for versioned release and disclosure guidance
 
-Lockspire does not use a demo app, certification language, or external folklore as its primary public proof story.
+Lockspire does not use README summaries, maintainer-only environment settings, workflow-run folklore, or a demo app as its primary public proof story.
 
 ## GA bar
 
 A 1.0 GA claim honestly says:
 
 - there is one canonical Phoenix onboarding path
+- `--sigra-host` is guidance-only; it does not create a second install topology or a compile-time Sigra dependency
+- install diagnostics and managed-scaffolding upgrades are explicit (`mix lockspire.verify` and `mix lockspire.upgrade`)
+- the generated host seam resolves the signed-in user through host-owned session state such as `conn.assigns.current_scope.user`
 - secure OAuth/OIDC defaults are enforced inside the supported surface
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI

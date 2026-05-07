@@ -286,7 +286,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "docs/rar-consent-host-guide.md"
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
-    assert supported_surface =~ "Lockspire does not use a demo app"
+    assert supported_surface =~ "canonical public support contract"
+    assert supported_surface =~ "README, `SECURITY.md`, and maintainer-only release guidance point back to this file"
+    assert supported_surface =~ "primary public proof story"
     assert supported_surface =~ "A 1.0 GA claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
 
