@@ -64,9 +64,9 @@ Releases should only claim the supported surface the repo can currently prove.
 
 The repo should not claim full release readiness or broader protocol support until the docs, CI, support policy, and maintainer runbooks all agree with implemented behavior.
 
-That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
+That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
 
-Do not broaden release claims to request-object-by-value support, generic external request_uri handling, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
+Do not broaden release claims to request-object-by-value support, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
 
 ## Preflight checklist
 

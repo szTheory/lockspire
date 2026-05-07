@@ -18,6 +18,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven surface:
 - `authorization_details_types_supported` in discovery only when the mounted authorization-code surface is usable and the host has configured at least one RAR validator type
 - Userinfo
 - Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice
+- Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
 - Revocation
 - Introspection
 - Refresh token rotation
@@ -42,6 +43,8 @@ Lockspire does not currently support:
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
 - Generic host protected-resource middleware remains out of scope
 - DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints
+- `client_secret_jwt`
+- Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
 - Lockspire-owned device verification browser UI or hosted approval pages
 - Lockspire-owned semantic RAR consent rendering, renderer registries, or payment-product UI
 - Dynamic Client Registration support for `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, or `frontchannel_logout_session_required` remains unsupported in this slice
@@ -60,6 +63,7 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
 - `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
+- `docs/private-key-jwt-host-guide.md` for the shipped `jwks_uri` + `private_key_jwt` client-auth slice
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `docs/maintainer-conformance.md`, `scripts/conformance/phase37-plan.json`, and `mix conformance.phase37` for the repo-native Phase 37 conformance lane and its `.artifacts/conformance/phase37` proof bundle
 - `test/integration/install_generator_test.exs` for generator-backed install proof
@@ -79,6 +83,7 @@ A 1.0 GA claim honestly says:
 - secure OAuth/OIDC defaults are enforced inside the supported surface
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
+- the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
 - the shipped DPoP proof surface is narrow: `/token` issuance plus the Lockspire-owned `userinfo` endpoint, not generic host protected resources
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only
 - contributor and release workflows are versioned in the repo

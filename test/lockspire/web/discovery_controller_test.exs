@@ -36,8 +36,8 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
 
   alias Lockspire.Protocol.DPoP
 
-  @shared_methods ["none", "client_secret_basic", "client_secret_post"]
-  @introspection_methods ["client_secret_basic", "client_secret_post"]
+  @shared_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup do
     original_env =
@@ -102,16 +102,34 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["token_endpoint_auth_methods_supported"] == [
              "none",
              "client_secret_basic",
-             "client_secret_post"
+             "client_secret_post",
+             "private_key_jwt"
            ]
 
-    refute Map.has_key?(body, "token_endpoint_auth_signing_alg_values_supported")
+    assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "RS256",
+             "ES256",
+             "PS256",
+             "EdDSA"
+           ]
 
     assert body["revocation_endpoint_auth_methods_supported"] == @shared_methods
-    refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")
+
+    assert body["revocation_endpoint_auth_signing_alg_values_supported"] == [
+             "RS256",
+             "ES256",
+             "PS256",
+             "EdDSA"
+           ]
 
     assert body["introspection_endpoint_auth_methods_supported"] == @introspection_methods
-    refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
+
+    assert body["introspection_endpoint_auth_signing_alg_values_supported"] == [
+             "RS256",
+             "ES256",
+             "PS256",
+             "EdDSA"
+           ]
 
     assert body["code_challenge_methods_supported"] == ["S256"]
     assert body["subject_types_supported"] == ["public"]
@@ -173,7 +191,13 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     body = Jason.decode!(conn.resp_body)
 
     assert body["token_endpoint_auth_methods_supported"] == @shared_methods
-    refute Map.has_key?(body, "token_endpoint_auth_signing_alg_values_supported")
+
+    assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "RS256",
+             "ES256",
+             "PS256",
+             "EdDSA"
+           ]
 
     refute Map.has_key?(body, "revocation_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")

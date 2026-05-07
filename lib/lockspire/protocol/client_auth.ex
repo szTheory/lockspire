@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.ClientAuth do
   """
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Protocol.ClientAuth.PrivateKeyJwt
   alias Lockspire.Security.Policy
 
   @supported_auth_methods [:none, :client_secret_basic, :client_secret_post, :private_key_jwt]
@@ -183,18 +184,11 @@ defmodule Lockspire.Protocol.ClientAuth do
        do: :ok
 
   defp validate_client_secret(%Client{} = client, :private_key_jwt, client_assertion, opts) do
-    with [_, payload_b64, _] <- String.split(client_assertion, "."),
-         {:ok, payload_json} <- Base.url_decode64(payload_b64, padding: false),
-         {:ok, payload} <- Jason.decode(payload_json),
-         :ok <- validate_jwt_ttl(payload),
-         :ok <- validate_jwt_replay(client.client_id, payload, opts) do
+    with :ok <- PrivateKeyJwt.verify(client, client_assertion, opts) do
       :ok
     else
-      {:error, reason} ->
-        {:error, invalid_client(reason, :invalid_client_assertion)}
-
-      _ ->
-        {:error, invalid_client("Invalid client_assertion", :invalid_client_assertion)}
+      {:error, reason_code} ->
+        {:error, invalid_client("Client authentication failed", reason_code)}
     end
   end
 
@@ -209,46 +203,6 @@ defmodule Lockspire.Protocol.ClientAuth do
 
       true ->
         :ok
-    end
-  end
-
-  defp validate_jwt_ttl(payload) do
-    exp = payload["exp"]
-    start_time = payload["iat"] || payload["nbf"]
-
-    if is_integer(exp) and is_integer(start_time) do
-      if exp - start_time > 600 do
-        {:error, "client_assertion lifetime exceeds 10 minutes"}
-      else
-        :ok
-      end
-    else
-      {:error, "client_assertion missing exp or iat/nbf"}
-    end
-  end
-
-  defp validate_jwt_replay(client_id, payload, opts) do
-    jti = payload["jti"]
-    exp = payload["exp"]
-
-    if is_binary(jti) and jti != "" and is_integer(exp) do
-      expires_at = DateTime.from_unix!(exp)
-
-      used_jti = %Lockspire.Domain.UsedJti{
-        client_id: client_id,
-        jti: jti,
-        expires_at: expires_at
-      }
-
-      store = Keyword.get(opts, :jti_store, client_store(opts))
-
-      case store.record_used_jti(used_jti) do
-        {:ok, :accepted} -> :ok
-        {:ok, :replay} -> {:error, "client_assertion replay detected"}
-        _ -> {:error, "client_assertion replay detected"}
-      end
-    else
-      {:error, "client_assertion missing jti"}
     end
   end
 

@@ -18,8 +18,7 @@ defmodule Lockspire.Web.CibaAuthorizationJSON do
   def error_response(%Error{} = error) do
     %{
       error: error.error,
-      error_description: error.error_description,
-      reason_code: error.reason_code
+      error_description: error.error_description
     }
     |> Map.reject(fn {_k, v} -> is_nil(v) end)
   end

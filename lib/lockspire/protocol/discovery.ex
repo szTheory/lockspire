@@ -32,7 +32,11 @@ defmodule Lockspire.Protocol.Discovery do
   ]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
-  @introspection_supported_auth_methods ["client_secret_basic", "client_secret_post"]
+  @introspection_supported_auth_methods [
+    "client_secret_basic",
+    "client_secret_post",
+    "private_key_jwt"
+  ]
 
   @doc """
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
@@ -203,7 +207,9 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp maybe_put_endpoint_auth_methods(metadata, _key, []), do: metadata
-  defp maybe_put_endpoint_auth_methods(metadata, key, methods), do: Map.put(metadata, key, methods)
+
+  defp maybe_put_endpoint_auth_methods(metadata, key, methods),
+    do: Map.put(metadata, key, methods)
 
   defp maybe_put_endpoint_auth_signing_algorithms(metadata, methods_key, algorithms_key) do
     if "private_key_jwt" in Map.get(metadata, methods_key, []) do
@@ -236,7 +242,6 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp published_direct_client_auth_methods do
     ClientAuth.supported_auth_method_names()
-    |> Enum.reject(&(&1 == "private_key_jwt"))
   end
 
   defp code_challenge_methods_supported(endpoint_metadata) do

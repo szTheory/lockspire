@@ -15,6 +15,7 @@ The public support contract for the current release lives in [`docs/supported-su
 - Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Userinfo, revocation, introspection, and refresh rotation
+- `private_key_jwt` confidential-client authentication on Lockspire-owned direct-client endpoints using inline `jwks` or guarded `jwks_uri`
 - Host-owned login and consent seams
 - Truthful discovery metadata for Resource Indicators and configured RAR types (`resource_indicators_supported` and `authorization_details_types_supported`)
 - Host-owned custom RAR consent guidance through [`docs/rar-consent-host-guide.md`](docs/rar-consent-host-guide.md)
@@ -38,6 +39,7 @@ The public support contract for the current release lives in [`docs/supported-su
 
 - [Getting started](docs/getting-started.md)
 - [Install and onboard](docs/install-and-onboard.md)
+- [Private key JWT host guide](docs/private-key-jwt-host-guide.md)
 - [Operator and admin guide](docs/operator-admin.md)
 - [Supported surface and GA contract](docs/supported-surface.md)
 - [Maintainer and release guide](docs/maintainer-release.md)

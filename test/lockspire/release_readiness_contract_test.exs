@@ -289,9 +289,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert security =~ "PKCE S256 required by default"
     assert security =~ "no `alg=none`"
+    assert security =~ "guarded `jwks_uri`"
+    assert security =~ "issuer-string `aud`"
 
     assert security =~
-             "request-object-by-value support, generic external `request_uri` handling, and device flow"
+             "request-object-by-value support and generic external `request_uri` handling"
 
     assert guide =~ "inside the 1.0 GA support contract"
 
@@ -299,14 +301,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Releases should only claim the supported surface the repo can currently prove."
 
     assert guide =~
-             "authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation"
+             "authorization code + PKCE, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation"
 
     assert guide =~
-             "Do not broaden release claims to request-object-by-value support, generic external request_uri handling, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+             "Do not broaden release claims to request-object-by-value support, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
 
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
     assert onboarding =~ "authorization-code + PKCE exchange"
+    assert onboarding =~ "docs/private-key-jwt-host-guide.md"
     assert onboarding =~ "LockspireVerificationController"
     assert onboarding =~ "lockspire_verification_html"
     assert onboarding =~ "docs/device-flow-host-guide.md"
@@ -456,15 +459,17 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "global"
     assert supported_surface =~ "client"
 
-    # Explicit exclusions preserved where the repo has not shipped support.
-    for doc <- [readme, security] do
-      doc_down = String.downcase(doc)
-      assert doc_down =~ "request-object-by-value"
-      assert doc_down =~ "generic external `request_uri`"
-      assert doc_down =~ "dynamic client registration"
-      assert doc_down =~ "device flow"
-      assert doc_down =~ "hosted auth"
-    end
+    readme_down = String.downcase(readme)
+    assert readme_down =~ "request-object-by-value"
+    assert readme_down =~ "generic external `request_uri`"
+    assert readme_down =~ "hosted auth"
+
+    security_down = String.downcase(security)
+    assert security_down =~ "request-object-by-value"
+    assert security_down =~ "generic external `request_uri`"
+    assert security_down =~ "dynamic client registration"
+    assert security_down =~ "hosted auth"
+    refute security_down =~ "device flow"
 
     supported_surface_down = String.downcase(supported_surface)
     assert supported_surface_down =~ "device flow"
@@ -520,7 +525,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "preparatory OIDF lane"
     assert maintainer_conformance =~ "Phase 42 wires the lane for Phase 43 consumption"
     assert maintainer_conformance =~ "does not claim pass-ready certification"
-    assert maintainer_conformance =~ "does not imply support for mTLS or `private_key_jwt`"
+    assert maintainer_conformance =~
+             "does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge"
+
+    assert maintainer_conformance =~
+             "Lockspire's shipped runtime now supports the repo-proven `private_key_jwt` slice"
+
     assert maintainer_conformance =~ "validate the prerequisites for this check"
     assert maintainer_conformance =~ "does NOT execute `scripts/conformance/fapi2-check.sh`"
 
@@ -591,7 +601,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     end
 
     assert maintainer_conformance =~
-             "documentation truth for the upstream plan shape, not an executable claim about the current runtime surface"
+             "This conformance guide is still a maintainer workflow doc, not the product contract"
+
+    assert maintainer_conformance =~
+             "the repo's runtime truth remains defined by the supported-surface docs plus executable proof"
 
     assert templates_registry =~ "fapi_smoke_e2e_test.exs",
            "expected templates registry to register the FAPI smoke E2E test template"

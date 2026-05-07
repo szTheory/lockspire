@@ -11,6 +11,10 @@ defmodule Lockspire.RedactionTest do
       code_verifier: "plain-code-verifier",
       client_secret: "super-secret",
       client_secret_hash: "argon2id$hash",
+      client_assertion: "header.payload.signature",
+      jwt_header: %{"alg" => "RS256"},
+      jwt_claims: %{"sub" => "client_123"},
+      jwks_body: %{"keys" => [%{"kid" => "kid-1"}]},
       token_hash: "sha256$hash",
       family_id: "family-secret-hash",
       params: %{"token" => "access-token-value", "scope" => "openid"},
@@ -31,6 +35,10 @@ defmodule Lockspire.RedactionTest do
     refute Map.has_key?(redacted, :code_verifier)
     refute Map.has_key?(redacted, :client_secret)
     refute Map.has_key?(redacted, :client_secret_hash)
+    refute Map.has_key?(redacted, :client_assertion)
+    refute Map.has_key?(redacted, :jwt_header)
+    refute Map.has_key?(redacted, :jwt_claims)
+    refute Map.has_key?(redacted, :jwks_body)
     refute Map.has_key?(redacted, :token_hash)
     refute Map.has_key?(redacted, :family_id)
     refute Map.has_key?(redacted, :params)

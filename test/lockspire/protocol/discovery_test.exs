@@ -40,8 +40,8 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   alias Lockspire.Storage.Ecto.Repository
 
   @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
-  @published_methods ["none", "client_secret_basic", "client_secret_post"]
-  @introspection_methods ["client_secret_basic", "client_secret_post"]
+  @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -96,35 +96,63 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert Discovery.token_endpoint_auth_methods_supported() == @static_methods
   end
 
-  test "published_token_endpoint_auth_methods_supported/0 omits private_key_jwt until runtime verification exists" do
+  test "published_token_endpoint_auth_methods_supported/0 includes private_key_jwt once runtime verification is shared" do
     assert Discovery.published_token_endpoint_auth_methods_supported() == @published_methods
   end
 
   describe "openid_configuration/0 — endpoint auth metadata truth" do
-    test "publishes only cryptographically verified token and revocation auth metadata" do
+    test "publishes shared token and revocation auth metadata including private_key_jwt" do
       config = Discovery.openid_configuration()
 
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
-      refute Map.has_key?(config, "token_endpoint_auth_signing_alg_values_supported")
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
 
       assert config["revocation_endpoint_auth_methods_supported"] == @published_methods
-      refute Map.has_key?(config, "revocation_endpoint_auth_signing_alg_values_supported")
+
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
     end
 
-    test "publishes narrower introspection auth metadata from current runtime behavior" do
+    test "publishes introspection auth metadata from current shared confidential-client runtime behavior" do
       config = Discovery.openid_configuration()
 
       assert config["introspection_endpoint_auth_methods_supported"] == @introspection_methods
-      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+
+      assert config["introspection_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
     end
 
     test "omits revocation and introspection auth metadata when those routes are not mounted" do
-      Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
 
       config = Discovery.openid_configuration()
 
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
-      refute Map.has_key?(config, "token_endpoint_auth_signing_alg_values_supported")
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
 
       refute Map.has_key?(config, "revocation_endpoint_auth_methods_supported")
       refute Map.has_key?(config, "revocation_endpoint_auth_signing_alg_values_supported")
@@ -132,14 +160,18 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
     end
 
-    test "omits endpoint signing algorithms when private_key_jwt is not published" do
+    test "publishes endpoint signing algorithms from the shared effective allowlist when private_key_jwt is published" do
       put_server_security_profile!(:fapi_2_0_security)
 
       config = Discovery.openid_configuration()
 
-      refute Map.has_key?(config, "token_endpoint_auth_signing_alg_values_supported")
-      refute Map.has_key?(config, "revocation_endpoint_auth_signing_alg_values_supported")
-      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+
+      assert config["introspection_endpoint_auth_signing_alg_values_supported"] == [
+               "ES256",
+               "PS256"
+             ]
     end
   end
 
@@ -188,21 +220,34 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator,
         "account_access" => Lockspire.Test.Rar.PassthroughValidator
       })
-      Application.put_env(:lockspire, :rar_types_supported, ["account_access", "payment_initiation"])
+
+      Application.put_env(:lockspire, :rar_types_supported, [
+        "account_access",
+        "payment_initiation"
+      ])
 
       config = Discovery.openid_configuration()
 
       assert config["resource_indicators_supported"] == true
-      assert config["authorization_details_types_supported"] == ["account_access", "payment_initiation"]
+
+      assert config["authorization_details_types_supported"] == [
+               "account_access",
+               "payment_initiation"
+             ]
     end
 
     test "omits both keys when the mounted surface cannot complete the authorization code flow" do
       Application.put_env(:lockspire, :rar_validators, %{
         "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator
       })
+
       Application.put_env(:lockspire, :rar_types_supported, ["payment_initiation"])
 
-      Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
 
       config = Discovery.openid_configuration()
 

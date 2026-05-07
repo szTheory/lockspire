@@ -83,13 +83,7 @@ defmodule Lockspire.Protocol.Introspection do
     end
   end
 
-  defp validate_confidential_caller(%Client{
-         client_type: :confidential,
-         token_endpoint_auth_method: method
-       })
-       when method in [:client_secret_basic, :client_secret_post] do
-    {:ok, true}
-  end
+  defp validate_confidential_caller(%Client{client_type: :confidential}), do: {:ok, true}
 
   defp validate_confidential_caller(_client), do: {:ok, false}
 
@@ -156,7 +150,8 @@ defmodule Lockspire.Protocol.Introspection do
         case consent_store(request).fetch_consent_grant(consent_grant_id) do
           {:ok, %ConsentGrant{} = grant} ->
             case Map.get(grant, :authorization_details) do
-              authorization_details when is_list(authorization_details) and authorization_details != [] ->
+              authorization_details
+              when is_list(authorization_details) and authorization_details != [] ->
                 Map.put(map, :authorization_details, authorization_details)
 
               _other ->

@@ -1,6 +1,6 @@
 # Maintainer Conformance Workflow
 
-This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, and does not imply support for mTLS or `private_key_jwt`.
+This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, and does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge.
 
 1. Run the fast local boundary probe script.
 2. Run the OpenID Foundation (OIDF) Conformance Suite for definitive verification.
@@ -108,7 +108,8 @@ Use the `fapi2-security-profile-final-test-plan` plan in the OIDF UI, with these
 - `fapi_response_mode`: `plain_response`
 
 The same plan and variants are pinned in `scripts/conformance/fapi2-plan.json` as the canonical upstream OIDF reference.
-Lockspire does NOT currently support `private_key_jwt`, so this pinned variant is documentation truth for the upstream plan shape, not an executable claim about the current runtime surface.
+Lockspire's shipped runtime now supports the repo-proven `private_key_jwt` slice described in `docs/supported-surface.md` and `docs/private-key-jwt-host-guide.md`.
+This conformance guide is still a maintainer workflow doc, not the product contract: the pinned variant documents the upstream OIDF plan shape while the repo's runtime truth remains defined by the supported-surface docs plus executable proof.
 The live Docker run remains a manual maintainer step; CI does not gate on it.
 
 Run `mix lockspire.oidf_conformance --validate-env` to verify your environment, dependencies,
