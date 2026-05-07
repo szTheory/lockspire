@@ -15,8 +15,8 @@ The format is based on Keep a Changelog, and versions follow Semantic Versioning
 
 ### Changed
 
-- The protected `hex-publish` release lane is the first authoritative `1.0.0` artifact for Lockspire's embedded Phoenix support contract.
-- Public GA posture now follows the checked-in package version, release manifest, changelog, and release workflow as one release-truth story.
+- The checked-in `1.0.0` release-candidate contract keeps `mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`, and the expected root tag `lockspire-v1.0.0` on one embedded-library release story before authenticated publish proof begins.
+- Hex-facing package metadata, release configuration, and changelog posture now describe one `lockspire` package and defer authenticated publish evidence to the protected `hex-publish` lane.
 
 ## [0.2.0](https://github.com/szTheory/lockspire/compare/lockspire-v0.1.2...lockspire-v0.2.0) (2026-04-24)
 

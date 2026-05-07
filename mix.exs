@@ -5,7 +5,7 @@ defmodule Lockspire.MixProject do
     [
       app: :lockspire,
       version: "1.0.0",
-      description: "Embedded OAuth/OIDC authorization server for Phoenix applications",
+      description: "Embedded OAuth/OIDC authorization server library for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -193,7 +193,8 @@ defmodule Lockspire.MixProject do
       licenses: ["Apache-2.0"],
       links: %{
         "Changelog" => "https://hexdocs.pm/lockspire/changelog.html",
-        "Docs" => "https://hexdocs.pm/lockspire"
+        "Docs" => "https://hexdocs.pm/lockspire",
+        "Supported surface" => "https://hexdocs.pm/lockspire/supported-surface.html"
       },
       files: ~w(lib priv docs .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]
