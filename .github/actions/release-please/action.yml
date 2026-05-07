@@ -1,5 +1,5 @@
 name: Release Please
-description: Repo-controlled Release Please invocation for the authoritative Lockspire release lane
+description: Repo-controlled Release Please invocation for the authoritative Lockspire release lane and root lockspire-v<version> tag contract
 
 inputs:
   token:
@@ -97,7 +97,7 @@ outputs:
     description: GitHub release HTML URL for the root component
     value: ${{ steps.release-please.outputs.html_url }}
   tag_name:
-    description: GitHub release tag for the root component
+    description: GitHub release tag for the root component, preserving the root lockspire-v<version> contract
     value: ${{ steps.release-please.outputs.tag_name }}
   version:
     description: Root-component version value for the checked-in release artifact
@@ -157,4 +157,5 @@ runs:
         RP_RELEASE_AS: ${{ inputs.release-as }}
       run: |
         set -euo pipefail
+        echo "Repo-controlled Release Please run preserving root tag outputs such as tag_name for the lockspire-v<version> release contract."
         node .github/actions/release-please/runtime/index.js

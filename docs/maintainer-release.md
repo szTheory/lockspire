@@ -14,6 +14,8 @@ This guide is maintainer-only release operations guidance. It does not define a 
 6. Let the Release workflow cross the `hex-publish` environment boundary on `main`.
 7. Treat the resulting protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
 
+Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
+
 ## Evidence boundaries
 
 Keep release evidence in three separate buckets:
@@ -51,6 +53,23 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 `mix package.publish-dry-run` remains a required release gate, but it is enforced from the trusted release workflow where `HEX_API_KEY` is available. It is not a manual local verification requirement for contributor closure.
 
 If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal publish trigger, it does not replace the Release Please driven path, and it must target the exact commit SHA or tag being recovered.
+
+## Release candidate checklist
+
+Before merging a Release Please PR for the root package, confirm this checked-in release-candidate contract end to end:
+
+1. Run `mix ci` on the candidate revision.
+2. Review `mix.exs`, `.release-please-manifest.json`, and `CHANGELOG.md` together so version, package metadata, and release notes describe one embedded-library release story.
+3. Review `release-please-config.json` and confirm the root package still uses `component: "lockspire"`, `include-v-in-tag: true`, and `include-component-in-tag: true`.
+4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package. For the current checked-in `1.0.0` candidate, that target is `lockspire-v1.0.0`.
+5. Review `.github/workflows/release.yml` and confirm the only checked-in Release Please entry point is `uses: ./.github/actions/release-please`.
+6. Confirm `.github/actions/release-please/action.yml` still preserves root outputs such as `tag_name` and `release_created`, because those outputs define which merged release commit is allowed to approach the protected publish lane.
+7. Confirm `workflow_dispatch` remains recovery-only, requires both `recovery_reason` and `recovery_ref`, and is documented as replaying an exact immutable SHA or existing tag rather than creating a new publish intent.
+8. Confirm the publish job still targets exactly one protected environment, `hex-publish`, and that checked-in proof stops there.
+9. Confirm `docs/supported-surface.md` remains the canonical support contract and that this maintainer guide, `README`, and `SECURITY.md` only defer to it rather than creating a second support matrix.
+10. Merge the reviewed Release Please PR and let the protected workflow run become the first authenticated evidence bucket.
+
+Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `mix release.preflight` and `mix hex.publish --yes` are trusted-workflow commands only; they belong to the protected `hex-publish` boundary, not to local maintainer folklore.
 
 ## Secrets and environment
 

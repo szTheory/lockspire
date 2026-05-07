@@ -32,6 +32,7 @@ jobs:
       pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created || steps.manual_dispatch.outputs.release_created || 'false' }}
+      tag_name: ${{ steps.release.outputs.tag_name || '' }}
     steps:
       - name: Check out repository for Release Please
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -49,6 +50,7 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           echo "Release Please generated PRs are review-only. Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
+          echo "The repo-controlled Release Please action is also the source of truth for the root release tag contract, which must stay in the lockspire-v<version> shape for the root package."
 
       - name: Run Release Please
         id: release
@@ -57,6 +59,11 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Record root release tag target for the merged release commit
+        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' }}
+        run: |
+          echo "Release Please selected root tag ${{ steps.release.outputs.tag_name }} for the merged release commit. Protected publish proof begins only when the publish job enters the hex-publish environment on main."
 
   recovery-validation:
     name: Validate Recovery Ref
@@ -124,6 +131,16 @@ jobs:
           set -euo pipefail
           git checkout --detach HEAD
           echo "Recovered immutable ref: ${{ needs.recovery-validation.outputs.checkout_ref }}"
+
+      - name: Record protected-boundary entry point
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Protected publish proof starts now for recovery ref ${{ needs.recovery-validation.outputs.checkout_ref }} inside the single hex-publish environment boundary."
+          else
+            echo "Protected publish proof starts now for merged release tag ${{ needs.release-please.outputs.tag_name }} inside the single hex-publish environment boundary."
+          fi
 
       - name: Set up Elixir and Erlang
         uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1.24.0
