@@ -83,7 +83,15 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["pushed_authorization_request_endpoint"] == "https://example.test/lockspire/par"
     assert body["scopes_supported"] == ["openid", "profile", "email"]
     assert body["response_types_supported"] == ["code"]
-    assert body["response_modes_supported"] == ["query"]
+    assert body["response_modes_supported"] == [
+             "query",
+             "fragment",
+             "form_post",
+             "jwt",
+             "query.jwt",
+             "fragment.jwt",
+             "form_post.jwt"
+           ]
 
     assert body["grant_types_supported"] == [
              "authorization_code",

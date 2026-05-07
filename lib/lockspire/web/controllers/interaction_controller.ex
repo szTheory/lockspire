@@ -24,8 +24,13 @@ defmodule Lockspire.Web.InteractionController do
         {:consent_required, interaction} ->
           redirect(conn, to: consent_path(interaction.interaction_id))
 
-        {:consent_reused, redirect_uri} ->
+        {:consent_reused, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
+
+        {:consent_reused, {:form_post, action, form_params}} ->
+          conn
+          |> put_resp_content_type("text/html")
+          |> send_resp(200, AuthorizeHTML.form_post_page(action, form_params))
 
         {:error, reason} ->
           render_browser_error(conn, interaction_error(reason), :bad_request)
@@ -41,11 +46,21 @@ defmodule Lockspire.Web.InteractionController do
          {:ok, subject_context} <- resolve_subject_context(conn, interaction),
          outcome <- finalize_interaction(interaction_id, decision, subject_context, params) do
       case outcome do
-        {:approved, redirect_uri} ->
+        {:approved, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
 
-        {:denied, redirect_uri} ->
+        {:approved, {:form_post, action, form_params}} ->
+          conn
+          |> put_resp_content_type("text/html")
+          |> send_resp(200, AuthorizeHTML.form_post_page(action, form_params))
+
+        {:denied, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
+
+        {:denied, {:form_post, action, form_params}} ->
+          conn
+          |> put_resp_content_type("text/html")
+          |> send_resp(200, AuthorizeHTML.form_post_page(action, form_params))
 
         {:error, reason} ->
           render_browser_error(conn, interaction_error(reason), :bad_request)

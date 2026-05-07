@@ -109,7 +109,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       case deny_with_audit(interaction_id, audit_event, opts) do
         {:ok, %Interaction{} = denied} ->
           emit(:consent, :denied, denied, subject_id, %{reason_code: :access_denied})
-          {:denied, denial_redirect(interaction)}
+          
+          case denial_redirect(interaction, opts) do
+            {:ok, redirect_uri} -> {:denied, redirect_uri}
+            {:error, reason} -> {:error, reason}
+          end
 
         {:error, :invalid_state} ->
           {:error, :interaction_not_active}
@@ -263,6 +267,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       auth_time: nil,
       max_age: validated.max_age,
       auth_time_requested: validated.auth_time_requested?,
+      response_mode: validated.response_mode,
       redirect_uri: validated.redirect_uri,
       return_to: default_return_to(interaction_id),
       state: validated.state,
@@ -298,7 +303,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
     with {:ok, stored_token} <- token_store(opts).store_token(token) do
       emit(:authorization_code, :issued, interaction, subject_id, %{token_id: stored_token.id})
-      {:ok, approval_redirect(interaction, raw_code)}
+      approval_redirect(interaction, raw_code, opts)
     end
   end
 
@@ -382,34 +387,105 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp ensure_resume_subject(%Interaction{} = interaction, subject_context),
     do: ensure_subject_match(interaction, subject_context)
 
-  defp approval_redirect(%Interaction{} = interaction, raw_code) do
-    build_redirect(interaction.redirect_uri, %{
+  defp approval_redirect(%Interaction{} = interaction, raw_code, opts) do
+    params = %{
       "code" => raw_code,
       "state" => interaction.state,
       "iss" => Config.issuer!()
-    })
+    }
+
+    build_response_redirect(interaction, params, opts)
   end
 
-  defp denial_redirect(%Interaction{} = interaction) do
-    build_redirect(interaction.redirect_uri, %{
+  defp denial_redirect(%Interaction{} = interaction, opts) do
+    params = %{
       "error" => "access_denied",
       "state" => interaction.state,
       "iss" => Config.issuer!()
-    })
+    }
+
+    build_response_redirect(interaction, params, opts)
   end
 
-  defp build_redirect(base_uri, params) when is_binary(base_uri) and is_map(params) do
-    uri = URI.parse(base_uri)
-    existing = URI.decode_query(uri.query || "")
+  defp build_response_redirect(%Interaction{} = interaction, params, opts) do
+    mode = interaction.response_mode || "query"
 
-    merged =
+    if is_jarm_mode?(mode) do
+      with {:ok, jwt} <- sign_jarm_response(interaction, params, opts) do
+        format_jarm_redirect(interaction, mode, jwt)
+      end
+    else
+      {:ok, build_redirect(interaction.redirect_uri, params, mode)}
+    end
+  end
+
+  defp is_jarm_mode?(mode) do
+    mode in ["jwt", "query.jwt", "fragment.jwt", "form_post.jwt"]
+  end
+
+  defp sign_jarm_response(interaction, params, opts) do
+    with {:ok, client} <- client_store(opts).fetch_client(interaction.client_id) do
+      alg = client.authorization_signed_response_alg || "RS256"
+      # If algorithm is string, use as is; if atom, convert to string for JARM
+      alg_str = if is_atom(alg), do: Atom.to_string(alg), else: alg
+      
+      case key_store(opts).fetch_active_signing_key(alg: alg_str, security_profile: client.security_profile) do
+        {:ok, nil} ->
+          {:error, :missing_signing_key}
+
+        {:ok, key} ->
+          context = %{
+            client_id: client.client_id,
+            issuer: Config.issuer!(),
+            signing_key: %{
+              kid: key.kid,
+              alg: key.alg,
+              private_jwk_encrypted: key.private_jwk_encrypted
+            },
+            security_profile: client.security_profile
+          }
+
+          Lockspire.Protocol.Jarm.sign(params, context)
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp format_jarm_redirect(interaction, mode, jwt) do
+    jarm_params = %{"response" => jwt}
+
+    case mode do
+      "form_post.jwt" ->
+        {:ok, {:form_post, interaction.redirect_uri, jarm_params}}
+
+      "fragment.jwt" ->
+        {:ok, build_redirect(interaction.redirect_uri, jarm_params, "fragment")}
+        
+      _other -> # "jwt" (which defaults to query.jwt for code) or "query.jwt"
+        {:ok, build_redirect(interaction.redirect_uri, jarm_params, "query")}
+    end
+  end
+
+  defp build_redirect(base_uri, params, mode) when is_binary(base_uri) and is_map(params) do
+    uri = URI.parse(base_uri)
+
+    clean_params =
       params
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
-      |> then(&Map.merge(existing, &1))
 
-    %{uri | query: URI.encode_query(merged)}
-    |> URI.to_string()
+    if mode == "fragment" do
+      # When fragment mode, we don't merge with existing query, we put in fragment
+      existing_fragment = URI.decode_query(uri.fragment || "")
+      merged = Map.merge(existing_fragment, clean_params)
+      %{uri | fragment: URI.encode_query(merged)} |> URI.to_string()
+    else
+      existing = URI.decode_query(uri.query || "")
+      merged = Map.merge(existing, clean_params)
+      %{uri | query: URI.encode_query(merged)} |> URI.to_string()
+    end
   end
 
   defp emit(entity, action, %Interaction{} = interaction, subject_id, extra \\ %{}) do
@@ -689,5 +765,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp interaction_store(opts), do: Keyword.get(opts, :interaction_store, Config.repo!())
   defp consent_store(opts), do: Keyword.get(opts, :consent_store, Config.repo!())
   defp token_store(opts), do: Keyword.get(opts, :token_store, Config.repo!())
+  defp client_store(opts), do: Keyword.get(opts, :client_store, Config.repo!())
+  defp key_store(opts), do: Keyword.get(opts, :key_store, Config.repo!())
   defp observability_module, do: Observability
 end

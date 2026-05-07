@@ -1060,10 +1060,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> repo().all()
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
+    |> filter_keys_for_alg(Keyword.get(opts, :alg))
     |> List.first()
     |> then(&{:ok, &1})
   rescue
     error -> {:error, error}
+  end
+
+  defp filter_keys_for_alg(keys, nil), do: keys
+
+  defp filter_keys_for_alg(keys, alg) when is_binary(alg) do
+    Enum.filter(keys, &(&1.alg == alg))
   end
 
   defp filter_keys_for_security_profile(keys, :fapi_2_0_security) do

@@ -68,8 +68,14 @@ defmodule Lockspire.Web.AuthorizeController do
     redirect(conn, to: consent_path(interaction.interaction_id))
   end
 
-  defp handle_authorization_outcome(conn, {:consent_reused, redirect_uri}) do
+  defp handle_authorization_outcome(conn, {:consent_reused, redirect_uri}) when is_binary(redirect_uri) do
     redirect(conn, external: redirect_uri)
+  end
+
+  defp handle_authorization_outcome(conn, {:consent_reused, {:form_post, action, params}}) do
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, AuthorizeHTML.form_post_page(action, params))
   end
 
   defp handle_authorization_outcome(conn, {:error, reason}) do
