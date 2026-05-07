@@ -2,6 +2,8 @@
 
 Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
+This guide is maintainer-only release operations guidance. It does not define a second public support contract.
+
 ## Normal flow
 
 1. Merge reviewed changes to `main`.
@@ -19,6 +21,8 @@ Keep release evidence in three separate buckets:
 - Repo-owned proof: `.github/workflows/release.yml`, `.github/actions/release-please/action.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
 - GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
 - Workflow-run proof: one successful `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
+
+Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
 ## Contributor gate
 
@@ -79,7 +83,7 @@ Before merging a release PR, confirm:
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - trusted publish lane still runs `mix hex.publish --yes`
-- public docs and `SECURITY.md` still match the supported surface
+- public docs and `SECURITY.md` still defer to `docs/supported-surface.md`
 
 ## Hold points
 
@@ -90,3 +94,5 @@ Stop the release if:
 - a workflow change bypasses CODEOWNERS or dependency review
 - CI stops being equivalent to the maintained `mix ci` contract
 - the protected `hex-publish` environment stops being restricted to `main`, allows bypass you do not intend to allow, or stores `HEX_API_KEY` outside the environment boundary
+
+This file does not broaden the Lockspire product contract. For public support truth, defer to `docs/supported-surface.md`.

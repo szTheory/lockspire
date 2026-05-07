@@ -76,6 +76,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "`mix ci` is the maintained contributor lane"
     assert guide =~ "`mix release.preflight` stays additive to `mix ci`"
     assert guide =~ "`mix package.publish-dry-run` remains a required release gate"
+    assert guide =~ "maintainer-only release operations guidance"
+    assert guide =~ "does not define a second public support contract"
     assert guide =~ "Release Please PR as review-only evidence"
     assert guide =~ "trusted proof starts only after merge in the protected `hex-publish` lane"
     assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
@@ -84,6 +86,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ ".github/actions/release-please/action.yml"
     assert guide =~ "GitHub settings proof:"
     assert guide =~ "Workflow-run proof:"
+    assert guide =~ "Public release claims stay anchored to `docs/supported-surface.md`"
+    assert guide =~ "GitHub settings and workflow-run evidence support that story"
     assert guide =~ "should call `./.github/actions/release-please`"
     assert guide =~ "direct third-party Release Please action reference"
 
@@ -93,6 +97,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "successful `hex-publish` workflow run"
     assert guide =~ "release-please-config.json"
     assert guide =~ ".release-please-manifest.json"
+    assert guide =~ "public docs and `SECURITY.md` still defer to `docs/supported-surface.md`"
+    assert guide =~ "This file does not broaden the Lockspire product contract"
 
     refute guide =~ "mix package.verify"
   end
