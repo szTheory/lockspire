@@ -47,6 +47,28 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
 
+  defp mix_version do
+    "mix.exs"
+    |> File.read!()
+    |> then(&Regex.run(~r/version:\s+"([0-9]+\.[0-9]+\.[0-9]+)"/, &1, capture: :all_but_first))
+    |> List.first()
+  end
+
+  defp manifest_version do
+    @release_please_manifest_path
+    |> File.read!()
+    |> then(&Regex.run(~r/"\."\s*:\s*"([0-9]+\.[0-9]+\.[0-9]+)"/, &1, capture: :all_but_first))
+    |> List.first()
+  end
+
+  defp newest_changelog_version do
+    "CHANGELOG.md"
+    |> File.read!()
+    |> then(&Regex.scan(~r/^## \[([0-9]+\.[0-9]+\.[0-9]+)\]/m, &1, capture: :all_but_first))
+    |> List.first()
+    |> List.first()
+  end
+
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
 
@@ -160,9 +182,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute action =~ "npm install"
   end
 
-  test "release please policy is checked in and keeps preview versioning explicit" do
+  test "release metadata and workflow contracts agree on one checked-in version story" do
     config = File.read!(@release_please_config_path)
     manifest = File.read!(@release_please_manifest_path)
+    release_workflow = File.read!(@release_workflow_path)
+    action = File.read!(@release_please_action_path)
 
     assert config =~ "\"bump-minor-pre-major\": false"
     assert config =~ "\"packages\""
@@ -171,6 +195,16 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert config =~ "\"package-name\": \"lockspire\""
     assert manifest =~ "\".\""
     assert manifest =~ ~r/"\.\":\s*"\d+\.\d+\.\d+"/
+    assert mix_version() == manifest_version()
+    assert manifest_version() == newest_changelog_version()
+    assert release_workflow =~ "uses: ./.github/actions/release-please"
+    assert release_workflow =~ "config-file: release-please-config.json"
+    assert release_workflow =~ "manifest-file: .release-please-manifest.json"
+    assert action =~ "config-file"
+    assert action =~ "manifest-file"
+    assert action =~ "node .github/actions/release-please/runtime/index.js"
+    refute File.read!("CHANGELOG.md") =~ "1.0.0-rc"
+    refute File.read!("CHANGELOG.md") =~ "GA-ready"
   end
 
   test "workflow files keep contributor proof separate from the protected publish lane" do
@@ -237,6 +271,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
 
     assert supported_surface =~ "Authorization code flow with PKCE S256"
+    assert supported_surface =~ "One canonical Phoenix onboarding path"
+    assert supported_surface =~ "second topology"
+    assert supported_surface =~ "conn.assigns.current_scope.user"
+    assert supported_surface =~ "mix lockspire.verify"
+    assert supported_surface =~ "mix lockspire.upgrade"
 
     assert supported_surface =~
              "Pushed authorization requests only as Lockspire-issued `request_uri` references"
@@ -308,6 +347,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
+    assert onboarding =~ "mix lockspire.verify"
+    assert onboarding =~ "mix lockspire.upgrade"
+    assert onboarding =~ "Lockspire-managed scaffolding"
+    assert onboarding =~ "host-owned seams"
+    assert onboarding =~ "conn.assigns.current_scope.user"
+    assert onboarding =~ "host-owned session seam"
+    assert onboarding =~ "interaction resume"
     assert onboarding =~ "authorization-code + PKCE exchange"
     assert onboarding =~ "docs/private-key-jwt-host-guide.md"
     assert onboarding =~ "LockspireVerificationController"
@@ -316,9 +362,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "docs/rar-consent-host-guide.md"
     assert onboarding =~ "custom RAR consent"
     assert onboarding =~ "rate limiting"
+    assert onboarding =~ "manifest-tracked managed scaffolding"
     assert onboarding =~ "The executable repo proof lives in:"
     assert onboarding =~ "test/integration/install_generator_test.exs"
     assert onboarding =~ "test/integration/phase6_onboarding_e2e_test.exs"
+    assert onboarding =~ "host login"
+    assert onboarding =~ "compile-time dependency on Sigra"
     refute onboarding =~ "production-ready"
 
     assert ci_workflow =~ "run: mix docs.verify"
@@ -369,6 +418,24 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "device authorization endpoint"
     assert supported_surface =~ "token redemption"
     assert supported_surface =~ "not a Lockspire-owned browser UI"
+  end
+
+  test "sigra companion docs keep the host seam narrow and topology guidance truthful" do
+    sigra_companion = File.read!(Path.expand("../../docs/sigra-companion-host.md", __DIR__))
+    onboarding = File.read!(@install_and_onboard_path)
+    supported_surface = File.read!(@supported_surface_path)
+
+    assert sigra_companion =~ "must **not** import Sigra at compile time"
+    assert sigra_companion =~ "conn.assigns.current_scope.user"
+    assert sigra_companion =~ "create a second install topology"
+    assert sigra_companion =~ "stable internal identifier"
+    assert sigra_companion =~ "return_to"
+    assert sigra_companion =~ "interaction_id"
+    assert sigra_companion =~ "phase6_onboarding_e2e_test.exs"
+    assert sigra_companion =~ "unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange"
+
+    assert onboarding =~ "docs/sigra-companion-host.md"
+    assert supported_surface =~ "guidance for the host-owned seam rather than a second topology"
   end
 
   test "phase 58 docs and release contract pin the rar consent seam and discovery claims" do
