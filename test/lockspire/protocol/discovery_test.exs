@@ -330,11 +330,10 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert metadata["authorization_response_iss_parameter_supported"] == true
     end
 
-    test "does NOT publish mTLS, JARM, or signed_metadata keys (D-09)" do
+    test "does NOT publish mTLS or signed_metadata keys (D-09)" do
       metadata = Discovery.openid_configuration()
 
       refute Map.has_key?(metadata, "tls_client_certificate_bound_access_tokens")
-      refute Map.has_key?(metadata, "authorization_signing_alg_values_supported")
       refute Map.has_key?(metadata, "signed_metadata")
     end
 

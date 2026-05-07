@@ -14,7 +14,16 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
-  @unsupported_params ~w(response_mode)
+  @allowed_response_modes MapSet.new([
+    "query",
+    "fragment",
+    "form_post",
+    "jwt",
+    "query.jwt",
+    "fragment.jwt",
+    "form_post.jwt"
+  ])
+  @unsupported_params ~w()
   @max_authorization_details_length 2048
 
   defmodule Validated do
@@ -37,7 +46,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
             max_age: non_neg_integer() | nil,
             auth_time_requested?: boolean(),
             code_challenge: String.t(),
-            code_challenge_method: :S256
+            code_challenge_method: :S256,
+            response_mode: String.t() | nil
           }
 
     defstruct [
@@ -49,6 +59,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       :max_age,
       :code_challenge,
       :code_challenge_method,
+      :response_mode,
       scopes: [],
       resources: [],
       authorization_details: [],
@@ -288,6 +299,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, prompt} <- validate_prompt(params),
          {:ok, max_age} <- validate_max_age(params),
          :ok <- validate_response_type(params),
+         {:ok, response_mode} <- validate_response_mode(params),
          :ok <- validate_nonce(params, scopes),
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
@@ -304,7 +316,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          authorization_details,
          prompt,
          max_age,
-         auth_time_requested?
+         auth_time_requested?,
+         response_mode
        )}
     end
   end
@@ -458,6 +471,28 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          )}
     end
   end
+
+  defp validate_response_mode(%{"response_mode" => mode} = params) when is_binary(mode) do
+    if MapSet.member?(@allowed_response_modes, mode) do
+      {:ok, resolve_default_delivery_mode(mode, params["response_type"])}
+    else
+      {:redirect_error,
+       redirect_error(
+         params,
+         :invalid_request,
+         "response_mode is invalid or unsupported",
+         :invalid_response_mode
+       )}
+    end
+  end
+
+  defp validate_response_mode(params) do
+    {:ok, resolve_default_delivery_mode(nil, params["response_type"])}
+  end
+
+  defp resolve_default_delivery_mode("jwt", "code"), do: "query.jwt"
+  defp resolve_default_delivery_mode(nil, "code"), do: "query"
+  defp resolve_default_delivery_mode(mode, _response_type), do: mode
 
   defp validate_nonce(params, scopes) do
     if "openid" in scopes do
@@ -795,7 +830,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          authorization_details,
          prompt,
          max_age,
-         auth_time_requested?
+         auth_time_requested?,
+         response_mode
        ) do
     %Validated{
       client: client,
@@ -810,7 +846,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       max_age: max_age,
       auth_time_requested?: auth_time_requested?,
       code_challenge: params["code_challenge"],
-      code_challenge_method: :S256
+      code_challenge_method: :S256,
+      response_mode: response_mode
     }
   end
 

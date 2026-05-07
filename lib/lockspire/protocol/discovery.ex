@@ -23,7 +23,15 @@ defmodule Lockspire.Protocol.Discovery do
   }
 
   @response_types_supported ["code"]
-  @response_modes_supported ["query"]
+  @response_modes_supported [
+    "query",
+    "fragment",
+    "form_post",
+    "jwt",
+    "query.jwt",
+    "fragment.jwt",
+    "form_post.jwt"
+  ]
   @grant_types_supported [
     "authorization_code",
     "refresh_token",
@@ -90,7 +98,8 @@ defmodule Lockspire.Protocol.Discovery do
         token_endpoint_auth_methods_supported(endpoint_metadata),
       "code_challenge_methods_supported" => code_challenge_methods_supported(endpoint_metadata),
       "subject_types_supported" => @subject_types_supported,
-      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
+      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported(),
+      "authorization_signing_alg_values_supported" => authorization_signing_alg_values_supported()
     }
     |> Map.merge(endpoint_metadata)
     |> put_endpoint_auth_metadata(endpoint_metadata)
@@ -115,6 +124,10 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp id_token_signing_alg_values_supported do
+    SecurityProfile.allowed_signing_algorithms(global_security_profile())
+  end
+
+  defp authorization_signing_alg_values_supported do
     SecurityProfile.allowed_signing_algorithms(global_security_profile())
   end
 
