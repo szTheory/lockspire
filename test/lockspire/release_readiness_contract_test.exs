@@ -129,6 +129,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   test "release workflow keeps one protected publish lane with recovery-only manual dispatch" do
     release_workflow = File.read!(@release_workflow_path)
+    release_please_job = release_workflow_job("release-please", "recovery-validation")
+    recovery_validation_job = release_workflow_job("recovery-validation", "publish")
+    publish_job = publish_job_section()
 
     assert release_workflow =~ "push:"
     assert release_workflow =~ "workflow_dispatch:"
@@ -173,10 +176,19 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
     assert release_workflow =~ "run: mix release.preflight"
     assert release_workflow =~ "run: mix hex.publish --yes"
-
     assert release_workflow =~ "needs.recovery-validation.result == 'success'"
     assert release_workflow =~ "needs.release-please.outputs.release_created == 'true'"
     assert release_workflow =~ "always()"
+    assert release_please_job =~ "uses: ./.github/actions/release-please"
+    assert release_please_job =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
+    assert recovery_validation_job =~ "recovery_ref must be an exact 40-character commit SHA or an existing tag"
+    assert publish_job =~ "environment: hex-publish"
+    assert publish_job =~ "run: mix release.preflight"
+    assert publish_job =~ "run: mix hex.publish --yes"
+    refute release_please_job =~ "run: mix release.preflight"
+    refute release_please_job =~ "run: mix hex.publish --yes"
+    refute recovery_validation_job =~ "run: mix release.preflight"
+    refute recovery_validation_job =~ "run: mix hex.publish --yes"
 
     refute release_workflow =~ "pull_request:"
     refute release_workflow =~ "package-name: lockspire"
@@ -274,15 +286,47 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       assert doc =~ "docs/supported-surface.md"
     end
 
+    assert guide =~ "## Release candidate checklist"
+    assert guide =~ "checked-in release-candidate contract end to end"
+    assert guide =~ "target is `lockspire-v1.0.0`"
+    assert guide =~ "checked-in proof stops there"
+    assert guide =~ "creating a second support matrix"
     assert guide =~ "does not define a second public support contract"
     assert security =~ "does not define a second feature or topology matrix"
     assert readme =~ "authoritative support contract"
     refute readme =~ "What v1.0 includes"
     refute readme =~ "What v1.0 does not include"
+    refute guide =~ "## Supported in scope"
+    refute guide =~ "## Explicitly out of scope"
 
     for subordinate_doc <- [readme, security, guide] do
       refute subordinate_doc =~ "resource_indicators_supported"
       refute subordinate_doc =~ "authorization_details_types_supported"
+    end
+  end
+
+  test "release prep docs keep evidence buckets separate and avoid checked-in publish-proof claims" do
+    guide = File.read!(@maintainer_guide_path)
+    readme = File.read!(@readme_path)
+    security = File.read!(@security_policy_path)
+    supported_surface = File.read!(@supported_surface_path)
+    changelog = File.read!("CHANGELOG.md")
+
+    assert guide =~ "Repo-owned proof:"
+    assert guide =~ "GitHub settings proof:"
+    assert guide =~ "Workflow-run proof:"
+    assert guide =~ "Release candidate checklist"
+    assert guide =~ "review-only evidence"
+    assert guide =~ "only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`"
+    assert guide =~ "Protected-environment proof starts only when the `publish` job"
+    assert guide =~ "Repo-owned commands stop at `mix ci`"
+    assert supported_surface =~ "canonical public support contract"
+
+    for doc <- [guide, readme, security, changelog] do
+      refute doc =~ "Hex-public proof"
+      refute doc =~ "install-from-Hex proof"
+      refute doc =~ "successful publish proof"
+      refute doc =~ "published to Hex already"
     end
   end
 
