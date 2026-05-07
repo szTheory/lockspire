@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.16
-milestone_name: "Embedded Adoption Hardening & Sigra Golden Path"
-status: milestone_complete
-stopped_at: "v1.16 archived; awaiting next milestone definition"
-last_updated: "2026-05-07T15:05:00Z"
+milestone: v1.17
+milestone_name: "Real Public Release"
+status: defining_requirements
+stopped_at: "requirements definition in progress"
+last_updated: "2026-05-07T15:20:00Z"
 last_activity: 2026-05-07
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,26 +22,25 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** no active milestone; next decision is whether to cut the real public release or define the next narrow embedded-adoption wedge
+**Current focus:** v1.17 real public release definition and roadmap creation
 
 ## Current Position
 
-Phase: milestone archived
-Plan: v1.16 closeout complete
-Status: v1.16 archived; no active milestone
-Last activity: 2026-05-07 — Archived v1.16 roadmap and requirements, recorded deferred close items, and prepared the project for next-milestone selection
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-07 — Milestone v1.17 started
 
 ## Performance Metrics
 
-- Phases completed: 4/4
-- Plans completed: 13/13
+- Phases completed: 0/3
+- Plans completed: 0/0
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 63 | 63-01..63-04 | complete | 8 | install/docs/tests |
-| 64 | 64-01..64-03 | complete | 8 | generated-host/docs/tests |
-| 65 | 65-01..65-03 | complete | 7 | release/docs/tests |
-| 66 | 66-01..66-03 | complete | 6 | docs/planning |
+| 67 | — | planned | — | release/docs |
+| 68 | — | planned | — | publish verification |
+| 69 | — | planned | — | planning/closure |
 
 ## Deferred Items
 
@@ -74,15 +73,15 @@ Items acknowledged and deferred at milestone close on 2026-05-07:
 
 ### Blockers/Concerns
 
-- No live blocker remains for the shipped v1.16 support story.
-- The next roadmap decision should resolve whether Lockspire cuts the long-deferred real public release before spending budget on new protocol breadth.
+- The real public release must stay scoped to release execution and truth verification rather than reopening product-surface expansion.
+- Publish verification depends on trusted release credentials and public package visibility, so the milestone must separate repo-owned proof from protected-environment execution evidence cleanly.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` to define the next milestone and decide whether `SEED-001` becomes active release work
+**Next action:** Define `v1.17` requirements and roadmap, then begin Phase 67 planning
 
 **Resume file:** None
 
-**Stopped at:** v1.16 archived; awaiting next milestone definition
+**Stopped at:** requirements definition in progress
 
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

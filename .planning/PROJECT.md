@@ -14,13 +14,18 @@ Lockspire has now archived sixteen planning milestones. The embedded provider fo
 
 Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces, and a repo-proven embedded Phoenix host path with canonical install, verification, upgrade, and generated-host onboarding proof.
 
-The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next question is whether Lockspire should cut the long-deferred real public release now that install truth, support truth, and current proof are aligned, or spend another milestone before that on a still-narrow adoption or operator wedge.
+The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to turn the now-aligned `1.0.0` repo story into a real public release so Phoenix teams can install the truthful embedded surface without version or support-contract drift.
 
-## Next Milestone Goals
+## Current Milestone: v1.17 Real Public Release
 
-- Decide whether to activate `SEED-001` and cut the next real public Lockspire release from the now-aligned `1.0.0` posture.
-- Preserve the embedded-library shape and keep host ownership explicit while validating any next adoption or operator wedge.
-- Avoid adding new protocol breadth unless it compounds on the now-proven install, support, and trust foundation rather than distracting from it.
+**Goal:** Turn Lockspire's repo-aligned `1.0.0` support story into an actual public release, prove the trusted publish lane end to end, and leave maintainers with a clean post-release truth state that matches what users can install from Hex.
+
+**Target features:**
+- Final release execution path from checked-in `1.0.0` posture to an actual published artifact.
+- Trusted publish verification and post-publish checks for package metadata, docs pointers, and install truth.
+- Narrow release-only cleanup when required to unblock the real release cut, without adding new protocol breadth.
+
+**Why now:** `v1.16` already closed the install, support, and proof gaps that made a real release risky. The remaining drag is publication and post-publish verification, not product shape.
 
 ## Recently Shipped Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
 
@@ -74,11 +79,9 @@ The highest-leverage open question is no longer whether the embedded path is rea
 
 ### Active
 
-- Phoenix host teams can install Lockspire alongside Sigra through one canonical, generator-backed path that preserves host ownership of accounts, login UX, and product policy.
-- Host teams can detect and correct the highest-risk embedded integration mistakes before they become runtime surprises or misleading support claims.
-- Maintainers can prove the generated host path end to end for the embedded seams Lockspire asks the host to own, including companion Sigra guidance where applicable.
-- Package versioning, changelog posture, release workflow truth, and supported-surface docs agree on the actual public release state.
-- Historical conformance and verification debt that materially affects Lockspire's public trust story is either closed with executable proof or narrowed into an explicit non-claim.
+- Maintainers can cut one real public Lockspire release whose version, changelog, package metadata, and support contract all describe the same shipped embedded surface.
+- The protected publish lane can be executed and verified without undocumented maintainer folklore.
+- Post-publish checks can prove that the released package still points Phoenix teams at the same canonical embedded install and support story that the repo claims.
 
 ### Out of Scope
 
@@ -92,7 +95,7 @@ The highest-leverage open question is no longer whether the embedded path is rea
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.15 complete, v1.16 shifts from adding protocol surface to making the embedded host path boring, executable, and release-truthful.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.16 complete, `v1.17` shifts from release-truth alignment in git to the real public release cut and post-publish verification.
 
 ## Constraints
 
@@ -145,4 +148,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 for v1.16 milestone start*
+*Last updated: 2026-05-07 for v1.17 milestone start*

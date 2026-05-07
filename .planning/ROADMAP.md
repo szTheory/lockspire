@@ -1,8 +1,46 @@
 # Lockspire Roadmap
 
-## No Active Milestone
+## Active Milestone
 
-`v1.16` is archived. Start the next milestone with `$gsd-new-milestone` after deciding whether the next highest-leverage move is the real public release cut or another narrow embedded-adoption wedge.
+### v1.17 Real Public Release
+
+**Status:** Planned
+**Progress:** Requirements defined; roadmap approved
+**Phases:** 67-69
+**Total Requirements:** 7
+
+#### Overview
+
+v1.17 turns Lockspire's checked-in `1.0.0` truth into an actual public release. The milestone stays narrow: prepare and execute the trusted publish lane, verify the public package and release artifacts against the canonical embedded support contract, and close with maintainable post-release records instead of release folklore.
+
+## Phases
+
+### Phase 67: Release Candidate & Trusted Publish Prep
+**Goal**: Maintainers can cut one coherent release candidate and enter the trusted publish lane without undocumented repo drift or support-contract ambiguity.
+**Depends on**: None (v1.16 completed)
+**Requirements**: REL-01, REL-02, REL-03
+**Success criteria:**
+1. The release candidate version, changelog entry, tag target, and package metadata all describe the same `1.0.0` embedded surface.
+2. Maintainer guidance and checked-in automation define every non-secret step required before protected publish approval.
+3. No release-only cleanup widens the embedded support contract or creates a shadow release story.
+
+### Phase 68: Publish Verification & Install Truth
+**Goal**: The public release can be verified from the perspective of a Phoenix maintainer consuming the published package.
+**Depends on**: Phase 67
+**Requirements**: PUB-01, PUB-02
+**Success criteria:**
+1. Post-publish checks confirm Hex metadata, docs pointers, and release artifacts match the canonical support contract.
+2. The documented install path still works for the released package without contradictory version or support signals.
+3. Any release-lane evidence that cannot be fully automated in repo is captured as explicit maintainer verification rather than implied proof.
+
+### Phase 69: Post-Release Records & Milestone Closure
+**Goal**: The real public release leaves behind a durable record of what shipped, how it was proven, and what remains next.
+**Depends on**: Phase 68
+**Requirements**: POST-01, POST-02
+**Success criteria:**
+1. Milestone artifacts, release notes, and planning state all agree on what `v1.17` published.
+2. Deferred follow-up work is recorded explicitly without reopening already-closed release-truth questions.
+3. Maintainers can point future contributors to one canonical post-release audit trail rather than reconstructing it from tags, workflows, and memory.
 
 ## Archived Milestones
 
