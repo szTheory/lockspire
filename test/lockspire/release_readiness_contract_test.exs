@@ -257,13 +257,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "current release"
     assert readme =~ "inside its existing app"
     assert readme =~ "The public support contract"
-    assert readme =~ "Generator-backed install flow for Phoenix hosts"
-
-    assert readme =~
-             "Pushed authorization requests through Lockspire-issued `request_uri` references"
-
-    assert readme =~
-             "Request-object-by-value support and generic external `request_uri` handling"
+    assert readme =~ "authoritative support contract"
+    assert readme =~ "Generator-backed install and onboarding"
+    assert readme =~ "not a hosted auth service"
+    assert readme =~ "What Lockspire is not"
+    assert readme =~ "For exact scope, non-claims, and repo-owned proof"
 
     assert supported_surface =~ "Lockspire `1.0.0` is a GA release"
 
@@ -305,11 +303,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
     assert supported_surface =~ "Lockspire-owned semantic RAR consent rendering"
 
-    assert readme =~ "Resource Indicators (RFC 8707)"
-    assert readme =~ "resource_indicators_supported"
-    assert readme =~ "authorization_details_types_supported"
-    assert readme =~ "docs/rar-consent-host-guide.md"
-
     refute readme =~ "production-ready"
   end
 
@@ -322,19 +315,20 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert security =~ "Please do not file public issues"
     assert security =~ "Open a GitHub Security Advisory draft"
-    assert security =~ "supported security surface is limited"
-    assert security =~ "authorization code + PKCE"
-
-    assert security =~
-             "pushed authorization requests only through Lockspire-issued `request_uri` references"
+    assert security =~ "canonical public support contract"
+    assert security =~ "does not define a second feature or topology matrix"
+    assert security =~ "embedded Phoenix surface the repo currently proves"
+    assert security =~ "host-seam contracts documented in repo-owned guides"
+    assert security =~ "confidential-client `private_key_jwt` support"
+    assert security =~ "secure defaults and FAPI 2.0 Security Profile enforcement"
 
     assert security =~ "PKCE S256 required by default"
     assert security =~ "no `alg=none`"
-    assert security =~ "guarded `jwks_uri`"
+    assert security =~ "confidential client uses `jwks_uri`"
     assert security =~ "issuer-string `aud`"
 
-    assert security =~
-             "request-object-by-value support and generic external `request_uri` handling"
+    assert security =~ "host-owned account databases, login/session implementations, or rate limiting"
+    assert security =~ "request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features"
 
     assert guide =~ "inside the 1.0 GA support contract"
 
@@ -490,14 +484,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert requirements =~
              "Integrators and maintainers can discover the shipped PAR policy slice through truthful metadata and docs"
 
-    assert readme =~
-             "Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path"
+    assert readme =~ "public support contract for the current release lives in"
+    assert readme =~ "For exact scope, non-claims, and repo-owned proof"
 
     assert supported_surface =~
              "Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow"
 
-    assert security =~
-             "pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path"
+    assert security =~ "canonical public support contract"
+    assert security =~ "request-object-by-value support, generic external `request_uri` handling"
 
     refute readme =~ "supports broader request-object modes"
     refute supported_surface =~ "Request-object-by-value support is in scope"
@@ -519,26 +513,25 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    for doc <- [readme, supported_surface, security] do
-      assert doc =~ "Lockspire-issued `request_uri`"
-      assert doc =~ "required"
-      assert doc =~ "optional"
-    end
+    assert supported_surface =~ "Lockspire-issued `request_uri`"
+    assert supported_surface =~ "required"
+    assert supported_surface =~ "optional"
+    assert readme =~ "canonical support contract"
+    assert security =~ "canonical public support contract"
 
     assert supported_surface =~ "global"
     assert supported_surface =~ "client"
 
     readme_down = String.downcase(readme)
-    assert readme_down =~ "request-object-by-value"
-    assert readme_down =~ "generic external `request_uri`"
     assert readme_down =~ "hosted auth"
+    assert readme_down =~ "supported-surface"
 
     security_down = String.downcase(security)
     assert security_down =~ "request-object-by-value"
     assert security_down =~ "generic external `request_uri`"
-    assert security_down =~ "dynamic client registration"
+    assert security_down =~ "canonical support contract"
     assert security_down =~ "hosted auth"
-    refute security_down =~ "device flow"
+    assert security_down =~ "device flow seam"
 
     supported_surface_down = String.downcase(supported_surface)
     assert supported_surface_down =~ "device flow"
@@ -632,25 +625,25 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       "require_pushed_authorization_requests"
     ]
 
+    for pinned <- positive_pinned_strings do
+      assert supported_surface =~ pinned,
+             "expected docs/supported-surface.md to contain pinned positive FAPI 2.0 string #{inspect(pinned)}"
+    end
+
     for {doc_name, doc_text} <- [
           {"SECURITY.md", security},
           {"README.md", readme},
           {"docs/supported-surface.md", supported_surface}
         ] do
-      for pinned <- positive_pinned_strings do
-        assert doc_text =~ pinned,
-               "expected #{doc_name} to contain pinned positive FAPI 2.0 string #{inspect(pinned)}"
-      end
-
       refute Regex.match?(~r/\bcertified\b/, doc_text),
              "#{doc_name} must NOT contain the literal word 'certified'"
-
-      assert doc_text =~ "mTLS",
-             "#{doc_name} must mention mTLS in negative-claim context"
-
-      assert doc_text =~ "OIDF",
-             "#{doc_name} must mention OIDF in negative-claim context"
     end
+
+    assert security =~ "FAPI 2.0 Security Profile"
+    assert security =~ "DPoP"
+    assert security =~ "mTLS"
+    assert security =~ "OIDF"
+    assert readme =~ "supported-surface"
 
     oidf_plan_pins = [
       "fapi2-security-profile-final-test-plan",

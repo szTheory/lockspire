@@ -6,34 +6,25 @@ It lets a Phoenix SaaS team become an OAuth/OIDC provider inside its existing ap
 
 The public support contract for the current release lives in [`docs/supported-surface.md`](docs/supported-surface.md).
 
-## What v1.0 includes
+## Current release posture
 
-- Authorization code + PKCE
-- Resource Indicators (RFC 8707) on authorization and token requests
-- Device Flow authorization
-- Dynamic Client Registration (DCR)
-- Pushed authorization requests through Lockspire-issued `request_uri` references on the existing authorization code + PKCE path (can be configured as `required` or `optional`)
-- OIDC discovery and JWKS
-- Userinfo, revocation, introspection, and refresh rotation
-- `private_key_jwt` confidential-client authentication on Lockspire-owned direct-client endpoints using inline `jwks` or guarded `jwks_uri`
-- Host-owned login and consent seams
-- Truthful discovery metadata for Resource Indicators and configured RAR types (`resource_indicators_supported` and `authorization_details_types_supported`)
-- Host-owned custom RAR consent guidance through [`docs/rar-consent-host-guide.md`](docs/rar-consent-host-guide.md)
-- LiveView admin surfaces for clients, consents, tokens, keys, and PAR policies
-- Generator-backed install flow for Phoenix hosts
-- FAPI 2.0 Security Profile enforcement (opt-in via `security_profile: :fapi_2_0_security` globally or per-client): PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs
-- RFC 9207 `iss` parameter on every authorization-response redirect for all clients regardless of profile
-- Truthful FAPI 2.0 keys in `.well-known/openid-configuration` (`authorization_response_iss_parameter_supported` always; `require_pushed_authorization_requests` only when the global server policy is `:fapi_2_0_security`)
+Lockspire `1.0.0` is the GA release of the embedded Phoenix library wedge documented in [`docs/supported-surface.md`](docs/supported-surface.md). That file is the authoritative support contract and proof boundary for the current release.
 
-## What v1.0 does not include
+## Orientation
+
+- Embedded OAuth/OIDC provider behavior inside an existing Phoenix app, not a hosted auth service or separate control plane
+- Generator-backed install and onboarding with host-owned login, account, branding, and product-policy seams
+- Core OAuth/OIDC surface for the documented embedded wedge, with exact supported and unsupported claims defined in the canonical support contract
+- Maintainer and operator workflows that stay subordinate to the same repo-proven support boundary
+
+## What Lockspire is not
 
 - Hosted auth as a separate service
-- Request-object-by-value support and generic external `request_uri` handling
 - SAML or LDAP federation
 - A full CIAM suite
 - Lockspire-owned account tables or login UX
-- External OIDF FAPI 2.0 conformance suite certification (Lockspire pins the canonical plan and variants but the live Docker run remains a manual maintainer step and is not gated by CI)
-- mTLS client authentication or mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism)
+
+For exact scope, non-claims, and repo-owned proof, read [`docs/supported-surface.md`](docs/supported-surface.md) before relying on a feature or topology.
 
 ## Guides
 
