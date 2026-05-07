@@ -1,5 +1,5 @@
 name: Release Please
-description: Repo-controlled Release Please invocation on a supported Node runtime
+description: Repo-controlled Release Please invocation for the authoritative Lockspire release lane
 
 inputs:
   token:
@@ -100,7 +100,7 @@ outputs:
     description: GitHub release tag for the root component
     value: ${{ steps.release-please.outputs.tag_name }}
   version:
-    description: Root-component version value
+    description: Root-component version value for the checked-in release artifact
     value: ${{ steps.release-please.outputs.version }}
   major:
     description: Root-component major version

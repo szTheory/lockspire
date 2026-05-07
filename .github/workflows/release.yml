@@ -48,7 +48,7 @@ jobs:
       - name: Record review-only Release Please PR posture
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
-          echo "Release Please generated PRs are review-only. Trusted proof starts only after merge in the protected hex-publish environment."
+          echo "Release Please generated PRs are review-only. Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
 
       - name: Run Release Please
         id: release
@@ -92,7 +92,7 @@ jobs:
             exit 1
           fi
 
-          echo "workflow_dispatch is recovery-only. Recovery publishes the exact immutable ref selected in recovery_ref, and normal publish intent starts from a merged Release Please PR and the protected hex-publish environment."
+          echo "workflow_dispatch is recovery-only. Recovery publishes the exact immutable ref selected in recovery_ref, and normal publish intent starts from the merged release commit in the protected hex-publish environment."
 
   publish:
     name: Publish to Hex

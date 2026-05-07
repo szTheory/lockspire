@@ -135,7 +135,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "mix local.rebar --force"
 
     assert release_workflow =~
-             "Trusted proof starts only after merge in the protected hex-publish environment"
+             "Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
 
     assert release_workflow =~ "uses: ./.github/actions/release-please"
     assert release_workflow =~ "config-file: release-please-config.json"
