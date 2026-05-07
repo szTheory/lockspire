@@ -62,11 +62,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   end
 
   defp newest_changelog_version do
+    changelog_versions()
+    |> List.first()
+  end
+
+  defp changelog_versions do
     "CHANGELOG.md"
     |> File.read!()
     |> then(&Regex.scan(~r/^## \[([0-9]+\.[0-9]+\.[0-9]+)\]/m, &1, capture: :all_but_first))
-    |> List.first()
-    |> List.first()
+    |> Enum.map(&List.first/1)
   end
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
@@ -211,6 +215,35 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert action =~ "node .github/actions/release-please/runtime/index.js"
     refute File.read!("CHANGELOG.md") =~ "1.0.0-rc"
     refute File.read!("CHANGELOG.md") =~ "GA-ready"
+  end
+
+  test "release truth hierarchy stays canonical across metadata and docs" do
+    readme = File.read!(@readme_path)
+    security = File.read!(@security_policy_path)
+    supported_surface = File.read!(@supported_surface_path)
+    guide = File.read!(@maintainer_guide_path)
+
+    assert mix_version() == "1.0.0"
+    assert manifest_version() == "1.0.0"
+    assert newest_changelog_version() == "1.0.0"
+    assert changelog_versions() == ["1.0.0", "0.2.0", "0.1.2", "0.1.1"]
+
+    assert supported_surface =~ "canonical public support contract"
+
+    for doc <- [readme, security, guide] do
+      assert doc =~ "docs/supported-surface.md"
+    end
+
+    assert guide =~ "does not define a second public support contract"
+    assert security =~ "does not define a second feature or topology matrix"
+    assert readme =~ "authoritative support contract"
+    refute readme =~ "What v1.0 includes"
+    refute readme =~ "What v1.0 does not include"
+
+    for subordinate_doc <- [readme, security, guide] do
+      refute subordinate_doc =~ "resource_indicators_supported"
+      refute subordinate_doc =~ "authorization_details_types_supported"
+    end
   end
 
   test "workflow files keep contributor proof separate from the protected publish lane" do
