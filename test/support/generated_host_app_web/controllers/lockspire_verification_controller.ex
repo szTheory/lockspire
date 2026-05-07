@@ -1,3 +1,7 @@
+# Host-owned Lockspire seam
+# Lockspire generates this file once, but your app owns the ongoing logic, UX, claims, and policy here.
+# If you customize this file, keep those edits and reconcile future changes manually.
+
 defmodule GeneratedHostAppWeb.LockspireVerificationController do
   use Phoenix.Controller, formats: [:html]
 

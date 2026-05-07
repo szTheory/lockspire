@@ -1,6 +1,6 @@
 # Requirements: Lockspire v1.16 — Embedded Adoption Hardening & Sigra Golden Path
 
-**Status:** Draft
+**Status:** Completed
 **Defined:** 2026-05-06
 **Milestone:** v1.16 Embedded Adoption Hardening & Sigra Golden Path
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
@@ -13,29 +13,29 @@ Each requirement is atomic, testable, and traceable to a phase. Phase numbering 
 
 ### Install DX & Host Boundaries
 
-- [ ] **HOST-01**: A Phoenix team can install Lockspire alongside Sigra through one canonical documented and generator-backed path that preserves host ownership of accounts, login UX, branding, and product policy.
-- [ ] **HOST-02**: A host app can detect the highest-risk embedded integration mistakes early, including missing router mount wiring, incomplete host behaviour implementation, missing migrations, or inconsistent runtime configuration.
-- [ ] **HOST-03**: A Phoenix team can safely regenerate or upgrade Lockspire-owned host files with explicit ownership boundaries, drift guidance, and least-surprise failure messages.
+- [x] **HOST-01**: A Phoenix team can install Lockspire alongside Sigra through one canonical documented and generator-backed path that preserves host ownership of accounts, login UX, branding, and product policy.
+- [x] **HOST-02**: A host app can detect the highest-risk embedded integration mistakes early, including missing router mount wiring, incomplete host behaviour implementation, missing migrations, or inconsistent runtime configuration.
+- [x] **HOST-03**: A Phoenix team can safely regenerate or upgrade Lockspire-owned host files with explicit ownership boundaries, drift guidance, and least-surprise failure messages.
 
 ### Sigra Companion Golden Path
 
-- [ ] **SIGRA-01**: Maintainers can run executable proof for the canonical Sigra-backed embedded authorization-code onboarding path from host session to authorization completion.
-- [ ] **SIGRA-02**: The generated host path proves the security-sensitive seams Lockspire asks the host to own, including login redirect handoff, `return_to` or `interaction_id` preservation, account resolution, consent handoff, and claims construction.
-- [ ] **SIGRA-03**: Companion docs explain exactly how Lockspire integrates with Sigra through generated host code without introducing a compile-time dependency or blurring product ownership boundaries.
+- [x] **SIGRA-01**: Maintainers can run executable proof for the canonical Sigra-backed embedded authorization-code onboarding path from host session to authorization completion.
+- [x] **SIGRA-02**: The generated host path proves the security-sensitive seams Lockspire asks the host to own, including login redirect handoff, `return_to` or `interaction_id` preservation, account resolution, consent handoff, and claims construction.
+- [x] **SIGRA-03**: Companion docs explain exactly how Lockspire integrates with Sigra through generated host code without introducing a compile-time dependency or blurring product ownership boundaries.
 
 ### Support Truth & Release Posture
 
-- [ ] **TRUTH-01**: Package versioning, changelog, release automation, and support docs agree on Lockspire's actual public release posture.
-- [ ] **TRUTH-02**: README, SECURITY, supported-surface docs, and release-contract tests describe only the embedded behaviors the repo can prove today and explicitly exclude unsupported host shapes or protocol claims.
+- [x] **TRUTH-01**: Package versioning, changelog, release automation, and support docs agree on Lockspire's actual public release posture.
+- [x] **TRUTH-02**: README, SECURITY, supported-surface docs, and release-contract tests describe only the embedded behaviors the repo can prove today and explicitly exclude unsupported host shapes or protocol claims.
 
 ### Conformance Debt Retirement
 
-- [ ] **CONF-01**: Historical conformance or verification debt that materially affects the public trust story is either closed with executable proof or converted into an explicit documented non-claim with rationale.
-- [ ] **CONF-02**: Maintainer-facing conformance guidance distinguishes fast repo-native proof from external-suite verification clearly enough that a maintainer can reproduce the claimed trust story without folklore.
+- [x] **CONF-01**: Historical conformance or verification debt that materially affects the public trust story is either closed with executable proof or converted into an explicit documented non-claim with rationale.
+- [x] **CONF-02**: Maintainer-facing conformance guidance distinguishes fast repo-native proof from external-suite verification clearly enough that a maintainer can reproduce the claimed trust story without folklore.
 
 ### Verification & Closure
 
-- [ ] **V-01**: The milestone closes with generated-host proof, release-truth proof, and full traceability for every shipped requirement in this milestone.
+- [x] **V-01**: The milestone closes with generated-host proof, release-truth proof, and full traceability for every shipped requirement in this milestone.
 
 ## Future Requirements
 
@@ -63,17 +63,17 @@ Explicitly excluded to keep v1.16 narrow and coherent.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOST-01 | Phase 63 | Planned |
-| HOST-02 | Phase 63 | Planned |
-| HOST-03 | Phase 63 | Planned |
-| SIGRA-01 | Phase 64 | Planned |
-| SIGRA-02 | Phase 64 | Planned |
-| SIGRA-03 | Phase 64 | Planned |
-| TRUTH-01 | Phase 65 | Planned |
-| TRUTH-02 | Phase 65 | Planned |
-| CONF-01 | Phase 66 | Planned |
-| CONF-02 | Phase 66 | Planned |
-| V-01 | Phase 66 | Planned |
+| HOST-01 | Phase 63 | Completed |
+| HOST-02 | Phase 63 | Completed |
+| HOST-03 | Phase 63 | Completed |
+| SIGRA-01 | Phase 64 | Completed |
+| SIGRA-02 | Phase 64 | Completed |
+| SIGRA-03 | Phase 64 | Completed |
+| TRUTH-01 | Phase 65 | Completed |
+| TRUTH-02 | Phase 65 | Completed |
+| CONF-01 | Phase 66 | Completed — repo-native strictness proof retained; historical external-suite lane retired as non-claim |
+| CONF-02 | Phase 66 | Completed — maintainer guidance now separates repo-native baseline proof from optional external corroboration |
+| V-01 | Phase 66 | Completed — v1.16 milestone audit closes the proof chain and full traceability |
 
 **Coverage:**
 - v1.16 requirements: 11 total

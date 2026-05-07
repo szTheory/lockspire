@@ -4,34 +4,99 @@ defmodule Lockspire.Generators.Install do
   """
 
   alias Lockspire.Generators.Templates
+  alias Lockspire.Install.Manifest
 
   @template_root Application.app_dir(:lockspire, "priv/templates/lockspire.install")
 
   @spec run(keyword()) :: :ok
   def run(opts \\ []) do
     assigns = build_assigns(opts)
+    rendered_templates = rendered_templates(assigns)
 
-    Enum.each(Templates.all(), fn template ->
-      render_template(template, assigns)
+    Enum.each(rendered_templates, fn rendered ->
+      ensure_file!(rendered.destination, rendered.rendered)
     end)
 
+    write_manifest!(assigns, rendered_templates)
     Mix.shell().info(instructions(assigns))
 
     :ok
   end
 
-  defp render_template(%{template: template_name, output: output_fun}, assigns) do
-    destination =
-      assigns.project_root
-      |> Path.join(output_fun.(assigns))
-      |> Path.expand()
+  @spec build_assigns(keyword()) :: map()
+  def build_assigns(opts) do
+    root_module =
+      Mix.Project.config()
+      |> Keyword.fetch!(:app)
+      |> to_string()
+      |> Macro.camelize()
 
-    rendered =
+    web_module = Keyword.get(opts, :web, "#{root_module}Web")
+    scope_module = Keyword.get(opts, :scope, "#{root_module}.Lockspire")
+    mount_path = Keyword.get(opts, :mount_path, "/lockspire")
+
+    %{
+      project_root: Keyword.get(opts, :path, File.cwd!()),
+      app_module: root_module,
+      app_path: Macro.underscore(root_module),
+      web_module: web_module,
+      web_path: Macro.underscore(web_module),
+      scope_module: scope_module,
+      scope_path: Macro.underscore(scope_module),
+      mount_path: mount_path,
+      router_module: "#{web_module}.Router",
+      resolver_module: "#{scope_module}.AccountResolver",
+      interaction_handler_module: "#{scope_module}.InteractionHandler",
+      consent_live_module: "#{web_module}.LockspireConsentLive",
+      authorized_apps_controller_module: "#{web_module}.AuthorizedAppsController",
+      authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
+      verification_controller_module: "#{web_module}.LockspireVerificationController",
+      verification_html_module: "#{web_module}.LockspireVerificationHTML",
+      sigra_host: Keyword.get(opts, :sigra_host, false)
+    }
+  end
+
+  @spec rendered_templates(map()) :: [map()]
+  def rendered_templates(assigns) do
+    Enum.map(Templates.all(), fn template ->
+      destination = destination_path(template, assigns)
+
+      %{
+        template: template,
+        destination: destination,
+        relative_path: template.output.(assigns),
+        rendered: render_template_content(template, assigns, destination)
+      }
+    end)
+  end
+
+  @spec destination_path(map(), map()) :: String.t()
+  def destination_path(%{output: output_fun}, assigns) do
+    assigns.project_root
+    |> Path.join(output_fun.(assigns))
+    |> Path.expand()
+  end
+
+  @spec render_template_content(map(), map(), String.t() | nil) :: String.t()
+  def render_template_content(template, assigns, destination \\ nil) do
+    destination = destination || destination_path(template, assigns)
+
+    rendered_body =
       @template_root
-      |> Path.join(template_name)
+      |> Path.join(template.template)
       |> EEx.eval_file(assigns: assigns)
 
-    ensure_file!(destination, rendered)
+    ownership_header(template, destination) <> rendered_body
+  end
+
+  defp write_manifest!(assigns, rendered_templates) do
+    managed_templates =
+      rendered_templates
+      |> Enum.filter(&(&1.template.ownership == :managed))
+
+    assigns
+    |> Manifest.build(managed_templates)
+    |> then(&Manifest.write(assigns.project_root, &1))
   end
 
   defp ensure_file!(destination, rendered) do
@@ -58,38 +123,6 @@ defmodule Lockspire.Generators.Install do
     end
   end
 
-  defp build_assigns(opts) do
-    root_module =
-      Mix.Project.config()
-      |> Keyword.fetch!(:app)
-      |> to_string()
-      |> Macro.camelize()
-
-    web_module = Keyword.get(opts, :web, "#{root_module}Web")
-    scope_module = Keyword.get(opts, :scope, "#{root_module}.Lockspire")
-    mount_path = Lockspire.mount_path()
-
-    %{
-      project_root: Keyword.get(opts, :path, File.cwd!()),
-      app_module: root_module,
-      app_path: Macro.underscore(root_module),
-      web_module: web_module,
-      web_path: Macro.underscore(web_module),
-      scope_module: scope_module,
-      scope_path: Macro.underscore(scope_module),
-      mount_path: mount_path,
-      router_module: "#{web_module}.Router",
-      resolver_module: "#{scope_module}.AccountResolver",
-      interaction_handler_module: "#{scope_module}.InteractionHandler",
-      consent_live_module: "#{web_module}.LockspireConsentLive",
-      authorized_apps_controller_module: "#{web_module}.AuthorizedAppsController",
-      authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
-      verification_controller_module: "#{web_module}.LockspireVerificationController",
-      verification_html_module: "#{web_module}.LockspireVerificationHTML",
-      sigra_host: Keyword.get(opts, :sigra_host, false)
-    }
-  end
-
   defp instructions(assigns) do
     """
 
@@ -102,5 +135,49 @@ defmodule Lockspire.Generators.Install do
       6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
       7. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
     """
+  end
+
+  defp ownership_header(%{ownership: :managed}, destination) do
+    ownership_comment(
+      destination,
+      "Lockspire-managed scaffolding",
+      [
+        "Safe to update later only through `mix lockspire.upgrade` when the manifest says this file is unchanged.",
+        "Keep this file unchanged if you want future managed upgrades to apply automatically."
+      ]
+    )
+  end
+
+  defp ownership_header(%{ownership: :host_owned}, destination) do
+    ownership_comment(
+      destination,
+      "Host-owned Lockspire seam",
+      [
+        "Lockspire generates this file once, but your app owns the ongoing logic, UX, claims, and policy here.",
+        "If you customize this file, keep those edits and reconcile future changes manually."
+      ]
+    )
+  end
+
+  defp ownership_comment(destination, title, lines) do
+    if Path.extname(destination) == ".heex" do
+      [
+        "<%!-- #{title} --%>",
+        Enum.map(lines, &"<%!-- #{&1} --%>"),
+        ""
+      ]
+      |> List.flatten()
+      |> Enum.join("\n")
+      |> Kernel.<>("\n")
+    else
+      [
+        "# #{title}",
+        Enum.map(lines, &"# #{&1}"),
+        ""
+      ]
+      |> List.flatten()
+      |> Enum.join("\n")
+      |> Kernel.<>("\n")
+    end
   end
 end

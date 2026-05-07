@@ -19,6 +19,7 @@ defmodule Mix.Tasks.Lockspire.Install do
           web: :string,
           scope: :string,
           path: :string,
+          mount_path: :string,
           help: :boolean,
           sigra_host: :boolean
         ]
@@ -37,7 +38,7 @@ defmodule Mix.Tasks.Lockspire.Install do
 
   def help do
     """
-    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--sigra-host]
+    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--sigra-host]
 
     Canonical Phoenix-first onboarding:
       1. Add the :lockspire dependency
@@ -57,6 +58,10 @@ defmodule Mix.Tasks.Lockspire.Install do
 
     When --sigra-host is passed, the AccountResolver stub includes Sigra-oriented
     moduledoc/comments (still host-owned; see Sigra companion recipe on hexdocs).
+
+    Options:
+      --mount-path PATH   Embedded Lockspire mount path to generate into router/config
+                          (default: /lockspire)
     """
   end
 end

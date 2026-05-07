@@ -1,3 +1,7 @@
+# Lockspire-managed scaffolding
+# Safe to update later only through `mix lockspire.upgrade` when the manifest says this file is unchanged.
+# Keep this file unchanged if you want future managed upgrades to apply automatically.
+
 defmodule GeneratedHostAppWeb.Router.Lockspire do
   @moduledoc """
   Host-owned mount point for the embedded Lockspire router.

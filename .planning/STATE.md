@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: "Embedded Adoption Hardening & Sigra Golden Path"
 status: phase_complete
-stopped_at: "phase 65 complete; phase 66 ready"
-last_updated: "2026-05-07T13:33:53Z"
+stopped_at: "phase 66 complete; awaiting post-phase milestone-close workflow"
+last_updated: "2026-05-07T14:30:01Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 75
+  completed_phases: 4
+  total_plans: 13
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -26,30 +26,30 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 66 next (65 complete)
-Plan: —
-Status: Phase 65 complete
-Last activity: 2026-05-07 — Completed Phase 65 release-truth artifact convergence, canonical support-contract hierarchy, and executable drift fences
+Phase: 66 complete
+Plan: 66-03 complete
+Status: v1.16 closure audit and planning-state alignment complete; milestone rollover remains owned by the post-phase milestone-close workflow
+Last activity: 2026-05-07 — Completed Phase 66 conformance-debt retirement, historical non-claim alignment, and the v1.16 milestone audit
 
 ## Performance Metrics
 
-- Phases completed: 3/4
-- Plans completed: 10/10
+- Phases completed: 4/4
+- Plans completed: 13/13
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 63 | 63-01..63-04 | complete | 8 | install/docs/tests |
 | 64 | 64-01..64-03 | complete | 8 | generated-host/docs/tests |
 | 65 | 65-01..65-03 | complete | 7 | release/docs/tests |
-| 66 | — | planned | — | — |
+| 66 | 66-01..66-03 | complete | 6 | docs/planning |
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-05-06:
+Items preserved as historical audit context at milestone close on 2026-05-07:
 
 | Category | Item | Status |
 |----------|------|--------|
-| verification | 37-VERIFICATION.md | gaps_found |
+| verification | 37-VERIFICATION.md | retired_non_claim_historical_context |
 
 ## Accumulated Context
 
@@ -73,14 +73,15 @@ Items acknowledged and deferred at milestone close on 2026-05-06:
 
 ### Blockers/Concerns
 
-- Historical Phase 37 verification debt remains acknowledged and deferred.
+- No live blocker remains for v1.16 closure. The historical Phase 37 external-suite lane is retired as a non-claim for the current support story and preserved only as audit-trail context alongside `37-VERIFICATION.md`.
+- Milestone progress rollover, archival, and any next-milestone activation remain owned by the post-phase milestone-close workflow rather than this phase plan.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-execute-phase 66`
+**Next action:** Run the post-phase milestone-close workflow to roll roadmap/archive state forward from the completed v1.16 closure audit
 
 **Resume file:** None
 
-**Stopped at:** phase 65 complete; phase 66 ready
+**Stopped at:** phase 66 complete; awaiting post-phase milestone-close workflow
 
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

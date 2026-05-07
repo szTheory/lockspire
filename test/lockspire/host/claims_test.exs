@@ -28,6 +28,15 @@ defmodule Lockspire.Host.ClaimsTest do
     assert userinfo["name"] == "Subject 123"
   end
 
+  test "build_id_token_claims/2 keeps Claims.subject as the canonical subject by default" do
+    claims = host_claims()
+
+    merged = Claims.build_id_token_claims(claims, %{"iss" => "https://example.test/lockspire"})
+
+    assert merged["sub"] == "subject-123"
+    refute merged["sub"] == "host-subject"
+  end
+
   defp host_claims do
     %Claims{
       subject: "subject-123",

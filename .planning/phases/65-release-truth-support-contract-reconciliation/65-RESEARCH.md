@@ -325,17 +325,16 @@ end
 | A2 | The live GitHub `hex-publish` environment still matches the maintainer guide’s expected branch restrictions, secret placement, and bypass posture. | Architectural Responsibility Map, Environment Availability | If false, the workflow contract remains truthful in git but the trusted-lane story is incomplete until maintainers fix GitHub settings. |
 | A3 | The uncommitted Phase 63/64 changes in the current workspace will land before or alongside Phase 65 planning/execution. | Common Pitfalls, Validation Architecture | If false, Phase 65 could reconcile docs against local-only truth instead of the published commit boundary. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is there any remaining proof gap that would make a real `1.0.0` artifact dishonest?**
-   - What we know: The repo already claims `1.0.0` GA in docs and tests, and prior milestone context explicitly aimed to transition to GA. [VERIFIED: docs/supported-surface.md, README.md, .planning/phases/47-1.0-ga-release-readiness/47-01-SUMMARY.md]
-   - What's unclear: Research here did not rerun the full milestone proof surface or inspect live protected-environment settings. [VERIFIED: scope of this session]
-   - Recommendation: Planner should default to the `1.0.0` convergence plan, but keep one early validation task that can trigger the D-04 fallback immediately if a material proof gap appears. [ASSUMED]
+   - Resolution: No repo-local blocker was found in this planning pass. The checked-in support surface, release workflow, maintainer guide, and current contract tests all assume the intended public posture is `1.0.0` GA; the contradiction is that artifact metadata still says `0.2.0`, not that the embedded surface lacks a defined support contract. [VERIFIED: docs/supported-surface.md, README.md, docs/maintainer-release.md, .github/workflows/release.yml, test/lockspire/release_readiness_contract_test.exs]
+   - Remaining boundary: live GitHub protected-environment settings are still maintainer evidence outside git and should stay secondary per D-14, not a blocker for planning. [VERIFIED: docs/maintainer-release.md]
+   - Planning implication: default to `1.0.0` artifact convergence, but keep an early execution checkpoint that can trigger the D-04 fallback immediately if execution uncovers a concrete proof failure in checked-in repo truth. [VERIFIED: 65-CONTEXT D-04]
 
 2. **Should Phase 65 include a Release Please runtime refresh from `17.3.0` to current `17.6.0`?**
-   - What we know: The repo pin is behind npm latest, but the current contradiction exists independently of that version gap. [VERIFIED: .github/actions/release-please/runtime/package.json, npm registry via `npm view release-please version time --json`]
-   - What's unclear: No evidence in this session shows a `17.3.0` bug that blocks the `1.0.0` reconciliation path. [VERIFIED: absence of repo-local failure evidence]
-   - Recommendation: Treat runtime refresh as optional unless planning uncovers a version-specific bug or security concern. Do not let that upgrade delay truth reconciliation. [ASSUMED]
+   - Resolution: No. Treat runtime refresh as explicitly out of scope for Phase 65 unless execution finds a version-specific defect in the checked-in release lane. The release-truth contradiction exists independently of the vendored runtime version and should not be delayed behind an opportunistic tooling bump. [VERIFIED: .github/actions/release-please/runtime/package.json, 65-RESEARCH Summary]
+   - Planning implication: keep the Phase 65 plans focused on metadata, docs, workflow contract alignment, and drift-fence coverage.
 
 ## Environment Availability
 

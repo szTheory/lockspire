@@ -64,6 +64,8 @@ mix lockspire.install --sigra-host
 
 The generator emits a commented-up `AccountResolver` module into your host app. You fill in the parts that depend on your data model — which fields go into `id_token` vs `userinfo`, how org membership and roles map to claims, what `sub` looks like.
 
+The install topology stays the same as the generic Phoenix path. `--sigra-host` changes guidance only; it does not introduce a runtime or compile-time dependency edge from Lockspire to Sigra.
+
 For practical wiring details, see the dedicated companion guide: **[Lockspire + Sigra](sigra-companion-host.html)**.
 
 A typical implementation looks like:
@@ -119,7 +121,7 @@ Relyra is currently early in development and will publish its own integration ge
 ## Recommended adoption order
 
 1. **Sigra first.** Get end-user auth working. Login, register, MFA if needed, optional orgs/RBAC. This is the foundation; Lockspire authorizes *after* the host can prove who the user is.
-2. **Lockspire second**, when you have a concrete need to expose your API to external apps. Run `mix lockspire.install --sigra-host`, complete the AccountResolver, exercise the OIDC + token-lifecycle surface end to end (`docs/getting-started.md`), then expose third-party integrations broadly.
+2. **Lockspire second**, when you have a concrete need to expose your API to external apps. Run `mix lockspire.install --sigra-host`, complete the AccountResolver, run `mix lockspire.verify`, exercise the OIDC + token-lifecycle surface end to end (`docs/getting-started.md`), then expose third-party integrations broadly.
 3. **Relyra third**, when an enterprise customer asks for SAML SSO. The Relyra → Sigra session glue is a separate, small piece; Lockspire integration does not change.
 
 You almost never adopt all three at once.

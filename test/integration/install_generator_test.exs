@@ -13,6 +13,18 @@ defmodule Lockspire.InstallGeneratorTest do
   end
 
   test "mix lockspire.install writes the host-owned integration files" do
+    original_mount_path = Application.get_env(:lockspire, :mount_path)
+
+    on_exit(fn ->
+      if is_nil(original_mount_path) do
+        Application.delete_env(:lockspire, :mount_path)
+      else
+        Application.put_env(:lockspire, :mount_path, original_mount_path)
+      end
+    end)
+
+    Application.delete_env(:lockspire, :mount_path)
+
     output =
       capture_io(fn ->
         install_fixture!()
@@ -25,6 +37,24 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "config :lockspire"
+
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             "Lockspire-managed scaffolding"
+
+    manifest = load_manifest!()
+
+    assert manifest["version"] == to_string(Mix.Project.config()[:version])
+    assert manifest["inputs"]["mount_path"] == "/lockspire"
+
+    managed_paths =
+      manifest["managed_files"]
+      |> Enum.map(& &1["path"])
+      |> Enum.sort()
+
+    assert "config/lockspire.exs" in managed_paths
+    assert "lib/generated_host_app_web/router/lockspire.ex" in managed_paths
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs" in managed_paths
+    refute Enum.any?(managed_paths, &String.contains?(&1, "account_resolver.ex"))
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(import_config "lockspire.exs")
@@ -51,8 +81,11 @@ defmodule Lockspire.InstallGeneratorTest do
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
 
+    assert resolver =~ "Host-owned Lockspire seam"
     assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
-    assert resolver =~ "subject: to_string(account.id)"
+    assert resolver =~ "Implement GeneratedHostApp.Lockspire.AccountResolver.resolve_account/2"
+    assert resolver =~ "Implement GeneratedHostApp.Lockspire.AccountResolver.build_claims/2"
+    assert resolver =~ "raise"
     refute resolver =~ "Sigra"
 
     assert File.read!(
@@ -162,7 +195,9 @@ defmodule Lockspire.InstallGeneratorTest do
     fapi_smoke = File.read!(fapi_smoke_path)
 
     assert fapi_smoke =~ "defmodule GeneratedHostApp.Lockspire.FapiSmokeE2ETest"
-    assert fapi_smoke =~ "Lockspire.Web.Router"
+    assert fapi_smoke =~ "Lockspire-managed scaffolding"
+    assert fapi_smoke =~ "@endpoint GeneratedHostAppWeb.Endpoint"
+    assert fapi_smoke =~ ~s(get("/lockspire/authorize")
     assert fapi_smoke =~ "Lockspire.Clients.register_client"
     assert fapi_smoke =~ "Lockspire.issuer()"
     assert fapi_smoke =~ "FAPI 2.0"
@@ -173,6 +208,7 @@ defmodule Lockspire.InstallGeneratorTest do
     refute fapi_smoke =~ "Lockspire.Domain"
     refute fapi_smoke =~ "Lockspire.Security"
     refute fapi_smoke =~ "Application.compile_env"
+    refute fapi_smoke =~ "@endpoint Lockspire.Web.Router"
 
     :code.purge(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
     :code.delete(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
@@ -196,6 +232,34 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert resolver =~ "Sigra"
     assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
+    assert resolver =~ "current_scope.user"
+    assert resolver =~ "preserve both return_to and"
+    assert resolver =~ "interaction_id"
+    assert resolver =~ "Lockspire must not import Sigra at compile"
+  end
+
+  test "mix lockspire.install --sigra-host keeps the canonical generated file set unchanged" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    generic_files =
+      @fixture_root
+      |> generated_files()
+      |> Enum.sort()
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!(["--sigra-host"])
+    end)
+
+    sigra_files =
+      @fixture_root
+      |> generated_files()
+      |> Enum.sort()
+
+    assert sigra_files == generic_files
   end
 
   test "mix lockspire.install is idempotent when the host has not edited generated files" do
@@ -210,6 +274,7 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert rerun_output =~ "* unchanged lib/generated_host_app_web/router/lockspire.ex"
     assert rerun_output =~ "* unchanged config/lockspire.exs"
+    assert rerun_output =~ "* unchanged .lockspire/install_manifest.json"
 
     assert rerun_output =~
              "* unchanged lib/generated_host_app_web/controllers/lockspire_verification_controller.ex"
@@ -274,10 +339,26 @@ defmodule Lockspire.InstallGeneratorTest do
   end
 
   defp reset_fixture! do
+    File.rm_rf!(Path.join(@fixture_root, ".lockspire"))
     File.rm_rf!(Path.join(@fixture_root, "config"))
     File.rm_rf!(Path.join(@fixture_root, "lib"))
     File.rm_rf!(Path.join(@fixture_root, "test"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
+  end
+
+  defp generated_files(root) do
+    root
+    |> Path.join("{config,lib,test}/**/*")
+    |> Path.wildcard(match_dot: true)
+    |> Enum.reject(&File.dir?/1)
+    |> Enum.map(&Path.relative_to(&1, root))
+  end
+
+  defp load_manifest! do
+    @fixture_root
+    |> Path.join(".lockspire/install_manifest.json")
+    |> File.read!()
+    |> Jason.decode!()
   end
 end

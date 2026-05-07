@@ -369,17 +369,17 @@ Source pattern: existing milestone audits use requirement-to-evidence rows rathe
 
 All material claims in this research were verified against the repository state read during this session. [VERIFIED: repository inspection]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where should the single v1.16 closure index live?**
-   - What we know: Prior shipped milestones use `vX.YY-MILESTONE-AUDIT.md` as the human-readable evidence index, and the Phase 66 context allows either a dedicated closure report or an enriched milestone audit as long as it stays index-like. [VERIFIED: .planning/milestones/v1.14-MILESTONE-AUDIT.md] [VERIFIED: .planning/milestones/v1.15-MILESTONE-AUDIT.md] [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
-   - What's unclear: Whether the planner wants a new `v1.16-MILESTONE-AUDIT.md` only, or a phase-local closeout artifact plus the milestone audit. [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
-   - Recommendation: Prefer `v1.16-MILESTONE-AUDIT.md` as the sole closeout index and avoid a second long-lived closure document. [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md] [VERIFIED: .planning/milestones/v1.15-MILESTONE-AUDIT.md]
+   - Decision: use `.planning/milestones/v1.16-MILESTONE-AUDIT.md` as the sole durable closure index for Phase 66 and v1.16.
+   - Why: prior shipped milestones already use the milestone-audit shape successfully, and Phase 66 explicitly rejects a second long-lived closure matrix or parallel contract surface. [VERIFIED: .planning/milestones/v1.14-MILESTONE-AUDIT.md] [VERIFIED: .planning/milestones/v1.15-MILESTONE-AUDIT.md] [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
+   - Effect on planning: do not create a second phase-local closeout report beyond normal phase summaries; make `v1.16-MILESTONE-AUDIT.md` the claim-bearing closure index. [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
 
 2. **How much of the old external-lane wiring should remain executable?**
-   - What we know: The workflow, mix alias, and shell script still exist and Docker is available in this environment, but Phase 66 decisions say external execution is optional corroboration, not required proof. [VERIFIED: .github/workflows/oidf-conformance.yml] [VERIFIED: mix.exs] [VERIFIED: scripts/conformance/run_phase37_suite.sh] [VERIFIED: `docker --version`] [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
-   - What's unclear: Whether maintaining the hosted lane creates enough future value to justify continued contract-test coverage. [VERIFIED: test/lockspire/release_readiness_contract_test.exs]
-   - Recommendation: Keep the wiring only if the docs and tests demote it to explicit supplemental or historical corroboration; otherwise remove it from claim-bearing tests first. [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
+   - Decision: retain existing workflow, alias, and shell wiring only as supplemental maintainer corroboration and historical audit trail, not as claim-bearing or milestone-closing proof.
+   - Why: Docker and the wiring still exist, but Phase 66 decisions require repo-native proof to stay primary and external execution to remain optional. [VERIFIED: .github/workflows/oidf-conformance.yml] [VERIFIED: mix.exs] [VERIFIED: scripts/conformance/run_phase37_suite.sh] [VERIFIED: `docker --version`] [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
+   - Effect on planning: docs and contract tests must demote the old lane to explicit supplemental or historical corroboration; if any claim-bearing tests still treat it as primary proof, remove or rewrite those assertions first. [VERIFIED: test/lockspire/release_readiness_contract_test.exs] [VERIFIED: .planning/phases/66-conformance-debt-retirement-milestone-closure/66-CONTEXT.md]
 
 ## Environment Availability
 

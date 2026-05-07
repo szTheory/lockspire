@@ -59,7 +59,7 @@ Lockspire does not currently support:
 - Full CIAM or workforce identity platform scope
 - Lockspire-owned account database, passwords, or login UX
 - Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
-- External OIDF FAPI 2.0 conformance suite certification — Lockspire pins the canonical OIDF FAPI 2.0 plan (`fapi2-security-profile-final-test-plan`) and variant axes in `scripts/conformance/fapi2-plan.json` and `docs/maintainer-conformance.md`, but the live Docker run remains a documented manual maintainer step and is not a CI pass-gate
+- External OIDF or FAPI suite certification claims — Lockspire does not treat historical or optional external-suite runs as part of the current public support contract for the embedded Phoenix library path
 - mTLS client authentication and mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism for FAPI 2.0; mTLS is permanently out of scope per the v1.10 milestone)
 
 ## Trust posture
@@ -70,7 +70,6 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
 - `docs/private-key-jwt-host-guide.md` for the shipped `jwks_uri` + `private_key_jwt` client-auth slice
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
-- `docs/maintainer-conformance.md`, `scripts/conformance/phase37-plan.json`, and `mix conformance.phase37` for the repo-native Phase 37 conformance lane and its `.artifacts/conformance/phase37` proof bundle
 - `test/integration/install_generator_test.exs` for generator-backed install proof
 - `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow, including unauthenticated `/authorize`, host login, interaction resume, consent, and token exchange
 - `test/integration/phase37_protocol_strictness_e2e_test.exs` for the generated-host strictness proof covering `prompt=none`, `max_age`, `auth_time`, and exact redirect behavior
@@ -78,7 +77,9 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `.github/workflows/ci.yml` and `.github/workflows/release.yml` for maintained contributor and protected release lanes
 - `docs/maintainer-release.md` and `SECURITY.md` for versioned release and disclosure guidance
 
-Lockspire does not use README summaries, maintainer-only environment settings, workflow-run folklore, or a demo app as its primary public proof story.
+Lockspire does not use README summaries, maintainer-only workflow docs, external-suite artifact folders, workflow-run folklore, or a demo app as its primary public proof story.
+
+Historical Phase 37 external-suite wiring and any OIDF or FAPI Docker runs remain maintainer-only corroboration. They can be useful for standards-sensitive investigation, but they are optional, secondary to the repo-native proof above, and not part of the current public support contract.
 
 ## GA bar
 

@@ -1,9 +1,17 @@
 # Maintainer Conformance Workflow
 
-This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, and does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge.
+This guide is a maintainer workflow doc. It does not define the product contract. For public support truth, start with `docs/supported-surface.md`.
+
+Use the repo-native proof first:
+
+1. Run `mix test test/integration/phase37_protocol_strictness_e2e_test.exs`.
+2. Run `mix test test/lockspire/release_readiness_contract_test.exs`.
+3. Use the external OIDF or FAPI suite only as optional supplemental corroboration.
+
+This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a repo-native-first, preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge, and does not turn the external suite into a required release gate or milestone-closing proof.
 
 1. Run the fast local boundary probe script.
-2. Run the OpenID Foundation (OIDF) Conformance Suite for definitive verification.
+2. Run the OpenID Foundation (OIDF) Conformance Suite only if you need optional supplemental maintainer evidence beyond the repo-native proof.
 
 ## Prerequisites
 
@@ -52,7 +60,7 @@ This script is a fast smoke check for the boundary Plug and resource enforcement
 
 You can also run `mix lockspire.oidf_conformance --validate-env` to validate the prerequisites for this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set, but it does NOT execute `scripts/conformance/fapi2-check.sh` or send live HTTP probes.
 
-## Step 3: Run the OIDF Conformance Suite
+## Step 3: Optional external OIDF Conformance Suite corroboration
 
 1. Clone the suite:
 
@@ -87,15 +95,15 @@ Then use these values in the OIDF UI:
 
 ## Phase 37 Protocol Strictness
 
-The suite ensures strict protocol behavior as tested in `phase37_protocol_strictness_e2e_test.exs`.
-Results from `mix conformance.phase37` and this lane are saved to `.artifacts/conformance/phase37`.
+The current shipped strictness claim is backed first by `phase37_protocol_strictness_e2e_test.exs` and `test/lockspire/release_readiness_contract_test.exs`.
+Results from `mix conformance.phase37` and this lane are saved to `.artifacts/conformance/phase37` as optional maintainer-only corroboration.
 browser cookie and third-party cookie configuration is handled per the environment.
 
 ## FAPI 2.0 notes
 
 - Select an appropriate `FAPI2` plan in the OIDF UI.
 - Use clients and keys that match the phase’s supported FAPI posture.
-- Treat `scripts/conformance/fapi2-check.sh` as the quick preflight and the OIDF suite as the release gate.
+- Treat `scripts/conformance/fapi2-check.sh` as the quick preflight and the OIDF suite as optional supplemental evidence, not as a required release gate.
 
 ## FAPI 2.0 OIDF plan (Phase 43)
 
@@ -110,7 +118,7 @@ Use the `fapi2-security-profile-final-test-plan` plan in the OIDF UI, with these
 The same plan and variants are pinned in `scripts/conformance/fapi2-plan.json` as the canonical upstream OIDF reference.
 Lockspire's shipped runtime now supports the repo-proven `private_key_jwt` slice described in `docs/supported-surface.md` and `docs/private-key-jwt-host-guide.md`.
 This conformance guide is still a maintainer workflow doc, not the product contract: the pinned variant documents the upstream OIDF plan shape while the repo's runtime truth remains defined by the supported-surface docs plus executable proof.
-The live Docker run remains a manual maintainer step; CI does not gate on it.
+The live Docker run remains a manual maintainer step; CI does not gate on it, it is not part of the public support contract, it is not a required release gate, and it is not milestone-closing proof.
 
 Run `mix lockspire.oidf_conformance --validate-env` to verify your environment, dependencies,
 and pinned artifacts before launching the suite.
