@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.17 1.0.0 GA Release Readiness (Shipped + archived: 2026-05-07)
+
+**Phases completed:** **3** (**67-69**), **3** plans, **7** requirements closed.
+
+**Package posture:** Lockspire 1.0.0 is officially released to Hex, with all execution verifiable.
+
+**Key accomplishments:**
+- Completed public release verification.
+- Documented explicit durable records.
+
+**Pre-close audit:** `audit-open` had 2 acknowledged deferred items. Formal milestone audit: [`.planning/milestones/v1.17-MILESTONE-AUDIT.md`](milestones/v1.17-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.17-ROADMAP.md`, `milestones/v1.17-REQUIREMENTS.md`, `milestones/v1.17-MILESTONE-AUDIT.md` · **Git tag:** `v1.17`
+
+---
+
 ## v1.16 Embedded Adoption Hardening & Sigra Golden Path (Shipped + archived: 2026-05-07)
 
 **Phases completed:** **4** (**63-66**), **13** plans, **11** requirements closed.
