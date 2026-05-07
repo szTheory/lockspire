@@ -4,7 +4,7 @@ defmodule Lockspire.MixProject do
   def project do
     [
       app: :lockspire,
-      version: "0.2.0",
+      version: "1.0.0",
       description: "Embedded OAuth/OIDC authorization server for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
