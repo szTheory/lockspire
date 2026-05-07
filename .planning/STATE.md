@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: "Embedded Adoption Hardening & Sigra Golden Path"
-status: phase_complete
-stopped_at: "phase 66 complete; awaiting post-phase milestone-close workflow"
-last_updated: "2026-05-07T14:30:01Z"
+status: milestone_complete
+stopped_at: "v1.16 archived; awaiting next milestone definition"
+last_updated: "2026-05-07T15:05:00Z"
 last_activity: 2026-05-07
 progress:
   total_phases: 4
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** v1.16 embedded adoption hardening, release-truth completion, and conformance debt retirement
+**Current focus:** no active milestone; next decision is whether to cut the real public release or define the next narrow embedded-adoption wedge
 
 ## Current Position
 
-Phase: 66 complete
-Plan: 66-03 complete
-Status: v1.16 closure audit and planning-state alignment complete; milestone rollover remains owned by the post-phase milestone-close workflow
-Last activity: 2026-05-07 — Completed Phase 66 conformance-debt retirement, historical non-claim alignment, and the v1.16 milestone audit
+Phase: milestone archived
+Plan: v1.16 closeout complete
+Status: v1.16 archived; no active milestone
+Last activity: 2026-05-07 — Archived v1.16 roadmap and requirements, recorded deferred close items, and prepared the project for next-milestone selection
 
 ## Performance Metrics
 
@@ -45,11 +45,12 @@ Last activity: 2026-05-07 — Completed Phase 66 conformance-debt retirement, hi
 
 ## Deferred Items
 
-Items preserved as historical audit context at milestone close on 2026-05-07:
+Items acknowledged and deferred at milestone close on 2026-05-07:
 
 | Category | Item | Status |
 |----------|------|--------|
 | verification | 37-VERIFICATION.md | retired_non_claim_historical_context |
+| seed | 001-cut-next-real-release | dormant |
 
 ## Accumulated Context
 
@@ -73,15 +74,15 @@ Items preserved as historical audit context at milestone close on 2026-05-07:
 
 ### Blockers/Concerns
 
-- No live blocker remains for v1.16 closure. The historical Phase 37 external-suite lane is retired as a non-claim for the current support story and preserved only as audit-trail context alongside `37-VERIFICATION.md`.
-- Milestone progress rollover, archival, and any next-milestone activation remain owned by the post-phase milestone-close workflow rather than this phase plan.
+- No live blocker remains for the shipped v1.16 support story.
+- The next roadmap decision should resolve whether Lockspire cuts the long-deferred real public release before spending budget on new protocol breadth.
 
 ## Session Continuity
 
-**Next action:** Run the post-phase milestone-close workflow to roll roadmap/archive state forward from the completed v1.16 closure audit
+**Next action:** Run `$gsd-new-milestone` to define the next milestone and decide whether `SEED-001` becomes active release work
 
 **Resume file:** None
 
-**Stopped at:** phase 66 complete; awaiting post-phase milestone-close workflow
+**Stopped at:** v1.16 archived; awaiting next milestone definition
 
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -10,22 +10,27 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived fifteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, and v1.15 delivered JWKS URI & Private Key JWT Client Authentication.
+Lockspire has now archived sixteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, v1.15 delivered JWKS URI & Private Key JWT Client Authentication, and v1.16 delivered embedded adoption hardening plus the Sigra golden path.
 
-Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, and shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces.
+Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces, and a repo-proven embedded Phoenix host path with canonical install, verification, upgrade, and generated-host onboarding proof.
 
-The remaining highest-value gap is no longer protocol breadth. It is adoption truth: making the embedded Phoenix/Sigra path boring to install, hard to misconfigure, executable end to end, and aligned with the package/release/support posture the repo publicly claims.
+The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next question is whether Lockspire should cut the long-deferred real public release now that install truth, support truth, and current proof are aligned, or spend another milestone before that on a still-narrow adoption or operator wedge.
 
-## Current Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
+## Next Milestone Goals
+
+- Decide whether to activate `SEED-001` and cut the next real public Lockspire release from the now-aligned `1.0.0` posture.
+- Preserve the embedded-library shape and keep host ownership explicit while validating any next adoption or operator wedge.
+- Avoid adding new protocol breadth unless it compounds on the now-proven install, support, and trust foundation rather than distracting from it.
+
+## Recently Shipped Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
 
 **Goal:** Make Lockspire feel complete, correct, and trustworthy in its intended embedded Phoenix deployment shape by hardening the canonical host integration path, proving the Sigra companion flow end to end, reconciling release truth, and retiring the conformance debt that affects public claims.
 
-**Target features:**
-- Canonical Sigra-backed install and onboarding path with sharper generated host seams, diagnostics, and upgrade guidance.
-- Executable generated-host proof for the embedded authorization, consent, logout, and verification boundaries Lockspire asks host apps to own.
-- Release, support, and conformance truth that keeps package metadata, docs, workflows, and supported-surface claims in agreement.
-
-**Why now:** Lockspire already has enough protocol depth to be useful. The next compounding move is to make adoption and trust friction disappear for Phoenix teams using Lockspire alongside Sigra, without widening into hosted-auth or CIAM scope.
+**Delivered:**
+- Canonical embedded install, verify, and manifest-backed upgrade workflows with explicit Lockspire-managed versus host-owned boundaries.
+- Executable generated-host proof for the Sigra-backed authorization-code onboarding path through host login, interaction resume, consent, token exchange, and JWKS.
+- One coherent 1.0.0 release-truth story across package metadata, changelog posture, release workflow wording, support docs, and drift-fence tests.
+- Repo-native conformance and strictness proof as the current trust anchor, with historical external-suite artifacts preserved only as non-claim audit context.
 
 ## Requirements
 
