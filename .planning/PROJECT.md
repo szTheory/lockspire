@@ -12,13 +12,20 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 Lockspire has now archived fifteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, and v1.15 delivered JWKS URI & Private Key JWT Client Authentication.
 
-At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, and shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces.
+Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, and shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces.
 
-## Next Milestone Goals
+The remaining highest-value gap is no longer protocol breadth. It is adoption truth: making the embedded Phoenix/Sigra path boring to install, hard to misconfigure, executable end to end, and aligned with the package/release/support posture the repo publicly claims.
 
-- Define the next narrow trust wedge from `.planning/EPIC.md` and the archived future requirements rather than continuing to edit a shipped milestone in place.
-- Preserve the embedded-library shape and truthful metadata/docs posture established by v1.15.
-- Decide whether the next budget goes to another confidential-client auth slice (`client_secret_jwt` or stronger remote-key trust), broader conformance debt retirement, or another leverage-heavy integrator wedge.
+## Current Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
+
+**Goal:** Make Lockspire feel complete, correct, and trustworthy in its intended embedded Phoenix deployment shape by hardening the canonical host integration path, proving the Sigra companion flow end to end, reconciling release truth, and retiring the conformance debt that affects public claims.
+
+**Target features:**
+- Canonical Sigra-backed install and onboarding path with sharper generated host seams, diagnostics, and upgrade guidance.
+- Executable generated-host proof for the embedded authorization, consent, logout, and verification boundaries Lockspire asks host apps to own.
+- Release, support, and conformance truth that keeps package metadata, docs, workflows, and supported-surface claims in agreement.
+
+**Why now:** Lockspire already has enough protocol depth to be useful. The next compounding move is to make adoption and trust friction disappear for Phoenix teams using Lockspire alongside Sigra, without widening into hosted-auth or CIAM scope.
 
 ## Requirements
 
@@ -62,9 +69,11 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 ### Active
 
-- Safe `jwks_uri` retrieval and caching for confidential clients must land with explicit SSRF and timeout boundaries rather than expanding the host seam.
-- `private_key_jwt` must move from payload-shape checks to full signature, claim, and replay verification across Lockspire-owned client-auth endpoints.
-- Discovery, DCR management, and security docs must advertise only the shipped authentication methods and signing algorithms the repo can verify end to end.
+- Phoenix host teams can install Lockspire alongside Sigra through one canonical, generator-backed path that preserves host ownership of accounts, login UX, and product policy.
+- Host teams can detect and correct the highest-risk embedded integration mistakes before they become runtime surprises or misleading support claims.
+- Maintainers can prove the generated host path end to end for the embedded seams Lockspire asks the host to own, including companion Sigra guidance where applicable.
+- Package versioning, changelog posture, release workflow truth, and supported-surface docs agree on the actual public release state.
+- Historical conformance and verification debt that materially affects Lockspire's public trust story is either closed with executable proof or narrowed into an explicit non-claim.
 
 ### Out of Scope
 
@@ -78,7 +87,7 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.14 completed, v1.15 now targets stronger confidential-client authentication by combining safe `jwks_uri` support with truthful `private_key_jwt` verification.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.15 complete, v1.16 shifts from adding protocol surface to making the embedded host path boring, executable, and release-truthful.
 
 ## Constraints
 
@@ -131,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after v1.15 milestone archive*
+*Last updated: 2026-05-06 for v1.16 milestone start*

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.15
-milestone_name: "JWKS URI & Private Key JWT Client Authentication"
-status: milestone_completed
-stopped_at: "v1.15 archived; next milestone not yet defined"
-last_updated: "2026-05-07T00:47:00Z"
-last_activity: 2026-05-07
+milestone: v1.16
+milestone_name: "Embedded Adoption Hardening & Sigra Golden Path"
+status: defining_requirements
+stopped_at: "v1.16 planned; phase work not started"
+last_updated: "2026-05-06T16:00:00Z"
+last_activity: 2026-05-06
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,26 +22,26 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** v1.15 archived; awaiting next milestone definition
+**Current focus:** v1.16 embedded adoption hardening, Sigra golden-path proof, release truth, and conformance debt retirement
 
 ## Current Position
 
-Phase: —
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone archived
-Last activity: 2026-05-07 — Archived v1.15 after audit pass, restored missing phase verification artifacts, and retired the active milestone roadmap/requirements files
+Status: Defining requirements
+Last activity: 2026-05-06 — Started v1.16 milestone planning for embedded adoption hardening and Sigra golden-path proof
 
 ## Performance Metrics
 
-- Phases completed: 4/4
-- Plans completed: 13/13
+- Phases completed: 0/4
+- Plans completed: 0/0
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 59 | 59-01..59-03 | completed | 6 | 22 |
-| 60 | 60-01..60-03 | completed | 4 | 7 |
-| 61 | 61-01..61-04 | completed | 8 | 13 |
-| 62 | 62-01..62-03 | completed | 3 | 12 |
+| 63 | — | planned | — | — |
+| 64 | — | planned | — | — |
+| 65 | — | planned | — | — |
+| 66 | — | planned | — | — |
 
 ## Deferred Items
 
@@ -67,6 +67,9 @@ Items acknowledged and deferred at milestone close on 2026-05-06:
 - Phase 60 exposes explicit JWKS cache TTL and a single bounded forced-refresh path that preserves the last-known-good cache entry on refresh failure.
 - Phase 61 moves `private_key_jwt` client authentication to a shared staged verifier with explicit key resolution, JOSE signature verification, trusted-claim enforcement, and post-verification replay recording.
 - Phase 61 aligns discovery, introspection, direct-client endpoint behavior, telemetry, audit, and redaction around the same shared runtime capability.
+- v1.16 will prioritize embedded adoption hardening over new protocol breadth.
+- The chosen v1.16 wedge is a canonical Sigra-backed host path with executable generated-host proof, release-truth reconciliation, and selective conformance debt retirement.
+- `client_secret_jwt` remains deferred because it has lower leverage than adoption proof and pressures Lockspire's hashed-secret posture.
 
 ### Blockers/Concerns
 
@@ -74,10 +77,10 @@ Items acknowledged and deferred at milestone close on 2026-05-06:
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` to define the next milestone
+**Next action:** Run `$gsd-plan-phase 63` to start execution
 
 **Resume file:** None
 
-**Stopped at:** v1.15 archived; waiting for next milestone selection
+**Stopped at:** v1.16 planned; phase execution not yet started
 
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
