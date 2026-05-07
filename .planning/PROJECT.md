@@ -10,21 +10,15 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived fourteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, and v1.14 delivered Advanced Authorization & Resource Targetting.
+Lockspire has now archived fifteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, and v1.15 delivered JWKS URI & Private Key JWT Client Authentication.
 
-At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, and Rich Authorization Requests with durable validation and introspection proof.
+At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, and shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces.
 
-## Current Milestone: v1.15 JWKS URI & Private Key JWT Client Authentication
+## Next Milestone Goals
 
-**Goal:** Close the strongest remaining confidential-client authentication gap by adding safe `jwks_uri` support and repo-proven `private_key_jwt` validation across Lockspire-owned direct client-auth surfaces without widening the embedded-library shape.
-
-**Target features:**
-- SSRF-guarded `jwks_uri` retrieval, caching, and rotation-aware refresh for registered client keys.
-- Cryptographically verified `private_key_jwt` authentication on Lockspire-owned direct client-auth surfaces.
-- Truthful DCR, discovery, operator-policy, telemetry, and audit wiring for the shipped client-auth slice.
-- Executable docs and verification proving secure-by-default audience, replay, and algorithm enforcement.
-
-**Why now:** This compounds directly on DCR, JAR/JWE, FAPI 2.0, and the existing client/JWKS domain model while closing a real integrator need with less product-shape drift than a broader new protocol family.
+- Define the next narrow trust wedge from `.planning/EPIC.md` and the archived future requirements rather than continuing to edit a shipped milestone in place.
+- Preserve the embedded-library shape and truthful metadata/docs posture established by v1.15.
+- Decide whether the next budget goes to another confidential-client auth slice (`client_secret_jwt` or stronger remote-key trust), broader conformance debt retirement, or another leverage-heavy integrator wedge.
 
 ## Requirements
 
@@ -137,4 +131,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 at v1.15 milestone start*
+*Last updated: 2026-05-06 after v1.15 milestone archive*
