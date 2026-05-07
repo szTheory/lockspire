@@ -4,7 +4,8 @@
 
 ### v1.16 Embedded Adoption Hardening & Sigra Golden Path
 
-**Status:** Planned
+**Status:** In Progress
+**Progress:** Phases 63-65 complete; Phase 66 remaining
 **Phases:** 63-66
 **Total Requirements:** 11
 
