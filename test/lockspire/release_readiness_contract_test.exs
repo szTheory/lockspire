@@ -73,6 +73,26 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     |> Enum.map(&List.first/1)
   end
 
+  defp release_workflow_job(name, next_name) do
+    @release_workflow_path
+    |> File.read!()
+    |> then(
+      &Regex.run(
+        ~r/^  #{Regex.escape(name)}:\n(.*?)^  #{Regex.escape(next_name)}:/ms,
+        &1,
+        capture: :all_but_first
+      )
+    )
+    |> List.first()
+  end
+
+  defp publish_job_section do
+    @release_workflow_path
+    |> File.read!()
+    |> then(&Regex.run(~r/^  publish:\n(.*)\z/ms, &1, capture: :all_but_first))
+    |> List.first()
+  end
+
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
     guide = File.read!(@maintainer_guide_path)
 
@@ -197,24 +217,44 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     manifest = File.read!(@release_please_manifest_path)
     release_workflow = File.read!(@release_workflow_path)
     action = File.read!(@release_please_action_path)
+    mixfile = File.read!("mix.exs")
+    changelog = File.read!("CHANGELOG.md")
 
     assert config =~ "\"bump-minor-pre-major\": false"
+    assert config =~ "\"include-v-in-tag\": true"
     assert config =~ "\"packages\""
     assert config =~ "\".\""
+    assert config =~ "\"component\": \"lockspire\""
+    assert config =~ "\"include-component-in-tag\": true"
     assert config =~ "\"release-type\": \"elixir\""
     assert config =~ "\"package-name\": \"lockspire\""
     assert manifest =~ "\".\""
     assert manifest =~ ~r/"\.\":\s*"\d+\.\d+\.\d+"/
     assert mix_version() == manifest_version()
     assert manifest_version() == newest_changelog_version()
+    assert mix_version() == "1.0.0"
+    assert changelog =~ "lockspire-v1.0.0"
+    assert changelog =~ "one `lockspire` package"
+    assert mixfile =~ "\"Changelog\" => \"https://hexdocs.pm/lockspire/changelog.html\""
+    assert mixfile =~ "\"Docs\" => \"https://hexdocs.pm/lockspire\""
+    assert mixfile =~ "\"Supported surface\" => \"https://hexdocs.pm/lockspire/supported-surface.html\""
     assert release_workflow =~ "uses: ./.github/actions/release-please"
     assert release_workflow =~ "config-file: release-please-config.json"
     assert release_workflow =~ "manifest-file: .release-please-manifest.json"
+    assert release_workflow =~ "outputs:"
+    assert release_workflow =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
+    assert release_workflow =~ "Release Please selected root tag ${{ steps.release.outputs.tag_name }}"
     assert action =~ "config-file"
     assert action =~ "manifest-file"
     assert action =~ "node .github/actions/release-please/runtime/index.js"
-    refute File.read!("CHANGELOG.md") =~ "1.0.0-rc"
-    refute File.read!("CHANGELOG.md") =~ "GA-ready"
+
+    for artifact <- [mixfile, config, manifest, changelog] do
+      refute artifact =~ "1.0.0-rc"
+      refute artifact =~ "lockspire_rc"
+      refute artifact =~ "lockspire-rc"
+    end
+
+    refute changelog =~ "GA-ready"
   end
 
   test "release truth hierarchy stays canonical across metadata and docs" do
