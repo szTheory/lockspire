@@ -72,6 +72,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     send(pid, {:telemetry_event, event, measurements, metadata})
   end
 
+  defp encrypted_jarm_metadata(overrides) do
+    DcrFixtures.valid_metadata()
+    |> Map.put("authorization_signed_response_alg", "RS256")
+    |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
+    |> Map.put("authorization_encrypted_response_enc", "A256GCM")
+    |> Map.merge(overrides)
+  end
+
   describe "read/2" do
     test "returns {:ok, %Client{}} when client_id_from_url == client.client_id", %{
       client: client,
@@ -147,6 +155,30 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — RAT rotation" do
+    test "updates client with coherent encrypted JARM metadata and persists the fields", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          encrypted_jarm_metadata(%{
+            "jwks" => %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}
+          }),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.authorization_signed_response_alg == :RS256
+      assert updated_client.authorization_encrypted_response_alg == :RSA_OAEP_256
+      assert updated_client.authorization_encrypted_response_enc == :A256GCM
+      assert updated_client.jwks == %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}
+      assert is_nil(updated_client.jwks_uri)
+    end
+
     test "updates private_key_jwt client from inline jwks to jwks_uri and persists the new field",
          %{
            server_policy: _server_policy
@@ -174,6 +206,52 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       assert updated_client.token_endpoint_auth_method == :private_key_jwt
       assert updated_client.jwks_uri == "https://keys.example.test/client.jwks.json"
       assert is_nil(updated_client.jwks)
+    end
+
+    test "rejects update when encrypted JARM metadata is partial", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          DcrFixtures.valid_metadata()
+          |> Map.put("authorization_signed_response_alg", "RS256")
+          |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
+          |> Map.put("jwks", %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :authorization_encrypted_response_enc,
+                reason: :missing_for_encrypted_response
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when encrypted JARM metadata uses both jwks and jwks_uri", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          encrypted_jarm_metadata(%{
+            "jwks" => %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]},
+            "jwks_uri" => "https://keys.example.test/client.jwks.json"
+          }),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks,
+                reason: :mutually_exclusive_with_jwks_uri
+              }} = RegistrationManagement.update(client_id, request)
     end
 
     test "rejects update when metadata includes both jwks and jwks_uri", %{

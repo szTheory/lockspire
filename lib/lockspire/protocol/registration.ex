@@ -127,6 +127,7 @@ defmodule Lockspire.Protocol.Registration do
       when is_map(metadata) do
     with :ok <- validate_unsupported_logout_metadata(metadata),
          :ok <- validate_jwks(metadata),
+         :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy) do
@@ -216,6 +217,7 @@ defmodule Lockspire.Protocol.Registration do
     has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
     auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
     jwks_uri = Map.get(metadata, "jwks_uri")
+    encrypted_jarm_requested? = encrypted_jarm_requested?(metadata)
 
     cond do
       has_jwks and has_jwks_uri ->
@@ -234,7 +236,7 @@ defmodule Lockspire.Protocol.Registration do
            reason: :missing_cryptographic_material
          }}
 
-      has_jwks_uri and auth_method != "private_key_jwt" ->
+      has_jwks_uri and auth_method != "private_key_jwt" and not encrypted_jarm_requested? ->
         {:error,
          %Error{
            code: :invalid_client_metadata,
@@ -248,6 +250,70 @@ defmodule Lockspire.Protocol.Registration do
            code: :invalid_client_metadata,
            field: :jwks_uri,
            reason: :invalid_uri_scheme
+         }}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_authorization_response_encryption_metadata(metadata) do
+    signing_alg = Map.get(metadata, "authorization_signed_response_alg")
+    encryption_alg = Map.get(metadata, "authorization_encrypted_response_alg")
+    encryption_enc = Map.get(metadata, "authorization_encrypted_response_enc")
+    has_jwks = Map.has_key?(metadata, "jwks")
+    has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
+
+    cond do
+      is_nil(encryption_alg) and is_nil(encryption_enc) ->
+        :ok
+
+      is_nil(encryption_alg) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
+           reason: :missing_for_encrypted_response
+         }}
+
+      is_nil(encryption_enc) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_enc,
+           reason: :missing_for_encrypted_response
+         }}
+
+      signing_alg not in supported_authorization_signing_algs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_signed_response_alg,
+           reason: :missing_for_encrypted_response
+         }}
+
+      encryption_alg not in supported_authorization_encryption_algs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
+           reason: :unsupported
+         }}
+
+      encryption_enc not in supported_authorization_encryption_encs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_enc,
+           reason: :unsupported
+         }}
+
+      not has_jwks and not has_jwks_uri ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
+           reason: :missing_cryptographic_material
          }}
 
       true ->
@@ -356,6 +422,16 @@ defmodule Lockspire.Protocol.Registration do
       initial_access_token_id: iat_id,
       id_token_signed_response_alg:
         atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
+      authorization_signed_response_alg:
+        atomize_alg(Map.get(metadata, "authorization_signed_response_alg")),
+      authorization_encrypted_response_alg:
+        atomize_authorization_encryption_alg(
+          Map.get(metadata, "authorization_encrypted_response_alg")
+        ),
+      authorization_encrypted_response_enc:
+        atomize_authorization_encryption_enc(
+          Map.get(metadata, "authorization_encrypted_response_enc")
+        ),
       security_profile:
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
@@ -394,6 +470,14 @@ defmodule Lockspire.Protocol.Registration do
   defp atomize_alg("EdDSA"), do: :EdDSA
   defp atomize_alg(_), do: nil
 
+  defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
+  defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES
+  defp atomize_authorization_encryption_alg(_), do: nil
+
+  defp atomize_authorization_encryption_enc("A256GCM"), do: :A256GCM
+  defp atomize_authorization_encryption_enc("A128GCM"), do: :A128GCM
+  defp atomize_authorization_encryption_enc(_), do: nil
+
   defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
   defp atomize_security_profile("none"), do: :none
   defp atomize_security_profile(_), do: :inherit
@@ -421,6 +505,15 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp https_uri?(_uri), do: false
+
+  defp encrypted_jarm_requested?(metadata) when is_map(metadata) do
+    Map.has_key?(metadata, "authorization_encrypted_response_alg") or
+      Map.has_key?(metadata, "authorization_encrypted_response_enc")
+  end
+
+  defp supported_authorization_signing_algs, do: ["RS256", "ES256", "EdDSA"]
+  defp supported_authorization_encryption_algs, do: ["RSA-OAEP-256", "ECDH-ES"]
+  defp supported_authorization_encryption_encs, do: ["A256GCM", "A128GCM"]
 
   defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
     case Map.get(metadata, "dpop_bound_access_tokens", false) do
