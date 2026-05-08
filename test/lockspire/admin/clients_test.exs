@@ -349,14 +349,16 @@ defmodule Lockspire.Admin.ClientsTest do
     assert {:error, %Ecto.Changeset{} = changeset} =
              Clients.update_client("admin-client", %{max_delegation_depth: 6})
 
-    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] = changeset.errors
+    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "update_client/2 rejects max_delegation_depth < 0" do
     assert {:error, %Ecto.Changeset{} = changeset} =
              Clients.update_client("admin-client", %{max_delegation_depth: -1})
 
-    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] = changeset.errors
+    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "update_client/2 accepts only inherit, required, and optional for par_policy" do
@@ -470,6 +472,85 @@ defmodule Lockspire.Admin.ClientsTest do
     assert Enum.any?(errors, fn err ->
              err.field == :security_profile and
                err.reason in [:missing_compliant_active_key, :missing_compliant_publishable_key]
+           end)
+  end
+
+  test "update_client/2 with security_profile 'fapi_2_0_message_signing' persists and returns strict mode" do
+    now = DateTime.utc_now()
+
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "message-signing-update-ready",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "message-signing-update-ready",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert {:ok, %Client{} = client} =
+             Clients.update_client("admin-client", %{
+               security_profile: "fapi_2_0_message_signing",
+               authorization_signed_response_alg: "ES256",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert client.security_profile == :fapi_2_0_message_signing
+    assert client.authorization_signed_response_alg == :ES256
+  end
+
+  test "update_client/2 rejects security_profile 'fapi_2_0_message_signing' when signing posture is not compliant" do
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               security_profile: "fapi_2_0_message_signing",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert Enum.any?(errors, fn err ->
+             err.field == :security_profile and
+               err.reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] and
+               err.detail == :fapi_2_0_message_signing
+           end)
+  end
+
+  test "update_client/2 rejects strict message signing when authorization response signing algorithm is missing" do
+    now = DateTime.utc_now()
+
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "message-signing-update-missing-jarm-alg",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "message-signing-update-missing-jarm-alg",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert {:error, errors} =
+             Clients.update_client("admin-client", %{
+               security_profile: "fapi_2_0_message_signing",
+               actor: %{type: :operator, id: "ops-security"}
+             })
+
+    assert Enum.any?(errors, fn err ->
+             err.field == :authorization_signed_response_alg and
+               err.reason == :incompatible_with_fapi_2_0
            end)
   end
 

@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
   alias Lockspire.Protocol.Registration.Success
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
 
@@ -353,6 +354,76 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
       assert {:ok, %Success{client: client}} = Registration.register(request)
       assert client.id_token_signed_response_alg == :RS256
+    end
+
+    test "accepts strict message-signing metadata when readiness is met" do
+      now = DateTime.utc_now()
+
+      Repository.publish_key(%Lockspire.Domain.SigningKey{
+        kid: "dcr-message-signing-ready",
+        use: :sig,
+        status: :active,
+        published_at: now,
+        activated_at: now,
+        public_jwk: %{
+          "kty" => "EC",
+          "crv" => "P-256",
+          "kid" => "dcr-message-signing-ready",
+          "alg" => "ES256",
+          "use" => "sig"
+        },
+        private_jwk_encrypted: <<1>>,
+        kty: :EC,
+        alg: "ES256"
+      })
+
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("security_profile", "fapi_2_0_message_signing")
+        |> Map.put("id_token_signed_response_alg", "ES256")
+        |> Map.put("authorization_signed_response_alg", "ES256")
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.security_profile == :fapi_2_0_message_signing
+      assert client.authorization_signed_response_alg == :ES256
+    end
+
+    test "rejects strict message-signing clients without a compliant authorization response signing algorithm" do
+      now = DateTime.utc_now()
+
+      Repository.publish_key(%Lockspire.Domain.SigningKey{
+        kid: "dcr-message-signing-reject",
+        use: :sig,
+        status: :active,
+        published_at: now,
+        activated_at: now,
+        public_jwk: %{
+          "kty" => "EC",
+          "crv" => "P-256",
+          "kid" => "dcr-message-signing-reject",
+          "alg" => "ES256",
+          "use" => "sig"
+        },
+        private_jwk_encrypted: <<1>>,
+        kty: :EC,
+        alg: "ES256"
+      })
+
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("security_profile", "fapi_2_0_message_signing")
+        |> Map.put("id_token_signed_response_alg", "ES256")
+
+      request = DcrFixtures.register_request(metadata: metadata)
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :authorization_signed_response_alg,
+                reason: :incompatible_with_fapi_2_0
+              }} = Registration.register(request)
     end
   end
 

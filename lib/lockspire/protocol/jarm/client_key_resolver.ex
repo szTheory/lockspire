@@ -71,8 +71,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
   defp select_key(jwks, %{alg: alg} = params) do
     jwks
     |> jwk_entries()
-    |> Enum.filter(&compatible_key_shape?(&1, alg))
-    |> Enum.filter(&allowed_use?(&1))
+    |> Enum.filter(fn jwk -> compatible_key_shape?(jwk, alg) and allowed_use?(jwk) end)
     |> maybe_filter_requested_kid(params)
     |> sort_candidates(params)
     |> case do

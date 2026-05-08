@@ -44,6 +44,7 @@ defmodule Lockspire.Host.DefaultDelegationValidatorTest do
       }
 
       assert {:ok, %{claims: %{"act" => act}}} = DefaultDelegationValidator.validate(context)
+
       assert act == %{
                "sub" => "actor_sub",
                "client_id" => "actor_client",
@@ -53,7 +54,7 @@ defmodule Lockspire.Host.DefaultDelegationValidatorTest do
                }
              }
     end
-   
+
     test "ignores missing sub or client_id appropriately" do
       context = %TokenExchangeContext{
         client_id: "client1",

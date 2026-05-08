@@ -37,7 +37,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
         {:ok, %ServerPolicy{} = policy} ->
           {:noreply,
            socket
-           |> assign(policy: policy, private_key_jwt_truth: dcr_private_key_jwt_truth(policy), form_errors: [])
+           |> assign(
+             policy: policy,
+             private_key_jwt_truth: dcr_private_key_jwt_truth(policy),
+             form_errors: []
+           )
            |> put_flash(:info, "Global DCR policy updated")}
 
         {:error, errors} when is_list(errors) ->

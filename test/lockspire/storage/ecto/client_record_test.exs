@@ -266,6 +266,27 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_security
   end
 
+  test "changeset/2 accepts :fapi_2_0_message_signing security_profile and is valid" do
+    client = %Client{
+      client_id: "fapi_message_signing_client_changeset_test",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_message_signing
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
+
+    assert changeset.valid?
+    assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_message_signing
+  end
+
   test "changeset/2 with default :inherit security_profile round-trips through to_domain/1" do
     repo = Lockspire.TestRepo
 
@@ -413,6 +434,28 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
       ClientRecord.update_changeset(inserted, %{
         id_token_signed_response_alg: "RS256"
       })
+
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)
+  end
+
+  test "changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_message_signing is enabled" do
+    client = %Client{
+      client_id: "fapi_message_signing_rs256_client",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_message_signing,
+      id_token_signed_response_alg: :RS256
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
 
     refute changeset.valid?
     assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)

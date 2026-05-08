@@ -29,7 +29,9 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.DcrPolicy.Resolved
   alias Lockspire.Protocol.InitialAccessToken
+  alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Protocol.SecurityProfile
 
   defmodule Success do
     @moduledoc false
@@ -63,7 +65,7 @@ defmodule Lockspire.Protocol.Registration do
     with :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
-         :ok <- validate_intake_metadata(metadata, resolved, server_policy),
+         :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
          credentials <- generate_credentials(),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
@@ -123,19 +125,27 @@ defmodule Lockspire.Protocol.Registration do
   @doc false
   @spec validate_intake_metadata(map(), Resolved.t(), ServerPolicy.t()) ::
           :ok | {:error, Error.t()}
-  def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy)
+  def validate_intake_metadata(metadata, %Resolved{} = resolved, server_policy)
+      when is_map(metadata) do
+    validate_intake_metadata(metadata, resolved, server_policy, nil)
+  end
+
+  @doc false
+  @spec validate_intake_metadata(map(), Resolved.t(), ServerPolicy.t(), Client.t() | nil) ::
+          :ok | {:error, Error.t()}
+  def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
     with :ok <- validate_unsupported_logout_metadata(metadata),
          :ok <- validate_jwks(metadata),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
-         :ok <- validate_fapi_2_0_readiness(metadata, server_policy) do
+         :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
     end
   end
 
-  defp validate_fapi_2_0_readiness(metadata, server_policy) do
+  defp validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
     client_profile = atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
 
     resolved_profile =
@@ -143,14 +153,32 @@ defmodule Lockspire.Protocol.Registration do
         security_profile: client_profile
       })
 
+    current_effective_profile =
+      case current_client do
+        nil ->
+          :none
+
+        client ->
+          Lockspire.Protocol.SecurityProfile.resolve_effective_profile(server_policy, client)
+          |> Map.fetch!(:effective_profile)
+      end
+
     if resolved_profile.fapi_2_0_security? do
       alg = atomize_alg(Map.get(metadata, "id_token_signed_response_alg"))
 
       if alg in [:ES256, :PS256] do
-        case Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security) do
-          :ok ->
-            :ok
-
+        with :ok <-
+               validate_effective_profile_transition(
+                 current_effective_profile,
+                 resolved_profile.effective_profile
+               ),
+             :ok <-
+               validate_strict_authorization_signing_alg(
+                 metadata,
+                 resolved_profile.effective_profile
+               ) do
+          :ok
+        else
           {:error, reason}
           when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
             {:error,
@@ -159,6 +187,9 @@ defmodule Lockspire.Protocol.Registration do
                field: :security_profile,
                reason: reason
              }}
+
+          {:error, %Error{} = error} ->
+            {:error, error}
         end
       else
         {:error,
@@ -172,6 +203,24 @@ defmodule Lockspire.Protocol.Registration do
       :ok
     end
   end
+
+  defp validate_strict_authorization_signing_alg(metadata, :fapi_2_0_message_signing) do
+    case Map.get(metadata, "authorization_signed_response_alg") do
+      alg ->
+        if alg in SecurityProfile.allowed_signing_algorithms(:fapi_2_0_message_signing) do
+          :ok
+        else
+          {:error,
+           %Error{
+             code: :invalid_client_metadata,
+             field: :authorization_signed_response_alg,
+             reason: :incompatible_with_fapi_2_0
+           }}
+        end
+    end
+  end
+
+  defp validate_strict_authorization_signing_alg(_metadata, _effective_profile), do: :ok
 
   defp validate_unsupported_logout_metadata(metadata) do
     cond do
@@ -212,6 +261,7 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_jwks(metadata) do
     has_jwks = Map.has_key?(metadata, "jwks")
     has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
@@ -257,6 +307,7 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_authorization_response_encryption_metadata(metadata) do
     signing_alg = Map.get(metadata, "authorization_signed_response_alg")
     encryption_alg = Map.get(metadata, "authorization_encrypted_response_alg")
@@ -479,8 +530,25 @@ defmodule Lockspire.Protocol.Registration do
   defp atomize_authorization_encryption_enc(_), do: nil
 
   defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
+  defp atomize_security_profile("fapi_2_0_message_signing"), do: :fapi_2_0_message_signing
   defp atomize_security_profile("none"), do: :none
   defp atomize_security_profile(_), do: :inherit
+
+  defp validate_effective_profile_transition(
+         :fapi_2_0_message_signing,
+         :fapi_2_0_message_signing
+       ),
+       do: :ok
+
+  defp validate_effective_profile_transition(_old_profile, :fapi_2_0_message_signing) do
+    MessageSigningProfile.validate_transition(:none, :fapi_2_0_message_signing)
+  end
+
+  defp validate_effective_profile_transition(_old_profile, :fapi_2_0_security) do
+    Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security)
+  end
+
+  defp validate_effective_profile_transition(_old_profile, _new_profile), do: :ok
 
   defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post

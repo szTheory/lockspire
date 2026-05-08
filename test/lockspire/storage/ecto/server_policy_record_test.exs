@@ -94,6 +94,18 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecordTest do
     assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_security
   end
 
+  test "changeset/2 accepts :fapi_2_0_message_signing and produces a valid changeset" do
+    domain = %ServerPolicy{
+      id: ServerPolicyRecord.singleton_id(),
+      security_profile: :fapi_2_0_message_signing
+    }
+
+    changeset = ServerPolicyRecord.changeset(%ServerPolicyRecord{}, domain)
+
+    assert changeset.valid?
+    assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_message_signing
+  end
+
   test "changeset/2 with default :none round-trips through to_domain/1 as :none" do
     repo = Lockspire.TestRepo
 

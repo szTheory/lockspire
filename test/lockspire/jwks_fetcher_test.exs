@@ -293,6 +293,7 @@ defmodule Lockspire.JwksFetcherTest do
 
   defp jwk_kids(%JOSE.JWK{} = jwk_set) do
     {_, keys} = jwk_set.keys
+
     Enum.map(keys, &JOSE.JWK.to_map/1)
     |> Enum.map(fn {_kty, params} -> params["kid"] end)
   end

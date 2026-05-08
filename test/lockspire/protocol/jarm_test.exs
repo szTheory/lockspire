@@ -10,6 +10,7 @@ defmodule Lockspire.Protocol.JarmTest do
   defmodule MockKeyStore do
     def fetch_active_signing_key(opts) do
       key = Process.get(:mock_signing_key)
+
       if key do
         {:ok, %{key | alg: Keyword.get(opts, :alg, "RS256")}}
       else
@@ -80,8 +81,11 @@ defmodule Lockspire.Protocol.JarmTest do
   end
 
   test "client key resolver refreshes guarded jwks_uri at most once on stale cached keys" do
-    cached_jwk = public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "stale", "use" => "enc"})
-    fresh_jwk = public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "fresh", "use" => "enc"})
+    cached_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "stale", "use" => "enc"})
+
+    fresh_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "fresh", "use" => "enc"})
 
     Process.put(
       {MockJwksFetcher, :get_keys_result},
@@ -113,7 +117,8 @@ defmodule Lockspire.Protocol.JarmTest do
   end
 
   test "client key resolver returns stable errors for unsupported key shape and algorithm pairs" do
-    ec_jwk = public_jwk_map(JOSE.JWK.generate_key({:ec, "P-256"}), %{"kid" => "ec-enc", "use" => "enc"})
+    ec_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:ec, "P-256"}), %{"kid" => "ec-enc", "use" => "enc"})
 
     client = %Client{
       client_id: "client-inline-bad-key",
@@ -137,13 +142,13 @@ defmodule Lockspire.Protocol.JarmTest do
 
   test "sign/2 successfully signs a map into JWS and injects standard claims", %{keys: keys} do
     params = %{code: "auth_code_123", state: "abc"}
-    
+
     client = %Client{
       client_id: "client-123",
       authorization_signed_response_alg: :RS256,
       security_profile: :none
     }
-    
+
     context = %{
       client: client,
       issuer: "https://auth.example.com",
@@ -166,7 +171,7 @@ defmodule Lockspire.Protocol.JarmTest do
     params = %{}
     client = %Client{client_id: "client-123"}
     context = %{client: client, issuer: "iss", key_store: MockKeyStore}
-    
+
     assert {:error, :invalid_signing_key} = Jarm.sign(params, context)
   end
 
@@ -174,8 +179,27 @@ defmodule Lockspire.Protocol.JarmTest do
     params = %{}
     client = %Client{client_id: "client-123", authorization_signed_response_alg: :none}
     context = %{client: client, issuer: "iss", key_store: MockKeyStore}
-    
+
     assert {:error, :invalid_algorithm} = Jarm.sign(params, context)
+  end
+
+  test "sign/2 rejects strict message-signing clients without an explicit compliant JARM algorithm" do
+    params = %{}
+
+    client = %Client{
+      client_id: "client-123",
+      authorization_signed_response_alg: nil,
+      security_profile: :inherit
+    }
+
+    context = %{
+      client: client,
+      issuer: "iss",
+      key_store: MockKeyStore,
+      security_profile: :fapi_2_0_message_signing
+    }
+
+    assert {:error, :invalid_jarm_client_metadata} = Jarm.sign(params, context)
   end
 
   test "encode/2 returns signed JWS when encryption metadata is absent", %{keys: keys} do

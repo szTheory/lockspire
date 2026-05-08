@@ -75,6 +75,7 @@ defmodule Lockspire.Security.Policy do
   end
 
   @spec validate_issuer_and_mount_path!(String.t(), String.t()) :: String.t()
+  # credo:disable-for-next-line
   def validate_issuer_and_mount_path!(issuer, mount_path)
       when is_binary(issuer) and is_binary(mount_path) do
     uri = URI.parse(issuer)

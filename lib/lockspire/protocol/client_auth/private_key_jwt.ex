@@ -60,11 +60,13 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp resolve_keys(%Client{}, _opts), do: {:error, :client_jwks_missing}
 
   defp allowed_signing_algorithms(%Client{} = client, opts) do
-    with {:ok, %ServerPolicy{} = server_policy} <- server_policy_store(opts).get_server_policy() do
-      resolved = SecurityProfile.resolve_effective_profile(server_policy, client)
-      {:ok, SecurityProfile.allowed_signing_algorithms(resolved.effective_profile)}
-    else
-      _ -> {:error, :security_profile_unavailable}
+    case server_policy_store(opts).get_server_policy() do
+      {:ok, %ServerPolicy{} = server_policy} ->
+        resolved = SecurityProfile.resolve_effective_profile(server_policy, client)
+        {:ok, SecurityProfile.allowed_signing_algorithms(resolved.effective_profile)}
+
+      _ ->
+        {:error, :security_profile_unavailable}
     end
   end
 
@@ -95,7 +97,12 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
     end
   end
 
-  defp retry_remote_signature_verification(assertion, %Client{jwks_uri: jwks_uri} = client, allowed_signing_algorithms, opts) do
+  defp retry_remote_signature_verification(
+         assertion,
+         %Client{jwks_uri: jwks_uri} = client,
+         allowed_signing_algorithms,
+         opts
+       ) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
 
     with {:ok, jwk_set} <- fetcher.refresh_keys(jwks_uri, jwks_fetcher_opts(opts)),
@@ -109,8 +116,13 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   end
 
   defp map_signature_result({:ok, verified_assertion}), do: {:ok, verified_assertion}
-  defp map_signature_result({:error, :invalid_signature}), do: {:error, :client_assertion_signature_invalid}
-  defp map_signature_result({:error, :no_matching_key}), do: {:error, :client_assertion_signature_invalid}
+
+  defp map_signature_result({:error, :invalid_signature}),
+    do: {:error, :client_assertion_signature_invalid}
+
+  defp map_signature_result({:error, :no_matching_key}),
+    do: {:error, :client_assertion_signature_invalid}
+
   defp map_signature_result({:error, :invalid_client_keys}), do: {:error, :client_jwks_invalid}
   defp map_signature_result({:error, :invalid_typ}), do: {:error, :client_assertion_typ_invalid}
   defp map_signature_result({:error, reason}), do: {:error, reason}
@@ -138,8 +150,6 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp jwks_contains_kid?(jwk, kid) when is_map(jwk) do
     Map.get(jwk, "kid") == kid
   end
-
-  defp jwks_contains_kid?(_jwks, _kid), do: false
 
   defp validate_algorithm(%Jar{header: header}, allowed_signing_algorithms) do
     case Map.get(header, "alg") do

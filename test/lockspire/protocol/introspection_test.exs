@@ -212,6 +212,44 @@ defmodule Lockspire.Protocol.IntrospectionTest do
     assert response.payload.authorization_details == authorization_details
   end
 
+  test "marks strict callers as entitled for strict JWT introspection handling", %{
+    confidential_client: client,
+    secret: secret
+  } do
+    {:ok, strict_client} =
+      Repository.update_client(client, %{security_profile: :fapi_2_0_message_signing})
+
+    assert {:ok, %Success{} = response} =
+             Introspection.introspect(%{
+               params: %{"token" => "introspect-access-token"},
+               authorization: basic_auth(strict_client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert response.strict_jwt_required? == true
+    assert response.security_profile.effective_profile == :fapi_2_0_message_signing
+    assert response.payload.active == true
+  end
+
+  test "keeps authenticated non-strict callers non-entitled for strict JWT handling", %{
+    confidential_client: client,
+    secret: secret
+  } do
+    {:ok, fapi_client} =
+      Repository.update_client(client, %{security_profile: :fapi_2_0_security})
+
+    assert {:ok, %Success{} = response} =
+             Introspection.introspect(%{
+               params: %{"token" => "introspect-access-token"},
+               authorization: basic_auth(fapi_client.client_id, secret),
+               opts: [client_store: Repository, token_store: Repository]
+             })
+
+    assert response.strict_jwt_required? == false
+    assert response.security_profile.effective_profile == :fapi_2_0_security
+    assert response.payload.active == true
+  end
+
   test "returns granted authorization_details for active refresh tokens", %{
     confidential_client: client,
     secret: secret
@@ -226,6 +264,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
     assert response.payload.active == true
     assert response.payload.token_type == "refresh_token"
     assert response.payload.scope == "email offline_access"
+
     assert response.payload.authorization_details == [
              %{
                "actions" => ["create"],
@@ -236,10 +275,11 @@ defmodule Lockspire.Protocol.IntrospectionTest do
            ]
   end
 
-  test "keeps tokens compact-by-reference and omits authorization_details when the grant is missing", %{
-    confidential_client: client,
-    secret: secret
-  } do
+  test "keeps tokens compact-by-reference and omits authorization_details when the grant is missing",
+       %{
+         confidential_client: client,
+         secret: secret
+       } do
     assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-no-grant-token"},

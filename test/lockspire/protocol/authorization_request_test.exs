@@ -283,6 +283,84 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.error == "unsupported_response_type"
   end
 
+  test "strict message signing rejects omitted and raw response_mode values for PAR validation",
+       %{
+         client: client
+       } do
+    client = update_client_security_profile!(client, :fapi_2_0_message_signing)
+
+    for params <- [
+          valid_params(client.client_id),
+          Map.put(valid_params(client.client_id), "response_mode", "query"),
+          Map.put(valid_params(client.client_id), "response_mode", "fragment"),
+          Map.put(valid_params(client.client_id), "response_mode", "form_post")
+        ] do
+      assert {:error, %Error{} = error} = AuthorizationRequest.validate_pushed(params, client)
+      assert error.reason_code == :strict_message_signing_requires_jarm
+    end
+  end
+
+  test "strict message signing accepts JWT response_mode values for PAR validation", %{
+    client: client
+  } do
+    client = update_client_security_profile!(client, :fapi_2_0_message_signing)
+
+    for {response_mode, expected} <- [
+          {"jwt", "query.jwt"},
+          {"query.jwt", "query.jwt"},
+          {"fragment.jwt", "fragment.jwt"},
+          {"form_post.jwt", "form_post.jwt"}
+        ] do
+      assert {:ok, %Validated{} = validated} =
+               client.client_id
+               |> valid_params()
+               |> Map.put("response_mode", response_mode)
+               |> AuthorizationRequest.validate_pushed(client)
+
+      assert validated.response_mode == expected
+    end
+  end
+
+  test "strict message signing enforces JWT response_mode for consumed PAR requests", %{
+    client: client
+  } do
+    client = update_client_security_profile!(client, :fapi_2_0_message_signing)
+
+    rejected_request =
+      put_pushed_request!(client.client_id,
+        authorization_params: Map.put(valid_params(client.client_id), "response_mode", "query")
+      )
+
+    assert {:error, %Error{} = pushed_error} =
+             AuthorizationRequest.validate_pushed(
+               Map.put(valid_params(client.client_id), "response_mode", "query"),
+               client
+             )
+
+    assert pushed_error.reason_code == :strict_message_signing_requires_jarm
+
+    assert {:redirect_error, %Error{} = error} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => rejected_request.request_uri
+             })
+
+    assert error.reason_code == :strict_message_signing_requires_jarm
+
+    accepted_request =
+      put_pushed_request!(client.client_id,
+        authorization_params: Map.put(valid_params(client.client_id), "response_mode", "jwt")
+      )
+
+    assert {:ok, %Validated{} = validated} =
+             AuthorizationRequest.validate(%{
+               "client_id" => client.client_id,
+               "request_uri" => accepted_request.request_uri
+             })
+
+    assert validated.response_mode == "query.jwt"
+  end
+
   test "required global par policy rejects direct authorize requests with a trusted redirect", %{
     client: client
   } do
@@ -614,9 +692,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   end
 
   test "accepts a signed request object and projects its claims into the authorization pipeline",
-       %{
-         client: client
-       } do
+       _context do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
     {:ok, client} =
@@ -747,7 +823,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   test "maps invalid signatures to the invalid_request_object_signature reason code", %{
     client: _client
   } do
-    %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+    %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
     other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
 
     {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
@@ -1029,14 +1105,19 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   end
 
   defp put_pushed_request!(client_id, opts \\ []) do
+    authorization_params =
+      Keyword.get(opts, :authorization_params, valid_params(client_id))
+
     attrs = %{
       client_id: client_id,
-      redirect_uri: "https://client.example.com/callback",
+      redirect_uri: authorization_params["redirect_uri"],
       scopes: ["profile", "email"],
       prompt: ["login", "consent"],
-      state: "state-123",
-      code_challenge: String.duplicate("a", 43),
-      code_challenge_method: :S256
+      state: authorization_params["state"],
+      code_challenge: authorization_params["code_challenge"],
+      code_challenge_method: :S256,
+      nonce: authorization_params["nonce"],
+      response_mode: authorization_params["response_mode"]
     }
 
     request = PushedAuthorizationRequest.issue(attrs, opts)
@@ -1055,6 +1136,13 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   defp update_client_par_policy!(client, mode) do
     assert {:ok, %Client{} = updated_client} =
              Repository.update_client(client, %{par_policy: mode})
+
+    updated_client
+  end
+
+  defp update_client_security_profile!(client, profile) do
+    assert {:ok, %Client{} = updated_client} =
+             Repository.update_client(client, %{security_profile: profile})
 
     updated_client
   end

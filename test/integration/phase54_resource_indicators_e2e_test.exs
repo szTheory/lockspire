@@ -33,7 +33,7 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
     end
 
     @impl true
-    def redirect_for_login(_conn_or_socket, _context), do: raise "not implemented"
+    def redirect_for_login(_conn_or_socket, _context), do: raise("not implemented")
   end
 
   setup_all do

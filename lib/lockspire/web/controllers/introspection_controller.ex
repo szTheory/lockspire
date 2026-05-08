@@ -26,10 +26,18 @@ defmodule Lockspire.Web.IntrospectionController do
            opts: [client_store: Repository, token_store: Repository, consent_store: Repository]
          }) do
       {:ok, %Success{} = success} ->
-        conn
-        |> put_cache_headers()
-        |> maybe_put_vary_accept(wants_jwt?)
-        |> render_success(success, wants_jwt?)
+        if success.strict_jwt_required? and not wants_jwt? do
+          conn
+          |> put_cache_headers()
+          |> maybe_put_vary_accept(true)
+          |> put_status(:bad_request)
+          |> json(IntrospectionJSON.error_response(strict_jwt_required_error()))
+        else
+          conn
+          |> put_cache_headers()
+          |> maybe_put_vary_accept(wants_jwt? or success.strict_jwt_required?)
+          |> render_success(success, wants_jwt?)
+        end
 
       {:error, %Error{} = error} ->
         conn
@@ -134,6 +142,15 @@ defmodule Lockspire.Web.IntrospectionController do
       error: "server_error",
       error_description: "Unable to sign introspection response",
       reason_code: :introspection_signing_failed
+    }
+  end
+
+  defp strict_jwt_required_error do
+    %Error{
+      status: 400,
+      error: "invalid_request",
+      error_description: "Accept must include application/token-introspection+jwt",
+      reason_code: :strict_jwt_accept_required
     }
   end
 end

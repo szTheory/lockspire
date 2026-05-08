@@ -21,10 +21,11 @@ defmodule Lockspire.Protocol.Introspection do
     @type t :: %__MODULE__{
             payload: map(),
             caller: Client.t(),
-            security_profile: atom() | struct() | nil
+            security_profile: atom() | struct() | nil,
+            strict_jwt_required?: boolean()
           }
 
-    defstruct [:payload, :caller, :security_profile]
+    defstruct [:payload, :caller, :security_profile, strict_jwt_required?: false]
   end
 
   defmodule Error do
@@ -155,10 +156,13 @@ defmodule Lockspire.Protocol.Introspection do
   defp inactive_response, do: {:ok, %{active: false}}
 
   defp success_response(%Client{} = client, payload, request) when is_map(payload) do
+    security_profile = effective_security_profile(client, request)
+
     %Success{
       payload: payload,
       caller: client,
-      security_profile: effective_security_profile(client, request)
+      security_profile: security_profile,
+      strict_jwt_required?: strict_jwt_required?(security_profile)
     }
   end
 
@@ -250,9 +254,12 @@ defmodule Lockspire.Protocol.Introspection do
          {:ok, %ServerPolicy{} = server_policy} <- store.get_server_policy() do
       SecurityProfile.resolve_effective_profile(server_policy, client)
     else
-      _other -> client.security_profile || :none
+      _other -> client.security_profile
     end
   end
+
+  defp strict_jwt_required?(%SecurityProfile.Resolved{fapi_2_0_message_signing?: true}), do: true
+  defp strict_jwt_required?(_security_profile), do: false
 
   defp token_store(request),
     do:

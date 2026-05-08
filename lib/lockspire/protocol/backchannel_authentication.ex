@@ -85,9 +85,16 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
       |> Enum.reject(&(&1 == nil or &1 == ""))
 
     case length(hints) do
-      1 -> :ok
-      0 -> {:error, oauth_error(400, "invalid_request", "Exactly one hint is required", :missing_hint)}
-      _ -> {:error, oauth_error(400, "invalid_request", "More than one hint provided", :too_many_hints)}
+      1 ->
+        :ok
+
+      0 ->
+        {:error,
+         oauth_error(400, "invalid_request", "Exactly one hint is required", :missing_hint)}
+
+      _ ->
+        {:error,
+         oauth_error(400, "invalid_request", "More than one hint provided", :too_many_hints)}
     end
   end
 
@@ -97,16 +104,20 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
     if "openid" in scopes do
       :ok
     else
-      {:error, oauth_error(400, "invalid_scope", "The openid scope is required", :missing_openid_scope)}
+      {:error,
+       oauth_error(400, "invalid_scope", "The openid scope is required", :missing_openid_scope)}
     end
   end
 
-  defp validate_delivery_mode(params, %Client{} = client) do
-    delivery_mode = client.backchannel_token_delivery_mode || :poll
+  defp validate_delivery_mode(
+         params,
+         %Client{backchannel_token_delivery_mode: delivery_mode} = client
+       )
+       when delivery_mode in [:ping, :push] do
     notification_token = params["client_notification_token"]
 
     cond do
-      delivery_mode in [:ping, :push] and (notification_token == nil or notification_token == "") ->
+      notification_token == nil or notification_token == "" ->
         {:error,
          oauth_error(
            400,
@@ -115,9 +126,8 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
            :missing_client_notification_token
          )}
 
-      delivery_mode in [:ping, :push] and
-          (client.backchannel_client_notification_endpoint == nil or
-             client.backchannel_client_notification_endpoint == "") ->
+      client.backchannel_client_notification_endpoint == nil or
+          client.backchannel_client_notification_endpoint == "" ->
         {:error,
          oauth_error(
            400,
@@ -131,13 +141,22 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
     end
   end
 
+  defp validate_delivery_mode(_params, %Client{backchannel_token_delivery_mode: delivery_mode}) do
+    {:ok, delivery_mode}
+  end
+
   defp validate_user_code(params, client, subject_id, request) do
     user_code = params["user_code"]
 
     cond do
       client.backchannel_user_code_parameter and (user_code == nil or user_code == "") ->
         {:error,
-         oauth_error(400, "missing_user_code", "A user_code is required for this client", :missing_user_code)}
+         oauth_error(
+           400,
+           "missing_user_code",
+           "A user_code is required for this client",
+           :missing_user_code
+         )}
 
       user_code != nil and user_code != "" ->
         verify_user_code_with_host(subject_id, user_code, client, request)
@@ -159,7 +178,8 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
           :ok
 
         {:error, :invalid_user_code} ->
-          {:error, oauth_error(400, "invalid_user_code", "The user_code is incorrect", :invalid_user_code)}
+          {:error,
+           oauth_error(400, "invalid_user_code", "The user_code is incorrect", :invalid_user_code)}
 
         {:error, reason} ->
           {:error, oauth_error(400, "invalid_request", "Error verifying user_code", reason)}
@@ -242,7 +262,7 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
     case resolver.resolve_account(hint_value, context) do
       {:ok, account} ->
         # We need the ID of the account. Host usually returns the account struct.
-        # We assume the host knows how to return a subject_id if we ask for it, 
+        # We assume the host knows how to return a subject_id if we ask for it,
         # but resolve_account/2 is generic.
         # Lockspire usually expects the host to return something that can be used as subject_id.
         # For CIBA, we'll assume the 'account' returned is the subject_id or can be mapped to it.
@@ -251,7 +271,8 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
 
       {:error, :not_found} ->
         # return generic error to prevent enumeration if required by policy
-        {:error, oauth_error(400, "unknown_user", "The user could not be resolved", :user_not_found)}
+        {:error,
+         oauth_error(400, "unknown_user", "The user could not be resolved", :user_not_found)}
 
       {:error, reason} ->
         {:error, oauth_error(400, "invalid_request", "Error resolving user", reason)}
@@ -272,7 +293,8 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   defp to_subject_id(other), do: to_string(other)
 
   defp persist_ciba_authorization(params, client, subject_id, delivery_mode, request, now) do
-    auth_req_id = DeviceCode.generate_device_code() # Reusing the same entropy as device code
+    # Reusing the same entropy as device code
+    auth_req_id = DeviceCode.generate_device_code()
     scopes = parse_scopes(params["scope"])
 
     ciba_auth =

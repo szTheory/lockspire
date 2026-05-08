@@ -9,6 +9,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   attr(:client, Client, default: nil)
   attr(:effective_par_policy, :map, default: nil)
   attr(:effective_security_profile, :map, default: nil)
+  attr(:strict_readiness, :map, default: nil)
   attr(:errors, :list, default: [])
 
   def client_form(assigns) do
@@ -173,6 +174,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               Inherit from global policy
             </option>
             <option
+              value="fapi_2_0_message_signing"
+              selected={@defaults.security_profile == "fapi_2_0_message_signing"}
+            >
+              FAPI 2.0 Message Signing
+            </option>
+            <option
               value="fapi_2_0_security"
               selected={@defaults.security_profile == "fapi_2_0_security"}
             >
@@ -183,17 +190,83 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             </option>
           </select>
 
+          <label for="client_authorization_signed_response_alg">
+            Authorization response signing algorithm
+          </label>
+          <select
+            id="client_authorization_signed_response_alg"
+            name="client[authorization_signed_response_alg]"
+          >
+            <option value="" selected={is_nil(@defaults.authorization_signed_response_alg)}>
+              Use legacy default / not set
+            </option>
+            <option
+              value="ES256"
+              selected={@defaults.authorization_signed_response_alg == "ES256"}
+            >
+              ES256
+            </option>
+            <option
+              value="PS256"
+              selected={@defaults.authorization_signed_response_alg == "PS256"}
+            >
+              PS256
+            </option>
+            <option
+              value="RS256"
+              selected={@defaults.authorization_signed_response_alg == "RS256"}
+            >
+              RS256
+            </option>
+            <option
+              value="EdDSA"
+              selected={@defaults.authorization_signed_response_alg == "EdDSA"}
+            >
+              EdDSA
+            </option>
+          </select>
+
           <div :if={@effective_security_profile} class="lockspire-admin-help">
             <p>
               <strong>Global policy:</strong> {@effective_security_profile.global_profile}
             </p>
             <p>
-              <strong>Effective profile:</strong> {if @effective_security_profile.effective_profile ==
-                                                       :fapi_2_0_security,
-                do: "FAPI 2.0 Security Profile",
-                else: "None (Standard OIDC)"}
+              <strong>Effective profile:</strong> {effective_profile_label(
+                @effective_security_profile
+              )}
             </p>
+            <p>
+              <strong>Strict readiness:</strong> {strict_readiness_label(
+                @effective_security_profile,
+                @strict_readiness
+              )}
+            </p>
+            <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
+              This stricter tier requires explicit JARM on `/authorize` and JWT negotiation on
+              `/introspect`.
+            </p>
+            <p :if={mixed_mode_override?(@effective_security_profile)}>
+              This client is using the mixed-mode escape hatch under a stricter global profile.
+            </p>
+            <ul :if={@strict_readiness && @strict_readiness.remediation != [] && @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
+              <%= for item <- @strict_readiness.remediation do %>
+                <li>{item}</li>
+              <% end %>
+            </ul>
           </div>
+        </div>
+
+        <div :if={@mode == :security_profile} class="lockspire-admin-help">
+          <p>
+            <strong>None (Standard OIDC):</strong> compatibility-first OIDC behavior.
+          </p>
+          <p>
+            <strong>FAPI 2.0 Security Profile:</strong> PAR, DPoP, and FAPI baseline enforcement.
+          </p>
+          <p>
+            <strong>FAPI 2.0 Message Signing:</strong> baseline FAPI enforcement plus explicit JARM
+            and JWT-only introspection negotiation.
+          </p>
         </div>
 
         <div :if={@mode == :logout_propagation}>
@@ -259,6 +332,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     """
   end
 
+  defp mixed_mode_override?(%{
+         global_profile: :fapi_2_0_message_signing,
+         effective_profile: :none,
+         client_profile: :none
+       }),
+       do: true
+
+  defp mixed_mode_override?(%{
+         global_profile: :fapi_2_0_security,
+         effective_profile: :none,
+         client_profile: :none
+       }),
+       do: true
+
+  defp mixed_mode_override?(_resolved), do: false
+
+  defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, %{ready?: true}), do: "Ready"
+  defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, _readiness), do: "Blocked"
+
+  defp strict_readiness_label(resolved, %{ready?: true}) when is_map(resolved),
+    do: "Ready if enabled"
+
+  defp strict_readiness_label(_resolved, _readiness), do: "Not ready yet"
+
+  defp effective_profile_label(%{effective_profile: :fapi_2_0_message_signing}),
+    do: "FAPI 2.0 Message Signing"
+
+  defp effective_profile_label(%{effective_profile: :fapi_2_0_security}),
+    do: "FAPI 2.0 Security Profile"
+
+  defp effective_profile_label(_resolved), do: "None (Standard OIDC)"
+
   defp defaults_for(:new, _client) do
     %{
       name: nil,
@@ -306,7 +411,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
   defp defaults_for(:security_profile, %Client{} = client) do
     %{
-      security_profile: Atom.to_string(client.security_profile)
+      security_profile: Atom.to_string(client.security_profile),
+      authorization_signed_response_alg:
+        client.authorization_signed_response_alg &&
+          Atom.to_string(client.authorization_signed_response_alg)
     }
   end
 

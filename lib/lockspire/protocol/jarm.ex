@@ -6,8 +6,11 @@ defmodule Lockspire.Protocol.Jarm do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.Jarm.ClientKeyResolver
+  alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Storage.Ecto.Repository
 
-  @type signing_error :: :invalid_signing_key | :invalid_algorithm | term()
+  @type signing_error ::
+          :invalid_signing_key | :invalid_algorithm | :invalid_jarm_client_metadata | term()
   @type encoding_error ::
           signing_error()
           | :invalid_jarm_client_metadata
@@ -23,9 +26,8 @@ defmodule Lockspire.Protocol.Jarm do
   def encode(response_params, context) do
     client = Map.fetch!(context, :client)
 
-    with {:ok, signed_jwt} <- sign(response_params, context),
-         {:ok, output} <- maybe_encrypt(signed_jwt, client, context) do
-      {:ok, output}
+    with {:ok, signed_jwt} <- sign(response_params, context) do
+      maybe_encrypt(signed_jwt, client, context)
     end
   end
 
@@ -37,23 +39,29 @@ defmodule Lockspire.Protocol.Jarm do
     client = Map.fetch!(context, :client)
     issuer = Map.fetch!(context, :issuer)
     key_store = Map.get(context, :key_store, Config.repo!())
+    security_profile = effective_security_profile(context, client)
+    alg = signing_alg(client, security_profile)
 
-    alg = signing_alg(client)
+    cond do
+      is_nil(alg) ->
+        {:error, :invalid_jarm_client_metadata}
 
-    if alg == "none" do
-      {:error, :invalid_algorithm}
-    else
-      with {:ok, signing_key} <- fetch_key(key_store, alg, client.security_profile),
-           {:ok, jwk_map} <- decode_private_jwk(signing_key.private_jwk_encrypted),
-           claims <- build_claims(response_params, issuer, client.client_id),
-           protected_header <- %{"alg" => signing_key.alg, "kid" => signing_key.kid, "typ" => "JWT"},
-           {_, compact} <-
-             JOSE.JWT.sign(JOSE.JWK.from_map(jwk_map), protected_header, claims)
-             |> JOSE.JWS.compact() do
-        {:ok, compact}
-      else
-        {:error, reason} -> {:error, reason}
-      end
+      alg == "none" ->
+        {:error, :invalid_algorithm}
+
+      true ->
+        with {:ok, signing_key} <- fetch_key(key_store, alg, security_profile),
+             {:ok, jwk_map} <- decode_private_jwk(signing_key.private_jwk_encrypted),
+             claims <- build_claims(response_params, issuer, client.client_id),
+             protected_header <-
+               %{"alg" => signing_key.alg, "kid" => signing_key.kid, "typ" => "JWT"},
+             {_, compact} <-
+               JOSE.JWT.sign(JOSE.JWK.from_map(jwk_map), protected_header, claims)
+               |> JOSE.JWS.compact() do
+          {:ok, compact}
+        else
+          {:error, reason} -> {:error, reason}
+        end
     end
   end
 
@@ -160,10 +168,19 @@ defmodule Lockspire.Protocol.Jarm do
     end
   end
 
-  defp signing_alg(%Client{} = client) do
-    client.authorization_signed_response_alg
-    |> normalize_alg()
-    |> Kernel.||("RS256")
+  defp signing_alg(%Client{} = client, security_profile) do
+    normalized_alg = normalize_alg(client.authorization_signed_response_alg)
+
+    cond do
+      security_profile == :fapi_2_0_message_signing and normalized_alg in ["ES256", "PS256"] ->
+        normalized_alg
+
+      security_profile == :fapi_2_0_message_signing ->
+        nil
+
+      true ->
+        normalized_alg || "RS256"
+    end
   end
 
   defp encryption_alg(%Client{} = client),
@@ -185,5 +202,28 @@ defmodule Lockspire.Protocol.Jarm do
     []
     |> Keyword.put(:jwks_fetcher, Map.get(context, :jwks_fetcher, Config.jwks_fetcher()))
     |> Keyword.put(:jwks_fetcher_opts, Map.get(context, :jwks_fetcher_opts, []))
+  end
+
+  defp effective_security_profile(context, %Client{} = client) do
+    case Map.get(context, :security_profile) do
+      %{effective_profile: profile} when is_atom(profile) ->
+        profile
+
+      profile when is_atom(profile) ->
+        profile
+
+      _other ->
+        resolve_security_profile_from_repo(client)
+    end
+  end
+
+  defp resolve_security_profile_from_repo(%Client{} = client) do
+    case Repository.get_server_policy() do
+      {:ok, server_policy} ->
+        SecurityProfile.resolve_effective_profile(server_policy, client).effective_profile
+
+      {:error, _reason} ->
+        client.security_profile
+    end
   end
 end

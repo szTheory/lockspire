@@ -22,8 +22,8 @@ defmodule Lockspire.Observability do
   }
 
   @spec emit(entity(), action(), measurements(), metadata()) :: :ok
-  def emit(entity, action, measurements \\ %{}, metadata \\ %{})
-      when is_atom(entity) and is_atom(action) do
+  def emit(entity, action, measurements, metadata)
+      when is_atom(entity) and is_atom(action) and is_map(measurements) and is_map(metadata) do
     redacted_metadata = redact(metadata)
     normalized_measurements = Map.put_new(measurements, :count, 1)
 
@@ -42,9 +42,30 @@ defmodule Lockspire.Observability do
     :ok
   end
 
+  @spec emit(action(), measurements(), metadata()) :: :ok
+  def emit(event, measurements, metadata)
+      when is_atom(event) and is_map(measurements) and is_map(metadata) do
+    redacted_metadata = redact(metadata)
+    normalized_measurements = Map.put_new(measurements, :count, 1)
+
+    :telemetry.execute(
+      @audit_prefix ++ [event],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :telemetry.execute(
+      @telemetry_prefix ++ [event],
+      normalized_measurements,
+      redacted_metadata
+    )
+
+    :ok
+  end
+
   @spec emit_logout(atom(), measurements(), metadata()) :: :ok
   def emit_logout(stage, measurements \\ %{}, metadata \\ %{}) when is_atom(stage) do
-    emit(:logout, stage, measurements, metadata)
+    emit(logout_event_name!(stage), measurements, metadata)
   end
 
   @spec logout_event_name!(atom()) :: atom()

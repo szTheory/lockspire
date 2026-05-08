@@ -5,7 +5,7 @@ defmodule Lockspire.Protocol.SecurityProfile do
 
   alias Lockspire.Domain.ServerPolicy
 
-  @type mode :: :inherit | :fapi_2_0_security | :none
+  @type mode :: :inherit | :fapi_2_0_security | :fapi_2_0_message_signing | :none
 
   defmodule Resolved do
     @moduledoc false
@@ -14,13 +14,15 @@ defmodule Lockspire.Protocol.SecurityProfile do
             global_profile: ServerPolicy.security_profile(),
             client_profile: Lockspire.Protocol.SecurityProfile.mode(),
             effective_profile: ServerPolicy.security_profile(),
-            fapi_2_0_security?: boolean()
+            fapi_2_0_security?: boolean(),
+            fapi_2_0_message_signing?: boolean()
           }
 
     defstruct global_profile: :none,
               client_profile: :inherit,
               effective_profile: :none,
-              fapi_2_0_security?: false
+              fapi_2_0_security?: false,
+              fapi_2_0_message_signing?: false
   end
 
   @spec resolve_effective_profile(ServerPolicy.t(), struct() | map() | nil) :: struct()
@@ -32,7 +34,8 @@ defmodule Lockspire.Protocol.SecurityProfile do
       global_profile: server_policy.security_profile,
       client_profile: client_profile,
       effective_profile: effective_profile,
-      fapi_2_0_security?: effective_profile == :fapi_2_0_security
+      fapi_2_0_security?: effective_profile in [:fapi_2_0_security, :fapi_2_0_message_signing],
+      fapi_2_0_message_signing?: effective_profile == :fapi_2_0_message_signing
     }
   end
 
@@ -40,6 +43,7 @@ defmodule Lockspire.Protocol.SecurityProfile do
 
   defp normalize_client_profile(client) do
     case Map.get(client, :security_profile, :inherit) do
+      :fapi_2_0_message_signing -> :fapi_2_0_message_signing
       :fapi_2_0_security -> :fapi_2_0_security
       :none -> :none
       _other -> :inherit
@@ -47,10 +51,15 @@ defmodule Lockspire.Protocol.SecurityProfile do
   end
 
   defp effective_profile(global_profile, :inherit), do: global_profile
+
+  defp effective_profile(_global_profile, :fapi_2_0_message_signing),
+    do: :fapi_2_0_message_signing
+
   defp effective_profile(_global_profile, :fapi_2_0_security), do: :fapi_2_0_security
   defp effective_profile(_global_profile, :none), do: :none
 
   @spec allowed_signing_algorithms(ServerPolicy.security_profile()) :: [String.t()]
+  def allowed_signing_algorithms(:fapi_2_0_message_signing), do: ["ES256", "PS256"]
   def allowed_signing_algorithms(:fapi_2_0_security), do: ["ES256", "PS256"]
   def allowed_signing_algorithms(:none), do: ["RS256", "ES256", "PS256", "EdDSA"]
 end

@@ -86,16 +86,14 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
   test "prints OK lines for a passing verify run" do
     output =
       capture_io(fn ->
-        Mix.Tasks.Lockspire.Verify.run(
-          [
-            "--web",
-            "Mix.Tasks.Lockspire.VerifyTest.Web",
-            "--scope",
-            "Mix.Tasks.Lockspire.VerifyTest.Scope",
-            "--mount-path",
-            "/lockspire"
-          ]
-        )
+        Mix.Tasks.Lockspire.Verify.run([
+          "--web",
+          "Mix.Tasks.Lockspire.VerifyTest.Web",
+          "--scope",
+          "Mix.Tasks.Lockspire.VerifyTest.Scope",
+          "--mount-path",
+          "/lockspire"
+        ])
       end)
 
     assert output =~ "OK Runtime config is present"
@@ -106,16 +104,14 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
   test "raises with actionable router guidance when verify routes are missing" do
     assert_raise Mix.Error, ~r/Lockspire verification failed/, fn ->
       capture_io(fn ->
-        Mix.Tasks.Lockspire.Verify.run(
-          [
-            "--web",
-            "Mix.Tasks.Lockspire.VerifyTest.RouterMissingVerify",
-            "--scope",
-            "Mix.Tasks.Lockspire.VerifyTest.Scope",
-            "--mount-path",
-            "/lockspire"
-          ]
-        )
+        Mix.Tasks.Lockspire.Verify.run([
+          "--web",
+          "Mix.Tasks.Lockspire.VerifyTest.RouterMissingVerify",
+          "--scope",
+          "Mix.Tasks.Lockspire.VerifyTest.Scope",
+          "--mount-path",
+          "/lockspire"
+        ])
       end)
     end
   end

@@ -32,7 +32,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    assert {:ok, _policy} = Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{id: 1})
+
+    assert {:ok, _policy} =
+             Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{
+               id: 1
+             })
+
     :ok
   end
 

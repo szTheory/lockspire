@@ -15,14 +15,14 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
 
   @allowed_prompts MapSet.new(["login", "consent"])
   @allowed_response_modes MapSet.new([
-    "query",
-    "fragment",
-    "form_post",
-    "jwt",
-    "query.jwt",
-    "fragment.jwt",
-    "form_post.jwt"
-  ])
+                            "query",
+                            "fragment",
+                            "form_post",
+                            "jwt",
+                            "query.jwt",
+                            "fragment.jwt",
+                            "form_post.jwt"
+                          ])
   @unsupported_params ~w()
   @max_authorization_details_length 2048
 
@@ -300,11 +300,13 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
          {:ok, max_age} <- validate_max_age(params),
          :ok <- validate_response_type(params),
          {:ok, response_mode} <- validate_response_mode(params),
+         :ok <-
+           validate_strict_message_signing_response_mode(params, response_mode, security_profile),
          :ok <- validate_nonce(params, scopes),
          :ok <- validate_pkce(client, params, security_profile: security_profile),
          {:ok, auth_time_requested?} <- validate_claims_parameter(params),
          {:ok, resources} <- validate_resources(params),
-         {:ok, authorization_details} <- validate_authorization_details(params, pushed?),
+         {:ok, authorization_details} <- validate_authorization_details(params, client, pushed?),
          :ok <- reject_unsupported_params(params) do
       {:ok,
        build_validated(
@@ -494,6 +496,27 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp resolve_default_delivery_mode(nil, "code"), do: "query"
   defp resolve_default_delivery_mode(mode, _response_type), do: mode
 
+  defp validate_strict_message_signing_response_mode(
+         params,
+         response_mode,
+         %SecurityProfile.Resolved{fapi_2_0_message_signing?: true}
+       ) do
+    if response_mode in ["query.jwt", "fragment.jwt", "form_post.jwt"] do
+      :ok
+    else
+      {:redirect_error,
+       redirect_error(
+         params,
+         :invalid_request,
+         "response_mode must be an explicit JWT response mode",
+         :strict_message_signing_requires_jarm
+       )}
+    end
+  end
+
+  defp validate_strict_message_signing_response_mode(_params, _response_mode, _security_profile),
+    do: :ok
+
   defp validate_nonce(params, scopes) do
     if "openid" in scopes do
       case normalize_optional_string(params["nonce"]) do
@@ -602,7 +625,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp validate_authorization_details(params, pushed?) do
+  defp validate_authorization_details(params, %Client{} = client, pushed?) do
     case Map.get(params, "authorization_details") do
       nil ->
         {:ok, []}
@@ -613,11 +636,11 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       value when is_binary(value) ->
         with :ok <- validate_authorization_details_length(value, pushed?, params),
              {:ok, decoded} <- decode_authorization_details(value, params) do
-          ensure_authorization_details_shape(decoded, params)
+          normalize_authorization_details(decoded, client, params)
         end
 
       value when is_list(value) ->
-        ensure_authorization_details_shape(value, params)
+        normalize_authorization_details(value, client, params)
 
       _other ->
         invalid_authorization_details(params)
@@ -655,7 +678,52 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp ensure_authorization_details_shape(_value, params), do: invalid_authorization_details(params)
+  defp ensure_authorization_details_shape(_value, params),
+    do: invalid_authorization_details(params)
+
+  defp normalize_authorization_details(details, %Client{} = client, params)
+       when is_list(details) do
+    validators = Config.rar_validators()
+
+    if map_size(validators) == 0 do
+      ensure_authorization_details_shape(details, params)
+    else
+      ctx = %{client_id: client.client_id, request: params}
+
+      details
+      |> Enum.reduce_while({:ok, []}, fn detail, {:ok, acc} ->
+        case normalize_authorization_detail(detail, validators, ctx, params) do
+          {:ok, normalized} -> {:cont, {:ok, [normalized | acc]}}
+          {:redirect_error, %Error{} = error} -> {:halt, {:redirect_error, error}}
+        end
+      end)
+      |> case do
+        {:ok, normalized_details} -> {:ok, Enum.reverse(normalized_details)}
+        other -> other
+      end
+    end
+  end
+
+  defp normalize_authorization_details(_value, _client, params),
+    do: invalid_authorization_details(params)
+
+  defp normalize_authorization_detail(%{"type" => type} = detail, validators, ctx, params)
+       when is_binary(type) and type != "" do
+    case Map.get(validators, type) do
+      validator when is_atom(validator) ->
+        case validator.validate(detail, ctx) do
+          {:ok, normalized} when is_map(normalized) -> {:ok, normalized}
+          {:error, _reason} -> invalid_authorization_details(params)
+          _other -> invalid_authorization_details(params)
+        end
+
+      nil ->
+        invalid_authorization_details(params)
+    end
+  end
+
+  defp normalize_authorization_detail(_detail, _validators, _ctx, params),
+    do: invalid_authorization_details(params)
 
   defp invalid_authorization_details(params) do
     {:redirect_error,
@@ -767,7 +835,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       "nonce" => request.nonce,
       "state" => request.state,
       "code_challenge" => request.code_challenge,
-      "code_challenge_method" => Atom.to_string(request.code_challenge_method)
+      "code_challenge_method" => Atom.to_string(request.code_challenge_method),
+      "response_mode" => request.response_mode
     }
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
@@ -821,6 +890,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     })
   end
 
+  # credo:disable-for-next-line
   defp build_validated(
          params,
          %Client{} = client,

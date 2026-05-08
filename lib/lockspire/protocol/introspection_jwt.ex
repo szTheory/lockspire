@@ -28,16 +28,14 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
       when is_binary(issuer) and is_map(payload) and is_binary(caller_client_id) do
     key_store = Map.get(params, :key_store, Config.repo!())
     effective_security_profile = effective_security_profile(security_profile)
-    alg = Map.get(params, :alg, "RS256")
+    alg = Map.get(params, :alg, default_alg(effective_security_profile))
 
     with {:ok, signing_key} <- fetch_key(key_store, alg, effective_security_profile),
          :ok <- ensure_allowed_alg(signing_key.alg, effective_security_profile),
          {:ok, jwk_map} <- decode_private_jwk(signing_key.private_jwk_encrypted),
          claims <- build_claims(issuer, caller_client_id, issued_at, payload),
          protected_header <- protected_header(signing_key),
-         {_, compact} <-
-           JOSE.JWT.sign(JOSE.JWK.from_map(jwk_map), protected_header, claims)
-           |> JOSE.JWS.compact() do
+         {:ok, compact} <- sign_compact_jwt(jwk_map, protected_header, claims) do
       {:ok, compact}
     else
       {:error, reason} -> {:error, reason}
@@ -83,9 +81,28 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
   defp stringify_keys(list) when is_list(list), do: Enum.map(list, &stringify_keys/1)
   defp stringify_keys(value), do: value
 
-  defp effective_security_profile(%SecurityProfile.Resolved{effective_profile: profile}), do: profile
+  defp effective_security_profile(%SecurityProfile.Resolved{effective_profile: profile}),
+    do: profile
+
   defp effective_security_profile(profile) when is_atom(profile), do: profile
   defp effective_security_profile(_profile), do: :none
+
+  defp default_alg(security_profile) do
+    security_profile
+    |> SecurityProfile.allowed_signing_algorithms()
+    |> List.first()
+    |> Kernel.||("RS256")
+  end
+
+  defp sign_compact_jwt(jwk_map, protected_header, claims) do
+    {:ok,
+     JOSE.JWK.from_map(jwk_map)
+     |> JOSE.JWT.sign(protected_header, claims)
+     |> JOSE.JWS.compact()
+     |> elem(1)}
+  rescue
+    ErlangError -> {:error, :unsupported_signing_algorithm}
+  end
 
   defp decode_private_jwk(binary) when is_binary(binary) do
     case decode_json_jwk(binary) do

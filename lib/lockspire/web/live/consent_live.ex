@@ -108,7 +108,8 @@ defmodule Lockspire.Web.ConsentLive do
          client_id: interaction.client_id,
          requested_scopes: interaction.scopes_requested,
          authorization_details: interaction.authorization_details,
-         authorization_detail_types: authorization_detail_types(interaction.authorization_details),
+         authorization_detail_types:
+           authorization_detail_types(interaction.authorization_details),
          subject_id: subject_context.subject_id,
          finalize_path: finalize_path(interaction.interaction_id),
          error: nil

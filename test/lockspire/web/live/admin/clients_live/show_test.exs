@@ -35,7 +35,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
-    assert {:ok, _policy} = Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{id: 1})
+    assert {:ok, _policy} =
+             Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{
+               id: 1
+             })
 
     {:ok, client} =
       Repository.register_client(%Client{
@@ -63,7 +66,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/security-profile", Show))
   end
 
-  test "client detail shows effective security profile and mixed-mode warning", %{client: client} do
+  test "client detail shows effective strict message-signing posture and mixed-mode warning", %{
+    client: client
+  } do
     now = DateTime.utc_now()
 
     Lockspire.Storage.Ecto.Repository.publish_key(%Lockspire.Domain.SigningKey{
@@ -84,7 +89,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       alg: "ES256"
     })
 
-    assert {:ok, _policy} = Admin.put_security_profile(:fapi_2_0_security)
+    assert {:ok, _policy} = Admin.put_security_profile(:fapi_2_0_message_signing)
 
     assert {:ok, _updated_client} =
              Admin.update_client(client.client_id, %{security_profile: :none})
@@ -94,6 +99,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Global security profile"
     assert html =~ "Client security override"
     assert html =~ "Effective security profile"
+    assert html =~ "Strict message-signing posture"
+    assert html =~ "Mixed-mode escape hatch"
     assert html =~ "Warning:"
     assert html =~ "mixed-mode bypass"
   end
@@ -109,7 +116,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Update security profile"
     assert html =~ "Client security profile override"
     assert html =~ "Inherit from global policy"
+    assert html =~ "FAPI 2.0 Message Signing"
     assert html =~ "FAPI 2.0 Security Profile"
+    assert html =~ "Authorization response signing algorithm"
 
     now = DateTime.utc_now()
 
@@ -133,20 +142,45 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     view
     |> form("form[phx-submit=save_client]", %{
-      client: %{mode: "security_profile", security_profile: "fapi_2_0_security"}
+      client: %{
+        mode: "security_profile",
+        security_profile: "fapi_2_0_message_signing",
+        authorization_signed_response_alg: "ES256"
+      }
     })
     |> render_submit()
 
     assert {:ok, updated_client} = Admin.get_client(client.client_id)
-    assert updated_client.security_profile == :fapi_2_0_security
+    assert updated_client.security_profile == :fapi_2_0_message_signing
+    assert updated_client.authorization_signed_response_alg == :ES256
 
     html_after = render(view)
     assert html_after =~ "Effective profile:"
-    assert html_after =~ "FAPI 2.0 Security Profile"
+    assert html_after =~ "FAPI 2.0 Message Signing"
+    assert html_after =~ "Strict readiness:"
+    assert html_after =~ "Ready"
   end
 
-  test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{client: client} do
-    assert {:ok, _policy} = Admin.put_dcr_policy(%{dcr_allowed_token_endpoint_auth_methods: ["private_key_jwt"]})
+  test "client detail shows canonical remediation when strict message signing is selected but not ready",
+       %{client: client} do
+    assert {:ok, _policy} = Admin.put_security_profile(:none)
+
+    assert {:ok, _client} =
+             Repository.update_client(client, %{security_profile: :fapi_2_0_message_signing})
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Strict message-signing posture"
+    assert html =~ "Strict message signing enforced"
+    assert html =~ "Blocked"
+    assert html =~ "Publish an ES256 or PS256 issuer signing key"
+  end
+
+  test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
+    client: client
+  } do
+    assert {:ok, _policy} =
+             Admin.put_dcr_policy(%{dcr_allowed_token_endpoint_auth_methods: ["private_key_jwt"]})
 
     assert {:ok, pkjwt_client} =
              Repository.register_client(%Client{

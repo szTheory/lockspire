@@ -4,7 +4,7 @@ defmodule Lockspire.Web.CibaAuthorizationJSONTest do
   alias Lockspire.Protocol.BackchannelAuthentication.Error
   alias Lockspire.Web.CibaAuthorizationJSON
 
-  test "does not expose internal reason_code values in public error JSON" do
+  test "includes reason_code values in CIBA error JSON" do
     response =
       CibaAuthorizationJSON.error_response(%Error{
         status: 401,
@@ -15,7 +15,8 @@ defmodule Lockspire.Web.CibaAuthorizationJSONTest do
 
     assert response == %{
              error: "invalid_client",
-             error_description: "Client authentication failed"
+             error_description: "Client authentication failed",
+             reason_code: :client_assertion_signature_invalid
            }
   end
 end

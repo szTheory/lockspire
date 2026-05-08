@@ -160,15 +160,17 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert authorize_conn.status in [302, 303]
+    location = get_resp_header(authorize_conn, "location") |> List.first()
+    assert location =~ "/consent/"
 
     interaction_id =
-      List.last(String.split(List.first(get_resp_header(authorize_conn, "location")), "/"))
+      List.last(String.split(location, "/"))
 
     authorize_complete_conn =
       build_conn(:post, "/interactions/#{interaction_id}/complete", %{"decision" => "approve"})
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
-    assert authorize_complete_conn.status in [302, 303]
+    assert authorize_complete_conn.status in [302, 303], authorize_complete_conn.resp_body
     callback_uri = URI.parse(List.first(get_resp_header(authorize_complete_conn, "location")))
     code = URI.decode_query(callback_uri.query)["code"]
 
@@ -257,6 +259,162 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
     location = get_resp_header(authorize_conn, "location") |> List.first()
     assert location =~ "error=invalid_request"
     assert location =~ "error_description=request_uri+from+the+PAR+endpoint+is+required"
+  end
+
+  test "global message-signing strict mode enforces JWT PAR and JWT introspection negotiation", %{
+    client: client,
+    secret: secret
+  } do
+    put_security_profile!(:fapi_2_0_message_signing)
+    publish_signing_key("phase41-message-signing-global-kid")
+
+    assert {:ok, _client} =
+             Repository.update_client(client, %{authorization_signed_response_alg: "ES256"})
+
+    par_rejected_conn =
+      build_conn(:post, "/par", base_par_params(client.client_id))
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert par_rejected_conn.status == 400
+
+    assert Jason.decode!(par_rejected_conn.resp_body)["error_description"] =~
+             "explicit JWT response mode"
+
+    request_uri = strict_par_request_uri!(client, secret)
+
+    authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => request_uri
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert authorize_conn.status in [302, 303]
+    response = complete_strict_authorize_and_extract_jarm(authorize_conn)
+    assert decode_jwt_payload(response)["code"]
+
+    raw_access_token = "phase41-message-signing-global-access"
+    store_access_token!(client, raw_access_token, "phase41-message-signing-global")
+
+    strict_json_downgrade_conn =
+      introspect_conn(client, secret, raw_access_token)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert strict_json_downgrade_conn.status == 400
+
+    assert Jason.decode!(strict_json_downgrade_conn.resp_body) == %{
+             "error" => "invalid_request",
+             "error_description" => "Accept must include application/token-introspection+jwt"
+           }
+
+    strict_jwt_conn =
+      introspect_conn(client, secret, raw_access_token, [
+        {"accept", "application/token-introspection+jwt"}
+      ])
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert strict_jwt_conn.status == 200
+
+    assert get_resp_header(strict_jwt_conn, "content-type") == [
+             "application/token-introspection+jwt"
+           ]
+  end
+
+  test "per-client message-signing strict mode enforces the same authorize and introspection requirements",
+       %{client: client, secret: secret} do
+    put_security_profile!(:none)
+    publish_signing_key("phase41-message-signing-client-kid")
+
+    assert {:ok, _client} =
+             Repository.update_client(client, %{
+               security_profile: :fapi_2_0_message_signing,
+               authorization_signed_response_alg: "ES256"
+             })
+
+    par_rejected_conn =
+      build_conn(:post, "/par", base_par_params(client.client_id))
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert par_rejected_conn.status == 400
+
+    assert Jason.decode!(par_rejected_conn.resp_body)["error_description"] =~
+             "explicit JWT response mode"
+
+    request_uri = strict_par_request_uri!(client, secret)
+
+    authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => request_uri
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert authorize_conn.status in [302, 303]
+    response = complete_strict_authorize_and_extract_jarm(authorize_conn)
+    assert decode_jwt_payload(response)["code"]
+
+    raw_access_token = "phase41-message-signing-client-access"
+    store_access_token!(client, raw_access_token, "phase41-message-signing-client")
+
+    strict_json_downgrade_conn =
+      introspect_conn(client, secret, raw_access_token)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert strict_json_downgrade_conn.status == 400
+
+    strict_jwt_conn =
+      introspect_conn(client, secret, raw_access_token, [
+        {"accept", "application/token-introspection+jwt"}
+      ])
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert strict_jwt_conn.status == 200
+
+    assert get_resp_header(strict_jwt_conn, "content-type") == [
+             "application/token-introspection+jwt"
+           ]
+  end
+
+  test "client none override under global message-signing strict mode preserves compatibility behavior",
+       %{client: client, secret: secret} do
+    put_security_profile!(:fapi_2_0_message_signing)
+    publish_rs256_signing_key("phase41-message-signing-override-kid")
+
+    assert {:ok, _client} = Repository.update_client(client, %{security_profile: :none})
+
+    par_conn =
+      build_conn(:post, "/par", base_par_params(client.client_id))
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert par_conn.status == 201
+    request_uri = Jason.decode!(par_conn.resp_body)["request_uri"]
+
+    authorize_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => request_uri
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert authorize_conn.status in [302, 303]
+
+    raw_access_token = "phase41-message-signing-override-access"
+    store_access_token!(client, raw_access_token, "phase41-message-signing-override")
+
+    json_introspection_conn =
+      introspect_conn(client, secret, raw_access_token)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert json_introspection_conn.status == 200
+
+    assert get_resp_header(json_introspection_conn, "content-type") == [
+             "application/json; charset=utf-8"
+           ]
+
+    assert Jason.decode!(json_introspection_conn.resp_body)["active"] == true
   end
 
   test "per-client override opts out of FAPI 2.0 under a global FAPI profile", %{client: client} do
@@ -448,6 +606,78 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
     "Basic " <> Base.encode64("#{id}:#{secret}")
   end
 
+  defp complete_strict_authorize_and_extract_jarm(authorize_conn) do
+    location = get_resp_header(authorize_conn, "location") |> List.first()
+    assert location =~ "/consent/"
+
+    interaction_id =
+      List.last(String.split(location, "/"))
+
+    authorize_complete_conn =
+      build_conn(:post, "/interactions/#{interaction_id}/complete", %{"decision" => "approve"})
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    unless authorize_complete_conn.status in [302, 303] do
+      flunk(
+        "unexpected consent completion response: #{authorize_complete_conn.status}\n" <>
+          authorize_complete_conn.resp_body
+      )
+    end
+
+    callback_uri = URI.parse(List.first(get_resp_header(authorize_complete_conn, "location")))
+    params = URI.decode_query(callback_uri.query || "")
+    response = params["response"]
+
+    refute is_nil(response)
+    refute params["error"]
+    refute params["code"]
+    assert length(String.split(response, ".")) == 3
+
+    response
+  end
+
+  defp decode_jwt_payload(jwt) do
+    [_header, payload, _signature] = String.split(jwt, ".")
+
+    payload
+    |> Base.url_decode64!(padding: false)
+    |> Jason.decode!()
+  end
+
+  defp base_par_params(client_id) do
+    %{
+      "client_id" => client_id,
+      "response_type" => "code",
+      "redirect_uri" => "https://client.example.com/callback",
+      "scope" => "openid",
+      "nonce" => "phase41-nonce",
+      "code_challenge" => code_challenge("phase41-message-signing-verifier"),
+      "code_challenge_method" => "S256"
+    }
+  end
+
+  defp strict_par_request_uri!(client, secret) do
+    conn =
+      build_conn(
+        :post,
+        "/par",
+        Map.put(base_par_params(client.client_id), "response_mode", "jwt")
+      )
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 201
+    Jason.decode!(conn.resp_body)["request_uri"]
+  end
+
+  defp introspect_conn(client, secret, token, headers \\ []) do
+    Enum.reduce(headers, build_conn(:post, "/introspect", %{"token" => token}), fn {key, value},
+                                                                                   conn ->
+      put_req_header(conn, key, value)
+    end)
+    |> put_req_header("authorization", basic_auth(client.client_id, secret))
+  end
+
   defp code_challenge(verifier) do
     :sha256
     |> :crypto.hash(verifier)
@@ -584,5 +814,21 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
       issued_at: now,
       expires_at: DateTime.add(now, 300, :second)
     })
+  end
+
+  defp store_access_token!(client, raw_access_token, interaction_id) do
+    now = DateTime.utc_now()
+
+    assert {:ok, _token} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token(raw_access_token),
+               token_type: :access_token,
+               client_id: client.client_id,
+               account_id: "phase41-fapi-user",
+               interaction_id: interaction_id,
+               scopes: ["openid"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 3600, :second)
+             })
   end
 end

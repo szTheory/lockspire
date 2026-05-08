@@ -26,10 +26,9 @@ defmodule Lockspire.Web.AuthorizeHTML do
   def form_post_page(action, params) do
     inputs =
       params
-      |> Enum.map(fn {k, v} ->
+      |> Enum.map_join("", fn {k, v} ->
         ~s(<input type="hidden" name="#{Plug.HTML.html_escape(k)}" value="#{Plug.HTML.html_escape(v)}"/>)
       end)
-      |> Enum.join("")
 
     [
       "<!doctype html><html><head><meta charset=\"utf-8\"><title>Submit</title></head>",

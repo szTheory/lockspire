@@ -115,3 +115,14 @@ Stop the release if:
 - the protected `hex-publish` environment stops being restricted to `main`, allows bypass you do not intend to allow, or stores `HEX_API_KEY` outside the environment boundary
 
 This file does not broaden the Lockspire product contract. For public support truth, defer to `docs/supported-surface.md`.
+
+## Post-Publish Verification
+
+After a successful publish to Hex, you must verify the published artifact to guarantee "Install Truth". Run the post-publish script:
+
+```bash
+./scripts/publish/verify_install_truth.sh
+```
+
+This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
+

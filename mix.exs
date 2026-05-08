@@ -38,7 +38,7 @@ defmodule Lockspire.MixProject do
       {:phoenix_live_view, "~> 1.1.28"},
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
-      {:bandit, "~> 1.6"},
+      {:bandit, "~> 1.11"},
       {:oban, "~> 2.21"},
       {:req, "~> 0.5"},
       {:jose, "~> 1.11"},

@@ -242,10 +242,11 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
            }
   end
 
-  test "POST /introspect keeps JSON for missing wildcard malformed or JSON-only accept headers", %{
-    client: client,
-    secret: secret
-  } do
+  test "POST /introspect keeps JSON for missing wildcard malformed or JSON-only accept headers",
+       %{
+         client: client,
+         secret: secret
+       } do
     requests = [
       [],
       [{"accept", "*/*"}],
@@ -256,15 +257,57 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     Enum.each(requests, fn headers ->
       conn =
-        Enum.reduce(headers, build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"}), fn {key, value}, conn ->
-          put_req_header(conn, key, value)
-        end)
+        Enum.reduce(
+          headers,
+          build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"}),
+          fn {key, value}, conn ->
+            put_req_header(conn, key, value)
+          end
+        )
         |> put_req_header("authorization", basic_auth(client.client_id, secret))
         |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
       assert conn.status == 200
       assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
       assert Jason.decode!(conn.resp_body)["active"] == true
+    end)
+  end
+
+  test "POST /introspect rejects JSON downgrade for strict callers", %{
+    client: client,
+    secret: secret
+  } do
+    {:ok, strict_client} =
+      Repository.update_client(client, %{security_profile: :fapi_2_0_message_signing})
+
+    requests = [
+      [],
+      [{"accept", "*/*"}],
+      [{"accept", "application/json"}],
+      [{"accept", "application/token-introspection+jwt;q=0, application/json;q=1.0"}],
+      [{"accept", "application/json; q=bogus"}]
+    ]
+
+    Enum.each(requests, fn headers ->
+      conn =
+        Enum.reduce(
+          headers,
+          build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"}),
+          fn {key, value}, conn ->
+            put_req_header(conn, key, value)
+          end
+        )
+        |> put_req_header("authorization", basic_auth(strict_client.client_id, secret))
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 400
+      assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+      assert get_resp_header(conn, "vary") == ["Accept"]
+
+      assert Jason.decode!(conn.resp_body) == %{
+               "error" => "invalid_request",
+               "error_description" => "Accept must include application/token-introspection+jwt"
+             }
     end)
   end
 
@@ -343,11 +386,12 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
     assert body["authorization_details"] == authorization_details
   end
 
-  test "POST /introspect keeps token storage compact-by-reference and omits missing grant payloads", %{
-    client: client,
-    secret: secret,
-    consent_grant_id: consent_grant_id
-  } do
+  test "POST /introspect keeps token storage compact-by-reference and omits missing grant payloads",
+       %{
+         client: client,
+         secret: secret,
+         consent_grant_id: consent_grant_id
+       } do
     assert {:ok, %Token{} = token} =
              Repository.fetch_lifecycle_token(
                TokenFormatter.hash_token("controller-introspect-access")
@@ -440,7 +484,10 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     assert conn.status == 401
     assert get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
-    assert get_resp_header(conn, "www-authenticate") == ["Basic realm=\"Lockspire Token Endpoint\""]
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Basic realm=\"Lockspire Token Endpoint\""
+           ]
 
     assert Jason.decode!(conn.resp_body) == %{
              "error" => "invalid_client",

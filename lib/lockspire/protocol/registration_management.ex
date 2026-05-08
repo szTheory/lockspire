@@ -74,7 +74,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       {:error, :invalid_token}
     else
       with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
-           :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy),
+           :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
            {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
            {:ok, updated_client} <- persist_update(client, metadata, new_rat_hash) do
         emit_updated(updated_client)
@@ -310,6 +310,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   defp atomize_authorization_encryption_enc(_), do: nil
 
   defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
+  defp atomize_security_profile("fapi_2_0_message_signing"), do: :fapi_2_0_message_signing
   defp atomize_security_profile("none"), do: :none
   defp atomize_security_profile(_), do: :inherit
 

@@ -7,12 +7,12 @@ defmodule Lockspire.Domain.Client do
   @type token_endpoint_auth_method ::
           :client_secret_basic | :client_secret_post | :private_key_jwt | :none
   @type subject_type :: :public | :pairwise
-  @type signing_alg :: :RS256 | :ES256 | :EdDSA
+  @type signing_alg :: :RS256 | :ES256 | :PS256 | :EdDSA
   @type authorization_encrypted_response_alg :: :RSA_OAEP_256 | :ECDH_ES
   @type authorization_encrypted_response_enc :: :A256GCM | :A128GCM
   @type par_policy :: :inherit | :required | :optional
   @type dpop_policy :: :inherit | :bearer | :dpop
-  @type security_profile :: :inherit | :fapi_2_0_security | :none
+  @type security_profile :: :inherit | :fapi_2_0_security | :fapi_2_0_message_signing | :none
   @type backchannel_token_delivery_mode :: :poll | :ping | :push
   @type provenance :: :operator | :self_registered
 

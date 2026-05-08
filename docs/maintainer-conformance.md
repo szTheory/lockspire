@@ -60,22 +60,18 @@ This script is a fast smoke check for the boundary Plug and resource enforcement
 
 You can also run `mix lockspire.oidf_conformance --validate-env` to validate the prerequisites for this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set, but it does NOT execute `scripts/conformance/fapi2-check.sh` or send live HTTP probes.
 
-## Step 3: Optional external OIDF Conformance Suite corroboration
+## Local Testing Lane
 
-1. Clone the suite:
+You can execute the OIDF conformance suites locally using the automated scripts:
 
-```bash
-git clone https://gitlab.com/openid/conformance-suite.git
-cd conformance-suite
-```
+- **FAPI 2.0 Suite:** Run `./scripts/conformance/run_fapi2_suite.sh`
+- **Phase 37 Suite:** Run `./scripts/conformance/run_phase37_suite.sh`
 
-2. Start the suite using the prebuilt images:
-
-```bash
-docker-compose -f docker-compose-prebuilt.yml up
-```
-
-3. Open `https://localhost:8443/` and accept the local certificate warning.
+These scripts will:
+- Start a local Phoenix fixture application with Lockspire configured (and FAPI 2.0 enforced for the FAPI 2 script).
+- Automatically download and start the OpenID Foundation (OIDF) Docker containers.
+- Register a local test client and run the associated test plan (`fapi2-plan.json` or `phase37-plan.json`).
+- Export artifacts, run logs, and summaries to `.artifacts/conformance/fapi2` (or `phase37`).
 
 ## Reaching the local Lockspire instance from Docker
 

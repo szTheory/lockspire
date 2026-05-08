@@ -115,6 +115,16 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured RAR type validators.
+  """
+  @spec rar_validators() :: map()
+  def rar_validators do
+    @app
+    |> Application.get_env(:rar_validators, %{})
+    |> Map.new()
+  end
+
+  @doc """
   Returns the security profile configuration.
   """
   @spec security_profile() :: :none | :fapi_2_0_security

@@ -35,14 +35,15 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:dpop_policy, Ecto.Enum, values: [:inherit, :bearer, :dpop], default: :inherit)
 
     field(:security_profile, Ecto.Enum,
-      values: [:inherit, :fapi_2_0_security, :none],
+      values: [:inherit, :fapi_2_0_security, :fapi_2_0_message_signing, :none],
       default: :inherit
     )
 
     field(:subject_type, Ecto.Enum, values: [:public, :pairwise])
     field(:sector_identifier_uri, :string)
-    field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
-    field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
+    field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
+
+    field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
     field(:authorization_encrypted_response_alg, Ecto.Enum, values: [:RSA_OAEP_256, :ECDH_ES])
     field(:authorization_encrypted_response_enc, Ecto.Enum, values: [:A256GCM, :A128GCM])
     field(:jwks, :map)
@@ -70,7 +71,12 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:client_id_issued_at, :utc_datetime_usec)
     field(:client_secret_expires_at, :utc_datetime_usec)
     field(:backchannel_user_code_parameter, :boolean, default: false)
-    field(:backchannel_token_delivery_mode, Ecto.Enum, values: [:poll, :ping, :push], default: :poll)
+
+    field(:backchannel_token_delivery_mode, Ecto.Enum,
+      values: [:poll, :ping, :push],
+      default: :poll
+    )
+
     field(:backchannel_client_notification_endpoint, :string)
     field(:max_delegation_depth, :integer)
 
@@ -142,7 +148,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :active,
       :provenance
     ])
-    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
+    |> validate_number(:max_delegation_depth,
+      less_than_or_equal_to: 5,
+      greater_than_or_equal_to: 0
+    )
     |> validate_fapi_metadata()
     |> unique_constraint(:client_id)
   end
@@ -202,7 +211,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_scopes,
       :active
     ])
-    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
+    |> validate_number(:max_delegation_depth,
+      less_than_or_equal_to: 5,
+      greater_than_or_equal_to: 0
+    )
     |> validate_fapi_metadata()
   end
 
@@ -210,7 +222,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     profile = get_field(changeset, :security_profile)
     alg = get_field(changeset, :id_token_signed_response_alg)
 
-    if profile == :fapi_2_0_security and alg not in [nil, :ES256] do
+    if profile in [:fapi_2_0_security, :fapi_2_0_message_signing] and
+         alg not in [nil, :ES256, :PS256] do
       add_error(
         changeset,
         :id_token_signed_response_alg,

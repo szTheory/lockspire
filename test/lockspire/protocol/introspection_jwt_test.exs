@@ -134,7 +134,8 @@ defmodule Lockspire.Protocol.IntrospectionJwtTest do
       %SigningKey{
         kid: "introspection-kid",
         alg: "RS256",
-        private_jwk_encrypted: Jason.encode!(elem(JOSE.JWK.to_map(JarTestHelpers.generate_keys().private_jwk), 1))
+        private_jwk_encrypted:
+          Jason.encode!(elem(JOSE.JWK.to_map(JarTestHelpers.generate_keys().private_jwk), 1))
       }
     )
 
@@ -142,7 +143,12 @@ defmodule Lockspire.Protocol.IntrospectionJwtTest do
              IntrospectionJwt.sign(%{
                issuer: "https://auth.example.com",
                issued_at: ~U[2026-05-08 10:00:00Z],
-               success: %{success | security_profile: %SecurityProfile.Resolved{effective_profile: :fapi_2_0_security}},
+               success: %{
+                 success
+                 | security_profile: %SecurityProfile.Resolved{
+                     effective_profile: :fapi_2_0_security
+                   }
+               },
                key_store: MockKeyStore
              })
   end

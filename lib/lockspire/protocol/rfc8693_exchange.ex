@@ -152,6 +152,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   end
 
   defp decode_jwt_claims(jwt) do
+    # credo:disable-for-next-line
     try do
       payload_struct = JOSE.JWT.peek_payload(jwt)
       {_modules, claims} = JOSE.JWT.to_map(payload_struct)
@@ -167,8 +168,12 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
 
   defp check_delegation_depth(actor_token_claims, client, request) do
     policy = server_policy(request)
-    
-    case Lockspire.Protocol.TokenExchange.Delegation.check_depth(actor_token_claims, client, policy) do
+
+    case Lockspire.Protocol.TokenExchange.Delegation.check_depth(
+           actor_token_claims,
+           client,
+           policy
+         ) do
       :ok ->
         :ok
 
@@ -201,8 +206,6 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
       is_nil(token.reuse_detected_at) and
       DateTime.compare(token.expires_at, now) == :gt
   end
-
-  defp token_valid?(_, _), do: false
 
   defp validate_scopes(nil, %Token{} = subject_token) do
     {:ok, subject_token.scopes}

@@ -184,9 +184,10 @@ defmodule Lockspire.Protocol.ClientAuth do
        do: :ok
 
   defp validate_client_secret(%Client{} = client, :private_key_jwt, client_assertion, opts) do
-    with :ok <- PrivateKeyJwt.verify(client, client_assertion, opts) do
-      :ok
-    else
+    case PrivateKeyJwt.verify(client, client_assertion, opts) do
+      :ok ->
+        :ok
+
       {:error, reason_code} ->
         {:error, invalid_client("Client authentication failed", reason_code)}
     end

@@ -45,15 +45,21 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     """
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp do_run(opts) do
     assigns = Install.build_assigns(opts)
     dry_run? = Keyword.get(opts, :dry_run, false)
 
     manifest =
       case Manifest.load(assigns.project_root) do
-        {:ok, manifest} -> manifest
-        {:error, :enoent} -> Mix.raise("Missing install manifest. Run `mix lockspire.install` first.")
-        {:error, reason} -> Mix.raise("Could not load install manifest: #{inspect(reason)}")
+        {:ok, manifest} ->
+          manifest
+
+        {:error, :enoent} ->
+          Mix.raise("Missing install manifest. Run `mix lockspire.install` first.")
+
+        {:error, reason} ->
+          Mix.raise("Could not load install manifest: #{inspect(reason)}")
       end
 
     rendered_by_path =
@@ -97,7 +103,10 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     if drifts != [] do
       Enum.each(Enum.reverse(drifts), fn {path, reason} ->
         Mix.shell().info("REFUSE #{path} (#{reason})")
-        Mix.shell().info("  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`.")
+
+        Mix.shell().info(
+          "  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`."
+        )
       end)
 
       Mix.raise("Lockspire upgrade refused because managed scaffolding drifted.")
@@ -108,7 +117,9 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
       :ok
     else
       Enum.each(Enum.reverse(updates), fn rendered ->
-        Mix.shell().info("#{if(dry_run?, do: "DRY-RUN", else: "UPDATE")} #{rendered.relative_path}")
+        Mix.shell().info(
+          "#{if(dry_run?, do: "DRY-RUN", else: "UPDATE")} #{rendered.relative_path}"
+        )
 
         unless dry_run? do
           File.write!(rendered.destination, rendered.rendered)

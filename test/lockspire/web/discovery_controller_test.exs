@@ -95,6 +95,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["pushed_authorization_request_endpoint"] == "https://example.test/lockspire/par"
     assert body["scopes_supported"] == ["openid", "profile", "email"]
     assert body["response_types_supported"] == ["code"]
+
     assert body["response_modes_supported"] == [
              "query",
              "fragment",
@@ -154,7 +155,13 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["code_challenge_methods_supported"] == ["S256"]
     assert body["subject_types_supported"] == ["public"]
     assert body["id_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
-    assert body["authorization_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
+
+    assert body["authorization_signing_alg_values_supported"] == [
+             "RS256",
+             "ES256",
+             "PS256",
+             "EdDSA"
+           ]
 
     assert body["authorization_encryption_alg_values_supported"] == [
              "RSA-OAEP-256",

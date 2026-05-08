@@ -49,6 +49,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
         security_profile: :fapi_2_0_security
       })
 
+    {:ok, _message_signing_client} =
+      Repository.register_client(%Client{
+        client_id: "security-message-signing",
+        client_type: :confidential,
+        security_profile: :fapi_2_0_message_signing
+      })
+
     {:ok, _none_client} =
       Repository.register_client(%Client{
         client_id: "security-none",
@@ -80,9 +87,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "Security Profile"
     assert html =~ "DPoP"
     assert html =~ "DCR"
+    assert html =~ "Strict message-signing readiness"
+    assert html =~ "FAPI 2.0 Message Signing"
+    assert html =~ "client requires strict message signing"
     assert html =~ "client inherits"
     assert html =~ "client requires FAPI 2.0"
     assert html =~ "client forces None"
+    assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
   test "saving global security profile persists change across reload" do
@@ -110,15 +121,20 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     })
 
     view
-    |> form("form[phx-submit=save_policy]", %{policy: %{security_profile: "fapi_2_0_security"}})
+    |> form("form[phx-submit=save_policy]", %{
+      policy: %{security_profile: "fapi_2_0_message_signing"}
+    })
     |> render_submit()
 
-    assert {:ok, %{security_profile: :fapi_2_0_security}} = Admin.get_server_policy()
+    assert {:ok, %{security_profile: :fapi_2_0_message_signing}} = Admin.get_server_policy()
 
     assert {:ok, _reloaded_view, html} =
              live(conn_for_admin(), "/admin/policies/security-profile")
 
-    assert html =~ "Current profile is FAPI 2.0 Security Profile"
+    assert html =~ "Current profile is FAPI 2.0 Message Signing"
+    assert html =~ "Status:"
+    assert html =~ "Ready"
+    assert html =~ "Strict message signing is active"
   end
 
   test "invalid global security profile values return field errors" do

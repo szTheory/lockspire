@@ -181,7 +181,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "always()"
     assert release_please_job =~ "uses: ./.github/actions/release-please"
     assert release_please_job =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
-    assert recovery_validation_job =~ "recovery_ref must be an exact 40-character commit SHA or an existing tag"
+
+    assert recovery_validation_job =~
+             "recovery_ref must be an exact 40-character commit SHA or an existing tag"
+
     assert publish_job =~ "environment: hex-publish"
     assert publish_job =~ "run: mix release.preflight"
     assert publish_job =~ "run: mix hex.publish --yes"
@@ -249,13 +252,19 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert changelog =~ "one `lockspire` package"
     assert mixfile =~ "\"Changelog\" => \"https://hexdocs.pm/lockspire/changelog.html\""
     assert mixfile =~ "\"Docs\" => \"https://hexdocs.pm/lockspire\""
-    assert mixfile =~ "\"Supported surface\" => \"https://hexdocs.pm/lockspire/supported-surface.html\""
+
+    assert mixfile =~
+             "\"Supported surface\" => \"https://hexdocs.pm/lockspire/supported-surface.html\""
+
     assert release_workflow =~ "uses: ./.github/actions/release-please"
     assert release_workflow =~ "config-file: release-please-config.json"
     assert release_workflow =~ "manifest-file: .release-please-manifest.json"
     assert release_workflow =~ "outputs:"
     assert release_workflow =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
-    assert release_workflow =~ "Release Please selected root tag ${{ steps.release.outputs.tag_name }}"
+
+    assert release_workflow =~
+             "Release Please selected root tag ${{ steps.release.outputs.tag_name }}"
+
     assert action =~ "config-file"
     assert action =~ "manifest-file"
     assert action =~ "node .github/actions/release-please/runtime/index.js"
@@ -317,7 +326,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Workflow-run proof:"
     assert guide =~ "Release candidate checklist"
     assert guide =~ "review-only evidence"
-    assert guide =~ "only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`"
+
+    assert guide =~
+             "only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`"
+
     assert guide =~ "Protected-environment proof starts only when the `publish` job"
     assert guide =~ "Repo-owned commands stop at `mix ci`"
     assert supported_surface =~ "canonical public support contract"
@@ -408,7 +420,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "canonical public support contract"
-    assert supported_surface =~ "README, `SECURITY.md`, and maintainer-only release guidance point back to this file"
+
+    assert supported_surface =~
+             "README, `SECURITY.md`, and maintainer-only release guidance point back to this file"
+
     assert supported_surface =~ "primary public proof story"
     assert supported_surface =~ "A 1.0 GA claim should not say:"
     assert supported_surface =~ "Lockspire is production-ready for unsupported host shapes"
@@ -450,8 +465,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "confidential client uses `jwks_uri`"
     assert security =~ "issuer-string `aud`"
 
-    assert security =~ "host-owned account databases, login/session implementations, or rate limiting"
-    assert security =~ "request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features"
+    assert security =~
+             "host-owned account databases, login/session implementations, or rate limiting"
+
+    assert security =~
+             "request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features"
 
     assert guide =~ "inside the 1.0 GA support contract"
 
@@ -551,7 +569,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert sigra_companion =~ "return_to"
     assert sigra_companion =~ "interaction_id"
     assert sigra_companion =~ "phase6_onboarding_e2e_test.exs"
-    assert sigra_companion =~ "unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange"
+
+    assert sigra_companion =~
+             "unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange"
 
     assert onboarding =~ "docs/sigra-companion-host.md"
     assert supported_surface =~ "guidance for the host-owned seam rather than a second topology"
@@ -722,6 +742,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert maintainer_conformance =~ "preparatory OIDF lane"
     assert maintainer_conformance =~ "Phase 42 wires the lane for Phase 43 consumption"
     assert maintainer_conformance =~ "does not claim pass-ready certification"
+
     assert maintainer_conformance =~
              "does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge"
 
@@ -819,7 +840,26 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "No host MIME registration is required"
     assert supported_surface =~ "\"active\": false"
     assert supported_surface =~ "\"token_introspection\": {"
+
     assert supported_surface =~
              "does not claim introspection encryption, new discovery metadata, or strict mode enforcement"
+  end
+
+  test "phase 74 message-signing support contract distinguishes optional capability from strict enforcement" do
+    supported_surface = File.read!(@supported_surface_path)
+
+    assert supported_surface =~
+             "JWT-secured authorization response mode (JARM) as an optional authorization-response representation"
+
+    assert supported_surface =~ "FAPI 2.0 Message Signing strict enforcement"
+
+    assert supported_surface =~
+             "baseline optional JARM and RFC 9701 capabilities above become explicit requirements"
+
+    assert supported_surface =~ "requires JARM"
+    assert supported_surface =~ "requires `Accept: application/token-introspection+jwt`"
+    assert supported_surface =~ "mixed-mode escape hatches"
+    assert supported_surface =~ "does not require JARM encryption"
+    assert supported_surface =~ "does not broaden Lockspire into a larger FAPI certification"
   end
 end

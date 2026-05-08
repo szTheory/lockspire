@@ -70,9 +70,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     Process.put(:phase62_remote_jwks, remote_old_pub)
     Process.put(:phase62_jwks_fetch_count, 0)
 
-    Application.put_env(:lockspire, :jwks_fetcher_opts,
-      resolver: &__MODULE__.public_resolver/1
-    )
+    Application.put_env(:lockspire, :jwks_fetcher_opts, resolver: &__MODULE__.public_resolver/1)
     Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
 
     {:ok, inline_client} =

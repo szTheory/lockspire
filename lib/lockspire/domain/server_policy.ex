@@ -5,7 +5,7 @@ defmodule Lockspire.Domain.ServerPolicy do
 
   @type par_policy :: :optional | :required
   @type dpop_policy :: :bearer | :dpop
-  @type security_profile :: :none | :fapi_2_0_security
+  @type security_profile :: :none | :fapi_2_0_security | :fapi_2_0_message_signing
   @type registration_policy :: :disabled | :initial_access_token | :open
 
   @type t :: %__MODULE__{

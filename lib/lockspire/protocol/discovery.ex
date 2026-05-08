@@ -79,6 +79,7 @@ defmodule Lockspire.Protocol.Discovery do
   def openid_configuration do
     issuer = Config.issuer!()
     endpoint_metadata = mounted_endpoint_metadata()
+
     authorization_response_capabilities =
       AuthorizationResponseCapabilities.metadata(endpoint_metadata, global_security_profile())
 
@@ -309,7 +310,7 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp maybe_put_par_required_metadata(metadata) do
-    if global_security_profile() == :fapi_2_0_security do
+    if global_security_profile() in [:fapi_2_0_security, :fapi_2_0_message_signing] do
       Map.put(metadata, "require_pushed_authorization_requests", true)
     else
       metadata

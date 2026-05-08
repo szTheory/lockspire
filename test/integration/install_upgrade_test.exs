@@ -33,7 +33,8 @@ defmodule Lockspire.InstallUpgradeTest do
       upgrade_fixture!(["--mount-path", "/oauth"])
     end)
 
-    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~ ~s(mount_path: "/oauth")
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(mount_path: "/oauth")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(forward "/oauth", Lockspire.Web.Router)
@@ -48,11 +49,13 @@ defmodule Lockspire.InstallUpgradeTest do
     config_path = Path.join(@fixture_root, "config/lockspire.exs")
     File.write!(config_path, File.read!(config_path) <> "\n# local managed drift\n")
 
-    assert_raise Mix.Error, ~r/Lockspire upgrade refused because managed scaffolding drifted/, fn ->
-      capture_io(fn ->
-        upgrade_fixture!(["--mount-path", "/oauth"])
-      end)
-    end
+    assert_raise Mix.Error,
+                 ~r/Lockspire upgrade refused because managed scaffolding drifted/,
+                 fn ->
+                   capture_io(fn ->
+                     upgrade_fixture!(["--mount-path", "/oauth"])
+                   end)
+                 end
 
     assert File.read!(config_path) =~ "# local managed drift"
   end
@@ -60,7 +63,9 @@ defmodule Lockspire.InstallUpgradeTest do
   test "mix lockspire.upgrade ignores edited host-owned seams" do
     install_fixture!()
 
-    resolver_path = Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
+    resolver_path =
+      Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
+
     File.write!(resolver_path, File.read!(resolver_path) <> "\n# host-owned edit\n")
 
     capture_io(fn ->
@@ -68,7 +73,9 @@ defmodule Lockspire.InstallUpgradeTest do
     end)
 
     assert File.read!(resolver_path) =~ "# host-owned edit"
-    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~ ~s(mount_path: "/oauth")
+
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(mount_path: "/oauth")
   end
 
   defp install_fixture! do

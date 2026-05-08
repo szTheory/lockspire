@@ -26,6 +26,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
 - Revocation
 - Introspection
+- JWT-secured authorization response mode (JARM) as an optional authorization-response representation when clients explicitly choose `jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt`
 - RFC 9701 JWT introspection responses on the existing `POST /introspect` endpoint when the caller explicitly sends `Accept: application/token-introspection+jwt`
 - Refresh token rotation
 - DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
@@ -37,6 +38,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
+- FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
 - RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
 
@@ -49,6 +51,16 @@ Lockspire supports RFC 9701 JWT introspection as a negotiated representation of 
 - Error responses stay on the standard JSON OAuth error path
 - No host MIME registration is required
 - This Phase 73 slice does not claim introspection encryption, new discovery metadata, or strict mode enforcement
+
+## FAPI 2.0 Message Signing Strict Tier
+
+Lockspire keeps baseline JARM and RFC 9701 JWT introspection support optional for general OIDC interoperability, then offers a stricter `:fapi_2_0_message_signing` profile for deployments that want those message-signing capabilities enforced.
+
+- The strict tier requires explicit JARM on `/authorize`
+- The strict tier requires explicit `Accept: application/token-introspection+jwt` on `/introspect`
+- The strict tier preserves the mixed-mode escape hatch: a client can still explicitly set `security_profile: :none` under a stricter global policy
+- The strict tier does not require JARM encryption
+- The strict tier does not broaden Lockspire into a larger FAPI certification or unsupported-surface claim
 
 Active response shape example:
 

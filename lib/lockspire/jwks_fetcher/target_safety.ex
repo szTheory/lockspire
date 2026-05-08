@@ -15,9 +15,12 @@ defmodule Lockspire.JwksFetcher.TargetSafety do
   def ensure_safe_host(host, opts \\ []) when is_binary(host) do
     resolver = Keyword.get(opts, :resolver, &resolve_host/1)
 
-    with {:ok, addresses} <- resolve_addresses(host, resolver),
-         :ok <- ensure_public_addresses(addresses) do
-      :ok
+    case resolve_addresses(host, resolver) do
+      {:ok, addresses} ->
+        ensure_public_addresses(addresses)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -39,6 +42,7 @@ defmodule Lockspire.JwksFetcher.TargetSafety do
     end)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp classify({a, b, c, d}) do
     case <<a, b, c, d>> do
       <<0, 0, 0, 0>> -> {:error, :unspecified}

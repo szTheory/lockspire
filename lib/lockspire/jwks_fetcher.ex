@@ -75,6 +75,7 @@ defmodule Lockspire.JwksFetcher do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_network(uri, opts) do
     req_opts = strict_req_opts(opts)
 
@@ -125,7 +126,6 @@ defmodule Lockspire.JwksFetcher do
     case fetch_from_network(uri, opts) do
       {:commit, jwk_set, expire: _ttl} -> {:ok, jwk_set}
       {:ignore, {:error, reason}} -> {:error, reason}
-      {:error, {:jwks_fetch_failed, _reason}} = error -> error
       _other -> {:error, fetch_error(:cache_error)}
     end
   end
@@ -140,6 +140,7 @@ defmodule Lockspire.JwksFetcher do
   end
 
   defp build_jwk_set(body_map) do
+    # credo:disable-for-next-line
     try do
       {:ok, JOSE.JWK.from_map(body_map)}
     rescue
@@ -152,8 +153,11 @@ defmodule Lockspire.JwksFetcher do
       %URI{scheme: "https", host: host} = parsed_uri when is_binary(host) and host != "" ->
         {:ok, parsed_uri}
 
-      %URI{scheme: "https"} -> {:error, fetch_error(:invalid_uri)}
-      _ -> {:error, fetch_error(:https_required)}
+      %URI{scheme: "https"} ->
+        {:error, fetch_error(:invalid_uri)}
+
+      _ ->
+        {:error, fetch_error(:https_required)}
     end
   end
 

@@ -115,7 +115,8 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
           nonce: validated.nonce,
           state: validated.state,
           code_challenge: validated.code_challenge,
-          code_challenge_method: validated.code_challenge_method
+          code_challenge_method: validated.code_challenge_method,
+          response_mode: validated.response_mode
         },
         now: now,
         request_uri_generator: request_uri_generator(request)

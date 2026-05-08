@@ -490,6 +490,14 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert metadata["require_pushed_authorization_requests"] == true
     end
 
+    test "publishes require_pushed_authorization_requests when global profile is :fapi_2_0_message_signing" do
+      put_server_security_profile!(:fapi_2_0_message_signing)
+
+      metadata = Discovery.openid_configuration()
+
+      assert metadata["require_pushed_authorization_requests"] == true
+    end
+
     test "omits require_pushed_authorization_requests key when global profile is :none" do
       put_server_security_profile!(:none)
 

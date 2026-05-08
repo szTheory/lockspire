@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Admin.ServerPolicy, as: AdminServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Web.Components.AdminComponents
@@ -28,6 +29,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        client: nil,
        effective_par_policy: nil,
        effective_security_profile: nil,
+       strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
        form_errors: [],
        rotation_errors: [],
@@ -62,6 +64,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
            client: client,
            effective_par_policy: resolve_effective_par_policy(client),
            effective_security_profile: resolve_effective_security_profile(client),
+           strict_readiness: strict_readiness(),
            form_errors: []
          )}
 
@@ -163,6 +166,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Global security profile: <code>{security_profile_label(@effective_security_profile.global_profile)}</code></p>
         <p>Client security override: <code>{security_profile_label(@client.security_profile)}</code></p>
         <p>Effective security profile: <strong>{security_verdict_for(@effective_security_profile)}</strong></p>
+        <section :if={show_strict_message_signing_panel?(@effective_security_profile)} class="lockspire-admin-help">
+          <h3>Strict message-signing posture</h3>
+          <p>
+            <strong>Effective posture:</strong> {strict_posture_label(@effective_security_profile)}
+          </p>
+          <p>
+            <strong>Issuer readiness:</strong> {strict_readiness_label(@effective_security_profile, @strict_readiness)}
+          </p>
+          <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
+            `/authorize` requires an explicit JWT response mode and `/introspect` requires
+            `Accept: application/token-introspection+jwt`.
+          </p>
+          <p :if={mixed_mode_override?(@effective_security_profile)}>
+            This client is using the explicit mixed-mode escape hatch. Strict message-signing
+            enforcement does not apply to this client even though the issuer is stricter.
+          </p>
+          <ul :if={@strict_readiness.remediation != [] and @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
+            <%= for item <- @strict_readiness.remediation do %>
+              <li>{item}</li>
+            <% end %>
+          </ul>
+        </section>
         <div
           :if={mixed_mode_override?(@effective_security_profile)}
           class="lockspire-admin-warning"
@@ -265,6 +290,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client={@client}
           effective_par_policy={@effective_par_policy}
           effective_security_profile={@effective_security_profile}
+          strict_readiness={@strict_readiness}
           errors={@form_errors}
         />
       </AdminComponents.section_card>
@@ -331,7 +357,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   defp load_client(socket, nil) do
-    assign(socket, client: nil, effective_par_policy: nil, effective_security_profile: nil, private_key_jwt_truth: nil)
+    assign(socket,
+      client: nil,
+      effective_par_policy: nil,
+      effective_security_profile: nil,
+      strict_readiness: default_readiness(),
+      private_key_jwt_truth: nil
+    )
   end
 
   defp load_client(socket, client_id) do
@@ -344,7 +376,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client: client,
           effective_par_policy: resolve_effective_par_policy(client),
           effective_security_profile: resolve_effective_security_profile(client),
-          private_key_jwt_truth: AdminServerPolicy.private_key_jwt_registration_truth(server_policy)
+          strict_readiness: strict_readiness(),
+          private_key_jwt_truth:
+            AdminServerPolicy.private_key_jwt_registration_truth(server_policy)
         )
 
       {:error, _reason} ->
@@ -353,6 +387,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client: nil,
           effective_par_policy: nil,
           effective_security_profile: nil,
+          strict_readiness: default_readiness(),
           private_key_jwt_truth: nil
         )
     end
@@ -487,17 +522,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     Atom.to_string(policy)
   end
 
-  defp security_profile_label(profile) when profile in [:inherit, :fapi_2_0_security, :none] do
+  defp security_profile_label(profile)
+       when profile in [:inherit, :fapi_2_0_message_signing, :fapi_2_0_security, :none] do
     Atom.to_string(profile)
   end
 
   defp verdict_for(%{par_required?: true}), do: "Required"
   defp verdict_for(%{par_required?: false}), do: "Not required"
 
+  defp security_verdict_for(%{effective_profile: :fapi_2_0_message_signing}),
+    do: "FAPI 2.0 Message Signing"
+
   defp security_verdict_for(%{effective_profile: :fapi_2_0_security}),
     do: "FAPI 2.0 Security Profile"
 
   defp security_verdict_for(%{effective_profile: :none}), do: "None (Standard OIDC)"
+
+  defp mixed_mode_override?(%{
+         global_profile: :fapi_2_0_message_signing,
+         effective_profile: :none,
+         client_profile: :none
+       }),
+       do: true
 
   defp mixed_mode_override?(%{
          global_profile: :fapi_2_0_security,
@@ -507,6 +553,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        do: true
 
   defp mixed_mode_override?(_resolved), do: false
+
+  defp show_strict_message_signing_panel?(%{fapi_2_0_message_signing?: true}), do: true
+  defp show_strict_message_signing_panel?(resolved), do: mixed_mode_override?(resolved)
+
+  defp strict_posture_label(%{fapi_2_0_message_signing?: true}),
+    do: "Strict message signing enforced"
+
+  defp strict_posture_label(resolved) when is_map(resolved),
+    do: "Mixed-mode escape hatch"
+
+  defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, %{ready?: true}), do: "Ready"
+  defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, _readiness), do: "Blocked"
+
+  defp strict_readiness_label(_resolved, %{ready?: true}),
+    do: "Issuer is ready, but this client opted out"
+
+  defp strict_readiness_label(_resolved, _readiness), do: "Issuer prerequisites still missing"
 
   defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
   defp private_key_jwt_client?(_client), do: false
@@ -525,6 +588,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp value_or_not_configured(nil), do: "Not configured"
   defp value_or_not_configured(value), do: value
+
+  defp strict_readiness do
+    case MessageSigningProfile.readiness() do
+      readiness when is_map(readiness) ->
+        readiness
+
+      {:error, _reason} ->
+        %{default_readiness() | remediation: ["Unable to load strict message-signing readiness."]}
+    end
+  end
+
+  defp default_readiness do
+    %{
+      ready?: false,
+      profile: :fapi_2_0_message_signing,
+      prerequisite_reasons: [],
+      remediation: []
+    }
+  end
 
   defp save_client_attrs(%{"mode" => "edit"} = params, client) do
     edit_attrs(params, client) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
@@ -545,7 +627,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   defp save_client_attrs(%{"mode" => "security_profile"} = params, _client) do
-    %{security_profile: params["security_profile"], actor: %{type: :operator, id: "admin-ui"}}
+    %{
+      security_profile: params["security_profile"],
+      authorization_signed_response_alg: params["authorization_signed_response_alg"],
+      actor: %{type: :operator, id: "admin-ui"}
+    }
   end
 
   defp save_client_attrs(%{"mode" => "logout_propagation"} = params, _client) do

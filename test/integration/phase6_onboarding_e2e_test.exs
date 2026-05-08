@@ -21,7 +21,12 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
     Application.put_env(:lockspire, :known_scopes, ["openid", "email", "profile"])
-    Application.put_env(:lockspire, :account_resolver, GeneratedHostApp.Lockspire.TestAccountResolver)
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
 
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(GeneratedHostAppWeb.Endpoint)
