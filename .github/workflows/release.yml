@@ -108,7 +108,6 @@ jobs:
       - release-please
       - recovery-validation
     if: ${{ always() && ((github.event_name == 'workflow_dispatch' && needs.recovery-validation.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.release-please.outputs.release_created == 'true')) }}
-    environment: hex-publish
     permissions:
       contents: read
     steps:
