@@ -1,67 +1,69 @@
 defmodule Lockspire.Protocol.Jarm do
   @moduledoc """
-  Builds and signs JWT Secured Authorization Response Mode (JARM) responses.
+  Core JARM (JWT Secured Authorization Response Mode) signer utility.
   """
 
-  alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Config
 
-  @jarm_ttl 600
+  @type signing_error :: :invalid_signing_key | :invalid_algorithm | term()
 
-  @type signing_key :: %{
-          kid: String.t(),
-          alg: String.t(),
-          private_jwk_encrypted: binary()
-        }
+  @doc """
+  Signs the given authorization response parameters into a JWS.
+  """
+  @spec sign(map(), map()) :: {:ok, String.t()} | {:error, signing_error()}
+  def sign(response_params, context) do
+    client = Map.fetch!(context, :client)
+    issuer = Map.fetch!(context, :issuer)
+    key_store = Map.get(context, :key_store, Config.repo!())
 
-  @spec sign(map(), map()) :: {:ok, String.t()} | {:error, atom()}
-  def sign(
-        params,
-        %{
-          client_id: client_id,
-          issuer: issuer,
-          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
-        } = context
-      )
-      when is_map(params) and is_binary(client_id) and is_binary(issuer) do
-    security_profile = Map.get(context, :security_profile, :none)
-    allowed_algs = SecurityProfile.allowed_signing_algorithms(security_profile)
-
-    with :ok <- ensure_allowed_alg(alg, allowed_algs),
-         {:ok, jwk_map} <- decode_private_jwk(private_jwk),
-         claims <- build_claims(params, issuer, client_id),
-         {_, compact} <-
-           JOSE.JWT.sign(
-             JOSE.JWK.from_map(jwk_map),
-             %{"alg" => alg, "kid" => kid, "typ" => "JWT"},
-             claims
-           )
-           |> JOSE.JWS.compact() do
-      {:ok, compact}
+    alg_atom = client.authorization_signed_response_alg || :RS256
+    alg = to_string(alg_atom)
+    
+    if alg == "none" do
+      {:error, :invalid_algorithm}
     else
-      {:error, reason} -> {:error, reason}
+      with {:ok, signing_key} <- fetch_key(key_store, alg, client.security_profile),
+           {:ok, jwk_map} <- decode_private_jwk(signing_key.private_jwk_encrypted),
+           claims <- build_claims(response_params, issuer, client.client_id),
+           {_, compact} <-
+             JOSE.JWT.sign(
+               JOSE.JWK.from_map(jwk_map),
+               %{"alg" => signing_key.alg, "kid" => signing_key.kid, "typ" => "JWT"},
+               claims
+             )
+             |> JOSE.JWS.compact() do
+        {:ok, compact}
+      else
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
-  def sign(_params, _context), do: {:error, :invalid_signing_key}
-
-  defp ensure_allowed_alg(alg, allowed_algs) do
-    if alg in allowed_algs do
-      :ok
-    else
-      {:error, :unsupported_signing_algorithm}
+  defp fetch_key(key_store, alg, security_profile) do
+    case key_store.fetch_active_signing_key(alg: alg, security_profile: security_profile) do
+      {:ok, nil} -> {:error, :invalid_signing_key}
+      {:ok, key} -> {:ok, key}
+      {:error, reason} -> {:error, reason}
+      nil -> {:error, :invalid_signing_key}
     end
   end
 
   defp build_claims(params, issuer, client_id) do
     now = DateTime.utc_now() |> DateTime.to_unix()
+    exp = now + 600
 
     base_claims = %{
       "iss" => issuer,
       "aud" => client_id,
-      "exp" => now + @jarm_ttl
+      "exp" => exp
     }
 
-    Map.merge(params, base_claims)
+    string_params =
+      for {k, v} <- params, into: %{} do
+        {to_string(k), v}
+      end
+
+    Map.merge(string_params, base_claims)
   end
 
   defp decode_private_jwk(binary) when is_binary(binary) do
