@@ -36,8 +36,11 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
   alias Lockspire.Clients
   alias Lockspire.Protocol.Discovery
+  alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.Registration
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Test.Fixtures.DcrFixtures
 
   @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
   @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
@@ -172,6 +175,124 @@ defmodule Lockspire.Protocol.DiscoveryTest do
                "ES256",
                "PS256"
              ]
+    end
+  end
+
+  describe "authorization-response capability truth" do
+    test "publishes one mounted capability story for response modes, signing, and encryption metadata" do
+      capabilities =
+        AuthorizationResponseCapabilities.metadata(
+          %{"authorization_endpoint" => "https://example.test/lockspire/authorize"},
+          :none
+        )
+
+      assert capabilities["response_modes_supported"] == [
+               "query",
+               "fragment",
+               "form_post",
+               "jwt",
+               "query.jwt",
+               "fragment.jwt",
+               "form_post.jwt"
+             ]
+
+      assert capabilities["authorization_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      assert capabilities["authorization_encryption_alg_values_supported"] == [
+               "RSA-OAEP-256",
+               "ECDH-ES"
+             ]
+
+      assert capabilities["authorization_encryption_enc_values_supported"] == [
+               "A256GCM",
+               "A128GCM"
+             ]
+    end
+
+    test "restricts signing algorithms under the effective FAPI issuer posture while preserving the narrow encryption allow-list" do
+      capabilities =
+        AuthorizationResponseCapabilities.metadata(
+          %{"authorization_endpoint" => "https://example.test/lockspire/authorize"},
+          :fapi_2_0_security
+        )
+
+      assert capabilities["authorization_signing_alg_values_supported"] == ["ES256", "PS256"]
+
+      assert capabilities["authorization_encryption_alg_values_supported"] == [
+               "RSA-OAEP-256",
+               "ECDH-ES"
+             ]
+
+      assert capabilities["authorization_encryption_enc_values_supported"] == [
+               "A256GCM",
+               "A128GCM"
+             ]
+    end
+
+    test "publishes no JARM response metadata when the authorization surface is not mounted" do
+      capabilities = AuthorizationResponseCapabilities.metadata(%{}, :none)
+
+      assert capabilities["response_modes_supported"] == ["query", "fragment", "form_post"]
+      refute Map.has_key?(capabilities, "authorization_signing_alg_values_supported")
+      refute Map.has_key?(capabilities, "authorization_encryption_alg_values_supported")
+      refute Map.has_key?(capabilities, "authorization_encryption_enc_values_supported")
+    end
+
+    test "openid_configuration derives signing and encryption metadata from the shared helper" do
+      config = Discovery.openid_configuration()
+
+      assert Map.take(
+               config,
+               [
+                 "response_modes_supported",
+                 "authorization_signing_alg_values_supported",
+                 "authorization_encryption_alg_values_supported",
+                 "authorization_encryption_enc_values_supported"
+               ]
+             ) ==
+               AuthorizationResponseCapabilities.metadata(
+                 %{"authorization_endpoint" => config["authorization_endpoint"]},
+                 :none
+               )
+    end
+
+    test "published JARM metadata does not depend on transient client registrations" do
+      before_registration =
+        Discovery.openid_configuration()
+        |> Map.take([
+          "response_modes_supported",
+          "authorization_signing_alg_values_supported",
+          "authorization_encryption_alg_values_supported",
+          "authorization_encryption_enc_values_supported"
+        ])
+
+      {:ok, _client_result} =
+        Registration.register(%{
+          metadata:
+            DcrFixtures.private_key_jwt_jwks_metadata()
+            |> Map.put("client_name", "encrypted jarm metadata truth fixture")
+            |> Map.put("authorization_signed_response_alg", "PS256")
+            |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
+            |> Map.put("authorization_encrypted_response_enc", "A256GCM"),
+          server_policy: DcrFixtures.private_key_jwt_server_policy(),
+          source: %{ip: "127.0.0.1", user_agent: "test"}
+        })
+
+      after_registration =
+        Discovery.openid_configuration()
+        |> Map.take([
+          "response_modes_supported",
+          "authorization_signing_alg_values_supported",
+          "authorization_encryption_alg_values_supported",
+          "authorization_encryption_enc_values_supported"
+        ])
+
+      assert after_registration == before_registration
     end
   end
 

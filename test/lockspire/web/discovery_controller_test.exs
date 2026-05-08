@@ -34,10 +34,19 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   import Phoenix.ConnTest, only: [build_conn: 2]
   import Plug.Conn
 
+  alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Storage.Ecto.Repository
 
   @shared_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
   @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
+
+  setup_all do
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+    start_supervised!(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+    :ok
+  end
 
   setup do
     original_env =
@@ -58,6 +67,8 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
         end
       end)
     end)
+
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     :ok
   end
@@ -142,6 +153,31 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["code_challenge_methods_supported"] == ["S256"]
     assert body["subject_types_supported"] == ["public"]
     assert body["id_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
+    assert body["authorization_signing_alg_values_supported"] == ["RS256", "ES256", "PS256", "EdDSA"]
+
+    assert body["authorization_encryption_alg_values_supported"] == [
+             "RSA-OAEP-256",
+             "ECDH-ES"
+           ]
+
+    assert body["authorization_encryption_enc_values_supported"] == [
+             "A256GCM",
+             "A128GCM"
+           ]
+
+    assert Map.take(
+             body,
+             [
+               "response_modes_supported",
+               "authorization_signing_alg_values_supported",
+               "authorization_encryption_alg_values_supported",
+               "authorization_encryption_enc_values_supported"
+             ]
+           ) ==
+             AuthorizationResponseCapabilities.metadata(
+               %{"authorization_endpoint" => body["authorization_endpoint"]},
+               :none
+             )
 
     refute Map.has_key?(body, "registration_endpoint")
     refute Map.has_key?(body, "request_parameter_supported")
@@ -211,5 +247,63 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
+  end
+
+  test "GET /.well-known/openid-configuration drops JARM signing and encryption metadata when the authorization surface is unmounted" do
+    Application.put_env(
+      :lockspire,
+      :discovery_router,
+      Lockspire.Web.DiscoveryControllerTest.TokenOnlyRouter
+    )
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["response_modes_supported"] == ["query", "fragment", "form_post"]
+    refute Map.has_key?(body, "authorization_signing_alg_values_supported")
+    refute Map.has_key?(body, "authorization_encryption_alg_values_supported")
+    refute Map.has_key?(body, "authorization_encryption_enc_values_supported")
+
+    assert Map.take(
+             body,
+             [
+               "response_modes_supported",
+               "authorization_signing_alg_values_supported",
+               "authorization_encryption_alg_values_supported",
+               "authorization_encryption_enc_values_supported"
+             ]
+           ) == AuthorizationResponseCapabilities.metadata(%{}, :none)
+  end
+
+  test "GET /.well-known/openid-configuration publishes the FAPI signing posture through the shared authorization-response capability contract" do
+    {:ok, policy} = Repository.get_server_policy()
+    Repository.put_server_policy(%{policy | security_profile: :fapi_2_0_security})
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["authorization_signing_alg_values_supported"] == ["ES256", "PS256"]
+
+    assert Map.take(
+             body,
+             [
+               "response_modes_supported",
+               "authorization_signing_alg_values_supported",
+               "authorization_encryption_alg_values_supported",
+               "authorization_encryption_enc_values_supported"
+             ]
+           ) ==
+             AuthorizationResponseCapabilities.metadata(
+               %{"authorization_endpoint" => body["authorization_endpoint"]},
+               :fapi_2_0_security
+             )
   end
 end
