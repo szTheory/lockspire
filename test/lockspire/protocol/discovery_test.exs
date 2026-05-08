@@ -259,6 +259,26 @@ defmodule Lockspire.Protocol.DiscoveryTest do
                )
     end
 
+    test "openid_configuration publishes the unmounted authorization-response contract from the shared helper" do
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
+
+      config = Discovery.openid_configuration()
+
+      assert Map.take(
+               config,
+               [
+                 "response_modes_supported",
+                 "authorization_signing_alg_values_supported",
+                 "authorization_encryption_alg_values_supported",
+                 "authorization_encryption_enc_values_supported"
+               ]
+             ) == AuthorizationResponseCapabilities.metadata(%{}, :none)
+    end
+
     test "published JARM metadata does not depend on transient client registrations" do
       before_registration =
         Discovery.openid_configuration()
