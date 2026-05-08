@@ -26,6 +26,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
 - Revocation
 - Introspection
+- RFC 9701 JWT introspection responses on the existing `POST /introspect` endpoint when the caller explicitly sends `Accept: application/token-introspection+jwt`
 - Refresh token rotation
 - DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
@@ -38,6 +39,45 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
 - RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
+
+### JWT Introspection Representation
+
+Lockspire supports RFC 9701 JWT introspection as a negotiated representation of the existing introspection endpoint. The direct-client authentication surface stays the same; only the success representation changes when the caller explicitly sends `Accept: application/token-introspection+jwt`.
+
+- Successful negotiated introspection returns `Content-Type: application/token-introspection+jwt`
+- Active and inactive successful introspection outcomes can both be returned as signed JWTs
+- Error responses stay on the standard JSON OAuth error path
+- No host MIME registration is required
+- This Phase 73 slice does not claim introspection encryption, new discovery metadata, or strict mode enforcement
+
+Active response shape example:
+
+```json
+{
+  "iss": "https://issuer.example.com",
+  "aud": "gateway-client",
+  "iat": 1778241726,
+  "token_introspection": {
+    "active": true,
+    "client_id": "saas-client",
+    "scope": "openid profile",
+    "sub": "account-123"
+  }
+}
+```
+
+Inactive response shape example:
+
+```json
+{
+  "iss": "https://issuer.example.com",
+  "aud": "gateway-client",
+  "iat": 1778241726,
+  "token_introspection": {
+    "active": false
+  }
+}
+```
 
 ## Explicitly out of scope
 

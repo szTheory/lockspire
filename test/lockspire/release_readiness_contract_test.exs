@@ -808,4 +808,18 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert workflow =~ "mix lockspire.oidf_conformance"
   end
+
+  test "phase 73 JWT introspection support contract stays narrow and truthful" do
+    supported_surface = File.read!(@supported_surface_path)
+
+    assert supported_surface =~ "RFC 9701 JWT introspection responses"
+    assert supported_surface =~ "Accept: application/token-introspection+jwt"
+    assert supported_surface =~ "Content-Type: application/token-introspection+jwt"
+    assert supported_surface =~ "Error responses stay on the standard JSON OAuth error path"
+    assert supported_surface =~ "No host MIME registration is required"
+    assert supported_surface =~ "\"active\": false"
+    assert supported_surface =~ "\"token_introspection\": {"
+    assert supported_surface =~
+             "does not claim introspection encryption, new discovery metadata, or strict mode enforcement"
+  end
 end
