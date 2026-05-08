@@ -2,6 +2,8 @@
 
 The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full 1.0 GA support contract, see `docs/supported-surface.md`.
 
+If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, and key-rotation behavior.
+
 ## 1. Add Lockspire
 
 Add `:lockspire` to your dependencies and fetch deps.
@@ -19,7 +21,23 @@ Run:
 mix lockspire.install
 ```
 
-This creates host-owned files for:
+This creates one canonical Phoenix onboarding layout with two ownership classes:
+
+- Lockspire-managed scaffolding:
+  - `config/lockspire.exs`
+  - `lib/<web>/router/lockspire.ex`
+  - `test/<app>/lockspire_fapi_smoke_e2e_test.exs`
+  - `.lockspire/install_manifest.json`
+- Host-owned seams:
+  - Account resolution
+  - Interaction handoff
+  - Consent UI shell
+  - Authorized apps account surface
+  - Device verification controller and templates
+
+The manifest tracks only Lockspire-managed scaffolding. It is the source of truth for later safe upgrades.
+
+The generator also creates host-owned files for:
 
 - Lockspire config
 - Router mount helpers
@@ -39,10 +57,12 @@ Import `YourAppWeb.Router.Lockspire` from your host router and call `lockspire_r
 
 Implement the generated `AccountResolver` with:
 
-- Current-account lookup from your session
+- Current-account lookup from your host-owned session seam
+- For Sigra pairings, read `conn.assigns.current_scope.user` instead of importing Sigra at compile time
 - Account lookup by subject reference
 - Claim building for ID token and userinfo
 - Login redirect behavior that preserves `interaction_id` and `return_to`
+- Post-login resume behavior that sends the browser back through the generated interaction path before consent continues
 
 Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
 
@@ -66,23 +86,56 @@ Run:
 mix ecto.migrate
 ```
 
-## 5. Create a client and prove the flow
+## 5. Verify the install wiring
+
+Run:
+
+```bash
+mix lockspire.verify
+```
+
+This is the canonical post-install diagnostics step. It checks:
+
+- required `:lockspire` runtime config
+- the generated seam modules are present
+- the host router still exposes the host-owned `/verify` routes
+- the host router still forwards the embedded Lockspire routes at your mount path
+- Lockspire and Oban migrations are applied
+
+## 6. Create a client and prove the flow
 
 The canonical proof bar is:
 
 - Discovery returns the issuer and endpoint set.
 - JWKS returns the public signing keys.
 - A client can complete an authorization-code + PKCE exchange.
+- A confidential client can use the shipped direct-client auth surface the way `docs/private-key-jwt-host-guide.md` describes if you choose that mode.
 - If you configure RP logout propagation, `/end_session/complete` persists the logout event, enqueues back-channel delivery through Oban, and renders front-channel iframe cleanup as best effort only.
 
 The executable repo proof lives in:
 
 - `test/integration/install_generator_test.exs`
-- `test/integration/phase6_onboarding_e2e_test.exs`
+- `test/integration/phase6_onboarding_e2e_test.exs` for the unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange path
 
 The maintained contributor gate for that proof is `mix ci`, which runs the docs, package, fast-test, integration, and phase gates described in `.github/workflows/ci.yml`.
 
-## 6. Finish the verification seam before shipping device login
+## 7. Upgrade only the managed scaffolding
+
+When a newer Lockspire version changes generated managed files, preview the update with:
+
+```bash
+mix lockspire.upgrade --dry-run
+```
+
+Apply it with:
+
+```bash
+mix lockspire.upgrade
+```
+
+`mix lockspire.upgrade` only touches manifest-tracked managed scaffolding that is still unchanged. It never rewrites host-owned seams, and it refuses risky overwrites when a managed file has drifted from the recorded checksum.
+
+## 8. Finish the verification seam before shipping device login
 
 Before you expose `/verify` publicly:
 
@@ -99,4 +152,4 @@ If your host app already uses Sigra for end-user auth, run:
 mix lockspire.install --sigra-host
 ```
 
-That only changes comments and guidance in the generated resolver stub. It does not add a compile-time dependency on Sigra or create a second canonical path.
+That only changes comments and guidance in the generated resolver stub. It does not add a compile-time dependency on Sigra or create a second canonical path. For the full host-seam contract, including `conn.assigns.current_scope.user`, claim-shape guidance, and login-resume expectations, see `docs/sigra-companion-host.md`.

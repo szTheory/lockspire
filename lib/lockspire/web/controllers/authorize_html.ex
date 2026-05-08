@@ -22,4 +22,23 @@ defmodule Lockspire.Web.AuthorizeHTML do
     ]
     |> IO.iodata_to_binary()
   end
+
+  def form_post_page(action, params) do
+    inputs =
+      params
+      |> Enum.map_join("", fn {k, v} ->
+        ~s(<input type="hidden" name="#{Plug.HTML.html_escape(k)}" value="#{Plug.HTML.html_escape(v)}"/>)
+      end)
+
+    [
+      "<!doctype html><html><head><meta charset=\"utf-8\"><title>Submit</title></head>",
+      "<body onload=\"document.forms[0].submit()\">",
+      "<noscript><p>Your browser does not support JavaScript. Please click the button below to proceed.</p></noscript>",
+      "<form method=\"post\" action=\"#{Plug.HTML.html_escape(action)}\">",
+      inputs,
+      "<noscript><button type=\"submit\">Submit</button></noscript>",
+      "</form></body></html>"
+    ]
+    |> IO.iodata_to_binary()
+  end
 end

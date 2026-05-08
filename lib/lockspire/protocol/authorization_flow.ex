@@ -109,7 +109,11 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       case deny_with_audit(interaction_id, audit_event, opts) do
         {:ok, %Interaction{} = denied} ->
           emit(:consent, :denied, denied, subject_id, %{reason_code: :access_denied})
-          {:denied, denial_redirect(interaction)}
+
+          case denial_redirect(interaction, opts) do
+            {:ok, redirect_uri} -> {:denied, redirect_uri}
+            {:error, reason} -> {:error, reason}
+          end
 
         {:error, :invalid_state} ->
           {:error, :interaction_not_active}
@@ -154,10 +158,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       :consent_required ->
         {:redirect_error, silent_error(validated, "consent_required", :consent_required)}
 
-      {:ok, %Interaction{} = persisted} ->
+      {:ok, %Interaction{} = persisted, %ConsentGrant{} = grant} ->
         emit(:interaction, :started, persisted, subject_id)
         emit(:consent, :reused, persisted, subject_id)
-        finalize_reused_consent(persisted, subject_id, opts)
+        finalize_reused_consent(persisted, subject_id, grant, opts)
 
       {:error, reason} ->
         {:error, reason}
@@ -193,8 +197,13 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     case consent_store(opts).list_reusable_consents(subject_id, validated.client_id) do
       {:ok, grants} ->
         case ConsentPolicy.reusable_grant(grants, validated.scopes, validated.prompt) do
-          {:reuse, _grant} ->
-            interaction_store(opts).put_interaction(interaction)
+          {:reuse, %ConsentGrant{} = grant} ->
+            case interaction_store(opts).put_interaction(
+                   Map.put(interaction, :consent_grant_id, grant.id)
+                 ) do
+              {:ok, %Interaction{} = persisted} -> {:ok, persisted, grant}
+              {:error, reason} -> {:error, reason}
+            end
 
           :consent_required ->
             :consent_required
@@ -216,9 +225,9 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     case consent_store(opts).list_reusable_consents(subject_id, client_id) do
       {:ok, grants} ->
         case ConsentPolicy.reusable_grant(grants, scopes, prompt) do
-          {:reuse, _grant} ->
+          {:reuse, %ConsentGrant{} = grant} ->
             emit(:consent, :reused, interaction, subject_id)
-            finalize_reused_consent(interaction, subject_id, opts)
+            finalize_reused_consent(interaction, subject_id, grant, opts)
 
           :consent_required ->
             emit(:consent, :shown, interaction, subject_id)
@@ -230,12 +239,17 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     end
   end
 
-  defp finalize_reused_consent(%Interaction{} = interaction, subject_id, opts) do
+  defp finalize_reused_consent(
+         %Interaction{} = interaction,
+         subject_id,
+         %ConsentGrant{} = grant,
+         opts
+       ) do
     audit_event =
       authorization_completed_event(interaction, system_actor(), :consent_reused)
 
     case transact_with_audit(interaction_store(opts), [audit_event], fn ->
-           complete_reused_consent(interaction, subject_id, opts)
+           complete_reused_consent(interaction, subject_id, grant.id, opts)
          end) do
       {:ok, {%Interaction{} = completed, redirect_uri}} ->
         emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_reused})
@@ -263,6 +277,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       auth_time: nil,
       max_age: validated.max_age,
       auth_time_requested: validated.auth_time_requested?,
+      response_mode: validated.response_mode,
       redirect_uri: validated.redirect_uri,
       return_to: default_return_to(interaction_id),
       state: validated.state,
@@ -275,7 +290,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     }
   end
 
-  defp issue_authorization_code(%Interaction{} = interaction, subject_id, opts) do
+  defp issue_authorization_code(%Interaction{} = interaction, subject_id, consent_grant_id, opts) do
     raw_code = generate_code(opts)
     now = now(opts)
     token_hash = Policy.hash_token(raw_code)
@@ -286,6 +301,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       client_id: interaction.client_id,
       account_id: subject_id,
       interaction_id: interaction.interaction_id,
+      consent_grant_id: consent_grant_id,
       sid: interaction.sid,
       redirect_uri: interaction.redirect_uri,
       scopes: interaction.scopes_requested,
@@ -298,7 +314,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
     with {:ok, stored_token} <- token_store(opts).store_token(token) do
       emit(:authorization_code, :issued, interaction, subject_id, %{token_id: stored_token.id})
-      {:ok, approval_redirect(interaction, raw_code)}
+      approval_redirect(interaction, raw_code, opts)
     end
   end
 
@@ -307,6 +323,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       account_id: subject_id,
       client_id: interaction.client_id,
       scopes: interaction.scopes_requested,
+      authorization_details: interaction.authorization_details,
       granted_at: now(opts),
       status: :active,
       kind: ConsentPolicy.approval_kind(remember?)
@@ -382,34 +399,103 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp ensure_resume_subject(%Interaction{} = interaction, subject_context),
     do: ensure_subject_match(interaction, subject_context)
 
-  defp approval_redirect(%Interaction{} = interaction, raw_code) do
-    build_redirect(interaction.redirect_uri, %{
+  defp approval_redirect(%Interaction{} = interaction, raw_code, opts) do
+    params = %{
       "code" => raw_code,
       "state" => interaction.state,
       "iss" => Config.issuer!()
-    })
+    }
+
+    build_response_redirect(interaction, params, opts)
   end
 
-  defp denial_redirect(%Interaction{} = interaction) do
-    build_redirect(interaction.redirect_uri, %{
+  defp denial_redirect(%Interaction{} = interaction, opts) do
+    params = %{
       "error" => "access_denied",
       "state" => interaction.state,
       "iss" => Config.issuer!()
-    })
+    }
+
+    build_response_redirect(interaction, params, opts)
   end
 
-  defp build_redirect(base_uri, params) when is_binary(base_uri) and is_map(params) do
-    uri = URI.parse(base_uri)
-    existing = URI.decode_query(uri.query || "")
+  defp build_response_redirect(%Interaction{} = interaction, params, opts) do
+    mode = interaction.response_mode || "query"
 
-    merged =
+    if jarm_mode?(mode) do
+      with {:ok, jwt} <- sign_jarm_response(interaction, params, opts) do
+        format_jarm_redirect(interaction, mode, jwt)
+      end
+    else
+      {:ok, build_redirect(interaction.redirect_uri, params, mode)}
+    end
+  end
+
+  defp jarm_mode?(mode) do
+    mode in ["jwt", "query.jwt", "fragment.jwt", "form_post.jwt"]
+  end
+
+  defp sign_jarm_response(interaction, params, opts) do
+    with {:ok, client} <- fetch_jarm_client(client_store(opts), interaction.client_id) do
+      context = %{
+        client: client,
+        issuer: Config.issuer!(),
+        key_store: key_store(opts),
+        jwks_fetcher: Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher()),
+        jwks_fetcher_opts: Keyword.get(opts, :jwks_fetcher_opts, [])
+      }
+
+      Lockspire.Protocol.Jarm.encode(params, context)
+    end
+  end
+
+  defp fetch_jarm_client(client_store, client_id) when is_binary(client_id) do
+    cond do
+      function_exported?(client_store, :fetch_client, 1) ->
+        client_store.fetch_client(client_id)
+
+      function_exported?(client_store, :fetch_client_by_id, 1) ->
+        client_store.fetch_client_by_id(client_id)
+
+      true ->
+        {:error, :client_store_not_supported}
+    end
+  end
+
+  defp format_jarm_redirect(interaction, mode, jwt) do
+    jarm_params = %{"response" => jwt}
+
+    case mode do
+      "form_post.jwt" ->
+        {:ok, {:form_post, interaction.redirect_uri, jarm_params}}
+
+      "fragment.jwt" ->
+        {:ok, build_redirect(interaction.redirect_uri, jarm_params, "fragment")}
+
+      # "jwt" (which defaults to query.jwt for code) or "query.jwt"
+      _other ->
+        {:ok, build_redirect(interaction.redirect_uri, jarm_params, "query")}
+    end
+  end
+
+  defp build_redirect(base_uri, params, mode) when is_binary(base_uri) and is_map(params) do
+    uri = URI.parse(base_uri)
+
+    clean_params =
       params
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
-      |> then(&Map.merge(existing, &1))
 
-    %{uri | query: URI.encode_query(merged)}
-    |> URI.to_string()
+    if mode == "fragment" do
+      # When fragment mode, we don't merge with existing query, we put in fragment
+      existing_fragment = URI.decode_query(uri.fragment || "")
+      merged = Map.merge(existing_fragment, clean_params)
+      %{uri | fragment: URI.encode_query(merged)} |> URI.to_string()
+    else
+      existing = URI.decode_query(uri.query || "")
+      merged = Map.merge(existing, clean_params)
+      %{uri | query: URI.encode_query(merged)} |> URI.to_string()
+    end
   end
 
   defp emit(entity, action, %Interaction{} = interaction, subject_id, extra \\ %{}) do
@@ -479,8 +565,8 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
              [:pending_consent],
              %{status: :completed, completed_at: now(opts)}
            ),
-         {:ok, _grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
-         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+         {:ok, grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
+         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, grant.id, opts) do
       {completed, redirect_uri}
     end
   end
@@ -497,14 +583,15 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     )
   end
 
-  defp complete_reused_consent(%Interaction{} = interaction, subject_id, opts) do
+  defp complete_reused_consent(%Interaction{} = interaction, subject_id, consent_grant_id, opts) do
     with {:ok, completed} <-
            interaction_store(opts).transition_interaction(
              interaction.interaction_id,
              [:pending_consent],
              %{status: :completed, completed_at: now(opts)}
            ),
-         {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, opts) do
+         {:ok, redirect_uri} <-
+           issue_authorization_code(completed, subject_id, consent_grant_id, opts) do
       {completed, redirect_uri}
     end
   end
@@ -689,5 +776,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp interaction_store(opts), do: Keyword.get(opts, :interaction_store, Config.repo!())
   defp consent_store(opts), do: Keyword.get(opts, :consent_store, Config.repo!())
   defp token_store(opts), do: Keyword.get(opts, :token_store, Config.repo!())
+  defp client_store(opts), do: Keyword.get(opts, :client_store, Config.repo!())
+  defp key_store(opts), do: Keyword.get(opts, :key_store, Config.repo!())
   defp observability_module, do: Observability
 end

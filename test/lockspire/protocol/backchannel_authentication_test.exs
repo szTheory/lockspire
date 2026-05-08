@@ -27,7 +27,10 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
     @behaviour Lockspire.Storage.ClientStore
     def register_client(_), do: {:error, :not_implemented}
     def list_clients(_), do: {:error, :not_implemented}
-    def fetch_client_by_id("client-1"), do: {:ok, %Client{client_id: "client-1", token_endpoint_auth_method: :none}}
+
+    def fetch_client_by_id("client-1"),
+      do: {:ok, %Client{client_id: "client-1", token_endpoint_auth_method: :none}}
+
     def update_client(_, _), do: {:error, :not_implemented}
     def rotate_client_secret(_, _, _), do: {:error, :not_implemented}
     def set_client_active(_, _, _), do: {:error, :not_implemented}
@@ -67,7 +70,8 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
         opts: @opts
       }
 
-      assert {:error, %Error{error: "invalid_scope"}} = BackchannelAuthentication.authorize(request)
+      assert {:error, %Error{error: "invalid_scope"}} =
+               BackchannelAuthentication.authorize(request)
     end
 
     test "rejects request with multiple hints" do
@@ -108,7 +112,8 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
         opts: @opts
       }
 
-      assert {:error, %Error{error: "unknown_user"}} = BackchannelAuthentication.authorize(request)
+      assert {:error, %Error{error: "unknown_user"}} =
+               BackchannelAuthentication.authorize(request)
     end
   end
 end

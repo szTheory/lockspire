@@ -24,6 +24,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
     field(:auth_time, :utc_datetime_usec)
     field(:max_age, :integer)
     field(:auth_time_requested, :boolean, default: false)
+    field(:response_mode, :string)
     field(:redirect_uri, :string)
     field(:return_to, :string)
     field(:state, :string)
@@ -64,6 +65,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       :auth_time,
       :max_age,
       :auth_time_requested,
+      :response_mode,
       :redirect_uri,
       :return_to,
       :state,
@@ -115,6 +117,7 @@ defmodule Lockspire.Storage.Ecto.InteractionRecord do
       auth_time: record.auth_time,
       max_age: record.max_age,
       auth_time_requested: record.auth_time_requested,
+      response_mode: record.response_mode,
       redirect_uri: record.redirect_uri,
       return_to: record.return_to,
       state: record.state,

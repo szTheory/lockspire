@@ -36,10 +36,13 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
   alias Lockspire.Clients
   alias Lockspire.Protocol.Discovery
+  alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @static_methods ["none", "client_secret_basic", "client_secret_post"]
+  @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -56,6 +59,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     original = Application.get_env(:lockspire, :issuer)
     original_router = Application.get_env(:lockspire, :discovery_router)
     original_rar_validators = Application.get_env(:lockspire, :rar_validators)
+    original_rar_types_supported = Application.get_env(:lockspire, :rar_types_supported)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
 
     on_exit(fn ->
@@ -76,6 +80,12 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       else
         Application.put_env(:lockspire, :rar_validators, original_rar_validators)
       end
+
+      if is_nil(original_rar_types_supported) do
+        Application.delete_env(:lockspire, :rar_types_supported)
+      else
+        Application.put_env(:lockspire, :rar_types_supported, original_rar_types_supported)
+      end
     end)
 
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
@@ -87,8 +97,227 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert Discovery.token_endpoint_auth_methods_supported() == @static_methods
   end
 
-  test "published_token_endpoint_auth_methods_supported/0 reflects the static list when /token is mounted" do
-    assert Discovery.published_token_endpoint_auth_methods_supported() == @static_methods
+  test "published_token_endpoint_auth_methods_supported/0 includes private_key_jwt once runtime verification is shared" do
+    assert Discovery.published_token_endpoint_auth_methods_supported() == @published_methods
+  end
+
+  describe "openid_configuration/0 — endpoint auth metadata truth" do
+    test "publishes shared token and revocation auth metadata including private_key_jwt" do
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_methods_supported"] == @published_methods
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      assert config["revocation_endpoint_auth_methods_supported"] == @published_methods
+
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+    end
+
+    test "publishes introspection auth metadata from current shared confidential-client runtime behavior" do
+      config = Discovery.openid_configuration()
+
+      assert config["introspection_endpoint_auth_methods_supported"] == @introspection_methods
+
+      assert config["introspection_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+    end
+
+    test "omits revocation and introspection auth metadata when those routes are not mounted" do
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
+
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_methods_supported"] == @published_methods
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      refute Map.has_key?(config, "revocation_endpoint_auth_methods_supported")
+      refute Map.has_key?(config, "revocation_endpoint_auth_signing_alg_values_supported")
+      refute Map.has_key?(config, "introspection_endpoint_auth_methods_supported")
+      refute Map.has_key?(config, "introspection_endpoint_auth_signing_alg_values_supported")
+    end
+
+    test "publishes endpoint signing algorithms from the shared effective allowlist when private_key_jwt is published" do
+      put_server_security_profile!(:fapi_2_0_security)
+
+      config = Discovery.openid_configuration()
+
+      assert config["token_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+      assert config["revocation_endpoint_auth_signing_alg_values_supported"] == ["ES256", "PS256"]
+
+      assert config["introspection_endpoint_auth_signing_alg_values_supported"] == [
+               "ES256",
+               "PS256"
+             ]
+    end
+  end
+
+  describe "authorization-response capability truth" do
+    test "publishes one mounted capability story for response modes, signing, and encryption metadata" do
+      capabilities =
+        AuthorizationResponseCapabilities.metadata(
+          %{"authorization_endpoint" => "https://example.test/lockspire/authorize"},
+          :none
+        )
+
+      assert capabilities["response_modes_supported"] == [
+               "query",
+               "fragment",
+               "form_post",
+               "jwt",
+               "query.jwt",
+               "fragment.jwt",
+               "form_post.jwt"
+             ]
+
+      assert capabilities["authorization_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256",
+               "EdDSA"
+             ]
+
+      assert capabilities["authorization_encryption_alg_values_supported"] == [
+               "RSA-OAEP-256",
+               "ECDH-ES"
+             ]
+
+      assert capabilities["authorization_encryption_enc_values_supported"] == [
+               "A256GCM",
+               "A128GCM"
+             ]
+    end
+
+    test "restricts signing algorithms under the effective FAPI issuer posture while preserving the narrow encryption allow-list" do
+      capabilities =
+        AuthorizationResponseCapabilities.metadata(
+          %{"authorization_endpoint" => "https://example.test/lockspire/authorize"},
+          :fapi_2_0_security
+        )
+
+      assert capabilities["authorization_signing_alg_values_supported"] == ["ES256", "PS256"]
+
+      assert capabilities["authorization_encryption_alg_values_supported"] == [
+               "RSA-OAEP-256",
+               "ECDH-ES"
+             ]
+
+      assert capabilities["authorization_encryption_enc_values_supported"] == [
+               "A256GCM",
+               "A128GCM"
+             ]
+    end
+
+    test "publishes no JARM response metadata when the authorization surface is not mounted" do
+      capabilities = AuthorizationResponseCapabilities.metadata(%{}, :none)
+
+      assert capabilities["response_modes_supported"] == ["query", "fragment", "form_post"]
+      refute Map.has_key?(capabilities, "authorization_signing_alg_values_supported")
+      refute Map.has_key?(capabilities, "authorization_encryption_alg_values_supported")
+      refute Map.has_key?(capabilities, "authorization_encryption_enc_values_supported")
+    end
+
+    test "openid_configuration derives signing and encryption metadata from the shared helper" do
+      config = Discovery.openid_configuration()
+
+      assert Map.take(
+               config,
+               [
+                 "response_modes_supported",
+                 "authorization_signing_alg_values_supported",
+                 "authorization_encryption_alg_values_supported",
+                 "authorization_encryption_enc_values_supported"
+               ]
+             ) ==
+               AuthorizationResponseCapabilities.metadata(
+                 %{"authorization_endpoint" => config["authorization_endpoint"]},
+                 :none
+               )
+    end
+
+    test "openid_configuration publishes the unmounted authorization-response contract from the shared helper" do
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
+
+      config = Discovery.openid_configuration()
+
+      assert Map.take(
+               config,
+               [
+                 "response_modes_supported",
+                 "authorization_signing_alg_values_supported",
+                 "authorization_encryption_alg_values_supported",
+                 "authorization_encryption_enc_values_supported"
+               ]
+             ) == AuthorizationResponseCapabilities.metadata(%{}, :none)
+    end
+
+    test "published JARM metadata does not depend on transient client registrations" do
+      before_registration =
+        Discovery.openid_configuration()
+        |> Map.take([
+          "response_modes_supported",
+          "authorization_signing_alg_values_supported",
+          "authorization_encryption_alg_values_supported",
+          "authorization_encryption_enc_values_supported"
+        ])
+
+      {:ok, %{client: client}} =
+        Clients.register_client(%{
+          name: "encrypted jarm metadata truth fixture",
+          client_type: :confidential,
+          redirect_uris: ["https://client.example.com/cb"],
+          allowed_scopes: ["profile"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic
+        })
+
+      {:ok, _updated_client} =
+        Repository.update_client(client, %{
+          authorization_signed_response_alg: :RS256,
+          authorization_encrypted_response_alg: :RSA_OAEP_256,
+          authorization_encrypted_response_enc: :A256GCM
+        })
+
+      after_registration =
+        Discovery.openid_configuration()
+        |> Map.take([
+          "response_modes_supported",
+          "authorization_signing_alg_values_supported",
+          "authorization_encryption_alg_values_supported",
+          "authorization_encryption_enc_values_supported"
+        ])
+
+      assert after_registration == before_registration
+    end
   end
 
   test "openid_configuration/0 publishes the shipped device grant and device authorization endpoint truth" do
@@ -137,10 +366,19 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         "account_access" => Lockspire.Test.Rar.PassthroughValidator
       })
 
+      Application.put_env(:lockspire, :rar_types_supported, [
+        "account_access",
+        "payment_initiation"
+      ])
+
       config = Discovery.openid_configuration()
 
       assert config["resource_indicators_supported"] == true
-      assert config["authorization_details_types_supported"] == ["account_access", "payment_initiation"]
+
+      assert config["authorization_details_types_supported"] == [
+               "account_access",
+               "payment_initiation"
+             ]
     end
 
     test "omits both keys when the mounted surface cannot complete the authorization code flow" do
@@ -148,7 +386,13 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         "payment_initiation" => Lockspire.Test.Rar.PassthroughValidator
       })
 
-      Application.put_env(:lockspire, :discovery_router, Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter)
+      Application.put_env(:lockspire, :rar_types_supported, ["payment_initiation"])
+
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
 
       config = Discovery.openid_configuration()
 
@@ -158,6 +402,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
     test "omits authorization_details_types_supported instead of publishing an empty list" do
       Application.put_env(:lockspire, :rar_validators, %{})
+      Application.put_env(:lockspire, :rar_types_supported, [])
 
       config = Discovery.openid_configuration()
 
@@ -230,16 +475,23 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert metadata["authorization_response_iss_parameter_supported"] == true
     end
 
-    test "does NOT publish mTLS, JARM, or signed_metadata keys (D-09)" do
+    test "does NOT publish mTLS or signed_metadata keys (D-09)" do
       metadata = Discovery.openid_configuration()
 
       refute Map.has_key?(metadata, "tls_client_certificate_bound_access_tokens")
-      refute Map.has_key?(metadata, "authorization_signing_alg_values_supported")
       refute Map.has_key?(metadata, "signed_metadata")
     end
 
     test "publishes require_pushed_authorization_requests when global profile is :fapi_2_0_security" do
       put_server_security_profile!(:fapi_2_0_security)
+
+      metadata = Discovery.openid_configuration()
+
+      assert metadata["require_pushed_authorization_requests"] == true
+    end
+
+    test "publishes require_pushed_authorization_requests when global profile is :fapi_2_0_message_signing" do
+      put_server_security_profile!(:fapi_2_0_message_signing)
 
       metadata = Discovery.openid_configuration()
 

@@ -468,6 +468,71 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert location =~ "state=state-123"
   end
 
+  test "encrypted JARM failures render a first-party browser error instead of downgrading the redirect" do
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      Lockspire.Web.AuthorizeControllerAuthenticatedResolver
+    )
+
+    publish_signing_key("jarm-browser-kid")
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client_jarm_browser_fail_closed",
+        client_secret_hash: "sha256:salt:hash",
+        client_type: :confidential,
+        name: "Encrypted JARM Browser Failure",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["profile", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        authorization_signed_response_alg: :RS256,
+        authorization_encrypted_response_alg: :RSA_OAEP_256,
+        authorization_encrypted_response_enc: :A256GCM,
+        jwks: %{
+          "keys" => [
+            %{
+              "kty" => "EC",
+              "kid" => "wrong-shape",
+              "use" => "enc",
+              "crv" => "P-256",
+              "x" => "f83OJ3D2xF4qQnR1E8V7B6U4Y8W0vQ6V0g3cO7j4Q2M",
+              "y" => "x_FEzRu9hR8L6Rxurx8WcN6iYG3PaY5E9OQj1YxDCE8"
+            }
+          ]
+        },
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    assert {:ok, _grant} =
+             Repository.grant_consent(%ConsentGrant{
+               account_id: "account-123",
+               client_id: client.client_id,
+               scopes: ["profile", "email"],
+               granted_at: DateTime.utc_now(),
+               status: :active,
+               kind: :remembered
+             })
+
+    conn =
+      client.client_id
+      |> valid_params()
+      |> Map.put("prompt", "none")
+      |> Map.put("response_mode", "query.jwt")
+      |> call_authorize()
+
+    assert conn.status == 400
+    refute redirected?(conn)
+    assert conn.resp_body =~ "Authorization request rejected"
+    assert conn.resp_body =~ "Unable to continue the authorization flow"
+    refute conn.resp_body =~ "code="
+  end
+
   test "par-backed authorize requests reuse the normal browser login handoff", %{client: client} do
     pushed_request = issue_pushed_request(client)
 
@@ -664,6 +729,30 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   defp put_server_policy!(mode) do
     assert {:ok, %ServerPolicy{} = _policy} =
              Repository.put_server_policy(%ServerPolicy{par_policy: mode})
+  end
+
+  defp publish_signing_key(kid) do
+    keys = JarTestHelpers.generate_keys()
+    public_jwk = JOSE.JWK.to_public_map(keys.private_jwk) |> elem(1)
+    private_jwk = JOSE.JWK.to_map(keys.private_jwk) |> elem(1)
+
+    assert {:ok, _stored_key} =
+             Repository.publish_key(%Lockspire.Domain.SigningKey{
+               kid: kid,
+               kty: :RSA,
+               alg: "RS256",
+               use: :sig,
+               public_jwk:
+                 public_jwk
+                 |> Map.put("kid", kid)
+                 |> Map.put("alg", "RS256")
+                 |> Map.put("use", "sig"),
+               private_jwk_encrypted: Jason.encode!(Map.put(private_jwk, "kid", kid)),
+               status: :active,
+               published_at: DateTime.utc_now(),
+               activated_at: DateTime.utc_now(),
+               metadata: %{}
+             })
   end
 
   defp update_client_par_policy!(client, mode) do

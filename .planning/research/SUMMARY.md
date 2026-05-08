@@ -1,51 +1,83 @@
-# Research Summary: Lockspire OpenID Connect CIBA
+# Research Summary: v1.16 Embedded Adoption Hardening & Sigra Golden Path
 
-**Domain:** Embedded OAuth/OIDC Provider (Elixir/Phoenix)
-**Researched:** 2026-05-05
-**Overall confidence:** HIGH
+**Prepared:** 2026-05-06
+**Purpose:** Choose the next milestone from repo truth plus current ecosystem guidance.
 
-## Executive Summary
+## Recommended milestone
 
-Client-Initiated Backchannel Authentication (CIBA) Core 1.0 allows Relying Parties (RPs) to initiate authentication on behalf of a user without requiring browser redirects on the Consumption Device (CD). Instead, the user is authenticated via an Out-of-Band (OOB) mechanism on their Authentication Device (AD), such as a smartphone push notification. 
+**v1.16 Embedded Adoption Hardening & Sigra Golden Path**
 
-For Lockspire, CIBA represents a significant competitive advantage. Elixir's inherent concurrency, coupled with Oban for background processing, makes Ping and Push delivery modes trivial and resilient compared to other language ecosystems. However, as an embedded library, Lockspire must strictly separate protocol state (managing `auth_req_id`, polling intervals, token issuance) from the delivery mechanism. The host application remains entirely responsible for sending the actual push notification to the user and collecting their consent.
+Lockspire already has broad protocol depth for an embedded Phoenix authorization server. The highest-leverage next work is not another auth method. It is making the embedded host path boring, trustworthy, executable, and release-truthful.
 
-## Key Findings
+## Why this is next
 
-**Stack:** Leverages existing Elixir concurrency primitives (Registry/PubSub) and Oban for guaranteed webhook delivery in Ping/Push modes.
-**Architecture:** Protocol validation happens in Lockspire (`/bc-authorize`), but out-of-band notification logic is delegated to the host application via a Behaviour.
-**Critical pitfall:** Allowing malicious clients to spam users with unsolicited push notifications. Strict validation of `login_hint_token` and enforcement of `user_code`/`binding_message` are necessary.
+- Lockspire's own arc says to prefer real integrator leverage over checklist spec breadth.
+- The repo already ships PAR, JAR, DCR, device flow, DPoP, FAPI 2.0 Security, Token Exchange, CIBA, RAR, Resource Indicators, and `private_key_jwt`.
+- Current gaps are adoption and proof gaps:
+  - the Sigra companion path is documented but not yet proved as a canonical executable golden path
+  - public GA/support posture is stronger than current package metadata and changelog truth
+  - some conformance/verification debt still affects the trust story
 
-## Implications for Roadmap
+## Option ranking
 
-Based on research, suggested phase structure for CIBA:
+1. **Embedded adoption hardening**
+   - Best fit with Lockspire's embedded-library thesis
+   - Highest adoption leverage for Phoenix/Sigra teams
+   - Improves host-seam safety without widening protocol scope
+2. **Conformance debt retirement**
+   - Valuable where it strengthens current public claims
+   - Should stay narrow and proof-oriented, not become certification theater
+3. **`client_secret_jwt`**
+   - Standard and sometimes useful, but lower-value right now
+   - Especially unattractive in Lockspire because current client secrets are hashed at rest
+4. **External certification work**
+   - Useful later, but better deferred until the embedded host path is boring and repeatable
 
-1. **CIBA Core Protocol & Poll Mode** - Implement the `/bc-authorize` endpoint, new `grant_type=urn:openid:params:grant-type:ciba`, and database schema for tracking CIBA requests.
-   - Addresses: Core specification compliance and the easiest delivery mode (Poll) for clients to adopt.
-   - Avoids: Infrastructure overhead of webhooks before the core state machine is proven.
+## Key conclusions
 
-2. **Host Delegation & Notification Seams** - Define the `Lockspire.Host` callbacks to trigger host notifications and receive asynchronous consent results.
-   - Addresses: The boundary between Lockspire's protocol state and the host's push notification infrastructure.
+### Ecosystem lessons
 
-3. **Ping and Push Delivery Modes (Oban Integration)** - Add support for outgoing webhooks to notify clients when authentication is complete.
-   - Addresses: The advanced CIBA delivery modes, utilizing Oban for retry logic and resilience.
-   - Avoids: Building custom HTTP retry loops, relying instead on established ecosystem tools.
+- **`node-oidc-provider`** is the benchmark for protocol seriousness and explicit conformance posture.
+- **OpenIddict** is the best model for an embedded framework: strict defaults, truthful scope, strong host separation.
+- **ORY Hydra** reinforces the value of a headless provider that does not own login or user accounts.
+- **Keycloak** is useful for operator-policy ideas, but it is the wrong product shape to imitate.
+- **Doorkeeper** is a useful DX benchmark, especially for install ergonomics in a host framework.
 
-**Phase ordering rationale:**
-- Poll mode requires no outgoing HTTP calls from Lockspire and establishes the core database structures. The Host callback boundary must be defined before advanced Ping/Push delivery modes can be fully exercised.
+### Elixir/Phoenix lessons
 
-**Research flags for phases:**
-- Phase 2: Needs careful API design to ensure the host can easily correlate asynchronous Push/WebSocket responses from the Authentication Device back to Lockspire's `auth_req_id`.
+- Prefer generator-first host seams over compile-time integration between Lockspire and Sigra.
+- Keep runtime configuration explicit and host-owned.
+- Keep migrations host-applied and versioned.
+- Keep observability Telemetry-native and LiveView surfaces operational, not product-like.
+- Prove the generated host path end to end instead of relying on demo-app folklore.
 
-## Confidence Assessment
+### Security and product-shape lessons
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Oban is already an established standard in the Phoenix ecosystem for background jobs. |
-| Features | HIGH | CIBA Core 1.0 is a stable specification with clear endpoint definitions. |
-| Architecture | HIGH | The Elixir Behaviour pattern has already proven successful for separating Lockspire logic from Host logic (e.g., Device Flow, DCR). |
-| Pitfalls | HIGH | The spec explicitly warns about unsolicited authentication requests and provides mechanisms (`user_code`) to mitigate them. |
+- `client_secret_jwt` is a weaker trust step than `private_key_jwt`, and supporting it cleanly would put pressure on Lockspire's hashed-secret posture.
+- Broadening into more client-auth methods or certification claims before tightening the embedded host story would move the product away from its thesis.
+- The next milestone should make the current support contract more believable, not larger.
 
-## Gaps to Address
+## Milestone guardrails
 
-- Determining the exact schema requirements for the `login_hint_token` if Lockspire decides to validate it natively versus delegating the entire hint resolution to the host application.
+- Do not broaden into hosted auth, federation, or generic protected-resource middleware.
+- Do not make Lockspire depend on Sigra at compile time.
+- Do not claim certification or broader compatibility than the repo can prove.
+- Keep any conformance work tied to executable proof for the already-supported embedded path.
+
+## Primary sources
+
+- Phoenix auth generator: https://hexdocs.pm/phoenix/mix_phx_gen_auth.html
+- Plug: https://hexdocs.pm/plug/Plug.html
+- Plug router: https://hexdocs.pm/plug/Plug.Router.html
+- Ecto repo: https://hexdocs.pm/ecto/Ecto.Repo.html
+- Ecto testing: https://hexdocs.pm/ecto/testing-with-ecto.html
+- Ecto migration: https://hexdocs.pm/ecto_sql/Ecto.Migration.html
+- Oban migration: https://hexdocs.pm/oban/Oban.Migration.html
+- Telemetry: https://hexdocs.pm/telemetry/telemetry.html
+- OpenTelemetry API: https://hexdocs.pm/opentelemetry_api/readme.html
+- LiveView security model: https://hexdocs.pm/phoenix_live_view/security-model.html
+- OpenIddict assertion-based client auth: https://documentation.openiddict.com/configuration/assertion-based-client-authentication
+- OpenID Connect Core 1.0: https://openid.net/specs/openid-connect-core-1_0-18.html
+- OAuth 2.0 Security BCP (RFC 9700): https://www.rfc-editor.org/rfc/rfc9700
+- OAuth Authorization Server Metadata (RFC 8414): https://www.rfc-editor.org/rfc/rfc8414
+- FAPI 2.0 Security Profile Final: https://openid.net/specs/fapi-security-profile-2_0.html

@@ -24,7 +24,7 @@ defmodule Lockspire.Web.InteractionController do
         {:consent_required, interaction} ->
           redirect(conn, to: consent_path(interaction.interaction_id))
 
-        {:consent_reused, redirect_uri} ->
+        {:consent_reused, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
 
         {:error, reason} ->
@@ -41,10 +41,10 @@ defmodule Lockspire.Web.InteractionController do
          {:ok, subject_context} <- resolve_subject_context(conn, interaction),
          outcome <- finalize_interaction(interaction_id, decision, subject_context, params) do
       case outcome do
-        {:approved, redirect_uri} ->
+        {:approved, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
 
-        {:denied, redirect_uri} ->
+        {:denied, redirect_uri} when is_binary(redirect_uri) ->
           redirect(conn, external: redirect_uri)
 
         {:error, reason} ->
@@ -191,7 +191,9 @@ defmodule Lockspire.Web.InteractionController do
     [
       interaction_store: Repository,
       consent_store: Repository,
-      token_store: Repository
+      token_store: Repository,
+      client_store: Repository,
+      key_store: Repository
     ]
   end
 end

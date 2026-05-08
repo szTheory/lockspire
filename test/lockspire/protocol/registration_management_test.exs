@@ -72,6 +72,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     send(pid, {:telemetry_event, event, measurements, metadata})
   end
 
+  defp encrypted_jarm_metadata(overrides) do
+    DcrFixtures.valid_metadata()
+    |> Map.put("authorization_signed_response_alg", "RS256")
+    |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
+    |> Map.put("authorization_encrypted_response_enc", "A256GCM")
+    |> Map.merge(overrides)
+  end
+
   describe "read/2" do
     test "returns {:ok, %Client{}} when client_id_from_url == client.client_id", %{
       client: client,
@@ -109,8 +117,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     end
 
     test "rejects update when server is missing compliant keys for FAPI", %{
-      client: client,
-      client_id: client_id
+      client: client
     } do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
       Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.SigningKeyRecord)
@@ -145,9 +152,231 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
       assert updated_client.id_token_signed_response_alg == :RS256
     end
+
+    test "accepts strict message-signing update when readiness is met", %{
+      client: client,
+      client_id: client_id
+    } do
+      now = DateTime.utc_now()
+
+      Repository.publish_key(%Lockspire.Domain.SigningKey{
+        kid: "management-message-signing-ready",
+        use: :sig,
+        status: :active,
+        published_at: now,
+        activated_at: now,
+        public_jwk: %{
+          "kty" => "EC",
+          "crv" => "P-256",
+          "kid" => "management-message-signing-ready",
+          "alg" => "ES256",
+          "use" => "sig"
+        },
+        private_jwk_encrypted: <<1>>,
+        kty: :EC,
+        alg: "ES256"
+      })
+
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("security_profile", "fapi_2_0_message_signing")
+        |> Map.put("id_token_signed_response_alg", "ES256")
+        |> Map.put("authorization_signed_response_alg", "ES256")
+
+      request = %{
+        metadata: metadata,
+        server_policy: DcrFixtures.server_policy(%{security_profile: :none}),
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.security_profile == :fapi_2_0_message_signing
+      assert updated_client.authorization_signed_response_alg == :ES256
+    end
+
+    test "rejects strict message-signing updates without a compliant authorization response signing algorithm",
+         %{client: client, client_id: client_id} do
+      now = DateTime.utc_now()
+
+      Repository.publish_key(%Lockspire.Domain.SigningKey{
+        kid: "management-message-signing-reject",
+        use: :sig,
+        status: :active,
+        published_at: now,
+        activated_at: now,
+        public_jwk: %{
+          "kty" => "EC",
+          "crv" => "P-256",
+          "kid" => "management-message-signing-reject",
+          "alg" => "ES256",
+          "use" => "sig"
+        },
+        private_jwk_encrypted: <<1>>,
+        kty: :EC,
+        alg: "ES256"
+      })
+
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("security_profile", "fapi_2_0_message_signing")
+        |> Map.put("id_token_signed_response_alg", "ES256")
+
+      request = %{
+        metadata: metadata,
+        server_policy: DcrFixtures.server_policy(%{security_profile: :none}),
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :authorization_signed_response_alg,
+                reason: :incompatible_with_fapi_2_0
+              }} = RegistrationManagement.update(client_id, request)
+    end
   end
 
   describe "update/2 — RAT rotation" do
+    test "updates client with coherent encrypted JARM metadata and persists the fields", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          encrypted_jarm_metadata(%{
+            "jwks" => %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}
+          }),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.authorization_signed_response_alg == :RS256
+      assert updated_client.authorization_encrypted_response_alg == :RSA_OAEP_256
+      assert updated_client.authorization_encrypted_response_enc == :A256GCM
+      assert updated_client.jwks == %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}
+      assert is_nil(updated_client.jwks_uri)
+    end
+
+    test "updates private_key_jwt client from inline jwks to jwks_uri and persists the new field",
+         %{
+           server_policy: _server_policy
+         } do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      {:ok, %Registration.Success{client: client}} =
+        Registration.register(%{
+          metadata: DcrFixtures.private_key_jwt_jwks_metadata(),
+          iat: nil,
+          server_policy: server_policy,
+          source: %{ip: "127.0.0.1"}
+        })
+
+      request = %{
+        metadata: DcrFixtures.private_key_jwt_jwks_uri_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client.client_id, request)
+
+      assert updated_client.client_id == client.client_id
+      assert updated_client.token_endpoint_auth_method == :private_key_jwt
+      assert updated_client.jwks_uri == "https://keys.example.test/client.jwks.json"
+      assert is_nil(updated_client.jwks)
+    end
+
+    test "rejects update when encrypted JARM metadata is partial", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          DcrFixtures.valid_metadata()
+          |> Map.put("authorization_signed_response_alg", "RS256")
+          |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
+          |> Map.put("jwks", %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :authorization_encrypted_response_enc,
+                reason: :missing_for_encrypted_response
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when encrypted JARM metadata uses both jwks and jwks_uri", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata:
+          encrypted_jarm_metadata(%{
+            "jwks" => %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]},
+            "jwks_uri" => "https://keys.example.test/client.jwks.json"
+          }),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks,
+                reason: :mutually_exclusive_with_jwks_uri
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when metadata includes both jwks and jwks_uri", %{
+      client: client,
+      client_id: client_id
+    } do
+      server_policy = DcrFixtures.private_key_jwt_server_policy()
+
+      request = %{
+        metadata: DcrFixtures.mutual_jwks_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks,
+                reason: :mutually_exclusive_with_jwks_uri
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects update when jwks_uri is paired with unsupported auth method", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata: DcrFixtures.invalid_jwks_uri_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :jwks_uri,
+                reason: :unsupported_token_endpoint_auth_method
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
     test "accepts (client_id_from_url, %{metadata, server_policy, client}) and returns UpdateSuccess",
          %{client: client, client_id: client_id, server_policy: server_policy, rat: prior_rat} do
       new_metadata = Map.put(DcrFixtures.valid_metadata(), "client_name", "Updated Name")

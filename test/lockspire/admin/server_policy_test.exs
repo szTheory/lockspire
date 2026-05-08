@@ -16,6 +16,7 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    assert {:ok, %DomainServerPolicy{}} = Repository.put_server_policy(%DomainServerPolicy{id: 1})
     :ok
   end
 
@@ -74,12 +75,16 @@ defmodule Lockspire.Admin.ServerPolicyTest do
 
   test "put_max_delegation_depth/1 enforces maximum depth of 5" do
     assert {:error, %Ecto.Changeset{} = changeset} = ServerPolicy.put_max_delegation_depth(6)
-    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] = changeset.errors
+
+    assert [max_delegation_depth: {"must be less than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "put_max_delegation_depth/1 enforces minimum depth of 0" do
     assert {:error, %Ecto.Changeset{} = changeset} = ServerPolicy.put_max_delegation_depth(-1)
-    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] = changeset.errors
+
+    assert [max_delegation_depth: {"must be greater than or equal to %{number}", _}] =
+             changeset.errors
   end
 
   test "put_dpop_policy/1 rejects modes outside bearer and dpop" do
@@ -215,6 +220,68 @@ defmodule Lockspire.Admin.ServerPolicyTest do
     assert persisted.registration_policy == :open
     assert persisted.dcr_allowed_scopes == ["openid"]
     assert persisted.dcr_allowed_grant_types == ["authorization_code"]
+  end
+
+  test "private_key_jwt_registration_truth/1 reports allowlist gate and default algorithms" do
+    policy = %DomainServerPolicy{
+      security_profile: :none,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic", "private_key_jwt"]
+    }
+
+    assert %{
+             self_registration_allowed?: true,
+             supported_assertion_signing_algorithms: ["RS256", "ES256", "PS256", "EdDSA"]
+           } = ServerPolicy.private_key_jwt_registration_truth(policy)
+  end
+
+  test "private_key_jwt_registration_truth/1 narrows algorithms under fapi and denies when absent" do
+    policy = %DomainServerPolicy{
+      security_profile: :fapi_2_0_security,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_post"]
+    }
+
+    assert %{
+             self_registration_allowed?: false,
+             supported_assertion_signing_algorithms: ["ES256", "PS256"]
+           } = ServerPolicy.private_key_jwt_registration_truth(policy)
+  end
+
+  test "put_security_profile/1 persists :fapi_2_0_message_signing when signing readiness is met" do
+    now = DateTime.utc_now()
+
+    Repository.publish_key(%Lockspire.Domain.SigningKey{
+      kid: "message-signing-ready",
+      use: :sig,
+      status: :active,
+      published_at: now,
+      activated_at: now,
+      public_jwk: %{
+        "kty" => "EC",
+        "crv" => "P-256",
+        "kid" => "message-signing-ready",
+        "alg" => "ES256",
+        "use" => "sig"
+      },
+      private_jwk_encrypted: <<1>>,
+      kty: :EC,
+      alg: "ES256"
+    })
+
+    assert {:ok, %DomainServerPolicy{} = policy} =
+             ServerPolicy.put_security_profile(:fapi_2_0_message_signing)
+
+    assert policy.security_profile == :fapi_2_0_message_signing
+  end
+
+  test "put_security_profile/1 rejects :fapi_2_0_message_signing when publishable key is missing" do
+    assert {:error,
+            [
+              %{
+                field: :security_profile,
+                reason: :missing_compliant_publishable_key,
+                detail: :fapi_2_0_message_signing
+              }
+            ]} = ServerPolicy.put_security_profile(:fapi_2_0_message_signing)
   end
 
   # security_profile admin command tests (Phase 41 Task 3)

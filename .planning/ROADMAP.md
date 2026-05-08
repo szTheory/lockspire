@@ -1,13 +1,20 @@
-# Lockspire Roadmap
+# Project Roadmap
 
-## Current Milestone: None
+## Active Milestone: v1.18
 
-No active milestone is open.
+## Phases
 
-**Last shipped milestone:** v1.14 Advanced Authorization & Resource Targetting on 2026-05-06.
+| Phase | Description | Plans |
+|-------|-------------|-------|
+| 70 | OIDF Conformance Suite Automation (CONF-04) | 1 |
 
-**Archives:** `milestones/v1.14-ROADMAP.md`, `milestones/v1.14-REQUIREMENTS.md`, `milestones/v1.14-MILESTONE-AUDIT.md`
+### Phase 70: OIDF Conformance Suite Automation
 
-## Next Step
+**Goal**: Setup verifiable automated integration with the OIDF Conformance Test Suite (CONF-04).
 
-Run `$gsd-new-milestone` to define the next milestone.
+**Requirements:** CONF-04
+
+**Plans:** 1 plan
+
+Plans:
+- [ ] 70-01-PLAN.md — Integrate the official OpenID Foundation Conformance Suite into the automated CI pipeline for FAPI 2.0 execution.

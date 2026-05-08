@@ -72,6 +72,56 @@ jobs:
           name: phase37-conformance
           path: .artifacts/conformance/phase37
 
+  repo-native-fapi2:
+    name: Repo-Native FAPI 2.0 Lane
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
+      LOCKSPIRE_TEST_DB_PORT: "5432"
+      LOCKSPIRE_TEST_DB_USER: lockspire
+      LOCKSPIRE_TEST_DB_PASSWORD: lockspire
+      LOCKSPIRE_TEST_DB_NAME: lockspire_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1.24.0
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run FAPI 2.0 conformance lane
+        run: bash scripts/conformance/run_fapi2_suite.sh
+
+      - name: Upload FAPI 2.0 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fapi2-conformance
+          path: .artifacts/conformance/fapi2
+
   hosted-maintainer-lane:
     name: Hosted Maintainer Lane
     runs-on: ubuntu-latest

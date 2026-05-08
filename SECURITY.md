@@ -28,30 +28,24 @@ Lockspire aims to:
 
 ## Supported security surface
 
-Lockspire's supported security surface is limited to the embedded OAuth/OIDC provider behavior shipped in this repo and described in `docs/supported-surface.md`:
+`docs/supported-surface.md` is the canonical public support contract. This file stays subordinate to it and does not define a second feature or topology matrix.
 
-- authorization code + PKCE
-- pushed authorization requests only through Lockspire-issued `request_uri` references on the authorization code + PKCE path (supports `required` or `optional` policy enforcement)
-- discovery and JWKS
-- userinfo
-- revocation and introspection
-- refresh token rotation
-- generator-backed Phoenix install flow
-- operator workflows for clients, consents, tokens, keys, and PAR policies
-- FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens at /token and /userinfo, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
-- RFC 9207 `iss` parameter on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
-- Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` (always true) and `require_pushed_authorization_requests` (true only when the global server policy is `:fapi_2_0_security`)
+Security reports are in scope when they affect the embedded Phoenix surface the repo currently proves, especially:
 
-Unsupported or out-of-scope surfaces include:
+- Lockspire-owned authorization-server endpoints and token handling
+- generator-backed install and upgrade scaffolding that Lockspire ships and maintains
+- host-seam contracts documented in repo-owned guides, such as login/consent handoff and the `/verify` device flow seam
+- confidential-client `private_key_jwt` support on Lockspire-owned direct-client endpoints
+- secure defaults and FAPI 2.0 Security Profile enforcement shipped in this repo
 
-- host-owned account databases
-- host login/session implementations
-- third-party IdP integrations not shipped in this repo
+Out of scope examples remain:
+
+- host-owned account databases, login/session implementations, or rate limiting
 - hosted auth as a separate service
-- request-object-by-value support, generic external `request_uri` handling, and device flow
-- SAML, LDAP, or generic federation features
-- DCR scope limits: software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, JAR-04 encryption, and `jwks_uri` outbound fetch
-- DCR rate limiting: Lockspire does NOT provide built-in rate limiting for dynamic client registration endpoints. It is the host application's responsibility to protect these endpoints via Plug.
+- third-party IdP integrations not shipped in this repo
+- request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features
+- `client_secret_jwt`, mTLS client authentication, and generic JWT client-auth support outside Lockspire-owned direct-client endpoints
+- DCR scope not named in the canonical support contract, including software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, and JAR-04 encryption
 
 ## Secure defaults
 
@@ -62,6 +56,20 @@ Unsupported or out-of-scope surfaces include:
 - refresh-token family revocation on reuse
 - no implicit flow
 - no `alg=none`
+- issuer-string `aud` for `private_key_jwt`
+- generic `invalid_client` wire failures with strong redaction of client assertions and JWKS bodies in logs and operator surfaces
+
+## Guarded remote JWKS fetch
+
+When a confidential client uses `jwks_uri`, Lockspire performs remote key retrieval through a narrow guarded fetch path:
+
+- `https` only
+- redirects disabled
+- unsafe resolved targets rejected before request dispatch
+- bounded timeouts and payload size
+- cached last-known-good key material preserved when forced refresh fails
+
+This fetch path exists only to verify `private_key_jwt` client assertions on Lockspire-owned direct-client endpoints. It is not a general outbound metadata-ingestion capability.
 
 ## FAPI 2.0 posture
 
@@ -75,4 +83,3 @@ Lockspire does NOT claim:
 - mTLS client authentication or mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism; mTLS is permanently out of scope)
 
 This file does not broaden the public support contract. For the full supported and out-of-scope surface, see `docs/supported-surface.md`.
-

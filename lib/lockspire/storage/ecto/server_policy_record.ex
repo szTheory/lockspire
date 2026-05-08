@@ -13,7 +13,11 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
   schema "lockspire_server_policies" do
     field(:par_policy, Ecto.Enum, values: [:optional, :required], default: :optional)
     field(:dpop_policy, Ecto.Enum, values: [:bearer, :dpop], default: :bearer)
-    field(:security_profile, Ecto.Enum, values: [:none, :fapi_2_0_security], default: :none)
+
+    field(:security_profile, Ecto.Enum,
+      values: [:none, :fapi_2_0_security, :fapi_2_0_message_signing],
+      default: :none
+    )
 
     # D-05: tri-state Ecto.Enum cast against the text column from Plan 02 migration.
     # Pitfall 4: every text-enum column MUST have a matching Ecto.Enum field, or code
@@ -68,7 +72,10 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :security_profile,
       :registration_policy
     ])
-    |> validate_number(:max_delegation_depth, less_than_or_equal_to: 5, greater_than_or_equal_to: 0)
+    |> validate_number(:max_delegation_depth,
+      less_than_or_equal_to: 5,
+      greater_than_or_equal_to: 0
+    )
   end
 
   def to_domain(%__MODULE__{} = record) do

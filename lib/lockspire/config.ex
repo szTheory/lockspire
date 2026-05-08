@@ -105,6 +105,26 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured RAR authorization detail types.
+  """
+  @spec rar_types_supported() :: [String.t()]
+  def rar_types_supported do
+    @app
+    |> Application.get_env(:rar_types_supported, [])
+    |> List.wrap()
+  end
+
+  @doc """
+  Returns the configured RAR type validators.
+  """
+  @spec rar_validators() :: map()
+  def rar_validators do
+    @app
+    |> Application.get_env(:rar_validators, %{})
+    |> Map.new()
+  end
+
+  @doc """
   Returns the security profile configuration.
   """
   @spec security_profile() :: :none | :fapi_2_0_security
@@ -159,6 +179,26 @@ defmodule Lockspire.Config do
   @spec pruner_schedule() :: String.t() | false
   def pruner_schedule do
     Application.get_env(@app, :pruner_schedule, "@hourly")
+  end
+
+  @doc """
+  Returns optional JWKS fetcher overrides.
+
+  This is primarily used by repo-owned tests that need to drive the guarded
+  `jwks_uri` fetch path through `Req.Test` without changing the shipped runtime
+  defaults.
+  """
+  @spec jwks_fetcher_opts() :: keyword()
+  def jwks_fetcher_opts do
+    Application.get_env(@app, :jwks_fetcher_opts, [])
+  end
+
+  @doc """
+  Returns the JWKS fetcher module.
+  """
+  @spec jwks_fetcher() :: module()
+  def jwks_fetcher do
+    Application.get_env(@app, :jwks_fetcher, Lockspire.JwksFetcher)
   end
 
   defp fetch_required!(key) do

@@ -32,6 +32,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+
+    assert {:ok, _policy} =
+             Lockspire.Storage.Ecto.Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{
+               id: 1
+             })
+
     :ok
   end
 
@@ -50,6 +56,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "Global DCR policy"
     assert html =~ "Save global DCR policy"
     assert html =~ "Current mode is initial_access_token"
+  end
+
+  test "global DCR policy page explains private_key_jwt registration posture and algorithms" do
+    assert {:ok, _policy} =
+             ServerPolicy.put_dcr_policy(%{
+               registration_policy: :open,
+               dcr_allowed_token_endpoint_auth_methods: ["private_key_jwt", "client_secret_basic"]
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert html =~ "private_key_jwt"
+    assert html =~ "Self-registered clients may use private_key_jwt"
+    assert html =~ "RS256, ES256, PS256, EdDSA"
+    assert html =~ "jwks_uri"
   end
 
   test "saving global DCR policy persists change" do

@@ -6,9 +6,15 @@ defmodule Lockspire.Admin.ServerPolicy do
   require Logger
 
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Protocol.MessageSigningProfile
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
 
   @type error_detail :: %{field: atom(), reason: atom(), detail: term()}
+  @type private_key_jwt_registration_truth :: %{
+          self_registration_allowed?: boolean(),
+          supported_assertion_signing_algorithms: [String.t()]
+        }
 
   @registration_policy_atoms [:disabled, :initial_access_token, :open]
   @registration_policy_strings ["disabled", "initial_access_token", "open"]
@@ -63,14 +69,41 @@ defmodule Lockspire.Admin.ServerPolicy do
           {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
   def put_security_profile(profile) do
     with {:ok, normalized_profile} <- normalize_security_profile(profile),
-         :ok <- validate_fapi_signing_readiness(normalized_profile) do
+         {:ok, %ServerPolicy{} = current} <- Repository.get_server_policy(),
+         :ok <- validate_fapi_signing_readiness(current.security_profile, normalized_profile) do
       Repository.update_server_policy(fn %ServerPolicy{} = current ->
         %ServerPolicy{current | security_profile: normalized_profile}
       end)
     end
   end
 
-  defp validate_fapi_signing_readiness(:fapi_2_0_security) do
+  defp validate_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
+
+  defp validate_fapi_signing_readiness(:fapi_2_0_message_signing, :fapi_2_0_message_signing),
+    do: :ok
+
+  defp validate_fapi_signing_readiness(_old_profile, :fapi_2_0_message_signing) do
+    case MessageSigningProfile.validate_transition(:none, :fapi_2_0_message_signing) do
+      :ok ->
+        :ok
+
+      {:error, reason}
+      when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
+        {:error,
+         [
+           %{
+             field: :security_profile,
+             reason: reason,
+             detail: :fapi_2_0_message_signing
+           }
+         ]}
+
+      {:error, _term} = err ->
+        err
+    end
+  end
+
+  defp validate_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
     case Repository.validate_fapi_signing_readiness() do
       :ok ->
         :ok
@@ -91,7 +124,7 @@ defmodule Lockspire.Admin.ServerPolicy do
     end
   end
 
-  defp validate_fapi_signing_readiness(_profile), do: :ok
+  defp validate_fapi_signing_readiness(_old_profile, _profile), do: :ok
 
   @doc """
   Returns the current DCR policy view as a `%Domain.ServerPolicy{}` (the same struct
@@ -103,6 +136,17 @@ defmodule Lockspire.Admin.ServerPolicy do
   @spec get_dcr_policy() :: {:ok, ServerPolicy.t()} | {:error, term()}
   def get_dcr_policy do
     Repository.get_server_policy()
+  end
+
+  @spec private_key_jwt_registration_truth(ServerPolicy.t()) ::
+          private_key_jwt_registration_truth()
+  def private_key_jwt_registration_truth(%ServerPolicy{} = policy) do
+    %{
+      self_registration_allowed?:
+        "private_key_jwt" in policy.dcr_allowed_token_endpoint_auth_methods,
+      supported_assertion_signing_algorithms:
+        SecurityProfile.allowed_signing_algorithms(policy.security_profile)
+    }
   end
 
   @doc """
@@ -165,6 +209,7 @@ defmodule Lockspire.Admin.ServerPolicy do
 
   defp normalize_security_profile(:none), do: {:ok, :none}
   defp normalize_security_profile(:fapi_2_0_security), do: {:ok, :fapi_2_0_security}
+  defp normalize_security_profile(:fapi_2_0_message_signing), do: {:ok, :fapi_2_0_message_signing}
 
   defp normalize_security_profile(value) when is_binary(value) do
     value
@@ -172,6 +217,7 @@ defmodule Lockspire.Admin.ServerPolicy do
     |> case do
       "none" -> {:ok, :none}
       "fapi_2_0_security" -> {:ok, :fapi_2_0_security}
+      "fapi_2_0_message_signing" -> {:ok, :fapi_2_0_message_signing}
       _other -> invalid_security_profile(value)
     end
   end

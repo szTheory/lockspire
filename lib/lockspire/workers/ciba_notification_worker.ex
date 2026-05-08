@@ -42,9 +42,6 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
     else
       {:error, :not_found} ->
         {:discard, :not_found}
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
@@ -75,15 +72,16 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
     # Generate tokens
     case TokenExchange.issue_ciba_tokens(client, ciba_auth, mock_issuance_context(client), %{}) do
       {:ok, %TokenExchange.Success{} = success} ->
-        payload = %{
-          "auth_req_id" => ciba_auth.auth_req_id,
-          "access_token" => success.access_token,
-          "token_type" => success.token_type,
-          "expires_in" => success.expires_in,
-          "refresh_token" => success.refresh_token,
-          "id_token" => success.id_token
-        }
-        |> Map.reject(fn {_k, v} -> v == nil end)
+        payload =
+          %{
+            "auth_req_id" => ciba_auth.auth_req_id,
+            "access_token" => success.access_token,
+            "token_type" => success.token_type,
+            "expires_in" => success.expires_in,
+            "refresh_token" => success.refresh_token,
+            "id_token" => success.id_token
+          }
+          |> Map.reject(fn {_k, v} -> v == nil end)
 
         send_notification(ciba_auth, client, payload)
 
@@ -102,8 +100,11 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
   end
 
   defp send_notification(ciba_auth, client, payload) do
-    url = ciba_auth.client_notification_endpoint || client.backchannel_client_notification_endpoint
-    token = ciba_auth.client_notification_token_encrypted # Assuming it's the raw token for now as per previous discussion
+    url =
+      ciba_auth.client_notification_endpoint || client.backchannel_client_notification_endpoint
+
+    # Assuming it's the raw token for now as per previous discussion
+    token = ciba_auth.client_notification_token_encrypted
 
     request_opts =
       Application.get_env(:lockspire, :backchannel_ciba_req, [])
@@ -132,11 +133,15 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
     |> where([a], a.id == ^id)
     |> repo().one()
     |> case do
-      nil -> {:error, :not_found}
-      record -> 
+      nil ->
+        {:error, :not_found}
+
+      record ->
         # auth_req_id is needed for payload and token generation
-        auth_req_id = if record.auth_req_id_encrypted, do: to_string(record.auth_req_id_encrypted), else: nil
-        {:ok, CibaAuthorizationRecord.to_domain(record, auth_req_id: auth_req_id)} 
+        auth_req_id =
+          if record.auth_req_id_encrypted, do: to_string(record.auth_req_id_encrypted), else: nil
+
+        {:ok, CibaAuthorizationRecord.to_domain(record, auth_req_id: auth_req_id)}
     end
   end
 
@@ -152,7 +157,7 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
 
   defp mock_issuance_context(client) do
     # For Push mode, we assume Bearer for now unless client/policy dictates otherwise.
-    # But FAPI 2.0 would require DPoP. 
+    # But FAPI 2.0 would require DPoP.
     # CIBA Push mode and DPoP is tricky because there's no proof for the push.
     # We'll default to bearer.
     %{
@@ -161,7 +166,8 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
       jkt: nil,
       cnf: nil,
       token_type: "Bearer",
-      security_profile: SecurityProfile.resolve_effective_profile(%Lockspire.Domain.ServerPolicy{}, client)
+      security_profile:
+        SecurityProfile.resolve_effective_profile(%Lockspire.Domain.ServerPolicy{}, client)
     }
   end
 

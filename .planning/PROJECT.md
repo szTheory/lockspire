@@ -10,13 +10,32 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived fourteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, and v1.14 delivered Advanced Authorization & Resource Targetting.
+Lockspire has now archived sixteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, v1.15 delivered JWKS URI & Private Key JWT Client Authentication, and v1.16 delivered embedded adoption hardening plus the Sigra golden path.
 
-At archive time, the package version in `mix.exs` is still `0.2.0`, the protected release path has real proof behind it, and the checked-in Release Please path no longer depends on the deprecated Node 20 marketplace runtime. Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, and Rich Authorization Requests with durable validation and introspection proof.
+Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces, and a repo-proven embedded Phoenix host path with canonical install, verification, upgrade, and generated-host onboarding proof.
 
-## Current Milestone: None
+The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to turn the now-aligned `1.0.0` repo story into a real public release so Phoenix teams can install the truthful embedded surface without version or support-contract drift.
 
-**Goal:** Pending next milestone definition.
+## Current Milestone: v1.17 Real Public Release
+
+**Goal:** Turn Lockspire's repo-aligned `1.0.0` support story into an actual public release, prove the trusted publish lane end to end, and leave maintainers with a clean post-release truth state that matches what users can install from Hex.
+
+**Target features:**
+- Final release execution path from checked-in `1.0.0` posture to an actual published artifact.
+- Trusted publish verification and post-publish checks for package metadata, docs pointers, and install truth.
+- Narrow release-only cleanup when required to unblock the real release cut, without adding new protocol breadth.
+
+**Why now:** `v1.16` already closed the install, support, and proof gaps that made a real release risky. The remaining drag is publication and post-publish verification, not product shape.
+
+## Recently Shipped Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
+
+**Goal:** Make Lockspire feel complete, correct, and trustworthy in its intended embedded Phoenix deployment shape by hardening the canonical host integration path, proving the Sigra companion flow end to end, reconciling release truth, and retiring the conformance debt that affects public claims.
+
+**Delivered:**
+- Canonical embedded install, verify, and manifest-backed upgrade workflows with explicit Lockspire-managed versus host-owned boundaries.
+- Executable generated-host proof for the Sigra-backed authorization-code onboarding path through host login, interaction resume, consent, token exchange, and JWKS.
+- One coherent 1.0.0 release-truth story across package metadata, changelog posture, release workflow wording, support docs, and drift-fence tests.
+- Repo-native conformance and strictness proof as the current trust anchor, with historical external-suite artifacts preserved only as non-claim audit context.
 
 ## Requirements
 
@@ -60,7 +79,9 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 ### Active
 
-- None
+- Maintainers can cut one real public Lockspire release whose version, changelog, package metadata, and support contract all describe the same shipped embedded surface.
+- The protected publish lane can be executed and verified without undocumented maintainer folklore.
+- Post-publish checks can prove that the released package still points Phoenix teams at the same canonical embedded install and support story that the repo claims.
 
 ### Out of Scope
 
@@ -74,7 +95,7 @@ At archive time, the package version in `mix.exs` is still `0.2.0`, the protecte
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public preview posture narrow and truthful, and only then spend milestone budget on broader conformance depth or `1.0` support hardening. `.planning/EPIC.md` is the durable record of that arc. With v1.14 completed, the next milestone remains intentionally undefined until the next planning cycle.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.16 complete, `v1.17` shifts from release-truth alignment in git to the real public release cut and post-publish verification.
 
 ## Constraints
 
@@ -127,4 +148,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after v1.14 milestone closure*
+*Last updated: 2026-05-07 for v1.17 milestone start*

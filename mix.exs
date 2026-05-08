@@ -4,8 +4,8 @@ defmodule Lockspire.MixProject do
   def project do
     [
       app: :lockspire,
-      version: "0.2.0",
-      description: "Embedded OAuth/OIDC authorization server for Phoenix applications",
+      version: "1.0.0",
+      description: "Embedded OAuth/OIDC authorization server library for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -38,7 +38,7 @@ defmodule Lockspire.MixProject do
       {:phoenix_live_view, "~> 1.1.28"},
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
-      {:bandit, "~> 1.6"},
+      {:bandit, "~> 1.11"},
       {:oban, "~> 2.21"},
       {:req, "~> 0.5"},
       {:jose, "~> 1.11"},
@@ -143,6 +143,7 @@ defmodule Lockspire.MixProject do
         "docs/ecosystem-overview.md",
         "docs/getting-started.md",
         "docs/install-and-onboard.md",
+        "docs/private-key-jwt-host-guide.md",
         "docs/rar-consent-host-guide.md",
         "docs/operator-admin.md",
         "docs/dynamic-registration.md",
@@ -156,6 +157,7 @@ defmodule Lockspire.MixProject do
           "docs/ecosystem-overview.md",
           "docs/getting-started.md",
           "docs/install-and-onboard.md",
+          "docs/private-key-jwt-host-guide.md",
           "docs/rar-consent-host-guide.md",
           "docs/operator-admin.md",
           "docs/dynamic-registration.md",
@@ -191,7 +193,8 @@ defmodule Lockspire.MixProject do
       licenses: ["Apache-2.0"],
       links: %{
         "Changelog" => "https://hexdocs.pm/lockspire/changelog.html",
-        "Docs" => "https://hexdocs.pm/lockspire"
+        "Docs" => "https://hexdocs.pm/lockspire",
+        "Supported surface" => "https://hexdocs.pm/lockspire/supported-surface.html"
       },
       files: ~w(lib priv docs .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]

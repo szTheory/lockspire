@@ -313,12 +313,12 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
       refute Map.has_key?(metadata, "require_pushed_authorization_requests")
     end
 
-    test "discovery does not publish mTLS, JARM, or signed_metadata keys" do
+    test "discovery publishes JARM signing posture but not mTLS or signed_metadata keys" do
       put_security_profile!(:fapi_2_0_security)
       metadata = Discovery.openid_configuration()
 
       refute Map.has_key?(metadata, "tls_client_certificate_bound_access_tokens")
-      refute Map.has_key?(metadata, "authorization_signing_alg_values_supported")
+      assert metadata["authorization_signing_alg_values_supported"] == ["ES256", "PS256"]
       refute Map.has_key?(metadata, "signed_metadata")
     end
   end

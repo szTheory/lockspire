@@ -68,7 +68,8 @@ defmodule Lockspire.Web.AuthorizeController do
     redirect(conn, to: consent_path(interaction.interaction_id))
   end
 
-  defp handle_authorization_outcome(conn, {:consent_reused, redirect_uri}) do
+  defp handle_authorization_outcome(conn, {:consent_reused, redirect_uri})
+       when is_binary(redirect_uri) do
     redirect(conn, external: redirect_uri)
   end
 
@@ -179,7 +180,9 @@ defmodule Lockspire.Web.AuthorizeController do
     [
       interaction_store: Repository,
       consent_store: Repository,
-      token_store: Repository
+      token_store: Repository,
+      client_store: Repository,
+      key_store: Repository
     ]
   end
 

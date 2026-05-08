@@ -20,7 +20,7 @@ defmodule Lockspire.Integration.Phase52HostDelegationE2ETest do
 
   defmodule MockAccountResolver do
     @behaviour Lockspire.Host.AccountResolver
-    
+
     def resolve_current_account(_conn, _ctx), do: {:error, :not_implemented}
     def resolve_account(hint, _ctx), do: {:ok, hint}
     def build_claims(acc, _ctx), do: {:ok, %Lockspire.Host.Claims{subject: to_string(acc)}}
@@ -150,7 +150,8 @@ defmodule Lockspire.Integration.Phase52HostDelegationE2ETest do
     auth_req_id_hash = Lockspire.Security.Policy.hash_token(auth_req_id)
 
     # 2. Approve via Public API
-    {:ok, _} = Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-123", ["openid", "profile"])
+    {:ok, _} =
+      Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-123", ["openid", "profile"])
 
     # 3. Poll for token
     conn =

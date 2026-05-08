@@ -29,7 +29,9 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.DcrPolicy.Resolved
   alias Lockspire.Protocol.InitialAccessToken
+  alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Protocol.SecurityProfile
 
   defmodule Success do
     @moduledoc false
@@ -63,7 +65,7 @@ defmodule Lockspire.Protocol.Registration do
     with :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
-         :ok <- validate_intake_metadata(metadata, resolved, server_policy),
+         :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
          credentials <- generate_credentials(),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
@@ -123,18 +125,27 @@ defmodule Lockspire.Protocol.Registration do
   @doc false
   @spec validate_intake_metadata(map(), Resolved.t(), ServerPolicy.t()) ::
           :ok | {:error, Error.t()}
-  def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy)
+  def validate_intake_metadata(metadata, %Resolved{} = resolved, server_policy)
+      when is_map(metadata) do
+    validate_intake_metadata(metadata, resolved, server_policy, nil)
+  end
+
+  @doc false
+  @spec validate_intake_metadata(map(), Resolved.t(), ServerPolicy.t(), Client.t() | nil) ::
+          :ok | {:error, Error.t()}
+  def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
     with :ok <- validate_unsupported_logout_metadata(metadata),
          :ok <- validate_jwks(metadata),
+         :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
-         :ok <- validate_fapi_2_0_readiness(metadata, server_policy) do
+         :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
     end
   end
 
-  defp validate_fapi_2_0_readiness(metadata, server_policy) do
+  defp validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
     client_profile = atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
 
     resolved_profile =
@@ -142,14 +153,32 @@ defmodule Lockspire.Protocol.Registration do
         security_profile: client_profile
       })
 
+    current_effective_profile =
+      case current_client do
+        nil ->
+          :none
+
+        client ->
+          Lockspire.Protocol.SecurityProfile.resolve_effective_profile(server_policy, client)
+          |> Map.fetch!(:effective_profile)
+      end
+
     if resolved_profile.fapi_2_0_security? do
       alg = atomize_alg(Map.get(metadata, "id_token_signed_response_alg"))
 
       if alg in [:ES256, :PS256] do
-        case Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security) do
-          :ok ->
-            :ok
-
+        with :ok <-
+               validate_effective_profile_transition(
+                 current_effective_profile,
+                 resolved_profile.effective_profile
+               ),
+             :ok <-
+               validate_strict_authorization_signing_alg(
+                 metadata,
+                 resolved_profile.effective_profile
+               ) do
+          :ok
+        else
           {:error, reason}
           when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
             {:error,
@@ -158,6 +187,9 @@ defmodule Lockspire.Protocol.Registration do
                field: :security_profile,
                reason: reason
              }}
+
+          {:error, %Error{} = error} ->
+            {:error, error}
         end
       else
         {:error,
@@ -171,6 +203,24 @@ defmodule Lockspire.Protocol.Registration do
       :ok
     end
   end
+
+  defp validate_strict_authorization_signing_alg(metadata, :fapi_2_0_message_signing) do
+    case Map.get(metadata, "authorization_signed_response_alg") do
+      alg ->
+        if alg in SecurityProfile.allowed_signing_algorithms(:fapi_2_0_message_signing) do
+          :ok
+        else
+          {:error,
+           %Error{
+             code: :invalid_client_metadata,
+             field: :authorization_signed_response_alg,
+             reason: :incompatible_with_fapi_2_0
+           }}
+        end
+    end
+  end
+
+  defp validate_strict_authorization_signing_alg(_metadata, _effective_profile), do: :ok
 
   defp validate_unsupported_logout_metadata(metadata) do
     cond do
@@ -211,10 +261,13 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_jwks(metadata) do
     has_jwks = Map.has_key?(metadata, "jwks")
     has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
     auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
+    jwks_uri = Map.get(metadata, "jwks_uri")
+    encrypted_jarm_requested? = encrypted_jarm_requested?(metadata)
 
     cond do
       has_jwks and has_jwks_uri ->
@@ -230,6 +283,87 @@ defmodule Lockspire.Protocol.Registration do
          %Error{
            code: :invalid_client_metadata,
            field: :token_endpoint_auth_method,
+           reason: :missing_cryptographic_material
+         }}
+
+      has_jwks_uri and auth_method != "private_key_jwt" and not encrypted_jarm_requested? ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :jwks_uri,
+           reason: :unsupported_token_endpoint_auth_method
+         }}
+
+      has_jwks_uri and not https_uri?(jwks_uri) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :jwks_uri,
+           reason: :invalid_uri_scheme
+         }}
+
+      true ->
+        :ok
+    end
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp validate_authorization_response_encryption_metadata(metadata) do
+    signing_alg = Map.get(metadata, "authorization_signed_response_alg")
+    encryption_alg = Map.get(metadata, "authorization_encrypted_response_alg")
+    encryption_enc = Map.get(metadata, "authorization_encrypted_response_enc")
+    has_jwks = Map.has_key?(metadata, "jwks")
+    has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
+
+    cond do
+      is_nil(encryption_alg) and is_nil(encryption_enc) ->
+        :ok
+
+      is_nil(encryption_alg) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
+           reason: :missing_for_encrypted_response
+         }}
+
+      is_nil(encryption_enc) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_enc,
+           reason: :missing_for_encrypted_response
+         }}
+
+      signing_alg not in supported_authorization_signing_algs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_signed_response_alg,
+           reason: :missing_for_encrypted_response
+         }}
+
+      encryption_alg not in supported_authorization_encryption_algs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
+           reason: :unsupported
+         }}
+
+      encryption_enc not in supported_authorization_encryption_encs() ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_enc,
+           reason: :unsupported
+         }}
+
+      not has_jwks and not has_jwks_uri ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :authorization_encrypted_response_alg,
            reason: :missing_cryptographic_material
          }}
 
@@ -331,6 +465,7 @@ defmodule Lockspire.Protocol.Registration do
       policy_uri: Map.get(metadata, "policy_uri"),
       contacts: Map.get(metadata, "contacts", []),
       jwks: Map.get(metadata, "jwks"),
+      jwks_uri: Map.get(metadata, "jwks_uri"),
       active: true,
       dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,
@@ -338,6 +473,16 @@ defmodule Lockspire.Protocol.Registration do
       initial_access_token_id: iat_id,
       id_token_signed_response_alg:
         atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
+      authorization_signed_response_alg:
+        atomize_alg(Map.get(metadata, "authorization_signed_response_alg")),
+      authorization_encrypted_response_alg:
+        atomize_authorization_encryption_alg(
+          Map.get(metadata, "authorization_encrypted_response_alg")
+        ),
+      authorization_encrypted_response_enc:
+        atomize_authorization_encryption_enc(
+          Map.get(metadata, "authorization_encrypted_response_enc")
+        ),
       security_profile:
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
@@ -376,9 +521,34 @@ defmodule Lockspire.Protocol.Registration do
   defp atomize_alg("EdDSA"), do: :EdDSA
   defp atomize_alg(_), do: nil
 
+  defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
+  defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES
+  defp atomize_authorization_encryption_alg(_), do: nil
+
+  defp atomize_authorization_encryption_enc("A256GCM"), do: :A256GCM
+  defp atomize_authorization_encryption_enc("A128GCM"), do: :A128GCM
+  defp atomize_authorization_encryption_enc(_), do: nil
+
   defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
+  defp atomize_security_profile("fapi_2_0_message_signing"), do: :fapi_2_0_message_signing
   defp atomize_security_profile("none"), do: :none
   defp atomize_security_profile(_), do: :inherit
+
+  defp validate_effective_profile_transition(
+         :fapi_2_0_message_signing,
+         :fapi_2_0_message_signing
+       ),
+       do: :ok
+
+  defp validate_effective_profile_transition(_old_profile, :fapi_2_0_message_signing) do
+    MessageSigningProfile.validate_transition(:none, :fapi_2_0_message_signing)
+  end
+
+  defp validate_effective_profile_transition(_old_profile, :fapi_2_0_security) do
+    Lockspire.Admin.Clients.check_fapi_signing_readiness(:none, :fapi_2_0_security)
+  end
+
+  defp validate_effective_profile_transition(_old_profile, _new_profile), do: :ok
 
   defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
@@ -394,6 +564,24 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp parse_scope(_), do: []
+
+  defp https_uri?(uri) when is_binary(uri) do
+    case URI.parse(uri) do
+      %URI{scheme: "https", host: host} when is_binary(host) and host != "" -> true
+      _ -> false
+    end
+  end
+
+  defp https_uri?(_uri), do: false
+
+  defp encrypted_jarm_requested?(metadata) when is_map(metadata) do
+    Map.has_key?(metadata, "authorization_encrypted_response_alg") or
+      Map.has_key?(metadata, "authorization_encrypted_response_enc")
+  end
+
+  defp supported_authorization_signing_algs, do: ["RS256", "ES256", "EdDSA"]
+  defp supported_authorization_encryption_algs, do: ["RSA-OAEP-256", "ECDH-ES"]
+  defp supported_authorization_encryption_encs, do: ["A256GCM", "A128GCM"]
 
   defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
     case Map.get(metadata, "dpop_bound_access_tokens", false) do

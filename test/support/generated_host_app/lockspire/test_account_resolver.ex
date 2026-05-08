@@ -5,18 +5,13 @@ defmodule GeneratedHostApp.Lockspire.TestAccountResolver do
 
   alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
+  alias GeneratedHostAppWeb.Plugs.PutCurrentScope
 
   @impl true
   def resolve_current_account(%Plug.Conn{} = conn, context) do
-    case Plug.Conn.get_session(conn, "current_account_id") do
-      account_id when is_binary(account_id) and account_id != "" ->
-        {:ok,
-         %{
-           id: account_id,
-           auth_time: session_auth_time(conn)
-         }
-         |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-         |> Map.new()}
+    case conn.assigns[:current_scope] || PutCurrentScope.current_scope(conn) do
+      %{user: user} when is_map(user) ->
+        {:ok, maybe_put_auth_time(user, conn)}
 
       _ ->
         {:redirect, redirect_for_login(conn, context)}
@@ -27,18 +22,21 @@ defmodule GeneratedHostApp.Lockspire.TestAccountResolver do
     do: {:redirect, redirect_for_login(nil, context)}
 
   @impl true
-  def resolve_account(account_reference, _context), do: {:ok, %{id: account_reference}}
+  def resolve_account(account_reference, _context), do: build_account(account_reference)
 
   @impl true
   def build_claims(account, _context) do
+    email = Map.get(account, :email, "#{account.id}@example.test")
+    name = Map.get(account, :name, "Generated Host User")
+
     {:ok,
      %Claims{
        subject: to_string(account.id),
-       id_token: %{"email" => "#{account.id}@example.test"},
+       id_token: %{"email" => email},
        userinfo: %{
-         "email" => "#{account.id}@example.test",
+         "email" => email,
          "email_verified" => true,
-         "name" => "Generated Host User"
+         "name" => name
        }
      }}
   end
@@ -50,9 +48,30 @@ defmodule GeneratedHostApp.Lockspire.TestAccountResolver do
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
       params:
         context
-        |> Map.take([:verification_handle, "verification_handle"])
+        |> Map.take([
+          :verification_handle,
+          "verification_handle",
+          :interaction_id,
+          "interaction_id"
+        ])
         |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
     }
+  end
+
+  defp build_account(account_reference) do
+    {:ok,
+     %{
+       id: account_reference,
+       email: "#{account_reference}@example.test",
+       name: "Generated Host User"
+     }}
+  end
+
+  defp maybe_put_auth_time(user, conn) do
+    case session_auth_time(conn) do
+      nil -> user
+      auth_time -> Map.put(user, :auth_time, auth_time)
+    end
   end
 
   defp session_auth_time(conn) do

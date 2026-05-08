@@ -7,6 +7,7 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Storage.Ecto.Repository
 
   @mutable_fields ~w(
@@ -25,6 +26,7 @@ defmodule Lockspire.Admin.Clients do
     par_policy
     dpop_policy
     security_profile
+    authorization_signed_response_alg
     metadata
     max_delegation_depth
   )a
@@ -220,6 +222,7 @@ defmodule Lockspire.Admin.Clients do
       |> maybe_append_errors(validate_scopes_if_present(attrs))
       |> maybe_append_errors(validate_par_policy_if_present(attrs))
       |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
+      |> maybe_append_errors(validate_authorization_signing_alg_if_present(attrs))
       |> maybe_append_errors(validate_security_profile_if_present(client, attrs))
 
     case errors do
@@ -321,7 +324,8 @@ defmodule Lockspire.Admin.Clients do
 
       {:ok, value} ->
         with {:ok, profile} <- normalize_security_profile(value),
-             :ok <- check_fapi_signing_readiness(client.security_profile, profile) do
+             :ok <- check_fapi_signing_readiness(client.security_profile, profile),
+             :ok <- validate_strict_authorization_signing_alg(client, attrs, profile) do
           :ok
         else
           :error ->
@@ -330,13 +334,58 @@ defmodule Lockspire.Admin.Clients do
 
           {:error, reason}
           when reason in [:missing_compliant_active_key, :missing_compliant_publishable_key] ->
-            {:error, [%{field: :security_profile, reason: reason, detail: :fapi_2_0_security}]}
+            {:error,
+             [
+               %{
+                 field: :security_profile,
+                 reason: reason,
+                 detail: profile_detail_from_value(value)
+               }
+             ]}
+
+          {:error, :invalid_authorization_signing_alg} ->
+            {:error,
+             [
+               %{
+                 field: :authorization_signed_response_alg,
+                 reason: :incompatible_with_fapi_2_0,
+                 detail: effective_authorization_signing_alg(client, attrs)
+               }
+             ]}
+        end
+    end
+  end
+
+  defp validate_authorization_signing_alg_if_present(attrs) do
+    case fetch_mutable_attr(attrs, :authorization_signed_response_alg) do
+      :error ->
+        :ok
+
+      {:ok, value} ->
+        case normalize_authorization_signing_alg(value) do
+          {:ok, _alg} ->
+            :ok
+
+          :error ->
+            {:error,
+             [
+               %{
+                 field: :authorization_signed_response_alg,
+                 reason: :invalid_signing_alg,
+                 detail: value
+               }
+             ]}
         end
     end
   end
 
   @doc false
   def check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
+  def check_fapi_signing_readiness(:fapi_2_0_message_signing, :fapi_2_0_message_signing), do: :ok
+
+  def check_fapi_signing_readiness(_old_profile, :fapi_2_0_message_signing) do
+    MessageSigningProfile.validate_transition(:none, :fapi_2_0_message_signing)
+  end
 
   def check_fapi_signing_readiness(_old_profile, :fapi_2_0_security) do
     Repository.validate_fapi_signing_readiness()
@@ -410,6 +459,13 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
+  defp normalize_mutable_field(:authorization_signed_response_alg, value) do
+    case normalize_authorization_signing_alg(value) do
+      {:ok, alg} -> alg
+      :error -> value
+    end
+  end
+
   defp normalize_mutable_field(:metadata, value) when is_map(value), do: value
   defp normalize_mutable_field(:metadata, _value), do: %{}
 
@@ -419,12 +475,14 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_mutable_field(:max_delegation_depth, value) when is_integer(value), do: value
+
   defp normalize_mutable_field(:max_delegation_depth, value) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} -> int
       _ -> value
     end
   end
+
   defp normalize_mutable_field(:max_delegation_depth, _value), do: nil
 
   defp normalize_mutable_field(_field, value), do: normalize_string(value)
@@ -497,6 +555,7 @@ defmodule Lockspire.Admin.Clients do
 
   defp normalize_security_profile(:inherit), do: {:ok, :inherit}
   defp normalize_security_profile(:fapi_2_0_security), do: {:ok, :fapi_2_0_security}
+  defp normalize_security_profile(:fapi_2_0_message_signing), do: {:ok, :fapi_2_0_message_signing}
   defp normalize_security_profile(:none), do: {:ok, :none}
 
   defp normalize_security_profile(value) when is_binary(value) do
@@ -505,12 +564,67 @@ defmodule Lockspire.Admin.Clients do
     |> case do
       "inherit" -> {:ok, :inherit}
       "fapi_2_0_security" -> {:ok, :fapi_2_0_security}
+      "fapi_2_0_message_signing" -> {:ok, :fapi_2_0_message_signing}
       "none" -> {:ok, :none}
       _other -> :error
     end
   end
 
   defp normalize_security_profile(_value), do: :error
+
+  defp normalize_authorization_signing_alg(nil), do: {:ok, nil}
+  defp normalize_authorization_signing_alg(""), do: {:ok, nil}
+  defp normalize_authorization_signing_alg(:RS256), do: {:ok, :RS256}
+  defp normalize_authorization_signing_alg(:ES256), do: {:ok, :ES256}
+  defp normalize_authorization_signing_alg(:PS256), do: {:ok, :PS256}
+  defp normalize_authorization_signing_alg(:EdDSA), do: {:ok, :EdDSA}
+
+  defp normalize_authorization_signing_alg(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> {:ok, nil}
+      "RS256" -> {:ok, :RS256}
+      "ES256" -> {:ok, :ES256}
+      "PS256" -> {:ok, :PS256}
+      "EdDSA" -> {:ok, :EdDSA}
+      _other -> :error
+    end
+  end
+
+  defp normalize_authorization_signing_alg(_value), do: :error
+
+  defp profile_detail(:fapi_2_0_message_signing), do: :fapi_2_0_message_signing
+  defp profile_detail(_profile), do: :fapi_2_0_security
+
+  defp profile_detail_from_value("fapi_2_0_message_signing"), do: :fapi_2_0_message_signing
+  defp profile_detail_from_value(:fapi_2_0_message_signing), do: :fapi_2_0_message_signing
+  defp profile_detail_from_value(value), do: profile_detail(value)
+
+  defp validate_strict_authorization_signing_alg(_client, _attrs, profile)
+       when profile != :fapi_2_0_message_signing,
+       do: :ok
+
+  defp validate_strict_authorization_signing_alg(client, attrs, :fapi_2_0_message_signing) do
+    case effective_authorization_signing_alg(client, attrs) do
+      :ES256 -> :ok
+      :PS256 -> :ok
+      _other -> {:error, :invalid_authorization_signing_alg}
+    end
+  end
+
+  defp effective_authorization_signing_alg(%Client{} = client, attrs) do
+    case fetch_mutable_attr(attrs, :authorization_signed_response_alg) do
+      {:ok, value} ->
+        case normalize_authorization_signing_alg(value) do
+          {:ok, alg} -> alg
+          :error -> value
+        end
+
+      :error ->
+        client.authorization_signed_response_alg
+    end
+  end
 
   defp normalize_field_name(value) when is_atom(value), do: value
 

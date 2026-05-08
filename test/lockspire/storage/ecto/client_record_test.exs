@@ -123,6 +123,126 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     assert out.name == "renamed", "update_changeset/2 still updates other allowed fields"
   end
 
+  test "authorization response encryption metadata round-trips through persistence" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "jarm_encryption_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :private_key_jwt,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      authorization_signed_response_alg: :RS256,
+      authorization_encrypted_response_alg: :RSA_OAEP_256,
+      authorization_encrypted_response_enc: :A256GCM,
+      jwks: %{"keys" => [%{"kty" => "RSA", "kid" => "enc-1"}]}
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.authorization_signed_response_alg == :RS256
+    assert out.authorization_encrypted_response_alg == :RSA_OAEP_256
+    assert out.authorization_encrypted_response_enc == :A256GCM
+  end
+
+  test "changeset/2 and update_changeset/2 accept only the narrow JARM encryption allow-list" do
+    repo = Lockspire.TestRepo
+
+    valid_client = %Client{
+      client_id: "jarm_encryption_valid_algs",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :private_key_jwt,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      authorization_signed_response_alg: :RS256,
+      authorization_encrypted_response_alg: :ECDH_ES,
+      authorization_encrypted_response_enc: :A128GCM,
+      jwks: %{"keys" => [%{"kty" => "EC", "kid" => "enc-2"}]}
+    }
+
+    assert ClientRecord.changeset(%ClientRecord{}, valid_client).valid?
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(valid_client)
+      |> repo.insert()
+
+    valid_update =
+      ClientRecord.update_changeset(inserted, %{
+        redirect_uris: ["https://app.example.com/cb"],
+        allowed_scopes: ["openid"],
+        active: true,
+        authorization_encrypted_response_alg: "RSA_OAEP_256",
+        authorization_encrypted_response_enc: "A256GCM"
+      })
+
+    assert valid_update.valid?
+
+    invalid_alg =
+      ClientRecord.changeset(%ClientRecord{}, %{
+        valid_client
+        | client_id: "jarm_encryption_invalid_alg",
+          authorization_encrypted_response_alg: :RSA1_5
+      })
+
+    refute invalid_alg.valid?
+    assert Keyword.has_key?(invalid_alg.errors, :authorization_encrypted_response_alg)
+
+    invalid_enc =
+      ClientRecord.update_changeset(inserted, %{
+        redirect_uris: ["https://app.example.com/cb"],
+        allowed_scopes: ["openid"],
+        active: true,
+        authorization_encrypted_response_enc: "A128CBC_HS256"
+      })
+
+    refute invalid_enc.valid?
+    assert Keyword.has_key?(invalid_enc.errors, :authorization_encrypted_response_enc)
+  end
+
+  test "persisted clients without authorization response encryption metadata remain valid" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "jarm_encryption_optional",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.authorization_encrypted_response_alg == nil
+    assert out.authorization_encrypted_response_enc == nil
+    assert out.token_endpoint_auth_method == :client_secret_basic
+  end
+
   # security_profile field tests (Phase 41)
 
   test "changeset/2 accepts :fapi_2_0_security security_profile and is valid" do
@@ -144,6 +264,27 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
     assert changeset.valid?
     assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_security
+  end
+
+  test "changeset/2 accepts :fapi_2_0_message_signing security_profile and is valid" do
+    client = %Client{
+      client_id: "fapi_message_signing_client_changeset_test",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_message_signing
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
+
+    assert changeset.valid?
+    assert Ecto.Changeset.get_change(changeset, :security_profile) == :fapi_2_0_message_signing
   end
 
   test "changeset/2 with default :inherit security_profile round-trips through to_domain/1" do
@@ -293,6 +434,28 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
       ClientRecord.update_changeset(inserted, %{
         id_token_signed_response_alg: "RS256"
       })
+
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)
+  end
+
+  test "changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_message_signing is enabled" do
+    client = %Client{
+      client_id: "fapi_message_signing_rs256_client",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      security_profile: :fapi_2_0_message_signing,
+      id_token_signed_response_alg: :RS256
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
 
     refute changeset.valid?
     assert Keyword.has_key?(changeset.errors, :id_token_signed_response_alg)

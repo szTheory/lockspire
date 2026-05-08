@@ -75,7 +75,8 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
           nonce: "nonce-123",
           state: "state-123",
           code_challenge: String.duplicate("a", 43),
-          code_challenge_method: :S256
+          code_challenge_method: :S256,
+          response_mode: "query.jwt"
         },
         now: now,
         request_uri_generator: fn -> "opaque-reference" end
@@ -105,6 +106,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
     assert fetched.scopes == ["profile", "email"]
     assert fetched.prompt == ["login", "consent"]
     assert fetched.code_challenge_method == :S256
+    assert fetched.response_mode == "query.jwt"
   end
 
   test "expired pushed authorization requests are not returned as active" do
@@ -155,6 +157,29 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
     assert fetched.client_id == public_client.client_id
     assert fetched.redirect_uri == "https://client.example.com/callback"
     assert fetched.scopes == ["profile", "email"]
+  end
+
+  test "push persists validated response_mode for later PAR-backed authorize handling", %{
+    public_client: public_client
+  } do
+    assert {:ok, success} =
+             PushedAuthorizationRequestProtocol.push(%{
+               params:
+                 valid_params(public_client.client_id)
+                 |> Map.put("response_mode", "jwt"),
+               opts: [
+                 client_store: Repository,
+                 pushed_authorization_request_store: Repository,
+                 request_uri_generator: fn -> "response-mode-success" end
+               ]
+             })
+
+    assert {:ok, fetched} =
+             Repository.fetch_active_pushed_authorization_request(
+               Policy.hash_token(success.request_uri)
+             )
+
+    assert fetched.response_mode == "query.jwt"
   end
 
   test "push rejects inbound request_uri parameters without creating durable state", %{

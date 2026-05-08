@@ -1,9 +1,12 @@
 defmodule GeneratedHostAppWeb.Router do
   use Phoenix.Router
 
+  alias GeneratedHostAppWeb.Plugs.PutCurrentScope
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
+    plug(PutCurrentScope)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)

@@ -1039,6 +1039,13 @@ defmodule Lockspire.Storage.Ecto.Repository do
           :ok
           | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
   def validate_fapi_signing_readiness do
+    validate_message_signing_readiness()
+  end
+
+  @spec validate_message_signing_readiness() ::
+          :ok
+          | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
+  def validate_message_signing_readiness do
     with {:publishable, {:ok, [_ | _]}} <-
            {:publishable, list_publishable_keys(security_profile: :fapi_2_0_security)},
          {:active, {:ok, %SigningKey{}}} <-
@@ -1060,10 +1067,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> repo().all()
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
+    |> filter_keys_for_alg(Keyword.get(opts, :alg))
     |> List.first()
     |> then(&{:ok, &1})
   rescue
     error -> {:error, error}
+  end
+
+  defp filter_keys_for_alg(keys, nil), do: keys
+
+  defp filter_keys_for_alg(keys, alg) when is_binary(alg) do
+    Enum.filter(keys, &(&1.alg == alg))
   end
 
   defp filter_keys_for_security_profile(keys, :fapi_2_0_security) do
@@ -1469,9 +1483,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
        ) do
     if record.status in expected_statuses do
       record
-      |> CibaAuthorizationRecord.update_changeset(
-        Map.put(attrs, :updated_at, DateTime.utc_now())
-      )
+      |> CibaAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
       |> repo().update()
       |> map_one(&CibaAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()

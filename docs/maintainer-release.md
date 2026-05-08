@@ -2,6 +2,8 @@
 
 Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
+This guide is maintainer-only release operations guidance. It does not define a second public support contract.
+
 ## Normal flow
 
 1. Merge reviewed changes to `main`.
@@ -12,6 +14,8 @@ Lockspire release work should stay boring, reviewable, tied to repo truth, and i
 6. Let the Release workflow cross the `hex-publish` environment boundary on `main`.
 7. Treat the resulting protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
 
+Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
+
 ## Evidence boundaries
 
 Keep release evidence in three separate buckets:
@@ -19,6 +23,8 @@ Keep release evidence in three separate buckets:
 - Repo-owned proof: `.github/workflows/release.yml`, `.github/actions/release-please/action.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
 - GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
 - Workflow-run proof: one successful `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
+
+Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
 ## Contributor gate
 
@@ -48,6 +54,23 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 
 If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal publish trigger, it does not replace the Release Please driven path, and it must target the exact commit SHA or tag being recovered.
 
+## Release candidate checklist
+
+Before merging a Release Please PR for the root package, confirm this checked-in release-candidate contract end to end:
+
+1. Run `mix ci` on the candidate revision.
+2. Review `mix.exs`, `.release-please-manifest.json`, and `CHANGELOG.md` together so version, package metadata, and release notes describe one embedded-library release story.
+3. Review `release-please-config.json` and confirm the root package still uses `component: "lockspire"`, `include-v-in-tag: true`, and `include-component-in-tag: true`.
+4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package. For the current checked-in `1.0.0` candidate, that target is `lockspire-v1.0.0`.
+5. Review `.github/workflows/release.yml` and confirm the only checked-in Release Please entry point is `uses: ./.github/actions/release-please`.
+6. Confirm `.github/actions/release-please/action.yml` still preserves root outputs such as `tag_name` and `release_created`, because those outputs define which merged release commit is allowed to approach the protected publish lane.
+7. Confirm `workflow_dispatch` remains recovery-only, requires both `recovery_reason` and `recovery_ref`, and is documented as replaying an exact immutable SHA or existing tag rather than creating a new publish intent.
+8. Confirm the publish job still targets exactly one protected environment, `hex-publish`, and that checked-in proof stops there.
+9. Confirm `docs/supported-surface.md` remains the canonical support contract and that this maintainer guide, `README`, and `SECURITY.md` only defer to it rather than creating a second support matrix.
+10. Merge the reviewed Release Please PR and let the protected workflow run become the first authenticated evidence bucket.
+
+Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `mix release.preflight` and `mix hex.publish --yes` are trusted-workflow commands only; they belong to the protected `hex-publish` boundary, not to local maintainer folklore.
+
 ## Secrets and environment
 
 - Use a protected `hex-publish` environment for publish jobs.
@@ -64,9 +87,9 @@ Releases should only claim the supported surface the repo can currently prove.
 
 The repo should not claim full release readiness or broader protocol support until the docs, CI, support policy, and maintainer runbooks all agree with implemented behavior.
 
-That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
+That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows.
 
-Do not broaden release claims to request-object-by-value support, generic external request_uri handling, device flow, dynamic client registration, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
+Do not broaden release claims to request-object-by-value support, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning.
 
 ## Preflight checklist
 
@@ -79,7 +102,7 @@ Before merging a release PR, confirm:
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - trusted publish lane still runs `mix hex.publish --yes`
-- public docs and `SECURITY.md` still match the supported surface
+- public docs and `SECURITY.md` still defer to `docs/supported-surface.md`
 
 ## Hold points
 
@@ -90,3 +113,16 @@ Stop the release if:
 - a workflow change bypasses CODEOWNERS or dependency review
 - CI stops being equivalent to the maintained `mix ci` contract
 - the protected `hex-publish` environment stops being restricted to `main`, allows bypass you do not intend to allow, or stores `HEX_API_KEY` outside the environment boundary
+
+This file does not broaden the Lockspire product contract. For public support truth, defer to `docs/supported-surface.md`.
+
+## Post-Publish Verification
+
+After a successful publish to Hex, you must verify the published artifact to guarantee "Install Truth". Run the post-publish script:
+
+```bash
+./scripts/publish/verify_install_truth.sh
+```
+
+This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
+

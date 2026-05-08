@@ -25,6 +25,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
           state: String.t() | nil,
           code_challenge: String.t(),
           code_challenge_method: code_challenge_method(),
+          response_mode: String.t() | nil,
           expires_at: DateTime.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
@@ -40,6 +41,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
     :state,
     :code_challenge,
     :code_challenge_method,
+    :response_mode,
     :expires_at,
     :inserted_at,
     :updated_at,
@@ -73,6 +75,7 @@ defmodule Lockspire.Domain.PushedAuthorizationRequest do
       state: Map.get(attrs, :state),
       code_challenge: Map.fetch!(attrs, :code_challenge),
       code_challenge_method: Map.get(attrs, :code_challenge_method, :S256),
+      response_mode: Map.get(attrs, :response_mode),
       expires_at: DateTime.add(now, ttl, :second)
     }
   end

@@ -4,7 +4,10 @@ defmodule Lockspire.Protocol.Discovery do
   """
 
   alias Lockspire.Config
+  alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.SecurityProfile
 
   @endpoint_paths %{
     "authorization_endpoint" => "/authorize",
@@ -21,16 +24,19 @@ defmodule Lockspire.Protocol.Discovery do
   }
 
   @response_types_supported ["code"]
-  @response_modes_supported ["query"]
   @grant_types_supported [
     "authorization_code",
     "refresh_token",
     "urn:ietf:params:oauth:grant-type:device_code",
     "urn:openid:params:grant-type:ciba"
   ]
-  @token_endpoint_auth_methods_supported ["none", "client_secret_basic", "client_secret_post"]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
+  @introspection_supported_auth_methods [
+    "client_secret_basic",
+    "client_secret_post",
+    "private_key_jwt"
+  ]
 
   @doc """
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
@@ -44,17 +50,13 @@ defmodule Lockspire.Protocol.Discovery do
   what Phase 27's HTTP DCR surface MUST filter the resolver's accepted methods through.
   """
   @spec token_endpoint_auth_methods_supported() :: [String.t()]
-  def token_endpoint_auth_methods_supported, do: @token_endpoint_auth_methods_supported
+  def token_endpoint_auth_methods_supported, do: ClientAuth.supported_auth_method_names()
 
   @doc """
   Returns the truth-based list of `token_endpoint_auth_method` values this issuer's
   `openid-configuration` document actually publishes — i.e., `[]` when the
-  `token_endpoint` route is not mounted, otherwise the full static list.
-
-  Phase 27's HTTP DCR surface MUST filter the resolver's accepted
-  `allowed_token_endpoint_auth_methods` through this set (e.g.,
-  `MapSet.intersection(_, MapSet.new(published_token_endpoint_auth_methods_supported()))`)
-  to avoid accepting methods the discovery document does not advertise.
+  `token_endpoint` route is not mounted, otherwise the subset the current runtime can
+  truthfully verify on the token endpoint.
   """
   @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
   def published_token_endpoint_auth_methods_supported do
@@ -78,11 +80,13 @@ defmodule Lockspire.Protocol.Discovery do
     issuer = Config.issuer!()
     endpoint_metadata = mounted_endpoint_metadata()
 
+    authorization_response_capabilities =
+      AuthorizationResponseCapabilities.metadata(endpoint_metadata, global_security_profile())
+
     %{
       "issuer" => issuer,
       "scopes_supported" => scopes_supported(),
       "response_types_supported" => @response_types_supported,
-      "response_modes_supported" => @response_modes_supported,
       "grant_types_supported" => grant_types_supported(endpoint_metadata),
       "token_endpoint_auth_methods_supported" =>
         token_endpoint_auth_methods_supported(endpoint_metadata),
@@ -90,7 +94,9 @@ defmodule Lockspire.Protocol.Discovery do
       "subject_types_supported" => @subject_types_supported,
       "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
     }
+    |> Map.merge(authorization_response_capabilities)
     |> Map.merge(endpoint_metadata)
+    |> put_endpoint_auth_metadata(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
     |> maybe_put_ciba_metadata(endpoint_metadata)
     |> maybe_put_resource_indicators_metadata(endpoint_metadata)
@@ -112,7 +118,7 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp id_token_signing_alg_values_supported do
-    Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(global_security_profile())
+    SecurityProfile.allowed_signing_algorithms(global_security_profile())
   end
 
   defp global_security_profile do
@@ -169,10 +175,76 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp token_endpoint_auth_methods_supported(endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "token_endpoint") do
-      @token_endpoint_auth_methods_supported
+      published_direct_client_auth_methods()
     else
       []
     end
+  end
+
+  defp put_endpoint_auth_metadata(metadata, endpoint_metadata) do
+    metadata
+    |> maybe_put_endpoint_auth_methods(
+      "token_endpoint_auth_methods_supported",
+      token_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "token_endpoint_auth_methods_supported",
+      "token_endpoint_auth_signing_alg_values_supported"
+    )
+    |> maybe_put_endpoint_auth_methods(
+      "revocation_endpoint_auth_methods_supported",
+      revocation_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "revocation_endpoint_auth_methods_supported",
+      "revocation_endpoint_auth_signing_alg_values_supported"
+    )
+    |> maybe_put_endpoint_auth_methods(
+      "introspection_endpoint_auth_methods_supported",
+      introspection_endpoint_auth_methods_supported(endpoint_metadata)
+    )
+    |> maybe_put_endpoint_auth_signing_algorithms(
+      "introspection_endpoint_auth_methods_supported",
+      "introspection_endpoint_auth_signing_alg_values_supported"
+    )
+  end
+
+  defp maybe_put_endpoint_auth_methods(metadata, _key, []), do: metadata
+
+  defp maybe_put_endpoint_auth_methods(metadata, key, methods),
+    do: Map.put(metadata, key, methods)
+
+  defp maybe_put_endpoint_auth_signing_algorithms(metadata, methods_key, algorithms_key) do
+    if "private_key_jwt" in Map.get(metadata, methods_key, []) do
+      Map.put(
+        metadata,
+        algorithms_key,
+        SecurityProfile.allowed_signing_algorithms(global_security_profile())
+      )
+    else
+      metadata
+    end
+  end
+
+  defp revocation_endpoint_auth_methods_supported(endpoint_metadata) do
+    if Map.has_key?(endpoint_metadata, "revocation_endpoint") do
+      published_direct_client_auth_methods()
+    else
+      []
+    end
+  end
+
+  defp introspection_endpoint_auth_methods_supported(endpoint_metadata) do
+    if Map.has_key?(endpoint_metadata, "introspection_endpoint") do
+      published_direct_client_auth_methods()
+      |> Enum.filter(&(&1 in @introspection_supported_auth_methods))
+    else
+      []
+    end
+  end
+
+  defp published_direct_client_auth_methods do
+    ClientAuth.supported_auth_method_names()
   end
 
   defp code_challenge_methods_supported(endpoint_metadata) do
@@ -238,7 +310,7 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp maybe_put_par_required_metadata(metadata) do
-    if global_security_profile() == :fapi_2_0_security do
+    if global_security_profile() in [:fapi_2_0_security, :fapi_2_0_message_signing] do
       Map.put(metadata, "require_pushed_authorization_requests", true)
     else
       metadata

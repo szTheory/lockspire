@@ -16,6 +16,7 @@ defmodule Lockspire.Storage.Ecto.ConsentGrantRecord do
     field(:granted_at, :utc_datetime_usec)
     field(:status, Ecto.Enum, values: [:active, :revoked])
     field(:kind, Ecto.Enum, values: [:remembered, :one_time])
+    field(:authorization_details, {:array, :map}, default: [])
     field(:revoked_at, :utc_datetime_usec)
     field(:revoked_by, :string)
     field(:revoked_reason, :string)
@@ -34,6 +35,7 @@ defmodule Lockspire.Storage.Ecto.ConsentGrantRecord do
       :granted_at,
       :status,
       :kind,
+      :authorization_details,
       :revoked_at,
       :revoked_by,
       :revoked_reason,
@@ -58,6 +60,7 @@ defmodule Lockspire.Storage.Ecto.ConsentGrantRecord do
       granted_at: record.granted_at,
       status: record.status,
       kind: record.kind,
+      authorization_details: record.authorization_details,
       revoked_at: record.revoked_at,
       revoked_by: record.revoked_by,
       revoked_reason: record.revoked_reason,

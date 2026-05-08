@@ -1,5 +1,40 @@
 # Milestones
 
+## v1.17 1.0.0 GA Release Readiness (Shipped + archived: 2026-05-07)
+
+**Phases completed:** **3** (**67-69**), **3** plans, **7** requirements closed.
+
+**Package posture:** Lockspire 1.0.0 is officially released to Hex, with all execution verifiable.
+
+**Key accomplishments:**
+- Completed public release verification.
+- Documented explicit durable records.
+
+**Pre-close audit:** `audit-open` had 2 acknowledged deferred items. Formal milestone audit: [`.planning/milestones/v1.17-MILESTONE-AUDIT.md`](milestones/v1.17-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.17-ROADMAP.md`, `milestones/v1.17-REQUIREMENTS.md`, `milestones/v1.17-MILESTONE-AUDIT.md` · **Git tag:** `v1.17`
+
+---
+
+## v1.16 Embedded Adoption Hardening & Sigra Golden Path (Shipped + archived: 2026-05-07)
+
+**Phases completed:** **4** (**63-66**), **13** plans, **11** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` now has one coherent repo-truth story across package metadata, changelog posture, protected release wiring, supported-surface docs, and release-readiness contract tests.
+
+**Key accomplishments:**
+- Added one canonical embedded install path with explicit Lockspire-managed versus host-owned seams, plus a manifest-backed `mix lockspire.upgrade`.
+- Added `mix lockspire.verify` so host teams can catch router wiring, seam, config, and migration mistakes before runtime drift becomes support debt.
+- Proved the Sigra companion path end to end through generated-host code, including unauthenticated `/authorize`, login bounce, interaction resume, consent, token exchange, and JWKS.
+- Reconciled README, SECURITY, maintainer docs, changelog posture, package metadata, and release workflow wording around a single 1.0.0 support story.
+- Retired the old external-suite conformance lane as historical non-claim audit context and anchored current trust claims to repo-native strictness and release-readiness proof.
+
+**Pre-close audit:** `audit-open` had 2 acknowledged deferred items: historical `Phase 37: 37-VERIFICATION.md [gaps_found]` preserved as non-authoritative audit context, and seed `SEED-001-cut-next-real-release [dormant]` kept for the next milestone decision. Formal milestone audit: [`.planning/milestones/v1.16-MILESTONE-AUDIT.md`](milestones/v1.16-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.16-ROADMAP.md`, `milestones/v1.16-REQUIREMENTS.md`, `milestones/v1.16-MILESTONE-AUDIT.md` · **Git tag:** `v1.16`
+
+---
+
 ## v1.14 Advanced Authorization & Resource Targetting (Shipped + archived: 2026-05-06)
 
 **Phases completed:** **5** (**54-58**), **12** plans, **12** requirements closed.

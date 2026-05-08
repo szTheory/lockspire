@@ -6,10 +6,27 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
   alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
+
+  defmodule Success do
+    @moduledoc """
+    Successful introspection context with protocol-owned payload truth and signer inputs.
+    """
+
+    @type t :: %__MODULE__{
+            payload: map(),
+            caller: Client.t(),
+            security_profile: atom() | struct() | nil,
+            strict_jwt_required?: boolean()
+          }
+
+    defstruct [:payload, :caller, :security_profile, strict_jwt_required?: false]
+  end
 
   defmodule Error do
     @moduledoc """
@@ -26,7 +43,7 @@ defmodule Lockspire.Protocol.Introspection do
     defstruct [:status, :error, :error_description, :reason_code]
   end
 
-  @type result :: {:ok, map()} | {:error, Error.t()}
+  @type result :: {:ok, Success.t()} | {:error, Error.t()}
 
   @spec introspect(map()) :: result()
   def introspect(request) when is_map(request) do
@@ -35,9 +52,9 @@ defmodule Lockspire.Protocol.Introspection do
 
     with {:ok, token_hash} <- fetch_token_hash(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, response} <- introspection_response(client, token_hash, request) do
-      emit_result(client, response)
-      {:ok, response}
+         {:ok, payload} <- introspection_response(client, token_hash, request) do
+      emit_result(client, payload)
+      {:ok, success_response(client, payload, request)}
     else
       {:error, %Error{} = error} ->
         emit_failure(error)
@@ -83,13 +100,7 @@ defmodule Lockspire.Protocol.Introspection do
     end
   end
 
-  defp validate_confidential_caller(%Client{
-         client_type: :confidential,
-         token_endpoint_auth_method: method
-       })
-       when method in [:client_secret_basic, :client_secret_post] do
-    {:ok, true}
-  end
+  defp validate_confidential_caller(%Client{client_type: :confidential}), do: {:ok, true}
 
   defp validate_confidential_caller(_client), do: {:ok, false}
 
@@ -144,22 +155,43 @@ defmodule Lockspire.Protocol.Introspection do
 
   defp inactive_response, do: {:ok, %{active: false}}
 
+  defp success_response(%Client{} = client, payload, request) when is_map(payload) do
+    security_profile = effective_security_profile(client, request)
+
+    %Success{
+      payload: payload,
+      caller: client,
+      security_profile: security_profile,
+      strict_jwt_required?: strict_jwt_required?(security_profile)
+    }
+  end
+
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp maybe_put_authorization_details(map, %Token{consent_grant_id: nil}, _request), do: map
-
-  defp maybe_put_authorization_details(map, %Token{consent_grant_id: consent_grant_id}, request) do
-    case consent_store(request).fetch_consent_grant(consent_grant_id) do
-      {:ok, %ConsentGrant{authorization_details: authorization_details}}
-      when is_list(authorization_details) and authorization_details != [] ->
-        Map.put(map, :authorization_details, authorization_details)
-
-      {:ok, _grant} ->
+  defp maybe_put_authorization_details(map, %Token{} = token, request) do
+    case Map.get(token, :consent_grant_id) do
+      nil ->
         map
 
-      {:error, _reason} ->
-        map
+      consent_grant_id ->
+        case consent_store(request).fetch_consent_grant(consent_grant_id) do
+          {:ok, %ConsentGrant{} = grant} ->
+            case Map.get(grant, :authorization_details) do
+              authorization_details
+              when is_list(authorization_details) and authorization_details != [] ->
+                Map.put(map, :authorization_details, authorization_details)
+
+              _other ->
+                map
+            end
+
+          {:ok, _grant} ->
+            map
+
+          {:error, _reason} ->
+            map
+        end
     end
   end
 
@@ -215,11 +247,37 @@ defmodule Lockspire.Protocol.Introspection do
     |> Keyword.put_new(:client_store, Config.repo!())
   end
 
+  defp effective_security_profile(%Client{} = client, request) do
+    store = server_policy_store(request)
+
+    with true <- function_exported?(store, :get_server_policy, 0),
+         {:ok, %ServerPolicy{} = server_policy} <- store.get_server_policy() do
+      SecurityProfile.resolve_effective_profile(server_policy, client)
+    else
+      _other -> client.security_profile
+    end
+  end
+
+  defp strict_jwt_required?(%SecurityProfile.Resolved{fapi_2_0_message_signing?: true}), do: true
+  defp strict_jwt_required?(_security_profile), do: false
+
   defp token_store(request),
     do:
       request
       |> Map.get(:opts, [])
       |> Keyword.get(:token_store, Config.repo!())
+
+  defp server_policy_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get_lazy(:server_policy_store, fn -> client_store(request) end)
+
+  defp client_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get(:client_store, Config.repo!())
 
   defp consent_store(request),
     do:

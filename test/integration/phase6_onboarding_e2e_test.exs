@@ -2,61 +2,34 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
   use ExUnit.Case, async: false
 
   @moduletag :integration
+  @endpoint GeneratedHostAppWeb.Endpoint
 
   import Phoenix.ConnTest
   import Plug.Conn
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.SigningKey
-  alias Lockspire.Host.Claims
-  alias Lockspire.Host.InteractionResult
   alias Lockspire.Storage.Ecto.Repository
 
-  defmodule GeneratedHostResolver do
-    @behaviour Lockspire.Host.AccountResolver
-
-    @impl true
-    def resolve_current_account(_conn_or_socket, _context),
-      do: {:ok, %{id: "generated-host-user"}}
-
-    @impl true
-    def resolve_account(account_reference, _context), do: {:ok, %{id: account_reference}}
-
-    @impl true
-    def build_claims(account, _context) do
-      {:ok,
-       %Claims{
-         subject: to_string(account.id),
-         id_token: %{"email" => "#{account.id}@example.test"},
-         userinfo: %{
-           "email" => "#{account.id}@example.test",
-           "email_verified" => true,
-           "name" => "Generated Host User"
-         }
-       }}
-    end
-
-    @impl true
-    def redirect_for_login(_conn_or_socket, context) do
-      %InteractionResult{
-        login_path: "/login",
-        return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
-        params: %{
-          "interaction_id" =>
-            Map.get(context, :interaction_id) || Map.get(context, "interaction_id")
-        }
-      }
-    end
-  end
-
   setup_all do
+    Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
+      secret_key_base: String.duplicate("a", 64),
+      server: false
+    )
+
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
     Application.put_env(:lockspire, :known_scopes, ["openid", "email", "profile"])
-    Application.put_env(:lockspire, :account_resolver, GeneratedHostResolver)
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
 
     start_supervised!(Lockspire.TestRepo)
+    start_supervised!(GeneratedHostAppWeb.Endpoint)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
     :ok
@@ -92,9 +65,9 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     code_verifier = "phase6-onboarding-verifier"
 
     discovery_conn =
-      build_conn(:get, "/.well-known/openid-configuration")
+      build_conn()
       |> put_req_header("accept", "application/json")
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+      |> get("/lockspire/.well-known/openid-configuration")
 
     assert discovery_conn.status == 200
 
@@ -105,7 +78,8 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     assert discovery["jwks_uri"] == "https://example.test/lockspire/jwks"
 
     authorize_conn =
-      build_conn(:get, "/authorize", %{
+      build_conn()
+      |> get("/lockspire/authorize", %{
         "client_id" => client.client_id,
         "response_type" => "code",
         "redirect_uri" => "https://client.example.com/callback",
@@ -116,30 +90,57 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
         "code_challenge" => code_challenge(code_verifier),
         "code_challenge_method" => "S256"
       })
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert authorize_conn.status in [302, 303]
 
-    consent_path =
+    login_uri =
       authorize_conn
-      |> get_resp_header("location")
-      |> List.first()
-
-    assert consent_path =~ "/lockspire/consent/"
-
-    interaction_id =
-      consent_path
+      |> redirected_to()
       |> URI.parse()
-      |> Map.fetch!(:path)
-      |> String.split("/")
-      |> List.last()
+
+    assert login_uri.path == "/login"
+
+    login_params = URI.decode_query(login_uri.query || "")
+    assert %{"interaction_id" => interaction_id, "return_to" => return_to} = login_params
+    assert return_to == "/lockspire/consent/#{interaction_id}"
+
+    login_page_conn =
+      build_conn()
+      |> get("/login", login_params)
+
+    assert login_page_conn.status == 200
+    assert login_page_conn.resp_body =~ "Generated host login"
+
+    login_complete_conn =
+      submit_from(login_page_conn, "/login", %{
+        "return_to" => return_to,
+        "interaction_id" => interaction_id,
+        "login" => "generated-host-user",
+        "auth_time_seconds_ago" => "30"
+      })
+
+    assert login_complete_conn.status in [302, 303]
+
+    resume_uri =
+      login_complete_conn
+      |> redirected_to()
+      |> URI.parse()
+
+    assert resume_uri.path == "/lockspire/interactions/#{interaction_id}"
+
+    resumed_consent_conn =
+      signed_in_conn("generated-host-user", 30)
+      |> get(URI.to_string(resume_uri))
+
+    assert resumed_consent_conn.status in [302, 303]
+    assert redirected_to(resumed_consent_conn) == "/lockspire/consent/#{interaction_id}"
 
     consent_complete_conn =
-      build_conn(:post, "/interactions/#{interaction_id}/complete", %{
+      signed_in_conn("generated-host-user", 30)
+      |> post("/lockspire/interactions/#{interaction_id}/complete", %{
         "decision" => "approve",
         "remember" => "true"
       })
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert consent_complete_conn.status in [302, 303]
 
@@ -156,15 +157,15 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     assert code = callback_params["code"]
 
     token_conn =
-      build_conn(:post, "/token", %{
+      build_conn()
+      |> put_req_header("accept", "application/json")
+      |> post("/lockspire/token", %{
         "grant_type" => "authorization_code",
         "client_id" => client.client_id,
         "code" => code,
         "redirect_uri" => "https://client.example.com/callback",
         "code_verifier" => code_verifier
       })
-      |> put_req_header("accept", "application/json")
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert token_conn.status == 200
 
@@ -179,11 +180,12 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
 
     assert id_token_claims["sub"] == "generated-host-user"
     assert id_token_claims["nonce"] == "phase6-nonce"
+    assert id_token_claims["email"] == "generated-host-user@example.test"
 
     jwks_conn =
-      build_conn(:get, "/jwks")
+      build_conn()
       |> put_req_header("accept", "application/json")
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+      |> get("/lockspire/jwks")
 
     assert jwks_conn.status == 200
 
@@ -223,5 +225,37 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     :sha256
     |> :crypto.hash(verifier)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp submit_from(conn, path, params) do
+    csrf_token = extract_csrf_token(conn.resp_body)
+
+    conn
+    |> recycle()
+    |> post(path, Map.put(params, "_csrf_token", csrf_token))
+  end
+
+  defp extract_csrf_token(body) do
+    ~r/name="_csrf_token" value="([^"]+)"/
+    |> Regex.run(body, capture: :all_but_first)
+    |> case do
+      [token] -> token
+      _ -> raise "expected CSRF token in response body"
+    end
+  end
+
+  defp signed_in_conn(login, auth_time_seconds_ago) do
+    auth_time_unix =
+      DateTime.utc_now()
+      |> DateTime.add(-auth_time_seconds_ago, :second)
+      |> DateTime.to_unix()
+
+    build_conn()
+    |> init_test_session(%{
+      "current_account_id" => login,
+      "current_account_email" => "#{login}@example.test",
+      "current_account_name" => "Generated Host User",
+      "current_auth_time_unix" => auth_time_unix
+    })
   end
 end

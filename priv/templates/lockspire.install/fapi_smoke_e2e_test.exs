@@ -17,7 +17,7 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
   use ExUnit.Case, async: false
 
   @moduletag :integration
-  @endpoint Lockspire.Web.Router
+  @endpoint <%= @web_module %>.Endpoint
 
   import Phoenix.ConnTest
   import Plug.Conn
@@ -28,8 +28,8 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
 
   test "FAPI 2.0 rejects direct authorize requests without PAR and emits iss", %{client: client} do
     conn =
-      build_conn(:get, "/authorize", authorize_params(client))
-      |> @endpoint.call(@endpoint.init([]))
+      build_conn()
+      |> get("<%= @mount_path %>/authorize", authorize_params(client))
 
     assert conn.status in [302, 303]
 
@@ -51,10 +51,10 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
 
   test "authorize rejects trailing-slash redirect_uri drift with exact matching", %{client: client} do
     conn =
-      build_conn(:get, "/authorize", authorize_params(client, %{
+      build_conn()
+      |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
         "redirect_uri" => client.redirect_uri <> "/"
       }))
-      |> @endpoint.call(@endpoint.init([]))
 
     assert conn.status == 400
     assert conn.resp_body =~ "redirect_uri must match a registered URI"
@@ -62,10 +62,10 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
 
   test "authorize rejects extra-query redirect_uri drift with exact matching", %{client: client} do
     conn =
-      build_conn(:get, "/authorize", authorize_params(client, %{
+      build_conn()
+      |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
         "redirect_uri" => client.redirect_uri <> "?extra=1"
       }))
-      |> @endpoint.call(@endpoint.init([]))
 
     assert conn.status == 400
     assert conn.resp_body =~ "redirect_uri must match a registered URI"
@@ -73,10 +73,10 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
 
   test "authorization error redirects always include iss", %{client: client} do
     conn =
-      build_conn(:get, "/authorize", authorize_params(client, %{
+      build_conn()
+      |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
         "response_type" => "token"
       }))
-      |> @endpoint.call(@endpoint.init([]))
 
     assert conn.status in [302, 303]
 

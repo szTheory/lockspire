@@ -21,6 +21,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
     field(:state, :string)
     field(:code_challenge, :string)
     field(:code_challenge_method, Ecto.Enum, values: [:S256])
+    field(:response_mode, :string)
     field(:expires_at, :utc_datetime_usec)
 
     timestamps()
@@ -45,6 +46,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
       :state,
       :code_challenge,
       :code_challenge_method,
+      :response_mode,
       :expires_at
     ])
     |> validate_required([
@@ -73,6 +75,7 @@ defmodule Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord do
       state: record.state,
       code_challenge: record.code_challenge,
       code_challenge_method: record.code_challenge_method,
+      response_mode: record.response_mode,
       expires_at: record.expires_at,
       inserted_at: record.inserted_at,
       updated_at: record.updated_at

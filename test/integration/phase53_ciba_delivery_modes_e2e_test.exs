@@ -23,7 +23,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
 
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(Lockspire.Web.Endpoint)
-    
+
     # Oban is started by the application automatically in test mode.
 
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -89,8 +89,9 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
     auth_req_id_hash = Lockspire.Security.Policy.hash_token(auth_req_id)
 
     # 2. Approve authorization
-    {:ok, ciba_auth} = Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-123", ["openid", "profile"])
-    
+    {:ok, ciba_auth} =
+      Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-123", ["openid", "profile"])
+
     # 3. Verify Oban job enqueued
     assert_enqueued(worker: CibaNotificationWorker, args: %{ciba_authorization_id: ciba_auth.id})
 
@@ -100,7 +101,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
       assert req.url.path == "/notify"
       assert {"authorization", "Bearer #{notification_token}"} in req.headers
       assert req.body == Jason.encode!(%{"auth_req_id" => auth_req_id})
-      
+
       Req.Test.json(req, %{status: "ok"})
     end)
 
@@ -159,8 +160,9 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
     auth_req_id_hash = Lockspire.Security.Policy.hash_token(auth_req_id)
 
     # 2. Approve authorization
-    {:ok, ciba_auth} = Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-456", ["openid", "profile"])
-    
+    {:ok, ciba_auth} =
+      Lockspire.Ciba.approve_authorization(auth_req_id_hash, "user-456", ["openid", "profile"])
+
     # 3. Verify Oban job enqueued
     assert_enqueued(worker: CibaNotificationWorker, args: %{ciba_authorization_id: ciba_auth.id})
 
@@ -169,13 +171,13 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
       assert req.url.host == "rp.example.test"
       assert req.url.path == "/push"
       assert {"authorization", "Bearer #{notification_token}"} in req.headers
-      
+
       body = Jason.decode!(req.body)
       assert body["auth_req_id"] == auth_req_id
       assert is_binary(body["access_token"])
       assert is_binary(body["id_token"])
       assert body["token_type"] == "Bearer"
-      
+
       Req.Test.json(req, %{status: "ok"})
     end)
 
@@ -194,6 +196,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
   test "CIBA delivery fails if client_notification_token is missing for Ping/Push", %{conn: conn} do
     # Register a ping client
     client_id = "missing-token-client"
+
     {:ok, _client} =
       Repository.register_client(%Client{
         client_id: client_id,
@@ -216,6 +219,8 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
       })
 
     assert conn.status == 400
-    assert %{"error" => "invalid_request", "reason_code" => "missing_client_notification_token"} = Jason.decode!(conn.resp_body)
+
+    assert %{"error" => "invalid_request", "reason_code" => "missing_client_notification_token"} =
+             Jason.decode!(conn.resp_body)
   end
 end
