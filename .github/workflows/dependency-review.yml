@@ -14,5 +14,36 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Detect dependency graph availability
+        id: dependency_graph
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          status="$(
+            curl -sS -o /tmp/dependency-graph-sbom.json -w '%{http_code}' \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "X-GitHub-Api-Version: 2026-03-10" \
+              "$GITHUB_API_URL/repos/$REPOSITORY/dependency-graph/sbom"
+          )"
+
+          if [[ "$status" == "200" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+          echo "Dependency graph is unavailable for this repository; skipping dependency review."
+
       - name: Review dependency changes
+        if: ${{ steps.dependency_graph.outputs.enabled == 'true' }}
         uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+
+      - name: Skip dependency review when dependency graph is unavailable
+        if: ${{ steps.dependency_graph.outputs.enabled != 'true' }}
+        run: |
+          echo "Dependency review is skipped because the repository dependency graph is not enabled."
