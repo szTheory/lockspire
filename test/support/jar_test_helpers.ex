@@ -107,12 +107,23 @@ defmodule Lockspire.JarTestHelpers do
   @doc "Returns a `%Client{}` with a single inline public JWK (RFC 7517 form)."
   @spec client_with_single_jwk(map()) :: Client.t()
   def client_with_single_jwk(pub_jwk_map) when is_map(pub_jwk_map) do
-    %Client{jwks: pub_jwk_map}
+    base_client(%{jwks: pub_jwk_map})
   end
 
   @doc "Returns a `%Client{}` with a JWK Set containing one public key."
   @spec client_with_jwks_set(map()) :: Client.t()
   def client_with_jwks_set(pub_jwk_map) when is_map(pub_jwk_map) do
-    %Client{jwks: %{"keys" => [pub_jwk_map]}}
+    base_client(%{jwks: %{"keys" => [pub_jwk_map]}})
+  end
+
+  defp base_client(overrides) do
+    struct!(
+      Client,
+      %{
+        client_id: "jar-test-client",
+        client_type: :confidential
+      }
+      |> Map.merge(overrides)
+    )
   end
 end
