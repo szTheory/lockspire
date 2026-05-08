@@ -38,9 +38,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   alias Lockspire.Protocol.Discovery
   alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
-  alias Lockspire.Protocol.Registration
   alias Lockspire.Storage.Ecto.Repository
-  alias Lockspire.Test.Fixtures.DcrFixtures
 
   @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
   @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
@@ -271,16 +269,22 @@ defmodule Lockspire.Protocol.DiscoveryTest do
           "authorization_encryption_enc_values_supported"
         ])
 
-      {:ok, _client_result} =
-        Registration.register(%{
-          metadata:
-            DcrFixtures.private_key_jwt_jwks_metadata()
-            |> Map.put("client_name", "encrypted jarm metadata truth fixture")
-            |> Map.put("authorization_signed_response_alg", "PS256")
-            |> Map.put("authorization_encrypted_response_alg", "RSA-OAEP-256")
-            |> Map.put("authorization_encrypted_response_enc", "A256GCM"),
-          server_policy: DcrFixtures.private_key_jwt_server_policy(),
-          source: %{ip: "127.0.0.1", user_agent: "test"}
+      {:ok, %{client: client}} =
+        Clients.register_client(%{
+          name: "encrypted jarm metadata truth fixture",
+          client_type: :confidential,
+          redirect_uris: ["https://client.example.com/cb"],
+          allowed_scopes: ["profile"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic
+        })
+
+      {:ok, _updated_client} =
+        Repository.update_client(client, %{
+          authorization_signed_response_alg: :RS256,
+          authorization_encrypted_response_alg: :RSA_OAEP_256,
+          authorization_encrypted_response_enc: :A256GCM
         })
 
       after_registration =

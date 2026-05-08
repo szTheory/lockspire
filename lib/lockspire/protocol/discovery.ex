@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   alias Lockspire.Config
   alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.SecurityProfile
 
@@ -23,15 +24,6 @@ defmodule Lockspire.Protocol.Discovery do
   }
 
   @response_types_supported ["code"]
-  @response_modes_supported [
-    "query",
-    "fragment",
-    "form_post",
-    "jwt",
-    "query.jwt",
-    "fragment.jwt",
-    "form_post.jwt"
-  ]
   @grant_types_supported [
     "authorization_code",
     "refresh_token",
@@ -87,20 +79,21 @@ defmodule Lockspire.Protocol.Discovery do
   def openid_configuration do
     issuer = Config.issuer!()
     endpoint_metadata = mounted_endpoint_metadata()
+    authorization_response_capabilities =
+      AuthorizationResponseCapabilities.metadata(endpoint_metadata, global_security_profile())
 
     %{
       "issuer" => issuer,
       "scopes_supported" => scopes_supported(),
       "response_types_supported" => @response_types_supported,
-      "response_modes_supported" => @response_modes_supported,
       "grant_types_supported" => grant_types_supported(endpoint_metadata),
       "token_endpoint_auth_methods_supported" =>
         token_endpoint_auth_methods_supported(endpoint_metadata),
       "code_challenge_methods_supported" => code_challenge_methods_supported(endpoint_metadata),
       "subject_types_supported" => @subject_types_supported,
-      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported(),
-      "authorization_signing_alg_values_supported" => authorization_signing_alg_values_supported()
+      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
     }
+    |> Map.merge(authorization_response_capabilities)
     |> Map.merge(endpoint_metadata)
     |> put_endpoint_auth_metadata(endpoint_metadata)
     |> maybe_put_dpop_metadata(endpoint_metadata)
@@ -124,10 +117,6 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp id_token_signing_alg_values_supported do
-    SecurityProfile.allowed_signing_algorithms(global_security_profile())
-  end
-
-  defp authorization_signing_alg_values_supported do
     SecurityProfile.allowed_signing_algorithms(global_security_profile())
   end
 

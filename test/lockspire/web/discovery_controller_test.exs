@@ -34,6 +34,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   import Phoenix.ConnTest, only: [build_conn: 2]
   import Plug.Conn
 
+  alias Lockspire.Clients
   alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
@@ -305,5 +306,55 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
                %{"authorization_endpoint" => body["authorization_endpoint"]},
                :fapi_2_0_security
              )
+  end
+
+  test "GET /.well-known/openid-configuration does not change JARM metadata when transient clients are registered" do
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    before_registration =
+      Jason.decode!(conn.resp_body)
+      |> Map.take([
+        "response_modes_supported",
+        "authorization_signing_alg_values_supported",
+        "authorization_encryption_alg_values_supported",
+        "authorization_encryption_enc_values_supported"
+      ])
+
+    {:ok, %{client: client}} =
+      Clients.register_client(%{
+        name: "http discovery metadata truth fixture",
+        client_type: :confidential,
+        redirect_uris: ["https://client.example.com/cb"],
+        allowed_scopes: ["profile"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic
+      })
+
+    {:ok, _updated_client} =
+      Repository.update_client(client, %{
+        authorization_signed_response_alg: :RS256,
+        authorization_encrypted_response_alg: :RSA_OAEP_256,
+        authorization_encrypted_response_enc: :A256GCM
+      })
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    after_registration =
+      Jason.decode!(conn.resp_body)
+      |> Map.take([
+        "response_modes_supported",
+        "authorization_signing_alg_values_supported",
+        "authorization_encryption_alg_values_supported",
+        "authorization_encryption_enc_values_supported"
+      ])
+
+    assert after_registration == before_registration
   end
 end
