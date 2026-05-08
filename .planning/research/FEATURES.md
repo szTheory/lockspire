@@ -1,50 +1,56 @@
-# Feature Landscape: JWKS URI & Private Key JWT
+# Feature Landscape
 
-**Project:** Lockspire
-**Researched:** 2026-05-06
-**Milestone:** v1.15 JWKS URI & Private Key JWT Client Authentication
+**Domain:** RFC 8705 (Mutual TLS for OAuth)
+**Researched:** 2024
 
-## Table stakes
+## Table Stakes
 
-| Feature | Why expected | Complexity | Notes |
+Features users expect for basic RFC 8705 compliance. Missing = product feels incomplete for FAPI 2.0 Advanced.
+
+| Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| `jwks_uri` registration support | OIDC registration treats `jwks_uri` as the normal way to publish client keys and rotate them without re-registration. | Medium | Must stay mutually exclusive with inline `jwks`. |
-| Full `private_key_jwt` signature verification | Current Lockspire path only validates payload shape and replay, not signature trust. | Medium | Must use client `jwks` or fetched `jwks_uri` keys. |
-| Standard claim validation | `iss`, `sub`, `aud`, `exp`, and `jti` are the minimum safe assertion checks. | Medium | `iss` and `sub` should both bind to `client_id`. |
-| Truthful metadata publication | RFC 8414 requires signing-alg metadata whenever JWT client auth methods are advertised for supported endpoints. | Medium | Token, revocation, and introspection metadata matter here. |
+| `tls_client_auth` | Standard PKI-based client authentication. | Med | Requires validating the Subject DN against client metadata. |
+| `self_signed_tls_client_auth` | Self-signed JWKS-based authentication. | Med | Matches certificate thumbprint against pre-registered keys in the client's JWKS. |
+| Certificate-Bound Access Tokens | Required by RFC 8705 for sender-constraining. | Low | Injecting `cnf` claim (`x5t#S256`) during issuance and validating it on introspection/resource requests. |
+| Proxy Header Extraction | Crucial for real-world Elixir deployments behind NGINX/ALB. | High | Must handle URL-encoded PEM, raw PEM, or standard RFC 9440 formats securely. |
 
 ## Differentiators
 
-| Feature | Value | Complexity | Notes |
-|---------|-------|------------|-------|
-| Narrow SSRF-guarded remote key retrieval | Keeps Lockspire embedded and trustworthy without outsourcing fetch risk to the host app. | High | `https` only, no redirects, public-IP-only resolution, body caps, tight timeouts. |
-| Shared verification across all Lockspire-owned direct-client surfaces | One client-auth implementation raises trust everywhere it is reused. | Medium | Token, revocation, introspection, PAR, device authorization, token exchange, and CIBA all benefit. |
-| Rotation-aware cache refresh | Lets clients rotate keys at `jwks_uri` without operator intervention. | Medium | One cache-bypass refresh on verification miss is enough for v1.15. |
-| Security-posture-aligned audience enforcement | Avoids drifting into known multi-AS `private_key_jwt` audience footguns. | Medium | January 2025 OIDF guidance pushes implementations toward issuer-identifier audience binding. |
+Features that set product apart. Not expected, but valued in an embedded context.
 
-## Anti-features
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Explicit Proxy Trust Config | Host apps must explicitly map *which* header is trusted and from *which* internal IPs. | Med | Prevents accidental header spoofing vulnerabilities out-of-the-box. |
+| Support for RFC 9440 | Adopting the modern `Client-Cert` header standard. | Low | Most ecosystems still rely on custom `X-SSL-Cert` headers; standardizing on RFC 9440 is future-proof. |
 
-| Anti-feature | Why avoid | Instead |
-|-------------|-----------|---------|
-| `client_secret_jwt` in the same milestone | Broadens the auth-method matrix without adding the same trust gain as `private_key_jwt`. | Keep the milestone asymmetric-only. |
-| Signed JWKS URI / federation trust chains | Expands into federation and metadata trust distribution. | Limit v1.15 to plain `jwks` and guarded `jwks_uri`. |
-| mTLS client authentication | Breaks the embedded Phoenix ergonomics through proxy and TLS edge complexity. | Keep DPoP as the sender-constraining story. |
-| Generic outbound fetch framework | Too much surface for a single milestone. | Keep a single-purpose JWKS fetcher. |
+## Anti-Features
 
-## Feature dependencies
+Features to explicitly NOT build.
 
-`jwks_uri` intake/policy -> guarded fetcher/cache -> client-auth verification -> truthful metadata/docs -> end-to-end proof
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Native TLS Termination UI/Config | Lockspire is not a reverse proxy. Configuring Erlang `:ssl` options for the whole Phoenix app is out of scope. | Provide clear documentation on how the host app configures NGINX or Phoenix `Endpoint` directly, and have Lockspire only care about extracting the data from the `conn`. |
 
-## Recommendation
+## Feature Dependencies
 
-Build the milestone around four feature groups:
-1. Registration and policy truth
-2. Secure JWKS resolution
-3. Shared `private_key_jwt` verification
-4. Discovery/docs/verification closure
+```
+Proxy Header Extraction / Peer Data Extraction
+  ↓
+mTLS Client Authentication (`tls_client_auth`)
+  ↓
+Certificate-Bound Access Tokens (`cnf` claim)
+```
 
-## Primary sources
-- RFC 7523: https://datatracker.ietf.org/doc/html/rfc7523
-- RFC 8414: https://datatracker.ietf.org/doc/html/rfc8414
-- OpenID Connect Registration 1.0: https://www.openid.net/specs/openid-connect-registration-1_0-39.html
-- OpenID Connect CIBA Core 1.0: https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0-final.html
+## MVP Recommendation
+
+Prioritize:
+1. Proxy Header Extraction (the secure foundation).
+2. `self_signed_tls_client_auth` (easier to test and widely used in Open Banking).
+3. Certificate-Bound Access Tokens (sender-constraining).
+
+Defer: Full PKI `tls_client_auth` relying on CA chains if it introduces too much complexity initially, focusing first on the self-signed thumbprint method which aligns well with existing JWKS infrastructure in Lockspire.
+
+## Sources
+
+- RFC 8705 (OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens)
+- RFC 9440 (Client-Cert HTTP Header)

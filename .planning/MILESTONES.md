@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.18 Post-Release Execution (Shipped + archived: 2026-05-07)
+
+**Phases completed:** **1** (**70**), **1** plan, **1** requirement closed.
+
+**Package posture:** Lockspire maintains its `1.0.0` GA release state with the addition of automated repo-native FAPI 2.0 conformance testing.
+
+**Key accomplishments:**
+- Integrated the official OpenID Foundation FAPI 2.0 Conformance Suite into the automated CI pipeline.
+- Established a local testing lane for maintainers to run the conformance suite.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.18-MILESTONE-AUDIT.md`](milestones/v1.18-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.18-ROADMAP.md`, `milestones/v1.18-REQUIREMENTS.md`, `milestones/v1.18-MILESTONE-AUDIT.md` · **Git tag:** `v1.18`
+
+---
+
 ## v1.17 1.0.0 GA Release Readiness (Shipped + archived: 2026-05-07)
 
 **Phases completed:** **3** (**67-69**), **3** plans, **7** requirements closed.

@@ -9,7 +9,6 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
-  alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
   alias Lockspire.Host.Claims
   alias Lockspire.Storage.Ecto.Repository

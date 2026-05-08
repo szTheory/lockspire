@@ -15,6 +15,7 @@ key_files:
   - test/lockspire/storage/ecto/client_record_test.exs
   - test/lockspire/protocol/registration_test.exs
   - test/lockspire/protocol/registration_management_test.exs
+requirements-completed: [JARM-03]
 ---
 
 # Phase 72 Plan 01 Summary

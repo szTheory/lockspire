@@ -12,6 +12,7 @@ key_files:
   - lib/lockspire/protocol/discovery/authorization_response_capabilities.ex
   - test/lockspire/protocol/discovery_test.exs
   - test/lockspire/web/discovery_controller_test.exs
+requirements-completed: [JARM-03]
 ---
 
 # Phase 72 Plan 03 Summary

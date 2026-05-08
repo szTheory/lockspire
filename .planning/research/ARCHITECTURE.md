@@ -1,78 +1,58 @@
-# Architecture Notes: JWKS URI & Private Key JWT
+# Architecture Patterns
 
-**Project:** Lockspire
-**Researched:** 2026-05-06
-**Milestone:** v1.15 JWKS URI & Private Key JWT Client Authentication
+**Domain:** RFC 8705 (Mutual TLS for OAuth)
+**Researched:** 2024
 
-## Existing architecture fit
+## Recommended Architecture
 
-The repo already has the right boundary shape for this milestone:
-- `Lockspire.Protocol.Registration` already models `private_key_jwt`, `jwks`, and `jwks_uri`.
-- `Lockspire.Domain.Client` and `Lockspire.Storage.Ecto.ClientRecord` already persist `jwks_uri`.
-- `Lockspire.Protocol.ClientAuth` is the single shared seam for direct client authentication.
-- `Lockspire.JwksFetcher` already encapsulates remote JWKS retrieval and caching, but it is too permissive for v1.15 as-is.
+Lockspire's embedded nature means it cannot control the physical network topology. The architecture must assume the host app is either terminating TLS directly in Erlang or offloading it to a reverse proxy.
 
-## Recommended architecture
+### Component Boundaries
 
-### 1. Keep trust resolution inside Lockspire
-Do not push remote key validation to the host app. The milestone’s value is that Lockspire owns the dangerous part:
-- resolve client key material from inline `jwks` or remote `jwks_uri`
-- verify `private_key_jwt` cryptographically
-- enforce replay, claim, and algorithm policy consistently
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `Lockspire.Plug.ExtractClientCert` | Extracts the client certificate from either `Plug.Conn.get_peer_data/1` or configured HTTP headers, parses it via `:public_key`, and assigns it to `conn.assigns.lockspire_client_cert`. | Host application pipeline |
+| `Lockspire.Protocol.MTLS` | Handles the RFC 8705 authentication logic, validating the certificate's thumbprint against the client's registered JWKS or Subject DN against metadata. | `ExtractClientCert` (consumes `assigns`) |
+| Token Issuer | Injects the `cnf` claim (`x5t#S256`) into the access token payload during the token exchange if mTLS is used. | `Protocol.MTLS` |
+| Resource Validator | Ensures the certificate presented during a resource request matches the `cnf` claim in the presented access token. | `ExtractClientCert` |
 
-### 2. Split assertion processing into explicit steps
-`Lockspire.Protocol.ClientAuth` should separate:
-1. unverified extraction of header and payload for `client_id` lookup
-2. registered-client auth-method validation
-3. key resolution from `jwks` or `jwks_uri`
-4. signature verification
-5. claim validation (`iss`, `sub`, `aud`, `exp`, `iat`/`nbf`, `jti`)
-6. replay recording
+### Data Flow
 
-This keeps failure reasons precise and preserves a narrow seam for tests.
+1. **Request Ingress:** A request arrives at the host's Phoenix Endpoint.
+2. **Extraction Plug:** `ExtractClientCert` runs early in the pipeline.
+   - If configured for direct TLS, it reads `get_peer_data/1`.
+   - If configured for proxy headers, it reads the trusted header (e.g., `Client-Cert`).
+3. **Parsing:** The PEM/DER data is parsed into an Erlang `:OTPCertificate` record and stored in `conn.assigns`.
+4. **Endpoint Processing:** When the request hits the Token Endpoint (or a protected resource), Lockspire reads the certificate from `assigns` and performs the necessary RFC 8705 validation.
 
-### 3. Make JWKS resolution a dedicated sub-boundary
-Prefer a dedicated resolver module or a sharply expanded `Lockspire.JwksFetcher` contract:
-- validate `jwks_uri` eligibility before network access
-- fetch with safe Req options
-- parse and cache JWKS
-- optionally force-refresh once on key miss or signature mismatch
+## Patterns to Follow
 
-### 4. Truthful metadata is part of the architecture
-If `private_key_jwt` is supported on an endpoint, discovery metadata must stay aligned:
-- `token_endpoint_auth_methods_supported`
-- `token_endpoint_auth_signing_alg_values_supported`
-- `revocation_endpoint_auth_methods_supported`
-- `revocation_endpoint_auth_signing_alg_values_supported`
-- `introspection_endpoint_auth_methods_supported`
-- `introspection_endpoint_auth_signing_alg_values_supported`
+### Pattern 1: Early Explicit Extraction
+**What:** Extracting the certificate via a Plug *before* it reaches the specific OAuth endpoints.
+**When:** Always.
+**Example:**
+```elixir
+# In the host application's endpoint.ex or router.ex
+plug Lockspire.Plug.ExtractClientCert,
+  source: :header,
+  header_name: "client-cert",
+  trusted_proxies: ["10.0.0.0/8"] # Highly recommended
+```
 
-Inference from RFC 8414 and current repo usage:
-because `ClientAuth` is reused by revocation and introspection today, metadata truth should cover those endpoints too, not just `/token`.
+## Anti-Patterns to Avoid
 
-## Suggested phase build order
+### Anti-Pattern 1: Implicit Header Trust
+**What:** Automatically parsing `X-SSL-Cert` or `Client-Cert` headers without explicit host-app configuration.
+**Why bad:** This leads directly to header spoofing vulnerabilities if the host app's proxy isn't configured to strip these headers from external traffic.
+**Instead:** Require explicit configuration (`source: :header`) and strongly recommend restricting the extraction to trusted internal IP ranges.
 
-1. Registration, policy, and discovery truth
-2. Guarded JWKS fetcher and cache behavior
-3. Shared `private_key_jwt` verification in `ClientAuth`
-4. Endpoint regressions, docs, and release-truth proof
+## Scalability Considerations
 
-## What changes vs. what stays put
+| Concern | At 100 users | At 10K users | At 1M users |
+|---------|--------------|--------------|-------------|
+| Certificate Parsing | Negligible | `:public_key.pem_decode` is fast, but doing it on every request adds CPU overhead. | The reverse proxy should ideally send just the pre-calculated SHA-256 thumbprint in a header if possible, or parsing remains highly optimized in native Erlang. |
 
-### New or materially changed
-- `Lockspire.Protocol.ClientAuth`
-- `Lockspire.JwksFetcher` or a new client-key resolver beside it
-- discovery metadata builders
-- DCR/admin policy presentation
-- tests across direct-client endpoints
+## Sources
 
-### Likely unchanged
-- core token storage model
-- host seam ownership of accounts/login/branding
-- operator/admin shape outside auth-method truth updates
-
-## Primary sources
-- RFC 8414: https://datatracker.ietf.org/doc/html/rfc8414
-- RFC 7523: https://datatracker.ietf.org/doc/html/rfc7523
-- OpenID Connect Core 1.0 / Section 9 family: https://openid.net/specs/openid-connect-core-1_0-18.html
-- OpenID Foundation notice on `private_key_jwt` audience vulnerability (January 2025): https://openid.net/wp-content/uploads/2025/01/OIDF-Responsible-Disclosure-Notice-on-Security-Vulnerability-for-private_key_jwt.pdf
+- Elixir Plug and HTTP Header semantics.
+- RFC 8705 architecture models.

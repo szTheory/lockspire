@@ -1,79 +1,48 @@
-# Pitfalls: JWKS URI & Private Key JWT
+# Domain Pitfalls
 
-**Project:** Lockspire
-**Researched:** 2026-05-06
-**Milestone:** v1.15 JWKS URI & Private Key JWT Client Authentication
+**Domain:** RFC 8705 (Mutual TLS for OAuth)
+**Researched:** 2024
 
-## Highest-risk pitfalls
+## Critical Pitfalls
 
-### 1. Treating `private_key_jwt` as “claims-only”
-Current repo truth: `Lockspire.Protocol.ClientAuth` records replay and checks TTL, but it does not yet verify the JWS signature against client keys.
+Mistakes that cause rewrites or major security vulnerabilities.
 
-Why this is dangerous:
-- any actor who can guess a valid `client_id` can fabricate an unsigned or attacker-signed assertion that passes the current structural checks
-- the product would advertise stronger client auth than the repo actually proves
+### Pitfall 1: mTLS Proxy Header Spoofing
+**What goes wrong:** An attacker sends an HTTP request containing a forged `Client-Cert` (or `X-SSL-Cert`) header. The application trusts this header and grants access based on the attacker's forged identity.
+**Why it happens:** The TLS-terminating reverse proxy (NGINX, ALB) was not configured to sanitize/strip incoming headers before appending its own verified certificate header. Alternatively, the application parses headers implicitly without validating the internal IP address of the proxy.
+**Consequences:** Complete bypass of mTLS security. Attackers can impersonate confidential clients or steal sender-constrained access tokens.
+**Prevention:** 
+1. The proxy *must* overwrite or strip incoming certificate headers.
+2. The Lockspire extraction Plug *must* require explicit configuration to trust headers, and ideally validate that the `conn.remote_ip` belongs to the trusted proxy subnet.
+**Detection:** Penetration testing by injecting custom headers from the public internet.
 
-Prevent it:
-- require strict JWS verification before any replay side effect
-- reject `alg=none` and symmetric algorithms for this method
-- bind verification to registered client keys only
+### Pitfall 2: Header Normalization Differentials
+**What goes wrong:** The proxy strips `Client-Cert` (hyphen) but the attacker sends `Client_Cert` (underscore). The proxy ignores it, but the application framework normalizes underscores to hyphens and parses the attacker's header.
+**Why it happens:** Web servers and application frameworks (like Plug/Cowboy) have different rules for HTTP header normalization.
+**Consequences:** Header spoofing bypass.
+**Prevention:** Use strictly defined header names (e.g., standard RFC 9440 `Client-Cert`). Ensure the extraction Plug uses exact string matching on the normalized header map provided by `Plug.Conn` without doing its own fuzzy matching.
 
-### 2. Overly broad `jwks_uri` fetch behavior
-Current repo truth: `Lockspire.JwksFetcher` uses caching and timeouts, but it does not yet show redirect bans, DNS/IP screening, or body-size constraints.
+## Moderate Pitfalls
 
-Why this is dangerous:
-- SSRF against internal services
-- unexpected redirect chains
-- denial of service through large or slow responses
+### Pitfall 1: URL-Encoded PEM Artifacts
+**What goes wrong:** NGINX often passes certificates URL-encoded (or with spaces replaced by tabs/escapes) in headers (e.g., using `$ssl_client_escaped_cert`). The Elixir `:public_key` module fails to parse this.
+**Prevention:** The extraction Plug must intelligently handle URL-decoding and whitespace normalization before attempting `pem_decode`.
 
-Prevent it:
-- `https` only
-- no redirects
-- DNS and resolved-address filtering to public IP ranges only
-- body cap and low timeouts
-- standard `invalid_client` outward failure with detailed internal telemetry
+## Minor Pitfalls
 
-### 3. Accepting the wrong `aud` shape
-Historical specs often allowed or encouraged token-endpoint audience values. On 2025-01, the OpenID Foundation published a responsible disclosure explaining cross-AS impersonation risk when clients reuse keys across authorization servers and audiences are endpoint-based.
+### Pitfall 1: CPU Overhead on Parsing
+**What goes wrong:** Running `:public_key.pem_decode` on a massive certificate chain for every single API request adds CPU overhead.
+**Prevention:** For resource servers, consider if the proxy can calculate the SHA-256 thumbprint at the edge and pass *that* in a separate header, avoiding the need for the Elixir app to parse the full PEM on every request. (This is an optimization, not strictly required for MVP).
 
-Prevent it:
-- default Lockspire to issuer-identifier audience validation for `private_key_jwt`
-- document the choice explicitly in security and support docs
-- keep tests pinned to the safer audience rule
+## Phase-Specific Warnings
 
-### 4. Publishing partial metadata truth
-If discovery advertises `private_key_jwt`, RFC 8414 expects signing-alg metadata for the affected endpoint metadata entries.
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Certificate Extraction | Accidental spoofing vulnerability enabled by default. | Make direct TLS (`get_peer_data`) the default, or require a `source` explicitly. Do not automatically fall back to headers. |
+| FAPI 2.0 Strictness | Dropping support for DPoP because mTLS is implemented. | FAPI 2.0 Advanced requires mTLS *or* DPoP (often both in practice for different layers). Ensure Lockspire's policy resolver correctly allows either based on client configuration, rather than creating a global XOR. |
 
-Prevent it:
-- update endpoint auth-method metadata and signing-alg metadata together
-- cover token, revocation, and introspection, not only token endpoint discovery
+## Sources
 
-### 5. Replay recording before full validation
-Recording `jti` before signature or audience validation lets invalid assertions poison the replay store.
-
-Prevent it:
-- record replay only after signature and claims are fully accepted
-- keep expiry-derived TTL tied to the accepted assertion validity window
-
-### 6. Stale-cache-only key validation
-If a client rotates keys at `jwks_uri`, permanent cache reliance turns valid assertions into false negatives.
-
-Prevent it:
-- allow one forced refresh on verification miss
-- do not silently widen acceptance beyond the registered client’s key set
-
-## Phase ownership
-
-| Pitfall | Best phase to close |
-|---------|---------------------|
-| Claims-only verification | shared auth phase |
-| SSRF / redirect / slow-fetch risk | JWKS fetcher phase |
-| Wrong audience rule | shared auth phase plus docs |
-| Metadata drift | discovery/docs phase |
-| Replay poisoning | shared auth phase |
-| Rotation false negatives | JWKS fetcher phase plus endpoint regressions |
-
-## Primary sources
-- RFC 7523: https://datatracker.ietf.org/doc/html/rfc7523
-- RFC 8414: https://datatracker.ietf.org/doc/html/rfc8414
-- OpenID Foundation responsible disclosure notice dated January 2025: https://openid.net/wp-content/uploads/2025/01/OIDF-Responsible-Disclosure-Notice-on-Security-Vulnerability-for-private_key_jwt.pdf
+- FAPI 2.0 Security Profile
+- RFC 9440 (Client-Cert HTTP Header)
+- Open Banking implementation guidelines on proxy termination.

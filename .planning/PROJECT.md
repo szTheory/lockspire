@@ -10,32 +10,32 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived sixteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, v1.15 delivered JWKS URI & Private Key JWT Client Authentication, and v1.16 delivered embedded adoption hardening plus the Sigra golden path.
+Lockspire has now archived eighteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, v1.15 delivered JWKS URI & Private Key JWT Client Authentication, v1.16 delivered embedded adoption hardening plus the Sigra golden path, v1.17 finalized the 1.0.0 GA real public release, and v1.18 ensured post-release execution and conformance suite automation.
 
 Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces, and a repo-proven embedded Phoenix host path with canonical install, verification, upgrade, and generated-host onboarding proof.
 
-The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to turn the now-aligned `1.0.0` repo story into a real public release so Phoenix teams can install the truthful embedded surface without version or support-contract drift.
+The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to elevate the protocol for high-security domains.
 
-## Current Milestone: v1.17 Real Public Release
+## Current Milestone: v1.19 FAPI 2.0 Message Signing
 
-**Goal:** Turn Lockspire's repo-aligned `1.0.0` support story into an actual public release, prove the trusted publish lane end to end, and leave maintainers with a clean post-release truth state that matches what users can install from Hex.
+**Goal:** Implement JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701), leveraging existing `Protocol.Jar` infrastructure, thus significantly advancing Lockspire's capabilities for high-security environments without the infrastructural friction of mTLS.
 
 **Target features:**
-- Final release execution path from checked-in `1.0.0` posture to an actual published artifact.
-- Trusted publish verification and post-publish checks for package metadata, docs pointers, and install truth.
-- Narrow release-only cleanup when required to unblock the real release cut, without adding new protocol breadth.
+- JARM (`response_mode=jwt`) composite modes (`query.jwt`, `fragment.jwt`, `form_post.jwt`).
+- JARM Encryption for confidential authorization responses.
+- RFC 9701 signed JWT Introspection responses via content negotiation.
+- FAPI 2.0 Message Signing strict enforcement mode.
 
-**Why now:** `v1.16` already closed the install, support, and proof gaps that made a real release risky. The remaining drag is publication and post-publish verification, not product shape.
+**Why now:** After FAPI 2.0, RAR, and Token Exchange, Lockspire is well-positioned for advanced non-repudiation features. JARM provides this natively inside the application without relying on reverse-proxy mTLS termination, which perfectly aligns with the embedded nature of Lockspire.
 
-## Recently Shipped Milestone: v1.16 Embedded Adoption Hardening & Sigra Golden Path
+## Recently Shipped Milestone: v1.18 Post-Release Execution
 
-**Goal:** Make Lockspire feel complete, correct, and trustworthy in its intended embedded Phoenix deployment shape by hardening the canonical host integration path, proving the Sigra companion flow end to end, reconciling release truth, and retiring the conformance debt that affects public claims.
+**Goal:** Ensure post-release execution paths and integrate the official OpenID Foundation FAPI 2.0 Conformance Suite into the automated CI pipeline.
 
 **Delivered:**
-- Canonical embedded install, verify, and manifest-backed upgrade workflows with explicit Lockspire-managed versus host-owned boundaries.
-- Executable generated-host proof for the Sigra-backed authorization-code onboarding path through host login, interaction resume, consent, token exchange, and JWKS.
-- One coherent 1.0.0 release-truth story across package metadata, changelog posture, release workflow wording, support docs, and drift-fence tests.
-- Repo-native conformance and strictness proof as the current trust anchor, with historical external-suite artifacts preserved only as non-claim audit context.
+- Integrated the OIDF FAPI 2.0 Conformance Suite into CI.
+- Maintained `1.0.0` GA release state and verifiable execution.
+- Established local testing lane for maintainers.
 
 ## Requirements
 
@@ -76,15 +76,19 @@ The highest-leverage open question is no longer whether the embedded path is rea
 - Deliver Ecto-based RAR validation framework and durable storage for rich authorization details. Validated in archived v1.14.
 - Expose rich authorization details via introspection and verify end-to-end flows. Validated in archived v1.14.
 - Update Discovery metadata and provide executable documentation for the v1.14 advanced authorization surface. Validated in archived v1.14.
+- Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
+- Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
 
 ### Active
 
-- Maintainers can cut one real public Lockspire release whose version, changelog, package metadata, and support contract all describe the same shipped embedded surface.
-- The protected publish lane can be executed and verified without undocumented maintainer folklore.
-- Post-publish checks can prove that the released package still points Phoenix teams at the same canonical embedded install and support story that the repo claims.
+- Lockspire supports JARM for authorization responses and RFC 9701 JWT Introspection.
+- Responses can be fully sender-constrained, non-repudiable, and tamper-proof entirely at the application layer.
+- Operators can enforce FAPI 2.0 Message Signing standards on high-value clients.
 
 ### Out of Scope
 
+- HTTP Message Signatures (RFC 9421) for the Token Endpoint — Not required by FAPI 2.0 Message Signing and adds immense complexity. Rely on DPoP.
+- Mutual TLS (mTLS) Auth — Requires reverse proxy changes. Defer as per EPIC.md; use `private_key_jwt` for client auth.
 - SAML IdP and LDAP/AD federation — expands the protocol and enterprise-systems surface far beyond the core OAuth/OIDC provider wedge.
 - Hosted auth product or required separate process — the product value is embedded Phoenix deployment, not another service to run.
 - End-user authentication primitives such as passwords, MFA, passkeys, and session ownership — those belong to Sigra or the host app.
@@ -95,7 +99,7 @@ The highest-leverage open question is no longer whether the embedded path is rea
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
-The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.16 complete, `v1.17` shifts from release-truth alignment in git to the real public release cut and post-publish verification.
+The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.16 complete, `v1.17` shifted from release-truth alignment in git to the real public release cut and post-publish verification, and `v1.18` proved it in production.
 
 ## Constraints
 
@@ -129,6 +133,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Add OpenID Connect CIBA | Provides decoupled authentication and real-time out-of-band notifications, leveraging Elixir's concurrency and Oban for resilient delivery | Adopted at v1.13 milestone start |
 | Use Oban for resilient delivery | Ensures that CIBA webhooks (Ping/Push) and back-channel logouts are retriable and durable across system restarts | Adopted for v1.13 CIBA implementation |
 | **Select RAR & Resource Indicators for v1.14** | Empowers Phoenix teams in complex domains (fintech, healthcare) and enables "Zero Trust" targeted tokens | Adopted at v1.14 milestone start |
+| Target FAPI 2.0 Message Signing for v1.19 | Provides application-layer non-repudiation without mTLS infrastructure overhead, building off existing JWS/JWE primitives | Adopted at v1.19 milestone start |
+| Target FAPI 2.0 Message Signing for v1.19 | Provides application-layer non-repudiation without mTLS infrastructure overhead, building off existing JWS/JWE primitives | Adopted at v1.19 milestone start |
 
 ## Evolution
 
@@ -148,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 for v1.17 milestone start*
+*Last updated: 2026-05-07 for v1.19 milestone start*

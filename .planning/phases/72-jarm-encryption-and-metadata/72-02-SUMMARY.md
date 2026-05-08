@@ -14,6 +14,7 @@ key_files:
   - test/lockspire/protocol/jarm_test.exs
   - test/lockspire/protocol/authorization_flow_test.exs
   - test/lockspire/web/authorize_controller_test.exs
+requirements-completed: [JARM-03]
 ---
 
 # Phase 72 Plan 02 Summary

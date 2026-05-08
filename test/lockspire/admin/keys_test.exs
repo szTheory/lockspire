@@ -257,7 +257,7 @@ defmodule Lockspire.Admin.KeysTest do
     |> Map.merge(attrs)
   end
 
-  defp ec_signing_key(kid, status, now, attrs \\ []) do
+  defp ec_signing_key(kid, status, now, attrs) do
     attrs = Enum.into(attrs, %{})
 
     %SigningKey{

@@ -19,7 +19,7 @@ defmodule Lockspire.Storage.Ecto.RepositorySidTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
   end
 
-  defp token_with_sid(overrides \\ %{}) do
+  defp token_with_sid(overrides) do
     base = %Token{
       token_hash: "sid_test_hash_#{System.unique_integer([:positive])}",
       token_type: :refresh_token,

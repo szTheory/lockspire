@@ -5,7 +5,6 @@ defmodule Lockspire.Integration.Phase52HostDelegationE2ETest do
   @endpoint Lockspire.Web.Endpoint
 
   import Phoenix.ConnTest
-  import Plug.Conn
 
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository

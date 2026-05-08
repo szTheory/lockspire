@@ -13,6 +13,7 @@ key-files:
   - lib/lockspire/protocol/discovery.ex
 decisions:
   - "Integrated JARM validation into the authorization flow, formatted the response redirects, and advertised JARM support in Discovery metadata."
+requirements-completed: [JARM-01, JARM-02]
 ---
 
 # Phase 71 Plan 02: Authorization Flow Integration Summary
