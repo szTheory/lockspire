@@ -12,6 +12,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
   setup do
     Application.put_env(:lockspire, :issuer, "https://issuer.test/lockspire")
+    signing_keys = Lockspire.JarTestHelpers.generate_keys()
+    Process.put(:authorization_flow_signing_jwk, signing_keys.priv_jwk_map)
 
     {:ok, pid} =
       Agent.start_link(fn ->
@@ -731,6 +733,99 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     refute interaction_a.sid == interaction_b.sid
   end
 
+  test "approval and denial fail closed when encrypted JARM cannot be produced" do
+    client =
+      %Lockspire.Domain.Client{
+        client_id: "client_jarm_fail_closed",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "profile", "offline_access"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        client_type: :confidential,
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        authorization_signed_response_alg: :RS256,
+        authorization_encrypted_response_alg: :RSA_OAEP_256,
+        authorization_encrypted_response_enc: :A256GCM,
+        jwks: %{
+          "keys" => [
+            %{
+              "kty" => "EC",
+              "kid" => "wrong-shape",
+              "use" => "enc",
+              "crv" => "P-256",
+              "x" => "f83OJ3D2xF4qQnR1E8V7B6U4Y8W0vQ6V0g3cO7j4Q2M",
+              "y" => "x_FEzRu9hR8L6Rxurx8WcN6iYG3PaY5E9OQj1YxDCE8"
+            }
+          ]
+        },
+        metadata: %{}
+      }
+
+    __MODULE__.JarmClientStore.put_client(client)
+
+    assert {:consent_required, %Interaction{} = approval_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(
+                 client_id: client.client_id,
+                 client: client,
+                 response_mode: "query.jwt"
+               ),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "approval-code-jarm" end,
+               interaction_id_generator: fn -> "interaction-jarm-approval" end
+             )
+
+    assert {:error, :jarm_encryption_key_unavailable} =
+             AuthorizationFlow.approve_interaction(
+               approval_interaction.interaction_id,
+               %{subject_id: "subject_123"},
+               remember: true,
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               client_store: __MODULE__.JarmClientStore,
+               key_store: __MODULE__.JarmKeyStore,
+               now: &fixed_now/0,
+               code_generator: fn -> "approval-code-jarm" end
+             )
+
+    assert {:consent_required, %Interaction{} = denial_interaction} =
+             AuthorizationFlow.start_authorization(
+               validated_request(
+                 client_id: client.client_id,
+                 client: client,
+                 response_mode: "query.jwt",
+                 state: "deny-jarm",
+                 prompt: ["consent"]
+               ),
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               now: &fixed_now/0,
+               code_generator: fn -> "unused-code" end,
+               interaction_id_generator: fn -> "interaction-jarm-denial" end
+             )
+
+    assert {:error, :jarm_encryption_key_unavailable} =
+             AuthorizationFlow.deny_interaction(
+               denial_interaction.interaction_id,
+               %{subject_id: "subject_123"},
+               interaction_store: Store,
+               consent_store: Store,
+               token_store: Store,
+               client_store: __MODULE__.JarmClientStore,
+               key_store: __MODULE__.JarmKeyStore,
+               now: &fixed_now/0
+             )
+  end
+
   defp validated_request(overrides \\ []) do
     defaults = %{
       client_id: "client_123",
@@ -750,6 +845,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       scopes: ["email", "profile"],
       prompt: [],
       state: "state-123",
+      response_mode: "query",
       max_age: nil,
       auth_time_requested?: false,
       code_challenge: "challenge-123",
@@ -770,6 +866,32 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     agent
     |> Agent.get(&Enum.reverse(&1))
     |> Enum.map(fn {event, metadata} -> {event, Map.take(metadata, [:reason_code])} end)
+  end
+
+  defmodule JarmClientStore do
+    def put_client(client), do: Process.put({__MODULE__, :client}, client)
+    def fetch_client(client_id), do: {:ok, ensure_client(client_id)}
+
+    defp ensure_client(client_id) do
+      case Process.get({__MODULE__, :client}) do
+        %{client_id: ^client_id} = client -> client
+        _other -> raise "missing client #{client_id}"
+      end
+    end
+  end
+
+  defmodule JarmKeyStore do
+    def fetch_active_signing_key(opts) do
+      alg = Keyword.get(opts, :alg, "RS256")
+      private_jwk = Process.get(:authorization_flow_signing_jwk) || raise "missing signing jwk"
+
+      {:ok,
+       %Lockspire.Domain.SigningKey{
+         kid: "flow-kid",
+         alg: alg,
+         private_jwk_encrypted: Jason.encode!(private_jwk)
+       }}
+    end
   end
 
   defmodule Store do

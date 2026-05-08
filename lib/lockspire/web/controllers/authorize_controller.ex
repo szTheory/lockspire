@@ -185,7 +185,9 @@ defmodule Lockspire.Web.AuthorizeController do
     [
       interaction_store: Repository,
       consent_store: Repository,
-      token_store: Repository
+      token_store: Repository,
+      client_store: Repository,
+      key_store: Repository
     ]
   end
 

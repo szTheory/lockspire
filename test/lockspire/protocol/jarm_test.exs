@@ -178,6 +178,57 @@ defmodule Lockspire.Protocol.JarmTest do
     assert {:error, :invalid_algorithm} = Jarm.sign(params, context)
   end
 
+  test "encode/2 returns signed JWS when encryption metadata is absent", %{keys: keys} do
+    client = %Client{
+      client_id: "client-signed-only",
+      authorization_signed_response_alg: :RS256,
+      security_profile: :none
+    }
+
+    context = %{
+      client: client,
+      issuer: "https://auth.example.com",
+      key_store: MockKeyStore,
+      jwks_fetcher: MockJwksFetcher
+    }
+
+    assert {:ok, jwt} = Jarm.encode(%{code: "signed-only-code", state: "abc"}, context)
+    assert length(String.split(jwt, ".")) == 3
+
+    claims = decode_claims(jwt, keys, ["RS256"])
+    assert claims["code"] == "signed-only-code"
+  end
+
+  test "encode/2 signs first and then encrypts into a nested JWE", %{keys: keys} do
+    enc_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+
+    client = %Client{
+      client_id: "client-nested",
+      authorization_signed_response_alg: :RS256,
+      authorization_encrypted_response_alg: :RSA_OAEP_256,
+      authorization_encrypted_response_enc: :A256GCM,
+      jwks: %{"keys" => [public_jwk_map(enc_private_jwk, %{"kid" => "enc-1", "use" => "enc"})]},
+      security_profile: :none
+    }
+
+    context = %{
+      client: client,
+      issuer: "https://auth.example.com",
+      key_store: MockKeyStore,
+      jwks_fetcher: MockJwksFetcher
+    }
+
+    assert {:ok, jwt} = Jarm.encode(%{code: "nested-code", state: "xyz"}, context)
+    assert length(String.split(jwt, ".")) == 5
+
+    inner_jws = decrypt_nested_jwe(jwt, enc_private_jwk)
+    assert length(String.split(inner_jws, ".")) == 3
+
+    claims = decode_claims(inner_jws, keys, ["RS256"])
+    assert claims["code"] == "nested-code"
+    assert claims["state"] == "xyz"
+  end
+
   defp decode_claims(jwt, keys, allowed_algs) do
     {_modules, public_jwk_map} = JOSE.JWK.to_public_map(keys.private_jwk)
     public_jwk = JOSE.JWK.from_map(public_jwk_map)
@@ -191,5 +242,10 @@ defmodule Lockspire.Protocol.JarmTest do
   defp public_jwk_map(jwk, overrides) do
     {_kty, jwk_map} = JOSE.JWK.to_public_map(jwk)
     Map.merge(jwk_map, overrides)
+  end
+
+  defp decrypt_nested_jwe(jwt, private_jwk) do
+    assert {inner_jws, %JOSE.JWE{}} = JOSE.JWK.block_decrypt(jwt, private_jwk)
+    inner_jws
   end
 end

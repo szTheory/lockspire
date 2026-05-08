@@ -424,32 +424,29 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp sign_jarm_response(interaction, params, opts) do
-    with {:ok, client} <- client_store(opts).fetch_client(interaction.client_id) do
-      alg = client.authorization_signed_response_alg || "RS256"
-      # If algorithm is string, use as is; if atom, convert to string for JARM
-      alg_str = if is_atom(alg), do: Atom.to_string(alg), else: alg
-      
-      case key_store(opts).fetch_active_signing_key(alg: alg_str, security_profile: client.security_profile) do
-        {:ok, nil} ->
-          {:error, :missing_signing_key}
+    with {:ok, client} <- fetch_jarm_client(client_store(opts), interaction.client_id) do
+      context = %{
+        client: client,
+        issuer: Config.issuer!(),
+        key_store: key_store(opts),
+        jwks_fetcher: Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher()),
+        jwks_fetcher_opts: Keyword.get(opts, :jwks_fetcher_opts, [])
+      }
 
-        {:ok, key} ->
-          context = %{
-            client_id: client.client_id,
-            issuer: Config.issuer!(),
-            signing_key: %{
-              kid: key.kid,
-              alg: key.alg,
-              private_jwk_encrypted: key.private_jwk_encrypted
-            },
-            security_profile: client.security_profile
-          }
+      Lockspire.Protocol.Jarm.encode(params, context)
+    end
+  end
 
-          Lockspire.Protocol.Jarm.sign(params, context)
+  defp fetch_jarm_client(client_store, client_id) when is_binary(client_id) do
+    cond do
+      function_exported?(client_store, :fetch_client, 1) ->
+        client_store.fetch_client(client_id)
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+      function_exported?(client_store, :fetch_client_by_id, 1) ->
+        client_store.fetch_client_by_id(client_id)
+
+      true ->
+        {:error, :client_store_not_supported}
     end
   end
 
