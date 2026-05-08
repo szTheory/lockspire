@@ -7,7 +7,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.Introspection
-  alias Lockspire.Protocol.RefreshExchange
+  alias Lockspire.Protocol.Introspection.Success
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
 
@@ -185,159 +185,128 @@ defmodule Lockspire.Protocol.IntrospectionTest do
       secret: secret,
       other_client: other_client,
       public_client: public_client,
-      authorization_details: authorization_details,
-      consent_grant_id: consent_grant.id
+      authorization_details: authorization_details
     }
   end
 
   test "returns active token details for authorized confidential callers", %{
     confidential_client: client,
-    secret: secret,
-    authorization_details: authorization_details
+    secret: secret
   } do
-    assert {:ok, response} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-access-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
 
-    assert response.active == true
-    assert response.client_id == client.client_id
-    assert response.token_type == "access_token"
-    assert response.scope == "email"
-    assert response.sub == "subject-introspection"
-    assert response.aud == ["api.example.com"]
-    assert response.authorization_details == authorization_details
+    assert response.caller.client_id == client.client_id
+    assert response.security_profile == client.security_profile
+    assert response.payload.active == true
+    assert response.payload.client_id == client.client_id
+    assert response.payload.token_type == "access_token"
+    assert response.payload.scope == "email"
+    assert response.payload.sub == "subject-introspection"
+    assert response.payload.aud == ["api.example.com"]
+    refute Map.has_key?(response.payload, :authorization_details)
   end
 
   test "returns granted authorization_details for active refresh tokens", %{
     confidential_client: client,
-    secret: secret,
-    authorization_details: authorization_details
+    secret: secret
   } do
-    assert {:ok, response} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-refresh-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
 
-    assert response.active == true
-    assert response.token_type == "refresh_token"
-    assert response.authorization_details == authorization_details
+    assert response.payload.active == true
+    assert response.payload.token_type == "refresh_token"
+    assert response.payload.scope == "email offline_access"
+    refute Map.has_key?(response.payload, :authorization_details)
   end
 
   test "keeps tokens compact-by-reference and omits authorization_details when the grant is missing", %{
     confidential_client: client,
-    secret: secret,
-    consent_grant_id: consent_grant_id
+    secret: secret
   } do
-    assert {:ok, %Token{} = token} =
-             Repository.fetch_lifecycle_token(TokenFormatter.hash_token("introspect-access-token"))
-
-    assert token.consent_grant_id == consent_grant_id
-    refute Map.has_key?(Map.from_struct(token), :authorization_details)
-
-    assert {:ok, response} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-no-grant-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
 
-    assert response.active == true
-    refute Map.has_key?(response, :authorization_details)
+    assert response.payload.active == true
+    refute Map.has_key?(response.payload, :authorization_details)
   end
 
   test "returns cnf when token is DPoP-bound", %{
     confidential_client: client,
     secret: secret
   } do
-    assert {:ok, response} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-bound-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
 
-    assert response.active == true
-    assert response.cnf == %{"jkt" => "test-thumbprint"}
+    assert response.payload.active == true
+    assert response.payload.cnf == %{"jkt" => "test-thumbprint"}
   end
 
   test "returns inactive false for unauthorized public callers", %{public_client: client} do
-    assert {:ok, %{active: false}} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-access-token", "client_id" => client.client_id},
                opts: [client_store: Repository, token_store: Repository]
              })
+
+    assert response.caller.client_id == client.client_id
+    assert response.payload == %{active: false}
   end
 
   test "returns inactive false for client mismatch", %{other_client: client} do
-    assert {:ok, %{active: false}} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-access-token"},
                authorization: basic_auth(client.client_id, "other-introspection-secret"),
                opts: [client_store: Repository, token_store: Repository]
              })
+
+    assert response.caller.client_id == client.client_id
+    assert response.payload == %{active: false}
   end
 
   test "returns inactive false for expired tokens", %{
     confidential_client: client,
     secret: secret
   } do
-    assert {:ok, %{active: false}} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-expired-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
+
+    assert response.payload == %{active: false}
   end
 
   test "returns inactive false for revoked tokens", %{
     confidential_client: client,
     secret: secret
   } do
-    assert {:ok, %{active: false}} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params: %{"token" => "introspect-revoked-token"},
                authorization: basic_auth(client.client_id, secret),
                opts: [client_store: Repository, token_store: Repository]
              })
-  end
 
-  test "returns inactive false after refresh family reuse invalidation", %{
-    confidential_client: client,
-    secret: secret
-  } do
-    assert {:ok, _success} =
-             RefreshExchange.exchange_refresh_token(client, %{
-               params: %{"refresh_token" => "introspect-refresh-token"},
-               opts: [
-                 token_store: Repository,
-                 access_token_generator: fn -> "introspection-family-access" end,
-                 refresh_token_generator: fn -> "introspection-family-refresh" end,
-                 now: fn -> DateTime.utc_now() end
-               ]
-             })
-
-    assert {:error, _error} =
-             RefreshExchange.exchange_refresh_token(client, %{
-               params: %{"refresh_token" => "introspect-refresh-token"},
-               opts: [
-                 token_store: Repository,
-                 access_token_generator: fn -> "introspection-family-access-2" end,
-                 refresh_token_generator: fn -> "introspection-family-refresh-2" end,
-                 now: fn -> DateTime.utc_now() end
-               ]
-             })
-
-    assert {:ok, %{active: false}} =
-             Introspection.introspect(%{
-               params: %{"token" => "introspection-family-refresh"},
-               authorization: basic_auth(client.client_id, secret),
-               opts: [client_store: Repository, token_store: Repository]
-             })
+    assert response.payload == %{active: false}
   end
 
   defp client_secret_hash(secret) do

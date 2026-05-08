@@ -11,6 +11,20 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.TokenFormatter
 
+  defmodule Success do
+    @moduledoc """
+    Successful introspection context with protocol-owned payload truth and signer inputs.
+    """
+
+    @type t :: %__MODULE__{
+            payload: map(),
+            caller: Client.t(),
+            security_profile: atom() | struct() | nil
+          }
+
+    defstruct [:payload, :caller, :security_profile]
+  end
+
   defmodule Error do
     @moduledoc """
     Introspection endpoint error payload.
@@ -26,7 +40,7 @@ defmodule Lockspire.Protocol.Introspection do
     defstruct [:status, :error, :error_description, :reason_code]
   end
 
-  @type result :: {:ok, map()} | {:error, Error.t()}
+  @type result :: {:ok, Success.t()} | {:error, Error.t()}
 
   @spec introspect(map()) :: result()
   def introspect(request) when is_map(request) do
@@ -35,9 +49,9 @@ defmodule Lockspire.Protocol.Introspection do
 
     with {:ok, token_hash} <- fetch_token_hash(params),
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, response} <- introspection_response(client, token_hash, request) do
-      emit_result(client, response)
-      {:ok, response}
+         {:ok, payload} <- introspection_response(client, token_hash, request) do
+      emit_result(client, payload)
+      {:ok, success_response(client, payload)}
     else
       {:error, %Error{} = error} ->
         emit_failure(error)
@@ -137,6 +151,14 @@ defmodule Lockspire.Protocol.Introspection do
   end
 
   defp inactive_response, do: {:ok, %{active: false}}
+
+  defp success_response(%Client{} = client, payload) when is_map(payload) do
+    %Success{
+      payload: payload,
+      caller: client,
+      security_profile: client.security_profile
+    }
+  end
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
