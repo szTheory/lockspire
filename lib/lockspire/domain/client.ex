@@ -8,6 +8,8 @@ defmodule Lockspire.Domain.Client do
           :client_secret_basic | :client_secret_post | :private_key_jwt | :none
   @type subject_type :: :public | :pairwise
   @type signing_alg :: :RS256 | :ES256 | :EdDSA
+  @type authorization_encrypted_response_alg :: :RSA_OAEP_256 | :ECDH_ES
+  @type authorization_encrypted_response_enc :: :A256GCM | :A128GCM
   @type par_policy :: :inherit | :required | :optional
   @type dpop_policy :: :inherit | :bearer | :dpop
   @type security_profile :: :inherit | :fapi_2_0_security | :none
@@ -38,6 +40,8 @@ defmodule Lockspire.Domain.Client do
           sector_identifier_uri: String.t() | nil,
           id_token_signed_response_alg: signing_alg() | nil,
           authorization_signed_response_alg: signing_alg() | nil,
+          authorization_encrypted_response_alg: authorization_encrypted_response_alg() | nil,
+          authorization_encrypted_response_enc: authorization_encrypted_response_enc() | nil,
           jwks: map() | nil,
           jwks_uri: String.t() | nil,
           logo_uri: String.t() | nil,
@@ -91,6 +95,8 @@ defmodule Lockspire.Domain.Client do
     sector_identifier_uri: nil,
     id_token_signed_response_alg: nil,
     authorization_signed_response_alg: nil,
+    authorization_encrypted_response_alg: nil,
+    authorization_encrypted_response_enc: nil,
     jwks: nil,
     jwks_uri: nil,
     logo_uri: nil,

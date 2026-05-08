@@ -43,6 +43,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:sector_identifier_uri, :string)
     field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
     field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :EdDSA])
+    field(:authorization_encrypted_response_alg, Ecto.Enum, values: [:RSA_OAEP_256, :ECDH_ES])
+    field(:authorization_encrypted_response_enc, Ecto.Enum, values: [:A256GCM, :A128GCM])
     field(:jwks, :map)
     field(:jwks_uri, :string)
     field(:logo_uri, :string)
@@ -100,6 +102,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :sector_identifier_uri,
       :id_token_signed_response_alg,
       :authorization_signed_response_alg,
+      :authorization_encrypted_response_alg,
+      :authorization_encrypted_response_enc,
       :jwks,
       :jwks_uri,
       :logo_uri,
@@ -179,6 +183,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :jwks_uri,
       :id_token_signed_response_alg,
       :authorization_signed_response_alg,
+      :authorization_encrypted_response_alg,
+      :authorization_encrypted_response_enc,
       :sector_identifier_uri,
       :metadata,
       :active,
@@ -240,6 +246,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       sector_identifier_uri: record.sector_identifier_uri,
       id_token_signed_response_alg: record.id_token_signed_response_alg,
       authorization_signed_response_alg: record.authorization_signed_response_alg,
+      authorization_encrypted_response_alg: record.authorization_encrypted_response_alg,
+      authorization_encrypted_response_enc: record.authorization_encrypted_response_enc,
       jwks: record.jwks,
       jwks_uri: record.jwks_uri,
       logo_uri: record.logo_uri,
