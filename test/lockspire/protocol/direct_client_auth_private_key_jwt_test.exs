@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
   alias Lockspire.Protocol.BackchannelAuthentication
   alias Lockspire.Protocol.DeviceAuthorization
   alias Lockspire.Protocol.Introspection
+  alias Lockspire.Protocol.Introspection.Success
   alias Lockspire.Protocol.Revocation
   alias Lockspire.Protocol.TokenFormatter
 
@@ -54,7 +55,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
   end
 
   test "introspection accepts verified private_key_jwt callers", %{keys: keys, now: now} do
-    assert {:ok, response} =
+    assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
                params:
                  private_key_jwt_params(
@@ -71,8 +72,8 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
                ]
              })
 
-    assert response.active == true
-    assert response.client_id == "direct-client"
+    assert response.payload.active == true
+    assert response.payload.client_id == "direct-client"
   end
 
   test "revocation accepts verified private_key_jwt callers", %{keys: keys, now: now} do

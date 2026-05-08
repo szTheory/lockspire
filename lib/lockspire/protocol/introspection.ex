@@ -6,9 +6,11 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
   alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
 
   defmodule Success do
@@ -51,7 +53,7 @@ defmodule Lockspire.Protocol.Introspection do
          {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
          {:ok, payload} <- introspection_response(client, token_hash, request) do
       emit_result(client, payload)
-      {:ok, success_response(client, payload)}
+      {:ok, success_response(client, payload, request)}
     else
       {:error, %Error{} = error} ->
         emit_failure(error)
@@ -152,11 +154,11 @@ defmodule Lockspire.Protocol.Introspection do
 
   defp inactive_response, do: {:ok, %{active: false}}
 
-  defp success_response(%Client{} = client, payload) when is_map(payload) do
+  defp success_response(%Client{} = client, payload, request) when is_map(payload) do
     %Success{
       payload: payload,
       caller: client,
-      security_profile: client.security_profile
+      security_profile: effective_security_profile(client, request)
     }
   end
 
@@ -241,11 +243,34 @@ defmodule Lockspire.Protocol.Introspection do
     |> Keyword.put_new(:client_store, Config.repo!())
   end
 
+  defp effective_security_profile(%Client{} = client, request) do
+    store = server_policy_store(request)
+
+    with true <- function_exported?(store, :get_server_policy, 0),
+         {:ok, %ServerPolicy{} = server_policy} <- store.get_server_policy() do
+      SecurityProfile.resolve_effective_profile(server_policy, client)
+    else
+      _other -> client.security_profile || :none
+    end
+  end
+
   defp token_store(request),
     do:
       request
       |> Map.get(:opts, [])
       |> Keyword.get(:token_store, Config.repo!())
+
+  defp server_policy_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get_lazy(:server_policy_store, fn -> client_store(request) end)
+
+  defp client_store(request),
+    do:
+      request
+      |> Map.get(:opts, [])
+      |> Keyword.get(:client_store, Config.repo!())
 
   defp consent_store(request),
     do:

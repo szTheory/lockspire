@@ -191,7 +191,8 @@ defmodule Lockspire.Protocol.IntrospectionTest do
 
   test "returns active token details for authorized confidential callers", %{
     confidential_client: client,
-    secret: secret
+    secret: secret,
+    authorization_details: authorization_details
   } do
     assert {:ok, %Success{} = response} =
              Introspection.introspect(%{
@@ -201,14 +202,14 @@ defmodule Lockspire.Protocol.IntrospectionTest do
              })
 
     assert response.caller.client_id == client.client_id
-    assert response.security_profile == client.security_profile
+    assert response.security_profile.effective_profile == :none
     assert response.payload.active == true
     assert response.payload.client_id == client.client_id
     assert response.payload.token_type == "access_token"
     assert response.payload.scope == "email"
     assert response.payload.sub == "subject-introspection"
     assert response.payload.aud == ["api.example.com"]
-    refute Map.has_key?(response.payload, :authorization_details)
+    assert response.payload.authorization_details == authorization_details
   end
 
   test "returns granted authorization_details for active refresh tokens", %{
@@ -225,7 +226,14 @@ defmodule Lockspire.Protocol.IntrospectionTest do
     assert response.payload.active == true
     assert response.payload.token_type == "refresh_token"
     assert response.payload.scope == "email offline_access"
-    refute Map.has_key?(response.payload, :authorization_details)
+    assert response.payload.authorization_details == [
+             %{
+               "actions" => ["create"],
+               "instructedAmount" => %{"amount" => "12.34", "currency" => "USD"},
+               "locations" => ["https://resource.example.com/payments"],
+               "type" => "payment_initiation"
+             }
+           ]
   end
 
   test "keeps tokens compact-by-reference and omits authorization_details when the grant is missing", %{
