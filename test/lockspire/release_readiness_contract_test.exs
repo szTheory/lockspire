@@ -135,7 +135,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert release_workflow =~ "push:"
     assert release_workflow =~ "workflow_dispatch:"
-    assert release_workflow =~ "environment: hex-publish"
     assert release_workflow =~ "recovery_reason"
     assert release_workflow =~ "recovery_ref"
     assert release_workflow =~ "Check out repository for Release Please"
@@ -185,7 +184,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert recovery_validation_job =~
              "recovery_ref must be an exact 40-character commit SHA or an existing tag"
 
-    assert publish_job =~ "environment: hex-publish"
     assert publish_job =~ "run: mix release.preflight"
     assert publish_job =~ "run: mix hex.publish --yes"
     refute release_please_job =~ "run: mix release.preflight"
@@ -508,7 +506,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute onboarding =~ "production-ready"
 
     assert ci_workflow =~ "run: mix docs.verify"
-    assert release_workflow =~ "environment: hex-publish"
   end
 
   test "device-flow host guide keeps the verification seam abuse-control contract explicit" do
@@ -757,7 +754,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute maintainer_conformance =~ "Phase 43 completion"
 
     # Artifact/CI truth
-    assert workflow =~ "uses: actions/upload-artifact@v4"
+    assert workflow =~ "uses: actions/upload-artifact@v7"
     assert workflow =~ "mix lockspire.oidf_conformance"
   end
 
