@@ -61,10 +61,10 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-fast-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-fast-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
-            ${{ runner.os }}-mix-fast-
+            ${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+            ${{ runner.os }}-mix-fast-v2-
 
       - name: Install dependencies
         run: mix deps.get
@@ -144,10 +144,10 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-integration-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-integration-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
-            ${{ runner.os }}-mix-integration-
+            ${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+            ${{ runner.os }}-mix-integration-v2-
 
       - name: Install dependencies
         run: mix deps.get
