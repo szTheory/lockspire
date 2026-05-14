@@ -39,7 +39,7 @@ defmodule Lockspire.MixProject do
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},
-      {:oban, "~> 2.21.0"},
+      {:oban, "~> 2.22.1"},
       {:req, "~> 0.5"},
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
