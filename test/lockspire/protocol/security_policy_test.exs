@@ -46,6 +46,8 @@ defmodule Lockspire.Protocol.SecurityPolicyTest do
              Policy.ensure_supported_token_endpoint_auth_method(:private_key_jwt)
 
     assert :ok = Policy.ensure_supported_token_endpoint_auth_method(:client_secret_basic)
+    assert :ok = Policy.ensure_supported_token_endpoint_auth_method(:tls_client_auth)
+    assert :ok = Policy.ensure_supported_token_endpoint_auth_method(:self_signed_tls_client_auth)
 
     assert {:error, :invalid_signing_alg} = Policy.ensure_signing_alg("none")
     assert :ok = Policy.ensure_signing_alg(:ES256)
