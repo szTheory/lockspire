@@ -7,7 +7,14 @@ defmodule Lockspire.Protocol.ClientAuth do
   alias Lockspire.Protocol.ClientAuth.PrivateKeyJwt
   alias Lockspire.Security.Policy
 
-  @supported_auth_methods [:none, :client_secret_basic, :client_secret_post, :private_key_jwt]
+  @supported_auth_methods [
+    :none,
+    :client_secret_basic,
+    :client_secret_post,
+    :private_key_jwt,
+    :tls_client_auth,
+    :self_signed_tls_client_auth
+  ]
 
   defmodule Error do
     @moduledoc """
@@ -28,14 +35,21 @@ defmodule Lockspire.Protocol.ClientAuth do
 
   @spec authenticate(map(), String.t() | nil, keyword()) :: result()
   def authenticate(params, authorization, opts) when is_map(params) and is_list(opts) do
-    with {:ok, attempted_method, client_id, client_secret} <-
+    with {:ok, raw_method, client_id, client_secret} <-
            parse_client_credentials(params, authorization),
          {:ok, %Client{} = client} <- fetch_client(client_id, opts),
+         attempted_method = resolve_implicit_method(raw_method, client.token_endpoint_auth_method),
          :ok <- validate_registered_auth_method(client, attempted_method),
          :ok <- validate_client_secret(client, attempted_method, client_secret, opts) do
       {:ok, client}
     end
   end
+
+  defp resolve_implicit_method(:implicit_client_id, auth_method)
+       when auth_method in [:none, :tls_client_auth, :self_signed_tls_client_auth],
+       do: auth_method
+
+  defp resolve_implicit_method(method, _auth_method), do: method
 
   @spec supported_auth_methods() :: [atom()]
   def supported_auth_methods, do: @supported_auth_methods
@@ -86,7 +100,7 @@ defmodule Lockspire.Protocol.ClientAuth do
   end
 
   defp evaluate_client_credentials(%{body_client_id: id}) when not is_nil(id) do
-    {:ok, :none, id, nil}
+    {:ok, :implicit_client_id, id, nil}
   end
 
   defp evaluate_client_credentials(_state) do
@@ -185,6 +199,17 @@ defmodule Lockspire.Protocol.ClientAuth do
 
   defp validate_client_secret(%Client{} = client, :private_key_jwt, client_assertion, opts) do
     case PrivateKeyJwt.verify(client, client_assertion, opts) do
+      :ok ->
+        :ok
+
+      {:error, reason_code} ->
+        {:error, invalid_client("Client authentication failed", reason_code)}
+    end
+  end
+
+  defp validate_client_secret(%Client{} = client, method, _client_secret, opts)
+       when method in [:tls_client_auth, :self_signed_tls_client_auth] do
+    case Lockspire.Protocol.ClientAuth.MTLS.verify(client, opts[:mtls_cert], method, opts) do
       :ok ->
         :ok
 
