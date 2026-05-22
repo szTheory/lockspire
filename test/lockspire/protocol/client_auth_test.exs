@@ -292,6 +292,50 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     end
   end
 
+  @der_cert Base.decode64!(
+              "MIIDlzCCAn+gAwIBAgIUf9kmQnJK500+Nv0BWu0gM48zcgIwDQYJKoZIhvcNAQELBQAwNjEUMBIGA1UEAwwLZXhhbXBsZS5jb20xETAPBgNVBAoMCFRlc3QgT3JnMQswCQYDVQQGEwJVUzAeFw0yNjA1MjIyMjI0MzhaFw0zNjA1MTkyMjI0MzhaMDYxFDASBgNVBAMMC2V4YW1wbGUuY29tMREwDwYDVQQKDAhUZXN0IE9yZzELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCnzGcJzq614Cz9AN6axBrGwnx0odNBZJjdQ0VODx+WxDWepf5B9+B0qNEyMBg6eMzRWNSXPs5VaglfJUte35OTXtIh+Rz84PyPw7a8Yg+4EOasw2zqsxN+9uH/VYpV3dcrEJdA9Xx0x0ksLWV0vClTCSWNnJbJ8caftyp6fUL2kBPxv0nX/MVjNJxcm5QAmHXh+dSZ2CgZr6bdzN3JzNdc9JeYVJ9/7sMi7mbjSwLZElBBLIlPtJX7jVVTxLKR5UTnY9kYdxF3VaF42P/YPrcYJQ5LH8iilBxYL/qnct+ZwzvYgKACB8CEzNqIhTbDXzFh6J97OFDUnm+5XWIFMt+fAgMBAAGjgZwwgZkwHQYDVR0OBBYEFPEcpeN1EnkmQ7VbwOCyeUCfhwTmMB8GA1UdIwQYMBaAFPEcpeN1EnkmQ7VbwOCyeUCfhwTmMA8GA1UdEwEB/wQFMAMBAf8wRgYDVR0RBD8wPYILZXhhbXBsZS5jb22GFmh0dHBzOi8vZXhhbXBsZS5jb20vaWSHBMCoAQGBEHRlc3RAZXhhbXBsZS5jb20wDQYJKoZIhvcNAQELBQADggEBAJtQ86lCGy/Y+7SRx/sFWYhC9UaeRJix84ZBnqVEMA37uvZQ4N3AHP+XDhuhSe++ZMqkp9sZHsWQCIZkmqqLUtRUKGiFbe9DcSvbn9PuSN56EbLM0ZCNIt41lEpAYVOogeakehvU0YsSPA4p/MxQ7ZkizWqY9iqnZC93RX43FFLVlpR0YTnq4tiTo4Eln5kLdqhMJdBM/PUUjQAsKK4tUrxRI5u7ycKzI04/M8mo5tbg3UsIiZ4WiFaUENCMcI4RxQca2Kn5mN3gJyaE/NNM2E1fRhZQThVIGZOXO+BIvf1McaOBGbLeRdr2pP3/CORqljaH+kapJnOFVFw+N1daB8g="
+            )
+
+  describe "authenticate/3 with MTLS" do
+    test "resolves implicit client id to tls_client_auth and succeeds" do
+      assert {:ok, %Client{client_id: "mtls_client"}} =
+               ClientAuth.authenticate(
+                 %{"client_id" => "mtls_client"},
+                 nil,
+                 client_store: __MODULE__.MtlsStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 mtls_cert: @der_cert
+               )
+    end
+
+    test "resolves implicit client id to self_signed_tls_client_auth and succeeds" do
+      {:ok, parsed} = Lockspire.Mtls.Certificate.parse(@der_cert)
+      jwk = JOSE.JWK.from_key(parsed.public_key)
+      {_modules, jwk_map} = JOSE.JWK.to_map(jwk)
+      Process.put(:self_signed_jwks, %{"keys" => [jwk_map]})
+
+      assert {:ok, %Client{client_id: "self_signed_client"}} =
+               ClientAuth.authenticate(
+                 %{"client_id" => "self_signed_client"},
+                 nil,
+                 client_store: __MODULE__.MtlsStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 mtls_cert: @der_cert
+               )
+    end
+
+    test "returns error when mtls certificate is invalid" do
+      assert {:error, %Error{reason_code: :missing_certificate}} =
+               ClientAuth.authenticate(
+                 %{"client_id" => "mtls_client"},
+                 nil,
+                 client_store: __MODULE__.MtlsStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 mtls_cert: nil
+               )
+    end
+  end
+
   defmodule MockStore do
     def fetch_client_by_id("test_client") do
       {:ok,
@@ -352,6 +396,28 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       Process.put(:recorded_audit_events, [event | Process.get(:recorded_audit_events, [])])
       {:ok, event}
     end
+  end
+
+  defmodule MtlsStore do
+    def fetch_client_by_id("mtls_client") do
+      {:ok,
+       %Client{
+         client_id: "mtls_client",
+         token_endpoint_auth_method: :tls_client_auth,
+         tls_client_auth_subject_dn: "C=US,O=Test Org,CN=example.com"
+       }}
+    end
+
+    def fetch_client_by_id("self_signed_client") do
+      {:ok,
+       %Client{
+         client_id: "self_signed_client",
+         token_endpoint_auth_method: :self_signed_tls_client_auth,
+         jwks: Process.get(:self_signed_jwks)
+       }}
+    end
+
+    def fetch_client_by_id(_), do: {:ok, nil}
   end
 
   defmodule ServerPolicyStore do
