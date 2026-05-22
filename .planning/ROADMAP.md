@@ -10,9 +10,9 @@ Lockspire will implement mTLS via an explicit extraction behaviour. To preserve 
 
 ### Phase 75: MTLS Extraction Foundation
 **Goal**: Establish the `Lockspire.MTLS.Extractor` behaviour and safe extraction primitives.
-**Plans:** 2 plans
-- [ ] 75-01-PLAN.md — Extractors Foundation (Behaviour, CowboyDirect, ProxyHeader)
-- [ ] 75-02-PLAN.md — MTLS Plug Enforcement
+**Plans:** 2/2 plans complete
+- [x] 75-01-PLAN.md — Extractors Foundation (Behaviour, CowboyDirect, ProxyHeader)
+- [x] 75-02-PLAN.md — MTLS Plug Enforcement
 
 ### Phase 76: MTLS Client Authentication
 **Goal**: Support mTLS client authentication methods at the token and introspection endpoints.
