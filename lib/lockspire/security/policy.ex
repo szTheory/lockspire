@@ -10,7 +10,9 @@ defmodule Lockspire.Security.Policy do
     :none,
     :client_secret_basic,
     :client_secret_post,
-    :private_key_jwt
+    :private_key_jwt,
+    :tls_client_auth,
+    :self_signed_tls_client_auth
   ]
   @supported_response_types ["code"]
   @supported_signing_algs ["RS256", "ES256", "PS256", "EdDSA", :RS256, :ES256, :PS256, :EdDSA]
