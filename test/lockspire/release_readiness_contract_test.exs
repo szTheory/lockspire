@@ -447,7 +447,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     onboarding = File.read!(@install_and_onboard_path)
     guide = File.read!(@maintainer_guide_path)
     ci_workflow = File.read!(@ci_workflow_path)
-    release_workflow = File.read!(@release_workflow_path)
+    _release_workflow = File.read!(@release_workflow_path)
 
     assert security =~ "Please do not file public issues"
     assert security =~ "Open a GitHub Security Advisory draft"
