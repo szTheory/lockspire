@@ -4,13 +4,13 @@ milestone: v1.20
 milestone_name: Mutual TLS (RFC 8705)
 status: planned
 stopped_at: milestone planned
-last_updated: "2026-05-22T22:28:15.767Z"
+last_updated: "2026-05-22T22:33:17.659Z"
 last_activity: 2026-05-22 — Phase 75 successfully planned and verified.
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
