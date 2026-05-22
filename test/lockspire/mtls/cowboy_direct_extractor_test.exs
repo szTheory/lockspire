@@ -1,7 +1,7 @@
 defmodule Lockspire.MTLS.CowboyDirectExtractorTest do
   use ExUnit.Case, async: true
   import Plug.Test
-  import Plug.Conn
+
 
   alias Lockspire.MTLS.CowboyDirectExtractor
 
