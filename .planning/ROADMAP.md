@@ -1,70 +1,35 @@
-# Roadmap: v1.19 FAPI 2.0 Message Signing
+# v1.20 Mutual TLS (RFC 8705) Roadmap
 
 ## Overview
+This milestone delivers Mutual TLS (mTLS) for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for "real integrator readiness" in high-security environments.
 
-This milestone implements JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701) to support the FAPI 2.0 Message Signing Profile. By returning authorization and introspection responses as signed JSON Web Tokens (JWTs), it delivers advanced non-repudiation and integrity protection using existing application-level cryptography (`Protocol.Jar`) without requiring the infrastructural friction of mTLS.
+## Architecture & Sequencing
+Lockspire will implement mTLS via an explicit extraction behaviour. To preserve host-owned network bounds and prevent proxy header spoofing vulnerabilities, extraction must be explicitly configured by the host app.
 
 ## Phases
 
-- [x] **Phase 71: JARM Core** - Implement JWT Secured Authorization Response Mode signing and composite modes
-- [x] **Phase 72: JARM Encryption & Metadata** - Add JWE support for authorization responses and update Discovery metadata
-- [x] **Phase 73: JWT Introspection Responses** - Support RFC 9701 signed token introspection based on Accept headers
-- [x] **Phase 74: FAPI 2.0 Message Signing Strict Mode** - Enforce Message Signing strictness via operator profile controls
+### Phase 75: MTLS Extraction Foundation
+**Goal**: Establish the `Lockspire.MTLS.Extractor` behaviour and safe extraction primitives.
+**Plans:** 2 plans
+- [ ] 75-01-PLAN.md — Extractors Foundation (Behaviour, CowboyDirect, ProxyHeader)
+- [ ] 75-02-PLAN.md — MTLS Plug Enforcement
 
-## Phase Details
+### Phase 76: MTLS Client Authentication
+**Goal**: Support mTLS client authentication methods at the token and introspection endpoints.
+- **Tasks**:
+  - Implement `tls_client_auth` (PKI/CA-based).
+  - Implement `self_signed_tls_client_auth` (JWKS-based).
+  - Integrate extraction into client authentication resolution.
 
-### Phase 71: JARM Core
-**Goal**: Wrap authorization responses (`code`, `state`, `iss`) in signed JWTs based on client requested modes and metadata
-**Depends on**: None
-**Requirements**: JARM-01, JARM-02
-**Success Criteria** (what must be TRUE):
-  1. Requests using `response_mode=jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt` return signed JWTs rather than raw query/fragment parameters.
-  2. The JWT is signed using the private key matching the client's `authorization_signed_response_alg` preference.
-  3. The `iss` parameter is properly injected into the signed JWS to prevent mix-up attacks.
-**Plans**: `71-01`, `71-02`
+### Phase 77: Certificate-Bound Tokens
+**Goal**: Bind access and refresh tokens to the client certificate.
+- **Tasks**:
+  - Generate `x5t#S256` token bindings based on the extracted client certificate.
+  - Integrate with existing DPoPo `cnf` infrastructure to enforce certificate binding on token usage (e.g., at the `/userinfo` endpoint).
 
-### Phase 72: JARM Encryption & Metadata
-**Goal**: Encrypt JARM responses for clients requesting confidentiality and expose AS capabilities in metadata
-**Depends on**: Phase 71
-**Requirements**: JARM-03
-**Success Criteria** (what must be TRUE):
-  1. Authorization responses are nested (signed then encrypted) if the client specifies encryption metadata.
-  2. The encryption leverages the client's public key via guarded remote JWKS resolution without degrading the redirect.
-  3. Discovery metadata (`/.well-known/openid-configuration`) lists supported signing and encryption algorithms for responses.
-**Plans**: `72-01`, `72-02`, `72-03`
-
-### Phase 73: JWT Introspection Responses
-**Goal**: Support non-repudiable API gateway validation by wrapping introspection responses in signed JWTs
-**Depends on**: Phase 71
-**Requirements**: INT-01
-**Success Criteria** (what must be TRUE):
-  1. A successful `POST /introspect` request with `Accept: application/token-introspection+jwt` returns a signed JWT.
-  2. The response content type is strictly `application/token-introspection+jwt`.
-  3. Error responses for introspection gracefully fall back to standard JSON format.
-**Plans**: `73-01`, `73-02`, `73-03`
-
-### Phase 74: FAPI 2.0 Message Signing Strict Mode
-**Goal**: Allow operators to mandate Message Signing mechanisms globally or per-client for high-security environments
-**Depends on**: Phase 71, Phase 73
-**Requirements**: ENF-01
-**Success Criteria** (what must be TRUE):
-  1. Host developers can activate FAPI 2.0 Message Signing compliance enforcement for clients or globally.
-  2. The authorization endpoint rejects requests without JARM when strict mode is active.
-  3. Operator LiveView telemetry visually indicates when a client is operating under strict Message Signing constraints.
-**Plans**: 5 plans
-
-Plans:
-- [x] `74-01-PLAN.md` - Add the `:fapi_2_0_message_signing` profile tier to domain, storage, and resolver seams
-- [x] `74-02-PLAN.md` - Add canonical readiness and shared normalization across admin, DCR, and RFC 7592 profile-setting paths
-- [x] `74-03-PLAN.md` - Enforce explicit JARM at `AuthorizationRequest` under strict mode for direct and PAR-backed authorization requests
-- [x] `74-04-PLAN.md` - Require RFC 9701 JWT negotiation for strict-profile introspection callers while preserving the Phase 73 baseline elsewhere
-- [x] `74-05-PLAN.md` - Expose operator-facing visual strictness/readiness indication, prove strict mixed-mode behavior end to end, and pin the public support contract
-
-## Progress
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 71. JARM Core | 2/2 | Complete | 2026-05-07 |
-| 72. JARM Encryption & Metadata | 3/3 | Complete | 2026-05-08 |
-| 73. JWT Introspection Responses | 3/3 | Complete | 2026-05-08 |
-| 74. FAPI 2.0 Message Signing Strict Mode | 5/5 | Complete | 2026-05-08 |
+### Phase 78: MTLS Discovery, Documentation & Closure
+**Goal**: Truthfully advertise MTLS capabilities and verify end-to-end functionality.
+- **Tasks**:
+  - Expose `mtls_endpoint_aliases` and MTLS-specific authentication methods in OIDC discovery.
+  - Document the critical security requirement of proxy header stripping.
+  - Finalize milestone verification and closure.

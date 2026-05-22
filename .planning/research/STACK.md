@@ -1,39 +1,32 @@
 # Technology Stack
 
 **Project:** Lockspire
-**Researched:** 2024
+**Researched:** 2026-05-22
 
 ## Recommended Stack
 
 ### Core Framework
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Plug | ~> 1.14 | Header & Peer Data Extraction | Standard interface for intercepting HTTP requests in Elixir/Phoenix, allowing inspection of both `conn.req_headers` and `Plug.Conn.get_peer_data/1`. |
-| Erlang `:public_key` | standard lib | X.509 Parsing | Built-in Erlang capability to decode PEM or DER certificates, extract the Subject DN, and calculate thumbprints without external C dependencies. |
-| Erlang `:crypto` | standard lib | Thumbprint Hashing | Fast, native SHA-256 calculation required for the `x5t#S256` token binding claims (RFC 8705). |
+| `:public_key` (Erlang) | OTP 25+ | x.509 Parsing | Native OTP capabilities for decoding DER/PEM certificates without external dependencies. |
+| `Plug.Conn` | Elixir/Phoenix | State & Header Extraction | Core primitive for reading `x-forwarded-client-cert` headers or `:ssl` peer data. |
+| `x509` (Hex) | `~> 0.8` | Certificate Validation | If Erlang's native `:public_key` is too low-level for checking SANs, the `x509` package is the Elixir standard for ergonomic certificate handling. |
 
 ### Supporting Libraries
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| x509 | ~> 0.8 | Dev/Test PKI Generation | Excellent for generating self-signed client certificates and CA chains during test suite execution to prove mTLS extraction paths. |
+| `apiac_auth_mtls` | `~> 1.0` | Reference / Alternative | Review for reference implementation of extracting certificates from proxy headers versus native Cowboy termination. Lockspire should likely build extraction directly into its own pipeline to avoid generic dependency bloat, but the logic is heavily validated here. |
 
 ## Alternatives Considered
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| mTLS Plug Library | Native Implementation | `apiac_auth_mtls` | `apiac` is a broader API access control suite. Lockspire needs a highly specific, embedded approach tailored to its existing protocol pipeline and JWT handling, rather than importing an external generalized auth suite. |
+| Cert Parsing | Erlang `:public_key` or `x509` | Hand-rolled binary parsing | Security risk. Use battle-tested OTP/Hex libs for cryptographic primitives. |
+| MTLS Termination | Host Proxy (Nginx/Envoy) | Forced Cowboy Direct | Modern Phoenix apps are almost always behind edge proxies (Fly.io, ALB). Forcing Cowboy direct termination breaks the "embedded library" promise by dictating deployment architecture. |
 
 ## Installation
-
-No new production dependencies are required beyond standard Erlang/Elixir libraries.
-
-```bash
-# Dev/Test dependencies for generating certificates in test suites
-npm install -D {:x509, "~> 0.8", only: [:test, :dev]}
-```
+No new external dependencies strictly required if using `:public_key`, but `{:x509, "~> 0.8.8"}` is highly recommended for developer ergonomics.
 
 ## Sources
-
-- Erlang `:public_key` docs: https://www.erlang.org/doc/man/public_key.html
-- Elixir Plug docs: https://hexdocs.pm/plug/Plug.Conn.html
-- RFC 8705: https://datatracker.ietf.org/doc/html/rfc8705
+- Erlang OTP `:public_key` documentation
+- Hexdocs: `x509` and `apiac_auth_mtls`

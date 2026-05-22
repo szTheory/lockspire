@@ -1,58 +1,56 @@
 # Architecture Patterns
 
-**Domain:** RFC 8705 (Mutual TLS for OAuth)
-**Researched:** 2024
+**Domain:** Embedded OAuth/OIDC Provider (Phoenix/Elixir)
+**Researched:** 2026-05-22
 
 ## Recommended Architecture
 
-Lockspire's embedded nature means it cannot control the physical network topology. The architecture must assume the host app is either terminating TLS directly in Erlang or offloading it to a reverse proxy.
+Because Lockspire is an embedded library, it cannot control the TLS termination boundary. It must treat the client certificate as contextual data provided by the host application through a formalized extraction boundary.
 
 ### Component Boundaries
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| `Lockspire.Plug.ExtractClientCert` | Extracts the client certificate from either `Plug.Conn.get_peer_data/1` or configured HTTP headers, parses it via `:public_key`, and assigns it to `conn.assigns.lockspire_client_cert`. | Host application pipeline |
-| `Lockspire.Protocol.MTLS` | Handles the RFC 8705 authentication logic, validating the certificate's thumbprint against the client's registered JWKS or Subject DN against metadata. | `ExtractClientCert` (consumes `assigns`) |
-| Token Issuer | Injects the `cnf` claim (`x5t#S256`) into the access token payload during the token exchange if mTLS is used. | `Protocol.MTLS` |
-| Resource Validator | Ensures the certificate presented during a resource request matches the `cnf` claim in the presented access token. | `ExtractClientCert` |
+| `Lockspire.MTLS.Extractor` (Behaviour) | Extracts raw client certificate from `Plug.Conn` (via Cowboy `:ssl` or Proxy Headers). | Host App implementation, Lockspire Plugs |
+| `Lockspire.ClientAuth` | Validates `tls_client_auth` and `self_signed_tls_client_auth` against client registration metadata. | Extractor, Client Storage |
+| `Lockspire.TokenPipeline` | Computes `x5t#S256` hash of the cert and embeds it in the token `cnf` claim. | Extractor, Token Generator |
 
 ### Data Flow
 
-1. **Request Ingress:** A request arrives at the host's Phoenix Endpoint.
-2. **Extraction Plug:** `ExtractClientCert` runs early in the pipeline.
-   - If configured for direct TLS, it reads `get_peer_data/1`.
-   - If configured for proxy headers, it reads the trusted header (e.g., `Client-Cert`).
-3. **Parsing:** The PEM/DER data is parsed into an Erlang `:OTPCertificate` record and stored in `conn.assigns`.
-4. **Endpoint Processing:** When the request hits the Token Endpoint (or a protected resource), Lockspire reads the certificate from `assigns` and performs the necessary RFC 8705 validation.
+1. External request hits Proxy (Nginx/Envoy). Proxy terminates mTLS and adds `X-Forwarded-Client-Cert` header.
+2. Request hits Phoenix `Endpoint` -> `Router` -> `Lockspire.Plug.MTLSContext`.
+3. `Lockspire.Plug.MTLSContext` calls the configured `MTLS.Extractor` (e.g., `MyApp.MyNginxExtractor`).
+4. Extractor returns the parsed `:public_key` x.509 record.
+5. Lockspire stores the cert record in `conn.private[:lockspire_mtls_cert]`.
+6. Downstream pipelines (Token, PAR, CIBA) read the cert from the connection for authentication or `cnf` binding.
 
 ## Patterns to Follow
 
-### Pattern 1: Early Explicit Extraction
-**What:** Extracting the certificate via a Plug *before* it reaches the specific OAuth endpoints.
-**When:** Always.
+### Pattern 1: Host-Provided Extractor
+**What:** Do not hardcode header names or parsing logic. Expose a Behaviour that host apps implement.
+**When:** Extracting proxy-offloaded certificates.
 **Example:**
 ```elixir
-# In the host application's endpoint.ex or router.ex
-plug Lockspire.Plug.ExtractClientCert,
-  source: :header,
-  header_name: "client-cert",
-  trusted_proxies: ["10.0.0.0/8"] # Highly recommended
+defmodule MyApp.Lockspire.MTLSExtractor do
+  @behaviour Lockspire.MTLS.Extractor
+
+  def extract(conn) do
+    case Plug.Conn.get_req_header(conn, "x-forwarded-client-cert") do
+      [pem] -> parse_pem(pem)
+      [] -> nil
+    end
+  end
+end
 ```
 
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Implicit Header Trust
-**What:** Automatically parsing `X-SSL-Cert` or `Client-Cert` headers without explicit host-app configuration.
-**Why bad:** This leads directly to header spoofing vulnerabilities if the host app's proxy isn't configured to strip these headers from external traffic.
-**Instead:** Require explicit configuration (`source: :header`) and strongly recommend restricting the extraction to trusted internal IP ranges.
+### Pattern 2: Endpoint Aliasing
+**What:** Support `mtls_endpoint_aliases` in `.well-known/openid-configuration`.
+**Why:** Many load balancers require mTLS to be enabled per-domain. It's common to host the standard API on `api.example.com` and the mTLS API on `matls.api.example.com`.
+**Instead of:** Forcing the host to use a single domain for both standard and mTLS traffic.
 
 ## Scalability Considerations
 
-| Concern | At 100 users | At 10K users | At 1M users |
-|---------|--------------|--------------|-------------|
-| Certificate Parsing | Negligible | `:public_key.pem_decode` is fast, but doing it on every request adds CPU overhead. | The reverse proxy should ideally send just the pre-calculated SHA-256 thumbprint in a header if possible, or parsing remains highly optimized in native Erlang. |
-
-## Sources
-
-- Elixir Plug and HTTP Header semantics.
-- RFC 8705 architecture models.
+| Concern | Resolution |
+|---------|------------|
+| Parsing Overhead | PEM decoding is fast, but should only be executed on endpoints that explicitly require Client Auth or Token Binding (e.g., `/token`, `/par`), not unconditionally on every request. |
+| Header Size | Client certificates can be several kilobytes. Ensure Phoenix's header size limits are configured appropriately if proxying via HTTP headers. |

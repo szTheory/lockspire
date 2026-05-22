@@ -107,9 +107,20 @@ Scope:
 - Decoupled authentication maps perfectly to Elixir's concurrency and Phoenix PubSub/Channels.
 - Provides a massive competitive advantage over other ecosystem frameworks that struggle with decoupled real-time auth.
 
-### 7. Future Epochs — Advanced Security & Authorization
+### 7. v1.20 — Mutual TLS (RFC 8705) (Active)
 
-- **Mutual TLS (RFC 8705):** Essential for FAPI 2.0 Advanced, but introduces significant infrastructural friction in standard Phoenix apps behind TLS-terminating proxies. Defer until core community proxy-header patterns are established.
+Why next:
+- After FAPI 2.0 Message Signing, the final high-leverage trust gap for "real integrator readiness" in regulated domains is Mutual TLS for client authentication and sender-constrained tokens.
+- We have established a safe architectural pattern for embedded Phoenix apps behind TLS-terminating proxies: forcing the host to explicitly opt-in via a `Lockspire.MTLS.Extractor` plug, solving the infrastructural friction while preventing header spoofing.
+
+Scope:
+- Explicit extraction behavior (`CowboyDirectExtractor` and `ProxyHeaderExtractor`).
+- `tls_client_auth` and `self_signed_tls_client_auth` methods.
+- Certificate-bound tokens (`x5t#S256`).
+- Truthful `mtls_endpoint_aliases` discovery metadata.
+
+### 8. Future Epochs — Advanced Security & Authorization
+
 - **Rich Authorization Requests (RFC 9328):** Powerful for complex domains, but still bleeding edge. Wait for standard patterns to emerge and utilize Ecto `embedded_schema` for robust, type-safe validation.
 
 ## Milestone Selection Rules

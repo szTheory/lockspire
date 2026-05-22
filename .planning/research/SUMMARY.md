@@ -1,52 +1,47 @@
-# Research Summary: Lockspire mTLS (RFC 8705) Support
+# Research Summary: Mutual TLS (RFC 8705) for Lockspire
 
-**Domain:** OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens (RFC 8705)
-**Researched:** 2024
+**Domain:** Embedded OAuth/OIDC Provider (Phoenix/Elixir)
+**Researched:** 2026-05-22
 **Overall confidence:** HIGH
 
 ## Executive Summary
+With FAPI 2.0 Message Signing complete (v1.19), Lockspire possesses advanced application-layer non-repudiation and security (DPoP, JARM). The remaining high-leverage trust gap for "real integrator readiness" in regulated environments (e.g., Open Banking, high-value fintech) is Mutual TLS (RFC 8705). While DPoP solves sender-constraining at the application layer, many established ecosystems rigidly mandate mTLS for B2B client authentication and token binding.
 
-Mutual TLS (mTLS) is a core requirement for FAPI 2.0 Advanced profiles, utilizing client certificates for both robust client authentication and sender-constrained access tokens. In a standard Elixir/Phoenix environment, implementing RFC 8705 presents a unique infrastructural challenge: Phoenix applications are typically deployed behind TLS-terminating reverse proxies or load balancers (AWS ALB, NGINX, HAProxy). Because the proxy terminates the TLS session, the actual mTLS handshake happens at the edge, not within Erlang's `:ssl` module.
-
-The ecosystem handles this by having the proxy forward the client certificate details downstream to the Phoenix app via HTTP headers. While standardizing this header transmission has historically been fragmented (relying on `X-SSL-Cert` or `X-Forwarded-Client-Cert`), the recent **RFC 9440 (Client-Cert HTTP Header)** provides a standard path forward. The primary danger of this architecture is **header spoofing**, where a misconfigured proxy allows an attacker's injected certificate header to reach the application.
-
-For Lockspire, acting as an embedded library, the solution requires a flexible, security-first extraction layer that allows host applications to configure whether they are terminating TLS directly (using `Plug.Conn.get_peer_data/1`) or relying on specific trusted headers from a proxy, with strict guidance on proxy sanitization.
+Implementing mTLS in an embedded Phoenix library presents unique architectural challenges. Because Phoenix apps are almost universally deployed behind TLS-terminating reverse proxies (AWS ALB, Cloudflare, Fly.io edge, Nginx), Lockspire cannot rely exclusively on Cowboy's direct `:ssl` termination. It must provide robust, spoof-resistant proxy header parsing (e.g., `X-Forwarded-Client-Cert`) while preserving the host app's control over network boundaries.
 
 ## Key Findings
-
-**Stack:** Phoenix Plugs relying on `:public_key` for parsing and standard Elixir crypto for thumbprint verification, with RFC 9440 `Client-Cert` header support.
-**Architecture:** A configurable certificate extraction Plug (`Lockspire.Plug.ExtractClientCert`) that sits early in the pipeline, parsing headers or peer data and appending the resolved certificate to `conn.assigns` for downstream authentication/validation.
-**Critical pitfall:** Header spoofing. If a proxy fails to strip incoming `Client-Cert` headers, attackers can bypass mTLS entirely and forge the sender-constrained token binding (`cnf` claim).
+**Stack:** Native Cowboy `:ssl` extraction for direct deployments, paired with a configurable Plug-based extractor behaviour for proxy-offloaded architectures. The Erlang `:public_key` or Hex `x509` libraries should be used for parsing.
+**Architecture:** Pluggable `Lockspire.MTLS.Extractor` behaviour allowing host apps to define exactly how client certificates are retrieved from the connection, avoiding dangerous "magic" proxy assumptions.
+**Critical pitfall:** Proxy Header Spoofing. If Lockspire blindly trusts `X-Forwarded-Client-Cert` headers and the host proxy doesn't strip them from incoming internet requests, attackers can trivially bypass client authentication.
 
 ## Implications for Roadmap
+Based on research, suggested phase structure for Milestone v1.20 (RFC 8705 Mutual TLS):
 
-Based on research, suggested phase structure:
+1. **Phase: MTLS Extraction Foundation** - Establish the pluggable `MTLS.Extractor` boundary and native Cowboy extraction support.
+   - Addresses: Reading certificates via proxy headers or `:ssl` peer data.
+   - Avoids: Hardcoding dangerous proxy header assumptions.
 
-1. **Phase 1: Certificate Extraction and Normalization** - Establishes the safe extraction of X.509 certificates from both Erlang's `:ssl` peer data and HTTP headers (specifically standardizing on RFC 9440).
-   - Addresses: Safely pulling client certificates in varying deployment topologies.
-   - Avoids: Header spoofing vulnerabilities by requiring explicit opt-in for header trust.
+2. **Phase: Client Authentication (tls_client_auth)** - Implement `tls_client_auth` and `self_signed_tls_client_auth` client auth methods at the `/token`, `/par`, and `/bc-authorize` endpoints.
+   - Addresses: Validating x.509 chains and matching SAN/Subject attributes against client configuration.
 
-2. **Phase 2: mTLS Client Authentication (`tls_client_auth` & `self_signed_tls_client_auth`)** - Implements the actual RFC 8705 authentication methods at the token endpoint.
-   - Addresses: Validating the client certificate against registered JWKS/metadata.
+3. **Phase: Certificate-Bound Tokens** - Implement `cnf` binding with `x5t#S256` for access tokens.
+   - Addresses: Sender-constrained tokens via mTLS, leveraging the existing DPoP `cnf` infrastructure.
 
-3. **Phase 3: Certificate-Bound Access Tokens** - Injects the `cnf` claim (`x5t#S256`) into issued tokens and validates it on protected resources.
-   - Addresses: Sender-constraining for FAPI 2.0 Advanced compliance.
+4. **Phase: Discovery and Security Posture** - Advertise `mtls_endpoint_aliases` in OpenID configuration and update security docs with explicit proxy-stripping warnings.
 
 **Phase ordering rationale:**
-- Extraction (Phase 1) is the prerequisite foundation. Without securely retrieving the certificate, authentication (Phase 2) and token binding (Phase 3) cannot exist. We must solve the proxy-header problem first.
+- Extraction must exist before authentication can consume the certificate. Client auth is the primary driver, and token binding reuses existing DPoP infrastructure.
 
 **Research flags for phases:**
-- Phase 1: Needs deeper research into exact host-app configuration schemas to ensure the embedded library doesn't accidentally expose a vulnerable default.
+- Phase 1: Needs deeper research into exact header formats across common Elixir deployment targets (Fly.io, AWS ALB, Nginx) to ensure the extractor behaviour is sufficiently flexible for real-world deployments.
 
 ## Confidence Assessment
-
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Standard Elixir `:public_key` and Plugs are the established path. |
-| Features | HIGH | RFC 8705 explicitly defines the requirements for auth and token binding. |
-| Architecture | HIGH | The proxy-header pattern is a well-known industry standard for TLS offloading. |
-| Pitfalls | HIGH | Header spoofing is universally documented as the primary risk in this architecture. |
+| Stack | HIGH | Cowboy `:ssl` and `Plug.Conn` extraction patterns are well documented. |
+| Features | HIGH | RFC 8705 is stable and maps perfectly to existing Lockspire client auth paths. |
+| Architecture | HIGH | Pluggable extractors align perfectly with Lockspire's host-owned seam philosophy. |
+| Pitfalls | HIGH | Proxy spoofing is a universally recognized mTLS anti-pattern. |
 
 ## Gaps to Address
-
-- Standardizing operator documentation for exactly how to configure AWS ALB, NGINX, and HAProxy to securely strip and forward the certificate headers to Lockspire.
+- Which proxy header format should be the "default" provided by Lockspire (e.g., Nginx URL-encoded PEM vs Envoy structured XFCC), or should Lockspire force the host to implement the parser entirely to maximize safety?

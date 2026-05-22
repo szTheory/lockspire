@@ -1,50 +1,21 @@
-# Requirements: v1.19 FAPI 2.0 Message Signing
+# v1.20 Mutual TLS (RFC 8705) Requirements
 
-## Traceability
+## MTLS Extraction (MTLS-EXT)
+- **MTLS-EXT-01**: Lockspire MUST define a `Lockspire.MTLS.Extractor` behaviour for retrieving client certificates.
+- **MTLS-EXT-02**: Lockspire MUST provide a `CowboyDirectExtractor` for extracting certificates natively from Cowboy `:ssl` connections.
+- **MTLS-EXT-03**: Lockspire MUST provide a `ProxyHeaderExtractor` for extracting URL-encoded PEM certificates from headers (e.g., `X-Forwarded-Client-Cert`).
+- **MTLS-EXT-04**: Extraction MUST require explicit host configuration in the Plug pipeline; Lockspire MUST NOT implicitly trust proxy headers without host opt-in.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| JARM-01 | Phase 71 | Validated |
-| JARM-02 | Phase 71 | Validated |
-| JARM-03 | Phase 72 | Validated |
-| INT-01 | Phase 73 | Validated |
-| ENF-01 | Phase 74 | Validated |
+## Client Authentication (MTLS-AUTH)
+- **MTLS-AUTH-01**: Lockspire MUST support the `tls_client_auth` client authentication method using a registered CA subject DN.
+- **MTLS-AUTH-02**: Lockspire MUST support the `self_signed_tls_client_auth` client authentication method using the client's registered JWKS.
+- **MTLS-AUTH-03**: The Token Endpoint MUST reject requests if the extracted certificate does not match the registered client credentials.
 
-## Requirements
+## Certificate-Bound Tokens (MTLS-BIND)
+- **MTLS-BIND-01**: Lockspire MUST embed the `x5t#S256` claim within the `cnf` (confirmation) claim of access tokens when mTLS is used.
+- **MTLS-BIND-02**: Protected endpoints (like Userinfo) MUST reject tokens if the presented client certificate does not match the `x5t#S256` thumbprint.
 
-### JARM Core
-- **JARM-01: Response Mode JWT**
-  - **Description:** Implement `response_mode=jwt` and composite modes (`query.jwt`, `fragment.jwt`, `form_post.jwt`).
-  - **Success Criteria:**
-    - Requesting `response_mode=jwt` automatically defaults to the correct delivery method based on `response_type`.
-    - Authorization response parameters (`code`, `state`, `iss`) are returned wrapped in a signed JWS.
-    - Explicit `query.jwt`, `fragment.jwt`, and `form_post.jwt` modes correctly format and deliver the JWT response.
-
-- **JARM-02: JARM Signing Algorithms**
-  - **Description:** Support dynamic signing algorithms based on client metadata.
-  - **Success Criteria:**
-    - AS selects the correct private key from `Storage.KeyStore` based on the client's `authorization_signed_response_alg` metadata.
-    - Discovery endpoint advertises supported signing algorithms via `authorization_signing_alg_values_supported`.
-
-### JARM Encryption
-- **JARM-03: JWE Nested Authorization Responses**
-  - **Description:** Support encrypting the signed authorization response (JWS nested in JWE).
-  - **Success Criteria:**
-    - If client metadata specifies `authorization_encrypted_response_alg` and `authorization_encrypted_response_enc`, the response is encrypted using the client's public key.
-    - Leverages existing guarded remote JWKS resolution to avoid blocking fetches.
-    - Discovery endpoint advertises supported encryption algorithms via `authorization_encryption_alg_values_supported` and `authorization_encryption_enc_values_supported`.
-
-### JWT Introspection
-- **INT-01: RFC 9701 Introspection Responses**
-  - **Description:** Support returning introspection responses as signed JWTs via content negotiation.
-  - **Success Criteria:**
-    - When `Accept: application/token-introspection+jwt` is sent to `POST /introspect`, a successful introspection map is wrapped in a signed JWT.
-    - Error responses from `POST /introspect` continue to return standard JSON.
-    - The returned JWT uses `Content-Type: application/token-introspection+jwt`.
-
-### Strict Enforcement
-- **ENF-01: FAPI 2.0 Message Signing Profile**
-  - **Description:** Add strict profile enforcement for Message Signing.
-  - **Success Criteria:**
-    - Provide a configuration (e.g., `security_profile: :fapi_2_0_message_signing`) that mandates JARM and JWT Introspection for compliant clients.
-    - Requests failing to use the required mechanisms under strict mode are rejected with clear error messages.
+## Discovery & Documentation (MTLS-DOC)
+- **MTLS-DOC-01**: The OIDC Discovery endpoint MUST advertise `mtls_endpoint_aliases` for relevant endpoints.
+- **MTLS-DOC-02**: The OIDC Discovery endpoint MUST list `tls_client_auth` and `self_signed_tls_client_auth` in `token_endpoint_auth_methods_supported`.
+- **MTLS-DOC-03**: Security documentation MUST explicitly warn operators about proxy header spoofing and the necessity of stripping headers at the edge proxy.

@@ -1,5 +1,39 @@
 # Milestones
 
+## v1.20 Mutual TLS (RFC 8705) (Active)
+
+**Phases planned:** **4** (**75-78**)
+
+**Goal:** Implement Mutual TLS for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for high-security domain integrations.
+
+**Key capabilities:**
+- Explicit certificate extraction via `Lockspire.MTLS.Extractor` behaviour (Cowboy native and Proxy headers).
+- `tls_client_auth` and `self_signed_tls_client_auth` client authentication.
+- `x5t#S256` certificate-bound access tokens.
+- `mtls_endpoint_aliases` discovery metadata.
+
+**Active Files:** [`.planning/milestones/v1.20-ROADMAP.md`](milestones/v1.20-ROADMAP.md), [`.planning/milestones/v1.20-REQUIREMENTS.md`](milestones/v1.20-REQUIREMENTS.md)
+
+---
+
+## v1.19 FAPI 2.0 Message Signing (Shipped + archived: 2026-05-21)
+
+**Phases completed:** **4** (**71-74**), **13** plans, **5** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now includes full support for the OpenID Connect FAPI 2.0 Message Signing Profile.
+
+**Key accomplishments:**
+- Implemented JARM (JWT Secured Authorization Response Mode) and Encrypted JARM.
+- Implemented JWT introspection responses.
+- Enforced strict FAPI 2.0 Message Signing security profile across all runtime flows.
+- Provided canonical readiness signals and operator remediations in the LiveView admin interfaces.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.19-MILESTONE-AUDIT.md`](milestones/v1.19-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.19-ROADMAP.md`, `milestones/v1.19-REQUIREMENTS.md`, `milestones/v1.19-MILESTONE-AUDIT.md` · **Git tag:** `v1.19`
+
+---
+
 ## v1.18 Post-Release Execution (Shipped + archived: 2026-05-07)
 
 **Phases completed:** **1** (**70**), **1** plan, **1** requirement closed.

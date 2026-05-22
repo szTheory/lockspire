@@ -16,26 +16,27 @@ Lockspire now supports a substantial embedded-provider surface: authorization co
 
 The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to elevate the protocol for high-security domains.
 
-## Current Milestone: v1.19 FAPI 2.0 Message Signing
+## Current Milestone: v1.20 Mutual TLS (RFC 8705)
 
-**Goal:** Implement JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701), leveraging existing `Protocol.Jar` infrastructure, thus significantly advancing Lockspire's capabilities for high-security environments without the infrastructural friction of mTLS.
+**Goal:** Implement Mutual TLS (mTLS) for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for "real integrator readiness" in regulated domains.
 
 **Target features:**
+- Safe, host-configured certificate extraction via `Lockspire.MTLS.Extractor` (Cowboy native and Proxy Header support).
+- `tls_client_auth` and `self_signed_tls_client_auth` client authentication.
+- Certificate-bound tokens (`x5t#S256` via DPoP `cnf` infrastructure).
+- Truthful `mtls_endpoint_aliases` discovery metadata.
+
+**Why now:** With FAPI 2.0 Message Signing completed, implementing mTLS handles the final major security wedge required by many high-security B2B APIs. Because embedded apps often run behind edge proxies, Lockspire will provide explicit host-owned extraction seams to prevent header spoofing.
+
+## Recently Shipped Milestone: v1.19 FAPI 2.0 Message Signing
+
+**Goal:** Implement JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701), leveraging existing `Protocol.Jar` infrastructure.
+
+**Delivered:**
 - JARM (`response_mode=jwt`) composite modes (`query.jwt`, `fragment.jwt`, `form_post.jwt`).
 - JARM Encryption for confidential authorization responses.
 - RFC 9701 signed JWT Introspection responses via content negotiation.
 - FAPI 2.0 Message Signing strict enforcement mode.
-
-**Why now:** After FAPI 2.0, RAR, and Token Exchange, Lockspire is well-positioned for advanced non-repudiation features. JARM provides this natively inside the application without relying on reverse-proxy mTLS termination, which perfectly aligns with the embedded nature of Lockspire.
-
-## Recently Shipped Milestone: v1.18 Post-Release Execution
-
-**Goal:** Ensure post-release execution paths and integrate the official OpenID Foundation FAPI 2.0 Conformance Suite into the automated CI pipeline.
-
-**Delivered:**
-- Integrated the OIDF FAPI 2.0 Conformance Suite into CI.
-- Maintained `1.0.0` GA release state and verifiable execution.
-- Established local testing lane for maintainers.
 
 ## Requirements
 
