@@ -84,6 +84,42 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     assert out.provenance == :operator
   end
 
+  test "MTLS attributes round-trip through ClientRecord" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "mtls_client_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :tls_client_auth,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      tls_client_auth_subject_dn: "CN=client.example.com",
+      tls_client_auth_san_dns: "client.example.com",
+      tls_client_auth_san_uri: "https://client.example.com",
+      tls_client_auth_san_ip: "192.168.1.1",
+      tls_client_auth_san_email: "admin@example.com"
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.token_endpoint_auth_method == :tls_client_auth
+    assert out.tls_client_auth_subject_dn == "CN=client.example.com"
+    assert out.tls_client_auth_san_dns == "client.example.com"
+    assert out.tls_client_auth_san_uri == "https://client.example.com"
+    assert out.tls_client_auth_san_ip == "192.168.1.1"
+    assert out.tls_client_auth_san_email == "admin@example.com"
+  end
+
   test "update_changeset/2 does NOT cast :provenance (provenance is create-time only)" do
     repo = Lockspire.TestRepo
 

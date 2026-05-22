@@ -27,7 +27,14 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(
       :token_endpoint_auth_method,
       Ecto.Enum,
-      values: [:client_secret_basic, :client_secret_post, :private_key_jwt, :none]
+      values: [
+        :client_secret_basic,
+        :client_secret_post,
+        :private_key_jwt,
+        :tls_client_auth,
+        :self_signed_tls_client_auth,
+        :none
+      ]
     )
 
     field(:pkce_required, :boolean, default: true)
@@ -46,6 +53,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
     field(:authorization_encrypted_response_alg, Ecto.Enum, values: [:RSA_OAEP_256, :ECDH_ES])
     field(:authorization_encrypted_response_enc, Ecto.Enum, values: [:A256GCM, :A128GCM])
+    field(:tls_client_auth_subject_dn, :string)
+    field(:tls_client_auth_san_dns, :string)
+    field(:tls_client_auth_san_uri, :string)
+    field(:tls_client_auth_san_ip, :string)
+    field(:tls_client_auth_san_email, :string)
     field(:jwks, :map)
     field(:jwks_uri, :string)
     field(:logo_uri, :string)
@@ -110,6 +122,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :authorization_signed_response_alg,
       :authorization_encrypted_response_alg,
       :authorization_encrypted_response_enc,
+      :tls_client_auth_subject_dn,
+      :tls_client_auth_san_dns,
+      :tls_client_auth_san_uri,
+      :tls_client_auth_san_ip,
+      :tls_client_auth_san_email,
       :jwks,
       :jwks_uri,
       :logo_uri,
@@ -261,6 +278,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       authorization_signed_response_alg: record.authorization_signed_response_alg,
       authorization_encrypted_response_alg: record.authorization_encrypted_response_alg,
       authorization_encrypted_response_enc: record.authorization_encrypted_response_enc,
+      tls_client_auth_subject_dn: record.tls_client_auth_subject_dn,
+      tls_client_auth_san_dns: record.tls_client_auth_san_dns,
+      tls_client_auth_san_uri: record.tls_client_auth_san_uri,
+      tls_client_auth_san_ip: record.tls_client_auth_san_ip,
+      tls_client_auth_san_email: record.tls_client_auth_san_email,
       jwks: record.jwks,
       jwks_uri: record.jwks_uri,
       logo_uri: record.logo_uri,
