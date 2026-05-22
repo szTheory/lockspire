@@ -1,7 +1,6 @@
 defmodule Lockspire.MTLS.PlugTest do
   use ExUnit.Case, async: true
 
-  import Plug.Conn
   import Phoenix.ConnTest, only: [build_conn: 0]
 
   alias Lockspire.MTLS.Plug
@@ -36,7 +35,7 @@ defmodule Lockspire.MTLS.PlugTest do
 
     assert conn.halted
     assert conn.status == 400
-    
+
     body = Jason.decode!(conn.resp_body)
     assert body["error"] == "invalid_request"
     assert body["error_description"] == "Valid client certificate required"
