@@ -39,7 +39,14 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @shared_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @shared_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
   @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do
@@ -120,12 +127,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["frontchannel_logout_supported"] == true
     assert body["frontchannel_logout_session_supported"] == true
 
-    assert body["token_endpoint_auth_methods_supported"] == [
-             "none",
-             "client_secret_basic",
-             "client_secret_post",
-             "private_key_jwt"
-           ]
+    assert body["token_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["token_endpoint_auth_signing_alg_values_supported"] == [
              "RS256",

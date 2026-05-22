@@ -40,8 +40,22 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
-  @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @static_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
+  @published_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
   @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do

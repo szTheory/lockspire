@@ -16,7 +16,9 @@ defmodule Lockspire.Web.RevocationController do
     case Revocation.revoke(%{
            params: params,
            authorization: authorization,
-           opts: [client_store: Repository, token_store: Repository]
+           opts:
+             [client_store: Repository, token_store: Repository]
+             |> Keyword.put(:mtls_cert, conn.private[:lockspire_mtls_cert])
          }) do
       :ok ->
         conn

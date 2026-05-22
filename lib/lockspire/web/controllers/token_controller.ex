@@ -27,6 +27,7 @@ defmodule Lockspire.Web.TokenController do
              |> Keyword.put(:ciba_authorization_store, Repository)
              |> Keyword.put(:interaction_store, Repository)
              |> Keyword.put(:key_store, Repository)
+             |> Keyword.put(:mtls_cert, conn.private[:lockspire_mtls_cert])
          }) do
       {:ok, %Success{} = success} ->
         conn
