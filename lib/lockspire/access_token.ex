@@ -23,6 +23,6 @@ defmodule Lockspire.AccessToken do
             optional(:dpop_jkt) => String.t(),
             optional(:mtls_x5t_s256) => String.t()
           } | nil,
-          error: atom() | String.t() | nil
+          error: term()
         }
 end
