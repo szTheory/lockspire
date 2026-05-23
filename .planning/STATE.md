@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.20
-milestone_name: Mutual TLS (RFC 8705)
-status: completed
-stopped_at: milestone completed
-last_updated: "2026-05-23T13:35:00.000Z"
-last_activity: 2026-05-23 — Milestone v1.20 successfully completed and audited.
+milestone: v1.21
+milestone_name: Resource Server (API Protection)
+status: planning
+last_updated: "2026-05-23T14:00:00.000Z"
+last_activity: 2026-05-23 — Defined requirements and roadmap for v1.21 Resource Server Plug.
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,19 +21,18 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Awaiting next milestone.
+**Current focus:** Planning v1.21 Resource Server (API Protection) to provide a first-class validation plug for high-security tokens.
 
 ## Current Position
 
-Phase: 78
-Plan: 01
-Status: completed
-Last activity: 2026-05-23 — Milestone v1.20 successfully completed and audited.
+Phase: 79 (pending)
+Status: planning
+Last activity: 2026-05-23 — Defined requirements and roadmap for v1.21 Resource Server Plug.
 
 ## Performance Metrics
 
-- Phases completed: 4/4
-- Plans completed: 8/8
+- Phases completed: 0/3
+- Plans completed: 0/0
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
