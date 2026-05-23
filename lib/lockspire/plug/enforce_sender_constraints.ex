@@ -8,6 +8,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   import Plug.Conn
 
   alias Lockspire.AccessToken
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
 
   @options_schema [
@@ -24,6 +25,10 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
       type: :non_neg_integer,
       required: false
     ],
+    mtls_extractor: [
+      type: :any,
+      required: false
+    ],
     now: [
       type: :any,
       required: false
@@ -31,7 +36,21 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   ]
 
   @impl Plug
-  def init(opts), do: NimbleOptions.validate!(opts, @options_schema)
+  def init(opts) do
+    opts = NimbleOptions.validate!(opts, @options_schema)
+
+    case Keyword.get(opts, :mtls_extractor) do
+      nil ->
+        opts
+
+      {module, extractor_opts} when is_atom(module) and is_list(extractor_opts) ->
+        opts
+
+      other ->
+        raise ArgumentError,
+              "expected :mtls_extractor to be {module, opts}, got: #{inspect(other)}"
+    end
+  end
 
   @impl Plug
   def call(conn, opts) do
@@ -48,10 +67,10 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   defp enforce_constraints(conn, %AccessToken{} = access_token, opts) do
     case maybe_validate_dpop(access_token, conn, opts) do
       {:ok, _proof} ->
-        conn
+        maybe_validate_mtls(conn, access_token, opts)
 
       :skip ->
-        conn
+        maybe_validate_mtls(conn, access_token, opts)
 
       {:error, sender_error} ->
         assign(conn, :access_token, %AccessToken{access_token | error: sender_error})
@@ -84,6 +103,25 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
 
   defp maybe_validate_dpop(_access_token, _conn, _opts), do: :skip
 
+  defp maybe_validate_mtls(
+         conn,
+         %AccessToken{binding_requirements: %{mtls_x5t_s256: expected_thumbprint}} = access_token,
+         opts
+       ) do
+    with {:ok, cert} <- fetch_mtls_cert(conn, opts),
+         true <- MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
+      conn
+    else
+      {:error, _reason} ->
+        assign(conn, :access_token, %AccessToken{access_token | error: mtls_error()})
+
+      false ->
+        assign(conn, :access_token, %AccessToken{access_token | error: mtls_error()})
+    end
+  end
+
+  defp maybe_validate_mtls(conn, _access_token, _opts), do: conn
+
   defp sender_error(challenge, error) do
     %{
       category: :sender_constraint,
@@ -91,6 +129,16 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
       reason_code: error.reason_code,
       error: error.error,
       error_description: error.error_description
+    }
+  end
+
+  defp mtls_error do
+    %{
+      category: :sender_constraint,
+      challenge: :bearer,
+      reason_code: :invalid_client_certificate,
+      error: "invalid_token",
+      error_description: "Client certificate missing or thumbprint mismatch"
     }
   end
 
@@ -117,5 +165,18 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
       port: conn.port,
       path: path
     })
+  end
+
+  defp fetch_mtls_cert(conn, opts) do
+    case conn.private[:lockspire_mtls_cert] do
+      cert when is_binary(cert) ->
+        {:ok, cert}
+
+      _other ->
+        case Keyword.get(opts, :mtls_extractor) do
+          {module, extractor_opts} -> module.extract(conn, extractor_opts)
+          nil -> {:error, :missing_client_certificate}
+        end
+    end
   end
 end

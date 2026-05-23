@@ -19,6 +19,15 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
     def record_dpop_proof(_replay), do: {:ok, :replay}
   end
 
+  defmodule MTLSExtractor do
+    def extract(_conn, opts) do
+      case Keyword.fetch!(opts, :scenario) do
+        :success -> {:ok, "mtls-cert"}
+        :error -> {:error, :invalid_cert}
+      end
+    end
+  end
+
   test "passes through unconstrained access tokens unchanged" do
     access_token = %AccessToken{token: "plain", claims: %{"sub" => "123"}}
 
@@ -148,6 +157,85 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       )
 
     assert %{reason_code: :dpop_binding_mismatch} = wrong_key_conn.assigns.access_token.error
+  end
+
+  test "accepts mtls-bound tokens from conn.private or configured extractor and records typed failures otherwise" do
+    {:ok, thumbprint} = Lockspire.Protocol.MTLSTokenBinding.thumbprint("mtls-cert")
+
+    access_token = %AccessToken{
+      token: "resource-mtls-access-token",
+      authorization_scheme: "Bearer",
+      binding_type: "mtls",
+      binding_requirements: %{mtls_x5t_s256: thumbprint},
+      claims: %{"sub" => "123"}
+    }
+
+    private_conn =
+      conn(:get, "/resource")
+      |> put_private(:lockspire_mtls_cert, "mtls-cert")
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call([])
+
+    assert %AccessToken{error: nil} = private_conn.assigns.access_token
+
+    extractor_conn =
+      conn(:get, "/resource")
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call(mtls_extractor: {MTLSExtractor, scenario: :success})
+
+    assert %AccessToken{error: nil} = extractor_conn.assigns.access_token
+
+    missing_cert_conn =
+      conn(:get, "/resource")
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call([])
+
+    assert %{challenge: :bearer, reason_code: :invalid_client_certificate} =
+             missing_cert_conn.assigns.access_token.error
+
+    wrong_cert_conn =
+      conn(:get, "/resource")
+      |> put_private(:lockspire_mtls_cert, "wrong-cert")
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call([])
+
+    assert %{reason_code: :invalid_client_certificate} = wrong_cert_conn.assigns.access_token.error
+  end
+
+  test "dual-bound tokens require both dpop and mtls in the same soft plug" do
+    %{proof: proof, jkt: jkt} = dpop_fixture()
+    {:ok, thumbprint} = Lockspire.Protocol.MTLSTokenBinding.thumbprint("mtls-cert")
+
+    access_token = %AccessToken{
+      token: @raw_access_token,
+      authorization_scheme: "DPoP",
+      binding_type: "dpop+mtls",
+      binding_requirements: %{dpop_jkt: jkt, mtls_x5t_s256: thumbprint}
+    }
+
+    missing_mtls_conn =
+      request_conn()
+      |> put_req_header("dpop", proof)
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call(
+        dpop_replay_store: AcceptingReplayStore,
+        now: fn -> @now end
+      )
+
+    assert %{challenge: :bearer, reason_code: :invalid_client_certificate} =
+             missing_mtls_conn.assigns.access_token.error
+
+    valid_conn =
+      request_conn()
+      |> put_req_header("dpop", proof)
+      |> put_private(:lockspire_mtls_cert, "mtls-cert")
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call(
+        dpop_replay_store: AcceptingReplayStore,
+        now: fn -> @now end
+      )
+
+    assert %AccessToken{error: nil} = valid_conn.assigns.access_token
   end
 
   defp request_conn do
