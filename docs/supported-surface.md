@@ -112,7 +112,6 @@ Lockspire does not currently support:
 - Lockspire-owned account database, passwords, or login UX
 - Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
 - External OIDF or FAPI suite certification claims — Lockspire does not treat historical or optional external-suite runs as part of the current public support contract for the embedded Phoenix library path
-- mTLS client authentication and mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism for FAPI 2.0; mTLS is permanently out of scope per the v1.10 milestone)
 
 ## Trust posture
 

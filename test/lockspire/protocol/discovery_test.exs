@@ -599,7 +599,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       on_exit(fn -> Application.delete_env(:lockspire, :mtls_issuer) end)
 
       config = Discovery.openid_configuration()
-      
+
       aliases = config["mtls_endpoint_aliases"]
       assert aliases["token_endpoint"] == "https://mtls.example.test/lockspire/token"
       assert aliases["revocation_endpoint"] == "https://mtls.example.test/lockspire/revoke"

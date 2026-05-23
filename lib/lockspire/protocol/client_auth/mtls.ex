@@ -6,7 +6,12 @@ defmodule Lockspire.Protocol.ClientAuth.MTLS do
   alias Lockspire.Observability
   alias Lockspire.Config
 
-  @spec verify(Client.t(), binary() | nil, :tls_client_auth | :self_signed_tls_client_auth, keyword()) :: :ok | {:error, atom()}
+  @spec verify(
+          Client.t(),
+          binary() | nil,
+          :tls_client_auth | :self_signed_tls_client_auth,
+          keyword()
+        ) :: :ok | {:error, atom()}
   def verify(%Client{} = client, mtls_cert_der, auth_method, opts)
       when auth_method in [:tls_client_auth, :self_signed_tls_client_auth] do
     case mtls_cert_der do

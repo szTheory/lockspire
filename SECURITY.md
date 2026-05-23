@@ -80,6 +80,5 @@ axes in `scripts/conformance/fapi2-plan.json` and `docs/maintainer-conformance.m
 Lockspire does NOT claim:
 
 - external OIDF FAPI 2.0 conformance suite certification (the harness is wired and pinned, but the live Docker run remains a manual maintainer step and is not a CI pass-gate)
-- mTLS client authentication or mTLS-bound access tokens (DPoP is the supported sender-constraining mechanism; mTLS is permanently out of scope)
 
 This file does not broaden the public support contract. For the full supported and out-of-scope surface, see `docs/supported-surface.md`.
