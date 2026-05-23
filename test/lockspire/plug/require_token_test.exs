@@ -1,9 +1,10 @@
 defmodule Lockspire.Plug.RequireTokenTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Conn
+  import Plug.Test
 
-  alias Lockspire.Plug.RequireToken
   alias Lockspire.AccessToken
+  alias Lockspire.Plug.RequireToken
 
   defp build_conn do
     conn(:get, "/")
@@ -11,52 +12,58 @@ defmodule Lockspire.Plug.RequireTokenTest do
 
   describe "RequireToken plug" do
     test "allows request to proceed if valid AccessToken is assigned" do
-      conn = build_conn()
-             |> assign(:access_token, %AccessToken{error: nil, claims: %{"sub" => "123"}})
-             |> RequireToken.call([])
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{error: nil, claims: %{"sub" => "123"}})
+        |> RequireToken.call([])
 
       refute conn.halted
       assert conn.status == nil
     end
 
     test "halts with 401 and generic WWW-Authenticate if AccessToken is missing entirely" do
-      conn = build_conn()
-             |> RequireToken.call([])
+      conn =
+        build_conn()
+        |> RequireToken.call([])
 
       assert conn.halted
       assert conn.status == 401
-      
+
       assert ["Bearer realm=\"Lockspire\""] = get_resp_header(conn, "www-authenticate")
       assert %{"error" => "invalid_token"} = Jason.decode!(conn.resp_body)
     end
 
     test "halts with 401 and generic WWW-Authenticate if error is :missing_token" do
-      conn = build_conn()
-             |> assign(:access_token, %AccessToken{error: :missing_token})
-             |> RequireToken.call([])
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{error: :missing_token})
+        |> RequireToken.call([])
 
       assert conn.halted
       assert conn.status == 401
-      
+
       assert ["Bearer realm=\"Lockspire\""] = get_resp_header(conn, "www-authenticate")
       assert %{"error" => "invalid_token"} = Jason.decode!(conn.resp_body)
     end
 
     test "halts with 401 and detailed WWW-Authenticate if error is :invalid_token" do
-      conn = build_conn()
-             |> assign(:access_token, %AccessToken{error: :invalid_token})
-             |> RequireToken.call([])
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{error: :invalid_token})
+        |> RequireToken.call([])
 
       assert conn.halted
       assert conn.status == 401
-      
-      assert ["Bearer realm=\"Lockspire\", error=\"invalid_token\", error_description=\"The access token is invalid or expired\""] = 
+
+      assert [
+               "Bearer realm=\"Lockspire\", error=\"invalid_token\", error_description=\"The access token is invalid or expired\""
+             ] =
                get_resp_header(conn, "www-authenticate")
-               
+
       assert %{
-        "error" => "invalid_token",
-        "error_description" => "The access token is invalid or expired"
-      } = Jason.decode!(conn.resp_body)
+               "error" => "invalid_token",
+               "error_description" => "The access token is invalid or expired"
+             } = Jason.decode!(conn.resp_body)
     end
 
     test "halts with DPoP-aware challenge for typed sender-constraint failures" do
@@ -112,6 +119,61 @@ defmodule Lockspire.Plug.RequireTokenTest do
       assert %{
                "error" => "invalid_token",
                "error_description" => "Client certificate missing or thumbprint mismatch"
+             } = Jason.decode!(conn.resp_body)
+    end
+
+    test "halts with 401 and structured invalid_token details for audience failures" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :token_restriction,
+            challenge: :bearer,
+            reason_code: :invalid_audience,
+            error: "invalid_token",
+            error_description: "The access token audience is invalid for this route"
+          }
+        })
+        |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 401
+
+      assert [
+               "Bearer realm=\"Lockspire\", error=\"invalid_token\", error_description=\"The access token audience is invalid for this route\""
+             ] = get_resp_header(conn, "www-authenticate")
+
+      assert %{
+               "error" => "invalid_token",
+               "error_description" => "The access token audience is invalid for this route"
+             } = Jason.decode!(conn.resp_body)
+    end
+
+    test "halts with 403 and scope challenge for insufficient scope failures" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :insufficient_scope,
+            challenge: :bearer,
+            reason_code: :insufficient_scope,
+            error: "insufficient_scope",
+            error_description: "The access token is missing a required scope",
+            required_scopes: ["read:billing", "write:reports"]
+          }
+        })
+        |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 403
+
+      assert [
+               "Bearer realm=\"Lockspire\", error=\"insufficient_scope\", error_description=\"The access token is missing a required scope\", scope=\"read:billing write:reports\""
+             ] = get_resp_header(conn, "www-authenticate")
+
+      assert %{
+               "error" => "insufficient_scope",
+               "error_description" => "The access token is missing a required scope"
              } = Jason.decode!(conn.resp_body)
     end
   end
