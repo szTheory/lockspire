@@ -29,7 +29,8 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - JWT-secured authorization response mode (JARM) as an optional authorization-response representation when clients explicitly choose `jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt`
 - RFC 9701 JWT introspection responses on the existing `POST /introspect` endpoint when the caller explicitly sends `Accept: application/token-introspection+jwt`
 - Refresh token rotation
-- DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
+- Host Phoenix API route protection with `Lockspire.Plug.VerifyToken`, optional `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level `scopes:` and `audience:` / `audiences:` restrictions for Lockspire-issued access tokens
+- DPoP on token requests, Lockspire-owned endpoints, host Phoenix API routes protected by the shipped plug pipeline, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
@@ -98,8 +99,8 @@ Lockspire does not currently support:
 - Implicit flow
 - Request-object-by-value support
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
-- Generic host protected-resource middleware remains out of scope
-- DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints
+- Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
+- DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints and the shipped Phoenix plug pipeline
 - `client_secret_jwt`
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
 - Lockspire-owned device verification browser UI or hosted approval pages
@@ -118,9 +119,11 @@ Lockspire does not currently support:
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
+- `docs/protect-phoenix-api-routes.md` for the shipped host Phoenix API route protection guide
 - `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
 - `docs/private-key-jwt-host-guide.md` for the shipped `jwks_uri` + `private_key_jwt` client-auth slice
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
+- `test/integration/phase81_generated_host_route_protection_e2e_test.exs` for generated-host Phoenix API route protection proof
 - `test/integration/install_generator_test.exs` for generator-backed install proof
 - `test/integration/phase6_onboarding_e2e_test.exs` for the canonical auth-code + PKCE onboarding flow, including unauthenticated `/authorize`, host login, interaction resume, consent, and token exchange
 - `test/integration/phase37_protocol_strictness_e2e_test.exs` for the generated-host strictness proof covering `prompt=none`, `max_age`, `auth_time`, and exact redirect behavior
@@ -144,7 +147,7 @@ A 1.0 GA claim honestly says:
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
-- the shipped DPoP proof surface is narrow: `/token` issuance plus the Lockspire-owned `userinfo` endpoint, not generic host protected resources
+- the shipped protected-resource proof surface is narrow: Lockspire-owned endpoints plus host Phoenix API routes protected by the documented plug pipeline, not generic gateway or third-party issuer middleware
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only
 - contributor and release workflows are versioned in the repo
 - a private disclosure path exists for supported security issues
@@ -152,7 +155,7 @@ A 1.0 GA claim honestly says:
 A 1.0 GA claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
-- Lockspire supports broader request-object modes, generic external `request_uri` handling, generic host protected-resource middleware, SAML, or LDAP
+- Lockspire supports broader request-object modes, generic external `request_uri` handling, generic gateway protected-resource middleware, SAML, or LDAP
 - Lockspire accepts DCR logout metadata or proves front-channel logout success remotely
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage

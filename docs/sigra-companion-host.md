@@ -48,6 +48,8 @@ For a Sigra-backed host, keep the seam narrow:
 
 The repo-owned proof for that shape lives in `test/integration/phase6_onboarding_e2e_test.exs`, which exercises unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange through generated-host code.
 
+If the same Sigra-backed host also exposes Phoenix API routes, use the Lockspire plug pipeline documented in [`docs/protect-phoenix-api-routes.md`](protect-phoenix-api-routes.md). Sigra still owns the signed-in browser session; Lockspire verifies the API token; your host app still owns post-token business authorization.
+
 ## Planning
 
 Cross-repo sequencing lives in Lockspire **`.planning/ECOSYSTEM-SIGRA.md`**.

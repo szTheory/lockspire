@@ -39,6 +39,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                  )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
+  @protect_phoenix_api_routes_path Path.expand("../../docs/protect-phoenix-api-routes.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
@@ -383,9 +384,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute oidf_conformance_workflow =~ "pull_request:"
   end
 
-  test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow DPoP surface" do
+  test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow protected-route surface" do
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
+    protected_routes_guide = File.read!(@protect_phoenix_api_routes_path)
 
     assert readme =~ "current release"
     assert readme =~ "inside its existing app"
@@ -432,12 +434,28 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
 
-    assert supported_surface =~
-             "DPoP on token requests, the Lockspire-owned `userinfo` endpoint, and truthful introspection visibility for active bound tokens"
-
+    assert supported_surface =~ "Host Phoenix API route protection"
+    assert supported_surface =~ "Lockspire.Plug.VerifyToken"
+    assert supported_surface =~ "Lockspire.Plug.RequireToken"
+    assert supported_surface =~ "scopes:` and `audience:` / `audiences:` restrictions"
+    assert supported_surface =~ "host Phoenix API routes protected by the shipped plug pipeline"
     assert supported_surface =~ "bearer clients remaining unchanged by default"
-    assert supported_surface =~ "Generic host protected-resource middleware remains out of scope"
+
+    assert supported_surface =~
+             "Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope"
+
     assert supported_surface =~ "Lockspire-owned semantic RAR consent rendering"
+    assert supported_surface =~ "docs/protect-phoenix-api-routes.md"
+    assert supported_surface =~ "phase81_generated_host_route_protection_e2e_test.exs"
+
+    assert protected_routes_guide =~ "Lockspire.Plug.VerifyToken"
+    assert protected_routes_guide =~ "Lockspire.Plug.EnforceSenderConstraints"
+    assert protected_routes_guide =~ "Lockspire.Plug.RequireToken"
+    assert protected_routes_guide =~ "403"
+    assert protected_routes_guide =~ "insufficient_scope"
+    assert protected_routes_guide =~ "business authorization"
+    assert protected_routes_guide =~ "tenant checks"
+    assert protected_routes_guide =~ "Lockspire.AccessToken"
 
     refute readme =~ "production-ready"
   end
@@ -490,6 +508,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "host-owned session seam"
     assert onboarding =~ "interaction resume"
     assert onboarding =~ "authorization-code + PKCE exchange"
+    assert onboarding =~ "docs/protect-phoenix-api-routes.md"
+    assert onboarding =~ "Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions"
+    assert onboarding =~ "phase81_generated_host_route_protection_e2e_test.exs"
     assert onboarding =~ "docs/private-key-jwt-host-guide.md"
     assert onboarding =~ "LockspireVerificationController"
     assert onboarding =~ "lockspire_verification_html"
@@ -566,6 +587,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert sigra_companion =~ "return_to"
     assert sigra_companion =~ "interaction_id"
     assert sigra_companion =~ "phase6_onboarding_e2e_test.exs"
+    assert sigra_companion =~ "docs/protect-phoenix-api-routes.md"
+    assert sigra_companion =~ "post-token business authorization"
 
     assert sigra_companion =~
              "unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange"
@@ -596,6 +619,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "payment_initiation"
 
     assert mixfile =~ "\"docs/rar-consent-host-guide.md\""
+    assert mixfile =~ "\"docs/protect-phoenix-api-routes.md\""
   end
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
