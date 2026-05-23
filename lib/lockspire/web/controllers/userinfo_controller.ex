@@ -20,7 +20,8 @@ defmodule Lockspire.Web.UserinfoController do
            opts: [
              token_store: Repository,
              dpop_replay_store: Repository,
-             server_policy_store: Repository
+             server_policy_store: Repository,
+             mtls_cert: conn.private[:lockspire_mtls_cert]
            ]
          }) do
       {:ok, claims} ->

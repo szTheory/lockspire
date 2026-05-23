@@ -250,6 +250,70 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     assert_dpop_challenge(conn)
   end
 
+  describe "MTLS-bound access tokens" do
+    setup %{now: now} do
+      cert = "dummy_der_cert"
+      thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
+      raw_mtls_access_token = "userinfo-mtls-access-token"
+
+      {:ok, _token} =
+        Repository.store_token(%Token{
+          token_hash: TokenFormatter.hash_token(raw_mtls_access_token),
+          token_type: :access_token,
+          client_id: "client-userinfo",
+          account_id: "subject-userinfo",
+          interaction_id: "interaction-userinfo-mtls",
+          scopes: ["openid", "email", "profile"],
+          cnf: %{"x5t#S256" => thumbprint},
+          issued_at: now,
+          expires_at: DateTime.add(now, 3600, :second)
+        })
+
+      %{mtls_access_token: raw_mtls_access_token, mtls_cert: cert}
+    end
+
+    test "GET /userinfo accepts MTLS-bound token with matching client cert", %{
+      mtls_access_token: access_token,
+      mtls_cert: cert
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_private(:lockspire_mtls_cert, cert)
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 200
+      body = Jason.decode!(conn.resp_body)
+      assert body["sub"] == "subject-userinfo"
+    end
+
+    test "GET /userinfo rejects MTLS-bound token with missing client cert", %{
+      mtls_access_token: access_token
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+    end
+
+    test "GET /userinfo rejects MTLS-bound token with wrong client cert", %{
+      mtls_access_token: access_token
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_private(:lockspire_mtls_cert, "wrong_cert")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+    end
+  end
+
   defp assert_dpop_challenge(conn) do
     [challenge] = get_resp_header(conn, "www-authenticate")
     assert challenge =~ "DPoP realm=\"Lockspire Userinfo\""

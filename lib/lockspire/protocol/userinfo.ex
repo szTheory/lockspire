@@ -79,22 +79,54 @@ defmodule Lockspire.Protocol.Userinfo do
           Keyword.put(opts, :security_profile, resolved_security_profile)
         end)
 
-      cond do
-        present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
-          case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
-            {:ok, _proof} -> :ok
-            {:error, %Error{} = error} -> {:error, error}
-          end
+      with :ok <- validate_mtls_binding(access_token, request) do
+        cond do
+          present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
+            case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
+              {:ok, _proof} -> :ok
+              {:error, %Error{} = error} -> {:error, error}
+            end
 
-        authorization_scheme == "Bearer" ->
-          :ok
+          authorization_scheme == "Bearer" ->
+            :ok
 
-        true ->
-          {:error,
-           error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+          true ->
+            {:error,
+             error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+        end
       end
     end
   end
+
+  defp validate_mtls_binding(%Token{cnf: %{"x5t#S256" => expected_thumbprint}}, request) do
+    case request |> Map.get(:opts, []) |> Keyword.get(:mtls_cert) do
+      cert when is_binary(cert) and cert != "" ->
+        actual_thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
+
+        if expected_thumbprint == actual_thumbprint do
+          :ok
+        else
+          {:error,
+           error(
+             401,
+             "invalid_token",
+             "Client certificate missing or thumbprint mismatch",
+             :invalid_client_certificate
+           )}
+        end
+
+      _ ->
+        {:error,
+         error(
+           401,
+           "invalid_token",
+           "Client certificate missing or thumbprint mismatch",
+           :invalid_client_certificate
+         )}
+    end
+  end
+
+  defp validate_mtls_binding(%Token{}, _request), do: :ok
 
   defp fetch_access_token(token, request) do
     token_hash = TokenFormatter.hash_token(token)

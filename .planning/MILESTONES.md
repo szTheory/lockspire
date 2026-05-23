@@ -1,8 +1,8 @@
 # Milestones
 
-## v1.20 Mutual TLS (RFC 8705) (Active)
+## v1.20 Mutual TLS (RFC 8705) (Shipped + archived: 2026-05-23)
 
-**Phases planned:** **4** (**75-78**)
+**Phases completed:** **4** (**75-78**)
 
 **Goal:** Implement Mutual TLS for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for high-security domain integrations.
 
@@ -12,7 +12,9 @@
 - `x5t#S256` certificate-bound access tokens.
 - `mtls_endpoint_aliases` discovery metadata.
 
-**Active Files:** [`.planning/milestones/v1.20-ROADMAP.md`](milestones/v1.20-ROADMAP.md), [`.planning/milestones/v1.20-REQUIREMENTS.md`](milestones/v1.20-REQUIREMENTS.md)
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.20-MILESTONE-AUDIT.md`](milestones/v1.20-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.20-ROADMAP.md`, `milestones/v1.20-REQUIREMENTS.md`, `milestones/v1.20-MILESTONE-AUDIT.md` · **Git tag:** `v1.20`
 
 ---
 

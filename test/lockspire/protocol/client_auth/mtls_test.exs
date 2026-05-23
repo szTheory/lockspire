@@ -123,8 +123,8 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
       client = %Client{client | jwks_uri: "https://example.com/jwks"}
 
       fetcher_opts = [
-        jwks_fetcher: MockFetcher,
-        test_jwks: jwks
+        jwks_fetcher: __MODULE__.MockFetcher,
+        jwks_fetcher_opts: [test_jwks: jwks]
       ]
 
       assert :ok = MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, fetcher_opts)
