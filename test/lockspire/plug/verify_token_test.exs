@@ -1,10 +1,12 @@
 defmodule Lockspire.Plug.VerifyTokenTest do
   use ExUnit.Case, async: false
-  use Plug.Test
+  import ExUnit.CaptureLog
+  import Plug.Conn
+  import Plug.Test
 
-  alias Lockspire.Plug.VerifyToken
   alias Lockspire.AccessToken
   alias Lockspire.KeyCache
+  alias Lockspire.Plug.VerifyToken
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Domain.SigningKey
 
@@ -20,12 +22,17 @@ defmodule Lockspire.Plug.VerifyTokenTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
-    
+
     {:ok, pid: Process.whereis(KeyCache)}
   end
 
   defp build_conn do
     conn(:get, "/")
+  end
+
+  defp verify_conn(conn, opts \\ []) do
+    conn
+    |> VerifyToken.call(VerifyToken.init(opts))
   end
 
   defp generate_key_and_token(claims \\ %{}) do
@@ -44,7 +51,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
     }
 
     {:ok, _} = Repository.publish_key(key)
-    
+
     send(KeyCache, :refresh)
     :sys.get_state(KeyCache)
 
@@ -56,9 +63,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
 
     merged_claims = Map.merge(default_claims, claims)
 
-    jwk_map = jose_jwk |> JOSE.JWK.to_map() |> elem(1)
-    
-    {_, signed_token} = 
+    {_, signed_token} =
       JOSE.JWT.sign(jose_jwk, %{"alg" => "RS256", "kid" => kid}, merged_claims)
       |> JOSE.JWS.compact()
 
@@ -66,89 +71,117 @@ defmodule Lockspire.Plug.VerifyTokenTest do
   end
 
   describe "VerifyToken plug" do
+    test "init/1 rejects simultaneous audience and audiences options" do
+      assert_raise ArgumentError, ~r/only one of :audience or :audiences/, fn ->
+        VerifyToken.init(audience: "billing-api", audiences: ["admin-api"])
+      end
+    end
+
+    test "init/1 preserves validated route restriction options" do
+      assert [
+               scopes: ["read:billing"],
+               audience: "billing-api"
+             ] = VerifyToken.init(scopes: ["read:billing"], audience: "billing-api")
+
+      assert [scopes: [], audiences: ["billing-api", "ledger-api"]] =
+               VerifyToken.init(audiences: ["billing-api", "ledger-api"])
+    end
+
     test "assigns access_token with missing_token error when no header" do
-      conn = build_conn() |> VerifyToken.call([])
-      
+      conn = build_conn() |> verify_conn()
+
       assert %AccessToken{error: :missing_token} = conn.assigns[:access_token]
       refute conn.halted
     end
 
     test "assigns access_token with missing_token error when not a Bearer token" do
-      conn = build_conn() 
-             |> put_req_header("authorization", "Basic abc")
-             |> VerifyToken.call([])
-             
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Basic abc")
+        |> verify_conn()
+
       assert %AccessToken{error: :missing_token} = conn.assigns[:access_token]
       refute conn.halted
     end
 
     test "assigns invalid_token when token is malformed" do
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer not.a.jwt")
-             |> VerifyToken.call([])
-             
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer not.a.jwt")
+        |> verify_conn()
+
       assert %AccessToken{error: :invalid_token} = conn.assigns[:access_token]
     end
 
     test "assigns invalid_token when kid is not found" do
       jose_jwk = JOSE.JWK.generate_key({:rsa, 2048})
-      {_, token} = JOSE.JWT.sign(jose_jwk, %{"alg" => "RS256", "kid" => "unknown-kid"}, %{"client_id" => "client"}) |> JOSE.JWS.compact()
-      
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer #{token}")
-             |> VerifyToken.call([])
-             
+
+      {_, token} =
+        JOSE.JWT.sign(jose_jwk, %{"alg" => "RS256", "kid" => "unknown-kid"}, %{
+          "client_id" => "client"
+        })
+        |> JOSE.JWS.compact()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
       assert %AccessToken{error: :invalid_token} = conn.assigns[:access_token]
     end
 
     test "assigns invalid_token when signature is invalid" do
       {token, _claims} = generate_key_and_token()
-      
+
       tampered_token = token <> "tamper"
-      
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer #{tampered_token}")
-             |> VerifyToken.call([])
-             
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{tampered_token}")
+        |> verify_conn()
+
       assert %AccessToken{error: :invalid_token} = conn.assigns[:access_token]
     end
 
     test "assigns invalid_token when exp is in the past" do
       {token, _claims} = generate_key_and_token(%{"exp" => System.os_time(:second) - 3600})
-      
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer #{token}")
-             |> VerifyToken.call([])
-             
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
       assert %AccessToken{error: :invalid_token} = conn.assigns[:access_token]
     end
 
     test "assigns invalid_token when nbf is in the future" do
       {token, _claims} = generate_key_and_token(%{"nbf" => System.os_time(:second) + 3600})
-      
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer #{token}")
-             |> VerifyToken.call([])
-             
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
       assert %AccessToken{error: :invalid_token} = conn.assigns[:access_token]
     end
 
     test "assigns valid AccessToken when everything is correct" do
       {token, claims} = generate_key_and_token()
 
-      conn = build_conn()
-             |> put_req_header("authorization", "Bearer #{token}")
-             |> VerifyToken.call([])
-             
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
       assert %AccessToken{
-        token: ^token,
-        claims: ^claims,
-        client_id: "test_client",
-        authorization_scheme: "Bearer",
-        binding_type: nil,
-        binding_requirements: nil,
-        error: nil
-      } = conn.assigns[:access_token]
+               token: ^token,
+               claims: ^claims,
+               client_id: "test_client",
+               authorization_scheme: "Bearer",
+               binding_type: nil,
+               binding_requirements: nil,
+               error: nil
+             } = conn.assigns[:access_token]
 
       refute conn.halted
     end
@@ -160,7 +193,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       conn =
         build_conn()
         |> put_req_header("authorization", "DPoP #{token}")
-        |> VerifyToken.call([])
+        |> verify_conn()
 
       assert %AccessToken{
                token: ^token,
@@ -180,7 +213,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       conn =
         build_conn()
         |> put_req_header("authorization", "Bearer #{token}")
-        |> VerifyToken.call([])
+        |> verify_conn()
 
       assert %AccessToken{
                claims: ^merged_claims,
@@ -191,6 +224,126 @@ defmodule Lockspire.Plug.VerifyTokenTest do
                  mtls_x5t_s256: "cert-thumbprint"
                }
              } = conn.assigns[:access_token]
+    end
+
+    test "accepts a matching audience from a string aud claim" do
+      {token, claims} = generate_key_and_token(%{"aud" => "billing-api"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "billing-api")
+
+      assert %AccessToken{claims: ^claims, error: nil} = conn.assigns[:access_token]
+    end
+
+    test "accepts any configured audience from an aud list claim" do
+      {token, claims} = generate_key_and_token(%{"aud" => ["admin-api", "billing-api"]})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audiences: ["billing-api", "ledger-api"])
+
+      assert %AccessToken{claims: ^claims, error: nil} = conn.assigns[:access_token]
+    end
+
+    test "records structured invalid_token errors for audience mismatch and malformed aud claims" do
+      {mismatch_token, _claims} = generate_key_and_token(%{"aud" => "admin-api"})
+      {malformed_token, _claims} = generate_key_and_token(%{"aud" => [123, "billing-api"]})
+
+      mismatch_conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{mismatch_token}")
+        |> verify_conn(audience: "billing-api")
+
+      assert %{
+               category: :token_restriction,
+               challenge: :bearer,
+               reason_code: :invalid_audience,
+               error: "invalid_token",
+               error_description: "The access token audience is invalid for this route",
+               required_audiences: ["billing-api"]
+             } = mismatch_conn.assigns.access_token.error
+
+      malformed_conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{malformed_token}")
+        |> verify_conn(audience: "billing-api")
+
+      assert %{
+               category: :token_restriction,
+               reason_code: :invalid_audience
+             } = malformed_conn.assigns.access_token.error
+    end
+
+    test "records structured invalid_token errors when a required audience is missing" do
+      {token, _claims} = generate_key_and_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "billing-api")
+
+      assert %{
+               category: :token_restriction,
+               reason_code: :missing_audience,
+               error: "invalid_token"
+             } = conn.assigns.access_token.error
+    end
+
+    test "normalizes scope claim and records insufficient_scope errors when scopes are missing" do
+      {ok_token, ok_claims} =
+        generate_key_and_token(%{"scope" => "read:billing read:billing write:reports"})
+
+      ok_conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{ok_token}")
+        |> verify_conn(scopes: ["read:billing", "write:reports"])
+
+      assert %AccessToken{claims: ^ok_claims, error: nil} = ok_conn.assigns.access_token
+
+      {denied_token, _claims} = generate_key_and_token(%{"scope" => "write:reports"})
+
+      denied_conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{denied_token}")
+        |> verify_conn(scopes: ["read:billing"])
+
+      assert %{
+               category: :insufficient_scope,
+               challenge: :bearer,
+               reason_code: :insufficient_scope,
+               error: "insufficient_scope",
+               error_description: "The access token is missing a required scope",
+               required_scopes: ["read:billing"]
+             } = denied_conn.assigns.access_token.error
+    end
+
+    test "emits redaction-safe logs for JWT failures and route restriction failures" do
+      malformed_log =
+        capture_log(fn ->
+          build_conn()
+          |> put_req_header("authorization", "Bearer not.a.jwt")
+          |> verify_conn()
+        end)
+
+      assert malformed_log =~ "reason=malformed"
+      refute malformed_log =~ "not.a.jwt"
+
+      {token, _claims} =
+        generate_key_and_token(%{"aud" => "admin-api", "scope" => "write:reports"})
+
+      restriction_log =
+        capture_log(fn ->
+          build_conn()
+          |> put_req_header("authorization", "Bearer #{token}")
+          |> verify_conn(audience: "billing-api", scopes: ["read:billing"])
+        end)
+
+      assert restriction_log =~ "category=token_restriction"
+      assert restriction_log =~ "reason=invalid_audience"
+      refute restriction_log =~ token
     end
   end
 end

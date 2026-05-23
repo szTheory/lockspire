@@ -44,6 +44,7 @@ defmodule Lockspire.MixProject do
       {:jose, "~> 1.11"},
       {:jason, "~> 1.4"},
       {:jcs, "~> 0.2"},
+      {:nimble_options, "~> 1.1"},
       {:opentelemetry_api, "~> 1.5"},
       {:phoenix_live_dashboard, "~> 0.8", optional: true},
       {:telemetry, "~> 1.3"},
