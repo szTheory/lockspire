@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.21
 milestone_name: Resource Server (API Protection)
-status: planning
-last_updated: "2026-05-23T14:00:00.000Z"
-last_activity: 2026-05-23 — Defined requirements and roadmap for v1.21 Resource Server Plug.
+status: executing
+stopped_at: milestone completed
+last_updated: "2026-05-23T13:07:12.856Z"
+last_activity: 2026-05-23 -- Phase 80 execution started
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -21,13 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Planning v1.21 Resource Server (API Protection) to provide a first-class validation plug for high-security tokens.
+**Current focus:** Phase 80 — sender-constraining-integration
 
 ## Current Position
 
-Phase: 79 (pending)
-Status: planning
-Last activity: 2026-05-23 — Defined requirements and roadmap for v1.21 Resource Server Plug.
+Phase: 80 (sender-constraining-integration) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 80
+Last activity: 2026-05-23 -- Phase 80 execution started
 
 ## Performance Metrics
 
