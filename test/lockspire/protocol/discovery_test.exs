@@ -593,6 +593,24 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
   end
 
+  describe "openid_configuration/0 — mtls_endpoint_aliases" do
+    test "publishes mtls_endpoint_aliases when mtls_issuer is configured" do
+      Application.put_env(:lockspire, :mtls_issuer, "https://mtls.example.test/lockspire")
+      on_exit(fn -> Application.delete_env(:lockspire, :mtls_issuer) end)
+
+      config = Discovery.openid_configuration()
+      
+      aliases = config["mtls_endpoint_aliases"]
+      assert aliases["token_endpoint"] == "https://mtls.example.test/lockspire/token"
+      assert aliases["revocation_endpoint"] == "https://mtls.example.test/lockspire/revoke"
+      assert aliases["introspection_endpoint"] == "https://mtls.example.test/lockspire/introspect"
+      assert aliases["device_authorization_endpoint"] == "https://mtls.example.test/lockspire/device/code"
+      assert aliases["pushed_authorization_request_endpoint"] == "https://mtls.example.test/lockspire/par"
+      assert aliases["userinfo_endpoint"] == "https://mtls.example.test/lockspire/userinfo"
+      assert aliases["backchannel_authentication_endpoint"] == "https://mtls.example.test/lockspire/bc-authorize"
+    end
+  end
+
   defp put_server_security_profile!(profile) do
     {:ok, policy} = Repository.get_server_policy()
     Repository.put_server_policy(%{policy | security_profile: profile})

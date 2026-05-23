@@ -101,9 +101,43 @@ defmodule Lockspire.Protocol.Discovery do
     |> maybe_put_ciba_metadata(endpoint_metadata)
     |> maybe_put_resource_indicators_metadata(endpoint_metadata)
     |> maybe_put_authorization_details_metadata(endpoint_metadata)
+    |> maybe_put_mtls_endpoint_aliases(endpoint_metadata)
     |> put_bcl_fcl_metadata()
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
+  end
+
+  defp maybe_put_mtls_endpoint_aliases(metadata, endpoint_metadata) do
+    case Config.mtls_issuer() do
+      mtls_issuer when is_binary(mtls_issuer) ->
+        mtls_endpoints = [
+          "token_endpoint",
+          "revocation_endpoint",
+          "introspection_endpoint",
+          "device_authorization_endpoint",
+          "pushed_authorization_request_endpoint",
+          "userinfo_endpoint",
+          "backchannel_authentication_endpoint"
+        ]
+
+        aliases =
+          endpoint_metadata
+          |> Map.take(mtls_endpoints)
+          |> Enum.map(fn {key, _url} ->
+            path = Map.fetch!(@endpoint_paths, key)
+            {key, issuer_url(mtls_issuer, path)}
+          end)
+          |> Map.new()
+
+        if map_size(aliases) > 0 do
+          Map.put(metadata, "mtls_endpoint_aliases", aliases)
+        else
+          metadata
+        end
+
+      _ ->
+        metadata
+    end
   end
 
   defp maybe_put_ciba_metadata(metadata, endpoint_metadata) do

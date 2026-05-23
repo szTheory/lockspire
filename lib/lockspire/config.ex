@@ -201,6 +201,14 @@ defmodule Lockspire.Config do
     Application.get_env(@app, :jwks_fetcher, Lockspire.JwksFetcher)
   end
 
+  @doc """
+  Returns the MTLS issuer string if configured, or nil.
+  """
+  @spec mtls_issuer() :: String.t() | nil
+  def mtls_issuer do
+    Application.get_env(@app, :mtls_issuer)
+  end
+
   defp fetch_required!(key) do
     Policy.fetch_required_config!(key, Application.get_env(@app, key))
   end
