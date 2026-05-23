@@ -32,6 +32,24 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     assert proof.jkt == token.cnf["jkt"]
   end
 
+  test "validates generic protected-resource requests with explicit target uri and binding requirements" do
+    %{request: request, token: token} = dpop_request_fixture()
+    target_uri = "https://api.example.test/resource"
+    %{jwt: proof, validated: validated} = proof_fixture(%{"htu" => target_uri, "htm" => "POST"})
+
+    binding_source = %{binding_requirements: %{dpop_jkt: validated.jkt}}
+
+    assert {:ok, validated_proof} =
+             ProtectedResourceDPoP.validate_access(binding_source, %{
+               request
+               | dpop: proof,
+                 method: "POST",
+                 target_uri: target_uri
+             })
+
+    assert validated_proof.jkt == validated.jkt
+  end
+
   test "returns typed invalid_token errors for wrong scheme missing proof missing ath wrong ath and wrong proof key" do
     %{request: request, token: token} = dpop_request_fixture()
 
@@ -69,6 +87,14 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: wrong_key_proof}),
       :dpop_binding_mismatch
     )
+
+    assert_invalid_token(
+      ProtectedResourceDPoP.validate_access(
+        %{binding_requirements: %{dpop_jkt: token.cnf["jkt"]}},
+        Map.delete(request, :target_uri)
+      ),
+      :invalid_dpop_target_uri
+    )
   end
 
   test "records replay state durably and rejects replayed proofs deterministically" do
@@ -97,6 +123,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       access_token: @raw_access_token,
       dpop: jwt,
       method: "GET",
+      target_uri: @userinfo_uri,
       opts: [dpop_replay_store: replay_store, now: fn -> @now end]
     }
 
@@ -122,12 +149,15 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
 
+    target_uri = Map.get(claims, "htu", @userinfo_uri)
+    method = Map.get(claims, "htm", "GET")
+
     jwt = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
     assert {:ok, validated} =
              DPoP.validate_proof(jwt,
-               method: "GET",
-               target_uri: @userinfo_uri,
+               method: method,
+               target_uri: target_uri,
                now: @now,
                max_age: 300,
                clock_skew: 30

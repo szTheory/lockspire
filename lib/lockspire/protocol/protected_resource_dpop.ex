@@ -11,29 +11,31 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.Userinfo.Error
 
-  @spec validate_userinfo_access(Token.t(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
-  def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
+  @spec validate_access(map(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
+  def validate_access(binding_source, request) when is_map(binding_source) and is_map(request) do
     security_profile =
       Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
 
     with :ok <- validate_authorization_scheme(request),
          {:ok, raw_access_token} <- fetch_access_token(request),
-         {:ok, proof} <- validate_proof(request, security_profile),
+         {:ok, target_uri} <- fetch_target_uri(request),
+         {:ok, proof} <- validate_proof(request, security_profile, target_uri),
          :ok <- validate_ath(proof, raw_access_token),
-         :ok <- validate_token_binding(token, proof),
+         :ok <- validate_token_binding(binding_source, proof),
          :ok <- record_dpop_proof_use(proof, request) do
       {:ok, proof}
     else
-      {:error, %Error{reason_code: reason} = error} ->
-        metadata = %{
-          client_id: token.client_id,
-          account_id: token.account_id,
-          reason: reason
-        }
-
-        Observability.emit(:dpop, :failed, %{}, metadata)
+      {:error, %Error{} = error} ->
+        emit_failure(binding_source, error)
         {:error, error}
     end
+  end
+
+  @spec validate_userinfo_access(Token.t(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
+  def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
+    request
+    |> Map.put_new(:target_uri, userinfo_endpoint_uri())
+    |> then(&validate_access(token, &1))
   end
 
   defp validate_authorization_scheme(request) do
@@ -60,16 +62,16 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     end
   end
 
-  defp validate_proof(request, security_profile) do
+  defp validate_proof(request, security_profile, target_uri) do
     case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
       nil ->
         {:error, invalid_token("A valid DPoP proof is required", :missing_dpop_proof)}
 
       proof ->
         case DPoP.validate_proof(
-               proof,
+             proof,
                method: request_method(request),
-               target_uri: userinfo_endpoint_uri(),
+               target_uri: target_uri,
                now: now(request),
                max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
                clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
@@ -99,7 +101,19 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     end
   end
 
-  defp validate_token_binding(%Token{cnf: %{"jkt" => expected_jkt}}, %DPoP{jkt: actual_jkt})
+  defp validate_token_binding(binding_source, %DPoP{jkt: actual_jkt})
+       when is_binary(actual_jkt) do
+    case expected_jkt(binding_source) do
+      {:ok, expected_jkt} ->
+        validate_expected_jkt(expected_jkt, actual_jkt)
+
+      :error ->
+        {:error,
+         invalid_token("The DPoP-bound access token is invalid", :invalid_access_token_binding)}
+    end
+  end
+
+  defp validate_expected_jkt(expected_jkt, actual_jkt)
        when is_binary(expected_jkt) and is_binary(actual_jkt) do
     if expected_jkt == actual_jkt do
       :ok
@@ -112,10 +126,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     end
   end
 
-  defp validate_token_binding(%Token{}, _proof) do
-    {:error,
-     invalid_token("The DPoP-bound access token is invalid", :invalid_access_token_binding)}
-  end
+  defp validate_expected_jkt(_expected_jkt, _actual_jkt), do: :error
 
   defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
     with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
@@ -224,6 +235,37 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     |> Map.put(:query, nil)
     |> Map.put(:fragment, nil)
     |> URI.to_string()
+  end
+
+  defp fetch_target_uri(request) do
+    case Map.get(request, :target_uri, Map.get(request, "target_uri")) do
+      target_uri when is_binary(target_uri) and target_uri != "" ->
+        {:ok, target_uri}
+
+      _other ->
+        {:error, invalid_token("The DPoP proof target URI is invalid", :invalid_dpop_target_uri)}
+    end
+  end
+
+  defp expected_jkt(%{binding_requirements: %{dpop_jkt: jkt}})
+       when is_binary(jkt) and jkt != "",
+       do: {:ok, jkt}
+
+  defp expected_jkt(%Token{cnf: %{"jkt" => jkt}}) when is_binary(jkt) and jkt != "",
+    do: {:ok, jkt}
+
+  defp expected_jkt(%{"jkt" => jkt}) when is_binary(jkt) and jkt != "", do: {:ok, jkt}
+  defp expected_jkt(_binding_source), do: :error
+
+  defp emit_failure(binding_source, %Error{reason_code: reason}) do
+    metadata =
+      %{
+        client_id: Map.get(binding_source, :client_id),
+        account_id: Map.get(binding_source, :account_id),
+        reason: reason
+      }
+
+    Observability.emit(:dpop, :failed, %{}, metadata)
   end
 
   defp dpop_replay_store(request),
