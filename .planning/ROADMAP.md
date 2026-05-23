@@ -18,6 +18,10 @@ The implementation will start with the core JWT validation primitives (signature
 
 ### Phase 80: Sender-Constraining Integration (DPoP & MTLS)
 **Goal**: Transparently enforce `cnf` (confirmation) claims for high-security tokens.
+- **Plans:** 1/3 plans executed
+- [x] 80-01-PLAN.md — Normalize sender-binding metadata and extract shared MTLS token-binding helpers
+- [ ] 80-02-PLAN.md — Generalize protected-resource DPoP validation and add `EnforceSenderConstraints`
+- [ ] 80-03-PLAN.md — Complete MTLS enforcement and DPoP-aware `RequireToken` challenges
 - **Tasks**:
   - Detect `cnf` claims in the validated access token.
   - If `jkt` is present, validate the incoming `DPoP` proof header against the request URL, method, and token thumbprint.
