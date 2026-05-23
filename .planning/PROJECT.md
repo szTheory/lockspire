@@ -10,33 +10,21 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived eighteen planning milestones. The embedded provider foundation from v1.0 remains intact, v1.1 closed the release-hardening work, v1.2 delivered the narrow PAR wedge, v1.3 added PAR policy controls, v1.4 added the narrow JAR request-object slice, v1.5 delivered Dynamic Client Registration, v1.6 delivered the full Device Authorization Grant wedge, v1.7 delivered DPoP core, v1.8 delivered Session Management & Conformance, v1.9 delivered JWE support for request objects, v1.10 delivered the FAPI 2.0 Security Profile, v1.11 delivered the 1.0 GA release stabilization, v1.12 delivered OAuth 2.0 Token Exchange (RFC 8693), v1.13 delivered OpenID Connect CIBA, v1.14 delivered Advanced Authorization & Resource Targetting, v1.15 delivered JWKS URI & Private Key JWT Client Authentication, v1.16 delivered embedded adoption hardening plus the Sigra golden path, v1.17 finalized the 1.0.0 GA real public release, and v1.18 ensured post-release execution and conformance suite automation.
+Lockspire has now archived twenty-one planning milestones. Beyond the earlier embedded-provider and release-hardening work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, and first-class Phoenix API route protection in v1.21.
 
-Lockspire now supports a substantial embedded-provider surface: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push delivery modes), Resource Indicators, Rich Authorization Requests with durable validation and introspection proof, guarded remote `jwks_uri` resolution, shared cryptographic `private_key_jwt` client authentication across Lockspire-owned direct-client surfaces, and a repo-proven embedded Phoenix host path with canonical install, verification, upgrade, and generated-host onboarding proof.
+Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The highest-leverage open question is no longer whether the embedded path is real enough to support. v1.16 answered that. The next compounding move is to elevate the protocol for high-security domains.
+There is no active milestone at the moment. The next milestone should be defined explicitly with `$gsd-new-milestone` so the next scope starts from a fresh requirements and roadmap pass.
 
-## Current Milestone: v1.20 Mutual TLS (RFC 8705)
+## Recently Shipped Milestone: v1.21 Resource Server (API Protection)
 
-**Goal:** Implement Mutual TLS (mTLS) for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for "real integrator readiness" in regulated domains.
-
-**Target features:**
-- Safe, host-configured certificate extraction via `Lockspire.MTLS.Extractor` (Cowboy native and Proxy Header support).
-- `tls_client_auth` and `self_signed_tls_client_auth` client authentication.
-- Certificate-bound tokens (`x5t#S256` via DPoP `cnf` infrastructure).
-- Truthful `mtls_endpoint_aliases` discovery metadata.
-
-**Why now:** With FAPI 2.0 Message Signing completed, implementing mTLS handles the final major security wedge required by many high-security B2B APIs. Because embedded apps often run behind edge proxies, Lockspire will provide explicit host-owned extraction seams to prevent header spoofing.
-
-## Recently Shipped Milestone: v1.19 FAPI 2.0 Message Signing
-
-**Goal:** Implement JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701), leveraging existing `Protocol.Jar` infrastructure.
+**Goal:** Deliver the canonical protected-resource plug pipeline for host Phoenix routes using Lockspire-issued tokens.
 
 **Delivered:**
-- JARM (`response_mode=jwt`) composite modes (`query.jwt`, `fragment.jwt`, `form_post.jwt`).
-- JARM Encryption for confidential authorization responses.
-- RFC 9701 signed JWT Introspection responses via content negotiation.
-- FAPI 2.0 Message Signing strict enforcement mode.
+- `Lockspire.Plug.VerifyToken` plus `%Lockspire.AccessToken{}` and `Lockspire.KeyCache` for local JWT validation.
+- `Lockspire.Plug.EnforceSenderConstraints` for DPoP and MTLS confirmation-claim enforcement.
+- `Lockspire.Plug.RequireToken` as the single strict transport boundary with truthful `401` vs `403` semantics.
+- A canonical Phoenix protected-route guide plus release-readiness contract coverage.
 
 ## Requirements
 
@@ -79,17 +67,17 @@ The highest-leverage open question is no longer whether the embedded path is rea
 - Update Discovery metadata and provide executable documentation for the v1.14 advanced authorization surface. Validated in archived v1.14.
 - Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
 - Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
+- Delivered FAPI 2.0 Message Signing support including JARM and JWT introspection responses in archived v1.19.
+- Delivered Mutual TLS client authentication, certificate-bound tokens, and truthful MTLS discovery metadata in archived v1.20.
+- Delivered first-class Phoenix API route protection for Lockspire-issued tokens in archived v1.21.
 
 ### Active
 
-- Lockspire supports JARM for authorization responses and RFC 9701 JWT Introspection.
-- Responses can be fully sender-constrained, non-repudiable, and tamper-proof entirely at the application layer.
-- Operators can enforce FAPI 2.0 Message Signing standards on high-value clients.
+- No active milestone is defined. Start the next scope with `$gsd-new-milestone`.
 
 ### Out of Scope
 
 - HTTP Message Signatures (RFC 9421) for the Token Endpoint — Not required by FAPI 2.0 Message Signing and adds immense complexity. Rely on DPoP.
-- Mutual TLS (mTLS) Auth — Requires reverse proxy changes. Defer as per EPIC.md; use `private_key_jwt` for client auth.
 - SAML IdP and LDAP/AD federation — expands the protocol and enterprise-systems surface far beyond the core OAuth/OIDC provider wedge.
 - Hosted auth product or required separate process — the product value is embedded Phoenix deployment, not another service to run.
 - End-user authentication primitives such as passwords, MFA, passkeys, and session ownership — those belong to Sigra or the host app.
@@ -155,4 +143,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 for v1.19 milestone start*
+*Last updated: 2026-05-23 for v1.21 milestone close*

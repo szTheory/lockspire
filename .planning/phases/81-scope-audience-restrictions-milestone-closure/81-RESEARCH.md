@@ -449,12 +449,12 @@ end
 | A1 | Warning signs for audience/scope misclassification will show up mainly in telemetry/controller fallbacks. `[ASSUMED]` | Common Pitfalls | Low; implementation guidance remains unchanged. |
 | A2 | Warning signs for dual `audience`/`audiences` config will surface as docs ambiguity or branching code. `[ASSUMED]` | Common Pitfalls | Low; init-time rejection still stands. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 81 make `nimble_options` a direct dependency?**
-   - What we know: Lockspire already calls `NimbleOptions.validate!/2` in `EnforceSenderConstraints`, but `mix.exs` does not declare `:nimble_options` directly. `[VERIFIED: lib/lockspire/plug/enforce_sender_constraints.ex][VERIFIED: mix.exs][VERIFIED: mix.lock]`
-   - What's unclear: Whether maintainers are comfortable continuing to rely on a transitive dependency for public plug code. `[VERIFIED: mix.exs][VERIFIED: mix.lock]`
-   - Recommendation: Add it directly in the same phase that deepens option validation. `[VERIFIED: mix.exs][VERIFIED: lib/lockspire/plug/enforce_sender_constraints.ex]`
+   - Decision: **Yes.** Phase 81 should add `{:nimble_options, "~> 1.1"}` directly to `mix.exs` because Lockspire already invokes `NimbleOptions.validate!/2` in public plug code and this phase expands that usage into `VerifyToken.init/1`. `[VERIFIED: lib/lockspire/plug/enforce_sender_constraints.ex][VERIFIED: mix.exs][VERIFIED: mix.lock]`
+   - Why resolved this way: depending on a transitive package for a first-class public plug surface makes the compile/runtime contract less explicit and weakens repo truth for future release hygiene. A direct dependency keeps the option-validation contract intentional and auditable. `[VERIFIED: mix.exs][VERIFIED: lib/lockspire/plug/enforce_sender_constraints.ex]`
+   - Planning consequence: Plan 01 should add the direct dependency and treat `NimbleOptions` as the standard Phase 81 validation seam. `[VERIFIED: .planning/phases/81-scope-audience-restrictions-milestone-closure/81-01-PLAN.md]`
 
 ## Environment Availability
 

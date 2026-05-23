@@ -11,10 +11,10 @@ The implementation will start with the core JWT validation primitives (signature
 ### Phase 79: Core Validation Plug
 **Goal**: Establish the `Lockspire.Plug.VerifyToken` Plug with basic JWT validation.
 
-**Plans:** 3 plans
-- [ ] 79-01-PLAN.md — Build the core data structure (AccessToken) and high-speed ETS cache for signing keys (KeyCache)
-- [ ] 79-02-PLAN.md — Implement the Lockspire.Plug.VerifyToken plug
-- [ ] 79-03-PLAN.md — Implement the Lockspire.Plug.RequireToken plug
+**Plans:** 3/3 plans complete
+- [x] 79-01-PLAN.md — Build the core data structure (AccessToken) and high-speed ETS cache for signing keys (KeyCache)
+- [x] 79-02-PLAN.md — Implement the Lockspire.Plug.VerifyToken plug
+- [x] 79-03-PLAN.md — Implement the Lockspire.Plug.RequireToken plug
 
 ### Phase 80: Sender-Constraining Integration (DPoP & MTLS)
 **Goal**: Transparently enforce `cnf` (confirmation) claims for high-security tokens.
@@ -30,6 +30,10 @@ The implementation will start with the core JWT validation primitives (signature
 
 ### Phase 81: Scope/Audience Restrictions & Milestone Closure
 **Goal**: Provide granular route protection options and verify end-to-end DX.
+- **Plans:** 3/3 plans complete
+- [x] 81-01-PLAN.md — Add explicit `VerifyToken` scope/audience route options and structured restriction failures
+- [x] 81-02-PLAN.md — Preserve strict 401/403 semantics in `RequireToken` and prove generated-host protected routes end to end
+- [x] 81-03-PLAN.md — Publish the Phoenix API protection guide, update the support contract, and write the milestone verification report
 - **Tasks**:
   - Add support for required scopes (e.g., `plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"]`).
   - Add support for Audience (`aud`) validation.

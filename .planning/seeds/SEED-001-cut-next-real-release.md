@@ -1,8 +1,10 @@
 ---
 id: SEED-001
-status: dormant
+status: implemented
 planted: 2026-05-06
 planted_during: v1.16 milestone planning
+implemented: 2026-05-07
+implemented_in: v1.17/v1.18
 trigger_when: When the embedded host path is executable end to end and package/release/support truth are reconciled, plan a real public release instead of continuing to accumulate shipped surface behind stale metadata.
 scope: medium
 ---
@@ -49,3 +51,9 @@ As of 2026-05-06:
 - the package and release metadata still do not match the public support posture
 
 Do not surface this seed merely because “a lot changed.” Surface it when the repo can make one coherent public release claim and the trusted publish lane is the main remaining step.
+
+## Outcome
+
+This seed has already been implemented. The real public release and its
+follow-through shipped in `v1.17` and `v1.18`, so this file remains only as
+historical planning context.

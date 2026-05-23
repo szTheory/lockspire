@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.21 Resource Server (API Protection) (Shipped + archived: 2026-05-23)
+
+**Phases completed:** **3** (**79-81**), **9** plans, **10** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now includes first-class Phoenix API route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+
+**Key accomplishments:**
+- Added `Lockspire.Plug.VerifyToken` plus `%Lockspire.AccessToken{}` and `Lockspire.KeyCache` for fast, local JWT validation against Lockspire-issued keys.
+- Added `Lockspire.Plug.EnforceSenderConstraints` so protected routes can enforce DPoP and MTLS confirmation claims without taking over the HTTP boundary.
+- Kept `Lockspire.Plug.RequireToken` as the single strict transport boundary, with truthful `401 invalid_token` vs `403 insufficient_scope` semantics.
+- Published and contract-tested the canonical Phoenix protected-route guide for `VerifyToken -> EnforceSenderConstraints -> RequireToken`.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.21-MILESTONE-AUDIT.md`](milestones/v1.21-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.21-ROADMAP.md`, `milestones/v1.21-REQUIREMENTS.md`, `milestones/v1.21-CONTEXT.md`, `milestones/v1.21-MILESTONE-AUDIT.md` · **Git tag:** `v1.21`
+
+---
+
 ## v1.20 Mutual TLS (RFC 8705) (Shipped + archived: 2026-05-23)
 
 **Phases completed:** **4** (**75-78**)

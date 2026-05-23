@@ -1,9 +1,13 @@
 ---
 phase: 37-protocol-strictness-conformance
 verified: 2026-04-28T22:15:00Z
-status: gaps_found
-score: 3/4 must-haves verified
+status: retired_non_claim_historical_context
+score: historical_record_only
 overrides_applied: 0
+retired_reason: >
+  Preserved as historical audit context only. Its open items were superseded by
+  later shipped milestones and are not active closure blockers for the current
+  support surface.
 gaps:
   - truth: "A repo-native Phase 37 OIDF run completes successfully and saves proof artifacts under `.artifacts/conformance/phase37`."
     status: failed
@@ -51,9 +55,14 @@ gaps:
 
 # Phase 37: Protocol Strictness Conformance Verification Report
 
+## Historical Status
+
+This report is retained as historical audit context only. It should not be
+treated as an open verification blocker for current milestone closure.
+
 **Phase Goal:** Prove that Phase 37's timestamp strictness, silent-auth enforcement, and redirect validation satisfy CONF-01 through CONF-04 via deterministic repo-native conformance lanes — without turning every pull request into a flaky external-suite dependency.
 **Verified:** 2026-04-28T22:15:00Z
-**Status:** gaps_found
+**Status:** retired historical context
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
