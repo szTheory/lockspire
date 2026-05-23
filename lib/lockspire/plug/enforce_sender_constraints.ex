@@ -128,7 +128,8 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
       challenge: challenge,
       reason_code: error.reason_code,
       error: error.error,
-      error_description: error.error_description
+      error_description: error.error_description,
+      dpop_nonce: Map.get(error, :dpop_nonce)
     }
   end
 

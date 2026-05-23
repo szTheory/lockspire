@@ -21,6 +21,7 @@ defmodule Lockspire.Web.UserinfoController do
              token_store: Repository,
              dpop_replay_store: Repository,
              server_policy_store: Repository,
+             secret_key_base: conn.secret_key_base,
              mtls_cert: conn.private[:lockspire_mtls_cert]
            ]
          }) do
@@ -33,6 +34,7 @@ defmodule Lockspire.Web.UserinfoController do
       {:error, %Error{} = error} ->
         conn
         |> put_cache_headers()
+        |> put_dpop_nonce(error)
         |> put_www_authenticate(error)
         |> put_status(error.status)
         |> json(UserinfoJSON.error_response(error))
@@ -49,7 +51,41 @@ defmodule Lockspire.Web.UserinfoController do
     put_resp_header(conn, "www-authenticate", www_authenticate_value(error))
   end
 
+  defp put_www_authenticate(conn, %Error{status: 401, error: "use_dpop_nonce"} = error) do
+    put_resp_header(conn, "www-authenticate", www_authenticate_value(error))
+  end
+
   defp put_www_authenticate(conn, _error), do: conn
+
+  defp put_dpop_nonce(conn, %Error{dpop_nonce: nonce}) when is_binary(nonce) and nonce != "" do
+    conn
+    |> put_resp_header("dpop-nonce", nonce)
+    |> expose_header("DPoP-Nonce")
+    |> expose_header("WWW-Authenticate")
+  end
+
+  defp put_dpop_nonce(conn, _error), do: conn
+
+  defp expose_header(conn, header_name) do
+    update_resp_header(conn, "access-control-expose-headers", header_name, fn existing ->
+      [existing, header_name]
+      |> Enum.reject(&(&1 in [nil, ""]))
+      |> Enum.uniq()
+      |> Enum.join(", ")
+    end)
+  end
+
+  defp www_authenticate_value(%Error{error: "use_dpop_nonce"}) do
+    profile =
+      case Lockspire.Storage.Ecto.Repository.get_server_policy() do
+        {:ok, policy} -> policy.security_profile
+        _ -> :none
+      end
+
+    algorithms = Enum.join(Lockspire.Protocol.DPoP.signing_alg_values_supported(profile), " ")
+
+    ~s(DPoP realm="Lockspire Userinfo", error="use_dpop_nonce", error_description="Resource server requires nonce in DPoP proof", algs="#{algorithms}")
+  end
 
   defp www_authenticate_value(%Error{reason_code: reason_code})
        when reason_code in [
@@ -75,7 +111,9 @@ defmodule Lockspire.Web.UserinfoController do
               :invalid_iat,
               :stale_iat,
               :future_iat,
-              :missing_jti
+              :missing_jti,
+              :missing_dpop_nonce,
+              :invalid_dpop_nonce
             ] do
     profile =
       case Lockspire.Storage.Ecto.Repository.get_server_policy() do

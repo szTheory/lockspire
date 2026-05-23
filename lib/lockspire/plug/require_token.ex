@@ -48,6 +48,7 @@ defmodule Lockspire.Plug.RequireToken do
   defp handle_invalid_token(conn, error) do
     conn
     |> put_resp_header("www-authenticate", www_authenticate(error))
+    |> maybe_put_dpop_nonce(error)
     |> send_json(401, oauth_body(error))
     |> halt()
   end
@@ -73,7 +74,8 @@ defmodule Lockspire.Plug.RequireToken do
       challenge: Map.get(error, :challenge, :bearer),
       error: Map.get(error, :error, "invalid_token"),
       error_description:
-        Map.get(error, :error_description, "The access token is invalid or expired")
+        Map.get(error, :error_description, "The access token is invalid or expired"),
+      dpop_nonce: Map.get(error, :dpop_nonce)
     }
   end
 
@@ -133,6 +135,24 @@ defmodule Lockspire.Plug.RequireToken do
       error: error.error,
       error_description: error.error_description
     }
+  end
+
+  defp maybe_put_dpop_nonce(conn, %{dpop_nonce: nonce}) when is_binary(nonce) and nonce != "" do
+    conn
+    |> put_resp_header("dpop-nonce", nonce)
+    |> expose_header("DPoP-Nonce")
+    |> expose_header("WWW-Authenticate")
+  end
+
+  defp maybe_put_dpop_nonce(conn, _error), do: conn
+
+  defp expose_header(conn, header_name) do
+    update_resp_header(conn, "access-control-expose-headers", header_name, fn existing ->
+      [existing, header_name]
+      |> Enum.reject(&(&1 in [nil, ""]))
+      |> Enum.uniq()
+      |> Enum.join(", ")
+    end)
   end
 
   defp send_json(conn, status, body) do

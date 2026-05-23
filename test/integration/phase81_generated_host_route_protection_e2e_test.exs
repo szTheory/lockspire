@@ -172,7 +172,18 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
     assert failure_challenge =~ "DPoP realm=\"Lockspire\""
     assert failure_challenge =~ "error=\"invalid_token\""
 
-    proof = generate_dpop_proof(dpop_keys.private_jwk, token)
+    challenge_conn =
+      protected_conn()
+      |> put_req_header("authorization", "DPoP #{token}")
+      |> put_req_header("dpop", generate_dpop_proof(dpop_keys.private_jwk, token, nil))
+      |> get(@protected_route)
+
+    assert challenge_conn.status == 401
+    [nonce_challenge] = get_resp_header(challenge_conn, "www-authenticate")
+    assert nonce_challenge =~ "error=\"use_dpop_nonce\""
+    assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
+
+    proof = generate_dpop_proof(dpop_keys.private_jwk, token, retry_nonce)
 
     assert {:ok, _validated_proof} =
              DPoP.validate_proof(proof,
@@ -255,14 +266,18 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
     token
   end
 
-  defp generate_dpop_proof(dpop_key, access_token) do
-    claims = %{
-      "htm" => "GET",
-      "htu" => @protected_target_uri,
-      "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-      "jti" => Ecto.UUID.generate(),
-      "ath" => DPoP.access_token_ath(access_token)
-    }
+  defp generate_dpop_proof(dpop_key, access_token, nonce) do
+    claims =
+      %{
+        "htm" => "GET",
+        "htu" => @protected_target_uri,
+        "iat" => DateTime.utc_now() |> DateTime.to_unix(),
+        "jti" => Ecto.UUID.generate(),
+        "ath" => DPoP.access_token_ath(access_token),
+        "nonce" => nonce
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
 
     JarTestHelpers.sign_dpop_proof(dpop_key, claims)
   end

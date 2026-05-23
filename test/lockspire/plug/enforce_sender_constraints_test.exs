@@ -1,11 +1,13 @@
 defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import Plug.Conn
+  import Plug.Test
 
   alias Lockspire.AccessToken
   alias Lockspire.JarTestHelpers
   alias Lockspire.Plug.EnforceSenderConstraints
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
 
   @now ~U[2026-04-28 18:00:00Z]
   @target_uri "https://api.example.test/resource"
@@ -113,6 +115,31 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
 
     assert %{reason_code: :missing_dpop_proof} = missing_proof_conn.assigns.access_token.error
     refute missing_proof_conn.halted
+  end
+
+  test "records nonce challenges on protected-resource proofs that omit nonce" do
+    %{proof: proof, jkt: jkt} = dpop_fixture(%{"nonce" => nil})
+
+    access_token = %AccessToken{
+      token: @raw_access_token,
+      authorization_scheme: "DPoP",
+      binding_type: "dpop",
+      binding_requirements: %{dpop_jkt: jkt}
+    }
+
+    conn =
+      request_conn()
+      |> put_req_header("dpop", proof)
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call(
+        dpop_replay_store: AcceptingReplayStore,
+        now: fn -> @now end
+      )
+
+    assert %{reason_code: :missing_dpop_nonce, error: "use_dpop_nonce", dpop_nonce: nonce} =
+             conn.assigns.access_token.error
+
+    assert is_binary(nonce)
   end
 
   test "records typed sender-constraint failures for replay ath mismatch and wrong proof key" do
@@ -258,7 +285,8 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
         "htu" => @target_uri,
         "iat" => DateTime.to_unix(@now),
         "jti" => Ecto.UUID.generate(),
-        "ath" => DPoP.access_token_ath(@raw_access_token)
+        "ath" => DPoP.access_token_ath(@raw_access_token),
+        "nonce" => DPoPNonce.issue(:resource_server)
       }
       |> Map.merge(claim_overrides)
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)

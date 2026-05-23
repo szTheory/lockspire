@@ -15,6 +15,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
@@ -331,6 +332,95 @@ defmodule Lockspire.Web.TokenControllerTest do
     body = Jason.decode!(conn.resp_body)
     assert body["error"] == "invalid_dpop_proof"
     assert body["error_description"] == "The DPoP proof is invalid"
+  end
+
+  test "POST /token returns use_dpop_nonce and a retry nonce when a DPoP proof omits nonce" do
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "client-public-dpop-nonce",
+        client_secret_hash: nil,
+        client_type: :public,
+        name: "Public DPoP Nonce App",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email", "profile"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :none,
+        pkce_required: true,
+        dpop_policy: :dpop,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    now = DateTime.utc_now()
+    interaction_id = "interaction-public-dpop-nonce"
+
+    {:ok, _interaction} =
+      Repository.put_interaction(%Interaction{
+        interaction_id: interaction_id,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        scopes_requested: ["email", "profile"],
+        redirect_uri: "https://client.example.com/callback",
+        return_to: "/authorize",
+        state: "state-public-dpop-nonce",
+        code_challenge: code_challenge("public-dpop-nonce-verifier"),
+        code_challenge_method: :S256,
+        status: :completed,
+        completed_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
+
+    {:ok, _code} =
+      Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token("public-dpop-nonce-code"),
+        token_type: :authorization_code,
+        client_id: client.client_id,
+        account_id: "subject-public",
+        interaction_id: interaction_id,
+        redirect_uri: "https://client.example.com/callback",
+        scopes: ["email", "profile"],
+        code_challenge: code_challenge("public-dpop-nonce-verifier"),
+        code_challenge_method: :S256,
+        issued_at: now,
+        expires_at: DateTime.add(now, 300, :second)
+      })
+
+    %{jwt: proof_without_nonce} = dpop_proof_fixture(nonce: nil)
+
+    challenge_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "client_id" => client.client_id,
+        "code" => "public-dpop-nonce-code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => "public-dpop-nonce-verifier"
+      })
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("dpop", proof_without_nonce)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert challenge_conn.status == 400
+    assert Jason.decode!(challenge_conn.resp_body)["error"] == "use_dpop_nonce"
+    assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
+
+    %{jwt: proof_with_nonce} = dpop_proof_fixture(nonce: retry_nonce)
+
+    retry_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "client_id" => client.client_id,
+        "code" => "public-dpop-nonce-code",
+        "redirect_uri" => "https://client.example.com/callback",
+        "code_verifier" => "public-dpop-nonce-verifier"
+      })
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("dpop", proof_with_nonce)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert retry_conn.status == 200
+    assert Jason.decode!(retry_conn.resp_body)["token_type"] == "DPoP"
   end
 
   test "POST /token returns oauth-safe error json for unsupported grant types", %{
@@ -710,14 +800,20 @@ defmodule Lockspire.Web.TokenControllerTest do
     now = DateTime.utc_now()
     target_uri = "https://example.test/lockspire/token"
     iat = Keyword.get(overrides, :iat, DateTime.to_unix(now))
+    nonce = Keyword.get_lazy(overrides, :nonce, fn -> DPoPNonce.issue(:authorization_server) end)
 
-    proof =
-      JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
+    claims =
+      %{
         "htm" => "POST",
         "htu" => target_uri,
         "iat" => iat,
-        "jti" => Ecto.UUID.generate()
-      })
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => nonce
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
     validated =
       case DPoP.validate_proof(proof,

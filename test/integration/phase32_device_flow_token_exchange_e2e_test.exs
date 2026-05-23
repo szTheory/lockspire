@@ -9,6 +9,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.JarTestHelpers
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -257,7 +258,8 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
       "htm" => "POST",
       "htu" => "https://example.test/lockspire/token",
       "iat" => DateTime.to_unix(now),
-      "jti" => Ecto.UUID.generate()
+      "jti" => Ecto.UUID.generate(),
+      "nonce" => DPoPNonce.issue(:authorization_server)
     })
   end
 end

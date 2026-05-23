@@ -11,6 +11,7 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
   alias Lockspire.Host.Claims
@@ -692,7 +693,9 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
       "htm" => method,
       "htu" => url,
       "iat" => iat,
-      "jti" => jti
+      "jti" => jti,
+      "nonce" =>
+        if(access_token, do: DPoPNonce.issue(:resource_server), else: DPoPNonce.issue(:authorization_server))
     }
 
     payload =

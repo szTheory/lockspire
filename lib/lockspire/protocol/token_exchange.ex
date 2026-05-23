@@ -57,10 +57,11 @@ defmodule Lockspire.Protocol.TokenExchange do
             status: pos_integer(),
             error: String.t(),
             error_description: String.t(),
-            reason_code: atom()
+            reason_code: atom(),
+            dpop_nonce: String.t() | nil
           }
 
-    defstruct [:status, :error, :error_description, :reason_code]
+    defstruct [:status, :error, :error_description, :reason_code, :dpop_nonce]
   end
 
   @type result :: {:ok, Success.t()} | {:error, Error.t()}

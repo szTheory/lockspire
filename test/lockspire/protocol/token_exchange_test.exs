@@ -12,6 +12,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.TokenExchange
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.AuditEventRecord
@@ -1443,7 +1444,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         "htm" => "POST",
         "htu" => target_uri,
         "iat" => DateTime.to_unix(now),
-        "jti" => Ecto.UUID.generate()
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => DPoPNonce.issue(:authorization_server)
       })
 
     assert {:ok, %DPoP{} = validated} =

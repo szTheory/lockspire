@@ -30,7 +30,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - RFC 9701 JWT introspection responses on the existing `POST /introspect` endpoint when the caller explicitly sends `Accept: application/token-introspection+jwt`
 - Refresh token rotation
 - Host Phoenix API route protection with `Lockspire.Plug.VerifyToken`, optional `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level `scopes:` and `audience:` / `audiences:` restrictions for Lockspire-issued access tokens
-- DPoP on token requests, Lockspire-owned endpoints, host Phoenix API routes protected by the shipped plug pipeline, and truthful introspection visibility for active bound tokens, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
+- DPoP on token requests, Lockspire-owned endpoints, host Phoenix API routes protected by the shipped plug pipeline, and truthful introspection visibility for active bound tokens, including automatic `DPoP-Nonce` challenge and retry support on those shipped DPoP surfaces, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
@@ -100,7 +100,7 @@ Lockspire does not currently support:
 - Request-object-by-value support
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
 - Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
-- DPoP nonce support or broader resource-server integration beyond Lockspire-owned endpoints and the shipped Phoenix plug pipeline
+- broader resource-server integration beyond Lockspire-owned endpoints and the shipped Phoenix plug pipeline
 - `client_secret_jwt`
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
 - Lockspire-owned device verification browser UI or hosted approval pages

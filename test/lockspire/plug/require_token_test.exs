@@ -95,6 +95,29 @@ defmodule Lockspire.Plug.RequireTokenTest do
              } = Jason.decode!(conn.resp_body)
     end
 
+    test "halts with DPoP nonce header when sender-constraint failure requests nonce retry" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :sender_constraint,
+            challenge: :dpop,
+            reason_code: :missing_dpop_nonce,
+            error: "use_dpop_nonce",
+            error_description: "Resource server requires nonce in DPoP proof",
+            dpop_nonce: "retry-nonce"
+          }
+        })
+        |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 401
+      assert ["retry-nonce"] = get_resp_header(conn, "dpop-nonce")
+      assert Enum.any?(get_resp_header(conn, "access-control-expose-headers"), &(&1 =~ "DPoP-Nonce"))
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ "error=\"use_dpop_nonce\""
+    end
+
     test "halts with bearer challenge for mtls sender-constraint failures" do
       conn =
         build_conn()

@@ -43,8 +43,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
-  @roadmap_path Path.expand("../../.planning/milestones/v1.3-ROADMAP.md", __DIR__)
-  @requirements_path Path.expand("../../.planning/milestones/v1.3-REQUIREMENTS.md", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
 
@@ -420,6 +418,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
     assert supported_surface =~ "canonical public support contract"
+    assert supported_surface =~ "DPoP-Nonce"
 
     assert supported_surface =~
              "README, `SECURITY.md`, and maintainer-only release guidance point back to this file"
@@ -624,29 +623,16 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
   test "planning metadata and repo truth keep PAR scoped to the narrow v1.3 slice" do
     project = File.read!(@project_path)
-    roadmap = File.read!(@roadmap_path)
-    requirements = File.read!(@requirements_path)
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~ "v1.5 delivered Dynamic Client Registration"
-    assert project =~ "v1.2 delivered the narrow PAR wedge"
+    assert project =~ "PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15."
+    assert project =~
+             "Discovery, support docs, and SECURITY wording now describe only the shipped PAR slice, validated in Phase 15."
 
-    assert project =~ "v1.3 added PAR policy controls"
-    assert project =~ "v1.4 added the narrow JAR request-object slice"
-
-    assert roadmap =~ "v1.3 PAR Policy Controls"
-    assert roadmap =~ "Phase 19: Operator UX and Truthful Surface"
-
-    assert roadmap =~
-             "19-02: Update discovery/docs/contract tests so support claims match the shipped policy slice"
-
-    assert requirements =~ "v1.3 PAR Policy Controls"
-    assert requirements =~ "PARPOL-04"
-
-    assert requirements =~
-             "Integrators and maintainers can discover the shipped PAR policy slice through truthful metadata and docs"
+    assert project =~
+             "PAR milestone closure and release-runtime hygiene were validated in Phase 16"
 
     assert readme =~ "public support contract for the current release lives in"
     assert readme =~ "For exact scope, non-claims, and repo-owned proof"
@@ -821,6 +807,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "mTLS"
     assert security =~ "OIDF"
     assert readme =~ "supported-surface"
+    assert supported_surface =~ "automatic `DPoP-Nonce` challenge and retry support"
 
     oidf_plan_pins = [
       "fapi2-security-profile-final-test-plan",

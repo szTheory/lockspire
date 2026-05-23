@@ -8,6 +8,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
@@ -251,6 +252,26 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     assert_dpop_challenge(conn)
   end
 
+  test "GET /userinfo returns use_dpop_nonce plus a new nonce when the DPoP proof omits nonce", %{
+    dpop_access_token: access_token,
+    now: now
+  } do
+    proof = dpop_proof_fixture(access_token, now, %{"nonce" => nil}).jwt
+
+    conn =
+      build_conn(:get, "/userinfo")
+      |> put_req_header("authorization", "DPoP " <> access_token)
+      |> put_req_header("dpop", proof)
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+    [challenge] = get_resp_header(conn, "www-authenticate")
+    assert challenge =~ "error=\"use_dpop_nonce\""
+    assert [nonce] = get_resp_header(conn, "dpop-nonce")
+    assert is_binary(nonce)
+  end
+
   describe "MTLS-bound access tokens" do
     setup %{now: now} do
       cert = "dummy_der_cert"
@@ -378,9 +399,12 @@ defmodule Lockspire.Web.UserinfoControllerTest do
         "htu" => "https://example.test/lockspire/userinfo",
         "iat" => DateTime.to_unix(now),
         "jti" => Ecto.UUID.generate(),
-        "ath" => DPoP.access_token_ath(access_token)
+        "ath" => DPoP.access_token_ath(access_token),
+        "nonce" => DPoPNonce.issue(:resource_server)
       }
       |> Map.merge(claim_overrides)
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
 
     jwt = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 

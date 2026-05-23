@@ -19,7 +19,7 @@ end
 
 `Lockspire.Plug.VerifyToken` authenticates the access token and enforces route-level `scopes:` / `audience:` restrictions.
 
-`Lockspire.Plug.EnforceSenderConstraints` enforces DPoP when the token is sender-constrained. Bearer tokens remain unchanged unless the client chose DPoP mode at issuance time.
+`Lockspire.Plug.EnforceSenderConstraints` enforces DPoP when the token is sender-constrained. Bearer tokens remain unchanged unless the client chose DPoP mode at issuance time. When a DPoP proof is present but missing a valid resource-server nonce, the shipped plug pipeline returns `401` with `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus a `DPoP-Nonce` response header so the client can retry with a fresh proof.
 
 `Lockspire.Plug.RequireToken` turns structured verification failures into the correct OAuth-style HTTP response, including `403 insufficient_scope` when the token is valid but under-scoped.
 
@@ -80,6 +80,7 @@ Treat these as protocol facts. Your host app still decides whether the subject c
 | Audience mismatch | `401` | Bearer challenge with `invalid_token` and a restriction failure description |
 | Missing required scope | `403` | `WWW-Authenticate: Bearer ... error="insufficient_scope"` plus `scope="..."` |
 | DPoP-bound token without valid proof | `401` | `WWW-Authenticate: DPoP ...` sender-constraint failure |
+| DPoP-bound token with proof missing a valid nonce | `401` | `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus `DPoP-Nonce: ...` |
 
 ## Ownership boundary
 
