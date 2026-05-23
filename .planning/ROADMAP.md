@@ -29,7 +29,5 @@ Lockspire will implement mTLS via an explicit extraction behaviour. To preserve 
 
 ### Phase 78: MTLS Discovery, Documentation & Closure
 **Goal**: Truthfully advertise MTLS capabilities and verify end-to-end functionality.
-- **Tasks**:
-  - Expose `mtls_endpoint_aliases` and MTLS-specific authentication methods in OIDC discovery.
-  - Document the critical security requirement of proxy header stripping.
-  - Finalize milestone verification and closure.
+**Plans:** 1/1 plans complete
+- [x] 78-01-PLAN.md — MTLS Discovery, Documentation & Closure
