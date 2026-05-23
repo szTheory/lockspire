@@ -77,6 +77,8 @@ Lockspire ships the FAPI 2.0 Security Profile enforcement stack listed above and
 canonical OIDF FAPI 2.0 plan (`fapi2-security-profile-final-test-plan`) plus its variant
 axes in `scripts/conformance/fapi2-plan.json` and `docs/maintainer-conformance.md`.
 
+Both DPoP and mTLS are supported sender-constraining mechanisms for FAPI 2.0.
+
 Lockspire does NOT claim:
 
 - external OIDF FAPI 2.0 conformance suite certification (the harness is wired and pinned, but the live Docker run remains a manual maintainer step and is not a CI pass-gate)
