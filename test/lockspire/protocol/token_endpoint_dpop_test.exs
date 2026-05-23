@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.TokenEndpointDPoP
 
@@ -77,6 +78,46 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
     assert error.reason_code == :missing_dpop_proof
   end
 
+  test "returns use_dpop_nonce when effective policy requires DPoP proof without nonce" do
+    client = %Client{client_id: "client-dpop-missing-nonce", dpop_policy: :inherit}
+    %{jwt: proof_jwt} = dpop_proof_fixture(nonce: nil)
+
+    assert {:error, error} =
+             TokenEndpointDPoP.resolve_context(client, %{
+               method: "POST",
+               dpop: proof_jwt,
+               opts: [
+                 server_policy_store: DpopServerPolicyStore,
+                 dpop_replay_store: AcceptingReplayStore,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
+  test "returns use_dpop_nonce when the proof carries a resource-server nonce on the token surface" do
+    client = %Client{client_id: "client-dpop-wrong-nonce-purpose", dpop_policy: :inherit}
+    %{jwt: proof_jwt} = dpop_proof_fixture(nonce: DPoPNonce.issue(:resource_server))
+
+    assert {:error, error} =
+             TokenEndpointDPoP.resolve_context(client, %{
+               method: "POST",
+               dpop: proof_jwt,
+               opts: [
+                 server_policy_store: DpopServerPolicyStore,
+                 dpop_replay_store: AcceptingReplayStore,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :invalid_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
   test "returns invalid_dpop_proof when proof iat is a string" do
     client = %Client{client_id: "client-dpop-invalid-iat", dpop_policy: :inherit}
 
@@ -103,14 +144,20 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
     now = DateTime.utc_now()
     target_uri = "https://example.test/lockspire/token"
     iat = Keyword.get(overrides, :iat, DateTime.to_unix(now))
+    nonce = Keyword.get_lazy(overrides, :nonce, fn -> DPoPNonce.issue(:authorization_server) end)
 
-    proof =
-      JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
+    claims =
+      %{
         "htm" => "POST",
         "htu" => target_uri,
         "iat" => iat,
-        "jti" => Ecto.UUID.generate()
-      })
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => nonce
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
     validated =
       case DPoP.validate_proof(proof,

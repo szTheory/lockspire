@@ -1,41 +1,32 @@
-# v1.21 Resource Server (API Protection) Roadmap
+# v1.22 DPoP Nonce Support Roadmap
 
 ## Overview
-This milestone delivers a first-class validation Plug (`Lockspire.Plug.VerifyToken`) to protect host Phoenix API routes. Having established Lockspire as a highly secure token issuer with DPoP, MTLS, and FAPI 2.0 capabilities, this milestone closes the loop by providing developers an idiomatic, out-of-the-box way to easily validate those complex tokens on their resource servers. 
+This milestone adds the remaining high-leverage DPoP trust wedge without widening Lockspire's product shape: server-provided nonce challenge and retry behavior on the DPoP surfaces Lockspire already owns and proves today.
 
 ## Architecture & Sequencing
-The implementation will start with the core JWT validation primitives (signature, expiration, scope), followed by the integration of our advanced sender-constraining proofs (DPoP and MTLS bindings), and wrap up with documentation and developer experience improvements.
+The work starts with one shared nonce primitive and validator path, then adopts it on Lockspire-owned token and protected-resource surfaces, and finishes by updating the host plug contract plus the public support story.
 
 ## Phases
 
-### Phase 79: Core Validation Plug
-**Goal**: Establish the `Lockspire.Plug.VerifyToken` Plug with basic JWT validation.
+### Phase 82: Shared DPoP Nonce Primitive
+**Goal**: Add one shared DPoP nonce issuance and validation path without introducing new operator or client policy knobs.
 
-**Plans:** 3/3 plans complete
-- [x] 79-01-PLAN.md — Build the core data structure (AccessToken) and high-speed ETS cache for signing keys (KeyCache)
-- [x] 79-02-PLAN.md — Implement the Lockspire.Plug.VerifyToken plug
-- [x] 79-03-PLAN.md — Implement the Lockspire.Plug.RequireToken plug
+**Plans:** 2/2 plans complete
+- [x] 82-01-PLAN.md — Add a shared DPoP nonce primitive and wire nonce validation into the existing proof validator
+- [x] 82-02-PLAN.md — Add unit proof for nonce issuance, purpose separation, and typed nonce failure reasons
 
-### Phase 80: Sender-Constraining Integration (DPoP & MTLS)
-**Goal**: Transparently enforce `cnf` (confirmation) claims for high-security tokens.
-- **Plans:** 3/3 plans complete
-- [x] 80-01-PLAN.md — Normalize sender-binding metadata and extract shared MTLS token-binding helpers
-- [x] 80-02-PLAN.md — Generalize protected-resource DPoP validation and add `EnforceSenderConstraints`
-- [x] 80-03-PLAN.md — Complete MTLS enforcement and DPoP-aware `RequireToken` challenges
-- **Tasks**:
-  - Detect `cnf` claims in the validated access token.
-  - If `jkt` is present, validate the incoming `DPoP` proof header against the request URL, method, and token thumbprint.
-  - If `x5t#S256` is present, utilize the configured `Lockspire.MTLS.Extractor` to hash the client certificate and verify the match.
-  - Emit correct `WWW-Authenticate: DPoP` error headers if DPoP proofs are missing or invalid.
+### Phase 83: Lockspire-owned DPoP Endpoint Adoption
+**Goal**: Apply nonce challenge/retry behavior to the Lockspire-owned DPoP token and protected-resource surfaces.
 
-### Phase 81: Scope/Audience Restrictions & Milestone Closure
-**Goal**: Provide granular route protection options and verify end-to-end DX.
-- **Plans:** 3/3 plans complete
-- [x] 81-01-PLAN.md — Add explicit `VerifyToken` scope/audience route options and structured restriction failures
-- [x] 81-02-PLAN.md — Preserve strict 401/403 semantics in `RequireToken` and prove generated-host protected routes end to end
-- [x] 81-03-PLAN.md — Publish the Phoenix API protection guide, update the support contract, and write the milestone verification report
-- **Tasks**:
-  - Add support for required scopes (e.g., `plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"]`).
-  - Add support for Audience (`aud`) validation.
-  - Add an executable documentation guide for protecting Phoenix API routes.
-  - Verify end-to-end integration and close the milestone.
+**Plans:** 3 planned
+- [ ] 83-01-PLAN.md — Add authorization-server nonce challenge and retry behavior on `/token`
+- [ ] 83-02-PLAN.md — Add resource-server nonce challenge and retry behavior on `/userinfo`
+- [ ] 83-03-PLAN.md — Keep replay, `ath`, binding, MTLS, and bearer regressions covered while adopting nonce support
+
+### Phase 84: Host Plug Pipeline, Docs, and Milestone Closure
+**Goal**: Extend the shipped host Phoenix plug contract and public support story to include nonce-backed DPoP.
+
+**Plans:** 3 planned
+- [ ] 84-01-PLAN.md — Add nonce-aware DPoP challenge behavior to `EnforceSenderConstraints` and `RequireToken`
+- [ ] 84-02-PLAN.md — Update supported-surface and protected-route docs plus release-readiness contract wording
+- [ ] 84-03-PLAN.md — Prove the generated-host protected-route nonce retry path and close the milestone

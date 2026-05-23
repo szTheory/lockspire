@@ -3,6 +3,30 @@
 **Created:** 2026-04-28
 **Purpose:** Persist the longer-range project gameplan so milestone selection compounds from repo truth instead of restarting from scratch each cycle.
 
+> **Historical note (2026-05-23):** This file captures the earlier milestone sequence and rationale that carried Lockspire through GA and the v1.21 protected-resource milestone. It is no longer the best source of truth for "what next." Use `.planning/MILESTONE-ARC.md` for the current post-v1.21 adopter-facing done-ness judgment, ranked next-milestone candidates, and diminishing-returns stop rules.
+
+## Current Post-v1.21 Snapshot
+
+As of the v1.21 milestone close, the repo-local adopter-facing judgment is:
+
+- Lockspire is **near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
+- Rough done-ness is **~92%**.
+- The project is in **finish the last important wedges** territory, not broad capability-expansion territory.
+- The main risk is **overbuilding** into adjacent protocol breadth that does not materially improve the embedded Phoenix adopter story.
+
+The default next-wedge ranking is:
+
+1. **DPoP nonce support** — best next trust wedge
+2. **DCR logout propagation metadata** — best self-service client ergonomics wedge
+3. **`client_secret_jwt`** — useful, but lower leverage than the first two
+
+Likely diminishing-returns work:
+
+- generic gateway / service-mesh protected-resource middleware
+- hosted-auth expansion
+- SAML / LDAP / CIAM breadth
+- certification-breadth or spec-checklist work that does not improve the repo's real Phoenix adoption story
+
 ## Current Position
 
 Lockspire already has a substantial embedded-provider preview surface:

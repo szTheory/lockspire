@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.SecurityProfile
@@ -137,10 +138,16 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
            target_uri: token_endpoint_uri(),
            now: now(request),
            max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
-           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30)
+           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
+           nonce_purpose: :authorization_server,
+           secret_key_base: Keyword.get(request_options(request), :secret_key_base),
+           nonce_max_age: Keyword.get(request_options(request), :dpop_nonce_max_age, 300)
          ) do
       {:ok, %DPoP{} = validated_proof} ->
         {:ok, validated_proof}
+
+      {:error, reason} when reason in [:missing_dpop_nonce, :invalid_dpop_nonce] ->
+        {:error, use_dpop_nonce_error(reason, request)}
 
       {:error, reason} when is_atom(reason) ->
         {:error, invalid_dpop_proof("The DPoP proof is invalid", reason)}
@@ -377,12 +384,23 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     oauth_error(400, "invalid_dpop_proof", description, reason_code)
   end
 
+  defp use_dpop_nonce_error(reason_code, request) do
+    %Error{
+      status: 400,
+      error: "use_dpop_nonce",
+      error_description: "Authorization server requires nonce in DPoP proof",
+      reason_code: reason_code,
+      dpop_nonce: DPoPNonce.issue(:authorization_server, secret_key_base: secret_key_base(request))
+    }
+  end
+
   defp oauth_error(status, error, description, reason_code) do
     %Error{
       status: status,
       error: error,
       error_description: description,
-      reason_code: reason_code
+      reason_code: reason_code,
+      dpop_nonce: nil
     }
   end
 
@@ -407,6 +425,10 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
 
   defp request_options(request) do
     Map.get(request, :opts, Map.get(request, "opts", []))
+  end
+
+  defp secret_key_base(request) do
+    Keyword.get(request_options(request), :secret_key_base)
   end
 
   defp normalize_optional_string(value) when is_binary(value) do

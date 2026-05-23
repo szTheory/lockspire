@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.ProtectedResourceDPoP
   alias Lockspire.Protocol.Userinfo.Error
 
@@ -33,7 +34,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   end
 
   test "validates generic protected-resource requests with explicit target uri and binding requirements" do
-    %{request: request, token: token} = dpop_request_fixture()
+    %{request: request} = dpop_request_fixture()
     target_uri = "https://api.example.test/resource"
     %{jwt: proof, validated: validated} = proof_fixture(%{"htu" => target_uri, "htm" => "POST"})
 
@@ -112,16 +113,41 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     refute DPoP.access_token_ath(@raw_access_token) == DPoP.access_token_ath("different-token")
   end
 
-  defp dpop_request_fixture(overrides \\ []) do
-    %{validated: validated, jwt: jwt} = proof_fixture()
-    replay_store = Keyword.get(overrides, :replay_store, AcceptingReplayStore)
+  test "returns use_dpop_nonce with a new resource nonce when the proof omits nonce" do
+    %{request: request, token: token} = dpop_request_fixture(nonce: nil)
 
-    token = %Token{cnf: %{"jkt" => validated.jkt}}
+    assert {:error, %Error{} = error} = ProtectedResourceDPoP.validate_userinfo_access(token, request)
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
+  test "returns use_dpop_nonce when the proof carries an authorization-server nonce on the resource surface" do
+    %{request: request, token: token} =
+      dpop_request_fixture(nonce: DPoPNonce.issue(:authorization_server))
+
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :invalid_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
+  defp dpop_request_fixture(overrides \\ []) do
+    replay_store = Keyword.get(overrides, :replay_store, AcceptingReplayStore)
+    proof_data =
+      case Keyword.fetch(overrides, :nonce) do
+        {:ok, nonce} -> proof_fixture(%{"nonce" => nonce})
+        :error -> proof_fixture()
+      end
+
+    token = %Token{cnf: %{"jkt" => proof_data.validated.jkt}}
 
     request = %{
       authorization_scheme: "DPoP",
       access_token: @raw_access_token,
-      dpop: jwt,
+      dpop: proof_data.jwt,
       method: "GET",
       target_uri: @userinfo_uri,
       opts: [dpop_replay_store: replay_store, now: fn -> @now end]
@@ -143,7 +169,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
         "htu" => @userinfo_uri,
         "iat" => DateTime.to_unix(@now),
         "jti" => Ecto.UUID.generate(),
-        "ath" => DPoP.access_token_ath(@raw_access_token)
+        "ath" => DPoP.access_token_ath(@raw_access_token),
+        "nonce" => DPoPNonce.issue(:resource_server)
       }
       |> Map.merge(claim_overrides)
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)

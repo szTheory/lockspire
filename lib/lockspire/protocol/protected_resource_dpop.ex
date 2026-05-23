@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.Userinfo.Error
 
@@ -75,10 +76,16 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
                now: now(request),
                max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
                clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
-               security_profile: security_profile
+               security_profile: security_profile,
+               nonce_purpose: :resource_server,
+               secret_key_base: Keyword.get(request_options(request), :secret_key_base),
+               nonce_max_age: Keyword.get(request_options(request), :dpop_nonce_max_age, 300)
              ) do
           {:ok, %DPoP{} = validated_proof} ->
             {:ok, validated_proof}
+
+          {:error, reason} when reason in [:missing_dpop_nonce, :invalid_dpop_nonce] ->
+            {:error, use_dpop_nonce_error(reason, request)}
 
           {:error, reason} when is_atom(reason) ->
             {:error, invalid_token("The DPoP proof is invalid", reason)}
@@ -306,7 +313,22 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
       status: 401,
       error: "invalid_token",
       error_description: description,
-      reason_code: reason_code
+      reason_code: reason_code,
+      dpop_nonce: nil
     }
+  end
+
+  defp use_dpop_nonce_error(reason_code, request) do
+    %Error{
+      status: 401,
+      error: "use_dpop_nonce",
+      error_description: "Resource server requires nonce in DPoP proof",
+      reason_code: reason_code,
+      dpop_nonce: DPoPNonce.issue(:resource_server, secret_key_base: secret_key_base(request))
+    }
+  end
+
+  defp secret_key_base(request) do
+    Keyword.get(request_options(request), :secret_key_base)
   end
 end

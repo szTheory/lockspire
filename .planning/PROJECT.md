@@ -14,7 +14,18 @@ Lockspire has now archived twenty-one planning milestones. Beyond the earlier em
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-There is no active milestone at the moment. The next milestone should be defined explicitly with `$gsd-new-milestone` so the next scope starts from a fresh requirements and roadmap pass.
+The active milestone is now `v1.22 DPoP Nonce Support`, which tightens the already-shipped DPoP story across token issuance, Lockspire-owned protected resources, and the canonical host Phoenix plug pipeline without widening into broader protected-resource product scope.
+
+## Current Milestone: v1.22 DPoP Nonce Support
+
+**Goal:** Add automatic DPoP nonce challenge and validation across all shipped Lockspire DPoP validation surfaces.
+
+**Target features:**
+- Authorization-server nonce challenge and retry behavior on Lockspire-owned `/token` DPoP exchanges
+- Resource-server nonce challenge and retry behavior on Lockspire-owned protected resources and the shipped host Phoenix plug pipeline
+- Truthful support-contract, docs, and release-readiness updates for the new nonce-backed DPoP slice
+
+**Why now:** DPoP nonce support is the highest-leverage remaining trust wedge in Lockspire's existing sender-constrained story, and it closes explicit negative space already called out in the public support surface.
 
 ## Recently Shipped Milestone: v1.21 Resource Server (API Protection)
 
@@ -73,7 +84,9 @@ There is no active milestone at the moment. The next milestone should be defined
 
 ### Active
 
-- No active milestone is defined. Start the next scope with `$gsd-new-milestone`.
+- Add automatic DPoP nonce challenge and validation on Lockspire-owned token exchanges without introducing new operator or client policy knobs.
+- Add automatic DPoP nonce challenge and validation on Lockspire-owned protected resources and the shipped host Phoenix plug pipeline.
+- Update docs, support-truth wording, and repo-native proof so Lockspire can truthfully claim the nonce-backed DPoP slice.
 
 ### Out of Scope
 
@@ -143,4 +156,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 for v1.21 milestone close*
+*Last updated: 2026-05-23 for v1.22 milestone start*
