@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.Userinfo do
   alias Lockspire.Config
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
@@ -100,10 +101,8 @@ defmodule Lockspire.Protocol.Userinfo do
 
   defp validate_mtls_binding(%Token{cnf: %{"x5t#S256" => expected_thumbprint}}, request) do
     case request |> Map.get(:opts, []) |> Keyword.get(:mtls_cert) do
-      cert when is_binary(cert) and cert != "" ->
-        actual_thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
-
-        if expected_thumbprint == actual_thumbprint do
+      cert ->
+        if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
           :ok
         else
           {:error,
@@ -114,15 +113,6 @@ defmodule Lockspire.Protocol.Userinfo do
              :invalid_client_certificate
            )}
         end
-
-      _ ->
-        {:error,
-         error(
-           401,
-           "invalid_token",
-           "Client certificate missing or thumbprint mismatch",
-           :invalid_client_certificate
-         )}
     end
   end
 

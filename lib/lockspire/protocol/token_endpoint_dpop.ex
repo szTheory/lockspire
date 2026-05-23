@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DpopPolicy
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenExchange.Error
 
@@ -111,10 +112,8 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
 
   defp validate_mtls_binding(expected_cnf, request) do
     case {expected_cnf, Keyword.get(request_options(request), :mtls_cert)} do
-      {%{"x5t#S256" => expected_thumbprint}, cert} when is_binary(cert) and cert != "" ->
-        actual_thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
-
-        if expected_thumbprint == actual_thumbprint do
+      {%{"x5t#S256" => expected_thumbprint}, cert} ->
+        if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
           {:ok, expected_cnf}
         else
           {:error,
@@ -125,15 +124,6 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
              :invalid_client_certificate
            )}
         end
-
-      {%{"x5t#S256" => _}, _} ->
-        {:error,
-         oauth_error(
-           400,
-           "invalid_request",
-           "Client certificate missing or thumbprint mismatch",
-           :invalid_client_certificate
-         )}
 
       _ ->
         {:ok, expected_cnf}
@@ -245,17 +235,10 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   end
 
   defp maybe_add_x5t_cnf(cnf, request) do
-    case Keyword.get(request_options(request), :mtls_cert) do
-      cert when is_binary(cert) and cert != "" ->
-        thumbprint =
-          :crypto.hash(:sha256, cert)
-          |> Base.url_encode64(padding: false)
-
-        (cnf || %{}) |> Map.put("x5t#S256", thumbprint)
-
-      _ ->
-        cnf
-    end
+    request
+    |> request_options()
+    |> Keyword.get(:mtls_cert)
+    |> then(&MTLSTokenBinding.maybe_put_confirmation(cnf, &1))
   end
 
   defp token_endpoint_uri do

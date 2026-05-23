@@ -8,6 +8,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
 
@@ -253,7 +254,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
   describe "MTLS-bound access tokens" do
     setup %{now: now} do
       cert = "dummy_der_cert"
-      thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
+      {:ok, thumbprint} = MTLSTokenBinding.thumbprint(cert)
       raw_mtls_access_token = "userinfo-mtls-access-token"
 
       {:ok, _token} =

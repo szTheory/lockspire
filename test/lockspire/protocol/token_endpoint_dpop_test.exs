@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.TokenEndpointDPoP
 
   defmodule BearerServerPolicyStore do
@@ -129,7 +130,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
   test "resolves context with x5t#S256 when mtls_cert is provided" do
     client = %Client{client_id: "client-mtls", dpop_policy: :inherit}
     cert = "dummy_der_cert"
-    thumbprint = :crypto.hash(:sha256, cert) |> Base.url_encode64(padding: false)
+    {:ok, thumbprint} = MTLSTokenBinding.thumbprint(cert)
 
     assert {:ok, issuance_context} =
              TokenEndpointDPoP.resolve_context(client, %{
