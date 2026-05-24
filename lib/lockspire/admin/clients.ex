@@ -47,6 +47,36 @@ defmodule Lockspire.Admin.Clients do
 
   @type error_detail :: %{field: atom(), reason: atom(), detail: term()}
 
+  @spec validate_logout_metadata(map(), [String.t()], keyword()) ::
+          :ok | {:error, [error_detail()]}
+  def validate_logout_metadata(attrs, redirect_uris, opts \\ [])
+      when is_map(attrs) and is_list(redirect_uris) do
+    strict_booleans? = Keyword.get(opts, :strict_booleans, false)
+    normalized_attrs = normalize_logout_metadata(attrs)
+
+    errors =
+      []
+      |> maybe_append_errors(validate_logout_boolean_shapes(attrs, strict_booleans?))
+      |> maybe_append_errors(validate_logout_propagation(normalized_attrs, redirect_uris))
+
+    case errors do
+      [] -> :ok
+      _errors -> {:error, errors}
+    end
+  end
+
+  @spec normalize_logout_metadata(map()) :: map()
+  def normalize_logout_metadata(attrs) when is_map(attrs) do
+    %{
+      backchannel_logout_uri: normalize_string(fetch_attr(attrs, :backchannel_logout_uri)),
+      backchannel_logout_session_required:
+        normalize_boolean(fetch_attr(attrs, :backchannel_logout_session_required)),
+      frontchannel_logout_uri: normalize_string(fetch_attr(attrs, :frontchannel_logout_uri)),
+      frontchannel_logout_session_required:
+        normalize_boolean(fetch_attr(attrs, :frontchannel_logout_session_required))
+    }
+  end
+
   @spec list_clients(keyword()) :: {:ok, [Client.t()]} | {:error, term()}
   def list_clients(opts \\ []) do
     Repository.list_clients(opts)
@@ -736,6 +766,28 @@ defmodule Lockspire.Admin.Clients do
     do: Map.put(attrs, :frontchannel_logout_session_required, false)
 
   defp maybe_reset_logout_session_required(attrs, _field, _value), do: attrs
+
+  defp validate_logout_boolean_shapes(_attrs, false), do: :ok
+
+  defp validate_logout_boolean_shapes(attrs, true) do
+    []
+    |> maybe_add_logout_boolean_error(attrs, :backchannel_logout_session_required)
+    |> maybe_add_logout_boolean_error(attrs, :frontchannel_logout_session_required)
+    |> Enum.reverse()
+  end
+
+  defp maybe_add_logout_boolean_error(errors, attrs, field) do
+    case fetch_mutable_attr(attrs, field) do
+      :error ->
+        errors
+
+      {:ok, value} when is_boolean(value) ->
+        errors
+
+      {:ok, value} ->
+        [%{field: field, reason: :invalid_boolean, detail: value} | errors]
+    end
+  end
 
   defp rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
     transact_with_audit(

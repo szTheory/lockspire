@@ -584,63 +584,63 @@ defmodule Lockspire.Protocol.RegistrationTest do
                Registration.register(request)
     end
 
-    test "rejects backchannel_logout_uri as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("backchannel_logout_uri", "https://rp.example.com/backchannel-logout")
+    test "accepts valid logout propagation metadata and normalizes URIs" do
+      request = DcrFixtures.register_request(metadata: DcrFixtures.valid_logout_metadata())
 
-      request = DcrFixtures.register_request(metadata: metadata)
-
-      assert {:error,
-              %Error{
-                code: :invalid_client_metadata,
-                field: :backchannel_logout_uri,
-                reason: :unsupported_in_slice
-              }} = Registration.register(request)
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert client.backchannel_logout_session_required == true
+      assert client.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+      assert client.frontchannel_logout_session_required == true
     end
 
-    test "rejects backchannel_logout_session_required as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("backchannel_logout_session_required", true)
-
-      request = DcrFixtures.register_request(metadata: metadata)
+    test "rejects non-boolean logout session_required values" do
+      request =
+        DcrFixtures.register_request(metadata: DcrFixtures.invalid_logout_boolean_metadata())
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
                 field: :backchannel_logout_session_required,
-                reason: :unsupported_in_slice
+                reason: :invalid_boolean
               }} = Registration.register(request)
     end
 
-    test "rejects frontchannel_logout_uri as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("frontchannel_logout_uri", "https://rp.example.com/frontchannel-logout")
+    test "rejects backchannel session_required without a backchannel_logout_uri" do
+      request =
+        DcrFixtures.register_request(metadata: DcrFixtures.missing_backchannel_logout_uri_metadata())
 
-      request = DcrFixtures.register_request(metadata: metadata)
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_session_required,
+                reason: :logout_uri_required
+              }} = Registration.register(request)
+    end
+
+    test "rejects malformed backchannel_logout_uri" do
+      request =
+        DcrFixtures.register_request(metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata())
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_uri,
+                reason: :invalid_logout_uri
+              }} = Registration.register(request)
+    end
+
+    test "rejects frontchannel logout origin mismatch" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.frontchannel_logout_origin_mismatch_metadata()
+        )
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
                 field: :frontchannel_logout_uri,
-                reason: :unsupported_in_slice
-              }} = Registration.register(request)
-    end
-
-    test "rejects frontchannel_logout_session_required as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("frontchannel_logout_session_required", true)
-
-      request = DcrFixtures.register_request(metadata: metadata)
-
-      assert {:error,
-              %Error{
-                code: :invalid_client_metadata,
-                field: :frontchannel_logout_session_required,
-                reason: :unsupported_in_slice
+                reason: :frontchannel_logout_origin_mismatch
               }} = Registration.register(request)
     end
   end

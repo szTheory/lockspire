@@ -67,6 +67,37 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
     Map.put(@valid_metadata, "pkce_required", false)
   end
 
+  @spec valid_logout_metadata() :: map()
+  def valid_logout_metadata do
+    @valid_metadata
+    |> Map.put("backchannel_logout_uri", " https://rp.example.test/backchannel-logout ")
+    |> Map.put("backchannel_logout_session_required", true)
+    |> Map.put("frontchannel_logout_uri", " https://app.example.test/frontchannel-logout ")
+    |> Map.put("frontchannel_logout_session_required", true)
+  end
+
+  @spec invalid_logout_boolean_metadata() :: map()
+  def invalid_logout_boolean_metadata do
+    Map.put(@valid_metadata, "backchannel_logout_session_required", "true")
+  end
+
+  @spec missing_backchannel_logout_uri_metadata() :: map()
+  def missing_backchannel_logout_uri_metadata do
+    Map.put(@valid_metadata, "backchannel_logout_session_required", true)
+  end
+
+  @spec invalid_backchannel_logout_uri_metadata() :: map()
+  def invalid_backchannel_logout_uri_metadata do
+    Map.put(@valid_metadata, "backchannel_logout_uri", "https://rp.example.test/logout#fragment")
+  end
+
+  @spec frontchannel_logout_origin_mismatch_metadata() :: map()
+  def frontchannel_logout_origin_mismatch_metadata do
+    @valid_metadata
+    |> Map.put("frontchannel_logout_uri", "https://rp.example.test/frontchannel-logout")
+    |> Map.put("frontchannel_logout_session_required", true)
+  end
+
   @spec server_policy(map()) :: ServerPolicy.t()
   def server_policy(attrs \\ %{}) when is_map(attrs) do
     base = %ServerPolicy{

@@ -135,11 +135,11 @@ defmodule Lockspire.Protocol.Registration do
           :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
-    with :ok <- validate_unsupported_logout_metadata(metadata),
-         :ok <- validate_jwks(metadata),
+    with :ok <- validate_jwks(metadata),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
+         :ok <- validate_logout_metadata(metadata),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
     end
@@ -222,42 +222,17 @@ defmodule Lockspire.Protocol.Registration do
 
   defp validate_strict_authorization_signing_alg(_metadata, _effective_profile), do: :ok
 
-  defp validate_unsupported_logout_metadata(metadata) do
-    cond do
-      Map.has_key?(metadata, "backchannel_logout_uri") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :backchannel_logout_uri,
-           reason: :unsupported_in_slice
-         }}
+  defp validate_logout_metadata(metadata) do
+    redirect_uris = Map.get(metadata, "redirect_uris", [])
 
-      Map.has_key?(metadata, "backchannel_logout_session_required") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :backchannel_logout_session_required,
-           reason: :unsupported_in_slice
-         }}
-
-      Map.has_key?(metadata, "frontchannel_logout_uri") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :frontchannel_logout_uri,
-           reason: :unsupported_in_slice
-         }}
-
-      Map.has_key?(metadata, "frontchannel_logout_session_required") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :frontchannel_logout_session_required,
-           reason: :unsupported_in_slice
-         }}
-
-      true ->
+    case Admin.Clients.validate_logout_metadata(metadata, redirect_uris,
+           strict_booleans: true
+         ) do
+      :ok ->
         :ok
+
+      {:error, [%{field: field, reason: reason} | _rest]} ->
+        {:error, %Error{code: :invalid_client_metadata, field: field, reason: reason}}
     end
   end
 
@@ -436,6 +411,7 @@ defmodule Lockspire.Protocol.Registration do
 
   defp persist_client(metadata, %Resolved{} = resolved, iat_record, credentials, source) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    logout_metadata = Admin.Clients.normalize_logout_metadata(metadata)
 
     iat_id =
       case iat_record do
@@ -466,6 +442,12 @@ defmodule Lockspire.Protocol.Registration do
       contacts: Map.get(metadata, "contacts", []),
       jwks: Map.get(metadata, "jwks"),
       jwks_uri: Map.get(metadata, "jwks_uri"),
+      backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
+      backchannel_logout_session_required:
+        logout_metadata.backchannel_logout_session_required,
+      frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
+      frontchannel_logout_session_required:
+        logout_metadata.frontchannel_logout_session_required,
       active: true,
       dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,
