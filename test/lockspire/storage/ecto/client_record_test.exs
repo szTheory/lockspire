@@ -120,6 +120,40 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     assert out.tls_client_auth_san_email == "admin@example.com"
   end
 
+  test "logout propagation fields round-trip through ClientRecord" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "logout_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.test/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
+      backchannel_logout_session_required: true,
+      frontchannel_logout_uri: "https://app.example.test/frontchannel-logout",
+      frontchannel_logout_session_required: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+    assert out.backchannel_logout_session_required == true
+    assert out.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+    assert out.frontchannel_logout_session_required == true
+    assert out.metadata == %{}
+  end
+
   test "update_changeset/2 does NOT cast :provenance (provenance is create-time only)" do
     repo = Lockspire.TestRepo
 
