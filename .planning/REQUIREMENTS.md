@@ -11,15 +11,15 @@
 
 ### DCR Intake
 
-- [ ] **DCR-01**: A self-service client can submit `backchannel_logout_uri` during RFC 7591 registration when the value is a valid supported absolute URI for Lockspire's shipped logout propagation slice.
-- [ ] **DCR-02**: A self-service client can submit `backchannel_logout_session_required` during RFC 7591 registration and Lockspire stores it with the correct boolean semantics.
-- [ ] **DCR-03**: A self-service client can submit `frontchannel_logout_uri` during RFC 7591 registration when the value is a valid supported absolute URI for Lockspire's shipped logout propagation slice.
-- [ ] **DCR-04**: A self-service client can submit `frontchannel_logout_session_required` during RFC 7591 registration and Lockspire stores it with the correct boolean semantics.
-- [ ] **DCR-05**: A registrant receives RFC-shaped `invalid_client_metadata` failures when any logout propagation metadata is malformed, unsupported, or semantically invalid.
+- [x] **DCR-01**: A self-service client can submit `backchannel_logout_uri` during RFC 7591 registration when the value is a valid supported absolute URI for Lockspire's shipped logout propagation slice. Validated in Phase 85.
+- [x] **DCR-02**: A self-service client can submit `backchannel_logout_session_required` during RFC 7591 registration and Lockspire stores it with the correct boolean semantics. Validated in Phase 85.
+- [x] **DCR-03**: A self-service client can submit `frontchannel_logout_uri` during RFC 7591 registration when the value is a valid supported absolute URI for Lockspire's shipped logout propagation slice. Validated in Phase 85.
+- [x] **DCR-04**: A self-service client can submit `frontchannel_logout_session_required` during RFC 7591 registration and Lockspire stores it with the correct boolean semantics. Validated in Phase 85.
+- [x] **DCR-05**: A registrant receives RFC-shaped `invalid_client_metadata` failures when any logout propagation metadata is malformed, unsupported, or semantically invalid. Validated in Phase 85.
 
 ### Registration Management
 
-- [ ] **DCRM-01**: A self-service client can read its stored logout propagation metadata through RFC 7592 management responses.
+- [x] **DCRM-01**: A self-service client can read its stored logout propagation metadata through RFC 7592 management responses. Validated in Phase 85.
 - [ ] **DCRM-02**: A self-service client can replace its stored logout propagation metadata through RFC 7592 update flows without breaking full-replace semantics or registration access token rotation.
 - [ ] **DCRM-03**: DCR management preserves existing provenance, auditability, and operator/admin truth while exposing the same persisted logout metadata across self-service and operator views.
 

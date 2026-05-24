@@ -10,6 +10,8 @@
 
 #### Phase 85 - DCR Intake And Representation
 
+- Status: Complete on 2026-05-24
+
 - Scope:
   - extend the DCR validation contract to support the four logout propagation metadata fields
   - persist the accepted metadata through the existing registration pipeline

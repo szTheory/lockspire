@@ -14,7 +14,7 @@ Lockspire has now archived twenty-two planning milestones. Beyond the earlier em
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The active milestone is now `v1.23 DCR Logout Metadata`, which turns the already-shipped logout propagation runtime into a more partner-buildable self-service client-management story without widening beyond Lockspire's current logout truth model.
+The active milestone is now `v1.23 DCR Logout Metadata`. Phase 85 is complete: DCR create and management-read flows now accept, persist, and expose the existing logout propagation metadata truthfully without widening RFC 7592 update behavior. The remaining milestone work is Phase 86 update semantics/proof and Phase 87 support-truth closure.
 
 ## Recently Shipped Milestone: v1.22 DPoP Nonce Support
 
@@ -82,13 +82,13 @@ The active milestone is now `v1.23 DCR Logout Metadata`, which turns the already
 - Delivered Mutual TLS client authentication, certificate-bound tokens, and truthful MTLS discovery metadata in archived v1.20.
 - Delivered first-class Phoenix API route protection for Lockspire-issued tokens in archived v1.21.
 - Delivered automatic DPoP nonce challenge and retry support on Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline in archived v1.22.
+- Delivered DCR registration intake, typed persistence, and truthful readback for Lockspire's shipped logout propagation metadata in Phase 85 of milestone v1.23.
 
 ### Active
 
-- **DCR-01** Self-service clients can submit the four shipped logout propagation metadata fields during RFC 7591 registration and receive standard DCR validation errors on malformed values.
-- **DCR-02** RFC 7592 read and update flows reflect the persisted logout propagation metadata truthfully and keep RAT rotation plus provenance behavior intact.
-- **DCR-03** Repo-native proof covers create/read/update positive and negative paths for the new metadata without overstating front-channel guarantees.
-- **DCR-04** Public support docs and operator guidance describe the new self-service boundary accurately while preserving the current logout truth model and non-goals.
+- **DCR-02** RFC 7592 update flows must reflect the persisted logout propagation metadata truthfully and keep RAT rotation plus provenance behavior intact.
+- **DCR-03** Repo-native proof must cover create/read/update positive and negative paths for the new metadata without overstating front-channel guarantees.
+- **DCR-04** Public support docs and operator guidance must describe the new self-service boundary accurately while preserving the current logout truth model and non-goals.
 
 ### Out of Scope
 
@@ -158,4 +158,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 for v1.23 milestone start*
+*Last updated: 2026-05-24 after Phase 85 completion*
