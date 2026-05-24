@@ -1,41 +1,39 @@
-# v1.23 Research Summary
+# v1.24 Research Summary
 
 ## Milestone
 
-`v1.23 DCR Logout Metadata`
+`v1.24 client_secret_jwt`
 
 ## Stack Additions
 
 - No new dependency is needed.
-- Extend the existing RFC 7591 / RFC 7592 pipeline to support the four existing logout propagation metadata fields.
+- Extend the existing shared direct-client auth runtime with a narrow symmetric JWT verifier.
+- Reuse current hashed client-secret storage, replay tracking, registration, discovery, and admin truth paths.
 
 ## Feature Table Stakes
 
-- Register, read, and update:
-  - `backchannel_logout_uri`
-  - `backchannel_logout_session_required`
-  - `frontchannel_logout_uri`
-  - `frontchannel_logout_session_required`
-- Validate those fields narrowly and return standard DCR errors on malformed input.
+- Accept `client_secret_jwt` on Lockspire-owned direct-client endpoints for confidential clients.
+- Require strict JWT assertion claims, replay protection, and explicit signing-alg metadata.
+- Support truthful registration, discovery, and admin/operator surfaces for the new auth method.
 
 ## Why This Milestone Fits
 
-- The fields already exist in Lockspire's domain model and storage schema.
-- The current gap is self-service management, not protocol runtime capability.
-- This closes a real partner onboarding friction point without widening Lockspire beyond its existing logout truth model.
+- It closes the remaining practical direct-client auth gap without changing Lockspire's embedded-library shape.
+- The repo already has a strong shared verifier pattern through `private_key_jwt`, so the new slice compounds existing architecture instead of inventing a second auth plane.
+- The main work is truth and security discipline, not broad new protocol territory.
 
 ## Watch Out For
 
-- Do not separate create from read/update support.
-- Do not blur logout propagation metadata with `post_logout_redirect_uris`.
-- Do not overstate front-channel reliability.
-- Do not widen scope into federation or extra logout features.
+- Do not route all JWT assertions through the existing `private_key_jwt` verifier.
+- Do not weaken secret-at-rest posture or reveal raw assertions in logs/admin surfaces.
+- Do not broaden FAPI or higher-trust claims just because another JWT auth method exists.
+- Do not publish `client_secret_jwt` metadata unless every advertised endpoint actually supports it.
 
 ## Recommended Scope
 
-This milestone should stay core-only and narrow:
+This milestone should stay narrow and core-first:
 
-1. DCR validator and persistence support.
-2. RFC 7592 read/update response truth.
-3. Repo-native proof across positive and negative paths.
-4. Support-surface and operator docs aligned to the shipped behavior.
+1. Shared `client_secret_jwt` runtime verification on Lockspire-owned direct-client surfaces.
+2. Registration, DCR, discovery, and admin truth for the new auth method and its signing algorithms.
+3. Repo-native proof for positive and negative auth behavior, metadata truth, and support-truth docs.
+4. Documentation that clearly distinguishes this symmetric JWT slice from the already-shipped `private_key_jwt` and mTLS postures.

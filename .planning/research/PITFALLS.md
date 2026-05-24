@@ -1,47 +1,47 @@
-# v1.23 Research: Pitfalls
+# v1.24 Research: Pitfalls
 
-## Pitfall 1: Shipping partial support
+## Pitfall 1: Treating all JWT assertions as `private_key_jwt`
 
-If `POST /register` accepts the new fields but RFC 7592 read/update responses omit them, self-service clients will see inconsistent state.
-
-Prevention:
-
-- treat create, read, and update as one requirement family
-- add full lifecycle integration coverage
-
-## Pitfall 2: Blurring redirect-vs-propagation semantics
-
-`post_logout_redirect_uris` and logout propagation URIs are already separate concepts in Lockspire. Mixing them would create operator and partner confusion.
+The current shared auth parser resolves any JWT client assertion into the asymmetric verifier path. If `client_secret_jwt` is added without changing that split, runtime truth and registration truth will diverge immediately.
 
 Prevention:
 
-- keep requirement language explicit
-- keep docs and response examples separate
+- make method resolution explicit before verification
+- add tests that prove both auth methods route to their intended verifier
 
-## Pitfall 3: Over-claiming front-channel reliability
+## Pitfall 2: Weakening secret-handling posture
 
-Front-channel logout specs permit registration metadata, but Lockspire's shipped truth is still best-effort browser choreography.
-
-Prevention:
-
-- keep `docs/supported-surface.md` explicit
-- avoid wording that implies remote success verification
-
-## Pitfall 4: Under-validating RP logout URIs
-
-The OpenID specs require absolute URIs, forbid fragments for back-channel logout URIs, and define session-required flags with boolean defaults.
+`client_secret_jwt` is easy to implement incorrectly by introducing recoverable secret storage, ad hoc secret copies, or verbose audit logging of assertion contents.
 
 Prevention:
 
-- validate URI shape explicitly
-- reject invalid booleans or malformed strings
-- preserve optional-field semantics without inventing silent coercions
+- verify signatures from the existing client secret input only
+- preserve hashed-at-rest storage posture
+- redact assertions and raw secret-derived material from logs and operator surfaces
 
-## Pitfall 5: Breaking admin provenance truth
+## Pitfall 3: Over-claiming FAPI or high-trust equivalence
 
-Operators already manage logout propagation in admin. DCR support must not erase the distinction between operator-edited and self-service-managed clients.
+Lockspire already ships `private_key_jwt` and mTLS for higher-trust deployments. Advertising `client_secret_jwt` as equivalent would create support-truth drift.
 
 Prevention:
 
-- preserve provenance and audit behavior
-- keep admin docs explicit that both surfaces can exist without changing runtime semantics
+- keep `docs/supported-surface.md` explicit about the narrower posture
+- ensure discovery/admin wording does not imply stronger-trust parity
+
+## Pitfall 4: Audience and replay drift
+
+The standards history around JWT client-auth audiences has enough ambiguity that permissive matching becomes a long-term interop and security drag. Replay rules can also drift if some endpoints record `jti` and others do not.
+
+Prevention:
+
+- keep the issuer-string `aud` rule explicit and tested
+- reuse the same used-`jti` recording path across all shipped direct-client surfaces
+
+## Pitfall 5: Publishing incomplete metadata truth
+
+If DCR or discovery accepts `client_secret_jwt` without exposing the corresponding signing-alg requirements, clients will guess and support burden will rise.
+
+Prevention:
+
+- publish method and algorithm metadata together
+- add release-contract and discovery tests that pin the supported values

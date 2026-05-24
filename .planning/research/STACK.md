@@ -1,37 +1,40 @@
-# v1.23 Research: Stack
+# v1.24 Research: Stack
 
 ## Scope
 
-Add DCR and RFC 7592 support for existing logout propagation metadata:
+Add a narrow `client_secret_jwt` slice for confidential clients on Lockspire-owned direct-client endpoints:
 
-- `backchannel_logout_uri`
-- `backchannel_logout_session_required`
-- `frontchannel_logout_uri`
-- `frontchannel_logout_session_required`
+- `POST /token`
+- `POST /revoke`
+- `POST /introspect`
+- `POST /device/code`
+- `POST /bc-authorize`
 
 ## Existing Stack Reuse
 
-- Elixir/Phoenix request handling already exists for `POST /register` and `GET|PUT|DELETE /register/:client_id`.
-- Ecto storage already includes the four logout propagation fields on `Lockspire.Domain.Client` and `Lockspire.Storage.Ecto.ClientRecord`.
-- Existing logout propagation runtime already uses Oban plus Req for durable back-channel delivery and iframe rendering for front-channel best-effort cleanup.
-- Existing admin surfaces already separate post-logout redirect URIs from logout propagation settings.
+- `lib/lockspire/protocol/client_auth.ex` already centralizes direct-client authentication across the shipped shared surfaces.
+- `lib/lockspire/protocol/client_auth/private_key_jwt.ex` and its tests provide the closest runtime pattern for strict JWT assertion verification and replay recording.
+- `lib/lockspire/protocol/discovery.ex` already publishes per-endpoint auth-method and signing-alg metadata for JWT-based client auth.
+- `lib/lockspire/protocol/registration.ex`, `lib/lockspire/clients.ex`, and admin LiveView client forms already own the registration and operator truth for `token_endpoint_auth_method`.
+- `Lockspire.Security.Policy.hash_client_secret/1` and `verify_client_secret/2` already give Lockspire a durable hashed-at-rest secret source that can be reused as the HMAC verification key.
 
 ## Standards Inputs
 
-- RFC 7591 / RFC 7592 remain the registration and management envelope.
-- OpenID Connect Back-Channel Logout 1.0 defines `backchannel_logout_uri` and `backchannel_logout_session_required`.
-- OpenID Connect Front-Channel Logout 1.0 defines `frontchannel_logout_uri` and `frontchannel_logout_session_required`.
+- RFC 7523 defines the JWT client assertion envelope: `iss`, `sub`, `aud`, `exp`, and optional replay-resistant `jti`.
+- OpenID Connect Core Section 9 defines `client_secret_jwt` as a token-endpoint client-auth method alongside `private_key_jwt`.
+- OpenID Connect Discovery and Dynamic Client Registration define `token_endpoint_auth_methods_supported`, `token_endpoint_auth_signing_alg_values_supported`, and per-client `token_endpoint_auth_signing_alg`.
 
 ## Recommended Stack Changes
 
-- No new runtime dependency is needed.
-- Extend the existing DCR intake and management validator instead of creating a logout-specific pipeline.
-- Reuse existing URI validation conventions already applied to redirect and logout-related metadata elsewhere in Lockspire.
-- Reuse existing JSON rendering and E2E test lanes for registration read/update responses.
+- No new dependency is needed.
+- Extend the shared direct-client auth runtime with a symmetric JWT verifier instead of creating endpoint-specific code paths.
+- Reuse the existing used-`jti` recording path so successful assertions become single-use across the shipped direct-client surfaces.
+- Reuse current secret-at-rest storage; do not introduce plaintext secret recovery or a second symmetric credential store.
+- Keep the default symmetric signing set narrow and explicit, then bind it to the effective security posture instead of advertising every JOSE HMAC algorithm by default.
 
 ## What Not To Add
 
-- No federation metadata ingestion.
-- No new delivery mechanism beyond the shipped back-channel and front-channel implementations.
-- No new hosted UI or external compatibility lane.
-- No remote proof claims for front-channel success.
+- No generic JWT client-auth framework beyond Lockspire-owned direct-client surfaces.
+- No broader secret escrow, key-management UI, or external HSM integration.
+- No new hosted-auth, federation, or third-party gateway surface.
+- No support claim that `client_secret_jwt` is equivalent to `private_key_jwt` or mTLS in higher-trust deployments.

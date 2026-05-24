@@ -14,7 +14,18 @@ Lockspire has now archived twenty-three planning milestones. Beyond the earlier 
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-There is no active milestone at the moment. The leading next candidate is `v1.24 client_secret_jwt`, but the next scope should still start explicitly with `$gsd-new-milestone` so it gets a fresh requirements and roadmap pass before implementation.
+Lockspire is now starting milestone `v1.24 client_secret_jwt`, the current highest-priority remaining direct-client authentication gap in the milestone arc.
+
+## Current Milestone: v1.24 client_secret_jwt
+
+**Goal:** Add a narrow `client_secret_jwt` authentication slice on Lockspire-owned direct-client endpoints without widening the embedded-library shape or weakening current secret-handling posture.
+
+**Target features:**
+- Accept and verify `client_secret_jwt` assertions on the existing Lockspire-owned direct-client surfaces that already share client authentication.
+- Keep verification strict on replay prevention, issuer-string `aud` handling, algorithm allowlists, and bounded expiry semantics.
+- Publish truthful registration, discovery, admin, and support-surface posture for the shipped symmetric-JWT slice.
+
+**Why now:** `v1.23` closed the DCR logout metadata gap, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap without changing Lockspire's package boundaries or host-owned seams.
 
 ## Recently Shipped Milestone: v1.23 DCR Logout Metadata
 
@@ -36,12 +47,6 @@ There is no active milestone at the moment. The leading next candidate is `v1.24
 - Keep repo-native proof and support-truth docs aligned with Lockspire's existing asymmetric logout model: durable back-channel delivery and best-effort front-channel cleanup.
 
 **Why now:** This milestone has shipped and is archived in `.planning/milestones/v1.23-ROADMAP.md` plus `.planning/milestones/v1.23-REQUIREMENTS.md`.
-
-## Next Milestone Goals
-
-- Add `client_secret_jwt` as a narrow direct-client authentication option on Lockspire-owned endpoints without widening the embedded-library shape.
-- Keep the implementation strict on replay prevention, audience, algorithm allowlists, and support-truth documentation.
-- Continue prioritizing leverage-heavy adopter friction over broader protocol parity or certification theater.
 
 <details>
 <summary>Previous milestone snapshot</summary>
@@ -108,7 +113,9 @@ There is no active milestone at the moment. The leading next candidate is `v1.24
 
 ### Active
 
-- No active milestone is defined. Start the next scope with `$gsd-new-milestone`; the current leading candidate is `v1.24 client_secret_jwt`.
+- Add `client_secret_jwt` as a narrow direct-client authentication option on Lockspire-owned direct-client endpoints.
+- Keep `client_secret_jwt` verification strict on replay prevention, issuer-string `aud`, bounded lifetime checks, and algorithm allowlists tied to the effective security posture.
+- Expose truthful DCR, discovery, admin, and documentation posture for the shipped `client_secret_jwt` slice without broadening FAPI or higher-trust support claims.
 
 ### Out of Scope
 
@@ -159,7 +166,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | **Select RAR & Resource Indicators for v1.14** | Empowers Phoenix teams in complex domains (fintech, healthcare) and enables "Zero Trust" targeted tokens | Adopted at v1.14 milestone start |
 | Target FAPI 2.0 Message Signing for v1.19 | Provides application-layer non-repudiation without mTLS infrastructure overhead, building off existing JWS/JWE primitives | Adopted at v1.19 milestone start |
 | Start `v1.23 DCR Logout Metadata` as a narrow self-service wedge | The logout propagation runtime already exists; the highest-leverage remaining gap is letting partner-managed clients register and manage the existing metadata without widening beyond current logout truth | Adopted and archived in milestone v1.23 |
-| Keep `v1.24 client_secret_jwt` as the leading next candidate | The remaining leverage-heavy gap is a practical direct-client authentication option, but it still needs a fresh requirements pass before execution | Current next milestone candidate |
+| Activate `v1.24 client_secret_jwt` as the current milestone | The remaining leverage-heavy gap is a practical direct-client authentication option that fits the current embedded-library boundary when kept narrow and truthfully documented | Adopted at v1.24 milestone start |
 
 ## Evolution
 
@@ -179,4 +186,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 for v1.23 milestone close*
+*Last updated: 2026-05-24 for v1.24 milestone start*

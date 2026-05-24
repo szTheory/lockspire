@@ -104,9 +104,9 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 3
 
 - **name:** `v1.24 client_secret_jwt`
-- **status:** `candidate`
+- **status:** `active`
 - **priority:** `highest`
-- **recommendation:** default next milestone unless adopter pull clearly says otherwise
+- **recommendation:** active current milestone
 - **why now:** DCR logout metadata is now shipped, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap
 - **target slice:**
   - narrow shared verifier on Lockspire-owned direct-client endpoints
@@ -115,6 +115,7 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 - **non-goals:**
   - generic JWT client auth
   - broader federation-style trust expansion
+  - any new claim that shared-secret JWT auth satisfies Lockspire's higher-trust FAPI or mTLS posture
 
 ## Stop Rules
 

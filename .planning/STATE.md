@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.23
-milestone_name: DCR Logout Metadata
-status: completed
-stopped_at: milestone completed
-last_updated: "2026-05-24T18:25:03Z"
-last_activity: 2026-05-24 -- Milestone v1.23 successfully completed and archived.
+milestone: v1.24
+milestone_name: client_secret_jwt
+status: requirements
+stopped_at: defining requirements
+last_updated: "2026-05-24T19:00:00Z"
+last_activity: 2026-05-24 -- Milestone v1.24 client_secret_jwt started.
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 0
   total_plans: 9
-  completed_plans: 9
-  percent: 100
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,25 +22,23 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Awaiting next milestone.
+**Current focus:** Defining requirements for `v1.24 client_secret_jwt`.
 
 ## Current Position
 
-Phase: 87
-Plan: 03
-Status: completed
-Last activity: 2026-05-24 -- Milestone v1.23 successfully completed and archived.
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-05-24 -- Milestone v1.24 client_secret_jwt started.
 
 ## Performance Metrics
 
-- Phases completed: 3/3
-- Plans completed: 9/9
+- Phases completed: 0/3
+- Plans completed: 0/9
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 85 | 01-03 | 47m | 9 | 9 |
-| 86 | 01-03 | 30m | 9 | 4 |
-| 87 | 01-03 | 26m | 8 | 8 |
+| — | — | — | — | — |
 
 ## Deferred Items
 
@@ -66,7 +64,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Start the next milestone with `$gsd-new-milestone` or continue with standalone tasks.
+**Next action:** Start with `$gsd-plan-phase 88` after reviewing the new roadmap, or use `$gsd-discuss-phase 88` to refine the implementation approach first.
 **Resume file:** None
-**Stopped at:** milestone completed
+**Stopped at:** defining requirements
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
