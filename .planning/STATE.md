@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.21
-milestone_name: Resource Server (API Protection)
-status: completed
+milestone: v1.22
+milestone_name: DPoP Nonce Support
+status: executing
 stopped_at: milestone completed
-last_updated: "2026-05-23T18:55:00.000Z"
-last_activity: 2026-05-23 -- Milestone v1.21 successfully completed and archived.
+last_updated: "2026-05-24T10:55:52.208Z"
+last_activity: 2026-05-24 -- Phase 83 execution started
 progress:
   total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Awaiting next milestone.
+**Current focus:** Phase 83 — lockspire-owned-dpop-endpoint-adoption
 
 ## Current Position
 
-Phase: 81
-Plan: 03
-Status: completed
-Last activity: 2026-05-23 -- Milestone v1.21 successfully completed and archived.
+Phase: 83 (lockspire-owned-dpop-endpoint-adoption) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 83
+Last activity: 2026-05-24 -- Phase 83 execution started
 
 ## Performance Metrics
 
