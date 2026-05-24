@@ -22,7 +22,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - Resource Indicators on the authorization and token surface, with truthful discovery metadata via `resource_indicators_supported` only when the mounted authorization-code surface is actually usable
 - `authorization_details_types_supported` in discovery only when the mounted authorization-code surface is usable and the host has configured at least one RAR validator type
 - Userinfo
-- Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice
+- Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice, including create/read/update management of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
 - Revocation
 - Introspection
@@ -105,7 +105,7 @@ Lockspire does not currently support:
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
 - Lockspire-owned device verification browser UI or hosted approval pages
 - Lockspire-owned semantic RAR consent rendering, renderer registries, or payment-product UI
-- Dynamic Client Registration support for `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, or `frontchannel_logout_session_required` remains unsupported in this slice
+- Dynamic Client Registration does not add a new logout runtime; it only manages the existing logout propagation metadata already shipped on the current back-channel and front-channel surfaces
 - Hosted auth as a separate required service
 - SAML
 - LDAP or Active Directory federation
@@ -156,7 +156,7 @@ A 1.0 GA claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
 - Lockspire supports broader request-object modes, generic external `request_uri` handling, generic gateway protected-resource middleware, SAML, or LDAP
-- Lockspire accepts DCR logout metadata or proves front-channel logout success remotely
+- Lockspire adds a new logout runtime through DCR or proves front-channel logout success remotely
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage
 

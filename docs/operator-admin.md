@@ -29,7 +29,7 @@ Lockspire's shipped truth model is:
 
 - Back-channel logout is the reliable path. `/end_session/complete` persists delivery intent, then Oban runs Req-based POST delivery out of band.
 - Front-channel logout is best effort only. Lockspire renders invisible iframes and a bounded continue page, but it does not claim remote success.
-- Dynamic Client Registration does not accept logout propagation metadata in this slice. Operators configure those fields explicitly in admin.
+- Dynamic Client Registration now manages the same existing logout propagation metadata for eligible self-service clients. Operators still have an explicit admin workflow for review, correction, and support-driven updates.
 
 ## PAR Policy Management
 

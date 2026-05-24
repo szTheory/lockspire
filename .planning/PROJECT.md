@@ -10,13 +10,43 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-two planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, and automatic DPoP nonce challenge/retry support in v1.22.
+Lockspire has now archived twenty-three planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, and DCR-managed logout propagation metadata in v1.23.
 
-Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The active milestone is now `v1.23 DCR Logout Metadata`. Phase 85 is complete: DCR create and management-read flows now accept, persist, and expose the existing logout propagation metadata truthfully without widening RFC 7592 update behavior. The remaining milestone work is Phase 86 update semantics/proof and Phase 87 support-truth closure.
+There is no active milestone at the moment. The leading next candidate is `v1.24 client_secret_jwt`, but the next scope should still start explicitly with `$gsd-new-milestone` so it gets a fresh requirements and roadmap pass before implementation.
 
-## Recently Shipped Milestone: v1.22 DPoP Nonce Support
+## Recently Shipped Milestone: v1.23 DCR Logout Metadata
+
+**Goal:** Let self-service clients manage Lockspire's existing logout propagation metadata through DCR and RFC 7592 without broadening the product boundary.
+
+**Delivered:**
+- DCR create now accepts, validates, persists, and reads back `backchannel_logout_*` and `frontchannel_logout_*` metadata using the existing Lockspire logout truth model.
+- RFC 7592 management updates now replace and clear the four logout metadata fields under full-replace semantics while preserving RAT rotation, provenance, and audit continuity.
+- Repo-native protocol and controller proof now covers positive and negative logout metadata lifecycle behavior across create, read, and update flows.
+- Support-surface, DCR lifecycle, operator, and maintainer docs now describe the shipped self-service logout slice truthfully without overstating front-channel guarantees.
+
+## Archived Milestone Snapshot: v1.23 DCR Logout Metadata
+
+**Goal:** Let self-service clients manage Lockspire's existing logout propagation metadata through DCR and RFC 7592 without broadening the product boundary.
+
+**Target features:**
+- Accept, validate, store, and expose `backchannel_logout_uri` plus `backchannel_logout_session_required` through DCR create/read/update flows.
+- Accept, validate, store, and expose `frontchannel_logout_uri` plus `frontchannel_logout_session_required` through DCR create/read/update flows.
+- Keep repo-native proof and support-truth docs aligned with Lockspire's existing asymmetric logout model: durable back-channel delivery and best-effort front-channel cleanup.
+
+**Why now:** This milestone has shipped and is archived in `.planning/milestones/v1.23-ROADMAP.md` plus `.planning/milestones/v1.23-REQUIREMENTS.md`.
+
+## Next Milestone Goals
+
+- Add `client_secret_jwt` as a narrow direct-client authentication option on Lockspire-owned endpoints without widening the embedded-library shape.
+- Keep the implementation strict on replay prevention, audience, algorithm allowlists, and support-truth documentation.
+- Continue prioritizing leverage-heavy adopter friction over broader protocol parity or certification theater.
+
+<details>
+<summary>Previous milestone snapshot</summary>
+
+### v1.22 DPoP Nonce Support
 
 **Goal:** Add automatic DPoP nonce challenge and retry behavior across all shipped Lockspire DPoP validation surfaces.
 
@@ -26,16 +56,7 @@ The active milestone is now `v1.23 DCR Logout Metadata`. Phase 85 is complete: D
 - Nonce-aware host Phoenix protected-route enforcement through the shipped `VerifyToken -> EnforceSenderConstraints -> RequireToken` pipeline.
 - Support-surface, onboarding, and protected-route docs that now describe the shipped nonce-backed DPoP slice truthfully.
 
-## Current Milestone: v1.23 DCR Logout Metadata
-
-**Goal:** Let self-service clients manage Lockspire's existing logout propagation metadata through DCR and RFC 7592 without broadening the product boundary.
-
-**Target features:**
-- Accept, validate, store, and expose `backchannel_logout_uri` plus `backchannel_logout_session_required` through DCR create/read/update flows.
-- Accept, validate, store, and expose `frontchannel_logout_uri` plus `frontchannel_logout_session_required` through DCR create/read/update flows.
-- Keep repo-native proof and support-truth docs aligned with Lockspire's existing asymmetric logout model: durable back-channel delivery and best-effort front-channel cleanup.
-
-**Why now:** `v1.23` is the highest-priority active candidate from `.planning/MILESTONE-ARC.md` because it removes practical partner-managed client friction while preserving the embedded-library boundary and current logout execution truth.
+</details>
 
 ## Requirements
 
@@ -83,12 +104,11 @@ The active milestone is now `v1.23 DCR Logout Metadata`. Phase 85 is complete: D
 - Delivered first-class Phoenix API route protection for Lockspire-issued tokens in archived v1.21.
 - Delivered automatic DPoP nonce challenge and retry support on Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline in archived v1.22.
 - Delivered DCR registration intake, typed persistence, and truthful readback for Lockspire's shipped logout propagation metadata in Phase 85 of milestone v1.23.
+- Delivered RFC 7592 logout metadata replacement/clear semantics, lifecycle proof, and support-truth docs in archived milestone v1.23.
 
 ### Active
 
-- **DCR-02** RFC 7592 update flows must reflect the persisted logout propagation metadata truthfully and keep RAT rotation plus provenance behavior intact.
-- **DCR-03** Repo-native proof must cover create/read/update positive and negative paths for the new metadata without overstating front-channel guarantees.
-- **DCR-04** Public support docs and operator guidance must describe the new self-service boundary accurately while preserving the current logout truth model and non-goals.
+- No active milestone is defined. Start the next scope with `$gsd-new-milestone`; the current leading candidate is `v1.24 client_secret_jwt`.
 
 ### Out of Scope
 
@@ -138,7 +158,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Use Oban for resilient delivery | Ensures that CIBA webhooks (Ping/Push) and back-channel logouts are retriable and durable across system restarts | Adopted for v1.13 CIBA implementation |
 | **Select RAR & Resource Indicators for v1.14** | Empowers Phoenix teams in complex domains (fintech, healthcare) and enables "Zero Trust" targeted tokens | Adopted at v1.14 milestone start |
 | Target FAPI 2.0 Message Signing for v1.19 | Provides application-layer non-repudiation without mTLS infrastructure overhead, building off existing JWS/JWE primitives | Adopted at v1.19 milestone start |
-| Start `v1.23 DCR Logout Metadata` as a narrow self-service wedge | The logout propagation runtime already exists; the highest-leverage remaining gap is letting partner-managed clients register and manage the existing metadata without widening beyond current logout truth | Adopted at v1.23 milestone start |
+| Start `v1.23 DCR Logout Metadata` as a narrow self-service wedge | The logout propagation runtime already exists; the highest-leverage remaining gap is letting partner-managed clients register and manage the existing metadata without widening beyond current logout truth | Adopted and archived in milestone v1.23 |
+| Keep `v1.24 client_secret_jwt` as the leading next candidate | The remaining leverage-heavy gap is a practical direct-client authentication option, but it still needs a fresh requirements pass before execution | Current next milestone candidate |
 
 ## Evolution
 
@@ -158,4 +179,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 after Phase 85 completion*
+*Last updated: 2026-05-24 for v1.23 milestone close*

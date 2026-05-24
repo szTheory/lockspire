@@ -3,6 +3,7 @@
 Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
 This guide is maintainer-only release operations guidance. It does not define a second public support contract.
+For DCR/logout wording in release notes or release review, defer to the canonical support contract in `docs/supported-surface.md` rather than restating a separate support matrix here.
 
 ## Normal flow
 
@@ -125,4 +126,3 @@ After a successful publish to Hex, you must verify the published artifact to gua
 ```
 
 This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
-

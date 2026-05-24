@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.23 DCR Logout Metadata (Shipped + archived: 2026-05-24)
+
+**Phases completed:** **3** (**85-87**), **9** plans, **10** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now lets eligible self-service clients manage the existing logout propagation metadata through DCR and RFC 7592 without widening Lockspire's current logout support boundary.
+
+**Key accomplishments:**
+- Added DCR create-time validation, typed persistence, and truthful readback for `backchannel_logout_*` and `frontchannel_logout_*` metadata.
+- Added RFC 7592 full-replace update semantics for the four logout metadata fields, including clear-on-omit behavior.
+- Proved rotated registration access token truth, provenance retention, audit continuity, and negative-path contracts across protocol and controller seams.
+- Aligned supported-surface, DCR lifecycle, operator, and maintainer release docs to one canonical logout support contract.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.23-MILESTONE-AUDIT.md`](milestones/v1.23-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.23-ROADMAP.md`, `milestones/v1.23-REQUIREMENTS.md`, `milestones/v1.23-MILESTONE-AUDIT.md` · **Git tag:** `v1.23`
+
+---
+
 ## v1.21 Resource Server (API Protection) (Shipped + archived: 2026-05-23)
 
 **Phases completed:** **3** (**79-81**), **9** plans, **10** requirements closed.

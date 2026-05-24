@@ -78,6 +78,114 @@ Partners can read, update, or delete their client via the `registration_client_u
 * **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated client. This will rotate both the `client_secret` and the `registration_access_token`.
 * **Delete (DELETE):** `DELETE /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
 
+### Logout propagation metadata lifecycle
+
+Lockspire's DCR surface can create, read, and update the four existing logout propagation metadata fields:
+
+- `backchannel_logout_uri`
+- `backchannel_logout_session_required`
+- `frontchannel_logout_uri`
+- `frontchannel_logout_session_required`
+
+These settings control logout propagation to the relying party. They are separate from post-logout redirect URIs, which are browser destinations after RP-initiated logout.
+
+Back-channel logout is the durable server-to-server path. Front-channel logout is best effort only and should be treated as browser choreography rather than proof of remote success.
+
+**Create with logout propagation metadata:**
+
+```http
+POST /oauth/register HTTP/1.1
+Host: your-domain.com
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <INITIAL_ACCESS_TOKEN>
+
+{
+  "client_name": "My Cool App",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/backchannel-logout",
+  "backchannel_logout_session_required": true,
+  "frontchannel_logout_uri": "https://app.example.test/frontchannel-logout",
+  "frontchannel_logout_session_required": true
+}
+```
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret": "sec_def456",
+  "client_name": "My Cool App",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/backchannel-logout",
+  "backchannel_logout_session_required": true,
+  "frontchannel_logout_uri": "https://app.example.test/frontchannel-logout",
+  "frontchannel_logout_session_required": true,
+  "registration_access_token": "rat_xyz789",
+  "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
+}
+```
+
+**Read the stored values:**
+
+```http
+GET /oauth/register/cli_abc123 HTTP/1.1
+Host: your-domain.com
+Accept: application/json
+Authorization: Bearer <RAT>
+```
+
+The management response returns the same persisted logout propagation fields so the relying party can confirm the server's stored state.
+
+**Update with RFC 7592 full-replace semantics:**
+
+```http
+PUT /oauth/register/cli_abc123 HTTP/1.1
+Host: your-domain.com
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <RAT>
+
+{
+  "client_name": "Updated logout fixture client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "client_secret_basic",
+  "scope": "openid profile",
+  "backchannel_logout_uri": "https://rp.example.test/replaced-backchannel-logout",
+  "backchannel_logout_session_required": false,
+  "frontchannel_logout_uri": "https://app.example.test/replaced-frontchannel-logout",
+  "frontchannel_logout_session_required": false
+}
+```
+
+RFC 7592 `PUT` is full-replace, not patch. If logout propagation fields are omitted from an update, the omitted values clear and Lockspire persists `nil` / `false` for those fields on the stored client.
+
+The returned `registration_access_token` replaces the old RAT immediately. Any returned `client_secret` replaces the old client credential immediately.
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret": "sec_rotated789",
+  "client_name": "Updated logout fixture client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/replaced-backchannel-logout",
+  "backchannel_logout_session_required": false,
+  "frontchannel_logout_uri": "https://app.example.test/replaced-frontchannel-logout",
+  "frontchannel_logout_session_required": false,
+  "registration_access_token": "rat_rotated456",
+  "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
+}
+```
+
 ## Out of Scope
 
 To ensure a secure and explicit deployment model, the following Dynamic Client Registration features are **not supported**:

@@ -7,7 +7,7 @@
 
 Lockspire is **near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
 
-- **Rough done-ness:** `~94%`
+- **Rough done-ness:** `~95%`
 - **Territory:** finish the last important wedges
 - **Primary risk now:** overbuilding into adjacent protocol breadth that does not materially improve the embedded Phoenix adopter story
 
@@ -56,13 +56,10 @@ The remaining gaps are **not foundational**. They are narrower trust or integrat
 
 ### Highest-Leverage Gaps
 
-1. **DCR logout propagation metadata**
-   Logout propagation exists, but self-service clients still cannot manage the relevant metadata through DCR. That is practical adoption friction for partner-managed clients.
-
-2. **`client_secret_jwt`**
+1. **`client_secret_jwt`**
    A useful direct-client auth addition, but lower leverage than DPoP nonce because Lockspire already ships `private_key_jwt` and mTLS for higher-trust clients.
 
-3. **Advanced setup support burden**
+2. **Advanced setup support burden**
    The remaining product risk is no longer foundational protocol coverage; it is support cost around advanced setup edges such as logout propagation, `jwks_uri` rotation, mTLS, and protected-route configuration.
 
 ### Useful But Secondary
@@ -92,10 +89,10 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 2
 
 - **name:** `v1.23 DCR Logout Metadata`
-- **status:** `active`
-- **priority:** `highest`
-- **recommendation:** active milestone
-- **why now:** turns an already-shipped operator-only logout propagation surface into a more partner-buildable self-service story
+- **status:** `shipped`
+- **priority:** `completed`
+- **recommendation:** archived milestone
+- **why now:** turned an already-shipped operator-only logout propagation surface into a more partner-buildable self-service story
 - **target slice:**
   - accept/store/validate logout propagation metadata in DCR and management updates
   - keep provenance and admin workflows truthful
@@ -108,9 +105,9 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 
 - **name:** `v1.24 client_secret_jwt`
 - **status:** `candidate`
-- **priority:** `medium`
-- **recommendation:** after DCR logout metadata unless adopter pull clearly says otherwise
-- **why now:** fills a practical direct-client auth gap, but it is less leverage-heavy than the first two candidates
+- **priority:** `highest`
+- **recommendation:** default next milestone unless adopter pull clearly says otherwise
+- **why now:** DCR logout metadata is now shipped, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap
 - **target slice:**
   - narrow shared verifier on Lockspire-owned direct-client endpoints
   - strict replay, audience, algorithm, and docs posture

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.23
 milestone_name: DCR Logout Metadata
-status: in_progress
-stopped_at: phase 87 ready for execution
-last_updated: "2026-05-24T16:42:30Z"
-last_activity: 2026-05-24 -- Phase 86 executed: RFC 7592 logout metadata updates now persist with full-replace semantics and automated proof covers lifecycle success and failure cases.
+status: completed
+stopped_at: milestone completed
+last_updated: "2026-05-24T18:25:03Z"
+last_activity: 2026-05-24 -- Milestone v1.23 successfully completed and archived.
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 67
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -22,29 +22,29 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Milestone v1.23 DCR Logout Metadata, Phase 87 support truth and milestone closure.
+**Current focus:** Awaiting next milestone.
 
 ## Current Position
 
 Phase: 87
-Plan: -
-Status: Phase 86 complete; Phase 87 ready for execution
-Last activity: 2026-05-24 -- Phase 86 completed with RFC 7592 logout metadata persistence and repo-native lifecycle proof
+Plan: 03
+Status: completed
+Last activity: 2026-05-24 -- Milestone v1.23 successfully completed and archived.
 
 ## Performance Metrics
 
-- Phases completed: 2/3
-- Plans completed: 6/6
+- Phases completed: 3/3
+- Plans completed: 9/9
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 85 | 01-03 | 47m | 9 | 9 |
 | 86 | 01-03 | 30m | 9 | 4 |
-| 87 | - | - | - | - |
+| 87 | 01-03 | 26m | 8 | 8 |
 
 ## Deferred Items
 
-- None.
+None.
 
 ## Accumulated Context
 
@@ -58,6 +58,7 @@ Last activity: 2026-05-24 -- Phase 86 completed with RFC 7592 logout metadata pe
 - DCR create and management-read responses serialize persisted logout metadata directly from stored client state.
 - RFC 7592 management update now applies logout propagation metadata through the same normalized typed-field path and clears omitted values under full-replace semantics.
 - Repo-native proof for logout metadata management now covers rotated RAT truth, provenance/audit continuity, and negative validation contracts across protocol and controller seams.
+- DCR and RFC 7592 now manage the existing logout propagation metadata while preserving the durable back-channel and best-effort front-channel truth model.
 
 ### Blockers/Concerns
 
@@ -65,7 +66,7 @@ Last activity: 2026-05-24 -- Phase 86 completed with RFC 7592 logout metadata pe
 
 ## Session Continuity
 
-**Next action:** Execute Phase 87 to update support-surface docs, verify release truth, and close milestone v1.23.
+**Next action:** Start the next milestone with `$gsd-new-milestone` or continue with standalone tasks.
 **Resume file:** None
-**Stopped at:** phase 87 ready for execution
+**Stopped at:** milestone completed
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
