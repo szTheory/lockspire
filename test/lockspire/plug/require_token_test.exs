@@ -113,7 +113,10 @@ defmodule Lockspire.Plug.RequireTokenTest do
       assert conn.halted
       assert conn.status == 401
       assert ["retry-nonce"] = get_resp_header(conn, "dpop-nonce")
-      assert Enum.any?(get_resp_header(conn, "access-control-expose-headers"), &(&1 =~ "DPoP-Nonce"))
+
+      assert ["DPoP-Nonce, WWW-Authenticate"] =
+               get_resp_header(conn, "access-control-expose-headers")
+
       [challenge] = get_resp_header(conn, "www-authenticate")
       assert challenge =~ "error=\"use_dpop_nonce\""
     end

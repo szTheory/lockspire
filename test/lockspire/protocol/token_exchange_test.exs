@@ -375,6 +375,78 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert persisted_refresh_token.cnf["jkt"] == validated_proof.jkt
   end
 
+  test "returns use_dpop_nonce for authorization-code exchange before succeeding with the supplied nonce" do
+    secret = "auth-code-nonce-secret"
+
+    {:ok, client} =
+      create_client(
+        "client-auth-code-nonce",
+        :client_secret_basic,
+        secret,
+        ["authorization_code", "refresh_token"],
+        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+      )
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-dpop-nonce",
+        code_verifier: "verifier-dpop-nonce",
+        scopes: ["email", "profile", "offline_access"]
+      )
+
+    %{jwt: proof_without_nonce} = dpop_proof_fixture(nonce: nil)
+
+    assert {:error, error} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-dpop-nonce",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-dpop-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_without_nonce,
+               dpop_replay_store: Repository,
+               method: "POST"
+             )
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+
+    %{jwt: proof_with_nonce, validated: validated_proof} = dpop_proof_fixture(error.dpop_nonce)
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-dpop-nonce",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-dpop-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_with_nonce,
+               dpop_replay_store: Repository,
+               method: "POST",
+               access_token_generator: fn -> "auth-code-nonce-access-token" end,
+               refresh_token_generator: fn -> "auth-code-nonce-refresh-token" end
+             )
+
+    assert success.token_type == "DPoP"
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("auth-code-nonce-access-token")
+        )
+      )
+
+    assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
+  end
+
   test "accepts the first validated proof and rejects a replayed proof as invalid_dpop_proof" do
     secret = "replayed-dpop-secret"
 
@@ -1092,6 +1164,183 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert persisted_refresh_token.cnf["jkt"] == validated_proof.jkt
   end
 
+  test "returns use_dpop_nonce for device-code exchange before succeeding with the supplied nonce" do
+    secret = "device-nonce-secret"
+
+    {:ok, client} =
+      create_client(
+        "device-dpop-nonce-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
+        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-dpop-nonce",
+        user_code: "DPOP-NNC",
+        scopes: ["email", "profile", "offline_access"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    %{jwt: proof_without_nonce} = dpop_proof_fixture(nonce: nil)
+
+    assert {:error, error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-dpop-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_without_nonce,
+               method: "POST",
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 server_policy_store: Repository,
+                 dpop_replay_store: Repository
+               ]
+             })
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+
+    %{jwt: proof_with_nonce, validated: validated_proof} = dpop_proof_fixture(error.dpop_nonce)
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-dpop-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_with_nonce,
+               method: "POST",
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository,
+                 server_policy_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "device-nonce-access-token" end,
+                 refresh_token_generator: fn -> "device-nonce-refresh-token" end
+               ]
+             })
+
+    assert success.token_type == "DPoP"
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("device-nonce-access-token")
+        )
+      )
+
+    assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
+  end
+
+  test "returns use_dpop_nonce for ciba exchange before succeeding with the supplied nonce" do
+    secret = "ciba-nonce-secret"
+
+    {:ok, client} =
+      create_client(
+        "client-ciba-nonce",
+        :client_secret_basic,
+        secret,
+        ["urn:openid:params:grant-type:ciba", "refresh_token"],
+        %{allowed_scopes: ["openid", "email", "profile", "offline_access"], dpop_policy: :dpop}
+      )
+
+    {:ok, _authorization} =
+      create_ciba_authorization(client,
+        auth_req_id: "ciba-auth-req-nonce",
+        scopes: ["email", "profile", "offline_access"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    %{jwt: proof_without_nonce} = dpop_proof_fixture(nonce: nil)
+
+    assert {:error, error} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:openid:params:grant-type:ciba",
+                 "auth_req_id" => "ciba-auth-req-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_without_nonce,
+               method: "POST",
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 ciba_authorization_store: Repository,
+                 server_policy_store: Repository,
+                 dpop_replay_store: Repository
+               ]
+             })
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+
+    %{jwt: proof_with_nonce, validated: validated_proof} = dpop_proof_fixture(error.dpop_nonce)
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:openid:params:grant-type:ciba",
+                 "auth_req_id" => "ciba-auth-req-nonce"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               dpop: proof_with_nonce,
+               method: "POST",
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 ciba_authorization_store: Repository,
+                 server_policy_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "ciba-nonce-access-token" end,
+                 refresh_token_generator: fn -> "ciba-nonce-refresh-token" end
+               ]
+             })
+
+    assert success.token_type == "DPoP"
+
+    persisted_access_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where:
+            token.token_type == :access_token and
+              token.client_id == ^client.client_id and
+              token.token_hash == ^TokenFormatter.hash_token("ciba-nonce-access-token")
+        )
+      )
+
+    assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
+  end
+
   test "preserves bearer token_type for approved bearer-mode device authorization" do
     secret = "device-bearer-secret"
 
@@ -1434,19 +1683,27 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     })
   end
 
-  defp dpop_proof_fixture do
+  defp dpop_proof_fixture(overrides \\ []) do
     keys = JarTestHelpers.generate_ec_keys()
     now = DateTime.utc_now()
     target_uri = "https://example.test/lockspire/token"
+    overrides = if is_list(overrides), do: overrides, else: [nonce: overrides]
 
-    proof =
-      JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
+    nonce =
+      Keyword.get_lazy(overrides, :nonce, fn -> DPoPNonce.issue(:authorization_server) end)
+
+    claims =
+      %{
         "htm" => "POST",
         "htu" => target_uri,
         "iat" => DateTime.to_unix(now),
         "jti" => Ecto.UUID.generate(),
-        "nonce" => DPoPNonce.issue(:authorization_server)
-      })
+        "nonce" => nonce
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
     assert {:ok, %DPoP{} = validated} =
              DPoP.validate_proof(proof,
@@ -1482,6 +1739,34 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         attrs ->
           Repository.transition_device_authorization(
             stored.verification_handle,
+            [stored.status],
+            attrs
+          )
+      end
+    end
+  end
+
+  defp create_ciba_authorization(client, opts) do
+    now = Keyword.get(opts, :now, DateTime.utc_now())
+
+    authorization =
+      Lockspire.Domain.CibaAuthorization.issue(
+        %{
+          auth_req_id: Keyword.fetch!(opts, :auth_req_id),
+          client_id: client.client_id,
+          scopes: Keyword.get(opts, :scopes, ["openid", "email", "profile"])
+        },
+        now: now
+      )
+
+    with {:ok, stored} <- Repository.put_ciba_authorization(authorization) do
+      case Keyword.get(opts, :transition) do
+        nil ->
+          {:ok, stored}
+
+        attrs ->
+          Repository.transition_ciba_authorization(
+            stored.auth_req_id_hash,
             [stored.status],
             attrs
           )

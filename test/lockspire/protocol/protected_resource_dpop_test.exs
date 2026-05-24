@@ -116,7 +116,9 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   test "returns use_dpop_nonce with a new resource nonce when the proof omits nonce" do
     %{request: request, token: token} = dpop_request_fixture(nonce: nil)
 
-    assert {:error, %Error{} = error} = ProtectedResourceDPoP.validate_userinfo_access(token, request)
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
     assert error.error == "use_dpop_nonce"
     assert error.reason_code == :missing_dpop_nonce
     assert is_binary(error.dpop_nonce)
@@ -134,8 +136,28 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     assert is_binary(error.dpop_nonce)
   end
 
+  test "succeeds after retrying with the supplied resource-server nonce" do
+    %{request: request, token: token, private_jwk: private_jwk} = dpop_request_fixture(nonce: nil)
+
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+
+    %{jwt: retry_proof, validated: validated_proof} =
+      proof_fixture(%{"nonce" => error.dpop_nonce}, private_jwk: private_jwk)
+
+    assert {:ok, proof} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: retry_proof})
+
+    assert proof.jkt == validated_proof.jkt
+    assert proof.jkt == token.cnf["jkt"]
+  end
+
   defp dpop_request_fixture(overrides \\ []) do
     replay_store = Keyword.get(overrides, :replay_store, AcceptingReplayStore)
+
     proof_data =
       case Keyword.fetch(overrides, :nonce) do
         {:ok, nonce} -> proof_fixture(%{"nonce" => nonce})
@@ -153,14 +175,20 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       opts: [dpop_replay_store: replay_store, now: fn -> @now end]
     }
 
-    %{request: request, token: token}
+    %{request: request, token: token, private_jwk: proof_data.private_jwk}
   end
 
   defp proof_fixture(claim_overrides \\ %{}, opts \\ []) do
     keys =
-      case Keyword.get(opts, :key_seed, :default) do
-        :other -> JarTestHelpers.generate_ec_keys()
-        _default -> JarTestHelpers.generate_ec_keys()
+      case Keyword.get(opts, :private_jwk) do
+        %{} = private_jwk ->
+          %{private_jwk: private_jwk}
+
+        nil ->
+          case Keyword.get(opts, :key_seed, :default) do
+            :other -> JarTestHelpers.generate_ec_keys()
+            _default -> JarTestHelpers.generate_ec_keys()
+          end
       end
 
     claims =
@@ -190,7 +218,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
                clock_skew: 30
              )
 
-    %{jwt: jwt, validated: validated}
+    %{jwt: jwt, validated: validated, private_jwk: keys.private_jwk}
   end
 
   defp assert_invalid_token({:error, %Error{} = error}, reason_code) do

@@ -10,32 +10,27 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-one planning milestones. Beyond the earlier embedded-provider and release-hardening work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, and first-class Phoenix API route protection in v1.21.
+Lockspire has now archived twenty-two planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, and automatic DPoP nonce challenge/retry support in v1.22.
 
-Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The active milestone is now `v1.22 DPoP Nonce Support`, which tightens the already-shipped DPoP story across token issuance, Lockspire-owned protected resources, and the canonical host Phoenix plug pipeline without widening into broader protected-resource product scope.
+There is no active milestone at the moment. The leading next candidate is `v1.23 DCR Logout Metadata`, but the next scope should still be started explicitly with `$gsd-new-milestone` so it gets a fresh requirements and roadmap pass.
 
-## Current Milestone: v1.22 DPoP Nonce Support
+## Recently Shipped Milestone: v1.22 DPoP Nonce Support
 
-**Goal:** Add automatic DPoP nonce challenge and validation across all shipped Lockspire DPoP validation surfaces.
-
-**Target features:**
-- Authorization-server nonce challenge and retry behavior on Lockspire-owned `/token` DPoP exchanges
-- Resource-server nonce challenge and retry behavior on Lockspire-owned protected resources and the shipped host Phoenix plug pipeline
-- Truthful support-contract, docs, and release-readiness updates for the new nonce-backed DPoP slice
-
-**Why now:** DPoP nonce support is the highest-leverage remaining trust wedge in Lockspire's existing sender-constrained story, and it closes explicit negative space already called out in the public support surface.
-
-## Recently Shipped Milestone: v1.21 Resource Server (API Protection)
-
-**Goal:** Deliver the canonical protected-resource plug pipeline for host Phoenix routes using Lockspire-issued tokens.
+**Goal:** Add automatic DPoP nonce challenge and retry behavior across all shipped Lockspire DPoP validation surfaces.
 
 **Delivered:**
-- `Lockspire.Plug.VerifyToken` plus `%Lockspire.AccessToken{}` and `Lockspire.KeyCache` for local JWT validation.
-- `Lockspire.Plug.EnforceSenderConstraints` for DPoP and MTLS confirmation-claim enforcement.
-- `Lockspire.Plug.RequireToken` as the single strict transport boundary with truthful `401` vs `403` semantics.
-- A canonical Phoenix protected-route guide plus release-readiness contract coverage.
+- A shared stateless DPoP nonce primitive with strict authorization-server vs resource-server purpose separation.
+- Retryable `use_dpop_nonce` behavior on Lockspire-owned `/token` and `/userinfo` surfaces.
+- Nonce-aware host Phoenix protected-route enforcement through the shipped `VerifyToken -> EnforceSenderConstraints -> RequireToken` pipeline.
+- Support-surface, onboarding, and protected-route docs that now describe the shipped nonce-backed DPoP slice truthfully.
+
+## Next Milestone Goals
+
+- Extend DCR and registration management to accept, store, validate, and expose logout propagation metadata for self-service clients.
+- Preserve current logout propagation truth: no federation expansion, no broadened hosted-auth story, and no claims beyond the existing back-channel/front-channel behavior Lockspire already ships.
+- Keep repo-native proof and support-truth docs aligned as the self-service logout slice lands.
 
 ## Requirements
 
@@ -81,12 +76,11 @@ The active milestone is now `v1.22 DPoP Nonce Support`, which tightens the alrea
 - Delivered FAPI 2.0 Message Signing support including JARM and JWT introspection responses in archived v1.19.
 - Delivered Mutual TLS client authentication, certificate-bound tokens, and truthful MTLS discovery metadata in archived v1.20.
 - Delivered first-class Phoenix API route protection for Lockspire-issued tokens in archived v1.21.
+- Delivered automatic DPoP nonce challenge and retry support on Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline in archived v1.22.
 
 ### Active
 
-- Add automatic DPoP nonce challenge and validation on Lockspire-owned token exchanges without introducing new operator or client policy knobs.
-- Add automatic DPoP nonce challenge and validation on Lockspire-owned protected resources and the shipped host Phoenix plug pipeline.
-- Update docs, support-truth wording, and repo-native proof so Lockspire can truthfully claim the nonce-backed DPoP slice.
+- No active milestone is defined. Start the next scope with `$gsd-new-milestone`; the current leading candidate is `v1.23 DCR Logout Metadata`.
 
 ### Out of Scope
 
@@ -156,4 +150,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 for v1.22 milestone start*
+*Last updated: 2026-05-24 for v1.22 milestone close*

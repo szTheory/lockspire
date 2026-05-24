@@ -7,7 +7,7 @@
 
 Lockspire is **near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
 
-- **Rough done-ness:** `~92%`
+- **Rough done-ness:** `~94%`
 - **Territory:** finish the last important wedges
 - **Primary risk now:** overbuilding into adjacent protocol breadth that does not materially improve the embedded Phoenix adopter story
 
@@ -56,14 +56,14 @@ The remaining gaps are **not foundational**. They are narrower trust or integrat
 
 ### Highest-Leverage Gaps
 
-1. **DPoP nonce support**
-   The clearest remaining gap in the sender-constrained story. This is the best next milestone if the goal is to tighten a surface that is already central to Lockspire's real-integrator trust posture.
-
-2. **DCR logout propagation metadata**
+1. **DCR logout propagation metadata**
    Logout propagation exists, but self-service clients still cannot manage the relevant metadata through DCR. That is practical adoption friction for partner-managed clients.
 
-3. **`client_secret_jwt`**
+2. **`client_secret_jwt`**
    A useful direct-client auth addition, but lower leverage than DPoP nonce because Lockspire already ships `private_key_jwt` and mTLS for higher-trust clients.
+
+3. **Advanced setup support burden**
+   The remaining product risk is no longer foundational protocol coverage; it is support cost around advanced setup edges such as logout propagation, `jwks_uri` rotation, mTLS, and protected-route configuration.
 
 ### Useful But Secondary
 
@@ -77,10 +77,10 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 1
 
 - **name:** `v1.22 DPoP Nonce Support`
-- **status:** `active`
-- **priority:** `highest`
-- **recommendation:** active current milestone
-- **why now:** closes the most obvious remaining trust gap in a surface Lockspire already positions as serious and production-worthy
+- **status:** `shipped`
+- **priority:** `completed`
+- **recommendation:** archived milestone
+- **why now:** closed the most obvious remaining trust gap in a surface Lockspire already positions as serious and production-worthy
 - **target slice:**
   - nonce challenge and validation on the shipped DPoP surfaces that need it
   - truthful docs and discovery/support language
@@ -93,8 +93,8 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 
 - **name:** `v1.23 DCR Logout Metadata`
 - **status:** `candidate`
-- **priority:** `high`
-- **recommendation:** next after DPoP nonce if self-service client ergonomics matter more than auth-method breadth
+- **priority:** `highest`
+- **recommendation:** leading next milestone candidate
 - **why now:** turns an already-shipped operator-only logout propagation surface into a more partner-buildable self-service story
 - **target slice:**
   - accept/store/validate logout propagation metadata in DCR and management updates
@@ -109,7 +109,7 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 - **name:** `v1.24 client_secret_jwt`
 - **status:** `candidate`
 - **priority:** `medium`
-- **recommendation:** only after the first two unless adopter pull clearly says otherwise
+- **recommendation:** after DCR logout metadata unless adopter pull clearly says otherwise
 - **why now:** fills a practical direct-client auth gap, but it is less leverage-heavy than the first two candidates
 - **target slice:**
   - narrow shared verifier on Lockspire-owned direct-client endpoints

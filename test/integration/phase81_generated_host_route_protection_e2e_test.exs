@@ -183,6 +183,9 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
     assert nonce_challenge =~ "error=\"use_dpop_nonce\""
     assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
 
+    assert ["DPoP-Nonce, WWW-Authenticate"] =
+             get_resp_header(challenge_conn, "access-control-expose-headers")
+
     proof = generate_dpop_proof(dpop_keys.private_jwk, token, retry_nonce)
 
     assert {:ok, _validated_proof} =

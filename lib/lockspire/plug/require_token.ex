@@ -10,7 +10,7 @@ defmodule Lockspire.Plug.RequireToken do
   import Plug.Conn
 
   alias Lockspire.AccessToken
-  alias Lockspire.Protocol.DPoP
+  alias Lockspire.Web.ProtectedResourceChallenge
 
   @impl Plug
   def init(opts), do: opts
@@ -46,9 +46,16 @@ defmodule Lockspire.Plug.RequireToken do
   end
 
   defp handle_invalid_token(conn, error) do
+    conn =
+      case error do
+        %{challenge: :dpop} ->
+          ProtectedResourceChallenge.put_dpop_challenge(conn, error, realm: "Lockspire")
+
+        _other ->
+          put_resp_header(conn, "www-authenticate", www_authenticate(error))
+      end
+
     conn
-    |> put_resp_header("www-authenticate", www_authenticate(error))
-    |> maybe_put_dpop_nonce(error)
     |> send_json(401, oauth_body(error))
     |> halt()
   end
@@ -111,12 +118,6 @@ defmodule Lockspire.Plug.RequireToken do
     }
   end
 
-  defp www_authenticate(%{challenge: :dpop, error: error, error_description: description}) do
-    algorithms = Enum.join(DPoP.signing_alg_values_supported(), " ")
-
-    ~s(DPoP realm="Lockspire", error="#{error}", error_description="#{description}", algs="#{algorithms}")
-  end
-
   defp www_authenticate(%{
          error: "insufficient_scope",
          error_description: description,
@@ -135,24 +136,6 @@ defmodule Lockspire.Plug.RequireToken do
       error: error.error,
       error_description: error.error_description
     }
-  end
-
-  defp maybe_put_dpop_nonce(conn, %{dpop_nonce: nonce}) when is_binary(nonce) and nonce != "" do
-    conn
-    |> put_resp_header("dpop-nonce", nonce)
-    |> expose_header("DPoP-Nonce")
-    |> expose_header("WWW-Authenticate")
-  end
-
-  defp maybe_put_dpop_nonce(conn, _error), do: conn
-
-  defp expose_header(conn, header_name) do
-    update_resp_header(conn, "access-control-expose-headers", header_name, fn existing ->
-      [existing, header_name]
-      |> Enum.reject(&(&1 in [nil, ""]))
-      |> Enum.uniq()
-      |> Enum.join(", ")
-    end)
   end
 
   defp send_json(conn, status, body) do

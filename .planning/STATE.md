@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.22
 milestone_name: DPoP Nonce Support
-status: executing
+status: completed
 stopped_at: milestone completed
-last_updated: "2026-05-24T13:23:07.571Z"
-last_activity: 2026-05-24 -- Phase 84 planning complete
+last_updated: "2026-05-24T15:23:01Z"
+last_activity: 2026-05-24 -- Milestone v1.22 successfully completed and archived.
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 5
-  percent: 63
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -22,25 +22,25 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 84 planned — ready to execute the milestone-closing host-plug, docs, and generated-host nonce proof work.
+**Current focus:** Awaiting next milestone.
 
 ## Current Position
 
-Phase: 84 (host-plug-pipeline-docs-and-milestone-closure)
-Plan: 0 of 3
-Status: Ready to execute
-Last activity: 2026-05-24 -- Phase 84 planning complete
+Phase: 84
+Plan: 03
+Status: completed
+Last activity: 2026-05-24 -- Milestone v1.22 successfully completed and archived.
 
 ## Performance Metrics
 
 - Phases completed: 3/3
-- Plans completed: 9/9
+- Plans completed: 8/8
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 79 | 01,02,03 | ~30m | 9 | 9 |
-| 80 | 01,02,03 | ~75m | 6 | 18 |
-| 81 | 01,02,03 | ~39m | 7 | 16 |
+| 82 | 01,02 | ~5m | 4 | 8 |
+| 83 | 01,02,03 | ~1h | 3 | 6 |
+| 84 | 01,02,03 | ~33m | 5 | 10 |
 
 ## Deferred Items
 
@@ -61,7 +61,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Execute Phase 84.
+**Next action:** Start the next milestone with `$gsd-new-milestone` or continue with standalone tasks.
 **Resume file:** None
 **Stopped at:** milestone completed
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

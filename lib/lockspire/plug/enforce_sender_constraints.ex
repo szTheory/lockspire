@@ -77,7 +77,11 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
     end
   end
 
-  defp maybe_validate_dpop(%AccessToken{binding_requirements: %{dpop_jkt: _jkt}} = access_token, conn, opts) do
+  defp maybe_validate_dpop(
+         %AccessToken{binding_requirements: %{dpop_jkt: _jkt}} = access_token,
+         conn,
+         opts
+       ) do
     request = %{
       authorization_scheme: access_token.authorization_scheme,
       access_token: access_token.token,
@@ -88,6 +92,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
         dpop_replay_store: Keyword.get(opts, :dpop_replay_store),
         dpop_max_age: Keyword.get(opts, :dpop_max_age, 300),
         dpop_clock_skew: Keyword.get(opts, :dpop_clock_skew, 30),
+        secret_key_base: conn.secret_key_base,
         now: Keyword.get(opts, :now, &DateTime.utc_now/0)
       ]
     }

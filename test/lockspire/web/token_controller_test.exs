@@ -670,6 +670,53 @@ defmodule Lockspire.Web.TokenControllerTest do
     refute Map.has_key?(body, "refresh_token")
   end
 
+  test "POST /token returns use_dpop_nonce for a DPoP device grant before succeeding with the supplied nonce" do
+    secret = "device-controller-nonce-secret"
+
+    {:ok, client} =
+      register_device_client("controller-device-dpop-nonce", secret, dpop_policy: :dpop)
+
+    {:ok, _authorization} =
+      create_device_authorization(client,
+        device_code: "controller-device-code-dpop-nonce",
+        user_code: "DPOP-CTL",
+        scopes: ["email", "profile", "offline_access"],
+        now: DateTime.add(DateTime.utc_now(), -10, :second),
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-public"
+        }
+      )
+
+    challenge_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-dpop-nonce"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("dpop", dpop_proof_fixture(nonce: nil).jwt)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert challenge_conn.status == 400
+    assert Jason.decode!(challenge_conn.resp_body)["error"] == "use_dpop_nonce"
+    assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
+
+    retry_conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => "controller-device-code-dpop-nonce"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("dpop", dpop_proof_fixture(nonce: retry_nonce).jwt)
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert retry_conn.status == 200
+    assert Jason.decode!(retry_conn.resp_body)["token_type"] == "DPoP"
+  end
+
   test "POST /token returns access_denied for a denied device authorization" do
     secret = "device-denied-secret"
     {:ok, client} = register_device_client("controller-device-denied", secret)
@@ -838,7 +885,7 @@ defmodule Lockspire.Web.TokenControllerTest do
     "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
   end
 
-  defp register_device_client(client_id, secret) do
+  defp register_device_client(client_id, secret, opts \\ []) do
     Repository.register_client(%Client{
       client_id: client_id,
       client_secret_hash: client_secret_hash(secret),
@@ -850,6 +897,7 @@ defmodule Lockspire.Web.TokenControllerTest do
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
       pkce_required: true,
+      dpop_policy: Keyword.get(opts, :dpop_policy, :inherit),
       subject_type: :public,
       created_at: DateTime.utc_now(),
       metadata: %{}

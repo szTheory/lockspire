@@ -39,7 +39,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                  )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
-  @protect_phoenix_api_routes_path Path.expand("../../docs/protect-phoenix-api-routes.md", __DIR__)
+  @protect_phoenix_api_routes_path Path.expand(
+                                     "../../docs/protect-phoenix-api-routes.md",
+                                     __DIR__
+                                   )
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
@@ -452,6 +455,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert protected_routes_guide =~ "Lockspire.Plug.RequireToken"
     assert protected_routes_guide =~ "403"
     assert protected_routes_guide =~ "insufficient_scope"
+    assert protected_routes_guide =~ "error=\"use_dpop_nonce\""
+    assert protected_routes_guide =~ "DPoP-Nonce"
     assert protected_routes_guide =~ "business authorization"
     assert protected_routes_guide =~ "tenant checks"
     assert protected_routes_guide =~ "Lockspire.AccessToken"
@@ -508,7 +513,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "interaction resume"
     assert onboarding =~ "authorization-code + PKCE exchange"
     assert onboarding =~ "docs/protect-phoenix-api-routes.md"
-    assert onboarding =~ "Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions"
+    assert onboarding =~ "canonical optional host-route path"
+
+    assert onboarding =~
+             "Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions"
+
     assert onboarding =~ "phase81_generated_host_route_protection_e2e_test.exs"
     assert onboarding =~ "docs/private-key-jwt-host-guide.md"
     assert onboarding =~ "LockspireVerificationController"
@@ -627,7 +636,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     security = File.read!(@security_policy_path)
 
-    assert project =~ "PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15."
+    assert project =~
+             "PAR-backed authorization consumption on the existing authorization code + PKCE path was validated in Phase 15."
+
     assert project =~
              "Discovery, support docs, and SECURITY wording now describe only the shipped PAR slice, validated in Phase 15."
 
