@@ -92,9 +92,9 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 2
 
 - **name:** `v1.23 DCR Logout Metadata`
-- **status:** `candidate`
+- **status:** `active`
 - **priority:** `highest`
-- **recommendation:** leading next milestone candidate
+- **recommendation:** active milestone
 - **why now:** turns an already-shipped operator-only logout propagation surface into a more partner-buildable self-service story
 - **target slice:**
   - accept/store/validate logout propagation metadata in DCR and management updates

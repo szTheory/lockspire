@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.22
-milestone_name: DPoP Nonce Support
-status: completed
-stopped_at: milestone completed
-last_updated: "2026-05-24T15:23:01Z"
-last_activity: 2026-05-24 -- Milestone v1.22 successfully completed and archived.
+milestone: v1.23
+milestone_name: DCR Logout Metadata
+status: roadmap_ready
+stopped_at: milestone start complete
+last_updated: "2026-05-24T15:36:40Z"
+last_activity: 2026-05-24 -- Milestone v1.23 started; research, requirements, and roadmap are ready.
 progress:
   total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,29 +22,29 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Awaiting next milestone.
+**Current focus:** Milestone v1.23 DCR Logout Metadata.
 
 ## Current Position
 
-Phase: 84
-Plan: 03
-Status: completed
-Last activity: 2026-05-24 -- Milestone v1.22 successfully completed and archived.
+Phase: 85
+Plan: -
+Status: Ready for execution planning
+Last activity: 2026-05-24 -- Milestone v1.23 roadmap created
 
 ## Performance Metrics
 
-- Phases completed: 3/3
-- Plans completed: 8/8
+- Phases completed: 0/3
+- Plans completed: 0/0
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 82 | 01,02 | ~5m | 4 | 8 |
-| 83 | 01,02,03 | ~1h | 3 | 6 |
-| 84 | 01,02,03 | ~33m | 5 | 10 |
+| 85 | - | - | - | - |
+| 86 | - | - | - | - |
+| 87 | - | - | - | - |
 
 ## Deferred Items
 
-None.
+- None.
 
 ## Accumulated Context
 
@@ -61,7 +61,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Start the next milestone with `$gsd-new-milestone` or continue with standalone tasks.
+**Next action:** Finalize requirements and roadmap for milestone v1.23, then start execution with `$gsd-plan-phase 85`.
 **Resume file:** None
-**Stopped at:** milestone completed
+**Stopped at:** milestone start complete
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

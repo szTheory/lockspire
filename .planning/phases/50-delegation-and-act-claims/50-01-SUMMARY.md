@@ -1,5 +1,0 @@
-# 50-01-SUMMARY.md
-- **Task 1:** Added Ecto migration to add `max_delegation_depth` integer columns to `lockspire_server_policies` (default 3, null false) and `lockspire_clients` (null true).
-- **Task 2:** Updated domain schemas (`Lockspire.Domain.ServerPolicy` and `Lockspire.Domain.Client`), as well as Ecto schemas (`Lockspire.Storage.Ecto.ServerPolicyRecord` and `Lockspire.Storage.Ecto.ClientRecord`) and their changeset definitions.
-- **Task 3:** Implemented changeset validations enforcing depth <= 5 and >= 0 for `max_delegation_depth` in Ecto changesets, updated tests in `test/lockspire/admin/server_policy_test.exs` and `test/lockspire/admin/clients_test.exs` to verify constraint checking, and updated `to_domain/1` mapping logic.
-- **Result:** Successfully committed under atomic commits. All validations passed and coverage is complete.

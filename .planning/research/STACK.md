@@ -1,32 +1,37 @@
-# Technology Stack
+# v1.23 Research: Stack
 
-**Project:** Lockspire
-**Researched:** 2026-05-22
+## Scope
 
-## Recommended Stack
+Add DCR and RFC 7592 support for existing logout propagation metadata:
 
-### Core Framework
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| `:public_key` (Erlang) | OTP 25+ | x.509 Parsing | Native OTP capabilities for decoding DER/PEM certificates without external dependencies. |
-| `Plug.Conn` | Elixir/Phoenix | State & Header Extraction | Core primitive for reading `x-forwarded-client-cert` headers or `:ssl` peer data. |
-| `x509` (Hex) | `~> 0.8` | Certificate Validation | If Erlang's native `:public_key` is too low-level for checking SANs, the `x509` package is the Elixir standard for ergonomic certificate handling. |
+- `backchannel_logout_uri`
+- `backchannel_logout_session_required`
+- `frontchannel_logout_uri`
+- `frontchannel_logout_session_required`
 
-### Supporting Libraries
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `apiac_auth_mtls` | `~> 1.0` | Reference / Alternative | Review for reference implementation of extracting certificates from proxy headers versus native Cowboy termination. Lockspire should likely build extraction directly into its own pipeline to avoid generic dependency bloat, but the logic is heavily validated here. |
+## Existing Stack Reuse
 
-## Alternatives Considered
+- Elixir/Phoenix request handling already exists for `POST /register` and `GET|PUT|DELETE /register/:client_id`.
+- Ecto storage already includes the four logout propagation fields on `Lockspire.Domain.Client` and `Lockspire.Storage.Ecto.ClientRecord`.
+- Existing logout propagation runtime already uses Oban plus Req for durable back-channel delivery and iframe rendering for front-channel best-effort cleanup.
+- Existing admin surfaces already separate post-logout redirect URIs from logout propagation settings.
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Cert Parsing | Erlang `:public_key` or `x509` | Hand-rolled binary parsing | Security risk. Use battle-tested OTP/Hex libs for cryptographic primitives. |
-| MTLS Termination | Host Proxy (Nginx/Envoy) | Forced Cowboy Direct | Modern Phoenix apps are almost always behind edge proxies (Fly.io, ALB). Forcing Cowboy direct termination breaks the "embedded library" promise by dictating deployment architecture. |
+## Standards Inputs
 
-## Installation
-No new external dependencies strictly required if using `:public_key`, but `{:x509, "~> 0.8.8"}` is highly recommended for developer ergonomics.
+- RFC 7591 / RFC 7592 remain the registration and management envelope.
+- OpenID Connect Back-Channel Logout 1.0 defines `backchannel_logout_uri` and `backchannel_logout_session_required`.
+- OpenID Connect Front-Channel Logout 1.0 defines `frontchannel_logout_uri` and `frontchannel_logout_session_required`.
 
-## Sources
-- Erlang OTP `:public_key` documentation
-- Hexdocs: `x509` and `apiac_auth_mtls`
+## Recommended Stack Changes
+
+- No new runtime dependency is needed.
+- Extend the existing DCR intake and management validator instead of creating a logout-specific pipeline.
+- Reuse existing URI validation conventions already applied to redirect and logout-related metadata elsewhere in Lockspire.
+- Reuse existing JSON rendering and E2E test lanes for registration read/update responses.
+
+## What Not To Add
+
+- No federation metadata ingestion.
+- No new delivery mechanism beyond the shipped back-channel and front-channel implementations.
+- No new hosted UI or external compatibility lane.
+- No remote proof claims for front-channel success.
