@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.22
 milestone_name: DPoP Nonce Support
-status: in_progress
+status: executing
 stopped_at: milestone completed
-last_updated: "2026-05-24T11:05:30.000Z"
-last_activity: 2026-05-24 -- Phase 83 execution complete; summaries written and phase subset passing.
+last_updated: "2026-05-24T13:23:07.571Z"
+last_activity: 2026-05-24 -- Phase 84 planning complete
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 2
-  percent: 33
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 5
+  percent: 63
 ---
 
 # Project State
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 83 complete — ready for the next milestone step.
+**Current focus:** Phase 84 planned — ready to execute the milestone-closing host-plug, docs, and generated-host nonce proof work.
 
 ## Current Position
 
-Phase: 83 (lockspire-owned-dpop-endpoint-adoption)
-Plan: 3 of 3
-Status: Execution complete
-Last activity: 2026-05-24 -- Phase 83 execution complete; summaries written and phase subset passing.
+Phase: 84 (host-plug-pipeline-docs-and-milestone-closure)
+Plan: 0 of 3
+Status: Ready to execute
+Last activity: 2026-05-24 -- Phase 84 planning complete
 
 ## Performance Metrics
 
@@ -61,7 +61,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Awaiting user to start a new milestone or task.
+**Next action:** Execute Phase 84.
 **Resume file:** None
 **Stopped at:** milestone completed
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
