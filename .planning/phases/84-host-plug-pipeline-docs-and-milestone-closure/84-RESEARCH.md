@@ -392,17 +392,15 @@ conn
 |---|-------|---------|---------------|
 | None | All material claims in this research were verified against the repo, official docs, or the RFC sources used here. [VERIFIED: research trace] | — | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is any Phase 84 implementation already present in unarchived working-tree changes beyond the currently passing proof?**
-   - What we know: focused host-route, `/userinfo`, and release-contract suites are green on 2026-05-24, and the generated-host nonce retry path is already present in `phase81_generated_host_route_protection_e2e_test.exs`. [VERIFIED: local focused test runs] [VERIFIED: test/integration/phase81_generated_host_route_protection_e2e_test.exs]
-   - What's unclear: whether the planner should treat Phase 84 as mostly docs/helper/refinement because earlier execution already landed part of the code. [VERIFIED: local code/test scan]
-   - Recommendation: start planning with a short audit task that compares current tree behavior against the exact Phase 84 acceptance criteria before assigning larger implementation work. [VERIFIED: current repo state]
+   - Resolution: yes. The current tree already contains meaningful Phase 84 behavior, including nonce-aware host-route handling in the canonical generated-host proof and green focused adapter/release-contract suites on 2026-05-24. Phase 84 should therefore be planned as closure and drift-control work, not as a greenfield feature build. [VERIFIED: local focused test runs] [VERIFIED: test/integration/phase81_generated_host_route_protection_e2e_test.exs] [VERIFIED: test/lockspire/plug/enforce_sender_constraints_test.exs] [VERIFIED: test/lockspire/plug/require_token_test.exs] [VERIFIED: test/lockspire/release_readiness_contract_test.exs]
+   - Planning consequence: the first implementation task should audit the current tree against the exact Phase 84 acceptance criteria, then limit code changes to any remaining helper, docs, or proof drift rather than rebuilding the nonce slice. [VERIFIED: current repo state]
 
 2. **Should the shared protected-resource challenge helper use policy-aware DPoP algorithm lists for host routes, or preserve the current profile-agnostic `RequireToken` output?**
-   - What we know: `/userinfo` currently passes the effective profile into `DPoP.signing_alg_values_supported/1`, while `RequireToken` currently calls `signing_alg_values_supported/0`. [VERIFIED: lib/lockspire/web/controllers/userinfo_controller.ex] [VERIFIED: lib/lockspire/plug/require_token.ex] [VERIFIED: lib/lockspire/protocol/dpop.ex]
-   - What's unclear: whether host-route challenges should intentionally mirror `/userinfo` exactly on `algs`, or whether the existing difference is an acceptable presentation-local detail. [VERIFIED: 83-CONTEXT.md notes small presentation-local differences may vary]
-   - Recommendation: decide this explicitly during planning, then lock the chosen behavior with local tests on both adapters. [VERIFIED: test/lockspire/plug/require_token_test.exs] [VERIFIED: test/lockspire/web/userinfo_controller_test.exs]
+   - Resolution: the shared helper should use the same policy-aware algorithm sourcing as `/userinfo` so both protected-resource adapters emit the same DPoP challenge contract, including FAPI-effective `algs` values when the profile is active. This matches locked Decision D-10, which requires shared transport-shape semantics between `/userinfo` and the host plug pipeline. [VERIFIED: .planning/phases/84-host-plug-pipeline-docs-and-milestone-closure/84-CONTEXT.md] [VERIFIED: lib/lockspire/web/controllers/userinfo_controller.ex] [VERIFIED: lib/lockspire/plug/require_token.ex] [VERIFIED: lib/lockspire/protocol/dpop.ex]
+   - Planning consequence: the host-route alignment plan should explicitly pass the effective server policy into the shared helper and lock the resulting `algs` behavior with local tests on both adapters. [VERIFIED: test/lockspire/plug/require_token_test.exs] [VERIFIED: test/lockspire/web/userinfo_controller_test.exs]
 
 ## Environment Availability
 

@@ -19,18 +19,19 @@ created: 2026-05-24
 |----------|-------|
 | **Framework** | ExUnit + Phoenix.ConnTest |
 | **Config file** | `mix.exs` |
-| **Quick run command** | `MIX_ENV=test mix test test/lockspire/plug/enforce_sender_constraints_test.exs test/lockspire/plug/require_token_test.exs` |
+| **Quick run command** | `MIX_ENV=test mix test test/lockspire/plug/require_token_test.exs` |
 | **Full suite command** | `mix ci` |
-| **Estimated runtime** | ~90 seconds |
+| **Estimated runtime** | ~1 second |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `MIX_ENV=test mix test test/lockspire/plug/enforce_sender_constraints_test.exs test/lockspire/plug/require_token_test.exs`
+- **After every task commit:** Run `MIX_ENV=test mix test test/lockspire/plug/require_token_test.exs`
+- **After every sender-constraint or adapter task touching `EnforceSenderConstraints`, `/userinfo`, or protected-resource transport helpers:** Run `MIX_ENV=test mix test test/lockspire/plug/enforce_sender_constraints_test.exs test/lockspire/plug/require_token_test.exs`
 - **After every plan wave:** Run `MIX_ENV=test mix test test/lockspire/web/userinfo_controller_test.exs test/integration/phase81_generated_host_route_protection_e2e_test.exs test/lockspire/release_readiness_contract_test.exs`
 - **Before `$gsd-verify-work`:** `mix ci` must be green
-- **Max feedback latency:** 90 seconds
+- **Max feedback latency:** 1 second for task-level smoke checks; up to 90 seconds for wave-level subsets
 
 ---
 
@@ -67,7 +68,7 @@ created: 2026-05-24
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
+- [ ] Task-level smoke feedback latency < 30s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
