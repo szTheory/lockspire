@@ -65,6 +65,39 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     assert Jason.decode!(conn.resp_body)["client_id"] != nil
   end
 
+  test "create and subsequent show expose persisted logout metadata" do
+    Repository.put_server_policy(
+      Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{registration_policy: :open})
+    )
+
+    create_conn =
+      build_conn(:post, "/register", Lockspire.Test.Fixtures.DcrFixtures.valid_logout_metadata())
+      |> dispatch()
+
+    assert create_conn.status == 201
+
+    create_body = Jason.decode!(create_conn.resp_body)
+    assert client_id = create_body["client_id"]
+    assert rat = create_body["registration_access_token"]
+    assert create_body["backchannel_logout_uri"] == "https://rp.example.test/backchannel-logout"
+    assert create_body["backchannel_logout_session_required"] == true
+    assert create_body["frontchannel_logout_uri"] == "https://app.example.test/frontchannel-logout"
+    assert create_body["frontchannel_logout_session_required"] == true
+
+    show_conn =
+      build_conn(:get, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch()
+
+    assert show_conn.status == 200
+
+    show_body = Jason.decode!(show_conn.resp_body)
+    assert show_body["backchannel_logout_uri"] == "https://rp.example.test/backchannel-logout"
+    assert show_body["backchannel_logout_session_required"] == true
+    assert show_body["frontchannel_logout_uri"] == "https://app.example.test/frontchannel-logout"
+    assert show_body["frontchannel_logout_session_required"] == true
+  end
+
   test "create yields 401 when IAT is invalid" do
     conn =
       build_conn(:post, "/register", %{"client_name" => "Test App"})

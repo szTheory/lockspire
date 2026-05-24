@@ -56,7 +56,25 @@ defmodule Lockspire.Web.RegistrationJSON do
     )
     |> Map.put(:dpop_bound_access_tokens, client.dpop_policy == :dpop)
     |> Map.put(:registration_client_uri, Config.issuer!() <> "/register/" <> client.client_id)
+    |> maybe_put_logout_metadata(client)
   end
+
+  defp maybe_put_logout_metadata(payload, %Client{} = client) do
+    payload
+    |> maybe_put_logout_field(:backchannel_logout_uri, client.backchannel_logout_uri)
+    |> maybe_put_logout_field(
+      :backchannel_logout_session_required,
+      client.backchannel_logout_uri && client.backchannel_logout_session_required
+    )
+    |> maybe_put_logout_field(:frontchannel_logout_uri, client.frontchannel_logout_uri)
+    |> maybe_put_logout_field(
+      :frontchannel_logout_session_required,
+      client.frontchannel_logout_uri && client.frontchannel_logout_session_required
+    )
+  end
+
+  defp maybe_put_logout_field(payload, _field, nil), do: payload
+  defp maybe_put_logout_field(payload, field, value), do: Map.put(payload, field, value)
 
   defp build_error_description(field, reason) do
     cond do

@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
+  alias Lockspire.Web.RegistrationJSON
   import Ecto.Query
 
   setup_all do
@@ -92,6 +93,41 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     test "returns {:error, :invalid_token} when client_id_from_url != client.client_id (enumeration defense)",
          %{client: client} do
       assert {:error, :invalid_token} = RegistrationManagement.read("wrong_id", client)
+    end
+
+    test "returns persisted logout metadata truthfully for stored clients" do
+      {:ok, stored_client} =
+        Repository.register_client(%Client{
+          client_id: "persisted-logout-client",
+          client_type: :confidential,
+          redirect_uris: ["https://app.example.test/callback"],
+          allowed_scopes: ["openid"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          active: true,
+          provenance: :self_registered,
+          backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
+          backchannel_logout_session_required: true,
+          frontchannel_logout_uri: "https://app.example.test/frontchannel-logout",
+          frontchannel_logout_session_required: false
+        })
+
+      assert {:ok, returned_client} =
+               RegistrationManagement.read(stored_client.client_id, stored_client)
+
+      assert returned_client.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert returned_client.backchannel_logout_session_required == true
+      assert returned_client.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+      assert returned_client.frontchannel_logout_session_required == false
+
+      response = RegistrationJSON.read_response(returned_client)
+      assert response.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert response.backchannel_logout_session_required == true
+      assert response.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+      assert response.frontchannel_logout_session_required == false
     end
   end
 
