@@ -240,6 +240,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp apply_metadata_to_client(%Client{} = client, metadata) do
+    logout_metadata = Admin.Clients.normalize_logout_metadata(metadata)
+
     auth_method =
       case Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic") do
         "client_secret_post" -> :client_secret_post
@@ -291,6 +293,11 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         security_profile:
           atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
         dpop_policy: dpop_policy_from_metadata(metadata),
+        backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
+        backchannel_logout_session_required: logout_metadata.backchannel_logout_session_required,
+        frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
+        frontchannel_logout_session_required:
+          logout_metadata.frontchannel_logout_session_required,
         metadata: extension_metadata
     }
   end

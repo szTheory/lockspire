@@ -76,6 +76,16 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
     |> Map.put("frontchannel_logout_session_required", true)
   end
 
+  @spec replacement_logout_metadata() :: map()
+  def replacement_logout_metadata do
+    @valid_metadata
+    |> Map.put("client_name", "Updated logout fixture client")
+    |> Map.put("backchannel_logout_uri", "https://rp.example.test/replaced-backchannel-logout")
+    |> Map.put("backchannel_logout_session_required", false)
+    |> Map.put("frontchannel_logout_uri", "https://app.example.test/replaced-frontchannel-logout")
+    |> Map.put("frontchannel_logout_session_required", false)
+  end
+
   @spec invalid_logout_boolean_metadata() :: map()
   def invalid_logout_boolean_metadata do
     Map.put(@valid_metadata, "backchannel_logout_session_required", "true")

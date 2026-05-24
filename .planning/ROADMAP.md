@@ -26,6 +26,8 @@
 
 #### Phase 86 - RFC 7592 Update Semantics And Proof
 
+- Status: Complete on 2026-05-24
+
 - Scope:
   - support full-replace RFC 7592 updates for the logout propagation fields
   - preserve RAT rotation, provenance, and audit behavior
