@@ -18,10 +18,10 @@ The work starts with one shared nonce primitive and validator path, then adopts 
 ### Phase 83: Lockspire-owned DPoP Endpoint Adoption
 **Goal**: Apply nonce challenge/retry behavior to the Lockspire-owned DPoP token and protected-resource surfaces.
 
-**Plans:** 3 planned
-- [ ] 83-01-PLAN.md — Add authorization-server nonce challenge and retry behavior on `/token`
-- [ ] 83-02-PLAN.md — Add resource-server nonce challenge and retry behavior on `/userinfo`
-- [ ] 83-03-PLAN.md — Keep replay, `ath`, binding, MTLS, and bearer regressions covered while adopting nonce support
+**Plans:** 3/3 plans complete
+- [x] 83-01-PLAN.md — Add authorization-server nonce challenge and retry behavior on `/token`
+- [x] 83-02-PLAN.md — Add resource-server nonce challenge and retry behavior on `/userinfo`
+- [x] 83-03-PLAN.md — Keep replay, `ath`, binding, MTLS, and bearer regressions covered while adopting nonce support
 
 ### Phase 84: Host Plug Pipeline, Docs, and Milestone Closure
 **Goal**: Extend the shipped host Phoenix plug contract and public support story to include nonce-backed DPoP.
