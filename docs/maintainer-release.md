@@ -4,6 +4,7 @@ Lockspire release work should stay boring, reviewable, tied to repo truth, and i
 
 This guide is maintainer-only release operations guidance. It does not define a second public support contract.
 For DCR/logout wording in release notes or release review, defer to the canonical support contract in `docs/supported-surface.md` rather than restating a separate support matrix here. The same rule applies to `client_secret_jwt`: this guide can acknowledge the shipped narrow direct-client slice, but the canonical support contract and the dedicated host guide own the exact support wording.
+The same rule applies to advanced setup claims such as mTLS and protected-route support: release notes and maintainer review can point to `docs/supported-surface.md`, `docs/mtls-host-guide.md`, and `docs/protect-phoenix-api-routes.md`, but should not invent broader trust equivalence, automatic proxy trust, or generic deployment automation language here. Canonical wording enforcement belongs in the proof-focused contract tests and should stay there rather than being redefined in this guide.
 
 ## Normal flow
 
