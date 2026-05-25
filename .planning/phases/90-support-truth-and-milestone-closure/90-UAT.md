@@ -9,7 +9,9 @@ source:
 started: 2026-05-25T06:00:00Z
 updated: 2026-05-25T06:00:00Z
 human_steps_required: 0
-automation_deferred: []
+automation_deferred:
+  - AUTH-FUT-01
+  - SUPPORT-FUT-01
 ---
 
 ## Current Test
@@ -57,6 +59,11 @@ expected: The complete Lockspire test suite passes with the documentation-truth,
 result: pass
 evidence:
   - `mix test`
+
+## Deferred Work
+
+- `AUTH-FUT-01`: broader symmetric JWT client-auth policy controls such as per-client secret rotation UX or wider algorithm-matrix support remain future work and are not part of the shipped Phase 90 support contract.
+- `SUPPORT-FUT-01`: advanced setup diagnostics and operator/doctor guidance for `jwks_uri` rotation, mTLS, protected-route setup, and related support-burden edges remain future work and are not part of the shipped Phase 90 support contract.
 
 ## Summary
 
