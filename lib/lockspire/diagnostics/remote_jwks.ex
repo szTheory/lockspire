@@ -3,6 +3,7 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
   Shared remote-JWKS incident classification for support-facing diagnostics.
   """
 
+  alias Lockspire.Domain.Client
   alias Lockspire.JwksFetcher
 
   @typedoc """
@@ -15,6 +16,47 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
           | :remote_jwks_signature_invalid
 
   @type consumer :: :private_key_jwt | :jarm
+
+  @type summary_status :: :supported | :incident
+
+  @type summary :: %{
+          applicable?: boolean(),
+          status: summary_status() | :not_applicable,
+          client_id: String.t() | nil,
+          mode: :remote_jwks_uri | :not_configured,
+          incident: t() | nil,
+          headline: String.t(),
+          detail: String.t(),
+          next_step: String.t(),
+          ownership: String.t(),
+          command_hint: String.t() | nil
+        }
+
+  @incident_classes ~w(
+    remote_jwks_fetch_failed
+    remote_jwks_invalid
+    remote_jwks_key_unavailable
+    remote_jwks_signature_invalid
+  )a
+  @consumers ~w(private_key_jwt jarm)a
+  @stages ~w(validate_target network parse cache select_key verify_signature)a
+  @subreasons ~w(
+    unsafe_target
+    https_required
+    invalid_uri
+    resolution_failed
+    http_status
+    timeout
+    redirect_disallowed
+    transport_error
+    payload_too_large
+    invalid_format
+    cache_error
+    requested_key_missing
+    post_refresh_key_still_missing
+    signature_invalid
+    post_refresh_signature_invalid
+  )a
 
   @type t :: %__MODULE__{
           class: incident_class(),
@@ -140,6 +182,56 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
     |> Map.new()
   end
 
+  @spec summarize_client(Client.t()) :: summary()
+  def summarize_client(%Client{} = client) do
+    if remote_jwks_client?(client) do
+      incident = incident_from_client_metadata(client)
+
+      %{
+        applicable?: true,
+        status: if(is_nil(incident), do: :supported, else: :incident),
+        client_id: client.client_id,
+        mode: :remote_jwks_uri,
+        incident: incident,
+        headline: summary_headline(incident),
+        detail: summary_detail(incident),
+        next_step: summary_next_step(incident),
+        ownership: ownership_note(),
+        command_hint: doctor_command(client.client_id)
+      }
+    else
+      %{
+        applicable?: false,
+        status: :not_applicable,
+        client_id: client.client_id,
+        mode: :not_configured,
+        incident: nil,
+        headline: "Remote JWKS incident diagnosis is not active for this client.",
+        detail:
+          "This client is not using a remote jwks_uri on the shipped direct-client surface.",
+        next_step:
+          "Use `mix lockspire.verify` for install wiring checks or inspect the inline jwks registration instead.",
+        ownership: ownership_note(),
+        command_hint: nil
+      }
+    end
+  end
+
+  @spec ownership_note() :: String.t()
+  def ownership_note do
+    "Lockspire owns the guarded fetch, cache, refresh, and verify path. The host operator diagnoses incidents here and coordinates with the client integrator, who owns the JWKS endpoint and overlap-based key rollover."
+  end
+
+  @spec install_boundary_note() :: String.t()
+  def install_boundary_note do
+    "`mix lockspire.verify` remains the install and onboarding diagnostic. Use this doctor surface for runtime remote JWKS incidents."
+  end
+
+  @spec doctor_command(String.t()) :: String.t()
+  def doctor_command(client_id) when is_binary(client_id) do
+    "mix lockspire.doctor remote-jwks --client #{client_id}"
+  end
+
   defp fetch_class(%{stage: :parse}), do: :remote_jwks_invalid
   defp fetch_class(_details), do: :remote_jwks_fetch_failed
 
@@ -179,4 +271,200 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
   defp key_unavailable_remediation(_requested_kid_present?) do
     "Confirm overlap-based key rollover and keep both old and new keys published until Lockspire can refresh and verify a fresh JWT."
   end
+
+  defp remote_jwks_client?(%Client{
+         jwks_uri: jwks_uri,
+         token_endpoint_auth_method: :private_key_jwt
+       })
+       when is_binary(jwks_uri) and jwks_uri != "",
+       do: true
+
+  defp remote_jwks_client?(_client), do: false
+
+  defp incident_from_client_metadata(%Client{metadata: metadata} = client)
+       when is_map(metadata) do
+    metadata
+    |> Map.get("remote_jwks_diagnostic", Map.get(metadata, :remote_jwks_diagnostic))
+    |> build_incident_from_map(default_consumer(client))
+  end
+
+  defp incident_from_client_metadata(_client), do: nil
+
+  defp build_incident_from_map(nil, _default_consumer), do: nil
+
+  defp build_incident_from_map(raw, default_consumer) when is_map(raw) do
+    with {:ok, class} <- atom_field(raw, [:class], @incident_classes),
+         {:ok, stage} <- atom_field(raw, [:stage], @stages) do
+      %__MODULE__{
+        class: class,
+        consumer: atom_value(raw, [:consumer], @consumers, default_consumer),
+        stage: stage,
+        subreason: atom_value(raw, [:subreason], @subreasons, nil),
+        fetch_status: integer_field(raw, [:fetch_status]),
+        target_safety_reason: atom_value(raw, [:target_safety_reason], @subreasons, nil),
+        cached_entry_present?: boolean_field(raw, [:cached_entry_present?]),
+        forced_refresh_attempted?: boolean_field(raw, [:forced_refresh_attempted?], false),
+        requested_kid_present_in_cached_set?:
+          boolean_field(raw, [:requested_kid_present_in_cached_set?]),
+        remediation: string_field(raw, [:remediation]) || remediation_for(class, raw)
+      }
+    else
+      :error -> nil
+    end
+  end
+
+  defp build_incident_from_map(_raw, _default_consumer), do: nil
+
+  defp atom_field(raw, keys, allowed, default \\ :error) do
+    case value_for(raw, keys) do
+      nil when default != :error ->
+        default
+
+      value ->
+        case normalize_atom(value, allowed) do
+          {:ok, atom} -> {:ok, atom}
+          :error when default != :error -> default
+          :error -> :error
+        end
+    end
+  end
+
+  defp atom_value(raw, keys, allowed, default) do
+    case atom_field(raw, keys, allowed, default) do
+      {:ok, atom} -> atom
+      atom when is_atom(atom) -> atom
+      _other -> default
+    end
+  end
+
+  defp integer_field(raw, keys) do
+    case value_for(raw, keys) do
+      value when is_integer(value) ->
+        value
+
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {int, ""} -> int
+          _other -> nil
+        end
+
+      _other ->
+        nil
+    end
+  end
+
+  defp boolean_field(raw, keys, default \\ nil) do
+    case value_for(raw, keys) do
+      value when is_boolean(value) -> value
+      "true" -> true
+      "false" -> false
+      nil -> default
+      _other -> default
+    end
+  end
+
+  defp string_field(raw, keys) do
+    case value_for(raw, keys) do
+      value when is_binary(value) and value != "" -> value
+      _other -> nil
+    end
+  end
+
+  defp value_for(raw, [key]) do
+    Map.get(raw, key, Map.get(raw, Atom.to_string(key)))
+  end
+
+  defp normalize_atom(value, allowed) when is_atom(value) do
+    if value in allowed, do: {:ok, value}, else: :error
+  end
+
+  defp normalize_atom(value, allowed) when is_binary(value) do
+    case Enum.find(allowed, &(Atom.to_string(&1) == value)) do
+      nil -> :error
+      atom -> {:ok, atom}
+    end
+  end
+
+  defp normalize_atom(_value, _allowed), do: :error
+
+  defp default_consumer(%Client{token_endpoint_auth_method: :private_key_jwt}),
+    do: :private_key_jwt
+
+  defp default_consumer(_client), do: :jarm
+
+  defp remediation_for(class, raw) do
+    case class do
+      :remote_jwks_fetch_failed ->
+        classify_fetch_error(:private_key_jwt, {:jwks_fetch_failed, infer_fetch_reason(raw)}).remediation
+
+      :remote_jwks_invalid ->
+        classify_fetch_error(:private_key_jwt, {:jwks_fetch_failed, :invalid_format}).remediation
+
+      :remote_jwks_key_unavailable ->
+        key_unavailable(:private_key_jwt,
+          requested_kid_present_in_cached_set?:
+            boolean_field(raw, [:requested_kid_present_in_cached_set?]),
+          forced_refresh_attempted?: boolean_field(raw, [:forced_refresh_attempted?], false)
+        ).remediation
+
+      :remote_jwks_signature_invalid ->
+        signature_invalid(:private_key_jwt,
+          forced_refresh_attempted?: boolean_field(raw, [:forced_refresh_attempted?], false),
+          requested_kid_present_in_cached_set?:
+            boolean_field(raw, [:requested_kid_present_in_cached_set?])
+        ).remediation
+    end
+  end
+
+  defp infer_fetch_reason(raw) do
+    case atom_field(raw, [:stage], @stages) do
+      {:ok, :parse} ->
+        :invalid_format
+
+      {:ok, :validate_target} ->
+        case atom_value(raw, [:target_safety_reason], @subreasons, nil) do
+          nil -> :https_required
+          reason -> {:unsafe_target, reason}
+        end
+
+      {:ok, :network} ->
+        case integer_field(raw, [:fetch_status]) do
+          nil ->
+            case atom_field(raw, [:subreason], @subreasons, :transport_error) do
+              {:ok, reason} -> reason
+              reason when is_atom(reason) -> reason
+            end
+
+          status ->
+            {:http_status, status}
+        end
+
+      {:ok, :cache} ->
+        :cache_error
+
+      _other ->
+        :transport_error
+    end
+  end
+
+  defp summary_headline(nil),
+    do: "Remote JWKS is configured with bounded reactive rollover support."
+
+  defp summary_headline(%__MODULE__{class: class}) do
+    "Remote JWKS incident: #{class}"
+  end
+
+  defp summary_detail(nil) do
+    "Lockspire caches jwks_uri material, forces one refresh on stale or unknown-key mismatch, preserves the last known good cache on refresh failure, and fails the current request closed."
+  end
+
+  defp summary_detail(%__MODULE__{} = incident) do
+    "Stage=#{incident.stage} subreason=#{incident.subreason || "n/a"} forced_refresh=#{incident.forced_refresh_attempted?} cache_preserved=#{incident.preserves_last_known_good_cache?}"
+  end
+
+  defp summary_next_step(nil) do
+    "If rotation is planned, publish the new key before first use, keep the previous key available during rollover, and use one fresh JWT after the remote JWKS endpoint is updated."
+  end
+
+  defp summary_next_step(%__MODULE__{remediation: remediation}), do: remediation
 end
