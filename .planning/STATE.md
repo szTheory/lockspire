@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Support-Burden Reduction
-status: ready_for_phase_planning
+status: executing
 stopped_at: Milestone v1.25 started
-last_updated: "2026-05-25T08:15:00Z"
-last_activity: 2026-05-25
+last_updated: "2026-05-25T16:05:44.405Z"
+last_activity: 2026-05-25 -- Phase 91 execution started
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 9
+  total_plans: 3
   completed_plans: 0
   percent: 0
 ---
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Start phase planning for milestone v1.25 support-burden reduction work
+**Current focus:** Phase 91 — jwks-uri-rotation-diagnostics-and-remediation-truth
 
 ## Current Position
 
-Phase: Not started
-Plan: -
-Status: Ready to plan Phase 91
-Last activity: 2026-05-25 - Milestone v1.25 defined
+Phase: 91 (jwks-uri-rotation-diagnostics-and-remediation-truth) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 91
+Last activity: 2026-05-25 -- Phase 91 execution started
 
 ## Performance Metrics
 

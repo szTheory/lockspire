@@ -55,3 +55,22 @@ architecture.
 **Apply when:** Adoption-hardening, install DX, documentation truth, generated-host seams, and
  other multi-decision phases where internal coherence and least surprise matter more than user
  taste on each individual choice.
+
+## One-Shot Recommendation Bundles
+
+**Diagnoses:** GSD workflows surface too many medium-value options independently, forcing the user
+to assemble the final answer themselves even when the repo, codebase, and ecosystem evidence already
+support one coherent direction.
+
+**Recommends:** For already-shipped surfaces and support-truth work, default to producing a single
+cohesive recommendation bundle that:
+- compares the realistic approaches internally;
+- accounts for repo prompts, prior planning artifacts, and ecosystem precedent;
+- chooses the least-surprise option aligned with Lockspire's embedded-library boundary, operator UX,
+  and developer ergonomics;
+- escalates only when a decision changes product boundary, public support claims, operator
+  responsibility, security posture, API shape, or runtime guarantees.
+
+**Apply when:** Discuss, plan, and review phases touching docs-as-contract, advanced setup truth,
+operator/admin wording, install DX, diagnostics, or other areas where cohesion matters more than
+giving the user a menu of medium-value choices.
