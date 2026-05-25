@@ -77,7 +77,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert {:ok, _policy} =
              ServerPolicy.put_dcr_policy(%{
                registration_policy: :open,
-               dcr_allowed_token_endpoint_auth_methods: ["client_secret_jwt", "client_secret_basic"]
+               dcr_allowed_token_endpoint_auth_methods: [
+                 "client_secret_jwt",
+                 "client_secret_basic"
+               ]
              })
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")

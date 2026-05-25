@@ -24,6 +24,7 @@ defmodule Lockspire.Protocol.DirectClientAuthClientSecretJwtTest do
     Process.put(:direct_client_auth_client, direct_client(secret))
     Process.put(:direct_client_auth_server_policy, %ServerPolicy{security_profile: :none})
     Process.put(:direct_client_auth_used_jtis, MapSet.new())
+
     Process.put(:direct_client_auth_tokens, %{
       TokenFormatter.hash_token("introspect-token") => %Token{
         id: 1,
@@ -133,7 +134,10 @@ defmodule Lockspire.Protocol.DirectClientAuthClientSecretJwtTest do
          now: now
        } do
     invalid_signature_assertion = signed_assertion("wrong-secret", "direct-client", now: now)
-    bad_audience_assertion = signed_assertion(secret, "direct-client", aud: "https://example.test/token", now: now)
+
+    bad_audience_assertion =
+      signed_assertion(secret, "direct-client", aud: "https://example.test/token", now: now)
+
     replay_assertion = signed_assertion(secret, "direct-client", now: now, jti: "replay-jti")
     bad_alg_assertion = signed_assertion(secret, "direct-client", alg: "HS512", now: now)
 
@@ -148,7 +152,8 @@ defmodule Lockspire.Protocol.DirectClientAuthClientSecretJwtTest do
     assert {:error, %{error: "invalid_client", reason_code: :client_assertion_replayed}} =
              run_device_authorization(replay_assertion, now)
 
-    assert {:error, %{error: "invalid_client", reason_code: :client_assertion_algorithm_not_allowed}} =
+    assert {:error,
+            %{error: "invalid_client", reason_code: :client_assertion_algorithm_not_allowed}} =
              run_backchannel(bad_alg_assertion, now)
 
     Process.put(
@@ -265,14 +270,22 @@ defmodule Lockspire.Protocol.DirectClientAuthClientSecretJwtTest do
   defp run_introspection(assertion, now) do
     Introspection.introspect(%{
       params: client_secret_jwt_params(assertion) |> Map.put("token", "introspect-token"),
-      opts: [client_store: __MODULE__.SharedStore, token_store: __MODULE__.TokenStore, now: fn -> now end]
+      opts: [
+        client_store: __MODULE__.SharedStore,
+        token_store: __MODULE__.TokenStore,
+        now: fn -> now end
+      ]
     })
   end
 
   defp run_revocation(assertion, now) do
     Revocation.revoke(%{
       params: client_secret_jwt_params(assertion) |> Map.put("token", "revoke-token"),
-      opts: [client_store: __MODULE__.SharedStore, token_store: __MODULE__.TokenStore, now: fn -> now end]
+      opts: [
+        client_store: __MODULE__.SharedStore,
+        token_store: __MODULE__.TokenStore,
+        now: fn -> now end
+      ]
     })
   end
 

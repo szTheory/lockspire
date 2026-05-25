@@ -19,10 +19,12 @@ defmodule Lockspire.AccessToken do
           client_id: String.t() | nil,
           authorization_scheme: String.t() | nil,
           binding_type: String.t() | nil,
-          binding_requirements: %{
-            optional(:dpop_jkt) => String.t(),
-            optional(:mtls_x5t_s256) => String.t()
-          } | nil,
+          binding_requirements:
+            %{
+              optional(:dpop_jkt) => String.t(),
+              optional(:mtls_x5t_s256) => String.t()
+            }
+            | nil,
           error: term()
         }
 end

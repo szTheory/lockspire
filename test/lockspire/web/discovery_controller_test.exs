@@ -149,7 +149,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
            ]
 
     refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
-    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
+
+    refute Map.has_key?(
+             body,
+             "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+           )
 
     assert body["introspection_endpoint_auth_methods_supported"] == @introspection_methods
 
@@ -265,7 +269,11 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "introspection_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
     refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
-    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
+
+    refute Map.has_key?(
+             body,
+             "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+           )
   end
 
   test "GET /.well-known/openid-configuration drops JARM signing and encryption metadata when the authorization surface is unmounted" do

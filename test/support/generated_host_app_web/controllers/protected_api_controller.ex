@@ -1,4 +1,6 @@
 defmodule GeneratedHostAppWeb.ProtectedApiReplayStore do
+  @moduledoc false
+
   def record_dpop_proof(_replay), do: {:ok, :accepted}
 end
 

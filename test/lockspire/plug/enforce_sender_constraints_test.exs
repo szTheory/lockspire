@@ -165,7 +165,10 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
 
     wrong_ath_conn =
       request_conn()
-      |> put_req_header("dpop", dpop_fixture(%{"ath" => DPoP.access_token_ath("other-token")}).proof)
+      |> put_req_header(
+        "dpop",
+        dpop_fixture(%{"ath" => DPoP.access_token_ath("other-token")}).proof
+      )
       |> assign(:access_token, access_token)
       |> EnforceSenderConstraints.call(
         dpop_replay_store: AcceptingReplayStore,
@@ -226,7 +229,8 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       |> assign(:access_token, access_token)
       |> EnforceSenderConstraints.call([])
 
-    assert %{reason_code: :invalid_client_certificate} = wrong_cert_conn.assigns.access_token.error
+    assert %{reason_code: :invalid_client_certificate} =
+             wrong_cert_conn.assigns.access_token.error
   end
 
   test "dual-bound tokens require both dpop and mtls in the same soft plug" do

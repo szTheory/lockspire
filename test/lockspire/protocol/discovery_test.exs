@@ -142,7 +142,11 @@ defmodule Lockspire.Protocol.DiscoveryTest do
              ]
 
       refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_methods_supported")
-      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
+
+      refute Map.has_key?(
+               config,
+               "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+             )
     end
 
     test "publishes introspection auth metadata from current shared confidential-client runtime behavior" do
@@ -624,10 +628,17 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert aliases["token_endpoint"] == "https://mtls.example.test/lockspire/token"
       assert aliases["revocation_endpoint"] == "https://mtls.example.test/lockspire/revoke"
       assert aliases["introspection_endpoint"] == "https://mtls.example.test/lockspire/introspect"
-      assert aliases["device_authorization_endpoint"] == "https://mtls.example.test/lockspire/device/code"
-      assert aliases["pushed_authorization_request_endpoint"] == "https://mtls.example.test/lockspire/par"
+
+      assert aliases["device_authorization_endpoint"] ==
+               "https://mtls.example.test/lockspire/device/code"
+
+      assert aliases["pushed_authorization_request_endpoint"] ==
+               "https://mtls.example.test/lockspire/par"
+
       assert aliases["userinfo_endpoint"] == "https://mtls.example.test/lockspire/userinfo"
-      assert aliases["backchannel_authentication_endpoint"] == "https://mtls.example.test/lockspire/bc-authorize"
+
+      assert aliases["backchannel_authentication_endpoint"] ==
+               "https://mtls.example.test/lockspire/bc-authorize"
     end
   end
 

@@ -176,7 +176,8 @@ defmodule Lockspire.Security.Policy do
   def verify_client_secret(_client_secret_hash, _client_secret), do: false
 
   @spec seal_client_secret_jwt_verifier(String.t(), keyword()) :: String.t()
-  def seal_client_secret_jwt_verifier(secret, opts \\ []) when is_binary(secret) and is_list(opts) do
+  def seal_client_secret_jwt_verifier(secret, opts \\ [])
+      when is_binary(secret) and is_list(opts) do
     Plug.Crypto.encrypt(secret_key_base!(opts), @client_secret_jwt_salt, secret)
   end
 

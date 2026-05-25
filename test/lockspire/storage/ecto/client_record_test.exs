@@ -180,7 +180,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
       |> ClientRecord.changeset(client)
       |> repo.insert()
 
-    assert repo.get!(ClientRecord, inserted.id).client_secret_jwt_verifier_encrypted == "sealed-initial"
+    assert repo.get!(ClientRecord, inserted.id).client_secret_jwt_verifier_encrypted ==
+             "sealed-initial"
+
     assert repo.get!(ClientRecord, inserted.id).token_endpoint_auth_signing_alg == :HS256
 
     {:ok, updated} =

@@ -589,7 +589,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
   defp private_key_jwt_client?(_client), do: false
 
-  defp client_secret_jwt_client?(%Client{token_endpoint_auth_method: :client_secret_jwt}), do: true
+  defp client_secret_jwt_client?(%Client{token_endpoint_auth_method: :client_secret_jwt}),
+    do: true
+
   defp client_secret_jwt_client?(_client), do: false
 
   defp supported_assertion_algorithms(nil), do: "Not available"
