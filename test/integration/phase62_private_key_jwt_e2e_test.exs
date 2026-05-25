@@ -106,6 +106,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     seed_refresh_token(inline_client, "phase62-inline-refresh", "phase62-inline-family")
     seed_refresh_token(remote_client, "phase62-remote-refresh-1", "phase62-remote-family-1")
     seed_refresh_token(remote_client, "phase62-remote-refresh-2", "phase62-remote-family-2")
+    seed_refresh_token(remote_client, "phase62-remote-refresh-3", "phase62-remote-family-3")
 
     %{
       inline_client: inline_client,
@@ -166,23 +167,25 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     assert remote_rotated_response.status == 200
     assert Process.get(:phase62_jwks_fetch_count) == 2
 
-    attacker_assertion =
-      signed_assertion(
-        JOSE.JWK.generate_key({:rsa, 2048}),
-        inline_client.client_id,
-        jti: "attacker-jti"
-      )
+    Process.put(
+      :phase62_remote_jwks,
+      Map.put(JarTestHelpers.generate_keys().pub_jwk_map, "kid", "remote-bad-kid")
+    )
 
-    failed_response =
+    failed_remote_response =
       issue_refresh_token(
-        inline_client.client_id,
-        attacker_assertion,
-        "phase62-inline-refresh"
+        remote_client.client_id,
+        signed_assertion(remote_new_keys.private_jwk, remote_client.client_id,
+          jti: "remote-fail",
+          kid: "remote-new-kid"
+        ),
+        "phase62-remote-refresh-3"
       )
 
-    assert failed_response.status == 401
+    assert failed_remote_response.status == 401
+    assert Process.get(:phase62_jwks_fetch_count) == 4
 
-    assert Jason.decode!(failed_response.resp_body) == %{
+    assert Jason.decode!(failed_remote_response.resp_body) == %{
              "error" => "invalid_client",
              "error_description" => "Client authentication failed"
            }
