@@ -51,6 +51,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwks do
     Boundary:
       - `mix lockspire.verify` remains the install and onboarding diagnostic
       - `mix lockspire.doctor remote-jwks` is for runtime remote key-distribution incidents
+      - This task does not verify migrations, host seams, or router wiring
     """
   end
 

@@ -50,6 +50,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "Runtime remote-JWKS incident diagnosis"
     assert output =~ "mix lockspire.verify"
     assert output =~ "install and onboarding diagnostic"
+    assert output =~ "does not verify migrations, host seams, or router wiring"
   end
 
   test "prints shared incident class, safe facts, and remediation for a degraded client" do
