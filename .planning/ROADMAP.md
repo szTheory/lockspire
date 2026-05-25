@@ -35,7 +35,7 @@ Phase 91 focuses on the highest-friction advanced setup surface still called out
 
 Plans:
 
-- [ ] 92-01: Reconcile mTLS extraction prerequisites and host/infrastructure responsibilities across docs and maintainer guidance
+- [x] 92-01: Reconcile mTLS extraction prerequisites and host/infrastructure responsibilities across docs and maintainer guidance
 - [ ] 92-02: Tighten the canonical protected-route and logout propagation setup story so support boundaries and runtime guarantees are unambiguous
 - [ ] 92-03: Align operator/admin wording, diagnostics, and support docs around one shared advanced-setup truth contract
 
