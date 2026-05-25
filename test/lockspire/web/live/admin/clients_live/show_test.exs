@@ -256,6 +256,34 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "mix lockspire.doctor remote-jwks --client pkjwt-incident-client"
   end
 
+  test "client detail shows the remote JWKS panel for JARM-only jwks_uri clients", %{client: client} do
+    assert {:ok, jarm_client} =
+             Repository.register_client(%Client{
+               client_id: "jarm-remote-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "JARM Remote Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               authorization_encrypted_response_alg: :RSA_OAEP_256,
+               authorization_encrypted_response_enc: :A256GCM,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: DateTime.utc_now(),
+               jwks_uri: "https://client.example.com/.well-known/jwks.json",
+               metadata: %{}
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{jarm_client.client_id}")
+
+    assert html =~ "Remote JWKS"
+    assert html =~ "bounded reactive rollover support"
+    assert html =~ "mix lockspire.doctor remote-jwks --client jarm-remote-client"
+  end
+
   test "client detail shows read-only client_secret_jwt plus HS256 truth", %{client: client} do
     assert {:ok, jwt_client} =
              Repository.register_client(%Client{

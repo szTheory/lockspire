@@ -182,6 +182,24 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
     |> Map.new()
   end
 
+  @spec snapshot(t()) :: map()
+  def snapshot(%__MODULE__{} = incident) do
+    %{
+      class: incident.class,
+      consumer: incident.consumer,
+      stage: incident.stage,
+      subreason: incident.subreason,
+      fetch_status: incident.fetch_status,
+      target_safety_reason: incident.target_safety_reason,
+      cached_entry_present?: incident.cached_entry_present?,
+      forced_refresh_attempted?: incident.forced_refresh_attempted?,
+      requested_kid_present_in_cached_set?: incident.requested_kid_present_in_cached_set?,
+      remediation: incident.remediation
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
+
   @spec summarize_client(Client.t()) :: summary()
   def summarize_client(%Client{} = client) do
     if remote_jwks_client?(client) do
@@ -272,12 +290,11 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
     "Confirm overlap-based key rollover and keep both old and new keys published until Lockspire can refresh and verify a fresh JWT."
   end
 
-  defp remote_jwks_client?(%Client{
-         jwks_uri: jwks_uri,
-         token_endpoint_auth_method: :private_key_jwt
-       })
-       when is_binary(jwks_uri) and jwks_uri != "",
-       do: true
+  defp remote_jwks_client?(%Client{jwks_uri: jwks_uri} = client)
+       when is_binary(jwks_uri) and jwks_uri != "" do
+    client.token_endpoint_auth_method == :private_key_jwt or
+      not is_nil(client.authorization_encrypted_response_alg)
+  end
 
   defp remote_jwks_client?(_client), do: false
 

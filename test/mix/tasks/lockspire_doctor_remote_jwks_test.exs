@@ -3,7 +3,9 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
 
   import ExUnit.CaptureIO
 
+  alias Lockspire.JarTestHelpers
   alias Lockspire.Domain.Client
+  alias Lockspire.Protocol.ClientAuth.PrivateKeyJwt
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -17,6 +19,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Mix.Task.reenable("lockspire.doctor")
     Mix.Task.reenable("lockspire.doctor.remote_jwks")
 
     {:ok, _client} =
@@ -40,6 +43,11 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     :ok
   end
 
+  defmodule RemoteJwksFetcher do
+    def get_keys(_uri, _opts), do: {:error, {:jwks_fetch_failed, {:http_status, 503}}}
+    def refresh_keys(_uri, _opts), do: {:error, {:jwks_fetch_failed, {:http_status, 503}}}
+  end
+
   test "help text keeps runtime diagnosis separate from install verification" do
     output =
       capture_io(fn ->
@@ -53,34 +61,43 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "does not verify migrations, host seams, or router wiring"
   end
 
+  test "dispatcher task exposes the documented doctor command spelling" do
+    output =
+      capture_io(fn ->
+        Mix.Task.run("lockspire.doctor", ["remote-jwks", "--help"])
+      end)
+
+    assert output =~ "mix lockspire.doctor remote-jwks --client CLIENT_ID"
+  end
+
   test "prints shared incident class, safe facts, and remediation for a degraded client" do
     {:ok, client} = Repository.fetch_client_by_id("doctor-remote-jwks-client")
+    keys = JarTestHelpers.generate_keys()
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    {:ok, _client} =
-      Repository.update_client(client, %{
-        metadata: %{
-          "remote_jwks_diagnostic" => %{
-            "class" => "remote_jwks_key_unavailable",
-            "consumer" => "private_key_jwt",
-            "stage" => "select_key",
-            "subreason" => "post_refresh_key_still_missing",
-            "forced_refresh_attempted?" => true,
-            "requested_kid_present_in_cached_set?" => false
-          }
-        }
-      })
+    assertion =
+      signed_assertion(keys.private_jwk, client.client_id,
+        now: now,
+        jti: "doctor-runtime-failure"
+      )
+
+    assert {:error, :client_jwks_fetch_failed} =
+             PrivateKeyJwt.verify(client, assertion,
+               client_store: Repository,
+               jwks_fetcher: RemoteJwksFetcher
+             )
 
     output =
       capture_io(fn ->
-        Mix.Tasks.Lockspire.Doctor.RemoteJwks.run(["--client", "doctor-remote-jwks-client"])
+        Mix.Task.run("lockspire.doctor", ["remote-jwks", "--client", "doctor-remote-jwks-client"])
       end)
 
     assert output =~ "Client: doctor-remote-jwks-client"
     assert output =~ "Status: incident"
-    assert output =~ "Incident class: remote_jwks_key_unavailable"
-    assert output =~ "Stage: select_key"
-    assert output =~ "Subreason: post_refresh_key_still_missing"
-    assert output =~ "Publish the requested key alongside the previous key"
+    assert output =~ "Incident class: remote_jwks_fetch_failed"
+    assert output =~ "Stage: network"
+    assert output =~ "Subreason: http_status"
+    assert output =~ "HTTP status: 503"
     assert output =~ "Lockspire owns the guarded fetch, cache, refresh, and verify path."
     assert output =~ "mix lockspire.verify"
     refute output =~ "client_secret_hash"
@@ -90,7 +107,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
   test "prints bounded reactive support truth when no incident metadata is present" do
     output =
       capture_io(fn ->
-        Mix.Tasks.Lockspire.Doctor.RemoteJwks.run(["--client", "doctor-remote-jwks-client"])
+        Mix.Task.run("lockspire.doctor", ["remote-jwks", "--client", "doctor-remote-jwks-client"])
       end)
 
     assert output =~ "Status: supported"
@@ -98,5 +115,25 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "forces one refresh"
     assert output =~ "fails the current request closed"
     assert output =~ "If rotation is planned, publish the new key before first use"
+  end
+
+  defp signed_assertion(private_jwk, client_id, opts) do
+    now = Keyword.fetch!(opts, :now)
+
+    claims = %{
+      "iss" => client_id,
+      "sub" => client_id,
+      "aud" => Lockspire.Config.issuer!(),
+      "iat" => DateTime.to_unix(now),
+      "exp" => DateTime.to_unix(DateTime.add(now, 300, :second)),
+      "jti" => Keyword.fetch!(opts, :jti)
+    }
+
+    {_, jwt} =
+      private_jwk
+      |> JOSE.JWT.sign(%{"alg" => "RS256", "typ" => "JWT"}, claims)
+      |> JOSE.JWS.compact()
+
+    jwt
   end
 end

@@ -20,6 +20,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     Process.delete(:recorded_audit_events)
     Process.delete(:force_replay_store_error)
     Process.delete(:client_secret_jwt_secret)
+    Process.delete(:updated_remote_client)
     :ok
   end
 
@@ -91,6 +92,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                )
 
       assert Process.get(:fetched_jwks_uri) == "https://keys.example.test/client.jwks.json"
+      assert Process.get(:updated_remote_client) == nil
     end
 
     test "refreshes remote jwks once on key mismatch and retries verification" do
@@ -123,6 +125,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
       assert Process.get(:fetched_jwks_uri) == "https://keys.example.test/client.jwks.json"
       assert Process.get(:refreshed_jwks_uri) == "https://keys.example.test/client.jwks.json"
+      assert Process.get(:updated_remote_client) == nil
     end
 
     test "rejects algorithms outside the effective issuer allowlist" do
@@ -345,6 +348,10 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                         remote_jwks_forced_refresh_attempted?: true,
                         remote_jwks_requested_kid_present_in_cached_set?: false
                       }}
+
+      assert %{"remote_jwks_diagnostic" => diagnostic} = Process.get(:updated_remote_client)
+      assert diagnostic[:class] == :remote_jwks_key_unavailable
+      assert diagnostic[:consumer] == :private_key_jwt
     end
 
     test "emits shared remote jwks incident metadata for guarded fetch failures" do
@@ -388,6 +395,10 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                         remote_jwks_fetch_status: 503,
                         remote_jwks_forced_refresh_attempted?: false
                       }}
+
+      assert %{"remote_jwks_diagnostic" => diagnostic} = Process.get(:updated_remote_client)
+      assert diagnostic[:class] == :remote_jwks_fetch_failed
+      assert diagnostic[:fetch_status] == 503
     end
 
     test "emits shared remote jwks signature-invalid metadata when the refreshed kid exists" do
@@ -439,6 +450,10 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                         remote_jwks_forced_refresh_attempted?: true,
                         remote_jwks_requested_kid_present_in_cached_set?: true
                       }}
+
+      assert %{"remote_jwks_diagnostic" => diagnostic} = Process.get(:updated_remote_client)
+      assert diagnostic[:class] == :remote_jwks_signature_invalid
+      assert diagnostic[:consumer] == :private_key_jwt
     end
   end
 
@@ -750,6 +765,11 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     end
 
     def fetch_client_by_id(_), do: {:ok, nil}
+
+    def update_client(_client, attrs) do
+      Process.put(:updated_remote_client, attrs.metadata)
+      {:ok, struct(Client, attrs)}
+    end
   end
 
   defmodule RemoteJwksFetcher do

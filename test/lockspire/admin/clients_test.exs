@@ -253,6 +253,35 @@ defmodule Lockspire.Admin.ClientsTest do
              "mix lockspire.doctor remote-jwks --client admin-remote-jwks-summary"
   end
 
+  test "remote_jwks_summary/1 also applies to JARM-only jwks_uri clients" do
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "admin-remote-jwks-jarm",
+        client_secret_hash: "sha256:remote:jarm",
+        client_type: :confidential,
+        name: "Admin Remote JWKS JARM",
+        redirect_uris: ["https://remote.example.com/callback"],
+        allowed_scopes: ["openid"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        authorization_encrypted_response_alg: :RSA_OAEP_256,
+        authorization_encrypted_response_enc: :A256GCM,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        jwks_uri: "https://remote.example.com/.well-known/jwks.json",
+        metadata: %{}
+      })
+
+    summary = Clients.remote_jwks_summary(client)
+
+    assert summary.applicable? == true
+    assert summary.status == :supported
+    assert summary.command_hint =~
+             "mix lockspire.doctor remote-jwks --client admin-remote-jwks-jarm"
+  end
+
   test "remote_jwks_summary/1 reuses the shared incident taxonomy from client metadata" do
     {:ok, client} =
       Repository.register_client(%Client{

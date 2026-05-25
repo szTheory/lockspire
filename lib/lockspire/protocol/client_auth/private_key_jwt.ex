@@ -31,6 +31,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
                ),
              :ok <- validate_claims(verified_assertion, verified_client, opts),
              :ok <- record_replay(verified_assertion, verified_client, opts) do
+          clear_remote_jwks_diagnostic(client, opts)
           :ok
         else
           {:error, reason, remote_jwks_incident} ->
@@ -368,6 +369,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
 
     Observability.emit(:client_auth, action, %{}, metadata)
     append_audit_event(reason, client, metadata, opts)
+    persist_remote_jwks_diagnostic(client, remote_jwks_incident, opts)
   end
 
   defp append_audit_event(reason, %Client{} = client, metadata, opts) do
@@ -426,6 +428,41 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp jwks_source_for_failure(_client, resolved_source), do: resolved_source || :unknown
 
   defp replay_store(opts), do: Keyword.get(opts, :jti_store, Keyword.fetch!(opts, :client_store))
+
+  defp persist_remote_jwks_diagnostic(%Client{} = client, %RemoteJwks{} = incident, opts) do
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store),
+         true <- function_exported?(store, :update_client, 2) do
+      metadata =
+        client.metadata
+        |> ensure_metadata()
+        |> Map.put("remote_jwks_diagnostic", RemoteJwks.snapshot(incident))
+
+      _ = store.update_client(client, %{metadata: metadata})
+      :ok
+    else
+      _other -> :ok
+    end
+  end
+
+  defp persist_remote_jwks_diagnostic(_client, _incident, _opts), do: :ok
+
+  defp clear_remote_jwks_diagnostic(%Client{jwks_uri: jwks_uri} = client, opts)
+       when is_binary(jwks_uri) do
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store),
+         true <- function_exported?(store, :update_client, 2),
+         metadata when is_map(metadata) <- client.metadata,
+         true <- Map.has_key?(metadata, "remote_jwks_diagnostic") do
+      _ = store.update_client(client, %{metadata: Map.delete(metadata, "remote_jwks_diagnostic")})
+      :ok
+    else
+      _other -> :ok
+    end
+  end
+
+  defp clear_remote_jwks_diagnostic(_client, _opts), do: :ok
+
+  defp ensure_metadata(metadata) when is_map(metadata), do: metadata
+  defp ensure_metadata(_metadata), do: %{}
 
   defp server_policy_store(opts),
     do:

@@ -37,13 +37,15 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
     end
   end
 
-  defp do_resolve(%Client{jwks_uri: jwks_uri} = _client, params, opts) when is_binary(jwks_uri) do
+  defp do_resolve(%Client{jwks_uri: jwks_uri} = client, params, opts) when is_binary(jwks_uri) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
+    opts = Keyword.put_new(opts, :client, client)
 
     with {:ok, jwk_set} <- fetcher.get_keys(jwks_uri, jwks_fetcher_opts(opts)),
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set) do
       case select_key(jwks, params) do
         {:ok, jwk} ->
+          clear_remote_jwks_diagnostic(client_from_opts_or_nil(opts), opts)
           {:ok, jwk, :jwks_uri}
 
         {:error, :jarm_encryption_key_unavailable} ->
@@ -53,7 +55,9 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
       {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
         emit_remote_failure(
           :jarm_encryption_key_fetch_failed,
-          RemoteJwks.classify_fetch_error(:jarm, fetch_error)
+          RemoteJwks.classify_fetch_error(:jarm, fetch_error),
+          client,
+          opts
         )
 
         {:error, :jarm_encryption_key_fetch_failed}
@@ -74,6 +78,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
 
         case select_key(jwks, params) do
           {:ok, jwk} ->
+            clear_remote_jwks_diagnostic(client_from_opts_or_nil(opts), opts)
             {:ok, jwk, :jwks_uri}
 
           {:error, :jarm_encryption_key_unavailable} ->
@@ -86,7 +91,9 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
                   :requested_kid_present_in_cached_set?,
                   requested_kid_present?(jwks, params)
                 )
-              )
+              ),
+              client_from_opts_or_nil(opts),
+              opts
             )
 
             {:error, :jarm_encryption_key_unavailable}
@@ -95,7 +102,9 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
       {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
         emit_remote_failure(
           :jarm_encryption_key_fetch_failed,
-          RemoteJwks.classify_fetch_error(:jarm, fetch_error, remote_opts)
+          RemoteJwks.classify_fetch_error(:jarm, fetch_error, remote_opts),
+          client_from_opts_or_nil(opts),
+          opts
         )
 
         {:error, :jarm_encryption_key_fetch_failed}
@@ -179,6 +188,47 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
 
     Observability.emit(:jarm, :failed, %{}, metadata)
   end
+
+  defp emit_remote_failure(reason_code, remote_jwks_incident, %Client{} = client, opts) do
+    emit_remote_failure(reason_code, remote_jwks_incident)
+    persist_remote_jwks_diagnostic(client, remote_jwks_incident, opts)
+  end
+
+  defp client_from_opts_or_nil(opts), do: Keyword.get(opts, :client)
+
+  defp persist_remote_jwks_diagnostic(%Client{} = client, %RemoteJwks{} = incident, opts) do
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Config.repo!()),
+         true <- function_exported?(store, :update_client, 2) do
+      metadata =
+        client.metadata
+        |> ensure_metadata()
+        |> Map.put("remote_jwks_diagnostic", RemoteJwks.snapshot(incident))
+
+      _ = store.update_client(client, %{metadata: metadata})
+      :ok
+    else
+      _other -> :ok
+    end
+  end
+
+  defp persist_remote_jwks_diagnostic(_client, _incident, _opts), do: :ok
+
+  defp clear_remote_jwks_diagnostic(%Client{} = client, opts) do
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Config.repo!()),
+         true <- function_exported?(store, :update_client, 2),
+         metadata when is_map(metadata) <- client.metadata,
+         true <- Map.has_key?(metadata, "remote_jwks_diagnostic") do
+      _ = store.update_client(client, %{metadata: Map.delete(metadata, "remote_jwks_diagnostic")})
+      :ok
+    else
+      _other -> :ok
+    end
+  end
+
+  defp clear_remote_jwks_diagnostic(_client, _opts), do: :ok
+
+  defp ensure_metadata(metadata) when is_map(metadata), do: metadata
+  defp ensure_metadata(_metadata), do: %{}
 
   defp jwks_fetcher_opts(opts) do
     Config.jwks_fetcher_opts()

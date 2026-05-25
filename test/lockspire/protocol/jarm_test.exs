@@ -42,8 +42,16 @@ defmodule Lockspire.Protocol.JarmTest do
     }
 
     Process.put(:mock_signing_key, key)
+    Process.delete(:updated_remote_jarm_client)
 
     %{keys: keys}
+  end
+
+  defmodule RemoteClientStore do
+    def update_client(_client, attrs) do
+      Process.put(:updated_remote_jarm_client, attrs.metadata)
+      {:ok, struct(Client, attrs)}
+    end
   end
 
   test "client key resolver prefers use=enc and matching kid for inline jwks" do
@@ -106,7 +114,8 @@ defmodule Lockspire.Protocol.JarmTest do
              ClientKeyResolver.resolve(
                client,
                %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
-               jwks_fetcher: MockJwksFetcher
+               jwks_fetcher: MockJwksFetcher,
+               client_store: RemoteClientStore
              )
 
     {_kty, resolved_map} = JOSE.JWK.to_public_map(jwk)
@@ -114,6 +123,7 @@ defmodule Lockspire.Protocol.JarmTest do
     assert_received {:jwks_get_keys, "https://client.example.com/jwks.json"}
     assert_received {:jwks_refresh_keys, "https://client.example.com/jwks.json"}
     refute_received {:jwks_refresh_keys, "https://client.example.com/jwks.json"}
+    assert Process.get(:updated_remote_jarm_client) == nil
   end
 
   test "client key resolver returns stable errors for unsupported key shape and algorithm pairs" do
@@ -178,7 +188,8 @@ defmodule Lockspire.Protocol.JarmTest do
              ClientKeyResolver.resolve(
                client,
                %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
-               jwks_fetcher: MockJwksFetcher
+               jwks_fetcher: MockJwksFetcher,
+               client_store: RemoteClientStore
              )
 
     assert_receive {[:lockspire, :jarm, :failed],
@@ -191,6 +202,10 @@ defmodule Lockspire.Protocol.JarmTest do
                       remote_jwks_forced_refresh_attempted?: true,
                       remote_jwks_requested_kid_present_in_cached_set?: false
                     }}
+
+    assert %{"remote_jwks_diagnostic" => diagnostic} = Process.get(:updated_remote_jarm_client)
+    assert diagnostic[:class] == :remote_jwks_key_unavailable
+    assert diagnostic[:consumer] == :jarm
   end
 
   test "client key resolver emits shared remote jwks metadata for fetch failures" do
@@ -220,7 +235,8 @@ defmodule Lockspire.Protocol.JarmTest do
              ClientKeyResolver.resolve(
                client,
                %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
-               jwks_fetcher: MockJwksFetcher
+               jwks_fetcher: MockJwksFetcher,
+               client_store: RemoteClientStore
              )
 
     assert_receive {[:lockspire, :jarm, :failed],
@@ -233,6 +249,10 @@ defmodule Lockspire.Protocol.JarmTest do
                       remote_jwks_fetch_status: 503,
                       remote_jwks_forced_refresh_attempted?: false
                     }}
+
+    assert %{"remote_jwks_diagnostic" => diagnostic} = Process.get(:updated_remote_jarm_client)
+    assert diagnostic[:class] == :remote_jwks_fetch_failed
+    assert diagnostic[:consumer] == :jarm
   end
 
   test "sign/2 successfully signs a map into JWS and injects standard claims", %{keys: keys} do
