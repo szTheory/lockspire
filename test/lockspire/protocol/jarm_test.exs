@@ -22,12 +22,12 @@ defmodule Lockspire.Protocol.JarmTest do
   defmodule MockJwksFetcher do
     def get_keys(uri, _opts) do
       send(self(), {:jwks_get_keys, uri})
-      Process.get({__MODULE__, :get_keys_result}, {:error, :missing})
+      Process.get({__MODULE__, :get_keys_result}, {:error, {:jwks_fetch_failed, :missing}})
     end
 
     def refresh_keys(uri, _opts) do
       send(self(), {:jwks_refresh_keys, uri})
-      Process.get({__MODULE__, :refresh_keys_result}, {:error, :missing})
+      Process.get({__MODULE__, :refresh_keys_result}, {:error, {:jwks_fetch_failed, :missing}})
     end
   end
 
@@ -138,6 +138,101 @@ defmodule Lockspire.Protocol.JarmTest do
                %{alg: "RSA-OAEP-256", enc: "A256GCM"},
                jwks_fetcher: MockJwksFetcher
              )
+  end
+
+  test "client key resolver emits shared remote jwks metadata for post-refresh key unavailability" do
+    cached_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "stale", "use" => "enc"})
+
+    refreshed_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "other", "use" => "enc"})
+
+    Process.put(
+      {MockJwksFetcher, :get_keys_result},
+      {:ok, JOSE.JWK.from_map(%{"keys" => [cached_jwk]})}
+    )
+
+    Process.put(
+      {MockJwksFetcher, :refresh_keys_result},
+      {:ok, JOSE.JWK.from_map(%{"keys" => [refreshed_jwk]})}
+    )
+
+    parent = self()
+    handler_id = "jarm-remote-key-unavailable-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:lockspire, :jarm, :failed],
+      fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+      parent
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    client = %Client{
+      client_id: "client-remote",
+      jwks_uri: "https://client.example.com/jwks.json"
+    }
+
+    assert {:error, :jarm_encryption_key_unavailable} =
+             ClientKeyResolver.resolve(
+               client,
+               %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
+               jwks_fetcher: MockJwksFetcher
+             )
+
+    assert_receive {[:lockspire, :jarm, :failed],
+                    %{
+                      reason_code: :jarm_encryption_key_unavailable,
+                      remote_jwks_incident_class: :remote_jwks_key_unavailable,
+                      remote_jwks_consumer: :jarm,
+                      remote_jwks_stage: :select_key,
+                      remote_jwks_subreason: :post_refresh_key_still_missing,
+                      remote_jwks_forced_refresh_attempted?: true,
+                      remote_jwks_requested_kid_present_in_cached_set?: false
+                    }}
+  end
+
+  test "client key resolver emits shared remote jwks metadata for fetch failures" do
+    Process.put(
+      {MockJwksFetcher, :get_keys_result},
+      {:error, {:jwks_fetch_failed, {:http_status, 503}}}
+    )
+
+    parent = self()
+    handler_id = "jarm-remote-fetch-failure-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:lockspire, :jarm, :failed],
+      fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+      parent
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    client = %Client{
+      client_id: "client-remote",
+      jwks_uri: "https://client.example.com/jwks.json"
+    }
+
+    assert {:error, :jarm_encryption_key_fetch_failed} =
+             ClientKeyResolver.resolve(
+               client,
+               %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
+               jwks_fetcher: MockJwksFetcher
+             )
+
+    assert_receive {[:lockspire, :jarm, :failed],
+                    %{
+                      reason_code: :jarm_encryption_key_fetch_failed,
+                      remote_jwks_incident_class: :remote_jwks_fetch_failed,
+                      remote_jwks_consumer: :jarm,
+                      remote_jwks_stage: :network,
+                      remote_jwks_subreason: :http_status,
+                      remote_jwks_fetch_status: 503,
+                      remote_jwks_forced_refresh_attempted?: false
+                    }}
   end
 
   test "sign/2 successfully signs a map into JWS and injects standard claims", %{keys: keys} do

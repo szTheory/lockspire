@@ -2,7 +2,9 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
   @moduledoc false
 
   alias Lockspire.Config
+  alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Domain.Client
+  alias Lockspire.Observability
 
   @type encryption_params :: %{
           required(:alg) => String.t(),
@@ -48,22 +50,54 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
           refresh_remote_key(fetcher, jwks_uri, params, opts)
       end
     else
-      {:error, _reason} -> {:error, :jarm_encryption_key_fetch_failed}
+      {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
+        emit_remote_failure(
+          :jarm_encryption_key_fetch_failed,
+          RemoteJwks.classify_fetch_error(:jarm, fetch_error)
+        )
+
+        {:error, :jarm_encryption_key_fetch_failed}
     end
   end
 
   defp do_resolve(%Client{}, _params, _opts), do: {:error, :client_jwks_missing}
 
   defp refresh_remote_key(fetcher, jwks_uri, params, opts) do
-    with {:ok, jwk_set} <- fetcher.refresh_keys(jwks_uri, jwks_fetcher_opts(opts)),
-         {_modules, jwks} <- JOSE.JWK.to_map(jwk_set),
-         {:ok, jwk} <- select_key(jwks, params) do
-      {:ok, jwk, :jwks_uri}
-    else
-      {:error, :jarm_encryption_key_unavailable} ->
-        {:error, :jarm_encryption_key_unavailable}
+    remote_opts = [
+      cached_entry_present?: true,
+      forced_refresh_attempted?: true
+    ]
 
-      {:error, _reason} ->
+    case fetcher.refresh_keys(jwks_uri, jwks_fetcher_opts(opts)) do
+      {:ok, jwk_set} ->
+        {_modules, jwks} = JOSE.JWK.to_map(jwk_set)
+
+        case select_key(jwks, params) do
+          {:ok, jwk} ->
+            {:ok, jwk, :jwks_uri}
+
+          {:error, :jarm_encryption_key_unavailable} ->
+            emit_remote_failure(
+              :jarm_encryption_key_unavailable,
+              RemoteJwks.key_unavailable(
+                :jarm,
+                Keyword.put(
+                  remote_opts,
+                  :requested_kid_present_in_cached_set?,
+                  requested_kid_present?(jwks, params)
+                )
+              )
+            )
+
+            {:error, :jarm_encryption_key_unavailable}
+        end
+
+      {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
+        emit_remote_failure(
+          :jarm_encryption_key_fetch_failed,
+          RemoteJwks.classify_fetch_error(:jarm, fetch_error, remote_opts)
+        )
+
         {:error, :jarm_encryption_key_fetch_failed}
     end
   end
@@ -130,6 +164,21 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
 
   defp validate_enc(enc) when enc in @supported_encs, do: :ok
   defp validate_enc(_enc), do: {:error, :unsupported_jarm_encryption_enc}
+
+  defp requested_kid_present?(jwks, %{kid: requested_kid})
+       when is_binary(requested_kid) and requested_kid != "" do
+    Enum.any?(jwk_entries(jwks), &(Map.get(&1, "kid") == requested_kid))
+  end
+
+  defp requested_kid_present?(_jwks, _params), do: nil
+
+  defp emit_remote_failure(reason_code, remote_jwks_incident) do
+    metadata =
+      %{reason_code: reason_code, protocol_surface: :jarm, jwks_source: :jwks_uri}
+      |> Map.merge(Observability.remote_jwks_metadata(remote_jwks_incident))
+
+    Observability.emit(:jarm, :failed, %{}, metadata)
+  end
 
   defp jwks_fetcher_opts(opts) do
     Config.jwks_fetcher_opts()
