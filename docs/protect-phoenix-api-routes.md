@@ -19,7 +19,7 @@ end
 
 `Lockspire.Plug.VerifyToken` authenticates the access token and enforces route-level `scopes:` / `audience:` restrictions.
 
-`Lockspire.Plug.EnforceSenderConstraints` enforces DPoP when the token is sender-constrained. Bearer tokens remain unchanged unless the client chose DPoP mode at issuance time. When a DPoP proof is present but missing a valid resource-server nonce, the shipped plug pipeline returns `401` with `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus a `DPoP-Nonce` response header so the client can retry with a fresh proof. Lockspire verifies the token protocol facts; your host app still owns business authorization, tenant policy, domain lookups, and whether a protected route should exist at all.
+`Lockspire.Plug.EnforceSenderConstraints` is part of the canonical shipped path even when bearer tokens are currently the common case. It is a no-op for unconstrained bearer tokens, and it preserves correctness automatically when the same route later receives DPoP-bound or mTLS-bound access tokens. When a DPoP proof is present but missing a valid resource-server nonce, the shipped plug pipeline returns `401` with `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus a `DPoP-Nonce` response header so the client can retry with a fresh proof. Lockspire verifies the token protocol facts; your host app still owns business authorization, tenant policy, domain lookups, and whether a protected route should exist at all.
 
 `Lockspire.Plug.RequireToken` turns structured verification failures into the correct OAuth-style HTTP response, including `403 insufficient_scope` when the token is valid but under-scoped.
 
@@ -40,17 +40,21 @@ This keeps the route host-owned. Lockspire is not taking over your API controlle
 ```elixir
 pipeline :billing_api do
   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"]
+  plug Lockspire.Plug.EnforceSenderConstraints,
+    dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
   plug Lockspire.Plug.RequireToken
 end
 ```
 
-Use `scopes:` when the route needs one or more granted scopes. `scopes: []` means no scope restriction beyond a valid token.
+Use `scopes:` when the route needs one or more granted scopes. `scopes: []` means no scope restriction beyond a valid token. Keep `Lockspire.Plug.EnforceSenderConstraints` in the pipeline even if the route currently expects bearer tokens only so the route stays correct when sender-constrained tokens arrive later.
 
 ## Audience-restricted route example
 
 ```elixir
 pipeline :billing_audience do
   plug Lockspire.Plug.VerifyToken, audience: "billing-api"
+  plug Lockspire.Plug.EnforceSenderConstraints,
+    dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
   plug Lockspire.Plug.RequireToken
 end
 ```
