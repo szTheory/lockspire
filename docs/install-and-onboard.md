@@ -4,6 +4,8 @@ The canonical onboarding path is Phoenix-first and generator-first. Lockspire st
 
 If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, and key-rotation behavior.
 
+If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
+
 ## 1. Add Lockspire
 
 Add `:lockspire` to your dependencies and fetch deps.
@@ -113,6 +115,7 @@ The canonical proof bar is:
 - A client can complete an authorization-code + PKCE exchange.
 - Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions with the shipped plug pipeline when you choose to expose protected routes in the host app.
 - A confidential client can use the shipped direct-client auth surface the way `docs/private-key-jwt-host-guide.md` describes if you choose that mode.
+- A confidential client can use the shipped direct-client auth surface the way `docs/client-secret-jwt-host-guide.md` describes if you choose the narrow `client_secret_jwt` mode.
 - If you configure RP logout propagation, `/end_session/complete` persists the logout event, enqueues back-channel delivery through Oban, and renders front-channel iframe cleanup as best effort only.
 
 The executable repo proof lives in:
