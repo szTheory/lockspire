@@ -9,8 +9,12 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
   setup do
     Process.delete(:fetched_jwks_uri)
+    Process.delete(:refreshed_jwks_uri)
     Process.delete(:inline_pub_jwk_map)
     Process.delete(:remote_jwks)
+    Process.delete(:refreshed_remote_jwks)
+    Process.delete(:remote_jwks_get_error)
+    Process.delete(:remote_jwks_refresh_error)
     Process.delete(:used_jtis)
     Process.delete(:recorded_jtis)
     Process.delete(:recorded_audit_events)
@@ -290,6 +294,151 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       assert Enum.any?(audits, &(&1.reason_code == "client_assertion_replayed"))
       refute Enum.any?(audits, &Map.has_key?(&1.metadata, "client_assertion"))
       refute Enum.any?(audits, &Map.has_key?(&1.metadata, "jwks_body"))
+    end
+
+    test "emits shared remote jwks incident metadata for refresh miss failures" do
+      stale_keys = JarTestHelpers.generate_keys()
+      missing_keys = JarTestHelpers.generate_keys()
+      fresh_keys = JarTestHelpers.generate_keys()
+      stale_pub = Map.put(stale_keys.pub_jwk_map, "kid", "stale-kid")
+      wrong_pub = Map.put(fresh_keys.pub_jwk_map, "kid", "wrong-kid")
+      Process.put(:remote_jwks, JOSE.JWK.from_map(%{"keys" => [stale_pub]}))
+      Process.put(:refreshed_remote_jwks, JOSE.JWK.from_map(%{"keys" => [wrong_pub]}))
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      parent = self()
+      handler_id = "client-auth-remote-jwks-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:lockspire, :client_auth, :failed],
+        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+        parent
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assertion =
+        signed_assertion(missing_keys.private_jwk, "remote_client",
+          now: now,
+          jti: "remote-miss",
+          kid: "fresh-kid"
+        )
+
+      assert {:error, %Error{reason_code: :client_assertion_signature_invalid}} =
+               ClientAuth.authenticate(
+                 private_key_jwt_params(assertion),
+                 nil,
+                 client_store: __MODULE__.RemoteClientStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 jwks_fetcher: __MODULE__.RemoteJwksFetcher,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 now: now
+               )
+
+      assert_receive {[:lockspire, :client_auth, :failed],
+                      %{
+                        remote_jwks_incident_class: :remote_jwks_key_unavailable,
+                        remote_jwks_consumer: :private_key_jwt,
+                        remote_jwks_stage: :select_key,
+                        remote_jwks_subreason: :post_refresh_key_still_missing,
+                        remote_jwks_forced_refresh_attempted?: true,
+                        remote_jwks_requested_kid_present_in_cached_set?: false
+                      }}
+    end
+
+    test "emits shared remote jwks incident metadata for guarded fetch failures" do
+      Process.put(:remote_jwks_get_error, {:jwks_fetch_failed, {:http_status, 503}})
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      parent = self()
+      handler_id = "client-auth-remote-fetch-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:lockspire, :client_auth, :failed],
+        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+        parent
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assertion =
+        signed_assertion(JOSE.JWK.generate_key({:rsa, 2048}), "remote_client",
+          now: now,
+          jti: "remote-fetch-fail"
+        )
+
+      assert {:error, %Error{reason_code: :client_jwks_fetch_failed}} =
+               ClientAuth.authenticate(
+                 private_key_jwt_params(assertion),
+                 nil,
+                 client_store: __MODULE__.RemoteClientStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 jwks_fetcher: __MODULE__.RemoteJwksFetcher,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 now: now
+               )
+
+      assert_receive {[:lockspire, :client_auth, :failed],
+                      %{
+                        remote_jwks_incident_class: :remote_jwks_fetch_failed,
+                        remote_jwks_consumer: :private_key_jwt,
+                        remote_jwks_stage: :network,
+                        remote_jwks_subreason: :http_status,
+                        remote_jwks_fetch_status: 503,
+                        remote_jwks_forced_refresh_attempted?: false
+                      }}
+    end
+
+    test "emits shared remote jwks signature-invalid metadata when the refreshed kid exists" do
+      stale_keys = JarTestHelpers.generate_keys()
+      missing_keys = JarTestHelpers.generate_keys()
+      wrong_keys = JarTestHelpers.generate_keys()
+      stale_pub = Map.put(stale_keys.pub_jwk_map, "kid", "stale-kid")
+      wrong_pub = Map.put(wrong_keys.pub_jwk_map, "kid", "fresh-kid")
+      Process.put(:remote_jwks, JOSE.JWK.from_map(%{"keys" => [stale_pub]}))
+      Process.put(:refreshed_remote_jwks, JOSE.JWK.from_map(%{"keys" => [wrong_pub]}))
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      parent = self()
+      handler_id = "client-auth-remote-signature-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:lockspire, :client_auth, :failed],
+        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+        parent
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assertion =
+        signed_assertion(missing_keys.private_jwk, "remote_client",
+          now: now,
+          jti: "remote-signature-invalid",
+          kid: "fresh-kid"
+        )
+
+      assert {:error, %Error{reason_code: :client_assertion_signature_invalid}} =
+               ClientAuth.authenticate(
+                 private_key_jwt_params(assertion),
+                 nil,
+                 client_store: __MODULE__.RemoteClientStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 jwks_fetcher: __MODULE__.RemoteJwksFetcher,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 now: now
+               )
+
+      assert_receive {[:lockspire, :client_auth, :failed],
+                      %{
+                        remote_jwks_incident_class: :remote_jwks_signature_invalid,
+                        remote_jwks_consumer: :private_key_jwt,
+                        remote_jwks_stage: :verify_signature,
+                        remote_jwks_subreason: :post_refresh_signature_invalid,
+                        remote_jwks_forced_refresh_attempted?: true,
+                        remote_jwks_requested_kid_present_in_cached_set?: true
+                      }}
     end
   end
 
@@ -606,12 +755,20 @@ defmodule Lockspire.Protocol.ClientAuthTest do
   defmodule RemoteJwksFetcher do
     def get_keys(uri, _opts) do
       Process.put(:fetched_jwks_uri, uri)
-      {:ok, Process.get(:remote_jwks)}
+
+      case Process.get(:remote_jwks_get_error) do
+        nil -> {:ok, Process.get(:remote_jwks)}
+        error -> {:error, error}
+      end
     end
 
     def refresh_keys(uri, _opts) do
       Process.put(:refreshed_jwks_uri, uri)
-      {:ok, Process.get(:refreshed_remote_jwks)}
+
+      case Process.get(:remote_jwks_refresh_error) do
+        nil -> {:ok, Process.get(:refreshed_remote_jwks)}
+        error -> {:error, error}
+      end
     end
   end
 

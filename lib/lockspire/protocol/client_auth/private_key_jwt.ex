@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.UsedJti
   alias Lockspire.Audit.Event
+  alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Observability
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
@@ -32,13 +33,42 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
              :ok <- record_replay(verified_assertion, verified_client, opts) do
           :ok
         else
+          {:error, reason, remote_jwks_incident} ->
+            record_failure(
+              reason,
+              client,
+              jwks_source_for_failure(client, jwks_source),
+              remote_jwks_incident,
+              opts
+            )
+
+            {:error, reason}
+
           {:error, reason} = error ->
-            record_failure(reason, client, jwks_source_for_failure(client, jwks_source), opts)
+            record_failure(
+              reason,
+              client,
+              jwks_source_for_failure(client, jwks_source),
+              nil,
+              opts
+            )
+
             error
         end
 
+      {:error, reason, remote_jwks_incident} ->
+        record_failure(
+          reason,
+          client,
+          jwks_source_for_failure(client, nil),
+          remote_jwks_incident,
+          opts
+        )
+
+        {:error, reason}
+
       {:error, reason} = error ->
-        record_failure(reason, client, jwks_source_for_failure(client, nil), opts)
+        record_failure(reason, client, jwks_source_for_failure(client, nil), nil, opts)
         error
     end
   end
@@ -53,7 +83,9 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set) do
       {:ok, %Client{client | jwks: jwks}, :jwks_uri}
     else
-      {:error, _reason} -> {:error, :client_jwks_fetch_failed}
+      {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
+        {:error, :client_jwks_fetch_failed,
+         RemoteJwks.classify_fetch_error(:private_key_jwt, fetch_error)}
     end
   end
 
@@ -73,11 +105,23 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp verify_signature(assertion, client, allowed_signing_algorithms, jwks_source, opts) do
     case verify_signature_once(assertion, client, allowed_signing_algorithms) do
       {:error, :no_matching_key} when jwks_source == :jwks_uri ->
-        retry_remote_signature_verification(assertion, client, allowed_signing_algorithms, opts)
+        retry_remote_signature_verification(
+          assertion,
+          client,
+          allowed_signing_algorithms,
+          opts,
+          requested_kid_present_in_cached_set?: false
+        )
 
       {:error, :invalid_signature} when jwks_source == :jwks_uri ->
         if stale_remote_kid?(client, assertion) do
-          retry_remote_signature_verification(assertion, client, allowed_signing_algorithms, opts)
+          retry_remote_signature_verification(
+            assertion,
+            client,
+            allowed_signing_algorithms,
+            opts,
+            requested_kid_present_in_cached_set?: false
+          )
         else
           map_signature_result({:error, :invalid_signature})
         end
@@ -101,17 +145,30 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
          assertion,
          %Client{jwks_uri: jwks_uri} = client,
          allowed_signing_algorithms,
-         opts
+         opts,
+         remote_opts
        ) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
+    remote_opts =
+      remote_opts
+      |> Keyword.put_new(:cached_entry_present?, true)
+      |> Keyword.put(:forced_refresh_attempted?, true)
 
     with {:ok, jwk_set} <- fetcher.refresh_keys(jwks_uri, jwks_fetcher_opts(opts)),
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set),
          refreshed_client = %Client{client | jwks: jwks},
+         remote_opts =
+           Keyword.put(
+             remote_opts,
+             :requested_kid_present_in_cached_set?,
+             requested_kid_present?(refreshed_client, assertion)
+           ),
          result <- verify_signature_once(assertion, refreshed_client, allowed_signing_algorithms) do
-      map_signature_result(result)
+      map_remote_signature_result(result, remote_opts)
     else
-      {:error, _reason} -> {:error, :client_jwks_fetch_failed}
+      {:error, {:jwks_fetch_failed, _reason} = fetch_error} ->
+        {:error, :client_jwks_fetch_failed,
+         RemoteJwks.classify_fetch_error(:private_key_jwt, fetch_error, remote_opts)}
     end
   end
 
@@ -126,6 +183,24 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp map_signature_result({:error, :invalid_client_keys}), do: {:error, :client_jwks_invalid}
   defp map_signature_result({:error, :invalid_typ}), do: {:error, :client_assertion_typ_invalid}
   defp map_signature_result({:error, reason}), do: {:error, reason}
+
+  defp map_remote_signature_result({:error, :invalid_signature}, remote_opts) do
+    remote_jwks_incident =
+      if Keyword.get(remote_opts, :requested_kid_present_in_cached_set?) == false do
+        RemoteJwks.key_unavailable(:private_key_jwt, remote_opts)
+      else
+        RemoteJwks.signature_invalid(:private_key_jwt, remote_opts)
+      end
+
+    {:error, :client_assertion_signature_invalid, remote_jwks_incident}
+  end
+
+  defp map_remote_signature_result({:error, :no_matching_key}, remote_opts) do
+    {:error, :client_assertion_signature_invalid,
+     RemoteJwks.key_unavailable(:private_key_jwt, remote_opts)}
+  end
+
+  defp map_remote_signature_result(result, _remote_opts), do: map_signature_result(result)
 
   defp jwks_fetcher_opts(opts) do
     Config.jwks_fetcher_opts()
@@ -142,6 +217,17 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   end
 
   defp stale_remote_kid?(_client, _assertion), do: false
+
+  defp requested_kid_present?(%Client{jwks: jwks}, assertion) when is_map(jwks) do
+    with {:ok, %Jar{header: header}} <- Jar.decode(assertion),
+         kid when is_binary(kid) and kid != "" <- Map.get(header, "kid") do
+      jwks_contains_kid?(jwks, kid)
+    else
+      _ -> nil
+    end
+  end
+
+  defp requested_kid_present?(_client, _assertion), do: nil
 
   defp jwks_contains_kid?(%{"keys" => keys}, kid) when is_list(keys) do
     Enum.any?(keys, &(Map.get(&1, "kid") == kid))
@@ -276,8 +362,8 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp map_claim_validation_reason(:missing_timing_claim), do: :client_assertion_timing_missing
   defp map_claim_validation_reason(_reason), do: :invalid_client_assertion
 
-  defp record_failure(reason, %Client{} = client, jwks_source, opts) do
-    metadata = failure_metadata(client, reason, jwks_source)
+  defp record_failure(reason, %Client{} = client, jwks_source, remote_jwks_incident, opts) do
+    metadata = failure_metadata(client, reason, jwks_source, remote_jwks_incident)
     action = telemetry_action(reason)
 
     Observability.emit(:client_auth, action, %{}, metadata)
@@ -305,13 +391,14 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
     end
   end
 
-  defp failure_metadata(%Client{} = client, reason, jwks_source) do
+  defp failure_metadata(%Client{} = client, reason, jwks_source, remote_jwks_incident) do
     %{
       client_id: client.client_id,
       auth_method: :private_key_jwt,
       jwks_source: jwks_source,
       reason_code: reason
     }
+    |> Map.merge(Observability.remote_jwks_metadata(remote_jwks_incident))
   end
 
   defp telemetry_action(:client_assertion_replayed), do: :replay_detected
