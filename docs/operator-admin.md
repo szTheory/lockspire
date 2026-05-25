@@ -27,7 +27,7 @@ Keep those concerns separate. Redirect URIs are browser destinations; logout pro
 
 Lockspire's shipped truth model is:
 
-- Back-channel logout is the reliable path. `/end_session/complete` persists delivery intent, then Oban runs Req-based POST delivery out of band.
+- Back-channel logout is the durable path. After the host app clears its own browser session and returns to `/end_session/complete`, Lockspire persists delivery intent, then Oban runs Req-based POST delivery out of band.
 - Front-channel logout is best effort only. Lockspire renders invisible iframes and a bounded continue page, but it does not claim remote success.
 - Dynamic Client Registration now manages the same existing logout propagation metadata for eligible self-service clients. Operators still have an explicit admin workflow for review, correction, and support-driven updates.
 

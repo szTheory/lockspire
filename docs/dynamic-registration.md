@@ -136,6 +136,8 @@ Lockspire's DCR surface can create, read, and update the four existing logout pr
 
 These settings control logout propagation to the relying party. They are separate from post-logout redirect URIs, which are browser destinations after RP-initiated logout.
 
+These metadata fields manage the existing shipped logout runtime; they do not create a second logout system. After the host app clears its own browser session and returns to `/end_session/complete`, Lockspire persists propagation intent, enqueues back-channel delivery, and renders front-channel cleanup as best effort browser choreography only.
+
 Back-channel logout is the durable server-to-server path. Front-channel logout is best effort only and should be treated as browser choreography rather than proof of remote success.
 
 **Create with logout propagation metadata:**
