@@ -291,6 +291,17 @@ defmodule Lockspire.JwksFetcherTest do
     assert Agent.get(request_count, & &1) == 2
   end
 
+  test "exposes safe fetch diagnostics details for classification" do
+    assert %{stage: :validate_target, subreason: :unsafe_target, target_safety_reason: :loopback} =
+             JwksFetcher.error_details({:jwks_fetch_failed, {:unsafe_target, :loopback}})
+
+    assert %{stage: :network, subreason: :http_status, fetch_status: 404} =
+             JwksFetcher.error_details({:jwks_fetch_failed, {:http_status, 404}})
+
+    assert %{stage: :parse, subreason: :invalid_format} =
+             JwksFetcher.error_details({:jwks_fetch_failed, :invalid_format})
+  end
+
   defp jwk_kids(%JOSE.JWK{} = jwk_set) do
     {_, keys} = jwk_set.keys
 

@@ -3,6 +3,7 @@ defmodule Lockspire.Observability do
   Shared audit and telemetry emission helpers.
   """
 
+  alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Redaction
 
   @type entity :: atom()
@@ -82,4 +83,8 @@ defmodule Lockspire.Observability do
   def redact(metadata) when is_map(metadata) do
     Redaction.for_telemetry(metadata)
   end
+
+  @spec remote_jwks_metadata(RemoteJwks.t() | nil) :: metadata()
+  def remote_jwks_metadata(%RemoteJwks{} = incident), do: RemoteJwks.metadata(incident)
+  def remote_jwks_metadata(_incident), do: %{}
 end

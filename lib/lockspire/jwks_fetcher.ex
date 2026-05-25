@@ -15,6 +15,12 @@ defmodule Lockspire.JwksFetcher do
   @type result ::
           {:ok, JOSE.JWK.t()}
           | {:error, {:jwks_fetch_failed, atom() | {atom(), atom() | integer()}}}
+  @type error_details :: %{
+          required(:stage) => :validate_target | :network | :parse | :cache,
+          optional(:subreason) => atom(),
+          optional(:fetch_status) => integer(),
+          optional(:target_safety_reason) => atom()
+        }
 
   @doc """
   Retrieves a parsed `JOSE.JWK` (which contains the JWKSet) from the given URI.
@@ -50,6 +56,47 @@ defmodule Lockspire.JwksFetcher do
   """
   @spec cache_ttl() :: pos_integer()
   def cache_ttl, do: @default_ttl
+
+  @doc """
+  Returns safe diagnostic details for a fetch failure.
+  """
+  @spec error_details({:jwks_fetch_failed, term()}) :: error_details()
+  def error_details({:jwks_fetch_failed, {:unsafe_target, reason}}) do
+    %{stage: :validate_target, subreason: :unsafe_target, target_safety_reason: reason}
+  end
+
+  def error_details({:jwks_fetch_failed, :https_required}),
+    do: %{stage: :validate_target, subreason: :https_required}
+
+  def error_details({:jwks_fetch_failed, :invalid_uri}),
+    do: %{stage: :validate_target, subreason: :invalid_uri}
+
+  def error_details({:jwks_fetch_failed, :resolution_failed}),
+    do: %{stage: :validate_target, subreason: :resolution_failed}
+
+  def error_details({:jwks_fetch_failed, {:http_status, status}}),
+    do: %{stage: :network, subreason: :http_status, fetch_status: status}
+
+  def error_details({:jwks_fetch_failed, :timeout}),
+    do: %{stage: :network, subreason: :timeout}
+
+  def error_details({:jwks_fetch_failed, :redirect_disallowed}),
+    do: %{stage: :network, subreason: :redirect_disallowed}
+
+  def error_details({:jwks_fetch_failed, :transport_error}),
+    do: %{stage: :network, subreason: :transport_error}
+
+  def error_details({:jwks_fetch_failed, :payload_too_large}),
+    do: %{stage: :parse, subreason: :payload_too_large}
+
+  def error_details({:jwks_fetch_failed, :invalid_format}),
+    do: %{stage: :parse, subreason: :invalid_format}
+
+  def error_details({:jwks_fetch_failed, :cache_error}),
+    do: %{stage: :cache, subreason: :cache_error}
+
+  def error_details({:jwks_fetch_failed, reason}),
+    do: %{stage: :network, subreason: reason}
 
   @doc """
   Forces a bounded cache refresh for the given JWKS URI.
