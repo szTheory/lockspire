@@ -24,6 +24,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - Userinfo
 - Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice, including create/read/update management of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
+- Confidential-client `client_secret_jwt` authentication on the same Lockspire-owned direct-client endpoints that reuse the shared verifier, limited to `HS256`, issuer-string `aud`, required `jti`, replay protection, and fail-closed `invalid_client` behavior with no silent fallback to `client_secret_basic` or `client_secret_post`
 - Revocation
 - Introspection
 - JWT-secured authorization response mode (JARM) as an optional authorization-response representation when clients explicitly choose `jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt`
@@ -42,6 +43,19 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
 - RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
+
+### `client_secret_jwt` Direct-Client Slice
+
+Lockspire ships one narrow symmetric JWT client-authentication slice. It is a direct-client convenience method for confidential clients only on the Lockspire-owned endpoints that already reuse the shared verifier.
+
+- `HS256` only
+- `iss` and `sub` must equal the `client_id`
+- `aud` must be the issuer identifier string, not an endpoint URL
+- bounded lifetime claims with replay-protected `jti`
+- no silent fallback to `client_secret_basic` or `client_secret_post`
+- no support on `POST /par`
+
+This slice does not claim broader JWT client-auth support, stronger-trust equivalence with mTLS, or FAPI support. FAPI-sensitive deployments should treat `client_secret_jwt` as outside the shipped FAPI posture.
 
 ### JWT Introspection Representation
 
@@ -101,8 +115,9 @@ Lockspire does not currently support:
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
 - Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
 - broader resource-server integration beyond Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix plug pipeline
-- `client_secret_jwt`
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
+- `client_secret_jwt` on `POST /par`
+- `HS384` or `HS512` for `client_secret_jwt`
 - Lockspire-owned device verification browser UI or hosted approval pages
 - Lockspire-owned semantic RAR consent rendering, renderer registries, or payment-product UI
 - Dynamic Client Registration does not add a new logout runtime; it only manages the existing logout propagation metadata already shipped on the current back-channel and front-channel surfaces
@@ -122,6 +137,7 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `docs/protect-phoenix-api-routes.md` for the shipped host Phoenix API route protection guide
 - `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
 - `docs/private-key-jwt-host-guide.md` for the shipped `jwks_uri` + `private_key_jwt` client-auth slice
+- `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only `client_secret_jwt` direct-client slice
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `test/integration/phase81_generated_host_route_protection_e2e_test.exs` for generated-host Phoenix API route protection proof
 - `test/integration/install_generator_test.exs` for generator-backed install proof
@@ -147,6 +163,7 @@ A 1.0 GA claim honestly says:
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
+- the shipped `client_secret_jwt` slice is equally narrow: confidential clients, `HS256` only, issuer-string `aud`, replay-protected `jti`, Lockspire-owned direct-client endpoints only, and no `POST /par` or FAPI equivalence claim
 - the shipped protected-resource proof surface is narrow: Lockspire-owned endpoints plus host Phoenix API routes protected by the documented plug pipeline, not generic gateway or third-party issuer middleware
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only
 - contributor and release workflows are versioned in the repo
