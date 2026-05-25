@@ -2,7 +2,7 @@
 
 The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full 1.0 GA support contract, see `docs/supported-surface.md`.
 
-If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, and key-rotation behavior.
+If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, bounded reactive rollover truth, and runtime remote-key diagnosis path.
 
 If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
 
@@ -105,6 +105,8 @@ This is the canonical post-install diagnostics step. It checks:
 - the host router still exposes the host-owned `/verify` routes
 - the host router still forwards the embedded Lockspire routes at your mount path
 - Lockspire and Oban migrations are applied
+
+`mix lockspire.verify` does not diagnose runtime remote-`jwks_uri` incidents. For those, use `mix lockspire.doctor remote-jwks --client <client_id>` and the matching admin Remote JWKS summary described in `docs/private-key-jwt-host-guide.md`.
 
 ## 6. Create a client and prove the flow
 

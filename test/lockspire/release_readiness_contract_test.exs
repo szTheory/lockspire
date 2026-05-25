@@ -534,6 +534,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "phase81_generated_host_route_protection_e2e_test.exs"
     assert onboarding =~ "docs/private-key-jwt-host-guide.md"
     assert onboarding =~ "docs/client-secret-jwt-host-guide.md"
+    assert onboarding =~ "bounded reactive rollover truth"
+    assert onboarding =~ "mix lockspire.doctor remote-jwks --client <client_id>"
+    assert onboarding =~ "does not diagnose runtime remote-`jwks_uri` incidents"
     assert onboarding =~ "LockspireVerificationController"
     assert onboarding =~ "lockspire_verification_html"
     assert onboarding =~ "docs/device-flow-host-guide.md"
@@ -577,6 +580,26 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Lockspire does not provide built-in rate limiting"
     assert guide =~ "Hammer-style"
     assert guide =~ "PlugAttack-style"
+  end
+
+  test "private_key_jwt host guide teaches bounded reactive rollover diagnosis and fallback posture" do
+    guide = File.read!(Path.expand("../../docs/private-key-jwt-host-guide.md", __DIR__))
+
+    assert guide =~ "bounded reactive remote-`jwks_uri` rollover"
+    assert guide =~ "no background polling, no prefetch"
+    assert guide =~ "publish the new key before first use"
+    assert guide =~ "keep the previous key available during the overlap window"
+    assert guide =~ "mix lockspire.doctor remote-jwks --client <client_id>"
+    assert guide =~ "admin client detail screen"
+    assert guide =~ "remote_jwks_fetch_failed"
+    assert guide =~ "remote_jwks_invalid"
+    assert guide =~ "remote_jwks_key_unavailable"
+    assert guide =~ "remote_jwks_signature_invalid"
+    assert guide =~ "`mix lockspire.verify` is not the right tool"
+    assert guide =~ "Inline `jwks` is a deliberate fallback, not the default fix"
+    assert guide =~ "Lockspire owns:"
+    assert guide =~ "The host team owns:"
+    assert guide =~ "The client integrator owns:"
   end
 
   test "phase 31 onboarding and supported surface point to the verification seam truthfully" do

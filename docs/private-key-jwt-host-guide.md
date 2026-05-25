@@ -41,6 +41,17 @@ Inline `jwks` keeps the client's public verification keys inside the client reco
 
 This is a narrow key-retrieval path for client authentication only. It is not a generic outbound metadata-ingestion feature.
 
+## Bounded reactive rollover support
+
+Lockspire supports bounded reactive remote-`jwks_uri` rollover on the shipped remote-key surfaces. That means:
+
+- successful remote JWKS material is cached for bounded reuse
+- verification can force one refresh when the cached set looks stale or the requested key is unknown
+- refresh failure preserves the last known good cached entry
+- the current authentication attempt still fails closed
+
+Lockspire does not claim proactive rotation readiness. There is no background polling, no prefetch, and no broader remote metadata management subsystem behind this slice.
+
 ## Assertion requirements
 
 Client assertions must be signed. Lockspire does not allow `alg=none`.
@@ -72,6 +83,59 @@ When a client rotates keys:
 4. If refresh fails, Lockspire preserves the last known good cache entry and still fails the current authentication attempt closed.
 
 This gives clients a realistic rotation path without turning the embedded library into a broad remote-key management system.
+
+For zero-surprise rollover, publish the new key before first use and keep the previous key available during the overlap window until Lockspire has had a chance to refresh and verify against the new set.
+
+## Diagnose remote `jwks_uri` incidents
+
+Use Lockspire's runtime support surfaces when a `jwks_uri` client starts failing:
+
+- `mix lockspire.doctor remote-jwks --client <client_id>` gives the canonical runtime diagnosis for one client
+- the admin client detail screen renders the same shared Remote JWKS summary
+
+These surfaces normalize incidents into four stable classes:
+
+- `remote_jwks_fetch_failed`
+- `remote_jwks_invalid`
+- `remote_jwks_key_unavailable`
+- `remote_jwks_signature_invalid`
+
+`mix lockspire.verify` is not the right tool for this problem. It checks install and host-wiring prerequisites, not runtime remote-key incidents.
+
+## Remediation sequence
+
+When a remote-`jwks_uri` client fails, follow this sequence:
+
+1. Classify the incident with `mix lockspire.doctor remote-jwks --client <client_id>` or the admin Remote JWKS summary.
+2. Check remote reachability and target safety first when the incident is `remote_jwks_fetch_failed`.
+3. Check the remote JWKS document shape and key metadata when the incident is `remote_jwks_invalid`.
+4. Confirm overlap-based rollover when the incident is `remote_jwks_key_unavailable`: publish the new key before first use and keep the previous key present during the transition.
+5. Confirm the client is signing with the intended private key and algorithm when the incident is `remote_jwks_signature_invalid`.
+6. After correcting the remote state, allow cache and forced-refresh convergence, then retry with one fresh assertion.
+7. Move to inline `jwks` only when the client cannot operate a reliable overlap-based `jwks_uri` path or when deterministic cutover is a hard requirement.
+
+Inline `jwks` is a deliberate fallback, not the default fix for every remote-key incident.
+
+## Ownership split
+
+Lockspire owns:
+
+- the guarded fetch, cache, refresh, and verification path
+- generic fail-closed OAuth wire behavior
+- truthful runtime diagnostics and remediation hints on the shipped support surfaces
+
+The host team owns:
+
+- reading the diagnostics
+- confirming network reachability, DNS, TLS, or deployment issues on the Lockspire side
+- coordinating incident response and retry timing
+
+The client integrator owns:
+
+- serving a valid JWKS document over stable HTTPS
+- publishing distinct `kid` values
+- overlap-based rollover choreography
+- keeping old and new keys available during the transition window
 
 ## Direct-client endpoints that consume the shared verifier
 
