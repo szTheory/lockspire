@@ -8,7 +8,7 @@ The public support contract for the current release lives in [`docs/supported-su
 
 ## Current release posture
 
-Lockspire `1.0.0` is the GA release of the embedded Phoenix library wedge documented in [`docs/supported-surface.md`](docs/supported-surface.md). That file is the authoritative support contract and proof boundary for the current release.
+Lockspire `1.1.0` is the current GA release of the embedded Phoenix library wedge documented in [`docs/supported-surface.md`](docs/supported-surface.md). That file is the authoritative support contract and proof boundary for the current release.
 
 ## Orientation
 

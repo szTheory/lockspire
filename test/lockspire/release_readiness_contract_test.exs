@@ -253,8 +253,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert manifest =~ ~r/"\.\":\s*"\d+\.\d+\.\d+"/
     assert mix_version() == manifest_version()
     assert manifest_version() == newest_changelog_version()
-    assert mix_version() == "1.0.0"
-    assert changelog =~ "lockspire-v1.0.0"
+    assert mix_version() == "1.1.0"
+    assert changelog =~ "lockspire-v1.1.0"
     assert changelog =~ "one `lockspire` package"
     assert mixfile =~ "\"Changelog\" => \"https://hexdocs.pm/lockspire/changelog.html\""
     assert mixfile =~ "\"Docs\" => \"https://hexdocs.pm/lockspire\""
@@ -290,10 +290,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     guide = File.read!(@maintainer_guide_path)
 
-    assert mix_version() == "1.0.0"
-    assert manifest_version() == "1.0.0"
-    assert newest_changelog_version() == "1.0.0"
-    assert changelog_versions() == ["1.0.0", "0.2.0", "0.1.2", "0.1.1"]
+    assert mix_version() == "1.1.0"
+    assert manifest_version() == "1.1.0"
+    assert newest_changelog_version() == "1.1.0"
+    assert changelog_versions() == ["1.1.0", "1.0.0", "0.2.0", "0.1.2", "0.1.1"]
 
     assert supported_surface =~ "canonical public support contract"
 
@@ -303,7 +303,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert guide =~ "## Release candidate checklist"
     assert guide =~ "checked-in release-candidate contract end to end"
-    assert guide =~ "target is `lockspire-v1.0.0`"
+    assert guide =~ "target is `lockspire-v1.1.0`"
     assert guide =~ "checked-in proof stops there"
     assert guide =~ "creating a second support matrix"
     assert guide =~ "does not define a second public support contract"
@@ -405,7 +405,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "What Lockspire is not"
     assert readme =~ "For exact scope, non-claims, and repo-owned proof"
 
-    assert supported_surface =~ "Lockspire `1.0.0` is a GA release"
+    assert supported_surface =~ "Lockspire `1.1.0` is a GA release"
 
     assert supported_surface =~
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"

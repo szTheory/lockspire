@@ -1,6 +1,6 @@
 # Supported Surface
 
-Lockspire `1.0.0` is a GA release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
+Lockspire `1.1.0` is a GA release of an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It is meant for Phoenix teams that want to become an OAuth/OIDC provider inside an existing app while keeping accounts, login UX, layouts, branding, and product policy in the host application.
 
 This page is the canonical public support contract for what Lockspire currently supports, what it does not support, and what repo-owned proof backs those claims.
 
@@ -8,7 +8,7 @@ README, `SECURITY.md`, and maintainer-only release guidance point back to this f
 
 ## Supported in scope
 
-Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surface:
+Lockspire `1.1.0` GA currently supports this repo-proven embedded Phoenix surface:
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology

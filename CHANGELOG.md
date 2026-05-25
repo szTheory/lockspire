@@ -4,6 +4,20 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.1.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.0.0...lockspire-v1.1.0) (2026-05-25)
+
+### Added
+
+- DPoP sender-constraining coverage across Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix protected-route plug pipeline, including automatic `DPoP-Nonce` challenge and retry support on those shipped DPoP surfaces.
+- Mutual TLS client authentication and sender-constrained token support, including certificate extraction, `tls_client_auth` and `self_signed_tls_client_auth`, certificate-bound access tokens, and truthful `mtls_endpoint_aliases` discovery metadata.
+- First-class Phoenix protected-route verification with `Lockspire.Plug.VerifyToken`, optional `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level scope and audience restrictions for Lockspire-issued access tokens.
+- Dynamic client registration and registration-management support for the existing logout propagation metadata fields, plus a narrow `client_secret_jwt` direct-client authentication slice on Lockspire-owned endpoints with `HS256`, issuer-string `aud`, required `jti`, and replay protection.
+
+### Changed
+
+- The checked-in `1.1.0` release-candidate contract keeps `mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`, and the expected root tag `lockspire-v1.1.0` on one embedded-library release story before authenticated publish proof begins.
+- Hex-facing package metadata, support docs, and release configuration now describe the repo-proven embedded Phoenix surface shipped through milestone `v1.24` without including the current `v1.25` support-burden work.
+
 ## [1.0.0](https://github.com/szTheory/lockspire/compare/lockspire-v0.2.0...lockspire-v1.0.0) (2026-05-07)
 
 

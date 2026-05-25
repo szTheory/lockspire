@@ -62,7 +62,7 @@ Before merging a Release Please PR for the root package, confirm this checked-in
 1. Run `mix ci` on the candidate revision.
 2. Review `mix.exs`, `.release-please-manifest.json`, and `CHANGELOG.md` together so version, package metadata, and release notes describe one embedded-library release story.
 3. Review `release-please-config.json` and confirm the root package still uses `component: "lockspire"`, `include-v-in-tag: true`, and `include-component-in-tag: true`.
-4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package. For the current checked-in `1.0.0` candidate, that target is `lockspire-v1.0.0`.
+4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package. For the current checked-in `1.1.0` candidate, that target is `lockspire-v1.1.0`.
 5. Review `.github/workflows/release.yml` and confirm the only checked-in Release Please entry point is `uses: ./.github/actions/release-please`.
 6. Confirm `.github/actions/release-please/action.yml` still preserves root outputs such as `tag_name` and `release_created`, because those outputs define which merged release commit is allowed to approach the protected publish lane.
 7. Confirm `workflow_dispatch` remains recovery-only, requires both `recovery_reason` and `recovery_ref`, and is documented as replaying an exact immutable SHA or existing tag rather than creating a new publish intent.
