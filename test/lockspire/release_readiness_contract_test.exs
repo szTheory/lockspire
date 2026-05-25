@@ -385,7 +385,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "mix hex.publish --yes"
 
     assert oidf_conformance_workflow =~ "workflow_dispatch:"
-    assert oidf_conformance_workflow =~ "schedule:"
+    refute oidf_conformance_workflow =~ "schedule:"
     assert oidf_conformance_workflow =~ "MIX_ENV=test mix conformance.phase37"
     assert oidf_conformance_workflow =~ "LOCKSPIRE_PHASE37_MODE: hosted"
     refute oidf_conformance_workflow =~ "pull_request:"
@@ -751,7 +751,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute maintainer_conformance =~ "the OIDF suite as the release gate"
 
     assert workflow =~ "workflow_dispatch:"
-    assert workflow =~ "schedule:"
+    refute workflow =~ "schedule:"
     assert workflow =~ "MIX_ENV=test mix conformance.phase37"
     assert workflow =~ "bash scripts/conformance/run_phase37_suite.sh"
 
