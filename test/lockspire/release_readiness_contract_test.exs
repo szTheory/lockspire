@@ -1,6 +1,8 @@
 defmodule Lockspire.ReleaseReadinessContractTest do
   use ExUnit.Case, async: true
 
+  import Lockspire.TestSupport.ClientSecretJwtSupportTruth
+
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
   @release_workflow_path Path.expand("../../.github/workflows/release.yml", __DIR__)
   @release_please_action_path Path.expand(
@@ -39,6 +41,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                  )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
+  @client_secret_jwt_host_guide_path Path.expand(
+                                       "../../docs/client-secret-jwt-host-guide.md",
+                                       __DIR__
+                                     )
   @protect_phoenix_api_routes_path Path.expand(
                                      "../../docs/protect-phoenix-api-routes.md",
                                      __DIR__
@@ -467,6 +473,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   test "security and release posture stay inside the supported GA surface" do
     security = File.read!(@security_policy_path)
     onboarding = File.read!(@install_and_onboard_path)
+    client_secret_jwt_guide = File.read!(@client_secret_jwt_host_guide_path)
     guide = File.read!(@maintainer_guide_path)
     ci_workflow = File.read!(@ci_workflow_path)
     _release_workflow = File.read!(@release_workflow_path)
@@ -520,6 +527,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert onboarding =~ "phase81_generated_host_route_protection_e2e_test.exs"
     assert onboarding =~ "docs/private-key-jwt-host-guide.md"
+    assert onboarding =~ "docs/client-secret-jwt-host-guide.md"
     assert onboarding =~ "LockspireVerificationController"
     assert onboarding =~ "lockspire_verification_html"
     assert onboarding =~ "docs/device-flow-host-guide.md"
@@ -533,6 +541,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "host login"
     assert onboarding =~ "compile-time dependency on Sigra"
     refute onboarding =~ "production-ready"
+
+    assert_canonical_support_contract!(File.read!(@supported_surface_path))
+    assert_host_guide!(client_secret_jwt_guide)
+    assert_release_guide_defers!(guide)
 
     assert ci_workflow =~ "run: mix docs.verify"
   end
