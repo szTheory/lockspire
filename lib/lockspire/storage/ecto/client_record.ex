@@ -12,6 +12,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
   schema "lockspire_clients" do
     field(:client_id, :string)
     field(:client_secret_hash, :string)
+    field(:client_secret_jwt_verifier_encrypted, :string)
     field(:client_type, Ecto.Enum, values: [:public, :confidential])
     field(:name, :string)
     field(:redirect_uris, {:array, :string}, default: [])
@@ -27,7 +28,19 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(
       :token_endpoint_auth_method,
       Ecto.Enum,
-      values: [:client_secret_basic, :client_secret_post, :private_key_jwt, :none]
+      values: [
+        :client_secret_basic,
+        :client_secret_post,
+        :client_secret_jwt,
+        :private_key_jwt,
+        :tls_client_auth,
+        :self_signed_tls_client_auth,
+        :none
+      ]
+    )
+
+    field(:token_endpoint_auth_signing_alg, Ecto.Enum,
+      values: [:HS256, :RS256, :ES256, :PS256, :EdDSA]
     )
 
     field(:pkce_required, :boolean, default: true)
@@ -46,6 +59,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
     field(:authorization_encrypted_response_alg, Ecto.Enum, values: [:RSA_OAEP_256, :ECDH_ES])
     field(:authorization_encrypted_response_enc, Ecto.Enum, values: [:A256GCM, :A128GCM])
+    field(:tls_client_auth_subject_dn, :string)
+    field(:tls_client_auth_san_dns, :string)
+    field(:tls_client_auth_san_uri, :string)
+    field(:tls_client_auth_san_ip, :string)
+    field(:tls_client_auth_san_email, :string)
     field(:jwks, :map)
     field(:jwks_uri, :string)
     field(:logo_uri, :string)
@@ -88,6 +106,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> cast(Map.from_struct(client), [
       :client_id,
       :client_secret_hash,
+      :client_secret_jwt_verifier_encrypted,
       :client_type,
       :name,
       :redirect_uris,
@@ -100,6 +119,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_grant_types,
       :allowed_response_types,
       :token_endpoint_auth_method,
+      :token_endpoint_auth_signing_alg,
       :pkce_required,
       :par_policy,
       :dpop_policy,
@@ -110,6 +130,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :authorization_signed_response_alg,
       :authorization_encrypted_response_alg,
       :authorization_encrypted_response_enc,
+      :tls_client_auth_subject_dn,
+      :tls_client_auth_san_dns,
+      :tls_client_auth_san_uri,
+      :tls_client_auth_san_ip,
+      :tls_client_auth_san_email,
       :jwks,
       :jwks_uri,
       :logo_uri,
@@ -200,6 +225,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :disabled_at,
       :disabled_by,
       :client_secret_hash,
+      :client_secret_jwt_verifier_encrypted,
       :last_secret_rotated_at,
       :backchannel_user_code_parameter,
       :backchannel_token_delivery_mode,
@@ -239,6 +265,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       id: record.id,
       client_id: record.client_id,
       client_secret_hash: record.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: record.client_secret_jwt_verifier_encrypted,
       client_type: record.client_type,
       name: record.name,
       redirect_uris: record.redirect_uris,
@@ -251,6 +278,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       allowed_grant_types: record.allowed_grant_types,
       allowed_response_types: record.allowed_response_types,
       token_endpoint_auth_method: record.token_endpoint_auth_method,
+      token_endpoint_auth_signing_alg: record.token_endpoint_auth_signing_alg,
       pkce_required: record.pkce_required,
       par_policy: record.par_policy,
       dpop_policy: record.dpop_policy,
@@ -261,6 +289,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       authorization_signed_response_alg: record.authorization_signed_response_alg,
       authorization_encrypted_response_alg: record.authorization_encrypted_response_alg,
       authorization_encrypted_response_enc: record.authorization_encrypted_response_enc,
+      tls_client_auth_subject_dn: record.tls_client_auth_subject_dn,
+      tls_client_auth_san_dns: record.tls_client_auth_san_dns,
+      tls_client_auth_san_uri: record.tls_client_auth_san_uri,
+      tls_client_auth_san_ip: record.tls_client_auth_san_ip,
+      tls_client_auth_san_email: record.tls_client_auth_san_email,
       jwks: record.jwks,
       jwks_uri: record.jwks_uri,
       logo_uri: record.logo_uri,

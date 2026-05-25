@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.DPoP do
   """
 
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Protocol.DPoPNonce
 
   defstruct [:claims, :header, :public_jwk, :jkt]
 
@@ -35,6 +36,8 @@ defmodule Lockspire.Protocol.DPoP do
           | :future_iat
           | :missing_jti
           | :unsupported_signing_algorithm
+          | :missing_dpop_nonce
+          | :invalid_dpop_nonce
 
   @required_typ "dpop+jwt"
 
@@ -122,7 +125,8 @@ defmodule Lockspire.Protocol.DPoP do
          :ok <- check_htm(claims, method),
          :ok <- check_htu(claims, target_uri),
          :ok <- check_iat(claims, now, max_age, clock_skew),
-         :ok <- check_jti(claims) do
+         :ok <- check_jti(claims),
+         :ok <- check_nonce(claims, opts) do
       :ok
     end
   end
@@ -246,6 +250,24 @@ defmodule Lockspire.Protocol.DPoP do
 
   defp check_jti(%{"jti" => jti}) when is_binary(jti) and jti != "", do: :ok
   defp check_jti(_claims), do: {:error, :missing_jti}
+
+  defp check_nonce(claims, opts) when is_map(claims) and is_list(opts) do
+    case Keyword.get(opts, :nonce_purpose) do
+      purpose when purpose in [:authorization_server, :resource_server] ->
+        DPoPNonce.validate(
+          claims,
+          purpose,
+          nonce_max_age: Keyword.get(opts, :nonce_max_age, Keyword.get(opts, :max_age, 300)),
+          secret_key_base: Keyword.get(opts, :secret_key_base)
+        )
+
+      nil ->
+        :ok
+
+      _other ->
+        {:error, :invalid_claims_options}
+    end
+  end
 
   defp canonical_htu(uri) do
     %URI{scheme: scheme, host: host} = parsed = URI.parse(uri)

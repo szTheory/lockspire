@@ -135,14 +135,82 @@ defmodule Lockspire.Protocol.Registration do
           :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
-    with :ok <- validate_unsupported_logout_metadata(metadata),
-         :ok <- validate_jwks(metadata),
+    with :ok <- validate_jwks(metadata),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
+         :ok <- validate_logout_metadata(metadata),
+         :ok <- validate_token_endpoint_auth_metadata(metadata, server_policy),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
     end
+  end
+
+  defp validate_token_endpoint_auth_metadata(metadata, server_policy) do
+    auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
+    signing_alg = Map.get(metadata, "token_endpoint_auth_signing_alg")
+
+    resolved_profile =
+      SecurityProfile.resolve_effective_profile(server_policy, %{
+        security_profile:
+          atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
+      })
+
+    case auth_method do
+      "client_secret_jwt" ->
+        validate_client_secret_jwt_metadata(signing_alg, resolved_profile)
+
+      "private_key_jwt" ->
+        validate_private_key_jwt_metadata(signing_alg, resolved_profile)
+
+      _other ->
+        validate_non_jwt_signing_alg(signing_alg)
+    end
+  end
+
+  defp validate_client_secret_jwt_metadata(_signing_alg, %{fapi_2_0_security?: true}) do
+    invalid_client_metadata(:token_endpoint_auth_method, :incompatible_with_fapi_2_0)
+  end
+
+  defp validate_client_secret_jwt_metadata(nil, _resolved_profile) do
+    invalid_client_metadata(:token_endpoint_auth_signing_alg, :required)
+  end
+
+  defp validate_client_secret_jwt_metadata("HS256", _resolved_profile), do: :ok
+
+  defp validate_client_secret_jwt_metadata(_signing_alg, _resolved_profile) do
+    invalid_client_metadata(:token_endpoint_auth_signing_alg, :unsupported)
+  end
+
+  defp validate_private_key_jwt_metadata(nil, _resolved_profile), do: :ok
+
+  defp validate_private_key_jwt_metadata(signing_alg, resolved_profile) do
+    allowed_algs =
+      SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile)
+
+    if signing_alg in allowed_algs do
+      :ok
+    else
+      invalid_client_metadata(:token_endpoint_auth_signing_alg, :unsupported)
+    end
+  end
+
+  defp validate_non_jwt_signing_alg(nil), do: :ok
+
+  defp validate_non_jwt_signing_alg(_signing_alg) do
+    invalid_client_metadata(
+      :token_endpoint_auth_signing_alg,
+      :unsupported_token_endpoint_auth_method
+    )
+  end
+
+  defp invalid_client_metadata(field, reason) do
+    {:error,
+     %Error{
+       code: :invalid_client_metadata,
+       field: field,
+       reason: reason
+     }}
   end
 
   defp validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
@@ -222,42 +290,15 @@ defmodule Lockspire.Protocol.Registration do
 
   defp validate_strict_authorization_signing_alg(_metadata, _effective_profile), do: :ok
 
-  defp validate_unsupported_logout_metadata(metadata) do
-    cond do
-      Map.has_key?(metadata, "backchannel_logout_uri") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :backchannel_logout_uri,
-           reason: :unsupported_in_slice
-         }}
+  defp validate_logout_metadata(metadata) do
+    redirect_uris = Map.get(metadata, "redirect_uris", [])
 
-      Map.has_key?(metadata, "backchannel_logout_session_required") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :backchannel_logout_session_required,
-           reason: :unsupported_in_slice
-         }}
-
-      Map.has_key?(metadata, "frontchannel_logout_uri") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :frontchannel_logout_uri,
-           reason: :unsupported_in_slice
-         }}
-
-      Map.has_key?(metadata, "frontchannel_logout_session_required") ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :frontchannel_logout_session_required,
-           reason: :unsupported_in_slice
-         }}
-
-      true ->
+    case Admin.Clients.validate_logout_metadata(metadata, redirect_uris, strict_booleans: true) do
+      :ok ->
         :ok
+
+      {:error, [%{field: field, reason: reason} | _rest]} ->
+        {:error, %Error{code: :invalid_client_metadata, field: field, reason: reason}}
     end
   end
 
@@ -421,14 +462,15 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp generate_credentials do
-    {client_secret_hash, client_secret} = Clients.rotate_secret_hash()
+    secret_material = Clients.rotate_secret_material()
     {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
     client_id = Clients.generate_client_id()
 
     %{
       client_id: client_id,
-      client_secret: client_secret,
-      client_secret_hash: client_secret_hash,
+      client_secret: secret_material.client_secret,
+      client_secret_hash: secret_material.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
       rat: rat_plaintext,
       rat_hash: rat_hash
     }
@@ -436,6 +478,7 @@ defmodule Lockspire.Protocol.Registration do
 
   defp persist_client(metadata, %Resolved{} = resolved, iat_record, credentials, source) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    logout_metadata = Admin.Clients.normalize_logout_metadata(metadata)
 
     iat_id =
       case iat_record do
@@ -451,6 +494,7 @@ defmodule Lockspire.Protocol.Registration do
     client = %Client{
       client_id: credentials.client_id,
       client_secret_hash: credentials.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: credentials.client_secret_jwt_verifier_encrypted,
       client_type: client_type,
       name: Map.get(metadata, "client_name"),
       redirect_uris: Map.get(metadata, "redirect_uris", []),
@@ -458,6 +502,10 @@ defmodule Lockspire.Protocol.Registration do
       allowed_grant_types: Map.get(metadata, "grant_types", ["authorization_code"]),
       allowed_response_types: Map.get(metadata, "response_types", ["code"]),
       token_endpoint_auth_method: auth_method,
+      token_endpoint_auth_signing_alg:
+        atomize_token_endpoint_auth_signing_alg(
+          Map.get(metadata, "token_endpoint_auth_signing_alg")
+        ),
       pkce_required: true,
       subject_type: :public,
       logo_uri: Map.get(metadata, "logo_uri"),
@@ -466,6 +514,10 @@ defmodule Lockspire.Protocol.Registration do
       contacts: Map.get(metadata, "contacts", []),
       jwks: Map.get(metadata, "jwks"),
       jwks_uri: Map.get(metadata, "jwks_uri"),
+      backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
+      backchannel_logout_session_required: logout_metadata.backchannel_logout_session_required,
+      frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
+      frontchannel_logout_session_required: logout_metadata.frontchannel_logout_session_required,
       active: true,
       dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,
@@ -521,6 +573,9 @@ defmodule Lockspire.Protocol.Registration do
   defp atomize_alg("EdDSA"), do: :EdDSA
   defp atomize_alg(_), do: nil
 
+  defp atomize_token_endpoint_auth_signing_alg("HS256"), do: :HS256
+  defp atomize_token_endpoint_auth_signing_alg(value), do: atomize_alg(value)
+
   defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
   defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES
   defp atomize_authorization_encryption_alg(_), do: nil
@@ -552,6 +607,7 @@ defmodule Lockspire.Protocol.Registration do
 
   defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
+  defp atomize_auth_method("client_secret_jwt"), do: :client_secret_jwt
   defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt
   defp atomize_auth_method("none"), do: :none
   defp atomize_auth_method(_), do: :client_secret_basic

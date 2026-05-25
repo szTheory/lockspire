@@ -1,70 +1,68 @@
-# Roadmap: v1.19 FAPI 2.0 Message Signing
+# Lockspire Roadmap
 
-## Overview
+## Active Milestone
 
-This milestone implements JARM (JWT Secured Authorization Response Mode) and JWT Token Introspection Responses (RFC 9701) to support the FAPI 2.0 Message Signing Profile. By returning authorization and introspection responses as signed JSON Web Tokens (JWTs), it delivers advanced non-repudiation and integrity protection using existing application-level cryptography (`Protocol.Jar`) without requiring the infrastructural friction of mTLS.
+### v1.25 Support-Burden Reduction
 
-## Phases
+**Status:** Active
+**Phases:** 91-93
+**Total Plans:** 9
 
-- [x] **Phase 71: JARM Core** - Implement JWT Secured Authorization Response Mode signing and composite modes
-- [x] **Phase 72: JARM Encryption & Metadata** - Add JWE support for authorization responses and update Discovery metadata
-- [x] **Phase 73: JWT Introspection Responses** - Support RFC 9701 signed token introspection based on Accept headers
-- [x] **Phase 74: FAPI 2.0 Message Signing Strict Mode** - Enforce Message Signing strictness via operator profile controls
+### Overview
 
-## Phase Details
+This milestone narrows Lockspire's remaining product risk from missing protocol breadth to support burden on advanced setup edges. The work stays inside already-shipped surfaces and focuses on truthful diagnostics, clearer operator/host guidance, and proof that the support story matches runtime behavior.
 
-### Phase 71: JARM Core
-**Goal**: Wrap authorization responses (`code`, `state`, `iss`) in signed JWTs based on client requested modes and metadata
+### Phase 91: `jwks_uri` Rotation Diagnostics And Remediation Truth
+
+**Goal**: Make Lockspire's remote-JWKS rotation story diagnosable and supportable without source-diving.
 **Depends on**: None
-**Requirements**: JARM-01, JARM-02
-**Success Criteria** (what must be TRUE):
-  1. Requests using `response_mode=jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt` return signed JWTs rather than raw query/fragment parameters.
-  2. The JWT is signed using the private key matching the client's `authorization_signed_response_alg` preference.
-  3. The `iss` parameter is properly injected into the signed JWS to prevent mix-up attacks.
-**Plans**: `71-01`, `71-02`
-
-### Phase 72: JARM Encryption & Metadata
-**Goal**: Encrypt JARM responses for clients requesting confidentiality and expose AS capabilities in metadata
-**Depends on**: Phase 71
-**Requirements**: JARM-03
-**Success Criteria** (what must be TRUE):
-  1. Authorization responses are nested (signed then encrypted) if the client specifies encryption metadata.
-  2. The encryption leverages the client's public key via guarded remote JWKS resolution without degrading the redirect.
-  3. Discovery metadata (`/.well-known/openid-configuration`) lists supported signing and encryption algorithms for responses.
-**Plans**: `72-01`, `72-02`, `72-03`
-
-### Phase 73: JWT Introspection Responses
-**Goal**: Support non-repudiable API gateway validation by wrapping introspection responses in signed JWTs
-**Depends on**: Phase 71
-**Requirements**: INT-01
-**Success Criteria** (what must be TRUE):
-  1. A successful `POST /introspect` request with `Accept: application/token-introspection+jwt` returns a signed JWT.
-  2. The response content type is strictly `application/token-introspection+jwt`.
-  3. Error responses for introspection gracefully fall back to standard JSON format.
-**Plans**: `73-01`, `73-02`, `73-03`
-
-### Phase 74: FAPI 2.0 Message Signing Strict Mode
-**Goal**: Allow operators to mandate Message Signing mechanisms globally or per-client for high-security environments
-**Depends on**: Phase 71, Phase 73
-**Requirements**: ENF-01
-**Success Criteria** (what must be TRUE):
-  1. Host developers can activate FAPI 2.0 Message Signing compliance enforcement for clients or globally.
-  2. The authorization endpoint rejects requests without JARM when strict mode is active.
-  3. Operator LiveView telemetry visually indicates when a client is operating under strict Message Signing constraints.
-**Plans**: 5 plans
+**Plans**: 3 plans
 
 Plans:
-- [x] `74-01-PLAN.md` - Add the `:fapi_2_0_message_signing` profile tier to domain, storage, and resolver seams
-- [x] `74-02-PLAN.md` - Add canonical readiness and shared normalization across admin, DCR, and RFC 7592 profile-setting paths
-- [x] `74-03-PLAN.md` - Enforce explicit JARM at `AuthorizationRequest` under strict mode for direct and PAR-backed authorization requests
-- [x] `74-04-PLAN.md` - Require RFC 9701 JWT negotiation for strict-profile introspection callers while preserving the Phase 73 baseline elsewhere
-- [x] `74-05-PLAN.md` - Expose operator-facing visual strictness/readiness indication, prove strict mixed-mode behavior end to end, and pin the public support contract
 
-## Progress
+- [ ] 91-01: Audit the shipped remote-`jwks_uri` runtime and identify the concrete failure and rollover states that need first-class diagnostic truth
+- [ ] 91-02: Add or tighten operator/doctor/runtime diagnostics so adopters can distinguish unsupported rotation posture from transient or data-shape failures
+- [ ] 91-03: Prove the supported rotation and failure-path story through repo-native tests and verification artifacts
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 71. JARM Core | 2/2 | Complete | 2026-05-07 |
-| 72. JARM Encryption & Metadata | 3/3 | Complete | 2026-05-08 |
-| 73. JWT Introspection Responses | 3/3 | Complete | 2026-05-08 |
-| 74. FAPI 2.0 Message Signing Strict Mode | 5/5 | Complete | 2026-05-08 |
+**Details:**
+Phase 91 focuses on the highest-friction advanced setup surface still called out by the arc: remote `jwks_uri` key rotation. The phase should produce one explicit product truth for what Lockspire supports, how it signals stale or broken remote key state, and what operators are expected to do next.
+
+### Phase 92: Advanced Setup Support Truth
+
+**Goal**: Make the canonical mTLS, logout propagation, and protected-route setup story explicit and internally consistent across docs and operator truth surfaces.
+**Depends on**: Phase 91
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 92-01: Reconcile mTLS extraction prerequisites and host/infrastructure responsibilities across docs and maintainer guidance
+- [ ] 92-02: Tighten the canonical protected-route and logout propagation setup story so support boundaries and runtime guarantees are unambiguous
+- [ ] 92-03: Align operator/admin wording, diagnostics, and support docs around one shared advanced-setup truth contract
+
+**Details:**
+Phase 92 turns the remaining advanced setup tribal knowledge into explicit support truth. It should leave Lockspire with one coherent story for certificate extraction, sender-constraint enforcement, logout propagation semantics, and the shipped Phoenix API route pipeline, including what Lockspire owns versus what the host app or deployment environment owns.
+
+### Phase 93: Support-Truth Proof And Milestone Closure
+
+**Goal**: Lock the new support story in place with regression proof and milestone-close verification.
+**Depends on**: Phase 92
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 93-01: Add release-contract and documentation-truth assertions for the advanced setup support contract
+- [ ] 93-02: Verify representative misconfiguration, remediation, and negative-path behavior across the touched support surfaces
+- [ ] 93-03: Complete milestone-close verification and capture any intentionally deferred follow-on support work
+
+**Details:**
+Phase 93 makes the support-burden reduction milestone durable. The closeout should fail loudly if docs, diagnostics, or runtime behavior drift apart again, and it should capture any remaining support-heavy follow-ons without reopening protocol-expansion scope.
+
+## Shipped Milestones
+
+- [v1.24 client_secret_jwt](milestones/v1.24-ROADMAP.md) — shipped 2026-05-25; phases 88-90; 9 plans; Lockspire now supports a narrow `client_secret_jwt` direct-client slice on the shipped Lockspire-owned endpoints with sealed verifier material, strict HS256/replay/audience posture, and truthful DCR/discovery/admin/docs support.
+- [v1.23 DCR Logout Metadata](milestones/v1.23-ROADMAP.md) — shipped 2026-05-24; phases 85-87; 9 plans; self-service clients can now create, read, and replace Lockspire's existing logout propagation metadata through DCR and RFC 7592 without widening the current logout truth model.
+- [v1.22 DPoP Nonce Support](milestones/v1.22-ROADMAP.md) — shipped 2026-05-24; phases 82-84; 8 plans; automatic `DPoP-Nonce` challenge and retry support now covers Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline.
+
+## Next Candidate
+
+- Stop or reassess after `v1.25` unless real adopter evidence shows another concrete friction wedge worth solving inside Lockspire's current embedded-library scope.

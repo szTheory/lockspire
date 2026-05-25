@@ -73,6 +73,23 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "jwks_uri"
   end
 
+  test "global DCR policy page explains the narrow client_secret_jwt posture" do
+    assert {:ok, _policy} =
+             ServerPolicy.put_dcr_policy(%{
+               registration_policy: :open,
+               dcr_allowed_token_endpoint_auth_methods: [
+                 "client_secret_jwt",
+                 "client_secret_basic"
+               ]
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert html =~ "client_secret_jwt"
+    assert html =~ "shared direct-client token and revocation surfaces"
+    assert html =~ "HS256"
+  end
+
   test "saving global DCR policy persists change" do
     assert {:ok, _policy} = ServerPolicy.put_dcr_policy(%{registration_policy: :disabled})
 

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.19
-milestone_name: "FAPI 2.0 Message Signing"
-status: active
-stopped_at: "phase 74 verified complete"
-last_updated: "2026-05-08T15:02:07Z"
-last_activity: 2026-05-08
+milestone: v1.25
+milestone_name: Support-Burden Reduction
+status: ready_for_phase_planning
+stopped_at: Milestone v1.25 started
+last_updated: "2026-05-25T08:15:00Z"
+last_activity: 2026-05-25
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 9
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -22,45 +22,47 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Awaiting next milestone.
+**Current focus:** Start phase planning for milestone v1.25 support-burden reduction work
 
 ## Current Position
 
-Phase: 74
-Plan: None
-Status: complete
-Last activity: 2026-05-08 — Resolved compiler warnings and closed milestone v1.19.
+Phase: Not started
+Plan: -
+Status: Ready to plan Phase 91
+Last activity: 2026-05-25 - Milestone v1.25 defined
 
 ## Performance Metrics
 
-- Phases completed: 4/4
-- Plans completed: 13/13
+- Phases completed: 0/3 in active milestone slot
+- Plans completed: 0/9 in active milestone slot
 
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| 71 | 01, 02 | complete | 4 | — |
-| 72 | 01, 02, 03 | complete | 5 | — |
-| 73 | 01, 02, 03 | complete | 6 | — |
-| 74 | 01, 02, 03, 04, 05 | complete | 10 | — |
+Most recently shipped milestone:
+
+| Milestone | Phases | Plans | Requirements | Status |
+|-----------|--------|-------|--------------|--------|
+| v1.24 | 88-90 | 9 | 7 | shipped |
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-05-07:
-
-| Category | Item | Status |
-|----------|------|--------|
-| verification | 37-VERIFICATION.md | retired_non_claim_historical_context |
-| seed | 001-cut-next-real-release | dormant |
+None.
 
 ## Accumulated Context
 
 ### Decisions
 
-- Initialized v1.19 FAPI 2.0 Message Signing milestone.
-- Completed Phase 72 with verified encrypted JARM, guarded recipient-key resolution, and truthful discovery metadata publication.
-- Synchronized Phase 73 and Phase 74 planning state with the already-implemented JWT introspection and strict message-signing work in the tree.
-- Patched `Lockspire.Protocol.IntrospectionJwt` so strict-profile algorithm selection still returns stable `:unsupported_signing_algorithm` errors instead of leaking JOSE crashes.
-- Fixed compiler warnings to ensure clean test runs.
+- Milestone v1.20 Mutual TLS (RFC 8705) will be implemented via an explicit extraction behaviour (`Lockspire.MTLS.Extractor`).
+- Proxy extraction MUST be explicitly configured by the host app.
+- Protected Phoenix API routes use `VerifyToken -> EnforceSenderConstraints -> RequireToken` as the canonical shipped pipeline.
+- Route-level audience mismatches stay `401 invalid_token`, while scope failures render `403 insufficient_scope`.
+- DCR create now accepts logout propagation metadata through shared Lockspire URI/origin validation and persists it on typed client fields.
+- DCR create and management-read responses serialize persisted logout metadata directly from stored client state.
+- RFC 7592 management update now applies logout propagation metadata through the same normalized typed-field path and clears omitted values under full-replace semantics.
+- Repo-native proof for logout metadata management now covers rotated RAT truth, provenance/audit continuity, and negative validation contracts across protocol and controller seams.
+- DCR and RFC 7592 now manage the existing logout propagation metadata while preserving the durable back-channel and best-effort front-channel truth model.
+- Client records now store typed `token_endpoint_auth_signing_alg` truth so `client_secret_jwt` and `HS256` round-trip coherently across DCR, RFC 7592, discovery, and admin surfaces.
+- Discovery now publishes `client_secret_jwt` only on the shared verifier endpoints and emits endpoint-local mixed JWT signing-alg unions with `HS256` kept symmetric-only.
+- Admin create, detail, and DCR policy surfaces now expose the narrow `client_secret_jwt` slice with read-only `HS256` truth and unchanged secret-handling posture.
+- Milestone v1.24 is complete and archived; the next default candidate should favor support-burden reduction over additional protocol breadth.
 
 ### Blockers/Concerns
 
@@ -68,15 +70,7 @@ Items acknowledged and deferred at milestone close on 2026-05-07:
 
 ## Session Continuity
 
-**Next action:** Awaiting next milestone.
+**Next action:** $gsd-plan-phase 91
 **Resume file:** None
-**Stopped at:** milestone complete
-**Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
-`769 tests, 0 failures (255 excluded)` but still exits non-zero because of pre-existing warnings in unrelated test files outside the Phase 74 ownership slice.
-
-## Session Continuity
-
-**Next action:** Close the milestone or clean the unrelated warning debt if full `--warnings-as-errors` green exits are required before release.
-**Resume file:** None
-**Stopped at:** phase 74 verified complete
+**Stopped at:** Milestone v1.25 started
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -79,6 +79,15 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured Lockspire endpoint secret key base, or nil if unset.
+  """
+  @spec secret_key_base() :: String.t() | nil
+  def secret_key_base do
+    direct_secret_key_base(Lockspire.Web.Endpoint) ||
+      inferred_secret_key_base()
+  end
+
+  @doc """
   Returns the configured logout path.
   """
   @spec logout_path() :: String.t()
@@ -201,7 +210,33 @@ defmodule Lockspire.Config do
     Application.get_env(@app, :jwks_fetcher, Lockspire.JwksFetcher)
   end
 
+  @doc """
+  Returns the MTLS issuer string if configured, or nil.
+  """
+  @spec mtls_issuer() :: String.t() | nil
+  def mtls_issuer do
+    Application.get_env(@app, :mtls_issuer)
+  end
+
   defp fetch_required!(key) do
     Policy.fetch_required_config!(key, Application.get_env(@app, key))
+  end
+
+  defp direct_secret_key_base(endpoint_module) do
+    @app
+    |> Application.get_env(endpoint_module, [])
+    |> Keyword.get(:secret_key_base)
+  end
+
+  defp inferred_secret_key_base do
+    @app
+    |> Application.get_all_env()
+    |> Enum.find_value(fn
+      {_key, value} when is_list(value) ->
+        Keyword.get(value, :secret_key_base)
+
+      _other ->
+        nil
+    end)
   end
 end

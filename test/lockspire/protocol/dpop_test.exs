@@ -2,6 +2,7 @@ defmodule Lockspire.Protocol.DPoPTest do
   use ExUnit.Case, async: true
 
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.JarTestHelpers
 
@@ -194,6 +195,62 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert claims["htu"] == @target_uri
       assert claims["iat"] == @reference_unix
       assert is_binary(jkt)
+    end
+
+    test "accepts a proof with a valid authorization-server nonce when required", %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{
+            "nonce" => DPoPNonce.issue(:authorization_server)
+          })
+        )
+
+      assert {:ok, %DPoP{}} =
+               DPoP.validate_proof(
+                 proof,
+                 validation_opts(nonce_purpose: :authorization_server)
+               )
+    end
+
+    test "returns a typed reason when a required nonce is missing", %{keys: keys} do
+      proof = JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims())
+
+      assert {:error, :missing_dpop_nonce} =
+               DPoP.validate_proof(
+                 proof,
+                 validation_opts(nonce_purpose: :authorization_server)
+               )
+    end
+
+    test "returns a typed reason when a supplied nonce is invalid", %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{"nonce" => "invalid-nonce"})
+        )
+
+      assert {:error, :invalid_dpop_nonce} =
+               DPoP.validate_proof(
+                 proof,
+                 validation_opts(nonce_purpose: :authorization_server)
+               )
+    end
+
+    test "returns a typed reason when a nonce was issued for the wrong purpose", %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(
+          keys.private_jwk,
+          valid_claims(%{
+            "nonce" => DPoPNonce.issue(:resource_server)
+          })
+        )
+
+      assert {:error, :invalid_dpop_nonce} =
+               DPoP.validate_proof(
+                 proof,
+                 validation_opts(nonce_purpose: :authorization_server)
+               )
     end
 
     test "returns a typed reason for later invalid_dpop_proof mapping when htm mismatches", %{

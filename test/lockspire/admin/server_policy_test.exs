@@ -246,6 +246,30 @@ defmodule Lockspire.Admin.ServerPolicyTest do
            } = ServerPolicy.private_key_jwt_registration_truth(policy)
   end
 
+  test "client_secret_jwt_registration_truth/1 reflects allowlist and FAPI denial" do
+    allowed = %DomainServerPolicy{
+      security_profile: :none,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_jwt"]
+    }
+
+    assert %{
+             self_registration_allowed?: true,
+             signing_algorithm: "HS256",
+             fapi_effective?: false
+           } = ServerPolicy.client_secret_jwt_registration_truth(allowed)
+
+    fapi = %DomainServerPolicy{
+      security_profile: :fapi_2_0_security,
+      dcr_allowed_token_endpoint_auth_methods: ["client_secret_jwt"]
+    }
+
+    assert %{
+             self_registration_allowed?: false,
+             signing_algorithm: "HS256",
+             fapi_effective?: true
+           } = ServerPolicy.client_secret_jwt_registration_truth(fapi)
+  end
+
   test "put_security_profile/1 persists :fapi_2_0_message_signing when signing readiness is met" do
     now = DateTime.utc_now()
 

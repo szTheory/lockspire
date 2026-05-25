@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
+  alias Lockspire.Web.RegistrationJSON
   import Ecto.Query
 
   setup_all do
@@ -80,6 +81,16 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     |> Map.merge(overrides)
   end
 
+  defp latest_audit!(action) do
+    Lockspire.TestRepo.one!(
+      from(a in AuditEventRecord,
+        where: a.action == ^action,
+        order_by: [desc: a.id],
+        limit: 1
+      )
+    )
+  end
+
   describe "read/2" do
     test "returns {:ok, %Client{}} when client_id_from_url == client.client_id", %{
       client: client,
@@ -93,9 +104,68 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
          %{client: client} do
       assert {:error, :invalid_token} = RegistrationManagement.read("wrong_id", client)
     end
+
+    test "returns persisted logout metadata truthfully for stored clients" do
+      {:ok, stored_client} =
+        Repository.register_client(%Client{
+          client_id: "persisted-logout-client",
+          client_type: :confidential,
+          redirect_uris: ["https://app.example.test/callback"],
+          allowed_scopes: ["openid"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          active: true,
+          provenance: :self_registered,
+          backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
+          backchannel_logout_session_required: true,
+          frontchannel_logout_uri: "https://app.example.test/frontchannel-logout",
+          frontchannel_logout_session_required: false
+        })
+
+      assert {:ok, returned_client} =
+               RegistrationManagement.read(stored_client.client_id, stored_client)
+
+      assert returned_client.backchannel_logout_uri ==
+               "https://rp.example.test/backchannel-logout"
+
+      assert returned_client.backchannel_logout_session_required == true
+
+      assert returned_client.frontchannel_logout_uri ==
+               "https://app.example.test/frontchannel-logout"
+
+      assert returned_client.frontchannel_logout_session_required == false
+
+      response = RegistrationJSON.read_response(returned_client)
+      assert response.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert response.backchannel_logout_session_required == true
+      assert response.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+      assert response.frontchannel_logout_session_required == false
+    end
   end
 
   describe "update/2 — FAPI 2.0 readiness contract" do
+    test "rejects client_secret_jwt updates under the effective FAPI profile", %{
+      client: client,
+      client_id: client_id
+    } do
+      request = %{
+        metadata: DcrFixtures.client_secret_jwt_metadata(),
+        server_policy:
+          DcrFixtures.client_secret_jwt_server_policy(%{security_profile: :fapi_2_0_security}),
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_method,
+                reason: :incompatible_with_fapi_2_0
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
     test "rejects update when client algorithm metadata is incompatible with FAPI", %{
       client: client,
       client_id: client_id
@@ -239,6 +309,152 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — RAT rotation" do
+    test "switching to client_secret_jwt requires explicit HS256 and read/update responses use stored truth",
+         %{client: client, client_id: client_id} do
+      request = %{
+        metadata: DcrFixtures.client_secret_jwt_metadata(),
+        server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client} = success} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.token_endpoint_auth_method == :client_secret_jwt
+      assert updated_client.token_endpoint_auth_signing_alg == :HS256
+
+      assert RegistrationJSON.read_response(updated_client).token_endpoint_auth_method ==
+               "client_secret_jwt"
+
+      assert RegistrationJSON.read_response(updated_client).token_endpoint_auth_signing_alg ==
+               "HS256"
+
+      assert RegistrationJSON.update_response(success).token_endpoint_auth_signing_alg == "HS256"
+    end
+
+    test "switching away from client_secret_jwt clears the stored signing algorithm", %{
+      client: client,
+      client_id: client_id
+    } do
+      {:ok, %UpdateSuccess{client: jwt_client}} =
+        RegistrationManagement.update(client_id, %{
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+          client: client
+        })
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_metadata(),
+                 server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+                 client: jwt_client
+               })
+
+      assert updated_client.token_endpoint_auth_method == :client_secret_basic
+      assert is_nil(updated_client.token_endpoint_auth_signing_alg)
+    end
+
+    test "persists logout metadata on update and returns the same stored values", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      request = %{
+        metadata: DcrFixtures.valid_logout_metadata(),
+        server_policy: server_policy,
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client} = success} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert updated_client.backchannel_logout_session_required == true
+
+      assert updated_client.frontchannel_logout_uri ==
+               "https://app.example.test/frontchannel-logout"
+
+      assert updated_client.frontchannel_logout_session_required == true
+
+      assert {:ok, persisted_client} = Repository.fetch_client_by_id(client_id)
+      assert persisted_client.backchannel_logout_uri == updated_client.backchannel_logout_uri
+
+      assert persisted_client.backchannel_logout_session_required ==
+               updated_client.backchannel_logout_session_required
+
+      assert persisted_client.frontchannel_logout_uri == updated_client.frontchannel_logout_uri
+
+      assert persisted_client.frontchannel_logout_session_required ==
+               updated_client.frontchannel_logout_session_required
+
+      response = RegistrationJSON.update_response(success)
+      assert response.backchannel_logout_uri == persisted_client.backchannel_logout_uri
+      assert response.backchannel_logout_session_required == true
+      assert response.frontchannel_logout_uri == persisted_client.frontchannel_logout_uri
+      assert response.frontchannel_logout_session_required == true
+    end
+
+    test "replaces existing logout metadata under full-replace semantics", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:ok, %UpdateSuccess{client: seeded_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_logout_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.replacement_logout_metadata(),
+                 server_policy: server_policy,
+                 client: seeded_client
+               })
+
+      assert updated_client.backchannel_logout_uri ==
+               "https://rp.example.test/replaced-backchannel-logout"
+
+      assert updated_client.backchannel_logout_session_required == false
+
+      assert updated_client.frontchannel_logout_uri ==
+               "https://app.example.test/replaced-frontchannel-logout"
+
+      assert updated_client.frontchannel_logout_session_required == false
+    end
+
+    test "clears logout metadata when omitted from a later update", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:ok, %UpdateSuccess{client: seeded_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_logout_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
+
+      assert {:ok, %UpdateSuccess{client: cleared_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_metadata(),
+                 server_policy: server_policy,
+                 client: seeded_client
+               })
+
+      assert is_nil(cleared_client.backchannel_logout_uri)
+      assert cleared_client.backchannel_logout_session_required == false
+      assert is_nil(cleared_client.frontchannel_logout_uri)
+      assert cleared_client.frontchannel_logout_session_required == false
+
+      assert {:ok, persisted_client} = Repository.fetch_client_by_id(client_id)
+      assert is_nil(persisted_client.backchannel_logout_uri)
+      assert persisted_client.backchannel_logout_session_required == false
+      assert is_nil(persisted_client.frontchannel_logout_uri)
+      assert persisted_client.frontchannel_logout_session_required == false
+    end
+
     test "updates client with coherent encrypted JARM metadata and persists the fields", %{
       client: client,
       client_id: client_id,
@@ -394,14 +610,33 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       assert updated_client.client_id == client_id
       assert updated_client.name == "Updated Name"
       assert new_rat != prior_rat
+      assert updated_client.provenance == :self_registered
 
       assert updated_client.registration_access_token_hash == Policy.hash_token(new_rat)
+      assert {:ok, persisted_client} = Repository.fetch_client_by_id(client_id)
+      assert persisted_client.registration_access_token_hash == Policy.hash_token(new_rat)
+      assert persisted_client.provenance == :self_registered
 
       # Implicit invalidation
       assert {:ok, nil} =
                Repository.get_client_by_registration_access_token_hash(
                  Policy.hash_token(prior_rat)
                )
+
+      response =
+        RegistrationJSON.update_response(%UpdateSuccess{
+          client: updated_client,
+          registration_access_token_plaintext: new_rat
+        })
+
+      assert response.client_id == updated_client.client_id
+      assert response.registration_access_token == new_rat
+
+      audit_row = latest_audit!("dcr_management_updated")
+      assert audit_row.actor_type == "self_registered_client"
+      assert audit_row.actor_id == client_id
+      assert audit_row.resource_type == "client"
+      assert audit_row.resource_id == client_id
     end
 
     test "returns {:error, %Error{}} for invalid metadata (redirect_uris)", %{
@@ -419,6 +654,78 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
       assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :redirect_uris}} =
                RegistrationManagement.update(client_id, request)
+    end
+
+    test "rejects malformed backchannel logout URI with stable field attribution", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_uri,
+                reason: :invalid_logout_uri
+              }} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
+    end
+
+    test "rejects logout boolean values that are not strict booleans", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_session_required,
+                reason: :invalid_boolean
+              }} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.invalid_logout_boolean_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
+    end
+
+    test "rejects logout session requirement when the paired backchannel URI is missing", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_session_required,
+                reason: :logout_uri_required
+              }} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.missing_backchannel_logout_uri_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
+    end
+
+    test "rejects frontchannel logout origin mismatches with stable field attribution", %{
+      client: client,
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :frontchannel_logout_uri,
+                reason: :frontchannel_logout_origin_mismatch
+              }} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.frontchannel_logout_origin_mismatch_metadata(),
+                 server_policy: server_policy,
+                 client: client
+               })
     end
 
     test "returns {:error, :invalid_token} on URL/RAT mismatch", %{

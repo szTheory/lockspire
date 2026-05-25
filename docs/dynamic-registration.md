@@ -2,6 +2,8 @@
 
 Lockspire supports Dynamic Client Registration (DCR) via [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) and [RFC 7592](https://datatracker.ietf.org/doc/html/rfc7592). This allows external ecosystem partners to register their OAuth/OIDC clients programmatically without operator intervention, provided they have been issued an Initial Access Token (IAT).
 
+For the canonical public support contract, see `docs/supported-surface.md`. For the shipped symmetric JWT direct-client slice specifically, see `docs/client-secret-jwt-host-guide.md`.
+
 ## Operator Setup
 
 DCR is controlled by Lockspire's server policy. Out of the box, DCR might be disabled to ensure secure defaults. To enable it:
@@ -77,6 +79,161 @@ Partners can read, update, or delete their client via the `registration_client_u
 * **Read (GET):** `GET /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
 * **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated client. This will rotate both the `client_secret` and the `registration_access_token`.
 * **Delete (DELETE):** `DELETE /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
+
+### `client_secret_jwt` metadata shape
+
+Lockspire supports `client_secret_jwt` only as a narrow confidential-client direct-client slice. When a client chooses that mode, send the auth method and signing algorithm together:
+
+- `token_endpoint_auth_method=client_secret_jwt`
+- `token_endpoint_auth_signing_alg=HS256`
+
+This shipped slice is confidential-client only, uses issuer-string `aud`, and does not extend to `POST /par`, `HS384`, `HS512`, FAPI, or mTLS equivalence claims.
+
+**Create with explicit `client_secret_jwt` metadata:**
+
+```http
+POST /oauth/register HTTP/1.1
+Host: your-domain.com
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <INITIAL_ACCESS_TOKEN>
+
+{
+  "client_name": "Partner direct client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "token_endpoint_auth_method": "client_secret_jwt",
+  "token_endpoint_auth_signing_alg": "HS256"
+}
+```
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret": "sec_def456",
+  "client_id_issued_at": 1610000000,
+  "client_secret_expires_at": 0,
+  "client_name": "Partner direct client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "token_endpoint_auth_method": "client_secret_jwt",
+  "token_endpoint_auth_signing_alg": "HS256",
+  "registration_access_token": "rat_xyz789",
+  "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
+}
+```
+
+### Logout propagation metadata lifecycle
+
+Lockspire's DCR surface can create, read, and update the four existing logout propagation metadata fields:
+
+- `backchannel_logout_uri`
+- `backchannel_logout_session_required`
+- `frontchannel_logout_uri`
+- `frontchannel_logout_session_required`
+
+These settings control logout propagation to the relying party. They are separate from post-logout redirect URIs, which are browser destinations after RP-initiated logout.
+
+Back-channel logout is the durable server-to-server path. Front-channel logout is best effort only and should be treated as browser choreography rather than proof of remote success.
+
+**Create with logout propagation metadata:**
+
+```http
+POST /oauth/register HTTP/1.1
+Host: your-domain.com
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <INITIAL_ACCESS_TOKEN>
+
+{
+  "client_name": "My Cool App",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/backchannel-logout",
+  "backchannel_logout_session_required": true,
+  "frontchannel_logout_uri": "https://app.example.test/frontchannel-logout",
+  "frontchannel_logout_session_required": true
+}
+```
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret": "sec_def456",
+  "client_name": "My Cool App",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/backchannel-logout",
+  "backchannel_logout_session_required": true,
+  "frontchannel_logout_uri": "https://app.example.test/frontchannel-logout",
+  "frontchannel_logout_session_required": true,
+  "registration_access_token": "rat_xyz789",
+  "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
+}
+```
+
+**Read the stored values:**
+
+```http
+GET /oauth/register/cli_abc123 HTTP/1.1
+Host: your-domain.com
+Accept: application/json
+Authorization: Bearer <RAT>
+```
+
+The management response returns the same persisted logout propagation fields so the relying party can confirm the server's stored state.
+
+**Update with RFC 7592 full-replace semantics:**
+
+```http
+PUT /oauth/register/cli_abc123 HTTP/1.1
+Host: your-domain.com
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <RAT>
+
+{
+  "client_name": "Updated logout fixture client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "client_secret_basic",
+  "scope": "openid profile",
+  "backchannel_logout_uri": "https://rp.example.test/replaced-backchannel-logout",
+  "backchannel_logout_session_required": false,
+  "frontchannel_logout_uri": "https://app.example.test/replaced-frontchannel-logout",
+  "frontchannel_logout_session_required": false
+}
+```
+
+RFC 7592 `PUT` is full-replace, not patch. If logout propagation fields are omitted from an update, the omitted values clear and Lockspire persists `nil` / `false` for those fields on the stored client.
+
+The same full-replace rule applies to auth-method metadata. If a client stays on `client_secret_jwt`, send both `token_endpoint_auth_method` and `token_endpoint_auth_signing_alg` together so the stored `HS256` truth remains coherent. If an update changes auth method away from `client_secret_jwt`, omit the old symmetric JWT signing-alg expectation and let the new method's metadata define the replacement state.
+
+The returned `registration_access_token` replaces the old RAT immediately. Any returned `client_secret` replaces the old client credential immediately.
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret": "sec_rotated789",
+  "client_name": "Updated logout fixture client",
+  "redirect_uris": [
+    "https://app.example.com/callback"
+  ],
+  "backchannel_logout_uri": "https://rp.example.test/replaced-backchannel-logout",
+  "backchannel_logout_session_required": false,
+  "frontchannel_logout_uri": "https://app.example.test/replaced-frontchannel-logout",
+  "frontchannel_logout_session_required": false,
+  "registration_access_token": "rat_rotated456",
+  "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
+}
+```
 
 ## Out of Scope
 

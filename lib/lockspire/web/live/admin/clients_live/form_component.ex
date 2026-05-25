@@ -57,10 +57,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             >
               client_secret_post
             </option>
+            <option
+              value="client_secret_jwt"
+              selected={@defaults.token_endpoint_auth_method == "client_secret_jwt"}
+            >
+              client_secret_jwt
+            </option>
             <option value="none" selected={@defaults.token_endpoint_auth_method == "none"}>
               none
             </option>
           </select>
+          <p class="lockspire-admin-help">
+            <code>client_secret_jwt</code> is the narrow direct-client slice. Lockspire stores
+            it with read-only <code>HS256</code> truth and does not expose a generic signing
+            algorithm editor here.
+          </p>
         </div>
 
         <div :if={@mode in [:new, :edit]}>

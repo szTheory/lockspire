@@ -57,10 +57,11 @@ defmodule Lockspire.Protocol.TokenExchange do
             status: pos_integer(),
             error: String.t(),
             error_description: String.t(),
-            reason_code: atom()
+            reason_code: atom(),
+            dpop_nonce: String.t() | nil
           }
 
-    defstruct [:status, :error, :error_description, :reason_code]
+    defstruct [:status, :error, :error_description, :reason_code, :dpop_nonce]
   end
 
   @type result :: {:ok, Success.t()} | {:error, Error.t()}
@@ -1337,7 +1338,12 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp client_store(request),
     do: Keyword.get(request_options(request), :client_store, Repository)
 
-  defp client_auth_options(request), do: [client_store: client_store(request)]
+  defp client_auth_options(request) do
+    [
+      client_store: client_store(request),
+      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
+    ]
+  end
 
   defp token_store(request),
     do: Keyword.get(request_options(request), :token_store, Repository)

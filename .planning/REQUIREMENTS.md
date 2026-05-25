@@ -1,50 +1,71 @@
-# Requirements: v1.19 FAPI 2.0 Message Signing
+# v1.25 Support-Burden Reduction Requirements
+
+**Defined:** 2026-05-25
+**Status:** Active
+**Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
+
+## Milestone Goal
+
+Reduce advanced setup ambiguity on already-shipped trust surfaces so adopters can configure, diagnose, and support Lockspire with explicit product truth instead of maintainers' implicit knowledge.
+
+## v1 Requirements
+
+### JWKS Rotation Diagnostics
+
+- [ ] **JWKS-01**: A host team using remote `jwks_uri` key material can tell when Lockspire considers the configuration supported, stale, or broken, with concrete remediation guidance.
+- [ ] **JWKS-02**: An operator can distinguish key-rotation failures caused by issuer metadata, JWKS content, cache freshness, or unsupported rollover posture without reading source code.
+
+### Advanced Setup Guidance
+
+- [ ] **GUIDE-01**: A host team enabling mTLS client authentication can identify the required certificate extraction prerequisites, explicit host responsibilities, and supported deployment patterns before rollout.
+- [ ] **GUIDE-02**: A host team protecting Phoenix API routes can follow one canonical setup path for `VerifyToken -> EnforceSenderConstraints -> RequireToken`, including the expected `401 invalid_token` and `403 insufficient_scope` behavior.
+- [ ] **GUIDE-03**: An operator configuring logout propagation can understand the current back-channel durability, front-channel best-effort semantics, and required metadata/setup prerequisites from one coherent support story.
+
+### Support Truth Alignment
+
+- [ ] **TRUTH-01**: Canonical docs, operator/admin wording, and any doctor or diagnostic surfaces describe the same supported truth for `jwks_uri` rotation, mTLS setup, logout propagation, and protected-route configuration.
+- [ ] **TRUTH-02**: Advanced setup guidance clearly states Lockspire-owned behavior versus host-owned or infrastructure-owned behavior so support boundaries stay explicit.
+
+### Proof
+
+- [ ] **PROOF-01**: Repo-native automated proof covers representative advanced-setup misconfiguration and remediation cases for `jwks_uri` rotation and at least one other shipped high-friction setup surface.
+- [ ] **PROOF-02**: Release-contract or documentation-truth proof fails if the published support story drifts from the shipped advanced setup behavior.
+
+## Future Requirements
+
+### Deferred Follow-On Candidates
+
+- **FUTURE-01**: Broader auth-method parity or new protocol families if real adopter evidence emerges after support burden is reduced.
+- **FUTURE-02**: More ambitious operator UX around advanced setup readiness dashboards if the narrower diagnostics milestone still leaves material support drag.
+
+## Out Of Scope
+
+| Feature | Reason |
+|---------|--------|
+| New protocol families or major auth-method expansion | This milestone is about support-cost reduction on shipped surfaces, not breadth. |
+| Hosted-auth, CIAM, SAML, or LDAP expansion | Violates the embedded-library boundary and current product thesis. |
+| Reframing front-channel logout as reliable delivery | Would overstate Lockspire's actual runtime guarantees. |
+| New protected-resource product surfaces beyond the shipped Phoenix route pipeline | The priority is clarifying and proving the current path, not expanding it. |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| JARM-01 | Phase 71 | Validated |
-| JARM-02 | Phase 71 | Validated |
-| JARM-03 | Phase 72 | Validated |
-| INT-01 | Phase 73 | Validated |
-| ENF-01 | Phase 74 | Validated |
+| JWKS-01 | Phase 91 | Pending |
+| JWKS-02 | Phase 91 | Pending |
+| GUIDE-01 | Phase 92 | Pending |
+| GUIDE-02 | Phase 92 | Pending |
+| GUIDE-03 | Phase 92 | Pending |
+| TRUTH-01 | Phase 92 | Pending |
+| TRUTH-02 | Phase 92 | Pending |
+| PROOF-01 | Phase 93 | Pending |
+| PROOF-02 | Phase 93 | Pending |
 
-## Requirements
+**Coverage:**
+- v1 requirements: 9 total
+- Mapped to phases: 9
+- Unmapped: 0
 
-### JARM Core
-- **JARM-01: Response Mode JWT**
-  - **Description:** Implement `response_mode=jwt` and composite modes (`query.jwt`, `fragment.jwt`, `form_post.jwt`).
-  - **Success Criteria:**
-    - Requesting `response_mode=jwt` automatically defaults to the correct delivery method based on `response_type`.
-    - Authorization response parameters (`code`, `state`, `iss`) are returned wrapped in a signed JWS.
-    - Explicit `query.jwt`, `fragment.jwt`, and `form_post.jwt` modes correctly format and deliver the JWT response.
-
-- **JARM-02: JARM Signing Algorithms**
-  - **Description:** Support dynamic signing algorithms based on client metadata.
-  - **Success Criteria:**
-    - AS selects the correct private key from `Storage.KeyStore` based on the client's `authorization_signed_response_alg` metadata.
-    - Discovery endpoint advertises supported signing algorithms via `authorization_signing_alg_values_supported`.
-
-### JARM Encryption
-- **JARM-03: JWE Nested Authorization Responses**
-  - **Description:** Support encrypting the signed authorization response (JWS nested in JWE).
-  - **Success Criteria:**
-    - If client metadata specifies `authorization_encrypted_response_alg` and `authorization_encrypted_response_enc`, the response is encrypted using the client's public key.
-    - Leverages existing guarded remote JWKS resolution to avoid blocking fetches.
-    - Discovery endpoint advertises supported encryption algorithms via `authorization_encryption_alg_values_supported` and `authorization_encryption_enc_values_supported`.
-
-### JWT Introspection
-- **INT-01: RFC 9701 Introspection Responses**
-  - **Description:** Support returning introspection responses as signed JWTs via content negotiation.
-  - **Success Criteria:**
-    - When `Accept: application/token-introspection+jwt` is sent to `POST /introspect`, a successful introspection map is wrapped in a signed JWT.
-    - Error responses from `POST /introspect` continue to return standard JSON.
-    - The returned JWT uses `Content-Type: application/token-introspection+jwt`.
-
-### Strict Enforcement
-- **ENF-01: FAPI 2.0 Message Signing Profile**
-  - **Description:** Add strict profile enforcement for Message Signing.
-  - **Success Criteria:**
-    - Provide a configuration (e.g., `security_profile: :fapi_2_0_message_signing`) that mandates JARM and JWT Introspection for compliant clients.
-    - Requests failing to use the required mechanisms under strict mode are rejected with clear error messages.
+---
+*Requirements defined: 2026-05-25*
+*Last updated: 2026-05-25 after milestone definition*

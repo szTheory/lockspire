@@ -11,6 +11,10 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     inserted_at: @now,
     client_secret_expires_at: nil,
     dpop_policy: :dpop,
+    backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
+    backchannel_logout_session_required: true,
+    frontchannel_logout_uri: "https://example.com/frontchannel-logout",
+    frontchannel_logout_session_required: false,
     metadata: %{"client_name" => "Test App", "client_uri" => "https://example.com"}
   }
 
@@ -30,6 +34,10 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result["client_name"] == "Test App"
     assert result["client_uri"] == "https://example.com"
     assert result.dpop_bound_access_tokens == true
+    assert result.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+    assert result.backchannel_logout_session_required == true
+    assert result.frontchannel_logout_uri == "https://example.com/frontchannel-logout"
+    assert result.frontchannel_logout_session_required == false
     assert String.ends_with?(result.registration_client_uri, "/register/test-client-123")
   end
 
@@ -42,6 +50,10 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result.client_id_issued_at == DateTime.to_unix(@now)
     assert result.client_secret_expires_at == 0
     assert result.dpop_bound_access_tokens == true
+    assert result.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+    assert result.backchannel_logout_session_required == true
+    assert result.frontchannel_logout_uri == "https://example.com/frontchannel-logout"
+    assert result.frontchannel_logout_session_required == false
   end
 
   test "update_response/1 includes RAT but omits client_secret" do
@@ -57,12 +69,30 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result.registration_access_token == "rat-456"
     assert result.client_id_issued_at == DateTime.to_unix(@now)
     assert result.dpop_bound_access_tokens == true
+    assert result.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+    assert result.frontchannel_logout_session_required == false
   end
 
   test "responses expose dpop_bound_access_tokens as false for bearer clients" do
     bearer_client = %Client{@client | dpop_policy: :bearer}
 
     assert RegistrationJSON.read_response(bearer_client).dpop_bound_access_tokens == false
+  end
+
+  test "responses omit logout metadata when the client has none stored" do
+    result =
+      RegistrationJSON.read_response(%Client{
+        @client
+        | backchannel_logout_uri: nil,
+          backchannel_logout_session_required: false,
+          frontchannel_logout_uri: nil,
+          frontchannel_logout_session_required: false
+      })
+
+    refute Map.has_key?(result, :backchannel_logout_uri)
+    refute Map.has_key?(result, :backchannel_logout_session_required)
+    refute Map.has_key?(result, :frontchannel_logout_uri)
+    refute Map.has_key?(result, :frontchannel_logout_session_required)
   end
 
   test "error_response/1 maps code to error string" do

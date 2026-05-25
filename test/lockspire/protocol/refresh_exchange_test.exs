@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.AuditEventRecord
@@ -290,6 +291,72 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
     assert rotated_refresh_token.cnf["jkt"] == validated_proof.jkt
   end
 
+  test "returns use_dpop_nonce for a DPoP-bound refresh exchange before succeeding with the supplied nonce",
+       %{client: client, now: now} do
+    keys = JarTestHelpers.generate_ec_keys()
+    %{validated: stored_proof} = dpop_proof_fixture(now, keys: keys)
+
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("nonce-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-nonce",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh-nonce",
+               scopes: ["email", "offline_access"],
+               audience: ["api.example.com"],
+               cnf: %{"jkt" => stored_proof.jkt},
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:error, error} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               dpop: dpop_proof_fixture(now, keys: keys, nonce: nil).jwt,
+               params: %{"refresh_token" => "nonce-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "nonce-refresh-access-token" end,
+                 refresh_token_generator: fn -> "nonce-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+
+    %{jwt: proof_with_nonce, validated: validated_proof} =
+      dpop_proof_fixture(now, keys: keys, nonce: error.dpop_nonce)
+
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               method: "POST",
+               dpop: proof_with_nonce,
+               params: %{"refresh_token" => "nonce-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 dpop_replay_store: Repository,
+                 access_token_generator: fn -> "nonce-refresh-access-token" end,
+                 refresh_token_generator: fn -> "nonce-refresh-child-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    assert success.token_type == "DPoP"
+
+    assert {:ok, %Token{} = rotated_access_token} =
+             Repository.fetch_active_access_token(
+               TokenFormatter.hash_token("nonce-refresh-access-token")
+             )
+
+    assert rotated_access_token.cnf["jkt"] == validated_proof.jkt
+  end
+
   test "returns invalid_grant when a DPoP-bound refresh token is presented with the wrong key", %{
     client: client,
     now: now
@@ -520,16 +587,20 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
     assert error.reason_code == :client_mismatch
   end
 
-  defp dpop_proof_fixture(now) do
-    keys = JarTestHelpers.generate_ec_keys()
+  defp dpop_proof_fixture(now, overrides \\ []) do
+    keys = Keyword.get_lazy(overrides, :keys, &JarTestHelpers.generate_ec_keys/0)
     target_uri = "https://example.test/lockspire/token"
+
+    nonce =
+      Keyword.get_lazy(overrides, :nonce, fn -> DPoPNonce.issue(:authorization_server) end)
 
     proof =
       JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
         "htm" => "POST",
         "htu" => target_uri,
         "iat" => DateTime.to_unix(now),
-        "jti" => Ecto.UUID.generate()
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => nonce
       })
 
     assert {:ok, %DPoP{} = validated} =

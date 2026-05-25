@@ -4,6 +4,8 @@ The canonical onboarding path is Phoenix-first and generator-first. Lockspire st
 
 If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, and key-rotation behavior.
 
+If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
+
 ## 1. Add Lockspire
 
 Add `:lockspire` to your dependencies and fetch deps.
@@ -66,6 +68,8 @@ Implement the generated `AccountResolver` with:
 
 Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
 
+If you also want to protect host-owned Phoenix API routes with Lockspire-issued access tokens, follow [`docs/protect-phoenix-api-routes.md`](protect-phoenix-api-routes.md). That guide is the canonical optional host-route path inside the same embedded-library product shape. It keeps the route middleware narrow: Lockspire verifies token protocol facts, while your host app keeps business authorization and tenant policy.
+
 If you need custom RAR consent copy, edit the generated `lockspire_consent_live.ex` seam directly and follow [`docs/rar-consent-host-guide.md`](rar-consent-host-guide.md). The guide shows one illustrative `payment_initiation` example built on structural `authorization_details` data while keeping semantics, branding, and policy host-owned.
 
 Keep the generated host logout seam truthful as well: your host app clears its own browser session first, then returns to Lockspire's `/end_session/complete` endpoint. That completion endpoint is the protocol-owned fork point for token revocation, logout propagation persistence, back-channel enqueueing, and the front-channel best effort page.
@@ -109,13 +113,16 @@ The canonical proof bar is:
 - Discovery returns the issuer and endpoint set.
 - JWKS returns the public signing keys.
 - A client can complete an authorization-code + PKCE exchange.
+- Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions with the shipped plug pipeline when you choose to expose protected routes in the host app.
 - A confidential client can use the shipped direct-client auth surface the way `docs/private-key-jwt-host-guide.md` describes if you choose that mode.
+- A confidential client can use the shipped direct-client auth surface the way `docs/client-secret-jwt-host-guide.md` describes if you choose the narrow `client_secret_jwt` mode.
 - If you configure RP logout propagation, `/end_session/complete` persists the logout event, enqueues back-channel delivery through Oban, and renders front-channel iframe cleanup as best effort only.
 
 The executable repo proof lives in:
 
 - `test/integration/install_generator_test.exs`
 - `test/integration/phase6_onboarding_e2e_test.exs` for the unauthenticated `/authorize` -> host login -> interaction resume -> consent -> token exchange path
+- `test/integration/phase81_generated_host_route_protection_e2e_test.exs` for host Phoenix API route protection with bearer and DPoP-bound access tokens
 
 The maintained contributor gate for that proof is `mix ci`, which runs the docs, package, fast-test, integration, and phase gates described in `.github/workflows/ci.yml`.
 

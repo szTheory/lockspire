@@ -174,6 +174,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert gamma_html =~ "Rotate Registration Access Token (RAT)"
   end
 
+  test "register client form presents client_secret_jwt as the narrow HS256-backed option" do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin")
+
+    assert html =~ "client_secret_jwt"
+    assert html =~ "HS256"
+    refute html =~ "generic signing algorithm editor"
+  end
+
   test "RAT rotation workflow renders plaintext copy-once and explicit clear" do
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/gamma-client")
 

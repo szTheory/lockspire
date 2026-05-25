@@ -12,6 +12,20 @@ defmodule GeneratedHostAppWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
+  pipeline :api do
+    plug(:accepts, ["json"])
+  end
+
+  pipeline :lockspire_protected_api do
+    plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api")
+
+    plug(Lockspire.Plug.EnforceSenderConstraints,
+      dpop_replay_store: GeneratedHostAppWeb.ProtectedApiReplayStore
+    )
+
+    plug(Lockspire.Plug.RequireToken)
+  end
+
   scope "/", GeneratedHostAppWeb do
     pipe_through(:browser)
 
@@ -26,5 +40,11 @@ defmodule GeneratedHostAppWeb.Router do
 
   scope "/" do
     forward("/lockspire", Lockspire.Web.Router)
+  end
+
+  scope "/api", GeneratedHostAppWeb do
+    pipe_through([:api, :lockspire_protected_api])
+
+    get("/billing/summary", ProtectedApiController, :show)
   end
 end

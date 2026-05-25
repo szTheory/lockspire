@@ -101,9 +101,43 @@ defmodule Lockspire.Protocol.Discovery do
     |> maybe_put_ciba_metadata(endpoint_metadata)
     |> maybe_put_resource_indicators_metadata(endpoint_metadata)
     |> maybe_put_authorization_details_metadata(endpoint_metadata)
+    |> maybe_put_mtls_endpoint_aliases(endpoint_metadata)
     |> put_bcl_fcl_metadata()
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
+  end
+
+  defp maybe_put_mtls_endpoint_aliases(metadata, endpoint_metadata) do
+    case Config.mtls_issuer() do
+      mtls_issuer when is_binary(mtls_issuer) ->
+        mtls_endpoints = [
+          "token_endpoint",
+          "revocation_endpoint",
+          "introspection_endpoint",
+          "device_authorization_endpoint",
+          "pushed_authorization_request_endpoint",
+          "userinfo_endpoint",
+          "backchannel_authentication_endpoint"
+        ]
+
+        aliases =
+          endpoint_metadata
+          |> Map.take(mtls_endpoints)
+          |> Enum.map(fn {key, _url} ->
+            path = Map.fetch!(@endpoint_paths, key)
+            {key, issuer_url(mtls_issuer, path)}
+          end)
+          |> Map.new()
+
+        if map_size(aliases) > 0 do
+          Map.put(metadata, "mtls_endpoint_aliases", aliases)
+        else
+          metadata
+        end
+
+      _ ->
+        metadata
+    end
   end
 
   defp maybe_put_ciba_metadata(metadata, endpoint_metadata) do
@@ -215,14 +249,14 @@ defmodule Lockspire.Protocol.Discovery do
     do: Map.put(metadata, key, methods)
 
   defp maybe_put_endpoint_auth_signing_algorithms(metadata, methods_key, algorithms_key) do
-    if "private_key_jwt" in Map.get(metadata, methods_key, []) do
-      Map.put(
-        metadata,
-        algorithms_key,
-        SecurityProfile.allowed_signing_algorithms(global_security_profile())
-      )
-    else
+    algorithms =
+      Map.get(metadata, methods_key, [])
+      |> signing_algorithms_for_methods()
+
+    if algorithms == [] do
       metadata
+    else
+      Map.put(metadata, algorithms_key, algorithms)
     end
   end
 
@@ -244,7 +278,28 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   defp published_direct_client_auth_methods do
-    ClientAuth.supported_auth_method_names()
+    methods = ClientAuth.supported_auth_method_names()
+
+    if global_security_profile() in [:fapi_2_0_security, :fapi_2_0_message_signing] do
+      Enum.reject(methods, &(&1 == "client_secret_jwt"))
+    else
+      methods
+    end
+  end
+
+  defp signing_algorithms_for_methods(methods) do
+    methods
+    |> Enum.reduce([], fn
+      "client_secret_jwt", acc ->
+        acc ++ ["HS256"]
+
+      "private_key_jwt", acc ->
+        acc ++ SecurityProfile.allowed_signing_algorithms(global_security_profile())
+
+      _method, acc ->
+        acc
+    end)
+    |> Enum.uniq()
   end
 
   defp code_challenge_methods_supported(endpoint_metadata) do

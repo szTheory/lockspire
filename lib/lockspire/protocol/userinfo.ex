@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.Userinfo do
   alias Lockspire.Config
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
@@ -28,10 +29,11 @@ defmodule Lockspire.Protocol.Userinfo do
             status: pos_integer(),
             error: String.t(),
             error_description: String.t(),
-            reason_code: atom()
+            reason_code: atom(),
+            dpop_nonce: String.t() | nil
           }
 
-    defstruct [:status, :error, :error_description, :reason_code]
+    defstruct [:status, :error, :error_description, :reason_code, :dpop_nonce]
   end
 
   @type result :: {:ok, map()} | {:error, Error.t()}
@@ -79,22 +81,43 @@ defmodule Lockspire.Protocol.Userinfo do
           Keyword.put(opts, :security_profile, resolved_security_profile)
         end)
 
-      cond do
-        present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
-          case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
-            {:ok, _proof} -> :ok
-            {:error, %Error{} = error} -> {:error, error}
-          end
+      with :ok <- validate_mtls_binding(access_token, request) do
+        cond do
+          present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
+            case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
+              {:ok, _proof} -> :ok
+              {:error, %Error{} = error} -> {:error, error}
+            end
 
-        authorization_scheme == "Bearer" ->
-          :ok
+          authorization_scheme == "Bearer" ->
+            :ok
 
-        true ->
-          {:error,
-           error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+          true ->
+            {:error,
+             error(401, "invalid_token", "Bearer access token is required", :missing_bearer_token)}
+        end
       end
     end
   end
+
+  defp validate_mtls_binding(%Token{cnf: %{"x5t#S256" => expected_thumbprint}}, request) do
+    case request |> Map.get(:opts, []) |> Keyword.get(:mtls_cert) do
+      cert ->
+        if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
+          :ok
+        else
+          {:error,
+           error(
+             401,
+             "invalid_token",
+             "Client certificate missing or thumbprint mismatch",
+             :invalid_client_certificate
+           )}
+        end
+    end
+  end
+
+  defp validate_mtls_binding(%Token{}, _request), do: :ok
 
   defp fetch_access_token(token, request) do
     token_hash = TokenFormatter.hash_token(token)
@@ -150,7 +173,8 @@ defmodule Lockspire.Protocol.Userinfo do
       status: status,
       error: error,
       error_description: description,
-      reason_code: reason_code
+      reason_code: reason_code,
+      dpop_nonce: nil
     }
   end
 

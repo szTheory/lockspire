@@ -39,7 +39,15 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @shared_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @shared_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
   @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do
@@ -120,14 +128,10 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["frontchannel_logout_supported"] == true
     assert body["frontchannel_logout_session_supported"] == true
 
-    assert body["token_endpoint_auth_methods_supported"] == [
-             "none",
-             "client_secret_basic",
-             "client_secret_post",
-             "private_key_jwt"
-           ]
+    assert body["token_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
@@ -137,11 +141,19 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["revocation_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["revocation_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
              "EdDSA"
            ]
+
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
+
+    refute Map.has_key?(
+             body,
+             "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+           )
 
     assert body["introspection_endpoint_auth_methods_supported"] == @introspection_methods
 
@@ -245,6 +257,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["token_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
@@ -255,6 +268,12 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
+
+    refute Map.has_key?(
+             body,
+             "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+           )
   end
 
   test "GET /.well-known/openid-configuration drops JARM signing and encryption metadata when the authorization surface is unmounted" do

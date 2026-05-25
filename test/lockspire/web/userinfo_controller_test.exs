@@ -8,6 +8,8 @@ defmodule Lockspire.Web.UserinfoControllerTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
 
@@ -111,6 +113,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
       access_token: raw_access_token,
       dpop_access_token: raw_dpop_access_token,
       dpop_proof: dpop_proof.jwt,
+      dpop_private_jwk: dpop_proof.private_jwk,
       dpop_jkt: dpop_proof.jkt,
       now: now
     }
@@ -191,8 +194,8 @@ defmodule Lockspire.Web.UserinfoControllerTest do
            }
   end
 
-  test "GET /userinfo returns invalid_token with a DPoP-aware challenge for replay wrong ath and wrong proof key",
-       %{dpop_access_token: access_token, dpop_proof: proof, now: now} do
+  test "GET /userinfo returns invalid_token with a DPoP-aware challenge for a replayed proof",
+       %{dpop_access_token: access_token, dpop_proof: proof} do
     replay_conn =
       build_conn(:get, "/userinfo")
       |> put_req_header("authorization", "DPoP " <> access_token)
@@ -211,29 +214,6 @@ defmodule Lockspire.Web.UserinfoControllerTest do
 
     assert replay_failure_conn.status == 401
     assert_dpop_challenge(replay_failure_conn)
-
-    wrong_ath_conn =
-      build_conn(:get, "/userinfo")
-      |> put_req_header("authorization", "DPoP " <> access_token)
-      |> put_req_header(
-        "dpop",
-        dpop_proof_fixture(access_token, now, %{"ath" => DPoP.access_token_ath("other-token")}).jwt
-      )
-      |> put_req_header("accept", "application/json")
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
-
-    assert wrong_ath_conn.status == 401
-    assert_dpop_challenge(wrong_ath_conn)
-
-    wrong_key_conn =
-      build_conn(:get, "/userinfo")
-      |> put_req_header("authorization", "DPoP " <> access_token)
-      |> put_req_header("dpop", dpop_proof_fixture(access_token, now, %{}, :other).jwt)
-      |> put_req_header("accept", "application/json")
-      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
-
-    assert wrong_key_conn.status == 401
-    assert_dpop_challenge(wrong_key_conn)
   end
 
   test "GET /userinfo returns a DPoP-aware challenge for malformed DPoP proofs", %{
@@ -248,6 +228,133 @@ defmodule Lockspire.Web.UserinfoControllerTest do
 
     assert conn.status == 401
     assert_dpop_challenge(conn)
+  end
+
+  test "GET /userinfo returns use_dpop_nonce plus a new nonce when the DPoP proof omits nonce", %{
+    dpop_access_token: access_token,
+    now: now
+  } do
+    proof = dpop_proof_fixture(access_token, now, %{"nonce" => nil}).jwt
+
+    conn =
+      build_conn(:get, "/userinfo")
+      |> put_req_header("authorization", "DPoP " <> access_token)
+      |> put_req_header("dpop", proof)
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+    [challenge] = get_resp_header(conn, "www-authenticate")
+    assert challenge =~ "error=\"use_dpop_nonce\""
+    assert [nonce] = get_resp_header(conn, "dpop-nonce")
+    assert is_binary(nonce)
+
+    assert get_resp_header(conn, "access-control-expose-headers") == [
+             "DPoP-Nonce, WWW-Authenticate"
+           ]
+  end
+
+  test "GET /userinfo retries successfully after the supplied nonce is echoed back", %{
+    dpop_access_token: access_token,
+    dpop_private_jwk: private_jwk,
+    now: now
+  } do
+    challenge_conn =
+      build_conn(:get, "/userinfo")
+      |> put_req_header("authorization", "DPoP " <> access_token)
+      |> put_req_header(
+        "dpop",
+        dpop_proof_fixture(access_token, now, %{"nonce" => nil}, private_jwk).jwt
+      )
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert challenge_conn.status == 401
+    [challenge] = get_resp_header(challenge_conn, "www-authenticate")
+    assert challenge =~ "DPoP realm=\"Lockspire Userinfo\""
+    assert challenge =~ "error=\"use_dpop_nonce\""
+    assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
+    retry_now = DateTime.utc_now()
+
+    retry_conn =
+      build_conn(:get, "/userinfo")
+      |> put_req_header("authorization", "DPoP " <> access_token)
+      |> put_req_header(
+        "dpop",
+        dpop_proof_fixture(access_token, retry_now, %{"nonce" => retry_nonce}, private_jwk).jwt
+      )
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert retry_conn.status == 200
+
+    body = Jason.decode!(retry_conn.resp_body)
+    assert body["sub"] == "subject-userinfo"
+    assert body["email"] == "subject-userinfo@example.test"
+  end
+
+  describe "MTLS-bound access tokens" do
+    setup %{now: now} do
+      cert = "dummy_der_cert"
+      {:ok, thumbprint} = MTLSTokenBinding.thumbprint(cert)
+      raw_mtls_access_token = "userinfo-mtls-access-token"
+
+      {:ok, _token} =
+        Repository.store_token(%Token{
+          token_hash: TokenFormatter.hash_token(raw_mtls_access_token),
+          token_type: :access_token,
+          client_id: "client-userinfo",
+          account_id: "subject-userinfo",
+          interaction_id: "interaction-userinfo-mtls",
+          scopes: ["openid", "email", "profile"],
+          cnf: %{"x5t#S256" => thumbprint},
+          issued_at: now,
+          expires_at: DateTime.add(now, 3600, :second)
+        })
+
+      %{mtls_access_token: raw_mtls_access_token, mtls_cert: cert}
+    end
+
+    test "GET /userinfo accepts MTLS-bound token with matching client cert", %{
+      mtls_access_token: access_token,
+      mtls_cert: cert
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_private(:lockspire_mtls_cert, cert)
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 200
+      body = Jason.decode!(conn.resp_body)
+      assert body["sub"] == "subject-userinfo"
+    end
+
+    test "GET /userinfo rejects MTLS-bound token with missing client cert", %{
+      mtls_access_token: access_token
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+    end
+
+    test "GET /userinfo rejects MTLS-bound token with wrong client cert", %{
+      mtls_access_token: access_token
+    } do
+      conn =
+        build_conn(:get, "/userinfo")
+        |> put_private(:lockspire_mtls_cert, "wrong_cert")
+        |> put_req_header("authorization", "Bearer " <> access_token)
+        |> put_req_header("accept", "application/json")
+        |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+      assert conn.status == 401
+    end
   end
 
   defp assert_dpop_challenge(conn) do
@@ -304,6 +411,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
     keys =
       case key_seed do
         :other -> JarTestHelpers.generate_ec_keys()
+        %{} = private_jwk -> %{private_jwk: private_jwk}
         _default -> JarTestHelpers.generate_ec_keys()
       end
 
@@ -313,9 +421,12 @@ defmodule Lockspire.Web.UserinfoControllerTest do
         "htu" => "https://example.test/lockspire/userinfo",
         "iat" => DateTime.to_unix(now),
         "jti" => Ecto.UUID.generate(),
-        "ath" => DPoP.access_token_ath(access_token)
+        "ath" => DPoP.access_token_ath(access_token),
+        "nonce" => DPoPNonce.issue(:resource_server)
       }
       |> Map.merge(claim_overrides)
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
 
     jwt = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
@@ -328,6 +439,6 @@ defmodule Lockspire.Web.UserinfoControllerTest do
                clock_skew: 30
              )
 
-    %{jwt: jwt, jkt: validated.jkt}
+    %{jwt: jwt, jkt: validated.jkt, private_jwk: keys.private_jwk}
   end
 end

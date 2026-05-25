@@ -1,56 +1,28 @@
-# Feature Landscape
-
-**Domain:** RFC 8705 (Mutual TLS for OAuth)
-**Researched:** 2024
+# v1.24 Research: Features
 
 ## Table Stakes
 
-Features users expect for basic RFC 8705 compliance. Missing = product feels incomplete for FAPI 2.0 Advanced.
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| `tls_client_auth` | Standard PKI-based client authentication. | Med | Requires validating the Subject DN against client metadata. |
-| `self_signed_tls_client_auth` | Self-signed JWKS-based authentication. | Med | Matches certificate thumbprint against pre-registered keys in the client's JWKS. |
-| Certificate-Bound Access Tokens | Required by RFC 8705 for sender-constraining. | Low | Injecting `cnf` claim (`x5t#S256`) during issuance and validating it on introspection/resource requests. |
-| Proxy Header Extraction | Crucial for real-world Elixir deployments behind NGINX/ALB. | High | Must handle URL-encoded PEM, raw PEM, or standard RFC 9440 formats securely. |
+- Confidential clients can authenticate with `client_secret_jwt` on the shared Lockspire-owned direct-client endpoints.
+- Assertions require `iss` and `sub` equal to the client identifier, issuer-bound `aud`, bounded lifetime claims, and replay-resistant `jti`.
+- Registration and management flows can persist and read back `token_endpoint_auth_method=client_secret_jwt` and the required assertion-signing algorithm.
+- Discovery publishes truthful auth-method and signing-alg metadata only for endpoints that actually consume the shared verifier.
 
 ## Differentiators
 
-Features that set product apart. Not expected, but valued in an embedded context.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Explicit Proxy Trust Config | Host apps must explicitly map *which* header is trusted and from *which* internal IPs. | Med | Prevents accidental header spoofing vulnerabilities out-of-the-box. |
-| Support for RFC 9440 | Adopting the modern `Client-Cert` header standard. | Low | Most ecosystems still rely on custom `X-SSL-Cert` headers; standardizing on RFC 9440 is future-proof. |
+- Reuse the existing shared direct-client auth runtime so all supported endpoints fail the same way and produce one support story.
+- Keep the audience rule aligned with Lockspire's current issuer-string posture rather than opening endpoint-specific audience ambiguity.
+- Preserve hashed-at-rest secret handling and avoid any feature that would require storing recoverable secrets or broadening operator trust.
+- Keep docs explicit that `client_secret_jwt` is a convenience slice for direct clients, not a new higher-trust or broader certification claim.
 
 ## Anti-Features
 
-Features to explicitly NOT build.
+- Do not add generic symmetric JWT support outside Lockspire-owned direct-client endpoints.
+- Do not widen discovery or docs into a claim that all endpoint auth methods are equally strong under FAPI.
+- Do not add secret-derivation fallbacks, unsigned assertions, or relaxed replay rules to improve compatibility.
+- Do not expand this milestone into advanced setup support-burden work unless it is directly required for truthful `client_secret_jwt` operation.
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Native TLS Termination UI/Config | Lockspire is not a reverse proxy. Configuring Erlang `:ssl` options for the whole Phoenix app is out of scope. | Provide clear documentation on how the host app configures NGINX or Phoenix `Endpoint` directly, and have Lockspire only care about extracting the data from the `conn`. |
+## Complexity Notes
 
-## Feature Dependencies
-
-```
-Proxy Header Extraction / Peer Data Extraction
-  ↓
-mTLS Client Authentication (`tls_client_auth`)
-  ↓
-Certificate-Bound Access Tokens (`cnf` claim)
-```
-
-## MVP Recommendation
-
-Prioritize:
-1. Proxy Header Extraction (the secure foundation).
-2. `self_signed_tls_client_auth` (easier to test and widely used in Open Banking).
-3. Certificate-Bound Access Tokens (sender-constraining).
-
-Defer: Full PKI `tls_client_auth` relying on CA chains if it introduces too much complexity initially, focusing first on the self-signed thumbprint method which aligns well with existing JWKS infrastructure in Lockspire.
-
-## Sources
-
-- RFC 8705 (OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens)
-- RFC 9440 (Client-Cert HTTP Header)
+- The main implementation risk is not JOSE mechanics; it is preserving Lockspire's existing secret-handling model while still verifying signed assertions correctly.
+- Registration truth and discovery truth must move together so clients do not see advertised metadata that runtime cannot honor.
+- The current codebase already assumes JWT auth metadata is driven by `private_key_jwt`; `client_secret_jwt` will require that logic to become method-aware.

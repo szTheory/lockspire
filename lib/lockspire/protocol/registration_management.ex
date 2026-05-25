@@ -240,9 +240,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp apply_metadata_to_client(%Client{} = client, metadata) do
+    logout_metadata = Admin.Clients.normalize_logout_metadata(metadata)
+
     auth_method =
       case Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic") do
         "client_secret_post" -> :client_secret_post
+        "client_secret_jwt" -> :client_secret_jwt
         "private_key_jwt" -> :private_key_jwt
         "none" -> :none
         _ -> :client_secret_basic
@@ -270,6 +273,10 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         allowed_grant_types: Map.get(metadata, "grant_types", ["authorization_code"]),
         allowed_response_types: Map.get(metadata, "response_types", ["code"]),
         token_endpoint_auth_method: auth_method,
+        token_endpoint_auth_signing_alg:
+          atomize_token_endpoint_auth_signing_alg(
+            Map.get(metadata, "token_endpoint_auth_signing_alg")
+          ),
         logo_uri: Map.get(metadata, "logo_uri"),
         tos_uri: Map.get(metadata, "tos_uri"),
         policy_uri: Map.get(metadata, "policy_uri"),
@@ -291,6 +298,11 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         security_profile:
           atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
         dpop_policy: dpop_policy_from_metadata(metadata),
+        backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
+        backchannel_logout_session_required: logout_metadata.backchannel_logout_session_required,
+        frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
+        frontchannel_logout_session_required:
+          logout_metadata.frontchannel_logout_session_required,
         metadata: extension_metadata
     }
   end
@@ -300,6 +312,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   defp atomize_alg("PS256"), do: :PS256
   defp atomize_alg("EdDSA"), do: :EdDSA
   defp atomize_alg(_), do: nil
+
+  defp atomize_token_endpoint_auth_signing_alg("HS256"), do: :HS256
+  defp atomize_token_endpoint_auth_signing_alg(value), do: atomize_alg(value)
 
   defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
   defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES

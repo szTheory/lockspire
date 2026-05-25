@@ -91,6 +91,23 @@ defmodule Lockspire.Protocol.RegistrationTest do
                Registration.register(request)
 
       assert Policy.verify_client_secret(client.client_secret_hash, plain) == true
+
+      assert {:ok, ^plain} =
+               Policy.unseal_client_secret_jwt_verifier(
+                 client.client_secret_jwt_verifier_encrypted
+               )
+    end
+
+    test "persists client_secret_jwt plus explicit HS256 truth for confidential clients" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy()
+        )
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.token_endpoint_auth_method == :client_secret_jwt
+      assert client.token_endpoint_auth_signing_alg == :HS256
     end
 
     test "persisted Domain.Client has registration_access_token_hash equal to Policy.hash_token" do
@@ -312,6 +329,22 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — FAPI 2.0 readiness contract" do
+    test "rejects client_secret_jwt under the effective FAPI profile" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy:
+            DcrFixtures.client_secret_jwt_server_policy(%{security_profile: :fapi_2_0_security})
+        )
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_method,
+                reason: :incompatible_with_fapi_2_0
+              }} = Registration.register(request)
+    end
+
     test "rejects security_profile: :fapi_2_0_security when client algorithm metadata is incompatible" do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
 
@@ -428,6 +461,23 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — D-14 validator" do
+    test "rejects client_secret_jwt when token_endpoint_auth_signing_alg is missing" do
+      request =
+        DcrFixtures.register_request(
+          metadata:
+            DcrFixtures.client_secret_jwt_metadata()
+            |> Map.delete("token_endpoint_auth_signing_alg"),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy()
+        )
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_signing_alg,
+                reason: :required
+              }} = Registration.register(request)
+    end
+
     test "accepts encrypted JARM metadata with signing metadata and jwks_uri" do
       metadata =
         encrypted_jarm_metadata(%{
@@ -584,63 +634,67 @@ defmodule Lockspire.Protocol.RegistrationTest do
                Registration.register(request)
     end
 
-    test "rejects backchannel_logout_uri as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("backchannel_logout_uri", "https://rp.example.com/backchannel-logout")
+    test "accepts valid logout propagation metadata and normalizes URIs" do
+      request = DcrFixtures.register_request(metadata: DcrFixtures.valid_logout_metadata())
 
-      request = DcrFixtures.register_request(metadata: metadata)
-
-      assert {:error,
-              %Error{
-                code: :invalid_client_metadata,
-                field: :backchannel_logout_uri,
-                reason: :unsupported_in_slice
-              }} = Registration.register(request)
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+      assert client.backchannel_logout_session_required == true
+      assert client.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+      assert client.frontchannel_logout_session_required == true
     end
 
-    test "rejects backchannel_logout_session_required as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("backchannel_logout_session_required", true)
-
-      request = DcrFixtures.register_request(metadata: metadata)
+    test "rejects non-boolean logout session_required values" do
+      request =
+        DcrFixtures.register_request(metadata: DcrFixtures.invalid_logout_boolean_metadata())
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
                 field: :backchannel_logout_session_required,
-                reason: :unsupported_in_slice
+                reason: :invalid_boolean
               }} = Registration.register(request)
     end
 
-    test "rejects frontchannel_logout_uri as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("frontchannel_logout_uri", "https://rp.example.com/frontchannel-logout")
+    test "rejects backchannel session_required without a backchannel_logout_uri" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.missing_backchannel_logout_uri_metadata()
+        )
 
-      request = DcrFixtures.register_request(metadata: metadata)
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_session_required,
+                reason: :logout_uri_required
+              }} = Registration.register(request)
+    end
+
+    test "rejects malformed backchannel_logout_uri" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata()
+        )
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :backchannel_logout_uri,
+                reason: :invalid_logout_uri
+              }} = Registration.register(request)
+    end
+
+    test "rejects frontchannel logout origin mismatch" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.frontchannel_logout_origin_mismatch_metadata()
+        )
 
       assert {:error,
               %Error{
                 code: :invalid_client_metadata,
                 field: :frontchannel_logout_uri,
-                reason: :unsupported_in_slice
-              }} = Registration.register(request)
-    end
-
-    test "rejects frontchannel_logout_session_required as unsupported in this slice" do
-      metadata =
-        DcrFixtures.valid_metadata()
-        |> Map.put("frontchannel_logout_session_required", true)
-
-      request = DcrFixtures.register_request(metadata: metadata)
-
-      assert {:error,
-              %Error{
-                code: :invalid_client_metadata,
-                field: :frontchannel_logout_session_required,
-                reason: :unsupported_in_slice
+                reason: :frontchannel_logout_origin_mismatch
               }} = Registration.register(request)
     end
   end

@@ -63,6 +63,16 @@
           <br />
           Lockspire will accept JWT client assertions signed with <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code> under the current issuer security posture.
           <br />
+          <strong>client_secret_jwt posture:</strong>
+          <%= cond do %>
+            <% @client_secret_jwt_truth.fapi_effective? -> %>
+              FAPI-effective posture disables <code>client_secret_jwt</code>; Lockspire does not publish or accept the symmetric JWT slice there.
+            <% @client_secret_jwt_truth.self_registration_allowed? -> %>
+              Self-registered clients may use <code>client_secret_jwt</code> on the shared direct-client token and revocation surfaces with explicit <code>{@client_secret_jwt_truth.signing_algorithm}</code>.
+            <% true -> %>
+              Self-registered clients may not use <code>client_secret_jwt</code> until this auth method is present in the DCR allowlist.
+          <% end %>
+          <br />
           This page is descriptive only for this slice. It does not create a remote key-fetch or algorithm-management workflow.
         </p>
       </div>

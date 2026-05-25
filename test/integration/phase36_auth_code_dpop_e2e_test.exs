@@ -12,6 +12,7 @@ defmodule Lockspire.Integration.Phase36AuthCodeDpopE2ETest do
   alias Lockspire.JarTestHelpers
   alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule GeneratedHostResolver do
@@ -156,7 +157,8 @@ defmodule Lockspire.Integration.Phase36AuthCodeDpopE2ETest do
         "htm" => "POST",
         "htu" => "https://example.test/lockspire/token",
         "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-        "jti" => Ecto.UUID.generate()
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => DPoPNonce.issue(:authorization_server)
       })
 
     token_conn =
@@ -197,7 +199,8 @@ defmodule Lockspire.Integration.Phase36AuthCodeDpopE2ETest do
         "htu" => "https://example.test/lockspire/userinfo",
         "iat" => DateTime.utc_now() |> DateTime.to_unix(),
         "jti" => Ecto.UUID.generate(),
-        "ath" => ath
+        "ath" => ath,
+        "nonce" => DPoPNonce.issue(:resource_server)
       })
 
     userinfo_conn =
@@ -333,7 +336,8 @@ defmodule Lockspire.Integration.Phase36AuthCodeDpopE2ETest do
         "htm" => "POST",
         "htu" => "https://example.test/lockspire/token",
         "iat" => DateTime.utc_now() |> DateTime.to_unix(),
-        "jti" => Ecto.UUID.generate()
+        "jti" => Ecto.UUID.generate(),
+        "nonce" => DPoPNonce.issue(:authorization_server)
       })
 
     # Success to get token

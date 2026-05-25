@@ -40,6 +40,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
            |> assign(
              policy: policy,
              private_key_jwt_truth: dcr_private_key_jwt_truth(policy),
+             client_secret_jwt_truth: dcr_client_secret_jwt_truth(policy),
              form_errors: []
            )
            |> put_flash(:info, "Global DCR policy updated")}
@@ -66,11 +67,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
         {:error, _reason} -> %ServerPolicy{registration_policy: :disabled}
       end
 
-    assign(socket, policy: policy, private_key_jwt_truth: dcr_private_key_jwt_truth(policy))
+    assign(socket,
+      policy: policy,
+      private_key_jwt_truth: dcr_private_key_jwt_truth(policy),
+      client_secret_jwt_truth: dcr_client_secret_jwt_truth(policy)
+    )
   end
 
   defp dcr_private_key_jwt_truth(%ServerPolicy{} = policy) do
     AdminServerPolicy.private_key_jwt_registration_truth(policy)
+  end
+
+  defp dcr_client_secret_jwt_truth(%ServerPolicy{} = policy) do
+    AdminServerPolicy.client_secret_jwt_registration_truth(policy)
   end
 
   defp format_changeset_errors(changeset) do

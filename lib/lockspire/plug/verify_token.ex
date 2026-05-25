@@ -1,0 +1,380 @@
+defmodule Lockspire.Plug.VerifyToken do
+  @moduledoc """
+  A plug that extracts and verifies a Bearer token from the Authorization header.
+
+  This plug performs "soft validation". It never halts the connection, but instead
+  assigns a `Lockspire.AccessToken` struct to `conn.assigns[:access_token]`. If the
+  token is invalid or missing, the struct will contain an error reason.
+  """
+
+  @behaviour Plug
+
+  import Plug.Conn
+  require Logger
+
+  alias Lockspire.AccessToken
+  alias Lockspire.KeyCache
+
+  @allowed_algs ["RS256", "ES256", "PS256"]
+  @options_schema [
+    scopes: [
+      type: {:list, :string},
+      required: false,
+      default: [],
+      doc: "Exact case-sensitive scopes required for the route."
+    ],
+    audience: [
+      type: :string,
+      required: false,
+      doc: "Single expected audience value for the route."
+    ],
+    audiences: [
+      type: {:list, :string},
+      required: false,
+      doc: "Any-of audience values accepted for the route."
+    ]
+  ]
+
+  @impl Plug
+  def init(opts) do
+    opts = NimbleOptions.validate!(opts, @options_schema)
+
+    if Keyword.has_key?(opts, :audience) and Keyword.has_key?(opts, :audiences) do
+      raise ArgumentError, "expected only one of :audience or :audiences"
+    end
+
+    opts
+    |> validate_non_empty_values!(:scopes)
+    |> validate_non_empty_value!(:audience)
+    |> validate_non_empty_values!(:audiences)
+    |> validate_audiences_not_empty!()
+  end
+
+  @impl Plug
+  def call(conn, opts) do
+    case extract_token(conn) do
+      {:ok, authorization_scheme, token} ->
+        access_token = verify_token(token, authorization_scheme, opts)
+        assign(conn, :access_token, access_token)
+
+      {:error, reason} ->
+        log_missing_token()
+        assign(conn, :access_token, %AccessToken{error: reason})
+    end
+  end
+
+  defp extract_token(conn) do
+    case get_req_header(conn, "authorization") do
+      ["Bearer " <> token | _] -> {:ok, "Bearer", String.trim(token)}
+      ["DPoP " <> token | _] -> {:ok, "DPoP", String.trim(token)}
+      _ -> {:error, :missing_token}
+    end
+  end
+
+  defp verify_token(token, authorization_scheme, opts) do
+    with {:ok, kid} <- extract_kid(token),
+         {:ok, jwk} <- fetch_key(kid),
+         {:ok, claims} <- verify_signature_and_claims(jwk, token) do
+      %AccessToken{
+        token: token,
+        claims: claims,
+        client_id: Map.get(claims, "client_id"),
+        authorization_scheme: authorization_scheme,
+        binding_type: binding_type(claims),
+        binding_requirements: binding_requirements(claims)
+      }
+      |> apply_restrictions(opts)
+    else
+      {:error, reason_code} ->
+        log_invalid_token(reason_code, authorization_scheme)
+
+        %AccessToken{
+          error: :invalid_token,
+          token: token,
+          authorization_scheme: authorization_scheme
+        }
+    end
+  end
+
+  defp apply_restrictions(%AccessToken{} = access_token, opts) do
+    with :ok <- validate_audience(access_token.claims, opts),
+         :ok <- validate_scopes(access_token.claims, opts) do
+      access_token
+    else
+      {:error, error} ->
+        log_restriction_failure(error, access_token.authorization_scheme)
+        %AccessToken{access_token | error: error}
+    end
+  end
+
+  defp validate_audience(claims, opts) do
+    case configured_audiences(opts) do
+      [] ->
+        :ok
+
+      expected_audiences ->
+        with {:ok, token_audiences} <- normalize_token_audiences(claims),
+             true <- Enum.any?(expected_audiences, &Enum.member?(token_audiences, &1)) do
+          :ok
+        else
+          {:error, reason_code} ->
+            {:error, invalid_audience_error(reason_code, expected_audiences)}
+
+          false ->
+            {:error, invalid_audience_error(:invalid_audience, expected_audiences)}
+        end
+    end
+  end
+
+  defp validate_scopes(claims, opts) do
+    required_scopes = Keyword.get(opts, :scopes, [])
+
+    if required_scopes == [] do
+      :ok
+    else
+      token_scopes = normalize_token_scopes(Map.get(claims, "scope"))
+
+      if Enum.all?(required_scopes, &Enum.member?(token_scopes, &1)) do
+        :ok
+      else
+        {:error, insufficient_scope_error(required_scopes)}
+      end
+    end
+  end
+
+  defp configured_audiences(opts) do
+    case Keyword.fetch(opts, :audience) do
+      {:ok, audience} -> [audience]
+      :error -> Keyword.get(opts, :audiences, [])
+    end
+  end
+
+  defp normalize_token_audiences(claims) do
+    case Map.get(claims, "aud") do
+      nil ->
+        {:error, :missing_audience}
+
+      audience when is_binary(audience) ->
+        if String.trim(audience) == "" do
+          {:error, :invalid_audience}
+        else
+          {:ok, [audience]}
+        end
+
+      audiences when is_list(audiences) ->
+        cond do
+          audiences == [] -> {:error, :invalid_audience}
+          Enum.all?(audiences, &non_empty_string?/1) -> {:ok, audiences}
+          true -> {:error, :invalid_audience}
+        end
+
+      _other ->
+        {:error, :invalid_audience}
+    end
+  end
+
+  defp normalize_token_scopes(scope_claim) when is_binary(scope_claim) do
+    scope_claim
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.uniq()
+  end
+
+  defp normalize_token_scopes(_scope_claim), do: []
+
+  defp invalid_audience_error(reason_code, expected_audiences) do
+    %{
+      category: :token_restriction,
+      challenge: :bearer,
+      reason_code: reason_code,
+      error: "invalid_token",
+      error_description: "The access token audience is invalid for this route",
+      required_audiences: expected_audiences
+    }
+  end
+
+  defp insufficient_scope_error(required_scopes) do
+    %{
+      category: :insufficient_scope,
+      challenge: :bearer,
+      reason_code: :insufficient_scope,
+      error: "insufficient_scope",
+      error_description: "The access token is missing a required scope",
+      required_scopes: required_scopes
+    }
+  end
+
+  defp validate_non_empty_values!(opts, key) do
+    case Keyword.get(opts, key) do
+      nil ->
+        opts
+
+      values when is_list(values) ->
+        if Enum.all?(values, &non_empty_string?/1) do
+          opts
+        else
+          raise ArgumentError, "expected :#{key} to contain non-empty strings"
+        end
+    end
+  end
+
+  defp validate_non_empty_value!(opts, key) do
+    case Keyword.get(opts, key) do
+      nil ->
+        opts
+
+      value ->
+        if non_empty_string?(value) do
+          opts
+        else
+          raise ArgumentError, "expected :#{key} to be a non-empty string"
+        end
+    end
+  end
+
+  defp validate_audiences_not_empty!(opts) do
+    case Keyword.get(opts, :audiences) do
+      nil -> opts
+      [] -> raise ArgumentError, "expected :audiences to contain at least one value"
+      _values -> opts
+    end
+  end
+
+  defp non_empty_string?(value), do: is_binary(value) and String.trim(value) != ""
+
+  defp log_missing_token do
+    Logger.warning(
+      "Lockspire.VerifyToken missing token",
+      event: :lockspire_verify_token_failed,
+      category: :token_extraction,
+      reason_code: :missing_token
+    )
+  end
+
+  defp log_invalid_token(reason_code, authorization_scheme) do
+    Logger.warning(
+      "Lockspire.VerifyToken invalid token reason=#{reason_code}",
+      event: :lockspire_verify_token_failed,
+      category: :token_validation,
+      authorization_scheme: authorization_scheme,
+      reason_code: reason_code
+    )
+  end
+
+  defp log_restriction_failure(error, authorization_scheme) do
+    metadata =
+      [
+        event: :lockspire_verify_token_failed,
+        category: error.category,
+        authorization_scheme: authorization_scheme,
+        reason_code: error.reason_code
+      ] ++ restriction_log_metadata(error)
+
+    Logger.warning(
+      "Lockspire.VerifyToken restriction failure category=#{error.category} reason=#{error.reason_code}",
+      metadata
+    )
+  end
+
+  defp restriction_log_metadata(%{required_audiences: audiences}) do
+    [required_audiences_count: length(audiences)]
+  end
+
+  defp restriction_log_metadata(%{required_scopes: scopes}) do
+    [required_scopes_count: length(scopes)]
+  end
+
+  defp restriction_log_metadata(_error), do: []
+
+  defp binding_type(%{"cnf" => %{} = cnf}) do
+    has_dpop? = present?(Map.get(cnf, "jkt"))
+    has_mtls? = present?(Map.get(cnf, "x5t#S256"))
+
+    cond do
+      has_dpop? and has_mtls? -> "dpop+mtls"
+      has_dpop? -> "dpop"
+      has_mtls? -> "mtls"
+      true -> nil
+    end
+  end
+
+  defp binding_type(_claims), do: nil
+
+  defp binding_requirements(%{"cnf" => %{} = cnf}) do
+    requirements =
+      %{}
+      |> put_requirement(:dpop_jkt, Map.get(cnf, "jkt"))
+      |> put_requirement(:mtls_x5t_s256, Map.get(cnf, "x5t#S256"))
+
+    if map_size(requirements) == 0, do: nil, else: requirements
+  end
+
+  defp binding_requirements(_claims), do: nil
+
+  defp put_requirement(requirements, _key, value) when not is_binary(value), do: requirements
+
+  defp put_requirement(requirements, key, value) do
+    trimmed = String.trim(value)
+
+    if trimmed == "" do
+      requirements
+    else
+      Map.put(requirements, key, trimmed)
+    end
+  end
+
+  defp extract_kid(token) do
+    protected_headers = JOSE.JWT.peek_protected(token)
+    {_alg_map, map} = JOSE.JWS.to_map(protected_headers)
+
+    case map do
+      %{"kid" => kid} when is_binary(kid) -> {:ok, kid}
+      _ -> {:error, :no_kid}
+    end
+  rescue
+    _ -> {:error, :malformed}
+  end
+
+  defp fetch_key(kid) do
+    case KeyCache.get_key(kid) do
+      {:ok, jwk} -> {:ok, jwk}
+      {:error, _} -> {:error, :key_not_found}
+    end
+  end
+
+  defp verify_signature_and_claims(jwk, token) do
+    case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
+      {true, %JOSE.JWT{fields: claims}, _jws} ->
+        if time_claims_valid?(claims) do
+          {:ok, claims}
+        else
+          {:error, :invalid_time_claims}
+        end
+
+      {false, _, _} ->
+        {:error, :invalid_signature}
+    end
+  rescue
+    _ -> {:error, :verification_crashed}
+  end
+
+  defp time_claims_valid?(claims) do
+    now = System.os_time(:second)
+
+    exp_valid? =
+      case Map.get(claims, "exp") do
+        exp when is_integer(exp) -> exp > now
+        # Missing exp is currently treated as valid unless stricter policy requires it.
+        _ -> true
+      end
+
+    nbf_valid? =
+      case Map.get(claims, "nbf") do
+        nbf when is_integer(nbf) -> nbf <= now
+        _ -> true
+      end
+
+    exp_valid? and nbf_valid?
+  end
+
+  defp present?(value), do: is_binary(value) and String.trim(value) != ""
+end

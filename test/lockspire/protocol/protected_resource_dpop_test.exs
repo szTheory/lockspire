@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.ProtectedResourceDPoP
   alias Lockspire.Protocol.Userinfo.Error
 
@@ -30,6 +31,24 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
 
     assert {:ok, proof} = ProtectedResourceDPoP.validate_userinfo_access(token, request)
     assert proof.jkt == token.cnf["jkt"]
+  end
+
+  test "validates generic protected-resource requests with explicit target uri and binding requirements" do
+    %{request: request} = dpop_request_fixture()
+    target_uri = "https://api.example.test/resource"
+    %{jwt: proof, validated: validated} = proof_fixture(%{"htu" => target_uri, "htm" => "POST"})
+
+    binding_source = %{binding_requirements: %{dpop_jkt: validated.jkt}}
+
+    assert {:ok, validated_proof} =
+             ProtectedResourceDPoP.validate_access(binding_source, %{
+               request
+               | dpop: proof,
+                 method: "POST",
+                 target_uri: target_uri
+             })
+
+    assert validated_proof.jkt == validated.jkt
   end
 
   test "returns typed invalid_token errors for wrong scheme missing proof missing ath wrong ath and wrong proof key" do
@@ -69,6 +88,14 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
       ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: wrong_key_proof}),
       :dpop_binding_mismatch
     )
+
+    assert_invalid_token(
+      ProtectedResourceDPoP.validate_access(
+        %{binding_requirements: %{dpop_jkt: token.cnf["jkt"]}},
+        Map.delete(request, :target_uri)
+      ),
+      :invalid_dpop_target_uri
+    )
   end
 
   test "records replay state durably and rejects replayed proofs deterministically" do
@@ -86,28 +113,82 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     refute DPoP.access_token_ath(@raw_access_token) == DPoP.access_token_ath("different-token")
   end
 
+  test "returns use_dpop_nonce with a new resource nonce when the proof omits nonce" do
+    %{request: request, token: token} = dpop_request_fixture(nonce: nil)
+
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
+  test "returns use_dpop_nonce when the proof carries an authorization-server nonce on the resource surface" do
+    %{request: request, token: token} =
+      dpop_request_fixture(nonce: DPoPNonce.issue(:authorization_server))
+
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :invalid_dpop_nonce
+    assert is_binary(error.dpop_nonce)
+  end
+
+  test "succeeds after retrying with the supplied resource-server nonce" do
+    %{request: request, token: token, private_jwk: private_jwk} = dpop_request_fixture(nonce: nil)
+
+    assert {:error, %Error{} = error} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, request)
+
+    assert error.error == "use_dpop_nonce"
+    assert error.reason_code == :missing_dpop_nonce
+
+    %{jwt: retry_proof, validated: validated_proof} =
+      proof_fixture(%{"nonce" => error.dpop_nonce}, private_jwk: private_jwk)
+
+    assert {:ok, proof} =
+             ProtectedResourceDPoP.validate_userinfo_access(token, %{request | dpop: retry_proof})
+
+    assert proof.jkt == validated_proof.jkt
+    assert proof.jkt == token.cnf["jkt"]
+  end
+
   defp dpop_request_fixture(overrides \\ []) do
-    %{validated: validated, jwt: jwt} = proof_fixture()
     replay_store = Keyword.get(overrides, :replay_store, AcceptingReplayStore)
 
-    token = %Token{cnf: %{"jkt" => validated.jkt}}
+    proof_data =
+      case Keyword.fetch(overrides, :nonce) do
+        {:ok, nonce} -> proof_fixture(%{"nonce" => nonce})
+        :error -> proof_fixture()
+      end
+
+    token = %Token{cnf: %{"jkt" => proof_data.validated.jkt}}
 
     request = %{
       authorization_scheme: "DPoP",
       access_token: @raw_access_token,
-      dpop: jwt,
+      dpop: proof_data.jwt,
       method: "GET",
+      target_uri: @userinfo_uri,
       opts: [dpop_replay_store: replay_store, now: fn -> @now end]
     }
 
-    %{request: request, token: token}
+    %{request: request, token: token, private_jwk: proof_data.private_jwk}
   end
 
   defp proof_fixture(claim_overrides \\ %{}, opts \\ []) do
     keys =
-      case Keyword.get(opts, :key_seed, :default) do
-        :other -> JarTestHelpers.generate_ec_keys()
-        _default -> JarTestHelpers.generate_ec_keys()
+      case Keyword.get(opts, :private_jwk) do
+        %{} = private_jwk ->
+          %{private_jwk: private_jwk}
+
+        nil ->
+          case Keyword.get(opts, :key_seed, :default) do
+            :other -> JarTestHelpers.generate_ec_keys()
+            _default -> JarTestHelpers.generate_ec_keys()
+          end
       end
 
     claims =
@@ -116,24 +197,28 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
         "htu" => @userinfo_uri,
         "iat" => DateTime.to_unix(@now),
         "jti" => Ecto.UUID.generate(),
-        "ath" => DPoP.access_token_ath(@raw_access_token)
+        "ath" => DPoP.access_token_ath(@raw_access_token),
+        "nonce" => DPoPNonce.issue(:resource_server)
       }
       |> Map.merge(claim_overrides)
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
 
+    target_uri = Map.get(claims, "htu", @userinfo_uri)
+    method = Map.get(claims, "htm", "GET")
+
     jwt = JarTestHelpers.sign_dpop_proof(keys.private_jwk, claims)
 
     assert {:ok, validated} =
              DPoP.validate_proof(jwt,
-               method: "GET",
-               target_uri: @userinfo_uri,
+               method: method,
+               target_uri: target_uri,
                now: @now,
                max_age: 300,
                clock_skew: 30
              )
 
-    %{jwt: jwt, validated: validated}
+    %{jwt: jwt, validated: validated, private_jwk: keys.private_jwk}
   end
 
   defp assert_invalid_token({:error, %Error{} = error}, reason_code) do

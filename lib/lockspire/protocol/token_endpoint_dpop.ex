@@ -8,7 +8,9 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Domain.DpopReplay
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.DpopPolicy
+  alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenExchange.Error
 
@@ -34,7 +36,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
 
       with {:ok, proof} <- validate_proof_with_flag(effective_dpop_required, request),
            :ok <- record_dpop_proof_use(proof, request) do
-        {:ok, issuance_context(effective_mode, proof, resolved_security_profile)}
+        {:ok, issuance_context(effective_mode, proof, resolved_security_profile, request)}
       end
     end
   end
@@ -50,6 +52,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
     with {:ok, resolved_security_profile} <- resolve_security_profile(client, request),
          {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
+         {:ok, expected_cnf} <- validate_mtls_binding(expected_cnf, request),
          {:ok, proof} <- validate_refresh_proof(expected_cnf, resolved_security_profile, request),
          :ok <- record_dpop_proof_use(proof, request) do
       effective_mode =
@@ -58,7 +61,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
            do: :dpop,
            else: :bearer
 
-      {:ok, issuance_context(effective_mode, proof, resolved_security_profile)}
+      {:ok, issuance_context(effective_mode, proof, resolved_security_profile, request)}
     end
   end
 
@@ -108,6 +111,26 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     end
   end
 
+  defp validate_mtls_binding(expected_cnf, request) do
+    case {expected_cnf, Keyword.get(request_options(request), :mtls_cert)} do
+      {%{"x5t#S256" => expected_thumbprint}, cert} ->
+        if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
+          {:ok, expected_cnf}
+        else
+          {:error,
+           oauth_error(
+             400,
+             "invalid_request",
+             "Client certificate missing or thumbprint mismatch",
+             :invalid_client_certificate
+           )}
+        end
+
+      _ ->
+        {:ok, expected_cnf}
+    end
+  end
+
   defp validate_proof_value(proof, request) do
     case DPoP.validate_proof(
            proof,
@@ -115,10 +138,16 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
            target_uri: token_endpoint_uri(),
            now: now(request),
            max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
-           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30)
+           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
+           nonce_purpose: :authorization_server,
+           secret_key_base: Keyword.get(request_options(request), :secret_key_base),
+           nonce_max_age: Keyword.get(request_options(request), :dpop_nonce_max_age, 300)
          ) do
       {:ok, %DPoP{} = validated_proof} ->
         {:ok, validated_proof}
+
+      {:error, reason} when reason in [:missing_dpop_nonce, :invalid_dpop_nonce] ->
+        {:error, use_dpop_nonce_error(reason, request)}
 
       {:error, reason} when is_atom(reason) ->
         {:error, invalid_dpop_proof("The DPoP proof is invalid", reason)}
@@ -129,25 +158,13 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     cond do
       resolved_security_profile.fapi_2_0_security? ->
         # FAPI 2.0 requires DPoP for all token requests, even if the refresh token was bearer.
-        case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
-          nil ->
-            {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+        require_and_validate_dpop(request)
 
-          proof ->
-            validate_proof_value(proof, request)
-        end
-
-      is_nil(expected_cnf) ->
+      is_nil(expected_cnf) or not Map.has_key?(expected_cnf, "jkt") ->
         {:ok, nil}
 
-      match?(%{"jkt" => jkt} when is_binary(jkt), expected_cnf) ->
-        case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
-          nil ->
-            {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-
-          proof ->
-            validate_proof_value(proof, request)
-        end
+      Map.has_key?(expected_cnf, "jkt") and is_binary(Map.get(expected_cnf, "jkt")) ->
+        require_and_validate_dpop(request)
 
       true ->
         {:error,
@@ -157,6 +174,16 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
            "Stored refresh token binding is invalid",
            :invalid_refresh_token_binding
          )}
+    end
+  end
+
+  defp require_and_validate_dpop(request) do
+    case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
+      nil ->
+        {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
+
+      proof ->
+        validate_proof_value(proof, request)
     end
   end
 
@@ -188,26 +215,37 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
     end
   end
 
-  defp issuance_context(:dpop, %DPoP{} = proof, security_profile) do
+  defp issuance_context(:dpop, %DPoP{} = proof, security_profile, request) do
+    cnf = %{"jkt" => proof.jkt} |> maybe_add_x5t_cnf(request)
+
     %{
       mode: :dpop,
       proof: proof,
       jkt: proof.jkt,
-      cnf: %{"jkt" => proof.jkt},
+      cnf: cnf,
       token_type: "DPoP",
       security_profile: security_profile
     }
   end
 
-  defp issuance_context(_mode, _proof, security_profile) do
+  defp issuance_context(_mode, _proof, security_profile, request) do
+    cnf = maybe_add_x5t_cnf(nil, request)
+
     %{
       mode: :bearer,
       proof: nil,
       jkt: nil,
-      cnf: nil,
+      cnf: cnf,
       token_type: "Bearer",
       security_profile: security_profile
     }
+  end
+
+  defp maybe_add_x5t_cnf(cnf, request) do
+    request
+    |> request_options()
+    |> Keyword.get(:mtls_cert)
+    |> then(&MTLSTokenBinding.maybe_put_confirmation(cnf, &1))
   end
 
   defp token_endpoint_uri do
@@ -313,7 +351,20 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   defp normalized_dpop_port(%URI{port: port}), do: port
 
   defp refresh_binding_cnf(%Token{cnf: nil}), do: {:ok, nil}
-  defp refresh_binding_cnf(%Token{cnf: %{"jkt" => jkt} = cnf}) when is_binary(jkt), do: {:ok, cnf}
+
+  defp refresh_binding_cnf(%Token{cnf: %{} = cnf}) do
+    if Map.has_key?(cnf, "jkt") or Map.has_key?(cnf, "x5t#S256") do
+      {:ok, cnf}
+    else
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Stored refresh token binding is invalid",
+         :invalid_refresh_token_binding
+       )}
+    end
+  end
 
   defp refresh_binding_cnf(%Token{}) do
     {:error,
@@ -326,10 +377,22 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   end
 
   defp refresh_binding_mode(nil), do: :bearer
-  defp refresh_binding_mode(_cnf), do: :dpop
+  defp refresh_binding_mode(%{"jkt" => _}), do: :dpop
+  defp refresh_binding_mode(_cnf), do: :bearer
 
   defp invalid_dpop_proof(description, reason_code) do
     oauth_error(400, "invalid_dpop_proof", description, reason_code)
+  end
+
+  defp use_dpop_nonce_error(reason_code, request) do
+    %Error{
+      status: 400,
+      error: "use_dpop_nonce",
+      error_description: "Authorization server requires nonce in DPoP proof",
+      reason_code: reason_code,
+      dpop_nonce:
+        DPoPNonce.issue(:authorization_server, secret_key_base: secret_key_base(request))
+    }
   end
 
   defp oauth_error(status, error, description, reason_code) do
@@ -337,7 +400,8 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       status: status,
       error: error,
       error_description: description,
-      reason_code: reason_code
+      reason_code: reason_code,
+      dpop_nonce: nil
     }
   end
 
@@ -362,6 +426,10 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
 
   defp request_options(request) do
     Map.get(request, :opts, Map.get(request, "opts", []))
+  end
+
+  defp secret_key_base(request) do
+    Keyword.get(request_options(request), :secret_key_base)
   end
 
   defp normalize_optional_string(value) when is_binary(value) do

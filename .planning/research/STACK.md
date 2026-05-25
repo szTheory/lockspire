@@ -1,39 +1,40 @@
-# Technology Stack
+# v1.24 Research: Stack
 
-**Project:** Lockspire
-**Researched:** 2024
+## Scope
 
-## Recommended Stack
+Add a narrow `client_secret_jwt` slice for confidential clients on Lockspire-owned direct-client endpoints:
 
-### Core Framework
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Plug | ~> 1.14 | Header & Peer Data Extraction | Standard interface for intercepting HTTP requests in Elixir/Phoenix, allowing inspection of both `conn.req_headers` and `Plug.Conn.get_peer_data/1`. |
-| Erlang `:public_key` | standard lib | X.509 Parsing | Built-in Erlang capability to decode PEM or DER certificates, extract the Subject DN, and calculate thumbprints without external C dependencies. |
-| Erlang `:crypto` | standard lib | Thumbprint Hashing | Fast, native SHA-256 calculation required for the `x5t#S256` token binding claims (RFC 8705). |
+- `POST /token`
+- `POST /revoke`
+- `POST /introspect`
+- `POST /device/code`
+- `POST /bc-authorize`
 
-### Supporting Libraries
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| x509 | ~> 0.8 | Dev/Test PKI Generation | Excellent for generating self-signed client certificates and CA chains during test suite execution to prove mTLS extraction paths. |
+## Existing Stack Reuse
 
-## Alternatives Considered
+- `lib/lockspire/protocol/client_auth.ex` already centralizes direct-client authentication across the shipped shared surfaces.
+- `lib/lockspire/protocol/client_auth/private_key_jwt.ex` and its tests provide the closest runtime pattern for strict JWT assertion verification and replay recording.
+- `lib/lockspire/protocol/discovery.ex` already publishes per-endpoint auth-method and signing-alg metadata for JWT-based client auth.
+- `lib/lockspire/protocol/registration.ex`, `lib/lockspire/clients.ex`, and admin LiveView client forms already own the registration and operator truth for `token_endpoint_auth_method`.
+- `Lockspire.Security.Policy.hash_client_secret/1` and `verify_client_secret/2` already give Lockspire a durable hashed-at-rest secret source that can be reused as the HMAC verification key.
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| mTLS Plug Library | Native Implementation | `apiac_auth_mtls` | `apiac` is a broader API access control suite. Lockspire needs a highly specific, embedded approach tailored to its existing protocol pipeline and JWT handling, rather than importing an external generalized auth suite. |
+## Standards Inputs
 
-## Installation
+- RFC 7523 defines the JWT client assertion envelope: `iss`, `sub`, `aud`, `exp`, and optional replay-resistant `jti`.
+- OpenID Connect Core Section 9 defines `client_secret_jwt` as a token-endpoint client-auth method alongside `private_key_jwt`.
+- OpenID Connect Discovery and Dynamic Client Registration define `token_endpoint_auth_methods_supported`, `token_endpoint_auth_signing_alg_values_supported`, and per-client `token_endpoint_auth_signing_alg`.
 
-No new production dependencies are required beyond standard Erlang/Elixir libraries.
+## Recommended Stack Changes
 
-```bash
-# Dev/Test dependencies for generating certificates in test suites
-npm install -D {:x509, "~> 0.8", only: [:test, :dev]}
-```
+- No new dependency is needed.
+- Extend the shared direct-client auth runtime with a symmetric JWT verifier instead of creating endpoint-specific code paths.
+- Reuse the existing used-`jti` recording path so successful assertions become single-use across the shipped direct-client surfaces.
+- Reuse current secret-at-rest storage; do not introduce plaintext secret recovery or a second symmetric credential store.
+- Keep the default symmetric signing set narrow and explicit, then bind it to the effective security posture instead of advertising every JOSE HMAC algorithm by default.
 
-## Sources
+## What Not To Add
 
-- Erlang `:public_key` docs: https://www.erlang.org/doc/man/public_key.html
-- Elixir Plug docs: https://hexdocs.pm/plug/Plug.Conn.html
-- RFC 8705: https://datatracker.ietf.org/doc/html/rfc8705
+- No generic JWT client-auth framework beyond Lockspire-owned direct-client surfaces.
+- No broader secret escrow, key-management UI, or external HSM integration.
+- No new hosted-auth, federation, or third-party gateway surface.
+- No support claim that `client_secret_jwt` is equivalent to `private_key_jwt` or mTLS in higher-trust deployments.

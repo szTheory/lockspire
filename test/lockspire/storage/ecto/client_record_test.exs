@@ -24,6 +24,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     client = %Client{
       client_id: "dcr_client_round_trip",
       client_type: :confidential,
+      client_secret_jwt_verifier_encrypted: "sealed-dcr-verifier",
       redirect_uris: ["https://partner.example.com/callback"],
       allowed_scopes: ["openid"],
       allowed_grant_types: ["authorization_code"],
@@ -49,6 +50,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
     assert out.provenance == :self_registered
     assert out.registration_access_token_hash == "rat_hash_round_trip"
+    assert out.client_secret_jwt_verifier_encrypted == "sealed-dcr-verifier"
 
     assert out.registration_client_uri ==
              "https://issuer.example.com/register/dcr_client_round_trip"
@@ -82,6 +84,119 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
 
     assert out.provenance == :operator
+  end
+
+  test "MTLS attributes round-trip through ClientRecord" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "mtls_client_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :tls_client_auth,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      tls_client_auth_subject_dn: "CN=client.example.com",
+      tls_client_auth_san_dns: "client.example.com",
+      tls_client_auth_san_uri: "https://client.example.com",
+      tls_client_auth_san_ip: "192.168.1.1",
+      tls_client_auth_san_email: "admin@example.com"
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.token_endpoint_auth_method == :tls_client_auth
+    assert out.tls_client_auth_subject_dn == "CN=client.example.com"
+    assert out.tls_client_auth_san_dns == "client.example.com"
+    assert out.tls_client_auth_san_uri == "https://client.example.com"
+    assert out.tls_client_auth_san_ip == "192.168.1.1"
+    assert out.tls_client_auth_san_email == "admin@example.com"
+  end
+
+  test "logout propagation fields round-trip through ClientRecord" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "logout_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.test/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
+      backchannel_logout_session_required: true,
+      frontchannel_logout_uri: "https://app.example.test/frontchannel-logout",
+      frontchannel_logout_session_required: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
+    assert out.backchannel_logout_session_required == true
+    assert out.frontchannel_logout_uri == "https://app.example.test/frontchannel-logout"
+    assert out.frontchannel_logout_session_required == true
+    assert out.metadata == %{}
+  end
+
+  test "client_secret_jwt verifier material round-trips and updates through persistence" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "client_secret_jwt_verifier_round_trip",
+      client_type: :confidential,
+      client_secret_hash: "sha256:salt:hash",
+      client_secret_jwt_verifier_encrypted: "sealed-initial",
+      token_endpoint_auth_signing_alg: :HS256,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    assert repo.get!(ClientRecord, inserted.id).client_secret_jwt_verifier_encrypted ==
+             "sealed-initial"
+
+    assert repo.get!(ClientRecord, inserted.id).token_endpoint_auth_signing_alg == :HS256
+
+    {:ok, updated} =
+      inserted
+      |> ClientRecord.changeset(%Client{
+        ClientRecord.to_domain(inserted)
+        | client_secret_jwt_verifier_encrypted: "sealed-rotated",
+          token_endpoint_auth_signing_alg: :RS256
+      })
+      |> repo.update()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, updated.id))
+    assert out.client_secret_jwt_verifier_encrypted == "sealed-rotated"
+    assert out.token_endpoint_auth_signing_alg == :RS256
   end
 
   test "update_changeset/2 does NOT cast :provenance (provenance is create-time only)" do

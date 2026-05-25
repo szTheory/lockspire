@@ -40,8 +40,24 @@ defmodule Lockspire.Protocol.DiscoveryTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Storage.Ecto.Repository
 
-  @static_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
-  @published_methods ["none", "client_secret_basic", "client_secret_post", "private_key_jwt"]
+  @static_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
+  @published_methods [
+    "none",
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ]
   @introspection_methods ["client_secret_basic", "client_secret_post", "private_key_jwt"]
 
   setup_all do
@@ -108,6 +124,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
@@ -117,11 +134,19 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["revocation_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["revocation_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
                "EdDSA"
              ]
+
+      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_methods_supported")
+
+      refute Map.has_key?(
+               config,
+               "pushed_authorization_request_endpoint_auth_signing_alg_values_supported"
+             )
     end
 
     test "publishes introspection auth metadata from current shared confidential-client runtime behavior" do
@@ -149,6 +174,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
@@ -173,6 +199,18 @@ defmodule Lockspire.Protocol.DiscoveryTest do
                "ES256",
                "PS256"
              ]
+    end
+
+    test "suppresses client_secret_jwt and HS256 publication under FAPI posture" do
+      put_server_security_profile!(:fapi_2_0_security)
+
+      config = Discovery.openid_configuration()
+
+      refute "client_secret_jwt" in config["token_endpoint_auth_methods_supported"]
+      refute "client_secret_jwt" in config["revocation_endpoint_auth_methods_supported"]
+      refute "HS256" in config["token_endpoint_auth_signing_alg_values_supported"]
+      refute "HS256" in config["revocation_endpoint_auth_signing_alg_values_supported"]
+      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_methods_supported")
     end
   end
 
@@ -576,6 +614,31 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
       # Should return 400 (bad request due to missing body), not 404
       assert conn.status == 400
+    end
+  end
+
+  describe "openid_configuration/0 — mtls_endpoint_aliases" do
+    test "publishes mtls_endpoint_aliases when mtls_issuer is configured" do
+      Application.put_env(:lockspire, :mtls_issuer, "https://mtls.example.test/lockspire")
+      on_exit(fn -> Application.delete_env(:lockspire, :mtls_issuer) end)
+
+      config = Discovery.openid_configuration()
+
+      aliases = config["mtls_endpoint_aliases"]
+      assert aliases["token_endpoint"] == "https://mtls.example.test/lockspire/token"
+      assert aliases["revocation_endpoint"] == "https://mtls.example.test/lockspire/revoke"
+      assert aliases["introspection_endpoint"] == "https://mtls.example.test/lockspire/introspect"
+
+      assert aliases["device_authorization_endpoint"] ==
+               "https://mtls.example.test/lockspire/device/code"
+
+      assert aliases["pushed_authorization_request_endpoint"] ==
+               "https://mtls.example.test/lockspire/par"
+
+      assert aliases["userinfo_endpoint"] == "https://mtls.example.test/lockspire/userinfo"
+
+      assert aliases["backchannel_authentication_endpoint"] ==
+               "https://mtls.example.test/lockspire/bc-authorize"
     end
   end
 

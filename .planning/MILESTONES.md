@@ -1,5 +1,95 @@
 # Milestones
 
+## v1.24 client_secret_jwt (Shipped + archived: 2026-05-25)
+
+**Phases completed:** **3** (**88-90**), **9** plans, **7** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now supports a narrow `client_secret_jwt` direct-client authentication slice on shipped Lockspire-owned endpoints without widening Lockspire's higher-trust support claims.
+
+**Key accomplishments:**
+- Added shared direct-client JWT routing that resolves the attempted JWT method from stored client auth truth instead of implicitly treating every JWT assertion as `private_key_jwt`.
+- Added sealed verifier material and strict HS256-only verification so `client_secret_jwt` can work without weakening the existing hashed-secret posture.
+- Added repo-native proof for valid and invalid `client_secret_jwt` behavior across representative shipped direct-client surfaces, including replay, audience, algorithm, method-mismatch, and FAPI-denial cases.
+- Aligned DCR, RFC 7592, discovery, admin/operator surfaces, support docs, and release-contract tests around one truthful narrow support boundary.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.24-MILESTONE-AUDIT.md`](milestones/v1.24-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.24-ROADMAP.md`, `milestones/v1.24-REQUIREMENTS.md`, `milestones/v1.24-MILESTONE-AUDIT.md` · **Git tag:** `v1.24`
+
+---
+
+## v1.23 DCR Logout Metadata (Shipped + archived: 2026-05-24)
+
+**Phases completed:** **3** (**85-87**), **9** plans, **10** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now lets eligible self-service clients manage the existing logout propagation metadata through DCR and RFC 7592 without widening Lockspire's current logout support boundary.
+
+**Key accomplishments:**
+- Added DCR create-time validation, typed persistence, and truthful readback for `backchannel_logout_*` and `frontchannel_logout_*` metadata.
+- Added RFC 7592 full-replace update semantics for the four logout metadata fields, including clear-on-omit behavior.
+- Proved rotated registration access token truth, provenance retention, audit continuity, and negative-path contracts across protocol and controller seams.
+- Aligned supported-surface, DCR lifecycle, operator, and maintainer release docs to one canonical logout support contract.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.23-MILESTONE-AUDIT.md`](milestones/v1.23-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.23-ROADMAP.md`, `milestones/v1.23-REQUIREMENTS.md`, `milestones/v1.23-MILESTONE-AUDIT.md` · **Git tag:** `v1.23`
+
+---
+
+## v1.21 Resource Server (API Protection) (Shipped + archived: 2026-05-23)
+
+**Phases completed:** **3** (**79-81**), **9** plans, **10** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now includes first-class Phoenix API route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+
+**Key accomplishments:**
+- Added `Lockspire.Plug.VerifyToken` plus `%Lockspire.AccessToken{}` and `Lockspire.KeyCache` for fast, local JWT validation against Lockspire-issued keys.
+- Added `Lockspire.Plug.EnforceSenderConstraints` so protected routes can enforce DPoP and MTLS confirmation claims without taking over the HTTP boundary.
+- Kept `Lockspire.Plug.RequireToken` as the single strict transport boundary, with truthful `401 invalid_token` vs `403 insufficient_scope` semantics.
+- Published and contract-tested the canonical Phoenix protected-route guide for `VerifyToken -> EnforceSenderConstraints -> RequireToken`.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.21-MILESTONE-AUDIT.md`](milestones/v1.21-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.21-ROADMAP.md`, `milestones/v1.21-REQUIREMENTS.md`, `milestones/v1.21-CONTEXT.md`, `milestones/v1.21-MILESTONE-AUDIT.md` · **Git tag:** `v1.21`
+
+---
+
+## v1.20 Mutual TLS (RFC 8705) (Shipped + archived: 2026-05-23)
+
+**Phases completed:** **4** (**75-78**)
+
+**Goal:** Implement Mutual TLS for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for high-security domain integrations.
+
+**Key capabilities:**
+- Explicit certificate extraction via `Lockspire.MTLS.Extractor` behaviour (Cowboy native and Proxy headers).
+- `tls_client_auth` and `self_signed_tls_client_auth` client authentication.
+- `x5t#S256` certificate-bound access tokens.
+- `mtls_endpoint_aliases` discovery metadata.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.20-MILESTONE-AUDIT.md`](milestones/v1.20-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.20-ROADMAP.md`, `milestones/v1.20-REQUIREMENTS.md`, `milestones/v1.20-MILESTONE-AUDIT.md` · **Git tag:** `v1.20`
+
+---
+
+## v1.19 FAPI 2.0 Message Signing (Shipped + archived: 2026-05-21)
+
+**Phases completed:** **4** (**71-74**), **13** plans, **5** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now includes full support for the OpenID Connect FAPI 2.0 Message Signing Profile.
+
+**Key accomplishments:**
+- Implemented JARM (JWT Secured Authorization Response Mode) and Encrypted JARM.
+- Implemented JWT introspection responses.
+- Enforced strict FAPI 2.0 Message Signing security profile across all runtime flows.
+- Provided canonical readiness signals and operator remediations in the LiveView admin interfaces.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.19-MILESTONE-AUDIT.md`](milestones/v1.19-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.19-ROADMAP.md`, `milestones/v1.19-REQUIREMENTS.md`, `milestones/v1.19-MILESTONE-AUDIT.md` · **Git tag:** `v1.19`
+
+---
+
 ## v1.18 Post-Release Execution (Shipped + archived: 2026-05-07)
 
 **Phases completed:** **1** (**70**), **1** plan, **1** requirement closed.

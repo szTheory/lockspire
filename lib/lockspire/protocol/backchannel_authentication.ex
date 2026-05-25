@@ -362,7 +362,10 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   end
 
   defp client_auth_options(request) do
-    [client_store: Keyword.get(request_opts(request), :client_store, Repository)]
+    [
+      client_store: Keyword.get(request_opts(request), :client_store, Repository),
+      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
+    ]
   end
 
   defp request_opts(request) do

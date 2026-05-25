@@ -23,7 +23,9 @@ defmodule Lockspire.Web.IntrospectionController do
     case Introspection.introspect(%{
            params: params,
            authorization: authorization,
-           opts: [client_store: Repository, token_store: Repository, consent_store: Repository]
+           opts:
+             [client_store: Repository, token_store: Repository, consent_store: Repository]
+             |> Keyword.put(:mtls_cert, conn.private[:lockspire_mtls_cert])
          }) do
       {:ok, %Success{} = success} ->
         if success.strict_jwt_required? and not wants_jwt? do

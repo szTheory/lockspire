@@ -4,10 +4,21 @@ defmodule Lockspire.Protocol.ClientAuth do
   """
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Protocol.ClientAuth.ClientSecretJwt
   alias Lockspire.Protocol.ClientAuth.PrivateKeyJwt
   alias Lockspire.Security.Policy
 
-  @supported_auth_methods [:none, :client_secret_basic, :client_secret_post, :private_key_jwt]
+  @published_auth_methods [
+    :none,
+    :client_secret_basic,
+    :client_secret_post,
+    :client_secret_jwt,
+    :private_key_jwt,
+    :tls_client_auth,
+    :self_signed_tls_client_auth
+  ]
+  @runtime_supported_auth_methods @published_auth_methods
+  @jwt_auth_methods [:private_key_jwt, :client_secret_jwt]
 
   defmodule Error do
     @moduledoc """
@@ -28,21 +39,36 @@ defmodule Lockspire.Protocol.ClientAuth do
 
   @spec authenticate(map(), String.t() | nil, keyword()) :: result()
   def authenticate(params, authorization, opts) when is_map(params) and is_list(opts) do
-    with {:ok, attempted_method, client_id, client_secret} <-
+    with {:ok, raw_method, client_id, client_secret} <-
            parse_client_credentials(params, authorization),
          {:ok, %Client{} = client} <- fetch_client(client_id, opts),
+         attempted_method =
+           resolve_implicit_method(raw_method, client.token_endpoint_auth_method, opts),
          :ok <- validate_registered_auth_method(client, attempted_method),
          :ok <- validate_client_secret(client, attempted_method, client_secret, opts) do
       {:ok, client}
     end
   end
 
+  defp resolve_implicit_method(:implicit_client_id, auth_method, _opts)
+       when auth_method in [:none, :tls_client_auth, :self_signed_tls_client_auth],
+       do: auth_method
+
+  defp resolve_implicit_method(:jwt_client_assertion, auth_method, opts)
+       when auth_method in @jwt_auth_methods do
+    if auth_method in supported_jwt_auth_methods(opts),
+      do: auth_method,
+      else: :jwt_client_assertion
+  end
+
+  defp resolve_implicit_method(method, _auth_method, _opts), do: method
+
   @spec supported_auth_methods() :: [atom()]
-  def supported_auth_methods, do: @supported_auth_methods
+  def supported_auth_methods, do: @runtime_supported_auth_methods
 
   @spec supported_auth_method_names() :: [String.t()]
   def supported_auth_method_names do
-    Enum.map(@supported_auth_methods, &Atom.to_string/1)
+    Enum.map(@published_auth_methods, &Atom.to_string/1)
   end
 
   defp parse_client_credentials(params, authorization) do
@@ -75,7 +101,7 @@ defmodule Lockspire.Protocol.ClientAuth do
   defp evaluate_client_credentials(%{is_jwt_bearer?: true, client_assertion: a})
        when not is_nil(a) do
     case peek_jwt_client_id(a) do
-      {:ok, client_id} -> {:ok, :private_key_jwt, client_id, a}
+      {:ok, client_id} -> {:ok, :jwt_client_assertion, client_id, a}
       :error -> {:error, invalid_client("Malformed client_assertion", :invalid_client_assertion)}
     end
   end
@@ -86,7 +112,7 @@ defmodule Lockspire.Protocol.ClientAuth do
   end
 
   defp evaluate_client_credentials(%{body_client_id: id}) when not is_nil(id) do
-    {:ok, :none, id, nil}
+    {:ok, :implicit_client_id, id, nil}
   end
 
   defp evaluate_client_credentials(_state) do
@@ -145,7 +171,7 @@ defmodule Lockspire.Protocol.ClientAuth do
          %Client{token_endpoint_auth_method: auth_method},
          attempted_method
        )
-       when auth_method in @supported_auth_methods do
+       when auth_method in @runtime_supported_auth_methods do
     case Policy.ensure_supported_token_endpoint_auth_method(auth_method) do
       :ok ->
         if auth_method == attempted_method do
@@ -193,6 +219,27 @@ defmodule Lockspire.Protocol.ClientAuth do
     end
   end
 
+  defp validate_client_secret(%Client{} = client, :client_secret_jwt, client_assertion, opts) do
+    case ClientSecretJwt.verify(client, client_assertion, opts) do
+      :ok ->
+        :ok
+
+      {:error, reason_code} ->
+        {:error, invalid_client("Client authentication failed", reason_code)}
+    end
+  end
+
+  defp validate_client_secret(%Client{} = client, method, _client_secret, opts)
+       when method in [:tls_client_auth, :self_signed_tls_client_auth] do
+    case Lockspire.Protocol.ClientAuth.MTLS.verify(client, opts[:mtls_cert], method, opts) do
+      :ok ->
+        :ok
+
+      {:error, reason_code} ->
+        {:error, invalid_client("Client authentication failed", reason_code)}
+    end
+  end
+
   defp validate_client_secret(%Client{} = client, method, client_secret, _opts)
        when method in [:client_secret_basic, :client_secret_post] do
     cond do
@@ -223,6 +270,10 @@ defmodule Lockspire.Protocol.ClientAuth do
   defp normalize_optional_string(_value), do: nil
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
+
+  defp supported_jwt_auth_methods(opts) do
+    Keyword.get(opts, :supported_jwt_auth_methods, [:private_key_jwt])
+  end
 
   defp invalid_client(description, reason_code) do
     oauth_error(401, "invalid_client", description, reason_code)

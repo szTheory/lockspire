@@ -130,6 +130,7 @@ defmodule Lockspire.Protocol.Revocation do
     request
     |> Map.get(:opts, [])
     |> Keyword.put_new(:client_store, Config.repo!())
+    |> Keyword.put_new(:supported_jwt_auth_methods, [:private_key_jwt, :client_secret_jwt])
   end
 
   defp token_store(request),

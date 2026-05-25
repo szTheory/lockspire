@@ -1,5 +1,8 @@
 import Config
 
+config :logger, :default_formatter,
+  metadata: [:event, :category, :authorization_scheme, :reason_code, :required_audiences_count]
+
 config :lockspire,
   repo: nil,
   account_resolver: nil,

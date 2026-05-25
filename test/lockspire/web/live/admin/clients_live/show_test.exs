@@ -211,6 +211,34 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "Test fetch"
   end
 
+  test "client detail shows read-only client_secret_jwt plus HS256 truth", %{client: client} do
+    assert {:ok, jwt_client} =
+             Repository.register_client(%Client{
+               client_id: "csjwt-show-client",
+               client_secret_hash: client.client_secret_hash,
+               client_secret_jwt_verifier_encrypted: "sealed-jwt-show",
+               client_type: :confidential,
+               name: "Shared JWT Show Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_jwt,
+               token_endpoint_auth_signing_alg: :HS256,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{jwt_client.client_id}")
+
+    assert html =~ "Shared JWT client secret posture"
+    assert html =~ "client_secret_jwt"
+    assert html =~ "HS256"
+    refute html =~ "verifier material"
+  end
+
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
   end

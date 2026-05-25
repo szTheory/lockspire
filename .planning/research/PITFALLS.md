@@ -1,48 +1,47 @@
-# Domain Pitfalls
+# v1.24 Research: Pitfalls
 
-**Domain:** RFC 8705 (Mutual TLS for OAuth)
-**Researched:** 2024
+## Pitfall 1: Treating all JWT assertions as `private_key_jwt`
 
-## Critical Pitfalls
+The current shared auth parser resolves any JWT client assertion into the asymmetric verifier path. If `client_secret_jwt` is added without changing that split, runtime truth and registration truth will diverge immediately.
 
-Mistakes that cause rewrites or major security vulnerabilities.
+Prevention:
 
-### Pitfall 1: mTLS Proxy Header Spoofing
-**What goes wrong:** An attacker sends an HTTP request containing a forged `Client-Cert` (or `X-SSL-Cert`) header. The application trusts this header and grants access based on the attacker's forged identity.
-**Why it happens:** The TLS-terminating reverse proxy (NGINX, ALB) was not configured to sanitize/strip incoming headers before appending its own verified certificate header. Alternatively, the application parses headers implicitly without validating the internal IP address of the proxy.
-**Consequences:** Complete bypass of mTLS security. Attackers can impersonate confidential clients or steal sender-constrained access tokens.
-**Prevention:** 
-1. The proxy *must* overwrite or strip incoming certificate headers.
-2. The Lockspire extraction Plug *must* require explicit configuration to trust headers, and ideally validate that the `conn.remote_ip` belongs to the trusted proxy subnet.
-**Detection:** Penetration testing by injecting custom headers from the public internet.
+- make method resolution explicit before verification
+- add tests that prove both auth methods route to their intended verifier
 
-### Pitfall 2: Header Normalization Differentials
-**What goes wrong:** The proxy strips `Client-Cert` (hyphen) but the attacker sends `Client_Cert` (underscore). The proxy ignores it, but the application framework normalizes underscores to hyphens and parses the attacker's header.
-**Why it happens:** Web servers and application frameworks (like Plug/Cowboy) have different rules for HTTP header normalization.
-**Consequences:** Header spoofing bypass.
-**Prevention:** Use strictly defined header names (e.g., standard RFC 9440 `Client-Cert`). Ensure the extraction Plug uses exact string matching on the normalized header map provided by `Plug.Conn` without doing its own fuzzy matching.
+## Pitfall 2: Weakening secret-handling posture
 
-## Moderate Pitfalls
+`client_secret_jwt` is easy to implement incorrectly by introducing recoverable secret storage, ad hoc secret copies, or verbose audit logging of assertion contents.
 
-### Pitfall 1: URL-Encoded PEM Artifacts
-**What goes wrong:** NGINX often passes certificates URL-encoded (or with spaces replaced by tabs/escapes) in headers (e.g., using `$ssl_client_escaped_cert`). The Elixir `:public_key` module fails to parse this.
-**Prevention:** The extraction Plug must intelligently handle URL-decoding and whitespace normalization before attempting `pem_decode`.
+Prevention:
 
-## Minor Pitfalls
+- verify signatures from the existing client secret input only
+- preserve hashed-at-rest storage posture
+- redact assertions and raw secret-derived material from logs and operator surfaces
 
-### Pitfall 1: CPU Overhead on Parsing
-**What goes wrong:** Running `:public_key.pem_decode` on a massive certificate chain for every single API request adds CPU overhead.
-**Prevention:** For resource servers, consider if the proxy can calculate the SHA-256 thumbprint at the edge and pass *that* in a separate header, avoiding the need for the Elixir app to parse the full PEM on every request. (This is an optimization, not strictly required for MVP).
+## Pitfall 3: Over-claiming FAPI or high-trust equivalence
 
-## Phase-Specific Warnings
+Lockspire already ships `private_key_jwt` and mTLS for higher-trust deployments. Advertising `client_secret_jwt` as equivalent would create support-truth drift.
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Certificate Extraction | Accidental spoofing vulnerability enabled by default. | Make direct TLS (`get_peer_data`) the default, or require a `source` explicitly. Do not automatically fall back to headers. |
-| FAPI 2.0 Strictness | Dropping support for DPoP because mTLS is implemented. | FAPI 2.0 Advanced requires mTLS *or* DPoP (often both in practice for different layers). Ensure Lockspire's policy resolver correctly allows either based on client configuration, rather than creating a global XOR. |
+Prevention:
 
-## Sources
+- keep `docs/supported-surface.md` explicit about the narrower posture
+- ensure discovery/admin wording does not imply stronger-trust parity
 
-- FAPI 2.0 Security Profile
-- RFC 9440 (Client-Cert HTTP Header)
-- Open Banking implementation guidelines on proxy termination.
+## Pitfall 4: Audience and replay drift
+
+The standards history around JWT client-auth audiences has enough ambiguity that permissive matching becomes a long-term interop and security drag. Replay rules can also drift if some endpoints record `jti` and others do not.
+
+Prevention:
+
+- keep the issuer-string `aud` rule explicit and tested
+- reuse the same used-`jti` recording path across all shipped direct-client surfaces
+
+## Pitfall 5: Publishing incomplete metadata truth
+
+If DCR or discovery accepts `client_secret_jwt` without exposing the corresponding signing-alg requirements, clients will guess and support burden will rise.
+
+Prevention:
+
+- publish method and algorithm metadata together
+- add release-contract and discovery tests that pin the supported values

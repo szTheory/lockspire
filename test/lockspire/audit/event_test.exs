@@ -14,6 +14,7 @@ defmodule Lockspire.Audit.EventTest do
         metadata: %{
           client_id: "client-123",
           client_assertion: "raw.jwt.value",
+          client_secret_jwt_verifier_encrypted: "sealed-value",
           jwt_header: %{"alg" => "RS256"},
           jwt_claims: %{"sub" => "client-123"},
           jwks_body: %{"keys" => [%{"kid" => "kid-1"}]},
@@ -25,6 +26,7 @@ defmodule Lockspire.Audit.EventTest do
     assert event.metadata["client_id"] == "client-123"
     assert event.metadata["jwks_source"] == :jwks_uri
     refute Map.has_key?(event.metadata, "client_assertion")
+    refute Map.has_key?(event.metadata, "client_secret_jwt_verifier_encrypted")
     refute Map.has_key?(event.metadata, "jwt_header")
     refute Map.has_key?(event.metadata, "jwt_claims")
     refute Map.has_key?(event.metadata, "jwks_body")
