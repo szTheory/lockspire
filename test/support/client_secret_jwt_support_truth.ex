@@ -39,7 +39,7 @@ defmodule Lockspire.TestSupport.ClientSecretJwtSupportTruth do
   defp assert_includes_all(content, snippets) do
     Enum.each(snippets, fn snippet ->
       unless String.contains?(content, snippet) do
-        raise ExUnit.AssertionError, "expected content to include #{inspect(snippet)}"
+        raise "expected content to include #{inspect(snippet)}"
       end
     end)
   end
@@ -47,7 +47,7 @@ defmodule Lockspire.TestSupport.ClientSecretJwtSupportTruth do
   defp refute_includes_any(content, snippets) do
     Enum.each(snippets, fn snippet ->
       if String.contains?(content, snippet) do
-        raise ExUnit.AssertionError, "expected content to exclude #{inspect(snippet)}"
+        raise "expected content to exclude #{inspect(snippet)}"
       end
     end)
   end
