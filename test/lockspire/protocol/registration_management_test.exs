@@ -147,6 +147,25 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — FAPI 2.0 readiness contract" do
+    test "rejects client_secret_jwt updates under the effective FAPI profile", %{
+      client: client,
+      client_id: client_id
+    } do
+      request = %{
+        metadata: DcrFixtures.client_secret_jwt_metadata(),
+        server_policy:
+          DcrFixtures.client_secret_jwt_server_policy(%{security_profile: :fapi_2_0_security}),
+        client: client
+      }
+
+      assert {:error,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_method,
+                reason: :incompatible_with_fapi_2_0
+              }} = RegistrationManagement.update(client_id, request)
+    end
+
     test "rejects update when client algorithm metadata is incompatible with FAPI", %{
       client: client,
       client_id: client_id
@@ -290,6 +309,51 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — RAT rotation" do
+    test "switching to client_secret_jwt requires explicit HS256 and read/update responses use stored truth",
+         %{client: client, client_id: client_id} do
+      request = %{
+        metadata: DcrFixtures.client_secret_jwt_metadata(),
+        server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+        client: client
+      }
+
+      assert {:ok, %UpdateSuccess{client: updated_client} = success} =
+               RegistrationManagement.update(client_id, request)
+
+      assert updated_client.token_endpoint_auth_method == :client_secret_jwt
+      assert updated_client.token_endpoint_auth_signing_alg == :HS256
+
+      assert RegistrationJSON.read_response(updated_client).token_endpoint_auth_method ==
+               "client_secret_jwt"
+
+      assert RegistrationJSON.read_response(updated_client).token_endpoint_auth_signing_alg ==
+               "HS256"
+
+      assert RegistrationJSON.update_response(success).token_endpoint_auth_signing_alg == "HS256"
+    end
+
+    test "switching away from client_secret_jwt clears the stored signing algorithm", %{
+      client: client,
+      client_id: client_id
+    } do
+      {:ok, %UpdateSuccess{client: jwt_client}} =
+        RegistrationManagement.update(client_id, %{
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+          client: client
+        })
+
+      assert {:ok, %UpdateSuccess{client: updated_client}} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_metadata(),
+                 server_policy: DcrFixtures.client_secret_jwt_server_policy(),
+                 client: jwt_client
+               })
+
+      assert updated_client.token_endpoint_auth_method == :client_secret_basic
+      assert is_nil(updated_client.token_endpoint_auth_signing_alg)
+    end
+
     test "persists logout metadata on update and returns the same stored values", %{
       client: client,
       client_id: client_id,

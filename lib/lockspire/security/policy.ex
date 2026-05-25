@@ -4,18 +4,21 @@ defmodule Lockspire.Security.Policy do
   """
 
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.Config
   alias Lockspire.Protocol.SecurityProfile
 
   @supported_token_endpoint_auth_methods [
     :none,
     :client_secret_basic,
     :client_secret_post,
+    :client_secret_jwt,
     :private_key_jwt,
     :tls_client_auth,
     :self_signed_tls_client_auth
   ]
   @supported_response_types ["code"]
   @supported_signing_algs ["RS256", "ES256", "PS256", "EdDSA", :RS256, :ES256, :PS256, :EdDSA]
+  @client_secret_jwt_salt "lockspire client_secret_jwt verifier"
 
   @spec validate_key_compliance(SigningKey.t(), :fapi_2_0_security | :none) ::
           :ok | {:error, term()}
@@ -172,6 +175,24 @@ defmodule Lockspire.Security.Policy do
 
   def verify_client_secret(_client_secret_hash, _client_secret), do: false
 
+  @spec seal_client_secret_jwt_verifier(String.t(), keyword()) :: String.t()
+  def seal_client_secret_jwt_verifier(secret, opts \\ []) when is_binary(secret) and is_list(opts) do
+    Plug.Crypto.encrypt(secret_key_base!(opts), @client_secret_jwt_salt, secret)
+  end
+
+  @spec unseal_client_secret_jwt_verifier(String.t(), keyword()) ::
+          {:ok, String.t()} | {:error, :invalid_client_secret_jwt_verifier}
+  def unseal_client_secret_jwt_verifier(encrypted, opts \\ [])
+      when is_binary(encrypted) and is_list(opts) do
+    case Plug.Crypto.decrypt(secret_key_base!(opts), @client_secret_jwt_salt, encrypted) do
+      {:ok, secret} when is_binary(secret) and secret != "" ->
+        {:ok, secret}
+
+      _other ->
+        {:error, :invalid_client_secret_jwt_verifier}
+    end
+  end
+
   defp generate_token(size) do
     size
     |> :crypto.strong_rand_bytes()
@@ -193,4 +214,15 @@ defmodule Lockspire.Security.Policy do
 
   defp present?(value) when value in [nil, ""], do: false
   defp present?(_value), do: true
+
+  defp secret_key_base!(opts) do
+    case Keyword.get(opts, :secret_key_base) || Config.secret_key_base() do
+      value when is_binary(value) and value != "" ->
+        value
+
+      _other ->
+        raise ArgumentError,
+              "missing Lockspire endpoint secret_key_base required for client_secret_jwt verifier material"
+    end
+  end
 end

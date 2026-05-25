@@ -15,6 +15,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     Process.delete(:recorded_jtis)
     Process.delete(:recorded_audit_events)
     Process.delete(:force_replay_store_error)
+    Process.delete(:client_secret_jwt_secret)
     :ok
   end
 
@@ -292,6 +293,216 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     end
   end
 
+  describe "authenticate/3 with client_secret_jwt" do
+    test "accepts a valid HS256 assertion for a registered client_secret_jwt client" do
+      secret = "phase88-client-secret"
+      Process.put(:client_secret_jwt_secret, secret)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      assertion = client_secret_signed_assertion(secret, "secret_client", now: now)
+
+      assert {:ok, %Client{client_id: "secret_client"}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+    end
+
+    test "fails closed on auth-method mismatch without fallback to another auth method" do
+      secret = "phase88-client-secret"
+      Process.put(:client_secret_jwt_secret, secret)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      assertion = client_secret_signed_assertion(secret, "basic_client", now: now)
+
+      assert {:error, %Error{reason_code: :unsupported_token_endpoint_auth_method}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+    end
+
+    test "rejects HS256 assertions on surfaces that do not enable client_secret_jwt" do
+      secret = "phase88-client-secret"
+      Process.put(:client_secret_jwt_secret, secret)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      assertion = client_secret_signed_assertion(secret, "secret_client", now: now)
+
+      assert {:error, %Error{reason_code: :unsupported_token_endpoint_auth_method}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 now: now
+               )
+    end
+
+    test "rejects disallowed algorithms, audience mismatches, replay, and FAPI-effective profiles" do
+      secret = "phase88-client-secret"
+      Process.put(:client_secret_jwt_secret, secret)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      bad_alg_assertion =
+        client_secret_signed_assertion(secret, "secret_client", alg: "HS512", now: now)
+
+      assert {:error, %Error{reason_code: :client_assertion_algorithm_not_allowed}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(bad_alg_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      bad_audience_assertion =
+        client_secret_signed_assertion(secret, "secret_client",
+          aud: Lockspire.Config.issuer!() <> "/token",
+          now: now,
+          jti: "bad-audience"
+        )
+
+      assert {:error, %Error{reason_code: :client_assertion_audience_invalid}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(bad_audience_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      valid_assertion =
+        client_secret_signed_assertion(secret, "secret_client",
+          now: now,
+          jti: "client-secret-replay"
+        )
+
+      assert {:ok, %Client{client_id: "secret_client"}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(valid_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      assert {:error, %Error{reason_code: :client_assertion_replayed}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(valid_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      fapi_assertion = client_secret_signed_assertion(secret, "secret_client", now: now)
+
+      assert {:error, %Error{reason_code: :client_assertion_auth_method_not_allowed}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(fapi_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.FapiServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+    end
+
+    test "emits stable telemetry and redacted audit metadata for symmetric verifier failures" do
+      secret = "phase88-client-secret"
+      Process.put(:client_secret_jwt_secret, secret)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      parent = self()
+      handler_id = "client-secret-jwt-test-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach_many(
+        handler_id,
+        [
+          [:lockspire, :client_auth, :failed],
+          [:lockspire, :client_auth, :replay_detected]
+        ],
+        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
+        parent
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      invalid_signature_assertion =
+        client_secret_signed_assertion("wrong-secret", "secret_client", now: now)
+
+      assert {:error, %Error{reason_code: :client_assertion_signature_invalid}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(invalid_signature_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      valid_assertion =
+        client_secret_signed_assertion(secret, "secret_client", now: now, jti: "audit-replay")
+
+      assert {:ok, %Client{client_id: "secret_client"}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(valid_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      assert {:error, %Error{reason_code: :client_assertion_replayed}} =
+               ClientAuth.authenticate(
+                 jwt_client_assertion_params(valid_assertion),
+                 nil,
+                 client_store: __MODULE__.ClientSecretJwtStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt],
+                 now: now
+               )
+
+      assert_receive {[:lockspire, :client_auth, :failed],
+                      %{reason_code: :client_assertion_signature_invalid, auth_method: :client_secret_jwt}}
+
+      assert_receive {[:lockspire, :client_auth, :replay_detected],
+                      %{reason_code: :client_assertion_replayed, auth_method: :client_secret_jwt}}
+
+      audits = Process.get(:recorded_audit_events, [])
+
+      assert Enum.any?(audits, &(&1.reason_code == "client_assertion_signature_invalid"))
+      assert Enum.any?(audits, &(&1.reason_code == "client_assertion_replayed"))
+      refute Enum.any?(audits, &Map.has_key?(&1.metadata, "client_assertion"))
+      refute Enum.any?(audits, &Map.has_key?(&1.metadata, "jwt_claims"))
+      refute Enum.any?(audits, &Map.has_key?(&1.metadata, "client_secret_jwt_verifier_encrypted"))
+    end
+  end
+
   @der_cert Base.decode64!(
               "MIIDlzCCAn+gAwIBAgIUf9kmQnJK500+Nv0BWu0gM48zcgIwDQYJKoZIhvcNAQELBQAwNjEUMBIGA1UEAwwLZXhhbXBsZS5jb20xETAPBgNVBAoMCFRlc3QgT3JnMQswCQYDVQQGEwJVUzAeFw0yNjA1MjIyMjI0MzhaFw0zNjA1MTkyMjI0MzhaMDYxFDASBgNVBAMMC2V4YW1wbGUuY29tMREwDwYDVQQKDAhUZXN0IE9yZzELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCnzGcJzq614Cz9AN6axBrGwnx0odNBZJjdQ0VODx+WxDWepf5B9+B0qNEyMBg6eMzRWNSXPs5VaglfJUte35OTXtIh+Rz84PyPw7a8Yg+4EOasw2zqsxN+9uH/VYpV3dcrEJdA9Xx0x0ksLWV0vClTCSWNnJbJ8caftyp6fUL2kBPxv0nX/MVjNJxcm5QAmHXh+dSZ2CgZr6bdzN3JzNdc9JeYVJ9/7sMi7mbjSwLZElBBLIlPtJX7jVVTxLKR5UTnY9kYdxF3VaF42P/YPrcYJQ5LH8iilBxYL/qnct+ZwzvYgKACB8CEzNqIhTbDXzFh6J97OFDUnm+5XWIFMt+fAgMBAAGjgZwwgZkwHQYDVR0OBBYEFPEcpeN1EnkmQ7VbwOCyeUCfhwTmMB8GA1UdIwQYMBaAFPEcpeN1EnkmQ7VbwOCyeUCfhwTmMA8GA1UdEwEB/wQFMAMBAf8wRgYDVR0RBD8wPYILZXhhbXBsZS5jb22GFmh0dHBzOi8vZXhhbXBsZS5jb20vaWSHBMCoAQGBEHRlc3RAZXhhbXBsZS5jb20wDQYJKoZIhvcNAQELBQADggEBAJtQ86lCGy/Y+7SRx/sFWYhC9UaeRJix84ZBnqVEMA37uvZQ4N3AHP+XDhuhSe++ZMqkp9sZHsWQCIZkmqqLUtRUKGiFbe9DcSvbn9PuSN56EbLM0ZCNIt41lEpAYVOogeakehvU0YsSPA4p/MxQ7ZkizWqY9iqnZC93RX43FFLVlpR0YTnq4tiTo4Eln5kLdqhMJdBM/PUUjQAsKK4tUrxRI5u7ycKzI04/M8mo5tbg3UsIiZ4WiFaUENCMcI4RxQca2Kn5mN3gJyaE/NNM2E1fRhZQThVIGZOXO+BIvf1McaOBGbLeRdr2pP3/CORqljaH+kapJnOFVFw+N1daB8g="
             )
@@ -343,6 +554,33 @@ defmodule Lockspire.Protocol.ClientAuthTest do
          client_id: "test_client",
          token_endpoint_auth_method: :private_key_jwt,
          jwks: Process.get(:inline_pub_jwk_map)
+       }}
+    end
+
+    def fetch_client_by_id(_), do: {:ok, nil}
+  end
+
+  defmodule ClientSecretJwtStore do
+    def fetch_client_by_id("secret_client") do
+      {:ok,
+       %Client{
+         client_id: "secret_client",
+         client_type: :confidential,
+         token_endpoint_auth_method: :client_secret_jwt,
+         client_secret_jwt_verifier_encrypted:
+           Lockspire.Security.Policy.seal_client_secret_jwt_verifier(
+             Process.get(:client_secret_jwt_secret) || raise("missing test secret")
+           )
+       }}
+    end
+
+    def fetch_client_by_id("basic_client") do
+      {:ok,
+       %Client{
+         client_id: "basic_client",
+         client_type: :confidential,
+         token_endpoint_auth_method: :client_secret_basic,
+         client_secret_hash: Lockspire.Security.Policy.hash_client_secret("basic-client-secret")
        }}
     end
 
@@ -432,12 +670,14 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     end
   end
 
-  defp private_key_jwt_params(assertion) do
+  defp jwt_client_assertion_params(assertion) do
     %{
       "client_assertion_type" => "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
       "client_assertion" => assertion
     }
   end
+
+  defp private_key_jwt_params(assertion), do: jwt_client_assertion_params(assertion)
 
   defp signed_assertion(private_jwk, client_id, opts \\ []) do
     now = Keyword.get(opts, :now, DateTime.utc_now() |> DateTime.truncate(:second))
@@ -465,5 +705,22 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     header = Base.url_encode64(Jason.encode!(%{"alg" => "none"}), padding: false)
     payload_b64 = Base.url_encode64(Jason.encode!(payload), padding: false)
     "#{header}.#{payload_b64}."
+  end
+
+  defp client_secret_signed_assertion(secret, client_id, opts) do
+    now = Keyword.get(opts, :now, DateTime.utc_now() |> DateTime.truncate(:second))
+
+    JarTestHelpers.sign_jar(
+      JOSE.JWK.from_oct(secret),
+      %{
+        "iss" => client_id,
+        "sub" => client_id,
+        "aud" => Keyword.get(opts, :aud, Lockspire.Config.issuer!()),
+        "jti" => Keyword.get(opts, :jti, "jti-#{System.unique_integer([:positive])}"),
+        "iat" => DateTime.to_unix(now),
+        "exp" => DateTime.add(now, 300, :second) |> DateTime.to_unix()
+      },
+      alg: Keyword.get(opts, :alg, "HS256")
+    )
   end
 end

@@ -1338,7 +1338,12 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp client_store(request),
     do: Keyword.get(request_options(request), :client_store, Repository)
 
-  defp client_auth_options(request), do: [client_store: client_store(request)]
+  defp client_auth_options(request) do
+    [
+      client_store: client_store(request),
+      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
+    ]
+  end
 
   defp token_store(request),
     do: Keyword.get(request_options(request), :token_store, Repository)

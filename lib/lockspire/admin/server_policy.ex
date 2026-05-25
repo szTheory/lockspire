@@ -15,6 +15,11 @@ defmodule Lockspire.Admin.ServerPolicy do
           self_registration_allowed?: boolean(),
           supported_assertion_signing_algorithms: [String.t()]
         }
+  @type client_secret_jwt_registration_truth :: %{
+          self_registration_allowed?: boolean(),
+          signing_algorithm: String.t(),
+          fapi_effective?: boolean()
+        }
 
   @registration_policy_atoms [:disabled, :initial_access_token, :open]
   @registration_policy_strings ["disabled", "initial_access_token", "open"]
@@ -146,6 +151,20 @@ defmodule Lockspire.Admin.ServerPolicy do
         "private_key_jwt" in policy.dcr_allowed_token_endpoint_auth_methods,
       supported_assertion_signing_algorithms:
         SecurityProfile.allowed_signing_algorithms(policy.security_profile)
+    }
+  end
+
+  @spec client_secret_jwt_registration_truth(ServerPolicy.t()) ::
+          client_secret_jwt_registration_truth()
+  def client_secret_jwt_registration_truth(%ServerPolicy{} = policy) do
+    fapi_effective? = policy.security_profile in [:fapi_2_0_security, :fapi_2_0_message_signing]
+
+    %{
+      self_registration_allowed?:
+        not fapi_effective? and
+          "client_secret_jwt" in policy.dcr_allowed_token_endpoint_auth_methods,
+      signing_algorithm: "HS256",
+      fapi_effective?: fapi_effective?
     }
   end
 

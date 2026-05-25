@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.24 client_secret_jwt (Shipped + archived: 2026-05-25)
+
+**Phases completed:** **3** (**88-90**), **9** plans, **7** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now supports a narrow `client_secret_jwt` direct-client authentication slice on shipped Lockspire-owned endpoints without widening Lockspire's higher-trust support claims.
+
+**Key accomplishments:**
+- Added shared direct-client JWT routing that resolves the attempted JWT method from stored client auth truth instead of implicitly treating every JWT assertion as `private_key_jwt`.
+- Added sealed verifier material and strict HS256-only verification so `client_secret_jwt` can work without weakening the existing hashed-secret posture.
+- Added repo-native proof for valid and invalid `client_secret_jwt` behavior across representative shipped direct-client surfaces, including replay, audience, algorithm, method-mismatch, and FAPI-denial cases.
+- Aligned DCR, RFC 7592, discovery, admin/operator surfaces, support docs, and release-contract tests around one truthful narrow support boundary.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.24-MILESTONE-AUDIT.md`](milestones/v1.24-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.24-ROADMAP.md`, `milestones/v1.24-REQUIREMENTS.md`, `milestones/v1.24-MILESTONE-AUDIT.md` · **Git tag:** `v1.24`
+
+---
+
 ## v1.23 DCR Logout Metadata (Shipped + archived: 2026-05-24)
 
 **Phases completed:** **3** (**85-87**), **9** plans, **10** requirements closed.

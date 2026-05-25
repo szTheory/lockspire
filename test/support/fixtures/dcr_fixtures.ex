@@ -48,6 +48,13 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
     |> Map.put("jwks_uri", "https://app.example.test/.well-known/jwks.json")
   end
 
+  @spec client_secret_jwt_metadata() :: map()
+  def client_secret_jwt_metadata do
+    @valid_metadata
+    |> Map.put("token_endpoint_auth_method", "client_secret_jwt")
+    |> Map.put("token_endpoint_auth_signing_alg", "HS256")
+  end
+
   @spec incoherent_grant_response_metadata() :: map()
   def incoherent_grant_response_metadata do
     # refresh_token without authorization_code — RFC 7591 §2 coherence violation
@@ -138,6 +145,21 @@ defmodule Lockspire.Test.Fixtures.DcrFixtures do
         "client_secret_post",
         "none",
         "private_key_jwt"
+      ]
+    })
+    |> Map.from_struct()
+    |> Map.merge(attrs)
+    |> then(&struct!(ServerPolicy, &1))
+  end
+
+  @spec client_secret_jwt_server_policy(map()) :: ServerPolicy.t()
+  def client_secret_jwt_server_policy(attrs \\ %{}) when is_map(attrs) do
+    server_policy(%{
+      dcr_allowed_token_endpoint_auth_methods: [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt",
+        "none"
       ]
     })
     |> Map.from_struct()

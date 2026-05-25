@@ -56,10 +56,7 @@ The remaining gaps are **not foundational**. They are narrower trust or integrat
 
 ### Highest-Leverage Gaps
 
-1. **`client_secret_jwt`**
-   A useful direct-client auth addition, but lower leverage than DPoP nonce because Lockspire already ships `private_key_jwt` and mTLS for higher-trust clients.
-
-2. **Advanced setup support burden**
+1. **Advanced setup support burden**
    The remaining product risk is no longer foundational protocol coverage; it is support cost around advanced setup edges such as logout propagation, `jwks_uri` rotation, mTLS, and protected-route configuration.
 
 ### Useful But Secondary
@@ -104,10 +101,10 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 3
 
 - **name:** `v1.24 client_secret_jwt`
-- **status:** `active`
-- **priority:** `highest`
-- **recommendation:** active current milestone
-- **why now:** DCR logout metadata is now shipped, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap
+- **status:** `shipped`
+- **priority:** `completed`
+- **recommendation:** archived milestone
+- **why now:** DCR logout metadata was shipped, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap
 - **target slice:**
   - narrow shared verifier on Lockspire-owned direct-client endpoints
   - strict replay, audience, algorithm, and docs posture
@@ -116,6 +113,22 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
   - generic JWT client auth
   - broader federation-style trust expansion
   - any new claim that shared-secret JWT auth satisfies Lockspire's higher-trust FAPI or mTLS posture
+
+### Candidate 4
+
+- **name:** `Support-Burden Reduction`
+- **status:** `candidate`
+- **priority:** `highest`
+- **recommendation:** default next milestone candidate
+- **why now:** the remaining repo risk is support cost and advanced setup ambiguity, not missing foundational protocol coverage
+- **target slice:**
+  - better diagnostics and docs truth for `jwks_uri` rotation
+  - clearer operator guidance for mTLS, logout propagation, and protected-route setup
+  - repo-native proof for the highest-friction support paths that still generate ambiguity
+- **non-goals:**
+  - broad new protocol families
+  - generic CIAM or hosted-auth expansion
+  - auth-method parity work that does not materially reduce adopter friction
 
 ## Stop Rules
 

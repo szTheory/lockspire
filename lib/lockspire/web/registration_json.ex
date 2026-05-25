@@ -43,6 +43,7 @@ defmodule Lockspire.Web.RegistrationJSON do
 
     payload
     |> Map.put(:client_id, client.client_id)
+    |> Map.put(:token_endpoint_auth_method, stringify_auth_method(client.token_endpoint_auth_method))
     |> Map.put(
       :client_id_issued_at,
       if(client.inserted_at, do: DateTime.to_unix(client.inserted_at), else: 0)
@@ -56,7 +57,21 @@ defmodule Lockspire.Web.RegistrationJSON do
     )
     |> Map.put(:dpop_bound_access_tokens, client.dpop_policy == :dpop)
     |> Map.put(:registration_client_uri, Config.issuer!() <> "/register/" <> client.client_id)
+    |> maybe_put_token_endpoint_auth_signing_alg(client)
     |> maybe_put_logout_metadata(client)
+  end
+
+  defp maybe_put_token_endpoint_auth_signing_alg(payload, %Client{
+         token_endpoint_auth_signing_alg: nil
+       }),
+       do: payload
+
+  defp maybe_put_token_endpoint_auth_signing_alg(payload, %Client{} = client) do
+    Map.put(
+      payload,
+      :token_endpoint_auth_signing_alg,
+      stringify_signing_alg(client.token_endpoint_auth_signing_alg)
+    )
   end
 
   defp maybe_put_logout_metadata(payload, %Client{} = client) do
@@ -75,6 +90,12 @@ defmodule Lockspire.Web.RegistrationJSON do
 
   defp maybe_put_logout_field(payload, _field, nil), do: payload
   defp maybe_put_logout_field(payload, field, value), do: Map.put(payload, field, value)
+
+  defp stringify_auth_method(method) when is_atom(method), do: Atom.to_string(method)
+  defp stringify_auth_method(method), do: method
+
+  defp stringify_signing_alg(alg) when is_atom(alg), do: Atom.to_string(alg)
+  defp stringify_signing_alg(alg), do: alg
 
   defp build_error_description(field, reason) do
     cond do

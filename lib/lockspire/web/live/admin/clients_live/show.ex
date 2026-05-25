@@ -205,6 +205,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Last secret rotation: {format_datetime(@client.last_secret_rotated_at)}</p>
         <AdminComponents.status_badge status={status_for(@client)} />
 
+        <section :if={client_secret_jwt_client?(@client)}>
+          <h3>Shared JWT client secret posture</h3>
+          <p>
+            Stored auth method: <code>client_secret_jwt</code>
+          </p>
+          <p>
+            Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
+          </p>
+          <p>
+            This slice is limited to the shared direct-client verifier surfaces. Lockspire
+            keeps <code>HS256</code> read-only here and never exposes secret-derived verifier
+            material.
+          </p>
+        </section>
+
         <section :if={private_key_jwt_client?(@client)}>
           <h3>Client assertion keys</h3>
           <p>
@@ -573,6 +588,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
   defp private_key_jwt_client?(_client), do: false
+
+  defp client_secret_jwt_client?(%Client{token_endpoint_auth_method: :client_secret_jwt}), do: true
+  defp client_secret_jwt_client?(_client), do: false
 
   defp supported_assertion_algorithms(nil), do: "Not available"
 

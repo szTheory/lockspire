@@ -34,6 +34,7 @@ defmodule Lockspire.Storage.RepositoryTest do
     client = %Client{
       client_id: "client_123",
       client_secret_hash: "argon2id$hash",
+      client_secret_jwt_verifier_encrypted: "sealed-verifier-123",
       client_type: :confidential,
       name: "Acme Integrations",
       redirect_uris: ["https://client.example.com/callback"],
@@ -57,6 +58,7 @@ defmodule Lockspire.Storage.RepositoryTest do
     assert fetched_client.pkce_required
     assert fetched_client.active
     assert fetched_client.metadata == %{"tier" => "sandbox"}
+    assert fetched_client.client_secret_jwt_verifier_encrypted == "sealed-verifier-123"
   end
 
   test "lists, updates, rotates, and toggles client lifecycle state" do
@@ -66,6 +68,7 @@ defmodule Lockspire.Storage.RepositoryTest do
              Repository.register_client(%Client{
                client_id: "alpha-client",
                client_secret_hash: "argon2id$hash",
+               client_secret_jwt_verifier_encrypted: "sealed-alpha",
                client_type: :confidential,
                name: "Alpha Client",
                redirect_uris: ["https://alpha.example.com/callback"],
@@ -115,10 +118,12 @@ defmodule Lockspire.Storage.RepositoryTest do
              Repository.rotate_client_secret(
                updated_client,
                "sha256:new-salt:new-hash",
+               "sealed-new-verifier",
                now
              )
 
     assert rotated_client.client_secret_hash == "sha256:new-salt:new-hash"
+    assert rotated_client.client_secret_jwt_verifier_encrypted == "sealed-new-verifier"
     assert rotated_client.last_secret_rotated_at == now
 
     assert {:ok, %Client{} = disabled_client} =

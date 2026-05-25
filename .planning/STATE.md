@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.24
-milestone_name: client_secret_jwt
-status: requirements
-stopped_at: defining requirements
-last_updated: "2026-05-24T19:00:00Z"
-last_activity: 2026-05-24 -- Milestone v1.24 client_secret_jwt started.
+milestone: null
+milestone_name: null
+status: ready_for_next_milestone
+stopped_at: Milestone v1.24 archived and tagged
+last_updated: "2026-05-25T07:24:45Z"
+last_activity: 2026-05-25
 progress:
-  total_phases: 3
+  total_phases: 0
   completed_phases: 0
-  total_plans: 9
+  total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 100
 ---
 
 # Project State
@@ -22,23 +22,25 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Defining requirements for `v1.24 client_secret_jwt`.
+**Current focus:** Select and define the next milestone after shipping v1.24
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: -
-Status: Defining requirements
-Last activity: 2026-05-24 -- Milestone v1.24 client_secret_jwt started.
+Phase: None
+Plan: None
+Status: v1.24 archived and tagged
+Last activity: 2026-05-25
 
 ## Performance Metrics
 
-- Phases completed: 0/3
-- Plans completed: 0/9
+- Phases completed: 0/0 in active milestone slot
+- Plans completed: 0/0 in active milestone slot
 
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| — | — | — | — | — |
+Most recently shipped milestone:
+
+| Milestone | Phases | Plans | Requirements | Status |
+|-----------|--------|-------|--------------|--------|
+| v1.24 | 88-90 | 9 | 7 | shipped |
 
 ## Deferred Items
 
@@ -57,6 +59,10 @@ None.
 - RFC 7592 management update now applies logout propagation metadata through the same normalized typed-field path and clears omitted values under full-replace semantics.
 - Repo-native proof for logout metadata management now covers rotated RAT truth, provenance/audit continuity, and negative validation contracts across protocol and controller seams.
 - DCR and RFC 7592 now manage the existing logout propagation metadata while preserving the durable back-channel and best-effort front-channel truth model.
+- Client records now store typed `token_endpoint_auth_signing_alg` truth so `client_secret_jwt` and `HS256` round-trip coherently across DCR, RFC 7592, discovery, and admin surfaces.
+- Discovery now publishes `client_secret_jwt` only on the shared verifier endpoints and emits endpoint-local mixed JWT signing-alg unions with `HS256` kept symmetric-only.
+- Admin create, detail, and DCR policy surfaces now expose the narrow `client_secret_jwt` slice with read-only `HS256` truth and unchanged secret-handling posture.
+- Milestone v1.24 is complete and archived; the next default candidate should favor support-burden reduction over additional protocol breadth.
 
 ### Blockers/Concerns
 
@@ -64,7 +70,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Start with `$gsd-plan-phase 88` after reviewing the new roadmap, or use `$gsd-discuss-phase 88` to refine the implementation approach first.
+**Next action:** $gsd-new-milestone
 **Resume file:** None
-**Stopped at:** defining requirements
+**Stopped at:** Milestone v1.24 archived and tagged
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -140,8 +140,66 @@ defmodule Lockspire.Protocol.Registration do
          :ok <- validate_grant_response_coherence(metadata),
          :ok <- validate_redirect_uris(metadata),
          :ok <- validate_logout_metadata(metadata),
+         :ok <- validate_token_endpoint_auth_metadata(metadata, server_policy),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
+    end
+  end
+
+  defp validate_token_endpoint_auth_metadata(metadata, server_policy) do
+    auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
+    signing_alg = Map.get(metadata, "token_endpoint_auth_signing_alg")
+
+    resolved_profile =
+      SecurityProfile.resolve_effective_profile(server_policy, %{
+        security_profile: atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
+      })
+
+    cond do
+      auth_method == "client_secret_jwt" and resolved_profile.fapi_2_0_security? ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_method,
+           reason: :incompatible_with_fapi_2_0
+         }}
+
+      auth_method == "client_secret_jwt" and is_nil(signing_alg) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_signing_alg,
+           reason: :required
+         }}
+
+      auth_method == "client_secret_jwt" and signing_alg != "HS256" ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_signing_alg,
+           reason: :unsupported
+         }}
+
+      auth_method == "private_key_jwt" and
+          not is_nil(signing_alg) and
+          signing_alg not in SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_signing_alg,
+           reason: :unsupported
+         }}
+
+      auth_method not in ["client_secret_jwt", "private_key_jwt"] and not is_nil(signing_alg) ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: :token_endpoint_auth_signing_alg,
+           reason: :unsupported_token_endpoint_auth_method
+         }}
+
+      true ->
+        :ok
     end
   end
 
@@ -396,14 +454,15 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp generate_credentials do
-    {client_secret_hash, client_secret} = Clients.rotate_secret_hash()
+    secret_material = Clients.rotate_secret_material()
     {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
     client_id = Clients.generate_client_id()
 
     %{
       client_id: client_id,
-      client_secret: client_secret,
-      client_secret_hash: client_secret_hash,
+      client_secret: secret_material.client_secret,
+      client_secret_hash: secret_material.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
       rat: rat_plaintext,
       rat_hash: rat_hash
     }
@@ -427,6 +486,7 @@ defmodule Lockspire.Protocol.Registration do
     client = %Client{
       client_id: credentials.client_id,
       client_secret_hash: credentials.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: credentials.client_secret_jwt_verifier_encrypted,
       client_type: client_type,
       name: Map.get(metadata, "client_name"),
       redirect_uris: Map.get(metadata, "redirect_uris", []),
@@ -434,6 +494,10 @@ defmodule Lockspire.Protocol.Registration do
       allowed_grant_types: Map.get(metadata, "grant_types", ["authorization_code"]),
       allowed_response_types: Map.get(metadata, "response_types", ["code"]),
       token_endpoint_auth_method: auth_method,
+      token_endpoint_auth_signing_alg:
+        atomize_token_endpoint_auth_signing_alg(
+          Map.get(metadata, "token_endpoint_auth_signing_alg")
+        ),
       pkce_required: true,
       subject_type: :public,
       logo_uri: Map.get(metadata, "logo_uri"),
@@ -503,6 +567,9 @@ defmodule Lockspire.Protocol.Registration do
   defp atomize_alg("EdDSA"), do: :EdDSA
   defp atomize_alg(_), do: nil
 
+  defp atomize_token_endpoint_auth_signing_alg("HS256"), do: :HS256
+  defp atomize_token_endpoint_auth_signing_alg(value), do: atomize_alg(value)
+
   defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
   defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES
   defp atomize_authorization_encryption_alg(_), do: nil
@@ -534,6 +601,7 @@ defmodule Lockspire.Protocol.Registration do
 
   defp atomize_auth_method("client_secret_basic"), do: :client_secret_basic
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
+  defp atomize_auth_method("client_secret_jwt"), do: :client_secret_jwt
   defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt
   defp atomize_auth_method("none"), do: :none
   defp atomize_auth_method(_), do: :client_secret_basic

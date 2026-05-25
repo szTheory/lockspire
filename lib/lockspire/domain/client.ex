@@ -7,10 +7,12 @@ defmodule Lockspire.Domain.Client do
   @type token_endpoint_auth_method ::
           :client_secret_basic
           | :client_secret_post
+          | :client_secret_jwt
           | :private_key_jwt
           | :tls_client_auth
           | :self_signed_tls_client_auth
           | :none
+  @type token_endpoint_auth_signing_alg :: :HS256 | signing_alg()
   @type subject_type :: :public | :pairwise
   @type signing_alg :: :RS256 | :ES256 | :PS256 | :EdDSA
   @type authorization_encrypted_response_alg :: :RSA_OAEP_256 | :ECDH_ES
@@ -25,6 +27,7 @@ defmodule Lockspire.Domain.Client do
           id: integer() | nil,
           client_id: String.t(),
           client_secret_hash: String.t() | nil,
+          client_secret_jwt_verifier_encrypted: String.t() | nil,
           client_type: client_type(),
           name: String.t() | nil,
           redirect_uris: [String.t()],
@@ -37,6 +40,7 @@ defmodule Lockspire.Domain.Client do
           allowed_grant_types: [String.t()],
           allowed_response_types: [String.t()],
           token_endpoint_auth_method: token_endpoint_auth_method(),
+          token_endpoint_auth_signing_alg: token_endpoint_auth_signing_alg() | nil,
           pkce_required: boolean(),
           par_policy: par_policy(),
           dpop_policy: dpop_policy(),
@@ -85,6 +89,7 @@ defmodule Lockspire.Domain.Client do
     :id,
     :client_id,
     :client_secret_hash,
+    :client_secret_jwt_verifier_encrypted,
     :client_type,
     :name,
     redirect_uris: [],
@@ -97,6 +102,7 @@ defmodule Lockspire.Domain.Client do
     allowed_grant_types: [],
     allowed_response_types: [],
     token_endpoint_auth_method: :client_secret_basic,
+    token_endpoint_auth_signing_alg: nil,
     pkce_required: true,
     par_policy: :inherit,
     dpop_policy: :inherit,

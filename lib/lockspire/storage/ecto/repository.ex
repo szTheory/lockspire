@@ -185,12 +185,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ClientStore
-  def rotate_client_secret(%Client{id: id}, secret_hash, rotated_at)
-      when is_integer(id) and is_binary(secret_hash) and is_struct(rotated_at, DateTime) do
+  def rotate_client_secret(%Client{id: id}, secret_hash, verifier_encrypted, rotated_at)
+      when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
+             is_struct(rotated_at, DateTime) do
     update_client_record(
       id,
       %{
         client_secret_hash: secret_hash,
+        client_secret_jwt_verifier_encrypted: verifier_encrypted,
         last_secret_rotated_at: rotated_at,
         updated_at: DateTime.utc_now()
       },

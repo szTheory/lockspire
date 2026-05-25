@@ -152,7 +152,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   end
 
   defp create_attrs(params) do
-    %{
+    attrs = %{
       name: blank_to_nil(params["name"]),
       client_type: params["client_type"],
       token_endpoint_auth_method: params["token_endpoint_auth_method"],
@@ -161,6 +161,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       allowed_grant_types: ["authorization_code", "refresh_token"],
       actor: %{type: :operator, id: "admin-ui"}
     }
+
+    if params["token_endpoint_auth_method"] == "client_secret_jwt" do
+      Map.put(attrs, :token_endpoint_auth_signing_alg, "HS256")
+    else
+      attrs
+    end
   end
 
   defp status_for(%{active: true}), do: :active

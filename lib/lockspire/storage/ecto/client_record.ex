@@ -12,6 +12,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
   schema "lockspire_clients" do
     field(:client_id, :string)
     field(:client_secret_hash, :string)
+    field(:client_secret_jwt_verifier_encrypted, :string)
     field(:client_type, Ecto.Enum, values: [:public, :confidential])
     field(:name, :string)
     field(:redirect_uris, {:array, :string}, default: [])
@@ -30,12 +31,14 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       values: [
         :client_secret_basic,
         :client_secret_post,
+        :client_secret_jwt,
         :private_key_jwt,
         :tls_client_auth,
         :self_signed_tls_client_auth,
         :none
       ]
     )
+    field(:token_endpoint_auth_signing_alg, Ecto.Enum, values: [:HS256, :RS256, :ES256, :PS256, :EdDSA])
 
     field(:pkce_required, :boolean, default: true)
     field(:par_policy, Ecto.Enum, values: [:inherit, :required, :optional], default: :inherit)
@@ -100,6 +103,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> cast(Map.from_struct(client), [
       :client_id,
       :client_secret_hash,
+      :client_secret_jwt_verifier_encrypted,
       :client_type,
       :name,
       :redirect_uris,
@@ -112,6 +116,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :allowed_grant_types,
       :allowed_response_types,
       :token_endpoint_auth_method,
+      :token_endpoint_auth_signing_alg,
       :pkce_required,
       :par_policy,
       :dpop_policy,
@@ -217,6 +222,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :disabled_at,
       :disabled_by,
       :client_secret_hash,
+      :client_secret_jwt_verifier_encrypted,
       :last_secret_rotated_at,
       :backchannel_user_code_parameter,
       :backchannel_token_delivery_mode,
@@ -256,6 +262,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       id: record.id,
       client_id: record.client_id,
       client_secret_hash: record.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: record.client_secret_jwt_verifier_encrypted,
       client_type: record.client_type,
       name: record.name,
       redirect_uris: record.redirect_uris,
@@ -268,6 +275,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       allowed_grant_types: record.allowed_grant_types,
       allowed_response_types: record.allowed_response_types,
       token_endpoint_auth_method: record.token_endpoint_auth_method,
+      token_endpoint_auth_signing_alg: record.token_endpoint_auth_signing_alg,
       pkce_required: record.pkce_required,
       par_policy: record.par_policy,
       dpop_policy: record.dpop_policy,

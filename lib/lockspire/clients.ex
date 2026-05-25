@@ -22,6 +22,7 @@ defmodule Lockspire.Clients do
   @type validation_error ::
           :invalid_client_type
           | :invalid_token_endpoint_auth_method
+          | :invalid_token_endpoint_auth_signing_alg
           | :invalid_redirect_uri
           | :invalid_logout_uri
           | :invalid_scope
@@ -85,8 +86,23 @@ defmodule Lockspire.Clients do
 
   @spec rotate_secret_hash() :: {String.t(), String.t()}
   def rotate_secret_hash do
+    material = rotate_secret_material()
+    {material.client_secret_hash, material.client_secret}
+  end
+
+  @spec rotate_secret_material(keyword()) :: %{
+          client_secret: String.t(),
+          client_secret_hash: String.t(),
+          client_secret_jwt_verifier_encrypted: String.t()
+        }
+  def rotate_secret_material(opts \\ []) when is_list(opts) do
     secret = generate_token(@secret_bytes)
-    {Policy.hash_client_secret(secret), secret}
+
+    %{
+      client_secret: secret,
+      client_secret_hash: Policy.hash_client_secret(secret),
+      client_secret_jwt_verifier_encrypted: Policy.seal_client_secret_jwt_verifier(secret, opts)
+    }
   end
 
   @spec register_client(map() | keyword()) ::
@@ -132,6 +148,7 @@ defmodule Lockspire.Clients do
             normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
               generate_client_id(),
           client_secret_hash: normalized.client_secret_hash,
+          client_secret_jwt_verifier_encrypted: normalized.client_secret_jwt_verifier_encrypted,
           client_type: normalized.client_type,
           name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
           redirect_uris: normalized.redirect_uris,
@@ -139,6 +156,7 @@ defmodule Lockspire.Clients do
           allowed_grant_types: normalized.allowed_grant_types,
           allowed_response_types: normalized.allowed_response_types,
           token_endpoint_auth_method: normalized.auth_method,
+          token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
           pkce_required: true,
           subject_type: :public,
           created_by:
@@ -172,11 +190,16 @@ defmodule Lockspire.Clients do
       normalize_client_type(Map.get(attrs, :client_type) || Map.get(attrs, "client_type"))
 
     auth_method = normalize_auth_method(fetch_auth_method(attrs))
-    {client_secret_hash, plaintext_secret} = secret_values(client_type)
+    secret_material = secret_values(client_type)
 
     %{
       client_type: client_type,
       auth_method: auth_method,
+      token_endpoint_auth_signing_alg:
+        normalize_signing_alg(
+          Map.get(attrs, :token_endpoint_auth_signing_alg) ||
+            Map.get(attrs, "token_endpoint_auth_signing_alg")
+        ),
       redirect_uris: attrs |> fetch_required_list(:redirect_uris) |> normalize_string_list(),
       allowed_scopes: attrs |> fetch_required_list(:allowed_scopes) |> normalize_string_list(),
       allowed_grant_types:
@@ -186,8 +209,9 @@ defmodule Lockspire.Clients do
         |> Map.get(:allowed_response_types, Map.get(attrs, "allowed_response_types", ["code"]))
         |> normalize_string_list(),
       pkce_required: Map.get(attrs, :pkce_required, Map.get(attrs, "pkce_required", true)),
-      client_secret_hash: client_secret_hash,
-      plaintext_secret: plaintext_secret
+      client_secret_hash: secret_material.client_secret_hash,
+      client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
+      plaintext_secret: secret_material.client_secret
     }
   end
 
@@ -195,6 +219,7 @@ defmodule Lockspire.Clients do
     []
     |> validate_client_type(normalized.client_type)
     |> validate_auth_method(normalized.client_type, normalized.auth_method)
+    |> validate_auth_signing_alg(normalized)
     |> validate_redirect_uris(normalized.redirect_uris)
     |> validate_scopes(normalized.allowed_scopes)
     |> validate_grant_types(normalized.allowed_grant_types)
@@ -206,9 +231,15 @@ defmodule Lockspire.Clients do
     Map.get(attrs, :token_endpoint_auth_method) || Map.get(attrs, "token_endpoint_auth_method")
   end
 
-  defp secret_values(:confidential), do: rotate_secret_hash()
-  defp secret_values(:public), do: {nil, nil}
-  defp secret_values(_other), do: {nil, nil}
+  defp secret_values(:confidential), do: rotate_secret_material()
+
+  defp secret_values(:public) do
+    %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}
+  end
+
+  defp secret_values(_other) do
+    %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}
+  end
 
   defp validate_client_type(errors, type) when type in [:public, :confidential], do: errors
 
@@ -234,7 +265,7 @@ defmodule Lockspire.Clients do
   end
 
   defp validate_auth_method(errors, :confidential, method)
-       when method in [:client_secret_basic, :client_secret_post], do: errors
+       when method in [:client_secret_basic, :client_secret_post, :client_secret_jwt], do: errors
 
   defp validate_auth_method(errors, :confidential, method) do
     [
@@ -248,6 +279,70 @@ defmodule Lockspire.Clients do
   end
 
   defp validate_auth_method(errors, _client_type, _method), do: errors
+
+  defp validate_auth_signing_alg(errors, %{auth_method: :client_secret_jwt} = normalized) do
+    errors
+    |> validate_client_secret_jwt_signing_alg(normalized.token_endpoint_auth_signing_alg)
+    |> validate_client_secret_jwt_security_profile()
+  end
+
+  defp validate_auth_signing_alg(errors, %{auth_method: :private_key_jwt} = normalized) do
+    if normalized.token_endpoint_auth_signing_alg in [nil, :RS256, :ES256, :PS256, :EdDSA] do
+      errors
+    else
+      [
+        %{
+          field: :token_endpoint_auth_signing_alg,
+          reason: :invalid_token_endpoint_auth_signing_alg,
+          detail: normalized.token_endpoint_auth_signing_alg
+        }
+        | errors
+      ]
+    end
+  end
+
+  defp validate_auth_signing_alg(errors, %{token_endpoint_auth_signing_alg: nil}), do: errors
+
+  defp validate_auth_signing_alg(errors, %{token_endpoint_auth_signing_alg: alg}) do
+    [
+      %{
+        field: :token_endpoint_auth_signing_alg,
+        reason: :invalid_token_endpoint_auth_signing_alg,
+        detail: alg
+      }
+      | errors
+    ]
+  end
+
+  defp validate_client_secret_jwt_signing_alg(errors, :HS256), do: errors
+
+  defp validate_client_secret_jwt_signing_alg(errors, alg) do
+    [
+      %{
+        field: :token_endpoint_auth_signing_alg,
+        reason: :invalid_token_endpoint_auth_signing_alg,
+        detail: alg || :missing
+      }
+      | errors
+    ]
+  end
+
+  defp validate_client_secret_jwt_security_profile(errors) do
+    case effective_server_security_profile() do
+      profile when profile in [:fapi_2_0_security, :fapi_2_0_message_signing] ->
+        [
+          %{
+            field: :token_endpoint_auth_method,
+            reason: :invalid_token_endpoint_auth_method,
+            detail: :incompatible_with_fapi_2_0
+          }
+          | errors
+        ]
+
+      _other ->
+        errors
+    end
+  end
 
   defp validate_redirect_uris(errors, []),
     do: [%{field: :redirect_uris, reason: :invalid_redirect_uri, detail: :empty} | errors]
@@ -363,7 +458,7 @@ defmodule Lockspire.Clients do
   defp normalize_auth_method(nil), do: nil
 
   defp normalize_auth_method(value)
-       when value in [:none, :client_secret_basic, :client_secret_post, :private_key_jwt],
+       when value in [:none, :client_secret_basic, :client_secret_post, :client_secret_jwt, :private_key_jwt],
        do: value
 
   defp normalize_auth_method(value) when is_binary(value) do
@@ -371,12 +466,30 @@ defmodule Lockspire.Clients do
       "none" -> :none
       "client_secret_basic" -> :client_secret_basic
       "client_secret_post" -> :client_secret_post
+      "client_secret_jwt" -> :client_secret_jwt
       "private_key_jwt" -> :private_key_jwt
       _other -> nil
     end
   end
 
   defp normalize_auth_method(_value), do: nil
+
+  defp normalize_signing_alg(value) when value in [:HS256, :RS256, :ES256, :PS256, :EdDSA],
+    do: value
+
+  defp normalize_signing_alg(value) when is_binary(value) do
+    case String.trim(value) do
+      "HS256" -> :HS256
+      "RS256" -> :RS256
+      "ES256" -> :ES256
+      "PS256" -> :PS256
+      "EdDSA" -> :EdDSA
+      "" -> nil
+      _other -> nil
+    end
+  end
+
+  defp normalize_signing_alg(_value), do: nil
 
   defp normalize_string_list(nil), do: []
 
@@ -410,6 +523,13 @@ defmodule Lockspire.Clients do
 
   defp normalize_metadata(value) when is_map(value), do: value
   defp normalize_metadata(_value), do: %{}
+
+  defp effective_server_security_profile do
+    case Repository.get_server_policy() do
+      {:ok, %{security_profile: profile}} -> profile
+      _ -> :none
+    end
+  end
 
   defp uri_origin(uri) do
     case URI.parse(uri) do

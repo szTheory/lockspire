@@ -91,6 +91,22 @@ defmodule Lockspire.Protocol.RegistrationTest do
                Registration.register(request)
 
       assert Policy.verify_client_secret(client.client_secret_hash, plain) == true
+      assert {:ok, ^plain} =
+               Policy.unseal_client_secret_jwt_verifier(
+                 client.client_secret_jwt_verifier_encrypted
+               )
+    end
+
+    test "persists client_secret_jwt plus explicit HS256 truth for confidential clients" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy()
+        )
+
+      assert {:ok, %Success{client: client}} = Registration.register(request)
+      assert client.token_endpoint_auth_method == :client_secret_jwt
+      assert client.token_endpoint_auth_signing_alg == :HS256
     end
 
     test "persisted Domain.Client has registration_access_token_hash equal to Policy.hash_token" do
@@ -312,6 +328,22 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — FAPI 2.0 readiness contract" do
+    test "rejects client_secret_jwt under the effective FAPI profile" do
+      request =
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.client_secret_jwt_metadata(),
+          server_policy:
+            DcrFixtures.client_secret_jwt_server_policy(%{security_profile: :fapi_2_0_security})
+        )
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_method,
+                reason: :incompatible_with_fapi_2_0
+              }} = Registration.register(request)
+    end
+
     test "rejects security_profile: :fapi_2_0_security when client algorithm metadata is incompatible" do
       server_policy = DcrFixtures.server_policy(%{security_profile: :fapi_2_0_security})
 
@@ -428,6 +460,23 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "register/1 — D-14 validator" do
+    test "rejects client_secret_jwt when token_endpoint_auth_signing_alg is missing" do
+      request =
+        DcrFixtures.register_request(
+          metadata:
+            DcrFixtures.client_secret_jwt_metadata()
+            |> Map.delete("token_endpoint_auth_signing_alg"),
+          server_policy: DcrFixtures.client_secret_jwt_server_policy()
+        )
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :token_endpoint_auth_signing_alg,
+                reason: :required
+              }} = Registration.register(request)
+    end
+
     test "accepts encrypted JARM metadata with signing metadata and jwks_uri" do
       metadata =
         encrypted_jarm_metadata(%{

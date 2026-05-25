@@ -32,7 +32,7 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
       do: {:ok, %Client{client_id: "client-1", token_endpoint_auth_method: :none}}
 
     def update_client(_, _), do: {:error, :not_implemented}
-    def rotate_client_secret(_, _, _), do: {:error, :not_implemented}
+    def rotate_client_secret(_, _, _, _), do: {:error, :not_implemented}
     def set_client_active(_, _, _), do: {:error, :not_implemented}
   end
 

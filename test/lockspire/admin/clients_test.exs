@@ -186,6 +186,42 @@ defmodule Lockspire.Admin.ClientsTest do
     assert audit.metadata["client_type"] == "confidential"
   end
 
+  test "create_client/1 accepts client_secret_jwt only with explicit HS256" do
+    assert {:ok, %RegistrationResult{client: client}} =
+             Clients.create_client(%{
+               client_id: "client-secret-jwt-admin",
+               name: "JWT Admin Client",
+               client_type: :confidential,
+               redirect_uris: ["https://new.example.com/callback"],
+               allowed_scopes: ["profile"],
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :client_secret_jwt,
+               token_endpoint_auth_signing_alg: :HS256,
+               actor: %{type: :operator, id: "ops-123"}
+             })
+
+    assert client.token_endpoint_auth_method == :client_secret_jwt
+    assert client.token_endpoint_auth_signing_alg == :HS256
+
+    assert {:error, errors} =
+             Clients.create_client(%{
+               client_id: "client-secret-jwt-admin-invalid",
+               name: "JWT Admin Client",
+               client_type: :confidential,
+               redirect_uris: ["https://new.example.com/callback"],
+               allowed_scopes: ["profile"],
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :client_secret_jwt,
+               actor: %{type: :operator, id: "ops-123"}
+             })
+
+    assert Enum.any?(
+             errors,
+             &(&1.field == :token_endpoint_auth_signing_alg and
+                 &1.reason == :invalid_token_endpoint_auth_signing_alg)
+           )
+  end
+
   test "update_client/2 allows safe metadata changes and rejects immutable fields" do
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{
@@ -601,6 +637,11 @@ defmodule Lockspire.Admin.ClientsTest do
 
     assert {:ok, %Client{} = stored_client} = Repository.fetch_client_by_id("admin-client")
     assert stored_client.client_secret_hash == client.client_secret_hash
+    assert is_binary(stored_client.client_secret_jwt_verifier_encrypted)
+    assert {:ok, ^secret} =
+             Lockspire.Security.Policy.unseal_client_secret_jwt_verifier(
+               stored_client.client_secret_jwt_verifier_encrypted
+             )
     refute stored_client.client_secret_hash == secret
 
     assert_received {:telemetry_event, [:lockspire, :client, :secret_rotated],

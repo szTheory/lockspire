@@ -186,12 +186,12 @@ defmodule Lockspire.Admin.Clients do
 
     with {:ok, %Client{} = client} <- get_client(client_id),
          :ok <- ensure_confidential_client(client) do
-      {secret_hash, plaintext_secret} = Clients.rotate_secret_hash()
+      secret_material = Clients.rotate_secret_material()
 
-      case rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
+      case rotate_client_secret_with_audit(client, secret_material, rotated_at, actor) do
         {:ok, %Client{} = updated_client} ->
           emit(:client, :secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
-          {:ok, %{client: updated_client, client_secret: plaintext_secret}}
+          {:ok, %{client: updated_client, client_secret: secret_material.client_secret}}
 
         {:error, reason} ->
           {:error, reason}
@@ -789,9 +789,16 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
-  defp rotate_client_secret_with_audit(client, secret_hash, rotated_at, actor) do
+  defp rotate_client_secret_with_audit(client, secret_material, rotated_at, actor) do
     transact_with_audit(
-      fn -> Repository.rotate_client_secret(client, secret_hash, rotated_at) end,
+      fn ->
+        Repository.rotate_client_secret(
+          client,
+          secret_material.client_secret_hash,
+          secret_material.client_secret_jwt_verifier_encrypted,
+          rotated_at
+        )
+      end,
       fn %Client{} = updated_client ->
         client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
           rotated_at: rotated_at

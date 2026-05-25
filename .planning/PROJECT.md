@@ -10,32 +10,36 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-three planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, and DCR-managed logout propagation metadata in v1.23.
+Lockspire has now archived twenty-four planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, and a narrow `client_secret_jwt` direct-client authentication slice in v1.24.
 
-Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-Lockspire is now starting milestone `v1.24 client_secret_jwt`, the current highest-priority remaining direct-client authentication gap in the milestone arc.
+The repo is between milestones. The clearest next candidate is support-burden reduction around advanced setup truth and diagnostics rather than more protocol-breadth expansion.
 
-## Current Milestone: v1.24 client_secret_jwt
+## Current Milestone
+
+No active milestone is selected. Start the next one with `$gsd-new-milestone`.
+
+## Next Milestone Goals
+
+The current default next candidate is a support-burden reduction milestone focused on advanced setup clarity rather than new protocol territory.
+
+**Target features:**
+- Improve diagnostics, operator guidance, and support-truth around `jwks_uri` rotation.
+- Reduce setup ambiguity for mTLS, logout propagation, and protected-route configuration.
+- Prefer support-cost reduction over adjacent protocol expansion unless real adopter evidence changes the priority.
+
+**Why now:** `v1.24` closed the practical remaining direct-client auth gap. The highest-leverage remaining work is now support and setup clarity, not more auth-method parity.
+
+## Recently Shipped Milestone: v1.24 client_secret_jwt
 
 **Goal:** Add a narrow `client_secret_jwt` authentication slice on Lockspire-owned direct-client endpoints without widening the embedded-library shape or weakening current secret-handling posture.
 
-**Target features:**
-- Accept and verify `client_secret_jwt` assertions on the existing Lockspire-owned direct-client surfaces that already share client authentication.
-- Keep verification strict on replay prevention, issuer-string `aud` handling, algorithm allowlists, and bounded expiry semantics.
-- Publish truthful registration, discovery, admin, and support-surface posture for the shipped symmetric-JWT slice.
-
-**Why now:** `v1.23` closed the DCR logout metadata gap, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap without changing Lockspire's package boundaries or host-owned seams.
-
-## Recently Shipped Milestone: v1.23 DCR Logout Metadata
-
-**Goal:** Let self-service clients manage Lockspire's existing logout propagation metadata through DCR and RFC 7592 without broadening the product boundary.
-
 **Delivered:**
-- DCR create now accepts, validates, persists, and reads back `backchannel_logout_*` and `frontchannel_logout_*` metadata using the existing Lockspire logout truth model.
-- RFC 7592 management updates now replace and clear the four logout metadata fields under full-replace semantics while preserving RAT rotation, provenance, and audit continuity.
-- Repo-native protocol and controller proof now covers positive and negative logout metadata lifecycle behavior across create, read, and update flows.
-- Support-surface, DCR lifecycle, operator, and maintainer docs now describe the shipped self-service logout slice truthfully without overstating front-channel guarantees.
+- Lockspire-owned direct-client surfaces now accept valid `client_secret_jwt` assertions through one shared runtime path instead of implicitly treating all JWT assertions as `private_key_jwt`.
+- The symmetric JWT verifier preserves the existing secret-at-rest posture by storing sealed verifier material alongside the hashed client secret, and it enforces HS256-only, issuer-string audience, bounded lifetime, replay, and FAPI-denial rules.
+- DCR, RFC 7592, discovery, and admin/operator surfaces now publish one coherent `client_secret_jwt` plus `HS256` truth without exposing verifier material or claiming broader support than the runtime actually ships.
+- Canonical docs, maintainer guidance, discovery metadata, release-contract tests, and full regression proof now all agree on the narrow support boundary for the shipped `client_secret_jwt` slice.
 
 ## Archived Milestone Snapshot: v1.23 DCR Logout Metadata
 
@@ -110,12 +114,14 @@ Lockspire is now starting milestone `v1.24 client_secret_jwt`, the current highe
 - Delivered automatic DPoP nonce challenge and retry support on Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline in archived v1.22.
 - Delivered DCR registration intake, typed persistence, and truthful readback for Lockspire's shipped logout propagation metadata in Phase 85 of milestone v1.23.
 - Delivered RFC 7592 logout metadata replacement/clear semantics, lifecycle proof, and support-truth docs in archived milestone v1.23.
+- Delivered narrow shared-runtime `client_secret_jwt` support with sealed verifier material and strict HS256, replay, audience, and FAPI-denial posture in Phase 88 of milestone v1.24.
+- Delivered coherent `client_secret_jwt` registration, RFC 7592, discovery, and admin truth in Phase 89 of milestone v1.24.
+- Delivered canonical docs, release-contract proof, and milestone-close evidence for the narrow `client_secret_jwt` support slice in archived milestone v1.24.
 
 ### Active
 
-- Add `client_secret_jwt` as a narrow direct-client authentication option on Lockspire-owned direct-client endpoints.
-- Keep `client_secret_jwt` verification strict on replay prevention, issuer-string `aud`, bounded lifetime checks, and algorithm allowlists tied to the effective security posture.
-- Expose truthful DCR, discovery, admin, and documentation posture for the shipped `client_secret_jwt` slice without broadening FAPI or higher-trust support claims.
+- No active milestone requirements. Define the next milestone with `$gsd-new-milestone`.
+- Default next-candidate direction: reduce advanced setup support burden around `jwks_uri` rotation, mTLS, logout propagation, and protected-route setup.
 
 ### Out of Scope
 
@@ -186,4 +192,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 for v1.24 milestone start*
+*Last updated: 2026-05-25 for v1.24 milestone close*
