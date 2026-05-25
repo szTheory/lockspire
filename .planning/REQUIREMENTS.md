@@ -18,8 +18,8 @@ Reduce advanced setup ambiguity on already-shipped trust surfaces so adopters ca
 ### Advanced Setup Guidance
 
 - [x] **GUIDE-01**: A host team enabling mTLS client authentication can identify the required certificate extraction prerequisites, explicit host responsibilities, and supported deployment patterns before rollout.
-- [ ] **GUIDE-02**: A host team protecting Phoenix API routes can follow one canonical setup path for `VerifyToken -> EnforceSenderConstraints -> RequireToken`, including the expected `401 invalid_token` and `403 insufficient_scope` behavior.
-- [ ] **GUIDE-03**: An operator configuring logout propagation can understand the current back-channel durability, front-channel best-effort semantics, and required metadata/setup prerequisites from one coherent support story.
+- [x] **GUIDE-02**: A host team protecting Phoenix API routes can follow one canonical setup path for `VerifyToken -> EnforceSenderConstraints -> RequireToken`, including the expected `401 invalid_token` and `403 insufficient_scope` behavior.
+- [x] **GUIDE-03**: An operator configuring logout propagation can understand the current back-channel durability, front-channel best-effort semantics, and required metadata/setup prerequisites from one coherent support story.
 
 ### Support Truth Alignment
 
@@ -54,8 +54,8 @@ Reduce advanced setup ambiguity on already-shipped trust surfaces so adopters ca
 | JWKS-01 | Phase 91 | Pending |
 | JWKS-02 | Phase 91 | Pending |
 | GUIDE-01 | Phase 92 | Complete |
-| GUIDE-02 | Phase 92 | Pending |
-| GUIDE-03 | Phase 92 | Pending |
+| GUIDE-02 | Phase 92 | Complete |
+| GUIDE-03 | Phase 92 | Complete |
 | TRUTH-01 | Phase 92 | Complete |
 | TRUTH-02 | Phase 92 | Complete |
 | PROOF-01 | Phase 93 | Pending |

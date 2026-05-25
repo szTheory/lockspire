@@ -36,8 +36,8 @@ Phase 91 focuses on the highest-friction advanced setup surface still called out
 Plans:
 
 - [x] 92-01: Reconcile mTLS extraction prerequisites and host/infrastructure responsibilities across docs and maintainer guidance
-- [ ] 92-02: Tighten the canonical protected-route and logout propagation setup story so support boundaries and runtime guarantees are unambiguous
-- [ ] 92-03: Align operator/admin wording, diagnostics, and support docs around one shared advanced-setup truth contract
+- [x] 92-02: Tighten the canonical protected-route and logout propagation setup story so support boundaries and runtime guarantees are unambiguous
+- [x] 92-03: Align operator/admin wording, diagnostics, and support docs around one shared advanced-setup truth contract
 
 **Details:**
 Phase 92 turns the remaining advanced setup tribal knowledge into explicit support truth. It should leave Lockspire with one coherent story for certificate extraction, sender-constraint enforcement, logout propagation semantics, and the shipped Phoenix API route pipeline, including what Lockspire owns versus what the host app or deployment environment owns.
