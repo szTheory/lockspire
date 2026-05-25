@@ -297,6 +297,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           Front-channel session required:
           <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
         </p>
+        <p>These logout propagation URIs stay separate from post-logout redirect URIs.</p>
+        <p>
+          Back-channel delivery stays durable through the protocol-owned
+          <code>/end_session/complete</code> flow.
+        </p>
         <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
 
         <h3>Allowed scopes</h3>

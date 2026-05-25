@@ -214,6 +214,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "Test fetch"
   end
 
+  test "client detail keeps logout propagation separate from post-logout redirects", %{client: client} do
+    assert {:ok, _updated_client} =
+             Admin.update_client(client.client_id, %{
+               backchannel_logout_uri: "https://client.example.com/backchannel",
+               frontchannel_logout_uri: "https://client.example.com/frontchannel"
+             })
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Post-logout redirect URIs"
+    assert html =~ "Logout propagation"
+    assert html =~ "These logout propagation URIs stay separate from post-logout redirect URIs."
+    assert html =~ "/end_session/complete"
+    assert html =~ "Front-channel logout remains best effort browser cleanup."
+  end
+
+  test "logout propagation editor explains the durable back-channel and best-effort front-channel split",
+       %{client: client} do
+    assert {:ok, _view, html} =
+             live(
+               conn_for_admin(),
+               "/admin/clients/#{client.client_id}/edit?workflow=logout-propagation"
+             )
+
+    assert html =~ "Update logout propagation"
+    assert html =~ "Separate concern:"
+    assert html =~ "not post-logout redirects"
+    assert html =~ "/end_session/complete"
+    assert html =~ "durable back-channel delivery"
+    assert html =~ "front-channel logout stays best effort"
+  end
+
   test "client detail renders the shared remote JWKS incident summary when metadata is present",
        %{
          client: client

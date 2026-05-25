@@ -436,6 +436,17 @@ defmodule Lockspire.Admin.ClientsTest do
     assert fetched.frontchannel_logout_session_required == true
   end
 
+  test "validate_logout_metadata/3 keeps logout propagation separate from post-logout redirect validation" do
+    assert :ok =
+             Clients.validate_logout_metadata(
+               %{
+                 backchannel_logout_uri: "https://admin.example.com/backchannel",
+                 frontchannel_logout_uri: "https://admin.example.com/frontchannel"
+               },
+               ["https://admin.example.com/logout"]
+             )
+  end
+
   test "update_client/2 rejects invalid logout propagation combinations with field-specific errors" do
     assert {:error, errors} =
              Clients.update_client("admin-client", %{

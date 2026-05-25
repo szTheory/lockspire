@@ -321,6 +321,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
           <div class="lockspire-admin-help">
             <p><strong>Separate concern:</strong> these URIs control RP logout propagation, not post-logout redirects.</p>
+            <p><strong>Protocol fork point:</strong> after the host clears its own browser session, <code>/end_session/complete</code> persists propagation intent and enqueues durable back-channel delivery.</p>
             <p><strong>Truth model:</strong> front-channel logout stays best effort because browsers can block cross-site cleanup.</p>
           </div>
         </div>
