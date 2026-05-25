@@ -24,6 +24,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - Userinfo
 - Dynamic client registration and registration management for self-service clients within the repo-proven RFC 7591/RFC 7592 slice, including create/read/update management of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration managed through inline `jwks` or guarded `jwks_uri`
+- Bounded reactive remote-`jwks_uri` rollover support on the shipped remote-key surfaces (`private_key_jwt` direct-client authentication and JARM client-key resolution): Lockspire reads from cached remote JWKS material, forces one refresh when verification indicates stale or unknown key material, preserves the last known good cache entry when refresh fails, and fails the current authentication attempt closed
 - Confidential-client `client_secret_jwt` authentication on the same Lockspire-owned direct-client endpoints that reuse the shared verifier, limited to `HS256`, issuer-string `aud`, required `jti`, replay protection, and fail-closed `invalid_client` behavior with no silent fallback to `client_secret_basic` or `client_secret_post`
 - Revocation
 - Introspection
@@ -116,6 +117,7 @@ Lockspire does not currently support:
 - Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
 - broader resource-server integration beyond Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix plug pipeline
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
+- Proactive remote-key readiness guarantees such as background polling, prefetch, grace-window orchestration, or broader remote metadata management beyond the shipped guarded `jwks_uri` fetch path
 - `client_secret_jwt` on `POST /par`
 - `HS384` or `HS512` for `client_secret_jwt`
 - Lockspire-owned device verification browser UI or hosted approval pages
@@ -163,6 +165,7 @@ A 1.0 GA claim honestly says:
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
+- the shipped remote-`jwks_uri` rollover story is bounded reactive support: clients should publish the new key before first use and keep the previous key available during the overlap window because Lockspire does not claim proactive rotation readiness
 - the shipped `client_secret_jwt` slice is equally narrow: confidential clients, `HS256` only, issuer-string `aud`, replay-protected `jti`, Lockspire-owned direct-client endpoints only, and no `POST /par` or FAPI equivalence claim
 - the shipped protected-resource proof surface is narrow: Lockspire-owned endpoints plus host Phoenix API routes protected by the documented plug pipeline, not generic gateway or third-party issuer middleware
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only

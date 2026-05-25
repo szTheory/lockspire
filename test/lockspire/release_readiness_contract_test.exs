@@ -448,6 +448,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "scopes:` and `audience:` / `audiences:` restrictions"
     assert supported_surface =~ "host Phoenix API routes protected by the shipped plug pipeline"
     assert supported_surface =~ "bearer clients remaining unchanged by default"
+    assert supported_surface =~ "Bounded reactive remote-`jwks_uri` rollover support"
+    assert supported_surface =~ "forces one refresh when verification indicates stale or unknown key material"
+    assert supported_surface =~ "preserves the last known good cache entry when refresh fails"
+    assert supported_surface =~ "fails the current authentication attempt closed"
+    assert supported_surface =~ "does not claim proactive rotation readiness"
+    assert supported_surface =~ "background polling, prefetch, grace-window orchestration"
 
     assert supported_surface =~
              "Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope"
