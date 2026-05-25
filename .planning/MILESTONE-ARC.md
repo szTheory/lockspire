@@ -117,9 +117,9 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 4
 
 - **name:** `Support-Burden Reduction`
-- **status:** `candidate`
+- **status:** `active`
 - **priority:** `highest`
-- **recommendation:** default next milestone candidate
+- **recommendation:** active milestone
 - **why now:** the remaining repo risk is support cost and advanced setup ambiguity, not missing foundational protocol coverage
 - **target slice:**
   - better diagnostics and docs truth for `jwks_uri` rotation
@@ -129,6 +129,8 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
   - broad new protocol families
   - generic CIAM or hosted-auth expansion
   - auth-method parity work that does not materially reduce adopter friction
+- **activated:** `2026-05-25`
+- **version:** `v1.25`
 
 ## Stop Rules
 

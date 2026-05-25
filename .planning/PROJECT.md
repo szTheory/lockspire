@@ -10,19 +10,26 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-four planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, and a narrow `client_secret_jwt` direct-client authentication slice in v1.24.
+Lockspire has now archived twenty-four planning milestones and has started milestone v1.25. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, and a narrow `client_secret_jwt` direct-client authentication slice in v1.24.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The repo is between milestones. The clearest next candidate is support-burden reduction around advanced setup truth and diagnostics rather than more protocol-breadth expansion.
+The repo is now focused on support-burden reduction around advanced setup truth and diagnostics rather than more protocol-breadth expansion.
 
-## Current Milestone
+## Current Milestone: v1.25 Support-Burden Reduction
 
-No active milestone is selected. Start the next one with `$gsd-new-milestone`.
+**Goal:** Reduce advanced setup ambiguity on already-shipped high-trust surfaces so adopters can configure, diagnose, and support Lockspire without source-diving or relying on maintainer tribal knowledge.
+
+**Target features:**
+- Improve diagnostics, support-truth, and remediation guidance for `jwks_uri` rotation.
+- Tighten canonical operator and host guidance for mTLS extraction, logout propagation, and protected-route setup.
+- Add repo-native proof that runtime behavior, doctor/diagnostic output, and support docs agree on the supported advanced setup story.
+
+**Why now:** `v1.24` closed the last practical direct-client auth gap. The highest-leverage remaining work is now lowering support cost and setup ambiguity on the advanced surfaces Lockspire already ships.
 
 ## Next Milestone Goals
 
-The current default next candidate is a support-burden reduction milestone focused on advanced setup clarity rather than new protocol territory.
+The active milestone remains intentionally narrow and support-oriented rather than protocol-expansion oriented.
 
 **Target features:**
 - Improve diagnostics, operator guidance, and support-truth around `jwks_uri` rotation.
@@ -120,8 +127,9 @@ The current default next candidate is a support-burden reduction milestone focus
 
 ### Active
 
-- No active milestone requirements. Define the next milestone with `$gsd-new-milestone`.
-- Default next-candidate direction: reduce advanced setup support burden around `jwks_uri` rotation, mTLS, logout propagation, and protected-route setup.
+- Define actionable diagnostics and remediation truth for `jwks_uri` rotation on Lockspire's shipped remote-JWKS surface.
+- Make the canonical mTLS extraction, logout propagation, and protected-route setup story explicit, truthful, and easier to support.
+- Add repo-native proof that advanced setup docs, diagnostics, and runtime behavior stay aligned.
 
 ### Out of Scope
 
@@ -192,4 +200,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 for v1.24 milestone close*
+*Last updated: 2026-05-25 for v1.25 milestone start*

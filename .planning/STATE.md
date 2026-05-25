@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: ready_for_next_milestone
-stopped_at: Milestone v1.24 archived and tagged
-last_updated: "2026-05-25T07:24:45Z"
+milestone: v1.25
+milestone_name: Support-Burden Reduction
+status: ready_for_phase_planning
+stopped_at: Milestone v1.25 started
+last_updated: "2026-05-25T08:15:00Z"
 last_activity: 2026-05-25
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 9
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Select and define the next milestone after shipping v1.24
+**Current focus:** Start phase planning for milestone v1.25 support-burden reduction work
 
 ## Current Position
 
-Phase: None
-Plan: None
-Status: v1.24 archived and tagged
-Last activity: 2026-05-25
+Phase: Not started
+Plan: -
+Status: Ready to plan Phase 91
+Last activity: 2026-05-25 - Milestone v1.25 defined
 
 ## Performance Metrics
 
-- Phases completed: 0/0 in active milestone slot
-- Plans completed: 0/0 in active milestone slot
+- Phases completed: 0/3 in active milestone slot
+- Plans completed: 0/9 in active milestone slot
 
 Most recently shipped milestone:
 
@@ -70,7 +70,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** $gsd-new-milestone
+**Next action:** $gsd-plan-phase 91
 **Resume file:** None
-**Stopped at:** Milestone v1.24 archived and tagged
+**Stopped at:** Milestone v1.25 started
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
