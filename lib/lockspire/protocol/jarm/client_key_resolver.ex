@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
+  alias Lockspire.RemoteJwksDiagnostics
 
   @type encryption_params :: %{
           required(:alg) => String.t(),
@@ -35,35 +36,65 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
     end
   end
 
-  defp do_resolve(%Client{jwks_uri: jwks_uri} = _client, params, opts) when is_binary(jwks_uri) do
+  defp do_resolve(%Client{jwks_uri: jwks_uri} = client, params, opts) when is_binary(jwks_uri) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
 
     with {:ok, jwk_set} <- fetcher.get_keys(jwks_uri, jwks_fetcher_opts(opts)),
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set) do
+      RemoteJwksDiagnostics.record_healthy(client, source: :jarm)
+
       case select_key(jwks, params) do
         {:ok, jwk} ->
           {:ok, jwk, :jwks_uri}
 
         {:error, :jarm_encryption_key_unavailable} ->
-          refresh_remote_key(fetcher, jwks_uri, params, opts)
+          refresh_remote_key(fetcher, client, params, opts)
       end
     else
-      {:error, _reason} -> {:error, :jarm_encryption_key_fetch_failed}
+      {:error, {:jwks_fetch_failed, reason}} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :jarm)
+        {:error, :jarm_encryption_key_fetch_failed}
+
+      {:error, reason} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :jarm)
+        {:error, :jarm_encryption_key_fetch_failed}
     end
   end
 
   defp do_resolve(%Client{}, _params, _opts), do: {:error, :client_jwks_missing}
 
-  defp refresh_remote_key(fetcher, jwks_uri, params, opts) do
+  defp refresh_remote_key(fetcher, %Client{jwks_uri: jwks_uri} = client, params, opts) do
     with {:ok, jwk_set} <- fetcher.refresh_keys(jwks_uri, jwks_fetcher_opts(opts)),
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set),
          {:ok, jwk} <- select_key(jwks, params) do
+      RemoteJwksDiagnostics.record_supported_refresh_recovery(client, :requested_key_missing,
+        source: :jarm
+      )
+
       {:ok, jwk, :jwks_uri}
     else
       {:error, :jarm_encryption_key_unavailable} ->
+        RemoteJwksDiagnostics.record_unsupported_rollover(client, :requested_key_missing,
+          source: :jarm,
+          refresh_attempted?: true,
+          detail:
+            "Lockspire refreshed the remote JWKS once but the requested JARM encryption key was still unavailable."
+        )
+
         {:error, :jarm_encryption_key_unavailable}
 
-      {:error, _reason} ->
+      {:error, {:jwks_fetch_failed, reason}} ->
+        RemoteJwksDiagnostics.record_refresh_failure(client, :requested_key_missing, reason,
+          source: :jarm
+        )
+
+        {:error, :jarm_encryption_key_fetch_failed}
+
+      {:error, reason} ->
+        RemoteJwksDiagnostics.record_refresh_failure(client, :requested_key_missing, reason,
+          source: :jarm
+        )
+
         {:error, :jarm_encryption_key_fetch_failed}
     end
   end

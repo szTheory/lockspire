@@ -7,8 +7,18 @@ defmodule Lockspire.Admin.ClientsTest do
   alias Lockspire.Admin.Clients
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+
+  defmodule RemoteJwksFetcher do
+    def get_keys(_uri, _opts) do
+      case Process.get(:admin_remote_jwks_fetch_result, :ok) do
+        :ok -> {:ok, JOSE.JWK.from_map(%{"keys" => []})}
+        {:error, reason} -> {:error, {:jwks_fetch_failed, reason}}
+      end
+    end
+  end
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -41,6 +51,7 @@ defmodule Lockspire.Admin.ClientsTest do
       })
 
     on_exit(fn -> :telemetry.detach(handler_id) end)
+    Cachex.clear(:lockspire_jwks_cache)
 
     %{handler_id: handler_id}
   end
@@ -278,6 +289,43 @@ defmodule Lockspire.Admin.ClientsTest do
              errors,
              &(&1.field == :post_logout_redirect_uris and &1.reason == :invalid_redirect_uri)
            )
+  end
+
+  test "remote_jwks_diagnosis/2 classifies targeted operator probes without exposing payloads" do
+    original_fetcher = Application.get_env(:lockspire, :jwks_fetcher)
+
+    on_exit(fn ->
+      if is_nil(original_fetcher) do
+        Application.delete_env(:lockspire, :jwks_fetcher)
+      else
+        Application.put_env(:lockspire, :jwks_fetcher, original_fetcher)
+      end
+    end)
+
+    Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
+
+    client = %Client{
+      client_id: "remote-admin-client",
+      token_endpoint_auth_method: :private_key_jwt,
+      jwks_uri: "https://keys.example.test/admin-client.jwks.json"
+    }
+
+    Process.put(:admin_remote_jwks_fetch_result, {:error, :invalid_format})
+
+    assert {:ok, diagnosis} = Clients.remote_jwks_diagnosis(client)
+    assert diagnosis.posture == :malformed_remote_jwks
+    assert diagnosis.category == :payload
+    refute diagnosis.detail =~ "\"keys\""
+
+    RemoteJwksDiagnostics.record_unsupported_rollover(client, :ambiguous_signature,
+      source: :private_key_jwt
+    )
+
+    Process.put(:admin_remote_jwks_fetch_result, :ok)
+
+    assert {:ok, diagnosis} = Clients.remote_jwks_diagnosis(client)
+    assert diagnosis.posture == :healthy
+    assert diagnosis.last_runtime_observation.posture == :unsupported_rollover
   end
 
   test "repository round-trips typed logout propagation fields" do

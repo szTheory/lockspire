@@ -165,13 +165,15 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
         query -> conn.request_path <> "?" <> query
       end
 
-    URI.to_string(%URI{
-      scheme: Atom.to_string(conn.scheme || :http),
-      host: conn.host || "www.example.com",
-      port: conn.port,
-      path: path
-    })
+    scheme = Atom.to_string(conn.scheme)
+    authority = conn.host <> port_suffix(conn.scheme, conn.port)
+
+    scheme <> "://" <> authority <> path
   end
+
+  defp port_suffix(:http, 80), do: ""
+  defp port_suffix(:https, 443), do: ""
+  defp port_suffix(_scheme, port) when is_integer(port), do: ":" <> Integer.to_string(port)
 
   defp fetch_mtls_cert(conn, opts) do
     case conn.private[:lockspire_mtls_cert] do

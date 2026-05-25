@@ -4,6 +4,8 @@ defmodule Lockspire.Install.Verify do
   """
 
   alias Lockspire.Install.Verify.Check
+  alias Lockspire.RemoteJwksDiagnostics
+  alias Lockspire.Storage.Ecto.Repository
 
   @verify_routes [
     {:get, "/verify"},
@@ -28,8 +30,19 @@ defmodule Lockspire.Install.Verify do
       router_check(router, mount_path),
       migrations_check(repo)
     ]
+    |> maybe_append_remote_jwks_check(opts)
 
     %{ok?: Enum.all?(checks, &(&1.status == :ok)), checks: checks}
+  end
+
+  defp maybe_append_remote_jwks_check(checks, opts) do
+    case Keyword.get(opts, :remote_jwks_client_id) do
+      client_id when is_binary(client_id) and client_id != "" ->
+        checks ++ [remote_jwks_check(client_id, opts)]
+
+      _other ->
+        checks
+    end
   end
 
   defp config_check do
@@ -179,5 +192,65 @@ defmodule Lockspire.Install.Verify do
         Exception.message(error),
         "Ensure the configured repo is reachable and the database exists before rerunning verification."
       )
+  end
+
+  defp remote_jwks_check(client_id, opts) do
+    case Repository.fetch_client_by_id(client_id) do
+      {:ok, nil} ->
+        Check.error(
+          :remote_jwks,
+          "Remote JWKS client not found",
+          "client_id=#{client_id}",
+          "Register or select a client that currently uses remote `jwks_uri`."
+        )
+
+      {:ok, client} ->
+        remote_jwks_client_check(client, opts)
+
+      {:error, reason} ->
+        Check.error(
+          :remote_jwks,
+          "Remote JWKS diagnostic lookup failed",
+          inspect(reason),
+          "Ensure the configured repo is reachable before running targeted remote-JWKS diagnostics."
+        )
+    end
+  end
+
+  defp remote_jwks_client_check(%{jwks_uri: jwks_uri}, _opts) when not is_binary(jwks_uri) do
+    Check.error(
+      :remote_jwks,
+      "Selected client is not using remote JWKS",
+      "The target client does not have a `jwks_uri` configured.",
+      "Pass a client that uses remote `jwks_uri` if you want targeted remote-key diagnostics."
+    )
+  end
+
+  defp remote_jwks_client_check(client, opts) do
+    diagnosis =
+      case RemoteJwksDiagnostics.diagnose_client(client, opts) do
+        {:ok, result} -> result
+        {:error, result} when is_map(result) -> result
+      end
+
+    details =
+      [
+        "client_id=#{client.client_id}",
+        "posture=#{diagnosis.posture}",
+        "category=#{diagnosis.category}",
+        diagnosis.detail
+      ]
+      |> Enum.join(" | ")
+
+    fix =
+      diagnosis.remediation
+      |> List.first()
+      |> Kernel.||("Review the configured `jwks_uri` support posture and retry after remediation.")
+
+    if diagnosis.supported? do
+      Check.ok(:remote_jwks, "Remote JWKS posture is inside the supported contract", details, fix)
+    else
+      Check.error(:remote_jwks, "Remote JWKS posture needs remediation", details, fix)
+    end
   end
 end

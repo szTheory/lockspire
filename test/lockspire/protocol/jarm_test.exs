@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.JarmTest do
   alias Lockspire.Protocol.Jarm
   alias Lockspire.Protocol.Jarm.ClientKeyResolver
   alias Lockspire.Domain.Client
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Domain.SigningKey
 
   defmodule MockKeyStore do
@@ -114,6 +115,42 @@ defmodule Lockspire.Protocol.JarmTest do
     assert_received {:jwks_get_keys, "https://client.example.com/jwks.json"}
     assert_received {:jwks_refresh_keys, "https://client.example.com/jwks.json"}
     refute_received {:jwks_refresh_keys, "https://client.example.com/jwks.json"}
+
+    diagnosis = RemoteJwksDiagnostics.latest_runtime(client)
+    assert diagnosis.posture == :supported_refresh_recovery
+    assert diagnosis.category == :freshness
+  end
+
+  test "client key resolver classifies unsupported remote rollover when the requested key is still missing after refresh" do
+    cached_jwk =
+      public_jwk_map(JOSE.JWK.generate_key({:rsa, 2048}), %{"kid" => "stale", "use" => "enc"})
+
+    Process.put(
+      {MockJwksFetcher, :get_keys_result},
+      {:ok, JOSE.JWK.from_map(%{"keys" => [cached_jwk]})}
+    )
+
+    Process.put(
+      {MockJwksFetcher, :refresh_keys_result},
+      {:ok, JOSE.JWK.from_map(%{"keys" => [cached_jwk]})}
+    )
+
+    client = %Client{
+      client_id: "client-remote-unsupported",
+      jwks_uri: "https://client.example.com/unsupported-jwks.json"
+    }
+
+    assert {:error, :jarm_encryption_key_unavailable} =
+             ClientKeyResolver.resolve(
+               client,
+               %{alg: "RSA-OAEP-256", enc: "A256GCM", kid: "fresh"},
+               jwks_fetcher: MockJwksFetcher
+             )
+
+    diagnosis = RemoteJwksDiagnostics.latest_runtime(client)
+    assert diagnosis.posture == :unsupported_rollover
+    assert diagnosis.category == :unsupported_rollover
+    assert diagnosis.refresh_attempted?
   end
 
   test "client key resolver returns stable errors for unsupported key shape and algorithm pairs" do

@@ -12,7 +12,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology
-- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, and migrations
+- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, and migrations, plus an opt-in `--remote-jwks-client client-id` mode for targeted remote `jwks_uri` posture diagnostics
 - `mix lockspire.upgrade` for manifest-tracked Lockspire-managed scaffolding only
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
@@ -37,7 +37,7 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams, including Sigra-shaped account resolution from `conn.assigns.current_scope.user`
-- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
+- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, operator-managed logout propagation settings, and read-only remote `jwks_uri` posture diagnostics
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
@@ -137,6 +137,7 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `docs/protect-phoenix-api-routes.md` for the shipped host Phoenix API route protection guide
 - `docs/rar-consent-host-guide.md` for custom RAR consent on the generated host seam
 - `docs/private-key-jwt-host-guide.md` for the shipped `jwks_uri` + `private_key_jwt` client-auth slice
+- `docs/operator-admin.md` for the operator-facing remote `jwks_uri` diagnosis and remediation workflow
 - `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only `client_secret_jwt` direct-client slice
 - `docs/device-flow-host-guide.md` for the Phase 31 verification security contract
 - `test/integration/phase81_generated_host_route_protection_e2e_test.exs` for generated-host Phoenix API route protection proof
@@ -163,6 +164,7 @@ A 1.0 GA claim honestly says:
 - executable install and onboarding proof is checked into the repo
 - the shipped device flow is an embedded-library path: device authorization endpoint, device polling, token redemption, and a narrow host-owned device verification seam, not a Lockspire-owned browser UI
 - the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
+- the shipped remote `jwks_uri` rotation contract is equally narrow: one bounded refresh on detectable stale-cache signals, preserved last-known-good cache on refresh failure, and explicit non-claims for unsupported rollover shapes such as same-`kid` replacement
 - the shipped `client_secret_jwt` slice is equally narrow: confidential clients, `HS256` only, issuer-string `aud`, replay-protected `jti`, Lockspire-owned direct-client endpoints only, and no `POST /par` or FAPI equivalence claim
 - the shipped protected-resource proof surface is narrow: Lockspire-owned endpoints plus host Phoenix API routes protected by the documented plug pipeline, not generic gateway or third-party issuer middleware
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only

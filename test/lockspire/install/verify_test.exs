@@ -3,6 +3,10 @@ defmodule Lockspire.Install.VerifyTest do
 
   alias Lockspire.Install.Verify
 
+  defmodule RemoteJwksFetcher do
+    def get_keys(_uri, _opts), do: {:error, {:jwks_fetch_failed, :timeout}}
+  end
+
   defmodule Scope.AccountResolver do
     @behaviour Lockspire.Host.AccountResolver
 
@@ -56,7 +60,18 @@ defmodule Lockspire.Install.VerifyTest do
     def deny(conn, _params), do: conn
   end
 
+  setup_all do
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+
+    start_supervised!(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+
+    :ok
+  end
+
   setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+
     original_env =
       for key <- [:repo, :account_resolver, :issuer, :mount_path, :oban], into: %{} do
         {key, Application.get_env(:lockspire, key)}
@@ -110,5 +125,50 @@ defmodule Lockspire.Install.VerifyTest do
     refute result.ok?
     assert %{status: :error, details: details} = Enum.find(result.checks, &(&1.id == :router))
     assert details =~ "get /verify"
+  end
+
+  test "appends an opt-in remote jwks diagnostic without changing the default install checks" do
+    original_fetcher = Application.get_env(:lockspire, :jwks_fetcher)
+
+    on_exit(fn ->
+      if is_nil(original_fetcher) do
+        Application.delete_env(:lockspire, :jwks_fetcher)
+      else
+        Application.put_env(:lockspire, :jwks_fetcher, original_fetcher)
+      end
+    end)
+
+    Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
+
+    {:ok, _client} =
+      Lockspire.Storage.Ecto.Repository.register_client(%Lockspire.Domain.Client{
+        client_id: "verify-remote-client",
+        client_type: :confidential,
+        token_endpoint_auth_method: :private_key_jwt,
+        redirect_uris: ["https://app.example.test/cb"],
+        allowed_scopes: ["openid"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        pkce_required: true,
+        subject_type: :public,
+        jwks_uri: "https://keys.example.test/verify-client.jwks.json",
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    result =
+      Verify.run(
+        router: Web.Router,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire",
+        remote_jwks_client_id: "verify-remote-client"
+      )
+
+    assert %{status: :error, details: details} = Enum.find(result.checks, &(&1.id == :remote_jwks))
+    assert details =~ "client_id=verify-remote-client"
+    assert details =~ "category=transport"
+    assert details =~ "timed out"
   end
 end

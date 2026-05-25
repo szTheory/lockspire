@@ -35,8 +35,11 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   defp resolve_verifier_secret(%Client{client_secret_jwt_verifier_encrypted: encrypted}, opts)
        when is_binary(encrypted) and encrypted != "" do
     case Policy.unseal_client_secret_jwt_verifier(encrypted, opts) do
-      {:ok, secret} -> {:ok, secret}
-      {:error, :invalid_client_secret_jwt_verifier} -> {:error, :client_secret_verifier_unavailable}
+      {:ok, secret} ->
+        {:ok, secret}
+
+      {:error, :invalid_client_secret_jwt_verifier} ->
+        {:error, :client_secret_verifier_unavailable}
     end
   end
 
@@ -81,8 +84,6 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
 
   defp map_signature_result({false, _jwt_struct, _jws_struct}),
     do: {:error, :client_assertion_signature_invalid}
-
-  defp map_signature_result(_other), do: {:error, :client_assertion_signature_invalid}
 
   defp validate_algorithm(%Jar{header: header}, allowed_signing_algorithms) do
     case Map.get(header, "alg") do

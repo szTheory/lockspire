@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.ClientAuth.MTLS do
   alias Lockspire.Domain.Client
   alias Lockspire.Mtls.Certificate
   alias Lockspire.Observability
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Config
 
   @spec verify(
@@ -95,9 +96,15 @@ defmodule Lockspire.Protocol.ClientAuth.MTLS do
     case fetcher.get_keys(jwks_uri, fetcher_opts) do
       {:ok, jwk_set} ->
         {_modules, jwks} = JOSE.JWK.to_map(jwk_set)
+        RemoteJwksDiagnostics.record_healthy(client, source: :mtls)
         {:ok, %Client{client | jwks: jwks}}
 
-      {:error, _reason} ->
+      {:error, {:jwks_fetch_failed, reason}} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :mtls)
+        {:error, :client_jwks_fetch_failed}
+
+      {:error, reason} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :mtls)
         {:error, :client_jwks_fetch_failed}
     end
   end

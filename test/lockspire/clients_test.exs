@@ -45,10 +45,12 @@ defmodule Lockspire.ClientsTest do
     assert {:ok, %Client{} = stored_client} = Repository.fetch_client_by_id(client.client_id)
     assert stored_client.client_secret_hash == client.client_secret_hash
     assert is_binary(stored_client.client_secret_jwt_verifier_encrypted)
+
     assert {:ok, ^secret} =
              Policy.unseal_client_secret_jwt_verifier(
                stored_client.client_secret_jwt_verifier_encrypted
              )
+
     refute Map.has_key?(Map.from_struct(stored_client), :client_secret)
 
     client_id = client.client_id

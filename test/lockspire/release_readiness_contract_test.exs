@@ -45,6 +45,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                        "../../docs/client-secret-jwt-host-guide.md",
                                        __DIR__
                                      )
+  @private_key_jwt_host_guide_path Path.expand(
+                                     "../../docs/private-key-jwt-host-guide.md",
+                                     __DIR__
+                                   )
   @protect_phoenix_api_routes_path Path.expand(
                                      "../../docs/protect-phoenix-api-routes.md",
                                      __DIR__
@@ -542,6 +546,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "compile-time dependency on Sigra"
     refute onboarding =~ "production-ready"
 
+    private_key_jwt_guide = File.read!(@private_key_jwt_host_guide_path)
+    assert private_key_jwt_guide =~ "same-`kid` key replacement"
+    assert private_key_jwt_guide =~ "mix lockspire.verify --remote-jwks-client"
+    assert private_key_jwt_guide =~ "target-safety, transport, HTTP, payload, freshness, and unsupported-rollover"
+
     assert_canonical_support_contract!(File.read!(@supported_surface_path))
     assert_host_guide!(client_secret_jwt_guide)
     assert_release_guide_defers!(guide)
@@ -679,6 +688,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert operator_admin =~ "Global PAR policy"
     assert operator_admin =~ "Client PAR override"
     assert operator_admin =~ "Effective PAR requirement"
+    assert operator_admin =~ "Remote JWKS posture"
+    assert operator_admin =~ "mix lockspire.verify --remote-jwks-client"
+    assert operator_admin =~ "unsupported rollover posture"
   end
 
   test "supported surface and security docs distinguish capability from policy-resolved requirement" do

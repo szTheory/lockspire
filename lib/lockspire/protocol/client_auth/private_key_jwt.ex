@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   alias Lockspire.Domain.UsedJti
   alias Lockspire.Audit.Event
   alias Lockspire.Observability
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Config
@@ -51,9 +52,16 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
 
     with {:ok, jwk_set} <- fetcher.get_keys(jwks_uri, jwks_fetcher_opts(opts)),
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set) do
+      RemoteJwksDiagnostics.record_healthy(client, source: :private_key_jwt)
       {:ok, %Client{client | jwks: jwks}, :jwks_uri}
     else
-      {:error, _reason} -> {:error, :client_jwks_fetch_failed}
+      {:error, {:jwks_fetch_failed, reason}} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :private_key_jwt)
+        {:error, :client_jwks_fetch_failed}
+
+      {:error, reason} ->
+        RemoteJwksDiagnostics.record_fetch_failure(client, reason, source: :private_key_jwt)
+        {:error, :client_jwks_fetch_failed}
     end
   end
 
@@ -73,12 +81,30 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   defp verify_signature(assertion, client, allowed_signing_algorithms, jwks_source, opts) do
     case verify_signature_once(assertion, client, allowed_signing_algorithms) do
       {:error, :no_matching_key} when jwks_source == :jwks_uri ->
-        retry_remote_signature_verification(assertion, client, allowed_signing_algorithms, opts)
+        retry_remote_signature_verification(
+          assertion,
+          client,
+          allowed_signing_algorithms,
+          :no_matching_key,
+          opts
+        )
 
       {:error, :invalid_signature} when jwks_source == :jwks_uri ->
         if stale_remote_kid?(client, assertion) do
-          retry_remote_signature_verification(assertion, client, allowed_signing_algorithms, opts)
+          retry_remote_signature_verification(
+            assertion,
+            client,
+            allowed_signing_algorithms,
+            :stale_kid,
+            opts
+          )
         else
+          RemoteJwksDiagnostics.record_unsupported_rollover(client, :ambiguous_signature,
+            source: :private_key_jwt,
+            detail:
+              "The assertion signature failed against a cached remote key set without a detectable stale `kid`, so Lockspire treated the rollover posture as unsupported."
+          )
+
           map_signature_result({:error, :invalid_signature})
         end
 
@@ -101,6 +127,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
          assertion,
          %Client{jwks_uri: jwks_uri} = client,
          allowed_signing_algorithms,
+         trigger,
          opts
        ) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
@@ -109,11 +136,50 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
          {_modules, jwks} <- JOSE.JWK.to_map(jwk_set),
          refreshed_client = %Client{client | jwks: jwks},
          result <- verify_signature_once(assertion, refreshed_client, allowed_signing_algorithms) do
+      record_refresh_verification_diagnosis(client, trigger, result)
       map_signature_result(result)
     else
-      {:error, _reason} -> {:error, :client_jwks_fetch_failed}
+      {:error, {:jwks_fetch_failed, reason}} ->
+        RemoteJwksDiagnostics.record_refresh_failure(client, trigger, reason,
+          source: :private_key_jwt
+        )
+
+        {:error, :client_jwks_fetch_failed}
+
+      {:error, reason} ->
+        RemoteJwksDiagnostics.record_refresh_failure(client, trigger, reason,
+          source: :private_key_jwt
+        )
+
+        {:error, :client_jwks_fetch_failed}
     end
   end
+
+  defp record_refresh_verification_diagnosis(client, trigger, {:ok, _verified_assertion}) do
+    RemoteJwksDiagnostics.record_supported_refresh_recovery(client, trigger,
+      source: :private_key_jwt
+    )
+  end
+
+  defp record_refresh_verification_diagnosis(client, trigger, {:error, :invalid_signature}) do
+    RemoteJwksDiagnostics.record_unsupported_rollover(client, trigger,
+      source: :private_key_jwt,
+      refresh_attempted?: true,
+      detail:
+        "Lockspire refreshed the remote JWKS once but the assertion still failed signature verification, so the rollover posture remains unsupported."
+    )
+  end
+
+  defp record_refresh_verification_diagnosis(client, trigger, {:error, :no_matching_key}) do
+    RemoteJwksDiagnostics.record_unsupported_rollover(client, trigger,
+      source: :private_key_jwt,
+      refresh_attempted?: true,
+      detail:
+        "Lockspire refreshed the remote JWKS once but the requested signing key was still unavailable, so the rollover posture remains unsupported."
+    )
+  end
+
+  defp record_refresh_verification_diagnosis(_client, _trigger, _result), do: :ok
 
   defp map_signature_result({:ok, verified_assertion}), do: {:ok, verified_assertion}
 
@@ -306,11 +372,18 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
   end
 
   defp failure_metadata(%Client{} = client, reason, jwks_source) do
+    diagnosis =
+      if jwks_source == :jwks_uri do
+        RemoteJwksDiagnostics.latest_runtime(client)
+      end
+
     %{
       client_id: client.client_id,
       auth_method: :private_key_jwt,
       jwks_source: jwks_source,
-      reason_code: reason
+      reason_code: reason,
+      remote_jwks_posture: diagnosis && diagnosis.posture,
+      remote_jwks_category: diagnosis && diagnosis.category
     }
   end
 

@@ -390,7 +390,8 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
       error: "use_dpop_nonce",
       error_description: "Authorization server requires nonce in DPoP proof",
       reason_code: reason_code,
-      dpop_nonce: DPoPNonce.issue(:authorization_server, secret_key_base: secret_key_base(request))
+      dpop_nonce:
+        DPoPNonce.issue(:authorization_server, secret_key_base: secret_key_base(request))
     }
   end
 

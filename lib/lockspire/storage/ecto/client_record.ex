@@ -38,7 +38,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
         :none
       ]
     )
-    field(:token_endpoint_auth_signing_alg, Ecto.Enum, values: [:HS256, :RS256, :ES256, :PS256, :EdDSA])
+
+    field(:token_endpoint_auth_signing_alg, Ecto.Enum,
+      values: [:HS256, :RS256, :ES256, :PS256, :EdDSA]
+    )
 
     field(:pkce_required, :boolean, default: true)
     field(:par_policy, Ecto.Enum, values: [:inherit, :required, :optional], default: :inherit)

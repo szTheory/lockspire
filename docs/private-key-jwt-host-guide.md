@@ -73,6 +73,20 @@ When a client rotates keys:
 
 This gives clients a realistic rotation path without turning the embedded library into a broad remote-key management system.
 
+The supported recovery posture is intentionally narrow:
+
+- Lockspire can prove staleness when the cached set is missing the requested `kid`, or when a signature failure arrives with a `kid` that is not present in the cached set.
+- Lockspire performs one forced refresh only for those detectable stale-cache signals.
+- Lockspire does not claim automatic recovery for same-`kid` key replacement, omitted-`kid` assertions, or other rollover shapes that look indistinguishable from an ordinary bad signature after one bounded refresh.
+
+If you need operator proof for one configured client, run:
+
+```bash
+mix lockspire.verify --remote-jwks-client your-client-id
+```
+
+That opt-in diagnostic keeps the default install verification contract unchanged while classifying target-safety, transport, HTTP, payload, freshness, and unsupported-rollover posture for the selected client.
+
 ## Direct-client endpoints that consume the shared verifier
 
 The shipped `private_key_jwt` verifier is shared across Lockspire-owned direct-client surfaces, including:

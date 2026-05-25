@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.ClientAuth.Error
   alias Lockspire.JarTestHelpers
@@ -16,6 +17,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     Process.delete(:recorded_audit_events)
     Process.delete(:force_replay_store_error)
     Process.delete(:client_secret_jwt_secret)
+    Cachex.clear(:lockspire_jwks_cache)
     :ok
   end
 
@@ -119,6 +121,55 @@ defmodule Lockspire.Protocol.ClientAuthTest do
 
       assert Process.get(:fetched_jwks_uri) == "https://keys.example.test/client.jwks.json"
       assert Process.get(:refreshed_jwks_uri) == "https://keys.example.test/client.jwks.json"
+
+      diagnosis =
+        RemoteJwksDiagnostics.latest_runtime(%Client{
+          client_id: "remote_client",
+          jwks_uri: "https://keys.example.test/client.jwks.json"
+        })
+
+      assert diagnosis.posture == :supported_refresh_recovery
+      assert diagnosis.category == :freshness
+      assert diagnosis.refresh_attempted?
+    end
+
+    test "classifies ambiguous same-kid rollover as unsupported while keeping oauth failure generic" do
+      stale_keys = JarTestHelpers.generate_keys()
+      attacker_keys = JarTestHelpers.generate_keys()
+      stale_pub = Map.put(stale_keys.pub_jwk_map, "kid", "shared-kid")
+      Process.put(:remote_jwks, JOSE.JWK.from_map(%{"keys" => [stale_pub]}))
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      assertion =
+        signed_assertion(attacker_keys.private_jwk, "remote_client",
+          now: now,
+          jti: "remote-unsupported",
+          kid: "shared-kid"
+        )
+
+      assert {:error, %Error{reason_code: :client_assertion_signature_invalid}} =
+               ClientAuth.authenticate(
+                 private_key_jwt_params(assertion),
+                 nil,
+                 client_store: __MODULE__.RemoteClientStore,
+                 jti_store: __MODULE__.ReplayStore,
+                 jwks_fetcher: __MODULE__.RemoteJwksFetcher,
+                 server_policy_store: __MODULE__.ServerPolicyStore,
+                 now: now
+               )
+
+      refute Process.get(:refreshed_jwks_uri)
+
+      diagnosis =
+        RemoteJwksDiagnostics.latest_runtime(%Client{
+          client_id: "remote_client",
+          jwks_uri: "https://keys.example.test/client.jwks.json"
+        })
+
+      assert diagnosis.posture == :unsupported_rollover
+      assert diagnosis.category == :unsupported_rollover
+      refute diagnosis.supported?
     end
 
     test "rejects algorithms outside the effective issuer allowlist" do

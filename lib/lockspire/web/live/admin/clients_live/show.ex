@@ -31,6 +31,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        effective_security_profile: nil,
        strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
+       remote_jwks_diagnosis: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
@@ -239,6 +240,34 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
             not by ad hoc admin actions.
           </p>
+          <section :if={@remote_jwks_diagnosis} class="lockspire-admin-help">
+            <h3>Remote JWKS posture</h3>
+            <p>
+              <strong>Current posture:</strong> {@remote_jwks_diagnosis.posture_label}
+            </p>
+            <p>
+              <strong>Diagnosis category:</strong>
+              <code>{remote_jwks_category_label(@remote_jwks_diagnosis.category)}</code>
+            </p>
+            <p>{@remote_jwks_diagnosis.detail}</p>
+            <p>
+              <strong>Bounded refresh attempted:</strong>
+              <code>{boolean_label(@remote_jwks_diagnosis.refresh_attempted?)}</code>
+            </p>
+            <p>
+              <strong>Last-known-good cache preserved:</strong>
+              <code>{boolean_label(@remote_jwks_diagnosis.last_known_good_cache?)}</code>
+            </p>
+            <p :if={runtime_observation(@remote_jwks_diagnosis)}>
+              <strong>Last runtime observation:</strong>
+              {runtime_observation(@remote_jwks_diagnosis).posture_label}
+            </p>
+            <ul :if={@remote_jwks_diagnosis.remediation != []} class="lockspire-admin-errors">
+              <%= for item <- @remote_jwks_diagnosis.remediation do %>
+                <li>{item}</li>
+              <% end %>
+            </ul>
+          </section>
         </section>
 
         <h3>Redirect URIs</h3>
@@ -377,7 +406,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       effective_par_policy: nil,
       effective_security_profile: nil,
       strict_readiness: default_readiness(),
-      private_key_jwt_truth: nil
+      private_key_jwt_truth: nil,
+      remote_jwks_diagnosis: nil
     )
   end
 
@@ -393,7 +423,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_security_profile: resolve_effective_security_profile(client),
           strict_readiness: strict_readiness(),
           private_key_jwt_truth:
-            AdminServerPolicy.private_key_jwt_registration_truth(server_policy)
+            AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
+          remote_jwks_diagnosis: remote_jwks_diagnosis(client)
         )
 
       {:error, _reason} ->
@@ -403,7 +434,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_par_policy: nil,
           effective_security_profile: nil,
           strict_readiness: default_readiness(),
-          private_key_jwt_truth: nil
+          private_key_jwt_truth: nil,
+          remote_jwks_diagnosis: nil
         )
     end
   end
@@ -598,6 +630,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     Enum.join(algorithms, ", ")
   end
 
+  defp remote_jwks_category_label(category)
+       when category in [:healthy, :freshness, :target_safety, :transport, :http, :payload] do
+    category
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+  end
+
+  defp remote_jwks_category_label(:unsupported_rollover), do: "unsupported rollover"
+  defp remote_jwks_category_label(_category), do: "unknown"
+
+  defp runtime_observation(%{last_runtime_observation: observation}) when is_map(observation),
+    do: observation
+
+  defp runtime_observation(_diagnosis), do: nil
+
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
 
@@ -606,6 +653,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp value_or_not_configured(nil), do: "Not configured"
   defp value_or_not_configured(value), do: value
+
+  defp remote_jwks_diagnosis(%Client{jwks_uri: jwks_uri} = client) when is_binary(jwks_uri) do
+    case Admin.Clients.remote_jwks_diagnosis(client) do
+      {:ok, diagnosis} -> diagnosis
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp remote_jwks_diagnosis(_client), do: nil
 
   defp strict_readiness do
     case MessageSigningProfile.readiness() do

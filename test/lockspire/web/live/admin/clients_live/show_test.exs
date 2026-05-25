@@ -6,10 +6,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
   alias Lockspire.Admin
   alias Lockspire.Domain.Client
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
 
   @endpoint Lockspire.Web.Endpoint
+
+  defmodule RemoteJwksFetcher do
+    def get_keys(_uri, _opts) do
+      {:error, {:jwks_fetch_failed, :timeout}}
+    end
+  end
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -179,6 +186,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
     client: client
   } do
+    original_fetcher = Application.get_env(:lockspire, :jwks_fetcher)
+
+    on_exit(fn ->
+      if is_nil(original_fetcher) do
+        Application.delete_env(:lockspire, :jwks_fetcher)
+      else
+        Application.put_env(:lockspire, :jwks_fetcher, original_fetcher)
+      end
+    end)
+
+    Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
+
     assert {:ok, _policy} =
              Admin.put_dcr_policy(%{dcr_allowed_token_endpoint_auth_methods: ["private_key_jwt"]})
 
@@ -200,10 +219,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
                metadata: %{}
              })
 
+    RemoteJwksDiagnostics.record_unsupported_rollover(pkjwt_client, :ambiguous_signature,
+      source: :private_key_jwt
+    )
+
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{pkjwt_client.client_id}")
 
     assert html =~ "Client assertion keys"
     assert html =~ "Remote JWKS URI configured"
+    assert html =~ "Remote JWKS posture"
+    assert html =~ "Transient remote JWKS fetch failure"
+    assert html =~ "transport"
+    assert html =~ "Last runtime observation:"
+    assert html =~ "Unsupported rollover posture"
     assert html =~ "https://client.example.com/.well-known/jwks.json"
     assert html =~ "private_key_jwt"
     assert html =~ "RS256, ES256, PS256, EdDSA"

@@ -695,7 +695,10 @@ defmodule Lockspire.Integration.Phase41Fapi20E2ETest do
       "iat" => iat,
       "jti" => jti,
       "nonce" =>
-        if(access_token, do: DPoPNonce.issue(:resource_server), else: DPoPNonce.issue(:authorization_server))
+        if(access_token,
+          do: DPoPNonce.issue(:resource_server),
+          else: DPoPNonce.issue(:authorization_server)
+        )
     }
 
     payload =

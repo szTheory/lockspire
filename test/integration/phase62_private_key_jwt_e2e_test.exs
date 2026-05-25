@@ -15,12 +15,37 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
   defmodule RemoteJwksFetcher do
     def get_keys(_uri, _opts) do
       increment_fetch_count()
-      {:ok, JOSE.JWK.from_map(%{"keys" => [Process.get(:phase62_remote_jwks)]})}
+
+      case Process.get(:phase62_get_result, :default) do
+        :default ->
+          jwk =
+            case Process.get(:phase62_cached_remote_jwks) do
+              nil ->
+                current = Process.get(:phase62_remote_jwks)
+                Process.put(:phase62_cached_remote_jwks, current)
+                current
+
+              cached ->
+                cached
+            end
+
+          {:ok, JOSE.JWK.from_map(%{"keys" => [jwk]})}
+
+        {:error, reason} -> {:error, {:jwks_fetch_failed, reason}}
+      end
     end
 
     def refresh_keys(_uri, _opts) do
       increment_fetch_count()
-      {:ok, JOSE.JWK.from_map(%{"keys" => [Process.get(:phase62_remote_jwks)]})}
+
+      case Process.get(:phase62_refresh_result, :default) do
+        :default ->
+          current = Process.get(:phase62_remote_jwks)
+          Process.put(:phase62_cached_remote_jwks, current)
+          {:ok, JOSE.JWK.from_map(%{"keys" => [current]})}
+
+        {:error, reason} -> {:error, {:jwks_fetch_failed, reason}}
+      end
     end
 
     defp increment_fetch_count do
@@ -68,7 +93,10 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     remote_uri = "https://keys.example.test/phase62-#{System.unique_integer([:positive])}.json"
 
     Process.put(:phase62_remote_jwks, remote_old_pub)
+    Process.delete(:phase62_cached_remote_jwks)
     Process.put(:phase62_jwks_fetch_count, 0)
+    Process.put(:phase62_get_result, :default)
+    Process.put(:phase62_refresh_result, :default)
 
     Application.put_env(:lockspire, :jwks_fetcher_opts, resolver: &__MODULE__.public_resolver/1)
     Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
@@ -164,7 +192,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
       )
 
     assert remote_rotated_response.status == 200
-    assert Process.get(:phase62_jwks_fetch_count) == 2
+    assert Process.get(:phase62_jwks_fetch_count) == 3
 
     attacker_assertion =
       signed_assertion(
@@ -183,6 +211,72 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     assert failed_response.status == 401
 
     assert Jason.decode!(failed_response.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+  end
+
+  test "token endpoint keeps unsupported same-kid rollover and failed refresh responses generic", %{
+    remote_client: remote_client,
+    remote_old_keys: remote_old_keys,
+    remote_new_keys: remote_new_keys,
+    remote_new_pub: remote_new_pub
+  } do
+    shared_old_pub = Map.put(remote_old_keys.pub_jwk_map, "kid", "shared-kid")
+    shared_new_pub = Map.put(remote_new_pub, "kid", "shared-kid")
+
+    Process.put(:phase62_remote_jwks, shared_old_pub)
+
+    first_response =
+      issue_refresh_token(
+        remote_client.client_id,
+        signed_assertion(remote_old_keys.private_jwk, remote_client.client_id,
+          jti: "shared-old",
+          kid: "shared-kid"
+        ),
+        "phase62-remote-refresh-1"
+      )
+
+    assert first_response.status == 200
+    assert Process.get(:phase62_jwks_fetch_count) == 1
+
+    Process.put(:phase62_remote_jwks, shared_new_pub)
+
+    unsupported_response =
+      issue_refresh_token(
+        remote_client.client_id,
+        signed_assertion(remote_new_keys.private_jwk, remote_client.client_id,
+          jti: "shared-new",
+          kid: "shared-kid"
+        ),
+        "phase62-remote-refresh-2"
+      )
+
+    assert unsupported_response.status == 401
+    assert Process.get(:phase62_jwks_fetch_count) == 2
+
+    assert Jason.decode!(unsupported_response.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    Process.put(:phase62_remote_jwks, remote_new_pub)
+    Process.put(:phase62_refresh_result, {:error, :timeout})
+
+    refresh_failed_response =
+      issue_refresh_token(
+        remote_client.client_id,
+        signed_assertion(remote_new_keys.private_jwk, remote_client.client_id,
+          jti: "refresh-fail",
+          kid: "remote-new-kid"
+        ),
+        "phase62-remote-refresh-2"
+      )
+
+    assert refresh_failed_response.status == 401
+    assert Process.get(:phase62_jwks_fetch_count) == 4
+
+    assert Jason.decode!(refresh_failed_response.resp_body) == %{
              "error" => "invalid_client",
              "error_description" => "Client authentication failed"
            }

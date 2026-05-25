@@ -15,6 +15,7 @@ defmodule Mix.Tasks.Lockspire.Verify do
     web: :string,
     scope: :string,
     mount_path: :string,
+    remote_jwks_client: :string,
     help: :boolean
   ]
 
@@ -39,12 +40,17 @@ defmodule Mix.Tasks.Lockspire.Verify do
   def help do
     """
     mix lockspire.verify [--web MyAppWeb] [--scope MyApp.Lockspire] [--mount-path /lockspire]
+    mix lockspire.verify --remote-jwks-client client-id
 
     Canonical post-install verification:
       1. Confirm required :lockspire runtime config is present and valid
       2. Confirm the host seam modules compile
       3. Confirm the host router mounts Lockspire and exposes /verify routes
       4. Confirm Lockspire and Oban migrations are applied
+
+    Optional targeted remote-JWKS diagnostic:
+      - `--remote-jwks-client client-id` probes one configured remote `jwks_uri` client,
+        reports the classified posture, and suggests bounded-remediation next steps.
     """
   end
 
@@ -62,7 +68,8 @@ defmodule Mix.Tasks.Lockspire.Verify do
       router: Module.concat([web_module, "Router"]),
       resolver_module: Module.concat([scope_module, "AccountResolver"]),
       interaction_handler_module: Module.concat([scope_module, "InteractionHandler"]),
-      mount_path: Keyword.get(opts, :mount_path, Lockspire.Config.mount_path())
+      mount_path: Keyword.get(opts, :mount_path, Lockspire.Config.mount_path()),
+      remote_jwks_client_id: Keyword.get(opts, :remote_jwks_client)
     ]
   end
 

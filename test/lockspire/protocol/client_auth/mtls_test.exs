@@ -30,7 +30,8 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
     end
 
     test "returns error when certificate is invalid", %{client: %Client{} = client} do
-      assert {:error, :invalid_certificate} = MTLS.verify(client, "invalid der", :tls_client_auth, [])
+      assert {:error, :invalid_certificate} =
+               MTLS.verify(client, "invalid der", :tls_client_auth, [])
     end
 
     test "returns :ok when subject_dn matches exactly", %{client: %Client{} = client} do
@@ -40,7 +41,9 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
 
     test "returns error when subject_dn does not match", %{client: %Client{} = client} do
       client = %Client{client | tls_client_auth_subject_dn: "C=US,O=Test Org,CN=wrong.com"}
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
 
     test "returns :ok when san_dns matches exactly", %{client: %Client{} = client} do
@@ -50,7 +53,9 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
 
     test "returns error when san_dns does not match", %{client: %Client{} = client} do
       client = %Client{client | tls_client_auth_san_dns: "wrong.com"}
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
 
     test "returns :ok when san_uri matches exactly", %{client: %Client{} = client} do
@@ -60,7 +65,9 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
 
     test "returns error when san_uri does not match", %{client: %Client{} = client} do
       client = %Client{client | tls_client_auth_san_uri: "https://wrong.com/id"}
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
 
     test "returns :ok when san_ip matches exactly", %{client: %Client{} = client} do
@@ -70,7 +77,9 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
 
     test "returns error when san_ip does not match", %{client: %Client{} = client} do
       client = %Client{client | tls_client_auth_san_ip: "10.0.0.1"}
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
 
     test "returns :ok when san_email matches exactly", %{client: %Client{} = client} do
@@ -80,11 +89,16 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
 
     test "returns error when san_email does not match", %{client: %Client{} = client} do
       client = %Client{client | tls_client_auth_san_email: "wrong@example.com"}
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
 
-    test "returns error if client has no attributes configured for pki", %{client: %Client{} = client} do
-      assert {:error, :certificate_attribute_mismatch} = MTLS.verify(client, @der_cert, :tls_client_auth, [])
+    test "returns error if client has no attributes configured for pki", %{
+      client: %Client{} = client
+    } do
+      assert {:error, :certificate_attribute_mismatch} =
+               MTLS.verify(client, @der_cert, :tls_client_auth, [])
     end
   end
 
@@ -99,10 +113,14 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
     end
 
     test "returns error when certificate is missing", %{client: %Client{} = client} do
-      assert {:error, :missing_certificate} = MTLS.verify(client, nil, :self_signed_tls_client_auth, [])
+      assert {:error, :missing_certificate} =
+               MTLS.verify(client, nil, :self_signed_tls_client_auth, [])
     end
 
-    test "returns :ok when cert public key matches registered JWKS", %{client: %Client{} = client, jwks: jwks} do
+    test "returns :ok when cert public key matches registered JWKS", %{
+      client: %Client{} = client,
+      jwks: jwks
+    } do
       client = %Client{client | jwks: jwks}
       assert :ok = MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, [])
     end
@@ -112,11 +130,13 @@ defmodule Lockspire.Protocol.ClientAuth.MtlsTest do
       {_modules, other_jwk_map} = JOSE.JWK.to_map(other_jwk)
       client = %Client{client | jwks: %{"keys" => [other_jwk_map]}}
 
-      assert {:error, :no_matching_key} = MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, [])
+      assert {:error, :no_matching_key} =
+               MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, [])
     end
 
     test "returns error if client has no keys registered", %{client: %Client{} = client} do
-      assert {:error, :client_jwks_missing} = MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, [])
+      assert {:error, :client_jwks_missing} =
+               MTLS.verify(client, @der_cert, :self_signed_tls_client_auth, [])
     end
 
     test "retrieves jwks_uri on demand and matches", %{client: %Client{} = client, jwks: jwks} do

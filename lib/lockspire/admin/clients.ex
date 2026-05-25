@@ -8,6 +8,7 @@ defmodule Lockspire.Admin.Clients do
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
   alias Lockspire.Protocol.MessageSigningProfile
+  alias Lockspire.RemoteJwksDiagnostics
   alias Lockspire.Storage.Ecto.Repository
 
   @mutable_fields ~w(
@@ -87,6 +88,16 @@ defmodule Lockspire.Admin.Clients do
     case Repository.fetch_client_by_id(client_id) do
       {:ok, nil} -> {:error, :not_found}
       {:ok, %Client{} = client} -> {:ok, client}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @spec remote_jwks_diagnosis(Client.t(), keyword()) ::
+          {:ok, map()} | {:error, :not_applicable | term()}
+  def remote_jwks_diagnosis(%Client{} = client, opts \\ []) do
+    case RemoteJwksDiagnostics.diagnose_client(client, opts) do
+      {:ok, diagnosis} -> {:ok, diagnosis}
+      {:error, diagnosis} when is_map(diagnosis) -> {:ok, diagnosis}
       {:error, reason} -> {:error, reason}
     end
   end
