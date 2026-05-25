@@ -222,6 +222,76 @@ defmodule Lockspire.Admin.ClientsTest do
            )
   end
 
+  test "remote_jwks_summary/1 reports bounded reactive support truth for jwks_uri clients" do
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "admin-remote-jwks-summary",
+        client_secret_hash: "sha256:remote:hash",
+        client_type: :confidential,
+        name: "Admin Remote JWKS Summary",
+        redirect_uris: ["https://remote.example.com/callback"],
+        allowed_scopes: ["openid"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :private_key_jwt,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        jwks_uri: "https://remote.example.com/.well-known/jwks.json",
+        metadata: %{}
+      })
+
+    summary = Clients.remote_jwks_summary(client)
+
+    assert summary.applicable? == true
+    assert summary.status == :supported
+    assert summary.headline =~ "bounded reactive rollover support"
+    assert summary.detail =~ "forces one refresh"
+    assert summary.next_step =~ "publish the new key before first use"
+
+    assert summary.command_hint =~
+             "mix lockspire.doctor remote-jwks --client admin-remote-jwks-summary"
+  end
+
+  test "remote_jwks_summary/1 reuses the shared incident taxonomy from client metadata" do
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "admin-remote-jwks-incident",
+        client_secret_hash: "sha256:remote:incident",
+        client_type: :confidential,
+        name: "Admin Remote JWKS Incident",
+        redirect_uris: ["https://remote.example.com/callback"],
+        allowed_scopes: ["openid"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :private_key_jwt,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        jwks_uri: "https://remote.example.com/.well-known/jwks.json",
+        metadata: %{
+          "remote_jwks_diagnostic" => %{
+            "class" => "remote_jwks_fetch_failed",
+            "consumer" => "private_key_jwt",
+            "stage" => "network",
+            "subreason" => "http_status",
+            "fetch_status" => 503,
+            "forced_refresh_attempted?" => false
+          }
+        }
+      })
+
+    summary = Clients.remote_jwks_summary(client)
+
+    assert summary.applicable? == true
+    assert summary.status == :incident
+    assert summary.incident.class == :remote_jwks_fetch_failed
+    assert summary.incident.stage == :network
+    assert summary.incident.fetch_status == 503
+    assert summary.headline =~ "remote_jwks_fetch_failed"
+    assert summary.next_step =~ "HTTP status 503"
+  end
+
   test "update_client/2 allows safe metadata changes and rejects immutable fields" do
     assert {:ok, %Client{} = client} =
              Clients.update_client("admin-client", %{

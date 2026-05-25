@@ -207,8 +207,53 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "https://client.example.com/.well-known/jwks.json"
     assert html =~ "private_key_jwt"
     assert html =~ "RS256, ES256, PS256, EdDSA"
+    assert html =~ "Remote JWKS"
+    assert html =~ "bounded reactive rollover support"
+    assert html =~ "mix lockspire.doctor remote-jwks --client pkjwt-show-client"
     refute html =~ "Edit JWKS"
     refute html =~ "Test fetch"
+  end
+
+  test "client detail renders the shared remote JWKS incident summary when metadata is present",
+       %{
+         client: client
+       } do
+    assert {:ok, incident_client} =
+             Repository.register_client(%Client{
+               client_id: "pkjwt-incident-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "JWT Incident Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :private_key_jwt,
+               pkce_required: true,
+               subject_type: :public,
+               created_at: DateTime.utc_now(),
+               jwks_uri: "https://client.example.com/.well-known/jwks.json",
+               metadata: %{
+                 "remote_jwks_diagnostic" => %{
+                   "class" => "remote_jwks_key_unavailable",
+                   "consumer" => "private_key_jwt",
+                   "stage" => "select_key",
+                   "subreason" => "post_refresh_key_still_missing",
+                   "forced_refresh_attempted?" => true,
+                   "requested_kid_present_in_cached_set?" => false
+                 }
+               }
+             })
+
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/clients/#{incident_client.client_id}")
+
+    assert html =~ "Remote JWKS"
+    assert html =~ "Status:"
+    assert html =~ "incident"
+    assert html =~ "remote_jwks_key_unavailable"
+    assert html =~ "Publish the requested key alongside the previous key"
+    assert html =~ "mix lockspire.doctor remote-jwks --client pkjwt-incident-client"
   end
 
   test "client detail shows read-only client_secret_jwt plus HS256 truth", %{client: client} do

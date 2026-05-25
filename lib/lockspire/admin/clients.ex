@@ -5,6 +5,7 @@ defmodule Lockspire.Admin.Clients do
 
   alias Lockspire.Clients
   alias Lockspire.Clients.RegistrationResult
+  alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
   alias Lockspire.Protocol.MessageSigningProfile
@@ -89,6 +90,11 @@ defmodule Lockspire.Admin.Clients do
       {:ok, %Client{} = client} -> {:ok, client}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  @spec remote_jwks_summary(Client.t()) :: RemoteJwks.summary()
+  def remote_jwks_summary(%Client{} = client) do
+    RemoteJwks.summarize_client(client)
   end
 
   @spec create_client(map() | keyword()) ::

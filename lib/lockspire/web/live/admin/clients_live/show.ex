@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Admin.Clients, as: AdminClients
   alias Lockspire.Admin.ServerPolicy, as: AdminServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
@@ -31,6 +32,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        effective_security_profile: nil,
        strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
+       remote_jwks_summary: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
@@ -65,6 +67,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
            effective_par_policy: resolve_effective_par_policy(client),
            effective_security_profile: resolve_effective_security_profile(client),
            strict_readiness: strict_readiness(),
+           remote_jwks_summary: AdminClients.remote_jwks_summary(client),
            form_errors: []
          )}
 
@@ -241,6 +244,34 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </p>
         </section>
 
+        <section
+          :if={show_remote_jwks_summary?(@client, @remote_jwks_summary)}
+          class="lockspire-admin-help"
+        >
+          <h3>Remote JWKS</h3>
+          <p>
+            <strong>Status:</strong> <code>{@remote_jwks_summary.status}</code>
+          </p>
+          <p>
+            <strong>Summary:</strong> {@remote_jwks_summary.headline}
+          </p>
+          <p>{@remote_jwks_summary.detail}</p>
+          <p>
+            <strong>Next step:</strong> {@remote_jwks_summary.next_step}
+          </p>
+          <p>
+            <strong>Ownership:</strong> {@remote_jwks_summary.ownership}
+          </p>
+          <p :if={@remote_jwks_summary.incident}>
+            Incident class:
+            <code>{@remote_jwks_summary.incident.class}</code>
+          </p>
+          <p :if={@remote_jwks_summary.command_hint}>
+            Support command:
+            <code>{@remote_jwks_summary.command_hint}</code>
+          </p>
+        </section>
+
         <h3>Redirect URIs</h3>
         <ul>
           <%= for redirect_uri <- @client.redirect_uris do %>
@@ -377,7 +408,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       effective_par_policy: nil,
       effective_security_profile: nil,
       strict_readiness: default_readiness(),
-      private_key_jwt_truth: nil
+      private_key_jwt_truth: nil,
+      remote_jwks_summary: nil
     )
   end
 
@@ -393,7 +425,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_security_profile: resolve_effective_security_profile(client),
           strict_readiness: strict_readiness(),
           private_key_jwt_truth:
-            AdminServerPolicy.private_key_jwt_registration_truth(server_policy)
+            AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
         )
 
       {:error, _reason} ->
@@ -403,7 +436,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_par_policy: nil,
           effective_security_profile: nil,
           strict_readiness: default_readiness(),
-          private_key_jwt_truth: nil
+          private_key_jwt_truth: nil,
+          remote_jwks_summary: nil
         )
     end
   end
@@ -419,8 +453,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       end
 
     case result do
-      {:ok, %Client{} = client} -> assign(socket, client: client)
-      {:error, _reason} -> socket
+      {:ok, %Client{} = client} ->
+        assign(socket,
+          client: client,
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
+        )
+
+      {:error, _reason} ->
+        socket
     end
   end
 
@@ -588,6 +628,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
   defp private_key_jwt_client?(_client), do: false
+
+  defp show_remote_jwks_summary?(%Client{jwks_uri: jwks_uri}, %{applicable?: true})
+       when is_binary(jwks_uri) and jwks_uri != "",
+       do: true
+
+  defp show_remote_jwks_summary?(_client, _summary), do: false
 
   defp client_secret_jwt_client?(%Client{token_endpoint_auth_method: :client_secret_jwt}),
     do: true
