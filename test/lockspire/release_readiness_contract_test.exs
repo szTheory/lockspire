@@ -443,11 +443,18 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "token issuance"
 
     assert supported_surface =~ "Host Phoenix API route protection"
+    assert supported_surface =~ "Mutual TLS for confidential-client authentication"
+    assert supported_surface =~ "Lockspire.MTLS.Extractor.CowboyDirect"
+    assert supported_surface =~ "Lockspire.MTLS.Extractor.ProxyHeader"
+    assert supported_surface =~ "host app or deployment owns TLS termination"
     assert supported_surface =~ "Lockspire.Plug.VerifyToken"
+    assert supported_surface =~ "Lockspire.Plug.EnforceSenderConstraints"
     assert supported_surface =~ "Lockspire.Plug.RequireToken"
     assert supported_surface =~ "scopes:` and `audience:` / `audiences:` restrictions"
     assert supported_surface =~ "host Phoenix API routes protected by the shipped plug pipeline"
     assert supported_surface =~ "bearer clients remaining unchanged by default"
+    assert supported_surface =~ "protocol-owned `/end_session/complete` seam"
+    assert supported_surface =~ "front-channel iframe cleanup as best effort browser choreography only"
     assert supported_surface =~ "Bounded reactive remote-`jwks_uri` rollover support"
     assert supported_surface =~ "forces one refresh when verification indicates stale or unknown key material"
     assert supported_surface =~ "preserves the last known good cache entry when refresh fails"
@@ -458,6 +465,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~
              "Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope"
 
+    assert supported_surface =~
+             "Arbitrary custom `Lockspire.MTLS.Extractor` implementations are not first-class peers"
+
     assert supported_surface =~ "Lockspire-owned semantic RAR consent rendering"
     assert supported_surface =~ "docs/protect-phoenix-api-routes.md"
     assert supported_surface =~ "phase81_generated_host_route_protection_e2e_test.exs"
@@ -465,6 +475,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert protected_routes_guide =~ "Lockspire.Plug.VerifyToken"
     assert protected_routes_guide =~ "Lockspire.Plug.EnforceSenderConstraints"
     assert protected_routes_guide =~ "Lockspire.Plug.RequireToken"
+    assert protected_routes_guide =~ "no-op for unconstrained bearer tokens"
     assert protected_routes_guide =~ "403"
     assert protected_routes_guide =~ "insufficient_scope"
     assert protected_routes_guide =~ "error=\"use_dpop_nonce\""
@@ -544,6 +555,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert onboarding =~ "custom RAR consent"
     assert onboarding =~ "rate limiting"
     assert onboarding =~ "manifest-tracked managed scaffolding"
+    assert onboarding =~ "/end_session/complete"
+    assert onboarding =~ "durable back-channel delivery through Oban and Req"
     assert onboarding =~ "The executable repo proof lives in:"
     assert onboarding =~ "test/integration/install_generator_test.exs"
     assert onboarding =~ "test/integration/phase6_onboarding_e2e_test.exs"

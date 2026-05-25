@@ -31,7 +31,8 @@ Lockspire `1.0.0` GA currently supports this repo-proven embedded Phoenix surfac
 - JWT-secured authorization response mode (JARM) as an optional authorization-response representation when clients explicitly choose `jwt`, `query.jwt`, `fragment.jwt`, or `form_post.jwt`
 - RFC 9701 JWT introspection responses on the existing `POST /introspect` endpoint when the caller explicitly sends `Accept: application/token-introspection+jwt`
 - Refresh token rotation
-- Host Phoenix API route protection with `Lockspire.Plug.VerifyToken`, optional `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level `scopes:` and `audience:` / `audiences:` restrictions for Lockspire-issued access tokens
+- Mutual TLS for confidential-client authentication and certificate-bound access tokens through exactly two shipped extractor patterns: direct Phoenix TLS termination with `Lockspire.MTLS.Extractor.CowboyDirect`, or trusted reverse-proxy forwarding with `Lockspire.MTLS.Extractor.ProxyHeader`. The host app or deployment owns TLS termination, trusted forwarding, and anti-spoofing at the request edge; Lockspire owns certificate verification and token binding after extraction.
+- Host Phoenix API route protection with the canonical shipped pipeline `Lockspire.Plug.VerifyToken`, `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level `scopes:` and `audience:` / `audiences:` restrictions for Lockspire-issued access tokens
 - DPoP on Lockspire-owned `/token`, Lockspire-owned protected resources, host Phoenix API routes protected by the shipped plug pipeline, and truthful introspection visibility for active bound tokens, including automatic `DPoP-Nonce` challenge and retry support on those shipped DPoP surfaces, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
@@ -117,6 +118,7 @@ Lockspire does not currently support:
 - Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
 - broader resource-server integration beyond Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix plug pipeline
 - Generic JWT client-auth support outside the Lockspire-owned direct-client surfaces that reuse the shared verifier
+- Arbitrary custom `Lockspire.MTLS.Extractor` implementations are not first-class peers to the two shipped mTLS extraction patterns in the public support contract
 - Proactive remote-key readiness guarantees such as background polling, prefetch, grace-window orchestration, or broader remote metadata management beyond the shipped guarded `jwks_uri` fetch path
 - `client_secret_jwt` on `POST /par`
 - `HS384` or `HS512` for `client_secret_jwt`
@@ -167,6 +169,7 @@ A 1.0 GA claim honestly says:
 - the shipped `private_key_jwt` slice is narrow: confidential clients, inline `jwks` or guarded `jwks_uri`, issuer-string `aud`, and Lockspire-owned direct-client endpoints only
 - the shipped remote-`jwks_uri` rollover story is bounded reactive support: clients should publish the new key before first use and keep the previous key available during the overlap window because Lockspire does not claim proactive rotation readiness
 - the shipped `client_secret_jwt` slice is equally narrow: confidential clients, `HS256` only, issuer-string `aud`, replay-protected `jti`, Lockspire-owned direct-client endpoints only, and no `POST /par` or FAPI equivalence claim
+- the shipped mTLS path is narrow: two extractor patterns, explicit host TLS and proxy prerequisites, and no claim that Lockspire hides deployment trust boundaries
 - the shipped protected-resource proof surface is narrow: Lockspire-owned endpoints plus host Phoenix API routes protected by the documented plug pipeline, not generic gateway or third-party issuer middleware
 - the shipped logout propagation surface is asymmetric by design: back-channel delivery is durable and front-channel logout is best effort only
 - contributor and release workflows are versioned in the repo
