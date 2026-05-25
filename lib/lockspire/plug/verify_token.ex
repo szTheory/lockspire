@@ -323,17 +323,15 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp extract_kid(token) do
-    try do
-      protected_headers = JOSE.JWT.peek_protected(token)
-      {_alg_map, map} = JOSE.JWS.to_map(protected_headers)
+    protected_headers = JOSE.JWT.peek_protected(token)
+    {_alg_map, map} = JOSE.JWS.to_map(protected_headers)
 
-      case map do
-        %{"kid" => kid} when is_binary(kid) -> {:ok, kid}
-        _ -> {:error, :no_kid}
-      end
-    rescue
-      _ -> {:error, :malformed}
+    case map do
+      %{"kid" => kid} when is_binary(kid) -> {:ok, kid}
+      _ -> {:error, :no_kid}
     end
+  rescue
+    _ -> {:error, :malformed}
   end
 
   defp fetch_key(kid) do
@@ -344,21 +342,19 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp verify_signature_and_claims(jwk, token) do
-    try do
-      case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
-        {true, %JOSE.JWT{fields: claims}, _jws} ->
-          if time_claims_valid?(claims) do
-            {:ok, claims}
-          else
-            {:error, :invalid_time_claims}
-          end
+    case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
+      {true, %JOSE.JWT{fields: claims}, _jws} ->
+        if time_claims_valid?(claims) do
+          {:ok, claims}
+        else
+          {:error, :invalid_time_claims}
+        end
 
-        {false, _, _} ->
-          {:error, :invalid_signature}
-      end
-    rescue
-      _ -> {:error, :verification_crashed}
+      {false, _, _} ->
+        {:error, :invalid_signature}
     end
+  rescue
+    _ -> {:error, :verification_crashed}
   end
 
   defp time_claims_valid?(claims) do
@@ -367,7 +363,7 @@ defmodule Lockspire.Plug.VerifyToken do
     exp_valid? =
       case Map.get(claims, "exp") do
         exp when is_integer(exp) -> exp > now
-        # If exp is missing, technically it doesn't expire, but usually it's required. The spec doesn't mandate exp presence here unless specified. Let's assume it's valid if missing. If we want strict exp, we'd enforce it.
+        # Missing exp is currently treated as valid unless stricter policy requires it.
         _ -> true
       end
 

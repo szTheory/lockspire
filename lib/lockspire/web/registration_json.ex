@@ -43,7 +43,10 @@ defmodule Lockspire.Web.RegistrationJSON do
 
     payload
     |> Map.put(:client_id, client.client_id)
-    |> Map.put(:token_endpoint_auth_method, stringify_auth_method(client.token_endpoint_auth_method))
+    |> Map.put(
+      :token_endpoint_auth_method,
+      stringify_auth_method(client.token_endpoint_auth_method)
+    )
     |> Map.put(
       :client_id_issued_at,
       if(client.inserted_at, do: DateTime.to_unix(client.inserted_at), else: 0)

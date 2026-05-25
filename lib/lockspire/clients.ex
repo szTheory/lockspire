@@ -458,7 +458,13 @@ defmodule Lockspire.Clients do
   defp normalize_auth_method(nil), do: nil
 
   defp normalize_auth_method(value)
-       when value in [:none, :client_secret_basic, :client_secret_post, :client_secret_jwt, :private_key_jwt],
+       when value in [
+              :none,
+              :client_secret_basic,
+              :client_secret_post,
+              :client_secret_jwt,
+              :private_key_jwt
+            ],
        do: value
 
   defp normalize_auth_method(value) when is_binary(value) do

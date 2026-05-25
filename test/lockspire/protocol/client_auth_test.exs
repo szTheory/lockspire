@@ -488,7 +488,10 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                )
 
       assert_receive {[:lockspire, :client_auth, :failed],
-                      %{reason_code: :client_assertion_signature_invalid, auth_method: :client_secret_jwt}}
+                      %{
+                        reason_code: :client_assertion_signature_invalid,
+                        auth_method: :client_secret_jwt
+                      }}
 
       assert_receive {[:lockspire, :client_auth, :replay_detected],
                       %{reason_code: :client_assertion_replayed, auth_method: :client_secret_jwt}}

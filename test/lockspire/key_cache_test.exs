@@ -42,7 +42,7 @@ defmodule Lockspire.KeyCacheTest do
 
       # Trigger refresh
       send(pid, :refresh)
-      
+
       # Wait a bit for the message to be processed
       :sys.get_state(pid)
 
@@ -75,7 +75,7 @@ defmodule Lockspire.KeyCacheTest do
 
       # Retire the key
       {:ok, _} = Repository.publish_key(%{published_key | status: :retired})
-      
+
       send(pid, :refresh)
       :sys.get_state(pid)
 

@@ -56,7 +56,9 @@ defmodule Lockspire.Protocol.ClientAuth do
 
   defp resolve_implicit_method(:jwt_client_assertion, auth_method, opts)
        when auth_method in @jwt_auth_methods do
-    if auth_method in supported_jwt_auth_methods(opts), do: auth_method, else: :jwt_client_assertion
+    if auth_method in supported_jwt_auth_methods(opts),
+      do: auth_method,
+      else: :jwt_client_assertion
   end
 
   defp resolve_implicit_method(method, _auth_method, _opts), do: method

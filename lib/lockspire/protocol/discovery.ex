@@ -290,9 +290,14 @@ defmodule Lockspire.Protocol.Discovery do
   defp signing_algorithms_for_methods(methods) do
     methods
     |> Enum.reduce([], fn
-      "client_secret_jwt", acc -> acc ++ ["HS256"]
-      "private_key_jwt", acc -> acc ++ SecurityProfile.allowed_signing_algorithms(global_security_profile())
-      _method, acc -> acc
+      "client_secret_jwt", acc ->
+        acc ++ ["HS256"]
+
+      "private_key_jwt", acc ->
+        acc ++ SecurityProfile.allowed_signing_algorithms(global_security_profile())
+
+      _method, acc ->
+        acc
     end)
     |> Enum.uniq()
   end

@@ -91,6 +91,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
                Registration.register(request)
 
       assert Policy.verify_client_secret(client.client_secret_hash, plain) == true
+
       assert {:ok, ^plain} =
                Policy.unseal_client_secret_jwt_verifier(
                  client.client_secret_jwt_verifier_encrypted
@@ -657,7 +658,9 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
     test "rejects backchannel session_required without a backchannel_logout_uri" do
       request =
-        DcrFixtures.register_request(metadata: DcrFixtures.missing_backchannel_logout_uri_metadata())
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.missing_backchannel_logout_uri_metadata()
+        )
 
       assert {:error,
               %Error{
@@ -669,7 +672,9 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
     test "rejects malformed backchannel_logout_uri" do
       request =
-        DcrFixtures.register_request(metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata())
+        DcrFixtures.register_request(
+          metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata()
+        )
 
       assert {:error,
               %Error{

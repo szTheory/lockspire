@@ -152,55 +152,65 @@ defmodule Lockspire.Protocol.Registration do
 
     resolved_profile =
       SecurityProfile.resolve_effective_profile(server_policy, %{
-        security_profile: atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
+        security_profile:
+          atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
       })
 
-    cond do
-      auth_method == "client_secret_jwt" and resolved_profile.fapi_2_0_security? ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_method,
-           reason: :incompatible_with_fapi_2_0
-         }}
+    case auth_method do
+      "client_secret_jwt" ->
+        validate_client_secret_jwt_metadata(signing_alg, resolved_profile)
 
-      auth_method == "client_secret_jwt" and is_nil(signing_alg) ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_signing_alg,
-           reason: :required
-         }}
+      "private_key_jwt" ->
+        validate_private_key_jwt_metadata(signing_alg, resolved_profile)
 
-      auth_method == "client_secret_jwt" and signing_alg != "HS256" ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_signing_alg,
-           reason: :unsupported
-         }}
-
-      auth_method == "private_key_jwt" and
-          not is_nil(signing_alg) and
-          signing_alg not in SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile) ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_signing_alg,
-           reason: :unsupported
-         }}
-
-      auth_method not in ["client_secret_jwt", "private_key_jwt"] and not is_nil(signing_alg) ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_signing_alg,
-           reason: :unsupported_token_endpoint_auth_method
-         }}
-
-      true ->
-        :ok
+      _other ->
+        validate_non_jwt_signing_alg(signing_alg)
     end
+  end
+
+  defp validate_client_secret_jwt_metadata(_signing_alg, %{fapi_2_0_security?: true}) do
+    invalid_client_metadata(:token_endpoint_auth_method, :incompatible_with_fapi_2_0)
+  end
+
+  defp validate_client_secret_jwt_metadata(nil, _resolved_profile) do
+    invalid_client_metadata(:token_endpoint_auth_signing_alg, :required)
+  end
+
+  defp validate_client_secret_jwt_metadata("HS256", _resolved_profile), do: :ok
+
+  defp validate_client_secret_jwt_metadata(_signing_alg, _resolved_profile) do
+    invalid_client_metadata(:token_endpoint_auth_signing_alg, :unsupported)
+  end
+
+  defp validate_private_key_jwt_metadata(nil, _resolved_profile), do: :ok
+
+  defp validate_private_key_jwt_metadata(signing_alg, resolved_profile) do
+    allowed_algs =
+      SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile)
+
+    if signing_alg in allowed_algs do
+      :ok
+    else
+      invalid_client_metadata(:token_endpoint_auth_signing_alg, :unsupported)
+    end
+  end
+
+  defp validate_non_jwt_signing_alg(nil), do: :ok
+
+  defp validate_non_jwt_signing_alg(_signing_alg) do
+    invalid_client_metadata(
+      :token_endpoint_auth_signing_alg,
+      :unsupported_token_endpoint_auth_method
+    )
+  end
+
+  defp invalid_client_metadata(field, reason) do
+    {:error,
+     %Error{
+       code: :invalid_client_metadata,
+       field: field,
+       reason: reason
+     }}
   end
 
   defp validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
@@ -283,9 +293,7 @@ defmodule Lockspire.Protocol.Registration do
   defp validate_logout_metadata(metadata) do
     redirect_uris = Map.get(metadata, "redirect_uris", [])
 
-    case Admin.Clients.validate_logout_metadata(metadata, redirect_uris,
-           strict_booleans: true
-         ) do
+    case Admin.Clients.validate_logout_metadata(metadata, redirect_uris, strict_booleans: true) do
       :ok ->
         :ok
 
@@ -507,11 +515,9 @@ defmodule Lockspire.Protocol.Registration do
       jwks: Map.get(metadata, "jwks"),
       jwks_uri: Map.get(metadata, "jwks_uri"),
       backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
-      backchannel_logout_session_required:
-        logout_metadata.backchannel_logout_session_required,
+      backchannel_logout_session_required: logout_metadata.backchannel_logout_session_required,
       frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
-      frontchannel_logout_session_required:
-        logout_metadata.frontchannel_logout_session_required,
+      frontchannel_logout_session_required: logout_metadata.frontchannel_logout_session_required,
       active: true,
       dpop_policy: dpop_policy_from_metadata(metadata),
       provenance: :self_registered,

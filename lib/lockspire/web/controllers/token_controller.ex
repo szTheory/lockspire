@@ -58,7 +58,8 @@ defmodule Lockspire.Web.TokenController do
 
   defp maybe_put_www_authenticate(conn, _error), do: conn
 
-  defp maybe_put_dpop_nonce(conn, %Error{dpop_nonce: nonce}) when is_binary(nonce) and nonce != "" do
+  defp maybe_put_dpop_nonce(conn, %Error{dpop_nonce: nonce})
+       when is_binary(nonce) and nonce != "" do
     conn
     |> put_resp_header("dpop-nonce", nonce)
     |> expose_header("DPoP-Nonce")

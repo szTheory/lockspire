@@ -70,7 +70,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
       proof ->
         case DPoP.validate_proof(
-             proof,
+               proof,
                method: request_method(request),
                target_uri: target_uri,
                now: now(request),

@@ -90,7 +90,9 @@ defmodule Lockspire.Protocol.ClientAuth.MTLS do
 
   defp resolve_keys(%Client{jwks_uri: jwks_uri} = client, opts) when is_binary(jwks_uri) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
-    fetcher_opts = Keyword.merge(Config.jwks_fetcher_opts(), Keyword.get(opts, :jwks_fetcher_opts, []))
+
+    fetcher_opts =
+      Keyword.merge(Config.jwks_fetcher_opts(), Keyword.get(opts, :jwks_fetcher_opts, []))
 
     case fetcher.get_keys(jwks_uri, fetcher_opts) do
       {:ok, jwk_set} ->
