@@ -44,6 +44,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     "none",
     "client_secret_basic",
     "client_secret_post",
+    "client_secret_jwt",
     "private_key_jwt",
     "tls_client_auth",
     "self_signed_tls_client_auth"
@@ -52,6 +53,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     "none",
     "client_secret_basic",
     "client_secret_post",
+    "client_secret_jwt",
     "private_key_jwt",
     "tls_client_auth",
     "self_signed_tls_client_auth"
@@ -122,6 +124,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
@@ -131,11 +134,15 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["revocation_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["revocation_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
                "EdDSA"
              ]
+
+      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_methods_supported")
+      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
     end
 
     test "publishes introspection auth metadata from current shared confidential-client runtime behavior" do
@@ -163,6 +170,7 @@ defmodule Lockspire.Protocol.DiscoveryTest do
       assert config["token_endpoint_auth_methods_supported"] == @published_methods
 
       assert config["token_endpoint_auth_signing_alg_values_supported"] == [
+               "HS256",
                "RS256",
                "ES256",
                "PS256",
@@ -187,6 +195,18 @@ defmodule Lockspire.Protocol.DiscoveryTest do
                "ES256",
                "PS256"
              ]
+    end
+
+    test "suppresses client_secret_jwt and HS256 publication under FAPI posture" do
+      put_server_security_profile!(:fapi_2_0_security)
+
+      config = Discovery.openid_configuration()
+
+      refute "client_secret_jwt" in config["token_endpoint_auth_methods_supported"]
+      refute "client_secret_jwt" in config["revocation_endpoint_auth_methods_supported"]
+      refute "HS256" in config["token_endpoint_auth_signing_alg_values_supported"]
+      refute "HS256" in config["revocation_endpoint_auth_signing_alg_values_supported"]
+      refute Map.has_key?(config, "pushed_authorization_request_endpoint_auth_methods_supported")
     end
   end
 

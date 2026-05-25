@@ -43,6 +43,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     "none",
     "client_secret_basic",
     "client_secret_post",
+    "client_secret_jwt",
     "private_key_jwt",
     "tls_client_auth",
     "self_signed_tls_client_auth"
@@ -130,6 +131,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["token_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
@@ -139,11 +141,15 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["revocation_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["revocation_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
              "EdDSA"
            ]
+
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
 
     assert body["introspection_endpoint_auth_methods_supported"] == @introspection_methods
 
@@ -247,6 +253,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     assert body["token_endpoint_auth_methods_supported"] == @shared_methods
 
     assert body["token_endpoint_auth_signing_alg_values_supported"] == [
+             "HS256",
              "RS256",
              "ES256",
              "PS256",
@@ -257,6 +264,8 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     refute Map.has_key?(body, "revocation_endpoint_auth_signing_alg_values_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_methods_supported")
     refute Map.has_key?(body, "introspection_endpoint_auth_signing_alg_values_supported")
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_methods_supported")
+    refute Map.has_key?(body, "pushed_authorization_request_endpoint_auth_signing_alg_values_supported")
   end
 
   test "GET /.well-known/openid-configuration drops JARM signing and encryption metadata when the authorization surface is unmounted" do
