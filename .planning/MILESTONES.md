@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.25 Support-Burden Reduction (Shipped + archived: 2026-05-26)
+
+**Phases completed:** **3** (**91-93**), **9** plans, **9** requirements closed.
+
+**Package posture:** `lockspire 1.0.0` or higher now has one coherent advanced-setup support contract for remote `jwks_uri`, mTLS setup, logout propagation, and the shipped Phoenix protected-route pipeline, backed by repo-native proof and explicit support boundaries.
+
+**Key accomplishments:**
+- Added one shared remote-JWKS incident taxonomy plus a bounded-reactive rollover truth model for `private_key_jwt` and JARM consumers.
+- Added `mix lockspire.doctor remote-jwks` and an admin Remote JWKS summary so runtime incidents can be diagnosed without source-diving and without widening install-time verification.
+- Tightened the canonical mTLS, protected-route, and logout guidance so Lockspire-owned behavior versus host-owned or infrastructure-owned behavior is explicit and internally consistent.
+- Added semantic release-contract proof and representative runtime regressions so advanced-setup docs, diagnostics, and behavior fail loudly if they drift apart.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.25-MILESTONE-AUDIT.md`](milestones/v1.25-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.25-ROADMAP.md`, `milestones/v1.25-REQUIREMENTS.md`, `milestones/v1.25-MILESTONE-AUDIT.md` · **Git tag:** `v1.25`
+
+---
+
 ## v1.24 client_secret_jwt (Shipped + archived: 2026-05-25)
 
 **Phases completed:** **3** (**88-90**), **9** plans, **7** requirements closed.

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.25
-milestone_name: Support-Burden Reduction
-status: ready_for_milestone_close
-stopped_at: Completed 93-03-PLAN.md
-last_updated: "2026-05-26T05:12:00Z"
+milestone: none
+milestone_name: none
+status: milestone_archived
+stopped_at: Archived v1.25
+last_updated: "2026-05-26T13:45:00Z"
 last_activity: 2026-05-26
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 100
 ---
 
@@ -22,31 +22,26 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 93 — support-truth-proof-and-milestone-closure
+**Current focus:** No active milestone. `v1.25` is archived.
 
 ## Current Position
 
-Phase: 93 (support-truth-proof-and-milestone-closure) — COMPLETE
-Plan: 3 of 3
-Status: Completed
+Phase: None
+Plan: None
+Status: Milestone archived
 Last activity: 2026-05-26
 
 ## Performance Metrics
 
-- Phases completed: 3/3 in active milestone slot
-- Plans completed: 9/9 in active milestone slot
+- Phases completed: 3/3 in the archived `v1.25` milestone
+- Plans completed: 9/9 in the archived `v1.25` milestone
 
 Most recently shipped milestone:
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.25 | 91-93 | 9 | 9 | shipped |
 | v1.24 | 88-90 | 9 | 7 | shipped |
-| Phase 92 P01 | 3min | 2 tasks | 2 files |
-| Phase 92 P02 | 4min | 2 tasks | 4 files |
-| Phase 92 P03 | 6min | 3 tasks | 7 files |
-| Phase 93 P1 | 4min | 3 tasks | 4 files |
-| Phase 93 P2 | 4min | 3 tasks | 6 files |
-| Phase 93 P3 | 24min | 3 tasks | 6 files |
 
 ## Deferred Items
 
@@ -75,6 +70,7 @@ None.
 - The representative second advanced-setup surface remains the generated-host protected-route pipeline, and its under-scoped DPoP-bound path stays pinned to the shipped Bearer insufficient_scope response.
 - Phase 93 and milestone v1.25 close on exact repo-native proof commands, requirement-mapped verification artifacts, and a single milestone audit rather than retrospective narrative.
 - Deferred follow-on support work must stay explicit, narrow, and trigger-based instead of being implied as shipped scope.
+- Milestone v1.25 is archived, and the repo should stop or reassess until real adopter evidence justifies another embedded-library-scoped milestone.
 
 ### Blockers/Concerns
 
@@ -82,7 +78,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-complete-milestone v1.25`
+**Next action:** Run `$gsd-new-milestone` only if a new evidence-backed milestone is actually warranted; otherwise stop here.
 **Resume file:** None
-**Stopped at:** Completed 93-03-PLAN.md
+**Stopped at:** Archived v1.25
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

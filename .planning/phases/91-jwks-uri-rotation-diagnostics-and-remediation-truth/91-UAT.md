@@ -1,3 +1,10 @@
+---
+phase: 91-jwks-uri-rotation-diagnostics-and-remediation-truth
+status: complete
+completed: 2026-05-26T00:00:00Z
+human_steps_required: 0
+---
+
 # Phase 91 UAT
 
 ## Objective

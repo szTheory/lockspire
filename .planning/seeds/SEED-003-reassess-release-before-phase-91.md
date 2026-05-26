@@ -1,8 +1,10 @@
 ---
 id: SEED-003
-status: dormant
+status: obsolete
 planted: 2026-05-25
 planted_during: v1.25 milestone planning
+resolved: 2026-05-26
+resolved_in: v1.25 milestone close prep
 trigger_when: Before executing Phase 91, reassess release from current green main by comparing Hex 1.0.0 against the shipped v1.22-v1.24 delta, refreshing or replacing stale release-prep/v1.1.0 from main, and deciding whether to cut the next Hex release before more v1.25 work lands.
 scope: medium
 ---
@@ -50,3 +52,7 @@ As of May 25, 2026:
 - the main reason not to release immediately is that the old release-prep lane no longer matches current `main`
 
 Do not surface this seed merely because time has passed. Surface it when `main` is green, the shipped product delta is still materially ahead of Hex, and the repo is about to start another implementation wave that would widen the gap further.
+
+## Outcome
+
+This seed is now obsolete. The pre-Phase-91 release reassessment window has passed, and any future Hex release decision should be planned from current shipped state rather than inherited as stale pre-Phase-91 planning debt.

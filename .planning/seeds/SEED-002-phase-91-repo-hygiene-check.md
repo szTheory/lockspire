@@ -1,8 +1,10 @@
 ---
 id: SEED-002
-status: dormant
+status: obsolete
 planted: 2026-05-25
 planted_during: v1.25 milestone planning
+resolved: 2026-05-26
+resolved_in: v1.25 milestone close prep
 trigger_when: Before starting Phase 91 implementation or creating a new release branch, run a repo-hygiene pass to confirm main is green, git status is clean, and the stale release-prep/v1.1.0 worktree is either removed or refreshed from current main.
 scope: small
 ---
@@ -47,3 +49,7 @@ As of May 25, 2026:
 - the remaining hygiene concern is narrow release-lane clutter, not general repo instability
 
 This should not block routine planning, but it should be revisited before Phase 91 implementation or any new release-prep branch so the next execution wave starts from one intentional branch story.
+
+## Outcome
+
+This seed is now obsolete. Its trigger boundary passed during `v1.25`, and the remaining repo/worktree hygiene work should be reconsidered as a fresh release-prep or repo-maintenance task rather than as a pre-Phase-91 blocker.

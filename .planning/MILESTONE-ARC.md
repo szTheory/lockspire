@@ -52,21 +52,20 @@ The shipped repo-proven story includes:
 
 ## Current Adopter Gaps
 
-The remaining gaps are **not foundational**. They are narrower trust or integrator-completion wedges.
+There is **no default next gap** after `v1.25`. The remaining questions are now trigger-based and should be reopened only if real adopter evidence shows support drag that the current shipped surface does not already address.
 
 ### Highest-Leverage Gaps
 
-1. **Advanced setup support burden**
-   The remaining product risk is no longer foundational protocol coverage; it is support cost around advanced setup edges such as logout propagation, `jwks_uri` rotation, mTLS, and protected-route configuration.
+- None by default after `v1.25` ship.
 
 ### Useful But Secondary
 
-- better operator/doctor coverage for advanced setup mistakes
-- support-burden reduction around mTLS, `jwks_uri` rotation, logout propagation, and protected-route setup
+- release or maintenance work that keeps the already-shipped support contract trustworthy
+- narrowly scoped follow-ons only when repeated adopter evidence shows a concrete embedded-library friction wedge
 
 ## Candidate Milestones
 
-Treat these as the default candidate set for the next `$gsd-new-milestone` run.
+Treat these as historical context plus the current stop rule for the next `$gsd-new-milestone` run.
 
 ### Candidate 1
 
@@ -117,9 +116,9 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
 ### Candidate 4
 
 - **name:** `Support-Burden Reduction`
-- **status:** `active`
-- **priority:** `highest`
-- **recommendation:** active milestone
+- **status:** `shipped`
+- **priority:** `completed`
+- **recommendation:** archived milestone
 - **why now:** the remaining repo risk is support cost and advanced setup ambiguity, not missing foundational protocol coverage
 - **target slice:**
   - better diagnostics and docs truth for `jwks_uri` rotation
@@ -131,6 +130,7 @@ Treat these as the default candidate set for the next `$gsd-new-milestone` run.
   - auth-method parity work that does not materially reduce adopter friction
 - **activated:** `2026-05-25`
 - **version:** `v1.25`
+- **shipped:** `2026-05-26`
 
 ## Stop Rules
 

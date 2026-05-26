@@ -10,35 +10,36 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-four planning milestones and has started milestone v1.25. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, and a narrow `client_secret_jwt` direct-client authentication slice in v1.24.
+Lockspire has now archived twenty-five planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, and advanced-setup support-burden reduction in v1.25.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The repo is now focused on support-burden reduction around advanced setup truth and diagnostics rather than more protocol-breadth expansion.
+The repo no longer has a default active milestone. The current recommendation is to stop or reassess until real adopter evidence shows another narrow support or trust wedge worth solving inside the existing embedded-library scope.
 
-## Current Milestone: v1.25 Support-Burden Reduction
+## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
 **Goal:** Reduce advanced setup ambiguity on already-shipped high-trust surfaces so adopters can configure, diagnose, and support Lockspire without source-diving or relying on maintainer tribal knowledge.
 
-**Target features:**
-- Improve diagnostics, support-truth, and remediation guidance for `jwks_uri` rotation.
-- Tighten canonical operator and host guidance for mTLS extraction, logout propagation, and protected-route setup.
-- Add repo-native proof that runtime behavior, doctor/diagnostic output, and support docs agree on the supported advanced setup story.
+**Delivered:**
+- Lockspire now classifies remote `jwks_uri` incidents through one shared diagnostics model and exposes the same bounded-reactive support story across runtime, doctor, admin, and docs.
+- `mix lockspire.doctor remote-jwks` and the admin client detail Remote JWKS panel now provide one calm remediation path and ownership split without widening install-time verification.
+- The canonical mTLS, logout propagation, and protected-route guidance now states one explicit Lockspire-owned versus host-owned support boundary.
+- Release-contract assertions and representative runtime regressions now fail loudly if the advanced-setup support story drifts from shipped behavior.
 
-**Why now:** `v1.24` closed the last practical direct-client auth gap. The highest-leverage remaining work is now lowering support cost and setup ambiguity on the advanced surfaces Lockspire already ships.
+**Why now:** `v1.24` closed the last practical direct-client auth gap. The remaining high-leverage work was support cost and setup ambiguity on advanced surfaces Lockspire already shipped.
 
 ## Next Milestone Goals
 
-The active milestone remains intentionally narrow and support-oriented rather than protocol-expansion oriented.
+There is no default next milestone after `v1.25`.
 
 **Target features:**
-- Improve diagnostics, operator guidance, and support-truth around `jwks_uri` rotation.
-- Reduce setup ambiguity for mTLS, logout propagation, and protected-route configuration.
-- Prefer support-cost reduction over adjacent protocol expansion unless real adopter evidence changes the priority.
+- Prefer stopping or reassessing over automatic scope expansion.
+- Start another milestone only if concrete adopter evidence shows a narrow embedded-library trust or support wedge that materially improves the Phoenix SaaS adoption story.
+- Reject adjacent protocol breadth, auth-method parity, or hosted-auth drift unless the evidence clearly outweighs the added scope.
 
-**Why now:** `v1.24` closed the practical remaining direct-client auth gap. The highest-leverage remaining work is now support and setup clarity, not more auth-method parity.
+**Why now:** `v1.25` closed the highest-leverage remaining support-clarity wedge. More work should now be evidence-driven, not roadmap-inertia-driven.
 
-## Recently Shipped Milestone: v1.24 client_secret_jwt
+## Archived Milestone Snapshot: v1.24 client_secret_jwt
 
 **Goal:** Add a narrow `client_secret_jwt` authentication slice on Lockspire-owned direct-client endpoints without widening the embedded-library shape or weakening current secret-handling posture.
 
@@ -125,11 +126,9 @@ The active milestone remains intentionally narrow and support-oriented rather th
 - Delivered coherent `client_secret_jwt` registration, RFC 7592, discovery, and admin truth in Phase 89 of milestone v1.24.
 - Delivered canonical docs, release-contract proof, and milestone-close evidence for the narrow `client_secret_jwt` support slice in archived milestone v1.24.
 
-### Active
-
-- Define actionable diagnostics and remediation truth for `jwks_uri` rotation on Lockspire's shipped remote-JWKS surface.
-- Make the canonical mTLS extraction, logout propagation, and protected-route setup story explicit, truthful, and easier to support.
-- Add repo-native proof that advanced setup docs, diagnostics, and runtime behavior stay aligned.
+- Delivered actionable diagnostics and remediation truth for `jwks_uri` rotation on Lockspire's shipped remote-JWKS surface in archived milestone v1.25.
+- Delivered one canonical mTLS extraction, logout propagation, and protected-route setup support story in archived milestone v1.25.
+- Delivered repo-native proof that advanced setup docs, diagnostics, and runtime behavior stay aligned in archived milestone v1.25.
 
 ### Out of Scope
 
@@ -181,6 +180,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Target FAPI 2.0 Message Signing for v1.19 | Provides application-layer non-repudiation without mTLS infrastructure overhead, building off existing JWS/JWE primitives | Adopted at v1.19 milestone start |
 | Start `v1.23 DCR Logout Metadata` as a narrow self-service wedge | The logout propagation runtime already exists; the highest-leverage remaining gap is letting partner-managed clients register and manage the existing metadata without widening beyond current logout truth | Adopted and archived in milestone v1.23 |
 | Activate `v1.24 client_secret_jwt` as the current milestone | The remaining leverage-heavy gap is a practical direct-client authentication option that fits the current embedded-library boundary when kept narrow and truthfully documented | Adopted at v1.24 milestone start |
+| Ship `v1.25 Support-Burden Reduction` and default to stop-or-reassess afterward | The highest-leverage remaining work was support truth on already-shipped advanced setup surfaces; beyond that, roadmap inertia is a bigger risk than missing protocol breadth | Adopted at v1.25 milestone close |
 
 ## Evolution
 
@@ -200,4 +200,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 for v1.25 milestone start*
+*Last updated: 2026-05-26 for v1.25 milestone close*
