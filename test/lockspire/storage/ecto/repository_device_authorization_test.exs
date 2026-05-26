@@ -21,12 +21,13 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
   defp issue_device_authorization(attrs \\ %{}) do
     now = Map.get(attrs, :now, DateTime.utc_now())
+    suffix = System.unique_integer([:positive, :monotonic])
 
     device_authorization =
       DeviceAuthorization.issue(
         %{
-          device_code: Map.get(attrs, :device_code, "dev123"),
-          user_code: Map.get(attrs, :user_code, "WDJB-MJHT"),
+          device_code: Map.get(attrs, :device_code, "dev-#{suffix}"),
+          user_code: Map.get(attrs, :user_code, "WDJB-#{Integer.to_string(rem(suffix, 10_000), 36) |> String.upcase() |> String.pad_leading(4, "0")}"),
           client_id: Map.get(attrs, :client_id, "client_abc"),
           scopes: Map.get(attrs, :scopes, ["openid"])
         },
@@ -96,16 +97,17 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
   describe "verification lookups and transitions" do
     test "fetches the same pending authorization for formatted and unformatted user codes" do
-      stored = issue_device_authorization()
+      user_code = "WDJB-MJHT"
+      stored = issue_device_authorization(%{user_code: user_code})
 
       assert {:ok, %DeviceAuthorization{} = formatted} =
                Repository.fetch_device_authorization_by_user_code_hash(
-                 DeviceAuthorization.hash_user_code("WDJB-MJHT")
+                 DeviceAuthorization.hash_user_code(user_code)
                )
 
       assert {:ok, %DeviceAuthorization{} = unformatted} =
                Repository.fetch_device_authorization_by_user_code_hash(
-                 DeviceAuthorization.hash_user_code("wdjbmjht")
+                 DeviceAuthorization.hash_user_code(String.downcase(user_code))
                )
 
       assert formatted.id == stored.id
