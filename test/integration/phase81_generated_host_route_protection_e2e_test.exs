@@ -214,6 +214,39 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
            } = Jason.decode!(success_conn.resp_body)
   end
 
+  test "protected route keeps the insufficient_scope split for DPoP-bound under-scoped tokens",
+       %{
+         signing_key: signing_key,
+         signing_kid: signing_kid
+       } do
+    dpop_keys = JarTestHelpers.generate_ec_keys()
+    {:ok, jkt} = DPoP.thumbprint(dpop_keys.pub_jwk_map)
+
+    token =
+      issue_access_token(signing_key, signing_kid, %{
+        "sub" => "generated-host-user",
+        "scope" => "write:reports",
+        "aud" => "billing-api",
+        "cnf" => %{"jkt" => jkt}
+      })
+
+    scoped_failure_conn =
+      protected_conn()
+      |> put_req_header("authorization", "DPoP #{token}")
+      |> get(@protected_route)
+
+    assert scoped_failure_conn.status == 403
+
+    assert [
+             "Bearer realm=\"Lockspire\", error=\"insufficient_scope\", error_description=\"The access token is missing a required scope\", scope=\"read:billing\""
+           ] = get_resp_header(scoped_failure_conn, "www-authenticate")
+
+    assert %{
+             "error" => "insufficient_scope",
+             "error_description" => "The access token is missing a required scope"
+           } = Jason.decode!(scoped_failure_conn.resp_body)
+  end
+
   defp protected_conn do
     build_conn()
     |> Map.put(:host, "api.example.test")
