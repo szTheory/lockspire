@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Support-Burden Reduction
-status: ready_to_plan
-stopped_at: Phase 92 complete (3/3) — ready to discuss Phase 93
-last_updated: 2026-05-25T19:42:34.728Z
-last_activity: 2026-05-25
+status: executing
+stopped_at: Completed 93-01-PLAN.md
+last_updated: "2026-05-26T04:34:39.324Z"
+last_activity: 2026-05-26 -- Completed 93-01 support-truth contract proof
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 67
+  total_plans: 9
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Phase 93 — support truth proof and milestone closure
+**Current focus:** Phase 93 — support-truth-proof-and-milestone-closure
 
 ## Current Position
 
-Phase: 93
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-25
+Phase: 93 (support-truth-proof-and-milestone-closure) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute 93-02
+Last activity: 2026-05-26 -- Completed 93-01 support-truth contract proof
 
 ## Performance Metrics
 
-- Phases completed: 0/3 in active milestone slot
-- Plans completed: 0/9 in active milestone slot
+- Phases completed: 2/3 in active milestone slot
+- Plans completed: 7/9 in active milestone slot
 
 Most recently shipped milestone:
 
@@ -44,6 +44,7 @@ Most recently shipped milestone:
 | Phase 92 P01 | 3min | 2 tasks | 2 files |
 | Phase 92 P02 | 4min | 2 tasks | 4 files |
 | Phase 92 P03 | 6min | 3 tasks | 7 files |
+| Phase 93 P1 | 4min | 3 tasks | 4 files |
 
 ## Deferred Items
 
@@ -66,6 +67,8 @@ None.
 - Discovery now publishes `client_secret_jwt` only on the shared verifier endpoints and emits endpoint-local mixed JWT signing-alg unions with `HS256` kept symmetric-only.
 - Admin create, detail, and DCR policy surfaces now expose the narrow `client_secret_jwt` slice with read-only `HS256` truth and unchanged secret-handling posture.
 - Milestone v1.24 is complete and archived; the next default candidate should favor support-burden reduction over additional protocol breadth.
+- `docs/supported-surface.md` remains the sole public authority for advanced-setup support claims, while helper-backed release-contract assertions act only as drift fences.
+- Advanced-setup doc corrections should stay assertion-driven and narrow rather than reopening the support story across derived guides.
 
 ### Blockers/Concerns
 
@@ -73,7 +76,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** $gsd-plan-phase 91
+**Next action:** Execute 93-02-PLAN.md
 **Resume file:** None
-**Stopped at:** Completed 92-03-PLAN.md
+**Stopped at:** Completed 93-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

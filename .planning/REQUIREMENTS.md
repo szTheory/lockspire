@@ -29,7 +29,7 @@ Reduce advanced setup ambiguity on already-shipped trust surfaces so adopters ca
 ### Proof
 
 - [ ] **PROOF-01**: Repo-native automated proof covers representative advanced-setup misconfiguration and remediation cases for `jwks_uri` rotation and at least one other shipped high-friction setup surface.
-- [ ] **PROOF-02**: Release-contract or documentation-truth proof fails if the published support story drifts from the shipped advanced setup behavior.
+- [x] **PROOF-02**: Release-contract or documentation-truth proof fails if the published support story drifts from the shipped advanced setup behavior.
 
 ## Future Requirements
 
@@ -59,7 +59,7 @@ Reduce advanced setup ambiguity on already-shipped trust surfaces so adopters ca
 | TRUTH-01 | Phase 92 | Complete |
 | TRUTH-02 | Phase 92 | Complete |
 | PROOF-01 | Phase 93 | Pending |
-| PROOF-02 | Phase 93 | Pending |
+| PROOF-02 | Phase 93 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
