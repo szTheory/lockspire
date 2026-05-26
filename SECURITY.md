@@ -36,6 +36,9 @@ Security reports are in scope when they affect the embedded Phoenix surface the 
 - generator-backed install and upgrade scaffolding that Lockspire ships and maintains
 - host-seam contracts documented in repo-owned guides, such as login/consent handoff and the `/verify` device flow seam
 - confidential-client `private_key_jwt` support on Lockspire-owned direct-client endpoints
+- the bounded reactive remote-`jwks_uri` verification path on the shipped direct-client surfaces
+- the two shipped mTLS extraction patterns plus certificate-bound token enforcement after certificate extraction
+- host Phoenix API route protection for Lockspire-issued access tokens through the documented `Lockspire.Plug.VerifyToken -> Lockspire.Plug.EnforceSenderConstraints -> Lockspire.Plug.RequireToken` pipeline
 - secure defaults and FAPI 2.0 Security Profile enforcement shipped in this repo
 
 Out of scope examples remain:
@@ -44,7 +47,10 @@ Out of scope examples remain:
 - hosted auth as a separate service
 - third-party IdP integrations not shipped in this repo
 - request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features
-- `client_secret_jwt`, mTLS client authentication, and generic JWT client-auth support outside Lockspire-owned direct-client endpoints
+- arbitrary custom `Lockspire.MTLS.Extractor` implementations as first-class peers to the two shipped extraction patterns
+- generic gateway, service-mesh, or third-party issuer protected-resource middleware
+- generic JWT client-auth support outside Lockspire-owned direct-client endpoints
+- claims that front-channel logout is durable or that DCR creates a second logout runtime
 - DCR scope not named in the canonical support contract, including software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, and JAR-04 encryption
 
 ## Secure defaults

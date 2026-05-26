@@ -2,6 +2,8 @@
 
 Lockspire ships a library-owned operator surface for protocol state, while the host app keeps ownership of account UX.
 
+For the canonical advanced-setup support contract, see `docs/supported-surface.md`. This guide stays subordinate to that contract and should not be read as a second support matrix.
+
 ## Lockspire-owned operator workflows
 
 - Register and inspect OAuth clients
