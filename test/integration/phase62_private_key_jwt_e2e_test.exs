@@ -15,16 +15,24 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
   defmodule RemoteJwksFetcher do
     def get_keys(_uri, _opts) do
       increment_fetch_count()
-      {:ok, JOSE.JWK.from_map(%{"keys" => [Process.get(:phase62_remote_jwks)]})}
+      current_response()
     end
 
     def refresh_keys(_uri, _opts) do
       increment_fetch_count()
-      {:ok, JOSE.JWK.from_map(%{"keys" => [Process.get(:phase62_remote_jwks)]})}
+      current_response()
     end
 
     defp increment_fetch_count do
       Process.put(:phase62_jwks_fetch_count, Process.get(:phase62_jwks_fetch_count, 0) + 1)
+    end
+
+    defp current_response do
+      case Process.get(:phase62_remote_jwks_response, {:ok, Process.get(:phase62_remote_jwks)}) do
+        {:ok, %{"keys" => _keys} = jwks} -> {:ok, JOSE.JWK.from_map(jwks)}
+        {:ok, key_map} when is_map(key_map) -> {:ok, JOSE.JWK.from_map(%{"keys" => [key_map]})}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
@@ -68,6 +76,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     remote_uri = "https://keys.example.test/phase62-#{System.unique_integer([:positive])}.json"
 
     Process.put(:phase62_remote_jwks, remote_old_pub)
+    Process.put(:phase62_remote_jwks_response, {:ok, remote_old_pub})
     Process.put(:phase62_jwks_fetch_count, 0)
 
     Application.put_env(:lockspire, :jwks_fetcher_opts, resolver: &__MODULE__.public_resolver/1)
@@ -114,20 +123,18 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
       remote_client: remote_client,
       remote_old_keys: remote_old_keys,
       remote_new_keys: remote_new_keys,
-      remote_new_pub: remote_new_pub,
-      request_count: Process.get(:phase62_jwks_fetch_count)
+      remote_new_pub: remote_new_pub
     }
   end
 
-  test "token endpoint accepts inline jwks, recovers from jwks_uri rotation, and stays generic on failure",
+  test "token endpoint accepts inline jwks and recovers from jwks_uri rotation",
        %{
          inline_client: inline_client,
          inline_keys: inline_keys,
          remote_client: remote_client,
          remote_old_keys: remote_old_keys,
          remote_new_keys: remote_new_keys,
-         remote_new_pub: remote_new_pub,
-         request_count: _request_count
+         remote_new_pub: remote_new_pub
        } do
     inline_response =
       issue_refresh_token(
@@ -153,6 +160,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     assert Process.get(:phase62_jwks_fetch_count) == 1
 
     Process.put(:phase62_remote_jwks, remote_new_pub)
+    Process.put(:phase62_remote_jwks_response, {:ok, remote_new_pub})
 
     remote_rotated_response =
       issue_refresh_token(
@@ -166,10 +174,28 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
 
     assert remote_rotated_response.status == 200
     assert Process.get(:phase62_jwks_fetch_count) == 2
+    assert {:ok, refreshed_client} = Repository.fetch_client_by_id(remote_client.client_id)
+    refute Map.has_key?(refreshed_client.metadata, "remote_jwks_diagnostic")
+  end
+
+  test "remote jwks_uri current request fails closed while key-unavailable diagnostics stay support-safe",
+       %{
+         remote_client: remote_client,
+         remote_old_keys: remote_old_keys,
+         remote_new_keys: remote_new_keys
+       } do
+    assert issue_refresh_token(
+             remote_client.client_id,
+             signed_assertion(remote_old_keys.private_jwk, remote_client.client_id,
+               jti: "remote-old",
+               kid: "remote-old-kid"
+             ),
+             "phase62-remote-refresh-1"
+           ).status == 200
 
     Process.put(
-      :phase62_remote_jwks,
-      Map.put(JarTestHelpers.generate_keys().pub_jwk_map, "kid", "remote-bad-kid")
+      :phase62_remote_jwks_response,
+      {:ok, Map.put(JarTestHelpers.generate_keys().pub_jwk_map, "kid", "remote-bad-kid")}
     )
 
     failed_remote_response =
@@ -183,12 +209,67 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
       )
 
     assert failed_remote_response.status == 401
-    assert Process.get(:phase62_jwks_fetch_count) == 4
+    assert Process.get(:phase62_jwks_fetch_count) == 3
 
     assert Jason.decode!(failed_remote_response.resp_body) == %{
              "error" => "invalid_client",
              "error_description" => "Client authentication failed"
            }
+
+    assert {:ok, failed_client} = Repository.fetch_client_by_id(remote_client.client_id)
+
+    assert %{
+             "class" => "remote_jwks_key_unavailable",
+             "stage" => "select_key",
+             "subreason" => "post_refresh_key_still_missing",
+             "forced_refresh_attempted?" => true,
+             "requested_kid_present_in_cached_set?" => false
+           } = failed_client.metadata["remote_jwks_diagnostic"]
+  end
+
+  test "remote jwks_uri invalid content stays generic on the wire while persisting parse diagnostics",
+       %{
+         remote_client: remote_client,
+         remote_old_keys: remote_old_keys,
+         remote_new_keys: remote_new_keys
+       } do
+    assert issue_refresh_token(
+             remote_client.client_id,
+             signed_assertion(remote_old_keys.private_jwk, remote_client.client_id,
+               jti: "remote-old",
+               kid: "remote-old-kid"
+             ),
+             "phase62-remote-refresh-1"
+           ).status == 200
+
+    Process.put(:phase62_remote_jwks_response, {:error, {:jwks_fetch_failed, :invalid_format}})
+
+    failed_remote_response =
+      issue_refresh_token(
+        remote_client.client_id,
+        signed_assertion(remote_new_keys.private_jwk, remote_client.client_id,
+          jti: "remote-invalid-format",
+          kid: "remote-new-kid"
+        ),
+        "phase62-remote-refresh-2"
+      )
+
+    assert failed_remote_response.status == 401
+    assert Process.get(:phase62_jwks_fetch_count) == 2
+
+    assert Jason.decode!(failed_remote_response.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    assert {:ok, failed_client} = Repository.fetch_client_by_id(remote_client.client_id)
+
+    assert %{
+             "class" => "remote_jwks_invalid",
+             "stage" => "parse",
+             "subreason" => "invalid_format",
+             "forced_refresh_attempted?" => false
+           } = failed_client.metadata["remote_jwks_diagnostic"]
   end
 
   def public_resolver("keys.example.test"), do: {:ok, [{93, 184, 216, 34}]}

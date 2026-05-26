@@ -284,6 +284,46 @@ defmodule Lockspire.JwksFetcherTest do
     assert {:error, {:jwks_fetch_failed, {:http_status, 503}}} =
              JwksFetcher.refresh_keys(uri, plug: {Req.Test, Lockspire.JwksFetcher})
 
+    assert %{stage: :network, subreason: :http_status, fetch_status: 503} =
+             JwksFetcher.error_details({:jwks_fetch_failed, {:http_status, 503}})
+
+    assert {:ok, cached_keys} =
+             JwksFetcher.get_keys(uri, plug: {Req.Test, Lockspire.JwksFetcher})
+
+    assert jwk_kids(cached_keys) == ["stable"]
+    assert Agent.get(request_count, & &1) == 2
+  end
+
+  test "invalid forced refresh content preserves the last known good cache entry" do
+    uri = "https://example.com/jwks_refresh_invalid_#{System.unique_integer()}"
+    {:ok, request_count} = Agent.start_link(fn -> 0 end)
+    {:ok, mode} = Agent.start_link(fn -> :ok end)
+
+    Req.Test.stub(Lockspire.JwksFetcher, fn conn ->
+      Agent.update(request_count, &(&1 + 1))
+
+      case Agent.get(mode, & &1) do
+        :ok ->
+          Plug.Conn.send_resp(conn, 200, Jason.encode!(jwks_with_kid("stable")))
+
+        :invalid ->
+          Plug.Conn.send_resp(conn, 200, Jason.encode!(%{"keys" => "not_a_list"}))
+      end
+    end)
+
+    assert {:ok, initial_keys} =
+             JwksFetcher.get_keys(uri, plug: {Req.Test, Lockspire.JwksFetcher})
+
+    assert jwk_kids(initial_keys) == ["stable"]
+
+    Agent.update(mode, fn _ -> :invalid end)
+
+    assert {:error, {:jwks_fetch_failed, :invalid_format}} =
+             JwksFetcher.refresh_keys(uri, plug: {Req.Test, Lockspire.JwksFetcher})
+
+    assert %{stage: :parse, subreason: :invalid_format} =
+             JwksFetcher.error_details({:jwks_fetch_failed, :invalid_format})
+
     assert {:ok, cached_keys} =
              JwksFetcher.get_keys(uri, plug: {Req.Test, Lockspire.JwksFetcher})
 
