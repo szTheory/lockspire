@@ -414,6 +414,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert release_workflow =~ "mix release.preflight"
     assert release_workflow =~ "mix hex.publish --yes"
+    assert release_workflow =~ "environment: hex-publish"
+    assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
 
     assert oidf_conformance_workflow =~ "workflow_dispatch:"
     refute oidf_conformance_workflow =~ "schedule:"
