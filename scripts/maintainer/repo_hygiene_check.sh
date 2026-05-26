@@ -187,22 +187,26 @@ local_checks() {
       record_result "WARN" "open PRs" "open GitHub PRs exist; triage before release prep"
     fi
 
-    latest_ci="$(gh run list --workflow ci.yml --branch main --limit 1 --json conclusion,status,url 2>/dev/null || true)"
+    latest_ci="$(gh run list --workflow ci.yml --branch main --limit 1 --json conclusion,status,url,headSha 2>/dev/null || true)"
     if [[ "$latest_ci" == *'"conclusion":"success"'* ]]; then
       record_result "PASS" "latest CI" "latest main CI run succeeded"
-    elif [[ "$latest_ci" == *'"status":"in_progress"'* || "$latest_ci" == *'"status":"queued"'* ]]; then
-      record_result "WARN" "latest CI" "main CI is still in progress"
+    elif [[ "$latest_ci" == *'"status":"in_progress"'* || "$latest_ci" == *'"status":"queued"'* || "$latest_ci" == *'"status":"waiting"'* || "$latest_ci" == *'"status":"pending"'* ]]; then
+      record_result "WARN" "latest CI" "main CI is still in progress or waiting"
+    elif [[ "$latest_ci" == *'"conclusion":"cancelled"'* ]]; then
+      record_result "WARN" "latest CI" "latest main CI run was cancelled; prefer the newest completed non-cancelled run before release prep"
     elif [[ -n "$latest_ci" && "$latest_ci" != "[]" ]]; then
       record_result "BLOCK" "latest CI" "latest main CI run is not green"
     else
       record_result "WARN" "latest CI" "could not read recent main CI history"
     fi
 
-    latest_release="$(gh run list --workflow release.yml --branch main --limit 1 --json conclusion,status,url 2>/dev/null || true)"
+    latest_release="$(gh run list --workflow release.yml --branch main --limit 1 --json conclusion,status,url,headSha 2>/dev/null || true)"
     if [[ "$latest_release" == *'"conclusion":"success"'* ]]; then
       record_result "PASS" "latest release workflow" "latest main release workflow completed successfully"
-    elif [[ "$latest_release" == *'"status":"in_progress"'* || "$latest_release" == *'"status":"queued"'* ]]; then
-      record_result "WARN" "latest release workflow" "main release workflow is still in progress"
+    elif [[ "$latest_release" == *'"status":"in_progress"'* || "$latest_release" == *'"status":"queued"'* || "$latest_release" == *'"status":"waiting"'* || "$latest_release" == *'"status":"pending"'* ]]; then
+      record_result "WARN" "latest release workflow" "main release workflow is still in progress or waiting"
+    elif [[ "$latest_release" == *'"conclusion":"cancelled"'* ]]; then
+      record_result "WARN" "latest release workflow" "latest main release workflow was cancelled; confirm whether a newer recovery or release run superseded it"
     elif [[ -n "$latest_release" && "$latest_release" != "[]" ]]; then
       record_result "BLOCK" "latest release workflow" "latest main release workflow is not green"
     else
