@@ -1,6 +1,19 @@
 defmodule Lockspire.ReleaseReadinessContractTest do
   use ExUnit.Case, async: true
 
+  import Lockspire.TestSupport.AdvancedSetupSupportTruth,
+    only: [
+      assert_advanced_setup_support_contract!: 1,
+      assert_install_and_onboard_guide!: 1,
+      assert_private_key_jwt_host_guide!: 1,
+      assert_mtls_host_guide!: 1,
+      assert_protected_routes_guide!: 1,
+      assert_operator_admin_guide!: 1,
+      assert_dynamic_registration_guide!: 1,
+      assert_maintainer_release_deference!: 1,
+      assert_security_policy_deference!: 1,
+      refute_broadened_security_non_claims!: 1
+    ]
   import Lockspire.TestSupport.ClientSecretJwtSupportTruth
 
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
@@ -41,14 +54,18 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                  )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
+  @private_key_jwt_host_guide_path Path.expand("../../docs/private-key-jwt-host-guide.md", __DIR__)
   @client_secret_jwt_host_guide_path Path.expand(
                                        "../../docs/client-secret-jwt-host-guide.md",
                                        __DIR__
                                      )
+  @mtls_host_guide_path Path.expand("../../docs/mtls-host-guide.md", __DIR__)
   @protect_phoenix_api_routes_path Path.expand(
                                      "../../docs/protect-phoenix-api-routes.md",
                                      __DIR__
                                    )
+  @operator_admin_guide_path Path.expand("../../docs/operator-admin.md", __DIR__)
+  @dynamic_registration_guide_path Path.expand("../../docs/dynamic-registration.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
@@ -394,7 +411,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow protected-route surface" do
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
-    protected_routes_guide = File.read!(@protect_phoenix_api_routes_path)
 
     assert readme =~ "current release"
     assert readme =~ "inside its existing app"
@@ -441,48 +457,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert supported_surface =~ "polling"
     assert supported_surface =~ "token issuance"
-
-    assert supported_surface =~ "Host Phoenix API route protection"
-    assert supported_surface =~ "Mutual TLS for confidential-client authentication"
-    assert supported_surface =~ "Lockspire.MTLS.Extractor.CowboyDirect"
-    assert supported_surface =~ "Lockspire.MTLS.Extractor.ProxyHeader"
-    assert supported_surface =~ "host app or deployment owns TLS termination"
-    assert supported_surface =~ "Lockspire.Plug.VerifyToken"
-    assert supported_surface =~ "Lockspire.Plug.EnforceSenderConstraints"
-    assert supported_surface =~ "Lockspire.Plug.RequireToken"
-    assert supported_surface =~ "scopes:` and `audience:` / `audiences:` restrictions"
-    assert supported_surface =~ "host Phoenix API routes protected by the shipped plug pipeline"
-    assert supported_surface =~ "bearer clients remaining unchanged by default"
-    assert supported_surface =~ "protocol-owned `/end_session/complete` seam"
-    assert supported_surface =~ "front-channel iframe cleanup as best effort browser choreography only"
-    assert supported_surface =~ "Bounded reactive remote-`jwks_uri` rollover support"
-    assert supported_surface =~ "forces one refresh when verification indicates stale or unknown key material"
-    assert supported_surface =~ "preserves the last known good cache entry when refresh fails"
-    assert supported_surface =~ "fails the current authentication attempt closed"
-    assert supported_surface =~ "does not claim proactive rotation readiness"
-    assert supported_surface =~ "background polling, prefetch, grace-window orchestration"
-
-    assert supported_surface =~
-             "Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope"
-
-    assert supported_surface =~
-             "Arbitrary custom `Lockspire.MTLS.Extractor` implementations are not first-class peers"
-
     assert supported_surface =~ "Lockspire-owned semantic RAR consent rendering"
     assert supported_surface =~ "docs/protect-phoenix-api-routes.md"
     assert supported_surface =~ "phase81_generated_host_route_protection_e2e_test.exs"
-
-    assert protected_routes_guide =~ "Lockspire.Plug.VerifyToken"
-    assert protected_routes_guide =~ "Lockspire.Plug.EnforceSenderConstraints"
-    assert protected_routes_guide =~ "Lockspire.Plug.RequireToken"
-    assert protected_routes_guide =~ "no-op for unconstrained bearer tokens"
-    assert protected_routes_guide =~ "403"
-    assert protected_routes_guide =~ "insufficient_scope"
-    assert protected_routes_guide =~ "error=\"use_dpop_nonce\""
-    assert protected_routes_guide =~ "DPoP-Nonce"
-    assert protected_routes_guide =~ "business authorization"
-    assert protected_routes_guide =~ "tenant checks"
-    assert protected_routes_guide =~ "Lockspire.AccessToken"
 
     refute readme =~ "production-ready"
   end
@@ -506,7 +483,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert security =~ "PKCE S256 required by default"
     assert security =~ "no `alg=none`"
-    assert security =~ "confidential client uses `jwks_uri`"
     assert security =~ "issuer-string `aud`"
 
     assert security =~
@@ -571,6 +547,33 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert ci_workflow =~ "run: mix docs.verify"
   end
 
+  test "advanced-setup support contract stays pinned semantically across canonical and derived docs" do
+    supported_surface = File.read!(@supported_surface_path)
+    onboarding = File.read!(@install_and_onboard_path)
+    private_key_jwt_guide = File.read!(@private_key_jwt_host_guide_path)
+    mtls_guide = File.read!(@mtls_host_guide_path)
+    protected_routes_guide = File.read!(@protect_phoenix_api_routes_path)
+    operator_admin_guide = File.read!(@operator_admin_guide_path)
+    dynamic_registration_guide = File.read!(@dynamic_registration_guide_path)
+
+    assert_advanced_setup_support_contract!(supported_surface)
+    assert_install_and_onboard_guide!(onboarding)
+    assert_private_key_jwt_host_guide!(private_key_jwt_guide)
+    assert_mtls_host_guide!(mtls_guide)
+    assert_protected_routes_guide!(protected_routes_guide)
+    assert_operator_admin_guide!(operator_admin_guide)
+    assert_dynamic_registration_guide!(dynamic_registration_guide)
+  end
+
+  test "maintainer and security docs defer to the canonical advanced-setup contract" do
+    guide = File.read!(@maintainer_guide_path)
+    security = File.read!(@security_policy_path)
+
+    assert_maintainer_release_deference!(guide)
+    assert_security_policy_deference!(security)
+    refute_broadened_security_non_claims!(security)
+  end
+
   test "device-flow host guide keeps the verification seam abuse-control contract explicit" do
     guide = File.read!(@device_flow_host_guide_path)
 
@@ -596,20 +599,17 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   end
 
   test "private_key_jwt host guide teaches bounded reactive rollover diagnosis and fallback posture" do
-    guide = File.read!(Path.expand("../../docs/private-key-jwt-host-guide.md", __DIR__))
+    guide = File.read!(@private_key_jwt_host_guide_path)
 
-    assert guide =~ "bounded reactive remote-`jwks_uri` rollover"
-    assert guide =~ "no background polling, no prefetch"
+    assert_private_key_jwt_host_guide!(guide)
     assert guide =~ "publish the new key before first use"
     assert guide =~ "keep the previous key available during the overlap window"
-    assert guide =~ "mix lockspire.doctor remote-jwks --client <client_id>"
     assert guide =~ "admin client detail screen"
     assert guide =~ "remote_jwks_fetch_failed"
     assert guide =~ "remote_jwks_invalid"
     assert guide =~ "remote_jwks_key_unavailable"
     assert guide =~ "remote_jwks_signature_invalid"
     assert guide =~ "`mix lockspire.verify` is not the right tool"
-    assert guide =~ "Inline `jwks` is a deliberate fallback, not the default fix"
     assert guide =~ "Lockspire owns:"
     assert guide =~ "The host team owns:"
     assert guide =~ "The client integrator owns:"
