@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: none
 milestone_name: none
-status: release_truth_cleanup
-stopped_at: Release-truth cleanup after v1.25
-last_updated: "2026-05-26T13:45:00Z"
+status: release_hygiene_automation
+stopped_at: 1.1.0 release cut and hygiene automation follow-through
+last_updated: "2026-05-26T14:30:00Z"
 last_activity: 2026-05-26
 progress:
   total_phases: 0
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Release-truth cleanup and next Hex release from the shipped `v1.22`-`v1.25` scope.
+**Current focus:** Post-`1.1.0` release hygiene automation so future release prep starts from a provably clean repo and GitHub state.
 
 ## Current Position
 
 Phase: None
-Plan: Release-truth cleanup
-Status: Final polish before next release
+Plan: Release hygiene automation
+Status: Release shipped; cleaning and automating the next-maintainer path
 Last activity: 2026-05-26
 
 ## Performance Metrics
@@ -76,11 +76,11 @@ None.
 
 ### Blockers/Concerns
 
-- `mix ci` must be green before the next release candidate is considered ready.
+- The post-release repo should regain a green `mix ci` path and stop relying on version-pinned current-release docs or contract tests.
 
 ## Session Continuity
 
-**Next action:** Finish release-truth cleanup, restore a green `mix ci`, refresh the public release notes, and cut the next Hex release. After that, stop by default unless new adopter evidence justifies another milestone.
+**Next action:** Land the repo-owned hygiene command, CI drift fence, and versionless current-release docs/tests so future release prep starts with one boring command instead of branch archaeology.
 **Resume file:** None
-**Stopped at:** Release-truth cleanup after archived v1.25
+**Stopped at:** 1.1.0 release follow-through and hygiene automation
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

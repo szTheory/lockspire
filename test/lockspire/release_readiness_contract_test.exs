@@ -73,6 +73,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
+  @repo_hygiene_script_path Path.expand("../../scripts/maintainer/repo_hygiene_check.sh", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
 
@@ -135,6 +136,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "trusted proof starts only after merge in the protected `hex-publish` lane"
     assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
     assert guide =~ "exact commit SHA or tag being recovered"
+    assert guide =~ "./scripts/maintainer/repo_hygiene_check.sh"
+
+    assert guide =~
+             "Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix."
+
     assert guide =~ "Repo-owned proof:"
     assert guide =~ ".github/actions/release-please/action.yml"
     assert guide =~ "GitHub settings proof:"
@@ -274,8 +280,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert manifest =~ ~r/"\.\":\s*"\d+\.\d+\.\d+"/
     assert mix_version() == manifest_version()
     assert manifest_version() == newest_changelog_version()
-    assert mix_version() == "1.0.0"
-    assert changelog =~ "lockspire-v1.0.0"
+    assert changelog =~ "lockspire-v#{mix_version()}"
     assert changelog =~ "one `lockspire` package"
     assert mixfile =~ "\"Changelog\" => \"https://hexdocs.pm/lockspire/changelog.html\""
     assert mixfile =~ "\"Docs\" => \"https://hexdocs.pm/lockspire\""
@@ -311,10 +316,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     supported_surface = File.read!(@supported_surface_path)
     guide = File.read!(@maintainer_guide_path)
 
-    assert mix_version() == "1.0.0"
-    assert manifest_version() == "1.0.0"
-    assert newest_changelog_version() == "1.0.0"
-    assert changelog_versions() == ["1.0.0", "0.2.0", "0.1.2", "0.1.1"]
+    assert mix_version() == manifest_version()
+    assert newest_changelog_version() == mix_version()
+    assert List.first(changelog_versions()) == mix_version()
 
     assert supported_surface =~ "canonical public support contract"
 
@@ -324,7 +328,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert guide =~ "## Release candidate checklist"
     assert guide =~ "checked-in release-candidate contract end to end"
-    assert guide =~ "target is `lockspire-v1.0.0`"
+    assert guide =~ "target is still `lockspire-v<version>`"
     assert guide =~ "checked-in proof stops there"
     assert guide =~ "creating a second support matrix"
     assert guide =~ "does not define a second public support contract"
@@ -347,6 +351,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     security = File.read!(@security_policy_path)
     supported_surface = File.read!(@supported_surface_path)
     changelog = File.read!("CHANGELOG.md")
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
 
     assert guide =~ "Repo-owned proof:"
     assert guide =~ "GitHub settings proof:"
@@ -360,6 +365,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Protected-environment proof starts only when the `publish` job"
     assert guide =~ "Repo-owned commands stop at `mix ci`"
     assert supported_surface =~ "canonical public support contract"
+    assert repo_hygiene_script =~ "Result: safe to start release prep"
+    assert repo_hygiene_script =~ "Result: proceed with caution"
+    assert repo_hygiene_script =~ "Result: not ready"
 
     for doc <- [guide, readme, security, changelog] do
       refute doc =~ "Hex-public proof"
@@ -375,6 +383,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     oidf_conformance_workflow = File.read!(@oidf_conformance_workflow_path)
     mixfile = File.read!("mix.exs")
 
+    assert ci_workflow =~ "name: Release Hygiene Drift"
+    assert ci_workflow =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
     assert mixfile =~ "ci: ["
     assert mixfile =~ "\"test.fast\": [\"test.setup\", \"test\"]"
     assert mixfile =~ "\"cmd sh -lc 'mix qa'\""
@@ -424,8 +434,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme =~ "not a hosted auth service"
     assert readme =~ "What Lockspire is not"
     assert readme =~ "For exact scope, non-claims, and repo-owned proof"
+    refute readme =~ "Lockspire `1.0.0` is the GA release"
 
-    assert supported_surface =~ "Lockspire `1.0.0` is a GA release"
+    assert supported_surface =~ "The current GA line currently supports"
+    refute supported_surface =~ "Lockspire `1.0.0` is a GA release"
 
     assert supported_surface =~
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"

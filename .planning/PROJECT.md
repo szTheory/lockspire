@@ -16,7 +16,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 The repo no longer has a default active milestone. The current recommendation is to stop or reassess until real adopter evidence shows another narrow support or trust wedge worth solving inside the existing embedded-library scope.
 
-The immediate remaining work is release-truth polish rather than feature expansion: restore a green contributor lane, reconcile stale secondary docs, refresh public release notes to match the shipped v1.22-v1.25 scope, and cut the next Hex release from that aligned state.
+The immediate remaining work is no longer feature expansion. After the `1.1.0` release, the highest-leverage follow-through is disciplined repo and GitHub hygiene: keep `main` green, keep release-truth artifacts aligned, and make release prep start from one boring command rather than stale worktrees, hidden local drift, or manual GitHub archaeology.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
@@ -43,14 +43,14 @@ There is no default next milestone after `v1.25`.
 
 ## Current Release Focus
 
-**Goal:** Align gates, secondary docs, and public release artifacts with the already-shipped embedded-provider surface before cutting the next Hex release.
+**Goal:** Preserve the newly cut `1.1.0` release with one repeatable hygiene gate and CI drift fence so the next maintainer can confirm clean local git, triaged GitHub state, green `main`, and coherent release truth before opening any future release-prep work.
 
 **Target features:**
-- Restore a green `mix ci` contributor lane and clear release-hygiene drift.
-- Reconcile stale secondary docs so they no longer describe already-shipped surfaces as future work.
-- Refresh `CHANGELOG.md` and release-truth artifacts to match the shipped `v1.22` through `v1.25` delta.
+- Add one canonical maintainer hygiene command for local git, worktree, PR, workflow, and release-truth checks.
+- Add a lightweight CI drift fence for the repo-owned portion of release hygiene.
+- Remove version-pinned current-release wording from docs/tests so future package bumps do not silently break the maintainer contract.
 
-**Why now:** Lockspire is near-done for its intended scope. The highest-leverage remaining work is making the public package story as trustworthy as the repo already is.
+**Why now:** Lockspire is near-done for its intended scope. At this maturity level, friction and ambiguity in repo/release hygiene are a bigger adoption risk than missing another protocol wedge.
 
 ## Archived Milestone Snapshot: v1.24 client_secret_jwt
 
@@ -195,6 +195,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Activate `v1.24 client_secret_jwt` as the current milestone | The remaining leverage-heavy gap is a practical direct-client authentication option that fits the current embedded-library boundary when kept narrow and truthfully documented | Adopted at v1.24 milestone start |
 | Ship `v1.25 Support-Burden Reduction` and default to stop-or-reassess afterward | The highest-leverage remaining work was support truth on already-shipped advanced setup surfaces; beyond that, roadmap inertia is a bigger risk than missing protocol breadth | Adopted at v1.25 milestone close |
 | Treat the next work as release-truth polish rather than a new feature milestone | The remaining repo risk is stale public release posture and gate drift, not a missing core OAuth/OIDC wedge | Adopted after the v1.25 completion assessment |
+| Add a repo-owned hygiene gate after the `1.1.0` release | A mature OSS library needs one disciplined pre-release command and one CI drift fence more than more branch folklore | Adopted during post-`1.1.0` release follow-through |
 
 ## Evolution
 
