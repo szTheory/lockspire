@@ -209,6 +209,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "RS256, ES256, PS256, EdDSA"
     assert html =~ "Remote JWKS"
     assert html =~ "bounded reactive rollover support"
+    assert html =~ "fails the current request closed"
+    assert html =~ "Lockspire owns the guarded fetch, cache, refresh, and verify path"
     assert html =~ "mix lockspire.doctor remote-jwks --client pkjwt-show-client"
     refute html =~ "Edit JWKS"
     refute html =~ "Test fetch"
@@ -284,8 +286,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Status:"
     assert html =~ "incident"
     assert html =~ "remote_jwks_key_unavailable"
+    assert html =~ "Stage=select_key"
+    assert html =~ "subreason=post_refresh_key_still_missing"
+    assert html =~ "forced_refresh=true"
+    assert html =~ "cache_preserved=true"
     assert html =~ "Publish the requested key alongside the previous key"
     assert html =~ "mix lockspire.doctor remote-jwks --client pkjwt-incident-client"
+    refute html =~ "client_secret_hash"
   end
 
   test "client detail shows the remote JWKS panel for JARM-only jwks_uri clients", %{client: client} do

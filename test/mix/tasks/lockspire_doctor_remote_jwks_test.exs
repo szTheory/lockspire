@@ -98,6 +98,9 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "Stage: network"
     assert output =~ "Subreason: http_status"
     assert output =~ "HTTP status: 503"
+    assert output =~ "forced_refresh=false"
+    assert output =~ "cache_preserved=true"
+    assert output =~ "retry with one fresh JWT"
     assert output =~ "Lockspire owns the guarded fetch, cache, refresh, and verify path."
     assert output =~ "mix lockspire.verify"
     refute output =~ "client_secret_hash"
@@ -114,6 +117,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "bounded reactive rollover support"
     assert output =~ "forces one refresh"
     assert output =~ "fails the current request closed"
+    assert output =~ "Next step:"
     assert output =~ "If rotation is planned, publish the new key before first use"
   end
 

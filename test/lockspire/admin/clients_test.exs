@@ -247,7 +247,10 @@ defmodule Lockspire.Admin.ClientsTest do
     assert summary.status == :supported
     assert summary.headline =~ "bounded reactive rollover support"
     assert summary.detail =~ "forces one refresh"
+    assert summary.detail =~ "preserves the last known good cache"
+    assert summary.detail =~ "fails the current request closed"
     assert summary.next_step =~ "publish the new key before first use"
+    assert summary.ownership =~ "Lockspire owns the guarded fetch, cache, refresh, and verify path"
 
     assert summary.command_hint =~
              "mix lockspire.doctor remote-jwks --client admin-remote-jwks-summary"
@@ -305,7 +308,8 @@ defmodule Lockspire.Admin.ClientsTest do
             "stage" => "network",
             "subreason" => "http_status",
             "fetch_status" => 503,
-            "forced_refresh_attempted?" => false
+            "forced_refresh_attempted?" => false,
+            "cached_entry_present?" => true
           }
         }
       })
@@ -318,7 +322,12 @@ defmodule Lockspire.Admin.ClientsTest do
     assert summary.incident.stage == :network
     assert summary.incident.fetch_status == 503
     assert summary.headline =~ "remote_jwks_fetch_failed"
+    assert summary.detail =~ "Stage=network"
+    assert summary.detail =~ "subreason=http_status"
+    assert summary.detail =~ "forced_refresh=false"
+    assert summary.detail =~ "cache_preserved=true"
     assert summary.next_step =~ "HTTP status 503"
+    assert summary.ownership =~ "host operator diagnoses incidents here"
   end
 
   test "update_client/2 allows safe metadata changes and rejects immutable fields" do
