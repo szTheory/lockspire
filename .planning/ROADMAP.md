@@ -51,7 +51,7 @@ Phase 92 turns the remaining advanced setup tribal knowledge into explicit suppo
 Plans:
 
 - [x] 93-01: Add release-contract and documentation-truth assertions for the advanced setup support contract
-- [ ] 93-02: Verify representative misconfiguration, remediation, and negative-path behavior across the touched support surfaces
+- [x] 93-02: Verify representative misconfiguration, remediation, and negative-path behavior across the touched support surfaces
 - [ ] 93-03: Complete milestone-close verification and capture any intentionally deferred follow-on support work
 
 **Details:**
