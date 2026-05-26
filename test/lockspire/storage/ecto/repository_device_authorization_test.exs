@@ -27,7 +27,12 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
       DeviceAuthorization.issue(
         %{
           device_code: Map.get(attrs, :device_code, "dev-#{suffix}"),
-          user_code: Map.get(attrs, :user_code, "WDJB-#{Integer.to_string(rem(suffix, 10_000), 36) |> String.upcase() |> String.pad_leading(4, "0")}"),
+          user_code:
+            Map.get(
+              attrs,
+              :user_code,
+              "WDJB-#{Integer.to_string(rem(suffix, 10_000), 36) |> String.upcase() |> String.pad_leading(4, "0")}"
+            ),
           client_id: Map.get(attrs, :client_id, "client_abc"),
           scopes: Map.get(attrs, :scopes, ["openid"])
         },
