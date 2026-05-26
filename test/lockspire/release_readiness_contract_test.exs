@@ -137,6 +137,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "`workflow_dispatch` is used, treat it as recovery-only"
     assert guide =~ "exact commit SHA or tag being recovered"
     assert guide =~ "./scripts/maintainer/repo_hygiene_check.sh"
+    assert guide =~ "auto-publish once the Release Please PR is merged"
+    assert guide =~ "without a reviewer gate"
+    assert guide =~ "without a manual approval step"
 
     assert guide =~
              "Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix."
@@ -385,6 +388,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert ci_workflow =~ "name: Release Hygiene Drift"
     assert ci_workflow =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
+    assert ci_workflow =~ "cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}"
     assert mixfile =~ "ci: ["
     assert mixfile =~ "\"test.fast\": [\"test.setup\", \"test\"]"
     assert mixfile =~ "\"cmd sh -lc 'mix qa'\""

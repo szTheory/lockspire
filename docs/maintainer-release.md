@@ -21,10 +21,11 @@ Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix. I
 3. Treat the Release Please PR as review-only evidence, not authenticated release proof.
 4. Review the release PR diff, `mix.exs`, `CHANGELOG.md`, and the workflow/config artifacts that define the release lane.
 5. Merge the release PR.
-6. Let the Release workflow cross the `hex-publish` environment boundary on `main`.
+6. Let the Release workflow cross the `hex-publish` environment boundary on `main` automatically, without a reviewer gate.
 7. Treat the resulting protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
+Normal releases on `main` should auto-publish once the Release Please PR is merged. `workflow_dispatch` remains recovery-only, but recovery should also cross `hex-publish` without a manual approval step.
 
 ## Evidence boundaries
 
@@ -86,6 +87,7 @@ Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `
 - Use a protected `hex-publish` environment for publish jobs.
 - Store `HEX_API_KEY` as an environment secret, not an inline workflow secret.
 - Restrict the environment to deployments from `main`.
+- Do not require environment reviewers for `hex-publish`; protection comes from environment scoping, branch restriction, and the checked-in workflow contract rather than a manual approval click.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
 - Keep the authenticated dry-run inside the trusted workflow via `mix release.preflight`.
 - If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with both a recovery reason and the exact recovery ref so the protected publish lane replays the intended revision rather than whatever `main` points to later.
