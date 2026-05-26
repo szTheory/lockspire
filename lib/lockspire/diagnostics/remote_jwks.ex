@@ -350,7 +350,6 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
     case atom_field(raw, keys, allowed, default) do
       {:ok, atom} -> atom
       atom when is_atom(atom) -> atom
-      _other -> default
     end
   end
 
@@ -435,32 +434,34 @@ defmodule Lockspire.Diagnostics.RemoteJwks do
 
   defp infer_fetch_reason(raw) do
     case atom_field(raw, [:stage], @stages) do
-      {:ok, :parse} ->
-        :invalid_format
+      {:ok, stage} -> fetch_reason_for_stage(stage, raw)
+      _other -> :transport_error
+    end
+  end
 
-      {:ok, :validate_target} ->
-        case atom_value(raw, [:target_safety_reason], @subreasons, nil) do
-          nil -> :https_required
-          reason -> {:unsafe_target, reason}
-        end
+  defp fetch_reason_for_stage(:parse, _raw), do: :invalid_format
 
-      {:ok, :network} ->
-        case integer_field(raw, [:fetch_status]) do
-          nil ->
-            case atom_field(raw, [:subreason], @subreasons, :transport_error) do
-              {:ok, reason} -> reason
-              reason when is_atom(reason) -> reason
-            end
+  defp fetch_reason_for_stage(:validate_target, raw) do
+    case atom_value(raw, [:target_safety_reason], @subreasons, nil) do
+      nil -> :https_required
+      reason -> {:unsafe_target, reason}
+    end
+  end
 
-          status ->
-            {:http_status, status}
-        end
+  defp fetch_reason_for_stage(:network, raw) do
+    case integer_field(raw, [:fetch_status]) do
+      nil -> network_subreason(raw)
+      status -> {:http_status, status}
+    end
+  end
 
-      {:ok, :cache} ->
-        :cache_error
+  defp fetch_reason_for_stage(:cache, _raw), do: :cache_error
+  defp fetch_reason_for_stage(_stage, _raw), do: :transport_error
 
-      _other ->
-        :transport_error
+  defp network_subreason(raw) do
+    case atom_field(raw, [:subreason], @subreasons, :transport_error) do
+      {:ok, reason} -> reason
+      reason when is_atom(reason) -> reason
     end
   end
 

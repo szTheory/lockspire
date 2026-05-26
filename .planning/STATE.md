@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: none
 milestone_name: none
-status: milestone_archived
-stopped_at: Archived v1.25
+status: release_truth_cleanup
+stopped_at: Release-truth cleanup after v1.25
 last_updated: "2026-05-26T13:45:00Z"
 last_activity: 2026-05-26
 progress:
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** No active milestone. `v1.25` is archived.
+**Current focus:** Release-truth cleanup and next Hex release from the shipped `v1.22`-`v1.25` scope.
 
 ## Current Position
 
 Phase: None
-Plan: None
-Status: Milestone archived
+Plan: Release-truth cleanup
+Status: Final polish before next release
 Last activity: 2026-05-26
 
 ## Performance Metrics
@@ -71,14 +71,16 @@ None.
 - Phase 93 and milestone v1.25 close on exact repo-native proof commands, requirement-mapped verification artifacts, and a single milestone audit rather than retrospective narrative.
 - Deferred follow-on support work must stay explicit, narrow, and trigger-based instead of being implied as shipped scope.
 - Milestone v1.25 is archived, and the repo should stop or reassess until real adopter evidence justifies another embedded-library-scoped milestone.
+- The remaining high-leverage work after `v1.25` is release-truth polish: green contributor gates, stale-doc cleanup, and refreshed release notes for the shipped `v1.22`-`v1.25` delta.
+- `docs/user-flows-jtbd.md` had drifted behind shipped reality by still describing the Phoenix protected-route plug pipeline as future work; release-truth cleanup must favor repo-proven current behavior over older planning narratives.
 
 ### Blockers/Concerns
 
-- None
+- `mix ci` must be green before the next release candidate is considered ready.
 
 ## Session Continuity
 
-**Next action:** Run `$gsd-new-milestone` only if a new evidence-backed milestone is actually warranted; otherwise stop here.
+**Next action:** Finish release-truth cleanup, restore a green `mix ci`, refresh the public release notes, and cut the next Hex release. After that, stop by default unless new adopter evidence justifies another milestone.
 **Resume file:** None
-**Stopped at:** Archived v1.25
+**Stopped at:** Release-truth cleanup after archived v1.25
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

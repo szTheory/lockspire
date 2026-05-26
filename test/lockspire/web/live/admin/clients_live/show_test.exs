@@ -216,7 +216,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "Test fetch"
   end
 
-  test "client detail keeps logout propagation separate from post-logout redirects", %{client: client} do
+  test "client detail keeps logout propagation separate from post-logout redirects", %{
+    client: client
+  } do
     assert {:ok, _updated_client} =
              Admin.update_client(client.client_id, %{
                backchannel_logout_uri: "https://client.example.com/backchannel",
@@ -295,7 +297,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "client_secret_hash"
   end
 
-  test "client detail shows the remote JWKS panel for JARM-only jwks_uri clients", %{client: client} do
+  test "client detail shows the remote JWKS panel for JARM-only jwks_uri clients", %{
+    client: client
+  } do
     assert {:ok, jarm_client} =
              Repository.register_client(%Client{
                client_id: "jarm-remote-client",

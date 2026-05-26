@@ -16,6 +16,8 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 The repo no longer has a default active milestone. The current recommendation is to stop or reassess until real adopter evidence shows another narrow support or trust wedge worth solving inside the existing embedded-library scope.
 
+The immediate remaining work is release-truth polish rather than feature expansion: restore a green contributor lane, reconcile stale secondary docs, refresh public release notes to match the shipped v1.22-v1.25 scope, and cut the next Hex release from that aligned state.
+
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
 **Goal:** Reduce advanced setup ambiguity on already-shipped high-trust surfaces so adopters can configure, diagnose, and support Lockspire without source-diving or relying on maintainer tribal knowledge.
@@ -38,6 +40,17 @@ There is no default next milestone after `v1.25`.
 - Reject adjacent protocol breadth, auth-method parity, or hosted-auth drift unless the evidence clearly outweighs the added scope.
 
 **Why now:** `v1.25` closed the highest-leverage remaining support-clarity wedge. More work should now be evidence-driven, not roadmap-inertia-driven.
+
+## Current Release Focus
+
+**Goal:** Align gates, secondary docs, and public release artifacts with the already-shipped embedded-provider surface before cutting the next Hex release.
+
+**Target features:**
+- Restore a green `mix ci` contributor lane and clear release-hygiene drift.
+- Reconcile stale secondary docs so they no longer describe already-shipped surfaces as future work.
+- Refresh `CHANGELOG.md` and release-truth artifacts to match the shipped `v1.22` through `v1.25` delta.
+
+**Why now:** Lockspire is near-done for its intended scope. The highest-leverage remaining work is making the public package story as trustworthy as the repo already is.
 
 ## Archived Milestone Snapshot: v1.24 client_secret_jwt
 
@@ -181,6 +194,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start `v1.23 DCR Logout Metadata` as a narrow self-service wedge | The logout propagation runtime already exists; the highest-leverage remaining gap is letting partner-managed clients register and manage the existing metadata without widening beyond current logout truth | Adopted and archived in milestone v1.23 |
 | Activate `v1.24 client_secret_jwt` as the current milestone | The remaining leverage-heavy gap is a practical direct-client authentication option that fits the current embedded-library boundary when kept narrow and truthfully documented | Adopted at v1.24 milestone start |
 | Ship `v1.25 Support-Burden Reduction` and default to stop-or-reassess afterward | The highest-leverage remaining work was support truth on already-shipped advanced setup surfaces; beyond that, roadmap inertia is a bigger risk than missing protocol breadth | Adopted at v1.25 milestone close |
+| Treat the next work as release-truth polish rather than a new feature milestone | The remaining repo risk is stale public release posture and gate drift, not a missing core OAuth/OIDC wedge | Adopted after the v1.25 completion assessment |
 
 ## Evolution
 
@@ -200,4 +214,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 for v1.25 milestone close*
+*Last updated: 2026-05-26 for post-v1.25 release-truth cleanup*

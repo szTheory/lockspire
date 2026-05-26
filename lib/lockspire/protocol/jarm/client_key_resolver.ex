@@ -211,8 +211,6 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
     end
   end
 
-  defp persist_remote_jwks_diagnostic(_client, _incident, _opts), do: :ok
-
   defp clear_remote_jwks_diagnostic(%Client{} = client, opts) do
     with store when not is_nil(store) <- Keyword.get(opts, :client_store, Config.repo!()),
          true <- function_exported?(store, :update_client, 2),

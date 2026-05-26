@@ -150,6 +150,7 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
          remote_opts
        ) do
     fetcher = Keyword.get(opts, :jwks_fetcher, Config.jwks_fetcher())
+
     remote_opts =
       remote_opts
       |> Keyword.put_new(:cached_entry_present?, true)

@@ -14,6 +14,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       assert_security_policy_deference!: 1,
       refute_broadened_security_non_claims!: 1
     ]
+
   import Lockspire.TestSupport.ClientSecretJwtSupportTruth
 
   @maintainer_guide_path Path.expand("../../docs/maintainer-release.md", __DIR__)
@@ -54,7 +55,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                  )
   @security_policy_path Path.expand("../../SECURITY.md", __DIR__)
   @install_and_onboard_path Path.expand("../../docs/install-and-onboard.md", __DIR__)
-  @private_key_jwt_host_guide_path Path.expand("../../docs/private-key-jwt-host-guide.md", __DIR__)
+  @private_key_jwt_host_guide_path Path.expand(
+                                     "../../docs/private-key-jwt-host-guide.md",
+                                     __DIR__
+                                   )
   @client_secret_jwt_host_guide_path Path.expand(
                                        "../../docs/client-secret-jwt-host-guide.md",
                                        __DIR__

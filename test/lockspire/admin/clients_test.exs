@@ -250,7 +250,9 @@ defmodule Lockspire.Admin.ClientsTest do
     assert summary.detail =~ "preserves the last known good cache"
     assert summary.detail =~ "fails the current request closed"
     assert summary.next_step =~ "publish the new key before first use"
-    assert summary.ownership =~ "Lockspire owns the guarded fetch, cache, refresh, and verify path"
+
+    assert summary.ownership =~
+             "Lockspire owns the guarded fetch, cache, refresh, and verify path"
 
     assert summary.command_hint =~
              "mix lockspire.doctor remote-jwks --client admin-remote-jwks-summary"
@@ -281,6 +283,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
     assert summary.applicable? == true
     assert summary.status == :supported
+
     assert summary.command_hint =~
              "mix lockspire.doctor remote-jwks --client admin-remote-jwks-jarm"
   end

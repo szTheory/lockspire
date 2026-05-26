@@ -4,6 +4,24 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- Automatic `DPoP-Nonce` challenge and retry support across the shipped Lockspire-owned DPoP surfaces and the canonical Phoenix protected-route pipeline.
+- Dynamic Client Registration and RFC 7592 management support for the existing logout propagation metadata fields.
+- A narrow `client_secret_jwt` direct-client authentication slice on the shipped Lockspire-owned endpoints that already reuse the shared verifier.
+- Shared remote-`jwks_uri` diagnostics plus `mix lockspire.doctor remote-jwks` and matching admin support surfaces for the shipped `private_key_jwt` and JARM remote-key story.
+
+### Changed
+
+- The canonical advanced-setup support contract now aligns runtime behavior, admin wording, doctor output, and public docs for remote `jwks_uri`, mTLS setup, logout propagation, and the protected-route plug pipeline.
+- The public support posture now reflects one near-complete embedded-provider story rather than an actively expanding feature roadmap; new milestones should be trigger-based and evidence-driven.
+
+### Fixed
+
+- Release-truth docs now describe the shipped Phoenix protected-route plug pipeline and stop treating it as future work.
+
 * **39-04:** start named lockspire oban runtime ([75ff291](https://github.com/szTheory/lockspire/commit/75ff291ffaa2e670268e4b911328ffab5c34163f))
 * **39-05:** delegate end session completion to logout propagation ([59ecd99](https://github.com/szTheory/lockspire/commit/59ecd9906aa078e219a15efd28a2ce7d1be3f93f))
 * **39-05:** implement transactional logout completion orchestration ([cf06358](https://github.com/szTheory/lockspire/commit/cf0635847c53feec2e880bbb46a387967364efd1))
