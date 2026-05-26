@@ -2,6 +2,8 @@
 
 Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
+Lockspire now operates on a sustaining release train by default. That means the normal posture is not "open the next milestone"; it is "keep `main` green, keep release truth coherent, and let patch-eligible merged changes flow toward the next patch release."
+
 This guide is maintainer-only release operations guidance. It does not define a second public support contract.
 For DCR/logout wording in release notes or release review, defer to the canonical support contract in `docs/supported-surface.md` rather than restating a separate support matrix here. The same rule applies to `client_secret_jwt`: this guide can acknowledge the shipped narrow direct-client slice, but the canonical support contract and the dedicated host guide own the exact support wording.
 The same rule applies to advanced setup claims such as mTLS and protected-route support: release notes and maintainer review can point to `docs/supported-surface.md`, `docs/mtls-host-guide.md`, and `docs/protect-phoenix-api-routes.md`, but should not invent broader trust equivalence, automatic proxy trust, or generic deployment automation language here. Canonical wording enforcement belongs in the proof-focused contract tests and should stay there rather than being redefined in this guide.
@@ -15,6 +17,8 @@ Run the repo hygiene gate before opening release-prep cleanup or trying to cut a
 ```
 
 Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix. If you already have fresh contributor-gate evidence for the exact branch, you can skip the local rerun with `./scripts/maintainer/repo_hygiene_check.sh --skip-mix-ci`.
+
+The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update it after every real publish so the next maintainer inherits concrete proof instead of oral history.
 
 1. Merge reviewed changes to `main`.
 2. Let Release Please open or update the release PR.
@@ -64,6 +68,16 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 `mix package.publish-dry-run` remains a required release gate, but it is enforced from the trusted release workflow where `HEX_API_KEY` is available. It is not a manual local verification requirement for contributor closure.
 
 If `workflow_dispatch` is used, treat it as recovery-only. It is not a normal publish trigger, it does not replace the Release Please driven path, and it must target the exact commit SHA or tag being recovered.
+
+## Sustaining release train
+
+The default train rules are:
+
+- patch-eligible merged changes on shipped surfaces should ride the next patch release
+- the train moves only from green `main`
+- `./scripts/maintainer/repo_hygiene_check.sh` is the maintainer readiness gate
+- `workflow_dispatch` is recovery-only
+- anything that widens Lockspire's support boundary or product scope should become a new milestone rather than an opportunistic patch release
 
 ## Release candidate checklist
 
@@ -139,10 +153,12 @@ After a successful publish to Hex, you must verify the published artifact to gua
 
 This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
 
+After that verification passes, record the shipped version, publish proof, and install-truth proof in `.planning/RELEASE-TRAIN.md`.
+
 ## Hygiene Automation
 
 The repo-owned hygiene gate lives at `./scripts/maintainer/repo_hygiene_check.sh`.
 
 - Local mode checks git cleanliness, main divergence, worktree and branch clutter, open PR triage, recent GitHub workflow health, release metadata coherence, and optionally reruns `mix ci`.
-- CI runs `./scripts/maintainer/repo_hygiene_check.sh --ci` to fence the repo-owned release truth that GitHub can prove without local state.
+- CI runs `./scripts/maintainer/repo_hygiene_check.sh --ci` to fence the repo-owned release truth that GitHub can prove without local state, including the standing release-train ledger.
 - Keep this command diagnostic-first. It should tell maintainers what to fix, not silently mutate branches or PR state.

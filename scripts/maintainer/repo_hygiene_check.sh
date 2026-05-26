@@ -80,16 +80,34 @@ changelog_version() {
   sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' CHANGELOG.md | head -n 1
 }
 
+release_train_version() {
+  sed -nE 's/^- Latest released version: `([0-9]+\.[0-9]+\.[0-9]+)`/\1/p' .planning/RELEASE-TRAIN.md | head -n 1
+}
+
+release_train_has_required_lines() {
+  grep -Fq 'Lockspire is on a sustaining GA release train.' .planning/RELEASE-TRAIN.md &&
+    grep -Fq -- '- `milestone: none` remains the default GSD state.' .planning/RELEASE-TRAIN.md &&
+    grep -Fq -- '- Patch-eligible merged changes should flow to the next release through Release Please on `main`.' .planning/RELEASE-TRAIN.md &&
+    grep -Fq -- '- The train is ready to move only when `main` is green and `./scripts/maintainer/repo_hygiene_check.sh` passes without `BLOCK`.' .planning/RELEASE-TRAIN.md
+}
+
 repo_owned_checks() {
-  local mix_ver manifest_ver changelog_ver
+  local mix_ver manifest_ver changelog_ver release_train_ver
   mix_ver="$(mix_version)"
   manifest_ver="$(manifest_version)"
   changelog_ver="$(changelog_version)"
+  release_train_ver="$(release_train_version)"
 
   if [[ -n "$mix_ver" && "$mix_ver" == "$manifest_ver" && "$mix_ver" == "$changelog_ver" ]]; then
     record_result "PASS" "release versions" "mix.exs, manifest, and top changelog entry all point at $mix_ver"
   else
     record_result "BLOCK" "release versions" "mix.exs=$mix_ver manifest=$manifest_ver changelog=$changelog_ver"
+  fi
+
+  if [[ -n "$release_train_ver" && "$release_train_ver" == "$mix_ver" ]] && release_train_has_required_lines; then
+    record_result "PASS" "release train ledger" "release ledger matches version $mix_ver and preserves the standing train contract"
+  else
+    record_result "BLOCK" "release train ledger" "RELEASE-TRAIN.md is missing, malformed, or out of sync with mix.exs=$mix_ver"
   fi
 
   if grep -Fq '"component": "lockspire"' release-please-config.json &&

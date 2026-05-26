@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: none
 milestone_name: none
-status: release_hygiene_automation
-stopped_at: 1.1.0 release cut and hygiene automation follow-through
-last_updated: "2026-05-26T14:30:00Z"
+status: sustaining_release_train
+stopped_at: 1.1.0 release train baseline established
+last_updated: "2026-05-26T18:30:00Z"
 last_activity: 2026-05-26
 progress:
   total_phases: 0
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Post-`1.1.0` release hygiene automation so future release prep starts from a provably clean repo and GitHub state.
+**Current focus:** Sustaining GA release-train operations so future patch releases start from a provably clean repo and GitHub state.
 
 ## Current Position
 
 Phase: None
-Plan: Release hygiene automation
-Status: Release shipped; cleaning and automating the next-maintainer path
+Plan: Sustaining GA release train
+Status: Release shipped; defaulting to patch-on-merge sustainment with milestone-free planning
 Last activity: 2026-05-26
 
 ## Performance Metrics
@@ -51,6 +51,8 @@ None.
 
 ### Decisions
 
+- Lockspire now defaults to a standing GA release train: `milestone: none`, patch-on-merge for patch-eligible changes, and explicit milestone creation only for adopter-evidenced scope beyond sustainment.
+- `.planning/RELEASE-TRAIN.md` is the canonical GSD ledger for latest release proof, patch-train rules, and next-cut conditions.
 - Milestone v1.20 Mutual TLS (RFC 8705) will be implemented via an explicit extraction behaviour (`Lockspire.MTLS.Extractor`).
 - Proxy extraction MUST be explicitly configured by the host app.
 - Protected Phoenix API routes use `VerifyToken -> EnforceSenderConstraints -> RequireToken` as the canonical shipped pipeline.
@@ -76,11 +78,11 @@ None.
 
 ### Blockers/Concerns
 
-- The post-release repo should regain a green `mix ci` path and stop relying on version-pinned current-release docs or contract tests.
+- The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real patch release lands.
 
 ## Session Continuity
 
-**Next action:** Land the repo-owned hygiene command, CI drift fence, and versionless current-release docs/tests so future release prep starts with one boring command instead of branch archaeology.
+**Next action:** Use the release train by default: keep `main` green, run the repo hygiene gate before release prep, and update `.planning/RELEASE-TRAIN.md` whenever a protected publish and install-truth verification complete.
 **Resume file:** None
-**Stopped at:** 1.1.0 release follow-through and hygiene automation
+**Stopped at:** 1.1.0 release train baseline established
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

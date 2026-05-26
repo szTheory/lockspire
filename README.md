@@ -10,6 +10,8 @@ The public support contract for the current release lives in [`docs/supported-su
 
 Lockspire is on a GA release line for the embedded Phoenix library wedge documented in [`docs/supported-surface.md`](docs/supported-surface.md). That file is the authoritative support contract and proof boundary for the current release.
 
+Normal sustaining releases ride the repo-owned automated release lane from `main`; maintainers verify train readiness with `./scripts/maintainer/repo_hygiene_check.sh` and close each publish with install-truth verification.
+
 ## Orientation
 
 - Embedded OAuth/OIDC provider behavior inside an existing Phoenix app, not a hosted auth service or separate control plane

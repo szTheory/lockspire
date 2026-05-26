@@ -14,9 +14,9 @@ Lockspire has now archived twenty-five planning milestones. Beyond the earlier e
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The repo no longer has a default active milestone. The current recommendation is to stop or reassess until real adopter evidence shows another narrow support or trust wedge worth solving inside the existing embedded-library scope.
+The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane.
 
-The immediate remaining work is no longer feature expansion. After the `1.1.0` release, the highest-leverage follow-through is disciplined repo and GitHub hygiene: keep `main` green, keep release-truth artifacts aligned, and make release prep start from one boring command rather than stale worktrees, hidden local drift, or manual GitHub archaeology.
+The immediate remaining work is no longer feature expansion. After the `1.1.0` release, the highest-leverage follow-through is disciplined repo and GitHub hygiene: make release prep start from one boring command rather than stale worktrees, hidden local drift, or manual GitHub archaeology, and open a new milestone only when explicit adopter evidence shows a trust or support wedge that patch-train work cannot cover.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
@@ -35,22 +35,23 @@ The immediate remaining work is no longer feature expansion. After the `1.1.0` r
 There is no default next milestone after `v1.25`.
 
 **Target features:**
-- Prefer stopping or reassessing over automatic scope expansion.
-- Start another milestone only if concrete adopter evidence shows a narrow embedded-library trust or support wedge that materially improves the Phoenix SaaS adoption story.
+- Prefer sustaining the GA release train over automatic scope expansion.
+- Start another milestone only if concrete adopter evidence shows a narrow embedded-library trust or support wedge that materially improves the Phoenix SaaS adoption story beyond normal patch-train work.
 - Reject adjacent protocol breadth, auth-method parity, or hosted-auth drift unless the evidence clearly outweighs the added scope.
 
-**Why now:** `v1.25` closed the highest-leverage remaining support-clarity wedge. More work should now be evidence-driven, not roadmap-inertia-driven.
+**Why now:** `v1.25` closed the highest-leverage remaining support-clarity wedge. More work should now be evidence-driven, not roadmap-inertia-driven, and the default state should feel like a maintained released library rather than a paused feature factory.
 
-## Current Release Focus
+## Release Train Default
 
-**Goal:** Preserve the newly cut `1.1.0` release with one repeatable hygiene gate and CI drift fence so the next maintainer can confirm clean local git, triaged GitHub state, green `main`, and coherent release truth before opening any future release-prep work.
+**Goal:** Preserve Lockspire as a boring sustained GA library: patch-on-merge for eligible fixes, one maintainer hygiene gate, one CI drift fence, and one canonical release ledger instead of milestone churn.
 
-**Target features:**
-- Add one canonical maintainer hygiene command for local git, worktree, PR, workflow, and release-truth checks.
-- Add a lightweight CI drift fence for the repo-owned portion of release hygiene.
-- Remove version-pinned current-release wording from docs/tests so future package bumps do not silently break the maintainer contract.
+**Default rules:**
+- `milestone: none` is the normal GSD state.
+- Patch-eligible merged changes flow toward the next patch release through Release Please on `main`.
+- The train only moves when `main` is green and `./scripts/maintainer/repo_hygiene_check.sh` reports no `BLOCK`.
+- New feature milestones should open only when explicit adopter evidence shows work that is larger than patch/support/release-hygiene sustainment.
 
-**Why now:** Lockspire is near-done for its intended scope. At this maturity level, friction and ambiguity in repo/release hygiene are a bigger adoption risk than missing another protocol wedge.
+**Why now:** Lockspire is near-done for its intended scope. At this maturity level, friction and ambiguity in repo/release hygiene are a bigger adoption risk than missing another protocol wedge, so the default should encode stability rather than roadmap momentum.
 
 ## Archived Milestone Snapshot: v1.24 client_secret_jwt
 
@@ -196,6 +197,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Ship `v1.25 Support-Burden Reduction` and default to stop-or-reassess afterward | The highest-leverage remaining work was support truth on already-shipped advanced setup surfaces; beyond that, roadmap inertia is a bigger risk than missing protocol breadth | Adopted at v1.25 milestone close |
 | Treat the next work as release-truth polish rather than a new feature milestone | The remaining repo risk is stale public release posture and gate drift, not a missing core OAuth/OIDC wedge | Adopted after the v1.25 completion assessment |
 | Add a repo-owned hygiene gate after the `1.1.0` release | A mature OSS library needs one disciplined pre-release command and one CI drift fence more than more branch folklore | Adopted during post-`1.1.0` release follow-through |
+| Default Lockspire to a standing GA release train | A mature auth library should feel released by default: `milestone: none`, patch-on-merge for sustaining work, and a durable release ledger instead of milestone inertia | Adopted after the `1.1.0` public release verification |
 
 ## Evolution
 
@@ -215,4 +217,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 for post-v1.25 release-truth cleanup*
+*Last updated: 2026-05-26 for the sustaining GA release-train default*
