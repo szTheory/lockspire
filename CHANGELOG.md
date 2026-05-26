@@ -4,6 +4,22 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.1.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.0.0...lockspire-v1.1.0) (2026-05-26)
+
+
+### Features
+
+* **91-01:** add shared remote jwks diagnostics taxonomy ([13064b7](https://github.com/szTheory/lockspire/commit/13064b70bb69193e8ef4c7a74c43791ca3c86761))
+* **91-01:** align jarm remote jwks diagnostics ([0fbd363](https://github.com/szTheory/lockspire/commit/0fbd36359f65a00da6979ccc94eeab7f32dddcf4))
+* **91-01:** normalize private_key_jwt remote jwks incidents ([93c71a5](https://github.com/szTheory/lockspire/commit/93c71a586752160a8a8a492a5009674024ff811f))
+* **91-02:** add remote jwks doctor surface ([445f511](https://github.com/szTheory/lockspire/commit/445f511d42b666759509af845b5a6111cee374d0))
+* **91-02:** surface remote jwks truth in admin client detail ([a26dce5](https://github.com/szTheory/lockspire/commit/a26dce52002b6c9b0b9564d445c61dddb0d9a3d2))
+
+
+### Bug Fixes
+
+* **phase-91:** wire remote jwks operator diagnostics ([ce8f313](https://github.com/szTheory/lockspire/commit/ce8f31383c60d558091e63bdf00af2371c1aacb2))
+
 ## [Unreleased]
 
 ### Added
