@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.25
 milestone_name: Support-Burden Reduction
-status: executing
-stopped_at: Completed 93-02-PLAN.md
-last_updated: "2026-05-26T04:46:47.895Z"
+status: ready_for_milestone_close
+stopped_at: Completed 93-03-PLAN.md
+last_updated: "2026-05-26T05:12:00Z"
 last_activity: 2026-05-26
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 67
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -26,15 +26,15 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 93 (support-truth-proof-and-milestone-closure) — EXECUTING
+Phase: 93 (support-truth-proof-and-milestone-closure) — COMPLETE
 Plan: 3 of 3
-Status: Ready to execute
+Status: Completed
 Last activity: 2026-05-26
 
 ## Performance Metrics
 
-- Phases completed: 2/3 in active milestone slot
-- Plans completed: 8/9 in active milestone slot
+- Phases completed: 3/3 in active milestone slot
+- Plans completed: 9/9 in active milestone slot
 
 Most recently shipped milestone:
 
@@ -46,6 +46,7 @@ Most recently shipped milestone:
 | Phase 92 P03 | 6min | 3 tasks | 7 files |
 | Phase 93 P1 | 4min | 3 tasks | 4 files |
 | Phase 93 P2 | 4min | 3 tasks | 6 files |
+| Phase 93 P3 | 24min | 3 tasks | 6 files |
 
 ## Deferred Items
 
@@ -72,6 +73,8 @@ None.
 - Advanced-setup doc corrections should stay assertion-driven and narrow rather than reopening the support story across derived guides.
 - Remote-JWKS runtime proof should anchor on stable incident semantics, bounded-reactive refresh, cache preservation, and generic wire failures instead of implementation trivia.
 - The representative second advanced-setup surface remains the generated-host protected-route pipeline, and its under-scoped DPoP-bound path stays pinned to the shipped Bearer insufficient_scope response.
+- Phase 93 and milestone v1.25 close on exact repo-native proof commands, requirement-mapped verification artifacts, and a single milestone audit rather than retrospective narrative.
+- Deferred follow-on support work must stay explicit, narrow, and trigger-based instead of being implied as shipped scope.
 
 ### Blockers/Concerns
 
@@ -79,7 +82,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Execute 93-03-PLAN.md
+**Next action:** Run `$gsd-complete-milestone v1.25`
 **Resume file:** None
-**Stopped at:** Completed 93-02-PLAN.md
+**Stopped at:** Completed 93-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

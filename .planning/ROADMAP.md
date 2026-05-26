@@ -52,7 +52,7 @@ Plans:
 
 - [x] 93-01: Add release-contract and documentation-truth assertions for the advanced setup support contract
 - [x] 93-02: Verify representative misconfiguration, remediation, and negative-path behavior across the touched support surfaces
-- [ ] 93-03: Complete milestone-close verification and capture any intentionally deferred follow-on support work
+- [x] 93-03: Complete milestone-close verification and capture any intentionally deferred follow-on support work
 
 **Details:**
 Phase 93 makes the support-burden reduction milestone durable. The closeout should fail loudly if docs, diagnostics, or runtime behavior drift apart again, and it should capture any remaining support-heavy follow-ons without reopening protocol-expansion scope.
