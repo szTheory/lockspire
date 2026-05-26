@@ -8,6 +8,14 @@ The same rule applies to advanced setup claims such as mTLS and protected-route 
 
 ## Normal flow
 
+Run the repo hygiene gate before opening release-prep cleanup or trying to cut a release:
+
+```bash
+./scripts/maintainer/repo_hygiene_check.sh
+```
+
+Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix. If you already have fresh contributor-gate evidence for the exact branch, you can skip the local rerun with `./scripts/maintainer/repo_hygiene_check.sh --skip-mix-ci`.
+
 1. Merge reviewed changes to `main`.
 2. Let Release Please open or update the release PR.
 3. Treat the Release Please PR as review-only evidence, not authenticated release proof.
@@ -63,7 +71,7 @@ Before merging a Release Please PR for the root package, confirm this checked-in
 1. Run `mix ci` on the candidate revision.
 2. Review `mix.exs`, `.release-please-manifest.json`, and `CHANGELOG.md` together so version, package metadata, and release notes describe one embedded-library release story.
 3. Review `release-please-config.json` and confirm the root package still uses `component: "lockspire"`, `include-v-in-tag: true`, and `include-component-in-tag: true`.
-4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package. For the current checked-in `1.0.0` candidate, that target is `lockspire-v1.0.0`.
+4. Confirm the expected root release tag target is still `lockspire-v<version>` for the root package and matches the current `mix.exs` / manifest version.
 5. Review `.github/workflows/release.yml` and confirm the only checked-in Release Please entry point is `uses: ./.github/actions/release-please`.
 6. Confirm `.github/actions/release-please/action.yml` still preserves root outputs such as `tag_name` and `release_created`, because those outputs define which merged release commit is allowed to approach the protected publish lane.
 7. Confirm `workflow_dispatch` remains recovery-only, requires both `recovery_reason` and `recovery_ref`, and is documented as replaying an exact immutable SHA or existing tag rather than creating a new publish intent.
@@ -97,6 +105,7 @@ Do not broaden release claims to request-object-by-value support, generic extern
 
 Before merging a release PR, confirm:
 
+- `./scripts/maintainer/repo_hygiene_check.sh`
 - `mix ci`
 - the Release Please PR is still review-only and points at the same release workflow/config artifacts
 - `.github/workflows/release.yml` still calls `./.github/actions/release-please` rather than a direct third-party Release Please action reference
@@ -127,3 +136,11 @@ After a successful publish to Hex, you must verify the published artifact to gua
 ```
 
 This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
+
+## Hygiene Automation
+
+The repo-owned hygiene gate lives at `./scripts/maintainer/repo_hygiene_check.sh`.
+
+- Local mode checks git cleanliness, main divergence, worktree and branch clutter, open PR triage, recent GitHub workflow health, release metadata coherence, and optionally reruns `mix ci`.
+- CI runs `./scripts/maintainer/repo_hygiene_check.sh --ci` to fence the repo-owned release truth that GitHub can prove without local state.
+- Keep this command diagnostic-first. It should tell maintainers what to fix, not silently mutate branches or PR state.
