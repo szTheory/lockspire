@@ -370,6 +370,11 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
     assert config["device_authorization_endpoint"] ==
              "https://example.test/lockspire/device/code"
+
+    assert config["backchannel_authentication_endpoint"] ==
+             "https://example.test/lockspire/bc-authorize"
+
+    assert config["backchannel_token_delivery_modes_supported"] == ["poll", "ping", "push"]
   end
 
   test "openid_configuration/0 publishes dpop metadata when /token and /userinfo are both mounted" do

@@ -14,10 +14,9 @@ defmodule Lockspire.Protocol.RequestObject do
      produces in `Lockspire.Protocol.AuthorizationRequest`, so `validate_with_client/3`
      runs unchanged.
 
-  ## Out of scope (v1.4)
+  ## Out of scope
 
   - JAR-by-reference (`request_uri` pointing to an external JWT URL)
-  - JAR decryption (RFC 9101 §6 nested JWE)
   - `jwks_uri` HTTP fetch
   - JAR substituting as client authentication at `/par`
   - JTI replay cache

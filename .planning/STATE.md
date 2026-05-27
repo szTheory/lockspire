@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: none
 milestone_name: none
-status: sustaining_release_train
-stopped_at: 1.1.0 release train baseline established
-last_updated: "2026-05-27T07:05:00Z"
+status: sustaining_patch_truth_cleanup
+stopped_at: 1.1.1 release train green with support-truth cleanup active
+last_updated: "2026-05-27T08:20:00Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 0
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Restore green `main` after the post-PR #31 integration failure, then run sustaining patch-truth cleanup before opening any new feature milestone.
+**Current focus:** Keep green `main` boring while closing the narrow CIBA/JAR/JTBD support-truth cleanup before opening any new feature milestone.
 
 ## Current Position
 
 Phase: None
 Plan: Sustaining GA release train
-Status: Release shipped; patch branch open for red-main CI leakage, with future feature milestones still routed through the milestone PR lane
+Status: Release `1.1.1` shipped; green-main and release automation restored; narrow support-truth patch cleanup is the active sustaining work
 Last activity: 2026-05-27
 
 ## Performance Metrics
@@ -76,8 +76,8 @@ None.
 - Milestone v1.25 is archived, and the repo should stop or reassess until real adopter evidence justifies another embedded-library-scoped milestone.
 - The remaining high-leverage work after `v1.25` is release-truth polish: green contributor gates, stale-doc cleanup, and refreshed release notes for the shipped `v1.22`-`v1.25` delta.
 - `docs/user-flows-jtbd.md` had drifted behind shipped reality by still describing the Phoenix protected-route plug pipeline as future work; release-truth cleanup must favor repo-proven current behavior over older planning narratives.
-- After PR #31, `main` CI failed in `Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest` because root-mount integration tests leaked `:mount_path` application env into later back-channel logout worker execution. The immediate sustaining priority is to merge the env-isolation patch and restore green `main`.
-- The next patch-train cleanup should close support-truth drift before any new feature build: CIBA discovery currently advertises Poll while shipped runtime/tests also cover Ping and Push; JAR/request-object public docs need to match actual by-value support; and JTBD wording should stay aligned to shipped protected-route and adoption proof.
+- Green-main and release automation are restored after the `1.1.1` release train follow-through.
+- The active patch-train cleanup closes support-truth drift before any new feature build: CIBA discovery should advertise shipped Poll/Ping/Push support; JAR/request-object public docs should match actual by-value support; and JTBD wording should stay aligned to shipped protected-route and adoption proof.
 - The next feature-sized candidate is `v1.26 Host Integration & Operator Boundary Hardening`, focused on account/claims integration recipes, generated client bootstrap ergonomics, admin-route boundary clarity, and operator docs/diagnostics. Treat it as a milestone branch/PR, not as patch-train work.
 - Do not reopen broad protocol breadth by default. Gateway/service-mesh productization, hosted auth/CIAM, SAML/LDAP, certification breadth chasing, and auth-method parity work remain diminishing-return unless adopter evidence changes the calculus.
 
@@ -87,7 +87,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Merge the red-main CI fix, verify `main` is green, then run a narrow patch-truth cleanup. Only after that should a new milestone be opened, with `v1.26 Host Integration & Operator Boundary Hardening` as the recommended first feature candidate.
+**Next action:** Finish and merge the narrow support-truth cleanup PR, then reassess whether to open `v1.26 Host Integration & Operator Boundary Hardening` as the recommended first feature candidate.
 **Resume file:** None
-**Stopped at:** 1.1.0 release train baseline established
+**Stopped at:** 1.1.1 release train green with support-truth cleanup active
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
