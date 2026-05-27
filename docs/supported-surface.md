@@ -136,6 +136,15 @@ Lockspire does not currently support:
 - Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
 - External OIDF or FAPI suite certification claims — Lockspire does not treat historical or optional external-suite runs as part of the current public support contract for the embedded Phoenix library path
 
+## Explicit non-goals for host-API route protection
+
+These are explicitly out of scope for the Lockspire-owned host-API protected-route seam under v1.27.
+
+- no introspection-at-the-RS as the host-API seam — recreates gateway/CIAM productization the canon explicitly rejects
+- no auto-detection of token shape — documented ecosystem footgun (Ory oathkeeper #257 class)
+- no dual-verifier dispatcher — hides operator-visible complexity inside the library
+- no RAR enforcement at the RS plug — RAR claims surface via `conn.assigns.access_token` for host-owned enforcement
+
 ## Trust posture
 
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:

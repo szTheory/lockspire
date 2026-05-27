@@ -47,6 +47,6 @@ Before giving credentials to a real integrator:
 - Complete authorization code + PKCE with the exact redirect URI.
 - Confirm consent renders inside the host-owned UI.
 - Exchange the code with the configured client authentication method.
-- If exposing API routes, protect one host route with `Lockspire.Plug.VerifyToken`, `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`.
+- If exposing API routes, follow the canonical pipeline in [`docs/protect-phoenix-api-routes.md`](protect-phoenix-api-routes.md).
 
 Lockspire proves protocol facts. Your Phoenix app still owns tenant checks, business authorization, rate limiting, and response shaping.
