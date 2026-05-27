@@ -154,7 +154,7 @@ Lockspire maintains its 1.0 GA posture because public claims are backed by what 
 - `.github/workflows/ci.yml` and `.github/workflows/release.yml` for maintained contributor and protected release lanes
 - `docs/maintainer-release.md` and `SECURITY.md` for versioned release and disclosure guidance
 
-Lockspire does not use README summaries, maintainer-only workflow docs, external-suite artifact folders, workflow-run folklore, or a demo app as its primary public proof story.
+Lockspire does not use README summaries, maintainer-only workflow docs, external-suite artifact folders, workflow-run folklore, or a demo app as its primary public proof story. The repo-local adoption demo is a secondary executable DX smoke, not a broader support claim.
 
 Historical Phase 37 external-suite wiring and any OIDF or FAPI Docker runs remain maintainer-only corroboration. They can be useful for standards-sensitive investigation, but they are optional, secondary to the repo-native proof above, and not part of the current public support contract.
 

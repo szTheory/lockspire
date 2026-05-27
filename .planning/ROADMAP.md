@@ -10,4 +10,5 @@
 
 ## Next Candidate
 
-- None by default. Lockspire is back on the sustaining GA release train; start the next milestone only when concrete adopter evidence identifies a narrow embedded-library trust or support wedge that is larger than patch/support/release-hygiene sustainment.
+- Adoption demo smoke PR in flight. This is a narrow DX/proof wedge, not broad protocol scope: a repo-local Phoenix host app plus CI black-box smoke for discovery, JWKS, host login/consent, userinfo, device verification, operator admin gating, and anonymous protected-route rejection.
+- After that lands, default back to sustainment. Start the next milestone only when concrete adopter evidence identifies a narrow embedded-library trust or support wedge that is larger than patch/support/release-hygiene sustainment.
