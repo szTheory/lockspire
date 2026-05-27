@@ -131,6 +131,8 @@ The executable repo proof lives in:
 
 The maintained contributor gate for that proof is `mix ci`, which runs the docs, package, fast-test, integration, and phase gates described in `.github/workflows/ci.yml`.
 
+For a human-pokable host app, see `docs/adoption-demo.md`. That demo boots a small Phoenix SaaS host from `examples/adoption_demo` and CI runs its black-box smoke over HTTP.
+
 ## 7. Upgrade only the managed scaffolding
 
 When a newer Lockspire version changes generated managed files, preview the update with:

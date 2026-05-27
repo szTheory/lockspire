@@ -1,5 +1,7 @@
 /_build/
 /deps/
+/examples/*/_build/
+/examples/*/deps/
 /.elixir_ls/
 /.DS_Store
 **/.DS_Store
@@ -17,4 +19,6 @@
 /prompts/
 /lockspire-idea.md
 *.tar
+__pycache__/
+*.pyc
 /erl_crash.dump
