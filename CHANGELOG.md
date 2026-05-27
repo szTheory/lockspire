@@ -4,6 +4,13 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.1.2](https://github.com/szTheory/lockspire/compare/lockspire-v1.1.1...lockspire-v1.1.2) (2026-05-27)
+
+
+### Bug Fixes
+
+* align support truth for CIBA and JAR ([#36](https://github.com/szTheory/lockspire/issues/36)) ([fc6baa6](https://github.com/szTheory/lockspire/commit/fc6baa6d4b107a5f0826f7f98e0bed557b909034))
+
 ## [1.1.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.1.0...lockspire-v1.1.1) (2026-05-27)
 
 
