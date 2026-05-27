@@ -4,8 +4,8 @@ milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
 status: executing
 stopped_at: Phase 97 context gathered (assumptions mode)
-last_updated: "2026-05-27T21:46:19.761Z"
-last_activity: 2026-05-27 -- Phase 97 planning complete
+last_updated: "2026-05-27T21:47:57.408Z"
+last_activity: 2026-05-27 -- Phase 97 execution started
 progress:
   total_phases: 6
   completed_phases: 0
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** v1.27 Phoenix Resource Server Token Acceptance — resolve the unfinished design tension between Lockspire-issued stored opaque access tokens and the JWT-bearer-oriented `Lockspire.Plug.VerifyToken` by narrowing the plug to RFC 9068 `at+jwt` only and flipping the default issuance to JWT.
+**Current focus:** Phase 97 — contract-docs-first
 
 ## Current Position
 
-Phase: 97 of 102 (Contract + Docs First) — next up
-Plan: — (planning has not started)
-Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 97 planning complete
+Phase: 97 (contract-docs-first) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 97
+Last activity: 2026-05-27 -- Phase 97 execution started
 
 Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 
