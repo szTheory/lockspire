@@ -37,6 +37,7 @@ For exact scope, non-claims, and repo-owned proof, read [`docs/supported-surface
 
 - [Getting started](docs/getting-started.md)
 - [Install and onboard](docs/install-and-onboard.md)
+- [SaaS adoption recipe](docs/saas-adoption-recipe.md)
 - [Private key JWT host guide](docs/private-key-jwt-host-guide.md)
 - [Operator and admin guide](docs/operator-admin.md)
 - [Supported surface and GA contract](docs/supported-surface.md)

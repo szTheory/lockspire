@@ -144,6 +144,11 @@ defmodule Lockspire.ClientsTest do
 
     assert output =~ "client_id=cli_client"
     assert output =~ "client_secret="
+    assert output =~ "token_endpoint_auth_method=client_secret_basic"
+    assert output =~ "Next steps:"
+    assert output =~ "Store any printed client_secret now"
+    assert output =~ "authorization-code + PKCE flow"
+    assert output =~ "Keep product authorization and tenant policy in the host app"
 
     assert {:ok, %Client{} = client} = Repository.fetch_client_by_id("cli_client")
     assert client.client_secret_hash

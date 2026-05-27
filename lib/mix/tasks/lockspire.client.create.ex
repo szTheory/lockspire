@@ -84,10 +84,22 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
     Mix.shell().info("redirect_uris=#{Enum.join(result.client.redirect_uris, ",")}")
     Mix.shell().info("allowed_scopes=#{Enum.join(result.client.allowed_scopes, ",")}")
     Mix.shell().info("allowed_grant_types=#{Enum.join(result.client.allowed_grant_types, ",")}")
+    Mix.shell().info("token_endpoint_auth_method=#{result.client.token_endpoint_auth_method}")
 
     if result.client_secret do
       Mix.shell().info("client_secret=#{result.client_secret}")
     end
+
+    Mix.shell().info("")
+    Mix.shell().info("Next steps:")
+    Mix.shell().info("* Store any printed client_secret now; Lockspire will not show it again.")
+    Mix.shell().info("* Add this redirect URI to your partner app exactly as printed.")
+
+    Mix.shell().info(
+      "* Prove discovery, JWKS, and an authorization-code + PKCE flow before sharing it."
+    )
+
+    Mix.shell().info("* Keep product authorization and tenant policy in the host app.")
   end
 
   defp print_result({:error, errors}) do

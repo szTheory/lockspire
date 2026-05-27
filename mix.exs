@@ -143,6 +143,7 @@ defmodule Lockspire.MixProject do
         "SECURITY.md",
         "docs/ecosystem-overview.md",
         "docs/getting-started.md",
+        "docs/saas-adoption-recipe.md",
         "docs/install-and-onboard.md",
         "docs/protect-phoenix-api-routes.md",
         "docs/private-key-jwt-host-guide.md",
@@ -158,6 +159,7 @@ defmodule Lockspire.MixProject do
         Guides: [
           "docs/ecosystem-overview.md",
           "docs/getting-started.md",
+          "docs/saas-adoption-recipe.md",
           "docs/install-and-onboard.md",
           "docs/protect-phoenix-api-routes.md",
           "docs/private-key-jwt-host-guide.md",
