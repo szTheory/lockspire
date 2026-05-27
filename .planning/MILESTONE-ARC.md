@@ -5,11 +5,11 @@
 
 ## Current Product Judgment
 
-Lockspire is **near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
+Lockspire is **strong-to-near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
 
-- **Rough done-ness:** `~95%`
+- **Rough done-ness:** `~88-92%`
 - **Territory:** finish the last important wedges
-- **Primary risk now:** overbuilding into adjacent protocol breadth that does not materially improve the embedded Phoenix adopter story
+- **Primary risk now:** treating patch-truth drift or adoption/operator seams as either "nothing to do" or as an excuse for adjacent protocol breadth
 
 This judgment is based on current repo-local truth, especially:
 
@@ -23,6 +23,9 @@ This judgment is based on current repo-local truth, especially:
 - `test/integration/phase6_onboarding_e2e_test.exs`
 - `test/integration/phase81_generated_host_route_protection_e2e_test.exs`
 - `test/lockspire/release_readiness_contract_test.exs`
+- `test/lockspire/workers/backchannel_logout_delivery_worker_test.exs`
+- `test/integration/phase54_resource_indicators_e2e_test.exs`
+- `test/integration/phase55_rar_intake_e2e_test.exs`
 
 ## What Is Already Strong
 
@@ -52,20 +55,23 @@ The shipped repo-proven story includes:
 
 ## Current Adopter Gaps
 
-There is **no default next gap** after `v1.25`. The remaining questions are now trigger-based and should be reopened only if real adopter evidence shows support drag that the current shipped surface does not already address.
+There is **no broad protocol gap** after `v1.25`, but repo inspection found a practical maintenance-first sequence before the next milestone decision.
 
 ### Highest-Leverage Gaps
 
-- None by default after `v1.25` ship.
+- Restore green `main` after PR #31 by fixing test application-env leakage around root-mount integration suites and back-channel logout worker issuer validation.
+- Close patch-truth drift before feature work: CIBA discovery/runtime support, JAR/request-object docs versus shipped by-value behavior, and JTBD wording that still reads older than the shipped protected-route story.
+- If opening a feature milestone, make it adoption/operator hardening rather than protocol breadth: host account/claims recipes, client bootstrap ergonomics, admin-route boundary clarity, and diagnostic/operator docs.
 
 ### Useful But Secondary
 
 - release or maintenance work that keeps the already-shipped support contract trustworthy
 - narrowly scoped follow-ons only when repeated adopter evidence shows a concrete embedded-library friction wedge
+- broader doctor/support console expansion after the adoption/operator boundary work proves the remaining support gaps are real
 
 ## Candidate Milestones
 
-Treat these as historical context plus the current stop rule for the next `$gsd-new-milestone` run.
+Treat these as historical context plus the current ordering rule for the next `$gsd-new-milestone` run.
 
 ### Candidate 1
 
@@ -132,9 +138,58 @@ Treat these as historical context plus the current stop rule for the next `$gsd-
 - **version:** `v1.25`
 - **shipped:** `2026-05-26`
 
+### Candidate 5
+
+- **name:** `Green-Main Patch`
+- **status:** `active patch`
+- **priority:** `immediate`
+- **recommendation:** merge before any roadmap or release work
+- **why now:** main CI failed after PR #31 because integration tests leaked root-mount application env into later worker tests, undermining the release-train premise
+- **target slice:**
+  - isolate/restore `:issuer`, `:mount_path`, and adjacent Lockspire app env in the leaking integration tests
+  - pin the back-channel logout worker test to its own issuer/mount config
+  - prove with the worker test, `mix test.integration`, `mix ci`, and repo hygiene
+- **non-goals:**
+  - changing runtime issuer validation
+  - broad test-suite refactors unrelated to the leak
+
+### Candidate 6
+
+- **name:** `Support-Truth Patch Train`
+- **status:** `recommended next patch`
+- **priority:** `next`
+- **recommendation:** do before feature milestone planning
+- **why now:** the repo is mostly strong, but several public-truth seams lag shipped behavior and are exactly the kind of friction that hurts a mature auth library
+- **target slice:**
+  - align CIBA discovery with shipped Poll/Ping/Push support or explicitly document why discovery remains narrower
+  - align JAR/request-object docs with actual by-value request object support
+  - refresh adopter JTBD wording where older docs still understate shipped protected-route and onboarding proof
+- **non-goals:**
+  - new protocol features
+  - certification breadth
+  - changing support scope without runtime proof
+
+### Candidate 7
+
+- **name:** `v1.26 Host Integration & Operator Boundary Hardening`
+- **status:** `candidate`
+- **priority:** `first feature milestone candidate`
+- **recommendation:** open only after green-main and support-truth patch work
+- **why now:** the most adopter-facing friction is no longer missing OAuth/OIDC machinery; it is making the host seam, client bootstrap, and admin/operator boundary feel obvious to a Phoenix SaaS team
+- **target slice:**
+  - account resolver and claims recipes that demonstrate realistic SaaS integration patterns
+  - client bootstrap guidance or generator ergonomics for first real partner client setup
+  - explicit admin-route authorization boundary in generated host examples/docs
+  - sharper operator docs for common client, consent, token, and key support workflows
+- **non-goals:**
+  - hosted auth/control plane
+  - SAML/LDAP/CIAM expansion
+  - generic gateway/service-mesh productization
+  - auth-method parity that does not reduce adopter friction
+
 ## Stop Rules
 
-Assume Lockspire should **probably stop soon** after one or two of the above wedges unless real adopter evidence suggests otherwise.
+Assume Lockspire should **probably stop soon** after the patch-truth cleanup and, at most, one adoption/operator-hardening milestone unless real adopter evidence suggests otherwise.
 
 Do **not** default into more work just because a protocol feature is interesting.
 
@@ -150,10 +205,17 @@ These are tempting, but currently look like lower-value or overbuild territory r
 
 - generic API gateway or service-mesh protected-resource middleware
 - broad third-party issuer resource-server productization
-- request-object-by-value support
+- more JAR/request-object expansion beyond the shipped support-truth cleanup
 - hosted-auth or control-plane expansion
 - SAML / LDAP / workforce or CIAM platform expansion
 - certification-breadth chasing beyond the repo-native support contract
+
+## Recommended Ordering
+
+1. Restore green `main` with the env-isolation patch.
+2. Run the support-truth patch train for CIBA discovery, JAR docs/runtime truth, and JTBD wording.
+3. If feature work is still justified, open `v1.26 Host Integration & Operator Boundary Hardening` on `milestone/v1.26-host-integration-operator-boundary`.
+4. Consider doctor/support-console expansion only after v1.26 reveals concrete residual support drag.
 
 ## Selection Rules For Future Milestones
 
