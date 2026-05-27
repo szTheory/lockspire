@@ -4,6 +4,13 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.1.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.1.0...lockspire-v1.1.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* isolate test config for logout worker ([#32](https://github.com/szTheory/lockspire/issues/32)) ([ffd922a](https://github.com/szTheory/lockspire/commit/ffd922af19e18839930034bd49d80d5f3370575a))
+
 ## [1.1.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.0.0...lockspire-v1.1.0) (2026-05-26)
 
 ### Added
