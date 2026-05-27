@@ -3,7 +3,7 @@
 [![Hex version](https://img.shields.io/hexpm/v/lockspire.svg)](https://hex.pm/packages/lockspire)
 [![Docs](https://img.shields.io/badge/hexdocs-api%20%26%20guides-5865F2)](https://hexdocs.pm/lockspire)
 [![CI](https://github.com/szTheory/lockspire/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/lockspire/actions/workflows/ci.yml)
-[![License](https://img.shields.io/hexpm/l/lockspire.svg)](LICENSE)
+[![License](https://img.shields.io/hexpm/l/lockspire.svg)](https://github.com/szTheory/lockspire/blob/main/LICENSE)
 
 Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir applications.
 
