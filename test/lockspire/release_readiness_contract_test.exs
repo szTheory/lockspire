@@ -81,6 +81,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @repo_hygiene_script_path Path.expand("../../scripts/maintainer/repo_hygiene_check.sh", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
+  @adoption_demo_router_path Path.expand(
+                               "../../examples/adoption_demo/lib/adoption_demo_web/router.ex",
+                               __DIR__
+                             )
+  @install_template_router_path Path.expand(
+                                  "../../priv/templates/lockspire.install/router.ex",
+                                  __DIR__
+                                )
+  @adoption_smoke_script_path Path.expand("../../scripts/demo/adoption_smoke.py", __DIR__)
 
   defp mix_version do
     "mix.exs"
@@ -126,6 +135,82 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     |> File.read!()
     |> then(&Regex.run(~r/^  publish:\n(.*)\z/ms, &1, capture: :all_but_first))
     |> List.first()
+  end
+
+  defp extract_canonical_pipeline!(path, kind) do
+    bytes =
+      path
+      |> File.read!()
+      |> then(
+        &Regex.run(
+          ~r/# BEGIN LOCKSPIRE_PROTECTED_PIPELINE\n(.*?)\n[ \t]*# END LOCKSPIRE_PROTECTED_PIPELINE/ms,
+          &1,
+          capture: :all_but_first
+        )
+      )
+      |> case do
+        [captured] when is_binary(captured) and captured != "" -> captured
+        _ -> raise "missing BEGIN/END LOCKSPIRE_PROTECTED_PIPELINE markers in #{path}"
+      end
+
+    normalize(bytes, kind)
+  end
+
+  defp normalize(bytes, kind) when kind in [:python_commented, :elixir_in_commented_heredoc] do
+    bytes
+    |> String.replace("\r\n", "\n")
+    |> strip_uniform_indent()
+    |> String.split("\n")
+    |> Enum.map_join("\n", &String.replace_prefix(&1, "# ", ""))
+    |> strip_uniform_indent()
+    |> String.replace(~r/[ \t]+$/m, "")
+  end
+
+  defp normalize(bytes, _kind) do
+    bytes
+    |> String.replace("\r\n", "\n")
+    |> strip_uniform_indent()
+    |> String.replace(~r/[ \t]+$/m, "")
+  end
+
+  defp strip_uniform_indent(bytes) do
+    lines = String.split(bytes, "\n")
+
+    non_blank_indents =
+      lines
+      |> Enum.reject(&(String.trim(&1) == ""))
+      |> Enum.map(fn line ->
+        case Regex.run(~r/^[ \t]*/, line) do
+          [leading] -> String.length(leading)
+          _ -> 0
+        end
+      end)
+
+    case non_blank_indents do
+      [] ->
+        bytes
+
+      indents ->
+        n = Enum.min(indents)
+
+        Enum.map_join(lines, "\n", fn line ->
+          if String.length(line) >= n, do: String.slice(line, n..-1//1), else: line
+        end)
+    end
+  end
+
+  defp canonical_hash!(path, kind) do
+    bytes = extract_canonical_pipeline!(path, kind)
+
+    unless bytes =~ "Lockspire.Plug.VerifyToken" do
+      raise "canonical region in #{path} missing Lockspire.Plug.VerifyToken — markers renamed or extraction broken"
+    end
+
+    if String.ends_with?(path, ".ex") and bytes =~ ~r/<%/ do
+      raise "canonical region in #{path} contains EEx tag — heredoc interpolation would chew the canonical bytes"
+    end
+
+    :crypto.hash(:sha256, bytes)
   end
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
@@ -655,6 +740,43 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert_protected_routes_guide!(protected_routes_guide)
     assert_operator_admin_guide!(operator_admin_guide)
     assert_dynamic_registration_guide!(dynamic_registration_guide)
+  end
+
+  test "canonical lockspire_protected_api pipeline is byte-identical across the four RECIPE-01 sites" do
+    files = [
+      {@protect_phoenix_api_routes_path, :elixir_in_markdown_fence},
+      {@adoption_demo_router_path, :elixir},
+      {@install_template_router_path, :elixir_in_commented_heredoc},
+      {@adoption_smoke_script_path, :python_commented}
+    ]
+
+    hashes = Enum.map(files, fn {path, kind} -> {path, canonical_hash!(path, kind)} end)
+
+    for {path_a, hash_a} <- hashes, {path_b, hash_b} <- hashes, path_a < path_b do
+      assert hash_a == hash_b,
+             "canonical pipeline block drifted between #{Path.relative_to_cwd(path_a)} and #{Path.relative_to_cwd(path_b)}"
+    end
+  end
+
+  test "docs/saas-adoption-recipe.md cross-links to the canonical pipeline rather than restating plug names" do
+    recipe = File.read!(@saas_adoption_recipe_path)
+
+    assert recipe =~ ~r/protect-phoenix-api-routes\.md/,
+           "expected docs/saas-adoption-recipe.md to cross-link to docs/protect-phoenix-api-routes.md"
+
+    refute recipe =~
+             ~r/`Lockspire\.Plug\.VerifyToken`.*`Lockspire\.Plug\.EnforceSenderConstraints`.*`Lockspire\.Plug\.RequireToken`/s,
+           "expected docs/saas-adoption-recipe.md to no longer restate the three plug names in concatenated form"
+  end
+
+  test "docs/protect-phoenix-api-routes.md carries the canonical pipeline declaration exactly once (D-15)" do
+    page = File.read!(@protect_phoenix_api_routes_path)
+
+    declaration_count =
+      page |> String.split("pipeline :lockspire_protected_api do") |> length() |> Kernel.-(1)
+
+    assert declaration_count == 1,
+           "expected docs/protect-phoenix-api-routes.md to declare the canonical pipeline exactly once; found #{declaration_count} restatements (D-15 within-file refute)"
   end
 
   test "maintainer and security docs defer to the canonical advanced-setup contract" do
