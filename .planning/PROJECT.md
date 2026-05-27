@@ -16,7 +16,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones remain available, but they should run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The immediate remaining work is maintenance-first: restore green `main`, then close narrow public-truth drift before opening another feature milestone. If feature work resumes, the recommended next milestone is host integration and operator boundary hardening rather than new protocol breadth.
+The immediate remaining work is maintenance-first: keep green `main` and close narrow public-truth drift before opening another feature milestone. If feature work resumes, the recommended next milestone is host integration and operator boundary hardening rather than new protocol breadth.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 

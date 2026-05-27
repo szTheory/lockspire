@@ -143,7 +143,7 @@ defmodule Lockspire.Protocol.Discovery do
   defp maybe_put_ciba_metadata(metadata, endpoint_metadata) do
     if Map.has_key?(endpoint_metadata, "backchannel_authentication_endpoint") do
       Map.merge(metadata, %{
-        "backchannel_token_delivery_modes_supported" => ["poll"],
+        "backchannel_token_delivery_modes_supported" => ["poll", "ping", "push"],
         "backchannel_user_code_parameter_supported" => false
       })
     else

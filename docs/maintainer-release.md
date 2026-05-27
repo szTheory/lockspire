@@ -113,9 +113,9 @@ Releases should only claim the supported surface the repo can currently prove.
 
 The repo should not claim full release readiness or broader protocol support until the docs, CI, support policy, and maintainer runbooks all agree with implemented behavior.
 
-That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows. The same release posture can now also acknowledge the narrow `client_secret_jwt` direct-client slice documented in `docs/supported-surface.md` and `docs/client-secret-jwt-host-guide.md`.
+That means release posture must stay inside the embedded Phoenix library wedge already proven in-repo: authorization code + PKCE, PAR, JAR request objects by value on the shipped `/authorize` and `/par` paths, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation, generator-backed install, and operator workflows. The same release posture can now also acknowledge the narrow `client_secret_jwt` direct-client slice documented in `docs/supported-surface.md` and `docs/client-secret-jwt-host-guide.md`.
 
-Do not broaden release claims to request-object-by-value support, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning. Generic JWT client-auth beyond the documented `client_secret_jwt` direct-client slice remains outside that release posture as well.
+Do not broaden release claims to external JAR-by-reference, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning. Generic JWT client-auth beyond the documented `client_secret_jwt` direct-client slice remains outside that release posture as well.
 
 ## Preflight checklist
 

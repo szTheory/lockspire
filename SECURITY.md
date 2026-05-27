@@ -36,6 +36,7 @@ Security reports are in scope when they affect the embedded Phoenix surface the 
 - generator-backed install and upgrade scaffolding that Lockspire ships and maintains
 - host-seam contracts documented in repo-owned guides, such as login/consent handoff and the `/verify` device flow seam
 - confidential-client `private_key_jwt` support on Lockspire-owned direct-client endpoints
+- JAR request objects by value on the shipped `/authorize` and `/par` paths
 - the bounded reactive remote-`jwks_uri` verification path on the shipped direct-client surfaces
 - the two shipped mTLS extraction patterns plus certificate-bound token enforcement after certificate extraction
 - host Phoenix API route protection for Lockspire-issued access tokens through the documented `Lockspire.Plug.VerifyToken -> Lockspire.Plug.EnforceSenderConstraints -> Lockspire.Plug.RequireToken` pipeline
@@ -46,12 +47,12 @@ Out of scope examples remain:
 - host-owned account databases, login/session implementations, or rate limiting
 - hosted auth as a separate service
 - third-party IdP integrations not shipped in this repo
-- request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features
+- external JAR-by-reference, generic external `request_uri` handling, SAML, LDAP, or generic federation features
 - arbitrary custom `Lockspire.MTLS.Extractor` implementations as first-class peers to the two shipped extraction patterns
 - generic gateway, service-mesh, or third-party issuer protected-resource middleware
 - generic JWT client-auth support outside Lockspire-owned direct-client endpoints
 - claims that front-channel logout is durable or that DCR creates a second logout runtime
-- DCR scope not named in the canonical support contract, including software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, and JAR-04 encryption
+- DCR scope not named in the canonical support contract, including software statements (RFC 7591 §2.3), external-IdP federation, FAPI bundles, and external JAR-by-reference
 
 ## Secure defaults
 

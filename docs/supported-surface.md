@@ -17,6 +17,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
+- JAR request objects by value through the `request` parameter on the shipped `/authorize` and `/par` paths, including signed request objects and nested encrypted request objects using registered client keys
 - global and client-specific PAR requirement policies (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
 - Resource Indicators on the authorization and token surface, with truthful discovery metadata via `resource_indicators_supported` only when the mounted authorization-code surface is actually usable
@@ -35,6 +36,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - Host Phoenix API route protection with the canonical shipped pipeline `Lockspire.Plug.VerifyToken`, `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`, including route-level `scopes:` and `audience:` / `audiences:` restrictions for Lockspire-issued access tokens
 - DPoP on Lockspire-owned `/token`, Lockspire-owned protected resources, host Phoenix API routes protected by the shipped plug pipeline, and truthful introspection visibility for active bound tokens, including automatic `DPoP-Nonce` challenge and retry support on those shipped DPoP surfaces, with bearer clients remaining unchanged by default unless they explicitly opt into DPoP mode
 - Device authorization flow for embedded Phoenix hosts: `POST /device/code`, device polling through `POST /token`, single-use token redemption, and token issuance backed by the host-owned `/verify` seam
+- OIDC CIBA through `/bc-authorize` and the CIBA token grant, including Poll, Ping, and Push delivery modes with Oban-backed notifications for Ping/Push clients
 - A generated, host-owned device verification seam for `/verify`, including `LockspireVerificationController`, `lockspire_verification_html`, and the security contract in `docs/device-flow-host-guide.md`
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
@@ -113,7 +115,7 @@ Inactive response shape example:
 Lockspire does not currently support:
 
 - Implicit flow
-- Request-object-by-value support
+- JAR by reference through external request-object URLs
 - Generic external `request_uri` handling outside Lockspire's own PAR endpoint
 - Generic API gateway, service-mesh, or third-party issuer protected-resource middleware remains out of scope
 - broader resource-server integration beyond Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix plug pipeline
@@ -178,7 +180,7 @@ A 1.0 GA claim honestly says:
 A 1.0 GA claim should not say:
 
 - Lockspire is production-ready for unsupported host shapes
-- Lockspire supports broader request-object modes, generic external `request_uri` handling, generic gateway protected-resource middleware, SAML, or LDAP
+- Lockspire supports external JAR-by-reference, generic external `request_uri` handling, generic gateway protected-resource middleware, SAML, or LDAP
 - Lockspire adds a new logout runtime through DCR or proves front-channel logout success remotely
 - Lockspire is a hosted auth service or full CIAM product
 - Lockspire has broad certification or conformance coverage

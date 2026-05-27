@@ -85,7 +85,7 @@ defmodule Lockspire.Integration.Phase51CibaPollModeE2ETest do
     assert discovery["backchannel_authentication_endpoint"] ==
              "https://example.test/lockspire/bc-authorize"
 
-    assert discovery["backchannel_token_delivery_modes_supported"] == ["poll"]
+    assert discovery["backchannel_token_delivery_modes_supported"] == ["poll", "ping", "push"]
   end
 
   test "CIBA Poll Mode full lifecycle", %{client: client} do

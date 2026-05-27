@@ -500,6 +500,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "docs/rar-consent-host-guide.md"
     assert supported_surface =~ "host-owned device verification seam"
     assert supported_surface =~ "docs/device-flow-host-guide.md"
+    assert supported_surface =~ "OIDC CIBA"
+    assert supported_surface =~ "Poll, Ping, and Push delivery modes"
     assert supported_surface =~ "canonical public support contract"
     assert supported_surface =~ "DPoP-Nonce"
 
@@ -537,6 +539,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert security =~ "embedded Phoenix surface the repo currently proves"
     assert security =~ "host-seam contracts documented in repo-owned guides"
     assert security =~ "confidential-client `private_key_jwt` support"
+    assert security =~ "JAR request objects by value"
     assert security =~ "secure defaults and FAPI 2.0 Security Profile enforcement"
 
     assert security =~ "PKCE S256 required by default"
@@ -547,7 +550,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "host-owned account databases, login/session implementations, or rate limiting"
 
     assert security =~
-             "request-object-by-value support, generic external `request_uri` handling, SAML, LDAP, or generic federation features"
+             "external JAR-by-reference, generic external `request_uri` handling, SAML, LDAP, or generic federation features"
 
     assert guide =~ "inside the 1.0 GA support contract"
 
@@ -555,10 +558,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Releases should only claim the supported surface the repo can currently prove."
 
     assert guide =~
-             "authorization code + PKCE, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation"
+             "authorization code + PKCE, PAR, JAR request objects by value on the shipped `/authorize` and `/par` paths, discovery, JWKS, repo-proven `private_key_jwt` on Lockspire-owned direct-client endpoints, userinfo, revocation, introspection, refresh rotation"
 
     assert guide =~
-             "Do not broaden release claims to request-object-by-value support, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
+             "Do not broaden release claims to external JAR-by-reference, generic external request_uri handling, unsupported client-auth methods, hosted auth service language, certification language, demo-app proof, or full CIAM positioning."
 
     assert onboarding =~ "canonical onboarding path is Phoenix-first and generator-first"
     assert onboarding =~ "Lockspire stays embedded inside your host app"
@@ -764,10 +767,12 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow"
 
     assert security =~ "canonical public support contract"
-    assert security =~ "request-object-by-value support, generic external `request_uri` handling"
+    assert security =~ "external JAR-by-reference, generic external `request_uri` handling"
 
     refute readme =~ "supports broader request-object modes"
-    refute supported_surface =~ "Request-object-by-value support is in scope"
+    assert supported_surface =~ "JAR request objects by value"
+    assert supported_surface =~ "signed request objects and nested encrypted request objects"
+    assert supported_surface =~ "JAR by reference through external request-object URLs"
     refute security =~ "hosted auth is part of the supported security surface"
   end
 
@@ -800,7 +805,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert readme_down =~ "supported-surface"
 
     security_down = String.downcase(security)
-    assert security_down =~ "request-object-by-value"
+    assert security_down =~ "external jar-by-reference"
     assert security_down =~ "generic external `request_uri`"
     assert security_down =~ "canonical support contract"
     assert security_down =~ "hosted auth"
