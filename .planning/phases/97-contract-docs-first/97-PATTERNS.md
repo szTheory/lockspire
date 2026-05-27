@@ -72,8 +72,8 @@ This page describes the contract `Lockspire.Plug.VerifyToken` enforces; the runt
 - `"Lockspire.Plug.RequireToken"` → still in canonical block
 - `"no-op for unconstrained bearer tokens"` → currently L22; must reappear somewhere in the rewritten canonical-plug-order prose
 - `"error=\"use_dpop_nonce\""` → preserve in rewritten failure table
-- `"business authorization"` → currently L22, L102; multiple call-sites
-- `"tenant checks"` → currently L77, L102; multiple call-sites
+- `"business authorization"` (lowercase, literal) → CORRECTION (verified 2026-05-27 via direct `grep -n`): exists at L3 (lead — REWRITTEN by Plan 02) AND L22 (canonical-plug-order paragraph — PRESERVED). L100 carries the CAPITALIZED form `Business authorization` which is NOT the literal lowercase substring. Survives the rewrite via the L22 occurrence (preserved per D-05) but Plan 02 Task 1 Step 3 re-injects defensively.
+- `"tenant checks"` (lowercase, literal) → CORRECTION (verified 2026-05-27 via direct `grep -n`): exists at L3 (lead — REWRITTEN by Plan 02) ONLY. Prior PATTERNS claim of L77/L102 was WRONG (those lines carry `this tenant`/`internal policy checks` at L77 and `Tenant and account policy` at L101 — none match the literal lowercase substring `tenant checks`). Since the ONLY pre-edit home of `tenant checks` is the rewritten L3, Plan 02 Task 1 Step 3 MUST re-inject this substring into the canonical-plug-order introductory prose or the Phase 92 helper assertion regresses RED. (Source of correction: revision iteration 1 plan-checker BLOCKER #1.)
 
 ---
 

@@ -330,7 +330,8 @@ The new canonical-pipeline extractor should mirror this shape. Suggested helper 
 - `"Lockspire.Plug.VerifyToken"`, `"Lockspire.Plug.EnforceSenderConstraints"`, `"Lockspire.Plug.RequireToken"` will be in the rewritten canonical-plug-order section (still required)
 - `"no-op for unconstrained bearer tokens"` is at line 22 (preserve in canonical-plug-order section)
 - `"error=\"use_dpop_nonce\""` is at line 87 (in failure table — D-05 marks failure table as REWRITTEN, so the planner must preserve this substring through the rewrite)
-- `"business authorization"` and `"tenant checks"` are at lines 22, 24, and 76-77, 102-103 — multiple call-sites; preservation easy
+- `"business authorization"` (lowercase, literal) CORRECTION (verified 2026-05-27 via direct `grep -n`): exists at L3 (REWRITTEN) AND L22 (PRESERVED per D-05). L100 carries the CAPITALIZED form `Business authorization` which does NOT match Phase 92's literal lowercase substring assertion — survives the rewrite via L22.
+- `"tenant checks"` (lowercase, literal) CORRECTION (verified 2026-05-27 via direct `grep -n`): exists ONLY at L3 (the lead Plan 02 wholesale REWRITES). Prior research claim of multiple sites at L22/24/76-77/102-103 was WRONG — those lines carry `this tenant` (L77) and `Tenant and account policy` (L101), neither matching the literal lowercase substring. Plan 02 Task 1 Step 3 MUST re-inject `tenant checks` into the rewritten canonical-plug-order introductory prose or the Phase 92 helper assertion regresses RED. (Source: revision iteration 1 plan-checker BLOCKER #1.)
 
 **Plan implication:** the DOCS-01 rewrite plan must include an explicit acceptance criterion: `assert_protected_routes_guide!(File.read!("docs/protect-phoenix-api-routes.md"))` returns `:ok`. The plan-checker should verify this is in the plan's acceptance criteria.
 
