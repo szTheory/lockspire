@@ -6,10 +6,11 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.1.2`
+- Latest released version: `1.2.0`
 - Release date: `2026-05-27`
-- Protected publish proof: GitHub Actions run `26500357567` succeeded end to end on the trusted `hex-publish` environment.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.1.2` on `2026-05-27`.
+- Protected publish proof: GitHub Actions run `26502800103` succeeded end to end on the trusted `hex-publish` environment.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.2.0` on `2026-05-27`.
+- GitHub release truth: `lockspire-v1.2.0` was backfilled on `2026-05-27` after the dispatch-only publish lane exposed that Release Please was bypassed during auto-merge recovery dispatch.
 
 ## Normal Train Rules
 
@@ -19,6 +20,7 @@ The default operating mode is not "find the next milestone." The default is: kee
 - `workflow_dispatch` is exact-ref only for release automation or recovery and must replay an exact immutable ref; it does not create a new release intent.
 - Push-triggered Hex publish must only run when Release Please's released SHA equals the current `main` push SHA; delayed/stale Release Please tagging events must not republish an already-existing Hex package.
 - Eligible Release Please PRs should auto-merge only after green `main` CI and only through the guarded Release Please branch/title/file allowlist.
+- Exact-ref dispatch publish must ensure the matching `lockspire-v<version>` GitHub release exists before Hex publish so GitHub release truth, changelog links, tags, Hex, and HexDocs stay coherent.
 
 ## Patch-Eligible Change Classes
 

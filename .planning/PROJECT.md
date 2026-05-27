@@ -10,13 +10,25 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-five planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, and advanced-setup support-burden reduction in v1.25.
+Lockspire has now archived twenty-six planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, and host integration/operator boundary hardening in v1.26.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones remain available, but they should run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The immediate feature work is `v1.26 Host Integration & Operator Boundary Hardening`: improve the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth.
+The latest feature milestone, `v1.26 Host Integration & Operator Boundary Hardening`, shipped in `lockspire 1.2.0`: it improved the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth.
+
+## Recently Shipped Milestone: v1.26 Host Integration & Operator Boundary Hardening
+
+**Goal:** Make the first real Phoenix SaaS adoption path clearer without adding protocol breadth.
+
+**Delivered:**
+- Added `Lockspire.Web.AdminRouter` as a bounded admin-only router that hosts can mount behind their own operator-auth pipeline.
+- Updated generated router and account-resolver scaffolding so account lookup, stable subject claims, tenant checks, product authorization, and Sigra-specific wiring stay host-owned.
+- Improved first-client CLI output with token endpoint auth truth and practical next steps for proving authorization-code + PKCE.
+- Added a compact SaaS adoption recipe and release-readiness assertions that pin the host-owned account/operator boundary.
+
+**Why now:** `v1.25` made the shipped advanced setup story coherent. The next highest-leverage adoption wedge was not more protocol breadth; it was reducing first-adopter ambiguity at the host seam.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
