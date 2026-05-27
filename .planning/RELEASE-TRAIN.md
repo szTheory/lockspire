@@ -6,17 +6,18 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.1.0`
-- Release date: `2026-05-26`
-- Protected publish proof: GitHub Actions run `26454274652` succeeded end to end on the trusted `hex-publish` environment.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.1.0` on `2026-05-26`.
+- Latest released version: `1.1.1`
+- Release date: `2026-05-27`
+- Protected publish proof: GitHub Actions run `26497862703` succeeded end to end on the trusted `hex-publish` environment.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.1.1` on `2026-05-27`.
 
 ## Normal Train Rules
 
 - `milestone: none` remains the default GSD state.
 - Patch-eligible merged changes should flow to the next release through Release Please on `main`.
 - The train is ready to move only when `main` is green and `./scripts/maintainer/repo_hygiene_check.sh` passes without `BLOCK`.
-- `workflow_dispatch` is recovery-only and must replay an exact immutable ref; it does not create a new release intent.
+- `workflow_dispatch` is exact-ref only for release automation or recovery and must replay an exact immutable ref; it does not create a new release intent.
+- Eligible Release Please PRs should auto-merge only after green `main` CI and only through the guarded Release Please branch/title/file allowlist.
 
 ## Patch-Eligible Change Classes
 
