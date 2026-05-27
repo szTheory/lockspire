@@ -18,9 +18,9 @@ Lockspire is roughly `88-92%` done for its intended embedded Phoenix OAuth/OIDC 
 
 ## Recommended Sequence
 
-1. Merge the green-main env-isolation patch.
-2. Run a patch-truth cleanup for CIBA discovery, JAR docs/runtime truth, and JTBD wording.
-3. Open `v1.26 Host Integration & Operator Boundary Hardening` only after the patch train is clean.
+1. Done: merge the green-main env-isolation patch.
+2. Done: ship the patch-truth cleanup for CIBA discovery and JAR docs/runtime truth in `1.1.2`.
+3. Open `v1.26 Host Integration & Operator Boundary Hardening` only if feature work is justified beyond sustaining maintenance.
 4. Consider doctor/support-console expansion after v1.26 only if concrete support drag remains.
 
 ## Recommended v1.26 Shape
