@@ -161,8 +161,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     |> String.replace("\r\n", "\n")
     |> strip_uniform_indent()
     |> String.split("\n")
-    |> Enum.map(&String.replace_prefix(&1, "# ", ""))
-    |> Enum.join("\n")
+    |> Enum.map_join("\n", &String.replace_prefix(&1, "# ", ""))
     |> strip_uniform_indent()
     |> String.replace(~r/[ \t]+$/m, "")
   end
@@ -194,11 +193,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       indents ->
         n = Enum.min(indents)
 
-        lines
-        |> Enum.map(fn line ->
+        Enum.map_join(lines, "\n", fn line ->
           if String.length(line) >= n, do: String.slice(line, n..-1//1), else: line
         end)
-        |> Enum.join("\n")
     end
   end
 
