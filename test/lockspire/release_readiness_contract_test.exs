@@ -159,6 +159,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   defp normalize(bytes, kind) when kind in [:python_commented, :elixir_in_commented_heredoc] do
     bytes
     |> String.replace("\r\n", "\n")
+    |> strip_uniform_indent()
     |> String.split("\n")
     |> Enum.map(&String.replace_prefix(&1, "# ", ""))
     |> Enum.join("\n")
@@ -742,6 +743,43 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert_protected_routes_guide!(protected_routes_guide)
     assert_operator_admin_guide!(operator_admin_guide)
     assert_dynamic_registration_guide!(dynamic_registration_guide)
+  end
+
+  test "canonical lockspire_protected_api pipeline is byte-identical across the four RECIPE-01 sites" do
+    files = [
+      {@protect_phoenix_api_routes_path, :elixir_in_markdown_fence},
+      {@adoption_demo_router_path, :elixir},
+      {@install_template_router_path, :elixir_in_commented_heredoc},
+      {@adoption_smoke_script_path, :python_commented}
+    ]
+
+    hashes = Enum.map(files, fn {path, kind} -> {path, canonical_hash!(path, kind)} end)
+
+    for {path_a, hash_a} <- hashes, {path_b, hash_b} <- hashes, path_a < path_b do
+      assert hash_a == hash_b,
+             "canonical pipeline block drifted between #{Path.relative_to_cwd(path_a)} and #{Path.relative_to_cwd(path_b)}"
+    end
+  end
+
+  test "docs/saas-adoption-recipe.md cross-links to the canonical pipeline rather than restating plug names" do
+    recipe = File.read!(@saas_adoption_recipe_path)
+
+    assert recipe =~ ~r/protect-phoenix-api-routes\.md/,
+           "expected docs/saas-adoption-recipe.md to cross-link to docs/protect-phoenix-api-routes.md"
+
+    refute recipe =~
+             ~r/`Lockspire\.Plug\.VerifyToken`.*`Lockspire\.Plug\.EnforceSenderConstraints`.*`Lockspire\.Plug\.RequireToken`/s,
+           "expected docs/saas-adoption-recipe.md to no longer restate the three plug names in concatenated form"
+  end
+
+  test "docs/protect-phoenix-api-routes.md carries the canonical pipeline declaration exactly once (D-15)" do
+    page = File.read!(@protect_phoenix_api_routes_path)
+
+    declaration_count =
+      page |> String.split("pipeline :lockspire_protected_api do") |> length() |> Kernel.-(1)
+
+    assert declaration_count == 1,
+           "expected docs/protect-phoenix-api-routes.md to declare the canonical pipeline exactly once; found #{declaration_count} restatements (D-15 within-file refute)"
   end
 
   test "maintainer and security docs defer to the canonical advanced-setup contract" do
