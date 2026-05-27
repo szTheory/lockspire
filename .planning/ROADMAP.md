@@ -44,7 +44,12 @@
   2. The same protected-route pipeline declaration block appears verbatim in exactly four locations — `docs/protect-phoenix-api-routes.md`, `examples/adoption_demo/lib/adoption_demo_web/router.ex`, `priv/templates/lockspire.install/router.ex`, and `scripts/demo/adoption_smoke.py` (as a referenced comment).
   3. `docs/supported-surface.md` plainly records the explicit non-goals (no introspection-at-the-RS as the host-API seam, no auto-detection of token shape, no dual-verifier dispatcher, no RAR enforcement at the RS plug).
   4. A `release_readiness_contract_test` clause fails loudly if the content hash of the canonical pipeline declaration drifts between any two of the four locations.
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 97-01-PLAN.md — Wave 0 helper extensions: extend Phase 92 `assert_protected_routes_guide!/1` and `assert_advanced_setup_support_contract!/1` with D-06 contract sentence, D-07 forward-reference caveat, and four D-09 non-goal substrings (intentionally turns the existing release-readiness test RED so Plans 02/03 have a failing-target).
+- [ ] 97-02-PLAN.md — DOCS-01 rewrite of `docs/protect-phoenix-api-routes.md`: D-06 contract lead + D-07 caveat with HTML sweep marker + canonical-block BEGIN/END marker wrap on the first fenced Elixir block + D-15 secondary-fenced-block rewrites to reference-to-canonical prose.
+- [ ] 97-03-PLAN.md — DOCS-02 + D-11 adjacent-doc deference: insert new `## Explicit non-goals for host-API route protection` subsection in `docs/supported-surface.md`; replace `docs/saas-adoption-recipe.md:50` plug-name restatement with a cross-link to the canonical doc page.
+- [ ] 97-04-PLAN.md — RECIPE-01 canonical-block carriers: wrap demo router pipeline in BEGIN/END markers with D-04/D-13 placeholder reconciliation; insert commented-out canonical block into `priv/templates/lockspire.install/router.ex` heredoc (D-10); insert Python-comment canonical-block carrier into `scripts/demo/adoption_smoke.py` adjacent to L244 (D-14).
+- [ ] 97-05-PLAN.md — release_readiness_contract_test invariants: add three module attributes + four private helpers (`extract_canonical_pipeline!/2`, `normalize/2` × 2 clauses, `strip_uniform_indent/1`, `canonical_hash!/2`) + three new test clauses (four-file content-hash pairwise compare with file-pair naming on failure; D-11 saas-recipe cross-link assert+refute; D-15 within-file restatement refute).
 
 ### Phase 98: Plug Hardening
 **Goal**: `Lockspire.Plug.VerifyToken` accepts only RFC 9068 `at+jwt` access tokens and enforces RFC 9068 / RFC 8725 / RFC 9449 compliance rules that are currently missing, closing five of the seven critical pitfalls before any issuance change ships.
@@ -109,7 +114,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 97. Contract + Docs First | 0/TBD | Not started | - |
+| 97. Contract + Docs First | 0/5 | Not started | - |
 | 98. Plug Hardening | 0/TBD | Not started | - |
 | 99. Signer Extraction + JWT-Default Issuance | 0/TBD | Not started | - |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
