@@ -122,6 +122,7 @@ repo_owned_checks() {
   if grep -Fq 'uses: ./.github/actions/release-please' .github/workflows/release.yml &&
      grep -Fq 'config-file: release-please-config.json' .github/workflows/release.yml &&
      grep -Fq 'manifest-file: .release-please-manifest.json' .github/workflows/release.yml &&
+     grep -Fq 'needs.release-please.outputs.release_sha == github.sha' .github/workflows/release.yml &&
      grep -Fq 'run: mix release.preflight' .github/workflows/release.yml &&
      grep -Fq 'run: mix hex.publish --yes' .github/workflows/release.yml; then
     record_result "PASS" "release workflow" "repo-controlled Release Please and protected publish commands are intact"

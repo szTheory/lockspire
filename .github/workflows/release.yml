@@ -33,6 +33,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created || steps.manual_dispatch.outputs.release_created || 'false' }}
       tag_name: ${{ steps.release.outputs.tag_name || '' }}
+      release_sha: ${{ steps.release.outputs.sha || '' }}
     steps:
       - name: Check out repository for Release Please
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -61,9 +62,15 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Record root release tag target for the merged release commit
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' }}
+        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' && steps.release.outputs.sha == github.sha }}
         run: |
           echo "Release Please selected root tag ${{ steps.release.outputs.tag_name }} for the merged release commit. Protected publish proof begins only when the publish job enters the hex-publish environment on main."
+
+      - name: Record stale Release Please release event
+        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' && steps.release.outputs.sha != github.sha }}
+        run: |
+          echo "Release Please created or finalized ${{ steps.release.outputs.tag_name }} for ${{ steps.release.outputs.sha }}, but this workflow is running for ${{ github.sha }}."
+          echo "Skipping publish on this push prevents republishing an existing Hex package after a delayed Release Please tagging event."
 
   recovery-validation:
     name: Validate Recovery Ref
@@ -107,7 +114,7 @@ jobs:
     needs:
       - release-please
       - recovery-validation
-    if: ${{ always() && ((github.event_name == 'workflow_dispatch' && needs.recovery-validation.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.release-please.outputs.release_created == 'true')) }}
+    if: ${{ always() && ((github.event_name == 'workflow_dispatch' && needs.recovery-validation.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.release_sha == github.sha)) }}
     environment: hex-publish
     permissions:
       contents: read
