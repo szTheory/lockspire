@@ -4,6 +4,13 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.2.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.1.2...lockspire-v1.2.0) (2026-05-27)
+
+
+### Features
+
+* harden host integration boundary ([#40](https://github.com/szTheory/lockspire/issues/40)) ([2e80589](https://github.com/szTheory/lockspire/commit/2e80589795fa837c518a5708450d8ef0d2aa0032))
+
 ## [1.1.2](https://github.com/szTheory/lockspire/compare/lockspire-v1.1.1...lockspire-v1.1.2) (2026-05-27)
 
 
