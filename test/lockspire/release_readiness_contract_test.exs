@@ -81,6 +81,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @repo_hygiene_script_path Path.expand("../../scripts/maintainer/repo_hygiene_check.sh", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
+  @adoption_demo_router_path Path.expand(
+                               "../../examples/adoption_demo/lib/adoption_demo_web/router.ex",
+                               __DIR__
+                             )
+  @install_template_router_path Path.expand(
+                                  "../../priv/templates/lockspire.install/router.ex",
+                                  __DIR__
+                                )
+  @adoption_smoke_script_path Path.expand("../../scripts/demo/adoption_smoke.py", __DIR__)
 
   defp mix_version do
     "mix.exs"
@@ -126,6 +135,84 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     |> File.read!()
     |> then(&Regex.run(~r/^  publish:\n(.*)\z/ms, &1, capture: :all_but_first))
     |> List.first()
+  end
+
+  defp extract_canonical_pipeline!(path, kind) do
+    bytes =
+      path
+      |> File.read!()
+      |> then(
+        &Regex.run(
+          ~r/# BEGIN LOCKSPIRE_PROTECTED_PIPELINE\n(.*?)\n[ \t]*# END LOCKSPIRE_PROTECTED_PIPELINE/ms,
+          &1,
+          capture: :all_but_first
+        )
+      )
+      |> case do
+        [captured] when is_binary(captured) and captured != "" -> captured
+        _ -> raise "missing BEGIN/END LOCKSPIRE_PROTECTED_PIPELINE markers in #{path}"
+      end
+
+    normalize(bytes, kind)
+  end
+
+  defp normalize(bytes, kind) when kind in [:python_commented, :elixir_in_commented_heredoc] do
+    bytes
+    |> String.replace("\r\n", "\n")
+    |> String.split("\n")
+    |> Enum.map(&String.replace_prefix(&1, "# ", ""))
+    |> Enum.join("\n")
+    |> strip_uniform_indent()
+    |> String.replace(~r/[ \t]+$/m, "")
+  end
+
+  defp normalize(bytes, _kind) do
+    bytes
+    |> String.replace("\r\n", "\n")
+    |> strip_uniform_indent()
+    |> String.replace(~r/[ \t]+$/m, "")
+  end
+
+  defp strip_uniform_indent(bytes) do
+    lines = String.split(bytes, "\n")
+
+    non_blank_indents =
+      lines
+      |> Enum.reject(&(String.trim(&1) == ""))
+      |> Enum.map(fn line ->
+        case Regex.run(~r/^[ \t]*/, line) do
+          [leading] -> String.length(leading)
+          _ -> 0
+        end
+      end)
+
+    case non_blank_indents do
+      [] ->
+        bytes
+
+      indents ->
+        n = Enum.min(indents)
+
+        lines
+        |> Enum.map(fn line ->
+          if String.length(line) >= n, do: String.slice(line, n..-1//1), else: line
+        end)
+        |> Enum.join("\n")
+    end
+  end
+
+  defp canonical_hash!(path, kind) do
+    bytes = extract_canonical_pipeline!(path, kind)
+
+    unless bytes =~ "Lockspire.Plug.VerifyToken" do
+      raise "canonical region in #{path} missing Lockspire.Plug.VerifyToken — markers renamed or extraction broken"
+    end
+
+    if String.ends_with?(path, ".ex") and bytes =~ ~r/<%/ do
+      raise "canonical region in #{path} contains EEx tag — heredoc interpolation would chew the canonical bytes"
+    end
+
+    :crypto.hash(:sha256, bytes)
   end
 
   test "maintainer guide keeps the review-only release pr posture and separate evidence buckets" do
