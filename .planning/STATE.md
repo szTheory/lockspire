@@ -78,6 +78,7 @@ None.
 - `docs/user-flows-jtbd.md` had drifted behind shipped reality by still describing the Phoenix protected-route plug pipeline as future work; release-truth cleanup must favor repo-proven current behavior over older planning narratives.
 - Green-main and release automation are restored after the `1.1.1` release train follow-through.
 - Release `1.1.2` shipped the support-truth cleanup: CIBA discovery now advertises shipped Poll/Ping/Push support, and JAR/request-object docs now match actual by-value support while keeping external JAR-by-reference out of scope.
+- Release publish on push is guarded by Release Please release-SHA equality with the current `main` push SHA, so delayed/stale Release Please tagging events cannot republish an already-existing Hex package.
 - The next feature-sized candidate is `v1.26 Host Integration & Operator Boundary Hardening`, focused on account/claims integration recipes, generated client bootstrap ergonomics, admin-route boundary clarity, and operator docs/diagnostics. Treat it as a milestone branch/PR, not as patch-train work.
 - Do not reopen broad protocol breadth by default. Gateway/service-mesh productization, hosted auth/CIAM, SAML/LDAP, certification breadth chasing, and auth-method parity work remain diminishing-return unless adopter evidence changes the calculus.
 

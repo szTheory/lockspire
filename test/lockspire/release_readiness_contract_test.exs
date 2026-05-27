@@ -222,9 +222,13 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "run: mix hex.publish --yes"
     assert release_workflow =~ "needs.recovery-validation.result == 'success'"
     assert release_workflow =~ "needs.release-please.outputs.release_created == 'true'"
+    assert release_workflow =~ "release_sha: ${{ steps.release.outputs.sha || '' }}"
+    assert release_workflow =~ "needs.release-please.outputs.release_sha == github.sha"
+    assert release_workflow =~ "Record stale Release Please release event"
     assert release_workflow =~ "always()"
     assert release_please_job =~ "uses: ./.github/actions/release-please"
     assert release_please_job =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
+    assert release_please_job =~ "release_sha: ${{ steps.release.outputs.sha || '' }}"
 
     assert recovery_validation_job =~
              "recovery_ref must be an exact 40-character commit SHA or an existing tag"
