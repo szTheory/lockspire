@@ -10,5 +10,5 @@
 
 ## Next Candidate
 
-- Adoption demo smoke PR in flight. This is a narrow DX/proof wedge, not broad protocol scope: a repo-local Phoenix host app plus CI black-box smoke for discovery, JWKS, host login/consent, userinfo, device verification, operator admin gating, and anonymous protected-route rejection.
-- After that lands, default back to sustainment. Start the next milestone only when concrete adopter evidence identifies a narrow embedded-library trust or support wedge that is larger than patch/support/release-hygiene sustainment.
+- None by default. Lockspire is back on the sustaining GA release train after the adoption demo smoke shipped in PR `#44`.
+- If a feature-sized milestone is justified, the highest-leverage candidate is the Phoenix resource-server/token acceptance story: make it obvious which Lockspire-issued token shape a host Phoenix API should accept, how that relates to `Lockspire.Plug.VerifyToken`, and what CI proof backs the blessed path.

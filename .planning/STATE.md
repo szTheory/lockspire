@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: none
 milestone_name: none
-status: adoption_demo_smoke_pr_ready
-stopped_at: v1.26 shipped as lockspire 1.2.0 and release train restored
-last_updated: "2026-05-27T10:25:00Z"
+status: sustaining_release_train
+stopped_at: adoption demo smoke shipped and main CI green
+last_updated: "2026-05-27T10:35:00Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 0
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Sustaining GA release train with an adoption-demo smoke wedge in flight. Keep `main` green, keep release truth coherent, and use the demo as secondary DX proof for host-app boot and browser-flow sanity.
+**Current focus:** Sustaining GA release train. Keep `main` green, keep release truth coherent, and use the adoption demo as secondary DX proof for host-app boot and browser-flow sanity.
 
 ## Current Position
 
 Phase: none
 Plan: none
-Status: `v1.26 Host Integration & Operator Boundary Hardening` shipped in `lockspire 1.2.0`; adoption-demo smoke branch is locally verified and ready for PR.
+Status: `v1.26 Host Integration & Operator Boundary Hardening` shipped in `lockspire 1.2.0`; adoption-demo smoke shipped in PR `#44` and post-merge `main` CI is green.
 Last activity: 2026-05-27
 
 ## Most Recent Release
@@ -62,11 +62,11 @@ Last activity: 2026-05-27
 
 ## Blockers/Concerns
 
-- None active for the adoption-demo PR. The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real release lands.
+- None active. The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real release lands.
 
 ## Session Continuity
 
-**Next action:** Open the adoption-demo smoke PR, wait for GitHub checks including `Adoption Demo Smoke`, then squash-merge if green. After merge, return to the sustaining GA train unless the demo exposes a concrete adopter gap.
+**Next action:** Stay on the sustaining GA train. Optional next patch release `1.2.1` only if we want HexDocs to publish the adoption demo guide immediately; otherwise wait for a real runtime/doc fix. Next feature-sized milestone should focus on the Phoenix resource-server/token acceptance story if adopter evidence justifies it.
 **Resume file:** None
 **Stopped at:** `lockspire 1.2.0` shipped; release dispatch hygiene patch in progress.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
