@@ -27,7 +27,7 @@
 - Integer phases (97, 98, 99, 100, 101, 102): Planned milestone work
 - Decimal phases (e.g., 98.1): Urgent insertions (marked with INSERTED) if needed mid-milestone
 
-- [ ] **Phase 97: Contract + Docs First** — Single authoritative protected-route doc page anchors the implementation contract before any runtime change lands.
+- [x] **Phase 97: Contract + Docs First** — Single authoritative protected-route doc page anchors the implementation contract before any runtime change lands. (completed 2026-05-27)
 - [ ] **Phase 98: Plug Hardening** — `Lockspire.Plug.VerifyToken` narrows to RFC 9068 `at+jwt` only with full RFC 9068 / 8725 / 9449 compliance.
 - [ ] **Phase 99: Signer Extraction + JWT-Default Issuance** — Shared `Protocol.AccessTokenSigner` lands; default access-token format flips to `:jwt` with per-client override and audience semantics.
 - [ ] **Phase 100: Sender-Constraint End-to-End Proof** — DPoP-bound and mTLS-bound `at+jwt` traverse the blessed pipeline end-to-end; misordered-pipeline bypass is closed.
@@ -54,7 +54,7 @@
 - [x] 97-02-PLAN.md — DOCS-01 rewrite of `docs/protect-phoenix-api-routes.md`: D-06 contract lead + D-07 caveat with HTML sweep marker + canonical-block BEGIN/END marker wrap on the first fenced Elixir block + D-15 secondary-fenced-block rewrites to reference-to-canonical prose.
 - [x] 97-03-PLAN.md — DOCS-02 + D-11 adjacent-doc deference: insert new `## Explicit non-goals for host-API route protection` subsection in `docs/supported-surface.md`; replace `docs/saas-adoption-recipe.md:50` plug-name restatement with a cross-link to the canonical doc page.
 - [x] 97-04-PLAN.md — RECIPE-01 canonical-block carriers: wrap demo router pipeline in BEGIN/END markers with D-04/D-13 placeholder reconciliation; insert commented-out canonical block into `priv/templates/lockspire.install/router.ex` heredoc (D-10); insert Python-comment canonical-block carrier into `scripts/demo/adoption_smoke.py` adjacent to L244 (D-14).
-- [ ] 97-05-PLAN.md — release_readiness_contract_test invariants: add three module attributes + four private helpers (`extract_canonical_pipeline!/2`, `normalize/2` × 2 clauses, `strip_uniform_indent/1`, `canonical_hash!/2`) + three new test clauses (four-file content-hash pairwise compare with file-pair naming on failure; D-11 saas-recipe cross-link assert+refute; D-15 within-file restatement refute).
+- [x] 97-05-PLAN.md — release_readiness_contract_test invariants: add three module attributes + four private helpers (`extract_canonical_pipeline!/2`, `normalize/2` × 2 clauses, `strip_uniform_indent/1`, `canonical_hash!/2`) + three new test clauses (four-file content-hash pairwise compare with file-pair naming on failure; D-11 saas-recipe cross-link assert+refute; D-15 within-file restatement refute).
 
 ### Phase 98: Plug Hardening
 
@@ -134,7 +134,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 97. Contract + Docs First | 4/5 | In Progress|  |
+| 97. Contract + Docs First | 5/5 | Complete   | 2026-05-27 |
 | 98. Plug Hardening | 0/TBD | Not started | - |
 | 99. Signer Extraction + JWT-Default Issuance | 0/TBD | Not started | - |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
