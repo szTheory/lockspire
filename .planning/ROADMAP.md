@@ -9,4 +9,14 @@
 
 ## Next Candidate
 
-- Stop or reassess after `v1.25` unless real adopter evidence shows another narrow support or trust wedge worth solving inside Lockspire's current embedded-library scope.
+- Active on milestone branch: `v1.26 Host Integration & Operator Boundary Hardening`.
+
+## Active Milestone: v1.26 Host Integration & Operator Boundary Hardening
+
+**Goal:** Make the first real Phoenix SaaS adoption path clearer without adding protocol breadth.
+
+- [x] 94: Harden host account/claims and admin-mount scaffolding
+- [x] 95: Improve first-client bootstrap guidance and proof
+- [x] 96: Lock adopter-facing docs, support truth, and milestone-close evidence
+
+**Non-goals:** no hosted auth, no developer portal, no Sigra compile-time coupling, no new OAuth/OIDC endpoint family, and no Lockspire-owned operator authentication.

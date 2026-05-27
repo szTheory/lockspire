@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: sustaining_release_train
-stopped_at: 1.1.2 release train green after support-truth cleanup
-last_updated: "2026-05-27T09:15:00Z"
+milestone: v1.26
+milestone_name: Host Integration & Operator Boundary Hardening
+status: milestone_pr_ready
+stopped_at: v1.26 implemented and verified on milestone branch
+last_updated: "2026-05-27T10:20:00Z"
 last_activity: 2026-05-27
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Keep green `main` boring, keep the release ledger current, and open new feature work only when the next adopter-facing wedge is worth a milestone PR.
+**Current focus:** Open one milestone PR for `v1.26 Host Integration & Operator Boundary Hardening` after local verification.
 
 ## Current Position
 
-Phase: None
-Plan: Sustaining GA release train
-Status: Release `1.1.2` shipped; green-main, release automation, and the narrow CIBA/JAR support-truth cleanup are complete
+Phase: 96
+Plan: Milestone verification and PR handoff
+Status: v1.26 implementation complete on milestone branch; local targeted tests, docs verification, and `mix ci` passed
 Last activity: 2026-05-27
 
 ## Performance Metrics
@@ -80,6 +80,8 @@ None.
 - Release `1.1.2` shipped the support-truth cleanup: CIBA discovery now advertises shipped Poll/Ping/Push support, and JAR/request-object docs now match actual by-value support while keeping external JAR-by-reference out of scope.
 - Release publish on push is guarded by Release Please release-SHA equality with the current `main` push SHA, so delayed/stale Release Please tagging events cannot republish an already-existing Hex package.
 - The next feature-sized candidate is `v1.26 Host Integration & Operator Boundary Hardening`, focused on account/claims integration recipes, generated client bootstrap ergonomics, admin-route boundary clarity, and operator docs/diagnostics. Treat it as a milestone branch/PR, not as patch-train work.
+- `v1.26` is active on `milestone/v1.26-host-integration-boundary`; its scope is adopter confidence around host account/claims wiring, first-client bootstrap, and host-guarded admin routing, not new protocol breadth.
+- `Lockspire.Web.AdminRouter` is the bounded admin-only router for generated hosts that want to protect `/lockspire/admin` with host-owned operator authentication while preserving the existing public OAuth/OIDC router.
 - Do not reopen broad protocol breadth by default. Gateway/service-mesh productization, hosted auth/CIAM, SAML/LDAP, certification breadth chasing, and auth-method parity work remain diminishing-return unless adopter evidence changes the calculus.
 
 ### Blockers/Concerns
@@ -88,7 +90,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Reassess whether to open `v1.26 Host Integration & Operator Boundary Hardening` as the recommended first feature candidate, or stay on the sustaining patch train until adopter evidence justifies feature work.
+**Next action:** Commit the milestone branch, push it, open one PR to `main`, and merge only after GitHub PR checks pass.
 **Resume file:** None
-**Stopped at:** 1.1.2 release train green after support-truth cleanup
+**Stopped at:** v1.26 implemented and verified on milestone branch
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

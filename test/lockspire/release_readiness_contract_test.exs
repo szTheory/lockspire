@@ -72,6 +72,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                      "../../docs/protect-phoenix-api-routes.md",
                                      __DIR__
                                    )
+  @saas_adoption_recipe_path Path.expand("../../docs/saas-adoption-recipe.md", __DIR__)
   @operator_admin_guide_path Path.expand("../../docs/operator-admin.md", __DIR__)
   @dynamic_registration_guide_path Path.expand("../../docs/dynamic-registration.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
@@ -169,6 +170,32 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "This file does not broaden the Lockspire product contract"
 
     refute guide =~ "mix package.verify"
+  end
+
+  test "adopter docs keep host account and operator boundaries explicit" do
+    install_guide = File.read!(@install_and_onboard_path)
+    operator_guide = File.read!(@operator_admin_guide_path)
+    recipe = File.read!(@saas_adoption_recipe_path)
+    supported_surface = File.read!(@supported_surface_path)
+    getting_started = File.read!(@readme_path) <> File.read!("docs/getting-started.md")
+
+    for doc <- [install_guide, operator_guide, recipe] do
+      assert doc =~ "Lockspire.Web.AdminRouter"
+      assert doc =~ "operator"
+      assert doc =~ "host"
+    end
+
+    assert install_guide =~ "Lockspire does not authenticate your staff"
+    assert operator_guide =~ "pipe_through [:browser, :require_operator]"
+    assert operator_guide =~ "host owns staff sessions, MFA, role checks"
+    assert recipe =~ "stable subject"
+    assert recipe =~ "Store the printed `client_secret` immediately"
+    assert recipe =~ "tenant checks, business authorization, rate limiting"
+    assert supported_surface =~ "host-guarded `Lockspire.Web.AdminRouter`"
+    assert getting_started =~ "docs/saas-adoption-recipe.md"
+
+    refute recipe =~ "Lockspire owns operator authentication"
+    refute operator_guide =~ "Lockspire authenticates your operators"
   end
 
   test "release workflow keeps one protected publish lane with exact-ref dispatch" do

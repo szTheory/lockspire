@@ -20,14 +20,17 @@ defmodule <%= @resolver_module %> do
   alias Lockspire.Host.InteractionResult
 
   @impl true
-  def resolve_current_account(_conn_or_socket, context) do
+  def resolve_current_account(conn_or_socket, context) do
     <%= if @sigra_host do %>
-    # TODO: read conn.assigns.current_scope.user (or your equivalent host-owned assign),
-    # then return {:ok, user_map} instead of redirecting when a session exists.
+    # This helper reads conn.assigns.current_scope.user when present. Adjust it if
+    # your Sigra-backed host stores the signed-in user under a different assign.
     # Keep your real Sigra login route host-owned and preserve both return_to and
     # interaction_id so Lockspire can resume the pending OAuth interaction after login.
     <% end %>
-    {:redirect, redirect_for_login(nil, context)}
+    case current_account(conn_or_socket) do
+      nil -> {:redirect, redirect_for_login(conn_or_socket, context)}
+      account -> {:ok, account}
+    end
   end
 
   @impl true
@@ -48,6 +51,21 @@ defmodule <%= @resolver_module %> do
     This callback defines the subject and emitted OIDC claims for your host accounts.
     Use a stable internal identifier for `sub`, keep the default example claim set
     intentionally narrow, and replace the scaffold with real host-owned claims logic.
+
+    Typical shape:
+
+        {:ok,
+         %Claims{
+           subject: "user:" <> to_string(account.id),
+           claims: %{
+             "email" => account.email,
+             "name" => account.name
+           }
+         }}
+
+    Keep tenant authorization, billing tier checks, and product policy in your host
+    application. Lockspire should receive stable account facts, not own your business
+    authorization model.
     """
   end
 
@@ -72,4 +90,33 @@ defmodule <%= @resolver_module %> do
       }
     }
   end
+
+  defp current_account(%Plug.Conn{assigns: %{current_scope: %{user: user}}}) when not is_nil(user),
+    do: user
+
+  defp current_account(%Plug.Conn{assigns: %{current_scope: scope}}) do
+    case Map.get(scope, :user) || Map.get(scope, "user") do
+      nil -> nil
+      user -> user
+    end
+  end
+
+  defp current_account(%Plug.Conn{assigns: %{current_user: user}}) when not is_nil(user), do: user
+
+  defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_scope: %{user: user}}})
+       when not is_nil(user),
+       do: user
+
+  defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_scope: scope}}) do
+    case Map.get(scope, :user) || Map.get(scope, "user") do
+      nil -> nil
+      user -> user
+    end
+  end
+
+  defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_user: user}})
+       when not is_nil(user),
+       do: user
+
+  defp current_account(_conn_or_socket), do: nil
 end

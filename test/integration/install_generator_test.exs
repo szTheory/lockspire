@@ -77,6 +77,14 @@ defmodule Lockspire.InstallGeneratorTest do
     assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
+    assert router =~ ~s(scope "/lockspire/admin")
+    assert router =~ "pipe_through [:browser, :require_operator]"
+    assert router =~ ~s(forward "/", Lockspire.Web.AdminRouter)
+    assert router =~ "Do not rely on Lockspire to authenticate your operators"
+    assert router =~ ~s(forward "/lockspire", Lockspire.Web.Router)
+
+    assert router =~
+             ~r/scope "\/lockspire\/admin" do\s+pipe_through \[:browser, :require_operator\]\s+forward "\/", Lockspire.Web.AdminRouter\s+end/
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
@@ -85,6 +93,13 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "@behaviour Lockspire.Host.AccountResolver"
     assert resolver =~ "Implement GeneratedHostApp.Lockspire.AccountResolver.resolve_account/2"
     assert resolver =~ "Implement GeneratedHostApp.Lockspire.AccountResolver.build_claims/2"
+    assert resolver =~ "defp current_account(%Plug.Conn{assigns: %{current_user: user}})"
+
+    assert resolver =~
+             "defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_user: user}})"
+
+    assert resolver =~ "\"user:\" <> to_string(account.id)"
+    assert resolver =~ "Keep tenant authorization, billing tier checks, and product policy"
     assert resolver =~ "raise"
     refute resolver =~ "Sigra"
 
@@ -236,6 +251,7 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "preserve both return_to and"
     assert resolver =~ "interaction_id"
     assert resolver =~ "Lockspire must not import Sigra at compile"
+    assert resolver =~ "current_account(conn_or_socket)"
   end
 
   test "mix lockspire.install --sigra-host keeps the canonical generated file set unchanged" do

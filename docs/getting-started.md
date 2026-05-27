@@ -23,3 +23,5 @@ Do not use Lockspire as:
 5. Register a client (manually or via DCR) and prove the flow with discovery, JWKS, and an authorization-code + PKCE or Device Flow exchange.
 
 The generated files stay host-owned by design. Lockspire provides the protocol core; your app keeps ownership of login UX, branding, policy, and account data.
+
+For a practical install-to-first-client checklist, see `docs/saas-adoption-recipe.md`.

@@ -18,6 +18,25 @@ For the canonical advanced-setup support contract, see `docs/supported-surface.m
 
 These routes live under the embedded Lockspire router and are meant for application operators.
 
+## Mounting the admin surface
+
+Mount the operator UI behind your host application's operator-auth pipeline. Lockspire does not authenticate your staff or decide who counts as an operator.
+
+The generated router mounts `Lockspire.Web.AdminRouter` at `/lockspire/admin` before the general `Lockspire.Web.Router` forward:
+
+```elixir
+scope "/lockspire/admin" do
+  pipe_through [:browser, :require_operator]
+  forward "/", Lockspire.Web.AdminRouter
+end
+
+scope "/" do
+  forward "/lockspire", Lockspire.Web.Router
+end
+```
+
+Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, IP policy, and audit framing around access to those routes.
+
 ## Logout propagation workflow
 
 Operators now have two separate logout-related surfaces on each client:
@@ -61,6 +80,7 @@ Lockspire owns:
 The host app owns:
 
 - Accounts and sessions
+- Operator authentication and authorization before the admin router
 - Login UX and MFA
 - Layouts and branding
 - Product policy and authorization framing

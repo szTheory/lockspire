@@ -32,6 +32,24 @@ defmodule GeneratedHostAppWeb.Router.Lockspire do
       delete "/authorized-apps/:id", AuthorizedAppsController, :delete
     end
 
+    # Mount Lockspire's operator UI behind your host-owned operator auth
+    # pipeline before the general public OAuth/OIDC forward below.
+    #
+    # Example:
+    #
+    #   scope "/lockspire/admin" do
+    #     pipe_through [:browser, :require_operator]
+    #     forward "/", Lockspire.Web.AdminRouter
+    #   end
+    #
+    # Do not rely on Lockspire to authenticate your operators. Lockspire owns
+    # protocol/admin state after the request reaches these LiveViews; your host app
+    # owns who may reach them.
+    scope "/lockspire/admin" do
+      pipe_through [:browser, :require_operator]
+      forward "/", Lockspire.Web.AdminRouter
+    end
+
     scope "/" do
       forward "/lockspire", Lockspire.Web.Router
     end

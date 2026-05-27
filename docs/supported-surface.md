@@ -41,7 +41,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams, including Sigra-shaped account resolution from `conn.assigns.current_scope.user`
-- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings
+- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings, with a host-guarded `Lockspire.Web.AdminRouter` mount for applications that separate operator authentication from the public OAuth/OIDC router
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
@@ -132,6 +132,7 @@ Lockspire does not currently support:
 - LDAP or Active Directory federation
 - Full CIAM or workforce identity platform scope
 - Lockspire-owned account database, passwords, or login UX
+- Lockspire-owned operator authentication, staff MFA, role checks, or IP allowlists around the admin router
 - Broad compatibility claims beyond the Phoenix/Elixir embedded-library path documented in this repo
 - External OIDF or FAPI suite certification claims — Lockspire does not treat historical or optional external-suite runs as part of the current public support contract for the embedded Phoenix library path
 
@@ -162,6 +163,7 @@ Historical Phase 37 external-suite wiring and any OIDF or FAPI Docker runs remai
 A 1.0 GA claim honestly says:
 
 - there is one canonical Phoenix onboarding path
+- the host app owns operator authentication before mounting `Lockspire.Web.AdminRouter`
 - `--sigra-host` is guidance-only; it does not create a second install topology or a compile-time Sigra dependency
 - install diagnostics and managed-scaffolding upgrades are explicit (`mix lockspire.verify` and `mix lockspire.upgrade`)
 - the generated host seam resolves the signed-in user through host-owned session state such as `conn.assigns.current_scope.user`

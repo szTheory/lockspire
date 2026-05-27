@@ -16,7 +16,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones remain available, but they should run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The immediate remaining work is maintenance-first: keep green `main` and close narrow public-truth drift before opening another feature milestone. If feature work resumes, the recommended next milestone is host integration and operator boundary hardening rather than new protocol breadth.
+The immediate feature work is `v1.26 Host Integration & Operator Boundary Hardening`: improve the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
@@ -201,6 +201,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Use one milestone PR for future feature work | Keeps `main` as the release-train source of truth while preserving GSD milestones for larger feature development | Adopted after the `1.1.0` release-train baseline |
 | Put green-main and support-truth work before `v1.26` | The next repo-local risks are CI trust and public-truth drift; feature work should start only after those are boring again | Adopted during post-PR #31 roadmap assessment |
 | Make host integration/operator boundary hardening the next feature candidate | Account/claims recipes, client bootstrap, admin-route boundaries, and operator diagnostics improve real Phoenix adopter outcomes more than adjacent protocol breadth | Recommended for the next `$gsd-new-milestone` decision |
+| Add a host-guarded admin-only router for v1.26 | The generated host needs a concrete way to put operator auth in front of `/lockspire/admin` without putting the public OAuth/OIDC endpoints behind staff auth | Adopted for v1.26 implementation |
 
 ## Evolution
 

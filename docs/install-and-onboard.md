@@ -57,6 +57,8 @@ Import `config/lockspire.exs` from your main config entrypoint.
 
 Import `YourAppWeb.Router.Lockspire` from your host router and call `lockspire_routes/0` where your product wants the Lockspire routes to live.
 
+The generated route helper separates host-owned account routes, a host-guarded admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your operator pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not authenticate your staff; your host app owns operator sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin LiveViews.
+
 Implement the generated `AccountResolver` with:
 
 - Current-account lookup from your host-owned session seam
@@ -114,6 +116,7 @@ The canonical proof bar is:
 
 - Discovery returns the issuer and endpoint set.
 - JWKS returns the public signing keys.
+- A first partner client is registered through the admin UI, DCR, or `mix lockspire.client.create`.
 - A client can complete an authorization-code + PKCE exchange.
 - Host Phoenix API routes can enforce route-level `scopes:` and `audience:` restrictions with the shipped plug pipeline when you choose to expose protected routes in the host app.
 - A confidential client can use the shipped direct-client auth surface the way `docs/private-key-jwt-host-guide.md` describes if you choose that mode.
