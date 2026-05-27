@@ -1,20 +1,26 @@
 # Protect Phoenix API Routes
 
-Lockspire can protect host-owned Phoenix API routes with Lockspire-issued access tokens while staying inside the embedded-library model. Lockspire verifies the token contract; your host app still owns business authorization, tenant checks, rate limiting, domain lookups, and response shaping.
+Lockspire issues RFC 9068 `at+jwt` access tokens by default. `Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes. Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable. To opt a client back to opaque, see the admin Client Detail page.
+
+<!-- PHASE-102: delete this caveat sentence when issuance flip ships -->
+
+This page describes the contract `Lockspire.Plug.VerifyToken` enforces; the runtime narrowing and the default-issuance flip land in v1.27. Until v1.27 is fully shipped, opaque tokens may still be silently accepted on these routes.
 
 For the public support contract around this surface, see [`docs/supported-surface.md`](supported-surface.md).
 
 ## Canonical plug order
 
-Use the plugs in this order:
+Lockspire enforces the token contract via `Lockspire.Plug.VerifyToken`, `Lockspire.Plug.EnforceSenderConstraints`, and `Lockspire.Plug.RequireToken`; your host application keeps ownership of business authorization and tenant checks.
 
 ```elixir
+# BEGIN LOCKSPIRE_PROTECTED_PIPELINE
 pipeline :lockspire_protected_api do
   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api"
   plug Lockspire.Plug.EnforceSenderConstraints,
     dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
   plug Lockspire.Plug.RequireToken
 end
+# END LOCKSPIRE_PROTECTED_PIPELINE
 ```
 
 `Lockspire.Plug.VerifyToken` authenticates the access token and enforces route-level `scopes:` / `audience:` restrictions.
@@ -25,41 +31,15 @@ end
 
 ## Example route
 
-```elixir
-scope "/api", MyAppWeb do
-  pipe_through [:api, :lockspire_protected_api]
-
-  get "/billing/summary", ProtectedApiController, :show
-end
-```
-
-This keeps the route host-owned. Lockspire is not taking over your API controller or product policy.
+Mount any host-owned `scope` through the canonical pipeline by appending `:lockspire_protected_api` to its `pipe_through` list (for example, `pipe_through [:api, :lockspire_protected_api]` on a `scope "/api", MyAppWeb` block containing a `get "/billing/summary", ProtectedApiController, :show` route). This keeps the route host-owned. Lockspire is not taking over your API controller or product policy.
 
 ## Scope-restricted route example
 
-```elixir
-pipeline :billing_api do
-  plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"]
-  plug Lockspire.Plug.EnforceSenderConstraints,
-    dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
-  plug Lockspire.Plug.RequireToken
-end
-```
-
-Use `scopes:` when the route needs one or more granted scopes. `scopes: []` means no scope restriction beyond a valid token. Keep `Lockspire.Plug.EnforceSenderConstraints` in the pipeline even if the route currently expects bearer tokens only so the route stays correct when sender-constrained tokens arrive later.
+See the canonical pipeline above; this example narrows it to a single `scopes:` value (e.g., `scopes: ["read:billing"]`) with no `audience:` restriction. Keep `Lockspire.Plug.EnforceSenderConstraints` in the pipeline even on bearer-only routes so the route stays correct when sender-constrained tokens arrive later.
 
 ## Audience-restricted route example
 
-```elixir
-pipeline :billing_audience do
-  plug Lockspire.Plug.VerifyToken, audience: "billing-api"
-  plug Lockspire.Plug.EnforceSenderConstraints,
-    dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
-  plug Lockspire.Plug.RequireToken
-end
-```
-
-Use `audience:` or `audiences:` when the route should only accept tokens minted for a specific resource server. Route-level audience checks are exact-match against the token `aud` set.
+See the canonical pipeline above; this example pins `audience:` (e.g., `audience: "billing-api"`) to constrain the route to tokens minted for a specific resource server. Route-level audience checks are exact-match against the token `aud` set.
 
 ## Access-token assigns contract
 
