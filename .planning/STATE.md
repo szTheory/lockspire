@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
-status: ready_to_plan
-last_updated: "2026-05-27T11:15:00.000Z"
-last_activity: 2026-05-27
+status: planning
+stopped_at: Phase 97 context gathered (assumptions mode)
+last_updated: "2026-05-27T12:45:07.269Z"
+last_activity: 2026-05-27 — ROADMAP.md and REQUIREMENTS.md traceability written for v1.27
 progress:
   total_phases: 6
   completed_phases: 0
@@ -74,6 +75,6 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 ## Session Continuity
 
 **Next action:** Plan Phase 97 (Contract + Docs First). The canonical pipeline-declaration block, single authoritative `docs/protect-phoenix-api-routes.md` page, supported-surface non-goals, and the `release_readiness_contract_test` content-hash assertion all land before any plug or signer code changes.
-**Resume file:** None
-**Stopped at:** v1.27 roadmap and requirements traceability complete; ready to plan Phase 97.
+**Resume file:** .planning/phases/97-contract-docs-first/97-CONTEXT.md
+**Stopped at:** Phase 97 context gathered (assumptions mode)
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
