@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.26 Host Integration & Operator Boundary Hardening (Shipped + archived: 2026-05-27)
+
+**Phases completed:** **3** (**94-96**), **3** plans, **5** requirements closed.
+
+**Package posture:** `lockspire 1.2.0` now has a clearer first Phoenix SaaS adoption path: generated hosts can mount Lockspire's admin surface behind host-owned operator auth, wire account/claims resolution without broadening Lockspire's host seam, create a first client with copy-once secret guidance, and follow a compact SaaS adoption recipe.
+
+**Key accomplishments:**
+- Added `Lockspire.Web.AdminRouter` as the bounded admin-only router for hosts that want `/lockspire/admin` protected by their own operator-auth pipeline.
+- Updated generated router and account-resolver scaffolding so host account lookup, stable subject claims, tenant policy, product authorization, and Sigra-specific wiring stay explicitly host-owned.
+- Improved first-client CLI output with token endpoint auth truth and concrete next steps for proving authorization-code + PKCE.
+- Added adopter-facing docs and release-readiness assertions that pin the host-owned account/operator boundary.
+
+**Pre-close audit:** Formal milestone audit: [`.planning/milestones/v1.26-MILESTONE-AUDIT.md`](milestones/v1.26-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.26-ROADMAP.md`, `milestones/v1.26-REQUIREMENTS.md`, `milestones/v1.26-MILESTONE-AUDIT.md` · **Package release:** `lockspire 1.2.0`
+
+---
+
 ## v1.25 Support-Burden Reduction (Shipped + archived: 2026-05-26)
 
 **Phases completed:** **3** (**91-93**), **9** plans, **9** requirements closed.

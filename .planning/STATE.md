@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.26
-milestone_name: Host Integration & Operator Boundary Hardening
-status: milestone_pr_ready
-stopped_at: v1.26 implemented and verified on milestone branch
-last_updated: "2026-05-27T10:20:00Z"
+milestone: none
+milestone_name: none
+status: sustaining_release_train
+stopped_at: v1.26 shipped as lockspire 1.2.0 and release train restored
+last_updated: "2026-05-27T09:35:00Z"
 last_activity: 2026-05-27
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 100
 ---
 
@@ -20,77 +20,50 @@ progress:
 
 See: .planning/PROJECT.md
 
-**Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
+**Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Open one milestone PR for `v1.26 Host Integration & Operator Boundary Hardening` after local verification.
+**Current focus:** Sustaining GA release train. Keep `main` green, keep release truth coherent, and only start a new milestone when concrete adopter evidence justifies feature-sized work.
 
 ## Current Position
 
-Phase: 96
-Plan: Milestone verification and PR handoff
-Status: v1.26 implementation complete on milestone branch; local targeted tests, docs verification, and `mix ci` passed
+Phase: none
+Plan: none
+Status: `v1.26 Host Integration & Operator Boundary Hardening` shipped in `lockspire 1.2.0`; repo is back to sustainment.
 Last activity: 2026-05-27
 
-## Performance Metrics
+## Most Recent Release
 
-- Phases completed: 3/3 in the archived `v1.25` milestone
-- Plans completed: 9/9 in the archived `v1.25` milestone
+- Version: `1.2.0`
+- Release PR: `#41 chore(main): release lockspire 1.2.0`
+- Milestone PR: `#40 v1.26 Host Integration & Operator Boundary Hardening`
+- Protected publish proof: GitHub Actions run `26502800103`
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.2.0`
+- GitHub release: `lockspire-v1.2.0`
 
-Most recently shipped milestone:
+## Recently Shipped Milestones
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.26 | 94-96 | 3 | 5 | shipped |
 | v1.25 | 91-93 | 9 | 9 | shipped |
 | v1.24 | 88-90 | 9 | 7 | shipped |
 
-## Deferred Items
+## Decisions
 
-None.
-
-## Accumulated Context
-
-### Decisions
-
-- Lockspire now defaults to a standing GA release train: `milestone: none`, patch-on-merge for patch-eligible changes, and explicit milestone creation only for adopter-evidenced scope beyond sustainment.
+- Lockspire defaults to a standing GA release train: `milestone: none`, patch-on-merge for patch-eligible changes, and explicit milestone creation only for adopter-evidenced scope beyond sustainment.
 - `.planning/RELEASE-TRAIN.md` is the canonical GSD ledger for latest release proof, patch-train rules, and next-cut conditions.
 - `.planning/DEVELOPMENT-TRAIN.md` is the canonical GSD policy for future feature milestones: one `milestone/vNEXT-short-slug` branch, one PR to `main`, and merge only after milestone audit, verification evidence, `mix ci`, and GitHub PR checks pass.
-- Milestone v1.20 Mutual TLS (RFC 8705) will be implemented via an explicit extraction behaviour (`Lockspire.MTLS.Extractor`).
-- Proxy extraction MUST be explicitly configured by the host app.
-- Protected Phoenix API routes use `VerifyToken -> EnforceSenderConstraints -> RequireToken` as the canonical shipped pipeline.
-- Route-level audience mismatches stay `401 invalid_token`, while scope failures render `403 insufficient_scope`.
-- DCR create now accepts logout propagation metadata through shared Lockspire URI/origin validation and persists it on typed client fields.
-- DCR create and management-read responses serialize persisted logout metadata directly from stored client state.
-- RFC 7592 management update now applies logout propagation metadata through the same normalized typed-field path and clears omitted values under full-replace semantics.
-- Repo-native proof for logout metadata management now covers rotated RAT truth, provenance/audit continuity, and negative validation contracts across protocol and controller seams.
-- DCR and RFC 7592 now manage the existing logout propagation metadata while preserving the durable back-channel and best-effort front-channel truth model.
-- Client records now store typed `token_endpoint_auth_signing_alg` truth so `client_secret_jwt` and `HS256` round-trip coherently across DCR, RFC 7592, discovery, and admin surfaces.
-- Discovery now publishes `client_secret_jwt` only on the shared verifier endpoints and emits endpoint-local mixed JWT signing-alg unions with `HS256` kept symmetric-only.
-- Admin create, detail, and DCR policy surfaces now expose the narrow `client_secret_jwt` slice with read-only `HS256` truth and unchanged secret-handling posture.
-- Milestone v1.24 is complete and archived; the next default candidate should favor support-burden reduction over additional protocol breadth.
-- `docs/supported-surface.md` remains the sole public authority for advanced-setup support claims, while helper-backed release-contract assertions act only as drift fences.
-- Advanced-setup doc corrections should stay assertion-driven and narrow rather than reopening the support story across derived guides.
-- Remote-JWKS runtime proof should anchor on stable incident semantics, bounded-reactive refresh, cache preservation, and generic wire failures instead of implementation trivia.
-- The representative second advanced-setup surface remains the generated-host protected-route pipeline, and its under-scoped DPoP-bound path stays pinned to the shipped Bearer insufficient_scope response.
-- Phase 93 and milestone v1.25 close on exact repo-native proof commands, requirement-mapped verification artifacts, and a single milestone audit rather than retrospective narrative.
-- Deferred follow-on support work must stay explicit, narrow, and trigger-based instead of being implied as shipped scope.
-- Milestone v1.25 is archived, and the repo should stop or reassess until real adopter evidence justifies another embedded-library-scoped milestone.
-- The remaining high-leverage work after `v1.25` is release-truth polish: green contributor gates, stale-doc cleanup, and refreshed release notes for the shipped `v1.22`-`v1.25` delta.
-- `docs/user-flows-jtbd.md` had drifted behind shipped reality by still describing the Phoenix protected-route plug pipeline as future work; release-truth cleanup must favor repo-proven current behavior over older planning narratives.
-- Green-main and release automation are restored after the `1.1.1` release train follow-through.
-- Release `1.1.2` shipped the support-truth cleanup: CIBA discovery now advertises shipped Poll/Ping/Push support, and JAR/request-object docs now match actual by-value support while keeping external JAR-by-reference out of scope.
-- Release publish on push is guarded by Release Please release-SHA equality with the current `main` push SHA, so delayed/stale Release Please tagging events cannot republish an already-existing Hex package.
-- The next feature-sized candidate is `v1.26 Host Integration & Operator Boundary Hardening`, focused on account/claims integration recipes, generated client bootstrap ergonomics, admin-route boundary clarity, and operator docs/diagnostics. Treat it as a milestone branch/PR, not as patch-train work.
-- `v1.26` is active on `milestone/v1.26-host-integration-boundary`; its scope is adopter confidence around host account/claims wiring, first-client bootstrap, and host-guarded admin routing, not new protocol breadth.
 - `Lockspire.Web.AdminRouter` is the bounded admin-only router for generated hosts that want to protect `/lockspire/admin` with host-owned operator authentication while preserving the existing public OAuth/OIDC router.
+- Exact-ref release dispatch must ensure the matching GitHub release exists before Hex publish; the `1.2.0` Hex publish succeeded and the missing GitHub release was backfilled.
 - Do not reopen broad protocol breadth by default. Gateway/service-mesh productization, hosted auth/CIAM, SAML/LDAP, certification breadth chasing, and auth-method parity work remain diminishing-return unless adopter evidence changes the calculus.
 
-### Blockers/Concerns
+## Blockers/Concerns
 
-- The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real patch release lands.
+- None active. The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real release lands.
 
 ## Session Continuity
 
-**Next action:** Commit the milestone branch, push it, open one PR to `main`, and merge only after GitHub PR checks pass.
+**Next action:** Land the release-dispatch GitHub-release fix, keep `main` green, then stop unless a concrete adopter need justifies the next milestone.
 **Resume file:** None
-**Stopped at:** v1.26 implemented and verified on milestone branch
+**Stopped at:** `lockspire 1.2.0` shipped; release dispatch hygiene patch in progress.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -117,7 +117,7 @@ jobs:
     if: ${{ always() && ((github.event_name == 'workflow_dispatch' && needs.recovery-validation.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.release_sha == github.sha)) }}
     environment: hex-publish
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Check out repository for the merged release commit
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -148,6 +148,38 @@ jobs:
           else
             echo "Protected publish proof starts now for merged release tag ${{ needs.release-please.outputs.tag_name }} inside the single hex-publish environment boundary."
           fi
+
+      - name: Ensure dispatch GitHub release exists
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(grep -E '^[[:space:]]*version:' mix.exs | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          tag_name="lockspire-v${version}"
+          release_title="lockspire: v${version}"
+
+          if gh release view "$tag_name" >/dev/null 2>&1; then
+            echo "GitHub release $tag_name already exists."
+            exit 0
+          fi
+
+          notes="$(
+            awk -v version="$version" '
+              $0 ~ "^## \\[" version "\\]" { in_section = 1; next }
+              in_section && $0 ~ "^## \\[" { exit }
+              in_section { print }
+            ' CHANGELOG.md
+          )"
+
+          test -n "$notes"
+          gh release create "$tag_name" \
+            --target "$(git rev-parse HEAD)" \
+            --title "$release_title" \
+            --notes "$notes"
 
       - name: Set up Elixir and Erlang
         uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1.24.0
