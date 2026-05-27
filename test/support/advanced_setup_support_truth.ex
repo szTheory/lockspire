@@ -24,7 +24,16 @@ defmodule Lockspire.TestSupport.AdvancedSetupSupportTruth do
       "broader resource-server integration beyond Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped Phoenix plug pipeline",
       "Arbitrary custom `Lockspire.MTLS.Extractor` implementations are not first-class peers",
       "Dynamic Client Registration does not add a new logout runtime; it only manages the existing logout propagation metadata",
-      "proves front-channel logout success remotely"
+      "proves front-channel logout success remotely",
+      # Phase 97 extensions (D-09 four non-goal patterns)
+      "no introspection-at-the-RS as the host-API seam",
+      "recreates gateway/CIAM productization the canon explicitly rejects",
+      "no auto-detection of token shape",
+      "documented ecosystem footgun",
+      "no dual-verifier dispatcher",
+      "hides operator-visible complexity inside the library",
+      "no RAR enforcement at the RS plug",
+      "RAR claims surface via `conn.assigns.access_token` for host-owned enforcement"
     ])
   end
 
@@ -75,7 +84,14 @@ defmodule Lockspire.TestSupport.AdvancedSetupSupportTruth do
       "no-op for unconstrained bearer tokens",
       "error=\"use_dpop_nonce\"",
       "business authorization",
-      "tenant checks"
+      "tenant checks",
+      # Phase 97 extensions (D-06, D-07)
+      "Lockspire issues RFC 9068 `at+jwt` access tokens by default.",
+      "`Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes.",
+      "Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable.",
+      "To opt a client back to opaque, see the admin Client Detail page.",
+      "the runtime narrowing and the default-issuance flip land in v1.27",
+      "opaque tokens may still be silently accepted on these routes"
     ])
   end
 
