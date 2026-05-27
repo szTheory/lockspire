@@ -53,7 +53,7 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Canonical Recipe Content-Hashing
 
-- [ ] **RECIPE-01**: One canonical pipeline-declaration block lives in exactly four places — `docs/protect-phoenix-api-routes.md`, `examples/adoption_demo/lib/adoption_demo_web/router.ex`, `priv/templates/lockspire.install/router.ex`, and `scripts/demo/adoption_smoke.py` (referenced by comment) — and a `release_readiness_contract_test` clause fails if the content hash drifts between any two of them.
+- [x] **RECIPE-01**: One canonical pipeline-declaration block lives in exactly four places — `docs/protect-phoenix-api-routes.md`, `examples/adoption_demo/lib/adoption_demo_web/router.ex`, `priv/templates/lockspire.install/router.ex`, and `scripts/demo/adoption_smoke.py` (referenced by comment) — and a `release_readiness_contract_test` clause fails if the content hash drifts between any two of them.
 
 ### Discovery Metadata
 
@@ -66,8 +66,8 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Adopter-Facing Docs
 
-- [ ] **DOCS-01**: `docs/protect-phoenix-api-routes.md` becomes the single authoritative protected-route page. States plainly: "Lockspire issues RFC 9068 `at+jwt` access tokens by default. `Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes. Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable. To opt a client back to opaque, see the admin Client Detail page."
-- [ ] **DOCS-02**: `docs/supported-surface.md` records the explicit non-goals: no introspection-at-the-RS as the host-API seam, no auto-detection of token shape, no dual-verifier dispatcher, no RAR enforcement at the RS plug (RAR claims surface via `conn.assigns.access_token` for host-owned enforcement).
+- [x] **DOCS-01**: `docs/protect-phoenix-api-routes.md` becomes the single authoritative protected-route page. States plainly: "Lockspire issues RFC 9068 `at+jwt` access tokens by default. `Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes. Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable. To opt a client back to opaque, see the admin Client Detail page."
+- [x] **DOCS-02**: `docs/supported-surface.md` records the explicit non-goals: no introspection-at-the-RS as the host-API seam, no auto-detection of token shape, no dual-verifier dispatcher, no RAR enforcement at the RS plug (RAR claims surface via `conn.assigns.access_token` for host-owned enforcement).
 
 ### Operator Telemetry
 
@@ -115,9 +115,9 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RECIPE-01 | Phase 97 | Pending |
-| DOCS-01 | Phase 97 | Pending |
-| DOCS-02 | Phase 97 | Pending |
+| RECIPE-01 | Phase 97 | Complete |
+| DOCS-01 | Phase 97 | Complete |
+| DOCS-02 | Phase 97 | Complete |
 | VERIFIER-01 | Phase 98 | Pending |
 | VERIFIER-02 | Phase 98 | Pending |
 | VERIFIER-03 | Phase 98 | Pending |
@@ -145,6 +145,7 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | MIGRATE-02 | Phase 102 | Pending |
 
 **Coverage:**
+
 - v1.27 requirements: 28 total
 - Mapped to phases: 28
 - Unmapped: 0

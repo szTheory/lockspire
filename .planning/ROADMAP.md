@@ -134,7 +134,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 97. Contract + Docs First | 5/5 | Complete   | 2026-05-27 |
+| 97. Contract + Docs First | 5/5 | Complete    | 2026-05-27 |
 | 98. Plug Hardening | 0/TBD | Not started | - |
 | 99. Signer Extraction + JWT-Default Issuance | 0/TBD | Not started | - |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
