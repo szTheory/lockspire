@@ -51,7 +51,7 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           echo "Release Please generated PRs are review-only. Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
-          echo "The repo-controlled Release Please action is also the source of truth for the root release tag contract, which must stay in the lockspire-v<version> shape for the root package."
+          echo "Push-triggered Release Please manages release PRs only; the exact-ref dispatch publish lane owns GitHub release/tag creation and Hex publish for the root lockspire-v<version> contract."
 
       - name: Run Release Please
         id: release
@@ -60,6 +60,7 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-github-release: true
 
       - name: Record root release tag target for the merged release commit
         if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' && steps.release.outputs.sha == github.sha }}

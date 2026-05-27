@@ -18,7 +18,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 - Patch-eligible merged changes should flow to the next release through Release Please on `main`.
 - The train is ready to move only when `main` is green and `./scripts/maintainer/repo_hygiene_check.sh` passes without `BLOCK`.
 - `workflow_dispatch` is exact-ref only for release automation or recovery and must replay an exact immutable ref; it does not create a new release intent.
-- Push-triggered Hex publish must only run when Release Please's released SHA equals the current `main` push SHA; delayed/stale Release Please tagging events must not republish an already-existing Hex package.
+- Push-triggered Release Please manages release PRs only; it must not create GitHub releases directly because the exact-ref dispatch publish lane owns GitHub release/tag creation and Hex publish.
+- Push-triggered Hex publish remains guarded by Release Please release-SHA equality with the current `main` push SHA as a stale-event defense, but normal automated publishing should happen through the auto-merge workflow's exact-ref dispatch.
 - Eligible Release Please PRs should auto-merge only after green `main` CI and only through the guarded Release Please branch/title/file allowlist.
 - Exact-ref dispatch publish must ensure the matching `lockspire-v<version>` GitHub release exists before Hex publish so GitHub release truth, changelog links, tags, Hex, and HexDocs stay coherent.
 
