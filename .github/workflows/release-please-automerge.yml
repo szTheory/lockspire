@@ -27,6 +27,7 @@ jobs:
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
@@ -96,6 +97,7 @@ jobs:
         if: ${{ steps.candidate.outputs.found == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ steps.candidate.outputs.number }}
         shell: bash
         run: |
@@ -127,6 +129,7 @@ jobs:
         if: ${{ steps.candidate.outputs.found == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
           PR_NUMBER: ${{ steps.candidate.outputs.number }}
           SOURCE_CI_RUN_ID: ${{ github.event.workflow_run.id }}
