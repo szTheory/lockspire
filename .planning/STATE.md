@@ -63,10 +63,11 @@ Last activity: 2026-05-27
 ## Blockers/Concerns
 
 - None active. The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real release lands.
+- Earmarked but not opened: Phoenix Resource Server Token Acceptance. This should be the next feature-sized milestone when we intentionally leave sustainment.
 
 ## Session Continuity
 
-**Next action:** Stay on the sustaining GA train. Optional next patch release `1.2.1` only if we want HexDocs to publish the adoption demo guide immediately; otherwise wait for a real runtime/doc fix. Next feature-sized milestone should focus on the Phoenix resource-server/token acceptance story if adopter evidence justifies it.
+**Next action:** Stay on the sustaining GA train. Optional next patch release `1.2.1` only if we want HexDocs to publish the adoption demo guide immediately; otherwise wait for a real runtime/doc fix. Next feature-sized milestone is earmarked as Phoenix Resource Server Token Acceptance.
 **Resume file:** None
 **Stopped at:** `lockspire 1.2.0` shipped; release dispatch hygiene patch in progress.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -8,7 +8,13 @@
 - [v1.23 DCR Logout Metadata](milestones/v1.23-ROADMAP.md) — shipped 2026-05-24; phases 85-87; 9 plans; self-service clients can now create, read, and replace Lockspire's existing logout propagation metadata through DCR and RFC 7592 without widening the current logout truth model.
 - [v1.22 DPoP Nonce Support](milestones/v1.22-ROADMAP.md) — shipped 2026-05-24; phases 82-84; 8 plans; automatic `DPoP-Nonce` challenge and retry support now covers Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline.
 
-## Next Candidate
+## Earmarked Next Milestone
 
-- None by default. Lockspire is back on the sustaining GA release train after the adoption demo smoke shipped in PR `#44`.
-- If a feature-sized milestone is justified, the highest-leverage candidate is the Phoenix resource-server/token acceptance story: make it obvious which Lockspire-issued token shape a host Phoenix API should accept, how that relates to `Lockspire.Plug.VerifyToken`, and what CI proof backs the blessed path.
+- **Phoenix Resource Server Token Acceptance** — earmarked as the next feature-sized milestone when we intentionally leave sustainment.
+- Core question: make it obvious which Lockspire-issued token shape a host Phoenix API should accept, how that relates to `Lockspire.Plug.VerifyToken`, and what CI proof backs the blessed path.
+- Done enough: docs, demo, generated-host guidance, and CI agree on the blessed Phoenix API protection path without pretending stored opaque tokens and JWT bearer route-protection fixtures are the same thing.
+- Do not broaden this into hosted auth, service mesh/gateway productization, generic API-management, SAML/LDAP, or certification-breadth chasing.
+
+## Sustaining Default
+
+- Until that milestone is deliberately opened, Lockspire is back on the sustaining GA release train after the adoption demo smoke shipped in PR `#44`.
