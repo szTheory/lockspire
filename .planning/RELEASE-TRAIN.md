@@ -6,10 +6,10 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.1.1`
+- Latest released version: `1.1.2`
 - Release date: `2026-05-27`
-- Protected publish proof: GitHub Actions run `26497862703` succeeded end to end on the trusted `hex-publish` environment.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.1.1` on `2026-05-27`.
+- Protected publish proof: GitHub Actions run `26500357567` succeeded end to end on the trusted `hex-publish` environment.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.1.2` on `2026-05-27`.
 
 ## Normal Train Rules
 
