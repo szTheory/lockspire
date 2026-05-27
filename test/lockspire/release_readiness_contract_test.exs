@@ -257,6 +257,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert workflow =~ "contents: write"
     assert workflow =~ "pull-requests: write"
     assert workflow =~ "actions: write"
+    assert workflow =~ "GH_REPO: ${{ github.repository }}"
     assert workflow =~ "--author app/github-actions"
     assert workflow =~ "release-please--branches--main--components--lockspire"
     assert workflow =~ "chore\\\\(main\\\\): release lockspire"
