@@ -4,8 +4,8 @@ milestone: none
 milestone_name: none
 status: sustaining_release_train
 stopped_at: 1.1.0 release train baseline established
-last_updated: "2026-05-26T18:30:00Z"
-last_activity: 2026-05-26
+last_updated: "2026-05-27T00:00:00Z"
+last_activity: 2026-05-27
 progress:
   total_phases: 0
   completed_phases: 0
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security FAPI 2.0 standards.
 
-**Current focus:** Sustaining GA release-train operations so future patch releases start from a provably clean repo and GitHub state.
+**Current focus:** Sustaining GA release-train operations on `main` while using milestone branches and one milestone PR for any future feature development.
 
 ## Current Position
 
 Phase: None
 Plan: Sustaining GA release train
-Status: Release shipped; defaulting to patch-on-merge sustainment with milestone-free planning
-Last activity: 2026-05-26
+Status: Release shipped; defaulting to patch-on-merge sustainment on `main`, with feature milestones handled through the milestone PR lane
+Last activity: 2026-05-27
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ None.
 
 - Lockspire now defaults to a standing GA release train: `milestone: none`, patch-on-merge for patch-eligible changes, and explicit milestone creation only for adopter-evidenced scope beyond sustainment.
 - `.planning/RELEASE-TRAIN.md` is the canonical GSD ledger for latest release proof, patch-train rules, and next-cut conditions.
+- `.planning/DEVELOPMENT-TRAIN.md` is the canonical GSD policy for future feature milestones: one `milestone/vNEXT-short-slug` branch, one PR to `main`, and merge only after milestone audit, verification evidence, `mix ci`, and GitHub PR checks pass.
 - Milestone v1.20 Mutual TLS (RFC 8705) will be implemented via an explicit extraction behaviour (`Lockspire.MTLS.Extractor`).
 - Proxy extraction MUST be explicitly configured by the host app.
 - Protected Phoenix API routes use `VerifyToken -> EnforceSenderConstraints -> RequireToken` as the canonical shipped pipeline.
@@ -82,7 +83,7 @@ None.
 
 ## Session Continuity
 
-**Next action:** Use the release train by default: keep `main` green, run the repo hygiene gate before release prep, and update `.planning/RELEASE-TRAIN.md` whenever a protected publish and install-truth verification complete.
+**Next action:** Use the release train by default: keep `main` green, run the repo hygiene gate before release prep, update `.planning/RELEASE-TRAIN.md` whenever a protected publish and install-truth verification complete, and start future feature work through `.planning/DEVELOPMENT-TRAIN.md`.
 **Resume file:** None
 **Stopped at:** 1.1.0 release train baseline established
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

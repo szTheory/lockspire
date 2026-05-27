@@ -2,7 +2,7 @@
 
 Lockspire is on a sustaining GA release train.
 
-The default operating mode is not "find the next milestone." The default is: keep `main` green, keep release truth coherent, and let patch-eligible merged changes ride the maintained automated release lane.
+The default operating mode is not "find the next milestone." The default is: keep `main` green, keep release truth coherent, and let patch-eligible merged changes ride the maintained automated release lane. When future feature work is justified, use the milestone PR lane in `.planning/DEVELOPMENT-TRAIN.md`.
 
 ## Current Baseline
 
@@ -32,6 +32,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 - Host seam expansion
 - Material operator/admin breadth
 - Anything that changes Lockspire's embedded-library scope instead of sustaining it
+
+Feature milestones should run on `milestone/vNEXT-short-slug` branches and merge through one PR to `main` after GSD verification, milestone audit, `mix ci`, and GitHub PR checks pass. Do not create manual release branches for feature milestones; after merge, Release Please owns the normal release PR.
 
 ## Next Cut Condition
 
