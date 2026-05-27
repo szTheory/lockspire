@@ -23,6 +23,7 @@
 ## Phases
 
 **Phase Numbering:**
+
 - Integer phases (97, 98, 99, 100, 101, 102): Planned milestone work
 - Decimal phases (e.g., 98.1): Urgent insertions (marked with INSERTED) if needed mid-milestone
 
@@ -36,74 +37,93 @@
 ## Phase Details
 
 ### Phase 97: Contract + Docs First
+
 **Goal**: A single authoritative protected-route doc page exists and is content-hash-pinned across the four canonical locations before any implementation change lands, so the implementation honors a documented contract instead of a doc describing an accident.
 **Depends on**: Nothing (first phase of v1.27, continues from v1.26 phase 96).
 **Requirements**: RECIPE-01, DOCS-01, DOCS-02
 **Success Criteria** (what must be TRUE):
+
   1. An adopter reading `docs/protect-phoenix-api-routes.md` finds one authoritative answer that names RFC 9068 `at+jwt` as the host-API protection shape, and explains that `/userinfo` and `/introspect` use stored opaque tokens which are not interchangeable.
   2. The same protected-route pipeline declaration block appears verbatim in exactly four locations — `docs/protect-phoenix-api-routes.md`, `examples/adoption_demo/lib/adoption_demo_web/router.ex`, `priv/templates/lockspire.install/router.ex`, and `scripts/demo/adoption_smoke.py` (as a referenced comment).
   3. `docs/supported-surface.md` plainly records the explicit non-goals (no introspection-at-the-RS as the host-API seam, no auto-detection of token shape, no dual-verifier dispatcher, no RAR enforcement at the RS plug).
   4. A `release_readiness_contract_test` clause fails loudly if the content hash of the canonical pipeline declaration drifts between any two of the four locations.
+
 **Plans**: 5 plans
-- [ ] 97-01-PLAN.md — Wave 0 helper extensions: extend Phase 92 `assert_protected_routes_guide!/1` and `assert_advanced_setup_support_contract!/1` with D-06 contract sentence, D-07 forward-reference caveat, and four D-09 non-goal substrings (intentionally turns the existing release-readiness test RED so Plans 02/03 have a failing-target).
-- [ ] 97-02-PLAN.md — DOCS-01 rewrite of `docs/protect-phoenix-api-routes.md`: D-06 contract lead + D-07 caveat with HTML sweep marker + canonical-block BEGIN/END marker wrap on the first fenced Elixir block + D-15 secondary-fenced-block rewrites to reference-to-canonical prose.
-- [ ] 97-03-PLAN.md — DOCS-02 + D-11 adjacent-doc deference: insert new `## Explicit non-goals for host-API route protection` subsection in `docs/supported-surface.md`; replace `docs/saas-adoption-recipe.md:50` plug-name restatement with a cross-link to the canonical doc page.
+
+- [x] 97-01-PLAN.md — Wave 0 helper extensions: extend Phase 92 `assert_protected_routes_guide!/1` and `assert_advanced_setup_support_contract!/1` with D-06 contract sentence, D-07 forward-reference caveat, and four D-09 non-goal substrings (intentionally turns the existing release-readiness test RED so Plans 02/03 have a failing-target).
+- [x] 97-02-PLAN.md — DOCS-01 rewrite of `docs/protect-phoenix-api-routes.md`: D-06 contract lead + D-07 caveat with HTML sweep marker + canonical-block BEGIN/END marker wrap on the first fenced Elixir block + D-15 secondary-fenced-block rewrites to reference-to-canonical prose.
+- [x] 97-03-PLAN.md — DOCS-02 + D-11 adjacent-doc deference: insert new `## Explicit non-goals for host-API route protection` subsection in `docs/supported-surface.md`; replace `docs/saas-adoption-recipe.md:50` plug-name restatement with a cross-link to the canonical doc page.
 - [ ] 97-04-PLAN.md — RECIPE-01 canonical-block carriers: wrap demo router pipeline in BEGIN/END markers with D-04/D-13 placeholder reconciliation; insert commented-out canonical block into `priv/templates/lockspire.install/router.ex` heredoc (D-10); insert Python-comment canonical-block carrier into `scripts/demo/adoption_smoke.py` adjacent to L244 (D-14).
 - [ ] 97-05-PLAN.md — release_readiness_contract_test invariants: add three module attributes + four private helpers (`extract_canonical_pipeline!/2`, `normalize/2` × 2 clauses, `strip_uniform_indent/1`, `canonical_hash!/2`) + three new test clauses (four-file content-hash pairwise compare with file-pair naming on failure; D-11 saas-recipe cross-link assert+refute; D-15 within-file restatement refute).
 
 ### Phase 98: Plug Hardening
+
 **Goal**: `Lockspire.Plug.VerifyToken` accepts only RFC 9068 `at+jwt` access tokens and enforces RFC 9068 / RFC 8725 / RFC 9449 compliance rules that are currently missing, closing five of the seven critical pitfalls before any issuance change ships.
 **Depends on**: Phase 97 (the doc contract names what the plug now enforces).
 **Requirements**: VERIFIER-01, VERIFIER-02, VERIFIER-03, VERIFIER-04, VERIFIER-05, VERIFIER-06
 **Success Criteria** (what must be TRUE):
+
   1. An adopter who sends an opaque token to a `Lockspire.Plug.VerifyToken`-protected route receives a distinct `WWW-Authenticate: Bearer error="invalid_token", error_description="opaque tokens not accepted on this route"` challenge — not a silent `:malformed` failure.
   2. An adopter who sends a JWT with a missing or wrong `iss`, a missing or non-`at+jwt` `typ`, or missing `exp`/`iat`/`sub` receives a 401 with a distinct reason code naming which RFC 9068 / RFC 8725 rule was violated.
   3. An adopter who sends a DPoP-bound access token through the plug and fails audience or scope checks receives a `WWW-Authenticate: DPoP ...` challenge (not `Bearer`), per RFC 9449 §7.1; mTLS-bound and plain-bearer failures emit the correct scheme for their binding type.
   4. An adopter mounting `Lockspire.Plug.VerifyToken` without an `audience:` option on a pipeline that declares `enforce_audience: true` (the install-template default) sees `init/1` raise — or, equivalently, `release_readiness_contract_test` asserts every shipped pipeline declares one, so cross-API token reuse is structurally closed.
+
 **Plans**: TBD
 
 ### Phase 99: Signer Extraction + JWT-Default Issuance
+
 **Goal**: One shared `Lockspire.Protocol.AccessTokenSigner` owns RFC 9068 `at+jwt` issuance across the AC, refresh, device, CIBA, and RFC 8693 paths; the default access-token format flips from opaque to `:jwt`; per-client overrides and audience semantics are coherent and discoverable.
 **Depends on**: Phase 97 (contract names this issuance path); Phase 98 (the hardened plug accepts what the new signer produces).
 **Requirements**: SIGNER-01, SIGNER-02, FORMAT-01, FORMAT-02, AUD-01, AUD-02, AUD-03, DISCOVERY-01
 **Success Criteria** (what must be TRUE):
+
   1. An operator running a freshly-deployed Lockspire (server-wide `access_token_format` left at default) sees the authorization-code, refresh, device, and CIBA paths mint RFC 9068 `at+jwt` access tokens — with no per-client configuration required.
   2. An operator visiting the admin client-detail screen for any client can read and change a per-client `access_token_format` override (`:jwt | :opaque | nil`) independently of the server default, alongside a doclink explaining the tradeoff.
   3. A client requesting a token with `resource=https://billing.example.com` receives an `at+jwt` whose `aud` claim is `["https://billing.example.com"]`; with `resource=` absent on AC/refresh/device/CIBA, `aud` is `[client_id]`; with `resource=` absent on RFC 8693 token-exchange, `aud` continues to be `client_id` (no shipped-behavior change).
   4. An adopter or developer reading `/.well-known/openid-configuration` sees `access_token_signing_alg_values_supported: ["RS256", "ES256", "PS256"]` published truthfully because issuance can mint `at+jwt` on every grant path.
   5. There is no duplicated `at+jwt` signing logic anywhere in the codebase — the signing block previously in `rfc8693_exchange.ex:317-361` is gone, and every issuance path calls into `Protocol.AccessTokenSigner`.
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 100: Sender-Constraint End-to-End Proof
+
 **Goal**: A DPoP-bound `at+jwt` and an mTLS-bound `at+jwt` both traverse the `VerifyToken → EnforceSenderConstraints → RequireToken` pipeline end-to-end producing a usable `%AccessToken{}` at the host controller, and a pipeline missing `EnforceSenderConstraints` after `VerifyToken` is no longer a silent bypass path.
 **Depends on**: Phase 99 (DPoP/mTLS-bound `at+jwt` issuance from the new signer must exist before binding can be proven against it).
 **Requirements**: BIND-01, BIND-02, BIND-03
 **Success Criteria** (what must be TRUE):
+
   1. An adopter following the canonical pipeline who obtains a DPoP-bound `at+jwt` (carrying `cnf.jkt`) can call a host-owned protected route with a valid `DPoP:` proof and receive a 200 with `conn.assigns.access_token` populated.
   2. An adopter following the canonical pipeline who obtains an mTLS-bound `at+jwt` (carrying `cnf["x5t#S256"]`) can call a host-owned protected route presenting the bound client certificate and receive a 200 with `conn.assigns.access_token` populated.
   3. An adopter who builds a pipeline that omits `EnforceSenderConstraints` after `VerifyToken` either gets a fail-closed `403`/`401` from `RequireToken` when `binding_requirements` is non-nil, or a `release_readiness_contract_test` clause fires asserting the misorder cannot reach a shipped pipeline — sender-constraint bypass is no longer reachable via the blessed path.
+
 **Plans**: TBD
 
 ### Phase 101: Adoption-Demo Re-Wire
+
 **Goal**: The adoption demo executes an end-to-end auth-code → `at+jwt` → host-owned protected route → 200 round-trip in CI, replacing the current "401-on-anonymous" half-proof with executable adopter-facing evidence that the blessed path works.
 **Depends on**: Phase 99 (issuance flip lets the demo obtain an `at+jwt` without per-client config); Phase 100 (binding proof is upstream of the demo's bound-token use cases).
 **Requirements**: DEMO-01, DEMO-02, DEMO-03
 **Success Criteria** (what must be TRUE):
+
   1. An adopter or contributor running the adoption demo locally observes the smoke complete an auth-code flow, obtain an `at+jwt`, call `/api/billing/summary` with that token, and assert HTTP 200 — alongside the preserved `/userinfo` assertion that exercises the stored-opaque path against the Lockspire-owned RS endpoint.
   2. CI's `Adoption Demo Smoke` job fails loudly if either of those round-trip assertions stops returning the expected outcome — the smoke is no longer satisfied by anonymous-401 alone.
   3. The demo's `:lockspire_protected_api` pipeline declares an explicit `audience:` matching the `resource=` URI used during the token request, so adopters who copy the demo do not inherit the audience-substitution bug-pattern.
+
 **Plans**: TBD
 
 ### Phase 102: Generated-Host Scaffolding + Telemetry + Migration
+
 **Goal**: The install template, operator telemetry, migration guide, and doctor task all reflect the now-proven blessed path so new adopters land on a working pipeline by default and existing adopters can migrate the issuance-default flip safely.
 **Depends on**: Phase 101 (scaffolding mirrors what CI continuously proves; it does not lead).
 **Requirements**: SCAFFOLD-01, SCAFFOLD-02, TELEMETRY-01, MIGRATE-01, MIGRATE-02
 **Success Criteria** (what must be TRUE):
+
   1. A new adopter running `mix lockspire.install` is not asked about token format at install time; their generated `priv/templates/lockspire.install/router.ex` ships with a commented `:lockspire_protected_api` pipeline declaration matching the demo's blessed pipeline, ready to uncomment when they add their first protected API route.
   2. An operator running a Lockspire instance can subscribe to the `[:lockspire, :rs, :token_format]` telemetry event and see — on every successful verification through `Lockspire.Plug.VerifyToken` — a measurement of `:jwt | :opaque-rejected` plus metadata including `client_id`, `audience`, and `binding_type`.
   3. An operator upgrading from v1.26 to v1.27 finds `docs/upgrading/v1.27.md` explaining the default issuance flip, showing the one-line config to opt the whole deployment back to opaque if needed, and naming exactly which existing clients (those with `access_token_format: nil`) will inherit the new server default.
   4. An operator running `mix lockspire.doctor token_format` receives a diagnostic report of per-client format choices that flags every client where the inherited default has changed semantics — diagnostic, not enforcement.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -114,7 +134,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 97. Contract + Docs First | 0/5 | Not started | - |
+| 97. Contract + Docs First | 3/5 | In Progress|  |
 | 98. Plug Hardening | 0/TBD | Not started | - |
 | 99. Signer Extraction + JWT-Default Issuance | 0/TBD | Not started | - |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
