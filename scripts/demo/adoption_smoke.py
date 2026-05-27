@@ -241,6 +241,15 @@ def exercise_authorization_code():
     userinfo_json = json_body(userinfo, "userinfo")
     assert userinfo_json["email"] == "alice@acme.test"
 
+    # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
+    # pipeline :lockspire_protected_api do
+    #   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api"
+    #   plug Lockspire.Plug.EnforceSenderConstraints,
+    #     dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
+    #   plug Lockspire.Plug.RequireToken
+    # end
+    # END LOCKSPIRE_PROTECTED_PIPELINE
+
     anonymous_api = Browser(BASE_URL).request("GET", "/api/billing/summary")
     assert_status(anonymous_api, 401, "protected API rejects anonymous request")
 

@@ -20,11 +20,14 @@ defmodule AdoptionDemoWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
   pipeline :lockspire_protected_api do
-    plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"])
-    plug(Lockspire.Plug.EnforceSenderConstraints, dpop_replay_store: AdoptionDemo.Repo)
-    plug(Lockspire.Plug.RequireToken)
+    plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api"
+    plug Lockspire.Plug.EnforceSenderConstraints,
+      dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
+    plug Lockspire.Plug.RequireToken
   end
+  # END LOCKSPIRE_PROTECTED_PIPELINE
 
   scope "/", AdoptionDemoWeb do
     pipe_through(:browser)
