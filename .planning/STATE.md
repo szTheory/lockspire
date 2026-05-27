@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
-status: planning
-last_updated: "2026-05-27T10:47:29.650Z"
+status: ready_to_plan
+last_updated: "2026-05-27T11:15:00.000Z"
 last_activity: 2026-05-27
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Sustaining GA release train. Keep `main` green, keep release truth coherent, and use the adoption demo as secondary DX proof for host-app boot and browser-flow sanity.
+**Current focus:** v1.27 Phoenix Resource Server Token Acceptance — resolve the unfinished design tension between Lockspire-issued stored opaque access tokens and the JWT-bearer-oriented `Lockspire.Plug.VerifyToken` by narrowing the plug to RFC 9068 `at+jwt` only and flipping the default issuance to JWT.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-27 — Milestone v1.27 started
+Phase: 97 of 102 (Contract + Docs First) — next up
+Plan: — (planning has not started)
+Status: Ready to plan
+Last activity: 2026-05-27 — ROADMAP.md and REQUIREMENTS.md traceability written for v1.27
+
+Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 
 ## Most Recent Release
 
@@ -47,26 +49,31 @@ Last activity: 2026-05-27 — Milestone v1.27 started
 | v1.25 | 91-93 | 9 | 9 | shipped |
 | v1.24 | 88-90 | 9 | 7 | shipped |
 
+## v1.27 Phase Plan
+
+| Phase | Name | REQs | UI |
+|-------|------|------|----|
+| 97 | Contract + Docs First | 3 | no |
+| 98 | Plug Hardening | 6 | no |
+| 99 | Signer Extraction + JWT-Default Issuance | 8 | yes (admin client-detail) |
+| 100 | Sender-Constraint End-to-End Proof | 3 | no |
+| 101 | Adoption-Demo Re-Wire | 3 | no |
+| 102 | Generated-Host Scaffolding + Telemetry + Migration | 5 | yes (install template) |
+
 ## Decisions
 
-- Lockspire defaults to a standing GA release train: `milestone: none`, patch-on-merge for patch-eligible changes, and explicit milestone creation only for adopter-evidenced scope beyond sustainment.
-- `.planning/RELEASE-TRAIN.md` is the canonical GSD ledger for latest release proof, patch-train rules, and next-cut conditions.
-- `.planning/DEVELOPMENT-TRAIN.md` is the canonical GSD policy for future feature milestones: one `milestone/vNEXT-short-slug` branch, one PR to `main`, and merge only after milestone audit, verification evidence, `mix ci`, and GitHub PR checks pass.
-- `Lockspire.Web.AdminRouter` is the bounded admin-only router for generated hosts that want to protect `/lockspire/admin` with host-owned operator authentication while preserving the existing public OAuth/OIDC router.
-- Exact-ref release dispatch must ensure the matching GitHub release exists before Hex publish; the `1.2.0` Hex publish succeeded and the missing GitHub release was backfilled.
-- Do not reopen broad protocol breadth by default. Gateway/service-mesh productization, hosted auth/CIAM, SAML/LDAP, certification breadth chasing, and auth-method parity work remain diminishing-return unless adopter evidence changes the calculus.
-- The repo-local Phoenix adoption demo is a secondary executable DX smoke, not primary support truth and not Hex package content. It proves a host app can boot with Lockspire, seed representative clients/accounts, drive browser login/consent/device flows over HTTP, and run in CI as `Adoption Demo Smoke`.
-- Host-owned browser seams in the demo route Lockspire interaction completion and demo consent through the browser/session pipeline before the public OAuth/OIDC forward. That keeps the embedded-library boundary honest: machine endpoints stay public; login, consent, verification, and operator auth stay host-owned.
-- The demo uses Lockspire's issued stored access token against Lockspire `/userinfo`. The Phoenix protected-resource plug remains JWT-bearer-oriented; do not conflate token-endpoint stored access tokens with JWT route-protection fixtures without a deliberate future design.
+- v1.27 is the deliberate exception to the standing sustainment default; opened because adoption-demo evidence in PR #44 exposed the RS-token-shape tension as the next highest-leverage adopter wedge.
+- Branch A + JWT-default issuance is the resolution: narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only; flip default access-token issuance to `:jwt` for AC/refresh/device/CIBA; keep opaque as a per-client opt-in for `/userinfo` and `/introspect`.
+- Phase 97 (contract + docs) must land before any runtime implementation; the canon is explicit that docs is a contract the implementation honors.
+- Sustainment patch-train work continues in parallel on `main` while v1.27 feature work runs on `milestone/v1.27-phoenix-rs-token-acceptance`.
 
 ## Blockers/Concerns
 
-- None active. The sustaining default depends on keeping `main` green and the release-truth ledger current whenever a real release lands.
-- Earmarked but not opened: Phoenix Resource Server Token Acceptance. This should be the next feature-sized milestone when we intentionally leave sustainment.
+- None active. v1.27 has 28 requirements mapped 100% across 6 phases with no orphans.
 
 ## Session Continuity
 
-**Next action:** Stay on the sustaining GA train. Optional next patch release `1.2.1` only if we want HexDocs to publish the adoption demo guide immediately; otherwise wait for a real runtime/doc fix. Next feature-sized milestone is earmarked as Phoenix Resource Server Token Acceptance.
+**Next action:** Plan Phase 97 (Contract + Docs First). The canonical pipeline-declaration block, single authoritative `docs/protect-phoenix-api-routes.md` page, supported-surface non-goals, and the `release_readiness_contract_test` content-hash assertion all land before any plug or signer code changes.
 **Resume file:** None
-**Stopped at:** `lockspire 1.2.0` shipped; release dispatch hygiene patch in progress.
+**Stopped at:** v1.27 roadmap and requirements traceability complete; ready to plan Phase 97.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md

@@ -111,44 +111,57 @@ Explicitly excluded. Documented to prevent scope creep into hosted-auth / CIAM /
 
 ## Traceability
 
-To be filled by the roadmapper. Each REQ-ID maps to exactly one phase.
+Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FORMAT-01 | TBD | Pending |
-| FORMAT-02 | TBD | Pending |
-| VERIFIER-01 | TBD | Pending |
-| VERIFIER-02 | TBD | Pending |
-| VERIFIER-03 | TBD | Pending |
-| VERIFIER-04 | TBD | Pending |
-| VERIFIER-05 | TBD | Pending |
-| VERIFIER-06 | TBD | Pending |
-| AUD-01 | TBD | Pending |
-| AUD-02 | TBD | Pending |
-| AUD-03 | TBD | Pending |
-| SIGNER-01 | TBD | Pending |
-| SIGNER-02 | TBD | Pending |
-| BIND-01 | TBD | Pending |
-| BIND-02 | TBD | Pending |
-| BIND-03 | TBD | Pending |
-| DEMO-01 | TBD | Pending |
-| DEMO-02 | TBD | Pending |
-| DEMO-03 | TBD | Pending |
-| RECIPE-01 | TBD | Pending |
-| DISCOVERY-01 | TBD | Pending |
-| SCAFFOLD-01 | TBD | Pending |
-| SCAFFOLD-02 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| TELEMETRY-01 | TBD | Pending |
-| MIGRATE-01 | TBD | Pending |
-| MIGRATE-02 | TBD | Pending |
+| RECIPE-01 | Phase 97 | Pending |
+| DOCS-01 | Phase 97 | Pending |
+| DOCS-02 | Phase 97 | Pending |
+| VERIFIER-01 | Phase 98 | Pending |
+| VERIFIER-02 | Phase 98 | Pending |
+| VERIFIER-03 | Phase 98 | Pending |
+| VERIFIER-04 | Phase 98 | Pending |
+| VERIFIER-05 | Phase 98 | Pending |
+| VERIFIER-06 | Phase 98 | Pending |
+| SIGNER-01 | Phase 99 | Pending |
+| SIGNER-02 | Phase 99 | Pending |
+| FORMAT-01 | Phase 99 | Pending |
+| FORMAT-02 | Phase 99 | Pending |
+| AUD-01 | Phase 99 | Pending |
+| AUD-02 | Phase 99 | Pending |
+| AUD-03 | Phase 99 | Pending |
+| DISCOVERY-01 | Phase 99 | Pending |
+| BIND-01 | Phase 100 | Pending |
+| BIND-02 | Phase 100 | Pending |
+| BIND-03 | Phase 100 | Pending |
+| DEMO-01 | Phase 101 | Pending |
+| DEMO-02 | Phase 101 | Pending |
+| DEMO-03 | Phase 101 | Pending |
+| SCAFFOLD-01 | Phase 102 | Pending |
+| SCAFFOLD-02 | Phase 102 | Pending |
+| TELEMETRY-01 | Phase 102 | Pending |
+| MIGRATE-01 | Phase 102 | Pending |
+| MIGRATE-02 | Phase 102 | Pending |
 
 **Coverage:**
 - v1.27 requirements: 28 total
-- Mapped to phases: 0 (filled by roadmapper)
-- Unmapped: 28 ⚠️ (expected before roadmap)
+- Mapped to phases: 28
+- Unmapped: 0
+
+**Coverage by Phase:**
+
+| Phase | REQ Count | Requirements |
+|-------|-----------|--------------|
+| Phase 97 — Contract + Docs First | 3 | RECIPE-01, DOCS-01, DOCS-02 |
+| Phase 98 — Plug Hardening | 6 | VERIFIER-01, VERIFIER-02, VERIFIER-03, VERIFIER-04, VERIFIER-05, VERIFIER-06 |
+| Phase 99 — Signer Extraction + JWT-Default Issuance | 8 | SIGNER-01, SIGNER-02, FORMAT-01, FORMAT-02, AUD-01, AUD-02, AUD-03, DISCOVERY-01 |
+| Phase 100 — Sender-Constraint End-to-End Proof | 3 | BIND-01, BIND-02, BIND-03 |
+| Phase 101 — Adoption-Demo Re-Wire | 3 | DEMO-01, DEMO-02, DEMO-03 |
+| Phase 102 — Generated-Host Scaffolding + Telemetry + Migration | 5 | SCAFFOLD-01, SCAFFOLD-02, TELEMETRY-01, MIGRATE-01, MIGRATE-02 |
+| **Total** | **28** | |
 
 ---
 *Requirements defined: 2026-05-27*
+*Traceability mapped: 2026-05-27*
 *Design decision recorded as Key Decision in PROJECT.md: Branch A + JWT-default issuance*
