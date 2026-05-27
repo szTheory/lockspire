@@ -14,9 +14,9 @@ Lockspire has now archived twenty-six planning milestones. Beyond the earlier em
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
-The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones remain available, but they should run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
+Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The latest feature milestone, `v1.26 Host Integration & Operator Boundary Hardening`, shipped in `lockspire 1.2.0`: it improved the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth.
+The most recently shipped feature milestone, `v1.26 Host Integration & Operator Boundary Hardening`, landed in `lockspire 1.2.0`: it improved the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth. `v1.27 Phoenix Resource Server Token Acceptance` is now the deliberately opened next feature milestone, resolving the unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented Phoenix protected-resource plug.
 
 ## Recently Shipped Milestone: v1.26 Host Integration & Operator Boundary Hardening
 
@@ -42,16 +42,25 @@ The latest feature milestone, `v1.26 Host Integration & Operator Boundary Harden
 
 **Why now:** `v1.24` closed the last practical direct-client auth gap. The remaining high-leverage work was support cost and setup ambiguity on advanced surfaces Lockspire already shipped.
 
-## Next Milestone Goals
+## Current Milestone: v1.27 Phoenix Resource Server Token Acceptance
 
-There is no default next milestone after `v1.25`.
+**Goal:** Make it obvious which Lockspire-issued token shape a host Phoenix API should accept, how that relates to `Lockspire.Plug.VerifyToken`, and what CI proof backs the blessed path — without conflating stored opaque access tokens with JWT bearer route-protection fixtures.
 
 **Target features:**
-- Prefer sustaining the GA release train over automatic scope expansion.
-- Start another milestone only if concrete adopter evidence shows a narrow embedded-library trust or support wedge that materially improves the Phoenix SaaS adoption story beyond normal patch-train work.
-- Reject adjacent protocol breadth, auth-method parity, or hosted-auth drift unless the evidence clearly outweighs the added scope.
+- One authoritative answer for which Lockspire-issued token shape protects a host Phoenix API route, expressed in the shipped `Lockspire.Plug.VerifyToken` contract.
+- A blessed adoption recipe spanning docs, the adoption demo, and generated-host guidance so first-adopter ambiguity at the RS token seam is gone.
+- CI proof — repo-native — that the blessed RS token acceptance path stays aligned across runtime, plug, docs, demo, and generated host.
+- Honest separation of stored opaque access tokens (token-endpoint shape) from JWT bearer route-protection (RS verifier shape), with explicit operator/adopter language about when each applies.
 
-**Why now:** `v1.25` closed the highest-leverage remaining support-clarity wedge. More work should now be evidence-driven, not roadmap-inertia-driven, and the default state should feel like a maintained released library rather than a paused feature factory.
+**Why now:** `v1.26` delivered the host integration seam and adoption demo, but in doing so exposed an unfinished design tension: the demo uses Lockspire's issued stored access token against Lockspire `/userinfo`, while the Phoenix protected-resource plug remains JWT-bearer-oriented. That ambiguity is now a real first-adopter trip hazard — and the earmark documented in `STATE.md` and `.planning/ROADMAP.md` flagged this as the next feature-sized wedge once adopter evidence justifies leaving sustainment.
+
+**Explicit non-goals (do not broaden into):**
+- Hosted auth / CIAM productization.
+- Service mesh or gateway productization, generic API management.
+- SAML / LDAP federation, auth-method parity chasing.
+- Certification-breadth chasing beyond what the shipped surface already claims.
+
+**Sustainment boundary:** This milestone is the deliberate exception to `milestone: none`. Patch-train work continues in parallel on `main`. Feature work for v1.27 runs on `milestone/v1.27-phoenix-rs-token-acceptance` per `.planning/DEVELOPMENT-TRAIN.md`.
 
 ## Release Train Default
 
@@ -214,6 +223,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Put green-main and support-truth work before `v1.26` | The next repo-local risks are CI trust and public-truth drift; feature work should start only after those are boring again | Adopted during post-PR #31 roadmap assessment |
 | Make host integration/operator boundary hardening the next feature candidate | Account/claims recipes, client bootstrap, admin-route boundaries, and operator diagnostics improve real Phoenix adopter outcomes more than adjacent protocol breadth | Recommended for the next `$gsd-new-milestone` decision |
 | Add a host-guarded admin-only router for v1.26 | The generated host needs a concrete way to put operator auth in front of `/lockspire/admin` without putting the public OAuth/OIDC endpoints behind staff auth | Adopted for v1.26 implementation |
+| Deliberately leave sustainment and open `v1.27 Phoenix Resource Server Token Acceptance` | The adoption demo shipped in PR #44 exposed an unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented `Lockspire.Plug.VerifyToken`. Resolving it is a higher-leverage adopter wedge than additional protocol breadth, and qualifies as the adopter-evidenced exception to the sustaining-train default | Adopted at v1.27 milestone start (2026-05-27) |
 
 ## Evolution
 
@@ -233,4 +243,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 for the milestone PR development lane*
+*Last updated: 2026-05-27 — opening v1.27 Phoenix Resource Server Token Acceptance milestone*

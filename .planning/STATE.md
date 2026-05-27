@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: sustaining_release_train
-stopped_at: adoption demo smoke shipped and main CI green
-last_updated: "2026-05-27T10:35:00Z"
+milestone: v1.27
+milestone_name: Phoenix Resource Server Token Acceptance
+status: planning
+last_updated: "2026-05-27T10:47:29.650Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -26,10 +25,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: none
-Plan: none
-Status: `v1.26 Host Integration & Operator Boundary Hardening` shipped in `lockspire 1.2.0`; adoption-demo smoke shipped in PR `#44` and post-merge `main` CI is green.
-Last activity: 2026-05-27
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-27 — Milestone v1.27 started
 
 ## Most Recent Release
 
