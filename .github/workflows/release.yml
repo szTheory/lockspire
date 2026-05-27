@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       recovery_reason:
-        description: "Recovery-only note for rerunning the trusted release lane"
+        description: "Exact-ref automation/recovery note for running the trusted release lane"
         required: true
         type: string
       recovery_ref:
-        description: "Commit SHA or tag for the exact revision being recovered"
+        description: "Commit SHA or tag for the exact revision being published or recovered"
         required: true
         type: string
 
@@ -38,13 +38,13 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Confirm manual dispatch stays recovery-only
+      - name: Confirm dispatch stays exact-ref only
         id: manual_dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         run: |
           echo "release_created=false" >> "$GITHUB_OUTPUT"
-          echo "workflow_dispatch bypasses Release Please and exists only to recover the trusted publish lane for an exact immutable ref."
+          echo "workflow_dispatch bypasses Release Please and exists only to run the trusted publish lane for an exact immutable ref selected by release automation or recovery."
 
       - name: Record review-only Release Please PR posture
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -80,7 +80,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Validate recovery-only inputs and lock to an immutable ref
+      - name: Validate exact-ref dispatch inputs and lock to an immutable ref
         id: validate
         shell: bash
         run: |
@@ -95,11 +95,11 @@ jobs:
           elif git show-ref --verify --quiet "refs/tags/$recovery_ref"; then
             echo "checkout_ref=$recovery_ref" >> "$GITHUB_OUTPUT"
           else
-            echo "workflow_dispatch is recovery-only and recovery_ref must be an exact 40-character commit SHA or an existing tag."
+            echo "workflow_dispatch is exact-ref only and recovery_ref must be an exact 40-character commit SHA or an existing tag."
             exit 1
           fi
 
-          echo "workflow_dispatch is recovery-only. Recovery publishes the exact immutable ref selected in recovery_ref, and normal publish intent starts from the merged release commit in the protected hex-publish environment."
+          echo "workflow_dispatch is exact-ref only. It publishes the exact immutable ref selected in recovery_ref, and normal release intent still starts from a merged Release Please commit in the protected hex-publish environment."
 
   publish:
     name: Publish to Hex
@@ -137,7 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "Protected publish proof starts now for recovery ref ${{ needs.recovery-validation.outputs.checkout_ref }} inside the single hex-publish environment boundary."
+            echo "Protected publish proof starts now for dispatch ref ${{ needs.recovery-validation.outputs.checkout_ref }} inside the single hex-publish environment boundary."
           else
             echo "Protected publish proof starts now for merged release tag ${{ needs.release-please.outputs.tag_name }} inside the single hex-publish environment boundary."
           fi
