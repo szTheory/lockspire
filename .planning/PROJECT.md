@@ -16,7 +16,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 The repo no longer has a default active milestone. Lockspire's default posture is now a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones remain available, but they should run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The immediate remaining work is no longer feature expansion. After the `1.1.0` release, the highest-leverage follow-through is disciplined repo and GitHub hygiene: make release prep start from one boring command rather than stale worktrees, hidden local drift, or manual GitHub archaeology, and open a new milestone only when explicit adopter evidence shows a trust or support wedge that patch-train work cannot cover.
+The immediate remaining work is maintenance-first: restore green `main`, then close narrow public-truth drift before opening another feature milestone. If feature work resumes, the recommended next milestone is host integration and operator boundary hardening rather than new protocol breadth.
 
 ## Recently Shipped Milestone: v1.25 Support-Burden Reduction
 
@@ -199,6 +199,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Add a repo-owned hygiene gate after the `1.1.0` release | A mature OSS library needs one disciplined pre-release command and one CI drift fence more than more branch folklore | Adopted during post-`1.1.0` release follow-through |
 | Default Lockspire to a standing GA release train | A mature auth library should feel released by default: `milestone: none`, patch-on-merge for sustaining work, and a durable release ledger instead of milestone inertia | Adopted after the `1.1.0` public release verification |
 | Use one milestone PR for future feature work | Keeps `main` as the release-train source of truth while preserving GSD milestones for larger feature development | Adopted after the `1.1.0` release-train baseline |
+| Put green-main and support-truth work before `v1.26` | The next repo-local risks are CI trust and public-truth drift; feature work should start only after those are boring again | Adopted during post-PR #31 roadmap assessment |
+| Make host integration/operator boundary hardening the next feature candidate | Account/claims recipes, client bootstrap, admin-route boundaries, and operator diagnostics improve real Phoenix adopter outcomes more than adjacent protocol breadth | Recommended for the next `$gsd-new-milestone` decision |
 
 ## Evolution
 

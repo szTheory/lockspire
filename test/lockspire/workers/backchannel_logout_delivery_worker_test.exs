@@ -21,6 +21,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
 
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
@@ -33,10 +34,21 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     Req.Test.verify_on_exit!(context)
     Req.Test.set_req_test_from_context(context)
 
+    original_repo = Application.get_env(:lockspire, :repo)
+    original_issuer = Application.get_env(:lockspire, :issuer)
+    original_mount_path = Application.get_env(:lockspire, :mount_path)
     original_req_opts = Application.get_env(:lockspire, :backchannel_logout_req)
     handler_id = "logout-delivery-worker-test-#{System.unique_integer([:positive])}"
 
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
+
     on_exit(fn ->
+      restore_env(:repo, original_repo)
+      restore_env(:issuer, original_issuer)
+      restore_env(:mount_path, original_mount_path)
+
       if is_nil(original_req_opts) do
         Application.delete_env(:lockspire, :backchannel_logout_req)
       else
@@ -375,4 +387,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     |> limit(1)
     |> Lockspire.TestRepo.one!()
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:lockspire, key)
+  defp restore_env(key, value), do: Application.put_env(:lockspire, key, value)
 end
