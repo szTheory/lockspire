@@ -530,4 +530,350 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       refute log =~ opaque
     end
   end
+
+  describe "VerifyToken plug -- RFC 9068 compliance (D-02, D-03, D-04)" do
+    test "accepts JWT with typ=at+jwt (canonical lowercase)" do
+      {token, _claims} = generate_key_and_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: nil} = conn.assigns[:access_token]
+    end
+
+    test "accepts JWT with typ=AT+JWT (uppercase)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "AT+JWT"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: nil} = conn.assigns[:access_token]
+    end
+
+    test "accepts JWT with typ=At+Jwt (mixed case)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "At+Jwt"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: nil} = conn.assigns[:access_token]
+    end
+
+    test "accepts JWT with typ=application/at+jwt (RFC 9068 §2.1 full form)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "application/at+jwt"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: nil} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with typ=JWT (RFC 8725 §3.11 cross-JWT confusion)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "JWT"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_validation,
+                 challenge: :bearer,
+                 reason_code: :invalid_typ,
+                 error: "invalid_token",
+                 error_description: error_description
+               }
+             } = conn.assigns[:access_token]
+
+      assert error_description =~ "typ"
+      assert error_description =~ "at+jwt"
+    end
+
+    test "rejects JWT with typ=jwt (lowercase, still wrong post-normalization)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "jwt"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with missing typ header" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with empty-string typ header" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => ""})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with typ=dpop+jwt (verifier MUST NOT accept DPoP-proof typ)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "dpop+jwt"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with typ=application/jwt (stripping prefix leaves jwt, not at+jwt)" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "application/jwt"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with wrong iss claim (RFC 9068 §4 issuer pinning)" do
+      {token, _claims} = generate_key_and_token(%{"iss" => "https://attacker.example/op"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_validation,
+                 challenge: :bearer,
+                 reason_code: :invalid_issuer,
+                 error: "invalid_token",
+                 error_description: error_description
+               }
+             } = conn.assigns[:access_token]
+
+      assert error_description =~ "iss"
+    end
+
+    test "rejects JWT with missing iss claim" do
+      {token, _claims} = generate_key_and_token(%{"iss" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_issuer}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with empty iss claim" do
+      {token, _claims} = generate_key_and_token(%{"iss" => ""})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_issuer}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with trailing-slash variant of configured iss (exact compare, no normalization)" do
+      configured = Lockspire.Config.issuer!()
+      variant = configured <> "/"
+
+      {token, _claims} = generate_key_and_token(%{"iss" => variant})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_issuer}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with missing exp claim (RFC 9068 §2.2)" do
+      {token, _claims} = generate_key_and_token(%{"exp" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_validation,
+                 challenge: :bearer,
+                 reason_code: :missing_exp,
+                 error: "invalid_token",
+                 error_description: error_description
+               }
+             } = conn.assigns[:access_token]
+
+      assert error_description =~ "exp"
+    end
+
+    test "rejects JWT with exp=0 (zero is not a positive integer)" do
+      {token, _claims} = generate_key_and_token(%{"exp" => 0})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :missing_exp}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with exp=-100 (negative not positive)" do
+      {token, _claims} = generate_key_and_token(%{"exp" => -100})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :missing_exp}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with missing iat claim (RFC 9068 §2.2)" do
+      {token, _claims} = generate_key_and_token(%{"iat" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_validation,
+                 challenge: :bearer,
+                 reason_code: :missing_iat,
+                 error: "invalid_token",
+                 error_description: error_description
+               }
+             } = conn.assigns[:access_token]
+
+      assert error_description =~ "iat"
+    end
+
+    test "rejects JWT with iat=0 (not positive)" do
+      {token, _claims} = generate_key_and_token(%{"iat" => 0})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :missing_iat}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with missing sub claim (RFC 9068 §2.2)" do
+      {token, _claims} = generate_key_and_token(%{"sub" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_validation,
+                 challenge: :bearer,
+                 reason_code: :missing_sub,
+                 error: "invalid_token",
+                 error_description: error_description
+               }
+             } = conn.assigns[:access_token]
+
+      assert error_description =~ "sub"
+    end
+
+    test "rejects JWT with empty sub claim" do
+      {token, _claims} = generate_key_and_token(%{"sub" => ""})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :missing_sub}} = conn.assigns[:access_token]
+    end
+
+    test "rejects JWT with whitespace-only sub claim" do
+      {token, _claims} = generate_key_and_token(%{"sub" => "   "})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :missing_sub}} = conn.assigns[:access_token]
+    end
+
+    test "D-02 order: when multiple rules are violated, invalid_typ wins" do
+      {token, _claims} =
+        generate_key_and_token(
+          %{"iss" => "https://attacker.example", "exp" => nil, "iat" => nil, "sub" => nil},
+          %{"typ" => "JWT"}
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{error: %{reason_code: :invalid_typ}} = conn.assigns[:access_token]
+    end
+
+    test "end-to-end through RequireToken: invalid_typ emerges as 401 with WWW-Authenticate naming the rule" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "JWT"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      assert conn.halted
+
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+
+      assert www_authenticate =~ ~s(error="invalid_token")
+      assert www_authenticate =~ "typ"
+      assert www_authenticate =~ "at+jwt"
+    end
+
+    test "emits a redaction-safe log line with reason=invalid_typ" do
+      {token, _claims} = generate_key_and_token(%{}, %{"typ" => "JWT"})
+
+      log =
+        capture_log(fn ->
+          build_conn()
+          |> put_req_header("authorization", "Bearer #{token}")
+          |> verify_conn()
+        end)
+
+      assert log =~ "reason=invalid_typ"
+      refute log =~ token
+    end
+  end
 end
