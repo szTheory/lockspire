@@ -113,6 +113,10 @@ None. No signing, UI, or discovery behavior was introduced in this plan (by desi
 - The storage + domain foundation is complete: the signer (Plan 03) can read `ServerPolicy.access_token_format` (server default) and `Client.access_token_format` (per-client override) to resolve the effective token shape, and the admin UI (Plan 06) can mutate the per-client override via `update_changeset/2` and the server-wide value via `Admin.ServerPolicy.put_access_token_format/1`.
 - No blockers. Threat register mitigations T-99-01 (normalize/reject unknown values) and T-99-03 (Ecto.Enum paired with `:text` column) are both satisfied in this plan.
 
+## Self-Check: PASSED
+
+All created/modified files verified present on disk; all four commits (`34c709b`, `269ad4d`, `5b0721d`, `1932ed9`) verified in git history.
+
 ---
 *Phase: 99-signer-extraction-jwt-default-issuance*
 *Completed: 2026-05-28*
