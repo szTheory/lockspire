@@ -29,4 +29,13 @@ defmodule Lockspire.TestRepo do
   def record_dpop_proof(%DpopReplay{} = replay) do
     Repository.record_dpop_proof(replay)
   end
+
+  # Delegated so AccessTokenSigner can fetch the active signing key when a grant
+  # path passes no explicit :key_store and falls back to Config.repo!() (e.g. the
+  # CIBA Push delivery worker, which issues tokens with request == %{}). The JWT
+  # default (Phase 99) makes this lookup load-bearing on those worker paths.
+  @spec fetch_active_signing_key(keyword()) :: {:ok, map() | nil} | {:error, term()}
+  def fetch_active_signing_key(opts \\ []) do
+    Repository.fetch_active_signing_key(opts)
+  end
 end

@@ -62,6 +62,11 @@ defmodule Lockspire.Web.TokenControllerTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
+    # The default access-token format is now :jwt (Phase 99); every token-minting
+    # flow needs an active signing key. Publish one for the suite so the JWT-default
+    # /token responses can sign.
+    publish_signing_key("kid-token-controller-default")
+
     {:ok, public_client} =
       Repository.register_client(%Client{
         client_id: "client-public",
