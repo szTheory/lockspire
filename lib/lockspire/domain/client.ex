@@ -22,6 +22,7 @@ defmodule Lockspire.Domain.Client do
   @type security_profile :: :inherit | :fapi_2_0_security | :fapi_2_0_message_signing | :none
   @type backchannel_token_delivery_mode :: :poll | :ping | :push
   @type provenance :: :operator | :self_registered
+  @type access_token_format :: :jwt | :opaque
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -48,6 +49,7 @@ defmodule Lockspire.Domain.Client do
           subject_type: subject_type(),
           sector_identifier_uri: String.t() | nil,
           id_token_signed_response_alg: signing_alg() | nil,
+          access_token_format: access_token_format() | nil,
           authorization_signed_response_alg: signing_alg() | nil,
           authorization_encrypted_response_alg: authorization_encrypted_response_alg() | nil,
           authorization_encrypted_response_enc: authorization_encrypted_response_enc() | nil,
@@ -110,6 +112,7 @@ defmodule Lockspire.Domain.Client do
     subject_type: :public,
     sector_identifier_uri: nil,
     id_token_signed_response_alg: nil,
+    access_token_format: nil,
     authorization_signed_response_alg: nil,
     authorization_encrypted_response_alg: nil,
     authorization_encrypted_response_enc: nil,

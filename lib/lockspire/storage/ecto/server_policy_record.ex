@@ -19,6 +19,11 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       default: :none
     )
 
+    # FORMAT-01: server-wide default token shape. Pitfall 6: this Ecto.Enum MUST pair
+    # with the :text column from the Plan 99-01 migration, or code pattern-matching on
+    # :jwt silently fails because the persisted value is the string "jwt". Default :jwt.
+    field(:access_token_format, Ecto.Enum, values: [:jwt, :opaque], default: :jwt)
+
     # D-05: tri-state Ecto.Enum cast against the text column from Plan 02 migration.
     # Pitfall 4: every text-enum column MUST have a matching Ecto.Enum field, or code
     # pattern-matching on :disabled silently fails because the value is "disabled".
@@ -54,6 +59,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :dpop_policy,
       :security_profile,
       :registration_policy,
+      :access_token_format,
       :dcr_allowed_scopes,
       :dcr_allowed_grant_types,
       :dcr_allowed_response_types,
@@ -70,7 +76,8 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :par_policy,
       :dpop_policy,
       :security_profile,
-      :registration_policy
+      :registration_policy,
+      :access_token_format
     ])
     |> validate_number(:max_delegation_depth,
       less_than_or_equal_to: 5,
@@ -85,6 +92,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       dpop_policy: record.dpop_policy,
       security_profile: record.security_profile,
       registration_policy: record.registration_policy,
+      access_token_format: record.access_token_format,
       dcr_allowed_scopes: record.dcr_allowed_scopes,
       dcr_allowed_grant_types: record.dcr_allowed_grant_types,
       dcr_allowed_response_types: record.dcr_allowed_response_types,
