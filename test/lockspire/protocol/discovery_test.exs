@@ -511,6 +511,51 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     end
   end
 
+  describe "openid_configuration/0 — access_token_signing_alg_values_supported truth (DISCOVERY-01)" do
+    test "publishes the fixed truthful triple as a static literal" do
+      config = Discovery.openid_configuration()
+
+      assert config["access_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256"]
+    end
+
+    test "publishes the same literal triple regardless of server security profile (not derived from SecurityProfile)" do
+      Repository.update_server_policy(fn policy ->
+        %{policy | security_profile: :none}
+      end)
+
+      none_config = Discovery.openid_configuration()
+
+      Repository.update_server_policy(fn policy ->
+        %{policy | security_profile: :fapi_2_0_security}
+      end)
+
+      fapi_config = Discovery.openid_configuration()
+
+      assert none_config["access_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256"]
+      assert fapi_config["access_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256"]
+    end
+
+    test "publishes the key unconditionally, even when the token_endpoint route is not mounted" do
+      Application.put_env(
+        :lockspire,
+        :discovery_router,
+        Lockspire.Protocol.DiscoveryTest.TokenOnlyRouter
+      )
+
+      mounted_config = Discovery.openid_configuration()
+
+      assert mounted_config["access_token_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256"
+             ]
+
+      # Mirror the always-present id_token sibling: this key is static, not gated.
+      assert Map.has_key?(mounted_config, "access_token_signing_alg_values_supported")
+      assert Map.has_key?(mounted_config, "id_token_signing_alg_values_supported")
+    end
+  end
+
   describe "openid_configuration/0 — FAPI 2.0 discovery truth" do
     test "publishes authorization_response_iss_parameter_supported unconditionally" do
       metadata = Discovery.openid_configuration()
