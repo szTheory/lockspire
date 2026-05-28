@@ -11,6 +11,47 @@ defmodule Lockspire.Plug.RequireTokenTest do
   end
 
   describe "RequireToken plug" do
+    test "bound-but-unverified DPoP token fails closed with 403 (BIND-03)" do
+      bound = %AccessToken{
+        error: nil,
+        claims: %{"sub" => "u"},
+        binding_requirements: %{dpop_jkt: "x"},
+        binding_verified: false
+      }
+
+      conn = build_conn() |> assign(:access_token, bound) |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 403
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ "DPoP realm=\"Lockspire\""
+      assert challenge =~ "error=\"invalid_token\""
+    end
+
+    test "bound-but-unverified mTLS token fails closed with 403 (BIND-03)" do
+      bound = %AccessToken{
+        error: nil,
+        claims: %{"sub" => "u"},
+        binding_requirements: %{mtls_x5t_s256: "x"},
+        binding_verified: false
+      }
+
+      conn = build_conn() |> assign(:access_token, bound) |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 403
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ "Bearer realm=\"Lockspire\""
+      assert challenge =~ "error=\"invalid_token\""
+    end
+
+    test "bearer (unbound) token still passes through — surprise-free guarantee (BIND-03)" do
+      bearer = %AccessToken{error: nil, claims: %{"sub" => "u"}, binding_requirements: nil}
+      conn = build_conn() |> assign(:access_token, bearer) |> RequireToken.call([])
+      refute conn.halted
+      assert conn.status == nil
+    end
+
     test "allows request to proceed if valid AccessToken is assigned" do
       conn =
         build_conn()

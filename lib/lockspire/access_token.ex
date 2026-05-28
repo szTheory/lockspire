@@ -10,7 +10,8 @@ defmodule Lockspire.AccessToken do
     :authorization_scheme,
     :binding_type,
     :binding_requirements,
-    :error
+    :error,
+    binding_verified: false
   ]
 
   @type t :: %__MODULE__{
@@ -25,6 +26,7 @@ defmodule Lockspire.AccessToken do
               optional(:mtls_x5t_s256) => String.t()
             }
             | nil,
-          error: term()
+          error: term(),
+          binding_verified: boolean()
         }
 end

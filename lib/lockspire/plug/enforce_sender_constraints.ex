@@ -115,7 +115,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
        ) do
     with {:ok, cert} <- fetch_mtls_cert(conn, opts),
          true <- MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
-      conn
+      mark_binding_verified(conn)
     else
       {:error, _reason} ->
         assign(conn, :access_token, %AccessToken{access_token | error: mtls_error()})
@@ -125,7 +125,14 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
     end
   end
 
-  defp maybe_validate_mtls(conn, _access_token, _opts), do: conn
+  defp maybe_validate_mtls(conn, _access_token, _opts), do: mark_binding_verified(conn)
+
+  defp mark_binding_verified(conn) do
+    case conn.assigns[:access_token] do
+      %AccessToken{} = at -> assign(conn, :access_token, %AccessToken{at | binding_verified: true})
+      _ -> conn
+    end
+  end
 
   defp sender_error(challenge, error) do
     %{
