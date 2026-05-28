@@ -7,6 +7,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
   import Plug.Conn
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.TokenFormatter
@@ -81,6 +82,10 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
 
     Application.put_env(:lockspire, :jwks_fetcher_opts, resolver: &__MODULE__.public_resolver/1)
     Application.put_env(:lockspire, :jwks_fetcher, RemoteJwksFetcher)
+
+    # Refresh rotation now mints an at+jwt by default, so the token endpoint needs
+    # an active signing key available to sign the rotated access token.
+    publish_signing_key("phase62-signing-kid")
 
     {:ok, inline_client} =
       Repository.register_client(%Client{
@@ -285,6 +290,28 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
     })
     |> put_req_header("accept", "application/json")
     |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+  end
+
+  defp publish_signing_key(kid) do
+    jwk = JOSE.JWK.generate_key({:rsa, 2048}) |> JOSE.JWK.to_map() |> elem(1)
+
+    Repository.publish_key(%SigningKey{
+      kid: kid,
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk:
+        jwk
+        |> Map.take(["kty", "kid", "alg", "use", "n", "e"])
+        |> Map.put("kid", kid)
+        |> Map.put("alg", "RS256")
+        |> Map.put("use", "sig"),
+      private_jwk_encrypted: :erlang.term_to_binary(Map.put(jwk, "kid", kid)),
+      status: :active,
+      published_at: DateTime.utc_now(),
+      activated_at: DateTime.utc_now(),
+      metadata: %{}
+    })
   end
 
   defp seed_refresh_token(client, raw_refresh_token, family_id) do

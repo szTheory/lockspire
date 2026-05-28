@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
+  alias Lockspire.Protocol.AccessTokenSigner
   alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
@@ -83,58 +84,69 @@ defmodule Lockspire.Protocol.RefreshExchange do
          context,
          request
        ) do
-    {formatted_access_token, formatted_refresh_token} = format_refresh_rotation_tokens(request)
+    formatted_refresh_token =
+      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
+
     rotated_at = now(request)
 
+    # Build the rotated access token with the subject/scopes sourced from the
+    # presented refresh token (Pitfall 5: the rotated token's own account_id is
+    # nil) so the signer derives a non-nil `sub` and a correct `scope` claim.
     access_token =
       build_rotated_access_token(
         client,
-        formatted_access_token,
         rotated_at,
         context,
         presented_refresh_token,
         requested_resources
       )
 
-    refresh_token =
-      build_rotated_refresh_token(
-        client,
-        formatted_refresh_token,
-        rotated_at,
-        context,
-        presented_refresh_token
-      )
+    # Mint the at+jwt (or opaque, per format resolution) via the shared signer and
+    # re-point the persisted token_hash to the signer's hash (Pitfall 1).
+    with {:ok, raw_access_token, access_token_hash} <-
+           AccessTokenSigner.issue(access_token, client, request) do
+      access_token = %Token{access_token | token_hash: access_token_hash}
 
-    case transact_with_audit_outcome(token_store(request), fn ->
-           handle_refresh_rotation(
-             token_store(request),
-             client,
-             refresh_token_hash,
-             rotated_at,
-             refresh_token,
-             access_token,
-             presented_refresh_token,
-             context
-           )
-         end) do
-      {:ok,
-       %{
-         presented_refresh_token: %Token{} = presented_refresh_token,
-         refresh_token: %Token{} = persisted_refresh_token,
-         access_token: %Token{} = persisted_access_token
-       }} ->
+      refresh_token =
+        build_rotated_refresh_token(
+          client,
+          formatted_refresh_token,
+          rotated_at,
+          context,
+          presented_refresh_token
+        )
+
+      case transact_with_audit_outcome(token_store(request), fn ->
+             handle_refresh_rotation(
+               token_store(request),
+               client,
+               refresh_token_hash,
+               rotated_at,
+               refresh_token,
+               access_token,
+               presented_refresh_token,
+               context
+             )
+           end) do
         {:ok,
          %{
-           presented_refresh_token: presented_refresh_token,
-           refresh_token: persisted_refresh_token,
-           access_token: persisted_access_token,
-           raw_access_token: formatted_access_token.token,
-           raw_refresh_token: formatted_refresh_token.token,
-           token_type: context.token_type
-         }}
+           presented_refresh_token: %Token{} = presented_refresh_token,
+           refresh_token: %Token{} = persisted_refresh_token,
+           access_token: %Token{} = persisted_access_token
+         }} ->
+          {:ok,
+           %{
+             presented_refresh_token: presented_refresh_token,
+             refresh_token: persisted_refresh_token,
+             access_token: persisted_access_token,
+             raw_access_token: raw_access_token,
+             raw_refresh_token: formatted_refresh_token.token,
+             token_type: context.token_type
+           }}
 
-      {:error, %Error{} = error} ->
-        {:error, error}
+        {:error, %Error{} = error} ->
+          {:error, error}
+      end
     end
   end
 
@@ -281,30 +293,27 @@ defmodule Lockspire.Protocol.RefreshExchange do
     end
   end
 
-  defp format_refresh_rotation_tokens(request) do
-    {
-      TokenFormatter.format_access_token(token_format_options(request, :access_token)),
-      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
-    }
-  end
-
   defp build_rotated_access_token(
          %Client{} = client,
-         formatted_access_token,
          rotated_at,
          context,
          %Token{} = source_token,
          requested_resources
        ) do
     %Token{
-      token_hash: formatted_access_token.token_hash,
+      # token_hash is re-pointed to the signer's hash after minting (Pitfall 1).
+      token_hash: nil,
       token_type: :access_token,
       client_id: client.client_id,
-      account_id: nil,
+      # Pitfall 5: the rotated token's subject must come from the presented
+      # refresh token, otherwise the minted JWT would carry `sub: nil`.
+      account_id: source_token.account_id,
       consent_grant_id: source_token.consent_grant_id,
       sid: source_token.sid,
+      scopes: source_token.scopes,
       audience: requested_resources,
       cnf: context.cnf,
+      issued_at: rotated_at,
       expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
     }
   end

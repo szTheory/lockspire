@@ -175,7 +175,14 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
   } do
     Process.put(
       {MockValidator, :result},
-      {:ok, %{claims: %{"custom_role" => "admin", "iss" => "ignored"}}}
+      {:ok,
+       %{
+         claims: %{
+           "custom_role" => "admin",
+           "iss" => "ignored",
+           "aud" => "attacker-controlled"
+         }
+       }}
     )
 
     request = put_in(request.opts, Keyword.put(request.opts, :key_store, MockKeyStore))
@@ -184,11 +191,16 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     assert success.token_type == "Bearer"
 
     # success.access_token should be a signed JWT
-    assert [_header_b64, payload_b64, _sig_b64] = String.split(success.access_token, ".")
+    assert [header_b64, payload_b64, _sig_b64] = String.split(success.access_token, ".")
+    header = header_b64 |> Base.url_decode64!(padding: false) |> Jason.decode!()
     payload = payload_b64 |> Base.url_decode64!(padding: false) |> Jason.decode!()
 
+    assert header["typ"] == "at+jwt"
     assert payload["custom_role"] == "admin"
+    # Restricted claims (iss/aud) cannot be overridden by custom claims (T-99-17).
     assert payload["iss"] == Lockspire.Config.issuer!()
+    # AUD-03: the exchange path keeps a bare-STRING aud == client_id.
     assert payload["aud"] == client.client_id
+    assert is_binary(payload["aud"])
   end
 end

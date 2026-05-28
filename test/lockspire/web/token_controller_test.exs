@@ -472,6 +472,10 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     now = DateTime.utc_now()
 
+    # Refresh rotation now mints an at+jwt by default, so an active signing key
+    # must be available to the token controller (key_store: Repository).
+    publish_signing_key("kid-controller-refresh")
+
     {:ok, _refresh_token} =
       Repository.store_token(%Token{
         token_hash: TokenFormatter.hash_token("controller-refresh-token"),
@@ -526,6 +530,10 @@ defmodule Lockspire.Web.TokenControllerTest do
       })
 
     now = DateTime.utc_now()
+
+    # Refresh rotation now mints an at+jwt by default, so an active signing key
+    # must be available to the token controller (key_store: Repository).
+    publish_signing_key("kid-controller-replay")
 
     {:ok, _refresh_token} =
       Repository.store_token(%Token{
