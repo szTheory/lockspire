@@ -33,6 +33,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
        remote_jwks_summary: nil,
+       global_access_token_format: nil,
+       effective_access_token_format: nil,
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
@@ -61,6 +63,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
     case result do
       {:ok, %Client{} = client} ->
+        server_policy = server_policy()
+
         {:noreply,
          assign(socket,
            client: client,
@@ -68,6 +72,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
            effective_security_profile: resolve_effective_security_profile(client),
            strict_readiness: strict_readiness(),
            remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+           global_access_token_format: global_access_token_format(server_policy),
+           effective_access_token_format:
+             resolve_effective_access_token_format(server_policy, client),
            form_errors: []
          )}
 
@@ -204,6 +211,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <p>Global PAR policy: <code>{par_policy_label(@effective_par_policy.global_policy)}</code></p>
         <p>Client PAR override: <code>{par_policy_label(@client.par_policy)}</code></p>
         <p>Effective PAR requirement: <strong>{verdict_for(@effective_par_policy)}</strong></p>
+        <p>Global access token format: <code>{@global_access_token_format}</code></p>
+        <p>Client access token override: <code>{access_token_format_override_label(@client.access_token_format)}</code></p>
+        <p>Effective access token format: <strong>{@effective_access_token_format}</strong></p>
         <p>Current secret: redacted</p>
         <p>Last secret rotation: {format_datetime(@client.last_secret_rotated_at)}</p>
         <AdminComponents.status_badge status={status_for(@client)} />
@@ -414,7 +424,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       effective_security_profile: nil,
       strict_readiness: default_readiness(),
       private_key_jwt_truth: nil,
-      remote_jwks_summary: nil
+      remote_jwks_summary: nil,
+      global_access_token_format: nil,
+      effective_access_token_format: nil
     )
   end
 
@@ -431,7 +443,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           strict_readiness: strict_readiness(),
           private_key_jwt_truth:
             AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
-          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+          global_access_token_format: global_access_token_format(server_policy),
+          effective_access_token_format: resolve_effective_access_token_format(server_policy, client)
         )
 
       {:error, _reason} ->
@@ -442,7 +456,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_security_profile: nil,
           strict_readiness: default_readiness(),
           private_key_jwt_truth: nil,
-          remote_jwks_summary: nil
+          remote_jwks_summary: nil,
+          global_access_token_format: nil,
+          effective_access_token_format: nil
         )
     end
   end
@@ -474,6 +490,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       name: Map.get(params, "name", client.name),
       allowed_scopes: split_csv(params["allowed_scopes"]),
       dpop_policy: params["dpop_policy"],
+      access_token_format: params["access_token_format"],
       contacts: split_csv(params["contacts"]),
       logo_uri: params["logo_uri"],
       tos_uri: params["tos_uri"],
@@ -577,6 +594,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       {:error, _reason} -> %ServerPolicy{}
     end
   end
+
+  defp global_access_token_format(%ServerPolicy{access_token_format: format}),
+    do: access_token_format_string(format)
+
+  # Same per-client -> server-default -> :jwt precedence the signer uses. A `nil`
+  # client override means inherit, so the server default (or :jwt) wins.
+  defp resolve_effective_access_token_format(%ServerPolicy{} = policy, %Client{
+         access_token_format: nil
+       }),
+       do: global_access_token_format(policy)
+
+  defp resolve_effective_access_token_format(%ServerPolicy{}, %Client{access_token_format: format}),
+    do: access_token_format_string(format)
+
+  defp access_token_format_string(nil), do: "jwt"
+  defp access_token_format_string(format), do: Atom.to_string(format)
+
+  # `nil` means inherit (no `:inherit` sentinel is stored), rendered as the word "inherit".
+  defp access_token_format_override_label(nil), do: "inherit"
+  defp access_token_format_override_label(format), do: Atom.to_string(format)
 
   defp par_policy_label(policy) when policy in [:inherit, :required, :optional] do
     Atom.to_string(policy)

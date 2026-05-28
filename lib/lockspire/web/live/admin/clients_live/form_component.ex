@@ -105,6 +105,33 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             </option>
           </select>
 
+          <label :if={@mode == :edit} for="client_access_token_format">Access token format override</label>
+          <select
+            :if={@mode == :edit}
+            id="client_access_token_format"
+            name="client[access_token_format]"
+          >
+            <option value="inherit" selected={@defaults.access_token_format == "inherit"}>
+              Inherit from server default
+            </option>
+            <option value="jwt" selected={@defaults.access_token_format == "jwt"}>
+              JWT (RFC 9068 at+jwt)
+            </option>
+            <option value="opaque" selected={@defaults.access_token_format == "opaque"}>
+              Opaque (Lockspire-stored)
+            </option>
+          </select>
+          <div :if={@mode == :edit} class="lockspire-admin-help">
+            <p>
+              JWT (at+jwt) is the default and is what host Phoenix API routes verify. Opaque tokens
+              are Lockspire-stored and back /userinfo and /introspect — they are not interchangeable.
+              Leave this set to inherit unless a specific client needs opaque.
+            </p>
+            <p>
+              <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
+            </p>
+          </div>
+
           <label :if={@mode == :edit} for="client_contacts">Contacts</label>
           <input
             :if={@mode == :edit}
@@ -407,6 +434,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     %{
       allowed_scopes: Enum.join(client.allowed_scopes, ", "),
       dpop_policy: Atom.to_string(client.dpop_policy),
+      access_token_format: format_default_for_select(client.access_token_format),
       contacts: Enum.join(client.contacts, ", "),
       logo_uri: client.logo_uri,
       tos_uri: client.tos_uri,
@@ -438,6 +466,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       frontchannel_logout_session_required: client.frontchannel_logout_session_required
     }
   end
+
+  # `nil` means inherit (no `:inherit` sentinel is stored), so the inherit option
+  # must pre-select for a nil override. Unlike `dpop_policy`, which stores a real atom.
+  defp format_default_for_select(nil), do: "inherit"
+  defp format_default_for_select(format), do: Atom.to_string(format)
 
   defp title_for(:new), do: "Register client"
   defp title_for(:edit), do: "Update safe metadata"

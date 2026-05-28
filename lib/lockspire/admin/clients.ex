@@ -27,6 +27,7 @@ defmodule Lockspire.Admin.Clients do
     par_policy
     dpop_policy
     security_profile
+    access_token_format
     authorization_signed_response_alg
     metadata
     max_delegation_depth
@@ -258,6 +259,7 @@ defmodule Lockspire.Admin.Clients do
       |> maybe_append_errors(validate_scopes_if_present(attrs))
       |> maybe_append_errors(validate_par_policy_if_present(attrs))
       |> maybe_append_errors(validate_dpop_policy_if_present(attrs))
+      |> maybe_append_errors(validate_access_token_format_if_present(attrs))
       |> maybe_append_errors(validate_authorization_signing_alg_if_present(attrs))
       |> maybe_append_errors(validate_security_profile_if_present(client, attrs))
 
@@ -349,6 +351,23 @@ defmodule Lockspire.Admin.Clients do
 
           :error ->
             {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: value}]}
+        end
+    end
+  end
+
+  defp validate_access_token_format_if_present(attrs) do
+    case fetch_mutable_attr(attrs, :access_token_format) do
+      :error ->
+        :ok
+
+      {:ok, value} ->
+        case normalize_access_token_format(value) do
+          {:ok, _format} ->
+            :ok
+
+          :error ->
+            {:error,
+             [%{field: :access_token_format, reason: :invalid_access_token_format, detail: value}]}
         end
     end
   end
@@ -495,6 +514,13 @@ defmodule Lockspire.Admin.Clients do
     end
   end
 
+  defp normalize_mutable_field(:access_token_format, value) do
+    case normalize_access_token_format(value) do
+      {:ok, format} -> format
+      :error -> value
+    end
+  end
+
   defp normalize_mutable_field(:authorization_signed_response_alg, value) do
     case normalize_authorization_signing_alg(value) do
       {:ok, alg} -> alg
@@ -588,6 +614,25 @@ defmodule Lockspire.Admin.Clients do
   end
 
   defp normalize_dpop_policy(_value), do: :error
+
+  defp normalize_access_token_format(nil), do: {:ok, nil}
+  defp normalize_access_token_format(:inherit), do: {:ok, nil}
+  defp normalize_access_token_format(:jwt), do: {:ok, :jwt}
+  defp normalize_access_token_format(:opaque), do: {:ok, :opaque}
+
+  defp normalize_access_token_format(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> {:ok, nil}
+      "inherit" -> {:ok, nil}
+      "jwt" -> {:ok, :jwt}
+      "opaque" -> {:ok, :opaque}
+      _other -> :error
+    end
+  end
+
+  defp normalize_access_token_format(_value), do: :error
 
   defp normalize_security_profile(:inherit), do: {:ok, :inherit}
   defp normalize_security_profile(:fapi_2_0_security), do: {:ok, :fapi_2_0_security}
