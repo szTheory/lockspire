@@ -81,9 +81,18 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp extract_token(conn) do
-    case get_req_header(conn, "authorization") do
-      ["Bearer " <> token | _] -> {:ok, "Bearer", String.trim(token)}
-      ["DPoP " <> token | _] -> {:ok, "DPoP", String.trim(token)}
+    # RFC 7235 §2.1 requires `auth-scheme` to be compared case-insensitively
+    # (RFC 6750 §2.1 confirms this for `Bearer`). Normalize the scheme to its
+    # canonical casing so `challenge_from_scheme/1` keeps matching `"DPoP"`
+    # literally and the D-05 request-scheme tiebreaker honors `dpop`/`DPOP`.
+    with [value | _] <- get_req_header(conn, "authorization"),
+         [scheme, token] <- String.split(value, " ", parts: 2) do
+      case String.downcase(scheme) do
+        "bearer" -> {:ok, "Bearer", String.trim(token)}
+        "dpop" -> {:ok, "DPoP", String.trim(token)}
+        _other -> {:error, :missing_token}
+      end
+    else
       _ -> {:error, :missing_token}
     end
   end

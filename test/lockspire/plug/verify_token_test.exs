@@ -249,6 +249,41 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       refute conn.halted
     end
 
+    test "accepts lowercase bearer scheme and normalizes to canonical Bearer (WR-01, RFC 7235 §2.1)" do
+      {token, claims} = generate_key_and_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "bearer #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               token: ^token,
+               claims: ^claims,
+               authorization_scheme: "Bearer",
+               error: nil
+             } = conn.assigns[:access_token]
+
+      refute conn.halted
+    end
+
+    test "accepts uppercase DPOP scheme and normalizes to canonical DPoP (WR-01, RFC 7235 §2.1)" do
+      claims = %{"cnf" => %{"jkt" => "proof-thumbprint"}}
+      {token, _merged_claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "DPOP #{token}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               authorization_scheme: "DPoP",
+               error: nil
+             } = conn.assigns[:access_token]
+
+      refute conn.halted
+    end
+
     test "accepts DPoP authorization scheme and normalizes DPoP cnf requirements" do
       claims = %{"cnf" => %{"jkt" => "proof-thumbprint"}}
       {token, merged_claims} = generate_key_and_token(claims)
