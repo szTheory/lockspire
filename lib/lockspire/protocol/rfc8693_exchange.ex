@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Host.TokenExchangeContext
+  alias Lockspire.Protocol.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenFormatter
@@ -310,91 +311,20 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
         {:ok, formatted.token, formatted.token_hash}
 
       custom_claims when is_map(custom_claims) ->
-        sign_jwt_access_token(client, subject_token, scopes, issued_at, custom_claims, request)
-    end
-  end
-
-  defp sign_jwt_access_token(client, subject_token, scopes, issued_at, custom_claims, request) do
-    case fetch_signing_key(request) do
-      {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} ->
-        {:ok, jwk_map} = decode_private_jwk(private_jwk)
-
-        jti = TokenFormatter.format_access_token(token_format_options(request)).token
-
-        base_claims = %{
-          "iss" => Config.issuer!(),
-          "sub" => subject_token.account_id,
-          "aud" => client.client_id,
-          "exp" => DateTime.add(issued_at, 3600, :second) |> DateTime.to_unix(),
-          "iat" => DateTime.to_unix(issued_at),
-          "client_id" => client.client_id,
-          "jti" => jti,
-          "scope" => Enum.join(scopes, " ")
+        # Delegate all at+jwt signing to the shared module. issue_exchange/4 keeps
+        # the exchange carve-out: a bare-STRING aud == client_id (AUD-03) and the
+        # custom-claim merge with the iss/sub/aud/exp/iat/jti/client_id drop.
+        token = %Token{
+          token_type: :access_token,
+          client_id: client.client_id,
+          account_id: subject_token.account_id,
+          scopes: scopes,
+          cnf: subject_token.cnf,
+          issued_at: issued_at,
+          expires_at: DateTime.add(issued_at, 3600, :second)
         }
 
-        restricted = ~w(iss sub aud exp iat jti client_id)
-        safe_custom_claims = Map.drop(custom_claims, restricted)
-
-        claims = Map.merge(base_claims, safe_custom_claims)
-
-        {_, compact} =
-          JOSE.JWT.sign(
-            JOSE.JWK.from_map(jwk_map),
-            %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
-            claims
-          )
-          |> JOSE.JWS.compact()
-
-        {:ok, compact, Policy.hash_token(compact)}
-
-      {:error, reason} ->
-        Logger.error("Failed to sign token exchange JWT: #{inspect(reason)}")
-
-        {:error,
-         %Error{
-           status: 500,
-           error: "server_error",
-           error_description: "Unable to sign access token.",
-           reason_code: :token_signing_failed
-         }}
+        AccessTokenSigner.issue_exchange(token, client, custom_claims, request)
     end
-  end
-
-  defp fetch_signing_key(request) do
-    key_store =
-      request
-      |> Map.get(:opts, [])
-      |> Keyword.get(:key_store, Config.repo!())
-
-    case key_store.fetch_active_signing_key() do
-      {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
-      when is_binary(private_jwk) and is_binary(alg) ->
-        {:ok, key}
-
-      {:ok, nil} ->
-        {:error, :signing_key_not_found}
-
-      {:ok, _key} ->
-        {:error, :invalid_signing_key}
-
-      {:error, _reason} ->
-        {:error, :signing_key_lookup_failed}
-    end
-  end
-
-  defp decode_private_jwk(binary) when is_binary(binary) do
-    case Jason.decode(binary) do
-      {:ok, %{} = jwk} -> {:ok, jwk}
-      _other -> decode_erlang_jwk(binary)
-    end
-  end
-
-  defp decode_erlang_jwk(binary) do
-    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
-      %{} = jwk -> {:ok, jwk}
-      _other -> {:error, :invalid_signing_key}
-    end
-  rescue
-    _ -> {:error, :invalid_signing_key}
   end
 end
