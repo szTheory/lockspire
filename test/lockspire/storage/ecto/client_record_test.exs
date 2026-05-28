@@ -606,4 +606,123 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
     assert changeset.valid?
   end
+
+  # access_token_format field tests (Phase 99 Task 3)
+
+  test "a new Client struct defaults access_token_format to nil (inherit)" do
+    assert %Client{}.access_token_format == nil
+  end
+
+  test "changeset/2 casting access_token_format \"opaque\" yields :opaque" do
+    client = %Client{
+      client_id: "atf_changeset_opaque",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      access_token_format: :opaque
+    }
+
+    changeset = ClientRecord.changeset(%ClientRecord{}, client)
+
+    assert changeset.valid?
+    assert Ecto.Changeset.get_field(changeset, :access_token_format) == :opaque
+  end
+
+  test "update_changeset/2 (admin-mutable path) casting access_token_format \"jwt\" yields :jwt" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "atf_update_jwt",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    # Critical: :access_token_format MUST be in update_changeset/2 cast whitelist
+    # (the admin-mutable path).
+    {:ok, updated} =
+      inserted
+      |> ClientRecord.update_changeset(%{
+        access_token_format: "jwt",
+        redirect_uris: ["https://app.example.com/cb"],
+        allowed_scopes: ["openid"],
+        active: true
+      })
+      |> repo.update()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, updated.id))
+
+    assert out.access_token_format == :jwt,
+           "update_changeset/2 must include :access_token_format in cast whitelist"
+  end
+
+  test "to_domain/1 maps a nil access_token_format record onto a nil domain value" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "atf_inherit_nil",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.access_token_format == nil
+  end
+
+  test "access_token_format round-trips :jwt through changeset/2 and to_domain/1" do
+    repo = Lockspire.TestRepo
+
+    client = %Client{
+      client_id: "atf_changeset_jwt_round_trip",
+      client_type: :confidential,
+      redirect_uris: ["https://app.example.com/cb"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      access_token_format: :jwt
+    }
+
+    {:ok, inserted} =
+      %ClientRecord{}
+      |> ClientRecord.changeset(client)
+      |> repo.insert()
+
+    out = ClientRecord.to_domain(repo.get!(ClientRecord, inserted.id))
+
+    assert out.access_token_format == :jwt
+  end
 end

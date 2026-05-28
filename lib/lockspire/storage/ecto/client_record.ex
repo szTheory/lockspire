@@ -56,6 +56,11 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:sector_identifier_uri, :string)
     field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
 
+    # FORMAT-02: per-client override. No default => nil = inherit the server-wide
+    # ServerPolicy.access_token_format. Pitfall 6: this Ecto.Enum pairs with the :text
+    # column from the Plan 99-01 migration so :jwt/:opaque persist as "jwt"/"opaque".
+    field(:access_token_format, Ecto.Enum, values: [:jwt, :opaque])
+
     field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
     field(:authorization_encrypted_response_alg, Ecto.Enum, values: [:RSA_OAEP_256, :ECDH_ES])
     field(:authorization_encrypted_response_enc, Ecto.Enum, values: [:A256GCM, :A128GCM])
@@ -127,6 +132,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :subject_type,
       :sector_identifier_uri,
       :id_token_signed_response_alg,
+      :access_token_format,
       :authorization_signed_response_alg,
       :authorization_encrypted_response_alg,
       :authorization_encrypted_response_enc,
@@ -216,6 +222,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :jwks,
       :jwks_uri,
       :id_token_signed_response_alg,
+      :access_token_format,
       :authorization_signed_response_alg,
       :authorization_encrypted_response_alg,
       :authorization_encrypted_response_enc,
@@ -286,6 +293,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       subject_type: record.subject_type,
       sector_identifier_uri: record.sector_identifier_uri,
       id_token_signed_response_alg: record.id_token_signed_response_alg,
+      access_token_format: record.access_token_format,
       authorization_signed_response_alg: record.authorization_signed_response_alg,
       authorization_encrypted_response_alg: record.authorization_encrypted_response_alg,
       authorization_encrypted_response_enc: record.authorization_encrypted_response_enc,
