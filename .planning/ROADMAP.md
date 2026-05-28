@@ -71,7 +71,7 @@
 **Plans**: 4 plans
 
 - [x] 98-01-PLAN.md — D-01 opaque-token structural rejection at the front-edge of `verify_token/3` with a structured error map; new opaque-token fixture and seven shape-rejection assertions (VERIFIER-01).
-- [ ] 98-02-PLAN.md — D-07 `enforce_audience:` init/1 option (default false) raising on missing audience; D-08 keeps `enforce_audience: true` in install-template canonical block and propagates the keyword to all four RECIPE-01 sites; new release_readiness_contract_test clause asserts every canonical-pipeline file's VerifyToken line carries a non-empty `audience:` substring (VERIFIER-06).
+- [x] 98-02-PLAN.md — D-07 `enforce_audience:` init/1 option (default false) raising on missing audience; D-08 keeps `enforce_audience: true` in install-template canonical block and propagates the keyword to all four RECIPE-01 sites; new release_readiness_contract_test clause asserts every canonical-pipeline file's VerifyToken line carries a non-empty `audience:` substring (VERIFIER-06).
 - [ ] 98-03-PLAN.md — D-02/D-03/D-04 `validate_rfc9068_compliance/2` step after `JOSE.JWT.verify_strict/3` enforcing five RFC 9068 rules with distinct atom reason codes (`:invalid_typ`, `:invalid_issuer`, `:missing_exp`, `:missing_iat`, `:missing_sub`); structured error map shape with per-reason `error_description`; deletes obsolete `# Missing exp ...` comment at line 366 (VERIFIER-02, VERIFIER-03, VERIFIER-04).
 - [ ] 98-04-PLAN.md — D-05/D-06 binding-derived `challenge:` via new `challenge_for/2` helper (cnf.jkt → :dpop, cnf x5t#S256 → :bearer, no-cnf + request DPoP → :dpop, else :bearer); replaces hard-coded `:bearer` at verify_token.ex:187/198 and require_token.ex:113 insufficient-scope normalizer; downstream ProtectedResourceChallenge emission unchanged (VERIFIER-05).
 
@@ -140,7 +140,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 97. Contract + Docs First | 5/5 | Complete    | 2026-05-27 |
-| 98. Plug Hardening | 1/4 | In Progress|  |
+| 98. Plug Hardening | 2/4 | In Progress|  |
 | 99. Signer Extraction + JWT-Default Issuance | 0/TBD | Not started | - |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
 | 101. Adoption-Demo Re-Wire | 0/TBD | Not started | - |
