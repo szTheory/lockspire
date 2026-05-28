@@ -36,7 +36,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
     |> VerifyToken.call(VerifyToken.init(opts))
   end
 
-  defp generate_key_and_token(claims \\ %{}) do
+  defp generate_key_and_token(claims \\ %{}, header_overrides \\ %{}) do
     jose_jwk = JOSE.JWK.generate_key({:rsa, 2048})
     kid = "test-kid-#{System.unique_integer()}"
     public_jwk = jose_jwk |> JOSE.JWK.to_public() |> JOSE.JWK.to_map() |> elem(1)
@@ -56,16 +56,35 @@ defmodule Lockspire.Plug.VerifyTokenTest do
     send(KeyCache, :refresh)
     :sys.get_state(KeyCache)
 
+    # Defaults are intentionally aligned with the five RFC 9068 / RFC 8725
+    # compliance rules `validate_rfc9068_compliance/2` enforces (D-02). Tests
+    # that need to violate a specific rule pass `claims: %{"key" => nil}` to
+    # delete the default, or pass a non-conforming value as an override.
     default_claims = %{
       "client_id" => "test_client",
+      "iss" => Lockspire.Config.issuer!(),
+      "sub" => "test-user-#{System.unique_integer()}",
+      "iat" => System.os_time(:second) - 60,
       "exp" => System.os_time(:second) + 3600,
       "nbf" => System.os_time(:second) - 60
     }
 
-    merged_claims = Map.merge(default_claims, claims)
+    merged_claims =
+      default_claims
+      |> Map.merge(claims)
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
+
+    default_header = %{"alg" => "RS256", "kid" => kid, "typ" => "at+jwt"}
+
+    merged_header =
+      default_header
+      |> Map.merge(header_overrides)
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
 
     {_, signed_token} =
-      JOSE.JWT.sign(jose_jwk, %{"alg" => "RS256", "kid" => kid}, merged_claims)
+      JOSE.JWT.sign(jose_jwk, merged_header, merged_claims)
       |> JOSE.JWS.compact()
 
     {signed_token, merged_claims}
