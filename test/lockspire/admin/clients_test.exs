@@ -586,6 +586,87 @@ defmodule Lockspire.Admin.ClientsTest do
              })
   end
 
+  test "registered clients default to nil access_token_format and updates round-trip jwt/opaque/inherit" do
+    assert {:ok, %Client{} = fetched_client} = Repository.fetch_client_by_id("admin-client")
+    assert is_nil(fetched_client.access_token_format)
+
+    assert {:ok, %Client{} = opaque_client} =
+             Clients.update_client("admin-client", %{
+               "access_token_format" => "opaque"
+             })
+
+    assert opaque_client.access_token_format == :opaque
+
+    assert {:ok, %Client{} = stored_opaque_client} =
+             Repository.fetch_client_by_id("admin-client")
+
+    assert stored_opaque_client.access_token_format == :opaque
+
+    assert {:ok, %Client{} = jwt_client} =
+             Clients.update_client("admin-client", %{
+               "access_token_format" => "jwt"
+             })
+
+    assert jwt_client.access_token_format == :jwt
+
+    assert {:ok, %Client{} = inherit_client} =
+             Clients.update_client("admin-client", %{
+               "access_token_format" => "inherit"
+             })
+
+    assert is_nil(inherit_client.access_token_format)
+
+    assert {:ok, %Client{} = stored_inherit_client} =
+             Repository.fetch_client_by_id("admin-client")
+
+    assert is_nil(stored_inherit_client.access_token_format)
+  end
+
+  test "update_client/2 maps blank and nil access_token_format to nil (inherit)" do
+    assert {:ok, %Client{} = opaque_client} =
+             Clients.update_client("admin-client", %{"access_token_format" => "opaque"})
+
+    assert opaque_client.access_token_format == :opaque
+
+    assert {:ok, %Client{} = blank_client} =
+             Clients.update_client("admin-client", %{"access_token_format" => ""})
+
+    assert is_nil(blank_client.access_token_format)
+
+    assert {:ok, %Client{} = opaque_again} =
+             Clients.update_client("admin-client", %{"access_token_format" => "opaque"})
+
+    assert opaque_again.access_token_format == :opaque
+
+    assert {:ok, %Client{} = nil_client} =
+             Clients.update_client("admin-client", %{access_token_format: nil})
+
+    assert is_nil(nil_client.access_token_format)
+  end
+
+  test "update_client/2 accepts atom access_token_format values" do
+    assert {:ok, %Client{} = opaque_client} =
+             Clients.update_client("admin-client", %{access_token_format: :opaque})
+
+    assert opaque_client.access_token_format == :opaque
+
+    assert {:ok, %Client{} = jwt_client} =
+             Clients.update_client("admin-client", %{access_token_format: :jwt})
+
+    assert jwt_client.access_token_format == :jwt
+  end
+
+  test "update_client/2 rejects unknown access_token_format without storing or crashing" do
+    assert {:error,
+            [%{field: :access_token_format, reason: :invalid_access_token_format, detail: "admin"}]} =
+             Clients.update_client("admin-client", %{
+               "access_token_format" => "admin"
+             })
+
+    assert {:ok, %Client{} = stored_client} = Repository.fetch_client_by_id("admin-client")
+    assert is_nil(stored_client.access_token_format)
+  end
+
   test "update_client/2 with security_profile 'fapi_2_0_security' persists and returns :fapi_2_0_security" do
     now = DateTime.utc_now()
 
