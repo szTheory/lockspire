@@ -4,7 +4,7 @@ defmodule Lockspire.AccessTokenTest do
   alias Lockspire.AccessToken
 
   describe "struct" do
-    test "defaults all fields to nil" do
+    test "defaults all fields to nil (binding_verified defaults to false, not nil)" do
       token = %AccessToken{}
 
       assert token.token == nil
@@ -14,6 +14,7 @@ defmodule Lockspire.AccessTokenTest do
       assert token.binding_type == nil
       assert token.binding_requirements == nil
       assert token.error == nil
+      assert token.binding_verified == false
     end
 
     test "allows setting fields" do
