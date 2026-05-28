@@ -73,6 +73,10 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp verify_token(token, authorization_scheme, opts) do
+    # Front-edge structural check (D-01): a token that does not split into exactly
+    # three non-empty Base64URL segments by `.` short-circuits here with
+    # reason_code: :opaque_token_not_accepted instead of falling through to JOSE
+    # and being silently lumped under :malformed.
     if opaque_shape?(token) do
       error = opaque_token_error()
       log_invalid_token(error, authorization_scheme)

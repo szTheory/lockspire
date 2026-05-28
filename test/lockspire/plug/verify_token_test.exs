@@ -6,6 +6,7 @@ defmodule Lockspire.Plug.VerifyTokenTest do
 
   alias Lockspire.AccessToken
   alias Lockspire.KeyCache
+  alias Lockspire.Plug.RequireToken
   alias Lockspire.Plug.VerifyToken
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Domain.SigningKey
@@ -69,6 +70,9 @@ defmodule Lockspire.Plug.VerifyTokenTest do
 
     {signed_token, merged_claims}
   end
+
+  defp build_opaque_token,
+    do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
 
   describe "VerifyToken plug" do
     test "init/1 rejects simultaneous audience and audiences options" do
@@ -344,6 +348,127 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       assert restriction_log =~ "category=token_restriction"
       assert restriction_log =~ "reason=invalid_audience"
       refute restriction_log =~ token
+    end
+  end
+
+  describe "VerifyToken plug -- opaque-token rejection (VERIFIER-01 / D-01)" do
+    test "rejects a 32-byte Base64URL no-dots opaque token with the structured opaque error" do
+      opaque = build_opaque_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{opaque}")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_format,
+                 challenge: :bearer,
+                 reason_code: :opaque_token_not_accepted,
+                 error: "invalid_token",
+                 error_description: "opaque tokens not accepted on this route"
+               },
+               authorization_scheme: "Bearer"
+             } = conn.assigns[:access_token]
+
+      refute conn.halted
+    end
+
+    test "rejects a two-segment token as opaque" do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer a.b")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 reason_code: :opaque_token_not_accepted,
+                 challenge: :bearer,
+                 error: "invalid_token",
+                 error_description: "opaque tokens not accepted on this route"
+               }
+             } = conn.assigns[:access_token]
+    end
+
+    test "rejects a five-segment token as opaque" do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer a.b.c.d.e")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 reason_code: :opaque_token_not_accepted,
+                 challenge: :bearer,
+                 error: "invalid_token",
+                 error_description: "opaque tokens not accepted on this route"
+               }
+             } = conn.assigns[:access_token]
+    end
+
+    test "rejects a three-segment token with an empty middle segment as opaque" do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer a..c")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 reason_code: :opaque_token_not_accepted,
+                 challenge: :bearer,
+                 error: "invalid_token",
+                 error_description: "opaque tokens not accepted on this route"
+               }
+             } = conn.assigns[:access_token]
+    end
+
+    test "rejects a three-segment token with a non-Base64URL character as opaque" do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer a!b.c.d")
+        |> verify_conn()
+
+      assert %AccessToken{
+               error: %{
+                 reason_code: :opaque_token_not_accepted,
+                 challenge: :bearer,
+                 error: "invalid_token",
+                 error_description: "opaque tokens not accepted on this route"
+               }
+             } = conn.assigns[:access_token]
+    end
+
+    test "passes an opaque token through RequireToken as a 401 with the RFC 6750 WWW-Authenticate header" do
+      opaque = build_opaque_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{opaque}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      assert conn.halted
+
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+
+      assert www_authenticate ==
+               ~s(Bearer realm="Lockspire", error="invalid_token", error_description="opaque tokens not accepted on this route")
+    end
+
+    test "emits a redaction-safe log line with reason=opaque_token_not_accepted" do
+      opaque = build_opaque_token()
+
+      log =
+        capture_log(fn ->
+          build_conn()
+          |> put_req_header("authorization", "Bearer #{opaque}")
+          |> verify_conn()
+        end)
+
+      assert log =~ "reason=opaque_token_not_accepted"
+      assert log =~ "category=token_format"
+      refute log =~ opaque
     end
   end
 end
