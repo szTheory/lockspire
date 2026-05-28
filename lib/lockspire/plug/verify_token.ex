@@ -94,7 +94,12 @@ defmodule Lockspire.Plug.VerifyToken do
     # reason_code: :opaque_token_not_accepted instead of falling through to JOSE
     # and being silently lumped under :malformed.
     if opaque_shape?(token) do
-      error = opaque_token_error()
+      # D-05 row 3: opaque tokens have no parseable claims (and therefore no cnf
+      # binding), so the request's Authorization scheme is the only available
+      # tiebreaker. A client presenting an opaque token with `Authorization: DPoP`
+      # gets `challenge: :dpop`; with `Authorization: Bearer` (the default) gets
+      # `challenge: :bearer`. Plan 04 / VERIFIER-05.
+      error = opaque_token_error(challenge_for(nil, authorization_scheme))
       log_invalid_token(error, authorization_scheme)
 
       %AccessToken{
@@ -110,7 +115,7 @@ defmodule Lockspire.Plug.VerifyToken do
   defp do_verify_token(token, authorization_scheme, opts) do
     with {:ok, kid} <- extract_kid(token),
          {:ok, jwk} <- fetch_key(kid),
-         {:ok, claims} <- verify_signature_and_claims(jwk, token) do
+         {:ok, claims} <- verify_signature_and_claims(jwk, token, authorization_scheme) do
       %AccessToken{
         token: token,
         claims: claims,
@@ -167,10 +172,10 @@ defmodule Lockspire.Plug.VerifyToken do
 
   defp base64url_segment?(_segment), do: false
 
-  defp opaque_token_error do
+  defp opaque_token_error(challenge) do
     %{
       category: :token_format,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :opaque_token_not_accepted,
       error: "invalid_token",
       error_description: "opaque tokens not accepted on this route"
@@ -178,17 +183,23 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp apply_restrictions(%AccessToken{} = access_token, opts) do
-    with :ok <- validate_audience(access_token.claims, opts),
-         :ok <- validate_scopes(access_token.claims, opts) do
+    # D-05/D-06: read authorization_scheme from the in-flight access_token struct
+    # (set on line 118 of do_verify_token/3) rather than threading it through as
+    # an extra arg. validate_audience/3 and validate_scopes/3 use it to derive
+    # the challenge: atom for any failure they emit per the four-row D-05 mapping.
+    authorization_scheme = access_token.authorization_scheme
+
+    with :ok <- validate_audience(access_token.claims, opts, authorization_scheme),
+         :ok <- validate_scopes(access_token.claims, opts, authorization_scheme) do
       access_token
     else
       {:error, error} ->
-        log_restriction_failure(error, access_token.authorization_scheme)
+        log_restriction_failure(error, authorization_scheme)
         %AccessToken{access_token | error: error}
     end
   end
 
-  defp validate_audience(claims, opts) do
+  defp validate_audience(claims, opts, authorization_scheme) do
     case configured_audiences(opts) do
       [] ->
         :ok
@@ -199,15 +210,25 @@ defmodule Lockspire.Plug.VerifyToken do
           :ok
         else
           {:error, reason_code} ->
-            {:error, invalid_audience_error(reason_code, expected_audiences)}
+            {:error,
+             invalid_audience_error(
+               reason_code,
+               expected_audiences,
+               challenge_for(claims, authorization_scheme)
+             )}
 
           false ->
-            {:error, invalid_audience_error(:invalid_audience, expected_audiences)}
+            {:error,
+             invalid_audience_error(
+               :invalid_audience,
+               expected_audiences,
+               challenge_for(claims, authorization_scheme)
+             )}
         end
     end
   end
 
-  defp validate_scopes(claims, opts) do
+  defp validate_scopes(claims, opts, authorization_scheme) do
     required_scopes = Keyword.get(opts, :scopes, [])
 
     if required_scopes == [] do
@@ -218,7 +239,7 @@ defmodule Lockspire.Plug.VerifyToken do
       if Enum.all?(required_scopes, &Enum.member?(token_scopes, &1)) do
         :ok
       else
-        {:error, insufficient_scope_error(required_scopes)}
+        {:error, insufficient_scope_error(required_scopes, challenge_for(claims, authorization_scheme))}
       end
     end
   end
@@ -262,10 +283,10 @@ defmodule Lockspire.Plug.VerifyToken do
 
   defp normalize_token_scopes(_scope_claim), do: []
 
-  defp invalid_audience_error(reason_code, expected_audiences) do
+  defp invalid_audience_error(reason_code, expected_audiences, challenge) do
     %{
       category: :token_restriction,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: reason_code,
       error: "invalid_token",
       error_description: "The access token audience is invalid for this route",
@@ -274,14 +295,15 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   # D-04: structured error map shape for the five RFC 9068 / RFC 8725 reason
-  # codes that `validate_rfc9068_compliance/2` produces. Sibling of
-  # `invalid_audience_error/2` so the structured-error taxonomy reads as one
-  # unit. `challenge:` is hard-coded `:bearer` for Phase 98 Plan 03; Plan 04
-  # (VERIFIER-05) replaces this with a binding-derived value via D-05/D-06.
-  defp rfc9068_error(:invalid_typ) do
+  # codes that `validate_rfc9068_compliance/3` produces. Sibling of
+  # `invalid_audience_error/3` so the structured-error taxonomy reads as one
+  # unit. `challenge` is derived by `challenge_for/2` from the verified claims
+  # `cnf` binding (with the request Authorization scheme as tiebreaker per D-05
+  # row 3); see Plan 04 / VERIFIER-05.
+  defp rfc9068_error(:invalid_typ, challenge) do
     %{
       category: :token_validation,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :invalid_typ,
       error: "invalid_token",
       error_description:
@@ -289,10 +311,10 @@ defmodule Lockspire.Plug.VerifyToken do
     }
   end
 
-  defp rfc9068_error(:invalid_issuer) do
+  defp rfc9068_error(:invalid_issuer, challenge) do
     %{
       category: :token_validation,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :invalid_issuer,
       error: "invalid_token",
       error_description:
@@ -300,40 +322,40 @@ defmodule Lockspire.Plug.VerifyToken do
     }
   end
 
-  defp rfc9068_error(:missing_exp) do
+  defp rfc9068_error(:missing_exp, challenge) do
     %{
       category: :token_validation,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :missing_exp,
       error: "invalid_token",
       error_description: "access token is missing required \"exp\" claim per RFC 9068 §2.2"
     }
   end
 
-  defp rfc9068_error(:missing_iat) do
+  defp rfc9068_error(:missing_iat, challenge) do
     %{
       category: :token_validation,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :missing_iat,
       error: "invalid_token",
       error_description: "access token is missing required \"iat\" claim per RFC 9068 §2.2"
     }
   end
 
-  defp rfc9068_error(:missing_sub) do
+  defp rfc9068_error(:missing_sub, challenge) do
     %{
       category: :token_validation,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :missing_sub,
       error: "invalid_token",
       error_description: "access token is missing required \"sub\" claim per RFC 9068 §2.2"
     }
   end
 
-  defp insufficient_scope_error(required_scopes) do
+  defp insufficient_scope_error(required_scopes, challenge) do
     %{
       category: :insufficient_scope,
-      challenge: :bearer,
+      challenge: challenge,
       reason_code: :insufficient_scope,
       error: "insufficient_scope",
       error_description: "The access token is missing a required scope",
@@ -447,6 +469,53 @@ defmodule Lockspire.Plug.VerifyToken do
 
   defp binding_type(_claims), do: nil
 
+  # D-05 / D-06 (Plan 04 / VERIFIER-05): derive the `challenge:` atom used on
+  # every VerifyToken-produced structured error map from the verified claims'
+  # `cnf` binding, with the request's Authorization scheme as a tiebreaker
+  # when the token has no `cnf` claim. The four-row D-05 mapping is:
+  #
+  #   1. Token has `cnf.jkt` (DPoP-bound, possibly also mTLS-bound)
+  #      → `:dpop` — RFC 9449 §7.1 redefines the WWW-Authenticate scheme.
+  #      When both `jkt` and `x5t#S256` are present, DPoP wins.
+  #
+  #   2. Token has only `cnf["x5t#S256"]` (mTLS-bound, no DPoP binding)
+  #      → `:bearer` — RFC 8705 §3 specifies that mTLS-bound tokens reuse the
+  #      Bearer scheme; RFC 9449 only redefines the scheme for DPoP.
+  #
+  #   3. No `cnf` claim (or empty `cnf`) AND request used `Authorization: DPoP`
+  #      → `:dpop` — request-scheme tiebreaker for the misconfigured-client
+  #      path (rare: client thinks it has a DPoP-bound token, server's token
+  #      copy lacks the binding claim). The response should still be
+  #      DPoP-shaped so the client's retry path lands on a DPoP nonce flow,
+  #      not a Bearer one.
+  #
+  #   4. Otherwise (no `cnf`, request used Bearer or no scheme threaded)
+  #      → `:bearer` — default.
+  #
+  # Distinct return type from `binding_type/1` (`:bearer | :dpop` atoms vs
+  # `"dpop" | "dpop+mtls" | "mtls" | nil` strings); the two helpers cover
+  # sibling concerns but feed different downstream consumers (binding_type
+  # feeds AccessToken.binding_type for EnforceSenderConstraints; challenge_for
+  # feeds the structured error map's `challenge:` for the WWW-Authenticate
+  # scheme letter).
+  defp challenge_for(%{"cnf" => %{} = cnf}, scheme) do
+    has_dpop? = present?(Map.get(cnf, "jkt"))
+    has_mtls? = present?(Map.get(cnf, "x5t#S256"))
+
+    cond do
+      has_dpop? -> :dpop
+      has_mtls? -> :bearer
+      # Empty cnf — no recognizable binding present; fall through to the
+      # request-scheme tiebreaker per D-05 row 3/4.
+      true -> challenge_from_scheme(scheme)
+    end
+  end
+
+  defp challenge_for(_claims, scheme), do: challenge_from_scheme(scheme)
+
+  defp challenge_from_scheme("DPoP"), do: :dpop
+  defp challenge_from_scheme(_other), do: :bearer
+
   defp binding_requirements(%{"cnf" => %{} = cnf}) do
     requirements =
       %{}
@@ -489,7 +558,7 @@ defmodule Lockspire.Plug.VerifyToken do
     end
   end
 
-  defp verify_signature_and_claims(jwk, token) do
+  defp verify_signature_and_claims(jwk, token, authorization_scheme) do
     case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
       {true, %JOSE.JWT{fields: claims}, _jws} ->
         # D-02: RFC 9068 / RFC 8725 compliance runs AFTER the signature is
@@ -497,7 +566,11 @@ defmodule Lockspire.Plug.VerifyToken do
         # BEFORE time_claims_valid?/1 + apply_restrictions/2 (so the named
         # RFC 9068 reason codes win over the legacy :invalid_time_claims and
         # over audience/scope restriction failures).
-        with {:ok, claims} <- validate_rfc9068_compliance(token, claims) do
+        #
+        # D-05/D-06 (Plan 04): authorization_scheme is threaded through so the
+        # five RFC 9068 reason codes can derive `challenge:` from the cnf
+        # binding (with the request scheme as tiebreaker per D-05 row 3).
+        with {:ok, claims} <- validate_rfc9068_compliance(token, claims, authorization_scheme) do
           if time_claims_valid?(claims) do
             {:ok, claims}
           else
@@ -544,19 +617,24 @@ defmodule Lockspire.Plug.VerifyToken do
   # Phase 99's `Protocol.AccessTokenSigner` extraction evolve issuance to
   # emit `application/at+jwt` (stricter RFC 9068 §2.1 conformance) without
   # breaking Phase 98's verifier.
-  defp validate_rfc9068_compliance(token, claims) do
+  defp validate_rfc9068_compliance(token, claims, authorization_scheme) do
     expected_issuer = Config.issuer!()
+    # D-05/D-06 (Plan 04): derive the challenge atom from the verified claims'
+    # cnf binding (with the request scheme as tiebreaker when no cnf is
+    # present). Computed once here so all five rfc9068_error/2 calls share the
+    # same value.
+    challenge = challenge_for(claims, authorization_scheme)
 
-    with :ok <- check_at_jwt_typ(token),
-         :ok <- check_issuer(claims, expected_issuer),
-         :ok <- check_exp_positive_integer(claims),
-         :ok <- check_iat_positive_integer(claims),
-         :ok <- check_sub_non_empty_string(claims) do
+    with :ok <- check_at_jwt_typ(token, challenge),
+         :ok <- check_issuer(claims, expected_issuer, challenge),
+         :ok <- check_exp_positive_integer(claims, challenge),
+         :ok <- check_iat_positive_integer(claims, challenge),
+         :ok <- check_sub_non_empty_string(claims, challenge) do
       {:ok, claims}
     end
   end
 
-  defp check_at_jwt_typ(token) do
+  defp check_at_jwt_typ(token, challenge) do
     case peek_typ(token) do
       typ when is_binary(typ) ->
         normalized =
@@ -568,11 +646,11 @@ defmodule Lockspire.Plug.VerifyToken do
         if normalized == "at+jwt" do
           :ok
         else
-          {:error, rfc9068_error(:invalid_typ)}
+          {:error, rfc9068_error(:invalid_typ, challenge)}
         end
 
       _ ->
-        {:error, rfc9068_error(:invalid_typ)}
+        {:error, rfc9068_error(:invalid_typ, challenge)}
     end
   end
 
@@ -584,38 +662,38 @@ defmodule Lockspire.Plug.VerifyToken do
     _ -> nil
   end
 
-  defp check_issuer(claims, expected_issuer) do
+  defp check_issuer(claims, expected_issuer, challenge) do
     case Map.get(claims, "iss") do
       iss when is_binary(iss) and iss == expected_issuer -> :ok
-      _ -> {:error, rfc9068_error(:invalid_issuer)}
+      _ -> {:error, rfc9068_error(:invalid_issuer, challenge)}
     end
   end
 
-  defp check_exp_positive_integer(claims) do
+  defp check_exp_positive_integer(claims, challenge) do
     case Map.get(claims, "exp") do
       exp when is_integer(exp) and exp > 0 -> :ok
-      _ -> {:error, rfc9068_error(:missing_exp)}
+      _ -> {:error, rfc9068_error(:missing_exp, challenge)}
     end
   end
 
-  defp check_iat_positive_integer(claims) do
+  defp check_iat_positive_integer(claims, challenge) do
     case Map.get(claims, "iat") do
       iat when is_integer(iat) and iat > 0 -> :ok
-      _ -> {:error, rfc9068_error(:missing_iat)}
+      _ -> {:error, rfc9068_error(:missing_iat, challenge)}
     end
   end
 
-  defp check_sub_non_empty_string(claims) do
+  defp check_sub_non_empty_string(claims, challenge) do
     case Map.get(claims, "sub") do
       sub when is_binary(sub) ->
         if non_empty_string?(sub) do
           :ok
         else
-          {:error, rfc9068_error(:missing_sub)}
+          {:error, rfc9068_error(:missing_sub, challenge)}
         end
 
       _ ->
-        {:error, rfc9068_error(:missing_sub)}
+        {:error, rfc9068_error(:missing_sub, challenge)}
     end
   end
 
