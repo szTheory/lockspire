@@ -92,6 +92,50 @@ defmodule Lockspire.Admin.ServerPolicyTest do
              ServerPolicy.put_dpop_policy(:inherit)
   end
 
+  # access_token_format admin command tests (Phase 99 Task 2)
+
+  test "a fresh/default server policy resolves access_token_format to :jwt" do
+    assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.get_server_policy()
+    assert policy.access_token_format == :jwt
+  end
+
+  test "%Domain.ServerPolicy{} struct default access_token_format is :jwt" do
+    assert %DomainServerPolicy{}.access_token_format == :jwt
+  end
+
+  test "put_access_token_format/1 persists :opaque and a subsequent get returns :opaque" do
+    assert {:ok, %DomainServerPolicy{} = opaque_policy} =
+             ServerPolicy.put_access_token_format(:opaque)
+
+    assert opaque_policy.access_token_format == :opaque
+
+    assert {:ok, %DomainServerPolicy{} = admin_policy} = ServerPolicy.get_server_policy()
+    assert admin_policy.access_token_format == :opaque
+
+    assert {:ok, %DomainServerPolicy{} = stored_policy} = Repository.get_server_policy()
+    assert stored_policy.access_token_format == :opaque
+  end
+
+  test "put_access_token_format/1 normalizes the string \"jwt\" to :jwt" do
+    assert {:ok, %DomainServerPolicy{access_token_format: :opaque}} =
+             ServerPolicy.put_access_token_format(:opaque)
+
+    assert {:ok, %DomainServerPolicy{} = jwt_policy} =
+             ServerPolicy.put_access_token_format("jwt")
+
+    assert jwt_policy.access_token_format == :jwt
+  end
+
+  test "put_access_token_format/1 rejects unknown atom with a structured error tuple" do
+    assert {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: :bogus}]} =
+             ServerPolicy.put_access_token_format(:bogus)
+  end
+
+  test "put_access_token_format/1 rejects unknown string with an error tuple (no nil branch)" do
+    assert {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: "nonsense"}]} =
+             ServerPolicy.put_access_token_format("nonsense")
+  end
+
   test "get_dcr_policy/0 returns disabled defaults when no durable row exists" do
     assert {:ok, %DomainServerPolicy{} = policy} = ServerPolicy.get_dcr_policy()
     assert policy.registration_policy == :disabled

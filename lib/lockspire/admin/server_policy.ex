@@ -62,6 +62,16 @@ defmodule Lockspire.Admin.ServerPolicy do
     end
   end
 
+  @spec put_access_token_format(atom() | String.t()) ::
+          {:ok, ServerPolicy.t()} | {:error, [error_detail()]} | {:error, term()}
+  def put_access_token_format(format) do
+    with {:ok, normalized_format} <- normalize_access_token_format(format) do
+      Repository.update_server_policy(fn %ServerPolicy{} = current ->
+        %ServerPolicy{current | access_token_format: normalized_format}
+      end)
+    end
+  end
+
   @spec put_max_delegation_depth(integer()) ::
           {:ok, ServerPolicy.t()} | {:error, Ecto.Changeset.t()} | {:error, term()}
   def put_max_delegation_depth(depth) when is_integer(depth) do
@@ -224,6 +234,27 @@ defmodule Lockspire.Admin.ServerPolicy do
 
   defp invalid_dpop_policy(value) do
     {:error, [%{field: :dpop_policy, reason: :invalid_dpop_policy, detail: value}]}
+  end
+
+  # Server-wide setter: the value is :jwt | :opaque (NOT nullable). Mirrors
+  # normalize_dpop_policy/1 minus any nil branch — the server default is always concrete.
+  defp normalize_access_token_format(:jwt), do: {:ok, :jwt}
+  defp normalize_access_token_format(:opaque), do: {:ok, :opaque}
+
+  defp normalize_access_token_format(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "jwt" -> {:ok, :jwt}
+      "opaque" -> {:ok, :opaque}
+      _other -> invalid_access_token_format(value)
+    end
+  end
+
+  defp normalize_access_token_format(value), do: invalid_access_token_format(value)
+
+  defp invalid_access_token_format(value) do
+    {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: value}]}
   end
 
   defp normalize_security_profile(:none), do: {:ok, :none}
