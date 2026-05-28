@@ -39,6 +39,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       |> EnforceSenderConstraints.call([])
 
     assert conn.assigns.access_token == access_token
+    assert conn.assigns.access_token.binding_verified == false
     refute conn.halted
   end
 
@@ -76,6 +77,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       )
 
     assert %AccessToken{error: nil} = conn.assigns.access_token
+    assert conn.assigns.access_token.binding_verified == true
     refute conn.halted
   end
 
@@ -207,6 +209,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       |> EnforceSenderConstraints.call([])
 
     assert %AccessToken{error: nil} = private_conn.assigns.access_token
+    assert private_conn.assigns.access_token.binding_verified == true
 
     extractor_conn =
       conn(:get, "/resource")
@@ -214,6 +217,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       |> EnforceSenderConstraints.call(mtls_extractor: {MTLSExtractor, scenario: :success})
 
     assert %AccessToken{error: nil} = extractor_conn.assigns.access_token
+    assert extractor_conn.assigns.access_token.binding_verified == true
 
     missing_cert_conn =
       conn(:get, "/resource")
@@ -267,6 +271,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       )
 
     assert %AccessToken{error: nil} = valid_conn.assigns.access_token
+    assert valid_conn.assigns.access_token.binding_verified == true
   end
 
   defp request_conn do
