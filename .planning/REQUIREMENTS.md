@@ -41,9 +41,9 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Sender Constraints (DPoP + mTLS) End-to-End Proof
 
-- [ ] **BIND-01**: A DPoP-bound `at+jwt` issued by the AC / refresh / device / CIBA paths carries `cnf.jkt` and is verified end-to-end through `Lockspire.Plug.VerifyToken` → `EnforceSenderConstraints` → `RequireToken`, returning a usable `%AccessToken{}` to the host controller. No new enforcer code; proof only.
-- [ ] **BIND-02**: An mTLS-bound `at+jwt` issued by the same paths carries `cnf["x5t#S256"]` and is verified end-to-end. No new enforcer code; proof only.
-- [ ] **BIND-03**: A pipeline missing `EnforceSenderConstraints` after `VerifyToken` either fails closed in `RequireToken` (when `binding_requirements` is non-nil) or is asserted-against by `release_readiness_contract_test`. Sender-constraint bypass via misordered pipeline is no longer reachable in the blessed path.
+- [x] **BIND-01**: A DPoP-bound `at+jwt` issued by the AC / refresh / device / CIBA paths carries `cnf.jkt` and is verified end-to-end through `Lockspire.Plug.VerifyToken` → `EnforceSenderConstraints` → `RequireToken`, returning a usable `%AccessToken{}` to the host controller. No new enforcer code; proof only.
+- [x] **BIND-02**: An mTLS-bound `at+jwt` issued by the same paths carries `cnf["x5t#S256"]` and is verified end-to-end. No new enforcer code; proof only.
+- [x] **BIND-03**: A pipeline missing `EnforceSenderConstraints` after `VerifyToken` either fails closed in `RequireToken` (when `binding_requirements` is non-nil) or is asserted-against by `release_readiness_contract_test`. Sender-constraint bypass via misordered pipeline is no longer reachable in the blessed path.
 
 ### Adoption Demo Proof
 
@@ -132,9 +132,9 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | AUD-02 | Phase 99 | Complete |
 | AUD-03 | Phase 99 | Complete |
 | DISCOVERY-01 | Phase 99 | Complete |
-| BIND-01 | Phase 100 | Pending |
-| BIND-02 | Phase 100 | Pending |
-| BIND-03 | Phase 100 | Pending |
+| BIND-01 | Phase 100 | Complete |
+| BIND-02 | Phase 100 | Complete |
+| BIND-03 | Phase 100 | Complete |
 | DEMO-01 | Phase 101 | Pending |
 | DEMO-02 | Phase 101 | Pending |
 | DEMO-03 | Phase 101 | Pending |
