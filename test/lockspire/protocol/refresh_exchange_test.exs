@@ -14,7 +14,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule MockKeyStore do
-    def fetch_active_signing_key do
+    def fetch_active_signing_key(_opts) do
       jwk = JOSE.JWK.generate_key({:rsa, 2048}) |> JOSE.JWK.to_map() |> elem(1) |> Jason.encode!()
       {:ok, %{alg: "RS256", kid: "key-1", private_jwk_encrypted: jwk}}
     end

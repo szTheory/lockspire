@@ -163,20 +163,19 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   # --------------------------------------------------------------------------
 
   defp sign_jwt(claims, request) do
-    case fetch_signing_key(request) do
-      {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} ->
-        {:ok, jwk_map} = decode_private_jwk(private_jwk)
+    with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} <-
+           fetch_signing_key(request),
+         {:ok, jwk_map} <- decode_private_jwk(private_jwk) do
+      {_, compact} =
+        JOSE.JWT.sign(
+          JOSE.JWK.from_map(jwk_map),
+          %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
+          claims
+        )
+        |> JOSE.JWS.compact()
 
-        {_, compact} =
-          JOSE.JWT.sign(
-            JOSE.JWK.from_map(jwk_map),
-            %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
-            claims
-          )
-          |> JOSE.JWS.compact()
-
-        {:ok, compact, Policy.hash_token(compact)}
-
+      {:ok, compact, Policy.hash_token(compact)}
+    else
       {:error, reason} ->
         Logger.error("Failed to sign access token: #{inspect(reason)}")
 
@@ -200,7 +199,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
       |> Map.get(:opts, [])
       |> Keyword.get(:key_store, Config.repo!())
 
-    case key_store.fetch_active_signing_key() do
+    case key_store.fetch_active_signing_key([]) do
       {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
       when is_binary(private_jwk) and is_binary(alg) ->
         {:ok, key}

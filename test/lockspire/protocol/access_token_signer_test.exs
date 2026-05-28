@@ -15,8 +15,11 @@ defmodule Lockspire.Protocol.AccessTokenSignerTest do
   # Mocks — mirror token_controller.ex opts (key_store + server_policy_store).
   # ---------------------------------------------------------------------------
 
+  # Arity-1 only — mirrors the KeyStore behaviour callback
+  # `fetch_active_signing_key(keyword())`. Defining arity 1 (no default) guards
+  # the WR-01 regression: a signer that calls the arity-0 form raises here.
   defmodule MockKeyStore do
-    def fetch_active_signing_key do
+    def fetch_active_signing_key(_opts) do
       jwk =
         JOSE.JWK.generate_key({:rsa, 2048})
         |> JOSE.JWK.to_map()
@@ -28,7 +31,16 @@ defmodule Lockspire.Protocol.AccessTokenSignerTest do
   end
 
   defmodule MissingKeyStore do
-    def fetch_active_signing_key, do: {:ok, nil}
+    def fetch_active_signing_key(_opts), do: {:ok, nil}
+  end
+
+  # Returns a key whose private_jwk_encrypted is a binary (passes the fetch
+  # guard) but is neither valid JSON nor a safe-decodable Erlang term, so
+  # decode_private_jwk/1 returns {:error, :invalid_signing_key}.
+  defmodule CorruptKeyStore do
+    def fetch_active_signing_key(_opts) do
+      {:ok, %{alg: "RS256", kid: "key-1", private_jwk_encrypted: "not-a-valid-jwk-%%%"}}
+    end
   end
 
   # A server policy store whose default format is configured per-test via the
@@ -274,6 +286,49 @@ defmodule Lockspire.Protocol.AccessTokenSignerTest do
       put_server_default(:jwt)
       tok = token()
       req = request(key_store: MissingKeyStore)
+
+      log =
+        capture_log(fn ->
+          assert {:error, %Error{}} = AccessTokenSigner.issue(tok, client(), req)
+        end)
+
+      refute log =~ "private_jwk"
+      refute log =~ "BEGIN"
+      refute String.match?(log, ~r/"d"\s*:/), "no JWK private exponent in logs"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # (g) Corrupt signing key — a non-decodable stored JWK must degrade to a
+  # structured 500, not raise (CR-01). Every default grant path now routes
+  # through this signing site, so a single corrupt active key must not crash.
+  # ---------------------------------------------------------------------------
+
+  describe "corrupt signing key" do
+    test "returns a 500 token_signing_failed error instead of raising" do
+      put_server_default(:jwt)
+      tok = token()
+      req = request(key_store: CorruptKeyStore)
+
+      assert {:error, %Error{} = error} = AccessTokenSigner.issue(tok, client(), req)
+      assert error.status == 500
+      assert error.error == "server_error"
+      assert error.reason_code == :token_signing_failed
+    end
+
+    test "exchange path also degrades to a structured 500 on a corrupt key" do
+      put_server_default(:jwt)
+      tok = token()
+      req = request(key_store: CorruptKeyStore)
+
+      assert {:error, %Error{reason_code: :token_signing_failed}} =
+               AccessTokenSigner.issue_exchange(tok, client(), %{}, req)
+    end
+
+    test "does not log key material on the corrupt-key error path" do
+      put_server_default(:jwt)
+      tok = token()
+      req = request(key_store: CorruptKeyStore)
 
       log =
         capture_log(fn ->
