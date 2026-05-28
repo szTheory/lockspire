@@ -689,6 +689,63 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
+  @doc false
+  # Test-only public delegate for validate_grant_resources/2. The device/CIBA
+  # invalid_target rejection branch is only reachable when a grant carries a
+  # recorded authorized audience; device/CIBA grants carry none through the public
+  # flow today, so this seam lets the suite prove the rejection guard (T-99-11)
+  # against a grant token seeded with a recorded audience.
+  @spec validate_grant_resources_for_test(map(), Token.t()) ::
+          {:ok, [String.t()]} | {:error, Error.t()}
+  def validate_grant_resources_for_test(params, %Token{} = grant) do
+    validate_grant_resources(params, grant)
+  end
+
+  # AUD-01/AUD-02 for the device and CIBA grant paths. Mirrors the AC
+  # validate_requested_resources/2 shape (List.wrap, keep binaries, membership
+  # against the grant's authorized audience) with one carve-out: device and CIBA
+  # grants carry no recorded audience today (build_device_grant/build_ciba_grant),
+  # so an empty authorized set accepts any binary resource — matching the AC
+  # `requested == [] -> {:ok, authorized}` default semantics. When a grant DOES
+  # carry a recorded audience, an out-of-set resource is rejected with
+  # invalid_target (:invalid_resource, 400) — the T-99-11 audience-confusion guard.
+  defp validate_grant_resources(params, %Token{} = grant) do
+    requested =
+      params
+      |> Map.get("resource")
+      |> List.wrap()
+      |> Enum.flat_map(fn
+        r when is_binary(r) -> [r]
+        _ -> []
+      end)
+
+    authorized = grant.audience
+
+    cond do
+      requested == [] ->
+        {:ok, authorized}
+
+      authorized == [] ->
+        {:ok, requested}
+
+      Enum.all?(requested, &(&1 in authorized)) ->
+        {:ok, requested}
+
+      true ->
+        {:error,
+         oauth_error(
+           400,
+           "invalid_target",
+           "The requested resource is invalid or was not authorized",
+           :invalid_resource
+         )}
+    end
+  end
+
+  defp request_params(request) do
+    Map.get(request, :params, Map.get(request, "params", request))
+  end
+
   defp redeem_code(
          %Client{} = client,
          %Token{} = authorization_code,
@@ -812,7 +869,9 @@ defmodule Lockspire.Protocol.TokenExchange do
          account_id: ciba_authorization.subject_id,
          interaction_id: nil,
          scopes: ciba_authorization.scopes,
-         audience: [],
+         # audience is the grant's authorized set for validate_grant_resources/2;
+         # CIBA records none today, so it stays the %Token{} default ([]) and the
+         # validated resource is threaded in redeem_ciba_grant before minting.
          issued_at: ciba_authorization.approved_at,
          expires_at: ciba_authorization.expires_at
        }}
@@ -837,10 +896,11 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, ciba_grant, request)
 
-    with {%Token{} = access_token, raw_access_token} <-
+    with {:ok, validated_audience} <- validate_grant_resources(request_params(request), ciba_grant),
+         {%Token{} = access_token, raw_access_token} <-
            build_access_token(
              client,
-             ciba_grant,
+             %Token{ciba_grant | audience: validated_audience},
              issued_at,
              formatted_refresh_token,
              issuance_context,
@@ -960,7 +1020,9 @@ defmodule Lockspire.Protocol.TokenExchange do
          account_id: device_authorization.subject_id,
          interaction_id: nil,
          scopes: device_authorization.scopes,
-         audience: [],
+         # audience is the grant's authorized set for validate_grant_resources/2;
+         # device records none today, so it stays the %Token{} default ([]) and the
+         # validated resource is threaded in redeem_device_grant before minting.
          issued_at: device_authorization.approved_at,
          expires_at: device_authorization.expires_at
        }}
@@ -985,10 +1047,12 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
 
-    with {%Token{} = access_token, raw_access_token} <-
+    with {:ok, validated_audience} <-
+           validate_grant_resources(request_params(request), device_grant),
+         {%Token{} = access_token, raw_access_token} <-
            build_access_token(
              client,
-             device_grant,
+             %Token{device_grant | audience: validated_audience},
              issued_at,
              formatted_refresh_token,
              issuance_context,

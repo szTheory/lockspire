@@ -1482,6 +1482,252 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert persisted_access_token.cnf["jkt"] == validated_proof.jkt
   end
 
+  test "device flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)" do
+    secret = "device-resource-secret"
+    publish_signing_key("kid-device-resource")
+
+    {:ok, client} =
+      create_client(
+        "device-resource-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-resource",
+        user_code: "RES-0001",
+        scopes: ["email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-resource",
+                 "resource" => "https://api.device.example.com"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository
+               ]
+             })
+
+    {_header, claims} = verify_at_jwt(success.access_token)
+    assert claims["aud"] == ["https://api.device.example.com"]
+  end
+
+  test "device flow without resource= mints an at+jwt whose aud == [client_id] (AUD-02)" do
+    secret = "device-no-resource-secret"
+    publish_signing_key("kid-device-no-resource")
+
+    {:ok, client} =
+      create_client(
+        "device-no-resource-client",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:device_code"]
+      )
+
+    {:ok, _approved} =
+      create_device_authorization(client,
+        device_code: "device-code-no-resource",
+        user_code: "NORES001",
+        scopes: ["email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "device-code-no-resource"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository
+               ]
+             })
+
+    {_header, claims} = verify_at_jwt(success.access_token)
+    assert claims["aud"] == [client.client_id]
+  end
+
+  test "CIBA flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)" do
+    secret = "ciba-resource-secret"
+    publish_signing_key("kid-ciba-resource")
+
+    {:ok, client} =
+      create_client(
+        "client-ciba-resource",
+        :client_secret_basic,
+        secret,
+        ["urn:openid:params:grant-type:ciba"],
+        %{allowed_scopes: ["openid", "email", "profile"]}
+      )
+
+    {:ok, _authorization} =
+      create_ciba_authorization(client,
+        auth_req_id: "ciba-auth-req-resource",
+        scopes: ["openid", "email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:openid:params:grant-type:ciba",
+                 "auth_req_id" => "ciba-auth-req-resource",
+                 "resource" => "https://api.ciba.example.com"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 ciba_authorization_store: Repository
+               ]
+             })
+
+    {_header, claims} = verify_at_jwt(success.access_token)
+    assert claims["aud"] == ["https://api.ciba.example.com"]
+  end
+
+  test "CIBA flow without resource= mints an at+jwt whose aud == [client_id] (AUD-02)" do
+    secret = "ciba-no-resource-secret"
+    publish_signing_key("kid-ciba-no-resource")
+
+    {:ok, client} =
+      create_client(
+        "client-ciba-no-resource",
+        :client_secret_basic,
+        secret,
+        ["urn:openid:params:grant-type:ciba"],
+        %{allowed_scopes: ["openid", "email", "profile"]}
+      )
+
+    {:ok, _authorization} =
+      create_ciba_authorization(client,
+        auth_req_id: "ciba-auth-req-no-resource",
+        scopes: ["openid", "email", "profile"],
+        transition: %{
+          status: :approved,
+          approved_at: DateTime.utc_now(),
+          subject_id: "subject-123"
+        }
+      )
+
+    assert {:ok, success} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:openid:params:grant-type:ciba",
+                 "auth_req_id" => "ciba-auth-req-no-resource"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 ciba_authorization_store: Repository
+               ]
+             })
+
+    {_header, claims} = verify_at_jwt(success.access_token)
+    assert claims["aud"] == [client.client_id]
+  end
+
+  test "AC flow with an unauthorized resource returns invalid_target (:invalid_resource, 400)" do
+    # validate_requested_resources/2 (AC) and validate_grant_resources/2 (device/CIBA)
+    # share the identical membership-rejection cond: when the grant carries a
+    # recorded authorized audience and the requested resource is not a member, the
+    # request is rejected with invalid_target (:invalid_resource, 400) — T-99-11.
+    # AC is the reachable surface for the rejection branch because the authorization
+    # code records an authorized audience; device/CIBA record none today, so their
+    # reachable behavior is the accept-any-when-empty AUD-01 path proven above.
+    secret = "ac-unauthorized-resource-secret"
+    {:ok, client} = create_client("client-ac-unauthorized", :client_secret_basic, secret)
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-ac-unauthorized",
+        code_verifier: "verifier-ac-unauthorized",
+        audience: ["https://api.allowed.example.com"]
+      )
+
+    assert {:error, error} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-ac-unauthorized",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-ac-unauthorized",
+                 "resource" => "https://api.evil.example.com"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    assert error.status == 400
+    assert error.error == "invalid_target"
+    assert error.reason_code == :invalid_resource
+  end
+
+  test "device/CIBA validate_grant_resources rejects an out-of-set resource with invalid_target when the grant carries a recorded audience" do
+    # Exercises the device/CIBA invalid_target branch directly. Device/CIBA grants
+    # carry no recorded audience through the public flow today, so the rejection
+    # branch is exercised here against a grant token seeded with a recorded
+    # audience — proving validate_grant_resources/2 rejects unauthorized resources
+    # (T-99-11) rather than silently falling through to [client_id].
+    grant_with_audience = %Token{audience: ["https://api.allowed.example.com"]}
+
+    assert {:error, error} =
+             TokenExchange.validate_grant_resources_for_test(
+               %{"resource" => "https://api.evil.example.com"},
+               grant_with_audience
+             )
+
+    assert error.status == 400
+    assert error.error == "invalid_target"
+    assert error.reason_code == :invalid_resource
+
+    # And it accepts an in-set resource.
+    assert {:ok, ["https://api.allowed.example.com"]} =
+             TokenExchange.validate_grant_resources_for_test(
+               %{"resource" => "https://api.allowed.example.com"},
+               grant_with_audience
+             )
+
+    # And it accepts ANY binary resource when the grant carries no recorded audience.
+    assert {:ok, ["https://anything.example.com"]} =
+             TokenExchange.validate_grant_resources_for_test(
+               %{"resource" => "https://anything.example.com"},
+               %Token{audience: []}
+             )
+  end
+
   test "preserves bearer token_type for approved bearer-mode device authorization" do
     secret = "device-bearer-secret"
     publish_signing_key("kid-device-bearer")
