@@ -21,12 +21,12 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Verifier Contract
 
-- [ ] **VERIFIER-01**: `Lockspire.Plug.VerifyToken` accepts only RFC 9068 `at+jwt` access tokens. Opaque tokens are explicitly rejected with `WWW-Authenticate: Bearer error="invalid_token", error_description="opaque tokens not accepted on this route"`, never silently accepted or silently mis-rejected.
-- [ ] **VERIFIER-02**: The plug enforces RFC 9068 §4 issuer pinning (`iss` matches `Lockspire.Config.issuer!()`) on every verified access token. Missing or wrong `iss` returns `invalid_token` with a distinct reason code.
-- [ ] **VERIFIER-03**: The plug enforces `typ: at+jwt` header on every verified access token (RFC 9068 §2.1, RFC 8725 §3.11). Tokens with a different `typ` (including missing or `JWT`) are rejected as `invalid_token` to defeat cross-JWT confusion.
-- [ ] **VERIFIER-04**: The plug requires `exp`, `iat`, and `sub` claims on every verified access token (RFC 9068 §2.2). Missing any of these is `invalid_token`.
-- [ ] **VERIFIER-05**: The plug emits `WWW-Authenticate` challenges whose `scheme` is derived from the request's authorization scheme and the token's binding type, not from the failure category. DPoP-bound failures emit `DPoP`; mTLS-bound failures emit `Bearer` with `MAC`-equivalent guidance; plain bearer failures emit `Bearer`. RFC 9449 §7.1 compliant.
-- [ ] **VERIFIER-06**: `audience:` (or `audiences:`) is effectively mandatory on the blessed pipeline. The plug raises from `init/1` when `enforce_audience: true` is set (the default in `priv/templates/lockspire.install/router.ex`) and no `audience:` is supplied, OR a `release_readiness_contract_test` clause asserts every shipped pipeline declares one. Cross-API token reuse closed.
+- [x] **VERIFIER-01**: `Lockspire.Plug.VerifyToken` accepts only RFC 9068 `at+jwt` access tokens. Opaque tokens are explicitly rejected with `WWW-Authenticate: Bearer error="invalid_token", error_description="opaque tokens not accepted on this route"`, never silently accepted or silently mis-rejected.
+- [x] **VERIFIER-02**: The plug enforces RFC 9068 §4 issuer pinning (`iss` matches `Lockspire.Config.issuer!()`) on every verified access token. Missing or wrong `iss` returns `invalid_token` with a distinct reason code.
+- [x] **VERIFIER-03**: The plug enforces `typ: at+jwt` header on every verified access token (RFC 9068 §2.1, RFC 8725 §3.11). Tokens with a different `typ` (including missing or `JWT`) are rejected as `invalid_token` to defeat cross-JWT confusion.
+- [x] **VERIFIER-04**: The plug requires `exp`, `iat`, and `sub` claims on every verified access token (RFC 9068 §2.2). Missing any of these is `invalid_token`.
+- [x] **VERIFIER-05**: The plug emits `WWW-Authenticate` challenges whose `scheme` is derived from the request's authorization scheme and the token's binding type, not from the failure category. DPoP-bound failures emit `DPoP`; mTLS-bound failures emit `Bearer` with `MAC`-equivalent guidance; plain bearer failures emit `Bearer`. RFC 9449 §7.1 compliant.
+- [x] **VERIFIER-06**: `audience:` (or `audiences:`) is effectively mandatory on the blessed pipeline. The plug raises from `init/1` when `enforce_audience: true` is set (the default in `priv/templates/lockspire.install/router.ex`) and no `audience:` is supplied, OR a `release_readiness_contract_test` clause asserts every shipped pipeline declares one. Cross-API token reuse closed.
 
 ### Audience Semantics
 
@@ -118,12 +118,12 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | RECIPE-01 | Phase 97 | Complete |
 | DOCS-01 | Phase 97 | Complete |
 | DOCS-02 | Phase 97 | Complete |
-| VERIFIER-01 | Phase 98 | Pending |
-| VERIFIER-02 | Phase 98 | Pending |
-| VERIFIER-03 | Phase 98 | Pending |
-| VERIFIER-04 | Phase 98 | Pending |
-| VERIFIER-05 | Phase 98 | Pending |
-| VERIFIER-06 | Phase 98 | Pending |
+| VERIFIER-01 | Phase 98 | Complete |
+| VERIFIER-02 | Phase 98 | Complete |
+| VERIFIER-03 | Phase 98 | Complete |
+| VERIFIER-04 | Phase 98 | Complete |
+| VERIFIER-05 | Phase 98 | Complete |
+| VERIFIER-06 | Phase 98 | Complete |
 | SIGNER-01 | Phase 99 | Pending |
 | SIGNER-02 | Phase 99 | Pending |
 | FORMAT-01 | Phase 99 | Pending |
