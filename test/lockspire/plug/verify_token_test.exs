@@ -82,13 +82,53 @@ defmodule Lockspire.Plug.VerifyTokenTest do
     end
 
     test "init/1 preserves validated route restriction options" do
-      assert [
-               scopes: ["read:billing"],
-               audience: "billing-api"
-             ] = VerifyToken.init(scopes: ["read:billing"], audience: "billing-api")
+      opts = VerifyToken.init(scopes: ["read:billing"], audience: "billing-api")
+      assert Keyword.fetch!(opts, :scopes) == ["read:billing"]
+      assert Keyword.fetch!(opts, :audience) == "billing-api"
+      assert Keyword.fetch!(opts, :enforce_audience) == false
 
-      assert [scopes: [], audiences: ["billing-api", "ledger-api"]] =
-               VerifyToken.init(audiences: ["billing-api", "ledger-api"])
+      opts = VerifyToken.init(audiences: ["billing-api", "ledger-api"])
+      assert Keyword.fetch!(opts, :scopes) == []
+      assert Keyword.fetch!(opts, :audiences) == ["billing-api", "ledger-api"]
+      assert Keyword.fetch!(opts, :enforce_audience) == false
+    end
+
+    test "init/1 raises when :enforce_audience is true and neither :audience nor :audiences is supplied (D-07)" do
+      assert_raise ArgumentError, ~r/enforce_audience/, fn ->
+        VerifyToken.init(enforce_audience: true)
+      end
+
+      assert_raise ArgumentError, ~r/audience/, fn ->
+        VerifyToken.init(enforce_audience: true)
+      end
+    end
+
+    test "init/1 with :enforce_audience true and :audience does not raise (D-07)" do
+      opts = VerifyToken.init(enforce_audience: true, audience: "billing-api")
+      assert Keyword.fetch!(opts, :audience) == "billing-api"
+      assert Keyword.fetch!(opts, :enforce_audience) == true
+    end
+
+    test "init/1 with :enforce_audience true and :audiences does not raise (D-07)" do
+      opts = VerifyToken.init(enforce_audience: true, audiences: ["billing-api", "admin-api"])
+      assert Keyword.fetch!(opts, :audiences) == ["billing-api", "admin-api"]
+      assert Keyword.fetch!(opts, :enforce_audience) == true
+    end
+
+    test "init/1 with :enforce_audience false and no audience does not raise (D-07)" do
+      opts = VerifyToken.init(enforce_audience: false)
+      assert Keyword.fetch!(opts, :enforce_audience) == false
+    end
+
+    test "init/1 with no options preserves back-compat with no-audience mounts (D-07)" do
+      opts = VerifyToken.init([])
+      assert Keyword.fetch!(opts, :enforce_audience) == false
+    end
+
+    test "init/1 with only :audience and no :enforce_audience defaults to enforce_audience: false (D-07)" do
+      opts = VerifyToken.init(audience: "billing-api")
+      assert Keyword.fetch!(opts, :audience) == "billing-api"
+      assert Keyword.fetch!(opts, :enforce_audience) == false
     end
 
     test "assigns access_token with missing_token error when no header" do

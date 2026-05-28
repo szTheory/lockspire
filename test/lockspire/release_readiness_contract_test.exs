@@ -758,6 +758,38 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     end
   end
 
+  test "canonical lockspire_protected_api pipeline declares a non-empty audience: across all four RECIPE-01 sites (D-07)" do
+    files = [
+      {@protect_phoenix_api_routes_path, :elixir_in_markdown_fence},
+      {@adoption_demo_router_path, :elixir},
+      {@install_template_router_path, :elixir_in_commented_heredoc},
+      {@adoption_smoke_script_path, :python_commented}
+    ]
+
+    for {path, kind} <- files do
+      bytes = extract_canonical_pipeline!(path, kind)
+
+      case Regex.run(
+             ~r/Lockspire\.Plug\.VerifyToken,[^\n]*\baudience:\s*"([^"]+)"/,
+             bytes,
+             capture: :all_but_first
+           ) do
+        [captured] when is_binary(captured) ->
+          assert String.length(captured) > 0,
+                 "expected non-empty audience: value on the Lockspire.Plug.VerifyToken line in " <>
+                   "#{Path.relative_to_cwd(path)} (D-07 cross-API token reuse defense)"
+
+        _ ->
+          flunk(
+            "missing or empty audience: keyword on the Lockspire.Plug.VerifyToken line in " <>
+              "#{Path.relative_to_cwd(path)} (D-07 cross-API token reuse defense). The canonical " <>
+              "lockspire_protected_api pipeline MUST declare audience: \"...\" on the VerifyToken " <>
+              "declaration so the install template's enforce_audience: true raise stays meaningful."
+          )
+      end
+    end
+  end
+
   test "docs/saas-adoption-recipe.md cross-links to the canonical pipeline rather than restating plug names" do
     recipe = File.read!(@saas_adoption_recipe_path)
 
