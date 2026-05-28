@@ -25,6 +25,11 @@ findings:
   info: 4
   total: 10
 status: issues_found
+remediated:
+  - "CR-01 — fixed (commit 6134f75): sign_jwt/2 with/else returns structured :token_signing_failed on a corrupt key; regression tests added"
+  - "WR-01 — fixed (commit 6134f75): signer + test mocks use the arity-1 KeyStore callback"
+  - "WR-02 — fixed (commit 9b05f46): single issued_at threaded through RFC 8693 signing + persistence"
+remaining: "WR-03, WR-04, WR-05, IN-01..IN-04 not addressed (out of approved remediation scope)"
 ---
 
 # Phase 99: Code Review Report

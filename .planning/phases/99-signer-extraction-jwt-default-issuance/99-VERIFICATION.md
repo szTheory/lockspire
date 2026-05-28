@@ -1,28 +1,33 @@
 ---
 phase: 99-signer-extraction-jwt-default-issuance
 verified: 2026-05-28T11:05:00Z
-status: human_needed
+status: passed
 score: 8/8 must-have requirements verified
 overrides_applied: 0
-human_verification:
-  - test: "Decide disposition of CR-01 (latent MatchError on corrupt stored JWK)"
-    expected: "Either accept the risk for v1.27 (error-path-only edge case; happy path unaffected) and track the fix, OR fix sign_jwt/2 to use a `with`+`else` (mirroring IdToken.sign/1) so a corrupt active signing key returns a structured `:token_signing_failed` 500 instead of an uncaught MatchError + stacktrace on EVERY grant path."
-    why_human: "The code review flagged this as Critical because the JWT-default flip routes AC/refresh/device/CIBA through the same hard match. It is real and still present (access_token_signer.ex:168, unfixed), but it does NOT block any of the 8 requirements or 5 success criteria — all functional/happy paths work and the suite is green (1030/0). This is a risk-acceptance decision, not an automated pass/fail."
-deferred: []
+human_verification: []
+resolution:
+  - finding: "CR-01 (MatchError on corrupt stored JWK)"
+    decision: "Fixed — sign_jwt/2 now uses with/else (mirroring IdToken.sign/1), returning a structured :token_signing_failed 500 on a non-decodable key. Regression tests added (corrupt-key error + no key-material in logs). Commit 6134f75."
+  - finding: "WR-01 (KeyStore behaviour arity mismatch)"
+    decision: "Fixed — signer calls fetch_active_signing_key/1 per the behaviour contract; test mocks updated to arity-1 as a regression guard. Commit 6134f75."
+  - finding: "WR-02 (double now/1 in RFC 8693 exchange)"
+    decision: "Fixed — issued_at computed once and threaded through both signing and persistence. Commit 9b05f46."
+deferred:
+  - "token_exchange.ex:1232 fetch_signing_key/1 (ID-token path) still calls the host key_store at arity 0 — same WR-01 class but pre-existing and outside the approved remediation scope. Track for a follow-up."
 ---
 
 # Phase 99: Signer Extraction + JWT-Default Issuance — Verification Report
 
 **Phase Goal:** One shared `Lockspire.Protocol.AccessTokenSigner` owns RFC 9068 `at+jwt` issuance across the AC, refresh, device, CIBA, and RFC 8693 paths; the default access-token format flips from opaque to `:jwt`; per-client overrides and audience semantics are coherent and discoverable.
-**Verified:** 2026-05-28T11:05:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-05-28T11:05:00Z (initial) · resolved 2026-05-28
+**Status:** passed
+**Re-verification:** Yes — CR-01/WR-01/WR-02 remediated after initial human_needed
 
 ## Goal Achievement
 
-All 8 phase requirements (SIGNER-01/02, FORMAT-01/02, AUD-01/02/03, DISCOVERY-01) and all 5 ROADMAP success criteria are observably true in the live codebase. The full suite is green (`mix test` → **1030 tests, 0 failures, 284 excluded**). The phase goal is achieved.
+All 8 phase requirements (SIGNER-01/02, FORMAT-01/02, AUD-01/02/03, DISCOVERY-01) and all 5 ROADMAP success criteria are observably true in the live codebase. After remediation the full suite is green (`mix test` → **1033 tests, 0 failures, 284 excluded** — +3 corrupt-key regression tests). The phase goal is achieved.
 
-Status is `human_needed` — not because any must-have failed, but because the standard code review (`99-REVIEW.md`) raised one **Critical** finding (CR-01) that is real and still present in the code, and whose disposition (accept-and-track vs. fix-now) is a human risk decision. It does not block the functional goal.
+Initial status was `human_needed` solely because the code review (`99-REVIEW.md`) raised one **Critical** (CR-01) whose disposition was a human risk decision — no must-have failed. The user elected to fix it: CR-01 (graceful structured error on a corrupt signing key), WR-01 (KeyStore behaviour arity), and WR-02 (single `issued_at` in the RFC 8693 exchange) are now fixed with regression coverage (commits 6134f75, 9b05f46). See the `resolution:` frontmatter. Status flips to `passed`.
 
 ### Observable Truths (ROADMAP Success Criteria)
 
