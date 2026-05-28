@@ -30,7 +30,7 @@
 - [x] **Phase 97: Contract + Docs First** — Single authoritative protected-route doc page anchors the implementation contract before any runtime change lands. (completed 2026-05-27)
 - [x] **Phase 98: Plug Hardening** — `Lockspire.Plug.VerifyToken` narrows to RFC 9068 `at+jwt` only with full RFC 9068 / 8725 / 9449 compliance. (completed 2026-05-28)
 - [x] **Phase 99: Signer Extraction + JWT-Default Issuance** — Shared `Protocol.AccessTokenSigner` lands; default access-token format flips to `:jwt` with per-client override and audience semantics. (completed 2026-05-28)
-- [ ] **Phase 100: Sender-Constraint End-to-End Proof** — DPoP-bound and mTLS-bound `at+jwt` traverse the blessed pipeline end-to-end; misordered-pipeline bypass is closed.
+- [x] **Phase 100: Sender-Constraint End-to-End Proof** — DPoP-bound and mTLS-bound `at+jwt` traverse the blessed pipeline end-to-end; misordered-pipeline bypass is closed. (completed 2026-05-28)
 - [ ] **Phase 101: Adoption-Demo Re-Wire** — The demo smoke proves auth-code → `at+jwt` → `/api/billing/summary` → 200, not just 401-on-anonymous.
 - [ ] **Phase 102: Generated-Host Scaffolding + Telemetry + Migration** — Install template mirrors the blessed pipeline; operator telemetry and migration guide land for the issuance-default flip.
 
@@ -114,7 +114,7 @@
 
 - [x] 100-01-PLAN.md — BIND-03 runtime fail-closed guard (Wave 1): `binding_verified: false` struct field (D-01), `EnforceSenderConstraints` success-path set (D-02), `RequireToken` bound-but-unverified 403 clause (D-03) + the plug-unit/unit proofs (negative, bearer-passes, positive-set, struct-default).
 - [x] 100-02-PLAN.md — BIND-03 contract layer + A1 spike (Wave 1): `release_readiness_contract_test` ordering clause over the four RECIPE-01 sites via the shared `extract_canonical_pipeline!/2` + `byte_offset/2` helper (D-05); list-`aud` acceptance assertion in `VerifyToken` (A1).
-- [ ] 100-03-PLAN.md — BIND-01 + BIND-02 end-to-end proofs (Wave 2): one new `phase100_sender_constraint_e2e_test.exs` minting DPoP-bound and mTLS-bound `at+jwt` via `AccessTokenSigner.issue/3` (D-07) through the real 3-plug pipeline to 200 (nonce-retry dance for DPoP; `conn.private[:lockspire_mtls_cert]` for mTLS) — D-06/07/08/09/10.
+- [x] 100-03-PLAN.md — BIND-01 + BIND-02 end-to-end proofs (Wave 2): one new `phase100_sender_constraint_e2e_test.exs` minting DPoP-bound and mTLS-bound `at+jwt` via `AccessTokenSigner.issue/3` (D-07) through the real 3-plug pipeline to 200 (nonce-retry dance for DPoP; `conn.private[:lockspire_mtls_cert]` for mTLS) — D-06/07/08/09/10.
 
 ### Phase 101: Adoption-Demo Re-Wire
 
@@ -154,7 +154,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 97. Contract + Docs First | 5/5 | Complete    | 2026-05-27 |
 | 98. Plug Hardening | 4/4 | Complete    | 2026-05-28 |
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
-| 100. Sender-Constraint End-to-End Proof | 2/3 | In Progress|  |
+| 100. Sender-Constraint End-to-End Proof | 3/3 | Complete   | 2026-05-28 |
 | 101. Adoption-Demo Re-Wire | 0/TBD | Not started | - |
 | 102. Generated-Host Scaffolding + Telemetry + Migration | 0/TBD | Not started | - |
 
