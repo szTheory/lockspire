@@ -13,6 +13,7 @@ defmodule Lockspire.Plug.VerifyToken do
   require Logger
 
   alias Lockspire.AccessToken
+  alias Lockspire.Config
   alias Lockspire.KeyCache
 
   @allowed_algs ["RS256", "ES256", "PS256"]
@@ -120,7 +121,20 @@ defmodule Lockspire.Plug.VerifyToken do
       }
       |> apply_restrictions(opts)
     else
-      {:error, reason_code} ->
+      {:error, %{reason_code: _} = structured_error} ->
+        # D-04: structured-map error (e.g. the five RFC 9068 reason codes from
+        # validate_rfc9068_compliance/2) propagates through to AccessToken.error
+        # so RequireToken's WWW-Authenticate emission carries the distinct
+        # error_description naming the violated rule.
+        log_invalid_token(structured_error, authorization_scheme)
+
+        %AccessToken{
+          error: structured_error,
+          token: token,
+          authorization_scheme: authorization_scheme
+        }
+
+      {:error, reason_code} when is_atom(reason_code) ->
         log_invalid_token(reason_code, authorization_scheme)
 
         %AccessToken{
@@ -256,6 +270,63 @@ defmodule Lockspire.Plug.VerifyToken do
       error: "invalid_token",
       error_description: "The access token audience is invalid for this route",
       required_audiences: expected_audiences
+    }
+  end
+
+  # D-04: structured error map shape for the five RFC 9068 / RFC 8725 reason
+  # codes that `validate_rfc9068_compliance/2` produces. Sibling of
+  # `invalid_audience_error/2` so the structured-error taxonomy reads as one
+  # unit. `challenge:` is hard-coded `:bearer` for Phase 98 Plan 03; Plan 04
+  # (VERIFIER-05) replaces this with a binding-derived value via D-05/D-06.
+  defp rfc9068_error(:invalid_typ) do
+    %{
+      category: :token_validation,
+      challenge: :bearer,
+      reason_code: :invalid_typ,
+      error: "invalid_token",
+      error_description:
+        "access token JWT header \"typ\" is not \"at+jwt\" per RFC 9068 §2.1 / RFC 8725 §3.11"
+    }
+  end
+
+  defp rfc9068_error(:invalid_issuer) do
+    %{
+      category: :token_validation,
+      challenge: :bearer,
+      reason_code: :invalid_issuer,
+      error: "invalid_token",
+      error_description:
+        "access token \"iss\" claim does not match expected issuer per RFC 9068 §4"
+    }
+  end
+
+  defp rfc9068_error(:missing_exp) do
+    %{
+      category: :token_validation,
+      challenge: :bearer,
+      reason_code: :missing_exp,
+      error: "invalid_token",
+      error_description: "access token is missing required \"exp\" claim per RFC 9068 §2.2"
+    }
+  end
+
+  defp rfc9068_error(:missing_iat) do
+    %{
+      category: :token_validation,
+      challenge: :bearer,
+      reason_code: :missing_iat,
+      error: "invalid_token",
+      error_description: "access token is missing required \"iat\" claim per RFC 9068 §2.2"
+    }
+  end
+
+  defp rfc9068_error(:missing_sub) do
+    %{
+      category: :token_validation,
+      challenge: :bearer,
+      reason_code: :missing_sub,
+      error: "invalid_token",
+      error_description: "access token is missing required \"sub\" claim per RFC 9068 §2.2"
     }
   end
 
@@ -421,10 +492,17 @@ defmodule Lockspire.Plug.VerifyToken do
   defp verify_signature_and_claims(jwk, token) do
     case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
       {true, %JOSE.JWT{fields: claims}, _jws} ->
-        if time_claims_valid?(claims) do
-          {:ok, claims}
-        else
-          {:error, :invalid_time_claims}
+        # D-02: RFC 9068 / RFC 8725 compliance runs AFTER the signature is
+        # verified (so we never inspect claims on an unverified token) and
+        # BEFORE time_claims_valid?/1 + apply_restrictions/2 (so the named
+        # RFC 9068 reason codes win over the legacy :invalid_time_claims and
+        # over audience/scope restriction failures).
+        with {:ok, claims} <- validate_rfc9068_compliance(token, claims) do
+          if time_claims_valid?(claims) do
+            {:ok, claims}
+          else
+            {:error, :invalid_time_claims}
+          end
         end
 
       {false, _, _} ->
@@ -440,7 +518,6 @@ defmodule Lockspire.Plug.VerifyToken do
     exp_valid? =
       case Map.get(claims, "exp") do
         exp when is_integer(exp) -> exp > now
-        # Missing exp is currently treated as valid unless stricter policy requires it.
         _ -> true
       end
 
@@ -451,6 +528,95 @@ defmodule Lockspire.Plug.VerifyToken do
       end
 
     exp_valid? and nbf_valid?
+  end
+
+  # D-02 / D-03 / D-04: enforce the five RFC 9068 / RFC 8725 compliance rules
+  # that JOSE.JWT.verify_strict/3 does not check by itself. Runs after the
+  # signature has been verified (so `claims` are trustworthy in the
+  # "signed by a configured JWKS key" sense) and before time_claims_valid?/1
+  # and apply_restrictions/2, so the named reason codes from this step win
+  # over :invalid_time_claims and the audience/scope reason codes.
+  #
+  # Intentionally more permissive than the issuance-side `typ` check at
+  # `Lockspire.Protocol.DPoP.check_typ/1` (which exact-matches `"dpop+jwt"`).
+  # The verifier accepts `at+jwt`, `AT+JWT`, `At+Jwt`, and the
+  # `application/at+jwt` variant. This forward-compatibility margin lets
+  # Phase 99's `Protocol.AccessTokenSigner` extraction evolve issuance to
+  # emit `application/at+jwt` (stricter RFC 9068 §2.1 conformance) without
+  # breaking Phase 98's verifier.
+  defp validate_rfc9068_compliance(token, claims) do
+    expected_issuer = Config.issuer!()
+
+    with :ok <- check_at_jwt_typ(token),
+         :ok <- check_issuer(claims, expected_issuer),
+         :ok <- check_exp_positive_integer(claims),
+         :ok <- check_iat_positive_integer(claims),
+         :ok <- check_sub_non_empty_string(claims) do
+      {:ok, claims}
+    end
+  end
+
+  defp check_at_jwt_typ(token) do
+    case peek_typ(token) do
+      typ when is_binary(typ) ->
+        normalized =
+          typ
+          |> String.trim()
+          |> String.downcase()
+          |> String.replace_prefix("application/", "")
+
+        if normalized == "at+jwt" do
+          :ok
+        else
+          {:error, rfc9068_error(:invalid_typ)}
+        end
+
+      _ ->
+        {:error, rfc9068_error(:invalid_typ)}
+    end
+  end
+
+  defp peek_typ(token) do
+    protected_headers = JOSE.JWT.peek_protected(token)
+    {_alg_map, header_map} = JOSE.JWS.to_map(protected_headers)
+    Map.get(header_map, "typ")
+  rescue
+    _ -> nil
+  end
+
+  defp check_issuer(claims, expected_issuer) do
+    case Map.get(claims, "iss") do
+      iss when is_binary(iss) and iss == expected_issuer -> :ok
+      _ -> {:error, rfc9068_error(:invalid_issuer)}
+    end
+  end
+
+  defp check_exp_positive_integer(claims) do
+    case Map.get(claims, "exp") do
+      exp when is_integer(exp) and exp > 0 -> :ok
+      _ -> {:error, rfc9068_error(:missing_exp)}
+    end
+  end
+
+  defp check_iat_positive_integer(claims) do
+    case Map.get(claims, "iat") do
+      iat when is_integer(iat) and iat > 0 -> :ok
+      _ -> {:error, rfc9068_error(:missing_iat)}
+    end
+  end
+
+  defp check_sub_non_empty_string(claims) do
+    case Map.get(claims, "sub") do
+      sub when is_binary(sub) ->
+        if non_empty_string?(sub) do
+          :ok
+        else
+          {:error, rfc9068_error(:missing_sub)}
+        end
+
+      _ ->
+        {:error, rfc9068_error(:missing_sub)}
+    end
   end
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
