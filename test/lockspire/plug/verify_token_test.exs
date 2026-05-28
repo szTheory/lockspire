@@ -860,6 +860,17 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       assert www_authenticate =~ ~s(error="invalid_token")
       assert www_authenticate =~ "typ"
       assert www_authenticate =~ "at+jwt"
+
+      # CR-01 regression: the error_description must not reintroduce unescaped
+      # double-quote characters, which produce a malformed quoted-string per
+      # RFC 7235 §2.2. A well-formed header has an even count of `"` (each
+      # auth-param quoted-string opens and closes), and must carry only US-ASCII
+      # bytes per RFC 9110 §5.5 (no multi-byte `§`).
+      assert www_authenticate |> String.graphemes() |> Enum.count(&(&1 == "\"")) |> rem(2) == 0,
+             "WWW-Authenticate has an odd number of double-quotes (malformed quoted-string): #{www_authenticate}"
+
+      assert String.length(www_authenticate) == byte_size(www_authenticate),
+             "WWW-Authenticate contains non-ASCII bytes: #{www_authenticate}"
     end
 
     test "emits a redaction-safe log line with reason=invalid_typ" do

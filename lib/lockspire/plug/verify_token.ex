@@ -307,7 +307,7 @@ defmodule Lockspire.Plug.VerifyToken do
       reason_code: :invalid_typ,
       error: "invalid_token",
       error_description:
-        "access token JWT header \"typ\" is not \"at+jwt\" per RFC 9068 §2.1 / RFC 8725 §3.11"
+        "access token JWT header typ is not at+jwt per RFC 9068 section 2.1 / RFC 8725 section 3.11"
     }
   end
 
@@ -318,7 +318,7 @@ defmodule Lockspire.Plug.VerifyToken do
       reason_code: :invalid_issuer,
       error: "invalid_token",
       error_description:
-        "access token \"iss\" claim does not match expected issuer per RFC 9068 §4"
+        "access token iss claim does not match expected issuer per RFC 9068 section 4"
     }
   end
 
@@ -328,7 +328,7 @@ defmodule Lockspire.Plug.VerifyToken do
       challenge: challenge,
       reason_code: :missing_exp,
       error: "invalid_token",
-      error_description: "access token is missing required \"exp\" claim per RFC 9068 §2.2"
+      error_description: "access token is missing required exp claim per RFC 9068 section 2.2"
     }
   end
 
@@ -338,7 +338,7 @@ defmodule Lockspire.Plug.VerifyToken do
       challenge: challenge,
       reason_code: :missing_iat,
       error: "invalid_token",
-      error_description: "access token is missing required \"iat\" claim per RFC 9068 §2.2"
+      error_description: "access token is missing required iat claim per RFC 9068 section 2.2"
     }
   end
 
@@ -348,7 +348,7 @@ defmodule Lockspire.Plug.VerifyToken do
       challenge: challenge,
       reason_code: :missing_sub,
       error: "invalid_token",
-      error_description: "access token is missing required \"sub\" claim per RFC 9068 §2.2"
+      error_description: "access token is missing required sub claim per RFC 9068 section 2.2"
     }
   end
 
