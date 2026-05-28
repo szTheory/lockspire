@@ -876,4 +876,227 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       refute log =~ token
     end
   end
+
+  describe "VerifyToken plug -- challenge derivation from binding (D-05, D-06)" do
+    test "DPoP-bound token (cnf.jkt) failing audience emits challenge: :dpop and DPoP WWW-Authenticate" do
+      claims = %{"cnf" => %{"jkt" => "proof-thumbprint"}, "aud" => "wrong-audience"}
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init(audience: "expected-audience"))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ ~s(error="invalid_token")
+      assert www_authenticate =~ "algs="
+    end
+
+    test "DPoP-bound token (cnf.jkt) failing scope emits 403 with DPoP WWW-Authenticate" do
+      claims = %{
+        "cnf" => %{"jkt" => "proof-thumbprint"},
+        "scope" => "read:foo"
+      }
+
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init(scopes: ["write:bar"]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 403
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ ~s(error="insufficient_scope")
+      assert www_authenticate =~ "algs="
+    end
+
+    test "DPoP-bound token failing RFC 9068 typ check emits DPoP WWW-Authenticate" do
+      claims = %{"cnf" => %{"jkt" => "proof-thumbprint"}}
+      {token, _claims} = generate_key_and_token(claims, %{"typ" => "JWT"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ ~s(error="invalid_token")
+      assert www_authenticate =~ "algs="
+    end
+
+    test "mTLS-bound token (cnf.x5t#S256 only) failing audience emits challenge: :bearer (RFC 8705 §3)" do
+      claims = %{"cnf" => %{"x5t#S256" => "cert-thumbprint"}, "aud" => "wrong-audience"}
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init(audience: "expected-audience"))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^Bearer realm="Lockspire"/
+      assert www_authenticate =~ ~s(error="invalid_token")
+    end
+
+    test "dpop+mtls combined token (both cnf claims) failing audience emits DPoP (DPoP wins per D-05 row 1)" do
+      claims = %{
+        "cnf" => %{"jkt" => "proof-thumbprint", "x5t#S256" => "cert-thumbprint"},
+        "aud" => "wrong-audience"
+      }
+
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init(audience: "expected-audience"))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ "algs="
+    end
+
+    test "no-cnf token, request used Authorization: DPoP, audience failure emits DPoP (D-05 row 3 tiebreaker)" do
+      {token, _claims} = generate_key_and_token(%{"aud" => "wrong-audience"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "DPoP #{token}")
+        |> VerifyToken.call(VerifyToken.init(audience: "expected-audience"))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ "algs="
+    end
+
+    test "no-cnf token, request used Authorization: Bearer, audience failure emits Bearer (D-05 row 4 default)" do
+      {token, _claims} = generate_key_and_token(%{"aud" => "wrong-audience"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init(audience: "expected-audience"))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^Bearer realm="Lockspire"/
+    end
+
+    test "no-cnf token, Bearer scheme, RFC 9068 missing_exp emits Bearer" do
+      {token, _claims} = generate_key_and_token(%{"exp" => nil})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^Bearer realm="Lockspire"/
+    end
+
+    test "Plan 01 opaque token presented as Authorization: DPoP emits DPoP (request-scheme tiebreaker)" do
+      opaque = build_opaque_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "DPoP #{opaque}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^DPoP realm="Lockspire"/
+      assert www_authenticate =~ "algs="
+    end
+
+    test "Plan 01 opaque token presented as Authorization: Bearer emits Bearer (regression)" do
+      opaque = build_opaque_token()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{opaque}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+
+      assert www_authenticate ==
+               ~s(Bearer realm="Lockspire", error="invalid_token", error_description="opaque tokens not accepted on this route")
+    end
+
+    test "REGRESSION: legacy bare-atom error path (unknown kid) emits Bearer (default_invalid_error/0)" do
+      jose_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+
+      {_, token} =
+        JOSE.JWT.sign(jose_jwk, %{"alg" => "RS256", "kid" => "unknown-kid", "typ" => "at+jwt"}, %{
+          "client_id" => "client"
+        })
+        |> JOSE.JWS.compact()
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> VerifyToken.call(VerifyToken.init([]))
+        |> RequireToken.call(RequireToken.init([]))
+
+      assert conn.status == 401
+      [www_authenticate] = get_resp_header(conn, "www-authenticate")
+      assert www_authenticate =~ ~r/^Bearer realm="Lockspire"/
+    end
+
+    test "AccessToken.error on DPoP-bound audience failure carries challenge: :dpop directly" do
+      claims = %{"cnf" => %{"jkt" => "proof-thumbprint"}, "aud" => "wrong-audience"}
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "expected-audience")
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_restriction,
+                 challenge: :dpop,
+                 reason_code: :invalid_audience
+               }
+             } = conn.assigns[:access_token]
+    end
+
+    test "AccessToken.error on mTLS-bound audience failure carries challenge: :bearer directly" do
+      claims = %{"cnf" => %{"x5t#S256" => "cert-thumbprint"}, "aud" => "wrong-audience"}
+      {token, _claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "expected-audience")
+
+      assert %AccessToken{
+               error: %{
+                 category: :token_restriction,
+                 challenge: :bearer,
+                 reason_code: :invalid_audience
+               }
+             } = conn.assigns[:access_token]
+    end
+  end
 end

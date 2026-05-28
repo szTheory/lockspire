@@ -202,5 +202,72 @@ defmodule Lockspire.Plug.RequireTokenTest do
                "error_description" => "The access token is missing a required scope"
              } = Jason.decode!(conn.resp_body)
     end
+
+    test "halts with 403 and DPoP WWW-Authenticate when insufficient_scope error carries challenge: :dpop (D-05/D-06)" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :insufficient_scope,
+            challenge: :dpop,
+            reason_code: :insufficient_scope,
+            error: "insufficient_scope",
+            error_description: "The access token is missing a required scope",
+            required_scopes: ["read:billing"]
+          }
+        })
+        |> RequireToken.call([])
+
+      assert conn.halted
+      assert conn.status == 403
+
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ ~r/^DPoP realm="Lockspire"/
+      assert challenge =~ ~s(error="insufficient_scope")
+      assert challenge =~ "algs=\""
+
+      assert %{
+               "error" => "insufficient_scope",
+               "error_description" => "The access token is missing a required scope"
+             } = Jason.decode!(conn.resp_body)
+    end
+
+    test "insufficient_scope normalizer passes through explicit challenge: :bearer unchanged (regression)" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :insufficient_scope,
+            challenge: :bearer,
+            reason_code: :insufficient_scope,
+            error: "insufficient_scope",
+            error_description: "The access token is missing a required scope",
+            required_scopes: ["read:billing"]
+          }
+        })
+        |> RequireToken.call([])
+
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ ~r/^Bearer realm="Lockspire"/
+      assert challenge =~ ~s(error="insufficient_scope")
+    end
+
+    test "insufficient_scope normalizer defaults to :bearer when no :challenge key is set (back-compat)" do
+      conn =
+        build_conn()
+        |> assign(:access_token, %AccessToken{
+          error: %{
+            category: :insufficient_scope,
+            reason_code: :insufficient_scope,
+            error: "insufficient_scope",
+            error_description: "The access token is missing a required scope",
+            required_scopes: ["read:billing"]
+          }
+        })
+        |> RequireToken.call([])
+
+      [challenge] = get_resp_header(conn, "www-authenticate")
+      assert challenge =~ ~r/^Bearer realm="Lockspire"/
+    end
   end
 end
