@@ -18,6 +18,15 @@ defmodule Lockspire.Plug.RequireToken do
   @impl Plug
   def call(conn, _opts) do
     case conn.assigns[:access_token] do
+      # D-03: fail-closed guard — a bound token (binding_requirements != nil) that
+      # reached RequireToken without EnforceSenderConstraints marking it verified
+      # halts with 403 and the binding-derived challenge. The error: nil gate is
+      # non-negotiable: it ensures tokens that already failed VerifyToken (error != nil)
+      # continue to the existing error clauses below and are not intercepted here.
+      %AccessToken{error: nil, binding_requirements: req, binding_verified: false}
+      when not is_nil(req) ->
+        handle_sender_constraint_bypass(conn, sender_constraint_bypass_error(req))
+
       %AccessToken{error: nil, claims: claims} when not is_nil(claims) ->
         conn
 
@@ -81,6 +90,45 @@ defmodule Lockspire.Plug.RequireToken do
     conn
     |> send_json(403, oauth_body(error))
     |> halt()
+  end
+
+  # D-03: 403 handler for bound-but-unverified tokens. Modeled verbatim on
+  # handle_insufficient_scope/2 — challenge-aware routing, 403 status. Does NOT
+  # affect the existing sender_constraint 401 path used by EnforceSenderConstraints
+  # failures (those carry error != nil and reach handle_structured_error/2 below).
+  defp handle_sender_constraint_bypass(conn, error) do
+    conn =
+      case error do
+        %{challenge: :dpop} ->
+          ProtectedResourceChallenge.put_dpop_challenge(conn, error, realm: "Lockspire")
+
+        _other ->
+          put_resp_header(conn, "www-authenticate", www_authenticate(error))
+      end
+
+    conn
+    |> send_json(403, oauth_body(error))
+    |> halt()
+  end
+
+  # D-03: build the bypass error map mirroring EnforceSenderConstraints.sender_error/2
+  # and mtls_error/0. Derive challenge from binding_requirements: DPoP-bound -> :dpop,
+  # mTLS-bound -> :bearer. This keeps WWW-Authenticate coherent with Phase 98 taxonomy.
+  defp sender_constraint_bypass_error(binding_requirements) do
+    challenge =
+      case binding_requirements do
+        %{dpop_jkt: _} -> :dpop
+        _ -> :bearer
+      end
+
+    %{
+      category: :sender_constraint,
+      challenge: challenge,
+      error: "invalid_token",
+      error_description:
+        "The access token is sender-constrained but no binding proof was validated",
+      dpop_nonce: nil
+    }
   end
 
   defp handle_structured_error(conn, %{category: :sender_constraint} = error),
