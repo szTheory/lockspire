@@ -244,4 +244,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 — Phase 97 (contract-docs-first) complete: canonical pipeline pinned across four sites with SHA-256 content-hash invariants*
+*Last updated: 2026-05-28 — Phase 98 (plug-hardening) complete: `Lockspire.Plug.VerifyToken` now rejects opaque tokens at the front edge, enforces RFC 9068/8725 compliance (typ/iss/exp/iat/sub) with distinct reason codes, derives the WWW-Authenticate challenge from token binding, and structurally closes cross-API audience reuse via `enforce_audience:` + a release-readiness contract clause (VERIFIER-01..06)*
