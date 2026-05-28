@@ -270,7 +270,20 @@ def exercise_device_flow():
 
     login(browser, "alice", "/verify")
 
-    lookup = browser.request("POST", "/verify", {"_csrf_token": csrf(browser.request("GET", "/verify").get("body", "")), "user_code": issued_json["user_code"]})
+    # WR-05: fetch the verify page in its own statement so the GET is visible
+    # and its failure surfaces directly (rather than being masked by csrf()
+    # raising on an empty body when the GET itself fails).
+    verify_page = browser.request("GET", "/verify")
+    assert_status(verify_page, 200, "verify page")
+
+    lookup = browser.request(
+        "POST",
+        "/verify",
+        {
+            "_csrf_token": csrf(verify_page["body"]),
+            "user_code": issued_json["user_code"],
+        },
+    )
     assert_status(lookup, 200, "device code lookup")
     assert_contains(lookup, "Approve device", "device review")
 
