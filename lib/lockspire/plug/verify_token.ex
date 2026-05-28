@@ -591,6 +591,14 @@ defmodule Lockspire.Plug.VerifyToken do
         {:error, :invalid_signature}
     end
   rescue
+    # WR-02: a misconfigured issuer (e.g. operator clears :issuer config) makes
+    # Config.issuer!/0 raise ArgumentError inside validate_rfc9068_compliance/3.
+    # Re-raise it so the request fails loudly with the real misconfiguration
+    # signal instead of being silently coerced to :verification_crashed (which
+    # would make every token look generically invalid and hide that the resource
+    # server itself is broken). Genuine verification crashes still degrade to
+    # :verification_crashed.
+    error in ArgumentError -> reraise error, __STACKTRACE__
     _ -> {:error, :verification_crashed}
   end
 

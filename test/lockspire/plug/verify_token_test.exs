@@ -745,6 +745,27 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       assert %AccessToken{error: %{reason_code: :invalid_issuer}} = conn.assigns[:access_token]
     end
 
+    test "WR-02: issuer misconfiguration raises loudly instead of being swallowed as verification_crashed" do
+      # Generate a valid token while the issuer config is still well-formed.
+      {token, _claims} = generate_key_and_token()
+
+      original_issuer = Application.get_env(:lockspire, :issuer)
+      on_exit(fn -> Application.put_env(:lockspire, :issuer, original_issuer) end)
+
+      # Simulate runtime config drift: operator clears the :issuer config.
+      Application.delete_env(:lockspire, :issuer)
+
+      # Config.issuer!/0 now raises ArgumentError inside
+      # validate_rfc9068_compliance/3. The rescue in verify_signature_and_claims/3
+      # must re-raise it (loud failure) rather than degrade every token to
+      # :verification_crashed / generic :invalid_token.
+      assert_raise ArgumentError, fn ->
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+      end
+    end
+
     test "rejects JWT with missing exp claim (RFC 9068 §2.2)" do
       {token, _claims} = generate_key_and_token(%{"exp" => nil})
 
