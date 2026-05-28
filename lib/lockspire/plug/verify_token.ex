@@ -549,13 +549,26 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp extract_kid(token) do
+    # WR-03: decode the protected header once via peek_protected_header/1 and
+    # reuse the same map for both kid (here) and typ (check_at_jwt_typ/2), so a
+    # malformed header is decoded and rescued once with one consistent
+    # :malformed classification rather than two diverging code paths.
+    with {:ok, map} <- peek_protected_header(token) do
+      case map do
+        %{"kid" => kid} when is_binary(kid) -> {:ok, kid}
+        _ -> {:error, :no_kid}
+      end
+    end
+  end
+
+  # WR-03: single source of truth for decoding the JWS protected header. Both
+  # the kid extractor and the RFC 9068 typ check consume this, so a header that
+  # fails to parse produces a uniform {:error, :malformed} regardless of which
+  # consumer hits it first.
+  defp peek_protected_header(token) do
     protected_headers = JOSE.JWT.peek_protected(token)
     {_alg_map, map} = JOSE.JWS.to_map(protected_headers)
-
-    case map do
-      %{"kid" => kid} when is_binary(kid) -> {:ok, kid}
-      _ -> {:error, :no_kid}
-    end
+    {:ok, map}
   rescue
     _ -> {:error, :malformed}
   end
@@ -652,31 +665,35 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp check_at_jwt_typ(token, challenge) do
-    case peek_typ(token) do
-      typ when is_binary(typ) ->
-        normalized =
-          typ
-          |> String.trim()
-          |> String.downcase()
-          |> String.replace_prefix("application/", "")
+    # WR-03: reuse peek_protected_header/1 (the same decode extract_kid/1 uses)
+    # rather than re-decoding via a second peek_typ/1 helper. A header that
+    # fails to parse here surfaces as :malformed (consistent with the kid path)
+    # instead of being misclassified as :invalid_typ. In the live call chain
+    # extract_kid/1 runs first and already short-circuits malformed headers, but
+    # threading the malformed signal through keeps the two checks consistent.
+    case peek_protected_header(token) do
+      {:ok, header_map} ->
+        case Map.get(header_map, "typ") do
+          typ when is_binary(typ) ->
+            normalized =
+              typ
+              |> String.trim()
+              |> String.downcase()
+              |> String.replace_prefix("application/", "")
 
-        if normalized == "at+jwt" do
-          :ok
-        else
-          {:error, rfc9068_error(:invalid_typ, challenge)}
+            if normalized == "at+jwt" do
+              :ok
+            else
+              {:error, rfc9068_error(:invalid_typ, challenge)}
+            end
+
+          _ ->
+            {:error, rfc9068_error(:invalid_typ, challenge)}
         end
 
-      _ ->
-        {:error, rfc9068_error(:invalid_typ, challenge)}
+      {:error, :malformed} ->
+        {:error, :malformed}
     end
-  end
-
-  defp peek_typ(token) do
-    protected_headers = JOSE.JWT.peek_protected(token)
-    {_alg_map, header_map} = JOSE.JWS.to_map(protected_headers)
-    Map.get(header_map, "typ")
-  rescue
-    _ -> nil
   end
 
   defp check_issuer(claims, expected_issuer, challenge) do
