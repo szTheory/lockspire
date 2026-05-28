@@ -32,6 +32,12 @@ defmodule Lockspire.Protocol.Discovery do
   ]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
+  # DISCOVERY-01: the fixed, truthful algs the active access-token signing key uses
+  # (RFC 9068 `at+jwt`). A bare literal — NOT derived from
+  # `SecurityProfile.allowed_signing_algorithms/1`, which returns the `:none`/`EdDSA`
+  # superset and only `["ES256","PS256"]` under FAPI (D-11, Pitfall 4). Published
+  # unconditionally, mirroring the always-present `id_token_signing_alg_values_supported`.
+  @access_token_signing_alg_values_supported ["RS256", "ES256", "PS256"]
   @introspection_supported_auth_methods [
     "client_secret_basic",
     "client_secret_post",
@@ -92,7 +98,8 @@ defmodule Lockspire.Protocol.Discovery do
         token_endpoint_auth_methods_supported(endpoint_metadata),
       "code_challenge_methods_supported" => code_challenge_methods_supported(endpoint_metadata),
       "subject_types_supported" => @subject_types_supported,
-      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported()
+      "id_token_signing_alg_values_supported" => id_token_signing_alg_values_supported(),
+      "access_token_signing_alg_values_supported" => @access_token_signing_alg_values_supported
     }
     |> Map.merge(authorization_response_capabilities)
     |> Map.merge(endpoint_metadata)
