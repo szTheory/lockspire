@@ -13,6 +13,18 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
+  defmodule MockKeyStore do
+    def fetch_active_signing_key do
+      jwk = JOSE.JWK.generate_key({:rsa, 2048}) |> JOSE.JWK.to_map() |> elem(1) |> Jason.encode!()
+      {:ok, %{alg: "RS256", kid: "key-1", private_jwk_encrypted: jwk}}
+    end
+  end
+
+  defp decode_jwt_payload(jwt) do
+    assert [_header_b64, payload_b64, _sig_b64] = String.split(jwt, ".")
+    payload_b64 |> Base.url_decode64!(padding: false) |> Jason.decode!()
+  end
+
   setup_all do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
@@ -585,6 +597,104 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
              })
 
     assert error.reason_code == :client_mismatch
+  end
+
+  test "rotation mints an at+jwt access token whose sub is the presented token subject", %{
+    client: client
+  } do
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "seed-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 key_store: MockKeyStore,
+                 refresh_token_generator: fn -> "jwt-rotated-refresh-token" end,
+                 now: fn -> DateTime.utc_now() end
+               ]
+             })
+
+    payload = decode_jwt_payload(success.access_token)
+    [header_b64 | _] = String.split(success.access_token, ".")
+    header = header_b64 |> Base.url_decode64!(padding: false) |> Jason.decode!()
+
+    assert header["typ"] == "at+jwt"
+    # Pitfall 5: sub must come from presented_refresh_token.account_id (NOT nil)
+    assert payload["sub"] == "subject-refresh"
+    refute is_nil(payload["sub"])
+
+    # Persisted rotated access token's hash equals Policy.hash_token(issued_raw)
+    assert {:ok, %Token{}} =
+             Repository.fetch_active_access_token(
+               Lockspire.Security.Policy.hash_token(success.access_token)
+             )
+  end
+
+  test "rotation with resource= yields aud == [resource]", %{client: client, now: now} do
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("resource-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-resource",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh-resource",
+               scopes: ["email", "offline_access"],
+               audience: ["https://billing.example.com"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{
+                 "refresh_token" => "resource-refresh-token",
+                 "resource" => "https://billing.example.com"
+               },
+               opts: [
+                 token_store: Repository,
+                 key_store: MockKeyStore,
+                 refresh_token_generator: fn -> "resource-rotated-refresh-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    payload = decode_jwt_payload(success.access_token)
+    assert payload["aud"] == ["https://billing.example.com"]
+  end
+
+  test "rotation without resource (empty audience) yields aud == [client_id]", %{
+    client: client,
+    now: now
+  } do
+    assert {:ok, %Token{}} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("no-resource-refresh-token"),
+               token_type: :refresh_token,
+               family_id: "family-refresh-no-resource",
+               generation: 0,
+               client_id: client.client_id,
+               account_id: "subject-refresh",
+               interaction_id: "interaction-refresh-no-resource",
+               scopes: ["email", "offline_access"],
+               audience: [],
+               issued_at: now,
+               expires_at: DateTime.add(now, 86_400, :second)
+             })
+
+    assert {:ok, success} =
+             RefreshExchange.exchange_refresh_token(client, %{
+               params: %{"refresh_token" => "no-resource-refresh-token"},
+               opts: [
+                 token_store: Repository,
+                 key_store: MockKeyStore,
+                 refresh_token_generator: fn -> "no-resource-rotated-refresh-token" end,
+                 now: fn -> now end
+               ]
+             })
+
+    payload = decode_jwt_payload(success.access_token)
+    assert payload["aud"] == [client.client_id]
   end
 
   defp dpop_proof_fixture(now, overrides \\ []) do
