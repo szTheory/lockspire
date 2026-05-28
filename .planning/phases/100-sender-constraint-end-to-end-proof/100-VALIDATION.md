@@ -3,8 +3,9 @@ phase: 100
 slug: sender-constraint-end-to-end-proof
 status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-28
+validated: 2026-05-28
 ---
 
 # Phase 100 — Validation Strategy
@@ -41,13 +42,13 @@ created: 2026-05-28
 
 | Requirement | Wave | Observable signal (faithful proof) | Test Type | Automated Command | File Exists | Status |
 |-------------|------|------------------------------------|-----------|-------------------|-------------|--------|
-| BIND-01 | int | DPoP-bound `at+jwt` minted by `AccessTokenSigner.issue/3` (from `%Token{cnf: %{"jkt" => jkt}}`) → real 3-plug endpoint → genuine nonce-retry dance → `200` with `conn.assigns.access_token` populated AND `binding_type: "dpop"` AND `binding_requirements: %{dpop_jkt: jkt}` | integration | `mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs` | ❌ W0 (new file) | ⬜ pending |
-| BIND-02 | int | mTLS-bound `at+jwt` minted by `issue/3` (cnf `x5t#S256`) → endpoint with `conn.private[:lockspire_mtls_cert]` matching the SAME cert string → `200` with `binding_type: "mtls"` | integration | `mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs` | ❌ W0 (new file) | ⬜ pending |
-| BIND-03 (struct default) | 1 | `%AccessToken{}.binding_verified == false` (fail-closed default, D-01) | unit | `mix test test/lockspire/access_token_test.exs` | ✅ (update existing defaults test) | ⬜ pending |
-| BIND-03 (positive set) | 1 | `EnforceSenderConstraints` sets `access_token.binding_verified == true` on every binding-validated success path; bearer no-op path leaves it `false` (D-02) | plug-unit | `mix test test/lockspire/plug/enforce_sender_constraints_test.exs` | ❌ W0 (new assertions) | ⬜ pending |
-| BIND-03 (runtime negative) | 1 | Bound token (`error: nil`, `binding_requirements != nil`, `binding_verified: false`) → `RequireToken` → `403` halted, sender-constraint error (D-03) | plug-unit | `mix test test/lockspire/plug/require_token_test.exs` | ❌ W0 (new clause) | ⬜ pending |
-| BIND-03 (bearer-still-passes) | 1 | Bearer token (`binding_requirements: nil`) → `RequireToken` → not halted, passes through (surprise-free guarantee) | plug-unit | `mix test test/lockspire/plug/require_token_test.exs` | ❌ W0 (new clause) | ⬜ pending |
-| BIND-03 (contract ordering) | 1 | All four RECIPE-01 sites order Verify→Enforce→Require (offset/regex that genuinely fails if Enforce/Require are transposed); D-05 | contract | `mix test test/lockspire/release_readiness_contract_test.exs` | ❌ W0 (new clause; satisfied by current content) | ⬜ pending |
+| BIND-01 | int | DPoP-bound `at+jwt` minted by `AccessTokenSigner.issue/3` (from `%Token{cnf: %{"jkt" => jkt}}`) → real 3-plug endpoint → genuine nonce-retry dance → `200` with `conn.assigns.access_token` populated AND `binding_type: "dpop"` AND `binding_requirements: %{dpop_jkt: jkt}` | integration | `mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs` | ✅ (created) | ✅ green |
+| BIND-02 | int | mTLS-bound `at+jwt` minted by `issue/3` (cnf `x5t#S256`) → endpoint with `conn.private[:lockspire_mtls_cert]` matching the SAME cert string → `200` with `binding_type: "mtls"` | integration | `mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs` | ✅ (created) | ✅ green |
+| BIND-03 (struct default) | 1 | `%AccessToken{}.binding_verified == false` (fail-closed default, D-01) | unit | `mix test test/lockspire/access_token_test.exs` | ✅ (update existing defaults test) | ✅ green |
+| BIND-03 (positive set) | 1 | `EnforceSenderConstraints` sets `access_token.binding_verified == true` on every binding-validated success path; bearer no-op path leaves it `false` (D-02) | plug-unit | `mix test test/lockspire/plug/enforce_sender_constraints_test.exs` | ✅ (added) | ✅ green |
+| BIND-03 (runtime negative) | 1 | Bound token (`error: nil`, `binding_requirements != nil`, `binding_verified: false`) → `RequireToken` → `403` halted, sender-constraint error (D-03) | plug-unit | `mix test test/lockspire/plug/require_token_test.exs` | ✅ (added) | ✅ green |
+| BIND-03 (bearer-still-passes) | 1 | Bearer token (`binding_requirements: nil`) → `RequireToken` → not halted, passes through (surprise-free guarantee) | plug-unit | `mix test test/lockspire/plug/require_token_test.exs` | ✅ (added) | ✅ green |
+| BIND-03 (contract ordering) | 1 | All four RECIPE-01 sites order Verify→Enforce→Require (offset/regex that genuinely fails if Enforce/Require are transposed); D-05 | contract | `mix test test/lockspire/release_readiness_contract_test.exs` | ✅ (added; passes current content) | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -66,13 +67,13 @@ created: 2026-05-28
 
 ## Wave 0 Requirements
 
-- [ ] `test/integration/phase100_sender_constraint_e2e_test.exs` — NEW; BIND-01 (DPoP) + BIND-02 (mTLS) happy-path proofs (lift phase81 harness + KeyCache publish-then-sign helper).
-- [ ] `test/lockspire/plug/require_token_test.exs` — ADD bound-but-unverified→403 and bearer→pass clauses (BIND-03 runtime).
-- [ ] `test/lockspire/plug/enforce_sender_constraints_test.exs` — ADD `binding_verified: true` assertions on the existing success-path tests (BIND-03 positive).
-- [ ] `test/lockspire/access_token_test.exs` — UPDATE defaults test to assert `binding_verified == false` (D-01).
-- [ ] `test/lockspire/release_readiness_contract_test.exs` — ADD ordering clause (D-05; passes against current content).
-- [ ] (Wave-0 spike, A1) One assertion that a list-`aud` token passes `VerifyToken` audience check (signer emits list `aud`; phase81 used string).
-- [ ] (Wave-0 spike, A3) Confirm the D-03 guard returns `403` via a status-explicit path (`handle_invalid_token/2` currently emits `401`).
+- [x] `test/integration/phase100_sender_constraint_e2e_test.exs` — NEW; BIND-01 (DPoP) + BIND-02 (mTLS) happy-path proofs (lift phase81 harness + KeyCache publish-then-sign helper).
+- [x] `test/lockspire/plug/require_token_test.exs` — ADD bound-but-unverified→403 and bearer→pass clauses (BIND-03 runtime).
+- [x] `test/lockspire/plug/enforce_sender_constraints_test.exs` — ADD `binding_verified: true` assertions on the existing success-path tests (BIND-03 positive).
+- [x] `test/lockspire/access_token_test.exs` — UPDATE defaults test to assert `binding_verified == false` (D-01).
+- [x] `test/lockspire/release_readiness_contract_test.exs` — ADD ordering clause (D-05; passes against current content).
+- [x] (Wave-0 spike, A1) One assertion that a list-`aud` token passes `VerifyToken` audience check (signer emits list `aud`; phase81 used string).
+- [x] (Wave-0 spike, A3) Confirm the D-03 guard returns `403` via a status-explicit path (`handle_invalid_token/2` currently emits `401`).
 
 *Framework install: none — ExUnit is built-in; `mix test.setup` already exists.*
 
@@ -95,4 +96,29 @@ created: 2026-05-28
 - [x] Feedback latency < 60s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** approved 2026-05-28 (plan-checker VERIFICATION PASSED; `wave_0_complete` flips true once execute-phase creates the Wave 0 test files)
+**Approval:** approved 2026-05-28 (plan-checker VERIFICATION PASSED; `wave_0_complete` flipped true 2026-05-28 — execute-phase created all Wave 0 test files)
+
+---
+
+## Validation Audit 2026-05-28
+
+All seven Per-Requirement rows audited against the executed artifacts (Plans 01/02/03) and re-run live. Every requirement is COVERED by a faithful, green automated proof — no shallow assertions, no escalations, no manual-only fallbacks.
+
+| Metric | Count |
+|--------|-------|
+| Requirements audited | 7 |
+| Gaps found | 0 |
+| Resolved (already covered) | 7 |
+| Escalated to manual-only | 0 |
+
+**Re-run evidence (2026-05-28):**
+- `mix test` over the four fast files (access_token, enforce_sender_constraints, require_token, release_readiness_contract): **56 tests, 0 failures**.
+- `mix test.setup && mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs`: **2 tests, 0 failures** (BIND-01 DPoP + BIND-02 mTLS).
+
+**Anti-cheat checks passed:**
+- Integration proof mints via `AccessTokenSigner.issue/3` (2 sites) with **zero** `JOSE.JWT.sign` hand-signing of the access token (grep-confirmed) — Phase 99 `maybe_put_cnf/2` carry-through genuinely exercised.
+- Genuine DPoP nonce-retry dance present (`use_dpop_nonce` 401 → retry → 200) with `:sys.get_state(KeyCache)` sync after refresh.
+- BIND-03 ordering clause uses byte-offset comparison (`v < e and e < r`) via the shared `extract_canonical_pipeline!/2` — fails genuinely on plug transposition.
+- BIND-03 struct default asserts `== false` (fail-closed), not `== nil`; runtime negative asserts 403 ONLY for `error: nil, binding_requirements != nil, binding_verified: false`; bearer path asserts `refute halted` + `status == nil`.
+
+**Verdict:** Phase 100 is Nyquist-compliant. No test generation or auditor spawn required.
