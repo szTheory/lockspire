@@ -82,13 +82,15 @@ defmodule Lockspire.Plug.VerifyTokenTest do
     end
 
     test "init/1 preserves validated route restriction options" do
-      assert [
-               scopes: ["read:billing"],
-               audience: "billing-api"
-             ] = VerifyToken.init(scopes: ["read:billing"], audience: "billing-api")
+      opts = VerifyToken.init(scopes: ["read:billing"], audience: "billing-api")
+      assert Keyword.fetch!(opts, :scopes) == ["read:billing"]
+      assert Keyword.fetch!(opts, :audience) == "billing-api"
+      assert Keyword.fetch!(opts, :enforce_audience) == false
 
-      assert [scopes: [], audiences: ["billing-api", "ledger-api"]] =
-               VerifyToken.init(audiences: ["billing-api", "ledger-api"])
+      opts = VerifyToken.init(audiences: ["billing-api", "ledger-api"])
+      assert Keyword.fetch!(opts, :scopes) == []
+      assert Keyword.fetch!(opts, :audiences) == ["billing-api", "ledger-api"]
+      assert Keyword.fetch!(opts, :enforce_audience) == false
     end
 
     test "assigns access_token with missing_token error when no header" do

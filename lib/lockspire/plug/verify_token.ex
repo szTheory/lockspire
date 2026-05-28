@@ -33,6 +33,14 @@ defmodule Lockspire.Plug.VerifyToken do
       type: {:list, :string},
       required: false,
       doc: "Any-of audience values accepted for the route."
+    ],
+    enforce_audience: [
+      type: :boolean,
+      required: false,
+      default: false,
+      doc:
+        "When true, init/1 raises if neither :audience nor :audiences is supplied. " <>
+          "Closes VERIFIER-06 cross-API token reuse on pipelines that declare audience enforcement (D-07)."
     ]
   ]
 
@@ -42,6 +50,13 @@ defmodule Lockspire.Plug.VerifyToken do
 
     if Keyword.has_key?(opts, :audience) and Keyword.has_key?(opts, :audiences) do
       raise ArgumentError, "expected only one of :audience or :audiences"
+    end
+
+    if Keyword.get(opts, :enforce_audience, false) and
+         not Keyword.has_key?(opts, :audience) and
+         not Keyword.has_key?(opts, :audiences) do
+      raise ArgumentError,
+            "expected :audience or :audiences when :enforce_audience is true (D-07)"
     end
 
     opts
