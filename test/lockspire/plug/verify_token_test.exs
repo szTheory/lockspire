@@ -346,6 +346,31 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       assert %AccessToken{claims: ^claims, error: nil} = conn.assigns[:access_token]
     end
 
+    # A1 Wave-0 spike (BIND-01/02 de-risk): AccessTokenSigner emits aud as a single-element
+    # list (e.g. ["billing-api"]), while phase81's hand-signed happy path used a bare string.
+    # This assertion proves the live audience matcher accepts list aud with audience: set,
+    # confirming that BIND-01/02's signer-minted tokens will not be rejected with
+    # :invalid_audience at VerifyToken. RFC 9068/7519 allow aud as list-or-string.
+    test "A1: accepts a single-element list aud claim with audience: set (signer emits list aud)" do
+      {token, claims} = generate_key_and_token(%{"aud" => ["billing-api"]})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "billing-api")
+
+      access_token = conn.assigns[:access_token]
+
+      assert %AccessToken{claims: ^claims} = access_token,
+             "A1 failure: list aud token was not accepted — BIND-01/02 must mint with string aud or use audiences: option"
+
+      refute match?(%{reason_code: :invalid_audience}, access_token.error),
+             "A1 failure: VerifyToken rejected list aud with :invalid_audience — BIND-01/02 mitigation needed"
+
+      assert access_token.error == nil,
+             "A1 failure: list aud token has error #{inspect(access_token.error)} — check audience matcher"
+    end
+
     test "records structured invalid_token errors for audience mismatch and malformed aud claims" do
       {mismatch_token, _claims} = generate_key_and_token(%{"aud" => "admin-api"})
       {malformed_token, _claims} = generate_key_and_token(%{"aud" => [123, "billing-api"]})
