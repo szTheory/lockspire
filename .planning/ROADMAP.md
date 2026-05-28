@@ -127,7 +127,10 @@
   2. CI's `Adoption Demo Smoke` job fails loudly if either of those round-trip assertions stops returning the expected outcome — the smoke is no longer satisfied by anonymous-401 alone.
   3. The demo's `:lockspire_protected_api` pipeline declares an explicit `audience:` matching the `resource=` URI used during the token request, so adopters who copy the demo do not inherit the audience-substitution bug-pattern.
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+- [ ] 101-01-PLAN.md — DEMO-03: replace `audience: "billing-api"` with the absolute URI `audience: "https://billing.acme-ledger.test"` byte-identically across all four hash-locked RECIPE-01 sites (D-01/D-03); release_readiness_contract_test stays green.
+- [ ] 101-02-PLAN.md — DEMO-01/DEMO-02: thread `resource=https://billing.acme-ledger.test` onto the smoke's /authorize + /token requests and add the `GET /api/billing/summary` -> 200 Bearer-token assertion (D-02/D-04/D-07), preserving the anonymous-401 and /userinfo assertions.
 
 ### Phase 102: Generated-Host Scaffolding + Telemetry + Migration
 
