@@ -92,10 +92,10 @@
 
 - [x] 99-01-PLAN.md — Migration + ServerPolicy/Client access_token_format storage + runtime setter (FORMAT-01/02)
 - [x] 99-02-PLAN.md — Discovery advertises access_token_signing_alg_values_supported (DISCOVERY-01)
-- [ ] 99-03-PLAN.md — AccessTokenSigner module: one-place format resolution + aud derivation (SIGNER-01/02)
+- [x] 99-03-PLAN.md — AccessTokenSigner module: one-place format resolution + aud derivation (SIGNER-01/02)
 - [ ] 99-04-PLAN.md — Route AC + net-new device/CIBA resource threading through the signer (SIGNER-01, AUD-01/02)
 - [ ] 99-05-PLAN.md — Route refresh + RFC 8693 through the signer; delete duplicated signing block (SIGNER-01, AUD-01/02/03, SC5)
-- [ ] 99-06-PLAN.md — Admin client-detail per-client override select + display rows (FORMAT-02)
+- [x] 99-06-PLAN.md — Admin client-detail per-client override select + display rows (FORMAT-02)
 
 **UI hint**: yes
 
@@ -149,7 +149,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 |-------|----------------|--------|-----------|
 | 97. Contract + Docs First | 5/5 | Complete    | 2026-05-27 |
 | 98. Plug Hardening | 4/4 | Complete    | 2026-05-28 |
-| 99. Signer Extraction + JWT-Default Issuance | 2/6 | In Progress|  |
+| 99. Signer Extraction + JWT-Default Issuance | 4/6 | In Progress|  |
 | 100. Sender-Constraint End-to-End Proof | 0/TBD | Not started | - |
 | 101. Adoption-Demo Re-Wire | 0/TBD | Not started | - |
 | 102. Generated-Host Scaffolding + Telemetry + Migration | 0/TBD | Not started | - |
