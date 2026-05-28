@@ -423,17 +423,21 @@ end
 | A3 | D-03's required `403` status is achievable by adding a 403 path mirroring `handle_insufficient_scope/2` (which already sends 403), rather than the 401 of `handle_invalid_token/2`. | Pattern 3 | If the planner reuses `handle_invalid_token/2` verbatim, the guard emits 401 not 403. BIND-03 success criterion 3 accepts "403/401" so either is spec-acceptable, but D-03 says 403 — planner should make status explicit. |
 | A4 | The `%Token{}` minimal fields needed by `issue/3` are `account_id` (→sub), `scopes`, `audience`, `cnf`, `issued_at` plus the no-default struct keys (`token_hash`, `token_type`, `client_id`, `expires_at`). | Pattern 1 | If `base_claims/3` reads a field not set, mint raises. Verified `base_claims/3` reads exactly `account_id`, `scopes`, `audience` (via caller), `cnf`, `issued_at` (`access_token_signer.ex:130-145`). Low risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both questions carry an evidence-backed recommendation and are wired into executable tasks; neither blocks planning. Resolutions actioned in the Phase 100 plans.
 
 1. **List vs string `aud` acceptance in `VerifyToken` (A1).**
    - What we know: Signer emits list `aud`; phase81 happy path used string `aud`; RFC 9068/7519 allow both.
    - What's unclear: Whether the live audience matcher accepts a list without extra config.
    - Recommendation: Wave-0 quick check (one assertion minting a list-aud token through VerifyToken with `audience:` set). If it fails, the BIND-01/02 tokens use a single-element list that the matcher must unwrap — escalate to the planner as a tiny prerequisite, not a blocker.
+   - **RESOLVED:** wired into Plan 100-02 Task 2 as a Wave-0 spike with explicit escalation-not-workaround handling; Plan 100-03 (BIND-01/02) depends on 100-02.
 
 2. **403 vs 401 for the D-03 guard.**
    - What we know: D-03 says 403; success criterion 3 says "403/401".
    - What's unclear: Whether `handle_structured_error` should be extended with a 403 sender-constraint path or reuse the 401 path.
    - Recommendation: Follow D-03 (403); add a status-explicit path mirroring `handle_insufficient_scope/2`. Claude's-Discretion per CONTEXT.md.
+   - **RESOLVED:** wired into Plan 100-01 Task 3 — an explicit 403 path modeled on `handle_insufficient_scope/2` (confirmed to emit 403), not inheriting the 401 of `handle_invalid_token/2`.
 
 ## Environment Availability
 
