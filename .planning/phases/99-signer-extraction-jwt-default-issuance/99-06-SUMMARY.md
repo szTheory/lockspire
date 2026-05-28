@@ -122,3 +122,10 @@ None - no external service configuration required.
 ---
 *Phase: 99-signer-extraction-jwt-default-issuance*
 *Completed: 2026-05-28*
+
+## Self-Check: PASSED
+
+- All modified files exist on disk (clients.ex, form_component.ex, show.ex, clients_test.exs, show_test.exs).
+- All task commits verified in git log: `2d0bcb2`, `639db87`, `b0b3d17`.
+- SUMMARY commit verified: `6df05d4`.
+- Full plan verification green: `mix test test/lockspire/admin/clients_test.exs test/lockspire/web/live/admin/clients_live/show_test.exs` -> 51 tests, 0 failures; `MIX_ENV=test mix compile --warnings-as-errors` clean.
