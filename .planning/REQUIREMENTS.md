@@ -16,8 +16,8 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Token Format Policy
 
-- [ ] **FORMAT-01**: A server-wide `access_token_format` setting (default `:jwt`) controls the default token shape issued by the authorization-code, refresh, device, and CIBA paths. Operators can set this to `:opaque` to opt the entire deployment out of `at+jwt` issuance.
-- [ ] **FORMAT-02**: A per-client `access_token_format` override (`:jwt | :opaque | nil`) lets operators flip individual clients independently of the server default. Visible in the admin client-detail screen with a doclink to the tradeoff.
+- [x] **FORMAT-01**: A server-wide `access_token_format` setting (default `:jwt`) controls the default token shape issued by the authorization-code, refresh, device, and CIBA paths. Operators can set this to `:opaque` to opt the entire deployment out of `at+jwt` issuance.
+- [x] **FORMAT-02**: A per-client `access_token_format` override (`:jwt | :opaque | nil`) lets operators flip individual clients independently of the server default. Visible in the admin client-detail screen with a doclink to the tradeoff.
 
 ### Verifier Contract
 
@@ -30,14 +30,14 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Audience Semantics
 
-- [ ] **AUD-01**: When `resource=<URI>` is present in a token request (RFC 8707), the minted `at+jwt`'s `aud` claim is `[resource]`. The `resource` parameter is propagated through the AC, refresh, device, and CIBA paths to the signer.
-- [ ] **AUD-02**: When `resource=` is absent on AC/refresh/device/CIBA paths, the minted `at+jwt`'s `aud` is `[client_id]` (back-compat with shipped RFC 8693 behaviour; no semantics change for existing callers).
-- [ ] **AUD-03**: When `resource=` is absent on the RFC 8693 token-exchange path, `aud` continues to be `client_id` (no change to shipped behaviour).
+- [x] **AUD-01**: When `resource=<URI>` is present in a token request (RFC 8707), the minted `at+jwt`'s `aud` claim is `[resource]`. The `resource` parameter is propagated through the AC, refresh, device, and CIBA paths to the signer.
+- [x] **AUD-02**: When `resource=` is absent on AC/refresh/device/CIBA paths, the minted `at+jwt`'s `aud` is `[client_id]` (back-compat with shipped RFC 8693 behaviour; no semantics change for existing callers).
+- [x] **AUD-03**: When `resource=` is absent on the RFC 8693 token-exchange path, `aud` continues to be `client_id` (no change to shipped behaviour).
 
 ### Signer Module
 
-- [ ] **SIGNER-01**: A shared `Lockspire.Protocol.AccessTokenSigner` module owns RFC 9068 `at+jwt` signing. The signing block currently at `lib/lockspire/protocol/rfc8693_exchange.ex:317-361` is extracted into this module and called from the AC, refresh, device, CIBA, and RFC 8693 issuance paths. No duplicate signing logic remains.
-- [ ] **SIGNER-02**: The signer respects per-client and server-wide `access_token_format` policy and produces opaque tokens via the existing `Lockspire.Protocol.TokenFormatter` path when policy says `:opaque`. The format decision happens in one place.
+- [x] **SIGNER-01**: A shared `Lockspire.Protocol.AccessTokenSigner` module owns RFC 9068 `at+jwt` signing. The signing block currently at `lib/lockspire/protocol/rfc8693_exchange.ex:317-361` is extracted into this module and called from the AC, refresh, device, CIBA, and RFC 8693 issuance paths. No duplicate signing logic remains.
+- [x] **SIGNER-02**: The signer respects per-client and server-wide `access_token_format` policy and produces opaque tokens via the existing `Lockspire.Protocol.TokenFormatter` path when policy says `:opaque`. The format decision happens in one place.
 
 ### Sender Constraints (DPoP + mTLS) End-to-End Proof
 
@@ -57,7 +57,7 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Discovery Metadata
 
-- [ ] **DISCOVERY-01**: The OpenID Connect discovery document advertises `access_token_signing_alg_values_supported: ["RS256", "ES256", "PS256"]` whenever any path can mint `at+jwt` (which, after v1.27, is "always — by default"). Truthful with shipped behaviour.
+- [x] **DISCOVERY-01**: The OpenID Connect discovery document advertises `access_token_signing_alg_values_supported: ["RS256", "ES256", "PS256"]` whenever any path can mint `at+jwt` (which, after v1.27, is "always — by default"). Truthful with shipped behaviour.
 
 ### Generated-Host Scaffolding
 
@@ -124,14 +124,14 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | VERIFIER-04 | Phase 98 | Complete |
 | VERIFIER-05 | Phase 98 | Complete |
 | VERIFIER-06 | Phase 98 | Complete |
-| SIGNER-01 | Phase 99 | Pending |
-| SIGNER-02 | Phase 99 | Pending |
-| FORMAT-01 | Phase 99 | Pending |
-| FORMAT-02 | Phase 99 | Pending |
-| AUD-01 | Phase 99 | Pending |
-| AUD-02 | Phase 99 | Pending |
-| AUD-03 | Phase 99 | Pending |
-| DISCOVERY-01 | Phase 99 | Pending |
+| SIGNER-01 | Phase 99 | Complete |
+| SIGNER-02 | Phase 99 | Complete |
+| FORMAT-01 | Phase 99 | Complete |
+| FORMAT-02 | Phase 99 | Complete |
+| AUD-01 | Phase 99 | Complete |
+| AUD-02 | Phase 99 | Complete |
+| AUD-03 | Phase 99 | Complete |
+| DISCOVERY-01 | Phase 99 | Complete |
 | BIND-01 | Phase 100 | Pending |
 | BIND-02 | Phase 100 | Pending |
 | BIND-03 | Phase 100 | Pending |
