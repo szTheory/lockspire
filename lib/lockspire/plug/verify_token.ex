@@ -16,6 +16,7 @@ defmodule Lockspire.Plug.VerifyToken do
   alias Lockspire.KeyCache
 
   @allowed_algs ["RS256", "ES256", "PS256"]
+  @base64url_segment ~r/^[A-Za-z0-9_\-]+$/
   @options_schema [
     scopes: [
       type: {:list, :string},
@@ -72,6 +73,25 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp verify_token(token, authorization_scheme, opts) do
+    # Front-edge structural check (D-01): a token that does not split into exactly
+    # three non-empty Base64URL segments by `.` short-circuits here with
+    # reason_code: :opaque_token_not_accepted instead of falling through to JOSE
+    # and being silently lumped under :malformed.
+    if opaque_shape?(token) do
+      error = opaque_token_error()
+      log_invalid_token(error, authorization_scheme)
+
+      %AccessToken{
+        token: token,
+        authorization_scheme: authorization_scheme,
+        error: error
+      }
+    else
+      do_verify_token(token, authorization_scheme, opts)
+    end
+  end
+
+  defp do_verify_token(token, authorization_scheme, opts) do
     with {:ok, kid} <- extract_kid(token),
          {:ok, jwk} <- fetch_key(kid),
          {:ok, claims} <- verify_signature_and_claims(jwk, token) do
@@ -94,6 +114,38 @@ defmodule Lockspire.Plug.VerifyToken do
           authorization_scheme: authorization_scheme
         }
     end
+  end
+
+  # Returns true when the token does NOT split into exactly three non-empty
+  # Base64URL segments by `.`. Three-segment-but-bad inputs (e.g. "not.a.jwt")
+  # return false so they continue to fall through to the existing JOSE path
+  # and classify as `:malformed`, preserving the contract documented in D-01.
+  defp opaque_shape?(token) when is_binary(token) do
+    case String.split(token, ".", parts: 4) do
+      [a, b, c] ->
+        not (base64url_segment?(a) and base64url_segment?(b) and base64url_segment?(c))
+
+      _ ->
+        true
+    end
+  end
+
+  defp opaque_shape?(_token), do: true
+
+  defp base64url_segment?(segment) when is_binary(segment) do
+    segment != "" and Regex.match?(@base64url_segment, segment)
+  end
+
+  defp base64url_segment?(_segment), do: false
+
+  defp opaque_token_error do
+    %{
+      category: :token_format,
+      challenge: :bearer,
+      reason_code: :opaque_token_not_accepted,
+      error: "invalid_token",
+      error_description: "opaque tokens not accepted on this route"
+    }
   end
 
   defp apply_restrictions(%AccessToken{} = access_token, opts) do
@@ -250,7 +302,17 @@ defmodule Lockspire.Plug.VerifyToken do
     )
   end
 
-  defp log_invalid_token(reason_code, authorization_scheme) do
+  defp log_invalid_token(%{reason_code: reason_code, category: category}, authorization_scheme) do
+    Logger.warning(
+      "Lockspire.VerifyToken invalid token category=#{category} reason=#{reason_code}",
+      event: :lockspire_verify_token_failed,
+      category: category,
+      authorization_scheme: authorization_scheme,
+      reason_code: reason_code
+    )
+  end
+
+  defp log_invalid_token(reason_code, authorization_scheme) when is_atom(reason_code) do
     Logger.warning(
       "Lockspire.VerifyToken invalid token reason=#{reason_code}",
       event: :lockspire_verify_token_failed,
