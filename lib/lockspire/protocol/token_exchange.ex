@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
   alias Lockspire.Observability
+  alias Lockspire.Protocol.AccessTokenSigner
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.RefreshExchange
@@ -699,52 +700,57 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
 
-    {access_token, raw_access_token} =
-      build_access_token(
-        client,
-        %Token{authorization_code | audience: requested_resources},
-        issued_at,
-        formatted_refresh_token,
-        issuance_context,
-        request
-      )
+    with {%Token{} = access_token, raw_access_token} <-
+           build_access_token(
+             client,
+             %Token{authorization_code | audience: requested_resources},
+             issued_at,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+      case persist_authorization_code_grant(
+             code_hash,
+             issued_at,
+             access_token,
+             authorization_code,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+          build_success_response(
+            client,
+            authorization_code,
+            persisted_access_token,
+            raw_access_token,
+            issuance_context,
+            issued_at,
+            Map.get(persisted_grant, :refresh_token_raw),
+            request
+          )
 
-    case persist_authorization_code_grant(
-           code_hash,
-           issued_at,
-           access_token,
-           authorization_code,
-           formatted_refresh_token,
-           issuance_context,
-           request
-         ) do
-      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-        build_success_response(
-          client,
-          authorization_code,
-          persisted_access_token,
-          raw_access_token,
-          issuance_context,
-          issued_at,
-          Map.get(persisted_grant, :refresh_token_raw),
-          request
-        )
+        {:error, :already_redeemed} ->
+          {:error,
+           invalid_grant(
+             "Authorization code has already been used",
+             :authorization_code_replayed
+           )}
 
-      {:error, :already_redeemed} ->
-        {:error,
-         invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
+        {:error, :not_found} ->
+          {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
 
-      {:error, :not_found} ->
-        {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
-
-      {:error, _reason} ->
-        {:error,
-         oauth_error(
-           500,
-           "server_error",
-           "Unable to redeem authorization code",
-           :token_redemption_failed
-         )}
+        {:error, _reason} ->
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Unable to redeem authorization code",
+             :token_redemption_failed
+           )}
+      end
+    else
+      {:error, %Error{} = error} -> {:error, error}
     end
   end
 
@@ -831,52 +837,54 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, ciba_grant, request)
 
-    {access_token, raw_access_token} =
-      build_access_token(
-        client,
-        ciba_grant,
-        issued_at,
-        formatted_refresh_token,
-        issuance_context,
-        request
-      )
+    with {%Token{} = access_token, raw_access_token} <-
+           build_access_token(
+             client,
+             ciba_grant,
+             issued_at,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+      case persist_ciba_authorization_grant(
+             ciba_authorization,
+             issued_at,
+             access_token,
+             ciba_grant,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+          build_success_response(
+            client,
+            ciba_grant,
+            persisted_access_token,
+            raw_access_token,
+            issuance_context,
+            issued_at,
+            Map.get(persisted_grant, :refresh_token_raw),
+            request
+          )
 
-    case persist_ciba_authorization_grant(
-           ciba_authorization,
-           issued_at,
-           access_token,
-           ciba_grant,
-           formatted_refresh_token,
-           issuance_context,
-           request
-         ) do
-      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-        build_success_response(
-          client,
-          ciba_grant,
-          persisted_access_token,
-          raw_access_token,
-          issuance_context,
-          issued_at,
-          Map.get(persisted_grant, :refresh_token_raw),
-          request
-        )
+        {:error, :invalid_state} ->
+          {:error,
+           invalid_grant(
+             "The CIBA authorization has already been redeemed",
+             :ciba_authorization_consumed
+           )}
 
-      {:error, :invalid_state} ->
-        {:error,
-         invalid_grant(
-           "The CIBA authorization has already been redeemed",
-           :ciba_authorization_consumed
-         )}
-
-      {:error, _reason} ->
-        {:error,
-         oauth_error(
-           500,
-           "server_error",
-           "Unable to redeem CIBA authorization",
-           :ciba_authorization_redemption_failed
-         )}
+        {:error, _reason} ->
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Unable to redeem CIBA authorization",
+             :ciba_authorization_redemption_failed
+           )}
+      end
+    else
+      {:error, %Error{} = error} -> {:error, error}
     end
   end
 
@@ -977,52 +985,54 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
 
-    {access_token, raw_access_token} =
-      build_access_token(
-        client,
-        device_grant,
-        issued_at,
-        formatted_refresh_token,
-        issuance_context,
-        request
-      )
+    with {%Token{} = access_token, raw_access_token} <-
+           build_access_token(
+             client,
+             device_grant,
+             issued_at,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+      case persist_device_authorization_grant(
+             device_authorization,
+             issued_at,
+             access_token,
+             device_grant,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+          build_success_response(
+            client,
+            device_grant,
+            persisted_access_token,
+            raw_access_token,
+            issuance_context,
+            issued_at,
+            Map.get(persisted_grant, :refresh_token_raw),
+            request
+          )
 
-    case persist_device_authorization_grant(
-           device_authorization,
-           issued_at,
-           access_token,
-           device_grant,
-           formatted_refresh_token,
-           issuance_context,
-           request
-         ) do
-      {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-        build_success_response(
-          client,
-          device_grant,
-          persisted_access_token,
-          raw_access_token,
-          issuance_context,
-          issued_at,
-          Map.get(persisted_grant, :refresh_token_raw),
-          request
-        )
+        {:error, :invalid_state} ->
+          {:error,
+           invalid_grant(
+             "The device authorization has already been redeemed",
+             :device_authorization_consumed
+           )}
 
-      {:error, :invalid_state} ->
-        {:error,
-         invalid_grant(
-           "The device authorization has already been redeemed",
-           :device_authorization_consumed
-         )}
-
-      {:error, _reason} ->
-        {:error,
-         oauth_error(
-           500,
-           "server_error",
-           "Unable to redeem device authorization",
-           :device_authorization_redemption_failed
-         )}
+        {:error, _reason} ->
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Unable to redeem device authorization",
+             :device_authorization_redemption_failed
+           )}
+      end
+    else
+      {:error, %Error{} = error} -> {:error, error}
     end
   end
 
@@ -1394,11 +1404,7 @@ defmodule Lockspire.Protocol.TokenExchange do
        ) do
     family_id = if formatted_refresh_token, do: formatted_refresh_token.token_hash
 
-    formatted_access_token =
-      TokenFormatter.format_access_token(token_format_options(request, :access_token))
-
     access_token = %Token{
-      token_hash: formatted_access_token.token_hash,
       token_type: :access_token,
       family_id: family_id,
       generation: 0,
@@ -1414,7 +1420,18 @@ defmodule Lockspire.Protocol.TokenExchange do
       expires_at: DateTime.add(issued_at, @access_token_ttl, :second)
     }
 
-    {access_token, formatted_access_token.token}
+    # SIGNER-01: mint through the shared signer. The signer resolves the effective
+    # format (per-client override -> server default -> :jwt) and returns the raw
+    # token plus its hash. We re-point %Token{}.token_hash to the signer's hash so
+    # introspection/revocation by hash resolves regardless of the issued format
+    # (Pitfall 1 / T-99-12), preserving the internal {%Token{}, raw} 2-tuple.
+    case AccessTokenSigner.issue(access_token, client, request) do
+      {:ok, raw_access_token, token_hash} ->
+        {%Token{access_token | token_hash: token_hash}, raw_access_token}
+
+      {:error, %Error{} = error} ->
+        {:error, error}
+    end
   end
 
   defp persist_device_authorization_grant(

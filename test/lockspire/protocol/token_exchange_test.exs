@@ -88,7 +88,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     events: events
   } do
     secret = "super-secret-value"
-    {:ok, client} = create_client("client-basic", :client_secret_basic, secret)
+
+    {:ok, client} =
+      create_client("client-basic", :client_secret_basic, secret, ["authorization_code"], %{
+        access_token_format: :opaque
+      })
 
     _code =
       create_authorization_code(client, raw_code: "code-basic", code_verifier: "verifier-basic")
@@ -123,10 +127,116 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert persisted_token.token_hash == TokenFormatter.hash_token(success.access_token)
     assert persisted_token.cnf == nil
     refute persisted_token.token_hash == success.access_token
+    # Opaque opt-in: the issued token is NOT a JOSE-verifiable at+jwt.
+    refute opaque_token_is_at_jwt?(success.access_token)
 
     event_names = recorded_event_names(events)
     assert [:lockspire, :authorization_code, :redeemed] in event_names
     assert [:lockspire, :token, :issued] in event_names
+  end
+
+  test "AC flow mints an at+jwt access token by default and re-points the persisted hash to the signer's hash" do
+    secret = "ac-jwt-default-secret"
+    publish_signing_key("kid-ac-jwt")
+    {:ok, client} = create_client("client-ac-jwt", :client_secret_basic, secret)
+
+    _code =
+      create_authorization_code(client, raw_code: "code-ac-jwt", code_verifier: "verifier-ac-jwt")
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-ac-jwt",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-ac-jwt"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    {header, claims} = verify_at_jwt(success.access_token)
+    assert header["typ"] == "at+jwt"
+    assert claims["iss"] == "https://example.test/lockspire"
+    assert claims["sub"] == "subject-123"
+    assert claims["client_id"] == client.client_id
+    # AUD-02: absent resource= yields aud == [client_id] (list form).
+    assert claims["aud"] == [client.client_id]
+
+    persisted_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where: token.token_type == :access_token and token.client_id == ^client.client_id
+        )
+      )
+
+    # T-99-12: the persisted hash must equal the hash of the issued raw token so
+    # introspection/revocation by hash still resolves.
+    assert persisted_token.token_hash == Lockspire.Security.Policy.hash_token(success.access_token)
+  end
+
+  test "AC flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)" do
+    secret = "ac-jwt-resource-secret"
+    publish_signing_key("kid-ac-resource")
+    {:ok, client} = create_client("client-ac-resource", :client_secret_basic, secret)
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-ac-resource",
+        code_verifier: "verifier-ac-resource",
+        audience: ["https://billing.example.com"]
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-ac-resource",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-ac-resource",
+                 "resource" => "https://billing.example.com"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    {_header, claims} = verify_at_jwt(success.access_token)
+    assert claims["aud"] == ["https://billing.example.com"]
+  end
+
+  test "AC flow honors a per-client :opaque override even though the server default is :jwt" do
+    secret = "ac-opaque-optin-secret"
+
+    {:ok, client} =
+      create_client("client-ac-opaque", :client_secret_basic, secret, ["authorization_code"], %{
+        access_token_format: :opaque
+      })
+
+    _code =
+      create_authorization_code(client,
+        raw_code: "code-ac-opaque",
+        code_verifier: "verifier-ac-opaque"
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => "code-ac-opaque",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "code_verifier" => "verifier-ac-opaque"
+               },
+               authorization: basic_auth(client.client_id, secret)
+             )
+
+    refute opaque_token_is_at_jwt?(success.access_token)
+
+    persisted_token =
+      Lockspire.TestRepo.one!(
+        from(token in TokenRecord,
+          where: token.token_type == :access_token and token.client_id == ^client.client_id
+        )
+      )
+
+    assert persisted_token.token_hash == TokenFormatter.hash_token(success.access_token)
   end
 
   test "issues an RS256 id token for openid code flow using the linked interaction nonce" do
@@ -326,7 +436,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         :client_secret_basic,
         secret,
         ["authorization_code", "refresh_token"],
-        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+        %{
+          allowed_scopes: ["email", "profile", "offline_access"],
+          dpop_policy: :dpop,
+          access_token_format: :opaque
+        }
       )
 
     _code =
@@ -367,7 +481,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("issued-dpop-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -384,7 +498,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         :client_secret_basic,
         secret,
         ["authorization_code", "refresh_token"],
-        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+        %{
+          allowed_scopes: ["email", "profile", "offline_access"],
+          dpop_policy: :dpop,
+          access_token_format: :opaque
+        }
       )
 
     _code =
@@ -440,7 +558,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("auth-code-nonce-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -452,7 +570,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     {:ok, client} =
       create_client("client-dpop-replay", :client_secret_basic, secret, ["authorization_code"], %{
-        dpop_policy: :dpop
+        dpop_policy: :dpop,
+        access_token_format: :opaque
       })
 
     _first_code =
@@ -507,10 +626,13 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     secret = "refresh-secret"
 
     {:ok, client} =
-      create_client("client-refresh-issuer", :client_secret_basic, secret, [
-        "authorization_code",
-        "refresh_token"
-      ])
+      create_client(
+        "client-refresh-issuer",
+        :client_secret_basic,
+        secret,
+        ["authorization_code", "refresh_token"],
+        %{access_token_format: :opaque}
+      )
 
     _code =
       create_authorization_code(client,
@@ -543,7 +665,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("issued-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -557,6 +679,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   test "accepts form-encoded basic auth credentials containing reserved characters and colons" do
     client_id = "client:with/slash"
     secret = "sec:ret?/+= value:tail"
+    publish_signing_key("kid-encoded-basic")
     {:ok, client} = create_client(client_id, :client_secret_basic, secret)
 
     _code =
@@ -584,6 +707,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     events: events
   } do
     secret = "replay-secret"
+    publish_signing_key("kid-replay")
     {:ok, client} = create_client("client-replay", :client_secret_basic, secret)
 
     _code =
@@ -619,6 +743,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   test "successful redemption and replay attempts append durable audit rows with client attribution",
        %{events: events} do
     secret = "audit-secret"
+    publish_signing_key("kid-audit")
     {:ok, client} = create_client("client-audit", :client_secret_basic, secret)
 
     {:ok, authorization_code} =
@@ -1051,7 +1176,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         "device-success-client",
         :client_secret_basic,
         secret,
-        ["urn:ietf:params:oauth:grant-type:device_code"]
+        ["urn:ietf:params:oauth:grant-type:device_code"],
+        %{access_token_format: :opaque}
       )
 
     {:ok, _approved} =
@@ -1078,12 +1204,15 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
                  token_store: Repository,
                  interaction_store: Repository,
                  key_store: Repository,
-                 device_authorization_store: Repository,
-                 access_token_generator: fn -> "device-flow-access-token" end
+                 device_authorization_store: Repository
                ]
              })
 
-    assert success.access_token == "device-flow-access-token"
+    # :opaque opt-in: the signer mints the opaque token (the legacy
+    # access_token_generator seam no longer drives access-token minting), so the
+    # issued token is a non-empty binary that is not a JOSE at+jwt.
+    assert is_binary(success.access_token)
+    refute opaque_token_is_at_jwt?(success.access_token)
     assert success.token_type == "Bearer"
     assert success.scope == "email profile"
     assert success.refresh_token == nil
@@ -1104,7 +1233,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         :client_secret_basic,
         secret,
         ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
-        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+        %{
+          allowed_scopes: ["email", "profile", "offline_access"],
+          dpop_policy: :dpop,
+          access_token_format: :opaque
+        }
       )
 
     {:ok, _approved} =
@@ -1156,7 +1289,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("device-dpop-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -1173,7 +1306,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         :client_secret_basic,
         secret,
         ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
-        %{allowed_scopes: ["email", "profile", "offline_access"], dpop_policy: :dpop}
+        %{
+          allowed_scopes: ["email", "profile", "offline_access"],
+          dpop_policy: :dpop,
+          access_token_format: :opaque
+        }
       )
 
     {:ok, _approved} =
@@ -1246,7 +1383,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("device-nonce-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -1262,7 +1399,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
         :client_secret_basic,
         secret,
         ["urn:openid:params:grant-type:ciba", "refresh_token"],
-        %{allowed_scopes: ["openid", "email", "profile", "offline_access"], dpop_policy: :dpop}
+        %{
+          allowed_scopes: ["openid", "email", "profile", "offline_access"],
+          dpop_policy: :dpop,
+          access_token_format: :opaque
+        }
       )
 
     {:ok, _authorization} =
@@ -1334,7 +1475,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
           where:
             token.token_type == :access_token and
               token.client_id == ^client.client_id and
-              token.token_hash == ^TokenFormatter.hash_token("ciba-nonce-access-token")
+              token.token_hash == ^TokenFormatter.hash_token(success.access_token)
         )
       )
 
@@ -1343,6 +1484,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "preserves bearer token_type for approved bearer-mode device authorization" do
     secret = "device-bearer-secret"
+    publish_signing_key("kid-device-bearer")
 
     {:ok, client} =
       create_client(
@@ -1385,6 +1527,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "device grants redeem once, collapse replay to invalid_grant, and append durable device audit rows" do
     secret = "device-replay-secret"
+    publish_signing_key("kid-device-replay")
 
     {:ok, client} =
       create_client(
@@ -1615,6 +1758,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       token_endpoint_auth_method: auth_method,
       pkce_required: Map.get(attrs, :pkce_required, true),
       dpop_policy: Map.get(attrs, :dpop_policy, :inherit),
+      access_token_format: Map.get(attrs, :access_token_format),
       subject_type: Map.get(attrs, :subject_type, :public),
       created_at: DateTime.utc_now(),
       metadata: %{}
@@ -1676,6 +1820,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       interaction_id: interaction_id,
       redirect_uri: "https://client.example.com/callback",
       scopes: Keyword.get(opts, :scopes, ["email", "profile"]),
+      audience: Keyword.get(opts, :audience, []),
       code_challenge: code_challenge,
       code_challenge_method: code_challenge_method,
       issued_at: now,
@@ -1800,6 +1945,28 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       activated_at: DateTime.utc_now(),
       metadata: %{}
     })
+  end
+
+  # Decodes + JOSE-verifies an at+jwt access token against the active signing key,
+  # returning {header_map, claims_map}. Asserts the signature is valid.
+  defp verify_at_jwt(access_token) do
+    {:ok, %{public_jwk: public_jwk}} = Repository.fetch_active_signing_key()
+    jwk = JOSE.JWK.from_map(public_jwk)
+
+    assert {true, %JOSE.JWT{fields: claims}, _jws} = JOSE.JWT.verify_strict(jwk, ["RS256"], access_token)
+
+    header = decode_jwt_section(access_token, 0)
+    {header, claims}
+  end
+
+  # True only when the token parses as a JWT whose header advertises typ "at+jwt".
+  defp opaque_token_is_at_jwt?(token) do
+    case decode_jwt_section(token, 0) do
+      %{"typ" => "at+jwt"} -> true
+      _ -> false
+    end
+  rescue
+    _ -> false
   end
 
   defp basic_auth(client_id, client_secret) do
