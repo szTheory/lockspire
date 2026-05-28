@@ -18,6 +18,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   @spec exchange(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(%Client{} = client, request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
+    issued_at = now(request)
 
     with {:ok, subject_token_string} <- fetch_subject_token(params),
          {:ok, %Token{} = subject_token} <- validate_subject_token(subject_token_string, request),
@@ -37,12 +38,10 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
              client,
              subject_token,
              requested_scopes,
-             now(request),
+             issued_at,
              validation_result,
              request
            ) do
-      issued_at = now(request)
-
       access_token = %Token{
         token_hash: token_hash,
         token_type: :access_token,
