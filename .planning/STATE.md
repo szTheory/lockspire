@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
 status: executing
-stopped_at: Phase 99 context gathered (assumptions mode)
-last_updated: "2026-05-28T11:39:08.797Z"
-last_activity: 2026-05-28
+stopped_at: Phase 99 UI-SPEC approved
+last_updated: "2026-05-28T13:52:23.573Z"
+last_activity: 2026-05-28 -- Phase 99 planning complete
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 9
+  total_plans: 15
   completed_plans: 9
   percent: 33
 ---
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md
 
 Phase: 99
 Plan: Not started
-Status: Executing Phase 98
-Last activity: 2026-05-28
+Status: Ready to execute
+Last activity: 2026-05-28 -- Phase 99 planning complete
 
 Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 
@@ -75,6 +75,6 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 ## Session Continuity
 
 **Next action:** Plan Phase 97 (Contract + Docs First). The canonical pipeline-declaration block, single authoritative `docs/protect-phoenix-api-routes.md` page, supported-surface non-goals, and the `release_readiness_contract_test` content-hash assertion all land before any plug or signer code changes.
-**Resume file:** .planning/phases/99-signer-extraction-jwt-default-issuance/99-CONTEXT.md
-**Stopped at:** Phase 99 context gathered (assumptions mode)
+**Resume file:** .planning/phases/99-signer-extraction-jwt-default-issuance/99-UI-SPEC.md
+**Stopped at:** Phase 99 UI-SPEC approved
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
