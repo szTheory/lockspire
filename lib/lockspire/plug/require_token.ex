@@ -61,8 +61,24 @@ defmodule Lockspire.Plug.RequireToken do
   end
 
   defp handle_insufficient_scope(conn, error) do
+    # D-05/D-06 (Plan 04 / VERIFIER-05): mirror handle_invalid_token/2's
+    # challenge-aware routing. When VerifyToken's insufficient_scope_error/2
+    # derives `challenge: :dpop` (e.g. DPoP-bound token failing the scope
+    # check on a 403 path), use the DPoP-aware emission path so the response
+    # carries `WWW-Authenticate: DPoP realm="..." error="insufficient_scope"
+    # error_description="..." algs="..."` per RFC 9449 §7.1. ProtectedResourceChallenge.put_dpop_challenge/2
+    # is status-agnostic (it only sets headers), so the 403 status set by
+    # send_json/3 below is preserved per RFC 6750 §3.1.
+    conn =
+      case error do
+        %{challenge: :dpop} ->
+          ProtectedResourceChallenge.put_dpop_challenge(conn, error, realm: "Lockspire")
+
+        _other ->
+          put_resp_header(conn, "www-authenticate", www_authenticate(error))
+      end
+
     conn
-    |> put_resp_header("www-authenticate", www_authenticate(error))
     |> send_json(403, oauth_body(error))
     |> halt()
   end
@@ -110,11 +126,21 @@ defmodule Lockspire.Plug.RequireToken do
       |> Enum.filter(&is_binary/1)
 
     %{
-      challenge: :bearer,
+      # D-05/D-06 (Plan 04 / VERIFIER-05): pass through any explicitly-set
+      # `:challenge` from the upstream structured map so DPoP-bound tokens
+      # failing the scope check route through the DPoP emission path in
+      # handle_insufficient_scope/2 below. The :bearer fallthrough preserves
+      # existing behavior for tokens with no binding (D-05 row 4).
+      challenge: Map.get(error, :challenge, :bearer),
       error: Map.get(error, :error, "insufficient_scope"),
       error_description:
         Map.get(error, :error_description, "The access token is missing a required scope"),
-      scope: Enum.join(required_scopes, " ")
+      scope: Enum.join(required_scopes, " "),
+      # Defensive symmetry with normalize_sender_error/1: pass through any
+      # :dpop_nonce so future DPoP-bound scope-failure paths can carry a nonce
+      # for retry. VerifyToken does not currently set dpop_nonce on its
+      # insufficient_scope path; this is wire-up for uniformity.
+      dpop_nonce: Map.get(error, :dpop_nonce)
     }
   end
 
