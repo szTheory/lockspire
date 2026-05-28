@@ -1183,4 +1183,31 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert supported_surface =~ "does not require JARM encryption"
     assert supported_surface =~ "does not broaden Lockspire into a larger FAPI certification"
   end
+
+  test "all four RECIPE-01 sites order VerifyToken → EnforceSenderConstraints → RequireToken (BIND-03/D-05)" do
+    files = [
+      {@protect_phoenix_api_routes_path, :elixir_in_markdown_fence},
+      {@adoption_demo_router_path, :elixir},
+      {@install_template_router_path, :elixir_in_commented_heredoc},
+      {@adoption_smoke_script_path, :python_commented}
+    ]
+
+    for {path, kind} <- files do
+      bytes = extract_canonical_pipeline!(path, kind)
+      v = byte_offset(bytes, "Lockspire.Plug.VerifyToken")
+      e = byte_offset(bytes, "Lockspire.Plug.EnforceSenderConstraints")
+      r = byte_offset(bytes, "Lockspire.Plug.RequireToken")
+
+      assert v < e and e < r,
+             "canonical pipeline in #{Path.relative_to_cwd(path)} must order " <>
+               "VerifyToken → EnforceSenderConstraints → RequireToken (BIND-03/D-05)"
+    end
+  end
+
+  defp byte_offset(bytes, needle) do
+    case :binary.match(bytes, needle) do
+      {start, _len} -> start
+      :nomatch -> flunk("expected #{inspect(needle)} in canonical pipeline block")
+    end
+  end
 end
