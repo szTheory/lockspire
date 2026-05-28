@@ -474,6 +474,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       name: Map.get(params, "name", client.name),
       allowed_scopes: split_csv(params["allowed_scopes"]),
       dpop_policy: params["dpop_policy"],
+      access_token_format: params["access_token_format"],
       contacts: split_csv(params["contacts"]),
       logo_uri: params["logo_uri"],
       tos_uri: params["tos_uri"],

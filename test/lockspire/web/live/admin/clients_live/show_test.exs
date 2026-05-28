@@ -355,6 +355,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "verifier material"
   end
 
+  test "edit form renders the access_token_format override select with doclink and persists the choice",
+       %{client: client} do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}/edit")
+
+    assert html =~ "Access token format override"
+    assert html =~ ~s(name="client[access_token_format]")
+    assert html =~ ~s(value="inherit")
+    assert html =~ ~s(value="jwt")
+    assert html =~ ~s(value="opaque")
+    assert html =~ "Inherit from server default"
+    assert html =~ "JWT (RFC 9068 at+jwt)"
+    assert html =~ "Opaque (Lockspire-stored)"
+    assert html =~ "docs/protect-phoenix-api-routes.md"
+    assert html =~ "Learn when to choose JWT vs opaque"
+
+    # A client with nil override pre-selects the inherit option.
+    assert html =~ ~r/<option value="inherit"[^>]*selected/
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        mode: "edit",
+        allowed_scopes: "email",
+        access_token_format: "opaque"
+      }
+    })
+    |> render_submit()
+
+    assert {:ok, updated_client} = Admin.get_client(client.client_id)
+    assert updated_client.access_token_format == :opaque
+  end
+
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
   end
