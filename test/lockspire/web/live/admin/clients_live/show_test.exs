@@ -387,6 +387,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert updated_client.access_token_format == :opaque
   end
 
+  test "client detail shows global / override / effective access token format rows with nil as inherit",
+       %{client: client} do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Global access token format"
+    assert html =~ "Client access token override"
+    assert html =~ "Effective access token format"
+
+    # nil override renders as "inherit"; server default is :jwt, so effective is jwt.
+    assert html =~ "inherit"
+    assert html =~ "jwt"
+  end
+
+  test "client detail effective access token format reflects an opaque override over the server default",
+       %{client: client} do
+    assert {:ok, _opaque_client} =
+             Admin.update_client(client.client_id, %{access_token_format: :opaque})
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Effective access token format"
+    assert html =~ "opaque"
+  end
+
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
   end
