@@ -88,7 +88,13 @@
   4. An adopter or developer reading `/.well-known/openid-configuration` sees `access_token_signing_alg_values_supported: ["RS256", "ES256", "PS256"]` published truthfully because issuance can mint `at+jwt` on every grant path.
   5. There is no duplicated `at+jwt` signing logic anywhere in the codebase — the signing block previously in `rfc8693_exchange.ex:317-361` is gone, and every issuance path calls into `Protocol.AccessTokenSigner`.
 
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 99-01-PLAN.md — Migration + ServerPolicy/Client access_token_format storage + runtime setter (FORMAT-01/02)
+- [ ] 99-02-PLAN.md — Discovery advertises access_token_signing_alg_values_supported (DISCOVERY-01)
+- [ ] 99-03-PLAN.md — AccessTokenSigner module: one-place format resolution + aud derivation (SIGNER-01/02)
+- [ ] 99-04-PLAN.md — Route AC + net-new device/CIBA resource threading through the signer (SIGNER-01, AUD-01/02)
+- [ ] 99-05-PLAN.md — Route refresh + RFC 8693 through the signer; delete duplicated signing block (SIGNER-01, AUD-01/02/03, SC5)
+- [ ] 99-06-PLAN.md — Admin client-detail per-client override select + display rows (FORMAT-02)
 **UI hint**: yes
 
 ### Phase 100: Sender-Constraint End-to-End Proof
