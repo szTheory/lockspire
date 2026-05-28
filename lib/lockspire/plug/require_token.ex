@@ -135,12 +135,13 @@ defmodule Lockspire.Plug.RequireToken do
       error: Map.get(error, :error, "insufficient_scope"),
       error_description:
         Map.get(error, :error_description, "The access token is missing a required scope"),
-      scope: Enum.join(required_scopes, " "),
-      # Defensive symmetry with normalize_sender_error/1: pass through any
-      # :dpop_nonce so future DPoP-bound scope-failure paths can carry a nonce
-      # for retry. VerifyToken does not currently set dpop_nonce on its
-      # insufficient_scope path; this is wire-up for uniformity.
-      dpop_nonce: Map.get(error, :dpop_nonce)
+      scope: Enum.join(required_scopes, " ")
+      # WR-04: no :dpop_nonce wire-up here. No upstream path sets dpop_nonce on
+      # an insufficient_scope error, and ProtectedResourceChallenge.put_dpop_challenge/2
+      # already calls maybe_put_dpop_nonce/2, which threads any nonce present on
+      # the structured error. Passing nil through here was dead-code-for-symmetry
+      # exercised by no test; if a future caller sets dpop_nonce on a scope
+      # failure, the existing put_dpop_challenge/2 handling already covers it.
     }
   end
 
