@@ -144,7 +144,13 @@
   3. An operator upgrading from v1.26 to v1.27 finds `docs/upgrading/v1.27.md` explaining the default issuance flip, showing the one-line config to opt the whole deployment back to opaque if needed, and naming exactly which existing clients (those with `access_token_format: nil`) will inherit the new server default.
   4. An operator running `mix lockspire.doctor token_format` receives a diagnostic report of per-client format choices that flags every client where the inherited default has changed semantics — diagnostic, not enforcement.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+- [ ] 102-01-PLAN.md — SCAFFOLD-01/02: two regression guards in `release_readiness_contract_test.exs` (no-format-prompt refute over install task + generator source; raw-bytes uncomment-ready assert on the canonical pipeline block).
+- [ ] 102-02-PLAN.md — TELEMETRY-01: direct `:telemetry.execute([:lockspire, :rs, :token_format], …)` at two sites in `verify_token.ex` (JWT-success + opaque-rejection) plus a capture test.
+- [ ] 102-03-PLAN.md — MIGRATE-01: net-new `docs/upgrading/v1.27.md` (honest runtime opt-out, nil-inherit affected clients) pinned by a contract-test clause.
+- [ ] 102-04-PLAN.md — MIGRATE-02: read-only `Mix.Tasks.Lockspire.Doctor.TokenFormat` subtask + dispatcher clause + test.
+
 **UI hint**: yes
 
 ## Progress
