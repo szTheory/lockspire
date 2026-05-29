@@ -4,13 +4,13 @@ milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
 status: executing
 stopped_at: Phase 101 context gathered (assumptions mode)
-last_updated: "2026-05-28T23:44:59.175Z"
-last_activity: 2026-05-28 -- Phase 101 planning complete
+last_updated: "2026-05-29T00:24:38.100Z"
+last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
   percent: 67
 ---
 
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 100 — sender-constraint-end-to-end-proof
+**Current focus:** Phase 101 — adoption-demo-re-wire
 
 ## Current Position
 
-Phase: 101
-Plan: Not started
+Phase: 101 (adoption-demo-re-wire) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-05-28 -- Phase 101 planning complete
+Last activity: 2026-05-29
 
 Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 
@@ -75,6 +75,12 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 ## Session Continuity
 
 **Next action:** Plan Phase 97 (Contract + Docs First). The canonical pipeline-declaration block, single authoritative `docs/protect-phoenix-api-routes.md` page, supported-surface non-goals, and the `release_readiness_contract_test` content-hash assertion all land before any plug or signer code changes.
-**Resume file:** .planning/phases/101-adoption-demo-re-wire/101-CONTEXT.md
+**Resume file:** None
 **Stopped at:** Phase 101 context gathered (assumptions mode)
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 101-adoption-demo-re-wire P01 | 10 | 1 tasks | 4 files |

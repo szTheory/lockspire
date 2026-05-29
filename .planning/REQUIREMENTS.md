@@ -49,7 +49,7 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 - [ ] **DEMO-01**: The adoption demo (`examples/adoption_demo/`) runs an end-to-end auth-code flow that obtains a Lockspire-issued `at+jwt`, calls a host-owned protected route (e.g., `/api/billing/summary`), and asserts HTTP `200` with the token. The demo's existing `/userinfo` assertion against the stored opaque token stays (it correctly exercises the Lockspire-owned RS path).
 - [ ] **DEMO-02**: `scripts/demo/adoption_smoke.py` adds the `200-with-issued-token` assertion. The smoke proving only `401-on-anonymous` is no longer the sole RS-protection proof.
-- [ ] **DEMO-03**: The demo's router declares an explicit `audience:` on its protected pipeline matching the resource URI used in the token request.
+- [x] **DEMO-03**: The demo's router declares an explicit `audience:` on its protected pipeline matching the resource URI used in the token request.
 
 ### Canonical Recipe Content-Hashing
 
@@ -137,7 +137,7 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | BIND-03 | Phase 100 | Complete |
 | DEMO-01 | Phase 101 | Pending |
 | DEMO-02 | Phase 101 | Pending |
-| DEMO-03 | Phase 101 | Pending |
+| DEMO-03 | Phase 101 | Complete |
 | SCAFFOLD-01 | Phase 102 | Pending |
 | SCAFFOLD-02 | Phase 102 | Pending |
 | TELEMETRY-01 | Phase 102 | Pending |

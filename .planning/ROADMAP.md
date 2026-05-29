@@ -129,7 +129,7 @@
 
 **Plans**: 2 plans
 
-- [ ] 101-01-PLAN.md — DEMO-03: replace `audience: "billing-api"` with the absolute URI `audience: "https://billing.acme-ledger.test"` byte-identically across all four hash-locked RECIPE-01 sites (D-01/D-03); release_readiness_contract_test stays green.
+- [x] 101-01-PLAN.md — DEMO-03: replace `audience: "billing-api"` with the absolute URI `audience: "https://billing.acme-ledger.test"` byte-identically across all four hash-locked RECIPE-01 sites (D-01/D-03); release_readiness_contract_test stays green.
 - [ ] 101-02-PLAN.md — DEMO-01/DEMO-02: thread `resource=https://billing.acme-ledger.test` onto the smoke's /authorize + /token requests and add the `GET /api/billing/summary` -> 200 Bearer-token assertion (D-02/D-04/D-07), preserving the anonymous-401 and /userinfo assertions.
 
 ### Phase 102: Generated-Host Scaffolding + Telemetry + Migration
@@ -158,7 +158,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 98. Plug Hardening | 4/4 | Complete    | 2026-05-28 |
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
 | 100. Sender-Constraint End-to-End Proof | 3/3 | Complete    | 2026-05-28 |
-| 101. Adoption-Demo Re-Wire | 0/TBD | Not started | - |
+| 101. Adoption-Demo Re-Wire | 1/2 | In Progress|  |
 | 102. Generated-Host Scaffolding + Telemetry + Migration | 0/TBD | Not started | - |
 
 ## Build-Order Rationale
