@@ -61,8 +61,8 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Generated-Host Scaffolding
 
-- [ ] **SCAFFOLD-01**: `priv/templates/lockspire.install/router.ex` gains the commented `:lockspire_protected_api` pipeline declaration mirroring the demo's blessed pipeline. New adopters get a working RS-protection scaffold without copy-paste from docs.
-- [ ] **SCAFFOLD-02**: `mix lockspire.install` does NOT ask the operator about token format. The JWT default is right; opting to opaque happens later via admin client management or config, not at install time. No new install-time decision.
+- [x] **SCAFFOLD-01**: `priv/templates/lockspire.install/router.ex` gains the commented `:lockspire_protected_api` pipeline declaration mirroring the demo's blessed pipeline. New adopters get a working RS-protection scaffold without copy-paste from docs.
+- [x] **SCAFFOLD-02**: `mix lockspire.install` does NOT ask the operator about token format. The JWT default is right; opting to opaque happens later via admin client management or config, not at install time. No new install-time decision.
 
 ### Adopter-Facing Docs
 
@@ -138,8 +138,8 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | DEMO-01 | Phase 101 | Complete |
 | DEMO-02 | Phase 101 | Complete |
 | DEMO-03 | Phase 101 | Complete |
-| SCAFFOLD-01 | Phase 102 | Pending |
-| SCAFFOLD-02 | Phase 102 | Pending |
+| SCAFFOLD-01 | Phase 102 | Complete |
+| SCAFFOLD-02 | Phase 102 | Complete |
 | TELEMETRY-01 | Phase 102 | Pending |
 | MIGRATE-01 | Phase 102 | Pending |
 | MIGRATE-02 | Phase 102 | Pending |
