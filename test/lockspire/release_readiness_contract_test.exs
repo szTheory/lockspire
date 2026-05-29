@@ -89,6 +89,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
                                   "../../priv/templates/lockspire.install/router.ex",
                                   __DIR__
                                 )
+  @install_task_path Path.expand("../../lib/mix/tasks/lockspire.install.ex", __DIR__)
+  @install_generator_path Path.expand("../../lib/lockspire/generators/install.ex", __DIR__)
   @adoption_smoke_script_path Path.expand("../../scripts/demo/adoption_smoke.py", __DIR__)
 
   defp mix_version do
@@ -755,6 +757,42 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     for {path_a, hash_a} <- hashes, {path_b, hash_b} <- hashes, path_a < path_b do
       assert hash_a == hash_b,
              "canonical pipeline block drifted between #{Path.relative_to_cwd(path_a)} and #{Path.relative_to_cwd(path_b)}"
+    end
+  end
+
+  test "mix lockspire.install never prompts for or branches on access-token format (SCAFFOLD-02, D-02 #1)" do
+    # The install task + generator SOURCE must never gain a token-format decision.
+    # The install TEMPLATE is intentionally NOT a refute target: it legitimately carries
+    # `audience:`/`enforce_audience:` in the commented canonical pipeline, and the generator
+    # renders that template at runtime via EEx.eval_file, so the generator source itself stays
+    # clean. SCAFFOLD-02 is already satisfied behaviorally (Phases 97/101); this is its drift fence.
+    for path <- [@install_task_path, @install_generator_path] do
+      src = File.read!(path)
+
+      refute src =~ ~r/access_token_format|token[_ ]format|:jwt|:opaque/i,
+             "install task/generator must never prompt for or branch on token format (SCAFFOLD-02): " <>
+               "#{Path.relative_to_cwd(path)}"
+    end
+  end
+
+  test "install-template canonical lockspire_protected_api block stays fully commented (SCAFFOLD-01, D-02 #2)" do
+    # CRITICAL (Pitfall 3): assert against the RAW template bytes, NOT
+    # extract_canonical_pipeline!/2's output — that helper's normalize/2 STRIPS the leading `# `
+    # prefix, so asserting "every line commented" against it is a tautology that always passes.
+    # The "still commented / uncomment-ready" property REQUIRES the raw File.read! bytes.
+    raw = File.read!(@install_template_router_path)
+
+    [body] =
+      Regex.run(
+        ~r/# BEGIN LOCKSPIRE_PROTECTED_PIPELINE\n(.*?)\n[ \t]*# END LOCKSPIRE_PROTECTED_PIPELINE/ms,
+        raw,
+        capture: :all_but_first
+      )
+
+    for line <- String.split(body, "\n"), String.trim(line) != "" do
+      assert line =~ ~r/^\s*#/,
+             "install-template canonical lockspire_protected_api block must stay fully commented " <>
+               "(SCAFFOLD-01): offending line #{inspect(line)}"
     end
   end
 
