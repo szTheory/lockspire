@@ -32,7 +32,7 @@
 - [x] **Phase 99: Signer Extraction + JWT-Default Issuance** — Shared `Protocol.AccessTokenSigner` lands; default access-token format flips to `:jwt` with per-client override and audience semantics. (completed 2026-05-28)
 - [x] **Phase 100: Sender-Constraint End-to-End Proof** — DPoP-bound and mTLS-bound `at+jwt` traverse the blessed pipeline end-to-end; misordered-pipeline bypass is closed. (completed 2026-05-28)
 - [x] **Phase 101: Adoption-Demo Re-Wire** — The demo smoke proves auth-code → `at+jwt` → `/api/billing/summary` → 200, not just 401-on-anonymous. (completed 2026-05-29)
-- [ ] **Phase 102: Generated-Host Scaffolding + Telemetry + Migration** — Install template mirrors the blessed pipeline; operator telemetry and migration guide land for the issuance-default flip.
+- [x] **Phase 102: Generated-Host Scaffolding + Telemetry + Migration** — Install template mirrors the blessed pipeline; operator telemetry and migration guide land for the issuance-default flip. (completed 2026-05-29)
 
 ## Phase Details
 
@@ -153,7 +153,7 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 102-03-PLAN.md — MIGRATE-01: net-new `docs/upgrading/v1.27.md` (honest runtime opt-out, nil-inherit affected clients) pinned by a contract-test clause.
+- [x] 102-03-PLAN.md — MIGRATE-01: net-new `docs/upgrading/v1.27.md` (honest runtime opt-out, nil-inherit affected clients) pinned by a contract-test clause.
 
 **UI hint**: yes
 
@@ -169,7 +169,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
 | 100. Sender-Constraint End-to-End Proof | 3/3 | Complete    | 2026-05-28 |
 | 101. Adoption-Demo Re-Wire | 2/2 | Complete    | 2026-05-29 |
-| 102. Generated-Host Scaffolding + Telemetry + Migration | 3/4 | In Progress|  |
+| 102. Generated-Host Scaffolding + Telemetry + Migration | 4/4 | Complete   | 2026-05-29 |
 
 ## Build-Order Rationale
 

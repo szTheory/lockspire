@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.27
 milestone_name: Phoenix Resource Server Token Acceptance
-status: executing
+status: verifying
 stopped_at: Phase 102 context gathered (assumptions mode)
-last_updated: "2026-05-29T10:49:10.712Z"
+last_updated: "2026-05-29T10:53:31.821Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 24
-  completed_plans: 23
-  percent: 83
+  completed_plans: 24
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md
 
 Phase: 102 (generated-host-scaffolding-telemetry-migration) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-29
 
 Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 - Sustainment patch-train work continues in parallel on `main` while v1.27 feature work runs on `milestone/v1.27-phoenix-rs-token-acceptance`.
 - [Phase ?]: TELEMETRY-01: [:lockspire, :rs, :token_format] emitted via direct :telemetry.execute/3 at two VerifyToken sites; :jwt at format-confirmation time (independent of apply_restrictions/2), literal :"opaque-rejected" with all-nil metadata on the opaque branch; deliberately not Observability.emit/4 (avoids audit double-emit + nil-metadata redaction drop).
 - [Phase ?]: Phase 102-04: token_format doctor reproduces AccessTokenSigner.resolve_format/2 precedence inline (effective_format/2) rather than promoting the signer fn public; read-only/diagnostic-only (no Mix.raise/non-zero exit on flagged clients).
+- [Phase ?]: Phase 102-03: docs/upgrading/v1.27.md documents the issuance default flip with the honest runtime opt-out (ServerPolicy.put_access_token_format(:opaque), NOT a config :lockspire key) and the nil-inherit affected-client set; pinned by a release_readiness_contract_test clause (MIGRATE-01).
 
 ## Blockers/Concerns
 
@@ -90,3 +91,4 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases, 0 plans)
 | Phase 102 P01 | ~10min | 2 tasks | 1 files |
 | Phase 102 P02 | ~3min | 2 tasks | 2 files |
 | Phase 102 P04 | ~12min | 2 tasks | 3 files |
+| Phase 102 P03 | 6min | 2 tasks | 2 files |

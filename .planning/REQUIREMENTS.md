@@ -75,7 +75,7 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Migration & Backward Compatibility
 
-- [ ] **MIGRATE-01**: Existing clients (created before v1.27) whose `access_token_format` is `nil` inherit the new server default (`:jwt`). A migration guide in `docs/upgrading/v1.27.md` names this explicitly and shows the one-line config to opt the whole deployment back to opaque if needed.
+- [x] **MIGRATE-01**: Existing clients (created before v1.27) whose `access_token_format` is `nil` inherit the new server default (`:jwt`). A migration guide in `docs/upgrading/v1.27.md` names this explicitly and shows the one-line config to opt the whole deployment back to opaque if needed.
 - [x] **MIGRATE-02**: A `mix lockspire.doctor token_format` task (or extension of the existing doctor task) reports per-client format choices and flags any client where the inherited default has changed semantics. Diagnostic, not enforcement.
 
 ## Future Requirements
@@ -141,7 +141,7 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | SCAFFOLD-01 | Phase 102 | Complete |
 | SCAFFOLD-02 | Phase 102 | Complete |
 | TELEMETRY-01 | Phase 102 | Complete |
-| MIGRATE-01 | Phase 102 | Pending |
+| MIGRATE-01 | Phase 102 | Complete |
 | MIGRATE-02 | Phase 102 | Complete |
 
 **Coverage:**
