@@ -169,7 +169,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
 | 100. Sender-Constraint End-to-End Proof | 3/3 | Complete    | 2026-05-28 |
 | 101. Adoption-Demo Re-Wire | 2/2 | Complete    | 2026-05-29 |
-| 102. Generated-Host Scaffolding + Telemetry + Migration | 4/4 | Complete   | 2026-05-29 |
+| 102. Generated-Host Scaffolding + Telemetry + Migration | 4/4 | Complete    | 2026-05-29 |
 
 ## Build-Order Rationale
 
