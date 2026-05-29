@@ -71,7 +71,7 @@ Each requirement maps to roadmap phases via the Traceability section.
 
 ### Operator Telemetry
 
-- [ ] **TELEMETRY-01**: A `[:lockspire, :rs, :token_format]` telemetry event is emitted on every successful verification through `Lockspire.Plug.VerifyToken`, with `:jwt | :opaque-rejected` as a measurement and `client_id`, `audience`, and `binding_type` as metadata. Operators can see at a glance what flows through their plug.
+- [x] **TELEMETRY-01**: A `[:lockspire, :rs, :token_format]` telemetry event is emitted on every successful verification through `Lockspire.Plug.VerifyToken`, with `:jwt | :opaque-rejected` as a measurement and `client_id`, `audience`, and `binding_type` as metadata. Operators can see at a glance what flows through their plug.
 
 ### Migration & Backward Compatibility
 
@@ -140,7 +140,7 @@ Each REQ-ID maps to exactly one phase. Mapped 2026-05-27.
 | DEMO-03 | Phase 101 | Complete |
 | SCAFFOLD-01 | Phase 102 | Complete |
 | SCAFFOLD-02 | Phase 102 | Complete |
-| TELEMETRY-01 | Phase 102 | Pending |
+| TELEMETRY-01 | Phase 102 | Complete |
 | MIGRATE-01 | Phase 102 | Pending |
 | MIGRATE-02 | Phase 102 | Pending |
 

@@ -148,7 +148,7 @@
 **Wave 1**
 
 - [x] 102-01-PLAN.md — SCAFFOLD-01/02: two regression guards in `release_readiness_contract_test.exs` (no-format-prompt refute over install task + generator source; raw-bytes uncomment-ready assert on the canonical pipeline block).
-- [ ] 102-02-PLAN.md — TELEMETRY-01: direct `:telemetry.execute([:lockspire, :rs, :token_format], …)` at two sites in `verify_token.ex` (JWT-success + opaque-rejection) plus a capture test.
+- [x] 102-02-PLAN.md — TELEMETRY-01: direct `:telemetry.execute([:lockspire, :rs, :token_format], …)` at two sites in `verify_token.ex` (JWT-success + opaque-rejection) plus a capture test.
 - [ ] 102-04-PLAN.md — MIGRATE-02: read-only `Mix.Tasks.Lockspire.Doctor.TokenFormat` subtask + dispatcher clause + test.
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -169,7 +169,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
 | 100. Sender-Constraint End-to-End Proof | 3/3 | Complete    | 2026-05-28 |
 | 101. Adoption-Demo Re-Wire | 2/2 | Complete    | 2026-05-29 |
-| 102. Generated-Host Scaffolding + Telemetry + Migration | 1/4 | In Progress|  |
+| 102. Generated-Host Scaffolding + Telemetry + Migration | 2/4 | In Progress|  |
 
 ## Build-Order Rationale
 
