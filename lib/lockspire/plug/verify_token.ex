@@ -111,6 +111,19 @@ defmodule Lockspire.Plug.VerifyToken do
       error = opaque_token_error(challenge_for(nil, authorization_scheme))
       log_invalid_token(error, authorization_scheme)
 
+      # TELEMETRY-01 SITE B (opaque-rejection): emit at structural-format-decision
+      # time. Opaque tokens carry no parseable claims (and therefore no cnf
+      # binding), so every metadata field except the literal hyphenated atom
+      # :"opaque-rejected" (D-07, external operator contract) is nil. Emitting
+      # here keeps the :"opaque-rejected" count symmetric with the SITE A :jwt
+      # count (both fire at format-decision time, before any restriction).
+      emit_token_format(%{
+        token_format: :"opaque-rejected",
+        client_id: nil,
+        audience: nil,
+        binding_type: nil
+      })
+
       %AccessToken{
         token: token,
         authorization_scheme: authorization_scheme,
@@ -125,6 +138,21 @@ defmodule Lockspire.Plug.VerifyToken do
     with {:ok, kid} <- extract_kid(token),
          {:ok, jwk} <- fetch_key(kid),
          {:ok, claims} <- verify_signature_and_claims(jwk, token, authorization_scheme) do
+      # TELEMETRY-01 SITE A (JWT-success): emit at format-confirmation time —
+      # the `with` has verified the signature + RFC 9068 typ/claims, so the
+      # token is a confirmed at+jwt. Emit BEFORE/independent of
+      # apply_restrictions/2 (Pitfall 4) so the :jwt count reflects "a JWT-format
+      # verification reached a format decision," not "fully authorized": a
+      # structurally-valid at+jwt that fails the route's audience/scope check is
+      # still a :jwt format and stays count-symmetric with SITE B. Audience is
+      # read from claims["aud"] — the AccessToken struct has no audience field.
+      emit_token_format(%{
+        token_format: :jwt,
+        client_id: Map.get(claims, "client_id"),
+        audience: Map.get(claims, "aud"),
+        binding_type: binding_type(claims)
+      })
+
       %AccessToken{
         token: token,
         claims: claims,
@@ -477,6 +505,26 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp binding_type(_claims), do: nil
+
+  # TELEMETRY-01 (D-03/D-04/D-05): emit the per-request RS verification
+  # token-format counter via a DIRECT :telemetry.execute/3 call. The measurement
+  # is the numeric map %{count: 1} (D-04); the categorical :jwt | :"opaque-rejected"
+  # value rides in metadata under token_format alongside client_id/audience/
+  # binding_type.
+  #
+  # This MUST NOT route through Lockspire.Observability.emit/4 (Pitfall 2):
+  #   1. emit/4 double-emits a [:lockspire, :audit, ...] copy, flooding the audit
+  #      log on every protected request (T-102-05, DoS).
+  #   2. emit/4 runs Redaction.for_telemetry, where Redaction.sanitize_value(nil, _)
+  #      returns :drop — it would silently strip EVERY field of the all-nil
+  #      opaque-rejection metadata, hiding the reject signal (T-102-06).
+  #
+  # Security discipline (V7 / T-102-04): emit EXACTLY these four metadata keys —
+  # never `token`, `claims`, `cnf`, or `jti`. The direct-execute path skips
+  # redaction, so this call site IS the redaction discipline.
+  defp emit_token_format(metadata) do
+    :telemetry.execute([:lockspire, :rs, :token_format], %{count: 1}, metadata)
+  end
 
   # D-05 / D-06 (Plan 04 / VERIFIER-05): derive the `challenge:` atom used on
   # every VerifyToken-produced structured error map from the verified claims'
