@@ -31,7 +31,7 @@
 - [x] **Phase 98: Plug Hardening** — `Lockspire.Plug.VerifyToken` narrows to RFC 9068 `at+jwt` only with full RFC 9068 / 8725 / 9449 compliance. (completed 2026-05-28)
 - [x] **Phase 99: Signer Extraction + JWT-Default Issuance** — Shared `Protocol.AccessTokenSigner` lands; default access-token format flips to `:jwt` with per-client override and audience semantics. (completed 2026-05-28)
 - [x] **Phase 100: Sender-Constraint End-to-End Proof** — DPoP-bound and mTLS-bound `at+jwt` traverse the blessed pipeline end-to-end; misordered-pipeline bypass is closed. (completed 2026-05-28)
-- [ ] **Phase 101: Adoption-Demo Re-Wire** — The demo smoke proves auth-code → `at+jwt` → `/api/billing/summary` → 200, not just 401-on-anonymous.
+- [x] **Phase 101: Adoption-Demo Re-Wire** — The demo smoke proves auth-code → `at+jwt` → `/api/billing/summary` → 200, not just 401-on-anonymous. (completed 2026-05-29)
 - [ ] **Phase 102: Generated-Host Scaffolding + Telemetry + Migration** — Install template mirrors the blessed pipeline; operator telemetry and migration guide land for the issuance-default flip.
 
 ## Phase Details
@@ -130,7 +130,7 @@
 **Plans**: 2 plans
 
 - [x] 101-01-PLAN.md — DEMO-03: replace `audience: "billing-api"` with the absolute URI `audience: "https://billing.acme-ledger.test"` byte-identically across all four hash-locked RECIPE-01 sites (D-01/D-03); release_readiness_contract_test stays green.
-- [ ] 101-02-PLAN.md — DEMO-01/DEMO-02: thread `resource=https://billing.acme-ledger.test` onto the smoke's /authorize + /token requests and add the `GET /api/billing/summary` -> 200 Bearer-token assertion (D-02/D-04/D-07), preserving the anonymous-401 and /userinfo assertions.
+- [x] 101-02-PLAN.md — DEMO-01/DEMO-02: thread `resource=https://billing.acme-ledger.test` onto the smoke's /authorize + /token requests and add the `GET /api/billing/summary` -> 200 Bearer-token assertion (D-02/D-04/D-07), preserving the anonymous-401 and /userinfo assertions.
 
 ### Phase 102: Generated-Host Scaffolding + Telemetry + Migration
 
@@ -158,7 +158,7 @@ Phases execute in numeric order: 97 → 98 → 99 → 100 → 101 → 102. Decim
 | 98. Plug Hardening | 4/4 | Complete    | 2026-05-28 |
 | 99. Signer Extraction + JWT-Default Issuance | 6/6 | Complete    | 2026-05-28 |
 | 100. Sender-Constraint End-to-End Proof | 3/3 | Complete    | 2026-05-28 |
-| 101. Adoption-Demo Re-Wire | 1/2 | In Progress|  |
+| 101. Adoption-Demo Re-Wire | 2/2 | Complete   | 2026-05-29 |
 | 102. Generated-Host Scaffolding + Telemetry + Migration | 0/TBD | Not started | - |
 
 ## Build-Order Rationale
