@@ -77,6 +77,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @dynamic_registration_guide_path Path.expand("../../docs/dynamic-registration.md", __DIR__)
   @device_flow_host_guide_path Path.expand("../../docs/device-flow-host-guide.md", __DIR__)
   @rar_consent_host_guide_path Path.expand("../../docs/rar-consent-host-guide.md", __DIR__)
+  @upgrading_v1_27_path Path.expand("../../docs/upgrading/v1.27.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @repo_hygiene_script_path Path.expand("../../scripts/maintainer/repo_hygiene_check.sh", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
@@ -794,6 +795,29 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              "install-template canonical lockspire_protected_api block must stay fully commented " <>
                "(SCAFFOLD-01): offending line #{inspect(line)}"
     end
+  end
+
+  test "v1.27 migration guide pins the honest runtime opt-out and nil-inherit naming (MIGRATE-01, D-09/D-10)" do
+    # Pins docs/upgrading/v1.27.md against drift from shipped behavior. A failure here means the
+    # migration prose diverged from the real runtime opt-out (D-09) or the affected-client semantics
+    # (D-10) — fix the GUIDE to match shipped behavior, do not relax this assertion.
+    doc = File.read!(@upgrading_v1_27_path)
+
+    # D-09: the HONEST one-line runtime opt-out is a ServerPolicy call, not a config key.
+    assert doc =~ "put_access_token_format(:opaque)",
+           "v1.27 guide must document the runtime opt-out put_access_token_format(:opaque) (MIGRATE-01, D-09)"
+
+    # D-10: affected clients are exactly those whose access_token_format is nil (they inherit :jwt).
+    assert doc =~ ~r/access_token_format.{0,40}nil/,
+           "v1.27 guide must name affected clients as those whose access_token_format is nil (MIGRATE-01, D-10)"
+
+    # The flip narrative: both formats named.
+    assert doc =~ "opaque" and doc =~ ":jwt",
+           "v1.27 guide must explain the opaque->:jwt default flip (MIGRATE-01)"
+
+    # D-09: there is NO config :lockspire key for this — refuse a phantom no-op instruction.
+    refute doc =~ ~r/config :lockspire.*access_token_format/,
+           "v1.27 guide must NOT point operators at a phantom config :lockspire access_token_format key (MIGRATE-01, D-09)"
   end
 
   test "canonical lockspire_protected_api pipeline declares a non-empty audience: across all four RECIPE-01 sites (D-07)" do
