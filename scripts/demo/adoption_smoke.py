@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 
 BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://127.0.0.1:4100")
+BILLING_RESOURCE = "https://billing.acme-ledger.test"
 
 
 class Browser:
@@ -184,6 +185,7 @@ def exercise_authorization_code():
         "prompt": "consent",
         "code_challenge": code_challenge(verifier),
         "code_challenge_method": "S256",
+        "resource": BILLING_RESOURCE,
     }
 
     start = browser.request("GET", "/lockspire/authorize?" + urlencode(authorize_params))
@@ -225,6 +227,7 @@ def exercise_authorization_code():
             "redirect_uri": BASE_URL + "/oauth/callback",
             "code": code,
             "code_verifier": verifier,
+            "resource": BILLING_RESOURCE,
         },
     )
     assert_status(token, 200, "token exchange")
@@ -252,6 +255,15 @@ def exercise_authorization_code():
 
     anonymous_api = Browser(BASE_URL).request("GET", "/api/billing/summary")
     assert_status(anonymous_api, 401, "protected API rejects anonymous request")
+
+    authed_api = Browser(BASE_URL).request(
+        "GET",
+        "/api/billing/summary",
+        headers={"authorization": "Bearer " + token_json["access_token"]},
+    )
+    assert_status(authed_api, 200, "protected API accepts issued at+jwt")
+    authed_api_json = json_body(authed_api, "billing summary")
+    assert BILLING_RESOURCE in authed_api_json["access_token"]["audience"]
 
 
 def exercise_device_flow():
