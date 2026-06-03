@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.28 Admin UI Operator Experience Polish (Shipped + archived: 2026-06-03)
+
+**Phases completed:** **4** (**103-106**), **2** plans, **17** requirements closed.
+
+**Package posture:** Lockspire's admin UI now reads as one coherent operator product across setup proof, partner/client onboarding, support investigation, security posture review, runtime operations, DCR, and key lifecycle workflows while preserving protocol behavior and the embedded-library boundary.
+
+**Key accomplishments:**
+
+- Added shared admin components and BEM/design-token CSS primitives for buttons, action bars, alerts, data display, forms, confirmation panels, resource rows, badges, and responsive/focus states.
+- Reworked client detail into a scannable client workspace covering identity, effective posture, credentials, endpoints, logout, DCR/RAT context, and safe actions.
+- Polished support, operations, policy, DCR, and key lifecycle screens so queues, exceptions, handoff context, and safety panels are easier to scan and act on.
+- Verified demo seed expressiveness, operator admin docs, desktop/mobile screenshot coverage, and design-system regression contracts in Phase 106.
+
+**Pre-close audit:** `audit-open` clear. Formal v1.28 milestone audit artifact was not present at close; `roadmap.analyze` reported 100% completion and Phase 106 summary recorded closeout proof.
+
+**Archives:** `milestones/v1.28-ROADMAP.md`, `milestones/v1.28-REQUIREMENTS.md` · **Git tag:** `v1.28`
+
+---
+
 ## v1.27 Phoenix Resource Server Token Acceptance (Shipped: 2026-06-03)
 
 **Phases completed:** 6 phases, 24 plans, 45 tasks

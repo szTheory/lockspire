@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.27
-milestone_name: Phoenix Resource Server Token Acceptance
+milestone: v1.28
+milestone_name: Admin UI Operator Experience Polish
 status: Awaiting next milestone
-last_updated: "2026-06-03T00:12:54.618Z"
-last_activity: 2026-06-03 — Milestone v1.27 completed and archived
+last_updated: "2026-06-03T22:35:00.000Z"
+last_activity: 2026-06-03 — Milestone v1.28 completed and archived
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 24
-  completed_plans: 24
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 2
+  completed_plans: 2
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 102 — generated-host-scaffolding-telemetry-migration
+**Current focus:** Milestone v1.28 complete
 
 ## Current Position
 
-Phase: Milestone v1.27 complete
+Phase: Milestone v1.28 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-03 — Milestone v1.27 completed and archived
+Last activity: 2026-06-03 — Milestone v1.28 completed and archived
 
 ## Most Recent Release
 
@@ -43,24 +43,26 @@ Last activity: 2026-06-03 — Milestone v1.27 completed and archived
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.28 | 103-106 | 2 | 17 | shipped |
+| v1.27 | 97-102 | 24 | 28 | shipped |
 | v1.26 | 94-96 | 3 | 5 | shipped |
 | v1.25 | 91-93 | 9 | 9 | shipped |
-| v1.24 | 88-90 | 9 | 7 | shipped |
 
-## v1.27 Phase Plan
+## v1.28 Phase Plan
 
 | Phase | Name | REQs | UI |
 |-------|------|------|----|
-| 97 | Contract + Docs First | 3 | no |
-| 98 | Plug Hardening | 6 | no |
-| 99 | Signer Extraction + JWT-Default Issuance | 8 | yes (admin client-detail) |
-| 100 | Sender-Constraint End-to-End Proof | 3 | no |
-| 101 | Adoption-Demo Re-Wire | 3 | no |
-| 102 | Generated-Host Scaffolding + Telemetry + Migration | 5 | yes (install template) |
+| 103 | Admin UI Journey Contract + Design System Foundation | 7 | yes |
+| 104 | Client Workspace Recomposition | 1 | yes |
+| 105 | Support, Operate, Security, DCR, and Keys Workflow Polish | 5 | yes |
+| 106 | Demo Seeds, Docs, Screenshots, and Contract Verification | 4 | yes |
 
 ## Decisions
 
-- v1.27 is the deliberate exception to the standing sustainment default; opened because adoption-demo evidence in PR #44 exposed the RS-token-shape tension as the next highest-leverage adopter wedge.
+- v1.28 is a deliberate UI/operator-experience milestone; opened because the admin surface now has enough breadth that operator clarity and design-system consistency are the highest-leverage adoption wedge.
+- v1.28 treats the previous admin overview/nav/security/DCR/demo-seed polish already present in the worktree as the baseline, not work to redo.
+- v1.28 doubles down on BEM/design-token CSS and shared Phoenix components; no Tailwind migration and no theming engine.
+- v1.28 shipped with two explicit planning summaries: one combined execution summary for Phases 103-105 and one Phase 106 closeout summary.
 - Branch A + JWT-default issuance is the resolution: narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only; flip default access-token issuance to `:jwt` for AC/refresh/device/CIBA; keep opaque as a per-client opt-in for `/userinfo` and `/introspect`.
 - Phase 97 (contract + docs) must land before any runtime implementation; the canon is explicit that docs is a contract the implementation honors.
 - Sustainment patch-train work continues in parallel on `main` while v1.27 feature work runs on `milestone/v1.27-phoenix-rs-token-acceptance`.
@@ -70,13 +72,13 @@ Last activity: 2026-06-03 — Milestone v1.27 completed and archived
 
 ## Blockers/Concerns
 
-- None active. v1.27 has 28 requirements mapped 100% across 6 phases with no orphans.
+- None active. v1.28 has 17 requirements mapped 100% across 4 phases.
 
 ## Session Continuity
 
-**Next action:** Plan Phase 97 (Contract + Docs First). The canonical pipeline-declaration block, single authoritative `docs/protect-phoenix-api-routes.md` page, supported-surface non-goals, and the `release_readiness_contract_test` content-hash assertion all land before any plug or signer code changes.
+**Next action:** Start the next milestone with `$gsd-new-milestone`
 **Resume file:** None
-**Stopped at:** Phase 102 context gathered (assumptions mode)
+**Stopped at:** Milestone v1.28 archived
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -92,4 +94,4 @@ Last activity: 2026-06-03 — Milestone v1.27 completed and archived
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start the next milestone with `$gsd-new-milestone`.

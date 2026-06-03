@@ -10,13 +10,25 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-six planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, and host integration/operator boundary hardening in v1.26.
+Lockspire has now archived twenty-seven planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, and admin UI operator experience polish in v1.28.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently shipped feature milestone, `v1.27 Phoenix Resource Server Token Acceptance`, resolved the unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented Phoenix protected-resource plug by narrowing the verifier to RFC 9068 at+jwt and flipping default issuance to at+jwt.
+The most recently shipped feature milestone, `v1.28 Admin UI Operator Experience Polish`, made the admin UI feel like one coherent operator product instead of a set of accumulated LiveViews: clear operator journeys, reusable BEM/design-token components, polished client/support/operations/security/DCR/key workflows, expressive demo seed data, and screenshot-backed visual verification. v1.28 intentionally preserved the embedded-library boundary and protocol behavior.
+
+## Recently Shipped Milestone: v1.28 Admin UI Operator Experience Polish
+
+**Goal:** Make the Lockspire admin UI feel like one coherent operator product without adding protocol breadth or weakening host-owned seams.
+
+**Delivered:**
+- Added shared admin components and BEM/design-token CSS primitives for forms, actions, data display, confirmation panels, resource rows, badges, responsive behavior, and focus/motion states.
+- Reworked client detail into a canonical client workspace covering identity, effective posture, credentials, endpoints, logout, DCR/RAT context, and safe actions.
+- Polished support, operations, policy, DCR, and key lifecycle workflows around scan-friendly queues, exception pressure, lifecycle safety, and partner handoff context.
+- Verified demo seed state coverage, operator admin docs, desktop/mobile screenshot inventory, and design-system regression contracts.
+
+**Why now:** The admin surface now spans enough setup, partner, support, security, operations, DCR, and key workflows that operator clarity and design-system consistency became the highest-leverage adoption wedge.
 
 ## Archived Milestone Snapshot: v1.26 Host Integration & Operator Boundary Hardening
 
@@ -223,6 +235,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Add a host-guarded admin-only router for v1.26 | The generated host needs a concrete way to put operator auth in front of `/lockspire/admin` without putting the public OAuth/OIDC endpoints behind staff auth | Adopted for v1.26 implementation |
 | Deliberately leave sustainment and open `v1.27 Phoenix Resource Server Token Acceptance` | The adoption demo shipped in PR #44 exposed an unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented `Lockspire.Plug.VerifyToken`. Resolving it is a higher-leverage adopter wedge than additional protocol breadth, and qualifies as the adopter-evidenced exception to the sustaining-train default | Adopted at v1.27 milestone start (2026-05-27) |
 | Resolve v1.27 with Branch A + JWT-default issuance | Narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only and flip the default access-token format from opaque to `:jwt` for AC/refresh/device/CIBA paths. Opaque remains available as an explicit per-client opt-in and continues to back `/userinfo` and `/introspect`. Canon-aligned (the prompts/ corpus explicitly endorses `access_token_format: :jwt` as the secure default), ecosystem-aligned (every modern RS library written post-RFC-9068 defaults to JWT at the plug), and structurally avoids the auto-detection footgun class documented in Ory oathkeeper #257 / Spring Boot's startup-exception guardrail. Branch B (dual-verifier plug with shape-dispatch) and introspection-at-the-RS as the host-API seam both explicitly rejected | Adopted at v1.27 milestone start (2026-05-27); recorded in `.planning/REQUIREMENTS.md` design-decision section |
+| Start v1.28 as an admin UI polish milestone | The admin surface now spans setup proof, partner onboarding, support investigation, security posture review, operations triage, DCR, and key lifecycle. The highest-leverage adoption wedge is coherent operator UX and reusable design-system primitives, not more OAuth/OIDC protocol breadth. | Adopted at v1.28 milestone start (2026-06-03); archived in `.planning/milestones/v1.28-REQUIREMENTS.md` |
 
 ## Evolution
 
@@ -242,4 +255,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 — v1.27 Phoenix Resource Server Token Acceptance shipped.*
+*Last updated: 2026-06-03 — v1.28 Admin UI Operator Experience Polish shipped.*
