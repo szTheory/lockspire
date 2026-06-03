@@ -1,0 +1,33 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # Expose to Traefik network
+    networks:
+      - local-dev-proxy
+    volumes:
+      # Mount the entire current directory for live-reloading
+      - .:/app
+      # Create anonymous volumes for deps/ and _build/ to isolate Linux binaries 
+      # from the macOS host, drastically improving performance and preventing crashes.
+      - deps_volume:/app/deps
+      - build_volume:/app/_build
+    labels:
+      - "traefik.enable=true"
+      # Route traffic from http://adoption-demo.localhost to this container
+      - "traefik.http.routers.adoption-demo.rule=Host(`adoption-demo.localhost`)"
+      # Define the internal port Phoenix listens on
+      - "traefik.http.services.adoption-demo.loadbalancer.server.port=4000"
+    environment:
+      # Ensure Phoenix binds to 0.0.0.0 so Traefik can reach it
+      - PHX_SERVER=true
+      - PORT=4000
+
+volumes:
+  deps_volume:
+  build_volume:
+
+networks:
+  local-dev-proxy:
+    external: true

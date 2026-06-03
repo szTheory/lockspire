@@ -1,0 +1,17 @@
+FROM hexpm/elixir:1.15.7-erlang-26.1.2-alpine
+
+# Install essential build tools and inotify-tools for Phoenix live-reload
+RUN apk add --no-cache build-base npm git inotify-tools
+
+# Set working directory
+WORKDIR /app
+
+# Install Hex and Rebar globally
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# We intentionally DO NOT copy source code or run deps.get here.
+# Source code is volume-mounted to allow instant live-reloading.
+# deps and _build are isolated in anonymous volumes to persist between restarts.
+
+CMD ["sh", "-c", "mix deps.get && mix phx.server"]
