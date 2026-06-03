@@ -26,7 +26,7 @@ defmodule AdoptionDemo.MixProject do
       {:lockspire, path: "../.."},
       {:phoenix, "~> 1.8.5"},
       {:phoenix_live_view, "~> 1.1.28"},
-      {:ecto_sql, "~> 3.13.5"},
+      {:ecto_sql, "~> 3.14.0"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},
       {:jason, "~> 1.4"}
