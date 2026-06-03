@@ -238,7 +238,7 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
     assert scoped_failure_conn.status == 403
 
     assert [
-             "Bearer realm=\"Lockspire\", error=\"insufficient_scope\", error_description=\"The access token is missing a required scope\", scope=\"read:billing\""
+             "DPoP realm=\"Lockspire\", error=\"insufficient_scope\", error_description=\"The access token is missing a required scope\", algs=\"RS256 ES256 PS256 EdDSA\""
            ] = get_resp_header(scoped_failure_conn, "www-authenticate")
 
     assert %{
@@ -283,18 +283,21 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
   end
 
   defp issue_access_token(signing_key, signing_kid, claims) do
+    now = DateTime.utc_now() |> DateTime.to_unix()
+
     default_claims = %{
       "iss" => @issuer,
       "sub" => "generated-host-user",
       "client_id" => "generated-host-api-client",
-      "exp" => System.os_time(:second) + 3600,
-      "nbf" => System.os_time(:second) - 60
+      "iat" => now,
+      "exp" => now + 3600,
+      "nbf" => now - 60
     }
 
     {_, token} =
       JOSE.JWT.sign(
         signing_key,
-        %{"alg" => "RS256", "kid" => signing_kid},
+        %{"alg" => "RS256", "kid" => signing_kid, "typ" => "at+jwt"},
         Map.merge(default_claims, claims)
       )
       |> JOSE.JWS.compact()

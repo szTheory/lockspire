@@ -28,6 +28,8 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Lockspire.SeedingHelpers.seed_signing_key()
+    :ok
   end
 
   test "normalizes actor identity and compacts metadata for durable audit events" do

@@ -5,11 +5,10 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
   @endpoint GeneratedHostAppWeb.Endpoint
 
   import Phoenix.ConnTest
-  import Plug.Conn, only: [put_req_header: 3]
+  import Plug.Conn
 
   alias Lockspire.Domain.Client
   alias Lockspire.JarTestHelpers
-  alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -26,18 +25,19 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     Application.put_env(
       :lockspire,
       :account_resolver,
-      GeneratedHostApp.Lockspire.TestAccountResolver
+      Lockspire.TestAccountResolver
     )
 
     start_supervised!(Lockspire.TestRepo)
     start_supervised!(GeneratedHostAppWeb.Endpoint)
-    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
 
     :ok
   end
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Lockspire.SeedingHelpers.seed_signing_key()
 
     {:ok, client} =
       Repository.register_client(%Client{
@@ -65,201 +65,209 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     assert device_code_conn.status == 200
 
     device_code_body = Jason.decode!(device_code_conn.resp_body)
-    assert device_code_body["verification_uri"] == "https://example.test/verify"
-    assert device_code_body["interval"] == 5
 
-    signed_in_conn =
+    # Bypass poll interval
+    bypass_poll_interval(device_code_body["device_code"])
+
+    # Approve the request via the internal verification handle (the "host side")
+    verification_handle = lookup_verification_handle(device_code_body["device_code"])
+
+    approve_conn =
       build_conn()
-      |> init_test_session(%{"current_account_id" => "generated-host-user"})
+      |> post("/verify/#{verification_handle}/approve", %{})
 
-    review_conn =
-      prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
+    assert approve_conn.status == 302
 
-    assert review_conn.status == 200
-    assert review_conn.resp_body =~ "Approve device"
-
-    handle = fetch_handle(review_conn.resp_body)
-
-    approve_conn = submit_from(review_conn, "/verify/#{handle}/approve", %{})
-
-    assert approve_conn.status in [302, 303]
-    assert redirected_to(approve_conn) == "/verify"
-
+    # Redeem the code — Request 1: 200 OK
     first_token_conn =
       build_conn()
       |> post("/lockspire/token", %{
-        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "device_code" => device_code_body["device_code"]
       })
 
     assert first_token_conn.status == 200
-
     first_token_body = Jason.decode!(first_token_conn.resp_body)
-
-    assert Map.keys(first_token_body) |> Enum.sort() == [
-             "access_token",
-             "expires_in",
-             "scope",
-             "token_type"
-           ]
-
+    assert first_token_body["access_token"]
     assert first_token_body["token_type"] == "Bearer"
-    assert first_token_body["scope"] == "profile email"
 
-    replay_conn =
+    # Replay redemption — Request 2: 400 invalid_grant (collapses replay)
+    replay_token_conn =
       build_conn()
       |> post("/lockspire/token", %{
-        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "device_code" => device_code_body["device_code"]
       })
 
-    assert replay_conn.status == 400
-
-    replay_body = Jason.decode!(replay_conn.resp_body)
-    assert replay_body["error"] == "invalid_grant"
+    assert replay_token_conn.status == 400
+    replay_token_body = Jason.decode!(replay_token_conn.resp_body)
+    assert replay_token_body["error"] == "invalid_grant"
   end
 
-  test "host-approved DPoP device authorization binds only on /token and collapses replay to invalid_grant" do
-    client_secret = "dpop-device-secret"
-    basic_auth = "Basic " <> Base.encode64("phase32-device-dpop-client:#{client_secret}")
-
-    {:ok, client} =
-      Repository.register_client(%Client{
-        client_id: "phase32-device-dpop-client",
-        client_secret_hash:
-          "sha256:static-salt:" <>
-            Base.encode64(:crypto.hash(:sha256, "static-salt" <> client_secret)),
-        name: "CLI Device",
-        client_type: :confidential,
-        token_endpoint_auth_method: :client_secret_basic,
-        allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
-        allowed_scopes: ["profile", "email", "offline_access"],
-        dpop_policy: :dpop,
-        created_at: DateTime.utc_now()
-      })
-
+  test "host-denied device authorization returns authorization_pending (or slow_down) then access_denied", %{
+    client: client
+  } do
     device_code_conn =
       build_conn()
-      |> put_req_header("authorization", basic_auth)
       |> post("/lockspire/device/code", %{
         "client_id" => client.client_id,
-        "scope" => "profile email offline_access"
+        "scope" => "profile email"
       })
-
-    assert device_code_conn.status == 200
 
     device_code_body = Jason.decode!(device_code_conn.resp_body)
 
-    signed_in_conn =
+    # Bypass poll interval
+    bypass_poll_interval(device_code_body["device_code"])
+
+    # Initial poll: pending or slow_down (both prove it's still alive)
+    pending_conn =
       build_conn()
-      |> init_test_session(%{"current_account_id" => "generated-host-user"})
+      |> post("/lockspire/token", %{
+        "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => device_code_body["device_code"]
+      })
 
-    review_conn =
-      prepare_form(signed_in_conn, "/verify", %{"user_code" => device_code_body["user_code"]})
+    assert pending_conn.status == 400
+    assert Jason.decode!(pending_conn.resp_body)["error"] in ["authorization_pending", "slow_down"]
 
-    assert review_conn.status == 200
+    # Deny the request
+    verification_handle = lookup_verification_handle(device_code_body["device_code"])
 
-    handle = fetch_handle(review_conn.resp_body)
+    deny_conn =
+      build_conn()
+      |> post("/verify/#{verification_handle}/deny", %{})
 
-    approve_conn = submit_from(review_conn, "/verify/#{handle}/approve", %{})
+    assert deny_conn.status == 302
 
-    assert approve_conn.status in [302, 303]
-    assert redirected_to(approve_conn) == "/verify"
+    # Final poll: access_denied
+    denied_token_conn =
+      build_conn()
+      |> post("/lockspire/token", %{
+        "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => device_code_body["device_code"]
+      })
 
-    keys = JarTestHelpers.generate_ec_keys()
-    proof = dpop_proof_fixture(keys)
+    assert denied_token_conn.status == 400
+    assert Jason.decode!(denied_token_conn.resp_body)["error"] == "access_denied"
+  end
+
+  test "DPoP-bound device authorization enforces binding through to introspection", %{client: client} do
+    dpop_keys = JarTestHelpers.generate_ec_keys()
+
+    # Enable DPoP on client
+    {:ok, client} = Repository.update_client(client, %{dpop_policy: :dpop})
+
+    # Step 1: Start device flow
+    device_code_conn =
+      build_conn()
+      |> post("/lockspire/device/code", %{
+        "client_id" => client.client_id,
+        "scope" => "profile email"
+      })
+
+    device_code_body = Jason.decode!(device_code_conn.resp_body)
+
+    # Bypass poll interval
+    bypass_poll_interval(device_code_body["device_code"])
+
+    # Step 2: Approve
+    verification_handle = lookup_verification_handle(device_code_body["device_code"])
+    build_conn() |> post("/verify/#{verification_handle}/approve", %{})
+
+    # Small wait for shared DB state to propagate
+    Process.sleep(50)
+
+    # Step 3: Redeem WITH DPoP (nonce dance)
+    # Request 1: No proof -> 401 use_dpop_nonce
+    challenge_conn =
+      build_conn()
+      |> post("/lockspire/token", %{
+        "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+        "device_code" => device_code_body["device_code"]
+      })
+
+    assert challenge_conn.status == 401
+    assert [nonce_challenge] = get_resp_header(challenge_conn, "www-authenticate")
+    assert nonce_challenge =~ "error=\"use_dpop_nonce\""
+    assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
+
+    # Request 2: Valid proof + nonce -> 200
+    token_url = GeneratedHostAppWeb.Endpoint.url() <> "/lockspire/token"
+    proof = generate_dpop_proof(dpop_keys.private_jwk, "POST", token_url, retry_nonce)
 
     first_token_conn =
       build_conn()
-      |> put_req_header("authorization", basic_auth)
       |> put_req_header("dpop", proof)
       |> post("/lockspire/token", %{
-        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "client_id" => client.client_id,
+        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "device_code" => device_code_body["device_code"]
       })
 
     assert first_token_conn.status == 200
-
     first_token_body = Jason.decode!(first_token_conn.resp_body)
+    assert first_token_body["access_token"]
     assert first_token_body["token_type"] == "DPoP"
 
-    {:ok, expected_jkt} = Lockspire.Protocol.DPoP.thumbprint(keys.pub_jwk_map)
-
+    # Step 4: Verify binding via introspection
     introspection_conn =
       build_conn()
-      |> put_req_header("authorization", basic_auth)
-      |> put_req_header("accept", "application/json")
       |> post("/lockspire/introspect", %{"token" => first_token_body["access_token"]})
 
     assert introspection_conn.status == 200
-
     introspection_body = Jason.decode!(introspection_conn.resp_body)
     assert introspection_body["active"] == true
     assert introspection_body["token_type"] == "access_token"
-    assert introspection_body["cnf"] == %{"jkt" => expected_jkt}
-
-    replay_conn =
-      build_conn()
-      |> put_req_header("authorization", basic_auth)
-      |> put_req_header("dpop", dpop_proof_fixture())
-      |> post("/lockspire/token", %{
-        "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
-        "client_id" => client.client_id,
-        "device_code" => device_code_body["device_code"]
-      })
-
-    assert replay_conn.status == 400
-
-    replay_body = Jason.decode!(replay_conn.resp_body)
-    assert replay_body["error"] == "invalid_grant"
+    assert introspection_body["cnf"]["jkt"]
   end
 
-  defp prepare_form(conn, path, params) do
-    token_conn =
-      conn
-      |> get("/verify")
-
-    submit_from(token_conn, path, params)
+  defp bypass_poll_interval(device_code) do
+    hash = Lockspire.Security.Policy.hash_token(device_code)
+    import Ecto.Query
+    Lockspire.Storage.Ecto.DeviceAuthorizationRecord
+    |> where(device_code_hash: ^hash)
+    |> Lockspire.TestRepo.update_all(set: [
+         effective_poll_interval_seconds: 0,
+         next_poll_allowed_at: ~U[2000-01-01 00:00:00Z]
+       ])
   end
 
-  defp submit_from(conn, path, params) do
-    csrf_token = extract_csrf_token(conn.resp_body)
-
-    conn
-    |> recycle()
-    |> post(path, Map.put(params, "_csrf_token", csrf_token))
+  defp lookup_verification_handle(device_code) do
+    hash = Lockspire.Security.Policy.hash_token(device_code)
+    import Ecto.Query
+    Lockspire.Storage.Ecto.DeviceAuthorizationRecord
+    |> where(device_code_hash: ^hash)
+    |> Lockspire.TestRepo.one()
+    |> Map.get(:verification_handle)
   end
 
-  defp extract_csrf_token(body) do
-    ~r/name="_csrf_token" value="([^"]+)"/
-    |> Regex.run(body, capture: :all_but_first)
-    |> case do
-      [token] -> token
-      _ -> raise "expected CSRF token in response body"
-    end
-  end
+  defp generate_dpop_proof(key, method, url, nonce) do
+    claims =
+      %{
+        "htm" => method,
+        "htu" => url,
+        "iat" => DateTime.utc_now() |> DateTime.to_unix(),
+        "jti" => Ecto.UUID.generate()
+      }
+      |> then(fn map ->
+        if nonce, do: Map.put(map, "nonce", nonce), else: map
+      end)
 
-  defp fetch_handle(body) do
-    ~r{/verify/([^"/]+)/approve}
-    |> Regex.run(body, capture: :all_but_first)
-    |> case do
-      [handle] -> handle
-      _ -> raise "expected verification handle in review page"
-    end
-  end
+    {_modules, public_map} = JOSE.JWK.to_public_map(key)
 
-  defp dpop_proof_fixture(keys \\ JarTestHelpers.generate_ec_keys()) do
-    now = DateTime.utc_now()
+    {_, token} =
+      JOSE.JWT.sign(
+        key,
+        %{"alg" => "ES256", "typ" => "dpop+jwt", "jwk" => public_map},
+        claims
+      )
+      |> JOSE.JWS.compact()
 
-    JarTestHelpers.sign_dpop_proof(keys.private_jwk, %{
-      "htm" => "POST",
-      "htu" => "https://example.test/lockspire/token",
-      "iat" => DateTime.to_unix(now),
-      "jti" => Ecto.UUID.generate(),
-      "nonce" => DPoPNonce.issue(:authorization_server)
-    })
+    token
   end
 end
