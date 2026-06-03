@@ -22,6 +22,7 @@
 Define personas, JTBD, route ownership, navigation intent, page acceptance rubric, and screenshot/browser audit findings. Focus on proving where the current v1.28 UI is strong, adequate, or weak before execution starts.
 
 **Success criteria:**
+
 - Every admin route has one primary journey and one primary operator job.
 - Overview, navigation, page titles, and docs have a shared vocabulary.
 - The audit identifies the least-polished support, operations, mobile, and action-grouping surfaces.
@@ -31,8 +32,13 @@ Define personas, JTBD, route ownership, navigation intent, page acceptance rubri
 **Plans:** 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 107-01-PLAN.md — Create the route-by-route journey contract and IA audit matrix
 - [ ] 107-02-PLAN.md — Align the operator guide to the approved journey vocabulary and boundary wording
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 107-03-PLAN.md — Extend deterministic contract proof for route coverage, vocabulary, and style fences
 
 ### Phase 108: Design-System Token & Component Upgrade
@@ -40,6 +46,7 @@ Plans:
 Refine `Lockspire.Web.Admin.CSS` tokens and shared Phoenix admin components while preserving the existing BEM architecture. Add contract fences so future admin routes reuse primitives instead of accumulating one-off classes.
 
 **Success criteria:**
+
 - Shared components cover repeated page hero, task card, filter, metric, resource row, empty, confirmation, secret, status, and action-group patterns.
 - Tokens cover spacing, control size, radius, shadow, typography, status color, focus, z-index, and motion.
 - Reduced-motion behavior is defined and testable.
@@ -51,6 +58,7 @@ Refine `Lockspire.Web.Admin.CSS` tokens and shared Phoenix admin components whil
 Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Interactions, Device Authorizations, Logout Deliveries, DCR/IAT, Keys, and client-detail action grouping. Improve scanability, mobile behavior, safe actions, and next-step routing.
 
 **Success criteria:**
+
 - Support pages answer account/client/status/incident investigation questions clearly.
 - Operations pages show waiting, retrying, failed, expired, and completed state without raw-table overload.
 - Long identifiers, URLs, timestamps, and status badges remain readable on mobile.
@@ -62,6 +70,7 @@ Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Int
 Expand demo seeds and proof artifacts so the final UI can be clicked through and visually inspected. Update operator docs and contract tests to pin the journey model and design-system conventions.
 
 **Success criteria:**
+
 - Demo seeds exercise healthy, warning, incident, disabled, self-registered, retryable, revoked, expired, long-value, and copy-once states.
 - Desktop and mobile screenshots cover every admin route in the route surface.
 - `docs/operator-admin.md` describes the final journey model and host-owned boundary.
