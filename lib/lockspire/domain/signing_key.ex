@@ -9,7 +9,7 @@ defmodule Lockspire.Domain.SigningKey do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          kid: String.t(),
+          kid: String.t() | nil,
           kty: key_type(),
           alg: String.t(),
           use: use_type(),

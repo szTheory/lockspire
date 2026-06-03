@@ -109,7 +109,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
   defp effective_format(%Client{access_token_format: nil}, %ServerPolicyStruct{
          access_token_format: server_fmt
        }),
-       do: server_fmt || :jwt
+       do: server_fmt
 
   defp effective_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
 end

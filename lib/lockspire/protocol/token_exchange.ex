@@ -1437,6 +1437,7 @@ defmodule Lockspire.Protocol.TokenExchange do
   defp key_store(request),
     do: Keyword.get(request_options(request), :key_store, Repository)
 
+  @spec now(map()) :: DateTime.t()
   defp now(request),
     do:
       request

@@ -638,7 +638,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp resolve_effective_access_token_format(%ServerPolicy{}, %Client{access_token_format: format}),
        do: access_token_format_string(format)
 
-  defp access_token_format_string(nil), do: "jwt"
   defp access_token_format_string(format), do: Atom.to_string(format)
 
   # `nil` means inherit (no `:inherit` sentinel is stored), rendered as the word "inherit".

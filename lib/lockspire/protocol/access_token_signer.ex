@@ -93,7 +93,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   defp resolve_format(%Client{access_token_format: nil}, %ServerPolicy{
          access_token_format: server_fmt
        }),
-       do: server_fmt || :jwt
+       do: server_fmt
 
   defp resolve_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
 

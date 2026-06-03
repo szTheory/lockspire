@@ -254,6 +254,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
     end
   end
 
+  @spec now(map()) :: DateTime.t()
   defp now(request) do
     request
     |> Map.get(:opts, [])
