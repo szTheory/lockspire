@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.28
-milestone_name: Admin UI Operator Experience Polish
-status: Awaiting next milestone
-last_updated: "2026-06-03T22:35:00.000Z"
-last_activity: 2026-06-03 — Milestone v1.28 completed and archived
+milestone: v1.29
+milestone_name: Admin UI Journey & Design-System Deep Polish
+status: planning
+last_updated: "2026-06-03T23:10:00.000Z"
+last_activity: 2026-06-03 — Milestone v1.29 started
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Milestone v1.28 complete
+**Current focus:** Milestone v1.29 Admin UI Journey & Design-System Deep Polish
 
 ## Current Position
 
-Phase: Milestone v1.28 complete
+Phase: Not started (ready for Phase 107 planning)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-03 — Milestone v1.28 completed and archived
+Status: Defining phase approach
+Last activity: 2026-06-03 — Milestone v1.29 started
 
 ## Most Recent Release
 
@@ -48,50 +48,42 @@ Last activity: 2026-06-03 — Milestone v1.28 completed and archived
 | v1.26 | 94-96 | 3 | 5 | shipped |
 | v1.25 | 91-93 | 9 | 9 | shipped |
 
-## v1.28 Phase Plan
+## v1.29 Phase Plan
 
 | Phase | Name | REQs | UI |
 |-------|------|------|----|
-| 103 | Admin UI Journey Contract + Design System Foundation | 7 | yes |
-| 104 | Client Workspace Recomposition | 1 | yes |
-| 105 | Support, Operate, Security, DCR, and Keys Workflow Polish | 5 | yes |
-| 106 | Demo Seeds, Docs, Screenshots, and Contract Verification | 4 | yes |
+| 107 | Admin Journey Contract & IA Audit | 6 | yes |
+| 108 | Design-System Token & Component Upgrade | 6 | yes |
+| 109 | Weak-Spot Page Polish | 7 | yes |
+| 110 | Demo State, Screenshots, Docs, and Regression Proof | 5 | yes |
 
 ## Decisions
 
-- v1.28 is a deliberate UI/operator-experience milestone; opened because the admin surface now has enough breadth that operator clarity and design-system consistency are the highest-leverage adoption wedge.
-- v1.28 treats the previous admin overview/nav/security/DCR/demo-seed polish already present in the worktree as the baseline, not work to redo.
-- v1.28 doubles down on BEM/design-token CSS and shared Phoenix components; no Tailwind migration and no theming engine.
-- v1.28 shipped with two explicit planning summaries: one combined execution summary for Phases 103-105 and one Phase 106 closeout summary.
-- Branch A + JWT-default issuance is the resolution: narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only; flip default access-token issuance to `:jwt` for AC/refresh/device/CIBA; keep opaque as a per-client opt-in for `/userinfo` and `/introspect`.
-- Phase 97 (contract + docs) must land before any runtime implementation; the canon is explicit that docs is a contract the implementation honors.
-- Sustainment patch-train work continues in parallel on `main` while v1.27 feature work runs on `milestone/v1.27-phoenix-rs-token-acceptance`.
-- [Phase ?]: TELEMETRY-01: [:lockspire, :rs, :token_format] emitted via direct :telemetry.execute/3 at two VerifyToken sites; :jwt at format-confirmation time (independent of apply_restrictions/2), literal :"opaque-rejected" with all-nil metadata on the opaque branch; deliberately not Observability.emit/4 (avoids audit double-emit + nil-metadata redaction drop).
-- [Phase ?]: Phase 102-04: token_format doctor reproduces AccessTokenSigner.resolve_format/2 precedence inline (effective_format/2) rather than promoting the signer fn public; read-only/diagnostic-only (no Mix.raise/non-zero exit on flagged clients).
-- [Phase ?]: Phase 102-03: docs/upgrading/v1.27.md documents the issuance default flip with the honest runtime opt-out (ServerPolicy.put_access_token_format(:opaque), NOT a config :lockspire key) and the nil-inherit affected-client set; pinned by a release_readiness_contract_test clause (MIGRATE-01).
+- v1.29 is a deliberate second-pass admin UI milestone, not an admin UI rebuild.
+- v1.29 treats v1.28 as the baseline and focuses hardest on less-polished support, operations, mobile, and cross-route information architecture.
+- The admin journey model remains Orient / Configure / Support / Operate.
+- The CSS architecture remains BEM/design-token `lockspire-admin-*`; no Tailwind migration, theming engine, or arbitrary override layer.
+- Motion is allowed only when it improves orientation, feedback, or state continuity, and must respect reduced-motion preferences.
+- Host-owned seams remain unchanged: Lockspire does not own staff authentication, MFA, role checks, tenant policy, layouts, branding, or developer portal UX.
 
 ## Blockers/Concerns
 
-- None active. v1.28 has 17 requirements mapped 100% across 4 phases.
+- None active.
+- `gsd-sdk query init.new-milestone` reported stale helper metadata for latest completed milestone and phase archive path after v1.28 closeout. Do not run destructive phase cleanup from that stale path without rechecking archive targets.
 
 ## Session Continuity
 
-**Next action:** Start the next milestone with `$gsd-new-milestone`
+**Next action:** Start Phase 107 with `$gsd-plan-phase 107`
 **Resume file:** None
-**Stopped at:** Milestone v1.28 archived
+**Stopped at:** Milestone v1.29 initialized
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
-| Phase 101-adoption-demo-re-wire P01 | 10 | 1 tasks | 4 files |
-| Phase 101 P02 | 5min | 1 tasks | 1 files |
-| Phase 102 P01 | ~10min | 2 tasks | 1 files |
-| Phase 102 P02 | ~3min | 2 tasks | 2 files |
-| Phase 102 P04 | ~12min | 2 tasks | 3 files |
-| Phase 102 P03 | 6min | 2 tasks | 2 files |
+| — | — | — | v1.29 not started |
 
 ## Operator Next Steps
 
-- Start the next milestone with `$gsd-new-milestone`.
+- Start Phase 107 with `$gsd-plan-phase 107`.

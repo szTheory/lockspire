@@ -1,5 +1,65 @@
 # Lockspire Roadmap
 
+## Active Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
+
+**Goal:** Take the shipped admin UI from coherent baseline to a deliberately mapped operator product where every route, component, and state supports a clear persona, job, next action, and safety boundary.
+
+**Phases:** 4
+**Requirements:** 24
+**Numbering:** continues from v1.28; starts at Phase 107.
+
+| Phase | Name | Goal | Requirements |
+|-------|------|------|--------------|
+| 107 | Admin Journey Contract & IA Audit | Define the operator journey model and route-by-route acceptance rubric before changing UI code. | JOURNEY-01..06 |
+| 108 | Design-System Token & Component Upgrade | Strengthen the shared BEM/design-token and Phoenix component foundation so polish compounds across routes. | DESIGN-01..06 |
+| 109 | Weak-Spot Page Polish | Bring support, operations, configure, and onboarding weak spots up to the v1.29 journey and design-system standard. | OPS-01..05, CONFIG-01..02 |
+| 110 | Demo State, Screenshots, Docs, and Regression Proof | Prove the final admin route surface with demo data, docs, desktop/mobile screenshots, browser click-through, and contract tests. | CONFIG-03, PROOF-01..04 |
+
+## Phase Details
+
+### Phase 107: Admin Journey Contract & IA Audit
+
+Define personas, JTBD, route ownership, navigation intent, page acceptance rubric, and screenshot/browser audit findings. Focus on proving where the current v1.28 UI is strong, adequate, or weak before execution starts.
+
+**Success criteria:**
+- Every admin route has one primary journey and one primary operator job.
+- Overview, navigation, page titles, and docs have a shared vocabulary.
+- The audit identifies the least-polished support, operations, mobile, and action-grouping surfaces.
+- DCR onboarding versus DCR policy and post-logout redirects versus logout propagation are explicitly disambiguated.
+- The phase produces implementation-ready findings without broadening protocol scope.
+
+### Phase 108: Design-System Token & Component Upgrade
+
+Refine `Lockspire.Web.Admin.CSS` tokens and shared Phoenix admin components while preserving the existing BEM architecture. Add contract fences so future admin routes reuse primitives instead of accumulating one-off classes.
+
+**Success criteria:**
+- Shared components cover repeated page hero, task card, filter, metric, resource row, empty, confirmation, secret, status, and action-group patterns.
+- Tokens cover spacing, control size, radius, shadow, typography, status color, focus, z-index, and motion.
+- Reduced-motion behavior is defined and testable.
+- Reusable components replace repeated raw page structures where the reuse is clear.
+- Existing admin LiveViews continue to compile and avoid inline layout styles.
+
+### Phase 109: Weak-Spot Page Polish
+
+Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Interactions, Device Authorizations, Logout Deliveries, DCR/IAT, Keys, and client-detail action grouping. Improve scanability, mobile behavior, safe actions, and next-step routing.
+
+**Success criteria:**
+- Support pages answer account/client/status/incident investigation questions clearly.
+- Operations pages show waiting, retrying, failed, expired, and completed state without raw-table overload.
+- Long identifiers, URLs, timestamps, and status badges remain readable on mobile.
+- Support and operations pages expose useful pivot context without leaking secrets.
+- Risky actions are visually distinct and confirmation-backed.
+
+### Phase 110: Demo State, Screenshots, Docs, and Regression Proof
+
+Expand demo seeds and proof artifacts so the final UI can be clicked through and visually inspected. Update operator docs and contract tests to pin the journey model and design-system conventions.
+
+**Success criteria:**
+- Demo seeds exercise healthy, warning, incident, disabled, self-registered, retryable, revoked, expired, long-value, and copy-once states.
+- Desktop and mobile screenshots cover every admin route in the route surface.
+- `docs/operator-admin.md` describes the final journey model and host-owned boundary.
+- Compile, diff-check, admin LiveView tests, design-system contract tests, screenshot inventory, and browser evidence pass.
+
 ## Shipped Milestones
 
 - [v1.28 Admin UI Operator Experience Polish](milestones/v1.28-ROADMAP.md) — shipped 2026-06-03; phases 103-106; admin UI operator journeys, shared BEM/design-token primitives, client/support/operations/security/DCR/key workflow polish, demo seed truth, operator docs, screenshots, and design-system contract tests now align as one coherent operator product.

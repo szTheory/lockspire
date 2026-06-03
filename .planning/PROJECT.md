@@ -18,6 +18,18 @@ Between feature milestones, Lockspire's default posture remains a sustaining GA 
 
 The most recently shipped feature milestone, `v1.28 Admin UI Operator Experience Polish`, made the admin UI feel like one coherent operator product instead of a set of accumulated LiveViews: clear operator journeys, reusable BEM/design-token components, polished client/support/operations/security/DCR/key workflows, expressive demo seed data, and screenshot-backed visual verification. v1.28 intentionally preserved the embedded-library boundary and protocol behavior.
 
+## Current Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
+
+**Goal:** Take the shipped admin UI from coherent baseline to a deliberately mapped operator product where every route, component, and state supports a clear persona, job, next action, and safety boundary.
+
+**Target features:**
+- Define and enforce an admin journey contract that maps every admin route to operator persona, JTBD, entry point, primary decision, safe action, empty state, risk state, and follow-up route.
+- Deepen the shared BEM/design-token system so reusable Phoenix components carry layout, status, action, data-display, responsive, focus, and reduced-motion behavior consistently.
+- Polish the least-iterated support and operations surfaces first, then tighten DCR/IAT, keys, client-detail action grouping, mobile table/list behavior, and demo seed expressiveness.
+- Re-run browser screenshot and contract proof across the full admin route surface so docs, seeds, design-system tests, and desktop/mobile evidence remain aligned.
+
+**Why now:** v1.28 proved the admin UI can read as one coherent operator surface. The next highest-leverage adoption wedge is not more protocol breadth; it is raising the weaker pages and cross-route mental model to the same standard so operators can orient, configure, support, and operate without guessing.
+
 ## Recently Shipped Milestone: v1.28 Admin UI Operator Experience Polish
 
 **Goal:** Make the Lockspire admin UI feel like one coherent operator product without adding protocol breadth or weakening host-owned seams.
@@ -117,6 +129,13 @@ The most recently shipped feature milestone, `v1.28 Admin UI Operator Experience
 </details>
 
 ## Requirements
+
+### Active
+
+- Define and enforce the v1.29 admin journey contract across Overview, Clients, Security, Keys, DCR, Consents, Tokens, Interactions, Device Authorizations, Logout Deliveries, and related detail/edit workflows.
+- Extend the existing BEM/design-token admin CSS and shared Phoenix component library without introducing Tailwind, a theming engine, inline layout styles, or unrelated protocol behavior.
+- Polish support and operations workflows around investigation, exception pressure, queue scanning, mobile readability, and safe follow-up actions.
+- Keep demo seed state, operator docs, screenshot evidence, and design-system regression contracts aligned to the final admin route surface.
 
 ### Validated
 
@@ -236,6 +255,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Deliberately leave sustainment and open `v1.27 Phoenix Resource Server Token Acceptance` | The adoption demo shipped in PR #44 exposed an unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented `Lockspire.Plug.VerifyToken`. Resolving it is a higher-leverage adopter wedge than additional protocol breadth, and qualifies as the adopter-evidenced exception to the sustaining-train default | Adopted at v1.27 milestone start (2026-05-27) |
 | Resolve v1.27 with Branch A + JWT-default issuance | Narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only and flip the default access-token format from opaque to `:jwt` for AC/refresh/device/CIBA paths. Opaque remains available as an explicit per-client opt-in and continues to back `/userinfo` and `/introspect`. Canon-aligned (the prompts/ corpus explicitly endorses `access_token_format: :jwt` as the secure default), ecosystem-aligned (every modern RS library written post-RFC-9068 defaults to JWT at the plug), and structurally avoids the auto-detection footgun class documented in Ory oathkeeper #257 / Spring Boot's startup-exception guardrail. Branch B (dual-verifier plug with shape-dispatch) and introspection-at-the-RS as the host-API seam both explicitly rejected | Adopted at v1.27 milestone start (2026-05-27); recorded in `.planning/REQUIREMENTS.md` design-decision section |
 | Start v1.28 as an admin UI polish milestone | The admin surface now spans setup proof, partner onboarding, support investigation, security posture review, operations triage, DCR, and key lifecycle. The highest-leverage adoption wedge is coherent operator UX and reusable design-system primitives, not more OAuth/OIDC protocol breadth. | Adopted at v1.28 milestone start (2026-06-03); archived in `.planning/milestones/v1.28-REQUIREMENTS.md` |
+| Start v1.29 as an admin journey and design-system deep polish milestone | v1.28 established the coherent admin UI baseline. The next value is a systematic route-by-route operator journey pass, with strongest attention on support/operations/mobile/design-system weak spots rather than more protocol breadth or a UI rewrite. | Adopted at v1.29 milestone start (2026-06-03) |
 
 ## Evolution
 
@@ -255,4 +275,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 — v1.28 Admin UI Operator Experience Polish shipped.*
+*Last updated: 2026-06-03 — v1.29 Admin UI Journey & Design-System Deep Polish started.*
