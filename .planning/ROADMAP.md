@@ -28,6 +28,13 @@ Define personas, JTBD, route ownership, navigation intent, page acceptance rubri
 - DCR onboarding versus DCR policy and post-logout redirects versus logout propagation are explicitly disambiguated.
 - The phase produces implementation-ready findings without broadening protocol scope.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 107-01-PLAN.md — Create the route-by-route journey contract and IA audit matrix
+- [ ] 107-02-PLAN.md — Align the operator guide to the approved journey vocabulary and boundary wording
+- [ ] 107-03-PLAN.md — Extend deterministic contract proof for route coverage, vocabulary, and style fences
+
 ### Phase 108: Design-System Token & Component Upgrade
 
 Refine `Lockspire.Web.Admin.CSS` tokens and shared Phoenix admin components while preserving the existing BEM architecture. Add contract fences so future admin routes reuse primitives instead of accumulating one-off classes.
