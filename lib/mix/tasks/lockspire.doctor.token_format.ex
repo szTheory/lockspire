@@ -86,6 +86,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
 
   defp client_line(%Client{access_token_format: nil} = client, policy) do
     fmt = effective_format(client, policy)
+
     "#{client.client_id}: #{fmt} [CHANGED: inherits server default (#{fmt}); was no per-client format]"
   end
 

@@ -531,8 +531,17 @@ defmodule Lockspire.Protocol.DiscoveryTest do
 
       fapi_config = Discovery.openid_configuration()
 
-      assert none_config["access_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256"]
-      assert fapi_config["access_token_signing_alg_values_supported"] == ["RS256", "ES256", "PS256"]
+      assert none_config["access_token_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256"
+             ]
+
+      assert fapi_config["access_token_signing_alg_values_supported"] == [
+               "RS256",
+               "ES256",
+               "PS256"
+             ]
     end
 
     test "publishes the key unconditionally, even when the token_endpoint route is not mounted" do

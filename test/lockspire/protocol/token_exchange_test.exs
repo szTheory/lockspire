@@ -171,7 +171,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
     # T-99-12: the persisted hash must equal the hash of the issued raw token so
     # introspection/revocation by hash still resolves.
-    assert persisted_token.token_hash == Lockspire.Security.Policy.hash_token(success.access_token)
+    assert persisted_token.token_hash ==
+             Lockspire.Security.Policy.hash_token(success.access_token)
   end
 
   test "AC flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)" do
@@ -2199,7 +2200,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     {:ok, %{public_jwk: public_jwk}} = Repository.fetch_active_signing_key()
     jwk = JOSE.JWK.from_map(public_jwk)
 
-    assert {true, %JOSE.JWT{fields: claims}, _jws} = JOSE.JWT.verify_strict(jwk, ["RS256"], access_token)
+    assert {true, %JOSE.JWT{fields: claims}, _jws} =
+             JOSE.JWT.verify_strict(jwk, ["RS256"], access_token)
 
     header = decode_jwt_section(access_token, 0)
     {header, claims}

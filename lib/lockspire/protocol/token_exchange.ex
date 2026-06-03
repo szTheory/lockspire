@@ -757,57 +757,59 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
 
-    with {%Token{} = access_token, raw_access_token} <-
-           build_access_token(
-             client,
-             %Token{authorization_code | audience: requested_resources},
-             issued_at,
-             formatted_refresh_token,
-             issuance_context,
-             request
-           ) do
-      case persist_authorization_code_grant(
-             code_hash,
-             issued_at,
-             access_token,
-             authorization_code,
-             formatted_refresh_token,
-             issuance_context,
-             request
-           ) do
-        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-          build_success_response(
-            client,
-            authorization_code,
-            persisted_access_token,
-            raw_access_token,
-            issuance_context,
-            issued_at,
-            Map.get(persisted_grant, :refresh_token_raw),
-            request
-          )
+    case build_access_token(
+           client,
+           %Token{authorization_code | audience: requested_resources},
+           issued_at,
+           formatted_refresh_token,
+           issuance_context,
+           request
+         ) do
+      {%Token{} = access_token, raw_access_token} ->
+        case persist_authorization_code_grant(
+               code_hash,
+               issued_at,
+               access_token,
+               authorization_code,
+               formatted_refresh_token,
+               issuance_context,
+               request
+             ) do
+          {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+            build_success_response(
+              client,
+              authorization_code,
+              persisted_access_token,
+              raw_access_token,
+              issuance_context,
+              issued_at,
+              Map.get(persisted_grant, :refresh_token_raw),
+              request
+            )
 
-        {:error, :already_redeemed} ->
-          {:error,
-           invalid_grant(
-             "Authorization code has already been used",
-             :authorization_code_replayed
-           )}
+          {:error, :already_redeemed} ->
+            {:error,
+             invalid_grant(
+               "Authorization code has already been used",
+               :authorization_code_replayed
+             )}
 
-        {:error, :not_found} ->
-          {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
+          {:error, :not_found} ->
+            {:error,
+             invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
 
-        {:error, _reason} ->
-          {:error,
-           oauth_error(
-             500,
-             "server_error",
-             "Unable to redeem authorization code",
-             :token_redemption_failed
-           )}
-      end
-    else
-      {:error, %Error{} = error} -> {:error, error}
+          {:error, _reason} ->
+            {:error,
+             oauth_error(
+               500,
+               "server_error",
+               "Unable to redeem authorization code",
+               :token_redemption_failed
+             )}
+        end
+
+      {:error, %Error{} = error} ->
+        {:error, error}
     end
   end
 
@@ -896,7 +898,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     issued_at = now(request)
     formatted_refresh_token = maybe_format_refresh_token(client, ciba_grant, request)
 
-    with {:ok, validated_audience} <- validate_grant_resources(request_params(request), ciba_grant),
+    with {:ok, validated_audience} <-
+           validate_grant_resources(request_params(request), ciba_grant),
          {%Token{} = access_token, raw_access_token} <-
            build_access_token(
              client,

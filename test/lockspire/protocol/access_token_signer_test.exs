@@ -163,7 +163,8 @@ defmodule Lockspire.Protocol.AccessTokenSignerTest do
       tok = token()
       req = %{opts: [key_store: MockKeyStore]}
 
-      assert {:ok, raw, _hash} = AccessTokenSigner.issue(tok, client(access_token_format: nil), req)
+      assert {:ok, raw, _hash} =
+               AccessTokenSigner.issue(tok, client(access_token_format: nil), req)
 
       assert [_h, _p, _s] = String.split(raw, "."), "should fall back to :jwt"
     end

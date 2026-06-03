@@ -119,6 +119,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
   test "BIND-02: mTLS-bound at+jwt minted by AccessTokenSigner traverses the full pipeline to 200 with binding_type mtls" do
     # D-08: synthetic string cert — confirmed sufficient; real DER-cert/:mtls_extractor deferred
     cert = "phase100-mtls-client-cert"
+
     # Derive x5t from the SAME cert string presented via conn.private — CRITICAL for confirmation_matches?/2
     {:ok, x5t} = MTLSTokenBinding.thumbprint(cert)
 

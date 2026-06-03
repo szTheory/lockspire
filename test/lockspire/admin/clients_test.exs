@@ -658,7 +658,13 @@ defmodule Lockspire.Admin.ClientsTest do
 
   test "update_client/2 rejects unknown access_token_format without storing or crashing" do
     assert {:error,
-            [%{field: :access_token_format, reason: :invalid_access_token_format, detail: "admin"}]} =
+            [
+              %{
+                field: :access_token_format,
+                reason: :invalid_access_token_format,
+                detail: "admin"
+              }
+            ]} =
              Clients.update_client("admin-client", %{
                "access_token_format" => "admin"
              })

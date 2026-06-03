@@ -254,7 +254,8 @@ defmodule Lockspire.Admin.ServerPolicy do
   defp normalize_access_token_format(value), do: invalid_access_token_format(value)
 
   defp invalid_access_token_format(value) do
-    {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: value}]}
+    {:error,
+     [%{field: :access_token_format, reason: :invalid_access_token_format, detail: value}]}
   end
 
   defp normalize_security_profile(:none), do: {:ok, :none}

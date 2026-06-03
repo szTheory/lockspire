@@ -129,8 +129,11 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
 
   defp mark_binding_verified(conn) do
     case conn.assigns[:access_token] do
-      %AccessToken{} = at -> assign(conn, :access_token, %AccessToken{at | binding_verified: true})
-      _ -> conn
+      %AccessToken{} = at ->
+        assign(conn, :access_token, %AccessToken{at | binding_verified: true})
+
+      _ ->
+        conn
     end
   end
 

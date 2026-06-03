@@ -276,7 +276,8 @@ defmodule Lockspire.Plug.VerifyToken do
       if Enum.all?(required_scopes, &Enum.member?(token_scopes, &1)) do
         :ok
       else
-        {:error, insufficient_scope_error(required_scopes, challenge_for(claims, authorization_scheme))}
+        {:error,
+         insufficient_scope_error(required_scopes, challenge_for(claims, authorization_scheme))}
       end
     end
   end

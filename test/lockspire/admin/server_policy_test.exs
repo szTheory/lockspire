@@ -127,12 +127,20 @@ defmodule Lockspire.Admin.ServerPolicyTest do
   end
 
   test "put_access_token_format/1 rejects unknown atom with a structured error tuple" do
-    assert {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: :bogus}]} =
+    assert {:error,
+            [%{field: :access_token_format, reason: :invalid_access_token_format, detail: :bogus}]} =
              ServerPolicy.put_access_token_format(:bogus)
   end
 
   test "put_access_token_format/1 rejects unknown string with an error tuple (no nil branch)" do
-    assert {:error, [%{field: :access_token_format, reason: :invalid_access_token_format, detail: "nonsense"}]} =
+    assert {:error,
+            [
+              %{
+                field: :access_token_format,
+                reason: :invalid_access_token_format,
+                detail: "nonsense"
+              }
+            ]} =
              ServerPolicy.put_access_token_format("nonsense")
   end
 
