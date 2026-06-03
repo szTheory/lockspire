@@ -16,9 +16,9 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently shipped feature milestone, `v1.26 Host Integration & Operator Boundary Hardening`, landed in `lockspire 1.2.0`: it improved the first real Phoenix SaaS adoption path around account/claims wiring, first-client bootstrap, protected-route proof, and host-guarded operator/admin mounting without adding protocol breadth. `v1.27 Phoenix Resource Server Token Acceptance` is now the deliberately opened next feature milestone, resolving the unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented Phoenix protected-resource plug.
+The most recently shipped feature milestone, `v1.27 Phoenix Resource Server Token Acceptance`, resolved the unfinished design tension between Lockspire-issued stored access tokens and the JWT-bearer-oriented Phoenix protected-resource plug by narrowing the verifier to RFC 9068 at+jwt and flipping default issuance to at+jwt.
 
-## Recently Shipped Milestone: v1.26 Host Integration & Operator Boundary Hardening
+## Archived Milestone Snapshot: v1.26 Host Integration & Operator Boundary Hardening
 
 **Goal:** Make the first real Phoenix SaaS adoption path clearer without adding protocol breadth.
 
@@ -30,7 +30,7 @@ The most recently shipped feature milestone, `v1.26 Host Integration & Operator 
 
 **Why now:** `v1.25` made the shipped advanced setup story coherent. The next highest-leverage adoption wedge was not more protocol breadth; it was reducing first-adopter ambiguity at the host seam.
 
-## Recently Shipped Milestone: v1.25 Support-Burden Reduction
+## Archived Milestone Snapshot: v1.25 Support-Burden Reduction
 
 **Goal:** Reduce advanced setup ambiguity on already-shipped high-trust surfaces so adopters can configure, diagnose, and support Lockspire without source-diving or relying on maintainer tribal knowledge.
 
@@ -42,25 +42,19 @@ The most recently shipped feature milestone, `v1.26 Host Integration & Operator 
 
 **Why now:** `v1.24` closed the last practical direct-client auth gap. The remaining high-leverage work was support cost and setup ambiguity on advanced surfaces Lockspire already shipped.
 
-## Current Milestone: v1.27 Phoenix Resource Server Token Acceptance
+## Recently Shipped Milestone: v1.27 Phoenix Resource Server Token Acceptance
 
 **Goal:** Make it obvious which Lockspire-issued token shape a host Phoenix API should accept, how that relates to `Lockspire.Plug.VerifyToken`, and what CI proof backs the blessed path — without conflating stored opaque access tokens with JWT bearer route-protection fixtures.
 
-**Target features:**
-- One authoritative answer for which Lockspire-issued token shape protects a host Phoenix API route, expressed in the shipped `Lockspire.Plug.VerifyToken` contract.
-- A blessed adoption recipe spanning docs, the adoption demo, and generated-host guidance so first-adopter ambiguity at the RS token seam is gone.
-- CI proof — repo-native — that the blessed RS token acceptance path stays aligned across runtime, plug, docs, demo, and generated host.
-- Honest separation of stored opaque access tokens (token-endpoint shape) from JWT bearer route-protection (RS verifier shape), with explicit operator/adopter language about when each applies.
+**Delivered:**
+- `Lockspire.Plug.VerifyToken` narrowed to RFC 9068 `at+jwt` only, with strict `typ`, `iss`, and required claims validation.
+- One shared `AccessTokenSigner` now owns RFC 9068 `at+jwt` issuance across all grant paths.
+- Default access-token issuance format flipped from opaque to `:jwt` for AC, refresh, device, and CIBA paths, with a runtime-settable server default and nullable per-client override.
+- End-to-end sender-constraint proof (DPoP and mTLS) delivered across the canonical pipeline, closing misordered-pipeline bypasses.
+- The adoption demo is re-wired to use the blessed `at+jwt` path against the protected route.
+- Generated-host scaffolding, operator telemetry, and migration diagnostics all shipped to reflect the new default issuance.
 
 **Why now:** `v1.26` delivered the host integration seam and adoption demo, but in doing so exposed an unfinished design tension: the demo uses Lockspire's issued stored access token against Lockspire `/userinfo`, while the Phoenix protected-resource plug remains JWT-bearer-oriented. That ambiguity is now a real first-adopter trip hazard — and the earmark documented in `STATE.md` and `.planning/ROADMAP.md` flagged this as the next feature-sized wedge once adopter evidence justifies leaving sustainment.
-
-**Explicit non-goals (do not broaden into):**
-- Hosted auth / CIAM productization.
-- Service mesh or gateway productization, generic API management.
-- SAML / LDAP federation, auth-method parity chasing.
-- Certification-breadth chasing beyond what the shipped surface already claims.
-
-**Sustainment boundary:** This milestone is the deliberate exception to `milestone: none`. Patch-train work continues in parallel on `main`. Feature work for v1.27 runs on `milestone/v1.27-phoenix-rs-token-acceptance` per `.planning/DEVELOPMENT-TRAIN.md`.
 
 ## Release Train Default
 
@@ -248,4 +242,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 — Phase 102 (generated-host scaffolding + telemetry + migration) complete, closing the v1.27 milestone's planned phases (97–102). Phase 102 added: two release-readiness regression guards fencing the no-token-format-prompt install and the uncomment-ready canonical pipeline block (SCAFFOLD-01/02); the `[:lockspire, :rs, :token_format]` RS telemetry event emitted via direct `:telemetry.execute/3` at the JWT-success and `:"opaque-rejected"` sites of `Lockspire.Plug.VerifyToken` (TELEMETRY-01); `docs/upgrading/v1.27.md` documenting the opaque→`:jwt` default flip with the honest runtime `ServerPolicy.put_access_token_format(:opaque)` opt-out (no phantom config key) and `nil`-inherit affected-client naming (MIGRATE-01); and the read-only `mix lockspire.doctor token_format` diagnostic flagging every `access_token_format: nil` client (MIGRATE-02). Observe-only — no protocol/runtime behavior change. Verified 4/4 success criteria; code review clean (0 blockers). Run `/gsd-complete-milestone` to archive v1.27. Prior footer — Phase 99 (signer extraction + JWT-default issuance): `AccessTokenSigner` owns the single RFC 9068 `at+jwt` signing site for all five grant paths; default format flipped to `:jwt` with runtime-settable server default and nullable per-client override (SIGNER-01/02, FORMAT-01/02, AUD-01/02/03, DISCOVERY-01).*
+*Last updated: 2026-06-03 — v1.27 Phoenix Resource Server Token Acceptance shipped.*

@@ -1,5 +1,35 @@
 # Milestones
 
+## v1.27 Phoenix Resource Server Token Acceptance (Shipped: 2026-06-03)
+
+**Phases completed:** 6 phases, 24 plans, 45 tasks
+
+**Key accomplishments:**
+
+- BIND-03 runtime fail-closed guard: binding_verified breadcrumb (D-01/D-02/D-03) closes RFC 9449 §7.2 sender-constraint bypass with 403 + binding-derived challenge, proven by 25 passing plug-unit tests
+- BIND-03 contract test added asserting all four RECIPE-01 pipeline sites order VerifyToken→EnforceSenderConstraints→RequireToken via byte-offset comparison; A1 assumption confirmed: VerifyToken accepts list-valued aud (the signer's wire shape) without mitigation needed.
+- BIND-01 (DPoP) + BIND-02 (mTLS) signer-minted at+jwt e2e proofs: AccessTokenSigner.issue/3 cnf carry-through survives the VerifyToken->EnforceSenderConstraints->RequireToken pipeline through the nonce-retry dance to 200, confirming Wave 1's binding_verified breadcrumb is wired end-to-end
+- Replaced bare `audience: "billing-api"` with absolute URI `audience: "https://billing.acme-ledger.test"` byte-identically across all four RECIPE-01 hash-locked sites, closing the `valid_resource_uri?` rejection and audience-confusion vulnerability classes
+- Wired resource=https://billing.acme-ledger.test into both the /authorize and /token requests via a single module-level constant, and added the mandatory GET /api/billing/summary Bearer-token round-trip asserting HTTP 200 — closing the half-proof gap and satisfying DEMO-01 and DEMO-02
+- `[:lockspire, :rs, :token_format]` emitted via direct `:telemetry.execute/3` at two `VerifyToken` sites — `:jwt` (claims-sourced metadata) on verified `at+jwt`, literal `:"opaque-rejected"` (all-nil metadata) on the opaque-reject branch — proven by a TDD RED→GREEN capture test.
+- Read-only `mix lockspire.doctor token_format` diagnostic that reports each client's effective access-token format using the signer's exact precedence and flags every `access_token_format: nil` client whose inherited default flipped to `:jwt`.
+- Append 14 new D-06/D-07/D-09 substrings to the Phase 92 substring-contract helpers, landing the RED failure on `release_readiness_contract_test.exs:642` that Plans 02 and 03 will turn GREEN by editing the docs.
+- Rewrote `docs/protect-phoenix-api-routes.md` with the D-06 contract sentence as the verbatim lead, the D-07 forward-reference caveat preceded by an HTML-comment sweep marker, BEGIN/END markers wrapping the canonical pipeline fenced block, and the two D-15 secondary fenced blocks collapsed to reference-to-canonical prose — making this the single authoritative protected-route page and the first of four canonical-block carrier sites for v1.27.
+- Landed the v1.27 public-contract non-goals as a first-class H2 subsection in docs/supported-surface.md, and converted the saas-adoption-recipe pipeline restatement into a cross-link to the canonical contract page — closing the silent fifth-restatement drift class without touching any Phase 92 substring.
+- Mirrored the Plan 02 canonical pipeline-declaration bytes into the three remaining RECIPE-01 sites — `examples/adoption_demo/lib/adoption_demo_web/router.ex` (raw Elixir, 2-space module-body indent), `priv/templates/lockspire.install/router.ex` (commented-out Elixir inside a heredoc, 4-space heredoc-interior indent, per D-10), and `scripts/demo/adoption_smoke.py` (Python-comment carrier inside `exercise_authorization_code`, 4-space function-body indent + `# ` per-line prefix per D-03 + D-14) — such that all four carrier files now extract to byte-identical canonical bytes (SHA-256 `c79c19d107294b9c56c071d4fc6004eae0735365d4783d4f4bb2216664e87172`) after D-02 normalization, completing the four-site ground truth that Plan 05's `release_readiness_contract_test` hash-compare clause will enforce.
+- Closed the RECIPE-01 drift loop. `test/lockspire/release_readiness_contract_test.exs` now carries three new clauses that pairwise-compare SHA-256 hashes of the canonical pipeline interior across all four RECIPE-01 carrier sites, refute three-plug-name restatement in `docs/saas-adoption-recipe.md`, and refute within-file pipeline restatement in `docs/protect-phoenix-api-routes.md`. All three negative-path probes (drift, sanity-guard, EEx-tag) were executed-and-reverted with verbatim failure-message capture per WARNING #6 enforcement. `mix ci` exits 0 at phase end.
+- Front-edge structural opaque-token rejection in `Lockspire.Plug.VerifyToken.verify_token/3`: any token that does not split into exactly three non-empty Base64URL segments by `.` short-circuits with a structured `:opaque_token_not_accepted` error and the RFC 6750 wire response `WWW-Authenticate: Bearer realm="Lockspire", error="invalid_token", error_description="opaque tokens not accepted on this route"`, ending the silent `:malformed` lumping that previously swallowed opaque tokens at `extract_kid/1`'s rescue clause.
+- Add `enforce_audience: [type: :boolean, default: false]` to `Lockspire.Plug.VerifyToken`'s NimbleOptions schema with a new `init/1` raise when `enforce_audience: true` is set and neither `:audience` nor `:audiences` is supplied; propagate `enforce_audience: true` byte-identically across all four RECIPE-01 canonical-pipeline sites; and add a new `release_readiness_contract_test` clause that asserts each canonical block carries a non-empty `audience: "..."` on its `Lockspire.Plug.VerifyToken,` declaration. Closes VERIFIER-06 with both OR-clause mechanisms shipped for defense-in-depth.
+- A single new `validate_rfc9068_compliance/2` step inside `Lockspire.Plug.VerifyToken` enforces the five RFC 9068 / RFC 8725 compliance rules (typ=at+jwt, iss=Lockspire.Config.issuer!/0, exp positive integer, iat positive integer, sub non-empty string) between `JOSE.JWT.verify_strict/3` success and `time_claims_valid?/1` / `apply_restrictions/2`. Each failure emits a distinct atom `reason_code` (`:invalid_typ`, `:invalid_issuer`, `:missing_exp`, `:missing_iat`, `:missing_sub`) through the D-04 structured error map shape with a distinct `error_description` naming the violated RFC clause. The verifier's `typ` comparison is intentionally case-insensitive and strips `application/` (D-03's forward-compatibility margin for Phase 99's signer extraction); a code comment names this asymmetry against the issuance-side `Lockspire.Protocol.DPoP.check_typ/1` precedent. The obsolete `# Missing exp is currently treated as valid` comment at line 366 is deleted as part of this plan.
+- Add `challenge_for/2` to `Lockspire.Plug.VerifyToken` implementing the D-05 four-row mapping (cnf.jkt → :dpop, cnf.x5t#S256-only → :bearer, no-cnf + DPoP scheme → :dpop, otherwise → :bearer); replace the four hard-coded `challenge: :bearer` sites in error helpers (`invalid_audience_error/3`, `insufficient_scope_error/2`, `rfc9068_error/2` × 5 clauses, `opaque_token_error/1`) with derived values that thread through `verify_signature_and_claims/3` → `validate_rfc9068_compliance/3` → check helpers, plus `apply_restrictions/2` reading the scheme off the in-flight AccessToken struct; replace the hard-coded `challenge: :bearer` in `require_token.ex` `normalize_insufficient_scope_error/1` at line 113 with `Map.get(error, :challenge, :bearer)`; restructure `handle_insufficient_scope/2` to mirror `handle_invalid_token/2`'s challenge-aware routing so DPoP-bound scope failures emit `WWW-Authenticate: DPoP realm="..." error="insufficient_scope" ... algs="..."` via the existing `ProtectedResourceChallenge.put_dpop_challenge/2` (D-06 wire-up — no changes to that file). EnforceSenderConstraints is NOT modified.
+- Runtime-editable server-wide `ServerPolicy.access_token_format` defaulting to `:jwt` plus a nullable per-client `Client.access_token_format` override, backed by a dual-table `:text` migration and `Admin.ServerPolicy.put_access_token_format/1`.
+- Shared RFC 9068 `at+jwt` signer with one-place format resolution, list-vs-string `aud` carve-out, and `cnf` carry-through — assembled from the rfc8693 signing block and the SecurityProfile precedence shape, shipped TDD-first.
+- The AC/device/CIBA mint seam now issues access tokens through `AccessTokenSigner.issue/3` (re-pointing the persisted hash to the signer's hash), and the device + CIBA grant paths gained net-new `resource`→`aud` validation so `resource=` yields `aud=[resource]` and absent `resource=` yields `aud=[client_id]`.
+- Routed the refresh rotation path and the RFC 8693 token-exchange path through the shared `AccessTokenSigner`, fixed the refresh `sub` (rotated token had `account_id: nil`), and deleted the duplicated `at+jwt` signing block from `rfc8693_exchange.ex` so no signing logic survives outside the shared module (SC5).
+- Per-client access_token_format override (inherit|jwt|opaque) on the admin client-detail edit form with a JWT-vs-opaque doclink, inherit->nil normalize plumbing, and global/override/effective SHOW rows with signer-aligned effective resolution.
+
+---
+
 ## v1.26 Host Integration & Operator Boundary Hardening (Shipped + archived: 2026-05-27)
 
 **Phases completed:** **3** (**94-96**), **3** plans, **5** requirements closed.
@@ -7,6 +37,7 @@
 **Package posture:** `lockspire 1.2.0` now has a clearer first Phoenix SaaS adoption path: generated hosts can mount Lockspire's admin surface behind host-owned operator auth, wire account/claims resolution without broadening Lockspire's host seam, create a first client with copy-once secret guidance, and follow a compact SaaS adoption recipe.
 
 **Key accomplishments:**
+
 - Added `Lockspire.Web.AdminRouter` as the bounded admin-only router for hosts that want `/lockspire/admin` protected by their own operator-auth pipeline.
 - Updated generated router and account-resolver scaffolding so host account lookup, stable subject claims, tenant policy, product authorization, and Sigra-specific wiring stay explicitly host-owned.
 - Improved first-client CLI output with token endpoint auth truth and concrete next steps for proving authorization-code + PKCE.
@@ -25,6 +56,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now has one coherent advanced-setup support contract for remote `jwks_uri`, mTLS setup, logout propagation, and the shipped Phoenix protected-route pipeline, backed by repo-native proof and explicit support boundaries.
 
 **Key accomplishments:**
+
 - Added one shared remote-JWKS incident taxonomy plus a bounded-reactive rollover truth model for `private_key_jwt` and JARM consumers.
 - Added `mix lockspire.doctor remote-jwks` and an admin Remote JWKS summary so runtime incidents can be diagnosed without source-diving and without widening install-time verification.
 - Tightened the canonical mTLS, protected-route, and logout guidance so Lockspire-owned behavior versus host-owned or infrastructure-owned behavior is explicit and internally consistent.
@@ -43,6 +75,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now supports a narrow `client_secret_jwt` direct-client authentication slice on shipped Lockspire-owned endpoints without widening Lockspire's higher-trust support claims.
 
 **Key accomplishments:**
+
 - Added shared direct-client JWT routing that resolves the attempted JWT method from stored client auth truth instead of implicitly treating every JWT assertion as `private_key_jwt`.
 - Added sealed verifier material and strict HS256-only verification so `client_secret_jwt` can work without weakening the existing hashed-secret posture.
 - Added repo-native proof for valid and invalid `client_secret_jwt` behavior across representative shipped direct-client surfaces, including replay, audience, algorithm, method-mismatch, and FAPI-denial cases.
@@ -61,6 +94,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now lets eligible self-service clients manage the existing logout propagation metadata through DCR and RFC 7592 without widening Lockspire's current logout support boundary.
 
 **Key accomplishments:**
+
 - Added DCR create-time validation, typed persistence, and truthful readback for `backchannel_logout_*` and `frontchannel_logout_*` metadata.
 - Added RFC 7592 full-replace update semantics for the four logout metadata fields, including clear-on-omit behavior.
 - Proved rotated registration access token truth, provenance retention, audit continuity, and negative-path contracts across protocol and controller seams.
@@ -79,6 +113,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now includes first-class Phoenix API route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 **Key accomplishments:**
+
 - Added `Lockspire.Plug.VerifyToken` plus `%Lockspire.AccessToken{}` and `Lockspire.KeyCache` for fast, local JWT validation against Lockspire-issued keys.
 - Added `Lockspire.Plug.EnforceSenderConstraints` so protected routes can enforce DPoP and MTLS confirmation claims without taking over the HTTP boundary.
 - Kept `Lockspire.Plug.RequireToken` as the single strict transport boundary, with truthful `401 invalid_token` vs `403 insufficient_scope` semantics.
@@ -97,6 +132,7 @@
 **Goal:** Implement Mutual TLS for client authentication and sender-constrained tokens, closing the remaining high-leverage trust gap for high-security domain integrations.
 
 **Key capabilities:**
+
 - Explicit certificate extraction via `Lockspire.MTLS.Extractor` behaviour (Cowboy native and Proxy headers).
 - `tls_client_auth` and `self_signed_tls_client_auth` client authentication.
 - `x5t#S256` certificate-bound access tokens.
@@ -115,6 +151,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now includes full support for the OpenID Connect FAPI 2.0 Message Signing Profile.
 
 **Key accomplishments:**
+
 - Implemented JARM (JWT Secured Authorization Response Mode) and Encrypted JARM.
 - Implemented JWT introspection responses.
 - Enforced strict FAPI 2.0 Message Signing security profile across all runtime flows.
@@ -133,6 +170,7 @@
 **Package posture:** Lockspire maintains its `1.0.0` GA release state with the addition of automated repo-native FAPI 2.0 conformance testing.
 
 **Key accomplishments:**
+
 - Integrated the official OpenID Foundation FAPI 2.0 Conformance Suite into the automated CI pipeline.
 - Established a local testing lane for maintainers to run the conformance suite.
 
@@ -149,6 +187,7 @@
 **Package posture:** Lockspire 1.0.0 is officially released to Hex, with all execution verifiable.
 
 **Key accomplishments:**
+
 - Completed public release verification.
 - Documented explicit durable records.
 
@@ -165,6 +204,7 @@
 **Package posture:** `lockspire 1.0.0` now has one coherent repo-truth story across package metadata, changelog posture, protected release wiring, supported-surface docs, and release-readiness contract tests.
 
 **Key accomplishments:**
+
 - Added one canonical embedded install path with explicit Lockspire-managed versus host-owned seams, plus a manifest-backed `mix lockspire.upgrade`.
 - Added `mix lockspire.verify` so host teams can catch router wiring, seam, config, and migration mistakes before runtime drift becomes support debt.
 - Proved the Sigra companion path end to end through generated-host code, including unauthenticated `/authorize`, login bounce, interaction resume, consent, token exchange, and JWKS.
@@ -184,6 +224,7 @@
 **Package posture:** `lockspire 0.2.0` remains preview at archive time, but the shipped surface now includes OAuth 2.0 Resource Indicators (RFC 8707) and Rich Authorization Requests (RFC 9396).
 
 **Key accomplishments:**
+
 - Added Resource Indicators validation and audience downscoping across authorization-code and refresh-token exchanges.
 - Added `authorization_details` intake on `/par` and `/authorize`, including durable PAR and interaction persistence.
 - Added host-owned RAR validator behaviors, normalization, fingerprinting, durable consent-grant storage, and token-to-grant linkage.
@@ -203,6 +244,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now includes full support for the OpenID Connect Client-Initiated Backchannel Authentication Flow (CIBA).
 
 **Key accomplishments:**
+
 - Implemented the `/bc-authorize` endpoint with robust validation and discovery metadata.
 - Added the CIBA token grant type to `/token` with durable polling state enforcement.
 - Support for Poll, Ping, and Push delivery modes using Oban for reliable, retriable webhook delivery.
@@ -222,6 +264,7 @@
 **Package posture:** `lockspire 1.0.0` or higher now includes OAuth 2.0 Token Exchange for microservice patterns (Delegation and Impersonation).
 
 **Key accomplishments:**
+
 - Added parsing and durable storage of RFC 8693 Token Exchange requests, tracking token lineage via `grant_id`.
 - Introduced the `Lockspire.TokenExchangeValidator` behaviour to give host apps explicit policy control over which clients and actors are allowed to perform exchanges.
 - Enforced domain-specific delegation boundaries via `max_delegation_depth` configuration to prevent arbitrary recursive token bloat.
