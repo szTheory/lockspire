@@ -64,28 +64,36 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         title="Client inventory"
         subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
       >
-        <form method="get" action={clients_index_path()}>
-          <label for="client_search">Search</label>
-          <input id="client_search" name="q" type="text" value={@filters["q"]} />
+        <form method="get" action={clients_index_path()} class="lockspire-admin-form-shell" style="margin-bottom: var(--ls-space-6);">
+          <div class="lockspire-admin-field">
+            <label for="client_search">Search</label>
+            <input id="client_search" name="q" type="text" value={@filters["q"]} />
+          </div>
 
-          <label for="client_status">Status</label>
-          <select id="client_status" name="status">
-            <option value="all" selected={@filters["status"] == "all"}>All</option>
-            <option value="active" selected={@filters["status"] == "active"}>Active</option>
-            <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
-          </select>
+          <div class="lockspire-admin-field">
+            <label for="client_status">Status</label>
+            <select id="client_status" name="status">
+              <option value="all" selected={@filters["status"] == "all"}>All</option>
+              <option value="active" selected={@filters["status"] == "active"}>Active</option>
+              <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
+            </select>
+          </div>
 
-          <label for="client_provenance">Provenance</label>
-          <select id="client_provenance" name="provenance">
-            <option value="all" selected={@filters["provenance"] == "all"}>All</option>
-            <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
-            <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>Self-Registered</option>
-          </select>
+          <div class="lockspire-admin-field">
+            <label for="client_provenance">Provenance</label>
+            <select id="client_provenance" name="provenance">
+              <option value="all" selected={@filters["provenance"] == "all"}>All</option>
+              <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+              <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>Self-Registered</option>
+            </select>
+          </div>
 
-          <button type="submit">Apply</button>
+          <div class="lockspire-admin-actions">
+            <button class="lockspire-admin-btn-secondary" type="submit">Apply</button>
+          </div>
         </form>
 
-        <p>Total matching clients: {@total_clients}</p>
+        <p class="lockspire-admin-help" style="margin-bottom: var(--ls-space-4);">Total matching clients: {@total_clients}</p>
 
         <%= if @clients == [] do %>
           <AdminComponents.empty_state
@@ -93,13 +101,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             body="Adjust the search or status filter, or register a new client."
           />
         <% else %>
-          <ul class="lockspire-admin-client-list">
+          <ul class="lockspire-admin-client-list" style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--ls-space-4);">
             <%= for client <- @clients do %>
-              <li>
-                <a href={client_show_path(client.client_id)}>{client.name || client.client_id}</a>
-                <span>{client.client_id}</span>
-                <AdminComponents.status_badge status={status_for(client)} />
-                <AdminComponents.status_badge status={client.provenance} />
+              <li style="padding: var(--ls-space-4); background: var(--ls-color-gray-50); border: 1px solid var(--ls-color-gray-200); border-radius: var(--ls-radius-md); display: flex; align-items: center; justify-content: space-between; gap: var(--ls-space-4);">
+                <div style="display: flex; flex-direction: column; gap: var(--ls-space-1);">
+                  <a href={client_show_path(client.client_id)} style="font-weight: 600; color: var(--ls-color-brand-600); text-decoration: none;">{client.name || client.client_id}</a>
+                  <span class="lockspire-admin-tabular" style="color: var(--ls-color-gray-500);">{client.client_id}</span>
+                </div>
+                <div style="display: flex; gap: var(--ls-space-2);">
+                  <AdminComponents.status_badge status={status_for(client)} />
+                  <AdminComponents.status_badge status={client.provenance} />
+                </div>
               </li>
             <% end %>
           </ul>

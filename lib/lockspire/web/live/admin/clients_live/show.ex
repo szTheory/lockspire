@@ -169,15 +169,58 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         title={@client.name || @client.client_id}
         subtitle="Immutable security posture stays fixed. Safe edits are targeted workflows."
       >
-        <p>Client ID: <code>{@client.client_id}</code></p>
-        <p>Type: <code>{@client.client_type}</code></p>
-        <p>Token auth: <code>{@client.token_endpoint_auth_method}</code></p>
-        <p>PKCE required: <code>{to_string(@client.pkce_required)}</code></p>
-        <p>Global security profile: <code>{security_profile_label(@effective_security_profile.global_profile)}</code></p>
-        <p>Client security override: <code>{security_profile_label(@client.security_profile)}</code></p>
-        <p>Effective security profile: <strong>{security_verdict_for(@effective_security_profile)}</strong></p>
-        <section :if={show_strict_message_signing_panel?(@effective_security_profile)} class="lockspire-admin-help">
-          <h3>Strict message-signing posture</h3>
+        <div style="display: grid; grid-template-columns: minmax(200px, max-content) 1fr; gap: var(--ls-space-2) var(--ls-space-4); margin-bottom: var(--ls-space-6);">
+          <strong style="color: var(--ls-color-gray-700);">Client ID</strong> 
+          <code class="lockspire-admin-tabular">{@client.client_id}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Type</strong> 
+          <code>{@client.client_type}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Token auth</strong> 
+          <code>{@client.token_endpoint_auth_method}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">PKCE required</strong> 
+          <code>{to_string(@client.pkce_required)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Global security profile</strong> 
+          <code>{security_profile_label(@effective_security_profile.global_profile)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Client security override</strong> 
+          <code>{security_profile_label(@client.security_profile)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Effective security profile</strong> 
+          <strong style="color: var(--ls-color-gray-900);">{security_verdict_for(@effective_security_profile)}</strong>
+
+          <strong style="color: var(--ls-color-gray-700);">Global PAR policy</strong> 
+          <code>{par_policy_label(@effective_par_policy.global_policy)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Client PAR override</strong> 
+          <code>{par_policy_label(@client.par_policy)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Effective PAR requirement</strong> 
+          <strong style="color: var(--ls-color-gray-900);">{verdict_for(@effective_par_policy)}</strong>
+
+          <strong style="color: var(--ls-color-gray-700);">Global access token format</strong> 
+          <code>{@global_access_token_format}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Client access token override</strong> 
+          <code>{access_token_format_override_label(@client.access_token_format)}</code>
+
+          <strong style="color: var(--ls-color-gray-700);">Effective access token format</strong> 
+          <strong style="color: var(--ls-color-gray-900);">{@effective_access_token_format}</strong>
+
+          <strong style="color: var(--ls-color-gray-700);">Current secret</strong> 
+          <span style="color: var(--ls-color-gray-500); font-style: italic;">redacted</span>
+
+          <strong style="color: var(--ls-color-gray-700);">Last secret rotation</strong> 
+          <span class="lockspire-admin-tabular">{format_datetime(@client.last_secret_rotated_at)}</span>
+
+          <strong style="color: var(--ls-color-gray-700);">Status</strong> 
+          <div style="display: flex; align-items: center;"><AdminComponents.status_badge status={status_for(@client)} /></div>
+        </div>
+
+        <section :if={show_strict_message_signing_panel?(@effective_security_profile)} class="lockspire-admin-help" style="margin-bottom: var(--ls-space-6);">
+          <h3 style="margin-top: 0; color: var(--ls-color-gray-900);">Strict message-signing posture</h3>
           <p>
             <strong>Effective posture:</strong> {strict_posture_label(@effective_security_profile)}
           </p>
@@ -198,43 +241,36 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             <% end %>
           </ul>
         </section>
+
         <div
           :if={mixed_mode_override?(@effective_security_profile)}
-          class="lockspire-admin-warning"
+          class="lockspire-admin-alert lockspire-admin-alert-warning"
           role="alert"
+          style="background-color: var(--ls-color-warning-bg); color: var(--ls-color-warning-text); padding: var(--ls-space-4); border-radius: var(--ls-radius-md); margin-bottom: var(--ls-space-6);"
         >
           <strong>Warning:</strong> This client overrides the global FAPI 2.0 Security Profile
           to None. FAPI 2.0 boundary checks (PAR, DPoP) will NOT be enforced for this client.
           This is an intentional mixed-mode bypass. Confirm the client genuinely needs standard
           OIDC.
         </div>
-        <p>Global PAR policy: <code>{par_policy_label(@effective_par_policy.global_policy)}</code></p>
-        <p>Client PAR override: <code>{par_policy_label(@client.par_policy)}</code></p>
-        <p>Effective PAR requirement: <strong>{verdict_for(@effective_par_policy)}</strong></p>
-        <p>Global access token format: <code>{@global_access_token_format}</code></p>
-        <p>Client access token override: <code>{access_token_format_override_label(@client.access_token_format)}</code></p>
-        <p>Effective access token format: <strong>{@effective_access_token_format}</strong></p>
-        <p>Current secret: redacted</p>
-        <p>Last secret rotation: {format_datetime(@client.last_secret_rotated_at)}</p>
-        <AdminComponents.status_badge status={status_for(@client)} />
 
-        <section :if={client_secret_jwt_client?(@client)}>
-          <h3>Shared JWT client secret posture</h3>
+        <section :if={client_secret_jwt_client?(@client)} style="margin-bottom: var(--ls-space-6);">
+          <h3 style="margin-top: 0;">Shared JWT client secret posture</h3>
           <p>
             Stored auth method: <code>client_secret_jwt</code>
           </p>
           <p>
             Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
           </p>
-          <p>
+          <p class="lockspire-admin-help">
             This slice is limited to the shared direct-client verifier surfaces. Lockspire
             keeps <code>HS256</code> read-only here and never exposes secret-derived verifier
             material.
           </p>
         </section>
 
-        <section :if={private_key_jwt_client?(@client)}>
-          <h3>Client assertion keys</h3>
+        <section :if={private_key_jwt_client?(@client)} style="margin-bottom: var(--ls-space-6);">
+          <h3 style="margin-top: 0;">Client assertion keys</h3>
           <p>
             Remote JWKS URI configured:
             <code>{value_or_not_configured(@client.jwks_uri)}</code>
@@ -247,7 +283,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             Issuer-supported assertion algorithms:
             <code>{supported_assertion_algorithms(@private_key_jwt_truth)}</code>
           </p>
-          <p>
+          <p class="lockspire-admin-help">
             This client uses <code>private_key_jwt</code>. Key material stays read-only in
             Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
             not by ad hoc admin actions.
@@ -257,85 +293,78 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <section
           :if={show_remote_jwks_summary?(@client, @remote_jwks_summary)}
           class="lockspire-admin-help"
+          style="margin-bottom: var(--ls-space-6); padding: var(--ls-space-4); background: var(--ls-color-gray-50); border-radius: var(--ls-radius-md);"
         >
-          <h3>Remote JWKS</h3>
-          <p>
-            <strong>Status:</strong> <code>{@remote_jwks_summary.status}</code>
-          </p>
-          <p>
-            <strong>Summary:</strong> {@remote_jwks_summary.headline}
-          </p>
-          <p>{@remote_jwks_summary.detail}</p>
-          <p>
-            <strong>Next step:</strong> {@remote_jwks_summary.next_step}
-          </p>
-          <p>
-            <strong>Ownership:</strong> {@remote_jwks_summary.ownership}
-          </p>
-          <p :if={@remote_jwks_summary.incident}>
-            Incident class:
-            <code>{@remote_jwks_summary.incident.class}</code>
-          </p>
-          <p :if={@remote_jwks_summary.command_hint}>
-            Support command:
-            <code>{@remote_jwks_summary.command_hint}</code>
-          </p>
+          <h3 style="margin-top: 0; color: var(--ls-color-gray-900);">Remote JWKS</h3>
+          <div style="display: grid; grid-template-columns: minmax(100px, max-content) 1fr; gap: var(--ls-space-1) var(--ls-space-4);">
+            <strong>Status</strong> <code>{@remote_jwks_summary.status}</code>
+            <strong>Summary</strong> <span>{@remote_jwks_summary.headline}</span>
+            <strong>Details</strong> <span>{@remote_jwks_summary.detail}</span>
+            <strong>Next step</strong> <span>{@remote_jwks_summary.next_step}</span>
+            <strong>Ownership</strong> <span>{@remote_jwks_summary.ownership}</span>
+            <strong :if={@remote_jwks_summary.incident}>Incident class</strong>
+            <code :if={@remote_jwks_summary.incident}>{@remote_jwks_summary.incident.class}</code>
+            <strong :if={@remote_jwks_summary.command_hint}>Support command</strong>
+            <code :if={@remote_jwks_summary.command_hint}>{@remote_jwks_summary.command_hint}</code>
+          </div>
         </section>
 
-        <h3>Redirect URIs</h3>
-        <ul>
+        <h3 style="margin-top: 0;">Redirect URIs</h3>
+        <ul style="margin-bottom: var(--ls-space-6);">
           <%= for redirect_uri <- @client.redirect_uris do %>
             <li>{redirect_uri}</li>
           <% end %>
         </ul>
 
-        <h3>Post-logout redirect URIs</h3>
-        <ul>
+        <h3 style="margin-top: 0;">Post-logout redirect URIs</h3>
+        <ul style="margin-bottom: var(--ls-space-6);">
           <%= for uri <- @client.post_logout_redirect_uris do %>
             <li>{uri}</li>
           <% end %>
         </ul>
 
-        <h3>Logout propagation</h3>
-        <p>Back-channel logout URI: <code>{value_or_not_configured(@client.backchannel_logout_uri)}</code></p>
-        <p>
-          Back-channel session required:
+        <h3 style="margin-top: 0;">Logout propagation</h3>
+        <div style="display: grid; grid-template-columns: minmax(200px, max-content) 1fr; gap: var(--ls-space-2) var(--ls-space-4); margin-bottom: var(--ls-space-4);">
+          <strong style="color: var(--ls-color-gray-700);">Back-channel logout URI</strong> 
+          <code>{value_or_not_configured(@client.backchannel_logout_uri)}</code>
+          
+          <strong style="color: var(--ls-color-gray-700);">Back-channel session required</strong> 
           <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
-        </p>
-        <p>Front-channel logout URI: <code>{value_or_not_configured(@client.frontchannel_logout_uri)}</code></p>
-        <p>
-          Front-channel session required:
+          
+          <strong style="color: var(--ls-color-gray-700);">Front-channel logout URI</strong> 
+          <code>{value_or_not_configured(@client.frontchannel_logout_uri)}</code>
+          
+          <strong style="color: var(--ls-color-gray-700);">Front-channel session required</strong> 
           <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
-        </p>
-        <p>These logout propagation URIs stay separate from post-logout redirect URIs.</p>
-        <p>
-          Back-channel delivery stays durable through the protocol-owned
-          <code>/end_session/complete</code> flow.
-        </p>
-        <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
+        </div>
+        <div class="lockspire-admin-help" style="margin-bottom: var(--ls-space-6);">
+          <p>These logout propagation URIs stay separate from post-logout redirect URIs.</p>
+          <p>Back-channel delivery stays durable through the protocol-owned <code>/end_session/complete</code> flow.</p>
+          <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
+        </div>
 
-        <h3>Allowed scopes</h3>
-        <ul>
+        <h3 style="margin-top: 0;">Allowed scopes</h3>
+        <div style="display: flex; gap: var(--ls-space-2); flex-wrap: wrap; margin-bottom: var(--ls-space-6);">
           <%= for scope <- @client.allowed_scopes do %>
-            <li>{scope}</li>
+            <span class="lockspire-admin-badge lockspire-admin-badge-disabled">{scope}</span>
           <% end %>
-        </ul>
+        </div>
 
-        <div class="lockspire-admin-actions">
-          <.link patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
-          <.link patch={show_path(@client.client_id, :logout_propagation)}>
+        <div class="lockspire-admin-actions" style="flex-wrap: wrap;">
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
             Edit logout propagation
           </.link>
-          <.link patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
-          <.link patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
-          <.link patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
-          <.link patch={show_path(@client.client_id, :logout_uris)}>
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
             Edit post-logout redirect URIs
           </.link>
-          <.link :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
+          <.link class="lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
             Rotate secret
           </.link>
-          <button phx-click="toggle_client" type="button">
+          <button class="lockspire-admin-btn-secondary" style="border-color: var(--ls-color-danger-bg); color: var(--ls-color-danger-text);" phx-click="toggle_client" type="button">
             {if @client.active, do: "Disable client", else: "Enable client"}
           </button>
         </div>
@@ -445,7 +474,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
           remote_jwks_summary: AdminClients.remote_jwks_summary(client),
           global_access_token_format: global_access_token_format(server_policy),
-          effective_access_token_format: resolve_effective_access_token_format(server_policy, client)
+          effective_access_token_format:
+            resolve_effective_access_token_format(server_policy, client)
         )
 
       {:error, _reason} ->
@@ -606,7 +636,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        do: global_access_token_format(policy)
 
   defp resolve_effective_access_token_format(%ServerPolicy{}, %Client{access_token_format: format}),
-    do: access_token_format_string(format)
+       do: access_token_format_string(format)
 
   defp access_token_format_string(nil), do: "jwt"
   defp access_token_format_string(format), do: Atom.to_string(format)

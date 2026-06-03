@@ -285,7 +285,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              live(conn_for_admin(), "/admin/clients/#{incident_client.client_id}")
 
     assert html =~ "Remote JWKS"
-    assert html =~ "Status:"
+    assert html =~ "Status"
     assert html =~ "incident"
     assert html =~ "remote_jwks_key_unavailable"
     assert html =~ "Stage=select_key"

@@ -31,6 +31,9 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
       ])
 
     ~H"""
+    <style>
+      <%= Phoenix.HTML.raw(Lockspire.Web.Admin.CSS.get()) %>
+    </style>
     <section class="lockspire-admin-shell">
       <header class="lockspire-admin-header">
         <p class="lockspire-admin-eyebrow">Lockspire Admin</p>

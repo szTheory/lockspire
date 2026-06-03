@@ -23,163 +23,179 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     <section class="lockspire-admin-form-shell">
       <header>
         <h2>{@title}</h2>
-        <p>{subtitle_for(@mode)}</p>
+        <p class="lockspire-admin-help">{subtitle_for(@mode)}</p>
       </header>
 
       <.error_list errors={@errors} />
 
-      <form phx-submit="save_client">
+      <form phx-submit="save_client" style="display: flex; flex-direction: column; gap: var(--ls-space-5);">
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
 
-        <div :if={@mode == :new}>
-          <label for="client_name">Name</label>
-          <input id="client_name" name="client[name]" type="text" value={@defaults.name} />
-
-          <label for="client_type">Client type</label>
-          <select id="client_type" name="client[client_type]">
-            <option value="confidential" selected={@defaults.client_type == "confidential"}>
-              Confidential
-            </option>
-            <option value="public" selected={@defaults.client_type == "public"}>Public</option>
-          </select>
-
-          <label for="client_auth_method">Token endpoint auth method</label>
-          <select id="client_auth_method" name="client[token_endpoint_auth_method]">
-            <option
-              value="client_secret_basic"
-              selected={@defaults.token_endpoint_auth_method == "client_secret_basic"}
-            >
-              client_secret_basic
-            </option>
-            <option
-              value="client_secret_post"
-              selected={@defaults.token_endpoint_auth_method == "client_secret_post"}
-            >
-              client_secret_post
-            </option>
-            <option
-              value="client_secret_jwt"
-              selected={@defaults.token_endpoint_auth_method == "client_secret_jwt"}
-            >
-              client_secret_jwt
-            </option>
-            <option value="none" selected={@defaults.token_endpoint_auth_method == "none"}>
-              none
-            </option>
-          </select>
-          <p class="lockspire-admin-help">
-            <code>client_secret_jwt</code> is the narrow direct-client slice. Lockspire stores
-            it with read-only <code>HS256</code> truth and does not expose a generic signing
-            algorithm editor here.
-          </p>
-        </div>
-
-        <div :if={@mode in [:new, :edit]}>
-          <label :if={@mode == :edit} for="client_name">Name</label>
-          <input
-            :if={@mode == :edit}
-            id="client_name"
-            name="client[name]"
-            type="text"
-            value={@defaults.name}
-          />
-
-          <label for="client_allowed_scopes">Allowed scopes</label>
-          <input
-            id="client_allowed_scopes"
-            name="client[allowed_scopes]"
-            type="text"
-            value={@defaults.allowed_scopes}
-          />
-
-          <label :if={@mode == :edit} for="client_dpop_policy">Client DPoP override</label>
-          <select :if={@mode == :edit} id="client_dpop_policy" name="client[dpop_policy]">
-            <option value="inherit" selected={@defaults.dpop_policy == "inherit"}>
-              Inherit from global policy
-            </option>
-            <option value="bearer" selected={@defaults.dpop_policy == "bearer"}>
-              Use bearer access tokens
-            </option>
-            <option value="dpop" selected={@defaults.dpop_policy == "dpop"}>
-              Require DPoP-bound access tokens
-            </option>
-          </select>
-
-          <label :if={@mode == :edit} for="client_access_token_format">Access token format override</label>
-          <select
-            :if={@mode == :edit}
-            id="client_access_token_format"
-            name="client[access_token_format]"
-          >
-            <option value="inherit" selected={@defaults.access_token_format == "inherit"}>
-              Inherit from server default
-            </option>
-            <option value="jwt" selected={@defaults.access_token_format == "jwt"}>
-              JWT (RFC 9068 at+jwt)
-            </option>
-            <option value="opaque" selected={@defaults.access_token_format == "opaque"}>
-              Opaque (Lockspire-stored)
-            </option>
-          </select>
-          <div :if={@mode == :edit} class="lockspire-admin-help">
-            <p>
-              JWT (at+jwt) is the default and is what host Phoenix API routes verify. Opaque tokens
-              are Lockspire-stored and back /userinfo and /introspect — they are not interchangeable.
-              Leave this set to inherit unless a specific client needs opaque.
-            </p>
-            <p>
-              <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
-            </p>
+        <div :if={@mode == :new} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <div class="lockspire-admin-field">
+            <label for="client_name">Name</label>
+            <input id="client_name" name="client[name]" type="text" value={@defaults.name} />
           </div>
 
-          <label :if={@mode == :edit} for="client_contacts">Contacts</label>
-          <input
-            :if={@mode == :edit}
-            id="client_contacts"
-            name="client[contacts]"
-            type="text"
-            value={@defaults.contacts}
-          />
+          <div class="lockspire-admin-field">
+            <label for="client_type">Client type</label>
+            <select id="client_type" name="client[client_type]">
+              <option value="confidential" selected={@defaults.client_type == "confidential"}>
+                Confidential
+              </option>
+              <option value="public" selected={@defaults.client_type == "public"}>Public</option>
+            </select>
+          </div>
 
-          <label :if={@mode == :edit} for="client_logo_uri">Logo URI</label>
-          <input
-            :if={@mode == :edit}
-            id="client_logo_uri"
-            name="client[logo_uri]"
-            type="text"
-            value={@defaults.logo_uri}
-          />
-
-          <label :if={@mode == :edit} for="client_tos_uri">Terms of service URI</label>
-          <input
-            :if={@mode == :edit}
-            id="client_tos_uri"
-            name="client[tos_uri]"
-            type="text"
-            value={@defaults.tos_uri}
-          />
-
-          <label :if={@mode == :edit} for="client_policy_uri">Policy URI</label>
-          <input
-            :if={@mode == :edit}
-            id="client_policy_uri"
-            name="client[policy_uri]"
-            type="text"
-            value={@defaults.policy_uri}
-          />
+          <div class="lockspire-admin-field">
+            <label for="client_auth_method">Token endpoint auth method</label>
+            <select id="client_auth_method" name="client[token_endpoint_auth_method]">
+              <option
+                value="client_secret_basic"
+                selected={@defaults.token_endpoint_auth_method == "client_secret_basic"}
+              >
+                client_secret_basic
+              </option>
+              <option
+                value="client_secret_post"
+                selected={@defaults.token_endpoint_auth_method == "client_secret_post"}
+              >
+                client_secret_post
+              </option>
+              <option
+                value="client_secret_jwt"
+                selected={@defaults.token_endpoint_auth_method == "client_secret_jwt"}
+              >
+                client_secret_jwt
+              </option>
+              <option value="none" selected={@defaults.token_endpoint_auth_method == "none"}>
+                none
+              </option>
+            </select>
+            <p class="lockspire-admin-help">
+              <code>client_secret_jwt</code> is the narrow direct-client slice. Lockspire stores
+              it with read-only <code>HS256</code> truth and does not expose a generic signing
+              algorithm editor here.
+            </p>
+          </div>
         </div>
 
-        <div :if={@mode in [:new, :redirects]}>
+        <div :if={@mode in [:new, :edit]} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_name">Name</label>
+            <input
+              id="client_name"
+              name="client[name]"
+              type="text"
+              value={@defaults.name}
+            />
+          </div>
+
+          <div class="lockspire-admin-field">
+            <label for="client_allowed_scopes">Allowed scopes</label>
+            <input
+              id="client_allowed_scopes"
+              name="client[allowed_scopes]"
+              type="text"
+              value={@defaults.allowed_scopes}
+            />
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_dpop_policy">Client DPoP override</label>
+            <select id="client_dpop_policy" name="client[dpop_policy]">
+              <option value="inherit" selected={@defaults.dpop_policy == "inherit"}>
+                Inherit from global policy
+              </option>
+              <option value="bearer" selected={@defaults.dpop_policy == "bearer"}>
+                Use bearer access tokens
+              </option>
+              <option value="dpop" selected={@defaults.dpop_policy == "dpop"}>
+                Require DPoP-bound access tokens
+              </option>
+            </select>
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_access_token_format">Access token format override</label>
+            <select
+              id="client_access_token_format"
+              name="client[access_token_format]"
+            >
+              <option value="inherit" selected={@defaults.access_token_format == "inherit"}>
+                Inherit from server default
+              </option>
+              <option value="jwt" selected={@defaults.access_token_format == "jwt"}>
+                JWT (RFC 9068 at+jwt)
+              </option>
+              <option value="opaque" selected={@defaults.access_token_format == "opaque"}>
+                Opaque (Lockspire-stored)
+              </option>
+            </select>
+            <div class="lockspire-admin-help">
+              <p>
+                JWT (at+jwt) is the default and is what host Phoenix API routes verify. Opaque tokens
+                are Lockspire-stored and back /userinfo and /introspect — they are not interchangeable.
+                Leave this set to inherit unless a specific client needs opaque.
+              </p>
+              <p>
+                <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
+              </p>
+            </div>
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_contacts">Contacts</label>
+            <input
+              id="client_contacts"
+              name="client[contacts]"
+              type="text"
+              value={@defaults.contacts}
+            />
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_logo_uri">Logo URI</label>
+            <input
+              id="client_logo_uri"
+              name="client[logo_uri]"
+              type="text"
+              value={@defaults.logo_uri}
+            />
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_tos_uri">Terms of service URI</label>
+            <input
+              id="client_tos_uri"
+              name="client[tos_uri]"
+              type="text"
+              value={@defaults.tos_uri}
+            />
+          </div>
+
+          <div :if={@mode == :edit} class="lockspire-admin-field">
+            <label for="client_policy_uri">Policy URI</label>
+            <input
+              id="client_policy_uri"
+              name="client[policy_uri]"
+              type="text"
+              value={@defaults.policy_uri}
+            />
+          </div>
+        </div>
+
+        <div :if={@mode in [:new, :redirects]} class="lockspire-admin-field">
           <label for="client_redirect_uris">Redirect URIs</label>
           <textarea id="client_redirect_uris" name="client[redirect_uris]" rows="4"><%= @defaults.redirect_uris %></textarea>
         </div>
 
-        <div :if={@mode in [:new, :logout_uris]}>
+        <div :if={@mode in [:new, :logout_uris]} class="lockspire-admin-field">
           <label for="client_post_logout_redirect_uris">Post-Logout Redirect URIs</label>
           <textarea id="client_post_logout_redirect_uris" name="client[post_logout_redirect_uris]" rows="4"><%= @defaults.post_logout_redirect_uris %></textarea>
         </div>
 
-        <div :if={@mode == :par_policy}>
+        <div :if={@mode == :par_policy} class="lockspire-admin-field">
           <label for="client_par_policy">Client PAR override</label>
           <select id="client_par_policy" name="client[par_policy]">
             <option value="inherit" selected={@defaults.par_policy == "inherit"}>
@@ -205,64 +221,68 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
-        <div :if={@mode == :security_profile}>
-          <label for="client_security_profile">Client security profile override</label>
-          <select id="client_security_profile" name="client[security_profile]">
-            <option value="inherit" selected={@defaults.security_profile == "inherit"}>
-              Inherit from global policy
-            </option>
-            <option
-              value="fapi_2_0_message_signing"
-              selected={@defaults.security_profile == "fapi_2_0_message_signing"}
-            >
-              FAPI 2.0 Message Signing
-            </option>
-            <option
-              value="fapi_2_0_security"
-              selected={@defaults.security_profile == "fapi_2_0_security"}
-            >
-              FAPI 2.0 Security Profile
-            </option>
-            <option value="none" selected={@defaults.security_profile == "none"}>
-              None (Standard OIDC)
-            </option>
-          </select>
+        <div :if={@mode == :security_profile} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <div class="lockspire-admin-field">
+            <label for="client_security_profile">Client security profile override</label>
+            <select id="client_security_profile" name="client[security_profile]">
+              <option value="inherit" selected={@defaults.security_profile == "inherit"}>
+                Inherit from global policy
+              </option>
+              <option
+                value="fapi_2_0_message_signing"
+                selected={@defaults.security_profile == "fapi_2_0_message_signing"}
+              >
+                FAPI 2.0 Message Signing
+              </option>
+              <option
+                value="fapi_2_0_security"
+                selected={@defaults.security_profile == "fapi_2_0_security"}
+              >
+                FAPI 2.0 Security Profile
+              </option>
+              <option value="none" selected={@defaults.security_profile == "none"}>
+                None (Standard OIDC)
+              </option>
+            </select>
+          </div>
 
-          <label for="client_authorization_signed_response_alg">
-            Authorization response signing algorithm
-          </label>
-          <select
-            id="client_authorization_signed_response_alg"
-            name="client[authorization_signed_response_alg]"
-          >
-            <option value="" selected={is_nil(@defaults.authorization_signed_response_alg)}>
-              Use legacy default / not set
-            </option>
-            <option
-              value="ES256"
-              selected={@defaults.authorization_signed_response_alg == "ES256"}
+          <div class="lockspire-admin-field">
+            <label for="client_authorization_signed_response_alg">
+              Authorization response signing algorithm
+            </label>
+            <select
+              id="client_authorization_signed_response_alg"
+              name="client[authorization_signed_response_alg]"
             >
-              ES256
-            </option>
-            <option
-              value="PS256"
-              selected={@defaults.authorization_signed_response_alg == "PS256"}
-            >
-              PS256
-            </option>
-            <option
-              value="RS256"
-              selected={@defaults.authorization_signed_response_alg == "RS256"}
-            >
-              RS256
-            </option>
-            <option
-              value="EdDSA"
-              selected={@defaults.authorization_signed_response_alg == "EdDSA"}
-            >
-              EdDSA
-            </option>
-          </select>
+              <option value="" selected={is_nil(@defaults.authorization_signed_response_alg)}>
+                Use legacy default / not set
+              </option>
+              <option
+                value="ES256"
+                selected={@defaults.authorization_signed_response_alg == "ES256"}
+              >
+                ES256
+              </option>
+              <option
+                value="PS256"
+                selected={@defaults.authorization_signed_response_alg == "PS256"}
+              >
+                PS256
+              </option>
+              <option
+                value="RS256"
+                selected={@defaults.authorization_signed_response_alg == "RS256"}
+              >
+                RS256
+              </option>
+              <option
+                value="EdDSA"
+                selected={@defaults.authorization_signed_response_alg == "EdDSA"}
+              >
+                EdDSA
+              </option>
+            </select>
+          </div>
 
           <div :if={@effective_security_profile} class="lockspire-admin-help">
             <p>
@@ -307,16 +327,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </p>
         </div>
 
-        <div :if={@mode == :logout_propagation}>
-          <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
-          <input
-            id="client_backchannel_logout_uri"
-            name="client[backchannel_logout_uri]"
-            type="text"
-            value={@defaults.backchannel_logout_uri}
-          />
+        <div :if={@mode == :logout_propagation} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <div class="lockspire-admin-field">
+            <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
+            <input
+              id="client_backchannel_logout_uri"
+              name="client[backchannel_logout_uri]"
+              type="text"
+              value={@defaults.backchannel_logout_uri}
+            />
+          </div>
 
-          <label for="client_backchannel_logout_session_required">
+          <div class="lockspire-admin-field" style="flex-direction: row; align-items: center; gap: var(--ls-space-2);">
             <input
               id="client_backchannel_logout_session_required"
               name="client[backchannel_logout_session_required]"
@@ -324,18 +346,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               value="true"
               checked={@defaults.backchannel_logout_session_required}
             />
-            Include `sid` in back-channel logout tokens
-          </label>
+            <label for="client_backchannel_logout_session_required" style="font-weight: normal;">
+              Include `sid` in back-channel logout tokens
+            </label>
+          </div>
 
-          <label for="client_frontchannel_logout_uri">Front-channel logout URI</label>
-          <input
-            id="client_frontchannel_logout_uri"
-            name="client[frontchannel_logout_uri]"
-            type="text"
-            value={@defaults.frontchannel_logout_uri}
-          />
+          <div class="lockspire-admin-field">
+            <label for="client_frontchannel_logout_uri">Front-channel logout URI</label>
+            <input
+              id="client_frontchannel_logout_uri"
+              name="client[frontchannel_logout_uri]"
+              type="text"
+              value={@defaults.frontchannel_logout_uri}
+            />
+          </div>
 
-          <label for="client_frontchannel_logout_session_required">
+          <div class="lockspire-admin-field" style="flex-direction: row; align-items: center; gap: var(--ls-space-2);">
             <input
               id="client_frontchannel_logout_session_required"
               name="client[frontchannel_logout_session_required]"
@@ -343,8 +369,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               value="true"
               checked={@defaults.frontchannel_logout_session_required}
             />
-            Include `sid` in front-channel iframe requests
-          </label>
+            <label for="client_frontchannel_logout_session_required" style="font-weight: normal;">
+              Include `sid` in front-channel iframe requests
+            </label>
+          </div>
 
           <div class="lockspire-admin-help">
             <p><strong>Separate concern:</strong> these URIs control RP logout propagation, not post-logout redirects.</p>
@@ -353,7 +381,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
-        <button type="submit">{@button_label}</button>
+        <div class="lockspire-admin-actions">
+          <button class="lockspire-admin-btn-primary" type="submit">{@button_label}</button>
+        </div>
       </form>
     </section>
     """

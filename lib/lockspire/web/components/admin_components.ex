@@ -68,7 +68,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   def timestamp(assigns) do
     ~H"""
-    <span>{format_datetime(@value)}</span>
+    <span class="lockspire-admin-tabular">{format_datetime(@value)}</span>
     """
   end
 
@@ -85,10 +85,12 @@ defmodule Lockspire.Web.Components.AdminComponents do
   end
 
   defp badge_class(:active), do: "lockspire-admin-badge lockspire-admin-badge-active"
-  defp badge_class(:upcoming), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
-  defp badge_class(:retiring), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
+  defp badge_class(:upcoming), do: "lockspire-admin-badge lockspire-admin-badge-info"
+  defp badge_class(:retiring), do: "lockspire-admin-badge lockspire-admin-badge-warning"
   defp badge_class(:retired), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
-  defp badge_class(:reuse_detected), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
+  defp badge_class(:revoked), do: "lockspire-admin-badge lockspire-admin-badge-danger"
+  defp badge_class(:expired), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
+  defp badge_class(:reuse_detected), do: "lockspire-admin-badge lockspire-admin-badge-danger"
   defp badge_class(_other), do: "lockspire-admin-badge lockspire-admin-badge-disabled"
 
   defp badge_label(:active), do: "Active"
