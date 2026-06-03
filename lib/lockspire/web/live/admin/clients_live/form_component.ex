@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   use Phoenix.Component
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Web.Components.AdminComponents
 
   attr(:mode, :atom, required: true)
   attr(:client, Client, default: nil)
@@ -28,10 +29,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
       <.error_list errors={@errors} />
 
-      <form phx-submit="save_client" style="display: flex; flex-direction: column; gap: var(--ls-space-5);">
+      <form class="lockspire-admin-form-stack" phx-submit="save_client">
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
 
-        <div :if={@mode == :new} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+        <div :if={@mode == :new} class="lockspire-admin-fieldset">
           <div class="lockspire-admin-field">
             <label for="client_name">Name</label>
             <input id="client_name" name="client[name]" type="text" value={@defaults.name} />
@@ -80,7 +81,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
-        <div :if={@mode in [:new, :edit]} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+        <div :if={@mode in [:new, :edit]} class="lockspire-admin-fieldset">
           <div :if={@mode == :edit} class="lockspire-admin-field">
             <label for="client_name">Name</label>
             <input
@@ -221,7 +222,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
-        <div :if={@mode == :security_profile} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+        <div :if={@mode == :security_profile} class="lockspire-admin-fieldset">
           <div class="lockspire-admin-field">
             <label for="client_security_profile">Client security profile override</label>
             <select id="client_security_profile" name="client[security_profile]">
@@ -327,7 +328,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </p>
         </div>
 
-        <div :if={@mode == :logout_propagation} style="display: flex; flex-direction: column; gap: var(--ls-space-4);">
+        <div :if={@mode == :logout_propagation} class="lockspire-admin-fieldset">
           <div class="lockspire-admin-field">
             <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
             <input
@@ -338,7 +339,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             />
           </div>
 
-          <div class="lockspire-admin-field" style="flex-direction: row; align-items: center; gap: var(--ls-space-2);">
+          <div class="lockspire-admin-checkbox-field">
             <input
               id="client_backchannel_logout_session_required"
               name="client[backchannel_logout_session_required]"
@@ -346,7 +347,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               value="true"
               checked={@defaults.backchannel_logout_session_required}
             />
-            <label for="client_backchannel_logout_session_required" style="font-weight: normal;">
+            <label for="client_backchannel_logout_session_required">
               Include `sid` in back-channel logout tokens
             </label>
           </div>
@@ -361,7 +362,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             />
           </div>
 
-          <div class="lockspire-admin-field" style="flex-direction: row; align-items: center; gap: var(--ls-space-2);">
+          <div class="lockspire-admin-checkbox-field">
             <input
               id="client_frontchannel_logout_session_required"
               name="client[frontchannel_logout_session_required]"
@@ -369,7 +370,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               value="true"
               checked={@defaults.frontchannel_logout_session_required}
             />
-            <label for="client_frontchannel_logout_session_required" style="font-weight: normal;">
+            <label for="client_frontchannel_logout_session_required">
               Include `sid` in front-channel iframe requests
             </label>
           </div>
@@ -381,9 +382,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
         </div>
 
-        <div class="lockspire-admin-actions">
-          <button class="lockspire-admin-btn-primary" type="submit">{@button_label}</button>
-        </div>
+        <AdminComponents.action_bar>
+          <AdminComponents.admin_button type="submit" variant={:primary}>
+            {@button_label}
+          </AdminComponents.admin_button>
+        </AdminComponents.action_bar>
       </form>
     </section>
     """

@@ -61,7 +61,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-        <form phx-submit="save_policy">
+        <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="par_policy">Enforcement mode</label>
             <select id="par_policy" name="policy[par_policy]">
@@ -75,7 +75,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
             </p>
           </div>
 
-          <button class="lockspire-admin-btn-primary" type="submit">Save global PAR policy</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit" variant={:primary}>
+              Save global PAR policy
+            </AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 

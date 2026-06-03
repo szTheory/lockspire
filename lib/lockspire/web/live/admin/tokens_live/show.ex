@@ -101,31 +101,51 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         title={@token_detail.token.handle}
         subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts."
       >
-        <p>Client: <code>{@token_detail.token.client_display}</code></p>
-        <p>Client handle: <code>{@token_detail.token.client_handle}</code></p>
-        <p>Account: <code>{@token_detail.token.account_handle || "Not recorded"}</code></p>
-        <p>Type: <code>{@token_detail.token.token_type}</code></p>
-        <p>Status: <AdminComponents.status_badge status={@token_detail.status} /></p>
-        <p>Expires at: <AdminComponents.timestamp value={@token_detail.token.expires_at} /></p>
-        <p>Revoked at: <AdminComponents.timestamp value={@token_detail.token.revoked_at} /></p>
-        <p>Reuse detected at: <AdminComponents.timestamp value={@token_detail.token.reuse_detected_at} /></p>
-        <p>Session ID: <code>{Map.get(@token_detail.token, :sid) || "Not recorded"}</code></p>
-        <p>Family: <code>{@token_detail.token.family_handle || "Not recorded"}</code></p>
-        <p>Generation: <code>{@token_detail.token.generation}</code></p>
-        <p>Parent token: <code>{@token_detail.token.parent_handle || "Not recorded"}</code></p>
-        <p>Scopes: {Enum.join(@token_detail.token.scopes, ", ")}</p>
+        <AdminComponents.description_list>
+          <:item label="Client"><code>{@token_detail.token.client_display}</code></:item>
+          <:item label="Client handle"><code>{@token_detail.token.client_handle}</code></:item>
+          <:item label="Account">
+            <code>{@token_detail.token.account_handle || "Not recorded"}</code>
+          </:item>
+          <:item label="Type"><code>{@token_detail.token.token_type}</code></:item>
+          <:item label="Status"><AdminComponents.status_badge status={@token_detail.status} /></:item>
+          <:item label="Expires at">
+            <AdminComponents.timestamp value={@token_detail.token.expires_at} />
+          </:item>
+          <:item label="Revoked at">
+            <AdminComponents.timestamp value={@token_detail.token.revoked_at} />
+          </:item>
+          <:item label="Reuse detected at">
+            <AdminComponents.timestamp value={@token_detail.token.reuse_detected_at} />
+          </:item>
+          <:item label="Session ID">
+            <code>{Map.get(@token_detail.token, :sid) || "Not recorded"}</code>
+          </:item>
+          <:item label="Family"><code>{@token_detail.token.family_handle || "Not recorded"}</code></:item>
+          <:item label="Generation"><code>{@token_detail.token.generation}</code></:item>
+          <:item label="Parent token">
+            <code>{@token_detail.token.parent_handle || "Not recorded"}</code>
+          </:item>
+          <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
+        </AdminComponents.description_list>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
         title="Refresh family lineage"
         subtitle="Family status is derived from the stored lineage used by refresh, revocation, and introspection."
       >
-        <p>Family status: <AdminComponents.status_badge status={@token_detail.family_status} /></p>
-        <p>Active tokens in family: {@token_detail.family_active_count}</p>
-        <p>Revoked tokens in family: {@token_detail.family_revoked_count}</p>
-        <p>Family reuse signal: <AdminComponents.timestamp value={@token_detail.family_reuse_detected_at} /></p>
+        <AdminComponents.description_list>
+          <:item label="Family status">
+            <AdminComponents.status_badge status={@token_detail.family_status} />
+          </:item>
+          <:item label="Active tokens in family">{@token_detail.family_active_count}</:item>
+          <:item label="Revoked tokens in family">{@token_detail.family_revoked_count}</:item>
+          <:item label="Family reuse signal">
+            <AdminComponents.timestamp value={@token_detail.family_reuse_detected_at} />
+          </:item>
+        </AdminComponents.description_list>
 
-        <ul>
+        <ul class="lockspire-admin-resource-list lockspire-admin-section-spaced">
           <%= for entry <- @token_detail.family_tokens do %>
             <li>
               <strong>
@@ -149,23 +169,39 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         <p :if={@family_error}>{@family_error}</p>
         <p :if={@family_notice}>{@family_notice}</p>
 
-        <form phx-submit="revoke_token">
-          <label>
-            <input type="checkbox" name="revoke[confirm]" value="true" />
-            Revoke only this token record.
-          </label>
-          <button type="submit">
-            {if @token_detail.status == :revoked, do: "Token already revoked", else: "Revoke token"}
-          </button>
-        </form>
+        <AdminComponents.confirmation_panel title="Revoke token" variant={:danger}>
+          <:body>
+            <form class="lockspire-admin-form-stack" phx-submit="revoke_token">
+              <label class="lockspire-admin-checkbox-field">
+                <input type="checkbox" name="revoke[confirm]" value="true" />
+                <span>Revoke only this token record.</span>
+              </label>
+              <AdminComponents.action_bar>
+                <AdminComponents.admin_button type="submit" variant={:danger}>
+                  {if @token_detail.status == :revoked,
+                    do: "Token already revoked",
+                    else: "Revoke token"}
+                </AdminComponents.admin_button>
+              </AdminComponents.action_bar>
+            </form>
+          </:body>
+        </AdminComponents.confirmation_panel>
 
-        <form phx-submit="revoke_family">
-          <label>
-            <input type="checkbox" name="family[confirm]" value="true" />
-            Revoke the full refresh family linked to this token.
-          </label>
-          <button type="submit">Revoke family</button>
-        </form>
+        <AdminComponents.confirmation_panel title="Revoke refresh family" variant={:danger}>
+          <:body>
+            <form class="lockspire-admin-form-stack" phx-submit="revoke_family">
+              <label class="lockspire-admin-checkbox-field">
+                <input type="checkbox" name="family[confirm]" value="true" />
+                <span>Revoke the full refresh family linked to this token.</span>
+              </label>
+              <AdminComponents.action_bar>
+                <AdminComponents.admin_button type="submit" variant={:danger}>
+                  Revoke family
+                </AdminComponents.admin_button>
+              </AdminComponents.action_bar>
+            </form>
+          </:body>
+        </AdminComponents.confirmation_panel>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
     """

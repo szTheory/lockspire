@@ -7,7 +7,7 @@
   >
     <Lockspire.Web.Components.AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-    <form phx-submit="save_policy">
+    <form class="lockspire-admin-form-stack" phx-submit="save_policy">
       <div class="lockspire-admin-field">
         <label for="registration_policy">Enforcement mode</label>
         <select id="registration_policy" name="policy[registration_policy]">
@@ -92,7 +92,11 @@
         <input type="number" id="dcr_default_registration_access_token_lifetime_seconds" name="policy[dcr_default_registration_access_token_lifetime_seconds]" value={@policy.dcr_default_registration_access_token_lifetime_seconds} />
       </div>
 
-      <button class="lockspire-admin-btn-primary" type="submit">Save global DCR policy</button>
+      <Lockspire.Web.Components.AdminComponents.action_bar>
+        <Lockspire.Web.Components.AdminComponents.admin_button type="submit" variant={:primary}>
+          Save global DCR policy
+        </Lockspire.Web.Components.AdminComponents.admin_button>
+      </Lockspire.Web.Components.AdminComponents.action_bar>
     </form>
   </Lockspire.Web.Components.AdminComponents.section_card>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

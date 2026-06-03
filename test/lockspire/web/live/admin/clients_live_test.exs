@@ -9,6 +9,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
+  alias Lockspire.Web.Live.Admin.OverviewLive
   alias Phoenix.Router
 
   @endpoint Lockspire.Web.Endpoint
@@ -93,20 +94,29 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     :ok
   end
 
-  test "router exposes admin clients as the default operator entrypoint without an overview route" do
+  test "router exposes overview as the operator entrypoint and keeps client workflows" do
     routes = Router.routes(Lockspire.Web.Router)
 
-    assert Enum.any?(routes, &live_route?(&1, "/admin", Index))
+    assert Enum.any?(routes, &live_route?(&1, "/admin", OverviewLive.Index))
+    assert Enum.any?(routes, &live_route?(&1, "/admin/overview", OverviewLive.Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/par-policy", Show))
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/logout-uris", Show))
 
     assert Enum.any?(
              routes,
-             &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop)
+             &live_route?(&1, "/admin/dcr", Lockspire.Web.Live.Admin.DcrLive.Index)
            )
 
-    refute Enum.any?(routes, &(&1.path == "/admin/overview"))
+    assert Enum.any?(
+             routes,
+             &live_route?(&1, "/admin/policies", Lockspire.Web.Live.Admin.PoliciesLive.Index)
+           )
+
+    assert Enum.any?(
+             routes,
+             &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop)
+           )
   end
 
   test "clients index renders durable client truth and URL-driven filters" do
@@ -120,8 +130,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ "Client inventory"
     assert html =~ "Alpha Client"
     assert html =~ "Keys"
+    assert html =~ "Overview"
+    assert html =~ "DCR"
     refute html =~ "Beta Client"
-    refute html =~ "Overview"
     assert html =~ "Register client"
 
     # Test provenance filter
@@ -175,7 +186,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   end
 
   test "register client form presents client_secret_jwt as the narrow HS256-backed option" do
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin")
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients")
 
     assert html =~ "client_secret_jwt"
     assert html =~ "HS256"

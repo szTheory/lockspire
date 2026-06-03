@@ -40,24 +40,34 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
         title="Consent review"
         subtitle="Answer who granted what, to which client, and whether the durable grant is still active."
       >
-        <form method="get" action={consents_index_path()}>
-          <label for="consent_account">Account</label>
-          <input id="consent_account" name="account" type="text" value={@filters["account"]} />
+        <form method="get" action={consents_index_path()} class="lockspire-admin-form-shell">
+          <div class="lockspire-admin-field">
+            <label for="consent_account">Account</label>
+            <input id="consent_account" name="account" type="text" value={@filters["account"]} />
+          </div>
 
-          <label for="consent_client">Client</label>
-          <input id="consent_client" name="client" type="text" value={@filters["client"]} />
+          <div class="lockspire-admin-field">
+            <label for="consent_client">Client</label>
+            <input id="consent_client" name="client" type="text" value={@filters["client"]} />
+          </div>
 
-          <label for="consent_status">Status</label>
-          <select id="consent_status" name="status">
-            <option value="all" selected={@filters["status"] == "all"}>All</option>
-            <option value="active" selected={@filters["status"] == "active"}>Active</option>
-            <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
-          </select>
+          <div class="lockspire-admin-field">
+            <label for="consent_status">Status</label>
+            <select id="consent_status" name="status">
+              <option value="all" selected={@filters["status"] == "all"}>All</option>
+              <option value="active" selected={@filters["status"] == "active"}>Active</option>
+              <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
+            </select>
+          </div>
 
-          <button type="submit">Apply</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit">Apply</AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
 
-        <p>Total matching consents: {@total_consents}</p>
+        <p class="lockspire-admin-help lockspire-admin-help-block">
+          Total matching consents: {@total_consents}
+        </p>
 
         <%= if @consents == [] do %>
           <AdminComponents.empty_state

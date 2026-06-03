@@ -62,7 +62,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-        <form phx-submit="save_policy">
+        <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="dpop_policy">Enforcement mode</label>
             <select id="dpop_policy" name="policy[dpop_policy]">
@@ -76,7 +76,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
             </p>
           </div>
 
-          <button class="lockspire-admin-btn-primary" type="submit">Save global DPoP policy</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit" variant={:primary}>
+              Save global DPoP policy
+            </AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 

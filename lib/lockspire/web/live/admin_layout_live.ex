@@ -3,31 +3,53 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
 
   use Phoenix.Component
 
-  attr(:current_section, :atom, default: :clients)
+  attr(:current_section, :atom, default: :overview)
   attr(:page_title, :string, required: true)
   slot(:inner_block, required: true)
 
   def shell(assigns) do
     assigns =
-      assign(assigns, :nav_items, [
-        %{label: "Clients", key: :clients, href: admin_path("/clients"), enabled: true},
-        %{label: "Policies", key: :policies, href: admin_path("/policies/par"), enabled: true},
-        %{label: "Consents", key: :consents, href: admin_path("/consents"), enabled: true},
-        %{label: "Tokens", key: :tokens, href: admin_path("/tokens"), enabled: true},
+      assign(assigns, :nav_groups, [
         %{
-          label: "Device Auth",
-          key: :device_authorizations,
-          href: admin_path("/device_authorizations"),
-          enabled: true
+          label: "Orient",
+          items: [
+            %{label: "Overview", key: :overview, href: admin_path("/"), enabled: true}
+          ]
         },
-        %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true},
         %{
-          label: "Interactions",
-          key: :interactions,
-          href: admin_path("/interactions"),
-          enabled: true
+          label: "Configure",
+          items: [
+            %{label: "Clients", key: :clients, href: admin_path("/clients"), enabled: true},
+            %{label: "Security", key: :policies, href: admin_path("/policies"), enabled: true},
+            %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true},
+            %{label: "DCR", key: :dcr, href: admin_path("/dcr"), enabled: true}
+          ]
         },
-        %{label: "Logouts", key: :logouts, href: admin_path("/logouts"), enabled: true}
+        %{
+          label: "Support",
+          items: [
+            %{label: "Consents", key: :consents, href: admin_path("/consents"), enabled: true},
+            %{label: "Tokens", key: :tokens, href: admin_path("/tokens"), enabled: true}
+          ]
+        },
+        %{
+          label: "Operate",
+          items: [
+            %{
+              label: "Device Auth",
+              key: :device_authorizations,
+              href: admin_path("/device_authorizations"),
+              enabled: true
+            },
+            %{
+              label: "Interactions",
+              key: :interactions,
+              href: admin_path("/interactions"),
+              enabled: true
+            },
+            %{label: "Logouts", key: :logouts, href: admin_path("/logouts"), enabled: true}
+          ]
+        }
       ])
 
     ~H"""
@@ -41,8 +63,15 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
       </header>
 
       <nav aria-label="Operator navigation" class="lockspire-admin-nav">
-        <%= for item <- @nav_items do %>
-          <.nav_item item={item} current_section={@current_section} />
+        <%= for group <- @nav_groups do %>
+          <section class="lockspire-admin-nav-group" aria-label={group.label}>
+            <span class="lockspire-admin-nav-group-label">{group.label}</span>
+            <div class="lockspire-admin-nav-group-items">
+              <%= for item <- group.items do %>
+                <.nav_item item={item} current_section={@current_section} />
+              <% end %>
+            </div>
+          </section>
         <% end %>
       </nav>
 

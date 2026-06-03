@@ -10,7 +10,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
     {:ok,
      assign(socket,
        page_title: "Initial Access Tokens",
-       current_section: :iats,
+       current_section: :dcr,
        tokens: load_tokens()
      )}
   end

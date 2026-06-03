@@ -11,7 +11,8 @@ defmodule Lockspire.Web.AdminRouter do
   import Phoenix.LiveView.Router
 
   scope "/" do
-    live("/", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
+    live("/", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
+    live("/overview", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
     live("/clients", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
     live("/clients/:client_id", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)
     live("/consents", Lockspire.Web.Live.Admin.ConsentsLive.Index, :index)
@@ -69,6 +70,8 @@ defmodule Lockspire.Web.AdminRouter do
       :rotate_registration_access_token
     )
 
+    live("/dcr", Lockspire.Web.Live.Admin.DcrLive.Index, :index)
+    live("/policies", Lockspire.Web.Live.Admin.PoliciesLive.Index, :index)
     live("/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
 
     live(

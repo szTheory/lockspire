@@ -40,28 +40,38 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         title="Token inspection"
         subtitle="Inspect durable token lifecycle truth by account, client, and incident status."
       >
-        <form method="get" action={tokens_index_path()}>
-          <label for="token_account">Account</label>
-          <input id="token_account" name="account" type="text" value={@filters["account"]} />
+        <form method="get" action={tokens_index_path()} class="lockspire-admin-form-shell">
+          <div class="lockspire-admin-field">
+            <label for="token_account">Account</label>
+            <input id="token_account" name="account" type="text" value={@filters["account"]} />
+          </div>
 
-          <label for="token_client">Client</label>
-          <input id="token_client" name="client" type="text" value={@filters["client"]} />
+          <div class="lockspire-admin-field">
+            <label for="token_client">Client</label>
+            <input id="token_client" name="client" type="text" value={@filters["client"]} />
+          </div>
 
-          <label for="token_status">Status</label>
-          <select id="token_status" name="status">
-            <option value="all" selected={@filters["status"] == "all"}>All</option>
-            <option value="active" selected={@filters["status"] == "active"}>Active</option>
-            <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
-            <option value="expired" selected={@filters["status"] == "expired"}>Expired</option>
-            <option value="reuse_detected" selected={@filters["status"] == "reuse_detected"}>
-              Reuse detected
-            </option>
-          </select>
+          <div class="lockspire-admin-field">
+            <label for="token_status">Status</label>
+            <select id="token_status" name="status">
+              <option value="all" selected={@filters["status"] == "all"}>All</option>
+              <option value="active" selected={@filters["status"] == "active"}>Active</option>
+              <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
+              <option value="expired" selected={@filters["status"] == "expired"}>Expired</option>
+              <option value="reuse_detected" selected={@filters["status"] == "reuse_detected"}>
+                Reuse detected
+              </option>
+            </select>
+          </div>
 
-          <button type="submit">Apply</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit">Apply</AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
 
-        <p>Total matching tokens: {@total_tokens}</p>
+        <p class="lockspire-admin-help lockspire-admin-help-block">
+          Total matching tokens: {@total_tokens}
+        </p>
 
         <%= if @tokens == [] do %>
           <AdminComponents.empty_state

@@ -57,7 +57,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       # Refresh the token from DB (via UI update)
       # In the view it should reflect the status change, or at least the badge should change.
       html_after_revoke = render(view)
-      refute html_after_revoke =~ "class=\"button button-small\">Revoke</button>"
+      refute html_after_revoke =~ "class=\"lockspire-admin-btn-danger\">Revoke</button>"
     end
   end
 
@@ -66,7 +66,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       {:ok, view, _html} = live(conn_for_admin(), "/admin/iats/new")
 
       # Initial state should have no secret
-      refute render(view) =~ "Secret Revealed"
+      refute render(view) =~ "Secret revealed"
 
       # Mint a new token
       html_after_mint =
@@ -74,7 +74,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         |> element("form")
         |> render_submit(%{"single_use" => "true", "expires_in_days" => "30"})
 
-      assert html_after_mint =~ "Secret Revealed"
+      assert html_after_mint =~ "Secret revealed"
       assert html_after_mint =~ "I have copied this secret"
 
       # Clicking the acknowledge button
@@ -83,7 +83,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         |> element("button[phx-click=\"acknowledge_copy\"]")
         |> render_click()
 
-      refute html_after_ack =~ "Secret Revealed"
+      refute html_after_ack =~ "Secret revealed"
       refute html_after_ack =~ "I have copied this secret"
     end
   end

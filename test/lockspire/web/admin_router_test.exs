@@ -4,10 +4,31 @@ defmodule Lockspire.Web.AdminRouterTest do
   test "admin router exposes operator LiveViews without public OAuth endpoints" do
     assert %{
              plug: Phoenix.LiveView.Plug,
-             log_module: Lockspire.Web.Live.Admin.ClientsLive.Index,
+             log_module: Lockspire.Web.Live.Admin.OverviewLive.Index,
              phoenix_live_view: {_, :index, _, _}
            } =
              Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/", "")
+
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             log_module: Lockspire.Web.Live.Admin.ClientsLive.Index,
+             phoenix_live_view: {_, :index, _, _}
+           } =
+             Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/clients", "")
+
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             log_module: Lockspire.Web.Live.Admin.PoliciesLive.Index,
+             phoenix_live_view: {_, :index, _, _}
+           } =
+             Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/policies", "")
+
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             log_module: Lockspire.Web.Live.Admin.DcrLive.Index,
+             phoenix_live_view: {_, :index, _, _}
+           } =
+             Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/dcr", "")
 
     assert %{
              plug: Phoenix.LiveView.Plug,

@@ -58,7 +58,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Consents"
     assert html =~ "Tokens"
     assert html =~ "Keys"
-    refute html =~ "Overview"
+    assert html =~ "Overview"
+    assert html =~ "DCR"
   end
 
   test "key detail exposes only guided actions and advances lifecycle", %{

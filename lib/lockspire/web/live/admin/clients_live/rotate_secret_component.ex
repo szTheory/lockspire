@@ -3,6 +3,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
 
   use Phoenix.Component
 
+  alias Lockspire.Web.Components.AdminComponents
+
   attr(:errors, :list, default: [])
   attr(:revealed_secret, :string, default: nil)
 
@@ -14,11 +16,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
         <p>Lockspire reveals the new secret once. It is redacted immediately after this state.</p>
       </header>
 
-      <ul :if={@errors != []} class="lockspire-admin-errors">
-        <%= for error <- @errors do %>
-          <li>{error_message(error)}</li>
-        <% end %>
-      </ul>
+      <AdminComponents.error_list errors={@errors} />
 
       <div :if={@revealed_secret} class="lockspire-admin-secret-reveal">
         <h3>New client secret</h3>
@@ -27,20 +25,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
       </div>
 
       <form phx-submit="rotate_secret">
-        <label>
+        <label class="lockspire-admin-checkbox-field">
           <input type="checkbox" name="rotate[confirm]" value="true" />
-          I understand the previous secret stops being the current credential after rotation.
+          <span>I understand the previous secret stops being the current credential after rotation.</span>
         </label>
 
-        <button type="submit">Rotate secret</button>
+        <AdminComponents.action_bar>
+          <AdminComponents.admin_button type="submit" variant={:danger}>
+            Rotate secret
+          </AdminComponents.admin_button>
+        </AdminComponents.action_bar>
       </form>
     </section>
     """
   end
-
-  defp error_message(%{field: field, reason: reason, detail: detail}) do
-    "#{field} #{reason} #{inspect(detail)}"
-  end
-
-  defp error_message(other), do: inspect(other)
 end

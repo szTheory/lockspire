@@ -29,7 +29,8 @@ defmodule Lockspire.Web.Router do
     get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
     post("/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete)
     live("/consent/:interaction_id", Lockspire.Web.ConsentLive, :show)
-    live("/admin", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
+    live("/admin", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
+    live("/admin/overview", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
     live("/admin/clients", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
     live("/admin/clients/:client_id", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)
     live("/admin/consents", Lockspire.Web.Live.Admin.ConsentsLive.Index, :index)
@@ -87,6 +88,8 @@ defmodule Lockspire.Web.Router do
       :rotate_registration_access_token
     )
 
+    live("/admin/dcr", Lockspire.Web.Live.Admin.DcrLive.Index, :index)
+    live("/admin/policies", Lockspire.Web.Live.Admin.PoliciesLive.Index, :index)
     live("/admin/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show)
 
     live(

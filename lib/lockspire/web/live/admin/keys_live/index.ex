@@ -51,12 +51,18 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
         title="Signing key lifecycle"
         subtitle="Inspect upcoming, active, retiring, and retired keys without exposing raw status editing."
       >
-        <div class="lockspire-admin-actions" style="margin-bottom: 1rem; display: flex; gap: 1rem;">
-          <button phx-click="generate" phx-value-use="sig" class="button">Generate Signing Key</button>
-          <button phx-click="generate" phx-value-use="enc" class="button button-secondary">Generate Encryption Key</button>
-        </div>
+        <AdminComponents.action_bar class="lockspire-admin-action-bar-compact">
+          <AdminComponents.admin_button phx-click="generate" phx-value-use="sig" variant={:primary}>
+            Generate signing key
+          </AdminComponents.admin_button>
+          <AdminComponents.admin_button phx-click="generate" phx-value-use="enc">
+            Generate encryption key
+          </AdminComponents.admin_button>
+        </AdminComponents.action_bar>
 
-        <p>Total keys in durable storage: {@total_keys}</p>
+        <p class="lockspire-admin-help lockspire-admin-help-block">
+          Total keys in durable storage: {@total_keys}
+        </p>
 
         <%= if @keys == [] do %>
           <AdminComponents.empty_state

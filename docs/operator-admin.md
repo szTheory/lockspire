@@ -6,13 +6,17 @@ For the canonical advanced-setup support contract, see `docs/supported-surface.m
 
 ## Lockspire-owned operator workflows
 
-- Register and inspect OAuth clients
-- Rotate client secrets
-- Inspect and revoke consents
-- Inspect and revoke tokens
-- Publish, activate, and retire signing keys
+- Use `/admin` as the operator overview for client posture, security posture, key readiness, support incidents, and live protocol work
+- Register and inspect OAuth clients from `/admin/clients`
+- Rotate client secrets and registration access tokens from client detail workflows
+- Inspect and revoke consents from `/admin/consents`
+- Inspect and revoke tokens from `/admin/tokens`
+- Publish, activate, and retire signing and encryption keys from `/admin/keys`
+- Manage security posture from `/admin/policies`, with detailed PAR, Security Profile, DPoP, and DCR policy workflows
 - Manage Global PAR policy at `/admin/policies/par`
 - Manage Client PAR override at `/admin/clients/:client_id/par-policy`
+- Manage Dynamic Client Registration onboarding from `/admin/dcr`, including Initial Access Tokens at `/admin/iats`
+- Inspect runtime operations from `/admin/interactions`, `/admin/device_authorizations`, and `/admin/logouts`
 - Edit post-logout redirect URIs separately from logout propagation settings
 - Manage client logout propagation from the dedicated workflow at `/admin/clients/:client_id/edit?workflow=logout-propagation`
 
@@ -36,6 +40,20 @@ end
 ```
 
 Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, IP policy, and audit framing around access to those routes.
+
+## Admin navigation model
+
+The admin UI is organized around operator intent:
+
+- **Overview**: the default `/admin` cockpit for attention, posture, and next actions.
+- **Clients**: client inventory, registration, detail, redirect/logout URI edits, credentials, and per-client policy overrides.
+- **Security**: issuer-level PAR, DPoP, FAPI/security profile, and DCR policy posture.
+- **Keys**: signing and encryption key lifecycle with guided publish, activate, and retire actions.
+- **DCR**: partner onboarding, Initial Access Tokens, self-registered clients, and registration access token support.
+- **Support**: consent and token investigation/revocation workflows.
+- **Operations**: interactions, device authorizations, and logout deliveries.
+
+This organization is deliberate: setup, security, support, and runtime operations are separate journeys even when they reference the same client.
 
 ## Logout propagation workflow
 

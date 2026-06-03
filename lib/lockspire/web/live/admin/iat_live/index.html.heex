@@ -3,9 +3,11 @@
     title="Initial Access Tokens"
     subtitle="Manage dynamic client registration intake tokens."
   >
-    <div class="lockspire-admin-actions" style="margin-bottom: 1rem;">
-      <a href={iat_new_path()} class="button">Mint IAT</a>
-    </div>
+    <Lockspire.Web.Components.AdminComponents.action_bar>
+      <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
+        Mint IAT
+      </Lockspire.Web.Components.AdminComponents.admin_button>
+    </Lockspire.Web.Components.AdminComponents.action_bar>
 
     <%= if @tokens == [] do %>
       <Lockspire.Web.Components.AdminComponents.empty_state
@@ -13,23 +15,33 @@
         body="Mint a token to allow partners to dynamically register clients."
       />
     <% else %>
-      <ul class="lockspire-admin-token-list">
+      <Lockspire.Web.Components.AdminComponents.resource_list>
         <%= for token <- @tokens do %>
-          <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid #eee;">
-            <div>
-              <strong>ID:</strong> {token.id} <br/>
-              <small>Created by: {token.created_by}</small> <br/>
-              <small>Single use: {if token.single_use, do: "Yes", else: "No"}</small>
-            </div>
-            <div>
+          <Lockspire.Web.Components.AdminComponents.resource_item
+            title={"IAT ##{token.id}"}
+            subtitle={"Created by #{token.created_by || "operator"}"}
+          >
+            <:meta>
               <Lockspire.Web.Components.AdminComponents.status_badge status={iat_status(token)} />
+              <span class="lockspire-admin-help">
+                {if token.single_use, do: "Single use", else: "Multi-use"}
+              </span>
+            </:meta>
+            <:actions>
               <%= if iat_status(token) == :active do %>
-                <button phx-click="revoke" phx-value-id={token.id} data-confirm="Are you sure you want to revoke this IAT?" class="button button-small" style="margin-left: 1rem;">Revoke</button>
+                <Lockspire.Web.Components.AdminComponents.admin_button
+                  phx-click="revoke"
+                  phx-value-id={token.id}
+                  data-confirm="Are you sure you want to revoke this IAT?"
+                  variant={:danger}
+                >
+                  Revoke
+                </Lockspire.Web.Components.AdminComponents.admin_button>
               <% end %>
-            </div>
-          </li>
+            </:actions>
+          </Lockspire.Web.Components.AdminComponents.resource_item>
         <% end %>
-      </ul>
+      </Lockspire.Web.Components.AdminComponents.resource_list>
     <% end %>
   </Lockspire.Web.Components.AdminComponents.section_card>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

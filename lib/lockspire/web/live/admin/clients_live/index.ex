@@ -64,10 +64,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         title="Client inventory"
         subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
       >
-        <form method="get" action={clients_index_path()} class="lockspire-admin-form-shell" style="margin-bottom: var(--ls-space-6);">
+        <form method="get" action={clients_index_path()} class="lockspire-admin-form-shell">
           <div class="lockspire-admin-field">
             <label for="client_search">Search</label>
-            <input id="client_search" name="q" type="text" value={@filters["q"]} />
+            <input
+              id="client_search"
+              name="q"
+              type="text"
+              value={@filters["q"]}
+              autocomplete="off"
+            />
           </div>
 
           <div class="lockspire-admin-field">
@@ -88,12 +94,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </select>
           </div>
 
-          <div class="lockspire-admin-actions">
-            <button class="lockspire-admin-btn-secondary" type="submit">Apply</button>
-          </div>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button variant={:secondary} type="submit">Apply</AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
 
-        <p class="lockspire-admin-help" style="margin-bottom: var(--ls-space-4);">Total matching clients: {@total_clients}</p>
+        <p class="lockspire-admin-help">Total matching clients: {@total_clients}</p>
 
         <%= if @clients == [] do %>
           <AdminComponents.empty_state
@@ -101,20 +107,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             body="Adjust the search or status filter, or register a new client."
           />
         <% else %>
-          <ul class="lockspire-admin-client-list" style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <AdminComponents.resource_list>
             <%= for client <- @clients do %>
-              <li style="padding: var(--ls-space-4); background: var(--ls-color-gray-50); border: 1px solid var(--ls-color-gray-200); border-radius: var(--ls-radius-md); display: flex; align-items: center; justify-content: space-between; gap: var(--ls-space-4);">
-                <div style="display: flex; flex-direction: column; gap: var(--ls-space-1);">
-                  <a href={client_show_path(client.client_id)} style="font-weight: 600; color: var(--ls-color-brand-600); text-decoration: none;">{client.name || client.client_id}</a>
-                  <span class="lockspire-admin-tabular" style="color: var(--ls-color-gray-500);">{client.client_id}</span>
-                </div>
-                <div style="display: flex; gap: var(--ls-space-2);">
+              <AdminComponents.resource_item
+                href={client_show_path(client.client_id)}
+                title={client.name || client.client_id}
+                subtitle={client.client_id}
+              >
+                <:meta>
                   <AdminComponents.status_badge status={status_for(client)} />
                   <AdminComponents.status_badge status={client.provenance} />
-                </div>
-              </li>
+                </:meta>
+              </AdminComponents.resource_item>
             <% end %>
-          </ul>
+          </AdminComponents.resource_list>
         <% end %>
       </AdminComponents.section_card>
 
@@ -184,7 +190,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp status_for(%{active: true}), do: :active
   defp status_for(_client), do: :disabled
 
-  defp clients_index_path, do: Lockspire.mount_path() <> "/admin"
+  defp clients_index_path, do: Lockspire.mount_path() <> "/admin/clients"
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
 
   defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)

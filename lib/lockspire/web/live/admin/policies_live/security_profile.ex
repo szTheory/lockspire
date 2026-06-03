@@ -65,7 +65,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-        <form phx-submit="save_policy">
+        <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="security_profile">Active profile</label>
             <select id="security_profile" name="policy[security_profile]">
@@ -84,7 +84,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
             </p>
           </div>
 
-          <button class="lockspire-admin-btn-primary" type="submit">Save global security profile</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit" variant={:primary}>
+              Save global security profile
+            </AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 

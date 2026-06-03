@@ -75,7 +75,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Consent UI Client"
     assert html =~ "account-consent-ui"
     assert html =~ "Keys"
-    refute html =~ "Overview"
+    assert html =~ "Overview"
+    assert html =~ "DCR"
   end
 
   test "consent detail renders support-grade detail and guarded revoke action", %{grant: grant} do

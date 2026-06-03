@@ -10,7 +10,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
     {:ok,
      assign(socket,
        page_title: "Mint Initial Access Token",
-       current_section: :iats,
+       current_section: :dcr,
        iat_secret: nil,
        form: to_form(%{"single_use" => "true", "expires_in_days" => "30"})
      )}

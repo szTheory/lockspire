@@ -38,26 +38,28 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
             body="There are no interactions at this time."
           />
         <% else %>
-          <table class="lockspire-admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Status</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              <%= for interaction <- @interactions do %>
+          <div class="lockspire-admin-table-wrap">
+            <table class="lockspire-admin-table">
+              <thead>
                 <tr>
-                  <td>{interaction.interaction_id}</td>
-                  <td>{interaction.client_id}</td>
-                  <td><AdminComponents.status_badge status={interaction.status} /></td>
-                  <td>{interaction.inserted_at}</td>
+                  <th>ID</th>
+                  <th>Client</th>
+                  <th>Status</th>
+                  <th>Created</th>
                 </tr>
-              <% end %>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <%= for interaction <- @interactions do %>
+                  <tr>
+                    <td>{interaction.interaction_id}</td>
+                    <td>{interaction.client_id}</td>
+                    <td><AdminComponents.status_badge status={interaction.status} /></td>
+                    <td>{interaction.inserted_at}</td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
         <% end %>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
