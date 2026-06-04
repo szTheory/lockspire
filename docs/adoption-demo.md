@@ -14,7 +14,17 @@ The demo is not a new product surface or Hex package content. It is a repo-local
 
 The canonical support contract still lives in `docs/supported-surface.md`; the demo is an executable confidence check for adoption DX.
 
-## Run it locally
+## Run it with Docker
+
+From the repo root:
+
+```sh
+docker compose -f examples/adoption_demo/docker-compose.yml up --build
+```
+
+This starts the Phoenix/Bandit demo and PostgreSQL for the repo-local adoption demo. Then open `http://127.0.0.1:4100`.
+
+## Run it host-local
 
 From the repo root:
 
