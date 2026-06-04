@@ -25,9 +25,9 @@ Take the shipped admin UI from coherent baseline to a deliberately mapped operat
 ### Design System
 
 - [x] **DESIGN-01**: Admin CSS keeps the existing `lockspire-admin-*` BEM/design-token architecture and avoids inline layout styles, one-off overrides, and arbitrary class naming.
-- [ ] **DESIGN-02**: Shared Phoenix components cover repeated page primitives: page hero, task/attention cards, filter bars, metric cards, responsive resource rows, status badges, empty states, confirmation panels, copy-once secret panels, and safe/destructive action groups.
+- [x] **DESIGN-02**: Shared Phoenix components cover repeated page primitives: page hero, task/attention cards, filter bars, metric cards, responsive resource rows, status badges, empty states, confirmation panels, copy-once secret panels, and safe/destructive action groups.
 - [x] **DESIGN-03**: Design tokens cover spacing, control size, radius, shadow, typography, status color, focus, z-index, and motion with names that make the Lockspire admin brand repeatable.
-- [ ] **DESIGN-04**: Button, link, badge, alert, table/list, form, and confirmation patterns behave consistently across desktop and mobile admin routes.
+- [x] **DESIGN-04**: Button, link, badge, alert, table/list, form, and confirmation patterns behave consistently across desktop and mobile admin routes.
 - [x] **DESIGN-05**: Motion is restrained, purposeful, performant, and disabled or simplified under `prefers-reduced-motion`.
 - [x] **DESIGN-06**: Raw hex colors and repeated layout constants are moved toward semantic tokens where doing so reduces drift without creating a theming engine.
 
