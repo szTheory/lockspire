@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.29
 milestone_name: Admin UI Journey & Design-System Deep Polish
 status: milestone_complete
-last_updated: 2026-06-04T14:53:15.752Z
+last_updated: 2026-06-04T15:00:21.000Z
 last_activity: 2026-06-04
 progress:
   total_phases: 4
@@ -96,7 +96,7 @@ Last activity: 2026-06-04
 | Phase 109 P04 | 5 min | 2 tasks | 5 files |
 | Phase 109 P05 | 6 min | 2 tasks | 6 files |
 | Phase 109 P06 | 6 min | 2 tasks | 5 files |
-| Phase 110 P05 | 12 min | 3 tasks | 5 files |
+| Phase 110 P05 | 22 min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 

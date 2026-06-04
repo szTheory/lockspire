@@ -9,7 +9,7 @@ Browser evidence is milestone proof only. It uses artificial demo data, preserve
 
 ## Overview-Start Click-Through
 
-Started from `/lockspire/admin` after signing in as the seeded `ops` operator, then directly opened each approved admin route group with the same authenticated browser session.
+Started from `/lockspire/admin` after signing in as the seeded `ops` operator, then directly opened each approved admin route group with the same authenticated browser session. The final client workspace rerun confirmed admin page content before collecting width measurements, so guarded/login pages were not accepted as evidence.
 
 | Group | Routes | Status | Browser note |
 |-------|--------|--------|--------------|
@@ -36,6 +36,9 @@ document.documentElement.scrollWidth > document.documentElement.clientWidth
 Rerun target client: `northstar-dcr-self-registered`
 Viewport: 390px by 900px
 Expression: `document.documentElement.scrollWidth > document.documentElement.clientWidth`
+Session guard: seeded `ops` operator authenticated; admin content confirmed before route measurements
+
+The final rerun was performed after wrapping inline admin `<code>` values, including the self-registered client's long `registration_client_uri`.
 
 | Route | Result | Width proof |
 |-------|--------|-------------|

@@ -43,5 +43,6 @@ Screenshots are milestone evidence only. Runtime code and operator docs must not
 ## Verification Notes
 
 - Fresh Phase 110 screenshots exist locally under `tmp/admin-ui-polish/`.
-- Client workspace and client workflow mobile captures were rerun at 390px; `document.documentElement.scrollWidth > document.documentElement.clientWidth` returned `false` for every listed route.
+- Client workspace and client workflow mobile captures were rerun at 390px in the seeded `ops` operator session with admin page content confirmed; `document.documentElement.scrollWidth > document.documentElement.clientWidth` returned `false` for every listed route.
+- The rerun included the self-registered client detail card after inline `registration_client_uri` code wrapping was added.
 - Runtime source under `lib/` must not reference `tmp/admin-ui-polish/`.

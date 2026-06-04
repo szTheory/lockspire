@@ -1,14 +1,14 @@
 ---
 phase: 110-demo-state-screenshots-docs-and-regression-proof
 status: passed
-verified_at: "2026-06-04T14:47:00Z"
+verified_at: "2026-06-04T15:00:21Z"
 ---
 
 # Phase 110 Verification
 
 ## Status
 
-Passed - automated verification passed, route-complete desktop/mobile screenshot evidence was captured, browser click-through evidence was recorded, and the 390px no-page-overflow rerun passed for the client workspace/workflow routes.
+Passed - automated verification passed, route-complete desktop/mobile screenshot evidence was captured, browser click-through evidence was recorded, and the 390px no-page-overflow rerun passed for the client workspace/workflow routes in an authenticated seeded `ops` operator session with admin content confirmed.
 
 ## Command Results
 
@@ -29,7 +29,7 @@ Passed - automated verification passed, route-complete desktop/mobile screenshot
 | Screenshot inventory | Captured | 58 fresh desktop/mobile screenshots generated under `tmp/admin-ui-polish/phase110-*.png`. |
 | Confirmation workflows | Captured with constraints | Risky actions were opened only to pre-confirmation/copy-once states; no irreversible production-like action was confirmed. |
 | Copy-once/redaction | Captured with constraints | Evidence records durable handles only and does not persist plaintext IATs, RATs, client secrets, user codes, verifier material, access tokens, refresh tokens, or token hashes. |
-| 390px no-page-overflow | Passed | Client workspace and client workflow routes returned `false` for page-level overflow at 390px after the rerun. |
+| 390px no-page-overflow | Passed | Client workspace and client workflow routes returned `false` for page-level overflow at 390px after the final rerun. The session was authenticated as seeded `ops` and admin content was confirmed before measurements. |
 
 ## Client Workspace Rerun Evidence
 
@@ -61,8 +61,11 @@ the shared client detail/edit layout:
   sections.
 - `lib/lockspire/web/admin_css.ex` now constrains the client workspace, cards,
   form shells, action groups, copy-once panels, description/value lists, code
-  blocks, and display values with `min-width: 0`, `max-width: 100%`, and
-  long-value wrapping where needed.
+  blocks, inline admin code values, and display values with `min-width: 0`,
+  `max-width: 100%`, and long-value wrapping where needed.
+- The final overflow source in the valid admin-content rerun was the
+  self-registered client's inline `registration_client_uri` code value; that
+  source is now covered by both CSS and source-level contract assertions.
 - `test/lockspire/web/live/admin/design_system_contract_test.exs` now includes
   a deterministic Phase 110 source contract for the 390px overflow fix.
 - Evidence artifacts do not persist plaintext IATs, RATs, client secrets, user

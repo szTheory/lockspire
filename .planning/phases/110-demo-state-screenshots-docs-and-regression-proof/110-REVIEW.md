@@ -1,7 +1,7 @@
 ---
 phase: 110-demo-state-screenshots-docs-and-regression-proof
 status: clean
-reviewed_at: "2026-06-04T14:52:00Z"
+reviewed_at: "2026-06-04T15:00:21Z"
 depth: standard
 files_reviewed: 2
 findings:
@@ -26,6 +26,7 @@ Clean - no bugs, security issues, or code-quality problems found at standard dep
 
 - The CSS changes are scoped to existing embedded admin primitives and preserve the BEM/design-token architecture.
 - The responsive rules address the min-content overflow source directly with `min-width: 0`, `max-width: 100%`, mobile grid narrowing, and long-value wrapping rather than introducing route-specific screenshot CSS.
+- The follow-up inline admin code wrapping covers the remaining `registration_client_uri` overflow source without weakening redaction, copy-once behavior, or route-level boundaries.
 - The ExUnit contract is deterministic source proof and does not add runtime browser, screenshot, or CSS-parser dependencies.
 - Evidence artifact assertions now track the passing no-page-overflow state and continue to fence runtime screenshot dependencies and credential plaintext.
 
