@@ -176,6 +176,53 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
+  test "client detail groups routine, credential, endpoint, posture, and lifecycle actions",
+       %{client: client} do
+    assert {:ok, self_registered_client} =
+             Repository.register_client(%Client{
+               client_id: "self-registered-action-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "Self Registered Action Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_client_uri:
+                 "https://issuer.example.com/register/self-registered-action-client",
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/clients/#{self_registered_client.client_id}")
+
+    assert html =~ "lockspire-admin-action-group"
+    assert html =~ "Routine configuration"
+    assert html =~ "Edit client metadata"
+    assert html =~ "Credential and RAT rotation"
+    assert html =~ "Rotate client secret"
+    assert html =~ "Rotate registration access token"
+    assert html =~ "DCR context"
+    assert html =~ "Review DCR onboarding"
+    assert html =~ "/admin/dcr"
+    assert html =~ "Endpoint and logout settings"
+    assert html =~ "Edit redirect URIs"
+    assert html =~ "Edit post-logout redirect URIs"
+    assert html =~ "Edit logout propagation URIs"
+    assert html =~ "PAR and security posture"
+    assert html =~ "Edit PAR policy"
+    assert html =~ "Edit security profile"
+    assert html =~ "Lifecycle and destructive actions"
+    assert html =~ "Disable client"
+    assert html =~ "Registration access token rotation is grouped with credential actions above."
+    refute html =~ "Rotate Registration Access Token (RAT)"
+  end
+
   test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
     client: client
   } do

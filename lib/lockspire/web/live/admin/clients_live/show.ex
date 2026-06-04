@@ -377,24 +377,77 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </AdminComponents.badge_group>
         </section>
 
-        <AdminComponents.action_bar>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
-            Edit logout propagation
-          </.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
-            Edit post-logout redirect URIs
-          </.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
-            Rotate secret
-          </.link>
-          <button class="lockspire-admin-btn lockspire-admin-btn-danger" phx-click="toggle_client" type="button">
-            {if @client.active, do: "Disable client", else: "Enable client"}
-          </button>
-        </AdminComponents.action_bar>
+        <section class="lockspire-admin-detail-section">
+          <h3>Routine configuration</h3>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :edit)}>Edit client metadata</.link>
+            </:primary>
+          </AdminComponents.action_group>
+        </section>
+
+        <section class="lockspire-admin-detail-section">
+          <h3>Credential and RAT rotation</h3>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
+                Rotate client secret
+              </.link>
+            </:primary>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.provenance == :self_registered} patch={show_path(@client.client_id, :rotate_registration_access_token)}>
+                Rotate registration access token
+              </.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </section>
+
+        <section class="lockspire-admin-detail-section">
+          <h3>DCR context</h3>
+          <AdminComponents.action_group>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/dcr"}>Review DCR onboarding</.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </section>
+
+        <section class="lockspire-admin-detail-section">
+          <h3>Endpoint and logout settings</h3>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
+                Edit post-logout redirect URIs
+              </.link>
+            </:primary>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
+                Edit logout propagation URIs
+              </.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </section>
+
+        <section class="lockspire-admin-detail-section">
+          <h3>PAR and security posture</h3>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
+            </:primary>
+          </AdminComponents.action_group>
+        </section>
+
+        <section class="lockspire-admin-detail-section">
+          <h3>Lifecycle and destructive actions</h3>
+          <AdminComponents.action_group>
+            <:destructive>
+              <button class="lockspire-admin-btn lockspire-admin-btn-danger" phx-click="toggle_client" type="button">
+                {if @client.active, do: "Disable client", else: "Enable client"}
+              </button>
+            </:destructive>
+          </AdminComponents.action_group>
+        </section>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
@@ -418,11 +471,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         subtitle="This client was dynamically registered by a third party."
       >
         <p>Registration Client URI: <code>{@client.registration_client_uri || "N/A"}</code></p>
-        <AdminComponents.action_bar>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :rotate_registration_access_token)}>
-            Rotate Registration Access Token (RAT)
-          </.link>
-        </AdminComponents.action_bar>
+        <p class="lockspire-admin-help">
+          Registration access token rotation is grouped with credential actions above.
+        </p>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card

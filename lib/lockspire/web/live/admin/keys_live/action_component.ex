@@ -27,7 +27,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
           <form class="lockspire-admin-form-stack" phx-submit="publish_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
-              <span>Publish this upcoming key so verifiers can see it before cutover.</span>
+              <span>
+                Publish key {@key_detail.key.handle} for {@key_detail.key.use} verification overlap.
+                Verifiers can see the public key before signing or encryption cutover.
+              </span>
             </label>
             <AdminComponents.action_bar>
               <AdminComponents.admin_button type="submit" variant={:primary}>
@@ -46,7 +49,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
           <form class="lockspire-admin-form-stack" phx-submit="activate_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="activate[confirm]" value="true" />
-              <span>Activate this published key and move the current signer into retiring overlap.</span>
+              <span>
+                Activate key {@key_detail.key.handle} for {@key_detail.key.use}. This changes the
+                active signing/encryption key and moves the previous active key into retiring overlap.
+              </span>
             </label>
             <AdminComponents.action_bar>
               <AdminComponents.admin_button type="submit" variant={:primary}>
@@ -66,7 +72,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
           <form class="lockspire-admin-form-stack" phx-submit="retire_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
-              <span>Retire this overlap key after verifiers have moved off it.</span>
+              <span>
+                Retire key {@key_detail.key.handle} for {@key_detail.key.use}. This removes the key
+                from publication overlap after verifiers have moved off it.
+              </span>
             </label>
             <AdminComponents.action_bar>
               <AdminComponents.admin_button type="submit" variant={:danger}>

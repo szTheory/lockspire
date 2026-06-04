@@ -47,10 +47,24 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Review key lifecycle"
+        body="Review issuer key posture, publication overlap, rollover readiness, and safe lifecycle actions without exposing private key material."
+      />
+
       <AdminComponents.section_card
-        title="Signing key lifecycle"
+        title="Key lifecycle posture"
         subtitle="Inspect upcoming, active, retiring, and retired keys without exposing raw status editing."
       >
+        <AdminComponents.metric_grid>
+          <AdminComponents.summary_stat value={count_keys(@keys, :active)} label="Active" />
+          <AdminComponents.summary_stat value={count_keys(@keys, :upcoming)} label="Upcoming" />
+          <AdminComponents.summary_stat value={count_keys(@keys, :retiring)} label="Retiring" />
+          <AdminComponents.summary_stat value={count_keys(@keys, :retired)} label="Retired" />
+          <AdminComponents.summary_stat value={@total_keys} label="Total keys" />
+        </AdminComponents.metric_grid>
+
         <AdminComponents.action_bar class="lockspire-admin-action-bar-compact">
           <AdminComponents.admin_button phx-click="generate" phx-value-use="sig" variant={:primary}>
             Generate signing key
@@ -70,18 +84,27 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
             body="Create or import a key before relying on Lockspire for JWKS publication and ID token signing."
           />
         <% else %>
-          <ul class="lockspire-admin-key-list">
+          <AdminComponents.resource_list>
             <%= for entry <- @keys do %>
-              <li>
-                <a href={key_show_path(entry.key.id)}>{entry.key.kid}</a>
-                <span>{entry.key.alg} / {entry.key.kty}</span>
-                <span>Use: {entry.key.use}</span>
-                <AdminComponents.status_badge status={entry.key.status} />
-                <span>JWKS {if entry.publishable, do: "visible", else: "hidden"}</span>
-                <span>Next action {format_actions(entry.next_actions)}</span>
-              </li>
+              <AdminComponents.resource_item
+                href={key_show_path(entry.key.id)}
+                title="Review key lifecycle"
+                subtitle={"#{entry.key.alg} / #{entry.key.kty}"}
+              >
+                <:meta>
+                  <span>Key <AdminComponents.long_value value={entry.key.kid} kind={:id} /></span>
+                  <span>Use <AdminComponents.long_value value={entry.key.use} kind={:text} /></span>
+                  <span>Published <AdminComponents.long_value value={format_datetime(entry.key.published_at)} kind={:timestamp} /></span>
+                  <span>Activated <AdminComponents.long_value value={format_datetime(entry.key.activated_at)} kind={:timestamp} /></span>
+                  <span>Next action {format_actions(entry.next_actions)}</span>
+                </:meta>
+                <:status>
+                  <AdminComponents.status_badge status={entry.key.status} />
+                  <span class="lockspire-admin-help">JWKS {if entry.publishable, do: "visible", else: "hidden"}</span>
+                </:status>
+              </AdminComponents.resource_item>
             <% end %>
-          </ul>
+          </AdminComponents.resource_list>
         <% end %>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
@@ -96,6 +119,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   end
 
   defp key_show_path(id), do: Lockspire.mount_path() <> "/admin/keys/" <> Integer.to_string(id)
+
+  defp count_keys(keys, status), do: Enum.count(keys, &(&1.key.status == status))
+
+  defp format_datetime(nil), do: "Not recorded"
+
+  defp format_datetime(%DateTime{} = value),
+    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
 
   defp format_actions([]), do: "None"
 

@@ -51,7 +51,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Signing key lifecycle"
+    assert html =~ "Configure"
+    assert html =~ "Review key lifecycle"
+    assert html =~ "Key lifecycle posture"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
+    assert html =~ "Active"
+    assert html =~ "Upcoming"
+    assert html =~ "JWKS visible"
+    assert html =~ "JWKS hidden"
     assert html =~ "ui-active"
     assert html =~ "ui-upcoming"
     assert html =~ "Clients"
@@ -78,11 +86,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    assert html =~ "Review key lifecycle"
     assert html =~ "Lifecycle actions"
     assert html =~ "Publish key"
     assert html =~ "Key handle"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "kid_"
     assert html =~ "Database handle"
+    assert html =~ "verification overlap"
+    assert html =~ "signing or encryption cutover"
     refute html =~ "Retire key"
     refute html =~ "ui-upcoming"
     refute html =~ ~r/>\s*#{upcoming_key.id}\s*</
@@ -93,6 +105,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert socket.assigns.key_detail.publishable
     assert socket.assigns.key_detail.key.handle =~ "kid_"
     assert socket.assigns.action_notice == "Key published for verification overlap."
+    html = rendered_to_string(Show.render(socket.assigns))
+    assert html =~ "signing/encryption key"
 
     assert {:noreply, socket} = Show.handle_event("activate_key", %{}, socket)
 

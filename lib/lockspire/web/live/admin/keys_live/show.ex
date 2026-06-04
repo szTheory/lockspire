@@ -137,31 +137,47 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Review key lifecycle"
+        body="Review public key metadata, publication state, and lifecycle consequences without exposing private key material."
+      />
+
       <AdminComponents.section_card
         title={@key_detail.key.handle}
         subtitle="Key detail shows public metadata, lifecycle truth, and the next safe operator action."
       >
-        <p>Status: <AdminComponents.status_badge status={@key_detail.key.status} /></p>
-        <p>Key handle: <code>{@key_detail.key.handle}</code></p>
-        <p>Database handle: <code>{@key_detail.key.database_handle}</code></p>
-        <p>Algorithm: <code>{@key_detail.key.alg}</code></p>
-        <p>Key type: <code>{@key_detail.key.kty}</code></p>
-        <p>Use: <code>{@key_detail.key.use}</code></p>
-        <p>Visible in JWKS: <code>{to_string(@key_detail.publishable)}</code></p>
-        <p>Published at: <AdminComponents.timestamp value={@key_detail.key.published_at} /></p>
-        <p>Activated at: <AdminComponents.timestamp value={@key_detail.key.activated_at} /></p>
-        <p>Retiring at: <AdminComponents.timestamp value={@key_detail.key.retiring_at} /></p>
-        <p>Retired at: <AdminComponents.timestamp value={@key_detail.key.retired_at} /></p>
+        <AdminComponents.description_list>
+          <:item label="Status"><AdminComponents.status_badge status={@key_detail.key.status} /></:item>
+          <:item label="Key handle">
+            <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
+          </:item>
+          <:item label="Database handle">
+            <AdminComponents.long_value value={@key_detail.key.database_handle} kind={:id} />
+          </:item>
+          <:item label="Algorithm"><code>{@key_detail.key.alg}</code></:item>
+          <:item label="Key type"><code>{@key_detail.key.kty}</code></:item>
+          <:item label="Use"><code>{@key_detail.key.use}</code></:item>
+          <:item label="Visible in JWKS"><code>{to_string(@key_detail.publishable)}</code></:item>
+          <:item label="Published at"><AdminComponents.timestamp value={@key_detail.key.published_at} /></:item>
+          <:item label="Activated at"><AdminComponents.timestamp value={@key_detail.key.activated_at} /></:item>
+          <:item label="Retiring at"><AdminComponents.timestamp value={@key_detail.key.retiring_at} /></:item>
+          <:item label="Retired at"><AdminComponents.timestamp value={@key_detail.key.retired_at} /></:item>
+        </AdminComponents.description_list>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
         title="Public JWK metadata"
         subtitle="Only public members are shown here. Private key material stays hidden."
       >
-        <p>kid: <code>{@key_detail.key.public_jwk["kid"]}</code></p>
-        <p>alg: <code>{@key_detail.key.public_jwk["alg"]}</code></p>
-        <p>kty: <code>{@key_detail.key.public_jwk["kty"]}</code></p>
-        <p>use: <code>{@key_detail.key.public_jwk["use"]}</code></p>
+        <AdminComponents.description_list>
+          <:item label="kid">
+            <AdminComponents.long_value value={@key_detail.key.public_jwk["kid"]} kind={:id} />
+          </:item>
+          <:item label="alg"><code>{@key_detail.key.public_jwk["alg"]}</code></:item>
+          <:item label="kty"><code>{@key_detail.key.public_jwk["kty"]}</code></:item>
+          <:item label="use"><code>{@key_detail.key.public_jwk["use"]}</code></:item>
+        </AdminComponents.description_list>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
