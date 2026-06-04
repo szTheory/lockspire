@@ -665,6 +665,30 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "phase 110 client workspace CSS prevents 390px page overflow regressions" do
+    css = File.read!(@admin_css_path)
+
+    assert css_rule(css, ".lockspire-admin-client-workspace") =~
+             "grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))"
+
+    assert css_rule(css, ".lockspire-admin-client-workspace") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-client-workspace > *") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-card") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-form-shell") =~ "min-width: 0"
+
+    mobile_css = css_media_rule(css, "@media (max-width: 720px)")
+    assert css_rule(mobile_css, ".lockspire-admin-client-workspace") =~
+             "grid-template-columns: minmax(0, 1fr)"
+
+    assert css_rule(mobile_css, ".lockspire-admin-form-shell") =~ "max-width: 100%"
+    assert css_rule(css, ".lockspire-admin-copy-once-secret__value") =~
+             "overflow-wrap: anywhere"
+
+    assert css_rule(css, ".lockspire-admin-code-block") =~ "max-width: 100%"
+    assert css_rule(css, ".lockspire-admin-action-group") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-description-list dd") =~ "overflow-wrap: anywhere"
+  end
+
   test "phase 110 proof artifacts fence runtime dependencies, generic labels, and redaction notes" do
     artifacts = phase_110_artifact_blob()
 
@@ -779,6 +803,33 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp phase_110_path(filename) do
     Path.join(@phase_110_dir, filename)
+  end
+
+  defp css_rule(css, selector) do
+    pattern = ~r/#{Regex.escape(selector)}\s*\{(?<body>.*?)\}/s
+
+    case Regex.named_captures(pattern, css) do
+      %{"body" => body} -> body
+      nil -> flunk("missing CSS selector #{selector}")
+    end
+  end
+
+  defp css_media_rule(css, media_query) do
+    case :binary.match(css, media_query) do
+      {start, _length} ->
+        rest = String.slice(css, start..-1//1)
+
+        end_offset =
+          case :binary.match(rest, "\n  @media", [{:scope, {String.length(media_query), String.length(rest) - String.length(media_query)}}]) do
+            {offset, _length} -> offset
+            :nomatch -> String.length(rest)
+          end
+
+        String.slice(rest, 0, end_offset)
+
+      :nomatch ->
+        flunk("missing CSS media query #{media_query}")
+    end
   end
 
   defp component_declaration_block(source, function_name) do
