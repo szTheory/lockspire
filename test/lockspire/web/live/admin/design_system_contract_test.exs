@@ -629,6 +629,62 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "phase 110 screenshot inventory rows contain explicit desktop and mobile proof cells" do
+    screenshots = File.read!(phase_110_path("110-SCREENSHOTS.md"))
+
+    rows =
+      screenshots
+      |> String.split("\n")
+      |> Enum.filter(&String.starts_with?(&1, "| "))
+      |> Enum.reject(&String.contains?(&1, "---"))
+      |> Enum.drop(1)
+
+    assert length(rows) >= 29
+
+    for row <- rows do
+      cells =
+        row
+        |> String.trim("|")
+        |> String.split("|")
+        |> Enum.map(&String.trim/1)
+
+      assert [journey, route, desktop, mobile, demo_state, browser_note] = cells
+      assert journey in ["Orient", "Configure", "Support", "Operate"]
+      assert route |> String.trim("`") |> String.starts_with?("/admin")
+      assert screenshot_cell_present?(desktop)
+      assert screenshot_cell_present?(mobile)
+      assert demo_state != ""
+      assert browser_note != ""
+    end
+  end
+
+  test "phase 110 proof artifacts fence runtime dependencies, generic labels, and redaction notes" do
+    artifacts = phase_110_artifact_blob()
+
+    for path <- Path.wildcard(@admin_live_glob) ++ [@admin_css_path, @admin_components_path] do
+      refute File.read!(path) =~ "tmp/admin-ui-polish"
+    end
+
+    refute Regex.match?(
+             ~r/(?:^|>|\n|\|)\s*(Submit|OK|Cancel|Apply|Open)\s*(?:<|\n|\||$)/,
+             artifacts
+           )
+
+    for phrase <- [
+          "Do not persist plaintext IATs",
+          "RATs",
+          "client secrets",
+          "user codes",
+          "verifier material",
+          "access tokens",
+          "refresh tokens",
+          "token hashes",
+          "Keep screenshot files under `tmp/admin-ui-polish/` as milestone evidence only"
+        ] do
+      assert artifacts =~ phrase
+    end
+  end
+
   test "phase 103 migrated screens do not reintroduce inline layout styling" do
     for path <- [
           Path.expand(
@@ -691,6 +747,21 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   defp phase_109_test_blob do
     @phase_109_focused_tests
     |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp phase_110_artifact_blob do
+    [
+      phase_110_path("110-CONTEXT.md"),
+      phase_110_path("110-SCREENSHOTS.md"),
+      phase_110_path("110-BROWSER-EVIDENCE.md")
+    ]
+    |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp screenshot_cell_present?(cell) do
+    cell = String.trim(cell, "`")
+
+    String.starts_with?(cell, "tmp/admin-ui-polish/") or String.starts_with?(cell, "Not captured -")
   end
 
   defp source_for(suffix) do
