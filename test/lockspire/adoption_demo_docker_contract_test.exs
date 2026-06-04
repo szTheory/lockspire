@@ -55,7 +55,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       db = get_in(config, ["services", "db"])
       web = get_in(config, ["services", "web"])
 
-      assert_port(db, "15432", 5432)
+      assert_port(db, "15432", 5432, "127.0.0.1")
       assert env_value(web, "LOCKSPIRE_DEMO_DB_PORT") == "5432"
     end)
   end
@@ -194,9 +194,11 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert get_in(config, ["volumes", "build_volume", "name"]) == "#{project}_build_volume"
   end
 
-  defp assert_port(service, published, target) do
+  defp assert_port(service, published, target, host_ip \\ nil) do
     assert Enum.any?(service["ports"], fn port ->
-             port["published"] == published and port["target"] == target
+             port["published"] == published and
+               port["target"] == target and
+               (is_nil(host_ip) or port["host_ip"] == host_ip)
            end)
   end
 
