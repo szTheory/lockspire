@@ -234,6 +234,8 @@ defmodule Lockspire.Web.Admin.CSS do
     background: var(--ls-surface-panel);
     border-radius: var(--ls-radius-lg);
     box-shadow: var(--ls-shadow-sm);
+    max-width: 100%;
+    min-width: 0;
     padding: var(--ls-space-6);
     margin-bottom: var(--ls-space-6);
   }
@@ -529,6 +531,7 @@ defmodule Lockspire.Web.Admin.CSS do
   /* Form Shell */
   .lockspire-admin-form-shell {
     max-width: 600px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--ls-space-5);
@@ -565,6 +568,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field select,
   .lockspire-admin-field textarea {
     min-height: var(--ls-control-height);
+    min-width: 0;
+    max-width: 100%;
     padding: var(--ls-control-padding-y) var(--ls-control-padding-x);
     border: 1px solid var(--ls-color-gray-300);
     border-radius: var(--ls-radius-md);
@@ -699,6 +704,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-copy-once-secret {
     display: grid;
     gap: var(--ls-space-3);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-copy-once-secret p {
@@ -711,6 +718,10 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-copy-once-secret__value {
     display: grid;
     gap: var(--ls-space-2);
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .lockspire-admin-copy-once-secret__label {
@@ -729,6 +740,8 @@ defmodule Lockspire.Web.Admin.CSS do
     align-items: center;
     margin-top: var(--ls-space-6);
     flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-action-bar-compact {
@@ -741,6 +754,8 @@ defmodule Lockspire.Web.Admin.CSS do
     display: flex;
     flex-wrap: wrap;
     gap: var(--ls-space-3);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-action-group__primary,
@@ -750,6 +765,8 @@ defmodule Lockspire.Web.Admin.CSS do
     display: flex;
     flex-wrap: wrap;
     gap: var(--ls-space-3);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-action-group__destructive {
@@ -983,7 +1000,14 @@ defmodule Lockspire.Web.Admin.CSS do
     display: grid;
     gap: var(--ls-space-6);
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    max-width: 100%;
+    min-width: 0;
     margin-bottom: var(--ls-space-6);
+  }
+
+  .lockspire-admin-client-workspace > * {
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-detail-section {
@@ -1027,6 +1051,8 @@ defmodule Lockspire.Web.Admin.CSS do
     display: grid;
     gap: var(--ls-space-3);
     margin: 0;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-description-list div {
@@ -1034,6 +1060,8 @@ defmodule Lockspire.Web.Admin.CSS do
     display: grid;
     gap: var(--ls-space-2);
     grid-template-columns: minmax(120px, 0.45fr) minmax(0, 1fr);
+    max-width: 100%;
+    min-width: 0;
     padding-bottom: var(--ls-space-3);
   }
 
@@ -1055,6 +1083,7 @@ defmodule Lockspire.Web.Admin.CSS do
     margin: 0;
     min-width: 0;
     overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .lockspire-admin-redacted-value {
@@ -1067,7 +1096,10 @@ defmodule Lockspire.Web.Admin.CSS do
     gap: var(--ls-space-2);
     list-style-position: inside;
     margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
     padding: 0;
+    word-break: break-word;
   }
 
   .lockspire-admin-kicker {
@@ -1084,7 +1116,9 @@ defmodule Lockspire.Web.Admin.CSS do
     font-family: var(--ls-font-mono);
     font-size: 1.125rem !important;
     font-variant-numeric: tabular-nums;
+    min-width: 0;
     overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .lockspire-admin-empty-notice {
@@ -1104,8 +1138,11 @@ defmodule Lockspire.Web.Admin.CSS do
     color: var(--ls-color-gray-900);
     font-family: var(--ls-font-mono);
     font-size: 0.875rem;
+    max-width: 100%;
+    min-width: 0;
     overflow-wrap: anywhere;
     padding: var(--ls-space-4);
+    word-break: break-word;
   }
 
   .lockspire-admin-confirmation-panel {
@@ -1139,6 +1176,8 @@ defmodule Lockspire.Web.Admin.CSS do
     flex-wrap: wrap;
     gap: var(--ls-space-3);
     margin-top: var(--ls-space-4);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .lockspire-admin-confirmation-panel-warning {
@@ -1191,6 +1230,15 @@ defmodule Lockspire.Web.Admin.CSS do
       grid-template-columns: 1fr;
     }
 
+    .lockspire-admin-client-workspace {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lockspire-admin-form-shell {
+      width: 100%;
+      max-width: 100%;
+    }
+
     .lockspire-admin-filter-bar__fields,
     .lockspire-admin-filter-bar__actions,
     .lockspire-admin-action-group,
@@ -1237,6 +1285,8 @@ defmodule Lockspire.Web.Admin.CSS do
     .lockspire-admin-btn-primary,
     .lockspire-admin-btn-secondary,
     .lockspire-admin-btn-danger {
+      max-width: 100%;
+      min-width: 0;
       width: 100%;
     }
   }
