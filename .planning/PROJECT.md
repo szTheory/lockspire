@@ -18,6 +18,18 @@ Between feature milestones, Lockspire's default posture remains a sustaining GA 
 
 The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-System Deep Polish`, tightened the route-by-route operator journey model, deepened the shared BEM/design-token component contract, polished weaker support/operations/configuration surfaces, and closed route-complete screenshot/browser proof with 390px mobile no-page-overflow evidence. v1.29 intentionally preserved the embedded-library boundary and protocol behavior.
 
+## Current Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
+
+**Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
+
+**Target features:**
+- Provide a default Docker path for the adoption demo that starts app and database dependencies without relying on host Postgres.
+- Support conflict-resistant local development through configurable project names, ports, and optional Traefik hostname routing.
+- Print the important demo URLs, admin routes, seeded accounts, and smoke-test command after startup so maintainers can poke the admin UI without source-diving.
+- Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
+
+**Why now:** v1.29 produced route-complete admin UI proof, but the next UI iteration needs a boring, repeatable local demo base. Docker port conflicts and leftover generated artifacts are recurring friction when multiple local Elixir OSS libraries with admin UIs are running side by side.
+
 ## Completed Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
 
 **Goal:** Take the shipped admin UI from coherent baseline to a deliberately mapped operator product where every route, component, and state supports a clear persona, job, next action, and safety boundary.
@@ -138,7 +150,10 @@ The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-
 
 ### Active
 
-(None — start the next milestone with `$gsd-new-milestone`.)
+- Provide a default Docker path for the adoption demo that starts app and database dependencies without relying on host Postgres.
+- Support conflict-resistant local development through configurable project names, ports, and optional Traefik hostname routing.
+- Print the important demo URLs, admin routes, seeded accounts, and smoke-test command after startup so maintainers can poke the admin UI without source-diving.
+- Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
 
 ### Validated
 
@@ -279,4 +294,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-04 — v1.29 admin journey and design-system deep polish completed.*
+*Last updated: 2026-06-04 — v1.30 adoption demo Docker DX and repo hygiene started.*

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.29
-milestone_name: Admin UI Journey & Design-System Deep Polish
-status: Awaiting next milestone
-last_updated: "2026-06-04T15:40:21.096Z"
-last_activity: 2026-06-04 — Milestone v1.29 completed and archived
+milestone: v1.30
+milestone_name: Adoption Demo Docker DX & Repo Hygiene
+status: planning
+last_updated: "2026-06-04T16:10:06.610Z"
+last_activity: 2026-06-04
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: Milestone v1.29 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-04 — Milestone v1.29 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-04 — Milestone v1.30 started
 
 ## Most Recent Release
 
