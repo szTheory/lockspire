@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.29
 milestone_name: Admin UI Journey & Design-System Deep Polish
 status: milestone_complete
-last_updated: 2026-06-04T15:00:21.000Z
+last_updated: 2026-06-04T15:18:53.988Z
 last_activity: 2026-06-04
 progress:
   total_phases: 4
@@ -71,6 +71,12 @@ Last activity: 2026-06-04
 
 - None active.
 - `gsd-sdk query init.new-milestone` reported stale helper metadata for latest completed milestone and phase archive path after v1.28 closeout. Do not run destructive phase cleanup from that stale path without rechecking archive targets.
+
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260604-fpq | close v1.29 audit gaps from .planning/v1.29-MILESTONE-AUDIT.md | 2026-06-04 | docs-only | [260604-fpq-close-v1-29-audit-gaps-from-planning-v1-](./quick/260604-fpq-close-v1-29-audit-gaps-from-planning-v1-/) |
 
 ## Session Continuity
 

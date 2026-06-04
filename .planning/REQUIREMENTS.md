@@ -43,13 +43,13 @@ Take the shipped admin UI from coherent baseline to a deliberately mapped operat
 
 - [x] **CONFIG-01**: Client detail and edit workflows group identity, posture, endpoints, credentials, DCR/RAT context, logout, and lifecycle actions in a predictable order that survives dense mobile layouts.
 - [x] **CONFIG-02**: Security, DCR, IAT, and key lifecycle pages expose current posture, exception pressure, and next actions with consistent page structure.
-- [ ] **CONFIG-03**: Demo seed data exercises healthy, warning, incident, empty, disabled, self-registered, retryable, revoked, expired, long-value, and copy-once states across the admin UI.
+- [x] **CONFIG-03**: Demo seed data exercises healthy, warning, incident, empty, disabled, self-registered, retryable, revoked, expired, long-value, and copy-once states across the admin UI.
 
 ### Proof And Documentation
 
-- [ ] **PROOF-01**: Operator admin docs describe the final journey model and remain subordinate to `docs/supported-surface.md`.
-- [ ] **PROOF-02**: Desktop and mobile screenshots cover every admin route in the approved route surface after the polish pass.
-- [ ] **PROOF-03**: Design-system regression tests fail if admin routes drift from the journey model, reusable component contract, reduced-motion contract, or no-inline-style rule.
+- [x] **PROOF-01**: Operator admin docs describe the final journey model and remain subordinate to `docs/supported-surface.md`.
+- [x] **PROOF-02**: Desktop and mobile screenshots cover every admin route in the approved route surface after the polish pass.
+- [x] **PROOF-03**: Design-system regression tests fail if admin routes drift from the journey model, reusable component contract, reduced-motion contract, or no-inline-style rule.
 - [x] **PROOF-04**: The milestone closes with compile, diff-check, admin LiveView tests, design-system contract tests, screenshot inventory, browser click-through evidence, and mobile no-page-overflow proof.
 
 ## Future Requirements
