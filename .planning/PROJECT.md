@@ -18,14 +18,13 @@ Between feature milestones, Lockspire's default posture remains a sustaining GA 
 
 The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-System Deep Polish`, tightened the route-by-route operator journey model, deepened the shared BEM/design-token component contract, polished weaker support/operations/configuration surfaces, and closed route-complete screenshot/browser proof with 390px mobile no-page-overflow evidence. v1.29 intentionally preserved the embedded-library boundary and protocol behavior.
 
-Phase 111 of v1.30 is complete: the adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke drift proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`.
+Phases 111 and 112 of v1.30 are complete: the adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke drift proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`; the default Docker path now starts Phoenix/Bandit plus PostgreSQL, uses project-scoped volumes, prepares the database idempotently, and waits for public HTTP readiness before reporting ready.
 
 ## Current Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
 **Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
 
 **Target features:**
-- Provide a default Docker path for the adoption demo that starts app and database dependencies without relying on host Postgres.
 - Support conflict-resistant local development through configurable project names, ports, and optional Traefik hostname routing.
 - Print the important demo URLs, admin routes, seeded accounts, and smoke-test command after startup so maintainers can poke the admin UI without source-diving.
 - Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
@@ -215,6 +214,7 @@ Phase 111 of v1.30 is complete: the adoption demo now has one canonical `LOCKSPI
 - Delivered the v1.27 generated-host scaffolding, telemetry, and migration slice: regression guards fencing the no-token-format-prompt install + uncomment-ready canonical pipeline block (SCAFFOLD-01/02), the `[:lockspire, :rs, :token_format]` RS telemetry event at two `VerifyToken` sites via direct `:telemetry.execute/3` (TELEMETRY-01), the honest `docs/upgrading/v1.27.md` migration guide with runtime `ServerPolicy` opt-out and nil-inherit affected-client naming (MIGRATE-01), and the read-only `mix lockspire.doctor token_format` diagnostic (MIGRATE-02). Validated in Phase 102.
 - Delivered v1.29 Admin UI Journey & Design-System Deep Polish: route-by-route admin journey contract and docs vocabulary (JOURNEY-01..06, Phase 107); reusable BEM/design-token admin primitives and reduced-motion/style drift fences (DESIGN-01..06, Phase 108); support, operations, DCR/IAT, key, and client-detail weak-spot polish with mobile-safe rows, redaction, and risky-action grouping (OPS-01..05, CONFIG-01..02, Phase 109); demo seed, screenshot, browser, docs, and contract proof including 390px mobile no-page-overflow evidence (CONFIG-03, PROOF-01..04, Phase 110).
 - Validated in Phase 111: `LOCKSPIRE_DEMO_BASE_URL` is the single browser-visible adoption demo URL contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke proof; `LOCKSPIRE_DEMO_BIND_IP` controls only listener binding for Docker opt-in.
+- Validated in Phase 112: the default Docker adoption-demo path starts direct Phoenix/Bandit plus PostgreSQL without host Postgres, uses explicit DB wiring and project-scoped `db_data`, `deps`, and `_build` volumes, prepares the database idempotently, and waits for the configured public URL before printing the ready line.
 
 ### Out of Scope
 
