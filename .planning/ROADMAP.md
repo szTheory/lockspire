@@ -34,7 +34,12 @@ Make one public base URL drive every browser-visible demo URL. This phase lands 
 **Plans:** 2 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 111-01-PLAN.md - Configure one demo base URL for endpoint/issuer and explicit bind IP.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 111-02-PLAN.md - Derive seeded/UI URLs and sharpen smoke drift proof.
 
 ### Phase 112: Default Docker Compose App + DB
