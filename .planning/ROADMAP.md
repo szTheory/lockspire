@@ -12,7 +12,7 @@
 |-------|------|------|--------------|
 | 107 | 3/3 | Complete    | 2026-06-04 |
 | 108 | 3/3 | Complete   | 2026-06-04 |
-| 109 | 5/6 | In Progress|  |
+| 109 | 6/6 | Complete   | 2026-06-04 |
 | 110 | Demo State, Screenshots, Docs, and Regression Proof | Prove the final admin route surface with demo data, docs, desktop/mobile screenshots, browser click-through, and contract tests. | CONFIG-03, PROOF-01..04 |
 
 ## Phase Details
@@ -65,7 +65,7 @@ Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Int
 - Support and operations pages expose useful pivot context without leaking secrets.
 - Risky actions are visually distinct and confirmation-backed.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -78,7 +78,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 109-06-PLAN.md — Add Phase 109 deterministic contract proof
+- [x] 109-06-PLAN.md — Add Phase 109 deterministic contract proof (completed 2026-06-04)
 
 ### Phase 110: Demo State, Screenshots, Docs, and Regression Proof
 
