@@ -18,7 +18,7 @@ Take the shipped admin UI from coherent baseline to a deliberately mapped operat
 - [x] **JOURNEY-01**: Operators can understand the admin UI's top-level model as Orient, Configure, Support, and Operate, with each route assigned to exactly one primary journey.
 - [x] **JOURNEY-02**: Each admin route documents its persona, JTBD, entry point, primary decision, primary action, empty state, risk state, and follow-up route in one repo-local journey contract.
 - [x] **JOURNEY-03**: Overview routes operators by task and urgency, not only by object type, so a new operator can choose the next workflow without prior Lockspire knowledge.
-- [ ] **JOURNEY-04**: Journey labels, page titles, hero copy, empty states, and action labels use one vocabulary across docs and LiveView surfaces.
+- [x] **JOURNEY-04**: Journey labels, page titles, hero copy, empty states, and action labels use one vocabulary across docs and LiveView surfaces.
 - [x] **JOURNEY-05**: DCR onboarding, DCR policy, IAT inventory, IAT minting, and RAT rotation are clearly connected without collapsing onboarding and security-policy jobs into one ambiguous page.
 - [x] **JOURNEY-06**: Logout workflows consistently distinguish browser post-logout redirect URIs from RP cleanup endpoints used for back-channel and front-channel logout propagation.
 
