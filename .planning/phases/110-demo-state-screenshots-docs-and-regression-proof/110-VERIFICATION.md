@@ -1,7 +1,7 @@
 ---
 phase: 110-demo-state-screenshots-docs-and-regression-proof
-status: gaps
-verified_at: "2026-06-04T09:24:52Z"
+status: gaps_found
+verified_at: "2026-06-04T09:30:00Z"
 ---
 
 # Phase 110 Verification
@@ -44,6 +44,62 @@ The following routes were captured but failed the 390px page-level overflow proo
 - `/admin/clients/:client_id/security-profile`
 - `/admin/clients/:client_id/rotate-secret`
 - `/admin/clients/:client_id/rotate-registration-access-token`
+
+## Gap Diagnosis
+
+The gap is isolated to `Lockspire.Web.Live.Admin.ClientsLive.Show` routes and
+the shared client detail/edit layout:
+
+- `lib/lockspire/web/live/admin/clients_live/show.ex` renders every failing
+  route through the same client workspace, form workflow, or rotation workflow
+  sections.
+- `lib/lockspire/web/admin_css.ex` stacks action groups and description lists
+  below 720px, but the affected client routes still contain long identifiers,
+  long URI values, full-width action links/buttons, form controls, and
+  copy-once/rotation panels inside the same card path.
+- Other route groups passed the same 390px proof, so the defect is not the
+  global admin shell, route inventory, browser session, or screenshot capture
+  process.
+
+Most likely fix surface:
+
+- Add a client-route responsive overflow contract in admin CSS for
+  `.lockspire-admin-card`, `.lockspire-admin-client-workspace`,
+  `.lockspire-admin-form-shell`, form controls, action links/buttons,
+  description-list values, value lists, and copy-once code blocks so their
+  min-content widths cannot push the page wider than the viewport.
+- Add deterministic regression coverage for the client route responsive
+  contract. Prefer source/CSS contract assertions plus browser proof rerun;
+  do not persist secret plaintext and do not make runtime code depend on
+  screenshot paths.
+
+## Fix Plan For Execution
+
+1. Patch `lib/lockspire/web/admin_css.ex` so the client workspace and nested
+   client workflow controls have `min-width: 0`, `max-width: 100%`, and
+   wrapping behavior on the mobile path.
+2. Re-run focused source tests:
+
+   ```bash
+   mix test test/lockspire/web/live/admin/design_system_contract_test.exs --max-failures 1
+   mix test test/lockspire/web/live/admin --max-failures 1
+   ```
+
+3. Start the seeded adoption demo and re-check the nine failing routes at 390px
+   with:
+
+   ```js
+   document.documentElement.scrollWidth > document.documentElement.clientWidth
+   ```
+
+4. When every listed route returns `false`, update `110-SCREENSHOTS.md`,
+   `110-BROWSER-EVIDENCE.md`, and this file to `status: complete`, then run:
+
+   ```bash
+   MIX_ENV=test mix compile --warnings-as-errors
+   git diff --check
+   mix test
+   ```
 
 ## Rerun Instructions
 
