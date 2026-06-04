@@ -576,6 +576,59 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     assert seeds =~ "not stored or shown again as plaintext"
   end
 
+  test "phase 110 operator docs preserve final journey model and host boundary" do
+    guide = File.read!(@operator_admin_doc_path)
+
+    for phrase <- [
+          "Orient",
+          "Configure",
+          "Support",
+          "Operate",
+          "docs/supported-surface.md",
+          "DCR onboarding",
+          "DCR policy",
+          "post-logout redirect URIs",
+          "logout propagation URIs",
+          "staff sessions",
+          "MFA",
+          "role checks",
+          "tenant policy",
+          "layouts",
+          "branding",
+          "product-specific authorization"
+        ] do
+      assert guide =~ phrase
+    end
+  end
+
+  test "phase 110 screenshot and browser evidence inventories cover route proof fields" do
+    router = File.read!(@admin_router_path)
+    screenshots = File.read!(phase_110_path("110-SCREENSHOTS.md"))
+    browser = File.read!(phase_110_path("110-BROWSER-EVIDENCE.md"))
+
+    expected_routes =
+      router
+      |> mounted_admin_routes()
+      |> Kernel.++(["/admin/clients/:client_id/edit?workflow=logout-propagation"])
+      |> Enum.sort()
+
+    for route <- expected_routes do
+      assert screenshots =~ route
+    end
+
+    for heading <- ["Coverage Matrix", "Journey", "Route", "Desktop", "Mobile", "Demo state", "Browser note"] do
+      assert screenshots =~ heading
+    end
+
+    for phrase <- ["Orient", "Configure", "Support", "Operate", "tmp/admin-ui-polish/", "Not captured -"] do
+      assert screenshots =~ phrase
+    end
+
+    for phrase <- ["overview", "read-only", "390px", "no-page-overflow", "copy-once", "confirmation"] do
+      assert browser =~ phrase
+    end
+  end
+
   test "phase 103 migrated screens do not reintroduce inline layout styling" do
     for path <- [
           Path.expand(
@@ -644,6 +697,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     @phase_109_sources
     |> Enum.find(fn path -> String.ends_with?(path, suffix) end)
     |> File.read!()
+  end
+
+  defp phase_110_path(filename) do
+    Path.join(@phase_110_dir, filename)
   end
 
   defp component_declaration_block(source, function_name) do

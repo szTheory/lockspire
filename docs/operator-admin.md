@@ -32,7 +32,7 @@ scope "/" do
 end
 ```
 
-Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, operator authorization, IP policy, and audit framing around access to those routes.
+Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
 
 ## Admin navigation model
 
@@ -44,6 +44,8 @@ The admin UI uses the same four top-level journey labels as `Lockspire.Web.Live.
 - **Operate**: Device Auth, Interactions, and Logouts. These routes own active protocol queues, device authorization expiry, and logout propagation delivery pressure.
 
 This organization is deliberate: Orient, Configure, Support, and Operate are separate journeys even when they reference the same client.
+
+The v1.29 proof artifacts under `.planning/phases/110-demo-state-screenshots-docs-and-regression-proof/` record screenshot inventory and browser evidence for this route surface. Those artifacts are maintainer evidence only; runtime code and operator docs do not depend on screenshot files.
 
 Route groups remain concrete entries inside those journeys:
 
