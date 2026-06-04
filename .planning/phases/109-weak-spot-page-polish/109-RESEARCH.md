@@ -315,14 +315,15 @@ LiveViewTest supports `live/2`, `element/3`, `render_click/1`, `form/3`, and `re
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | For a UI-only phase, no browser automation is required unless focused overflow proof cannot be represented by deterministic tests. [ASSUMED] | Validation Architecture | Planner may under-test a mobile layout if static assertions are insufficient. |
+| A1 | Phase 109 uses deterministic no-overflow proxy tests as the default mobile proof; focused manual/browser 390px proof is required only if CSS layout primitives change. [RESOLVED] | Validation Architecture | If shared CSS layout primitives change and browser proof is skipped, mobile overflow could be under-tested. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does the planner want a small browser/mobile smoke proof despite Phase 110 owning screenshots?**
+1. **RESOLVED: Does the planner want a small browser/mobile smoke proof despite Phase 110 owning screenshots?**
    - What we know: Phase 109 says focused mobile/no-overflow proof where feasible; Phase 110 owns broad screenshots. [VERIFIED: .planning/phases/109-weak-spot-page-polish/109-CONTEXT.md]
-   - What's unclear: Whether deterministic class/source assertions are enough for 390px no-overflow on all target routes. [ASSUMED]
-   - Recommendation: Add static contract tests first; include one optional focused browser/manual proof task only if implementation changes CSS layout primitives. [ASSUMED]
+   - Selected strategy: Phase 109 uses deterministic no-overflow proxy tests for `long_value`, responsive `resource_item`, filter wrapping, and stacked `action_group` usage on target routes. [RESOLVED]
+   - Browser/manual proof trigger: focused 390px proof is required only if implementation changes shared CSS layout primitives such as resource-row layout, long-value wrapping, filter layout, or action-group stacking. [RESOLVED]
+   - Scope boundary: broad screenshot inventory, route-wide browser click-through, docs proof, and demo-seed coverage remain Phase 110 scope. [RESOLVED]
 
 ## Environment Availability
 

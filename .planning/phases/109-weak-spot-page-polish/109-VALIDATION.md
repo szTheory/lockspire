@@ -3,6 +3,7 @@ phase: 109
 slug: weak-spot-page-polish
 status: draft
 nyquist_compliant: true
+nyquist_latency_floor: accepted
 wave_0_complete: false
 created: 2026-06-04
 ---
@@ -21,7 +22,7 @@ created: 2026-06-04
 | **Config file** | `test/test_helper.exs` |
 | **Quick run command** | `mix test test/lockspire/web/live/admin/design_system_contract_test.exs --max-failures 1` |
 | **Full suite command** | `mix test` |
-| **Estimated runtime** | ~90 seconds focused, full suite variable |
+| **Estimated runtime** | ~90 seconds focused, full suite variable; accepted as the current project floor for Phoenix LiveView focused checks |
 
 ---
 
@@ -31,6 +32,11 @@ created: 2026-06-04
 - **After every plan wave:** Run all touched admin LiveView tests listed in the map below
 - **Before `$gsd-verify-work`:** `mix test` must be green
 - **Max feedback latency:** 120 seconds for focused feedback
+- **Nyquist warning threshold:** 30 seconds is explicitly accepted as below the current project floor for meaningful Phase 109 ExUnit/LiveView feedback; split commands remain surface-focused where practical.
+
+## Nyquist Latency Exception
+
+Phase 109 accepts a focused-feedback floor of approximately 90 seconds because the fastest meaningful checks still boot the Phoenix/LiveView test harness and exercise route/component contracts. The 30-second Nyquist warning threshold is not achievable without replacing meaningful route proof with weaker source-only checks, so the execution rule is: keep every task command limited to the touched route test plus `design_system_contract_test.exs`, and treat 120 seconds as the maximum focused feedback latency for this phase.
 
 ---
 
@@ -72,7 +78,7 @@ created: 2026-06-04
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify
 - [x] Wave 0 covers all MISSING references
 - [x] No watch-mode flags
-- [x] Feedback latency < 120s for focused commands
+- [x] Feedback latency < 120s for focused commands; 30s Nyquist warning threshold explicitly accepted as the current project floor
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-06-04
