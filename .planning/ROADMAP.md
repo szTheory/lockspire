@@ -13,7 +13,7 @@
 | 107 | 3/3 | Complete    | 2026-06-04 |
 | 108 | 3/3 | Complete   | 2026-06-04 |
 | 109 | 6/6 | Complete    | 2026-06-04 |
-| 110 | 2/4 | In Progress|  |
+| 110 | 4/4 | Complete   | 2026-06-04 |
 
 ## Phase Details
 
