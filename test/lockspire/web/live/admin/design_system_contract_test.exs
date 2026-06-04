@@ -138,6 +138,68 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     assert offenders == []
   end
 
+  test "shared component primitives are exposed and backed by namespaced CSS" do
+    components = File.read!(@admin_components_path)
+    css = File.read!(@admin_css_path)
+
+    for function_name <- [
+          "page_hero",
+          "metric_grid",
+          "task_card",
+          "filter_bar",
+          "copy_once_secret_panel",
+          "action_group",
+          "long_value",
+          "empty_state",
+          "confirmation_panel",
+          "resource_item",
+          "status_badge"
+        ] do
+      assert components =~ "def #{function_name}"
+    end
+
+    for primitive <- [
+          "page_hero",
+          "metric_grid",
+          "task_card",
+          "filter_bar",
+          "copy_once_secret_panel",
+          "action_group",
+          "long_value"
+        ] do
+      assert component_declaration_block(components, primitive) =~ "attr("
+    end
+
+    for primitive <- [
+          "page_hero",
+          "metric_grid",
+          "task_card",
+          "filter_bar",
+          "action_group"
+        ] do
+      assert component_declaration_block(components, primitive) =~ "slot("
+    end
+
+    for class <- [
+          "lockspire-admin-hero",
+          "lockspire-admin-page-hero",
+          "lockspire-admin-metric-grid",
+          "lockspire-admin-summary-stat",
+          "lockspire-admin-task-card",
+          "lockspire-admin-filter-bar",
+          "lockspire-admin-resource-list__item",
+          "lockspire-admin-empty",
+          "lockspire-admin-confirmation-panel",
+          "lockspire-admin-copy-once-secret",
+          "lockspire-admin-long-value",
+          "lockspire-admin-status-cluster",
+          "lockspire-admin-badge-group",
+          "lockspire-admin-action-group"
+        ] do
+      assert css =~ "." <> class
+    end
+  end
+
   test "admin route surface and operator docs stay aligned to journey model" do
     router = File.read!(@admin_router_path)
     guide = File.read!(@operator_admin_doc_path)
@@ -266,4 +328,12 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp mounted_admin_route("/"), do: "/admin"
   defp mounted_admin_route(route), do: "/admin" <> route
+
+  defp component_declaration_block(source, function_name) do
+    index = :binary.match(source, "def #{function_name}") |> elem(0)
+    start = max(index - 700, 0)
+
+    source
+    |> String.slice(start, 1_400)
+  end
 end
