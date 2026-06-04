@@ -1,0 +1,84 @@
+#!/usr/bin/env sh
+set -eu
+
+BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
+BASE_URL="${BASE_URL%/}"
+DB_HOST="${LOCKSPIRE_DEMO_DB_HOST:-db}"
+DB_PORT="${LOCKSPIRE_DEMO_DB_PORT:-5432}"
+DB_NAME="${LOCKSPIRE_DEMO_DB_NAME:-lockspire_adoption_demo}"
+DB_USER="${LOCKSPIRE_DEMO_DB_USER:-lockspire}"
+
+wait_for_postgres() {
+  attempt=1
+
+  while [ "$attempt" -le 60 ]; do
+    if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  echo "PostgreSQL did not become ready at ${DB_HOST}:${DB_PORT}/${DB_NAME}" >&2
+  return 1
+}
+
+create_database() {
+  create_output="$(mktemp)"
+
+  if mix ecto.create >"$create_output" 2>&1; then
+    rm -f "$create_output"
+    return 0
+  fi
+
+  if grep -qi "already exists" "$create_output"; then
+    echo "Database ${DB_NAME} already exists; reusing it."
+    rm -f "$create_output"
+    return 0
+  fi
+
+  cat "$create_output" >&2
+  rm -f "$create_output"
+  return 1
+}
+
+wait_for_http() {
+  attempt=1
+
+  while [ "$attempt" -le 60 ]; do
+    if curl -fsS "${BASE_URL}/" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  echo "Adoption demo did not become ready at ${BASE_URL}" >&2
+  return 1
+}
+
+server_pid=""
+
+cleanup() {
+  if [ -n "$server_pid" ]; then
+    kill "$server_pid" 2>/dev/null || true
+  fi
+}
+
+trap cleanup INT TERM EXIT
+
+wait_for_postgres
+mix deps.get
+create_database
+mix ecto.migrate --migrations-path ../../priv/repo/migrations
+mix run priv/repo/seeds.exs
+
+mix phx.server &
+server_pid="$!"
+
+wait_for_http
+echo "Adoption demo ready at ${BASE_URL}"
+
+wait "$server_pid"

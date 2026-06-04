@@ -1,7 +1,7 @@
 FROM hexpm/elixir:1.15.7-erlang-26.1.2-alpine
 
-# Install essential build tools and inotify-tools for Phoenix live-reload
-RUN apk add --no-cache build-base npm git inotify-tools
+# Install essential build tools and readiness utilities for Phoenix live-reload.
+RUN apk add --no-cache build-base npm git inotify-tools curl postgresql-client
 
 # Set working directory inside the repo-root mount.
 WORKDIR /workspace/examples/adoption_demo
