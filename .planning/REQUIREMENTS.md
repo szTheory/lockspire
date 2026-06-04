@@ -41,7 +41,7 @@ Take the shipped admin UI from coherent baseline to a deliberately mapped operat
 
 ### Configure And Onboarding Polish
 
-- [ ] **CONFIG-01**: Client detail and edit workflows group identity, posture, endpoints, credentials, DCR/RAT context, logout, and lifecycle actions in a predictable order that survives dense mobile layouts.
+- [x] **CONFIG-01**: Client detail and edit workflows group identity, posture, endpoints, credentials, DCR/RAT context, logout, and lifecycle actions in a predictable order that survives dense mobile layouts.
 - [x] **CONFIG-02**: Security, DCR, IAT, and key lifecycle pages expose current posture, exception pressure, and next actions with consistent page structure.
 - [ ] **CONFIG-03**: Demo seed data exercises healthy, warning, incident, empty, disabled, self-registered, retryable, revoked, expired, long-value, and copy-once states across the admin UI.
 
