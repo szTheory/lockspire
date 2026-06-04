@@ -32,6 +32,97 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
+  attr(:eyebrow, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:body, :string, default: nil)
+  attr(:class, :string, default: "")
+  slot(:summary)
+  slot(:actions)
+
+  def page_hero(assigns) do
+    ~H"""
+    <section class={["lockspire-admin-hero lockspire-admin-page-hero", @class]}>
+      <div class="lockspire-admin-page-hero__main">
+        <p class="lockspire-admin-eyebrow">{@eyebrow}</p>
+        <h2>{@title}</h2>
+        <p :if={@body}>{@body}</p>
+        <div :if={@summary != []} class="lockspire-admin-page-hero__summary">
+          {render_slot(@summary)}
+        </div>
+      </div>
+      <div :if={@actions != []} class="lockspire-admin-page-hero__actions">
+        {render_slot(@actions)}
+      </div>
+    </section>
+    """
+  end
+
+  attr(:wide, :boolean, default: false)
+  attr(:class, :string, default: "")
+  slot(:inner_block, required: true)
+
+  def metric_grid(assigns) do
+    ~H"""
+    <div class={[
+      "lockspire-admin-summary-grid lockspire-admin-metric-grid",
+      @wide && "lockspire-admin-summary-grid-wide lockspire-admin-metric-grid-wide",
+      @class
+    ]}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:subtitle, :string, default: nil)
+  attr(:state, :string, default: nil)
+  attr(:class, :string, default: "")
+  slot(:inner_block, required: true)
+  slot(:actions)
+
+  def task_card(assigns) do
+    ~H"""
+    <section class={["lockspire-admin-task-card", @class]}>
+      <header class="lockspire-admin-task-card__header">
+        <div>
+          <h3>{@title}</h3>
+          <p :if={@subtitle}>{@subtitle}</p>
+        </div>
+        <span :if={@state} class="lockspire-admin-task-card__state">{@state}</span>
+      </header>
+      <div class="lockspire-admin-task-card__body">
+        {render_slot(@inner_block)}
+      </div>
+      <div :if={@actions != []} class="lockspire-admin-task-card__actions">
+        {render_slot(@actions)}
+      </div>
+    </section>
+    """
+  end
+
+  attr(:action, :string, required: true)
+  attr(:method, :string, default: "get")
+  attr(:class, :string, default: "")
+  slot(:fields, required: true)
+  slot(:help)
+  slot(:actions)
+
+  def filter_bar(assigns) do
+    ~H"""
+    <form method={@method} action={@action} class={["lockspire-admin-filter-bar", @class]}>
+      <div class="lockspire-admin-filter-bar__fields">
+        {render_slot(@fields)}
+      </div>
+      <div :if={@help != []} class="lockspire-admin-filter-bar__help">
+        {render_slot(@help)}
+      </div>
+      <div :if={@actions != []} class="lockspire-admin-filter-bar__actions">
+        {render_slot(@actions)}
+      </div>
+    </form>
+    """
+  end
+
   attr(:variant, :atom, default: :secondary)
   attr(:type, :string, default: "button")
   attr(:href, :string, default: nil)
