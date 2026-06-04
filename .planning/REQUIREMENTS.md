@@ -32,8 +32,8 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 - [x] **CONFLICT-02**: The public app port is configurable and all printed URLs, docs, and smoke commands use the configured base URL.
 - [x] **CONFLICT-03**: PostgreSQL does not publish host port `5432` by default; any host database port exposure is opt-in and configurable.
 - [x] **CONFLICT-04**: Cache reset targets only the active demo Compose project's database, `deps`, and `_build` volumes.
-- [ ] **TRAEFIK-01**: Traefik hostname routing is optional and never required for the default Docker path.
-- [ ] **TRAEFIK-02**: Optional Traefik mode documents or automates the required external network and uses configurable hostname/router/service labels.
+- [x] **TRAEFIK-01**: Traefik hostname routing is optional and never required for the default Docker path.
+- [x] **TRAEFIK-02**: Optional Traefik mode documents or automates the required external network and uses configurable hostname/router/service labels.
 
 ### Operator-Ready Output And Proof
 
@@ -98,8 +98,8 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | CONFLICT-02 | 113 | Complete |
 | CONFLICT-03 | 113 | Complete |
 | CONFLICT-04 | 113 | Complete |
-| TRAEFIK-01 | 113 | Pending |
-| TRAEFIK-02 | 113 | Pending |
+| TRAEFIK-01 | 113 | Complete |
+| TRAEFIK-02 | 113 | Complete |
 | INFO-01 | 114 | Pending |
 | INFO-02 | 114 | Pending |
 | INFO-03 | 114 | Pending |

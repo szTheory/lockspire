@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
-status: executing
-last_updated: "2026-06-04T21:16:22.646Z"
+status: verifying
+last_updated: "2026-06-04T21:23:23.159Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 60
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 
 Phase: 113 (conflict-controls-optional-traefik) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-04
 
 ## Most Recent Release
@@ -73,6 +73,9 @@ Last activity: 2026-06-04
 - Phase 113 Plan 01 kept direct Docker as the default path and used Compose project-name precedence for resource isolation.
 - Phase 113 Plan 01 kept PostgreSQL host-port exposure absent by default and isolated host access in an explicit override file.
 - Phase 113 Plan 01 kept reset scoped to active-project `db_data`, `deps_volume`, and `build_volume` Docker volumes.
+- [Phase 113]: Phase 113 Plan 02 kept direct Docker as the default path with optional Traefik isolated in an explicit override file.
+- [Phase 113]: Phase 113 Plan 02 attached only web to the external Traefik proxy network while keeping db project-internal.
+- [Phase 113]: Phase 113 Plan 02 kept LOCKSPIRE_DEMO_BASE_URL as the hostname smoke truth for Traefik mode.
 
 ## Blockers/Concerns
 
@@ -89,7 +92,7 @@ Last activity: 2026-06-04
 
 **Next action:** Execute Phase 113 Plan 02.
 **Resume file:** None
-**Stopped at:** Phase 113 context gathered (assumptions mode)
+**Stopped at:** Completed 113-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -112,7 +115,8 @@ Last activity: 2026-06-04
 | Phase 111 P01 | 24 min | 2 tasks | 2 files |
 | Phase 111 P02 | 18 min | 3 tasks | 3 files |
 | Phase 113 P01 | 6 min | 3 tasks | 5 files |
+| Phase 113 P02 | 4min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
-- Execute Phase 113 Plan 02.
+- Verify Phase 113, then execute Phase 114.
