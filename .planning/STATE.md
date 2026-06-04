@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-04T16:10:06.610Z"
 last_activity: 2026-06-04
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Planning next milestone
+**Current focus:** Phase 111 planning
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 111 (demo-url-contract-config-unification) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-04 — Milestone v1.30 started
+Status: Ready for phase planning
+Last activity: 2026-06-04 — Milestone v1.30 roadmap created
 
 ## Most Recent Release
 
@@ -49,14 +49,15 @@ Last activity: 2026-06-04 — Milestone v1.30 started
 | v1.26 | 94-96 | 3 | 5 | shipped |
 | v1.25 | 91-93 | 9 | 9 | shipped |
 
-## v1.29 Phase Plan
+## v1.30 Phase Plan
 
-| Phase | Name | REQs | UI |
-|-------|------|------|----|
-| 107 | Admin Journey Contract & IA Audit | 6 | yes |
-| 108 | Design-System Token & Component Upgrade | 6 | yes |
-| 109 | Weak-Spot Page Polish | 7 | yes |
-| 110 | Demo State, Screenshots, Docs, and Regression Proof | 5 | yes |
+| Phase | Name | REQs | Focus |
+|-------|------|------|-------|
+| 111 | Demo URL Contract & Config Unification | 5 | Docker DX |
+| 112 | Default Docker Compose App + DB | 6 | Docker DX |
+| 113 | Conflict Controls & Optional Traefik | 6 | Docker DX |
+| 114 | Startup Output, Smoke Wrapper & Docs | 8 | Demo DX |
+| 115 | Repo Hygiene Gate & Scoped Cleanup | 10 | Hygiene |
 
 ## Decisions
 
@@ -66,6 +67,9 @@ Last activity: 2026-06-04 — Milestone v1.30 started
 - The CSS architecture remains BEM/design-token `lockspire-admin-*`; no Tailwind migration, theming engine, or arbitrary override layer.
 - Motion is allowed only when it improves orientation, feedback, or state continuity, and must respect reduced-motion preferences.
 - Host-owned seams remain unchanged: Lockspire does not own staff authentication, MFA, role checks, tenant policy, layouts, branding, or developer portal UX.
+- v1.30 is an adoption-demo Docker DX and repo-hygiene milestone, not a new protocol or admin UI polish milestone.
+- Default local demo access should be direct host-port Docker with Traefik as an optional profile.
+- `LOCKSPIRE_DEMO_BASE_URL` should become the single public URL truth for endpoint URL, issuer, seeds, docs, startup output, and smoke proof.
 
 ## Blockers/Concerns
 
@@ -80,7 +84,7 @@ Last activity: 2026-06-04 — Milestone v1.30 started
 
 ## Session Continuity
 
-**Next action:** Start the next milestone with `$gsd-new-milestone`.
+**Next action:** Start Phase 111 with `$gsd-discuss-phase 111` or `$gsd-plan-phase 111`.
 **Resume file:** None
 **Stopped at:** Completed 110-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
@@ -105,4 +109,4 @@ Last activity: 2026-06-04 — Milestone v1.30 started
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 111 with /gsd-discuss-phase 111

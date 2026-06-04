@@ -81,16 +81,49 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ## Traceability
 
-Traceability is populated by the roadmap.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| URL-01 | 111 | Pending |
+| URL-02 | 111 | Pending |
+| URL-03 | 111 | Pending |
+| URL-04 | 111 | Pending |
+| URL-05 | 111 | Pending |
+| DOCKER-01 | 112 | Pending |
+| DOCKER-02 | 112 | Pending |
+| DOCKER-03 | 112 | Pending |
+| DOCKER-04 | 112 | Pending |
+| DOCKER-05 | 112 | Pending |
+| DOCKER-06 | 112 | Pending |
+| CONFLICT-01 | 113 | Pending |
+| CONFLICT-02 | 113 | Pending |
+| CONFLICT-03 | 113 | Pending |
+| CONFLICT-04 | 113 | Pending |
+| TRAEFIK-01 | 113 | Pending |
+| TRAEFIK-02 | 113 | Pending |
+| INFO-01 | 114 | Pending |
+| INFO-02 | 114 | Pending |
+| INFO-03 | 114 | Pending |
+| INFO-04 | 114 | Pending |
+| SMOKE-01 | 114 | Pending |
+| SMOKE-02 | 114 | Pending |
+| SMOKE-03 | 115 | Pending |
+| CLEAN-01 | 115 | Pending |
+| CLEAN-02 | 115 | Pending |
+| CLEAN-03 | 115 | Pending |
+| HYGIENE-01 | 115 | Pending |
+| HYGIENE-02 | 115 | Pending |
+| HYGIENE-03 | 115 | Pending |
+| HYGIENE-04 | 115 | Pending |
+| DOCS-01 | 114 | Pending |
+| DOCS-02 | 114 | Pending |
+| BOUNDARY-01 | 115 | Pending |
+| BOUNDARY-02 | 115 | Pending |
 
 **Coverage:**
 - v1.30 requirements: 35 total
-- Mapped to phases: 0
-- Unmapped: 35
+- Mapped to phases: 35
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-04*
-*Last updated: 2026-06-04 after v1.30 requirements definition*
+*Last updated: 2026-06-04 after v1.30 roadmap creation*
