@@ -41,15 +41,21 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     event_id = result.rows |> hd() |> hd()
 
-    Ecto.Adapters.SQL.query!(
-      Lockspire.TestRepo,
-      "INSERT INTO lockspire_logout_deliveries (delivery_id, " <>
-        "logout_event_id, client_id, channel, target_uri, status, " <>
-        "attempt_count, session_required, inserted_at, updated_at) " <>
-        "VALUES ('test-delivery-123', $1, 'test-client', 'backchannel', " <>
-        "'http://example.com/logout', 'pending', 0, false, $2, $2)",
-      [event_id, now]
-    )
+    for {delivery_id, client_id, status, attempt_count} <- [
+          {"test-delivery-123", "test-client", "pending", 0},
+          {"test-delivery-attempted", "test-client-attempted", "attempted", 1},
+          {"test-delivery-retryable", "test-client-retryable", "retryable", 2}
+        ] do
+      Ecto.Adapters.SQL.query!(
+        Lockspire.TestRepo,
+        "INSERT INTO lockspire_logout_deliveries (delivery_id, " <>
+          "logout_event_id, client_id, channel, target_uri, status, " <>
+          "attempt_count, session_required, inserted_at, updated_at) " <>
+          "VALUES ($1, $2, $3, 'backchannel', " <>
+          "'http://example.com/logout', $4, $5, false, $6, $6)",
+        [delivery_id, event_id, client_id, status, attempt_count, now]
+      )
+    end
 
     :ok
   end
@@ -80,9 +86,14 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert html =~ "Failed"
     assert html =~ "Discarded"
     assert html =~ "Completed"
+    assert summary_stat?(html, "Waiting", 1)
+    assert summary_stat?(html, "Retrying", 1)
+    assert summary_stat?(html, "Failed", 1)
     assert html =~ "lockspire-admin-resource-list__item"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "test-delivery-123"
+    assert html =~ "test-delivery-attempted"
+    assert html =~ "test-delivery-retryable"
     refute html =~ "<table"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
@@ -95,5 +106,12 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp summary_stat?(html, label, value) do
+    Regex.match?(
+      ~r/lockspire-admin-summary-value[^>]*>\s*#{value}\s*<.*?#{Regex.escape(label)}/s,
+      html
+    )
   end
 end

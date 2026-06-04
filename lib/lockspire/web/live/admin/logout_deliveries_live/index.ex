@@ -84,7 +84,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
   defp delivery_metrics(deliveries) do
     %{
       waiting: Enum.count(deliveries, &(&1.status in [:pending, :enqueued])),
-      retrying: Enum.count(deliveries, &(&1.status in [:attempted, :retryable])),
+      retrying: Enum.count(deliveries, &(&1.status == :attempted)),
       failed: Enum.count(deliveries, &(&1.status == :retryable)),
       discarded: Enum.count(deliveries, &(&1.status in [:discarded, :skipped])),
       completed: Enum.count(deliveries, &(&1.status in [:succeeded, :rendered]))
