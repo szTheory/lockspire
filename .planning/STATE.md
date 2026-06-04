@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
-status: verifying
-last_updated: "2026-06-04T18:18:07.858Z"
-last_activity: 2026-06-04 -- Phase 111 execution complete; ready for verification
+status: ready_to_plan
+last_updated: 2026-06-04T18:21:18.385Z
+last_activity: 2026-06-04 -- Phase 111 verified complete; ready to discuss Phase 112
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 2
   completed_plans: 2
   percent: 20
+stopped_at: Phase 111 complete (2/2) - ready to discuss Phase 112
 ---
 
 # Project State
@@ -21,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 111 — demo-url-contract-config-unification
+**Current focus:** Phase 112 — default docker compose app + db
 
 ## Current Position
 
-Phase: 111 (demo-url-contract-config-unification) — READY FOR VERIFICATION
-Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-06-04 -- Phase 111 execution complete; ready for verification
+Phase: 112
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-04
 
 ## Most Recent Release
 
