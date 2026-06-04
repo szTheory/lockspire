@@ -91,12 +91,25 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Token inspection"
+    assert html =~ "Support"
+    assert html =~ "Token investigation"
+    assert html =~ "Selected account: account-token-ui"
+    assert html =~ "Selected status: active"
+    assert html =~ "Filter tokens"
+    assert html =~ "Review token"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "Token UI Client"
+    assert html =~ "Account"
+    assert html =~ "Family"
+    assert html =~ "Expires"
     assert html =~ "Keys"
     assert html =~ "Overview"
     assert html =~ "DCR"
     refute html =~ "token-ui-refresh-hash"
+    refute html =~ "client_secret"
+    refute html =~ "verifier"
+    refute html =~ "user_code"
   end
 
   test "token detail shows lineage and guarded single-token and family revoke flows", %{
@@ -114,9 +127,12 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    assert html =~ "Support"
+    assert html =~ "Token health decision"
     assert html =~ "Opaque tokens stay opaque here"
     assert html =~ "Refresh family lineage"
     assert html =~ "lockspire-admin-description-list"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "Client"
     assert html =~ "Token UI Client"
     assert html =~ "account_"
@@ -126,7 +142,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Parent token"
     assert html =~ "lockspire-admin-confirmation-panel"
     assert html =~ "Revoke token"
-    assert html =~ "Revoke refresh family"
+    assert html =~ "Revoke token family"
+    assert html =~ "family-wide action"
+    assert html =~ "revokes every active token"
     refute html =~ "token-ui-refresh-hash"
     refute html =~ "family-ui-123"
     refute html =~ "account-token-ui"

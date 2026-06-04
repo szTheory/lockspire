@@ -97,15 +97,37 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Support"
+        title="Token health decision"
+        body="Review durable token state, refresh-family context, and the smallest safe revocation path."
+      >
+        <:summary>
+          <span>Status: <AdminComponents.status_badge status={@token_detail.status} /></span>
+        </:summary>
+        <:actions>
+          <AdminComponents.admin_button href={tokens_index_path()}>
+            Review token investigation
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
+
       <AdminComponents.section_card
         title={@token_detail.token.handle}
-        subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts."
+        subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts or plaintext recovery."
       >
         <AdminComponents.description_list>
-          <:item label="Client"><code>{@token_detail.token.client_display}</code></:item>
-          <:item label="Client handle"><code>{@token_detail.token.client_handle}</code></:item>
+          <:item label="Client">
+            <AdminComponents.long_value value={@token_detail.token.client_display} kind={:id} />
+          </:item>
+          <:item label="Client handle">
+            <AdminComponents.long_value value={@token_detail.token.client_handle} kind={:id} />
+          </:item>
           <:item label="Account">
-            <code>{@token_detail.token.account_handle || "Not recorded"}</code>
+            <AdminComponents.long_value
+              value={@token_detail.token.account_handle || "Not recorded"}
+              kind={:id}
+            />
           </:item>
           <:item label="Type"><code>{@token_detail.token.token_type}</code></:item>
           <:item label="Status"><AdminComponents.status_badge status={@token_detail.status} /></:item>
@@ -119,12 +141,23 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
             <AdminComponents.timestamp value={@token_detail.token.reuse_detected_at} />
           </:item>
           <:item label="Session ID">
-            <code>{Map.get(@token_detail.token, :sid) || "Not recorded"}</code>
+            <AdminComponents.long_value
+              value={Map.get(@token_detail.token, :sid) || "Not recorded"}
+              kind={:id}
+            />
           </:item>
-          <:item label="Family"><code>{@token_detail.token.family_handle || "Not recorded"}</code></:item>
+          <:item label="Family">
+            <AdminComponents.long_value
+              value={@token_detail.token.family_handle || "Not recorded"}
+              kind={:id}
+            />
+          </:item>
           <:item label="Generation"><code>{@token_detail.token.generation}</code></:item>
           <:item label="Parent token">
-            <code>{@token_detail.token.parent_handle || "Not recorded"}</code>
+            <AdminComponents.long_value
+              value={@token_detail.token.parent_handle || "Not recorded"}
+              kind={:id}
+            />
           </:item>
           <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
         </AdminComponents.description_list>
@@ -147,16 +180,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
         <ul class="lockspire-admin-resource-list lockspire-admin-section-spaced">
           <%= for entry <- @token_detail.family_tokens do %>
-            <li>
-              <strong>
-                {if entry.current?,
-                  do: "Current token",
-                  else: entry.token.handle}
-              </strong>
-              <span>Type {entry.token.token_type}</span>
-              <span>Generation {entry.token.generation}</span>
-              <AdminComponents.status_badge status={entry.status} />
-            </li>
+            <AdminComponents.resource_item
+              title={if(entry.current?, do: "Current token", else: entry.token.handle)}
+              subtitle={"#{entry.token.token_type} token generation #{entry.token.generation}"}
+            >
+              <:meta>
+                <span>
+                  Token
+                  <AdminComponents.long_value value={entry.token.handle} kind={:id} />
+                </span>
+              </:meta>
+              <:status>
+                <AdminComponents.status_badge status={entry.status} />
+              </:status>
+            </AdminComponents.resource_item>
           <% end %>
         </ul>
       </AdminComponents.section_card>
@@ -174,7 +211,12 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
             <form class="lockspire-admin-form-stack" phx-submit="revoke_token">
               <label class="lockspire-admin-checkbox-field">
                 <input type="checkbox" name="revoke[confirm]" value="true" />
-                <span>Revoke only this token record.</span>
+                <span>
+                  Revoke only this {@token_detail.token.token_type} token for client
+                  {@token_detail.token.client_display}, subject
+                  {@token_detail.token.account_handle || "not recorded"}, expiring
+                  <AdminComponents.timestamp value={@token_detail.token.expires_at} />.
+                </span>
               </label>
               <AdminComponents.action_bar>
                 <AdminComponents.admin_button type="submit" variant={:danger}>
@@ -187,16 +229,26 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           </:body>
         </AdminComponents.confirmation_panel>
 
-        <AdminComponents.confirmation_panel title="Revoke refresh family" variant={:danger}>
+        <AdminComponents.confirmation_panel title="Revoke token family" variant={:danger}>
           <:body>
             <form class="lockspire-admin-form-stack" phx-submit="revoke_family">
               <label class="lockspire-admin-checkbox-field">
                 <input type="checkbox" name="family[confirm]" value="true" />
-                <span>Revoke the full refresh family linked to this token.</span>
+                <span>
+                  Revoke token family
+                  <AdminComponents.long_value
+                    value={@token_detail.token.family_handle || "not recorded"}
+                    kind={:id}
+                  />
+                  for client {@token_detail.token.client_display} and subject
+                  {@token_detail.token.account_handle || "not recorded"}. This family-wide action
+                  revokes every active token in the refresh lineage and cannot recover plaintext token
+                  material.
+                </span>
               </label>
               <AdminComponents.action_bar>
                 <AdminComponents.admin_button type="submit" variant={:danger}>
-                  Revoke family
+                  Revoke token family
                 </AdminComponents.admin_button>
               </AdminComponents.action_bar>
             </form>
@@ -226,4 +278,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   end
 
   defp parse_id(_value), do: nil
+
+  defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
 end
