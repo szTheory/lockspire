@@ -1,34 +1,44 @@
 services:
   web:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
-    # Expose to Traefik network
-    networks:
-      - local-dev-proxy
+      context: ../..
+      dockerfile: examples/adoption_demo/Dockerfile.dev
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4100:4100"
     volumes:
-      # Mount the entire current directory for live-reloading
-      - .:/app
-      # Create anonymous volumes for deps/ and _build/ to isolate Linux binaries 
-      # from the macOS host, drastically improving performance and preventing crashes.
-      - deps_volume:/app/deps
-      - build_volume:/app/_build
-    labels:
-      - "traefik.enable=true"
-      # Route traffic from http://adoption-demo.localhost to this container
-      - "traefik.http.routers.adoption-demo.rule=Host(`adoption-demo.localhost`)"
-      # Define the internal port Phoenix listens on
-      - "traefik.http.services.adoption-demo.loadbalancer.server.port=4000"
+      - ../..:/workspace
+      # Isolate Linux build artifacts from host artifacts.
+      - deps_volume:/workspace/examples/adoption_demo/deps
+      - build_volume:/workspace/examples/adoption_demo/_build
     environment:
-      # Ensure Phoenix binds to 0.0.0.0 so Traefik can reach it
-      - PHX_SERVER=true
-      - PORT=4000
-      - LOCKSPIRE_DEMO_BIND_IP=0.0.0.0
+      PHX_SERVER: "true"
+      PORT: "4100"
+      LOCKSPIRE_DEMO_BASE_URL: "http://127.0.0.1:4100"
+      LOCKSPIRE_DEMO_BIND_IP: "0.0.0.0"
+      LOCKSPIRE_DEMO_DB_HOST: "db"
+      LOCKSPIRE_DEMO_DB_PORT: "5432"
+      LOCKSPIRE_DEMO_DB_NAME: "lockspire_adoption_demo"
+      LOCKSPIRE_DEMO_DB_USER: "lockspire"
+      LOCKSPIRE_DEMO_DB_PASSWORD: "lockspire"
+
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: "lockspire_adoption_demo"
+      POSTGRES_USER: "lockspire"
+      POSTGRES_PASSWORD: "lockspire"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lockspire -d lockspire_adoption_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
 volumes:
+  db_data:
   deps_volume:
   build_volume:
-
-networks:
-  local-dev-proxy:
-    external: true
