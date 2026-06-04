@@ -40,12 +40,16 @@ defmodule Lockspire.Web.Admin.CSS do
     /* Status Colors */
     --ls-color-success-bg: #dcfce7;
     --ls-color-success-text: #166534;
+    --ls-color-success-border: #bbf7d0;
     --ls-color-warning-bg: #fef9c3;
     --ls-color-warning-text: #854d0e;
+    --ls-color-warning-border: #fde68a;
     --ls-color-danger-bg: #fee2e2;
     --ls-color-danger-text: #991b1b;
+    --ls-color-danger-border: #fecaca;
     --ls-color-info-bg: #e0f2fe;
     --ls-color-info-text: #075985;
+    --ls-color-info-border: #bae6fd;
 
     /* Radii (Concentric) */
     --ls-radius-sm: 0.125rem;
@@ -59,8 +63,53 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     /* Transitions */
-    --ls-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --ls-transition-bounce: 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ls-motion-duration-fast: 150ms;
+    --ls-motion-duration-medium: 220ms;
+    --ls-motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --ls-motion-property-feedback: background-color, border-color, color, box-shadow, transform;
+    --ls-transition-fast: var(--ls-motion-duration-fast) var(--ls-motion-ease-standard);
+
+    /* Semantic Token Aliases */
+    --ls-surface-page: var(--ls-color-gray-50);
+    --ls-surface-panel: white;
+    --ls-surface-muted: var(--ls-color-gray-100);
+    --ls-text-strong: var(--ls-color-gray-900);
+    --ls-text-body: var(--ls-color-gray-700);
+    --ls-text-muted: var(--ls-color-gray-500);
+    --ls-border-subtle: var(--ls-color-gray-200);
+    --ls-border-strong: var(--ls-color-gray-300);
+    --ls-status-success-bg: var(--ls-color-success-bg);
+    --ls-status-success-text: var(--ls-color-success-text);
+    --ls-status-success-border: var(--ls-color-success-border);
+    --ls-status-warning-bg: var(--ls-color-warning-bg);
+    --ls-status-warning-text: var(--ls-color-warning-text);
+    --ls-status-warning-border: var(--ls-color-warning-border);
+    --ls-status-danger-bg: var(--ls-color-danger-bg);
+    --ls-status-danger-text: var(--ls-color-danger-text);
+    --ls-status-danger-border: var(--ls-color-danger-border);
+    --ls-status-info-bg: var(--ls-color-info-bg);
+    --ls-status-info-text: var(--ls-color-info-text);
+    --ls-status-info-border: var(--ls-color-info-border);
+    --ls-control-height: 40px;
+    --ls-control-padding-x: var(--ls-space-4);
+    --ls-control-padding-y: var(--ls-space-2);
+    --ls-type-label-size: 0.75rem;
+    --ls-type-body-size: 0.875rem;
+    --ls-type-heading-size: 1rem;
+    --ls-type-display-size: 1.5rem;
+    --ls-type-weight-regular: 400;
+    --ls-type-weight-semibold: 600;
+    --ls-type-line-label: 1.2;
+    --ls-type-line-body: 1.5;
+    --ls-type-line-heading: 1.25;
+    --ls-type-line-display: 1.2;
+    --ls-focus-ring-color: var(--ls-color-brand-600);
+    --ls-focus-ring-width: 2px;
+    --ls-focus-ring-offset: 3px;
+    --ls-focus-ring-shadow: 0 0 0 3px var(--ls-color-brand-100);
+    --ls-z-nav: 10;
+    --ls-z-overlay: 50;
+    --ls-z-modal: 100;
   }
 
   /* Base Styles */
