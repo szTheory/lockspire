@@ -28,10 +28,10 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ### Conflict Controls
 
-- [ ] **CONFLICT-01**: The demo Compose project name is configurable so multiple local Lockspire checkouts or sibling library demos can run without resource-name collisions.
-- [ ] **CONFLICT-02**: The public app port is configurable and all printed URLs, docs, and smoke commands use the configured base URL.
-- [ ] **CONFLICT-03**: PostgreSQL does not publish host port `5432` by default; any host database port exposure is opt-in and configurable.
-- [ ] **CONFLICT-04**: Cache reset targets only the active demo Compose project's database, `deps`, and `_build` volumes.
+- [x] **CONFLICT-01**: The demo Compose project name is configurable so multiple local Lockspire checkouts or sibling library demos can run without resource-name collisions.
+- [x] **CONFLICT-02**: The public app port is configurable and all printed URLs, docs, and smoke commands use the configured base URL.
+- [x] **CONFLICT-03**: PostgreSQL does not publish host port `5432` by default; any host database port exposure is opt-in and configurable.
+- [x] **CONFLICT-04**: Cache reset targets only the active demo Compose project's database, `deps`, and `_build` volumes.
 - [ ] **TRAEFIK-01**: Traefik hostname routing is optional and never required for the default Docker path.
 - [ ] **TRAEFIK-02**: Optional Traefik mode documents or automates the required external network and uses configurable hostname/router/service labels.
 
@@ -94,10 +94,10 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | DOCKER-04 | 112 | Complete |
 | DOCKER-05 | 112 | Complete |
 | DOCKER-06 | 112 | Complete |
-| CONFLICT-01 | 113 | Pending |
-| CONFLICT-02 | 113 | Pending |
-| CONFLICT-03 | 113 | Pending |
-| CONFLICT-04 | 113 | Pending |
+| CONFLICT-01 | 113 | Complete |
+| CONFLICT-02 | 113 | Complete |
+| CONFLICT-03 | 113 | Complete |
+| CONFLICT-04 | 113 | Complete |
 | TRAEFIK-01 | 113 | Pending |
 | TRAEFIK-02 | 113 | Pending |
 | INFO-01 | 114 | Pending |

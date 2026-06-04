@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
 status: executing
-last_updated: "2026-06-04T21:02:19.622Z"
-last_activity: 2026-06-04 -- Phase 113 planning complete
+last_updated: "2026-06-04T21:16:22.646Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 6
-  completed_plans: 4
-  percent: 40
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 113 — conflict controls & optional traefik
+**Current focus:** Phase 113 — conflict-controls-optional-traefik
 
 ## Current Position
 
-Phase: 113
-Plan: Not started
+Phase: 113 (conflict-controls-optional-traefik) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-06-04 -- Phase 113 planning complete
+Last activity: 2026-06-04
 
 ## Most Recent Release
 
@@ -70,6 +70,9 @@ Last activity: 2026-06-04 -- Phase 113 planning complete
 - v1.30 is an adoption-demo Docker DX and repo-hygiene milestone, not a new protocol or admin UI polish milestone.
 - Default local demo access should be direct host-port Docker with Traefik as an optional profile.
 - `LOCKSPIRE_DEMO_BASE_URL` should become the single public URL truth for endpoint URL, issuer, seeds, docs, startup output, and smoke proof.
+- Phase 113 Plan 01 kept direct Docker as the default path and used Compose project-name precedence for resource isolation.
+- Phase 113 Plan 01 kept PostgreSQL host-port exposure absent by default and isolated host access in an explicit override file.
+- Phase 113 Plan 01 kept reset scoped to active-project `db_data`, `deps_volume`, and `build_volume` Docker volumes.
 
 ## Blockers/Concerns
 
@@ -84,8 +87,8 @@ Last activity: 2026-06-04 -- Phase 113 planning complete
 
 ## Session Continuity
 
-**Next action:** Plan Phase 113 with `$gsd-plan-phase 113`.
-**Resume file:** .planning/phases/113-conflict-controls-optional-traefik/113-CONTEXT.md
+**Next action:** Execute Phase 113 Plan 02.
+**Resume file:** None
 **Stopped at:** Phase 113 context gathered (assumptions mode)
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
@@ -108,7 +111,8 @@ Last activity: 2026-06-04 -- Phase 113 planning complete
 | Phase 110 P05 | 22 min | 3 tasks | 5 files |
 | Phase 111 P01 | 24 min | 2 tasks | 2 files |
 | Phase 111 P02 | 18 min | 3 tasks | 3 files |
+| Phase 113 P01 | 6 min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 
-- Plan Phase 113 with /gsd-plan-phase 113
+- Execute Phase 113 Plan 02.
