@@ -38,11 +38,11 @@ created: 2026-06-04
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 111-01-01 | 01 | 1 | URL-01, URL-02, URL-05 | T-111-01 / T-111-03 | Public URL does not control bind IP; default bind remains loopback | compile + static | `cd examples/adoption_demo && mix compile --warnings-as-errors` | yes | pending |
-| 111-01-02 | 01 | 1 | URL-01, URL-03 | T-111-01 / T-111-02 | Exact local redirect URIs derive from the same base URL | static + setup | `cd examples/adoption_demo && mix ecto.setup` | yes | pending |
-| 111-01-03 | 01 | 1 | URL-03 | T-111-02 | Developer copy and authorize params match seeded local callback URL | compile + smoke | `cd examples/adoption_demo && mix compile --warnings-as-errors` | yes | pending |
-| 111-01-04 | 01 | 1 | URL-04 | T-111-01 | Smoke reports expected and actual issuer/endpoint/verification URI drift | smoke | `LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 python3 scripts/demo/adoption_smoke.py` | yes | pending |
-| 111-01-05 | 01 | 1 | URL-01, URL-02, URL-03, URL-04, URL-05 | T-111-01 / T-111-02 / T-111-03 | End-to-end demo publishes and consumes one browser-visible base URL | full smoke | `LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 python3 scripts/demo/adoption_smoke.py` | yes | pending |
+| 111-01-task-1 | 01 | 1 | URL-01, URL-02 | T-111-01 / T-111-02 | Endpoint URL and issuer derive from one normalized browser-visible base URL | compile + static | `cd examples/adoption_demo && mix compile --warnings-as-errors` | yes | pending |
+| 111-01-task-2 | 01 | 1 | URL-05 | T-111-03 / T-111-04 | Public URL does not control bind IP; default bind remains loopback and Docker opts into `0.0.0.0` | compile + compose | `cd examples/adoption_demo && LOCKSPIRE_DEMO_BIND_IP=0.0.0.0 mix compile --warnings-as-errors` | yes | pending |
+| 111-02-task-1 | 02 | 2 | URL-01, URL-03 | T-111-05 / T-111-06 | Exact local redirect, registration, interaction, logout, and printed callback URLs derive from the same base URL while external fixtures stay external | static + setup | `cd examples/adoption_demo && mix ecto.setup` | yes | pending |
+| 111-02-task-2 | 02 | 2 | URL-01, URL-03 | T-111-05 | Developer copy and authorize params match the seeded local callback URL | compile + static | `cd examples/adoption_demo && mix compile --warnings-as-errors` | yes | pending |
+| 111-02-task-3 | 02 | 2 | URL-02, URL-04 | T-111-07 / T-111-08 | Smoke remains base-URL driven and reports expected/actual issuer, endpoint, redirect, and verification URI drift | py_compile + smoke | `python3 -m py_compile scripts/demo/adoption_smoke.py` | yes | pending |
 
 ---
 

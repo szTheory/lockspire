@@ -417,17 +417,19 @@ assert_equal(
 | A4 | Trimming trailing slashes is sufficient normalization for Phase 111. | Common Pitfalls | If users provide paths in base URL, config may need stricter rejection. |
 | A5 | Expected/actual smoke helper wording is enough for drift clarity. | Common Pitfalls, State of the Art | CI failures may still need more context if response JSON is malformed. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `LOCKSPIRE_DEMO_BASE_URL` allow a path prefix other than root?**
    - What we know: The locked issuer is exactly `{base_url}/lockspire`, and current demo routes live at root plus `/lockspire`. [VERIFIED: CONTEXT.md] [VERIFIED: codebase grep]
    - What's unclear: Whether a future reverse-proxy path prefix is intended. [ASSUMED]
    - Recommendation: For Phase 111, reject or ignore path-prefix expansion and keep base URL as an origin with no path except optional trailing slash. [ASSUMED]
+   - RESOLVED: Phase 111 rejects path prefixes except empty/root path. Reverse-proxy path-prefix behavior is not part of the v1.30 Phase 111 URL contract and can be considered only if a later phase explicitly scopes it.
 
 2. **Should the bind env accept arbitrary IPv4 values?**
    - What we know: Requirements only need loopback default and Docker-reachable `0.0.0.0`. [VERIFIED: REQUIREMENTS.md]
    - What's unclear: Whether local LAN testing is needed before later Docker phases. [ASSUMED]
    - Recommendation: Start with `127.0.0.1` and `0.0.0.0`; add broader parsing only if tests or user decisions require it. [ASSUMED]
+   - RESOLVED: Phase 111 accepts only `127.0.0.1` and `0.0.0.0` for the bind env. Broader IP parsing is deferred unless later Docker conflict/control work creates a concrete need.
 
 ## Environment Availability
 
