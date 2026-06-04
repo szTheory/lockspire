@@ -65,6 +65,21 @@ Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Int
 - Support and operations pages expose useful pivot context without leaking secrets.
 - Risky actions are visually distinct and confirmation-backed.
 
+**Plans:** 6 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 109-01-PLAN.md — Polish token support investigation index/detail
+- [ ] 109-02-PLAN.md — Polish consent support investigation index/detail
+- [ ] 109-03-PLAN.md — Recompose operations queues for logout, device, and interaction triage
+- [ ] 109-04-PLAN.md — Polish DCR onboarding and IAT inventory/minting
+- [ ] 109-05-PLAN.md — Polish keys and client-detail action grouping
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 109-06-PLAN.md — Add Phase 109 deterministic contract proof
+
 ### Phase 110: Demo State, Screenshots, Docs, and Regression Proof
 
 Expand demo seeds and proof artifacts so the final UI can be clicked through and visually inspected. Update operator docs and contract tests to pin the journey model and design-system conventions.
