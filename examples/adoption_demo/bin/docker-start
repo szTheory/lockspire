@@ -43,6 +43,19 @@ create_database() {
   return 1
 }
 
+seed_database() {
+  seed_output="$(mktemp)"
+
+  if mix run priv/repo/seeds.exs >"$seed_output" 2>&1; then
+    rm -f "$seed_output"
+    return 0
+  fi
+
+  cat "$seed_output" >&2
+  rm -f "$seed_output"
+  return 1
+}
+
 wait_for_http() {
   attempt=1
 
@@ -73,7 +86,7 @@ wait_for_postgres
 mix deps.get
 create_database
 mix ecto.migrate --migrations-path ../../priv/repo/migrations
-mix run priv/repo/seeds.exs
+seed_database
 
 mix phx.server &
 server_pid="$!"
