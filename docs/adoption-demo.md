@@ -64,6 +64,46 @@ docker compose -f examples/adoption_demo/docker-compose.yml \
 
 The app still talks to PostgreSQL on the internal Compose service port `5432`.
 
+Traefik hostname routing is optional. The default Docker command above does not
+need Traefik or an external proxy network. If you already use the repo-local
+Traefik helper, create or reuse the shared external network:
+
+```sh
+docker network create "${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}"
+```
+
+Start the helper in one shell:
+
+```sh
+docker compose -f tools/traefik/docker-compose.yml up --build
+```
+
+Then start the demo with the explicit Traefik override and pass the hostname
+origin through `LOCKSPIRE_DEMO_BASE_URL`:
+
+```sh
+LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost \
+docker compose -f examples/adoption_demo/docker-compose.yml \
+  -f examples/adoption_demo/docker-compose.traefik.yml up --build
+```
+
+The Traefik override attaches only the `web` service to the external proxy
+network. PostgreSQL stays on the project-internal network. These variables are
+available when running multiple demos behind the same local proxy:
+
+| Variable | Default |
+| --- | --- |
+| `LOCKSPIRE_DEMO_TRAEFIK_HOST` | `lockspire-demo.localhost` |
+| `LOCKSPIRE_DEMO_TRAEFIK_ROUTER` | `lockspire-adoption-demo` |
+| `LOCKSPIRE_DEMO_TRAEFIK_SERVICE` | `lockspire-adoption-demo` |
+| `LOCKSPIRE_DEMO_TRAEFIK_NETWORK` | `local-dev-proxy` |
+
+Run the smoke against the same hostname origin:
+
+```sh
+LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py
+```
+
 To reset only this demo project's database and container build caches, run:
 
 ```sh
