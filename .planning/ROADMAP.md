@@ -31,6 +31,11 @@ Make one public base URL drive every browser-visible demo URL. This phase lands 
 - Docker can bind Phoenix to a container-reachable interface without weakening host-local loopback defaults.
 
 **Requirements:** URL-01, URL-02, URL-03, URL-04, URL-05
+**Plans:** 2 plans
+
+Plans:
+- [ ] 111-01-PLAN.md - Configure one demo base URL for endpoint/issuer and explicit bind IP.
+- [ ] 111-02-PLAN.md - Derive seeded/UI URLs and sharpen smoke drift proof.
 
 ### Phase 112: Default Docker Compose App + DB
 
