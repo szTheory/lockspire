@@ -28,34 +28,29 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <section class="lockspire-admin-hero">
-        <div>
-          <p class="lockspire-admin-eyebrow">Partner onboarding</p>
-          <h2>Dynamic registration policy, Initial Access Tokens, and self-registered clients.</h2>
-          <p>
-            DCR is an onboarding journey: decide who may register, mint short-lived intake
-            tokens, review what appeared, and rotate registration access tokens when needed.
-          </p>
-        </div>
-        <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-          Mint IAT
-        </AdminComponents.admin_button>
-      </section>
+      <AdminComponents.page_hero
+        eyebrow="Partner onboarding"
+        title="Dynamic registration policy, Initial Access Tokens, and self-registered clients."
+        body="DCR is an onboarding journey: decide who may register, mint short-lived intake tokens, review what appeared, and rotate registration access tokens when needed."
+      >
+        <:actions>
+          <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
+            Mint IAT
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
 
-      <div class="lockspire-admin-summary-grid">
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@policy.registration_policy}</span>
-          <span class="lockspire-admin-summary-label">registration mode</span>
-        </div>
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.iats.active}</span>
-          <span class="lockspire-admin-summary-label">active IATs</span>
-        </div>
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.clients.self_registered}</span>
-          <span class="lockspire-admin-summary-label">self-registered clients</span>
-        </div>
-      </div>
+      <AdminComponents.metric_grid>
+        <AdminComponents.summary_stat
+          value={@policy.registration_policy}
+          label="registration mode"
+        />
+        <AdminComponents.summary_stat value={@summary.iats.active} label="active IATs" />
+        <AdminComponents.summary_stat
+          value={@summary.clients.self_registered}
+          label="self-registered clients"
+        />
+      </AdminComponents.metric_grid>
 
       <div class="lockspire-admin-dashboard-grid">
         <AdminComponents.section_card

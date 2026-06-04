@@ -28,38 +28,30 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <section class="lockspire-admin-hero">
-        <div>
-          <p class="lockspire-admin-eyebrow">Operator cockpit</p>
-          <h2>Run the embedded provider with the important state in view.</h2>
-          <p>
-            Start with client posture, issuer security, token incidents, key readiness, and live
-            protocol work. Each card points to the workflow that owns the next action.
-          </p>
-        </div>
-        <AdminComponents.admin_button href={admin_path("/clients")} variant={:primary}>
-          Review clients
-        </AdminComponents.admin_button>
-      </section>
+      <AdminComponents.page_hero
+        eyebrow="Operator cockpit"
+        title="Run the embedded provider with the important state in view."
+        body="Start with client posture, issuer security, token incidents, key readiness, and live protocol work. Each card points to the workflow that owns the next action."
+      >
+        <:actions>
+          <AdminComponents.admin_button href={admin_path("/clients")} variant={:primary}>
+            Review clients
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
 
-      <div class="lockspire-admin-summary-grid lockspire-admin-summary-grid-wide">
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.clients.total}</span>
-          <span class="lockspire-admin-summary-label">clients</span>
-        </div>
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.clients.self_registered}</span>
-          <span class="lockspire-admin-summary-label">self-registered</span>
-        </div>
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.tokens.reuse_detected}</span>
-          <span class="lockspire-admin-summary-label">reuse incidents</span>
-        </div>
-        <div class="lockspire-admin-summary-stat">
-          <span class="lockspire-admin-summary-value">{@summary.logouts.failed}</span>
-          <span class="lockspire-admin-summary-label">logout failures</span>
-        </div>
-      </div>
+      <AdminComponents.metric_grid wide>
+        <AdminComponents.summary_stat value={@summary.clients.total} label="clients" />
+        <AdminComponents.summary_stat
+          value={@summary.clients.self_registered}
+          label="self-registered"
+        />
+        <AdminComponents.summary_stat
+          value={@summary.tokens.reuse_detected}
+          label="reuse incidents"
+        />
+        <AdminComponents.summary_stat value={@summary.logouts.failed} label="logout failures" />
+      </AdminComponents.metric_grid>
 
       <div class="lockspire-admin-dashboard-grid">
         <AdminComponents.section_card
