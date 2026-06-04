@@ -29,13 +29,16 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
-        eyebrow="Partner onboarding"
-        title="Dynamic registration policy, Initial Access Tokens, and self-registered clients."
-        body="DCR is an onboarding journey: decide who may register, mint short-lived intake tokens, review what appeared, and rotate registration access tokens when needed."
+        eyebrow="Configure"
+        title="DCR onboarding"
+        body="DCR onboarding is the partner intake journey: mint short-lived initial access tokens, review self-registered clients, and route issuer posture changes to DCR policy."
       >
         <:actions>
           <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-            Mint IAT
+            Mint initial access token
+          </AdminComponents.admin_button>
+          <AdminComponents.admin_button href={admin_path("/iats")}>
+            Review initial access tokens
           </AdminComponents.admin_button>
         </:actions>
       </AdminComponents.page_hero>
@@ -54,7 +57,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
 
       <div class="lockspire-admin-dashboard-grid">
         <AdminComponents.section_card
-          title="Gate registration"
+          title="DCR policy"
           subtitle="Set whether registration is disabled, IAT-gated, or open."
         >
           <p class="lockspire-admin-help">
@@ -69,7 +72,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
         </AdminComponents.section_card>
 
         <AdminComponents.section_card
-          title="Mint and revoke IATs"
+          title="Initial access token inventory"
           subtitle="Plaintext is shown once; durable rows let operators revoke intake."
         >
           <dl class="lockspire-admin-description-list">
@@ -87,9 +90,11 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
             </div>
           </dl>
           <AdminComponents.action_bar>
-            <AdminComponents.admin_button href={admin_path("/iats")}>Review IATs</AdminComponents.admin_button>
+            <AdminComponents.admin_button href={admin_path("/iats")}>
+              Review initial access tokens
+            </AdminComponents.admin_button>
             <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-              Mint IAT
+              Mint initial access token
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </AdminComponents.section_card>

@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin.InitialAccessTokens
+  alias Lockspire.Redaction
 
   @impl true
   def mount(_params, _session, socket) do
@@ -49,6 +50,33 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
         :active
     end
   end
+
+  def iat_metrics(tokens) do
+    %{
+      active: Enum.count(tokens, &(iat_status(&1) == :active)),
+      used: Enum.count(tokens, &(iat_status(&1) == :used)),
+      expired: Enum.count(tokens, &(iat_status(&1) == :expired)),
+      revoked: Enum.count(tokens, &(iat_status(&1) == :revoked)),
+      total: length(tokens)
+    }
+  end
+
+  def token_title(token), do: "Initial access token #{redacted_handle(:iat, token.id)}"
+
+  def usage_label(%{single_use: true}), do: "Single-use"
+  def usage_label(_token), do: "Multi-use"
+
+  def token_timestamp(token), do: token.revoked_at || token.used_at || token.expires_at
+
+  def redacted_handle(_type, nil), do: "Not recorded"
+  def redacted_handle(type, value), do: Redaction.handle(type, value)
+
+  def formatted_timestamp(nil), do: "Not recorded"
+
+  def formatted_timestamp(%DateTime{} = value),
+    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
+
+  def formatted_timestamp(value), do: to_string(value)
 
   def iat_new_path, do: Lockspire.mount_path() <> "/admin/iats/new"
 end

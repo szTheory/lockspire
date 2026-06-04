@@ -1,26 +1,29 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.page_hero
+    eyebrow="Configure"
+    title="Mint initial access token"
+    body="Create a DCR onboarding intake token. DCR policy controls issuer registration posture; this token is the partner handoff credential."
+  />
+
   <Lockspire.Web.Components.AdminComponents.section_card
-    title="Mint Initial Access Token"
-    subtitle="Generate a new token to allow dynamic client registration."
+    title="Mint initial access token"
+    subtitle="Use short-lived, scoped intake tokens for partner onboarding. Plaintext is shown once and not shown again."
   >
     <%= if @iat_secret do %>
-      <Lockspire.Web.Components.AdminComponents.alert variant={:warning} title="Secret revealed">
-        <p>
-          This is the <strong>only time</strong> this token secret will be displayed. Copy it now
-          and store it securely.
-        </p>
-        <div class="lockspire-admin-code-block">
-          {@iat_secret}
-        </div>
-        <Lockspire.Web.Components.AdminComponents.action_bar>
-          <Lockspire.Web.Components.AdminComponents.admin_button
-            phx-click="acknowledge_copy"
-            variant={:primary}
-          >
-            I have copied this secret
-          </Lockspire.Web.Components.AdminComponents.admin_button>
-        </Lockspire.Web.Components.AdminComponents.action_bar>
-      </Lockspire.Web.Components.AdminComponents.alert>
+      <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
+        title="Initial access token minted"
+        body="Copy once now. This initial access token is not stored or shown again as plaintext."
+        label="Initial access token"
+        value={@iat_secret}
+      />
+      <Lockspire.Web.Components.AdminComponents.action_bar>
+        <Lockspire.Web.Components.AdminComponents.admin_button
+          phx-click="acknowledge_copy"
+          variant={:primary}
+        >
+          I have copied this secret
+        </Lockspire.Web.Components.AdminComponents.admin_button>
+      </Lockspire.Web.Components.AdminComponents.action_bar>
     <% else %>
       <form phx-submit="mint" class="lockspire-admin-form-shell">
         <div class="lockspire-admin-field">
@@ -45,13 +48,13 @@
 
         <Lockspire.Web.Components.AdminComponents.action_bar>
           <Lockspire.Web.Components.AdminComponents.admin_button variant={:primary} type="submit">
-            Mint IAT
+            Mint initial access token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             href={iat_index_path()}
             variant={:secondary}
           >
-            Cancel
+            Review initial access tokens
           </Lockspire.Web.Components.AdminComponents.admin_button>
         </Lockspire.Web.Components.AdminComponents.action_bar>
       </form>

@@ -35,9 +35,18 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     :ok
   end
 
+  test "DCR page preserves onboarding and policy vocabulary" do
+    {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
+
+    assert html =~ "DCR onboarding"
+    assert html =~ "DCR policy"
+    assert html =~ "Mint initial access token"
+    assert html =~ "Review initial access tokens"
+  end
+
   describe "Index" do
-    test "lists active tokens and allows revocation" do
-      {:ok, iat, _secret} =
+    test "renders DCR onboarding inventory context and allows guarded revocation" do
+      {:ok, iat, secret} =
         InitialAccessTokens.mint_iat(%{
           single_use: true,
           created_by: "test",
@@ -46,8 +55,19 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 
-      assert html =~ "Initial Access Tokens"
-      assert html =~ to_string(iat.id)
+      assert html =~ "Configure"
+      assert html =~ "Initial access token inventory"
+      assert html =~ "Review initial access tokens"
+      assert html =~ "Active"
+      assert html =~ "Used"
+      assert html =~ "Expired"
+      assert html =~ "Revoked"
+      assert html =~ "Single-use"
+      assert html =~ "Creator"
+      assert html =~ "Revoke initial access token"
+      assert html =~ "lockspire-admin-resource-list__item"
+      assert html =~ "lockspire-admin-long-value"
+      refute html =~ secret
 
       # Revoke
       view
@@ -57,16 +77,20 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       # Refresh the token from DB (via UI update)
       # In the view it should reflect the status change, or at least the badge should change.
       html_after_revoke = render(view)
-      refute html_after_revoke =~ "class=\"lockspire-admin-btn-danger\">Revoke</button>"
+      refute html_after_revoke =~ "Revoke initial access token</button>"
     end
   end
 
   describe "New" do
-    test "minting an IAT shows the secret exactly once and clearing works" do
+    test "minting an IAT uses copy-once panel and clearing removes plaintext" do
       {:ok, view, _html} = live(conn_for_admin(), "/admin/iats/new")
 
       # Initial state should have no secret
-      refute render(view) =~ "Secret revealed"
+      initial_html = render(view)
+      assert initial_html =~ "Configure"
+      assert initial_html =~ "Mint initial access token"
+      assert initial_html =~ "DCR policy"
+      refute initial_html =~ "Initial access token minted"
 
       # Mint a new token
       html_after_mint =
@@ -74,7 +98,10 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         |> element("form")
         |> render_submit(%{"single_use" => "true", "expires_in_days" => "30"})
 
-      assert html_after_mint =~ "Secret revealed"
+      assert html_after_mint =~ "Initial access token minted"
+      assert html_after_mint =~ "lockspire-admin-copy-once-secret"
+      assert html_after_mint =~ "Copy once"
+      assert html_after_mint =~ "not stored or shown again as plaintext"
       assert html_after_mint =~ "I have copied this secret"
 
       # Clicking the acknowledge button
@@ -83,7 +110,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         |> element("button[phx-click=\"acknowledge_copy\"]")
         |> render_click()
 
-      refute html_after_ack =~ "Secret revealed"
+      refute html_after_ack =~ "Initial access token minted"
       refute html_after_ack =~ "I have copied this secret"
     end
   end
