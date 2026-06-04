@@ -4,6 +4,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @repo_root Path.expand("../..", __DIR__)
   @compose_file "examples/adoption_demo/docker-compose.yml"
   @db_host_compose_file "examples/adoption_demo/docker-compose.db-host.yml"
+  @traefik_compose_file "examples/adoption_demo/docker-compose.traefik.yml"
   @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
@@ -59,6 +60,54 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     end)
   end
 
+  test "direct Compose has no Traefik labels or external proxy dependency" do
+    with_compose_config(["-f", @compose_file], fn config ->
+      web = get_in(config, ["services", "web"])
+      encoded_config = Jason.encode!(config)
+
+      refute labels(web) |> Enum.any?(fn {key, _value} -> String.starts_with?(key, "traefik.") end)
+      refute encoded_config =~ "traefik.enable"
+      refute encoded_config =~ "traefik.http"
+      refute encoded_config =~ "local-dev-proxy"
+    end)
+  end
+
+  test "Traefik override renders configured hostname router service network and port labels" do
+    env = traefik_env()
+
+    with_compose_config(["-f", @compose_file, "-f", @traefik_compose_file], [env: env], fn config ->
+      web = get_in(config, ["services", "web"])
+
+      assert label_value(web, "traefik.enable") == "true"
+      assert label_value(web, "traefik.docker.network") == "lockspire-alt-proxy"
+
+      assert label_value(web, "traefik.http.routers.lockspire-alt-router.rule") ==
+               "Host(`lockspire-alt.localhost`)"
+
+      assert label_value(web, "traefik.http.routers.lockspire-alt-router.service") ==
+               "lockspire-alt-service"
+
+      assert label_value(
+               web,
+               "traefik.http.services.lockspire-alt-service.loadbalancer.server.port"
+             ) == "4102"
+    end)
+  end
+
+  test "Traefik override attaches only web to the external proxy network" do
+    env = traefik_env()
+
+    with_compose_config(["-f", @compose_file, "-f", @traefik_compose_file], [env: env], fn config ->
+      web = get_in(config, ["services", "web"])
+      db = get_in(config, ["services", "db"])
+
+      assert get_in(config, ["networks", "traefik_proxy", "external"]) == true
+      assert get_in(config, ["networks", "traefik_proxy", "name"]) == "lockspire-alt-proxy"
+      assert "traefik_proxy" in service_network_keys(web)
+      refute "traefik_proxy" in service_network_keys(db)
+    end)
+  end
+
   test "reset helper targets only the active demo project volumes" do
     source = File.read!(@docker_reset_path)
 
@@ -93,6 +142,20 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "examples/adoption_demo/bin/docker-reset"
     assert docs =~
              "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+  end
+
+  test "docs explain optional Traefik hostname routing and smoke base URL" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "docker network create \"${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}\""
+    assert docs =~ "tools/traefik/docker-compose.yml"
+    assert docs =~ "examples/adoption_demo/docker-compose.traefik.yml"
+    assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_HOST"
+    assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_ROUTER"
+    assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_SERVICE"
+    assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_NETWORK"
+    assert docs =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py"
   end
 
   defp with_compose_config(args, opts \\ [], fun) do
@@ -137,6 +200,40 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
            end)
   end
 
+  defp labels(service) do
+    service
+    |> Map.get("labels", %{})
+    |> case do
+      values when is_list(values) ->
+        Map.new(values, fn value ->
+          [key, label_value] = String.split(value, "=", parts: 2)
+          {key, label_value}
+        end)
+
+      values when is_map(values) ->
+        values
+
+      nil ->
+        %{}
+    end
+  end
+
+  defp label_value(service, key) do
+    service
+    |> labels()
+    |> Map.fetch!(key)
+  end
+
+  defp service_network_keys(service) do
+    service
+    |> Map.get("networks", %{})
+    |> case do
+      values when is_list(values) -> values
+      values when is_map(values) -> Map.keys(values)
+      nil -> []
+    end
+  end
+
   defp env_value(service, key) do
     service
     |> Map.fetch!("environment")
@@ -153,5 +250,16 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       values when is_map(values) ->
         Map.fetch!(values, key)
     end
+  end
+
+  defp traefik_env do
+    [
+      {"LOCKSPIRE_DEMO_APP_PORT", "4102"},
+      {"LOCKSPIRE_DEMO_BASE_URL", "http://lockspire-alt.localhost"},
+      {"LOCKSPIRE_DEMO_TRAEFIK_HOST", "lockspire-alt.localhost"},
+      {"LOCKSPIRE_DEMO_TRAEFIK_ROUTER", "lockspire-alt-router"},
+      {"LOCKSPIRE_DEMO_TRAEFIK_SERVICE", "lockspire-alt-service"},
+      {"LOCKSPIRE_DEMO_TRAEFIK_NETWORK", "lockspire-alt-proxy"}
+    ]
   end
 end
