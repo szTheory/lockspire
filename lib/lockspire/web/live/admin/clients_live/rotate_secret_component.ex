@@ -18,11 +18,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
 
       <AdminComponents.error_list errors={@errors} />
 
-      <div :if={@revealed_secret} class="lockspire-admin-secret-reveal">
-        <h3>New client secret</h3>
-        <code>{@revealed_secret}</code>
-        <p>Copy it now. Lockspire does not store or re-show plaintext secrets.</p>
-      </div>
+      <AdminComponents.copy_once_secret_panel
+        :if={@revealed_secret}
+        title="New client secret"
+        body="Copy it now. Lockspire does not store or re-show plaintext secrets."
+        label="Client secret"
+        value={@revealed_secret}
+      />
 
       <form phx-submit="rotate_secret">
         <label class="lockspire-admin-checkbox-field">

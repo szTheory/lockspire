@@ -134,13 +134,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       >
         <FormComponent.client_form mode={:new} errors={@form_errors} />
 
-        <div :if={@created_result} class="lockspire-admin-secret-reveal">
-          <h3>Client created</h3>
+        <div :if={@created_result}>
           <p>Client ID: <code>{@created_result.client.client_id}</code></p>
-          <p :if={@created_result.client_secret}>
-            Client secret: <code>{@created_result.client_secret}</code>
-          </p>
-          <p :if={!@created_result.client_secret}>This public client does not use a client secret.</p>
+          <AdminComponents.copy_once_secret_panel
+            title="Client created"
+            body={
+              if @created_result.client_secret,
+                do: "Copy it now. Lockspire does not store or re-show plaintext secrets.",
+                else: "This public client does not use a client secret."
+            }
+            label="Client secret"
+            value={@created_result.client_secret}
+            redacted={is_nil(@created_result.client_secret)}
+          />
         </div>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>

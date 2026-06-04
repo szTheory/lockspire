@@ -437,10 +437,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
           <AdminComponents.error_list errors={@rotation_errors} />
 
-          <div :if={@revealed_rat} class="lockspire-admin-secret-reveal">
-            <h3>New Registration Access Token</h3>
-            <code>{@revealed_rat}</code>
-            <p>Copy it now. Lockspire does not store or re-show plaintext tokens.</p>
+          <div :if={@revealed_rat}>
+            <AdminComponents.copy_once_secret_panel
+              title="New Registration Access Token"
+              body="Copy it now. Lockspire does not store or re-show plaintext tokens."
+              label="Registration access token"
+              value={@revealed_rat}
+            />
             <AdminComponents.action_bar>
               <AdminComponents.admin_button phx-click="acknowledge_rat">
                 I have copied the token
