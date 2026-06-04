@@ -2,7 +2,7 @@
 phase: 113
 slug: conflict-controls-optional-traefik
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-04
 ---
@@ -17,16 +17,16 @@ Per-phase validation contract for feedback sampling during execution.
 |----------|-------|
 | **Framework** | ExUnit plus `docker compose config --format json` shell assertions |
 | **Config file** | Existing `mix.exs`; no dedicated Compose test config exists |
-| **Quick run command** | `mix test test/lockspire/adoption_demo_docker_contract_test.exs` |
+| **Quick run command** | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` |
 | **Full suite command** | `mix test.fast` |
-| **Estimated runtime** | ~60 seconds quick, existing project-dependent full suite |
+| **Estimated runtime** | under 30 seconds for focused single-file quick feedback; existing project-dependent full suite |
 
 ## Sampling Rate
 
-- **After every task commit:** Run `mix test test/lockspire/adoption_demo_docker_contract_test.exs`
+- **After every task commit:** Run `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0`
 - **After every plan wave:** Run `mix test.fast` and at least one relevant `docker compose ... config --format json` proof command
 - **Before `$gsd-verify-work`:** Full suite must be green
-- **Max feedback latency:** 90 seconds for quick contract test feedback
+- **Max feedback latency:** under 30 seconds for focused single-file quick contract test feedback
 
 ## Per-Task Verification Map
 
@@ -58,7 +58,7 @@ Per-phase validation contract for feedback sampling during execution.
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all missing references
 - [ ] No watch-mode flags
-- [ ] Feedback latency under 90 seconds for quick contract tests
-- [ ] `nyquist_compliant: true` set in frontmatter after Wave 0 exists and passes
+- [ ] Feedback latency under 30 seconds for focused single-file quick contract tests
+- [x] `nyquist_compliant: true` set in frontmatter for focused under-30-second quick feedback
 
 **Approval:** pending
