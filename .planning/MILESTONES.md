@@ -1,5 +1,31 @@
 # Milestones
 
+## v1.29 Admin UI Journey & Design-System Deep Polish (Shipped: 2026-06-04)
+
+**Phases completed:** 4 phases, 17 plans, 29 tasks
+
+**Key accomplishments:**
+
+- Route-by-route admin journey contract with evidence-backed IA strength ratings and locked DCR/logout vocabulary
+- Operator guide aligned to the Phase 107 journey model and host-owned admin boundary
+- Deterministic admin contract test for route coverage, journey vocabulary, docs alignment, and style fences
+- Semantic embedded admin CSS tokens with reduced-motion-safe interaction styles and deterministic raw-color drift fences
+- Phoenix function components for reusable admin heroes, metrics, filters, rows, copy-once secrets, long values, and action groups
+- Admin LiveViews now consume shared hero, metric, filter, and copy-once secret primitives without changing route behavior
+- Support token investigation pages with redacted pivots, status metrics, mobile-safe resource rows, and separate guarded token/family revocation actions
+- Support consent grant investigation pages with filtered context, redacted pivots, scope visibility, and guarded remembered-grant revocation copy
+- Operate queue pages for logout deliveries, device authorizations, and interactions with status buckets, resource rows, long values, and no new protocol actions
+- DCR onboarding and initial access token workflows with locked vocabulary, inventory metrics, mobile-safe rows, and shared copy-once secret treatment
+- Key lifecycle and client-detail actions now have clearer Configure context, mobile-safe identifiers, and risk-separated action grouping
+- Phase 109 now has deterministic contract coverage for journey labels, shared primitives, redaction, risky actions, and style discipline
+- Client workspace mobile overflow closed with embedded CSS shrink/wrap rules, deterministic source coverage, and passing 390px browser proof.
+
+**Pre-close audit:** `audit-open` clear after adding the legacy-compatible quick-task `SUMMARY.md`. Formal milestone audit: [`.planning/milestones/v1.29-MILESTONE-AUDIT.md`](milestones/v1.29-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.29-ROADMAP.md`, `milestones/v1.29-REQUIREMENTS.md`, `milestones/v1.29-MILESTONE-AUDIT.md` · **Git tag:** `v1.29`
+
+---
+
 ## v1.28 Admin UI Operator Experience Polish (Shipped + archived: 2026-06-03)
 
 **Phases completed:** **4** (**103-106**), **2** plans, **17** requirements closed.

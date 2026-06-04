@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.29
 milestone_name: Admin UI Journey & Design-System Deep Polish
-status: milestone_complete
-last_updated: 2026-06-04T15:18:53.988Z
-last_activity: 2026-06-04
+status: Awaiting next milestone
+last_updated: "2026-06-04T15:40:21.096Z"
+last_activity: 2026-06-04 — Milestone v1.29 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 17
   completed_plans: 17
   percent: 100
-stopped_at: Milestone complete (Phase 110 was final phase)
 ---
 
 # Project State
@@ -22,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 110 (demo-state-screenshots-docs-and-regression-proof) — COMPLETE
-Plan: 5 of 5
-Status: Milestone complete
-Last activity: 2026-06-04
+Phase: Milestone v1.29 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-04 — Milestone v1.29 completed and archived
 
 ## Most Recent Release
 
@@ -44,6 +43,7 @@ Last activity: 2026-06-04
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.29 | 107-110 | 17 | 24 | shipped |
 | v1.28 | 103-106 | 2 | 17 | shipped |
 | v1.27 | 97-102 | 24 | 28 | shipped |
 | v1.26 | 94-96 | 3 | 5 | shipped |
@@ -80,7 +80,7 @@ Last activity: 2026-06-04
 
 ## Session Continuity
 
-**Next action:** Complete v1.29 with `$gsd-complete-milestone`.
+**Next action:** Start the next milestone with `$gsd-new-milestone`.
 **Resume file:** None
 **Stopped at:** Completed 110-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
@@ -89,7 +89,6 @@ Last activity: 2026-06-04
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
-| — | — | — | v1.29 not started |
 | Phase 107 P01 | 20 min | 1 tasks | 1 files |
 | Phase 107 P02 | 8 min | 1 tasks | 1 files |
 | Phase 107 P03 | 6 min | 1 tasks | 1 files |
@@ -106,4 +105,4 @@ Last activity: 2026-06-04
 
 ## Operator Next Steps
 
-- Complete v1.29 with `$gsd-complete-milestone`.
+- Start the next milestone with /gsd-new-milestone
