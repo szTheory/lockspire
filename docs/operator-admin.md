@@ -84,6 +84,9 @@ Operators can control whether PAR is required for authorization requests:
 - **Client PAR override**: A per-client setting that can override the global default.
 - **Effective PAR requirement**: The resolved policy for a specific request, used by Lockspire to enforce or allow direct authorization.
 
+Use `/admin/policies/par` for the global issuer policy and
+`/admin/clients/:client_id/par-policy` for the per-client override workflow.
+
 ## Host-owned account workflows
 
 Generated account-facing files keep end-user UX inside the host app:

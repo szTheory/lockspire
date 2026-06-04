@@ -165,6 +165,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Review client configuration"
+        body="Review identity, effective posture, credentials, endpoints, DCR context, and lifecycle actions for this client."
+      />
+
       <AdminComponents.section_card
         title={@client.name || @client.client_id}
         subtitle="Client workspace for identity, effective security posture, endpoints, credentials, and safe lifecycle actions."
@@ -510,7 +516,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
             <AdminComponents.action_bar>
               <AdminComponents.admin_button type="submit" variant={:danger}>
-                Rotate RAT
+                Rotate registration access token
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
           </form>

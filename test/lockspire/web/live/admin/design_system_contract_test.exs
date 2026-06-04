@@ -16,6 +16,60 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                          "../../../../../.planning/phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
                          __DIR__
                        )
+  @phase_109_support_sources [
+    Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/show.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/consents_live/index.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/consents_live/show.ex", __DIR__)
+  ]
+  @phase_109_operations_sources [
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/logout_deliveries_live/index.ex",
+      __DIR__
+    ),
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
+      __DIR__
+    ),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/interactions_live/index.ex", __DIR__)
+  ]
+  @phase_109_configure_sources [
+    Path.expand("../../../../../lib/lockspire/web/live/admin/dcr_live/index.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/index.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/index.html.heex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/new.html.heex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/index.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/show.ex", __DIR__),
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/keys_live/action_component.ex",
+      __DIR__
+    ),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__)
+  ]
+  @phase_109_focused_tests [
+    Path.expand("../../../../../test/lockspire/web/live/admin/tokens_live_test.exs", __DIR__),
+    Path.expand("../../../../../test/lockspire/web/live/admin/consents_live_test.exs", __DIR__),
+    Path.expand(
+      "../../../../../test/lockspire/web/live/admin/logout_deliveries_live_test.exs",
+      __DIR__
+    ),
+    Path.expand(
+      "../../../../../test/lockspire/web/live/admin/device_authorizations_live_test.exs",
+      __DIR__
+    ),
+    Path.expand(
+      "../../../../../test/lockspire/web/live/admin/interactions_live_test.exs",
+      __DIR__
+    ),
+    Path.expand("../../../../../test/lockspire/web/live/admin/iat_live_test.exs", __DIR__),
+    Path.expand("../../../../../test/lockspire/web/live/admin/keys_live_test.exs", __DIR__),
+    Path.expand(
+      "../../../../../test/lockspire/web/live/admin/clients_live/show_test.exs",
+      __DIR__
+    )
+  ]
+  @phase_109_sources @phase_109_support_sources ++
+                       @phase_109_operations_sources ++ @phase_109_configure_sources
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -321,6 +375,135 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "phase 109 routes use approved journey labels, shared primitives, and style fences" do
+    for path <- @phase_109_support_sources do
+      source = File.read!(path)
+
+      assert source =~ "Support"
+      assert source =~ "AdminComponents.long_value"
+    end
+
+    for path <- [
+          Path.expand(
+            "../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex",
+            __DIR__
+          ),
+          Path.expand(
+            "../../../../../lib/lockspire/web/live/admin/consents_live/index.ex",
+            __DIR__
+          )
+        ] do
+      source = File.read!(path)
+
+      assert source =~ "AdminComponents.filter_bar"
+      assert source =~ "AdminComponents.resource_item"
+    end
+
+    for path <- @phase_109_operations_sources do
+      source = File.read!(path)
+
+      assert source =~ "Operate"
+      assert source =~ "AdminComponents.metric_grid"
+      assert source =~ "AdminComponents.summary_stat"
+      assert source =~ "AdminComponents.resource_item"
+      assert source =~ "AdminComponents.long_value"
+    end
+
+    for path <- [
+          Path.expand("../../../../../lib/lockspire/web/live/admin/dcr_live/index.ex", __DIR__),
+          Path.expand(
+            "../../../../../lib/lockspire/web/live/admin/iat_live/index.html.heex",
+            __DIR__
+          ),
+          Path.expand(
+            "../../../../../lib/lockspire/web/live/admin/iat_live/new.html.heex",
+            __DIR__
+          ),
+          Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/index.ex", __DIR__),
+          Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/show.ex", __DIR__),
+          Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__)
+        ] do
+      assert File.read!(path) =~ "Configure"
+    end
+
+    assert source_for("iat_live/new.html.heex") =~
+             "Lockspire.Web.Components.AdminComponents.copy_once_secret_panel"
+
+    assert source_for("clients_live/show.ex") =~ "AdminComponents.action_group"
+    assert source_for("keys_live/action_component.ex") =~ "AdminComponents.confirmation_panel"
+    assert source_for("tokens_live/show.ex") =~ "AdminComponents.confirmation_panel"
+    assert source_for("consents_live/show.ex") =~ "AdminComponents.confirmation_panel"
+
+    for path <- @phase_109_sources do
+      source = File.read!(path)
+
+      refute source =~ ~r/\sstyle=/
+      refute Regex.match?(~r/class="(?:button|[^"]*\sbutton(?:\s|"))/, source)
+      refute Regex.match?(~r/class="(?![^"]*lockspire-admin-)[^"]*admin[^"]*"/, source)
+    end
+  end
+
+  test "phase 109 routes fence generic CTAs, redaction, and risky action copy" do
+    sources = phase_109_source_blob()
+    tests = phase_109_test_blob()
+
+    refute Regex.match?(
+             ~r/(?:^|>|\n)\s*(Apply|Submit|OK|Cancel|Open|Revoke|Mint IAT|Rotate secret|Rotate RAT)\s*(?:<|\n|$)/,
+             sources
+           )
+
+    for phrase <- [
+          "redacted_handle",
+          "plaintext",
+          "copy_once_secret_panel",
+          "not stored or shown again as plaintext",
+          "user code material",
+          "verifier material",
+          "current credential",
+          "redacted",
+          "client_secret_hash",
+          "token material",
+          "token-ui-refresh-hash"
+        ] do
+      assert sources <> tests =~ phrase
+    end
+
+    for phrase <- [
+          "Revoke token family",
+          "Revoke consent grant",
+          "Revoke initial access token",
+          "Review key lifecycle",
+          "Rotate registration access token",
+          "Rotate client secret",
+          "Disable client",
+          "Enable client"
+        ] do
+      assert sources =~ phrase
+    end
+
+    for path <- [
+          "tokens_live/show.ex",
+          "consents_live/show.ex",
+          "keys_live/action_component.ex"
+        ] do
+      source = source_for(path)
+
+      assert source =~ "AdminComponents.confirmation_panel"
+      assert source =~ "variant={:danger}"
+      assert source =~ "confirm"
+    end
+
+    assert source_for("iat_live/index.html.heex") =~ "data-confirm="
+    assert source_for("iat_live/index.html.heex") =~ "Revoke initial access token"
+    assert source_for("clients_live/show.ex") =~ "<:destructive>"
+    assert source_for("clients_live/show.ex") =~ "phx-click=\"toggle_client\""
+
+    refute sources =~ "Playwright"
+    refute sources =~ "screenshot"
+    refute sources =~ "demo seed"
+    refute sources =~ "visual regression"
+  end
+
   test "phase 103 migrated screens do not reintroduce inline layout styling" do
     for path <- [
           Path.expand(
@@ -374,6 +557,22 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp mounted_admin_route("/"), do: "/admin"
   defp mounted_admin_route(route), do: "/admin" <> route
+
+  defp phase_109_source_blob do
+    @phase_109_sources
+    |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp phase_109_test_blob do
+    @phase_109_focused_tests
+    |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp source_for(suffix) do
+    @phase_109_sources
+    |> Enum.find(fn path -> String.ends_with?(path, suffix) end)
+    |> File.read!()
+  end
 
   defp component_declaration_block(source, function_name) do
     index = :binary.match(source, "def #{function_name}") |> elem(0)

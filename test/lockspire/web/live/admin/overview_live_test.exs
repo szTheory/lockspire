@@ -163,8 +163,8 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     assert {:ok, _dcr_view, dcr_html} = live(conn_for_admin(), "/admin/dcr")
 
-    assert dcr_html =~ "Partner onboarding"
-    assert dcr_html =~ "Mint IAT"
+    assert dcr_html =~ "DCR onboarding"
+    assert dcr_html =~ "Mint initial access token"
     assert dcr_html =~ "Review self-registered clients"
     assert dcr_html =~ "Overview Client"
   end

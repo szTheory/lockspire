@@ -182,7 +182,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     gamma_html = rendered_to_string(Show.render(gamma_socket.assigns))
 
     assert gamma_html =~ "Self-registered client (DCR)"
-    assert gamma_html =~ "Rotate Registration Access Token (RAT)"
+    assert gamma_html =~ "Rotate registration access token"
   end
 
   test "register client form presents client_secret_jwt as the narrow HS256-backed option" do
@@ -197,7 +197,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/gamma-client")
 
     view
-    |> element("a", "Rotate Registration Access Token (RAT)")
+    |> element("a", "Rotate registration access token")
     |> render_click()
 
     assert render(view) =~ "Rotate Registration Access Token (RAT)"
