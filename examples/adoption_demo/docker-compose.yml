@@ -1,3 +1,5 @@
+name: lockspire-adoption-demo
+
 services:
   web:
     build:
@@ -8,7 +10,7 @@ services:
         condition: service_healthy
     command: ["./bin/docker-start"]
     ports:
-      - "4100:4100"
+      - "${LOCKSPIRE_DEMO_APP_PORT:-4100}:${LOCKSPIRE_DEMO_APP_PORT:-4100}"
     volumes:
       - ../..:/workspace
       # Isolate Linux build artifacts from host artifacts.
@@ -16,8 +18,8 @@ services:
       - build_volume:/workspace/examples/adoption_demo/_build
     environment:
       PHX_SERVER: "true"
-      PORT: "4100"
-      LOCKSPIRE_DEMO_BASE_URL: "http://127.0.0.1:4100"
+      PORT: "${LOCKSPIRE_DEMO_APP_PORT:-4100}"
+      LOCKSPIRE_DEMO_BASE_URL: "${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:${LOCKSPIRE_DEMO_APP_PORT:-4100}}"
       LOCKSPIRE_DEMO_BIND_IP: "0.0.0.0"
       LOCKSPIRE_DEMO_DB_HOST: "db"
       LOCKSPIRE_DEMO_DB_PORT: "5432"

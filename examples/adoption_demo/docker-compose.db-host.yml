@@ -1,0 +1,4 @@
+services:
+  db:
+    ports:
+      - "${LOCKSPIRE_DEMO_DB_HOST_PORT:-5432}:5432"

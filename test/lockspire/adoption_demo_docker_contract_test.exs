@@ -31,7 +31,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     with_compose_config(["-f", @compose_file], [env: env], fn config ->
       web = get_in(config, ["services", "web"])
 
-      assert %{"published" => "4101", "target" => 4101} in web["ports"]
+      assert_port(web, "4101", 4101)
       assert env_value(web, "PORT") == "4101"
       assert env_value(web, "LOCKSPIRE_DEMO_BASE_URL") == "http://127.0.0.1:4101"
     end)
@@ -52,7 +52,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       db = get_in(config, ["services", "db"])
       web = get_in(config, ["services", "web"])
 
-      assert %{"published" => "15432", "target" => 5432} in db["ports"]
+      assert_port(db, "15432", 5432)
       assert env_value(web, "LOCKSPIRE_DEMO_DB_PORT") == "5432"
     end)
   end
@@ -91,6 +91,12 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert get_in(config, ["volumes", "db_data", "name"]) == "#{project}_db_data"
     assert get_in(config, ["volumes", "deps_volume", "name"]) == "#{project}_deps_volume"
     assert get_in(config, ["volumes", "build_volume", "name"]) == "#{project}_build_volume"
+  end
+
+  defp assert_port(service, published, target) do
+    assert Enum.any?(service["ports"], fn port ->
+             port["published"] == published and port["target"] == target
+           end)
   end
 
   defp env_value(service, key) do
