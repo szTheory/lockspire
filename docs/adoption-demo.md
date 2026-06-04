@@ -24,6 +24,61 @@ docker compose -f examples/adoption_demo/docker-compose.yml up --build
 
 This starts the Phoenix/Bandit demo and PostgreSQL for the repo-local adoption demo. Then open `http://127.0.0.1:4100`.
 
+The default Compose project is `lockspire-adoption-demo`. To run a second checkout
+beside it, use Docker Compose's standard project controls:
+
+```sh
+COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml up --build
+```
+
+or:
+
+```sh
+docker compose --project-name lockspire-adoption-demo-alt -f examples/adoption_demo/docker-compose.yml up --build
+```
+
+The direct Docker port is configurable. Keep `LOCKSPIRE_DEMO_BASE_URL` aligned
+with the browser-visible URL; it is the URL truth for endpoint generation,
+Lockspire issuer, docs examples, and smoke proof.
+
+```sh
+LOCKSPIRE_DEMO_APP_PORT=4101 \
+LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 \
+docker compose -f examples/adoption_demo/docker-compose.yml up --build
+```
+
+For that alternate port, run the smoke with the same browser-visible base URL:
+
+```sh
+LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py
+```
+
+PostgreSQL stays internal-only by default. To inspect it from host tools, opt in
+with the DB host override and choose a host port:
+
+```sh
+LOCKSPIRE_DEMO_DB_HOST_PORT=15432 \
+docker compose -f examples/adoption_demo/docker-compose.yml \
+  -f examples/adoption_demo/docker-compose.db-host.yml up --build
+```
+
+The app still talks to PostgreSQL on the internal Compose service port `5432`.
+
+To reset only this demo project's database and container build caches, run:
+
+```sh
+examples/adoption_demo/bin/docker-reset
+```
+
+For a named project, pass the same project name used at startup:
+
+```sh
+examples/adoption_demo/bin/docker-reset --project lockspire-adoption-demo-alt
+```
+
+The reset helper removes only the active project's `db_data`, `deps_volume`, and
+`build_volume` Docker volumes.
+
 ## Run it host-local
 
 From the repo root:
