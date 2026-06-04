@@ -200,6 +200,52 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "behavior-neutral migrations use shared primitives without inline styles" do
+    page_hero_sources = [
+      Path.expand("../../../../../lib/lockspire/web/live/admin/overview_live/index.ex", __DIR__),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/dcr_live/index.ex", __DIR__)
+    ]
+
+    filter_bar_sources = [
+      Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/index.ex", __DIR__),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex", __DIR__),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/consents_live/index.ex", __DIR__)
+    ]
+
+    copy_once_sources = [
+      Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/index.ex", __DIR__),
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/clients_live/rotate_secret_component.ex",
+        __DIR__
+      ),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__)
+    ]
+
+    for path <- page_hero_sources do
+      source = File.read!(path)
+
+      assert source =~ "AdminComponents.page_hero"
+      refute source =~ ~s(class="lockspire-admin-hero")
+    end
+
+    for path <- filter_bar_sources do
+      source = File.read!(path)
+
+      assert source =~ "AdminComponents.filter_bar"
+    end
+
+    for path <- copy_once_sources do
+      source = File.read!(path)
+
+      assert source =~ "AdminComponents.copy_once_secret_panel"
+      refute source =~ ~s(class="lockspire-admin-secret-reveal")
+    end
+
+    for path <- Path.wildcard(@admin_live_glob) do
+      refute File.read!(path) =~ ~r/\sstyle=/
+    end
+  end
+
   test "admin route surface and operator docs stay aligned to journey model" do
     router = File.read!(@admin_router_path)
     guide = File.read!(@operator_admin_doc_path)
