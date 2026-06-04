@@ -41,6 +41,11 @@ Ecto.Adapters.SQL.query!(
 
 now = DateTime.utc_now()
 
+# Phase 110 screenshot proof state matrix:
+# healthy, warning, incident, disabled, self-registered, retryable, revoked,
+# expired, long-value, and copy-once states are all artificial demo fixtures.
+# Copy-once plaintext is not stored or shown again as plaintext after creation.
+
 {:ok, _policy} =
   Repository.put_server_policy(%ServerPolicy{
     par_policy: :optional,
@@ -92,7 +97,7 @@ clients = [
     subject_type: :public,
     created_by: "seed",
     created_at: now,
-    metadata: %{"demo" => true}
+    metadata: %{"demo" => true, "phase110_state" => "healthy"}
   },
   %Client{
     client_id: "acme-tv-device",
@@ -108,7 +113,7 @@ clients = [
     subject_type: :public,
     created_by: "seed",
     created_at: now,
-    metadata: %{"demo" => true}
+    metadata: %{"demo" => true, "phase110_state" => "warning pending device"}
   },
   %Client{
     client_id: "acme-ledger-backend",
@@ -124,7 +129,7 @@ clients = [
     subject_type: :public,
     created_by: "seed",
     created_at: now,
-    metadata: %{"demo" => true}
+    metadata: %{"demo" => true, "phase110_state" => "copy-once client secret rotation"}
   },
   %Client{
     client_id: "northstar-dcr-self-registered",
@@ -156,7 +161,7 @@ clients = [
       "http://127.0.0.1:4100/lockspire/register/northstar-dcr-self-registered",
     registration_access_token_hash: Lockspire.Security.Policy.hash_token("demo-rat-northstar"),
     contacts: ["security@northstar.example.com", "integrations@northstar.example.com"],
-    metadata: %{"demo" => true, "journey" => "dcr"}
+    metadata: %{"demo" => true, "journey" => "dcr", "phase110_state" => "self-registered long-value copy-once RAT rotation"}
   },
   %Client{
     client_id: "legacy-disabled-reporter",
@@ -175,7 +180,7 @@ clients = [
     disabled_by: "ops",
     created_by: "seed",
     created_at: DateTime.add(now, -604_800, :second),
-    metadata: %{"demo" => true, "risk" => "disabled"}
+    metadata: %{"demo" => true, "risk" => "disabled", "phase110_state" => "disabled incident"}
   }
 ]
 
@@ -314,6 +319,20 @@ tokens = [
     scopes: ["openid", "read:billing"],
     issued_at: DateTime.add(now, -7_200, :second),
     expires_at: DateTime.add(now, -3_600, :second)
+  },
+  %Token{
+    token_hash: Lockspire.Security.Policy.hash_token("demo-refresh-long-family-expired"),
+    token_type: :refresh_token,
+    family_id:
+      "family-demo-long-value-refresh-token-family-id-for-mobile-wrapping-proof-001",
+    generation: 3,
+    client_id: "northstar-dcr-self-registered",
+    account_id: "acct-phase110-long-value-subject-for-mobile-proof",
+    scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
+    audience: ["https://very-long-resource-indicator.partners.northstar.example.com/billing"],
+    issued_at: DateTime.add(now, -172_800, :second),
+    expires_at: DateTime.add(now, -86_400, :second),
+    revoked_at: DateTime.add(now, -43_200, :second)
   }
 ]
 
@@ -356,6 +375,18 @@ Enum.each(
       expires_at: DateTime.add(now, -3_000, :second),
       inserted_at: DateTime.add(now, -4_000, :second),
       updated_at: DateTime.add(now, -3_600, :second)
+    },
+    %Interaction{
+      interaction_id: "interaction-expired",
+      client_id: "acme-ledger-backend",
+      account_id: "acct-phase110-long-value-subject-for-mobile-proof",
+      return_to: "https://backend.acme-ledger.example.com/very/long/oauth/callback/path",
+      status: :expired,
+      scopes_requested: ["openid", "email", "profile", "read:billing"],
+      expired_at: DateTime.add(now, -900, :second),
+      expires_at: DateTime.add(now, -900, :second),
+      inserted_at: DateTime.add(now, -7_200, :second),
+      updated_at: DateTime.add(now, -900, :second)
     }
   ],
   fn interaction ->
@@ -400,6 +431,33 @@ Enum.each(
       effective_poll_interval_seconds: 10,
       next_poll_allowed_at: DateTime.add(now, -55, :second),
       expires_at: DateTime.add(now, -60, :second)
+    },
+    %DeviceAuthorization{
+      device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-denied"),
+      user_code_hash: Lockspire.Security.Policy.hash_token("MNOP3456"),
+      verification_handle: "demo-device-denied-long-value-handle-for-mobile-proof",
+      client_id: "acme-tv-device",
+      scopes: ["openid", "profile"],
+      status: :denied,
+      subject_id: "acct-bob",
+      denied_at: DateTime.add(now, -300, :second),
+      effective_poll_interval_seconds: 5,
+      next_poll_allowed_at: DateTime.add(now, -295, :second),
+      expires_at: DateTime.add(now, 300, :second)
+    },
+    %DeviceAuthorization{
+      device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-consumed"),
+      user_code_hash: Lockspire.Security.Policy.hash_token("QRST7890"),
+      verification_handle: "demo-device-consumed",
+      client_id: "acme-tv-device",
+      scopes: ["openid", "profile"],
+      status: :consumed,
+      subject_id: "acct-alice",
+      approved_at: DateTime.add(now, -600, :second),
+      consumed_at: DateTime.add(now, -120, :second),
+      effective_poll_interval_seconds: 5,
+      next_poll_allowed_at: DateTime.add(now, -595, :second),
+      expires_at: DateTime.add(now, 300, :second)
     }
   ],
   fn auth ->
@@ -426,6 +484,12 @@ Enum.each(
       token_hash: Lockspire.Security.Policy.hash_token("demo-iat-used"),
       expires_at: DateTime.add(now, 86_400, :second),
       used_at: DateTime.add(now, -3_600, :second),
+      single_use: true,
+      created_by: "ops"
+    },
+    %InitialAccessToken{
+      token_hash: Lockspire.Security.Policy.hash_token("demo-iat-expired"),
+      expires_at: DateTime.add(now, -600, :second),
       single_use: true,
       created_by: "ops"
     }
@@ -489,6 +553,31 @@ Enum.each(
       status: :rendered,
       attempt_count: 0,
       rendered_at: DateTime.add(now, -30, :second)
+    },
+    %LogoutDelivery{
+      delivery_id: "demo-logout-backchannel-pending-long-value-delivery-id-for-mobile-proof",
+      logout_event_id: logout_event.id,
+      client_id: "northstar-dcr-self-registered",
+      channel: :backchannel,
+      target_uri:
+        "https://partners.northstar.example.com/backchannel-logout/very/long/path/for/mobile-proof",
+      session_required: true,
+      status: :pending,
+      attempt_count: 0
+    },
+    %LogoutDelivery{
+      delivery_id: "demo-logout-backchannel-discarded",
+      logout_event_id: logout_event.id,
+      client_id: "legacy-disabled-reporter",
+      channel: :backchannel,
+      target_uri: "https://legacy-reporter.example.com/backchannel-logout",
+      session_required: false,
+      status: :discarded,
+      attempt_count: 5,
+      last_attempted_at: DateTime.add(now, -600, :second),
+      finalized_at: DateTime.add(now, -300, :second),
+      http_status: 500,
+      failure_reason: "operator discarded demo delivery after repeated failures"
     }
   ],
   fn delivery ->

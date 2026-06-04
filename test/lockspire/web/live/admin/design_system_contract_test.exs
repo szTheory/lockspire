@@ -12,6 +12,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                          )
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @operator_admin_doc_path Path.expand("../../../../../docs/operator-admin.md", __DIR__)
+  @adoption_demo_seeds_path Path.expand(
+                              "../../../../../examples/adoption_demo/priv/repo/seeds.exs",
+                              __DIR__
+                            )
+  @phase_110_dir Path.expand(
+                   "../../../../../.planning/phases/110-demo-state-screenshots-docs-and-regression-proof",
+                   __DIR__
+                 )
   @route_contract_path Path.expand(
                          "../../../../../.planning/phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
                          __DIR__
@@ -502,6 +510,70 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     refute sources =~ "screenshot"
     refute sources =~ "demo seed"
     refute sources =~ "visual regression"
+  end
+
+  test "phase 110 demo seeds cover required proof states with artificial data" do
+    seeds = File.read!(@adoption_demo_seeds_path)
+
+    for phrase <- [
+          "healthy",
+          "warning",
+          "incident",
+          "disabled",
+          "self-registered",
+          "retryable",
+          "revoked",
+          "expired",
+          "long-value",
+          "copy-once"
+        ] do
+      assert seeds =~ phrase
+    end
+
+    for phrase <- [
+          "acme-ledger-public",
+          "acme-tv-device",
+          "acme-ledger-backend",
+          "northstar-dcr-self-registered",
+          "legacy-disabled-reporter"
+        ] do
+      assert seeds =~ phrase
+    end
+
+    for phrase <- [
+          "status: :denied",
+          "status: :consumed",
+          "status: :discarded",
+          "interaction-expired",
+          "demo-iat-expired"
+        ] do
+      assert seeds =~ phrase
+    end
+  end
+
+  test "phase 110 demo seeds keep secret and token proof values redaction-safe" do
+    seeds = File.read!(@adoption_demo_seeds_path)
+
+    for helper <- [
+          "Lockspire.Security.Policy.hash_client_secret",
+          "Lockspire.Security.Policy.hash_token"
+        ] do
+      assert seeds =~ helper
+    end
+
+    for forbidden <- [
+          "real-client-secret",
+          "production-secret",
+          "prod-access-token",
+          "prod-refresh-token",
+          "customer.example.com",
+          "tenant.example.com"
+        ] do
+      refute seeds =~ forbidden
+    end
+
+    assert seeds =~ "copy-once"
+    assert seeds =~ "not stored or shown again as plaintext"
   end
 
   test "phase 103 migrated screens do not reintroduce inline layout styling" do
