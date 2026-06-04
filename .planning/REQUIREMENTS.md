@@ -19,12 +19,12 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ### Default Docker Demo
 
-- [ ] **DOCKER-01**: A documented repo-root command starts the adoption demo with Docker without relying on host Postgres.
-- [ ] **DOCKER-02**: The default Compose topology includes Phoenix/Bandit and PostgreSQL 14+ services with explicit database environment wiring.
-- [ ] **DOCKER-03**: PostgreSQL has a healthcheck and a project-scoped named data volume.
-- [ ] **DOCKER-04**: The Phoenix container uses project-scoped `deps` and `_build` volumes so host and container build artifacts do not collide.
-- [ ] **DOCKER-05**: Startup creates, migrates, and seeds the database idempotently before reporting the demo ready.
-- [ ] **DOCKER-06**: Startup waits for the public demo URL to return a healthy HTTP response before printing the ready banner.
+- [x] **DOCKER-01**: A documented repo-root command starts the adoption demo with Docker without relying on host Postgres.
+- [x] **DOCKER-02**: The default Compose topology includes Phoenix/Bandit and PostgreSQL 14+ services with explicit database environment wiring.
+- [x] **DOCKER-03**: PostgreSQL has a healthcheck and a project-scoped named data volume.
+- [x] **DOCKER-04**: The Phoenix container uses project-scoped `deps` and `_build` volumes so host and container build artifacts do not collide.
+- [x] **DOCKER-05**: Startup creates, migrates, and seeds the database idempotently before reporting the demo ready.
+- [x] **DOCKER-06**: Startup waits for the public demo URL to return a healthy HTTP response before printing the ready banner.
 
 ### Conflict Controls
 
@@ -88,12 +88,12 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | URL-03 | 111 | Complete |
 | URL-04 | 111 | Complete |
 | URL-05 | 111 | Complete |
-| DOCKER-01 | 112 | Pending |
-| DOCKER-02 | 112 | Pending |
-| DOCKER-03 | 112 | Pending |
-| DOCKER-04 | 112 | Pending |
-| DOCKER-05 | 112 | Pending |
-| DOCKER-06 | 112 | Pending |
+| DOCKER-01 | 112 | Complete |
+| DOCKER-02 | 112 | Complete |
+| DOCKER-03 | 112 | Complete |
+| DOCKER-04 | 112 | Complete |
+| DOCKER-05 | 112 | Complete |
+| DOCKER-06 | 112 | Complete |
 | CONFLICT-01 | 113 | Pending |
 | CONFLICT-02 | 113 | Pending |
 | CONFLICT-03 | 113 | Pending |

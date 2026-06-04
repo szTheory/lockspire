@@ -11,7 +11,7 @@
 | Phase | Name | Goal | Requirements |
 |-------|------|------|--------------|
 | 111 | Demo URL Contract & Config Unification | Make `LOCKSPIRE_DEMO_BASE_URL` the single browser-visible URL truth for endpoint URL generation, Lockspire issuer, seeded redirects, smoke proof, and Docker bind behavior. Status: complete 2026-06-04. | URL-01..05 |
-| 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. | DOCKER-01..06 |
+| 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. Status: complete 2026-06-04. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. | CONFLICT-01..04, TRAEFIK-01..02 |
 | 114 | Startup Output, Smoke Wrapper & Docs | Print the useful URLs/accounts/clients/smoke command, keep proof base-URL driven, and make Docker the documented default path. | INFO-01..04, SMOKE-01..02, DOCS-01..02 |
 | 115 | Repo Hygiene Gate & Scoped Cleanup | Add non-destructive local hygiene and cleanup for demo-owned Docker/resources/artifacts while preserving CI determinism and product boundaries. | SMOKE-03, CLEAN-01..03, HYGIENE-01..04, BOUNDARY-01..02 |
@@ -55,6 +55,16 @@ Replace the current Traefik-only, app-only compose path with a default app + Pos
 - Startup creates, migrates, seeds, and waits for public HTTP readiness before reporting ready.
 
 **Requirements:** DOCKER-01, DOCKER-02, DOCKER-03, DOCKER-04, DOCKER-05, DOCKER-06
+**Plans:** 2/2 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 112-01-PLAN.md - Create the default repo-root Docker Compose topology for the adoption demo.
+
+**Wave 2**
+
+- [x] 112-02-PLAN.md - Add idempotent database setup and public HTTP readiness to the Docker adoption demo startup.
 
 ### Phase 113: Conflict Controls & Optional Traefik
 
