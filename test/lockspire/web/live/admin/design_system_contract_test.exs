@@ -620,7 +620,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert screenshots =~ heading
     end
 
-    for phrase <- ["Orient", "Configure", "Support", "Operate", "tmp/admin-ui-polish/", "Not captured -"] do
+    for phrase <- [
+          "Orient",
+          "Configure",
+          "Support",
+          "Operate",
+          "tmp/admin-ui-polish/",
+          "page-level overflow gap observed"
+        ] do
       assert screenshots =~ phrase
     end
 
