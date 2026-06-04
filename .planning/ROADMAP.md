@@ -79,6 +79,16 @@ Make the Docker path robust when this repo runs alongside other local Elixir lib
 - Optional Traefik mode documents or automates its external network and uses configurable hostname/router/service labels.
 
 **Requirements:** CONFLICT-01, CONFLICT-02, CONFLICT-03, CONFLICT-04, TRAEFIK-01, TRAEFIK-02
+**Plans:** 2 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 113-01-PLAN.md - Make direct Docker project, port, DB host exposure, and reset controls deterministic.
+
+**Wave 2**
+
+- [ ] 113-02-PLAN.md - Add opt-in Traefik hostname routing with configurable labels and network docs.
 
 ### Phase 114: Startup Output, Smoke Wrapper & Docs
 
