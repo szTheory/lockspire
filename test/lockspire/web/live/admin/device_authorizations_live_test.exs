@@ -56,12 +56,25 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/device_authorizations", Index))
   end
 
-  test "device authorizations index renders records" do
+  test "device authorizations index renders operate queue rows without code material" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/device_authorizations")
 
-    assert html =~ "Device Authorizations"
-    assert html =~ "test-client"
-    assert html =~ "pending"
+    assert html =~ "Operate"
+    assert html =~ "Device authorization queue"
+    assert html =~ "Review device authorizations"
+    assert html =~ "Pending"
+    assert html =~ "Approved"
+    assert html =~ "Denied"
+    assert html =~ "Expired"
+    assert html =~ "Completed"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
+    assert html =~ "Device authorization"
+    refute html =~ "hash1"
+    refute html =~ "hash2"
+    refute html =~ "device_code"
+    refute html =~ "user_code"
+    refute html =~ "test-client"
   end
 
   defp conn_for_admin do

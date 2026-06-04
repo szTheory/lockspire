@@ -3,6 +3,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
 
   use Phoenix.LiveView
 
+  alias Lockspire.Redaction
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
@@ -28,41 +29,80 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Operate"
+        title="Authorization interaction queue"
+        body="Triage active and closed authorization interactions by status, client, subject, age, expiration, and safe review context."
+      />
+
       <AdminComponents.section_card
-        title="Active interactions"
-        subtitle="View and manage current authorization interactions."
+        title="Review interactions"
+        subtitle="Read-only interaction rows expose non-secret queue context without raw-table overload."
       >
+        <AdminComponents.metric_grid>
+          <AdminComponents.summary_stat
+            value={count_status(@interactions, :pending_login)}
+            label="Pending login"
+          />
+          <AdminComponents.summary_stat
+            value={count_status(@interactions, :pending_consent)}
+            label="Pending consent"
+          />
+          <AdminComponents.summary_stat
+            value={count_status(@interactions, :completed)}
+            label="Completed"
+          />
+          <AdminComponents.summary_stat value={count_status(@interactions, :denied)} label="Denied" />
+          <AdminComponents.summary_stat
+            value={count_status(@interactions, :expired)}
+            label="Expired"
+          />
+        </AdminComponents.metric_grid>
+
         <%= if @interactions == [] do %>
           <AdminComponents.empty_state
             title="No active interactions"
-            body="There are no interactions at this time."
+            body="There are no authorization interactions waiting for operator review."
           />
         <% else %>
           <div class="lockspire-admin-table-wrap">
-            <table class="lockspire-admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Client</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <%= for interaction <- @interactions do %>
-                  <tr>
-                    <td>{interaction.interaction_id}</td>
-                    <td>{interaction.client_id}</td>
-                    <td><AdminComponents.status_badge status={interaction.status} /></td>
-                    <td>{interaction.inserted_at}</td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
+            <AdminComponents.resource_list>
+              <%= for interaction <- @interactions do %>
+                <AdminComponents.resource_item title="Authorization interaction" subtitle="Review interactions">
+                  <:meta>
+                    <span>Interaction <AdminComponents.long_value value={interaction.interaction_id} kind={:id} /></span>
+                    <span>Client <AdminComponents.long_value value={redacted_handle(:client, interaction.client_id)} kind={:id} /></span>
+                    <span>Subject <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
+                    <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
+                    <span>Created <AdminComponents.long_value value={formatted_timestamp(interaction.inserted_at)} kind={:timestamp} /></span>
+                    <span>Expires <AdminComponents.long_value value={formatted_timestamp(interaction.expires_at)} kind={:timestamp} /></span>
+                  </:meta>
+                  <:status>
+                    <AdminComponents.status_badge status={interaction.status} />
+                  </:status>
+                </AdminComponents.resource_item>
+              <% end %>
+            </AdminComponents.resource_list>
           </div>
         <% end %>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
     """
   end
+
+  defp count_status(interactions, status), do: Enum.count(interactions, &(&1.status == status))
+
+  defp redacted_handle(_type, nil), do: "Not recorded"
+  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+
+  defp prompt_label(nil), do: "Not recorded"
+  defp prompt_label(value) when is_list(value), do: Enum.join(value, ", ")
+  defp prompt_label(value), do: to_string(value)
+
+  defp formatted_timestamp(nil), do: "Not recorded"
+
+  defp formatted_timestamp(%DateTime{} = value),
+    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
+
+  defp formatted_timestamp(value), do: to_string(value)
 end

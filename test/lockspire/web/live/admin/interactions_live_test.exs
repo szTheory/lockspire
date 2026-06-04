@@ -44,7 +44,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/interactions", Index))
   end
 
-  test "interactions index renders interactions list" do
+  test "interactions index renders operate queue buckets and resource rows" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
@@ -56,9 +56,18 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Active interactions"
+    assert html =~ "Operate"
+    assert html =~ "Authorization interaction queue"
+    assert html =~ "Review interactions"
+    assert html =~ "Pending login"
+    assert html =~ "Pending consent"
+    assert html =~ "Completed"
+    assert html =~ "Denied"
+    assert html =~ "Expired"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "test-interaction-123"
-    assert html =~ "test-client"
+    refute html =~ "<table"
     assert html =~ "Pending login"
   end
 

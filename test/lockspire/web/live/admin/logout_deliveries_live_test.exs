@@ -60,7 +60,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/logouts", Index))
   end
 
-  test "logout deliveries index renders deliveries list" do
+  test "logout deliveries index renders operate queue buckets and resource rows" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
@@ -72,9 +72,20 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Logout deliveries"
+    assert html =~ "Operate"
+    assert html =~ "Logout propagation queue"
+    assert html =~ "Review logout deliveries"
+    assert html =~ "Waiting"
+    assert html =~ "Retrying"
+    assert html =~ "Failed"
+    assert html =~ "Discarded"
+    assert html =~ "Completed"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "test-delivery-123"
-    assert html =~ "test-client"
+    refute html =~ "<table"
+    refute html =~ "phx-click"
+    refute html =~ "phx-submit"
     assert html =~ "Pending"
   end
 
