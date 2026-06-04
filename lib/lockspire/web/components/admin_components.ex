@@ -218,12 +218,14 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:href, :string, default: nil)
   attr(:title, :string, required: true)
   attr(:subtitle, :string, default: nil)
+  attr(:class, :string, default: "")
   slot(:meta)
+  slot(:status)
   slot(:actions)
 
   def resource_item(assigns) do
     ~H"""
-    <li class="lockspire-admin-resource-list__item">
+    <li class={["lockspire-admin-resource-list__item", @class]}>
       <div class="lockspire-admin-resource-list__main">
         <a :if={@href} href={@href} class="lockspire-admin-resource-list__title">{@title}</a>
         <strong :if={!@href} class="lockspire-admin-resource-list__title">{@title}</strong>
@@ -232,10 +234,74 @@ defmodule Lockspire.Web.Components.AdminComponents do
       <div :if={@meta != []} class="lockspire-admin-resource-list__meta">
         {render_slot(@meta)}
       </div>
+      <div :if={@status != []} class="lockspire-admin-status-cluster">
+        {render_slot(@status)}
+      </div>
       <div :if={@actions != []} class="lockspire-admin-resource-list__actions">
         {render_slot(@actions)}
       </div>
     </li>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:body, :string, default: nil)
+  attr(:value, :any, default: nil)
+  attr(:redacted, :boolean, default: false)
+  attr(:label, :string, default: "Copy-once value")
+  attr(:class, :string, default: "")
+
+  def copy_once_secret_panel(assigns) do
+    ~H"""
+    <section class={["lockspire-admin-secret-reveal lockspire-admin-copy-once-secret", @class]}>
+      <h3>{@title}</h3>
+      <p :if={@body}>{@body}</p>
+      <div class="lockspire-admin-copy-once-secret__value">
+        <span class="lockspire-admin-copy-once-secret__label">{@label}</span>
+        <code :if={@value && !@redacted}>{@value}</code>
+        <span :if={!@value || @redacted} class="lockspire-admin-redacted-value">Redacted</span>
+      </div>
+    </section>
+    """
+  end
+
+  attr(:value, :any, required: true)
+  attr(:kind, :atom, default: :text)
+  attr(:redacted, :boolean, default: false)
+  attr(:class, :string, default: "")
+
+  def long_value(assigns) do
+    assigns = assign(assigns, :class_name, long_value_class(assigns.kind, assigns.class))
+
+    ~H"""
+    <span class={@class_name}>
+      <%= if @redacted do %>
+        <span class="lockspire-admin-redacted-value">Redacted</span>
+      <% else %>
+        {@value}
+      <% end %>
+    </span>
+    """
+  end
+
+  attr(:class, :string, default: "")
+  slot(:primary)
+  slot(:secondary)
+  slot(:destructive)
+
+  def action_group(assigns) do
+    ~H"""
+    <div class={["lockspire-admin-action-group", @class]}>
+      <div :if={@primary != []} class="lockspire-admin-action-group__primary">
+        {render_slot(@primary)}
+      </div>
+      <div :if={@secondary != []} class="lockspire-admin-action-group__secondary">
+        {render_slot(@secondary)}
+      </div>
+      <div :if={@destructive != []} class="lockspire-admin-action-group__destructive">
+        {render_slot(@destructive)}
+      </div>
+    </div>
     """
   end
 
@@ -357,6 +423,14 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp button_class(:primary), do: "lockspire-admin-btn lockspire-admin-btn-primary"
   defp button_class(:danger), do: "lockspire-admin-btn lockspire-admin-btn-danger"
   defp button_class(_variant), do: "lockspire-admin-btn lockspire-admin-btn-secondary"
+
+  defp long_value_class(kind, class) do
+    [
+      "lockspire-admin-long-value",
+      kind in [:id, :url, :token, :timestamp, :mono] && "lockspire-admin-long-value-mono",
+      class
+    ]
+  end
 
   defp alert_class(:warning), do: "lockspire-admin-alert lockspire-admin-alert-warning"
   defp alert_class(:danger), do: "lockspire-admin-alert lockspire-admin-alert-danger"

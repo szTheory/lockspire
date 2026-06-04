@@ -696,6 +696,31 @@ defmodule Lockspire.Web.Admin.CSS do
     word-break: break-all;
   }
 
+  .lockspire-admin-copy-once-secret {
+    display: grid;
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-copy-once-secret p {
+    color: var(--ls-text-body);
+    font-size: var(--ls-type-body-size);
+    line-height: var(--ls-type-line-body);
+    margin: 0;
+  }
+
+  .lockspire-admin-copy-once-secret__value {
+    display: grid;
+    gap: var(--ls-space-2);
+  }
+
+  .lockspire-admin-copy-once-secret__label {
+    color: var(--ls-text-muted);
+    font-size: var(--ls-type-label-size);
+    font-weight: var(--ls-type-weight-semibold);
+    line-height: var(--ls-type-line-label);
+    text-transform: uppercase;
+  }
+
   /* Actions */
   .lockspire-admin-action-bar,
   .lockspire-admin-actions {
@@ -709,6 +734,28 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-action-bar-compact {
     margin-bottom: var(--ls-space-4);
     margin-top: var(--ls-space-4);
+  }
+
+  .lockspire-admin-action-group {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-action-group__primary,
+  .lockspire-admin-action-group__secondary,
+  .lockspire-admin-action-group__destructive {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-action-group__destructive {
+    border-left: 1px solid var(--ls-status-danger-border);
+    margin-left: var(--ls-space-1);
+    padding-left: var(--ls-space-3);
   }
 
   /* Summary Grid */
@@ -911,11 +958,25 @@ defmodule Lockspire.Web.Admin.CSS do
 
   .lockspire-admin-resource-list__meta,
   .lockspire-admin-resource-list__actions,
-  .lockspire-admin-badge-group {
+  .lockspire-admin-badge-group,
+  .lockspire-admin-status-cluster {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: var(--ls-space-2);
+  }
+
+  .lockspire-admin-long-value {
+    display: inline-block;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .lockspire-admin-long-value-mono {
+    font-family: var(--ls-font-mono);
+    font-variant-numeric: tabular-nums;
   }
 
   .lockspire-admin-client-workspace {
@@ -1132,10 +1193,23 @@ defmodule Lockspire.Web.Admin.CSS do
 
     .lockspire-admin-filter-bar__fields,
     .lockspire-admin-filter-bar__actions,
+    .lockspire-admin-action-group,
+    .lockspire-admin-action-group__primary,
+    .lockspire-admin-action-group__secondary,
+    .lockspire-admin-action-group__destructive,
     .lockspire-admin-task-card__header,
     .lockspire-admin-task-card__actions {
       align-items: stretch;
       flex-direction: column;
+    }
+
+    .lockspire-admin-action-group__destructive {
+      border-left: 0;
+      border-top: 1px solid var(--ls-status-danger-border);
+      margin-left: 0;
+      margin-top: var(--ls-space-1);
+      padding-left: 0;
+      padding-top: var(--ls-space-3);
     }
 
     .lockspire-admin-description-list div {
