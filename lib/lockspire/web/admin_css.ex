@@ -302,6 +302,15 @@ defmodule Lockspire.Web.Admin.CSS do
     text-wrap: pretty;
   }
 
+  .lockspire-admin-card code,
+  .lockspire-admin-detail-section code,
+  .lockspire-admin-form-shell code {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   /* Badges (Atomic Component) */
   .lockspire-admin-badge {
     display: inline-flex;

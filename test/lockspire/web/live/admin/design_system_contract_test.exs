@@ -674,6 +674,9 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     assert css_rule(css, ".lockspire-admin-client-workspace") =~ "min-width: 0"
     assert css_rule(css, ".lockspire-admin-client-workspace > *") =~ "min-width: 0"
     assert css_rule(css, ".lockspire-admin-card") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-card code,\n  .lockspire-admin-detail-section code,\n  .lockspire-admin-form-shell code") =~
+             "overflow-wrap: anywhere"
+
     assert css_rule(css, ".lockspire-admin-form-shell") =~ "min-width: 0"
 
     mobile_css = css_media_rule(css, "@media (max-width: 720px)")
