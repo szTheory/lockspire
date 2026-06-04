@@ -11,11 +11,11 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ### Demo URL Contract
 
-- [ ] **URL-01**: The adoption demo has one canonical `LOCKSPIRE_DEMO_BASE_URL` for the browser-visible origin.
-- [ ] **URL-02**: Phoenix endpoint URL generation and the Lockspire issuer derive from the same base URL.
+- [x] **URL-01**: The adoption demo has one canonical `LOCKSPIRE_DEMO_BASE_URL` for the browser-visible origin.
+- [x] **URL-02**: Phoenix endpoint URL generation and the Lockspire issuer derive from the same base URL.
 - [ ] **URL-03**: Seeded redirect, callback, and verification URLs align with the configured base URL after demo setup.
 - [ ] **URL-04**: The smoke script continues to use `LOCKSPIRE_DEMO_BASE_URL` as its only external URL input and fails clearly on issuer or endpoint drift.
-- [ ] **URL-05**: Docker mode binds Phoenix to a container-reachable interface without changing the safe loopback default for host-local runs.
+- [x] **URL-05**: Docker mode binds Phoenix to a container-reachable interface without changing the safe loopback default for host-local runs.
 
 ### Default Docker Demo
 
@@ -83,11 +83,11 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| URL-01 | 111 | Pending |
-| URL-02 | 111 | Pending |
+| URL-01 | 111 | Complete |
+| URL-02 | 111 | Complete |
 | URL-03 | 111 | Pending |
 | URL-04 | 111 | Pending |
-| URL-05 | 111 | Pending |
+| URL-05 | 111 | Complete |
 | DOCKER-01 | 112 | Pending |
 | DOCKER-02 | 112 | Pending |
 | DOCKER-03 | 112 | Pending |
