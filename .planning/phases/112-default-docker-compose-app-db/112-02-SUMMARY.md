@@ -62,6 +62,7 @@ Additional deviation commits:
 
 - `01bfe4a` - switched Dockerfile to an available HexPM Elixir image tag.
 - `67cd5e6` - suppressed seed stdout to keep Docker startup output minimal.
+- `fix(112-02): make demo image install noninteractive` - made Ubuntu package installation explicitly noninteractive.
 
 ## Files Created/Modified
 
@@ -102,9 +103,17 @@ Additional deviation commits:
 - **Verification:** `sh -n examples/adoption_demo/bin/docker-start` and direct Docker smoke proof.
 - **Committed in:** `67cd5e6`
 
+**4. [Rule 2 - Missing Critical] Made image package installation noninteractive**
+- **Found during:** Follow-up review of Docker build logs
+- **Issue:** The Ubuntu package install completed, but apt fell back through interactive frontend detection during image build.
+- **Fix:** Added `DEBIAN_FRONTEND=noninteractive` to the development image.
+- **Files modified:** `examples/adoption_demo/Dockerfile.dev`
+- **Verification:** `docker compose -f examples/adoption_demo/docker-compose.yml config` and Dockerfile source assertions.
+- **Committed in:** `fix(112-02): make demo image install noninteractive`
+
 ---
 
-**Total deviations:** 3 auto-fixed.
+**Total deviations:** 4 auto-fixed.
 **Impact on plan:** All deviations were necessary to satisfy the Docker startup and readiness contract without expanding Phase 112 scope.
 
 ## Issues Encountered

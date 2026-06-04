@@ -1,6 +1,8 @@
 FROM hexpm/elixir:1.18.4-erlang-28.5-ubuntu-noble-20260509.1
 
 # Install essential build tools and readiness utilities for Phoenix live-reload.
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
