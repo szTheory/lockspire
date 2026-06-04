@@ -74,7 +74,7 @@ Last activity: 2026-06-04
 
 ## Session Continuity
 
-**Next action:** Discuss Phase 108 with `$gsd-discuss-phase 108`
+**Next action:** Plan Phase 108 with `$gsd-plan-phase 108`
 **Resume file:** .planning/phases/108-design-system-token-component-upgrade/108-CONTEXT.md
 **Stopped at:** Phase 108 context gathered (assumptions mode with sub-agent research)
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
