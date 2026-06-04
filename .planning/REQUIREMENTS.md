@@ -34,7 +34,7 @@ Take the shipped admin UI from coherent baseline to a deliberately mapped operat
 ### Support And Operations Polish
 
 - [x] **OPS-01**: Support pages help operators investigate by account, client, status, incident, and next safe action without leaking secret material.
-- [ ] **OPS-02**: Operations pages make waiting, retrying, failed, expired, and completed protocol state scannable without forcing operators to decode raw tables.
+- [x] **OPS-02**: Operations pages make waiting, retrying, failed, expired, and completed protocol state scannable without forcing operators to decode raw tables.
 - [x] **OPS-03**: Long identifiers, client names, URLs, timestamps, statuses, and counts stay readable on mobile without incoherent overlap or page-level horizontal scrolling.
 - [x] **OPS-04**: Risky actions remain visually distinct, confirmation-backed, and copy-clear about the consequence and reversibility of the action.
 - [x] **OPS-05**: Support and operations pages provide pivot context by client, account/subject, token family, consent, session, or delivery identifier when that context exists.
