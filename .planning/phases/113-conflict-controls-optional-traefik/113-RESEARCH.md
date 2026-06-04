@@ -359,17 +359,17 @@ LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smok
 | A1 | A Traefik override file is lower risk than putting external network definitions in the base file behind a profile, because Compose docs state top-level elements are not affected by profiles. | Summary, Standard Stack, Common Pitfalls | Planner may choose a profile-only design that still works, but must prove default `docker compose up` does not require the external network. |
 | A2 | Recommended env var names such as `LOCKSPIRE_DEMO_APP_PORT`, `LOCKSPIRE_DEMO_TRAEFIK_HOST`, `LOCKSPIRE_DEMO_TRAEFIK_ROUTER`, `LOCKSPIRE_DEMO_TRAEFIK_SERVICE`, and `LOCKSPIRE_DEMO_TRAEFIK_NETWORK` are unsurprising and acceptable. | Architecture Patterns, Code Examples | User may prefer alternate names; planner should keep names demo-scoped and document them. |
 
-## Open Questions
+## Resolved Research Decisions
 
-1. **Should reset be a script or documented command?**
-   - What we know: Context allows either exact reset command shape if it is scoped to the active project and three demo volumes. [VERIFIED: 113-CONTEXT.md]
-   - What's unclear: Whether maintainers prefer `examples/adoption_demo/bin/docker-reset` or Make/Mix-style docs only. [ASSUMED]
-   - Recommendation: Plan a small shell helper plus docs, because it makes CONFLICT-04 testable and avoids copy/paste mistakes. [ASSUMED]
+1. **Reset implementation**
+   - Decision: Plan `examples/adoption_demo/bin/docker-reset` as a small shell helper plus docs. [ASSUMED]
+   - Rationale: A helper makes CONFLICT-04 testable with source assertions and avoids copy/paste mistakes while still keeping reset scoped to the active Compose project and the three demo-owned volumes. [VERIFIED: 113-CONTEXT.md]
+   - Planning consequence: Contract tests should inspect the helper for active-project handling, the `db_data`, `deps_volume`, and `build_volume` allowlist, and absence of global prune commands. [ASSUMED]
 
-2. **Should host DB exposure use a profile or override file?**
-   - What we know: Default DB exposure must remain absent and any exposure must be opt-in/configurable. [VERIFIED: 113-CONTEXT.md]
-   - What's unclear: Whether host DB access belongs in the same Traefik override or a separate DB override. [ASSUMED]
-   - Recommendation: Use a separate opt-in override or profile for DB host port so Traefik mode and DB host access remain independent. [ASSUMED]
+2. **DB host exposure shape**
+   - Decision: Keep DB host exposure independent from Traefik mode by planning a separate opt-in override file such as `examples/adoption_demo/docker-compose.db-host.yml`. [ASSUMED]
+   - Rationale: CONFLICT-03 requires default DB host exposure to remain absent, and D-08 requires any host access to be opt-in/configurable through demo-owned Compose configuration. Separating this override from Traefik prevents maintainers from publishing PostgreSQL merely because they enabled hostname routing. [VERIFIED: 113-CONTEXT.md]
+   - Planning consequence: `LOCKSPIRE_DEMO_DB_HOST_PORT` controls only the host-side DB port in the opt-in DB override; app-to-DB wiring keeps `LOCKSPIRE_DEMO_DB_PORT=5432` as the internal container port. [ASSUMED]
 
 ## Environment Availability
 

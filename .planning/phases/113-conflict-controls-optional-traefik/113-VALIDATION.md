@@ -36,8 +36,8 @@ Per-phase validation contract for feedback sampling during execution.
 | 113-W0-02 | 01 | 0 | CONFLICT-02 | T-113-02 | Configured app port appears in host mapping, `PORT`, docs examples, and smoke command env | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
 | 113-W0-03 | 01 | 0 | CONFLICT-03 | T-113-03 | Default DB service has no host `ports`; opt-in config uses configured host port only | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
 | 113-W0-04 | 02 | 0 | CONFLICT-04 | T-113-04 | Reset command targets only active project `db_data`, `deps_volume`, and `build_volume` | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
-| 113-W0-05 | 03 | 0 | TRAEFIK-01 | T-113-05 | Default Compose model has no Traefik dependency or external proxy network | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
-| 113-W0-06 | 03 | 0 | TRAEFIK-02 | T-113-06 | Optional Traefik mode renders configurable hostname, router, service, network labels, and explicit service port | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
+| 113-W0-05 | 02 | 0 | TRAEFIK-01 | T-113-05 | Default Compose model has no Traefik dependency or external proxy network | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
+| 113-W0-06 | 02 | 0 | TRAEFIK-02 | T-113-06 | Optional Traefik mode renders configurable hostname, router, service, network labels, and explicit service port | contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | No - W0 | pending |
 
 ## Wave 0 Requirements
 
