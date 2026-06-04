@@ -79,6 +79,65 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "semantic token categories are covered by the embedded admin CSS contract" do
+    css = File.read!(@admin_css_path)
+
+    for token <- [
+          "--ls-surface-page",
+          "--ls-surface-panel",
+          "--ls-text-strong",
+          "--ls-text-body",
+          "--ls-border-subtle",
+          "--ls-border-strong",
+          "--ls-status-success-bg",
+          "--ls-status-warning-border",
+          "--ls-space-4",
+          "--ls-control-height",
+          "--ls-radius-md",
+          "--ls-shadow-sm",
+          "--ls-type-body-size",
+          "--ls-font-sans",
+          "--ls-focus-ring-color",
+          "--ls-z-nav",
+          "--ls-motion-duration-fast",
+          "--ls-motion-ease-standard"
+        ] do
+      assert css =~ token
+    end
+  end
+
+  test "reduced motion neutralizes animation duration, transition duration, and active transforms" do
+    css = File.read!(@admin_css_path)
+
+    assert css =~ "@media (prefers-reduced-motion: reduce)"
+    assert css =~ "transition-duration: 0.01ms !important"
+    assert css =~ "animation-duration: 0.01ms !important"
+
+    for selector <- [
+          ".lockspire-admin-btn-primary:active",
+          ".lockspire-admin-btn-secondary:active",
+          ".lockspire-admin-btn-danger:active"
+        ] do
+      assert css =~ selector
+    end
+
+    assert css =~ "transform: none;"
+  end
+
+  test "raw hex colors are declared only on Lockspire admin token lines" do
+    css = File.read!(@admin_css_path)
+
+    offenders =
+      css
+      |> String.split("\n")
+      |> Enum.with_index(1)
+      |> Enum.filter(fn {line, _line_number} ->
+        Regex.match?(~r/#[0-9a-fA-F]{3,8}/, line) and not String.contains?(line, "--ls-")
+      end)
+
+    assert offenders == []
+  end
+
   test "admin route surface and operator docs stay aligned to journey model" do
     router = File.read!(@admin_router_path)
     guide = File.read!(@operator_admin_doc_path)
