@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -65,13 +66,45 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Support"
+        title="Stored grant decision"
+        body="Review whether this consent grant remains healthy and whether revocation is the next safe action."
+      >
+        <:summary>
+          <span>Status: <AdminComponents.status_badge status={@consent.grant.status} /></span>
+          <span>Scopes: {scope_label(@consent.grant.scopes)}</span>
+        </:summary>
+        <:actions>
+          <AdminComponents.admin_button href={consents_index_path()}>
+            Review stored grant
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
+
       <AdminComponents.section_card
         title={@consent.client && (@consent.client.name || @consent.client.client_id) || @consent.grant.client_id}
         subtitle="Durable consent truth for support workflows. This screen does not infer from event history."
       >
         <AdminComponents.description_list>
-          <:item label="Account"><code>{@consent.grant.account_id}</code></:item>
-          <:item label="Client ID"><code>{@consent.grant.client_id}</code></:item>
+          <:item label="Grant ID">
+            <AdminComponents.long_value
+              value={redacted_handle(:consent_grant, @consent.grant.id)}
+              kind={:id}
+            />
+          </:item>
+          <:item label="Account">
+            <AdminComponents.long_value
+              value={redacted_handle(:account, @consent.grant.account_id)}
+              kind={:id}
+            />
+          </:item>
+          <:item label="Client ID">
+            <AdminComponents.long_value
+              value={redacted_handle(:client, @consent.grant.client_id)}
+              kind={:id}
+            />
+          </:item>
           <:item label="Grant kind"><AdminComponents.status_badge status={@consent.grant.kind} /></:item>
           <:item label="Status"><AdminComponents.status_badge status={@consent.grant.status} /></:item>
           <:item label="Granted at">
@@ -87,32 +120,34 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         </AdminComponents.description_list>
 
         <h3 class="lockspire-admin-section-heading">Scopes</h3>
-        <ul class="lockspire-admin-value-list">
-          <%= for scope <- @consent.grant.scopes do %>
-            <li>{scope}</li>
-          <% end %>
-        </ul>
+        <AdminComponents.long_value value={scope_label(@consent.grant.scopes)} kind={:text} />
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Revoke consent"
+        title="Revoke consent grant"
         subtitle="Use this only when the durable grant should stop authorizing future reuse."
       >
         <p :if={@consent.grant.status == :revoked}>This consent is already revoked. Repeating the action is safe.</p>
         <p :if={@revoke_error}>{@revoke_error}</p>
 
-        <AdminComponents.confirmation_panel title="Revoke stored grant" variant={:danger}>
+        <AdminComponents.confirmation_panel title="Revoke consent grant" variant={:danger}>
           <:body>
             <form class="lockspire-admin-form-stack" phx-submit="revoke_consent">
               <label class="lockspire-admin-checkbox-field">
                 <input type="checkbox" name="revoke[confirm]" value="true" />
-                <span>I understand this revokes the stored grant for this account and client.</span>
+                <span>
+                  Revoke consent grant for client
+                  {client_display(@consent)}, subject
+                  {redacted_handle(:account, @consent.grant.account_id)}, and scopes
+                  {scope_label(@consent.grant.scopes)}. This remembered grant will no longer
+                  authorize future consent reuse.
+                </span>
               </label>
               <AdminComponents.action_bar>
                 <AdminComponents.admin_button type="submit" variant={:danger}>
                   {if @consent.grant.status == :revoked,
-                    do: "Consent already revoked",
-                    else: "Revoke consent"}
+                    do: "Consent grant already revoked",
+                    else: "Revoke consent grant"}
                 </AdminComponents.admin_button>
               </AdminComponents.action_bar>
             </form>
@@ -142,4 +177,17 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   end
 
   defp parse_id(_value), do: nil
+
+  defp client_display(consent) do
+    (consent.client && (consent.client.name || consent.client.client_id)) ||
+      redacted_handle(:client, consent.grant.client_id)
+  end
+
+  defp redacted_handle(_type, nil), do: "Not recorded"
+  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+
+  defp scope_label([]), do: "No scopes recorded"
+  defp scope_label(scopes), do: Enum.join(scopes, ", ")
+
+  defp consents_index_path, do: Lockspire.mount_path() <> "/admin/consents"
 end

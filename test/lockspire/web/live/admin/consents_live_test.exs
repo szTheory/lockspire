@@ -59,24 +59,42 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/consents/:id", Show))
   end
 
-  test "consent index renders URL-driven filters and durable grant data" do
+  test "consent index renders support grant investigation filters and rows without secrets" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
              Index.handle_params(
-               %{"account" => "account-consent-ui"},
-               "/lockspire/admin/consents?account=account-consent-ui",
+               %{
+                 "account" => "account-consent-ui",
+                 "client" => "consent-ui-client",
+                 "status" => "active"
+               },
+               "/lockspire/admin/consents?account=account-consent-ui&client=consent-ui-client&status=active",
                socket
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Consent review"
+    assert html =~ "Support"
+    assert html =~ "Consent grant investigation"
+    assert html =~ "Selected account: account-consent-ui"
+    assert html =~ "Selected client: consent-ui-client"
+    assert html =~ "Selected status: active"
+    assert html =~ "Filter consent grants"
+    assert html =~ "Review stored grant"
+    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-long-value"
     assert html =~ "Consent UI Client"
-    assert html =~ "account-consent-ui"
+    assert html =~ "Scopes"
+    assert html =~ "openid, email"
     assert html =~ "Keys"
     assert html =~ "Overview"
     assert html =~ "DCR"
+    refute html =~ "sha256:consent-ui:hash"
+    refute html =~ "client_secret"
+    refute html =~ "refresh_token"
+    refute html =~ "user_code"
+    refute html =~ "verifier"
   end
 
   test "consent detail renders support-grade detail and guarded revoke action", %{grant: grant} do
@@ -92,14 +110,25 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    assert html =~ "Support"
+    assert html =~ "Stored grant decision"
     assert html =~ "Durable consent truth"
-    assert html =~ "account-consent-ui"
-    assert html =~ "Revoke consent"
+    assert html =~ "Review stored grant"
+    assert html =~ "Revoke consent grant"
+    assert html =~ "remembered grant will no longer"
+    assert html =~ "openid, email"
+    assert html =~ "lockspire-admin-long-value"
+    refute html =~ "account-consent-ui"
+    refute html =~ "sha256:consent-ui:hash"
 
     assert {:noreply, socket} =
              Show.handle_event("revoke_consent", %{"revoke" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.consent.grant.status == :revoked
+
+    assert {:noreply, socket} = Show.handle_event("revoke_consent", %{}, socket)
+
+    assert socket.assigns.revoke_error =~ "Confirm the revoke action"
   end
 
   defp socket_for(action) do
