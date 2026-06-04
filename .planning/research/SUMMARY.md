@@ -1,257 +1,165 @@
-# v1.27 Phoenix Resource Server Token Acceptance — Research Summary
+# Project Research Summary
 
-**Project:** Lockspire — embedded OAuth/OIDC authorization-server library for Phoenix/Elixir
-**Domain:** RS-side token-acceptance contract on an already-shipped embedded provider
-**Researched:** 2026-05-27
-**Confidence:** HIGH on diagnosis and stack; **OPEN** on plug-shape design (see Open Design Decision)
+**Project:** Lockspire
+**Domain:** Repo-local Phoenix adoption demo Docker DX and repo hygiene
+**Researched:** 2026-06-04
+**Confidence:** HIGH
 
 ## Executive Summary
 
-v1.27 exists to resolve one concrete, code-grounded contradiction inside an otherwise-shipped library: `Lockspire.Plug.VerifyToken` is JOSE-strict, JWT-only (verifies `RS256/ES256/PS256` via `JOSE.JWT.verify_strict/3`); `Lockspire.Protocol.TokenFormatter` emits 32-byte opaque random tokens for the authorization-code, refresh, device, and CIBA paths; only the RFC 8693 token-exchange path emits `at+jwt`. The `examples/adoption_demo` smoke (`scripts/demo/adoption_smoke.py`) papers over the gap by only asserting `401` on anonymous requests to `:lockspire_protected_api` and by sending the issued opaque token to Lockspire-owned `/userinfo` (which looks up by hash) — it never threads a Lockspire-issued token through `Lockspire.Plug.VerifyToken`. The "blessed adoption path" is non-blessed by accident today, and any first adopter who copies the demo will hit `{:error, :malformed}` the moment they try to protect their own Phoenix API.
+v1.30 is a demo-operations milestone for an embedded Phoenix OAuth/OIDC authorization-server library. The product work is not new protocol surface or admin UI expansion; it is making the representative host app in `examples/adoption_demo` boring to start, easy to prove, hard to collide with other local projects, and clean enough to serve as the base for the next admin UI pass.
 
-The milestone needs **no new runtime dependency**. JOSE, Plug, NimbleOptions, Ecto/Postgres, and the existing `at+jwt` signing block in `lib/lockspire/protocol/rfc8693_exchange.ex` cover every code path required. The work is a **contract decision plus a CI-provable round-trip**, not a library hunt. Equally important, RFC 7662 introspection-at-the-RS-plug is the wrong primitive for the host-API seam — it recreates the gateway/CIAM productization PROJECT.md explicitly forbids and forces a synchronous network/IPC hop for state the same BEAM already holds. Introspection stays a Lockspire-owned operator/tooling primitive.
+The recommended approach is one default Docker path: app plus PostgreSQL through Docker Compose, direct host-port access on `127.0.0.1:${LOCKSPIRE_DEMO_PORT:-4100}`, and Traefik hostname routing only behind an explicit opt-in profile or override. One canonical `LOCKSPIRE_DEMO_BASE_URL` must drive Phoenix endpoint URL, Lockspire issuer, seeded redirect/callback truth, startup output, docs, and the smoke command.
 
-The four researchers converged on diagnosis but **split on the plug shape** that resolves it. STACK and FEATURES recommend tightening `Lockspire.Plug.VerifyToken` to JWT-only and routing AC/refresh/device/CIBA through a new shared `Protocol.AccessTokenSigner` to mint `at+jwt`. ARCHITECTURE recommends keeping one plug with two internal verifiers (`JwtVerifier` + a new `OpaqueVerifier` that calls the in-process `Storage.TokenStore.fetch_active_access_token/1` — the same path `Protocol.Userinfo` already uses). Both branches close the demo gap; both ship without new dependencies; both leave DPoP/mTLS sender-constraint enforcement and RFC 8707 resource-indicator audience binding untouched. They differ on what the plug accepts and what adopters opt into. **This is the milestone's load-bearing design decision and must be resolved with the user during requirements definition — the synthesizer is not picking a winner.**
+The highest risks are environment drift and cleanup damage: hard-coded issuer/callback URLs, container loopback binding, accidental host Postgres dependency, global Docker resource collisions, and over-broad hygiene that deletes useful UI evidence. Mitigate these by landing the URL/config contract first, adding a Compose-managed database with explicit env wiring, parameterizing project names/ports/hostnames, keeping cleanup allowlisted and non-destructive by default, and proving the active URL with the existing black-box smoke.
 
 ## Key Findings
 
-### Diagnosis (Convergence) — All Four Researchers Agree
+### Recommended Stack
 
-The structural mismatch is real, narrow, and code-grounded:
+Use the existing Phoenix/Elixir stack and add only local demo infrastructure. Do not add production Docker packaging, Kubernetes, conformance lanes, new OAuth/OIDC behavior, Redis, pgAdmin, or a required standalone auth-service shape.
 
-- `lib/lockspire/plug/verify_token.ex:345-358` — uses `JOSE.JWT.verify_strict/3` over `["RS256","ES256","PS256"]` and `JOSE.JWT.peek_protected/1` for `kid`. Physically cannot accept opaque tokens.
-- `lib/lockspire/protocol/token_formatter.ex:29-34` — `format_access_token/1` emits 32-byte url-safe base64 opaque strings.
-- `lib/lockspire/protocol/rfc8693_exchange.ex:340-348` — the **only** path today that emits `typ: at+jwt` with the seven RFC 9068 mandatory claims (`iss`, `exp`, `aud`, `sub`, `client_id`, `iat`, `jti` + `scope`).
-- `lib/lockspire/protocol/userinfo.ex:122-136` — accepts the stored opaque token via SHA-256 hash + `Storage.TokenStore.fetch_active_access_token/1`. **This is correct** for a Lockspire-owned resource and is not the bug.
-- `examples/adoption_demo/lib/adoption_demo_web/router.ex:23-27` — pipeline mounts `VerifyToken → EnforceSenderConstraints → RequireToken` correctly, but `scripts/demo/adoption_smoke.py:235-244` only asserts `401` on anonymous and uses the stored token against `/userinfo`. **No issued Lockspire token is ever proven to flow through `Lockspire.Plug.VerifyToken`.**
+**Core technologies:**
+- Docker Compose v2: local app/database topology, project isolation, env interpolation, profiles, healthchecks, named volumes.
+- `postgres:14` or `postgres:14-alpine`: Compose-managed demo database with named volume and `pg_isready` healthcheck.
+- Phoenix/Bandit: app binds `0.0.0.0` in Docker while preserving loopback host-local defaults.
+- Traefik v2.10: optional local hostname routing through `tools/traefik`, never required for default startup.
+- Bash/Mix demo helpers: thin repo-root wrappers or Mix task for start/stop/info/reset/smoke output; keep `scripts/demo/adoption_smoke.py` as proof, not orchestration.
+- `scripts/maintainer/repo_hygiene_check.sh`: extend the existing PASS/WARN/BLOCK gate for demo leftovers without making CI depend on Docker daemon state.
 
-Additionally, the plug carries real RFC 9068 / RFC 8725 compliance gaps that v1.27 must close **regardless of which design branch wins**:
+### Expected Features
 
-- Missing `iss` claim enforcement (RFC 9068 §4 step 4, RFC 9700 mix-up class).
-- Missing `typ: at+jwt` header enforcement (RFC 9068 §2.1, RFC 8725 §3.11) — enables silent cross-JWT confusion (ID token accepted as access token).
-- Silent acceptance of JWTs without `exp` (RFC 9068 §2.2 makes `exp` REQUIRED).
-- `WWW-Authenticate` challenge derived from the failure category instead of the token's binding shape — DPoP-bound failures returning a `Bearer` challenge loop the client (RFC 9449 §7.1).
+**Must have (table stakes):**
+- One documented repo-root Docker command starts the adoption demo app and database without host Postgres.
+- Compose includes `web` and `db`, DB healthcheck, named Postgres/deps/_build volumes, explicit DB env, and direct `127.0.0.1` port publishing.
+- Startup performs idempotent create/migrate/seed, waits for HTTP readiness, then prints active base URL, issuer, discovery, JWKS, admin, verify, developer apps, callback/protected API URLs, seeded accounts, seeded clients, and the exact smoke command.
+- Ports, base URL, Compose project name, and optional Traefik hostname are configurable.
+- `scripts/demo/adoption_smoke.py` passes against the active `LOCKSPIRE_DEMO_BASE_URL`.
+- Stop/reset/cleanup commands are scoped to the active Compose project.
+- Hygiene reports demo containers/volumes, generated demo artifacts, stale logs/screenshots, and dirty tracked state with clear remediation.
+- `docs/adoption-demo.md` makes Docker the default path and keeps the host-local Mix/Postgres path as a fallback.
 
-DPoP-bound (RFC 9449) and mTLS-bound (RFC 8705) access tokens are already shipped end-to-end via `Lockspire.Plug.EnforceSenderConstraints` (consuming `binding_requirements` from `cnf.jkt` / `cnf["x5t#S256"]`). RFC 8707 Resource Indicators is already validated (v1.14). **v1.27 must not re-implement any of those — it must prove them against a Lockspire-issued access token that actually reaches the host-API plug.**
+**Should have (differentiators):**
+- `info` or `--print` command to reprint URLs/accounts/clients/smoke command for a running demo.
+- `doctor` preflight for Docker daemon, Compose plugin, chosen ports, Traefik network, and expected files.
+- Optional smoke wrapper that preserves the existing Python smoke output.
+- Log-tail helper scoped to the active Compose project.
+- Structured `--json` readiness output only after the plain text contract is stable.
 
-See: `.planning/research/STACK.md` Findings 1-8; `.planning/research/ARCHITECTURE.md` "The Tension in Two Sentences"; `.planning/research/FEATURES.md` "Framing"; `.planning/research/PITFALLS.md` Pitfall 1.
+**Defer:**
+- Browser screenshot automation for startup; leave screenshots to the next admin UI polish milestone.
+- Cross-repo local development platform conventions.
+- Required Traefik, TLS/certificate automation, production release image, Kubernetes/Helm/Terraform.
+- New protocol flows, admin workflows, hosted auth, SAML, LDAP, or CIAM breadth.
 
-### Stack — No New Dependencies
+### Architecture Approach
 
-**Headline:** No new Hex package is justified. v1.27 is a contract refactor on top of `:jose`, `:plug`, `:nimble_options`, `:ecto_sql`, `:postgrex`, and the existing in-tree `Lockspire.KeyCache` / `Storage.KeyStore`.
+Keep v1.30 outside Lockspire runtime modules. The local Docker path is a first-class maintainer path, but CI should continue using the existing host-run adoption smoke unless a later phase intentionally adds a Docker smoke job. The architectural center is a single external URL contract flowing through Compose env, Phoenix endpoint config, Lockspire issuer, seeds, docs, startup output, and smoke.
 
-**Explicitly rejected additions:**
+**Major components:**
+1. `examples/adoption_demo/docker-compose.yml` - local `web` + `db` topology, direct port default, project-scoped volumes, optional Traefik profile/override.
+2. `examples/adoption_demo/config/config.exs` - env precedence for bind IP/port, public base URL, endpoint `url`, issuer, and DB settings.
+3. Demo startup/info scripts or Mix task - idempotent setup, readiness wait, and generated URL/account/client/smoke output.
+4. `scripts/demo/adoption_smoke.py` - black-box proof against the printed base URL; no Docker orchestration.
+5. `docs/adoption-demo.md` - canonical human contract for Docker, Traefik, smoke, reset, cleanup, env overrides, and host-local fallback.
+6. `scripts/maintainer/repo_hygiene_check.sh` - non-destructive repo hygiene classification and cleanup guidance.
 
-| Tempting addition | Why rejected |
-|---|---|
-| `:joken` or `:guardian` | Duplicates the shipped JOSE-direct verifier; broadens dependency surface for no gain. |
-| External JWKS HTTP fetcher | Lockspire is the issuer; verifier reads in-process `KeyCache`. The existing `lib/lockspire/jwks_fetcher/` is for **client assertion** verification, a different code path. |
-| RFC 7662 introspection client as the host-API verifier seam | Anti-feature trap — recreates gateway/CIAM productization PROJECT.md forbids; forces synchronous round-trip; defeats the embedded-library value proposition. |
-| A generic "stored token verify" plug exported to host apps | Either couples host Repo to Lockspire's Repo or forces network introspection. Both violate the embedded-library boundary. |
+### Critical Pitfalls
 
-**The one new verifier rule both design branches require:** explicit `typ: at+jwt` enforcement on the JWT path (one-line guard; RFC 8725 §3.11 motivation).
+1. **Hard-coded issuer/callback drift** - derive endpoint URL, Lockspire issuer, seeded redirect URIs, docs, banner, and smoke from `LOCKSPIRE_DEMO_BASE_URL`.
+2. **Docker still assumes host Postgres** - add a Compose `db` service, explicit `LOCKSPIRE_DEMO_DB_*` env, healthcheck, and setup command.
+3. **Phoenix binds loopback inside container** - set `LOCKSPIRE_DEMO_BIND_IP=0.0.0.0` in Compose while defaulting host-local runs to `127.0.0.1`.
+4. **Docker project/volume/Traefik collisions** - parameterize Compose project name, ports, hostname, router/service labels; avoid `container_name`; keep DB host port unexposed by default.
+5. **Over-broad cleanup destroys evidence** - hygiene should report by category and cleanup only allowlisted demo-owned paths/resources with explicit reset flags.
+6. **Startup banner lies or leaks** - generate output from config truth and seeds; print client IDs and demo logins, not client secrets, tokens, private keys, auth codes, or cookies.
 
-### Feature Categories
+## Implications for Roadmap
 
-**Table stakes (must ship in v1.27 with docs + demo + CI):**
+Based on research, suggested phase structure:
 
-- **TS-1 / TS-3** — A Lockspire-issued access token actually flowing through `Lockspire.Plug.VerifyToken` end-to-end (the issuance shape depends on the Open Design Decision).
-- **TS-4** — Route-level `aud` and `scope` enforcement preserved end-to-end (already shipped in the plug; needs round-trip proof against issued tokens).
-- **TS-5 / TS-6** — DPoP-bound and mTLS-bound proof against issued access tokens (no new code; the enforcer is already shipped correctly through v1.22).
-- **TS-7** — One authoritative adopter-facing answer: "this token shape protects host Phoenix APIs; this other shape is for Lockspire-owned resources." No more four-source-of-truth drift between demo, docs, plug docstring, and CI fixture.
-- **TS-8 / TS-9** — Blessed adoption-demo path that drives an issued token through `/api/billing/summary` end-to-end, plus a CI smoke fence that fails loudly if drift returns.
-- **Plug hardening pass** — `iss` enforcement, `typ: at+jwt` enforcement, mandatory `exp`/`iat`/`sub`, `WWW-Authenticate` scheme derived from binding shape (closes Pitfalls 3, 4, 6, 11, 12).
-- **Audience mandatory in the blessed pipeline** — make `audience:` / `audiences:` effectively required (or document + assert via `release_readiness_contract_test`) so the demo's current "no audience" router stops being the bug-pattern (closes Pitfall 2).
-- **Discovery metadata truth** for whatever issuance shape is chosen.
+### Phase 1: Demo URL Contract and Config Unification
+**Rationale:** URL truth is the root dependency. Compose, Traefik, seeds, docs, and smoke all fail noisily if issuer/callback/base URL drift remains.
+**Delivers:** `LOCKSPIRE_DEMO_BASE_URL` parsing, Docker bind IP support, endpoint `url` and Lockspire issuer derived from one base URL, seed/smoke/doc alignment checks.
+**Addresses:** configurable base URL/port/hostname, smoke URL compatibility.
+**Avoids:** hard-coded issuer drift, callback mismatch, loopback container binding.
 
-**Differentiators (flag for the roadmapper; not required to close v1.27):**
+### Phase 2: Default Docker Compose App + DB
+**Rationale:** The milestone's default path must remove host Postgres dependency before polishing scripts or docs.
+**Delivers:** `db` service, healthcheck-gated `web`, explicit DB env, named Postgres/deps/_build volumes, direct `127.0.0.1:${LOCKSPIRE_DEMO_PORT:-4100}:4000` publishing, idempotent setup command.
+**Uses:** Docker Compose v2, PostgreSQL 14, Phoenix/Bandit dev image.
+**Implements:** local app/database topology for the adoption demo only.
 
-- **DIFF-2** — RFC 8707 resource indicators honored in JWT `aud` is essentially free since the runtime already lands in v1.14; strong candidate to fold into table stakes if implementation cost is trivial.
-- **DIFF-1 / DIFF-4** — A second introspection-backed plug or a `mode:` knob — explicitly defer (recreates the ambiguity the milestone exists to delete).
-- **DIFF-5** — Per-client format pinning — defer.
-- **DIFF-6** — JWT acceptance at `/userinfo` for one-token-fits-everywhere — defer.
+### Phase 3: Conflict Controls and Optional Traefik
+**Rationale:** Multiple local Elixir admin demos are the concrete adopter friction. Project/port/hostname controls should land before final docs so commands are truthful.
+**Delivers:** configurable Compose project name, app port, optional DB debug port if needed, cache reset, Traefik profile/override, parameterized Traefik labels/network/hostname, preflight/doctor if included.
+**Addresses:** port conflicts, Compose resource collisions, optional hostname routing.
+**Avoids:** required Traefik, static router label collisions, stale `_build`/`deps` volume confusion.
 
-**Dependent on shipped surface (must NOT be re-implemented):**
+### Phase 4: Startup Output, Smoke Wrapper, and Docs
+**Rationale:** The demo is useful only if maintainers can immediately see what is running and how to prove it.
+**Delivers:** repo-root launcher/info output, readiness wait, seeded account/client display, exact smoke command, optional smoke wrapper, updated `docs/adoption-demo.md` with Docker default, host-local fallback, Traefik, env overrides, stop/reset/cleanup.
+**Addresses:** printed URLs/accounts/clients/routes, smoke proof, executable handoff.
+**Avoids:** source-diving, stale banner values, secret leakage, smoke proving only the wrong origin.
 
-`Lockspire.Plug.EnforceSenderConstraints`, `Lockspire.Plug.RequireToken`, `Lockspire.AccessToken`, `Lockspire.KeyCache`, `Lockspire.Storage.TokenStore`, `Lockspire.Protocol.TokenFormatter.hash_token/1`, `Lockspire.Protocol.Userinfo`, `Lockspire.Protocol.Introspection`, all FAPI 2.0 / DPoP / mTLS / Resource Indicators runtime, all discovery + JWKS publication.
+### Phase 5: Repo Hygiene Gate and Scoped Cleanup
+**Rationale:** Hygiene should be last because it depends on knowing which artifacts and Docker resources the new demo path creates.
+**Delivers:** local PASS/WARN/BLOCK checks for generated demo artifacts and Docker leftovers, cleanup/reset lane scoped by Compose project, Docker-free `--ci` behavior, documented remediation commands.
+**Addresses:** clean repo before next admin UI pass.
+**Avoids:** destructive broad cleanup, CI flakes from local Docker checks, conflating Docker state with git state.
 
-### Architecture Integration — Where New Code Lands
+### Phase Ordering Rationale
 
-**Stable surfaces — do not touch:** `EnforceSenderConstraints`, `RequireToken`, `AccessToken` struct shape, `Protocol.Introspection`'s HTTP `/introspect` (stays for remote callers + operator tooling), `Protocol.Userinfo`, `Storage.TokenStore` behaviour callbacks, `KeyCache`, every host seam in `lib/lockspire/host/`, every discovery key, the admin router.
-
-**New code (shape depends on which design branch wins):**
-
-- **Both branches need:** A shared signer module if `at+jwt` issuance is extended beyond RFC 8693 (`Protocol.AccessTokenSigner`, extracted from `rfc8693_exchange.ex:317-361`).
-- **Both branches need:** Plug-hardening changes to `verify_token.ex` for `iss`, `typ: at+jwt`, mandatory `exp`/`iat`/`sub`, scheme-aware `WWW-Authenticate`.
-- **JWT-only branch needs:** An issuance opt-in (per-client / per-server policy) so AC/refresh/device/CIBA paths can emit `at+jwt` when a client is configured for it; demo router gains a host-owned `/api/demo/me` route protected by `VerifyToken` with `audience:` and `resource=...` wired through.
-- **Dual-verifier branch needs:** New internal modules under `lib/lockspire/plug/verify_token/` (`verifier.ex` dispatcher, `jwt_verifier.ex` extracted from the current path, `opaque_verifier.ex` calling `Storage.TokenStore.fetch_active_access_token/1` and projecting `%Domain.Token{}` into a synthetic claims map with `binding_requirements`).
-
-**Generated-host scaffolding (both branches):** `priv/templates/lockspire.install/router.ex` gains a commented `:lockspire_protected_api` pipeline block mirroring whichever shape the demo proves.
-
-### Watch Out For — Highest-Leverage Pitfalls
-
-1. **Token-type confusion (Pitfall 1, Critical).** The reason this milestone exists. Any first adopter who copies the demo today gets `{:error, :malformed}` from `Lockspire.Plug.VerifyToken` on a valid Lockspire-issued opaque token. The fix is whichever design branch wins, *plus* a distinct `reason_code: :wrong_token_shape` so diagnostics are honest. Guard: end-to-end auth-code → `/api/billing/summary` → 200 in CI. **The smoke proving 401 on anonymous proves nothing.**
-2. **Audience-substitution / cross-API token reuse (Pitfall 2, Critical).** `audience:` is currently optional on the plug, and the demo router uses no audience. Make audience effectively mandatory in the blessed pipeline (raise from `init/1` or assert via `release_readiness_contract_test` content scan).
-3. **Issuer pinning gap (Pitfall 3, Critical).** `verify_signature_and_claims/2` does not validate `iss` against `Config.issuer!()`. RFC 9068 §4 step 4 mandates it; RFC 9700 names the mix-up class. Add the check + three negative test cases (missing/wrong/matching `iss`).
-4. **JWT alg-confusion / signature-stripping regression (Pitfall 4, Critical).** The current `@allowed_algs ["RS256","ES256","PS256"]` + `JOSE.JWT.verify_strict/3` posture is correct. Freeze it via a `release_readiness_contract_test` literal-value assertion and add an explicit HS256-with-public-key-as-HMAC-secret rejection test. Symmetric verification on the RS side is **never** the right answer.
-5. **DPoP / mTLS binding bypass when constraint enforcement is missing or out-of-order (Pitfall 5, Critical).** The three-plug split is correct internally but a known adopter footgun. Either ship a single composite `Lockspire.Plug.LockspireProtectedResource` for the blessed path, or have `RequireToken` fail closed when `binding_requirements` is non-nil but no `conn.private[:lockspire_sender_constraint_checked]` flag is set.
-6. **WWW-Authenticate scheme mismatch on DPoP-bound failures (Pitfall 6, Critical→Moderate).** Today the challenge is derived from the failure category, not the token's binding shape. DPoP-bound audience/scope failures emit `Bearer` and clients loop. Drive challenge selection from `access_token.binding_type` and `access_token.authorization_scheme`.
-7. **Missing `typ: at+jwt` enforcement (Pitfall 11, Moderate).** Without it, an ID token whose `aud` happens to line up gets accepted as an access token. Cross-JWT confusion is the named attack class; RFC 9068 §2.1 is explicit.
-8. **Demo / docs / plug / CI four-source-of-truth drift (Pitfall 10, Moderate).** The named v1.27 problem. One canonical snippet, content-hashed across the four files, with the smoke proving `200 with issued token`, not just `401 anonymous`.
-
-## Open Design Decision (REQUIRED — Must Resolve With User in Requirements)
-
-**The four researchers converged on the diagnosis but split on the plug shape that resolves it. This decision drives every downstream phase. The synthesizer is explicitly not choosing.**
-
-### Branch A — JWT-only plug (STACK + FEATURES position)
-
-**One plug. JWT-only contract. Opaque tokens out of scope at the host-API seam.**
-
-- `Lockspire.Plug.VerifyToken` is narrowed to RFC 9068 `typ: at+jwt` only.
-- The `at+jwt` signing block in `rfc8693_exchange.ex:317-361` is extracted into a shared `Protocol.AccessTokenSigner`.
-- AC / refresh / device / CIBA paths opt into `at+jwt` issuance via a per-client (or per-server) policy switch.
-- Opaque tokens remain confined to Lockspire-owned resources (`/userinfo`, `/introspect`) where they already are.
-- Adoption demo rewires to obtain an `at+jwt` access token (via the new opt-in) and proves it against a host-owned RS endpoint.
-- Adopters who **do not** opt into `at+jwt` issuance get **no** host-API protection from `VerifyToken` — that fact is explicit, named, and documented in `docs/protect-phoenix-api-routes.md`.
-
-**Argument:** Smaller plug surface. No in-process DB coupling promoted at the plug seam. The simplest possible RFC 9068 contract. The plug's docstring becomes literally true. The introspection-as-RS-seam temptation is structurally foreclosed.
-
-**Conditional pitfalls this branch carries:**
-
-- Adopters who never opt into `at+jwt` issuance silently get no protection from `VerifyToken`. Mitigation: loud docs + diagnostic emission + an opt-in default for the generated host scaffold.
-- Demo migration cost: issuance opt-in must land before the demo can prove end-to-end through the plug.
-- Per-client/per-server format policy is a new operator surface adopters must learn.
-
-### Branch B — Dual-verifier plug (ARCHITECTURE position)
-
-**One plug. Two internal verifiers. Lockspire knows what it issued; the verifier honors either shape.**
-
-- `Lockspire.Plug.VerifyToken` keeps its public contract; internally splits into `Verifier` (dispatch on token shape — JWS three-segment vs opaque url-safe random) → `JwtVerifier` (current JOSE path) + new `OpaqueVerifier` (in-process `Storage.TokenStore.fetch_active_access_token/1`, same path `Protocol.Userinfo` already uses).
-- The opaque verifier projects `%Domain.Token{}` into a synthetic claims map identical in shape to the JWT claims map (`iss`, `sub`, `client_id`, `scope`, `aud`, `exp`, `iat`, `cnf`).
-- `EnforceSenderConstraints` and `RequireToken` consume `%AccessToken{}` unchanged.
-- No new HTTP introspection client. No remote round-trip. The plug runs in the same BEAM that issued the token.
-- Adoption demo rewires by adding **one** assertion: the same stored bearer it already obtains now also hits `/api/billing/summary` and gets 200 — no issuance change required.
-
-**Argument:** Lockspire is embedded — host and Lockspire already share the BEAM and the DB. Refusing to look up tokens via the existing in-process path is artificially restrictive. The host controller cannot tell from `%AccessToken{}` whether the source was opaque or JWT, and it should not be able to — that is the architectural payoff. Adopters get protection on day one without an issuance opt-in.
-
-**Conditional pitfalls this branch carries:**
-
-- Doubled plug-internal surface (two verifier modules + dispatcher).
-- In-process DB coupling becomes implicit at the route-protection seam. The `Storage.TokenStore` behaviour is already public, but its semantics shift from "AS-owned resolver" to "RS-owned resolver, in process."
-- Cross-shape audience semantics differ subtly: JWT `aud` is a claim on the token; opaque `aud` is projected from `token.audience` populated at issuance from `interaction.resources_requested`. The projection must be byte-for-byte consistent with how `validate_audience/2` reads JWT `aud` (Pitfall 7).
-- Token-shape detection (JWS three-segment vs base64url 32 bytes) needs to be unambiguous and CI-tested — a future change to `TokenFormatter` could collide with JWS shape.
-
-### What the Two Branches Have in Common (Both Must Ship)
-
-Both branches must close the same RFC 9068 / RFC 8725 / RFC 9449 gaps: `iss` enforcement, `typ: at+jwt` enforcement on the JWT path, mandatory `exp`/`iat`/`sub`, scheme-aware `WWW-Authenticate`, audience effectively mandatory in the blessed pipeline, the demo smoke proving `200 with issued token` instead of `401 anonymous`, one canonical snippet content-hashed across demo + docs + scaffolding + CI.
-
-Both branches keep `Protocol.Introspection` exactly as it is and keep it out of the host-API route-protection seam.
-
-### Recommended Resolution Path
-
-The requirements step should choose Branch A or Branch B with the user explicitly, and the chosen branch should be recorded as a Key Decision in PROJECT.md before any phase planning. Picking one removes ambiguity that no later phase can recover from.
-
-## Suggested Phase Shape (Advisory — Roadmapper Will Refine)
-
-**Both branches share a phase backbone**; only Phase 3 differs by branch.
-
-1. **Phase 1: Contract + docs first.** Single authoritative protected-route doc page lands stating (depending on resolution) either "JWT for host APIs, opaque only for Lockspire-owned resources" or "one plug, two shapes, Lockspire knows what it issued." Release-readiness assertions pin the contract.
-
-2. **Phase 2: Plug hardening — RFC 9068 / RFC 8725 / RFC 9449 compliance pass.** `iss` enforcement, `typ: at+jwt` enforcement, mandatory `exp`/`iat`/`sub`, scheme-aware `WWW-Authenticate`, audience effectively mandatory. Negative tests for HS256-confusion, missing-typ ID-token-confusion, missing-iss. **Branch-independent.**
-
-3. **Phase 3: Verifier delta (branch-specific).**
-   - *Branch A:* extract `Protocol.AccessTokenSigner`; wire the per-client/per-server issuance opt-in for AC/refresh/device/CIBA; narrow `VerifyToken` to JWT-only.
-   - *Branch B:* extract `JwtVerifier`; land `OpaqueVerifier` with synthetic-claims projection from `%Domain.Token{}`; land `Verifier` dispatcher with unambiguous shape detection.
-
-4. **Phase 4: DPoP/mTLS composition proof.** Prove the chosen shape carries `cnf.jkt` / `cnf["x5t#S256"]` correctly through `EnforceSenderConstraints` and `RequireToken`. No new enforcer code — proof only.
-
-5. **Phase 5: Adoption-demo re-wire (executable proof).** Smoke adds the canonical `auth-code → bearer → GET /api/billing/summary → 200` assertion. Audience set in the demo router. The existing `/userinfo` assertion stays.
-
-6. **Phase 6: CI proof — repo-native.** End-to-end integration test driving the canonical pipeline against the demo's own issued token (not synthetic fixtures). `release_readiness_contract_test` clause asserting the one canonical snippet is content-hashed across docs/demo/scaffold/CI.
-
-7. **Phase 7: Generated-host scaffolding update.** `priv/templates/lockspire.install/router.ex` gains the commented `:lockspire_protected_api` pipeline block mirroring whatever the demo proves. Install docs point at the Phase 1 doc page.
-
-**Ordering rationale:** Contract first so docs are a contract the implementation honors, not a description of an accident (Phase 1 is non-negotiably first). Plug hardening is branch-independent and unblocks both branches (Phase 2 can run in parallel with Phase 1). The verifier delta (Phase 3) cannot land before the contract is named. Demo cannot prove end-to-end until the runtime accepts the chosen shape through the plug. Generated-host scaffolding must follow the demo (the scaffold mirrors what CI continuously proves).
+- URL/config contract comes first because every later phase consumes the public base URL.
+- Compose app+DB comes before wrappers because scripts should wrap a working topology, not compensate for missing database/config behavior.
+- Conflict controls and optional Traefik come before docs so the documented commands are final.
+- Startup output and smoke alignment come before hygiene because they define what proof artifacts exist.
+- Hygiene is last because it should classify actual generated outputs and Docker resources, not guessed ones.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (Branch A):** if chosen, the per-client/per-server format-policy surface and discovery metadata need a small targeted research pass (operator UX + `Storage.KeyStore` / `Domain.Client` schema implications).
-- **Phase 3 (Branch B):** if chosen, the token-shape detection heuristic needs validation against `Protocol.TokenFormatter`'s output space — confirm no current or near-future opaque token can be mistaken for a JWS compact serialization.
+- **Phase 3:** Traefik label naming and Compose profile/override details need targeted validation with `docker compose config`, especially for multiple simultaneous checkouts.
+- **Phase 5:** Cleanup ownership needs repo-specific path validation so useful `tmp/admin-ui-polish` evidence is preserved while demo-owned debris is reported.
 
 Phases with standard patterns (skip research-phase):
-- **Phases 1, 2, 4, 5, 6, 7** — RFC 9068 / RFC 8725 / RFC 9449 are explicit; the demo and scaffolding patterns are well-established in this codebase (v1.21, v1.22, v1.26 all set precedent).
+- **Phase 1:** Phoenix endpoint URL config, URI parsing, and smoke equality checks are straightforward repo-local work.
+- **Phase 2:** Docker Compose app+Postgres with healthcheck/named volumes is well-documented.
+- **Phase 4:** Existing smoke script, seeds, docs, and route inventory provide enough repo truth for implementation.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
-|---|---|---|
-| Stack | HIGH | Every relevant module read directly; RFC 9068 / 8725 / 7662 / 8693 / 8707 verified. No new dependency. |
-| Features (table stakes) | HIGH | Grounded in direct code reads; gap is named in STATE.md and matches what the smoke fails to prove. |
-| Architecture (mechanics) | HIGH | Both candidate shapes are mechanically sound; module boundaries verified. |
-| Architecture (plug shape) | **OPEN** | Two coherent designs, both valid, with different operator/adopter consequences. Requires user resolution. |
-| Pitfalls (codebase-grounded) | HIGH | Pitfalls 1, 2, 3, 5, 6, 7, 10, 11, 12, 15, 16 are direct reads of current code. |
-| Pitfalls (RFC-mandated) | HIGH | Pitfalls 4, 11, 12, 13 grounded in explicit RFC text. |
-| Pitfalls (conditional on Branch B) | MEDIUM | Pitfalls 7, 8 escalate if introspection-shaped resolution is chosen; mitigations identified. |
+|------|------------|-------|
+| Stack | HIGH | Grounded in repo reads plus official Docker Compose, Traefik, and Phoenix docs. Exact script names can be finalized during planning. |
+| Features | HIGH | Table stakes map directly to `.planning/PROJECT.md`, current demo files, and the milestone's stated defaults. |
+| Architecture | HIGH | Integration points are repo-local and avoid Lockspire runtime boundary changes. |
+| Pitfalls | HIGH | Critical pitfalls are directly visible in current config, compose, docs, smoke, and hygiene behavior. |
 
-**Overall:** HIGH confidence on what must ship; **OPEN** on plug shape (single load-bearing decision for requirements to resolve).
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-1. **Plug shape resolution.** The Open Design Decision above. Cannot be deferred past requirements.
-2. **`aud` semantics for `at+jwt` minted with `resource=`** (whichever branch ships `at+jwt` issuance for AC/refresh/device/CIBA). RFC 9068 §3 expects the resource indicator as `aud`; the existing RFC 8693 path uses `client_id` for delegation. Recommendation: when `resource` is present, `aud = resource`; when absent on a delegation path, retain `aud = client_id` for backward compatibility. Confirm in requirements.
-3. **Discovery metadata posture.** `access_token_signing_alg_values_supported` and any new format-advertisement key should be truthful, but the exact keys depend on Branch A vs Branch B. Low priority; flag for requirements.
-4. **Replay-store durability story for DPoP at the RS** (Pitfall 13). Out-of-scope-for-v1.27 unless the user opts in — the gap exists today on the host-side `dpop_replay_store:` option. Flag.
-5. **RAR-at-the-RS scope clarification** (Pitfall 9). Recommendation: `docs/supported-surface.md` explicitly says v1.27 RS contract is scope-based only; RAR enforcement stays host-owned via `conn.assigns.access_token`. Confirm in requirements.
+- Script shape: choose exact names and flags for start/stop/reset/info/smoke wrappers during requirements.
+- Readiness implementation: decide whether URL printing is a Mix task, shell helper, or minimal Compose command output; prefer Mix task if it can read the same config truth.
+- Seed URL derivation: verify whether seeded redirect/callback/client URLs can be made base-URL-driven cleanly or need an explicit reset requirement when `LOCKSPIRE_DEMO_BASE_URL` changes.
+- CI Docker proof: decide whether v1.30 only validates `docker compose config` in CI or adds a full Docker smoke job after local proof stabilizes.
+- Cleanup allowlist: define exact repo-owned generated paths; preserve admin UI screenshot/evidence directories unless explicitly requested.
 
 ## Sources
 
-### Primary (HIGH confidence — direct in-tree reads, 2026-05-27)
+### Primary (HIGH confidence)
+- `.planning/PROJECT.md` - v1.30 goal, target features, boundaries, and milestone context.
+- `.planning/research/STACK.md` - Docker Compose/Phoenix/Traefik stack recommendations and current repo-state findings.
+- `.planning/research/FEATURES.md` - table-stakes capabilities, differentiators, anti-features, and acceptance criteria.
+- `.planning/research/ARCHITECTURE.md` - repo integration points, config/data flow, env precedence, script/docs/CI responsibilities.
+- `.planning/research/PITFALLS.md` - critical/moderate/minor pitfalls and phase-specific warnings.
+- Repo files cited by researchers: `docs/adoption-demo.md`, `examples/adoption_demo/docker-compose.yml`, `examples/adoption_demo/Dockerfile.dev`, `examples/adoption_demo/config/config.exs`, `examples/adoption_demo/priv/repo/seeds.exs`, `scripts/demo/adoption_smoke.py`, `scripts/maintainer/repo_hygiene_check.sh`, `tools/traefik/docker-compose.yml`.
 
-- `lib/lockspire/plug/verify_token.ex`
-- `lib/lockspire/plug/enforce_sender_constraints.ex`
-- `lib/lockspire/plug/require_token.ex`
-- `lib/lockspire/access_token.ex`
-- `lib/lockspire/protocol/introspection.ex`
-- `lib/lockspire/protocol/userinfo.ex`
-- `lib/lockspire/protocol/token_formatter.ex`
-- `lib/lockspire/protocol/rfc8693_exchange.ex`
-- `lib/lockspire/protocol/authorization_flow.ex`
-- `lib/lockspire/protocol/refresh_exchange.ex`
-- `lib/lockspire/storage/token_store.ex`
-- `lib/lockspire/key_cache.ex`
-- `examples/adoption_demo/lib/adoption_demo_web/router.ex`
-- `examples/adoption_demo/lib/adoption_demo_web/controllers/api_controller.ex`
-- `scripts/demo/adoption_smoke.py`
-- `priv/templates/lockspire.install/router.ex`
-- `docs/protect-phoenix-api-routes.md`
-- `.planning/PROJECT.md`
-- `.planning/STATE.md`
-- `.planning/ROADMAP.md`
-- `mix.exs`
-
-### Primary (HIGH confidence — IETF / OWASP)
-
-- RFC 9068 — JWT Profile for OAuth 2.0 Access Tokens
-- RFC 8725 — JWT Best Current Practices
-- RFC 7662 — OAuth 2.0 Token Introspection
-- RFC 8693 — OAuth 2.0 Token Exchange
-- RFC 8707 — Resource Indicators for OAuth 2.0
-- RFC 9449 — OAuth 2.0 DPoP
-- RFC 8705 — OAuth 2.0 Mutual TLS
-- RFC 9700 — OAuth 2.0 Security Best Current Practice
-- RFC 9207 — OAuth 2.0 Authorization Server Issuer Identification
-- RFC 6750 — Bearer Token Usage
-- RFC 9396 — Rich Authorization Requests
-- RFC 9701 — JWT Response for OAuth Token Introspection
-- RFC 7519 — JSON Web Token
-
-### Detailed research files
-
-- `.planning/research/STACK.md`
-- `.planning/research/FEATURES.md`
-- `.planning/research/ARCHITECTURE.md`
-- `.planning/research/PITFALLS.md`
+### Secondary (MEDIUM/HIGH confidence)
+- Docker Compose documentation - project model, CLI/env vars, services, profiles, healthchecks, port publishing, volume behavior.
+- Traefik Docker provider v2.10 documentation - Docker labels, `exposedByDefault=false`, network selection, router/service configuration.
+- Phoenix Endpoint documentation - endpoint `:url`, server binding, generated URL behavior behind local/proxy access.
 
 ---
-*Research synthesis: 2026-05-27. Ready for requirements pending resolution of the Open Design Decision (Branch A JWT-only vs Branch B dual-verifier plug shape).*
+*Research completed: 2026-06-04*
+*Ready for roadmap: yes*
