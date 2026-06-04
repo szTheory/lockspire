@@ -6,13 +6,15 @@ defmodule AdoptionDemoWeb.DeveloperController do
   def index(conn, _params) do
     verifier = "demo-pkce-verifier"
     challenge = code_challenge(verifier)
+    demo_base_url = Application.fetch_env!(:adoption_demo, :demo_base_url)
+    oauth_callback_url = demo_base_url <> "/oauth/callback"
 
     authorize_url =
       "/lockspire/authorize?" <>
         URI.encode_query(%{
           "client_id" => "acme-ledger-public",
           "response_type" => "code",
-          "redirect_uri" => "http://127.0.0.1:4100/oauth/callback",
+          "redirect_uri" => oauth_callback_url,
           "scope" => "openid email profile read:billing",
           "state" => "demo-state",
           "nonce" => "demo-nonce",
@@ -27,7 +29,7 @@ defmodule AdoptionDemoWeb.DeveloperController do
       <p>The public client below is seeded for a browser-based auth-code + PKCE proof.</p>
       <dl>
         <dt>Client ID</dt><dd><code>acme-ledger-public</code></dd>
-        <dt>Redirect URI</dt><dd><code>http://127.0.0.1:4100/oauth/callback</code></dd>
+        <dt>Redirect URI</dt><dd><code>#{oauth_callback_url}</code></dd>
         <dt>PKCE verifier for the demo smoke</dt><dd><code>#{verifier}</code></dd>
       </dl>
       <p><a class="primary" href="#{authorize_url}">Start OAuth authorization</a></p>
