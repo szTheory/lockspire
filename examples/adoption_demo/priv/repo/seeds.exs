@@ -40,6 +40,9 @@ Ecto.Adapters.SQL.query!(
 )
 
 now = DateTime.utc_now()
+demo_base_url = Application.fetch_env!(:adoption_demo, :demo_base_url)
+oauth_callback_url = demo_base_url <> "/oauth/callback"
+lockspire_base_url = demo_base_url <> "/lockspire"
 
 # Phase 110 screenshot proof state matrix:
 # healthy, warning, incident, disabled, self-registered, retryable, revoked,
@@ -88,7 +91,7 @@ clients = [
     client_secret_hash: nil,
     client_type: :public,
     name: "Acme Ledger Demo SPA",
-    redirect_uris: ["http://127.0.0.1:4100/oauth/callback"],
+    redirect_uris: [oauth_callback_url],
     allowed_scopes: ["openid", "email", "profile", "read:billing"],
     allowed_grant_types: ["authorization_code", "refresh_token"],
     allowed_response_types: ["code"],
@@ -120,7 +123,7 @@ clients = [
     client_secret_hash: Lockspire.Security.Policy.hash_client_secret("demo-backend-secret"),
     client_type: :confidential,
     name: "Acme Ledger Backend",
-    redirect_uris: ["http://127.0.0.1:4100/oauth/callback"],
+    redirect_uris: [oauth_callback_url],
     allowed_scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
     allowed_grant_types: ["authorization_code", "refresh_token"],
     allowed_response_types: ["code"],
@@ -157,11 +160,14 @@ clients = [
     created_by: "dcr",
     created_at: now,
     provenance: :self_registered,
-    registration_client_uri:
-      "http://127.0.0.1:4100/lockspire/register/northstar-dcr-self-registered",
+    registration_client_uri: lockspire_base_url <> "/register/northstar-dcr-self-registered",
     registration_access_token_hash: Lockspire.Security.Policy.hash_token("demo-rat-northstar"),
     contacts: ["security@northstar.example.com", "integrations@northstar.example.com"],
-    metadata: %{"demo" => true, "journey" => "dcr", "phase110_state" => "self-registered long-value copy-once RAT rotation"}
+    metadata: %{
+      "demo" => true,
+      "journey" => "dcr",
+      "phase110_state" => "self-registered long-value copy-once RAT rotation"
+    }
   },
   %Client{
     client_id: "legacy-disabled-reporter",
@@ -323,8 +329,7 @@ tokens = [
   %Token{
     token_hash: Lockspire.Security.Policy.hash_token("demo-refresh-long-family-expired"),
     token_type: :refresh_token,
-    family_id:
-      "family-demo-long-value-refresh-token-family-id-for-mobile-wrapping-proof-001",
+    family_id: "family-demo-long-value-refresh-token-family-id-for-mobile-wrapping-proof-001",
     generation: 3,
     client_id: "northstar-dcr-self-registered",
     account_id: "acct-phase110-long-value-subject-for-mobile-proof",
@@ -345,7 +350,7 @@ Enum.each(
     %Interaction{
       interaction_id: "interaction-pending-login",
       client_id: "acme-ledger-public",
-      return_to: "http://127.0.0.1:4100/lockspire/interactions/interaction-pending-login",
+      return_to: lockspire_base_url <> "/interactions/interaction-pending-login",
       status: :pending_login,
       scopes_requested: ["openid", "email"],
       expires_at: DateTime.add(now, 600, :second),
@@ -356,7 +361,7 @@ Enum.each(
       interaction_id: "interaction-pending-consent",
       client_id: "northstar-dcr-self-registered",
       account_id: "acct-alice",
-      return_to: "http://127.0.0.1:4100/lockspire/interactions/interaction-pending-consent",
+      return_to: lockspire_base_url <> "/interactions/interaction-pending-consent",
       status: :pending_consent,
       scopes_requested: ["openid", "profile", "write:reports"],
       resources_requested: ["https://billing.acme-ledger.test"],
@@ -507,7 +512,39 @@ Enum.each(
     account_id: "acct-alice",
     subject: "acct-alice",
     completed_at: now,
-    post_logout_redirect_uri: "http://127.0.0.1:4100/"
+    post_logout_redirect_uri: demo_base_url <> "/"
+  })
+  |> repo.insert()
+  |> case do
+    {:ok, record} -> {:ok, LogoutEventRecord.to_domain(record)}
+    other -> other
+  end
+
+{:ok, pending_logout_event} =
+  %LogoutEventRecord{}
+  |> LogoutEventRecord.changeset(%LogoutEvent{
+    event_id: "demo-logout-event-pending",
+    sid: "sid-demo-pending",
+    account_id: "acct-alice",
+    subject: "acct-alice",
+    completed_at: now,
+    post_logout_redirect_uri: demo_base_url <> "/"
+  })
+  |> repo.insert()
+  |> case do
+    {:ok, record} -> {:ok, LogoutEventRecord.to_domain(record)}
+    other -> other
+  end
+
+{:ok, discarded_logout_event} =
+  %LogoutEventRecord{}
+  |> LogoutEventRecord.changeset(%LogoutEvent{
+    event_id: "demo-logout-event-discarded",
+    sid: "sid-demo-discarded",
+    account_id: "acct-bob",
+    subject: "acct-bob",
+    completed_at: now,
+    post_logout_redirect_uri: demo_base_url <> "/"
   })
   |> repo.insert()
   |> case do
@@ -556,7 +593,7 @@ Enum.each(
     },
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-pending-long-value-delivery-id-for-mobile-proof",
-      logout_event_id: logout_event.id,
+      logout_event_id: pending_logout_event.id,
       client_id: "northstar-dcr-self-registered",
       channel: :backchannel,
       target_uri:
@@ -567,7 +604,7 @@ Enum.each(
     },
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-discarded",
-      logout_event_id: logout_event.id,
+      logout_event_id: discarded_logout_event.id,
       client_id: "legacy-disabled-reporter",
       channel: :backchannel,
       target_uri: "https://legacy-reporter.example.com/backchannel-logout",
@@ -598,5 +635,5 @@ Accounts:
 OAuth:
   public client: acme-ledger-public
   device client: acme-tv-device
-  redirect URI: http://127.0.0.1:4100/oauth/callback
+  redirect URI: #{oauth_callback_url}
 """)
