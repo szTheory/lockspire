@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.29
 milestone_name: Admin UI Journey & Design-System Deep Polish
-status: verifying
-last_updated: "2026-06-04T14:51:19.838Z"
+status: milestone_complete
+last_updated: 2026-06-04T14:53:15.752Z
 last_activity: 2026-06-04
 progress:
   total_phases: 4
@@ -11,6 +11,7 @@ progress:
   total_plans: 17
   completed_plans: 17
   percent: 100
+stopped_at: Milestone complete (Phase 110 was final phase)
 ---
 
 # Project State
@@ -21,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 110 — demo-state-screenshots-docs-and-regression-proof
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 110 (demo-state-screenshots-docs-and-regression-proof) — VERIFYING
+Phase: 110 (demo-state-screenshots-docs-and-regression-proof) — COMPLETE
 Plan: 5 of 5
-Status: Phase complete — ready for verification
+Status: Milestone complete
 Last activity: 2026-06-04
 
 ## Most Recent Release
@@ -73,7 +74,7 @@ Last activity: 2026-06-04
 
 ## Session Continuity
 
-**Next action:** Verify Phase 110 with `$gsd-verify-work 110`, then complete v1.29.
+**Next action:** Complete v1.29 with `$gsd-complete-milestone`.
 **Resume file:** None
 **Stopped at:** Completed 110-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
@@ -99,4 +100,4 @@ Last activity: 2026-06-04
 
 ## Operator Next Steps
 
-- Verify Phase 110 with `$gsd-verify-work 110`, then complete v1.29.
+- Complete v1.29 with `$gsd-complete-milestone`.
