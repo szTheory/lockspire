@@ -10,7 +10,7 @@
 
 | Phase | Name | Goal | Requirements |
 |-------|------|------|--------------|
-| 111 | Demo URL Contract & Config Unification | Make `LOCKSPIRE_DEMO_BASE_URL` the single browser-visible URL truth for endpoint URL generation, Lockspire issuer, seeded redirects, smoke proof, and Docker bind behavior. Progress: 1/2 plans executed. | URL-01..05 |
+| 111 | Demo URL Contract & Config Unification | Make `LOCKSPIRE_DEMO_BASE_URL` the single browser-visible URL truth for endpoint URL generation, Lockspire issuer, seeded redirects, smoke proof, and Docker bind behavior. Status: complete, ready for verification. | URL-01..05 |
 | 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. | CONFLICT-01..04, TRAEFIK-01..02 |
 | 114 | Startup Output, Smoke Wrapper & Docs | Print the useful URLs/accounts/clients/smoke command, keep proof base-URL driven, and make Docker the documented default path. | INFO-01..04, SMOKE-01..02, DOCS-01..02 |
@@ -31,16 +31,16 @@ Make one public base URL drive every browser-visible demo URL. This phase lands 
 - Docker can bind Phoenix to a container-reachable interface without weakening host-local loopback defaults.
 
 **Requirements:** URL-01, URL-02, URL-03, URL-04, URL-05
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
 
 - [x] 111-01-PLAN.md - Configure one demo base URL for endpoint/issuer and explicit bind IP.
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Wave 2**
 
-- [ ] 111-02-PLAN.md - Derive seeded/UI URLs and sharpen smoke drift proof.
+- [x] 111-02-PLAN.md - Derive seeded/UI URLs and sharpen smoke drift proof.
 
 ### Phase 112: Default Docker Compose App + DB
 
