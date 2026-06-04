@@ -12,7 +12,7 @@
 |-------|------|------|--------------|
 | 107 | 3/3 | Complete    | 2026-06-04 |
 | 108 | 3/3 | Complete   | 2026-06-04 |
-| 109 | Weak-Spot Page Polish | Bring support, operations, configure, and onboarding weak spots up to the v1.29 journey and design-system standard. | OPS-01..05, CONFIG-01..02 |
+| 109 | 1/6 | In Progress|  |
 | 110 | Demo State, Screenshots, Docs, and Regression Proof | Prove the final admin route surface with demo data, docs, desktop/mobile screenshots, browser click-through, and contract tests. | CONFIG-03, PROOF-01..04 |
 
 ## Phase Details
@@ -65,12 +65,12 @@ Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Int
 - Support and operations pages expose useful pivot context without leaking secrets.
 - Risky actions are visually distinct and confirmation-backed.
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 109-01-PLAN.md — Polish token support investigation index/detail
+- [x] 109-01-PLAN.md — Polish token support investigation index/detail
 - [ ] 109-02-PLAN.md — Polish consent support investigation index/detail
 - [ ] 109-03-PLAN.md — Recompose operations queues for logout, device, and interaction triage
 - [ ] 109-04-PLAN.md — Polish DCR onboarding and IAT inventory/minting
