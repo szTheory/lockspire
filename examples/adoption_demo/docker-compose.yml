@@ -23,6 +23,7 @@ services:
       # Ensure Phoenix binds to 0.0.0.0 so Traefik can reach it
       - PHX_SERVER=true
       - PORT=4000
+      - LOCKSPIRE_DEMO_BIND_IP=0.0.0.0
 
 volumes:
   deps_volume:

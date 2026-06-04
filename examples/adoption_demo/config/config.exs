@@ -20,6 +20,13 @@ end
 
 config :adoption_demo, :demo_base_url, demo_base_url
 
+demo_bind_ip =
+  case System.get_env("LOCKSPIRE_DEMO_BIND_IP", "127.0.0.1") do
+    "127.0.0.1" -> {127, 0, 0, 1}
+    "0.0.0.0" -> {0, 0, 0, 0}
+    other -> raise ArgumentError, "unsupported LOCKSPIRE_DEMO_BIND_IP=#{inspect(other)}"
+  end
+
 config :adoption_demo, AdoptionDemo.Repo,
   username:
     System.get_env("LOCKSPIRE_DEMO_DB_USER") || System.get_env("PGUSER") ||
@@ -39,7 +46,7 @@ config :adoption_demo, AdoptionDemo.Repo,
 config :adoption_demo, AdoptionDemoWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   http: [
-    ip: {127, 0, 0, 1},
+    ip: demo_bind_ip,
     port: String.to_integer(System.get_env("PORT") || "4100")
   ],
   url: [
