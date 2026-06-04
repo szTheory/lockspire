@@ -12,6 +12,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                          )
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @operator_admin_doc_path Path.expand("../../../../../docs/operator-admin.md", __DIR__)
+  @route_contract_path Path.expand(
+                         "../../../../../.planning/phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
+                         __DIR__
+                       )
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -99,6 +103,57 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  test "phase 107 route journey contract covers admin routes and locked vocabulary" do
+    router = File.read!(@admin_router_path)
+    contract = File.read!(@route_contract_path)
+    guide = File.read!(@operator_admin_doc_path)
+
+    expected_routes =
+      router
+      |> mounted_admin_routes()
+      |> Kernel.++(["/admin/clients/:client_id/edit?workflow=logout-propagation"])
+      |> Enum.sort()
+
+    for route <- expected_routes do
+      assert contract =~ "| `#{route}` |"
+    end
+
+    for field <- [
+          "Route",
+          "Primary journey",
+          "Persona",
+          "JTBD",
+          "Entry point",
+          "Primary decision",
+          "Primary action",
+          "Empty state",
+          "Risk state",
+          "Follow-up route",
+          "Evidence"
+        ] do
+      assert contract =~ field
+    end
+
+    for journey <- ["Orient", "Configure", "Support", "Operate"] do
+      assert contract =~ "| #{journey} |"
+      assert guide =~ journey
+    end
+
+    for phrase <- [
+          "DCR onboarding",
+          "DCR policy",
+          "post-logout redirect URIs",
+          "logout propagation URIs"
+        ] do
+      assert contract =~ phrase
+      assert guide =~ phrase
+    end
+
+    for assessment <- ["strong", "adequate", "weak"] do
+      assert contract =~ "| #{assessment} |"
+    end
+  end
+
   test "phase 103 migrated screens do not reintroduce inline layout styling" do
     for path <- [
           Path.expand(
@@ -142,4 +197,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       refute Regex.match?(~r/<button(?![^>]*lockspire-admin-btn)/, content)
     end
   end
+
+  defp mounted_admin_routes(router_source) do
+    ~r/live\(\s*"([^"]+)"/
+    |> Regex.scan(router_source, capture: :all_but_first)
+    |> List.flatten()
+    |> Enum.map(&mounted_admin_route/1)
+  end
+
+  defp mounted_admin_route("/"), do: "/admin"
+  defp mounted_admin_route(route), do: "/admin" <> route
 end
