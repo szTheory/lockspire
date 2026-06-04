@@ -626,7 +626,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "Support",
           "Operate",
           "tmp/admin-ui-polish/",
-          "page-level overflow gap observed"
+          "390px no-page-overflow returned false"
         ] do
       assert screenshots =~ phrase
     end

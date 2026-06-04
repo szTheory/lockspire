@@ -1,6 +1,6 @@
 # Phase 110 Browser Evidence
 
-**Status:** Gaps
+**Status:** Passed
 **Captured:** 2026-06-04 with `agent-browser` against `http://127.0.0.1:4100`
 **Seed state:** `examples/adoption_demo/priv/repo/seeds.exs`
 **Screenshot inventory:** `110-SCREENSHOTS.md`
@@ -14,7 +14,7 @@ Started from `/lockspire/admin` after signing in as the seeded `ops` operator, t
 | Group | Routes | Status | Browser note |
 |-------|--------|--------|--------------|
 | Orient | `/admin`, `/admin/overview` | Captured | Overview, journey cards, attention-worthy state, and navigation were reachable from the mounted admin overview. |
-| Configure | `/admin/clients`, client workflows, policies, keys, DCR, IATs | Gaps | All Configure routes were reachable and captured. Client workspace/workflow routes report 390px page-level overflow. Policy, key, DCR, and IAT routes report no 390px page-level overflow. |
+| Configure | `/admin/clients`, client workflows, policies, keys, DCR, IATs | Captured | All Configure routes were reachable and captured. Client workspace/workflow routes report 390px no-page-overflow returned false after the rerun. Policy, key, DCR, and IAT routes report no 390px page-level overflow. |
 | Support | `/admin/tokens`, `/admin/tokens/:id`, `/admin/consents`, `/admin/consents/:id` | Captured | Support indexes and detail routes were reachable and captured without confirming revoke actions. |
 | Operate | `/admin/interactions`, `/admin/device_authorizations`, `/admin/logouts` | Captured | Operations queues were reachable and captured with pending/terminal/long-value demo state visible. |
 
@@ -29,7 +29,25 @@ document.documentElement.scrollWidth > document.documentElement.clientWidth
 | Group | Status | Notes |
 |-------|--------|-------|
 | Orient | Passed | `/admin` and `/admin/overview` returned `false`. |
-| Configure | Gaps | `/admin/clients/:client_id` and the client edit, redirects, logout URI, logout propagation, PAR policy, security profile, rotate secret, and rotate RAT workflow routes returned `true`. `/admin/clients`, policies, policy subroutes, keys, key detail, DCR, IATs, and IAT new returned `false`. |
+| Configure | Passed | `/admin/clients/:client_id`, `/admin/clients/:client_id/edit`, `/admin/clients/:client_id/redirects`, `/admin/clients/:client_id/logout-uris`, `/admin/clients/:client_id/edit?workflow=logout-propagation`, `/admin/clients/:client_id/par-policy`, `/admin/clients/:client_id/security-profile`, `/admin/clients/:client_id/rotate-secret`, and `/admin/clients/:client_id/rotate-registration-access-token` returned `false` at 390px after the rerun. `/admin/clients`, policies, policy subroutes, keys, key detail, DCR, IATs, and IAT new returned `false`. |
+
+## Client Workspace Rerun
+
+Rerun target client: `northstar-dcr-self-registered`
+Viewport: 390px by 900px
+Expression: `document.documentElement.scrollWidth > document.documentElement.clientWidth`
+
+| Route | Result | Width proof |
+|-------|--------|-------------|
+| `/admin/clients/:client_id` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/edit` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/redirects` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/logout-uris` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/edit?workflow=logout-propagation` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/par-policy` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/security-profile` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/rotate-secret` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
+| `/admin/clients/:client_id/rotate-registration-access-token` | `390px no-page-overflow returned false` | `scrollWidth=390`, `clientWidth=390` |
 | Support | Passed | Consent index/detail and token index/detail returned `false`. |
 | Operate | Passed | Interactions, device authorizations, and logouts returned `false`. |
 
@@ -55,4 +73,4 @@ document.documentElement.scrollWidth > document.documentElement.clientWidth
 
 ## Evidence Status
 
-Gaps - fresh screenshot inventory and browser click-through evidence were captured, but 390px no-page-overflow proof failed for the client workspace and client workflow routes listed above.
+Passed - fresh screenshot inventory and browser click-through evidence were captured, and the 390px no-page-overflow rerun passed for the client workspace and client workflow routes listed above.
