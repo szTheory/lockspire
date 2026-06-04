@@ -12,7 +12,7 @@
 |-------|------|------|--------------|
 | 107 | 3/3 | Complete    | 2026-06-04 |
 | 108 | 3/3 | Complete   | 2026-06-04 |
-| 109 | 3/6 | In Progress|  |
+| 109 | 4/6 | In Progress|  |
 | 110 | Demo State, Screenshots, Docs, and Regression Proof | Prove the final admin route surface with demo data, docs, desktop/mobile screenshots, browser click-through, and contract tests. | CONFIG-03, PROOF-01..04 |
 
 ## Phase Details
@@ -65,7 +65,7 @@ Prioritize pages that were less heavily iterated in v1.28: Tokens, Consents, Int
 - Support and operations pages expose useful pivot context without leaking secrets.
 - Risky actions are visually distinct and confirmation-backed.
 
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -73,7 +73,7 @@ Plans:
 - [x] 109-01-PLAN.md — Polish token support investigation index/detail
 - [x] 109-02-PLAN.md — Polish consent support investigation index/detail
 - [x] 109-03-PLAN.md — Recompose operations queues for logout, device, and interaction triage
-- [ ] 109-04-PLAN.md — Polish DCR onboarding and IAT inventory/minting
+- [x] 109-04-PLAN.md — Polish DCR onboarding and IAT inventory/minting
 - [ ] 109-05-PLAN.md — Polish keys and client-detail action grouping
 
 **Wave 2** *(blocked on Wave 1 completion)*
