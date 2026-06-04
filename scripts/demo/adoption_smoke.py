@@ -11,7 +11,7 @@ from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 
-BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://127.0.0.1:4100")
+BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://127.0.0.1:4100").rstrip("/")
 BILLING_RESOURCE = "https://billing.acme-ledger.test"
 
 
@@ -88,6 +88,14 @@ def assert_contains(response, needle, label):
         raise AssertionError(f"{label}: missing {needle!r}\n{response['body'][:600]}")
 
 
+def assert_equal(actual, expected, label):
+    if actual != expected:
+        raise AssertionError(
+            f"{label}: expected {expected!r}, got {actual!r} "
+            f"(LOCKSPIRE_DEMO_BASE_URL={BASE_URL!r})"
+        )
+
+
 def csrf(body):
     match = re.search(r'name="_csrf_token"\s+value="([^"]+)"', body)
     if not match:
@@ -152,9 +160,17 @@ def exercise_discovery_and_admin():
     discovery = browser.request("GET", "/lockspire/.well-known/openid-configuration")
     assert_status(discovery, 200, "discovery")
     discovery_json = json_body(discovery, "discovery")
-    assert discovery_json["issuer"] == BASE_URL + "/lockspire"
-    assert discovery_json["authorization_endpoint"] == BASE_URL + "/lockspire/authorize"
-    assert discovery_json["device_authorization_endpoint"] == BASE_URL + "/lockspire/device/code"
+    assert_equal(discovery_json["issuer"], BASE_URL + "/lockspire", "discovery issuer")
+    assert_equal(
+        discovery_json["authorization_endpoint"],
+        BASE_URL + "/lockspire/authorize",
+        "authorization endpoint",
+    )
+    assert_equal(
+        discovery_json["device_authorization_endpoint"],
+        BASE_URL + "/lockspire/device/code",
+        "device authorization endpoint",
+    )
 
     jwks = browser.request("GET", "/lockspire/jwks")
     assert_status(jwks, 200, "jwks")
@@ -213,9 +229,16 @@ def exercise_authorization_code():
     )
     assert_status(completed, 302, "consent approval")
 
-    callback = urlparse(location(completed))
+    callback_url = urljoin(BASE_URL + "/", location(completed))
+    callback = urlparse(callback_url)
+    callback_without_query = callback._replace(query="", fragment="").geturl()
+    assert_equal(
+        callback_without_query,
+        BASE_URL + "/oauth/callback",
+        "authorization callback redirect_uri",
+    )
     callback_params = parse_qs(callback.query)
-    assert callback_params["state"][0] == state
+    assert_equal(callback_params["state"][0], state, "authorization callback state")
     code = callback_params["code"][0]
 
     token = browser.request(
@@ -278,7 +301,7 @@ def exercise_device_flow():
     issued_json = json_body(issued, "device authorization")
     assert issued_json["device_code"]
     assert issued_json["user_code"]
-    assert issued_json["verification_uri"] == BASE_URL + "/verify"
+    assert_equal(issued_json["verification_uri"], BASE_URL + "/verify", "device verification_uri")
 
     login(browser, "alice", "/verify")
 
