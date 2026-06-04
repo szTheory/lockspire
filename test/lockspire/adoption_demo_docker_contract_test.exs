@@ -4,6 +4,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @repo_root Path.expand("../..", __DIR__)
   @compose_file "examples/adoption_demo/docker-compose.yml"
   @db_host_compose_file "examples/adoption_demo/docker-compose.db-host.yml"
+  @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
+  @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
   test "direct Compose uses a stable default project namespace" do
     with_compose_config(["-f", @compose_file], fn config ->
@@ -55,6 +57,42 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       assert_port(db, "15432", 5432)
       assert env_value(web, "LOCKSPIRE_DEMO_DB_PORT") == "5432"
     end)
+  end
+
+  test "reset helper targets only the active demo project volumes" do
+    source = File.read!(@docker_reset_path)
+
+    assert source =~ "lockspire-adoption-demo"
+    assert source =~ "COMPOSE_PROJECT_NAME"
+    assert source =~ "--project"
+    assert source =~ ~r/docker compose .*--project-name "\$project".* down/
+
+    volume_suffixes =
+      ~r/\b(db_data|deps_volume|build_volume)\b/
+      |> Regex.scan(source, capture: :all_but_first)
+      |> List.flatten()
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    assert volume_suffixes == ["build_volume", "db_data", "deps_volume"]
+
+    refute source =~ "docker volume prune"
+    refute source =~ "docker system prune"
+    refute source =~ "docker compose down -v"
+    refute source =~ "adoption_demo_"
+  end
+
+  test "docs explain direct conflict controls and scoped reset" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "COMPOSE_PROJECT_NAME"
+    assert docs =~ "LOCKSPIRE_DEMO_APP_PORT"
+    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL"
+    assert docs =~ "examples/adoption_demo/docker-compose.db-host.yml"
+    assert docs =~ "LOCKSPIRE_DEMO_DB_HOST_PORT"
+    assert docs =~ "examples/adoption_demo/bin/docker-reset"
+    assert docs =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
   end
 
   defp with_compose_config(args, opts \\ [], fun) do
