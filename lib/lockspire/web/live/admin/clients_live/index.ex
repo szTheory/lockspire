@@ -64,42 +64,46 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         title="Client inventory"
         subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
       >
-        <form method="get" action={clients_index_path()} class="lockspire-admin-form-shell">
-          <div class="lockspire-admin-field">
-            <label for="client_search">Search</label>
-            <input
-              id="client_search"
-              name="q"
-              type="text"
-              value={@filters["q"]}
-              autocomplete="off"
-            />
-          </div>
+        <AdminComponents.filter_bar action={clients_index_path()}>
+          <:fields>
+            <div class="lockspire-admin-field">
+              <label for="client_search">Search</label>
+              <input
+                id="client_search"
+                name="q"
+                type="text"
+                value={@filters["q"]}
+                autocomplete="off"
+              />
+            </div>
 
-          <div class="lockspire-admin-field">
-            <label for="client_status">Status</label>
-            <select id="client_status" name="status">
-              <option value="all" selected={@filters["status"] == "all"}>All</option>
-              <option value="active" selected={@filters["status"] == "active"}>Active</option>
-              <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
-            </select>
-          </div>
+            <div class="lockspire-admin-field">
+              <label for="client_status">Status</label>
+              <select id="client_status" name="status">
+                <option value="all" selected={@filters["status"] == "all"}>All</option>
+                <option value="active" selected={@filters["status"] == "active"}>Active</option>
+                <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
+              </select>
+            </div>
 
-          <div class="lockspire-admin-field">
-            <label for="client_provenance">Provenance</label>
-            <select id="client_provenance" name="provenance">
-              <option value="all" selected={@filters["provenance"] == "all"}>All</option>
-              <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
-              <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>Self-Registered</option>
-            </select>
-          </div>
-
-          <AdminComponents.action_bar>
+            <div class="lockspire-admin-field">
+              <label for="client_provenance">Provenance</label>
+              <select id="client_provenance" name="provenance">
+                <option value="all" selected={@filters["provenance"] == "all"}>All</option>
+                <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+                <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>
+                  Self-Registered
+                </option>
+              </select>
+            </div>
+          </:fields>
+          <:help>
+            <p>Total matching clients: {@total_clients}</p>
+          </:help>
+          <:actions>
             <AdminComponents.admin_button variant={:secondary} type="submit">Apply</AdminComponents.admin_button>
-          </AdminComponents.action_bar>
-        </form>
-
-        <p class="lockspire-admin-help">Total matching clients: {@total_clients}</p>
+          </:actions>
+        </AdminComponents.filter_bar>
 
         <%= if @clients == [] do %>
           <AdminComponents.empty_state
