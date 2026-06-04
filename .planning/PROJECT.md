@@ -10,15 +10,15 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-seven planning milestones. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, and admin UI operator experience polish in v1.28.
+Lockspire has now archived twenty-seven planning milestones and completed the v1.29 admin UI deep-polish milestone. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, and admin journey/design-system deep polish in v1.29.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently shipped feature milestone, `v1.28 Admin UI Operator Experience Polish`, made the admin UI feel like one coherent operator product instead of a set of accumulated LiveViews: clear operator journeys, reusable BEM/design-token components, polished client/support/operations/security/DCR/key workflows, expressive demo seed data, and screenshot-backed visual verification. v1.28 intentionally preserved the embedded-library boundary and protocol behavior.
+The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-System Deep Polish`, tightened the route-by-route operator journey model, deepened the shared BEM/design-token component contract, polished weaker support/operations/configuration surfaces, and closed route-complete screenshot/browser proof with 390px mobile no-page-overflow evidence. v1.29 intentionally preserved the embedded-library boundary and protocol behavior.
 
-## Current Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
+## Completed Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
 
 **Goal:** Take the shipped admin UI from coherent baseline to a deliberately mapped operator product where every route, component, and state supports a clear persona, job, next action, and safety boundary.
 
@@ -30,8 +30,11 @@ The most recently shipped feature milestone, `v1.28 Admin UI Operator Experience
 
 **Why now:** v1.28 proved the admin UI can read as one coherent operator surface. The next highest-leverage adoption wedge is not more protocol breadth; it is raising the weaker pages and cross-route mental model to the same standard so operators can orient, configure, support, and operate without guessing.
 
-**Delivered so far:**
-- Phase 107 defined the route-by-route admin journey contract, aligned operator docs to Orient/Configure/Support/Operate, and added deterministic route/docs drift proof. Validated in Phase 107.
+**Delivered:**
+- Phase 107 defined the route-by-route admin journey contract, aligned operator docs to Orient/Configure/Support/Operate, and added deterministic route/docs drift proof.
+- Phase 108 deepened the shared BEM/design-token component contract for layout, status, action, data display, focus, responsive, and reduced-motion behavior.
+- Phase 109 polished weak support, operations, DCR/IAT, key, and client-detail surfaces while preserving route vocabulary and host-owned seams.
+- Phase 110 completed demo seed, docs, screenshot inventory, browser click-through, regression, and 390px mobile no-page-overflow proof.
 
 ## Recently Shipped Milestone: v1.28 Admin UI Operator Experience Polish
 
@@ -278,4 +281,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-04 — Phase 107 admin journey contract completed.*
+*Last updated: 2026-06-04 — v1.29 admin journey and design-system deep polish completed.*
