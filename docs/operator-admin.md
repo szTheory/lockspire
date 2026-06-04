@@ -4,21 +4,14 @@ Lockspire ships a library-owned operator surface for protocol state, while the h
 
 For the canonical advanced-setup support contract, see `docs/supported-surface.md`. This guide stays subordinate to that contract and should not be read as a second support matrix.
 
-## Lockspire-owned operator workflows
+## Lockspire-owned operator journeys
 
-- Use `/admin` as the operator overview for client posture, security posture, key readiness, support incidents, and live protocol work
-- Register and inspect OAuth clients from `/admin/clients`
-- Rotate client secrets and registration access tokens from client detail workflows
-- Inspect and revoke consents from `/admin/consents`
-- Inspect and revoke tokens from `/admin/tokens`
-- Publish, activate, and retire signing and encryption keys from `/admin/keys`
-- Manage security posture from `/admin/policies`, with detailed PAR, Security Profile, DPoP, and DCR policy workflows
-- Manage Global PAR policy at `/admin/policies/par`
-- Manage Client PAR override at `/admin/clients/:client_id/par-policy`
-- Manage Dynamic Client Registration onboarding from `/admin/dcr`, including Initial Access Tokens at `/admin/iats`
-- Inspect runtime operations from `/admin/interactions`, `/admin/device_authorizations`, and `/admin/logouts`
-- Edit post-logout redirect URIs separately from logout propagation settings
-- Manage client logout propagation from the dedicated workflow at `/admin/clients/:client_id/edit?workflow=logout-propagation`
+Lockspire groups the admin surface by operator intent:
+
+- **Orient**: use `/admin` or `/admin/overview` as the operator cockpit for client posture, security posture, key readiness, support incidents, and live protocol work.
+- **Configure**: use `/admin/clients`, `/admin/policies`, `/admin/keys`, and `/admin/dcr` to manage client setup, issuer posture, key lifecycle, and partner intake.
+- **Support**: use `/admin/consents` and `/admin/tokens` to investigate durable grant, token, refresh-family, account, client, and status questions.
+- **Operate**: use `/admin/interactions`, `/admin/device_authorizations`, and `/admin/logouts` to inspect live authorization work, device flow requests, and logout delivery pressure.
 
 These routes live under the embedded Lockspire router and are meant for application operators.
 
@@ -39,30 +32,43 @@ scope "/" do
 end
 ```
 
-Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, IP policy, and audit framing around access to those routes.
+Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, operator authorization, IP policy, and audit framing around access to those routes.
 
 ## Admin navigation model
 
-The admin UI is organized around operator intent:
+The admin UI uses the same four top-level journey labels as `Lockspire.Web.Live.AdminLayoutLive`:
 
-- **Overview**: the default `/admin` cockpit for attention, posture, and next actions.
-- **Clients**: client inventory, registration, detail, redirect/logout URI edits, credentials, and per-client policy overrides.
-- **Security**: issuer-level PAR, DPoP, FAPI/security profile, and DCR policy posture.
-- **Keys**: signing and encryption key lifecycle with guided publish, activate, and retire actions.
-- **DCR**: partner onboarding, Initial Access Tokens, self-registered clients, and registration access token support.
-- **Support**: consent and token investigation/revocation workflows.
-- **Operations**: interactions, device authorizations, and logout deliveries.
+- **Orient**: Overview. The `/admin` cockpit answers what needs attention and points to the next workflow.
+- **Configure**: Clients, Security, Keys, and DCR. These routes own setup, issuer posture, client posture, endpoint configuration, credentials, DCR onboarding, DCR policy, IAT inventory, and key lifecycle.
+- **Support**: Consents and Tokens. These routes own account/client/status investigation, consent revocation, token revocation, and refresh-family response.
+- **Operate**: Device Auth, Interactions, and Logouts. These routes own active protocol queues, device authorization expiry, and logout propagation delivery pressure.
 
-This organization is deliberate: setup, security, support, and runtime operations are separate journeys even when they reference the same client.
+This organization is deliberate: Orient, Configure, Support, and Operate are separate journeys even when they reference the same client.
+
+Route groups remain concrete entries inside those journeys:
+
+- **Overview** belongs to Orient.
+- **Clients**, **Security**, **Keys**, and **DCR** belong to Configure.
+- **Support** covers Consents and Tokens.
+- **Operations** covers Device Auth, Interactions, and Logouts.
+
+## DCR onboarding and DCR policy
+
+Keep DCR onboarding separate from DCR policy:
+
+- **DCR onboarding** lives primarily at `/admin/dcr`, `/admin/iats`, `/admin/iats/new`, self-registered client detail, and `/admin/clients/:client_id/rotate-registration-access-token`. It covers partner intake, short-lived Initial Access Tokens, self-registered clients, and registration access token support.
+- **DCR policy** lives at `/admin/policies/dcr`. It covers issuer registration posture, allowed registration methods, and whether registration is disabled, IAT-gated, or open.
+
+These workflows are connected, but they are not the same job. Operators may start in DCR onboarding, discover that issuer policy blocks the intake path, and pivot to DCR policy before returning to the onboarding route.
 
 ## Logout propagation workflow
 
 Operators now have two separate logout-related surfaces on each client:
 
-- **Post-logout redirect URIs**: where the RP may send the browser after RP-initiated logout completes.
-- **Logout propagation**: the `backchannel_logout_uri`, `frontchannel_logout_uri`, and their `*_session_required` flags.
+- **Post-logout redirect URIs**: browser destinations the RP may use after RP-initiated logout completes. Edit them at `/admin/clients/:client_id/logout-uris`.
+- **Logout propagation URIs**: RP cleanup endpoints for back-channel and front-channel logout propagation. Edit them at `/admin/clients/:client_id/edit?workflow=logout-propagation`.
 
-Keep those concerns separate. Redirect URIs are browser destinations; logout propagation URIs are RP cleanup endpoints.
+Keep those concerns separate: post-logout redirect URIs are browser destinations; logout propagation URIs are RP cleanup endpoints.
 
 Lockspire's shipped truth model is:
 
