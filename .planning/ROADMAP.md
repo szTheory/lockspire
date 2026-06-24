@@ -14,7 +14,7 @@
 | 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. Status: complete 2026-06-04. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. Status: complete 2026-06-04. | CONFLICT-01..04, TRAEFIK-01..02 |
 | 114 | 3/3 | Complete    | 2026-06-24 |
-| 115 | 2/3 | In Progress|  |
+| 115 | 3/3 | Complete   | 2026-06-24 |
 
 ## Phase Details
 
@@ -133,7 +133,7 @@ Close the milestone by making cleanup and repo state explicit, non-destructive b
 - v1.30 does not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
 
 **Requirements:** SMOKE-03, CLEAN-01, CLEAN-02, CLEAN-03, HYGIENE-01, HYGIENE-02, HYGIENE-03, HYGIENE-04, BOUNDARY-01, BOUNDARY-02
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -143,7 +143,7 @@ Plans:
 
 **Wave 2**
 
-- [ ] 115-03-PLAN.md - Align docs, CI, boundary contracts, and lifecycle proof for final Phase 115 verification.
+- [x] 115-03-PLAN.md - Align docs, CI, boundary contracts, and lifecycle proof for final Phase 115 verification. (completed 2026-06-24)
 
 ## Shipped Milestones
 
