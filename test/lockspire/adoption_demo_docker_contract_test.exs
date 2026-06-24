@@ -78,10 +78,14 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     output = docker_info_output()
     source = File.read!(@docker_info_path)
     reprint_command = "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+    project_reprint_command =
+      "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert output =~ "Reprint:"
     assert output =~ reprint_command
+    assert output =~ project_reprint_command
     assert source =~ reprint_command
+    assert source =~ project_reprint_command
 
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml up"
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml run"
@@ -367,6 +371,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "## Startup output"
     assert docs =~ "LOCKSPIRE_DEMO_BASE_URL is the single public URL truth"
     assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+    assert docs =~
+             "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+
+    assert docs =~ "If the demo was started with an alternate Compose project"
     assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh"
     assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
     assert docs =~ "examples/adoption_demo/bin/docker-stop"

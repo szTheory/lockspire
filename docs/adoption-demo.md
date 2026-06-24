@@ -43,6 +43,12 @@ To reprint the banner without recreating containers:
 docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 ```
 
+If the demo was started with an alternate Compose project, reprint with the same project name:
+
+```sh
+COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+```
+
 ## Run the smoke
 
 Use the thin shell wrapper for maintainer smoke checks:
@@ -288,6 +294,12 @@ Then reprint the expected URLs after the service is healthy:
 
 ```sh
 docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+```
+
+For an alternate Compose project, include the same project name used at startup:
+
+```sh
+COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 ```
 
 ### Traefik network

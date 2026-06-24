@@ -35,4 +35,5 @@ Smoke command
 
 Reprint:
   docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+  COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 INFO
