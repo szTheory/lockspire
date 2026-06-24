@@ -7,6 +7,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @traefik_compose_file "examples/adoption_demo/docker-compose.traefik.yml"
   @docker_info_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-info")
   @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
+  @docker_stop_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-stop")
+  @docker_cleanup_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-cleanup")
   @adoption_smoke_wrapper_path Path.join(@repo_root, "scripts/demo/adoption_smoke.sh")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
@@ -240,6 +242,82 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ "adoption_demo_"
   end
 
+  test "stop helper preserves active demo project volumes" do
+    assert File.regular?(@docker_stop_path)
+    assert executable?(@docker_stop_path)
+
+    source = File.read!(@docker_stop_path)
+    help = command_output(@docker_stop_path, ["--help"])
+
+    assert source =~ "lockspire-adoption-demo"
+    assert source =~ "COMPOSE_PROJECT_NAME"
+    assert source =~ "--project"
+    assert source =~ ~r/docker compose .*--project-name "\$project".*-f examples\/adoption_demo\/docker-compose\.yml down/
+    assert help =~ "--project NAME"
+    assert help =~ "COMPOSE_PROJECT_NAME"
+    assert help =~ "lockspire-adoption-demo"
+    assert help =~ "preserve"
+    assert help =~ "volumes"
+
+    refute_broad_docker_cleanup(source)
+    refute source =~ "docker volume rm"
+    refute source =~ "adoption_demo_"
+  end
+
+  test "cleanup helper is dry-run first and exact allowlist scoped" do
+    assert File.regular?(@docker_cleanup_path)
+    assert executable?(@docker_cleanup_path)
+
+    source = File.read!(@docker_cleanup_path)
+    help = command_output(@docker_cleanup_path, ["--help"])
+
+    for expected <- [
+          "docker-cleanup",
+          "--project",
+          "--execute",
+          "db_data",
+          "deps_volume",
+          "build_volume",
+          "tmp/adoption_demo.log",
+          "examples/adoption_demo/_build",
+          "examples/adoption_demo/deps",
+          "tmp/admin-ui-polish/"
+        ] do
+      assert source =~ expected
+      assert help =~ expected
+    end
+
+    assert source =~ "COMPOSE_PROJECT_NAME"
+    assert source =~ "lockspire-adoption-demo"
+    assert source =~ ~r/execute=0/
+    assert source =~ ~r/execute=1/
+    assert source =~ ~r/\$\{project\}_db_data/
+    assert source =~ ~r/\$\{project\}_deps_volume/
+    assert source =~ ~r/\$\{project\}_build_volume/
+    assert help =~ "Dry run"
+    assert help =~ "default"
+    assert help =~ "Preserved"
+
+    refute_broad_docker_cleanup(source)
+    refute source =~ ~r/rm -rf "?tmp"?/
+    refute source =~ ~r/rm -rf "?tmp\/"?/
+    refute source =~ ~r/rm -rf .*admin-ui-polish/
+    refute source =~ "com.docker.compose.project="
+    refute source =~ "adoption_demo_"
+  end
+
+  test "cleanup helper explicitly preserves admin UI polish evidence" do
+    source = File.read!(@docker_cleanup_path)
+    help = command_output(@docker_cleanup_path, ["--help"])
+
+    assert source =~ "tmp/admin-ui-polish/"
+    assert help =~ "tmp/admin-ui-polish/"
+    assert source =~ ~r/(preserv|out of cleanup scope|not removed)/i
+    assert help =~ ~r/(Preserved|out of cleanup scope|not removed)/i
+
+    refute source =~ ~r/rm -rf .*tmp\/admin-ui-polish/
+  end
+
   test "docker-start prints docker-info only after HTTP readiness" do
     source = File.read!(Path.join(@repo_root, "examples/adoption_demo/bin/docker-start"))
 
@@ -381,6 +459,20 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     Enum.each(sensitive_fragments, fn fragment ->
       refute text =~ fragment
     end)
+  end
+
+  defp refute_broad_docker_cleanup(source) do
+    refute source =~ "docker volume prune"
+    refute source =~ "docker system prune"
+    refute source =~ "docker compose down -v"
+    refute source =~ "docker compose down --volumes"
+    refute source =~ ~r/docker compose .* down .* -v/
+    refute source =~ ~r/docker compose .* down .* --volumes/
+  end
+
+  defp command_output(path, args) do
+    {output, 0} = System.cmd(path, args, cd: @repo_root, stderr_to_stdout: true)
+    output
   end
 
   defp executable?(path) do
