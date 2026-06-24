@@ -80,6 +80,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @upgrading_v1_27_path Path.expand("../../docs/upgrading/v1.27.md", __DIR__)
   @project_path Path.expand("../../.planning/PROJECT.md", __DIR__)
   @repo_hygiene_script_path Path.expand("../../scripts/maintainer/repo_hygiene_check.sh", __DIR__)
+  @adoption_demo_docs_path Path.expand("../../docs/adoption-demo.md", __DIR__)
+  @docker_reset_path Path.expand("../../examples/adoption_demo/bin/docker-reset", __DIR__)
+  @docker_stop_path Path.expand("../../examples/adoption_demo/bin/docker-stop", __DIR__)
+  @docker_cleanup_path Path.expand("../../examples/adoption_demo/bin/docker-cleanup", __DIR__)
   @fapi2_conformance_plan_path Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
   @templates_registry_path Path.expand("../../lib/lockspire/generators/templates.ex", __DIR__)
   @adoption_demo_router_path Path.expand(
@@ -93,6 +97,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
   @install_task_path Path.expand("../../lib/mix/tasks/lockspire.install.ex", __DIR__)
   @install_generator_path Path.expand("../../lib/lockspire/generators/install.ex", __DIR__)
   @adoption_smoke_script_path Path.expand("../../scripts/demo/adoption_smoke.py", __DIR__)
+  @adoption_smoke_wrapper_path Path.expand("../../scripts/demo/adoption_smoke.sh", __DIR__)
 
   defp mix_version do
     "mix.exs"
@@ -581,6 +586,121 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert oidf_conformance_workflow =~ "MIX_ENV=test mix conformance.phase37"
     assert oidf_conformance_workflow =~ "LOCKSPIRE_PHASE37_MODE: hosted"
     refute oidf_conformance_workflow =~ "pull_request:"
+  end
+
+  test "phase 115 hygiene separates local Docker checks from deterministic CI source checks" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+    ci_workflow = File.read!(@ci_workflow_path)
+
+    assert repo_hygiene_script =~ "local_demo_docker_hygiene_checks"
+    assert repo_hygiene_script =~ "local_demo_artifact_hygiene_checks"
+    assert repo_hygiene_script =~ "ci_source_contract_checks"
+    assert repo_hygiene_script =~ "repo_hygiene_check.sh [--ci] [--project NAME]"
+    assert repo_hygiene_script =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
+
+    assert repo_hygiene_script =~ "if [[ \"$MODE\" != \"ci\" ]]; then"
+    assert repo_hygiene_script =~ "local_demo_docker_hygiene_checks"
+    assert repo_hygiene_script =~ "local_demo_artifact_hygiene_checks"
+
+    ci_branch =
+      repo_hygiene_script
+      |> String.split("if [[ \"$MODE\" != \"ci\" ]]; then", parts: 2)
+      |> hd()
+
+    refute ci_branch =~ "docker ps"
+    refute ci_branch =~ "docker volume ls"
+    refute ci_branch =~ "docker info"
+
+    assert ci_workflow =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
+  end
+
+  test "phase 115 hygiene resolves the active Docker project like lifecycle helpers" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+    reset_script = File.read!(@docker_reset_path)
+    stop_script = File.read!(@docker_stop_path)
+    cleanup_script = File.read!(@docker_cleanup_path)
+
+    for script <- [repo_hygiene_script, reset_script, stop_script, cleanup_script] do
+      assert script =~ "--project"
+      assert script =~ "COMPOSE_PROJECT_NAME"
+      assert script =~ "lockspire-adoption-demo"
+    end
+
+    assert repo_hygiene_script =~
+             "./scripts/maintainer/repo_hygiene_check.sh --project lockspire-adoption-demo --skip-mix-ci"
+
+    explicit_project = byte_offset(repo_hygiene_script, "project=\"$2\"")
+    env_project = byte_offset(repo_hygiene_script, "COMPOSE_PROJECT_NAME")
+    default_project = byte_offset(repo_hygiene_script, "lockspire-adoption-demo")
+
+    assert explicit_project > env_project
+    assert env_project < default_project
+  end
+
+  test "phase 115 local hygiene classifies Docker state with calm exact remediation" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+
+    assert repo_hygiene_script =~ "Docker is unavailable or unreachable"
+    assert repo_hygiene_script =~ "WARN"
+    assert repo_hygiene_script =~ "com.docker.compose.project"
+    assert repo_hygiene_script =~ "running active-project demo containers"
+    assert repo_hygiene_script =~ "BLOCK"
+    assert repo_hygiene_script =~ "examples/adoption_demo/bin/docker-stop --project $project"
+    assert repo_hygiene_script =~ "examples/adoption_demo/bin/docker-cleanup --project $project --execute"
+    assert repo_hygiene_script =~ "docker-cleanup --execute"
+  end
+
+  test "phase 115 generated artifact hygiene is allowlisted and preserves admin UI evidence" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+    cleanup_script = File.read!(@docker_cleanup_path)
+
+    for path <- [
+          "tmp/adoption_demo.log",
+          "examples/adoption_demo/_build",
+          "examples/adoption_demo/deps"
+        ] do
+      assert repo_hygiene_script =~ path
+      assert cleanup_script =~ path
+    end
+
+    assert repo_hygiene_script =~ "tmp/admin-ui-polish/"
+    assert repo_hygiene_script =~ "Preserved"
+    refute repo_hygiene_script =~ "rm -rf tmp"
+    refute repo_hygiene_script =~ "find tmp"
+  end
+
+  test "phase 115 CI keeps Python smoke proof and avoids full Docker Compose smoke" do
+    ci_workflow = File.read!(@ci_workflow_path)
+    smoke_script = File.read!(@adoption_smoke_script_path)
+    smoke_wrapper = File.read!(@adoption_smoke_wrapper_path)
+
+    assert ci_workflow =~ "name: Adoption Demo Smoke"
+    assert ci_workflow =~ "python3 scripts/demo/adoption_smoke.py"
+    refute ci_workflow =~ "docker compose"
+    refute ci_workflow =~ "docker-compose"
+
+    assert smoke_script =~ "exercise_authorization_code"
+    assert smoke_script =~ "exercise_discovery_and_admin"
+    assert smoke_wrapper =~ "exec python3 scripts/demo/adoption_smoke.py"
+  end
+
+  test "phase 115 repo hygiene stays repo-local and does not broaden public support surface" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+    docs = File.read!(@adoption_demo_docs_path)
+    mix_task_paths = Path.wildcard(Path.expand("../../lib/mix/tasks/*.ex", __DIR__))
+
+    refute Enum.any?(mix_task_paths, &String.contains?(&1, "cleanup"))
+    refute Enum.any?(mix_task_paths, &String.contains?(&1, "hygiene"))
+
+    for source <- [repo_hygiene_script, docs] do
+      refute source =~ "production Docker packaging"
+      refute source =~ "hosted auth service"
+      refute source =~ "public support expansion"
+      refute source =~ "Lockspire owns operator authentication"
+    end
+
+    refute File.exists?(Path.expand("../../lib/lockspire/repo_hygiene.ex", __DIR__))
+    refute File.exists?(Path.expand("../../lib/lockspire/docker_cleanup.ex", __DIR__))
   end
 
   test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow protected-route surface" do
