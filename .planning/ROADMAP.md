@@ -104,6 +104,20 @@ Make the running demo self-describing. A maintainer should not need to source-di
 - `docs/adoption-demo.md` presents Docker as the default maintainer path with host-local fallback and troubleshooting.
 
 **Requirements:** INFO-01, INFO-02, INFO-03, INFO-04, SMOKE-01, SMOKE-02, DOCS-01, DOCS-02
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 114-01-PLAN.md - Create redacted startup info output for URLs, accounts, clients, and smoke command.
+
+**Wave 2**
+
+- [ ] 114-02-PLAN.md - Add smoke wrapper and reprint proof for direct Docker and optional Traefik.
+
+**Wave 3**
+
+- [ ] 114-03-PLAN.md - Update Docker-first adoption demo docs and docs contracts.
 
 ### Phase 115: Repo Hygiene Gate & Scoped Cleanup
 
