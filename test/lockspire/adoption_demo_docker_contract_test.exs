@@ -260,6 +260,49 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
              "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
   end
 
+  test "docs present Docker startup before host-local fallback" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    docker_position = docs_position!(docs, "## Run it with Docker")
+    host_local_position = docs_position!(docs, "## Run it host-local")
+
+    assert docker_position < host_local_position
+    assert docs =~ "Docker is the default maintainer path"
+    assert docs =~ "Host-local Mix/Postgres remains a fallback"
+    assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml up --build"
+  end
+
+  test "docs cover startup output reprint smoke stop reset cleanup and troubleshooting" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "## Startup output"
+    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL is the single public URL truth"
+    assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh"
+    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
+    assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml down"
+    assert docs =~ "examples/adoption_demo/bin/docker-reset"
+    assert docs =~ "Phase 115 owns broader cleanup and hygiene commands"
+    assert docs =~ "## Environment overrides"
+    assert docs =~ "LOCKSPIRE_DEMO_DB_HOST_PORT"
+    assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_HOST"
+    assert docs =~ "## Troubleshooting"
+    assert docs =~ "Port conflict"
+    assert docs =~ "Readiness failure"
+    assert docs =~ "Traefik network"
+    assert docs =~ "Base URL drift"
+  end
+
+  test "docs use wrapper and docker-info for Phase 114 proof commands" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "scripts/demo/adoption_smoke.sh"
+    assert docs =~ "delegates to `scripts/demo/adoption_smoke.py`"
+    assert docs =~ "examples/adoption_demo/bin/docker-info"
+    refute docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+    refute docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py"
+  end
+
   test "docs explain optional Traefik hostname routing and smoke base URL" do
     docs = File.read!(@adoption_demo_docs_path)
 
@@ -271,7 +314,14 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_SERVICE"
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_NETWORK"
     assert docs =~
-             "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py"
+             "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
+  end
+
+  defp docs_position!(docs, text) do
+    case :binary.match(docs, text) do
+      {position, _length} -> position
+      :nomatch -> flunk("Expected docs to contain #{inspect(text)}")
+    end
   end
 
   defp with_compose_config(args, opts \\ [], fun) do
