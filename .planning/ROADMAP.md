@@ -14,7 +14,7 @@
 | 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. Status: complete 2026-06-04. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. Status: complete 2026-06-04. | CONFLICT-01..04, TRAEFIK-01..02 |
 | 114 | 3/3 | Complete    | 2026-06-24 |
-| 115 | 1/3 | In Progress|  |
+| 115 | 2/3 | In Progress|  |
 
 ## Phase Details
 
@@ -133,13 +133,13 @@ Close the milestone by making cleanup and repo state explicit, non-destructive b
 - v1.30 does not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
 
 **Requirements:** SMOKE-03, CLEAN-01, CLEAN-02, CLEAN-03, HYGIENE-01, HYGIENE-02, HYGIENE-03, HYGIENE-04, BOUNDARY-01, BOUNDARY-02
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 115-01-PLAN.md - Add contract-first stop, reset, and dry-run cleanup lifecycle commands.
-- [ ] 115-02-PLAN.md - Expand repo hygiene for local Docker/artifact reporting and Docker-free CI contracts.
+- [x] 115-02-PLAN.md - Expand repo hygiene for local Docker/artifact reporting and Docker-free CI contracts.
 
 **Wave 2**
 
