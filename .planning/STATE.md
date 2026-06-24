@@ -3,13 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
 status: executing
-last_updated: "2026-06-04T21:33:21Z"
-last_activity: 2026-06-04
+stopped_at: Phase 113 verified and complete
+last_updated: "2026-06-24T16:45:58.706Z"
+last_activity: 2026-06-24
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
   percent: 60
 ---
 
@@ -21,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 114 — Startup Output, Smoke Wrapper & Docs
+**Current focus:** Phase 114 — startup-output-smoke-wrapper-docs
 
 ## Current Position
 
-Phase: 114
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-06-04 -- Phase 113 verified and complete
+Phase: 114 (startup-output-smoke-wrapper-docs) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-24
 
 ## Most Recent Release
 
@@ -76,6 +77,8 @@ Last activity: 2026-06-04 -- Phase 113 verified and complete
 - [Phase 113]: Phase 113 Plan 02 kept direct Docker as the default path with optional Traefik isolated in an explicit override file.
 - [Phase 113]: Phase 113 Plan 02 attached only web to the external Traefik proxy network while keeping db project-internal.
 - [Phase 113]: Phase 113 Plan 02 kept LOCKSPIRE_DEMO_BASE_URL as the hostname smoke truth for Traefik mode.
+- [Phase 114]: Plan 01 docker-info uses static allowlisted fixture truth instead of database inspection or seed stdout.
+- [Phase 114]: Plan 01 docker-start prints startup information only after wait_for_http succeeds.
 
 ## Blockers/Concerns
 
@@ -116,7 +119,8 @@ Last activity: 2026-06-04 -- Phase 113 verified and complete
 | Phase 111 P02 | 18 min | 3 tasks | 3 files |
 | Phase 113 P01 | 6 min | 3 tasks | 5 files |
 | Phase 113 P02 | 4min | 2 tasks | 3 files |
+| Phase 114 P01 | 5 min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
-- Plan Phase 114 with /gsd-plan-phase 114.
+- Execute Phase 114 Plan 02.

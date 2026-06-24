@@ -37,9 +37,9 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ### Operator-Ready Output And Proof
 
-- [ ] **INFO-01**: Successful startup prints the active base URL, issuer URL, discovery URL, JWKS URL, admin URL, device verification URL, developer apps URL, OAuth callback URL, protected API URL, and exact smoke command.
-- [ ] **INFO-02**: Successful startup prints seeded demo accounts `alice`, `bob`, and `ops`, including roles/account emails and the fact that `ops` is the operator account.
-- [ ] **INFO-03**: Successful startup prints seeded OAuth client IDs and demo client shapes without exposing real secrets, tokens, private keys, authorization codes, refresh tokens, or cookies.
+- [x] **INFO-01**: Successful startup prints the active base URL, issuer URL, discovery URL, JWKS URL, admin URL, device verification URL, developer apps URL, OAuth callback URL, protected API URL, and exact smoke command.
+- [x] **INFO-02**: Successful startup prints seeded demo accounts `alice`, `bob`, and `ops`, including roles/account emails and the fact that `ops` is the operator account.
+- [x] **INFO-03**: Successful startup prints seeded OAuth client IDs and demo client shapes without exposing real secrets, tokens, private keys, authorization codes, refresh tokens, or cookies.
 - [ ] **INFO-04**: A maintainer can reprint the current URL/account/client/smoke information without recreating containers.
 - [ ] **SMOKE-01**: The existing black-box smoke passes against the direct Docker URL using `LOCKSPIRE_DEMO_BASE_URL`.
 - [ ] **SMOKE-02**: If optional Traefik mode is enabled, the same smoke can run against the Traefik hostname URL.
@@ -100,9 +100,9 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | CONFLICT-04 | 113 | Complete |
 | TRAEFIK-01 | 113 | Complete |
 | TRAEFIK-02 | 113 | Complete |
-| INFO-01 | 114 | Pending |
-| INFO-02 | 114 | Pending |
-| INFO-03 | 114 | Pending |
+| INFO-01 | 114 | Complete |
+| INFO-02 | 114 | Complete |
+| INFO-03 | 114 | Complete |
 | INFO-04 | 114 | Pending |
 | SMOKE-01 | 114 | Pending |
 | SMOKE-02 | 114 | Pending |
