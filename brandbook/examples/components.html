@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockspire — Component Gallery</title>
+<link rel="icon" href="../logo/lockspire-favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Real product tokens — same --ls-* names as lib/lockspire/web/admin_css.ex -->
+<link rel="stylesheet" href="../tokens/tokens.css">
+<style>
+  /* Demo chrome only. Component styles below all consume --ls-* tokens, so they
+     theme automatically and can be lifted straight into Phoenix components. */
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ls-font-sans);background:var(--ls-surface-page);color:var(--ls-text-body);line-height:1.6;transition:background .2s,color .2s}
+  header{position:sticky;top:0;background:color-mix(in srgb,var(--ls-surface-page) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--ls-border-subtle);padding:14px 28px;display:flex;align-items:center;gap:16px;z-index:10}
+  header h1{font-family:var(--ls-font-display);font-size:18px;margin:0;color:var(--ls-text-strong)}
+  header .sub{font-family:var(--ls-font-mono);font-size:12px;color:var(--ls-text-muted)}
+  .toggle{margin-left:auto;appearance:none;border:1px solid var(--ls-border-strong);background:var(--ls-surface-panel);color:var(--ls-text-body);border-radius:var(--ls-radius-md);padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+  main{max-width:960px;margin:0 auto;padding:32px 28px 80px}
+  h2{font-family:var(--ls-font-display);font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--ls-text-accent);margin:40px 0 14px;font-weight:600}
+  .panel{background:var(--ls-surface-panel);border:1px solid var(--ls-border-subtle);border-radius:var(--ls-radius-xl);padding:22px;box-shadow:var(--ls-shadow-sm);margin-bottom:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  /* ---- lifted component styles (token-driven) ---- */
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:var(--ls-radius-md);padding:9px 16px;cursor:pointer;border:1px solid transparent;transition:background var(--ls-motion-duration-fast) var(--ls-motion-ease-standard),border-color var(--ls-motion-duration-fast)}
+  .btn:focus-visible{outline:2px solid var(--ls-focus-ring-color);outline-offset:var(--ls-focus-ring-offset)}
+  .btn-primary{background:var(--ls-color-brand-600);color:#fff}
+  .btn-primary:hover{background:var(--ls-color-brand-700)}
+  :root[data-theme="dark"] .btn-primary{background:var(--ls-color-brand-500);color:var(--ls-color-gray-950)}
+  .btn-secondary{background:var(--ls-surface-panel);color:var(--ls-text-body);border-color:var(--ls-border-strong)}
+  .btn-secondary:hover{border-color:var(--ls-text-accent);color:var(--ls-text-accent)}
+  .btn-danger{background:transparent;color:#dc2626;border-color:#fecaca}
+  :root[data-theme="dark"] .btn-danger{color:#fca5a5;border-color:#e35d6a}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-active{background:var(--ls-status-success-bg);color:var(--ls-status-success-text);border-color:var(--ls-status-success-border)}
+  .b-warn{background:var(--ls-status-warning-bg);color:var(--ls-status-warning-text);border-color:var(--ls-status-warning-border)}
+  .b-danger{background:var(--ls-status-danger-bg);color:var(--ls-status-danger-text);border-color:var(--ls-status-danger-border)}
+  .b-info{background:var(--ls-status-info-bg);color:var(--ls-status-info-text);border-color:var(--ls-status-info-border)}
+  .field{max-width:380px}
+  .field+.field{margin-top:14px}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--ls-text-strong);margin-bottom:6px}
+  .field input,.field select{width:100%;font:inherit;font-size:14px;padding:9px 12px;border-radius:var(--ls-radius-md);border:1px solid var(--ls-border-strong);background:var(--ls-surface-page);color:var(--ls-text-strong)}
+  .field input:focus{outline:none;border-color:var(--ls-focus-ring-color);box-shadow:var(--ls-focus-ring-shadow)}
+  .field .hint{font-size:12px;color:var(--ls-text-muted);margin-top:5px}
+  .field .err{font-size:12px;color:#dc2626;margin-top:5px}
+  :root[data-theme="dark"] .field .err{color:#fca5a5}
+  .alert{display:flex;gap:11px;padding:13px 15px;border-radius:var(--ls-radius-md);border:1px solid;font-size:14px;margin-bottom:10px}
+  .alert b{font-weight:600}
+  .a-info{background:var(--ls-status-info-bg);color:var(--ls-status-info-text);border-color:var(--ls-status-info-border)}
+  .a-warn{background:var(--ls-status-warning-bg);color:var(--ls-status-warning-text);border-color:var(--ls-status-warning-border)}
+  .a-danger{background:var(--ls-status-danger-bg);color:var(--ls-status-danger-text);border-color:var(--ls-status-danger-border)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ls-text-muted);padding:8px 12px;border-bottom:1px solid var(--ls-border-strong)}
+  td{padding:10px 12px;border-bottom:1px solid var(--ls-border-subtle);color:var(--ls-text-body)}
+  td.mono{font-family:var(--ls-font-mono);font-size:13px;color:var(--ls-text-strong)}
+  .card-title{font-family:var(--ls-font-display);font-weight:600;font-size:16px;color:var(--ls-text-strong);margin:0 0 4px}
+  .card-sub{font-size:13px;color:var(--ls-text-muted);margin:0 0 14px}
+  .empty{text-align:center;padding:34px;color:var(--ls-text-muted)}
+  .empty h3{font-family:var(--ls-font-display);color:var(--ls-text-strong);margin:0 0 6px;font-size:16px}
+  .stat{display:inline-block;margin-right:28px}
+  .stat .v{font-family:var(--ls-font-display);font-size:28px;font-weight:600;color:var(--ls-text-strong)}
+  .stat .l{font-size:12px;color:var(--ls-text-muted);text-transform:uppercase;letter-spacing:.05em}
+  .secret{font-family:var(--ls-font-mono);font-size:13px;background:var(--ls-surface-muted);border:1px solid var(--ls-border-subtle);border-radius:var(--ls-radius-md);padding:10px 12px;color:var(--ls-text-strong);display:flex;align-items:center;justify-content:space-between;gap:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lockspire — Components</h1>
+  <span class="sub">token-driven · toggle theme →</span>
+  <button class="toggle" id="t">☾ Dark</button>
+</header>
+<main>
+  <p style="color:var(--ls-text-muted);font-size:14px;margin-top:0">A standalone gallery of the admin component primitives, styled entirely from <code>../tokens/tokens.css</code>. Copy any block into a Phoenix component — the <code>--ls-*</code> variables already exist in the app. Toggle the theme to verify both modes.</p>
+
+  <h2>Buttons</h2>
+  <div class="panel"><div class="row">
+    <button class="btn btn-primary">Create client</button>
+    <button class="btn btn-secondary">Cancel</button>
+    <button class="btn btn-danger">Revoke access</button>
+    <button class="btn btn-secondary" disabled>Disabled</button>
+  </div></div>
+
+  <h2>Status badges</h2>
+  <div class="panel"><div class="row">
+    <span class="badge b-active">Active</span>
+    <span class="badge b-info">Upcoming</span>
+    <span class="badge b-warn">Retiring</span>
+    <span class="badge b-danger">Revoked</span>
+    <span class="badge b-danger">Reuse detected</span>
+  </div></div>
+
+  <h2>Forms</h2>
+  <div class="panel">
+    <div class="field"><label for="n">Client name</label><input id="n" value="Acme Dashboard"><div class="hint">Shown to users on the consent screen.</div></div>
+    <div class="field"><label for="r">Redirect URI</label><input id="r" value="https://app.example.com/cb" aria-invalid="true"><div class="err">Does not match the client's registered configuration.</div></div>
+    <div class="field"><label for="g">Grant type</label><select id="g"><option>authorization_code</option><option>client_credentials</option><option>refresh_token</option></select></div>
+  </div>
+
+  <h2>Alerts</h2>
+  <div class="panel">
+    <div class="alert a-info"><b>DPoP enforced.</b> This client must present a proof-of-possession key on every token request.</div>
+    <div class="alert a-warn"><b>Key rotation pending.</b> The active signing key rotates in 3 days. Downstream verifiers should refresh JWKS.</div>
+    <div class="alert a-danger"><b>Token reuse detected.</b> A refresh token was replayed; the chain has been revoked.</div>
+  </div>
+
+  <h2>Card + stats + secret</h2>
+  <div class="panel">
+    <p class="card-title">Provider overview</p>
+    <p class="card-sub">Issuer https://auth.example.com</p>
+    <div style="margin-bottom:18px">
+      <span class="stat"><span class="v">12</span><span class="l">Clients</span></span>
+      <span class="stat"><span class="v">3</span><span class="l">Active keys</span></span>
+      <span class="stat"><span class="v">1,204</span><span class="l">Consents</span></span>
+    </div>
+    <div class="secret"><span>client_secret · lsp_sk_••••••••••••3f9a</span><button class="btn btn-secondary" style="padding:5px 11px;font-size:12px">Copy</button></div>
+  </div>
+
+  <h2>Table</h2>
+  <div class="panel" style="padding:6px 6px 0">
+    <table>
+      <thead><tr><th>Client</th><th>Client ID</th><th>Grant</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Acme Dashboard</td><td class="mono">lsp_3f9a8c</td><td class="mono">auth_code</td><td><span class="badge b-active">Active</span></td></tr>
+        <tr><td>Partner Sync</td><td class="mono">lsp_7b21de</td><td class="mono">client_creds</td><td><span class="badge b-warn">Retiring</span></td></tr>
+        <tr><td>Legacy Import</td><td class="mono">lsp_0c44a1</td><td class="mono">auth_code</td><td><span class="badge b-danger">Revoked</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Empty state</h2>
+  <div class="panel"><div class="empty">
+    <h3>No OAuth clients yet</h3>
+    <p>Create your first client to start testing your provider configuration.</p>
+    <button class="btn btn-primary" style="margin-top:10px">Create client</button>
+  </div></div>
+</main>
+<script>
+(function(){var r=document.documentElement,t=localStorage.getItem('ls-bb-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');set(t);
+document.getElementById('t').onclick=function(){set(r.getAttribute('data-theme')==='dark'?'light':'dark')};
+function set(m){r.setAttribute('data-theme',m);localStorage.setItem('ls-bb-theme',m);document.getElementById('t').textContent=(m==='dark'?'☾ Dark':'☀ Light')}})();
+</script>
+</body>
+</html>

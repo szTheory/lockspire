@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockspire — Brand Book</title>
+<link rel="icon" href="logo/lockspire-favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   Lockspire Brand Book — self-contained. Two CSS namespaces, kept separate:
+   --ls-*  = product design tokens (mirror of tokens/tokens.css & admin_css.ex)
+   --bb-*  = brand-book chrome only (never used by the product)
+   ========================================================================== */
+
+/* ---- Product tokens (mirror of tokens/tokens.css) ---- */
+:root{
+  --ls-space-1:.25rem;--ls-space-2:.5rem;--ls-space-3:.75rem;--ls-space-4:1rem;--ls-space-5:1.25rem;--ls-space-6:1.5rem;--ls-space-8:2rem;--ls-space-10:2.5rem;--ls-space-12:3rem;
+  --ls-font-display:"Familjen Grotesk","Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+  --ls-font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --ls-font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  --ls-color-brand-50:#ecfeff;--ls-color-brand-100:#cffafe;--ls-color-brand-500:#22d3ee;--ls-color-brand-600:#0e7490;--ls-color-brand-700:#155e75;
+  --ls-color-gray-50:#f8fafc;--ls-color-gray-100:#f1f5f9;--ls-color-gray-200:#e2e8f0;--ls-color-gray-300:#cbd5e1;--ls-color-gray-400:#94a3b8;--ls-color-gray-500:#64748b;--ls-color-gray-600:#475569;--ls-color-gray-700:#334155;--ls-color-gray-800:#1f2937;--ls-color-gray-900:#111827;--ls-color-gray-950:#0b1220;
+  --ls-radius-sm:.125rem;--ls-radius-md:.375rem;--ls-radius-lg:.5rem;--ls-radius-xl:.75rem;
+  --ls-shadow-sm:0 1px 2px 0 rgb(0 0 0/.05);--ls-shadow-md:0 4px 6px -1px rgb(0 0 0/.1),0 2px 4px -2px rgb(0 0 0/.1);--ls-shadow-lg:0 10px 15px -3px rgb(0 0 0/.1),0 4px 6px -4px rgb(0 0 0/.1);
+  --ls-motion-fast:150ms;--ls-motion-medium:220ms;--ls-ease:cubic-bezier(.4,0,.2,1);
+  /* light semantic aliases */
+  --ls-surface-page:var(--ls-color-gray-50);--ls-surface-panel:#fff;--ls-surface-muted:var(--ls-color-gray-100);
+  --ls-text-strong:var(--ls-color-gray-950);--ls-text-body:var(--ls-color-gray-700);--ls-text-muted:var(--ls-color-gray-500);--ls-text-accent:var(--ls-color-brand-600);
+  --ls-border-subtle:var(--ls-color-gray-200);--ls-border-strong:var(--ls-color-gray-300);
+  --ls-status-success-bg:#dcfce7;--ls-status-success-text:#166534;--ls-status-success-border:#bbf7d0;
+  --ls-status-warning-bg:#fef9c3;--ls-status-warning-text:#854d0e;--ls-status-warning-border:#fde68a;
+  --ls-status-danger-bg:#fee2e2;--ls-status-danger-text:#991b1b;--ls-status-danger-border:#fecaca;
+  --ls-status-info-bg:#cffafe;--ls-status-info-text:#155e75;--ls-status-info-border:#a5f3fc;
+  --ls-focus-ring:var(--ls-color-brand-600);--ls-focus-shadow:0 0 0 3px var(--ls-color-brand-100);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ls-surface-page:var(--ls-color-gray-950);--ls-surface-panel:#131c2e;--ls-surface-muted:var(--ls-color-gray-800);
+  --ls-text-strong:var(--ls-color-gray-50);--ls-text-body:#c9d4e3;--ls-text-muted:#8a99ad;--ls-text-accent:var(--ls-color-brand-500);
+  --ls-border-subtle:#1e293b;--ls-border-strong:#334155;
+  --ls-status-success-bg:#0d2b22;--ls-status-success-text:#5eead4;--ls-status-success-border:#14b8a6;
+  --ls-status-warning-bg:#2c2410;--ls-status-warning-text:#f4b942;--ls-status-warning-border:#a16207;
+  --ls-status-danger-bg:#2e1517;--ls-status-danger-text:#fca5a5;--ls-status-danger-border:#e35d6a;
+  --ls-status-info-bg:#0c2330;--ls-status-info-text:#67e8f9;--ls-status-info-border:#22d3ee;
+  --ls-focus-ring:var(--ls-color-brand-500);--ls-focus-shadow:0 0 0 3px rgb(34 211 238/.35);
+  --ls-shadow-sm:0 1px 2px 0 rgb(0 0 0/.4);--ls-shadow-md:0 4px 6px -1px rgb(0 0 0/.5),0 2px 4px -2px rgb(0 0 0/.5);--ls-shadow-lg:0 10px 15px -3px rgb(0 0 0/.55);
+}
+@media (prefers-reduced-motion:reduce){:root{--ls-motion-fast:0ms;--ls-motion-medium:0ms}}
+
+/* ---- Book chrome ---- */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--ls-font-sans);background:var(--ls-surface-page);color:var(--ls-text-body);line-height:1.6;-webkit-font-smoothing:antialiased;transition:background var(--ls-motion-medium) var(--ls-ease),color var(--ls-motion-medium) var(--ls-ease)}
+h1,h2,h3,h4{font-family:var(--ls-font-display);color:var(--ls-text-strong);line-height:1.15;letter-spacing:-.02em;margin:0}
+a{color:var(--ls-text-accent);text-decoration:none}
+code,kbd,.mono{font-family:var(--ls-font-mono)}
+.bb-wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* nav */
+.bb-nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--ls-surface-page) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--ls-border-subtle)}
+.bb-nav-in{max-width:1080px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
+.bb-nav .logo{height:26px;width:auto;color:var(--ls-text-strong)}
+.bb-nav-links{display:flex;gap:18px;margin-left:auto;flex-wrap:wrap}
+.bb-nav-links a{color:var(--ls-text-muted);font-size:13px;font-weight:500}
+.bb-nav-links a:hover{color:var(--ls-text-accent)}
+.bb-toggle{appearance:none;border:1px solid var(--ls-border-strong);background:var(--ls-surface-panel);color:var(--ls-text-body);border-radius:var(--ls-radius-md);padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.bb-toggle:hover{border-color:var(--ls-text-accent);color:var(--ls-text-accent)}
+.bb-toggle:focus-visible{outline:var(--ls-focus-ring) solid 2px;outline-offset:2px}
+
+/* hero */
+.bb-hero{padding:72px 0 40px;border-bottom:1px solid var(--ls-border-subtle)}
+.bb-hero .eyebrow{font-family:var(--ls-font-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ls-text-accent)}
+.bb-hero .lockup{margin:22px 0 8px;max-width:440px;color:var(--ls-text-strong)}
+.bb-hero .lockup svg{width:100%;height:auto}
+.bb-hero p{font-size:19px;max-width:60ch;margin:18px 0 0}
+.bb-hero .promise{font-family:var(--ls-font-display);font-size:26px;font-weight:600;color:var(--ls-text-strong);margin:26px 0 0;letter-spacing:-.01em}
+
+section{padding:56px 0;border-bottom:1px solid var(--ls-border-subtle)}
+.sec-label{font-family:var(--ls-font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ls-text-accent);margin-bottom:8px}
+section>.bb-wrap>h2{font-size:30px;margin-bottom:6px}
+.lead{font-size:17px;color:var(--ls-text-muted);max-width:64ch;margin:0 0 32px}
+h3{font-size:18px;margin:32px 0 14px}
+
+.grid{display:grid;gap:16px}
+.cards-3{grid-template-columns:repeat(3,1fr)}
+.cards-2{grid-template-columns:repeat(2,1fr)}
+.cards-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:820px){.cards-3,.cards-4{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.cards-2,.cards-3,.cards-4{grid-template-columns:1fr}}
+
+.panel{background:var(--ls-surface-panel);border:1px solid var(--ls-border-subtle);border-radius:var(--ls-radius-xl);padding:24px;box-shadow:var(--ls-shadow-sm)}
+
+/* logo showcase */
+.logo-stage{background:var(--ls-surface-panel);border:1px solid var(--ls-border-subtle);border-radius:var(--ls-radius-xl);padding:40px;display:flex;align-items:center;justify-content:center;min-height:120px}
+.logo-stage.dark{background:var(--ls-color-gray-950)}
+.logo-stage.light{background:var(--ls-color-gray-50)}
+.logo-stage svg{max-width:80%;height:auto}
+.logo-stage .mk{display:inline-flex}
+.logo-stage .mk svg{height:84px;width:auto;max-width:none}
+.cap{font-family:var(--ls-font-mono);font-size:11px;color:var(--ls-text-muted);margin-top:10px;text-align:center}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:560px){.dodont{grid-template-columns:1fr}}
+.dd{border-radius:var(--ls-radius-lg);padding:18px;border:1px solid var(--ls-border-subtle);background:var(--ls-surface-panel)}
+.dd .tag{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.dd.do .tag{color:#15803d}.dd.dont .tag{color:#dc2626}
+:root[data-theme="dark"] .dd.do .tag{color:#5eead4}:root[data-theme="dark"] .dd.dont .tag{color:#fca5a5}
+.dd p{margin:0;font-size:13.5px;color:var(--ls-text-muted)}
+
+/* color */
+.swatch{border-radius:var(--ls-radius-lg);overflow:hidden;border:1px solid var(--ls-border-subtle);background:var(--ls-surface-panel)}
+.swatch .chip{height:72px}
+.swatch .meta{padding:10px 12px}
+.swatch .nm{font-weight:600;font-size:13px;color:var(--ls-text-strong)}
+.swatch .hex{font-family:var(--ls-font-mono);font-size:12px;color:var(--ls-text-muted)}
+.swatch .wcag{font-family:var(--ls-font-mono);font-size:11px;margin-top:4px}
+.pass{color:#15803d}.fail{color:#dc2626}
+:root[data-theme="dark"] .pass{color:#5eead4}:root[data-theme="dark"] .fail{color:#fca5a5}
+
+/* type */
+.specimen{border:1px solid var(--ls-border-subtle);border-radius:var(--ls-radius-lg);padding:20px;background:var(--ls-surface-panel);margin-bottom:12px}
+.specimen .role{font-family:var(--ls-font-mono);font-size:11px;color:var(--ls-text-muted);margin-bottom:6px}
+.t-display{font-family:var(--ls-font-display);font-weight:600;color:var(--ls-text-strong)}
+.t-mono{font-family:var(--ls-font-mono)}
+
+/* token visuals */
+.tok-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.tok-row .lbl{font-family:var(--ls-font-mono);font-size:12px;color:var(--ls-text-muted);width:170px}
+.tok-bar{height:18px;background:var(--ls-color-brand-500);border-radius:3px}
+.radius-demo{width:60px;height:60px;background:var(--ls-color-brand-500);opacity:.9}
+.shadow-demo{width:90px;height:60px;background:var(--ls-surface-panel);border-radius:var(--ls-radius-md);border:1px solid var(--ls-border-subtle)}
+
+/* components */
+.btn{font:inherit;font-weight:600;font-size:14px;border-radius:var(--ls-radius-md);padding:9px 16px;cursor:pointer;border:1px solid transparent;transition:background var(--ls-motion-fast) var(--ls-ease),border-color var(--ls-motion-fast) var(--ls-ease)}
+.btn:focus-visible{outline:var(--ls-focus-ring) solid 2px;outline-offset:2px}
+.btn-primary{background:var(--ls-color-brand-600);color:#fff}
+.btn-primary:hover{background:var(--ls-color-brand-700)}
+:root[data-theme="dark"] .btn-primary{background:var(--ls-color-brand-500);color:var(--ls-color-gray-950)}
+:root[data-theme="dark"] .btn-primary:hover{background:#67e8f9}
+.btn-secondary{background:var(--ls-surface-panel);color:var(--ls-text-body);border-color:var(--ls-border-strong)}
+.btn-secondary:hover{border-color:var(--ls-text-accent);color:var(--ls-text-accent)}
+.btn-danger{background:transparent;color:#dc2626;border-color:#fecaca}
+:root[data-theme="dark"] .btn-danger{color:#fca5a5;border-color:#e35d6a}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-active{background:var(--ls-status-success-bg);color:var(--ls-status-success-text);border-color:var(--ls-status-success-border)}
+.b-warn{background:var(--ls-status-warning-bg);color:var(--ls-status-warning-text);border-color:var(--ls-status-warning-border)}
+.b-revoked{background:var(--ls-status-danger-bg);color:var(--ls-status-danger-text);border-color:var(--ls-status-danger-border)}
+.b-info{background:var(--ls-status-info-bg);color:var(--ls-status-info-text);border-color:var(--ls-status-info-border)}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ls-text-strong);margin-bottom:6px}
+.field input{width:100%;font:inherit;font-size:14px;padding:9px 12px;border-radius:var(--ls-radius-md);border:1px solid var(--ls-border-strong);background:var(--ls-surface-page);color:var(--ls-text-strong)}
+.field input:focus{outline:none;border-color:var(--ls-focus-ring);box-shadow:var(--ls-focus-shadow)}
+.field .hint{font-size:12px;color:var(--ls-text-muted);margin-top:5px}
+.alert{display:flex;gap:11px;padding:13px 15px;border-radius:var(--ls-radius-md);border:1px solid;font-size:14px;margin-bottom:12px}
+.alert-info{background:var(--ls-status-info-bg);color:var(--ls-status-info-text);border-color:var(--ls-status-info-border)}
+.alert-warn{background:var(--ls-status-warning-bg);color:var(--ls-status-warning-text);border-color:var(--ls-status-warning-border)}
+.alert-danger{background:var(--ls-status-danger-bg);color:var(--ls-status-danger-text);border-color:var(--ls-status-danger-border)}
+table.demo{width:100%;border-collapse:collapse;font-size:14px}
+table.demo th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ls-text-muted);padding:8px 12px;border-bottom:1px solid var(--ls-border-strong)}
+table.demo td{padding:10px 12px;border-bottom:1px solid var(--ls-border-subtle);color:var(--ls-text-body)}
+table.demo td.mono{font-family:var(--ls-font-mono);font-size:13px;color:var(--ls-text-strong)}
+
+/* microcopy */
+.copy-eg{border-left:3px solid;padding:10px 16px;margin-bottom:12px;background:var(--ls-surface-panel);border-radius:0 var(--ls-radius-md) var(--ls-radius-md) 0}
+.copy-eg.good{border-color:#22c55e}.copy-eg.bad{border-color:#ef4444}
+.copy-eg .k{font-family:var(--ls-font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ls-text-muted)}
+.copy-eg p{margin:4px 0 0;color:var(--ls-text-strong);font-size:14.5px}
+.copy-eg.bad p{color:var(--ls-text-muted);text-decoration:line-through;text-decoration-color:var(--ls-border-strong)}
+
+pre.code{background:var(--ls-color-gray-950);color:#c9d4e3;border:1px solid var(--ls-border-strong);border-radius:var(--ls-radius-lg);padding:16px 18px;overflow:auto;font-family:var(--ls-font-mono);font-size:13px;line-height:1.6}
+:root:not([data-theme="dark"]) pre.code{background:#0b1220;color:#c9d4e3}
+pre.code .c{color:#8a99ad}
+footer.bb{padding:40px 0 70px}
+footer.bb p{font-size:13px;color:var(--ls-text-muted);max-width:70ch}
+.kicker{font-size:13px;color:var(--ls-text-muted);margin:0 0 24px}
+</style>
+</head>
+<body>
+
+<nav class="bb-nav"><div class="bb-nav-in">
+  <span class="logo" aria-label="Lockspire"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 5507.6 1046"><path fill="#0e7490" d="M42.546 845.985h382.91l-42.546-85.091H85.091ZM234 37.618l85.092 212.728 42.546 510.548H234Z"/><path fill="#22d3ee" d="m234 37.618-85.09 212.728-42.546 510.548h127.637Z"/><path fill="#67e8f9" d="m234 80.164-42.545 170.182 10.637 510.548H234Z"/><path fill="#a5f3fc" d="m234 37.618-42.545 212.728h42.546Z"/><path fill="currentColor" d="M660 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T1182.85 546t71.75-229.5 217.75-85.5 217.75 85.5 71.75 229.5-71.75 229.5-217.75 85.5m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T1472.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T1472.35 758m628.1 103q-136.75 0-207.875-85.375T1821.45 546q0-150.75 74.75-232.875T2101.95 231q115.5 0 182.625 61.875T2364.95 463.5H2218.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1974.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T2100.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L3014.8 840v6h-174.75L2656.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T3017.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T3045.4 407.5q0-79.25 59.5-127.875T3272.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T3266.65 333q-41 0-61.875 16.375T3183.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T3287.9 861m331.6 185V246H3756v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T4034.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3767.25 546q0 93.5 38.375 149.125T3908.5 750.75M4288.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4806.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4724.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H5097.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T5238.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m4362.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m4362.6 180-90-90 90-90Z"/></svg></span>
+  <span class="bb-nav-links">
+    <a href="#logo">Logo</a><a href="#color">Color</a><a href="#type">Type</a>
+    <a href="#tokens">Tokens</a><a href="#components">Components</a><a href="#voice">Voice</a><a href="#impl">Build</a>
+  </span>
+  <button class="bb-toggle" id="themeToggle" aria-label="Toggle light/dark"><span id="themeIcon">☾</span> <span id="themeLbl">Dark</span></button>
+</div></nav>
+
+<header class="bb-hero"><div class="bb-wrap">
+  <div class="eyebrow">Lockspire · Brand Book v1.0</div>
+  <div class="lockup"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 4847.6 1046"><path fill="currentColor" d="M0 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T522.85 546t71.75-229.5T812.35 231t217.75 85.5 71.75 229.5-71.75 229.5T812.35 861m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T812.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T812.35 758m628.1 103q-136.75 0-207.875-85.375T1161.45 546q0-150.75 74.75-232.875T1441.95 231q115.5 0 182.625 61.875T1704.95 463.5H1558.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1314.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T1440.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L2354.8 840v6h-174.75L1996.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T2357.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T2385.4 407.5q0-79.25 59.5-127.875T2612.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T2606.65 333q-41 0-61.875 16.375T2523.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T2627.9 861m331.6 185V246H3096v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T3374.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3107.25 546q0 93.5 38.375 149.125T3248.5 750.75M3628.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4146.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4064.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H4437.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T4578.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m3702.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m3702.6 180-90-90 90-90Z"/></svg></div>
+  <p>The embedded OAuth/OIDC authorization server for Phoenix. This is the single source of truth for Lockspire's identity, color, type, tokens, components, and voice — built to be used in code, docs, and marketing alike.</p>
+  <p class="promise">“Structured trust, without friction.”</p>
+</div></header>
+
+<!-- LOGO -->
+<section id="logo"><div class="bb-wrap">
+  <div class="sec-label">01 — Identity</div>
+  <h2>Logo system</h2>
+  <p class="lead">A faceted obelisk — light passing through strong structure — paired with a wordmark whose “i” is crowned by a cut signal-stone. The mark and the diamond share one crystalline language. Transparent always; never boxed.</p>
+
+  <div class="grid cards-2">
+    <div><div class="logo-stage dark"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 5507.6 1046"><path fill="#0e7490" d="M42.546 845.985h382.91l-42.546-85.091H85.091ZM234 37.618l85.092 212.728 42.546 510.548H234Z"/><path fill="#22d3ee" d="m234 37.618-85.09 212.728-42.546 510.548h127.637Z"/><path fill="#67e8f9" d="m234 80.164-42.545 170.182 10.637 510.548H234Z"/><path fill="#a5f3fc" d="m234 37.618-42.545 212.728h42.546Z"/><path fill="#f8fafc" d="M660 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T1182.85 546t71.75-229.5 217.75-85.5 217.75 85.5 71.75 229.5-71.75 229.5-217.75 85.5m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T1472.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T1472.35 758m628.1 103q-136.75 0-207.875-85.375T1821.45 546q0-150.75 74.75-232.875T2101.95 231q115.5 0 182.625 61.875T2364.95 463.5H2218.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1974.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T2100.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L3014.8 840v6h-174.75L2656.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T3017.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T3045.4 407.5q0-79.25 59.5-127.875T3272.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T3266.65 333q-41 0-61.875 16.375T3183.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T3287.9 861m331.6 185V246H3756v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T4034.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3767.25 546q0 93.5 38.375 149.125T3908.5 750.75M4288.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4806.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4724.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H5097.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T5238.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m4362.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m4362.6 180-90-90 90-90Z"/></svg></div><div class="cap">Primary lockup · on Obsidian</div></div>
+    <div><div class="logo-stage light"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 5507.6 1046"><path fill="#0e7490" d="M42.546 845.985h382.91l-42.546-85.091H85.091ZM234 37.618l85.092 212.728 42.546 510.548H234Z"/><path fill="#22d3ee" d="m234 37.618-85.09 212.728-42.546 510.548h127.637Z"/><path fill="#67e8f9" d="m234 80.164-42.545 170.182 10.637 510.548H234Z"/><path fill="#a5f3fc" d="m234 37.618-42.545 212.728h42.546Z"/><path fill="#0b1220" d="M660 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T1182.85 546t71.75-229.5 217.75-85.5 217.75 85.5 71.75 229.5-71.75 229.5-217.75 85.5m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T1472.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T1472.35 758m628.1 103q-136.75 0-207.875-85.375T1821.45 546q0-150.75 74.75-232.875T2101.95 231q115.5 0 182.625 61.875T2364.95 463.5H2218.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1974.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T2100.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L3014.8 840v6h-174.75L2656.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T3017.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T3045.4 407.5q0-79.25 59.5-127.875T3272.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T3266.65 333q-41 0-61.875 16.375T3183.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T3287.9 861m331.6 185V246H3756v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T4034.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3767.25 546q0 93.5 38.375 149.125T3908.5 750.75M4288.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4806.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4724.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H5097.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T5238.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m4362.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m4362.6 180-90-90 90-90Z"/></svg></div><div class="cap">Primary lockup · on Frost</div></div>
+  </div>
+
+  <h3>Variants</h3>
+  <div class="grid cards-3">
+    <div><div class="logo-stage dark"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 4847.6 1046"><path fill="#f8fafc" d="M0 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T522.85 546t71.75-229.5T812.35 231t217.75 85.5 71.75 229.5-71.75 229.5T812.35 861m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T812.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T812.35 758m628.1 103q-136.75 0-207.875-85.375T1161.45 546q0-150.75 74.75-232.875T1441.95 231q115.5 0 182.625 61.875T1704.95 463.5H1558.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1314.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T1440.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L2354.8 840v6h-174.75L1996.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T2357.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T2385.4 407.5q0-79.25 59.5-127.875T2612.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T2606.65 333q-41 0-61.875 16.375T2523.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T2627.9 861m331.6 185V246H3096v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T3374.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3107.25 546q0 93.5 38.375 149.125T3248.5 750.75M3628.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4146.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4064.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H4437.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T4578.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m3702.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m3702.6 180-90-90 90-90Z"/></svg></div><div class="cap">wordmark</div></div>
+    <div><div class="logo-stage dark"><span class="mk"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="2 4 40 80"><path fill="#0e7490" d="M4 82h36l-4-8H8ZM22 6l8 20 4 48H22Z"/><path fill="#22d3ee" d="m22 6-8 20-4 48h12Z"/><path fill="#67e8f9" d="m22 10-4 16 1 48h3Z"/><path fill="#a5f3fc" d="m22 6-4 20h4Z"/></svg></span></div><div class="cap">mark · icon</div></div>
+    <div><div class="logo-stage dark"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 4847.6 1666.7"><path fill="#f8fafc" d="M0 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T522.85 546t71.75-229.5T812.35 231t217.75 85.5 71.75 229.5-71.75 229.5T812.35 861m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T812.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T812.35 758m628.1 103q-136.75 0-207.875-85.375T1161.45 546q0-150.75 74.75-232.875T1441.95 231q115.5 0 182.625 61.875T1704.95 463.5H1558.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1314.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T1440.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L2354.8 840v6h-174.75L1996.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T2357.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T2385.4 407.5q0-79.25 59.5-127.875T2612.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T2606.65 333q-41 0-61.875 16.375T2523.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T2627.9 861m331.6 185V246H3096v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T3374.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3107.25 546q0 93.5 38.375 149.125T3248.5 750.75M3628.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4146.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4064.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H4437.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T4578.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m3702.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m3702.6 180-90-90 90-90Z"/><path fill="#f8fafc" d="M397.533 1469.37q-15.443 0-26.284-4.182-10.842-4.181-17.7-11.15-6.86-6.97-10.266-15.488-3.408-8.518-3.983-17.191h25.488q.398 6.814 4.115 13.076 3.717 6.261 11.085 10.244t18.43 3.982q11.992 0 18.076-5t6.084-13.275q0-8.01-5.486-12.833-5.487-4.823-14.249-7.744l-18.32-6.15q-9.69-3.23-18.562-7.877-8.873-4.646-14.58-12.28-5.709-7.632-5.709-19.668 0-12.213 6.129-20.62t16.947-12.811T393.64 1326q17.833 0 28.409 6.084 10.575 6.085 15.553 15.532t5.952 19.979h-25.488q-.398-5.354-2.965-10.2t-8.009-7.898q-5.443-3.054-14.558-3.054-10.134 0-15.355 4.315-5.221 4.314-5.221 11.173 0 7.522 5.62 11.903 5.619 4.381 14.469 7.39l18.364 6.15q9.823 3.187 18.563 7.921 8.739 4.735 14.315 12.523t5.575 20.488q0 19.249-13.607 30.156t-37.723 10.908m128.059-2.655v-116.378h-42.126v-21.682h111.51v21.682H552.85v116.378Zm122.749 0v-138.06h56.817q17.656 0 28.608 5.022 10.951 5.023 16.062 13.674t5.111 19.846q0 13.186-7.058 22.656t-20.82 13.407l31.64 62.393v1.062H729.85l-29.206-59.605h-25.399v59.605Zm26.904-79.606h26.417q12.611 0 19.138-4.358 6.527-4.359 6.527-14.536 0-10.355-6.593-14.603t-19.072-4.248h-26.417Zm191.293 82.217q-29.515 0-43.764-15.466-14.248-15.465-14.248-44.316v-80.889h27.612v80.447q0 18.319 6.947 28.054t23.807 9.735q16.992 0 23.873-9.735 6.88-9.735 6.88-28.054v-80.447h26.905v80.889q0 28.851-14.138 44.316t-43.874 15.466m167.441.044q-29.691 0-46.108-18.917t-16.416-52.768q0-33.63 16.24-52.658t46.152-19.027q17.789 0 30.51 6.682 12.722 6.681 19.957 18.54 7.235 11.86 8.518 27.347h-27.17q-1.504-14.824-9.89-23.342-8.384-8.518-21.88-8.518-16.904 0-25.6 13.341-8.694 13.342-8.694 37.768 0 25.134 8.938 37.988 8.938 12.855 25.178 12.855 14.116 0 22.39-8.85t9.559-23.01h27.17q-1.284 15.443-8.519 27.324t-19.868 18.563-30.466 6.682m140.139-2.655v-116.378h-42.126v-21.682h111.51v21.682h-42.126v116.378Zm178.992 2.611q-29.515 0-43.764-15.466-14.248-15.465-14.248-44.316v-80.889h27.612v80.447q0 18.319 6.947 28.054t23.807 9.735q16.992 0 23.873-9.735 6.88-9.735 6.88-28.054v-80.447h26.904v80.889q0 28.851-14.137 44.316t-43.874 15.466m118.457-2.611v-138.06h56.817q17.656 0 28.608 5.022t16.062 13.674 5.111 19.846q0 13.186-7.058 22.656t-20.82 13.407l31.64 62.393v1.062h-28.852l-29.205-59.605h-25.399v59.605Zm26.904-79.606h26.417q12.611 0 19.138-4.358 6.527-4.359 6.527-14.536 0-10.355-6.593-14.603t-19.072-4.248h-26.417Zm135.051 79.606v-138.06h92.748v21.682h-65.755v32.613h50.975v20.178h-50.976v41.905h66.818v21.682Zm150.45 0v-138.06h48.188q36.55 0 53.034 18.142 16.483 18.143 16.483 50.888t-16.483 50.888-53.034 18.142Zm27.302-21.417h19.116q14.691 0 24.25-4.558 9.557-4.558 14.226-14.978 4.668-10.421 4.668-28.077 0-17.7-4.668-28.099t-14.227-14.956-24.249-4.558h-19.116Zm254.217 21.417v-116.378h-42.126v-21.682h111.51v21.682h-42.126v116.378Zm122.749 0v-138.06h56.817q17.656 0 28.608 5.022 10.951 5.023 16.062 13.674t5.111 19.846q0 13.186-7.058 22.656t-20.82 13.407l31.64 62.393v1.062h-28.852l-29.205-59.605h-25.399v59.605Zm26.904-79.606h26.417q12.611 0 19.138-4.358 6.527-4.359 6.527-14.536 0-10.355-6.593-14.603t-19.072-4.248h-26.417Zm191.293 82.217q-29.515 0-43.763-15.466-14.249-15.465-14.249-44.316v-80.889h27.612v80.447q0 18.319 6.947 28.054 6.948 9.735 23.807 9.735 16.992 0 23.873-9.735 6.88-9.735 6.88-28.054v-80.447h26.905v80.889q0 28.851-14.138 44.316t-43.874 15.466m168.371.044q-15.443 0-26.284-4.182-10.842-4.181-17.7-11.15-6.86-6.97-10.266-15.488-3.408-8.518-3.983-17.191h25.488q.398 6.814 4.115 13.076 3.717 6.261 11.085 10.244t18.43 3.982q11.992 0 18.076-5t6.084-13.275q0-8.01-5.486-12.833-5.488-4.823-14.249-7.744l-18.32-6.15q-9.69-3.23-18.562-7.877-8.872-4.646-14.58-12.28-5.709-7.632-5.709-19.668 0-12.213 6.129-20.62t16.947-12.811 24.891-4.403q17.833 0 28.409 6.084 10.575 6.085 15.553 15.532t5.952 19.979h-25.488q-.398-5.354-2.965-10.2t-8.009-7.898q-5.443-3.054-14.558-3.054-10.133 0-15.355 4.315-5.221 4.314-5.221 11.173 0 7.522 5.62 11.903 5.619 4.381 14.469 7.39l18.364 6.15q9.823 3.187 18.563 7.921 8.739 4.735 14.314 12.523 5.576 7.788 5.576 20.488 0 19.249-13.607 30.156t-37.723 10.908m128.06-2.655v-116.378h-42.126v-21.682h111.51v21.682h-42.126v116.378Zm199.213 0v-138.06h90.624v21.682h-63.631v33.453h48.852v20.178h-48.852v62.747Zm196.688 2.478q-21.724 0-36.152-8.762-14.43-8.761-21.506-24.868t-7.077-37.878q0-21.948 7.077-37.966t21.506-24.78 36.152-8.762q21.907 0 36.246 8.762 14.34 8.761 21.417 24.78 7.078 16.018 7.078 37.966 0 21.771-7.078 37.878-7.077 16.107-21.417 24.868-14.339 8.762-36.246 8.762m.003-20.709q18.807 0 27.7-13.275 8.895-13.275 8.895-37.59t-8.894-37.524-27.7-13.209-27.701 13.209-8.895 37.524 8.895 37.59 27.7 13.275m118.723 18.231v-138.06h56.817q17.656 0 28.608 5.022 10.951 5.023 16.062 13.674t5.111 19.846q0 13.186-7.058 22.656t-20.82 13.407l31.64 62.393v1.062h-28.852l-29.205-59.605h-25.399v59.605Zm26.904-79.606h26.417q12.611 0 19.138-4.358 6.527-4.359 6.527-14.536 0-10.355-6.593-14.603t-19.072-4.248h-26.417Zm211.515 79.606v-138.06h55.578q26.506 0 38.697 11.151 12.19 11.151 12.19 29.913t-12.124 29.98-38.763 11.217h-28.586v55.799Zm26.992-76.508h25.046q13.186 0 20.134-4.58 6.947-4.58 6.947-15.775 0-11.063-6.947-15.775-6.948-4.713-20.134-4.713h-25.046Zm133.193 76.508v-138.06h27.258v53.277h61.596v-53.277h27.258v138.06h-27.258v-62.57h-61.596v62.57Zm234.743 2.478q-21.724 0-36.152-8.762-14.43-8.761-21.506-24.868t-7.077-37.878q0-21.948 7.077-37.966t21.506-24.78 36.152-8.762q21.907 0 36.246 8.762 14.34 8.761 21.417 24.78 7.078 16.018 7.078 37.966 0 21.771-7.078 37.878-7.077 16.107-21.417 24.868-14.339 8.762-36.246 8.762m.003-20.709q18.807 0 27.7-13.275 8.895-13.275 8.895-37.59t-8.894-37.524-27.7-13.209-27.701 13.209-8.894 37.524 8.894 37.59q8.894 13.275 27.7 13.275m118.723 18.231v-138.06h92.748v21.682h-65.756v32.613h50.977v20.178h-50.977v41.905h66.818v21.682Zm150.45 0v-138.06h47.524l45.843 116.599h4.248v-116.599h24.692v138.06h-47.79l-45.71-116.599h-4.116v116.599Zm184.611 0v-138.06h27.258v138.06Zm78.411 0v-1.062l41.772-72.349-35.71-63.587v-1.062h28.984l26.373 47.392h4.071l25.753-47.392h27.966v1.062l-35.577 63.587 41.507 72.349v1.062h-30.267l-30.754-56.242h-4.07l-30.932 56.242Z" opacity=".82"/></svg></div><div class="cap">tagline lockup (secondary)</div></div>
+  </div>
+
+  <h3>Clear space &amp; minimum size</h3>
+  <div class="panel">
+    <p style="margin:0 0 6px;color:var(--ls-text-body);font-size:14.5px">Keep clear space equal to the height of the mark's plinth on all sides. Minimum legible sizes: wordmark <strong>96px</strong> wide; mark <strong>16px</strong> (favicon holds down to 16px). Never crowd the lockup with other elements.</p>
+  </div>
+
+  <h3>Usage rules</h3>
+  <div class="dodont">
+    <div class="dd do"><div class="tag">✓ Do</div><p>Place the mark on transparent or solid brand surfaces. Use the inverse (frost) variant on dark, the default (ink) on light.</p></div>
+    <div class="dd dont"><div class="tag">✕ Don't</div><p>Box the mark in a rectangle, add a drop shadow, or place it on a busy/low-contrast photo.</p></div>
+    <div class="dd do"><div class="tag">✓ Do</div><p>Keep the diamond cyan even in one-color contexts where possible — it's the signal accent.</p></div>
+    <div class="dd dont"><div class="tag">✕ Don't</div><p>Stretch, rotate, recolor the letters to non-brand hues, or add a tagline to the primary lockup.</p></div>
+    <div class="dd do"><div class="tag">✓ Do</div><p>Use the mono variants (<code>currentColor</code>) for embossing, single-ink print, or tight UI.</p></div>
+    <div class="dd dont"><div class="tag">✕ Don't</div><p>Separate the mark far from the wordmark or rebuild the lockup with a different font.</p></div>
+  </div>
+</div></section>
+
+<!-- COLOR -->
+<section id="color"><div class="bb-wrap">
+  <div class="sec-label">02 — Color</div>
+  <h2>Palette</h2>
+  <p class="lead">Dark-first: midnight infrastructure with precise signal light. Signal Cyan is the hero on dark surfaces; on light it steps down to Deep Cyan so text and actions always clear WCAG AA. Ratios below are verified — see <code>notes/accessibility-checks.md</code>.</p>
+
+  <h3>Brand — Signal Cyan</h3>
+  <div class="grid cards-4">
+    <div class="swatch"><div class="chip" style="background:#22d3ee"></div><div class="meta"><div class="nm">Signal Cyan</div><div class="hex">#22D3EE · brand-500</div><div class="wcag pass">hero on dark ✓ AAA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0e7490"></div><div class="meta"><div class="nm">Deep Cyan</div><div class="hex">#0E7490 · brand-600</div><div class="wcag pass">text/action on light ✓ AA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#155e75"></div><div class="meta"><div class="nm">Cyan 700</div><div class="hex">#155E75 · brand-700</div><div class="wcag pass">hover ✓ AAA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#cffafe"></div><div class="meta"><div class="nm">Cyan 100</div><div class="hex">#CFFAFE · brand-100</div><div class="wcag">tint · focus glow</div></div></div>
+  </div>
+
+  <h3>Neutrals — slate family</h3>
+  <div class="grid cards-4">
+    <div class="swatch"><div class="chip" style="background:#0b1220"></div><div class="meta"><div class="nm">Obsidian</div><div class="hex">#0B1220 · gray-950</div><div class="wcag">dark page</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#1f2937"></div><div class="meta"><div class="nm">Slate</div><div class="hex">#1F2937 · gray-800</div><div class="wcag">dark muted</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#334155"></div><div class="meta"><div class="nm">Ink Body</div><div class="hex">#334155 · gray-700</div><div class="wcag pass">body on light ✓ AAA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f8fafc;border-bottom:1px solid #e2e8f0"></div><div class="meta"><div class="nm">Frost</div><div class="hex">#F8FAFC · gray-50</div><div class="wcag">light page</div></div></div>
+  </div>
+
+  <h3>Semantic &amp; support</h3>
+  <div class="grid cards-4">
+    <div class="swatch"><div class="chip" style="background:#14b8a6"></div><div class="meta"><div class="nm">Trust Teal</div><div class="hex">#14B8A6 · success</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f4b942"></div><div class="meta"><div class="nm">Beacon Amber</div><div class="hex">#F4B942 · warning</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#e35d6a"></div><div class="meta"><div class="nm">Alert Rose</div><div class="hex">#E35D6A · danger</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#c9d4e3"></div><div class="meta"><div class="nm">Mist</div><div class="hex">#C9D4E3 · dark body text</div></div></div>
+  </div>
+  <p class="kicker" style="margin-top:20px">Ratio guide: dark/light neutrals ≈ 70% · text ≈ 20% · accent ≈ 10%. Never communicate state by color alone — always pair with a label or icon.</p>
+</div></section>
+
+<!-- TYPE -->
+<section id="type"><div class="bb-wrap">
+  <div class="sec-label">03 — Typography</div>
+  <h2>Type system</h2>
+  <p class="lead">Three tiers, all open-source (OFL-1.1), none shipped as files: <strong>Familjen Grotesk</strong> for logo &amp; headings, <strong>Inter</strong> for UI &amp; body, <strong>JetBrains Mono</strong> for code, tokens, and identifiers.</p>
+
+  <div class="specimen"><div class="role">DISPLAY · Familjen Grotesk 600 · headings &amp; logo</div><div class="t-display" style="font-size:40px">Structured trust for Phoenix</div></div>
+  <div class="specimen"><div class="role">BODY · Inter · UI &amp; long-form</div><div style="font-size:17px;color:var(--ls-text-body)">Lockspire turns your Phoenix app into a secure OAuth/OIDC provider — with clean operator controls and a surface that feels integrated, not outsourced.</div></div>
+  <div class="specimen"><div class="role">MONO · JetBrains Mono · code &amp; identifiers</div><div class="t-mono" style="font-size:15px;color:var(--ls-text-strong)">scope=openid profile · client_id=lsp_3f9a · grant_type=authorization_code</div></div>
+
+  <h3>Scale</h3>
+  <div class="panel">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="t-display" style="font-size:48px">Hero 48</div>
+      <div class="t-display" style="font-size:36px">H1 36</div>
+      <div class="t-display" style="font-size:28px">H2 28</div>
+      <div class="t-display" style="font-size:22px">H3 22</div>
+      <div style="font-size:17px;color:var(--ls-text-body)">Body 17 — comfortable reading measure (~60–75ch).</div>
+      <div style="font-size:14px;color:var(--ls-text-muted)">Small 14 — metadata, captions, table cells.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- TOKENS -->
+<section id="tokens"><div class="bb-wrap">
+  <div class="sec-label">04 — Tokens</div>
+  <h2>Spacing, radius, shadow, motion</h2>
+  <p class="lead">All tokens use the <code>--ls-*</code> names from <code>tokens/tokens.css</code> — identical to the variables the admin UI consumes, so the brand book and product never diverge.</p>
+
+  <h3>Spacing (4px baseline)</h3>
+  <div class="panel">
+    <div class="tok-row"><span class="lbl">--ls-space-1 · 4px</span><div class="tok-bar" style="width:4px"></div></div>
+    <div class="tok-row"><span class="lbl">--ls-space-2 · 8px</span><div class="tok-bar" style="width:8px"></div></div>
+    <div class="tok-row"><span class="lbl">--ls-space-4 · 16px</span><div class="tok-bar" style="width:16px"></div></div>
+    <div class="tok-row"><span class="lbl">--ls-space-6 · 24px</span><div class="tok-bar" style="width:24px"></div></div>
+    <div class="tok-row"><span class="lbl">--ls-space-8 · 32px</span><div class="tok-bar" style="width:32px"></div></div>
+    <div class="tok-row"><span class="lbl">--ls-space-12 · 48px</span><div class="tok-bar" style="width:48px"></div></div>
+  </div>
+
+  <h3>Radius &amp; elevation</h3>
+  <div class="grid cards-2">
+    <div class="panel"><div style="display:flex;gap:16px;align-items:flex-end">
+      <div><div class="radius-demo" style="border-radius:var(--ls-radius-sm)"></div><div class="cap">sm 2px</div></div>
+      <div><div class="radius-demo" style="border-radius:var(--ls-radius-md)"></div><div class="cap">md 6px</div></div>
+      <div><div class="radius-demo" style="border-radius:var(--ls-radius-lg)"></div><div class="cap">lg 8px</div></div>
+      <div><div class="radius-demo" style="border-radius:var(--ls-radius-xl)"></div><div class="cap">xl 12px</div></div>
+    </div></div>
+    <div class="panel"><div style="display:flex;gap:20px;align-items:center">
+      <div><div class="shadow-demo" style="box-shadow:var(--ls-shadow-sm)"></div><div class="cap">shadow-sm</div></div>
+      <div><div class="shadow-demo" style="box-shadow:var(--ls-shadow-md)"></div><div class="cap">shadow-md</div></div>
+      <div><div class="shadow-demo" style="box-shadow:var(--ls-shadow-lg)"></div><div class="cap">shadow-lg</div></div>
+    </div></div>
+  </div>
+
+  <h3>Motion</h3>
+  <div class="panel"><p style="margin:0;font-size:14.5px">Precise and quiet. Small UI transitions <code>150ms</code>, panels <code>220ms</code>, easing <code>cubic-bezier(.4,0,.2,1)</code>. All motion is disabled under <code>prefers-reduced-motion</code>. No bounce, no parallax.</p></div>
+</div></section>
+
+<!-- COMPONENTS -->
+<section id="components"><div class="bb-wrap">
+  <div class="sec-label">05 — Components</div>
+  <h2>UI primitives</h2>
+  <p class="lead">Rendered live with the current theme — toggle dark/light in the nav to see both. These mirror the real admin components (<code>lib/lockspire/web/components/admin_components.ex</code>).</p>
+
+  <div class="grid cards-2">
+    <div class="panel"><h4 style="font-size:14px;margin-bottom:14px">Buttons</h4>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary">Create client</button>
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-danger">Revoke</button>
+        <button class="btn btn-secondary" disabled>Disabled</button>
+      </div>
+    </div>
+    <div class="panel"><h4 style="font-size:14px;margin-bottom:14px">Status badges</h4>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge b-active">Active</span>
+        <span class="badge b-warn">Retiring</span>
+        <span class="badge b-revoked">Revoked</span>
+        <span class="badge b-info">Upcoming</span>
+      </div>
+    </div>
+    <div class="panel"><h4 style="font-size:14px;margin-bottom:14px">Form field</h4>
+      <div class="field"><label for="ru">Redirect URI</label><input id="ru" type="text" value="https://app.example.com/callback"><div class="hint">Must match the client's registered configuration exactly.</div></div>
+    </div>
+    <div class="panel"><h4 style="font-size:14px;margin-bottom:14px">Alerts</h4>
+      <div class="alert alert-info">DPoP is enforced for this client.</div>
+      <div class="alert alert-warn">This signing key rotates in 3 days.</div>
+      <div class="alert alert-danger">Token reuse detected — the chain was revoked.</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px"><h4 style="font-size:14px;margin-bottom:14px">Table &amp; code</h4>
+    <table class="demo">
+      <thead><tr><th>Client</th><th>Client ID</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Acme Dashboard</td><td class="mono">lsp_3f9a8c</td><td><span class="badge b-active">Active</span></td></tr>
+        <tr><td>Partner Sync</td><td class="mono">lsp_7b21de</td><td><span class="badge b-warn">Retiring</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div></section>
+
+<!-- VOICE -->
+<section id="voice"><div class="bb-wrap">
+  <div class="sec-label">06 — Voice &amp; microcopy</div>
+  <h2>How Lockspire talks</h2>
+  <p class="lead">Like a senior infrastructure engineer with product taste: clear, confident, concise, technically credible, never breathless. Prefer concrete nouns over slogans; explain risk without fear-mongering; default to active voice.</p>
+
+  <h3>Error messages — what happened, why it matters, how to fix</h3>
+  <div class="copy-eg good"><div class="k">Good</div><p>Invalid redirect URI. This URI doesn't match the client's registered configuration. Add it under Client → Redirect URIs, then retry.</p></div>
+  <div class="copy-eg bad"><div class="k">Avoid</div><p>Error: something went wrong with your request. Please try again later.</p></div>
+
+  <h3>Empty states — orient, then offer the next step</h3>
+  <div class="copy-eg good"><div class="k">Good</div><p>No OAuth clients yet. Create your first client to start testing your provider configuration.</p></div>
+  <div class="copy-eg bad"><div class="k">Avoid</div><p>Nothing to see here! 🎉 Get started by clicking the big button below!!</p></div>
+
+  <h3>Words</h3>
+  <div class="grid cards-2">
+    <div class="dd do"><div class="tag">✓ Favor</div><p class="mono" style="color:var(--ls-text-body);text-decoration:none">issuer · consent · scopes · keys · operator · policy · claims · provider · structured · verified</p></div>
+    <div class="dd dont"><div class="tag">✕ Avoid</div><p class="mono" style="color:var(--ls-text-muted);text-decoration:none">fortress · cyber · unhackable · ironclad · military-grade · seamless · revolutionary · next-gen synergy</p></div>
+  </div>
+</div></section>
+
+<!-- IMPL -->
+<section id="impl"><div class="bb-wrap">
+  <div class="sec-label">07 — Build</div>
+  <h2>Implementation notes</h2>
+  <p class="lead">The brand book isn't a parallel universe — its tokens are the product's tokens. Adopt them by consuming <code>tokens/tokens.css</code> (or the same <code>--ls-*</code> names already in <code>admin_css.ex</code>).</p>
+
+  <h3>Tokens &amp; dark mode</h3>
+  <pre class="code"><span class="c">/* Light = :root defaults. Dark = remap semantic aliases only. */</span>
+<span class="c">/* Components consume aliases, so dark mode needs zero component edits. */</span>
+:root[data-theme="dark"] {
+  --ls-surface-page: var(--ls-color-gray-950);  <span class="c">/* Obsidian */</span>
+  --ls-text-strong:  var(--ls-color-gray-50);
+  --ls-text-accent:  var(--ls-color-brand-500); <span class="c">/* Signal Cyan pops */</span>
+  --ls-focus-ring:   var(--ls-color-brand-500);
+}</pre>
+
+  <h3>Logo in code</h3>
+  <pre class="code"><span class="c">&lt;!-- GitHub README / any &lt;img&gt;: currentColor is always black,</span>
+<span class="c">     so use explicit color variants + prefers-color-scheme --&gt;</span>
+&lt;picture&gt;
+  &lt;source media="(prefers-color-scheme: dark)" srcset="logo/lockspire-horizontal-inverse.svg"&gt;
+  &lt;img src="logo/lockspire-horizontal.svg" alt="Lockspire" height="32"&gt;
+&lt;/picture&gt;
+
+<span class="c">&lt;!-- Inline / Phoenix HEEx (currentColor inherits): use -adaptive --&gt;</span>
+&lt;span class="text-strong"&gt;{raw(File.read!("lockspire-wordmark-adaptive.svg"))}&lt;/span&gt;</pre>
+
+  <h3>Accent by surface</h3>
+  <p style="font-size:14.5px">Use <strong>Signal Cyan #22D3EE</strong> on dark surfaces and for focus glow / large fills. Use <strong>Deep Cyan #0E7490</strong> for text, links, and solid buttons on light (it clears AA; #22D3EE does not). The tokens handle this automatically via <code>--ls-text-accent</code>.</p>
+</div></section>
+
+<footer class="bb"><div class="bb-wrap">
+  <p><strong style="color:var(--ls-text-strong)">Lockspire Brand Book v1.0</strong> — self-contained, vector-first, repo-safe. Fonts (Familjen Grotesk, Inter, JetBrains Mono) are OFL-1.1 and referenced by name, never shipped. See <code>notes/</code> for research, decisions, and accessibility checks; <code>tokens/</code> for machine-readable tokens; <code>examples/</code> for component &amp; README usage.</p>
+</div></footer>
+
+<script>
+(function(){
+  var root=document.documentElement, t=localStorage.getItem('ls-bb-theme');
+  if(!t) t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  apply(t);
+  document.getElementById('themeToggle').addEventListener('click',function(){
+    apply(root.getAttribute('data-theme')==='dark'?'light':'dark');
+  });
+  function apply(mode){
+    root.setAttribute('data-theme',mode);
+    localStorage.setItem('ls-bb-theme',mode);
+    document.getElementById('themeIcon').textContent=mode==='dark'?'☾':'☀';
+    document.getElementById('themeLbl').textContent=mode==='dark'?'Dark':'Light';
+  }
+})();
+</script>
+</body>
+</html>
