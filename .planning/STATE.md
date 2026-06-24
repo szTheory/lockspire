@@ -4,16 +4,16 @@ milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
 current_phase: 114
 current_phase_name: startup-output-smoke-wrapper-docs
-status: executing
-stopped_at: Phase 113 verified and complete
-last_updated: "2026-06-24T16:52:06.987Z"
+status: verifying
+stopped_at: Completed 114-03-PLAN.md
+last_updated: "2026-06-24T16:57:45.506Z"
 last_activity: 2026-06-24
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 80
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md
 
 Phase: 114 (startup-output-smoke-wrapper-docs) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-24
 
 ## Most Recent Release
@@ -84,6 +84,9 @@ Last activity: 2026-06-24
 - [Phase 114]: Plan 02 kept scripts/demo/adoption_smoke.py as the only black-box OAuth/OIDC proof implementation.
 - [Phase 114]: Plan 02 used LOCKSPIRE_DEMO_BASE_URL as the only direct Docker versus optional Traefik smoke switch.
 - [Phase 114]: Plan 02 recorded docker compose exec against the running web service as INFO-04 reprint truth.
+- [Phase 114]: Plan 03 kept Docker as the default maintainer path with host-local Mix/Postgres as fallback.
+- [Phase 114]: Plan 03 documented scripts/demo/adoption_smoke.sh as the maintainer smoke entrypoint while preserving the Python smoke as the black-box proof.
+- [Phase 114]: Plan 03 left broader cleanup and hygiene command implementation to Phase 115.
 
 ## Blockers/Concerns
 
@@ -98,9 +101,11 @@ Last activity: 2026-06-24
 
 ## Session Continuity
 
+**Last session:** 2026-06-24T16:57:45.499Z
+
 **Next action:** Plan Phase 114 with `$gsd-plan-phase 114`.
 **Resume file:** None
-**Stopped at:** Phase 113 verified and complete
+**Stopped at:** Completed 114-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -126,6 +131,7 @@ Last activity: 2026-06-24
 | Phase 113 P02 | 4min | 2 tasks | 3 files |
 | Phase 114 P01 | 5 min | 2 tasks | 3 files |
 | Phase 114 P02 | 4 min | 3 tasks | 3 files |
+| Phase 114 P03 | 8 min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 

@@ -57,8 +57,8 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 
 ### Documentation And Boundaries
 
-- [ ] **DOCS-01**: `docs/adoption-demo.md` presents Docker as the default maintainer path and keeps host-local Mix/Postgres instructions as a fallback.
-- [ ] **DOCS-02**: Demo docs cover default startup, optional Traefik, smoke, stop, reset, cleanup, environment overrides, and troubleshooting for port/readiness failures.
+- [x] **DOCS-01**: `docs/adoption-demo.md` presents Docker as the default maintainer path and keeps host-local Mix/Postgres instructions as a fallback.
+- [x] **DOCS-02**: Demo docs cover default startup, optional Traefik, smoke, stop, reset, cleanup, environment overrides, and troubleshooting for port/readiness failures.
 - [ ] **BOUNDARY-01**: v1.30 does not introduce new OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, or hosted-auth service shape.
 - [ ] **BOUNDARY-02**: The adoption demo remains repo-local proof and does not broaden Lockspire's public supported surface.
 
@@ -114,8 +114,8 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | HYGIENE-02 | 115 | Pending |
 | HYGIENE-03 | 115 | Pending |
 | HYGIENE-04 | 115 | Pending |
-| DOCS-01 | 114 | Pending |
-| DOCS-02 | 114 | Pending |
+| DOCS-01 | 114 | Complete |
+| DOCS-02 | 114 | Complete |
 | BOUNDARY-01 | 115 | Pending |
 | BOUNDARY-02 | 115 | Pending |
 
