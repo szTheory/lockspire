@@ -153,6 +153,13 @@ ci_source_contract_checks() {
     record_result "BLOCK" "docker-stop contract" "stop must stay project-scoped and must not delete volumes"
   fi
 
+  if grep -Fq 'for suffix in db_data deps_volume build_volume' examples/adoption_demo/bin/docker-reset &&
+     ! grep -Eq 'docker[[:space:]]+volume[[:space:]]+prune|down[[:space:]].*(-v|--volumes)' examples/adoption_demo/bin/docker-reset; then
+    record_result "PASS" "docker-reset contract" "reset remains scoped to db_data deps_volume build_volume"
+  else
+    record_result "BLOCK" "docker-reset contract" "reset must keep the active-project volume suffix allowlist: db_data deps_volume build_volume"
+  fi
+
   if script_has_active_project_precedence scripts/maintainer/repo_hygiene_check.sh &&
      script_has_active_project_precedence examples/adoption_demo/bin/docker-stop &&
      script_has_active_project_precedence examples/adoption_demo/bin/docker-reset &&
@@ -169,6 +176,27 @@ ci_source_contract_checks() {
     record_result "PASS" "adoption smoke boundary" "CI keeps the Python black-box smoke and avoids full Docker Compose smoke"
   else
     record_result "BLOCK" "adoption smoke boundary" "CI must keep python3 scripts/demo/adoption_smoke.py as smoke proof without Docker Compose smoke"
+  fi
+
+  if grep -Fq 'exec python3 scripts/demo/adoption_smoke.py' scripts/demo/adoption_smoke.sh &&
+     grep -Fq 'exercise_authorization_code' scripts/demo/adoption_smoke.py &&
+     grep -Fq 'exercise_discovery_and_admin' scripts/demo/adoption_smoke.py; then
+    record_result "PASS" "smoke wrapper contract" "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof and scripts/demo/adoption_smoke.sh remains only the maintainer wrapper"
+  else
+    record_result "BLOCK" "smoke wrapper contract" "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof; wrapper must only delegate"
+  fi
+
+  local forbidden_operator_auth
+  forbidden_operator_auth="Lockspire owns operator authentic""ation"
+
+  if [[ ! -e lib/mix/tasks/lockspire.demo.cleanup.ex &&
+        ! -e lib/mix/tasks/lockspire.hygiene.ex &&
+        ! -e lib/lockspire/repo_hygiene.ex &&
+        ! -e lib/lockspire/docker_cleanup.ex ]] &&
+     ! grep -R "$forbidden_operator_auth" lib examples/adoption_demo scripts/demo >/dev/null 2>&1; then
+    record_result "PASS" "public surface contract" "no Mix cleanup task, runtime module, protocol/admin behavior, packaged Docker surface, or hosted-auth support expansion"
+  else
+    record_result "BLOCK" "public surface contract" "hygiene must remain repo-local with no public runtime, protocol, admin, packaged Docker, or hosted-auth support expansion"
   fi
 }
 

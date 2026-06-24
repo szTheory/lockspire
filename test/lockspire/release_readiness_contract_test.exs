@@ -711,7 +711,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert repo_hygiene_script =~ "smoke wrapper contract"
     assert repo_hygiene_script =~ "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof"
     assert repo_hygiene_script =~ "public surface contract"
-    assert repo_hygiene_script =~ "no Mix cleanup task, runtime module, protocol behavior, admin workflow behavior, production Docker packaging, or hosted-auth support expansion"
+    assert repo_hygiene_script =~ "no Mix cleanup task, runtime module, protocol/admin behavior, packaged Docker surface, or hosted-auth support expansion"
 
     refute repo_hygiene_script =~ "mix lockspire.demo.cleanup"
     refute repo_hygiene_script =~ "defmodule Lockspire.RepoHygiene"
