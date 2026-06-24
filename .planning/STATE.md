@@ -2,12 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
-current_phase: 114
-current_phase_name: startup-output-smoke-wrapper-docs
+current_phase: 115
+current_phase_name: Repo Hygiene Gate & Scoped Cleanup
 status: verifying
 stopped_at: Completed 114-03-PLAN.md
-last_updated: "2026-06-24T16:57:45.506Z"
+last_updated: "2026-06-24T17:08:04.484Z"
 last_activity: 2026-06-24
+last_activity_desc: Phase 114 complete, transitioned to Phase 115
 progress:
   total_phases: 5
   completed_phases: 4
@@ -28,10 +29,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 114 (startup-output-smoke-wrapper-docs) — EXECUTING
-Plan: 3 of 3
+Phase: 115 — Repo Hygiene Gate & Scoped Cleanup
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-06-24
+Last activity: 2026-06-24 — Phase 114 complete, transitioned to Phase 115
 
 ## Most Recent Release
 

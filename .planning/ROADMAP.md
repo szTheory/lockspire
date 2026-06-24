@@ -13,7 +13,7 @@
 | 111 | Demo URL Contract & Config Unification | Make `LOCKSPIRE_DEMO_BASE_URL` the single browser-visible URL truth for endpoint URL generation, Lockspire issuer, seeded redirects, smoke proof, and Docker bind behavior. Status: complete 2026-06-04. | URL-01..05 |
 | 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. Status: complete 2026-06-04. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. Status: complete 2026-06-04. | CONFLICT-01..04, TRAEFIK-01..02 |
-| 114 | 3/3 | Complete   | 2026-06-24 |
+| 114 | 3/3 | Complete    | 2026-06-24 |
 | 115 | Repo Hygiene Gate & Scoped Cleanup | Add non-destructive local hygiene and cleanup for demo-owned Docker/resources/artifacts while preserving CI determinism and product boundaries. | SMOKE-03, CLEAN-01..03, HYGIENE-01..04, BOUNDARY-01..02 |
 
 ## Phase Details
