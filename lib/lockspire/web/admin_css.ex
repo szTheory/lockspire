@@ -15,17 +15,20 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-space-10: 2.5rem;
     --ls-space-12: 3rem;
 
-    /* Typography */
-    --ls-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --ls-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    
-    /* Colors */
-    --ls-color-brand-50: #eff6ff;
-    --ls-color-brand-100: #dbeafe;
-    --ls-color-brand-500: #3b82f6;
-    --ls-color-brand-600: #2563eb;
-    --ls-color-brand-700: #1d4ed8;
-    
+    /* Typography — Familjen Grotesk (display) / Inter (UI) / JetBrains Mono (code).
+       Named, not shipped: no font files, no external fetch (host/OS provides). */
+    --ls-font-display: "Familjen Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --ls-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --ls-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    /* Colors — Signal Cyan brand. 500 = hero (dark/accent), 600 = Deep Cyan
+       (AA-safe text/action on light), 700 = hover. */
+    --ls-color-brand-50: #ecfeff;
+    --ls-color-brand-100: #cffafe;
+    --ls-color-brand-500: #22d3ee;
+    --ls-color-brand-600: #0e7490;
+    --ls-color-brand-700: #155e75;
+
     --ls-color-gray-50: #f9fafb;
     --ls-color-gray-100: #f3f4f6;
     --ls-color-gray-200: #e5e7eb;
@@ -36,6 +39,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-color-gray-700: #374151;
     --ls-color-gray-800: #1f2937;
     --ls-color-gray-900: #111827;
+    --ls-color-gray-950: #0b1220;
 
     /* Status Colors */
     --ls-color-success-bg: #dcfce7;
@@ -144,11 +148,24 @@ defmodule Lockspire.Web.Admin.CSS do
     margin: 0 0 var(--ls-space-1) 0;
   }
 
+  .lockspire-admin-brand {
+    display: inline-flex;
+    color: var(--ls-text-strong);
+    margin: 0 0 var(--ls-space-4) 0;
+  }
+
+  .lockspire-admin-brand svg {
+    height: 22px;
+    width: auto;
+    display: block;
+  }
+
   .lockspire-admin-header h1 {
     margin: 0;
+    font-family: var(--ls-font-display);
     font-size: 1.875rem;
     font-weight: 700;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 
@@ -945,7 +962,7 @@ defmodule Lockspire.Web.Admin.CSS do
 
   .lockspire-admin-resource-list a:hover,
   .lockspire-admin-resource-list__item:hover {
-    background: white;
+    background: var(--ls-surface-panel);
     box-shadow: var(--ls-shadow-sm);
   }
 
@@ -1318,5 +1335,78 @@ defmodule Lockspire.Web.Admin.CSS do
   }
   """
 
-  def get, do: @css
+  # Dark mode — additive. Strategy: the gray scale is used as a semantic ramp
+  # (low = surfaces/borders, high = text), so we INVERT it here plus remap the
+  # accent, status, surface, focus, and shadow tokens. No component CSS changes.
+  @dark_vars """
+    color-scheme: dark;
+
+    /* inverted neutral ramp: low numbers -> dark surfaces, high -> light text */
+    --ls-color-gray-50: #0b1220;
+    --ls-color-gray-100: #1c2638;
+    --ls-color-gray-200: #1e293b;
+    --ls-color-gray-300: #334155;
+    --ls-color-gray-400: #9aa7bd;
+    --ls-color-gray-500: #8a99ad;
+    --ls-color-gray-600: #c9d4e3;
+    --ls-color-gray-700: #d4dde8;
+    --ls-color-gray-800: #e9eef4;
+    --ls-color-gray-900: #f8fafc;
+    --ls-color-gray-950: #f8fafc;
+
+    /* accent brightens on dark: Signal Cyan is the hero */
+    --ls-color-brand-600: #22d3ee;
+    --ls-color-brand-700: #67e8f9;
+    --ls-color-brand-100: rgb(34 211 238 / 0.28);
+
+    /* status -> tinted-dark surfaces with luminous text */
+    --ls-color-success-bg: #0d2b22;
+    --ls-color-success-text: #5eead4;
+    --ls-color-success-border: #14b8a6;
+    --ls-color-warning-bg: #2c2410;
+    --ls-color-warning-text: #f4b942;
+    --ls-color-warning-border: #a16207;
+    --ls-color-danger-bg: #2e1517;
+    --ls-color-danger-text: #fca5a5;
+    --ls-color-danger-border: #e35d6a;
+    --ls-color-info-bg: #0c2330;
+    --ls-color-info-text: #67e8f9;
+    --ls-color-info-border: #22d3ee;
+
+    /* semantic surfaces (set explicitly; panel/page are not gray-derived) */
+    --ls-surface-page: #0b1220;
+    --ls-surface-panel: #131c2e;
+    --ls-surface-muted: #1f2937;
+    --ls-text-strong: #f8fafc;
+    --ls-text-body: #c9d4e3;
+    --ls-text-muted: #8a99ad;
+    --ls-border-subtle: #1e293b;
+    --ls-border-strong: #334155;
+
+    --ls-focus-ring-color: #22d3ee;
+    --ls-focus-ring-shadow: 0 0 0 3px rgb(34 211 238 / 0.35);
+    --ls-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --ls-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    --ls-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+  """
+
+  # The primary button fills with the (now bright cyan) accent, so its label
+  # must flip to the dark page color for contrast. One targeted override per
+  # dark condition. (--ls-surface-page resolves to Obsidian in dark mode.)
+  @dark_btn "color: var(--ls-surface-page);"
+
+  @dark_css """
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+    #{@dark_vars}
+    }
+    :root:not([data-theme="light"]) .lockspire-admin-btn-primary { #{@dark_btn} }
+  }
+  :root[data-theme="dark"] {
+  #{@dark_vars}
+  }
+  :root[data-theme="dark"] .lockspire-admin-btn-primary { #{@dark_btn} }
+  """
+
+  def get, do: @css <> @dark_css
 end

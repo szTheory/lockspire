@@ -1,0 +1,249 @@
+/* ============================================================================
+   Lockspire Design Tokens
+   ----------------------------------------------------------------------------
+   Single source of truth for the Lockspire brand + product UI.
+
+   Variable names match `lib/lockspire/web/admin_css.ex` VERBATIM (the `--ls-*`
+   prefix) so this file is implementation-ready: the admin UI consumes the same
+   token vocabulary, never a parallel one.
+
+   Architecture:
+     :root                  -> primitives + LIGHT semantic aliases (default)
+     @media prefers dark    -> DARK semantic-alias remap (auto)
+     [data-theme="dark"]    -> DARK semantic-alias remap (explicit/forced)
+     [data-theme="light"]   -> LIGHT semantic-alias remap (explicit/forced)
+
+   Dark mode remaps ONLY semantic aliases. Primitives are theme-agnostic, so
+   components that consume `--ls-surface-*` / `--ls-text-*` / `--ls-status-*`
+   theme automatically with zero component CSS changes.
+
+   Accent: dark-first Signal Cyan. Pure #22D3EE is the hero on dark surfaces
+   but fails WCAG AA as text on light (~1.5:1), so light-mode interactive/text
+   uses Deep Cyan #0E7490 (~5:1 on white). See notes/accessibility-checks.md.
+   ========================================================================== */
+
+:root {
+  /* --- Spacing scale (4px baseline) ------------------------------------- */
+  --ls-space-1: 0.25rem;
+  --ls-space-2: 0.5rem;
+  --ls-space-3: 0.75rem;
+  --ls-space-4: 1rem;
+  --ls-space-5: 1.25rem;
+  --ls-space-6: 1.5rem;
+  --ls-space-8: 2rem;
+  --ls-space-10: 2.5rem;
+  --ls-space-12: 3rem;
+
+  /* --- Typography ------------------------------------------------------- */
+  /* "Inter" / "JetBrains Mono" lead the stack: used when the host app or OS
+     provides them, with a robust fallback. Lockspire ships NO font files and
+     adds NO external font fetch (privacy/CSP-safe for an auth server). */
+  --ls-font-display: "Familjen Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ls-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ls-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* --- Brand: Signal Cyan scale ----------------------------------------- */
+  /* brand-500 = Signal Cyan hero (dark surfaces, focus glow, accents, logo).
+     brand-600 = Deep Cyan, AA-safe for solid buttons (white text ~5:1) and
+                 light-mode links/text. brand-700 = hover/active (darker). */
+  --ls-color-brand-50: #ecfeff;
+  --ls-color-brand-100: #cffafe;
+  --ls-color-brand-500: #22d3ee; /* Signal Cyan */
+  --ls-color-brand-600: #0e7490; /* Deep Cyan   */
+  --ls-color-brand-700: #155e75;
+
+  /* --- Neutrals --------------------------------------------------------- */
+  /* Slate-blue family so neutrals harmonize with Obsidian/Slate brand darks.
+     gray-950 = Obsidian (dark-mode page). */
+  --ls-color-gray-50: #f8fafc;  /* Frost */
+  --ls-color-gray-100: #f1f5f9;
+  --ls-color-gray-200: #e2e8f0;
+  --ls-color-gray-300: #cbd5e1;
+  --ls-color-gray-400: #94a3b8;
+  --ls-color-gray-500: #64748b;
+  --ls-color-gray-600: #475569;
+  --ls-color-gray-700: #334155;
+  --ls-color-gray-800: #1f2937; /* Slate */
+  --ls-color-gray-900: #111827;
+  --ls-color-gray-950: #0b1220; /* Obsidian */
+
+  /* --- Status primitives (light) ---------------------------------------- */
+  --ls-color-success-bg: #dcfce7;
+  --ls-color-success-text: #166534;
+  --ls-color-success-border: #bbf7d0;
+  --ls-color-warning-bg: #fef9c3;
+  --ls-color-warning-text: #854d0e;
+  --ls-color-warning-border: #fde68a;
+  --ls-color-danger-bg: #fee2e2;
+  --ls-color-danger-text: #991b1b;
+  --ls-color-danger-border: #fecaca;
+  --ls-color-info-bg: #cffafe;
+  --ls-color-info-text: #155e75;
+  --ls-color-info-border: #a5f3fc;
+
+  /* --- Status primitives (dark) ----------------------------------------- */
+  /* Tinted-dark surfaces with luminous brand-family text. Built from
+     Trust Teal #14B8A6, Beacon Amber #F4B942, Alert Rose #E35D6A. */
+  --ls-color-success-bg-dark: #0d2b22;
+  --ls-color-success-text-dark: #5eead4;
+  --ls-color-success-border-dark: #14b8a6;
+  --ls-color-warning-bg-dark: #2c2410;
+  --ls-color-warning-text-dark: #f4b942;
+  --ls-color-warning-border-dark: #a16207;
+  --ls-color-danger-bg-dark: #2e1517;
+  --ls-color-danger-text-dark: #fca5a5;
+  --ls-color-danger-border-dark: #e35d6a;
+  --ls-color-info-bg-dark: #0c2330;
+  --ls-color-info-text-dark: #67e8f9;
+  --ls-color-info-border-dark: #22d3ee;
+
+  /* --- Radii ------------------------------------------------------------ */
+  --ls-radius-sm: 0.125rem;
+  --ls-radius-md: 0.375rem;
+  --ls-radius-lg: 0.5rem;
+  --ls-radius-xl: 0.75rem;
+
+  /* --- Shadows ---------------------------------------------------------- */
+  --ls-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ls-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --ls-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* --- Motion ----------------------------------------------------------- */
+  --ls-motion-duration-fast: 150ms;
+  --ls-motion-duration-medium: 220ms;
+  --ls-motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ls-motion-property-feedback: background-color, border-color, color, box-shadow, transform;
+  --ls-transition-fast: var(--ls-motion-duration-fast) var(--ls-motion-ease-standard);
+
+  /* --- Semantic aliases (LIGHT — default) ------------------------------- */
+  --ls-surface-page: var(--ls-color-gray-50);
+  --ls-surface-panel: #ffffff;
+  --ls-surface-muted: var(--ls-color-gray-100);
+  --ls-surface-inverse: var(--ls-color-gray-950);
+  --ls-text-strong: var(--ls-color-gray-950);
+  --ls-text-body: var(--ls-color-gray-700);
+  --ls-text-muted: var(--ls-color-gray-500);
+  --ls-text-accent: var(--ls-color-brand-600);
+  --ls-border-subtle: var(--ls-color-gray-200);
+  --ls-border-strong: var(--ls-color-gray-300);
+
+  --ls-status-success-bg: var(--ls-color-success-bg);
+  --ls-status-success-text: var(--ls-color-success-text);
+  --ls-status-success-border: var(--ls-color-success-border);
+  --ls-status-warning-bg: var(--ls-color-warning-bg);
+  --ls-status-warning-text: var(--ls-color-warning-text);
+  --ls-status-warning-border: var(--ls-color-warning-border);
+  --ls-status-danger-bg: var(--ls-color-danger-bg);
+  --ls-status-danger-text: var(--ls-color-danger-text);
+  --ls-status-danger-border: var(--ls-color-danger-border);
+  --ls-status-info-bg: var(--ls-color-info-bg);
+  --ls-status-info-text: var(--ls-color-info-text);
+  --ls-status-info-border: var(--ls-color-info-border);
+
+  --ls-control-height: 40px;
+  --ls-control-padding-x: var(--ls-space-4);
+  --ls-control-padding-y: var(--ls-space-2);
+  --ls-type-label-size: 0.75rem;
+  --ls-type-body-size: 0.875rem;
+  --ls-type-heading-size: 1rem;
+  --ls-type-display-size: 1.5rem;
+  --ls-type-weight-regular: 400;
+  --ls-type-weight-semibold: 600;
+  --ls-type-line-label: 1.2;
+  --ls-type-line-body: 1.5;
+  --ls-type-line-heading: 1.25;
+  --ls-type-line-display: 1.2;
+
+  --ls-focus-ring-color: var(--ls-color-brand-600);
+  --ls-focus-ring-width: 2px;
+  --ls-focus-ring-offset: 3px;
+  --ls-focus-ring-shadow: 0 0 0 3px var(--ls-color-brand-100);
+
+  --ls-z-nav: 10;
+  --ls-z-overlay: 50;
+  --ls-z-modal: 100;
+}
+
+/* --- DARK semantic-alias remap ----------------------------------------- */
+/* Authored once, applied via both the system preference and an explicit
+   [data-theme="dark"] hook (toggle / forced). Only semantic aliases change. */
+:root[data-theme="dark"],
+:root[data-theme="dark"] :where(*) {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ls-surface-page: var(--ls-color-gray-950);   /* Obsidian */
+    --ls-surface-panel: #131c2e;                    /* raised */
+    --ls-surface-muted: var(--ls-color-gray-800);   /* Slate */
+    --ls-surface-inverse: var(--ls-color-gray-50);
+    --ls-text-strong: var(--ls-color-gray-50);      /* Frost */
+    --ls-text-body: #c9d4e3;                         /* Mist */
+    --ls-text-muted: #8a99ad;
+    --ls-text-accent: var(--ls-color-brand-500);    /* Signal Cyan pops on dark */
+    --ls-border-subtle: #1e293b;
+    --ls-border-strong: #334155;
+
+    --ls-status-success-bg: var(--ls-color-success-bg-dark);
+    --ls-status-success-text: var(--ls-color-success-text-dark);
+    --ls-status-success-border: var(--ls-color-success-border-dark);
+    --ls-status-warning-bg: var(--ls-color-warning-bg-dark);
+    --ls-status-warning-text: var(--ls-color-warning-text-dark);
+    --ls-status-warning-border: var(--ls-color-warning-border-dark);
+    --ls-status-danger-bg: var(--ls-color-danger-bg-dark);
+    --ls-status-danger-text: var(--ls-color-danger-text-dark);
+    --ls-status-danger-border: var(--ls-color-danger-border-dark);
+    --ls-status-info-bg: var(--ls-color-info-bg-dark);
+    --ls-status-info-text: var(--ls-color-info-text-dark);
+    --ls-status-info-border: var(--ls-color-info-border-dark);
+
+    --ls-focus-ring-color: var(--ls-color-brand-500);
+    --ls-focus-ring-shadow: 0 0 0 3px rgb(34 211 238 / 0.35);
+    --ls-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --ls-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    --ls-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+  }
+}
+
+/* Explicit/forced dark (toggle, or host opting in regardless of OS). */
+:root[data-theme="dark"] {
+  --ls-surface-page: var(--ls-color-gray-950);
+  --ls-surface-panel: #131c2e;
+  --ls-surface-muted: var(--ls-color-gray-800);
+  --ls-surface-inverse: var(--ls-color-gray-50);
+  --ls-text-strong: var(--ls-color-gray-50);
+  --ls-text-body: #c9d4e3;
+  --ls-text-muted: #8a99ad;
+  --ls-text-accent: var(--ls-color-brand-500);
+  --ls-border-subtle: #1e293b;
+  --ls-border-strong: #334155;
+
+  --ls-status-success-bg: var(--ls-color-success-bg-dark);
+  --ls-status-success-text: var(--ls-color-success-text-dark);
+  --ls-status-success-border: var(--ls-color-success-border-dark);
+  --ls-status-warning-bg: var(--ls-color-warning-bg-dark);
+  --ls-status-warning-text: var(--ls-color-warning-text-dark);
+  --ls-status-warning-border: var(--ls-color-warning-border-dark);
+  --ls-status-danger-bg: var(--ls-color-danger-bg-dark);
+  --ls-status-danger-text: var(--ls-color-danger-text-dark);
+  --ls-status-danger-border: var(--ls-color-danger-border-dark);
+  --ls-status-info-bg: var(--ls-color-info-bg-dark);
+  --ls-status-info-text: var(--ls-color-info-text-dark);
+  --ls-status-info-border: var(--ls-color-info-border-dark);
+
+  --ls-focus-ring-color: var(--ls-color-brand-500);
+  --ls-focus-ring-shadow: 0 0 0 3px rgb(34 211 238 / 0.35);
+  --ls-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --ls-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+  --ls-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ls-motion-duration-fast: 0ms;
+    --ls-motion-duration-medium: 0ms;
+  }
+}
