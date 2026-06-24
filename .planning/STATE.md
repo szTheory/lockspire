@@ -4,8 +4,8 @@ milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
 current_phase: 115
 current_phase_name: Repo Hygiene Gate & Scoped Cleanup
-status: verifying
-stopped_at: Completed 114-03-PLAN.md
+status: ready_to_plan
+stopped_at: Phase 114 complete
 last_updated: "2026-06-24T17:08:04.484Z"
 last_activity: 2026-06-24
 last_activity_desc: Phase 114 complete, transitioned to Phase 115
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 114 — startup-output-smoke-wrapper-docs
+**Current focus:** Phase 115 — Repo Hygiene Gate & Scoped Cleanup
 
 ## Current Position
 
 Phase: 115 — Repo Hygiene Gate & Scoped Cleanup
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Ready to discuss
 Last activity: 2026-06-24 — Phase 114 complete, transitioned to Phase 115
 
 ## Most Recent Release
@@ -102,11 +102,11 @@ Last activity: 2026-06-24 — Phase 114 complete, transitioned to Phase 115
 
 ## Session Continuity
 
-**Last session:** 2026-06-24T16:57:45.499Z
+**Last session:** 2026-06-24T17:08:04.484Z
 
-**Next action:** Plan Phase 114 with `$gsd-plan-phase 114`.
+**Next action:** Discuss Phase 115 with `$gsd-discuss-phase 115`.
 **Resume file:** None
-**Stopped at:** Completed 114-03-PLAN.md
+**Stopped at:** Phase 114 verified and complete
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -136,4 +136,4 @@ Last activity: 2026-06-24 — Phase 114 complete, transitioned to Phase 115
 
 ## Operator Next Steps
 
-- Execute Phase 114 Plan 03.
+- Discuss Phase 115 with `$gsd-discuss-phase 115`.

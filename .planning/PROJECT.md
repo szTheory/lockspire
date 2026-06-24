@@ -18,7 +18,7 @@ Between feature milestones, Lockspire's default posture remains a sustaining GA 
 
 The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-System Deep Polish`, tightened the route-by-route operator journey model, deepened the shared BEM/design-token component contract, polished weaker support/operations/configuration surfaces, and closed route-complete screenshot/browser proof with 390px mobile no-page-overflow evidence. v1.29 intentionally preserved the embedded-library boundary and protocol behavior.
 
-Phases 111 and 112 of v1.30 are complete: the adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke drift proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`; the default Docker path now starts Phoenix/Bandit plus PostgreSQL, uses project-scoped volumes, prepares the database idempotently, and waits for public HTTP readiness before reporting ready.
+Phases 111 through 114 of v1.30 are complete: the adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke drift proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`; the default Docker path now starts Phoenix/Bandit plus PostgreSQL, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. Phase 115 remains for repo hygiene gates and scoped cleanup.
 
 ## Current Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -151,9 +151,6 @@ Phases 111 and 112 of v1.30 are complete: the adoption demo now has one canonica
 
 ### Active
 
-- Provide a default Docker path for the adoption demo that starts app and database dependencies without relying on host Postgres.
-- Support conflict-resistant local development through configurable project names, ports, and optional Traefik hostname routing.
-- Print the important demo URLs, admin routes, seeded accounts, and smoke-test command after startup so maintainers can poke the admin UI without source-diving.
 - Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
 
 ### Validated
@@ -215,6 +212,8 @@ Phases 111 and 112 of v1.30 are complete: the adoption demo now has one canonica
 - Delivered v1.29 Admin UI Journey & Design-System Deep Polish: route-by-route admin journey contract and docs vocabulary (JOURNEY-01..06, Phase 107); reusable BEM/design-token admin primitives and reduced-motion/style drift fences (DESIGN-01..06, Phase 108); support, operations, DCR/IAT, key, and client-detail weak-spot polish with mobile-safe rows, redaction, and risky-action grouping (OPS-01..05, CONFIG-01..02, Phase 109); demo seed, screenshot, browser, docs, and contract proof including 390px mobile no-page-overflow evidence (CONFIG-03, PROOF-01..04, Phase 110).
 - Validated in Phase 111: `LOCKSPIRE_DEMO_BASE_URL` is the single browser-visible adoption demo URL contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke proof; `LOCKSPIRE_DEMO_BIND_IP` controls only listener binding for Docker opt-in.
 - Validated in Phase 112: the default Docker adoption-demo path starts direct Phoenix/Bandit plus PostgreSQL without host Postgres, uses explicit DB wiring and project-scoped `db_data`, `deps`, and `_build` volumes, prepares the database idempotently, and waits for the configured public URL before printing the ready line.
+- Validated in Phase 113: conflict-resistant adoption-demo Docker controls support configurable Compose project names, app ports, scoped reset of active-project volumes, optional PostgreSQL host-port exposure, and opt-in Traefik hostname routing while keeping direct Docker as the default path.
+- Validated in Phase 114: startup output prints redacted URL/account/client/smoke/reprint information from `docker-info`, `docker-start` uses container-local readiness separate from the public base URL, `scripts/demo/adoption_smoke.sh` wraps the existing Python OAuth/OIDC proof for direct and optional Traefik targets, and `docs/adoption-demo.md` documents Docker-first startup, smoke, stop, reset, cleanup boundary, overrides, and troubleshooting.
 
 ### Out of Scope
 
@@ -297,4 +296,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-04 — v1.30 adoption demo Docker DX and repo hygiene started.*
+*Last updated: 2026-06-24 — v1.30 phases 111-114 complete; Phase 115 repo hygiene remains.*
