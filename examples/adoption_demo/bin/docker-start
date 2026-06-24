@@ -92,6 +92,6 @@ mix phx.server &
 server_pid="$!"
 
 wait_for_http
-echo "Adoption demo ready at ${BASE_URL}"
+./bin/docker-info
 
 wait "$server_pid"

@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+set -eu
+
+BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
+BASE_URL="$(printf '%s' "$BASE_URL" | sed 's:/*$::')"
+
+cat <<INFO
+Adoption demo ready at ${BASE_URL}
+
+URLs
+  Base URL: ${BASE_URL}
+  Issuer: ${BASE_URL}/lockspire
+  Discovery: ${BASE_URL}/lockspire/.well-known/openid-configuration
+  JWKS: ${BASE_URL}/lockspire/jwks
+  Admin: ${BASE_URL}/lockspire/admin
+  Device verification: ${BASE_URL}/verify
+  Developer apps: ${BASE_URL}/developer/apps
+  OAuth callback: ${BASE_URL}/oauth/callback
+  Protected API: ${BASE_URL}/api/billing/summary
+
+Seeded accounts
+  alice | alice@acme.test | Acme Ledger | developer account
+  bob   | bob@globex.test | Globex Finance | developer account
+  ops   | ops@acme.test | Acme Ledger | operator account
+
+Seeded OAuth clients
+  acme-ledger-public | public | grants: authorization_code,refresh_token | auth: none | PKCE required
+  acme-tv-device | public | grants: device_code | auth: none | PKCE required
+  acme-ledger-backend | confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
+  northstar-dcr-self-registered | confidential self-registered | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required | PAR required | DPoP required
+  legacy-disabled-reporter | disabled confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
+
+Smoke command
+  LOCKSPIRE_DEMO_BASE_URL=${BASE_URL} python3 scripts/demo/adoption_smoke.py
+INFO

@@ -193,6 +193,14 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ "adoption_demo_"
   end
 
+  test "docker-start prints docker-info only after HTTP readiness" do
+    source = File.read!(Path.join(@repo_root, "examples/adoption_demo/bin/docker-start"))
+
+    assert source =~ ~r/wait_for_http\s+\.\/bin\/docker-info/
+    refute source =~ ~r/seed_database\s+\.\/bin\/docker-info/
+    refute source =~ ~r/create_database\s+\.\/bin\/docker-info/
+  end
+
   test "docs explain direct conflict controls and scoped reset" do
     docs = File.read!(@adoption_demo_docs_path)
 
