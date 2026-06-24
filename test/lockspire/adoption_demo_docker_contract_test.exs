@@ -5,8 +5,70 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @compose_file "examples/adoption_demo/docker-compose.yml"
   @db_host_compose_file "examples/adoption_demo/docker-compose.db-host.yml"
   @traefik_compose_file "examples/adoption_demo/docker-compose.traefik.yml"
+  @docker_info_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-info")
   @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
+
+  test "docker-info prints base URL derived startup links and exact smoke command" do
+    output = docker_info_output("http://127.0.0.1:4101/")
+
+    assert output =~ "Adoption demo ready at http://127.0.0.1:4101"
+    assert output =~ "Base URL: http://127.0.0.1:4101"
+    assert output =~ "Issuer: http://127.0.0.1:4101/lockspire"
+    assert output =~ "Discovery: http://127.0.0.1:4101/lockspire/.well-known/openid-configuration"
+    assert output =~ "JWKS: http://127.0.0.1:4101/lockspire/jwks"
+    assert output =~ "Admin: http://127.0.0.1:4101/lockspire/admin"
+    assert output =~ "Device verification: http://127.0.0.1:4101/verify"
+    assert output =~ "Developer apps: http://127.0.0.1:4101/developer/apps"
+    assert output =~ "OAuth callback: http://127.0.0.1:4101/oauth/callback"
+    assert output =~ "Protected API: http://127.0.0.1:4101/api/billing/summary"
+
+    assert output =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+
+    refute output =~ "http://127.0.0.1:4101//"
+  end
+
+  test "docker-info prints seeded account allowlist with operator account marked" do
+    output = docker_info_output()
+
+    assert output =~ "alice"
+    assert output =~ "alice@acme.test"
+    assert output =~ "bob"
+    assert output =~ "bob@globex.test"
+    assert output =~ "ops"
+    assert output =~ "ops@acme.test"
+    assert output =~ "operator account"
+  end
+
+  test "docker-info prints seeded client allowlist without sensitive material" do
+    output = docker_info_output()
+    source = File.read!(@docker_info_path)
+
+    assert output =~ "acme-ledger-public"
+    assert output =~ "public"
+    assert output =~ "authorization_code,refresh_token"
+    assert output =~ "none"
+    assert output =~ "PKCE required"
+
+    assert output =~ "acme-tv-device"
+    assert output =~ "device_code"
+
+    assert output =~ "acme-ledger-backend"
+    assert output =~ "confidential"
+    assert output =~ "client_secret_basic"
+
+    assert output =~ "northstar-dcr-self-registered"
+    assert output =~ "self-registered"
+    assert output =~ "PAR required"
+    assert output =~ "DPoP required"
+
+    assert output =~ "legacy-disabled-reporter"
+    assert output =~ "disabled"
+
+    refute_sensitive_demo_material(output)
+    refute_sensitive_demo_material(source)
+  end
 
   test "direct Compose uses a stable default project namespace" do
     with_compose_config(["-f", @compose_file], fn config ->
@@ -166,6 +228,42 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       :skip ->
         IO.puts("Skipping adoption demo Docker contract assertions: docker compose is unavailable")
     end
+  end
+
+  defp docker_info_output(base_url \\ "http://127.0.0.1:4101/") do
+    assert File.regular?(@docker_info_path)
+
+    {output, 0} =
+      System.cmd(
+        @docker_info_path,
+        [],
+        cd: @repo_root,
+        env: [{"LOCKSPIRE_DEMO_BASE_URL", base_url}],
+        stderr_to_stdout: true
+      )
+
+    output
+  end
+
+  defp refute_sensitive_demo_material(text) do
+    sensitive_fragments = [
+      "demo-backend-secret",
+      "demo-rat-secret",
+      "demo-rat-northstar",
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "private_jwk",
+      "private_jwk_encrypted",
+      "authorization code material",
+      "refresh token material",
+      "access token material",
+      "Set-Cookie",
+      "cookie material"
+    ]
+
+    Enum.each(sensitive_fragments, fn fragment ->
+      refute text =~ fragment
+    end)
   end
 
   defp compose_config(args, opts) do
