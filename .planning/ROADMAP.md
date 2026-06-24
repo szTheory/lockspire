@@ -14,7 +14,7 @@
 | 112 | Default Docker Compose App + DB | Provide the boring default Docker path: app plus PostgreSQL, explicit DB env, project-scoped volumes, idempotent setup, and HTTP readiness. Status: complete 2026-06-04. | DOCKER-01..06 |
 | 113 | Conflict Controls & Optional Traefik | Make local Docker conflict-resistant with configurable project names, ports, cache reset, and opt-in Traefik hostname routing. Status: complete 2026-06-04. | CONFLICT-01..04, TRAEFIK-01..02 |
 | 114 | 3/3 | Complete    | 2026-06-24 |
-| 115 | 3/3 | Complete   | 2026-06-24 |
+| 115 | 3/3 | Complete    | 2026-06-24 |
 
 ## Phase Details
 

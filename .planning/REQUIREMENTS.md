@@ -43,24 +43,24 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 - [x] **INFO-04**: A maintainer can reprint the current URL/account/client/smoke information without recreating containers.
 - [x] **SMOKE-01**: The existing black-box smoke passes against the direct Docker URL using `LOCKSPIRE_DEMO_BASE_URL`.
 - [x] **SMOKE-02**: If optional Traefik mode is enabled, the same smoke can run against the Traefik hostname URL.
-- [ ] **SMOKE-03**: CI keeps the existing adoption-demo smoke proof and adds only deterministic Docker validation unless a later phase proves full Docker smoke is stable enough for CI.
+- [x] **SMOKE-03**: CI keeps the existing adoption-demo smoke proof and adds only deterministic Docker validation unless a later phase proves full Docker smoke is stable enough for CI.
 
 ### Hygiene And Cleanup
 
-- [ ] **CLEAN-01**: A stop command stops the demo without deleting volumes by default.
-- [ ] **CLEAN-02**: A reset command intentionally rebuilds database and cache state for the active Compose project only.
-- [ ] **CLEAN-03**: A cleanup lane removes only allowlisted demo-owned Docker resources and generated demo artifacts.
-- [ ] **HYGIENE-01**: The repo hygiene gate reports PASS/WARN/BLOCK for demo Docker leftovers and repo-owned generated artifacts in local mode.
-- [ ] **HYGIENE-02**: The hygiene gate does not require a Docker daemon or inspect local Docker state in `--ci` mode.
-- [ ] **HYGIENE-03**: Hygiene output preserves useful admin UI evidence such as `tmp/admin-ui-polish/` unless an explicit cleanup command names it.
-- [ ] **HYGIENE-04**: Running start, smoke, stop, cleanup, and hygiene can leave no demo-owned BLOCK findings.
+- [x] **CLEAN-01**: A stop command stops the demo without deleting volumes by default.
+- [x] **CLEAN-02**: A reset command intentionally rebuilds database and cache state for the active Compose project only.
+- [x] **CLEAN-03**: A cleanup lane removes only allowlisted demo-owned Docker resources and generated demo artifacts.
+- [x] **HYGIENE-01**: The repo hygiene gate reports PASS/WARN/BLOCK for demo Docker leftovers and repo-owned generated artifacts in local mode.
+- [x] **HYGIENE-02**: The hygiene gate does not require a Docker daemon or inspect local Docker state in `--ci` mode.
+- [x] **HYGIENE-03**: Hygiene output preserves useful admin UI evidence such as `tmp/admin-ui-polish/` unless an explicit cleanup command names it.
+- [x] **HYGIENE-04**: Running start, smoke, stop, cleanup, and hygiene can leave no demo-owned BLOCK findings.
 
 ### Documentation And Boundaries
 
 - [x] **DOCS-01**: `docs/adoption-demo.md` presents Docker as the default maintainer path and keeps host-local Mix/Postgres instructions as a fallback.
 - [x] **DOCS-02**: Demo docs cover default startup, optional Traefik, smoke, stop, reset, cleanup, environment overrides, and troubleshooting for port/readiness failures.
-- [ ] **BOUNDARY-01**: v1.30 does not introduce new OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, or hosted-auth service shape.
-- [ ] **BOUNDARY-02**: The adoption demo remains repo-local proof and does not broaden Lockspire's public supported surface.
+- [x] **BOUNDARY-01**: v1.30 does not introduce new OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, or hosted-auth service shape.
+- [x] **BOUNDARY-02**: The adoption demo remains repo-local proof and does not broaden Lockspire's public supported surface.
 
 ## Future Requirements
 
@@ -106,18 +106,18 @@ Make the repo-local adoption demo easy to start, hard to conflict with other loc
 | INFO-04 | 114 | Complete |
 | SMOKE-01 | 114 | Complete |
 | SMOKE-02 | 114 | Complete |
-| SMOKE-03 | 115 | Pending |
-| CLEAN-01 | 115 | Pending |
-| CLEAN-02 | 115 | Pending |
-| CLEAN-03 | 115 | Pending |
-| HYGIENE-01 | 115 | Pending |
-| HYGIENE-02 | 115 | Pending |
-| HYGIENE-03 | 115 | Pending |
-| HYGIENE-04 | 115 | Pending |
+| SMOKE-03 | 115 | Complete |
+| CLEAN-01 | 115 | Complete |
+| CLEAN-02 | 115 | Complete |
+| CLEAN-03 | 115 | Complete |
+| HYGIENE-01 | 115 | Complete |
+| HYGIENE-02 | 115 | Complete |
+| HYGIENE-03 | 115 | Complete |
+| HYGIENE-04 | 115 | Complete |
 | DOCS-01 | 114 | Complete |
 | DOCS-02 | 114 | Complete |
-| BOUNDARY-01 | 115 | Pending |
-| BOUNDARY-02 | 115 | Pending |
+| BOUNDARY-01 | 115 | Complete |
+| BOUNDARY-02 | 115 | Complete |
 
 **Coverage:**
 
