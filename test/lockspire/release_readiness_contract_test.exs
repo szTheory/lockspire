@@ -703,6 +703,20 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute File.exists?(Path.expand("../../lib/lockspire/docker_cleanup.ex", __DIR__))
   end
 
+  test "phase 115 CI source contracts prove lifecycle allowlists and public surface boundaries" do
+    repo_hygiene_script = File.read!(@repo_hygiene_script_path)
+
+    assert repo_hygiene_script =~ "docker-reset contract"
+    assert repo_hygiene_script =~ "db_data deps_volume build_volume"
+    assert repo_hygiene_script =~ "smoke wrapper contract"
+    assert repo_hygiene_script =~ "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof"
+    assert repo_hygiene_script =~ "public surface contract"
+    assert repo_hygiene_script =~ "no Mix cleanup task, runtime module, protocol behavior, admin workflow behavior, production Docker packaging, or hosted-auth support expansion"
+
+    refute repo_hygiene_script =~ "mix lockspire.demo.cleanup"
+    refute repo_hygiene_script =~ "defmodule Lockspire.RepoHygiene"
+  end
+
   test "GA docs keep the embedded Phoenix wedge explicit and pin the narrow protected-route surface" do
     readme = File.read!(@readme_path)
     supported_surface = File.read!(@supported_surface_path)
