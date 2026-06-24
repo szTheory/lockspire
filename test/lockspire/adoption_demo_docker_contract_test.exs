@@ -7,6 +7,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @traefik_compose_file "examples/adoption_demo/docker-compose.traefik.yml"
   @docker_info_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-info")
   @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
+  @adoption_smoke_wrapper_path Path.join(@repo_root, "scripts/demo/adoption_smoke.sh")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
   test "docker-info prints base URL derived startup links and exact smoke command" do
@@ -68,6 +69,51 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     refute_sensitive_demo_material(output)
     refute_sensitive_demo_material(source)
+  end
+
+  test "docker-info prints canonical reprint command for running web service" do
+    output = docker_info_output()
+    source = File.read!(@docker_info_path)
+    reprint_command = "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+
+    assert output =~ "Reprint:"
+    assert output =~ reprint_command
+    assert source =~ reprint_command
+
+    refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml up"
+    refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml run"
+  end
+
+  test "adoption smoke wrapper normalizes base URL and delegates to Python smoke" do
+    assert File.regular?(@adoption_smoke_wrapper_path)
+    assert executable?(@adoption_smoke_wrapper_path)
+
+    source = File.read!(@adoption_smoke_wrapper_path)
+
+    assert source =~ "http://127.0.0.1:4100"
+    assert source =~ "BASE_URL="
+    assert source =~ ~r/BASE_URL=.*LOCKSPIRE_DEMO_BASE_URL/
+    assert source =~ ~r/BASE_URL=.*%\//
+    assert source =~ "Running adoption demo smoke against ${BASE_URL}"
+    assert source =~ "LOCKSPIRE_DEMO_BASE_URL=${BASE_URL}"
+    assert source =~ "exec python3 scripts/demo/adoption_smoke.py"
+
+    refute source =~ "lockspire-demo.localhost" <> "\n" <> "exec"
+  end
+
+  test "adoption smoke wrapper keeps OAuth proof logic in Python smoke" do
+    source = File.read!(@adoption_smoke_wrapper_path)
+
+    assert source =~ "scripts/demo/adoption_smoke.py"
+    refute source =~ "oauth/callback"
+    refute source =~ "code_verifier"
+    refute source =~ "code_challenge"
+    refute source =~ "SimpleCookie"
+    refute source =~ "_csrf_token"
+    refute source =~ "device_code"
+    refute source =~ "user_code"
+    refute source =~ "access_token"
+    refute source =~ "id_token"
   end
 
   test "direct Compose uses a stable default project namespace" do
@@ -272,6 +318,14 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     Enum.each(sensitive_fragments, fn fragment ->
       refute text =~ fragment
     end)
+  end
+
+  defp executable?(path) do
+    path
+    |> File.stat!()
+    |> Map.fetch!(:mode)
+    |> Bitwise.band(0o111)
+    |> Kernel.!=(0)
   end
 
   defp compose_config(args, opts) do
