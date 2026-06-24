@@ -133,6 +133,17 @@ Close the milestone by making cleanup and repo state explicit, non-destructive b
 - v1.30 does not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
 
 **Requirements:** SMOKE-03, CLEAN-01, CLEAN-02, CLEAN-03, HYGIENE-01, HYGIENE-02, HYGIENE-03, HYGIENE-04, BOUNDARY-01, BOUNDARY-02
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 115-01-PLAN.md - Add contract-first stop, reset, and dry-run cleanup lifecycle commands.
+- [ ] 115-02-PLAN.md - Expand repo hygiene for local Docker/artifact reporting and Docker-free CI contracts.
+
+**Wave 2**
+
+- [ ] 115-03-PLAN.md - Align docs, CI, boundary contracts, and lifecycle proof for final Phase 115 verification.
 
 ## Shipped Milestones
 
