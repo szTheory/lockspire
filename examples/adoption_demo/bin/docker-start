@@ -3,6 +3,9 @@ set -eu
 
 BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
 BASE_URL="${BASE_URL%/}"
+PORT="${PORT:-4100}"
+READINESS_URL="${LOCKSPIRE_DEMO_READINESS_URL:-http://127.0.0.1:${PORT}}"
+READINESS_URL="${READINESS_URL%/}"
 DB_HOST="${LOCKSPIRE_DEMO_DB_HOST:-db}"
 DB_PORT="${LOCKSPIRE_DEMO_DB_PORT:-5432}"
 DB_NAME="${LOCKSPIRE_DEMO_DB_NAME:-lockspire_adoption_demo}"
@@ -60,7 +63,7 @@ wait_for_http() {
   attempt=1
 
   while [ "$attempt" -le 60 ]; do
-    if curl -fsS "${BASE_URL}/" >/dev/null 2>&1; then
+    if curl -fsS "${READINESS_URL}/" >/dev/null 2>&1; then
       return 0
     fi
 
@@ -68,7 +71,7 @@ wait_for_http() {
     sleep 1
   done
 
-  echo "Adoption demo did not become ready at ${BASE_URL}" >&2
+  echo "Adoption demo did not become ready at ${READINESS_URL}" >&2
   return 1
 }
 

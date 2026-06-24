@@ -211,7 +211,7 @@ Use a different `COMPOSE_PROJECT_NAME` when another checkout is already using th
 
 ### Readiness failure
 
-The Docker entrypoint waits for PostgreSQL, prepares the database idempotently, starts Phoenix/Bandit, and waits for the configured `LOCKSPIRE_DEMO_BASE_URL`. If readiness fails, check the container logs and confirm the base URL resolves from the host:
+The Docker entrypoint waits for PostgreSQL, prepares the database idempotently, starts Phoenix/Bandit, and waits for the container-local `LOCKSPIRE_DEMO_READINESS_URL` defaulting to `http://127.0.0.1:${PORT}`. `LOCKSPIRE_DEMO_BASE_URL` remains the public issuer/browser URL printed in startup output and used by the smoke wrapper. If readiness fails, check the container logs and confirm the internal readiness URL reaches the Phoenix service:
 
 ```sh
 docker compose -f examples/adoption_demo/docker-compose.yml logs web

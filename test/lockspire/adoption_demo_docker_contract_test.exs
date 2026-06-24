@@ -25,9 +25,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert output =~ "Protected API: http://127.0.0.1:4101/api/billing/summary"
 
     assert output =~
-             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 scripts/demo/adoption_smoke.sh"
 
     refute output =~ "http://127.0.0.1:4101//"
+    refute output =~ "python3 scripts/demo/adoption_smoke.py"
   end
 
   test "docker-info prints seeded account allowlist with operator account marked" do
@@ -247,6 +248,16 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ ~r/create_database\s+\.\/bin\/docker-info/
   end
 
+  test "docker-start uses container-local readiness separate from public base URL" do
+    source = File.read!(Path.join(@repo_root, "examples/adoption_demo/bin/docker-start"))
+
+    assert source =~ "READINESS_URL="
+    assert source =~ "LOCKSPIRE_DEMO_READINESS_URL"
+    assert source =~ "http://127.0.0.1:${PORT}"
+    assert source =~ ~r/curl -fsS "\$\{READINESS_URL\}\/"/
+    refute source =~ ~r/curl -fsS "\$\{BASE_URL\}\/"/
+  end
+
   test "docs explain direct conflict controls and scoped reset" do
     docs = File.read!(@adoption_demo_docs_path)
 
@@ -289,6 +300,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "## Troubleshooting"
     assert docs =~ "Port conflict"
     assert docs =~ "Readiness failure"
+    assert docs =~ "LOCKSPIRE_DEMO_READINESS_URL"
+    assert docs =~ "`LOCKSPIRE_DEMO_BASE_URL` remains the public issuer/browser URL"
     assert docs =~ "Traefik network"
     assert docs =~ "Base URL drift"
   end
