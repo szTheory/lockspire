@@ -729,7 +729,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert docs =~ "repo-local adopter proof"
     assert docs =~ "canonical support contract still lives in `docs/supported-surface.md`"
     assert docs =~ "not a production deployment guide"
-    assert docs =~ "not a hosted auth service"
+    assert docs =~ "not hosted authentication"
 
     refute docs =~ "production Docker packaging"
     refute docs =~ "production Docker deployment"

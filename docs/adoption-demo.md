@@ -2,7 +2,7 @@
 
 Lockspire includes a small Phoenix host app at `examples/adoption_demo`.
 
-The demo is not a new product surface or Hex package content. It is a repo-local adopter proof that boots a representative SaaS host, mounts Lockspire, seeds realistic OAuth clients, and exercises the library over HTTP.
+The demo is not a new product surface or Hex package content. It is a repo-local adopter proof that boots a representative SaaS host, mounts Lockspire, seeds realistic OAuth clients, and exercises the library over HTTP. It is not a production deployment guide, not hosted authentication, and not an expansion beyond the canonical Lockspire support contract.
 
 ## What it proves
 
@@ -58,10 +58,18 @@ The wrapper prints the active target and delegates to `scripts/demo/adoption_smo
 Stop containers without deleting project volumes:
 
 ```sh
-docker compose -f examples/adoption_demo/docker-compose.yml down
+examples/adoption_demo/bin/docker-stop
 ```
 
 Use this when you want to keep the demo database, Mix deps, and build cache for the next run.
+
+For a named project, pass the same project name used at startup:
+
+```sh
+examples/adoption_demo/bin/docker-stop --project lockspire-adoption-demo-alt
+```
+
+The stop helper resolves the active project from `--project`, `COMPOSE_PROJECT_NAME`, then the default `lockspire-adoption-demo`, and preserves volumes.
 
 ## Reset demo volumes
 
@@ -77,11 +85,70 @@ For a named project, pass the same project name used at startup:
 examples/adoption_demo/bin/docker-reset --project lockspire-adoption-demo-alt
 ```
 
-The reset helper removes only the active project's `db_data`, `deps_volume`, and `build_volume` Docker volumes. It does not run broad Docker prune commands.
+The reset helper resolves the active project from `--project`, `COMPOSE_PROJECT_NAME`, then the default `lockspire-adoption-demo`. It removes only the active project's `db_data`, `deps_volume`, and `build_volume` Docker volumes.
 
-## Cleanup boundary
+## Cleanup generated state
 
-Phase 115 owns broader cleanup and hygiene commands for generated demo artifacts, Docker leftovers, and dirty local state. Phase 114 documents the boundary only: use `docker compose ... down` for stop, `examples/adoption_demo/bin/docker-reset` for active-project demo volumes, and avoid broad cleanup commands unless Phase 115 adds and verifies them.
+Preview cleanup candidates without deleting anything:
+
+```sh
+examples/adoption_demo/bin/docker-cleanup
+```
+
+For a named project:
+
+```sh
+examples/adoption_demo/bin/docker-cleanup --project lockspire-adoption-demo-alt
+```
+
+Cleanup is a Dry run by default. To remove only the allowlisted active-project Docker volumes and generated artifacts:
+
+```sh
+examples/adoption_demo/bin/docker-cleanup --execute
+```
+
+The cleanup helper resolves the active project from `--project`, `COMPOSE_PROJECT_NAME`, then the default `lockspire-adoption-demo`. With `--execute`, it removes only:
+
+- active-project Docker volumes named `db_data`, `deps_volume`, and `build_volume`;
+- `tmp/adoption_demo.log`;
+- `examples/adoption_demo/_build`;
+- `examples/adoption_demo/deps`.
+
+`tmp/admin-ui-polish/` is preserved by default because it contains admin UI evidence for the next UI pass.
+
+Cleanup does not delete broad `tmp/`, unrelated ignored files, unrelated Docker resources, or host-wide Docker state.
+
+## Repo hygiene
+
+Run local hygiene against the active demo project after stopping and cleaning up:
+
+```sh
+./scripts/maintainer/repo_hygiene_check.sh --project lockspire-adoption-demo --skip-mix-ci
+```
+
+Local hygiene reports adoption-demo Docker leftovers and generated artifacts with calm `PASS`, `WARN`, and `BLOCK` findings. Specifically, running active-project demo containers are `BLOCK` findings because the demo lifecycle is unfinished; the report includes exact resource names and the next command to run, such as `examples/adoption_demo/bin/docker-stop --project lockspire-adoption-demo` or `examples/adoption_demo/bin/docker-cleanup --project lockspire-adoption-demo --execute`.
+
+CI keeps the existing Python smoke proof plus deterministic Docker validation through:
+
+```sh
+repo_hygiene_check.sh --ci
+```
+
+The CI hygiene path checks source contracts and does not run the full Docker Compose lifecycle or inspect local Docker daemon state.
+
+## Lifecycle proof
+
+The intended local lifecycle is start -> smoke -> stop -> cleanup -> hygiene:
+
+```sh
+docker compose -f examples/adoption_demo/docker-compose.yml up --build
+LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh
+examples/adoption_demo/bin/docker-stop
+examples/adoption_demo/bin/docker-cleanup --execute
+./scripts/maintainer/repo_hygiene_check.sh --project lockspire-adoption-demo --skip-mix-ci
+```
+
+After cleanup, hygiene should report no demo-owned `BLOCK` findings. Broader local release-readiness checks can still report unrelated repo state, such as a dirty working tree or external CI status.
 
 ## Environment overrides
 
