@@ -257,7 +257,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "LOCKSPIRE_DEMO_DB_HOST_PORT"
     assert docs =~ "examples/adoption_demo/bin/docker-reset"
     assert docs =~
-             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 scripts/demo/adoption_smoke.sh"
   end
 
   test "docs present Docker startup before host-local fallback" do
