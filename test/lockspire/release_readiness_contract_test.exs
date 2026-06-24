@@ -684,6 +684,26 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert smoke_wrapper =~ "exec python3 scripts/demo/adoption_smoke.py"
   end
 
+  test "phase 115 CI and docs keep deterministic Docker validation only" do
+    ci_workflow = File.read!(@ci_workflow_path)
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert ci_workflow =~ "name: Release Hygiene Drift"
+    assert ci_workflow =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
+    assert ci_workflow =~ "name: Adoption Demo Smoke"
+    assert ci_workflow =~ "python3 scripts/demo/adoption_smoke.py"
+
+    refute ci_workflow =~ "docker compose"
+    refute ci_workflow =~ "docker-compose"
+    refute ci_workflow =~ "examples/adoption_demo/bin/docker-stop"
+    refute ci_workflow =~ "examples/adoption_demo/bin/docker-cleanup"
+    refute ci_workflow =~ "repo_hygiene_check.sh --project"
+
+    assert docs =~ "CI keeps the existing Python smoke proof"
+    assert docs =~ "deterministic Docker validation"
+    assert docs =~ "does not run the full Docker Compose lifecycle"
+  end
+
   test "phase 115 repo hygiene stays repo-local and does not broaden public support surface" do
     repo_hygiene_script = File.read!(@repo_hygiene_script_path)
     docs = File.read!(@adoption_demo_docs_path)
@@ -701,6 +721,21 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     refute File.exists?(Path.expand("../../lib/lockspire/repo_hygiene.ex", __DIR__))
     refute File.exists?(Path.expand("../../lib/lockspire/docker_cleanup.ex", __DIR__))
+  end
+
+  test "phase 115 adoption demo docs stay repo-local without production Docker claims" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "repo-local adopter proof"
+    assert docs =~ "canonical support contract still lives in `docs/supported-surface.md`"
+    assert docs =~ "not a production deployment guide"
+    assert docs =~ "not a hosted auth service"
+
+    refute docs =~ "production Docker packaging"
+    refute docs =~ "production Docker deployment"
+    refute docs =~ "hosted auth service"
+    refute docs =~ "public support expansion"
+    refute docs =~ "Lockspire owns operator authentication"
   end
 
   test "phase 115 CI source contracts prove lifecycle allowlists and public surface boundaries" do

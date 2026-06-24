@@ -384,6 +384,59 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "Base URL drift"
   end
 
+  test "docs present the final Phase 115 lifecycle command surface" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    lifecycle_commands = [
+      "docker compose -f examples/adoption_demo/docker-compose.yml up --build",
+      "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh",
+      "examples/adoption_demo/bin/docker-stop",
+      "examples/adoption_demo/bin/docker-cleanup --execute",
+      "./scripts/maintainer/repo_hygiene_check.sh --project lockspire-adoption-demo --skip-mix-ci"
+    ]
+
+    Enum.each(lifecycle_commands, fn command ->
+      assert docs =~ command
+    end)
+
+    assert_ordered(docs, lifecycle_commands)
+    assert docs =~ "start -> smoke -> stop -> cleanup -> hygiene"
+    assert docs =~ "no demo-owned `BLOCK` findings"
+    refute docs =~ "Phase 115 owns broader cleanup and hygiene commands"
+  end
+
+  test "docs align stop reset cleanup and hygiene semantics with scripts" do
+    docs = File.read!(@adoption_demo_docs_path)
+
+    assert docs =~ "examples/adoption_demo/bin/docker-stop"
+    assert docs =~ "preserve"
+    assert docs =~ "volumes"
+    assert docs =~ "db_data"
+    assert docs =~ "deps_volume"
+    assert docs =~ "build_volume"
+    assert docs =~ "Dry run"
+    assert docs =~ "--execute"
+    assert docs =~ "--project"
+    assert docs =~ "COMPOSE_PROJECT_NAME"
+    assert docs =~ "tmp/adoption_demo.log"
+    assert docs =~ "examples/adoption_demo/_build"
+    assert docs =~ "examples/adoption_demo/deps"
+    assert docs =~ "tmp/admin-ui-polish/"
+    assert docs =~ "preserved by default"
+    assert docs =~ "does not delete broad `tmp/`"
+    assert docs =~ "unrelated ignored files"
+    assert docs =~ "unrelated Docker resources"
+    assert docs =~ "host-wide Docker state"
+    assert docs =~ "repo_hygiene_check.sh --ci"
+    assert docs =~ "running active-project demo containers"
+    assert docs =~ "BLOCK"
+
+    refute docs =~ "docker system prune"
+    refute docs =~ "docker volume prune"
+    refute docs =~ "docker compose down -v"
+    refute docs =~ "docker compose down --volumes"
+  end
+
   test "docs use wrapper and docker-info for Phase 114 proof commands" do
     docs = File.read!(@adoption_demo_docs_path)
 
@@ -413,6 +466,13 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       {position, _length} -> position
       :nomatch -> flunk("Expected docs to contain #{inspect(text)}")
     end
+  end
+
+  defp assert_ordered(text, ordered_fragments) do
+    ordered_fragments
+    |> Enum.map(&docs_position!(text, &1))
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.each(fn [left, right] -> assert left < right end)
   end
 
   defp with_compose_config(args, opts \\ [], fun) do
