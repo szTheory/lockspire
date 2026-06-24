@@ -32,4 +32,7 @@ Seeded OAuth clients
 
 Smoke command
   LOCKSPIRE_DEMO_BASE_URL=${BASE_URL} python3 scripts/demo/adoption_smoke.py
+
+Reprint:
+  docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 INFO

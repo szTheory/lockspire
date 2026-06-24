@@ -95,7 +95,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ ~r/BASE_URL=.*LOCKSPIRE_DEMO_BASE_URL/
     assert source =~ ~r/BASE_URL=.*%\//
     assert source =~ "Running adoption demo smoke against ${BASE_URL}"
-    assert source =~ "LOCKSPIRE_DEMO_BASE_URL=${BASE_URL}"
+    assert source =~ ~r/LOCKSPIRE_DEMO_BASE_URL="?\$\{BASE_URL\}"?/
     assert source =~ "exec python3 scripts/demo/adoption_smoke.py"
 
     refute source =~ "lockspire-demo.localhost" <> "\n" <> "exec"
