@@ -10,17 +10,17 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-eight planning milestones, including the v1.29 admin UI deep-polish milestone. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, and admin journey/design-system deep polish in v1.29.
+Lockspire has now archived twenty-nine planning milestones, including the v1.30 adoption-demo Docker DX and repo-hygiene milestone. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, and adoption-demo Docker DX plus repo hygiene in v1.30.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently completed feature milestone, `v1.29 Admin UI Journey & Design-System Deep Polish`, tightened the route-by-route operator journey model, deepened the shared BEM/design-token component contract, polished weaker support/operations/configuration surfaces, and closed route-complete screenshot/browser proof with 390px mobile no-page-overflow evidence. v1.29 intentionally preserved the embedded-library boundary and protocol behavior.
+The most recently completed feature milestone, `v1.30 Adoption Demo Docker DX & Repo Hygiene`, made the repo-local adoption demo easier to start, harder to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI pass. v1.30 intentionally preserved the embedded-library boundary and did not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
 
-Phases 111 through 114 of v1.30 are complete: the adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, and smoke drift proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`; the default Docker path now starts Phoenix/Bandit plus PostgreSQL, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. Phase 115 remains for repo hygiene gates and scoped cleanup.
+The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
 
-## Current Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
+## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
 **Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
 
@@ -30,6 +30,13 @@ Phases 111 through 114 of v1.30 are complete: the adoption demo now has one cano
 - Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
 
 **Why now:** v1.29 produced route-complete admin UI proof, but the next UI iteration needs a boring, repeatable local demo base. Docker port conflicts and leftover generated artifacts are recurring friction when multiple local Elixir OSS libraries with admin UIs are running side by side.
+
+**Delivered:**
+- Phase 111 unified the adoption demo around `LOCKSPIRE_DEMO_BASE_URL` for endpoint URL generation, issuer, seed URLs, developer callback output, and smoke drift proof.
+- Phase 112 added the direct Docker app plus PostgreSQL path with explicit DB wiring, project-scoped volumes, idempotent setup, and HTTP readiness.
+- Phase 113 added configurable Compose project names, app ports, optional DB host exposure, scoped reset, and opt-in Traefik hostname routing.
+- Phase 114 added redacted startup/reprint output, wrapper-driven smoke proof, Docker-first docs, and project-aware reprint guidance.
+- Phase 115 added scoped stop/reset/cleanup helpers, local PASS/WARN/BLOCK hygiene, Docker-free CI hygiene contracts, and final lifecycle proof.
 
 ## Completed Milestone: v1.29 Admin UI Journey & Design-System Deep Polish
 
@@ -151,7 +158,7 @@ Phases 111 through 114 of v1.30 are complete: the adoption demo now has one cano
 
 ### Active
 
-- Add a repo hygiene gate and cleanup lane for generated demo artifacts, Docker leftovers, and dirty local state before the next UI milestone.
+- None. Fresh requirements should be defined by the next milestone.
 
 ### Validated
 
@@ -214,6 +221,7 @@ Phases 111 through 114 of v1.30 are complete: the adoption demo now has one cano
 - Validated in Phase 112: the default Docker adoption-demo path starts direct Phoenix/Bandit plus PostgreSQL without host Postgres, uses explicit DB wiring and project-scoped `db_data`, `deps`, and `_build` volumes, prepares the database idempotently, and waits for the configured public URL before printing the ready line.
 - Validated in Phase 113: conflict-resistant adoption-demo Docker controls support configurable Compose project names, app ports, scoped reset of active-project volumes, optional PostgreSQL host-port exposure, and opt-in Traefik hostname routing while keeping direct Docker as the default path.
 - Validated in Phase 114: startup output prints redacted URL/account/client/smoke/reprint information from `docker-info`, `docker-start` uses container-local readiness separate from the public base URL, `scripts/demo/adoption_smoke.sh` wraps the existing Python OAuth/OIDC proof for direct and optional Traefik targets, and `docs/adoption-demo.md` documents Docker-first startup, smoke, stop, reset, cleanup boundary, overrides, and troubleshooting.
+- Validated in Phase 115: adoption-demo stop, reset, cleanup, and hygiene commands are scoped to the active Compose project and allowlisted repo-owned artifacts; local hygiene reports PASS/WARN/BLOCK findings; CI hygiene remains Docker-daemon-free; useful admin UI evidence is preserved; lifecycle proof can leave no demo-owned BLOCK findings; and v1.30 does not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
 
 ### Out of Scope
 
@@ -277,6 +285,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Resolve v1.27 with Branch A + JWT-default issuance | Narrow `Lockspire.Plug.VerifyToken` to RFC 9068 `at+jwt` only and flip the default access-token format from opaque to `:jwt` for AC/refresh/device/CIBA paths. Opaque remains available as an explicit per-client opt-in and continues to back `/userinfo` and `/introspect`. Canon-aligned (the prompts/ corpus explicitly endorses `access_token_format: :jwt` as the secure default), ecosystem-aligned (every modern RS library written post-RFC-9068 defaults to JWT at the plug), and structurally avoids the auto-detection footgun class documented in Ory oathkeeper #257 / Spring Boot's startup-exception guardrail. Branch B (dual-verifier plug with shape-dispatch) and introspection-at-the-RS as the host-API seam both explicitly rejected | Adopted at v1.27 milestone start (2026-05-27); recorded in `.planning/REQUIREMENTS.md` design-decision section |
 | Start v1.28 as an admin UI polish milestone | The admin surface now spans setup proof, partner onboarding, support investigation, security posture review, operations triage, DCR, and key lifecycle. The highest-leverage adoption wedge is coherent operator UX and reusable design-system primitives, not more OAuth/OIDC protocol breadth. | Adopted at v1.28 milestone start (2026-06-03); archived in `.planning/milestones/v1.28-REQUIREMENTS.md` |
 | Start v1.29 as an admin journey and design-system deep polish milestone | v1.28 established the coherent admin UI baseline. The next value is a systematic route-by-route operator journey pass, with strongest attention on support/operations/mobile/design-system weak spots rather than more protocol breadth or a UI rewrite. | Adopted at v1.29 milestone start (2026-06-03); archived 2026-06-04 |
+| Start and complete v1.30 as adoption-demo Docker DX and repo hygiene | v1.29 produced route-complete admin UI proof, but the next UI iteration needed a boring, repeatable local demo base with fewer Docker conflicts, clearer startup output, wrapper-driven smoke proof, and scoped cleanup/hygiene before more UI polish. | Adopted at v1.30 milestone start (2026-06-04); archived 2026-06-24 |
 
 ## Evolution
 
@@ -296,4 +305,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-24 — v1.30 phases 111-114 complete; Phase 115 repo hygiene remains.*
+*Last updated: 2026-06-24 after v1.30 milestone completion*

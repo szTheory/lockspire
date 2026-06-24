@@ -74,12 +74,50 @@
 
 ---
 
+## Milestone: v1.30 — Adoption Demo Docker DX & Repo Hygiene
+
+**Shipped:** 2026-06-24
+**Phases:** 5 | **Plans:** 12
+
+### What Was Built
+- One `LOCKSPIRE_DEMO_BASE_URL` contract now drives endpoint URL generation, issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof.
+- The default repo-local Docker demo now starts Phoenix/Bandit plus PostgreSQL with project-scoped volumes, idempotent setup, and readiness before reporting the demo ready.
+- Conflict controls cover configurable Compose project names, app ports, optional DB host exposure, scoped reset, and opt-in Traefik hostname routing.
+- Startup and reprint output now expose redacted URL/account/client/smoke information, including project-aware reprint guidance for alternate Compose projects.
+- Stop, reset, cleanup, and hygiene lanes are scoped to the active demo project, dry-run or non-destructive by default, and backed by Docker-free CI contracts.
+
+### What Worked
+- Keeping direct Docker as the default and Traefik as an explicit override made the maintainer path simpler without losing hostname-routing support.
+- Source contracts were effective for shell/docs behavior that would otherwise depend on local Docker daemon state.
+- The milestone audit caught a real edge case in alternate-project reprint guidance before archival.
+
+### What Was Inefficient
+- Validation metadata quality varied across phases even when executable verification was strong.
+- The generated roadmap archive preserved Phase 114/115 summary rows less descriptively than the phase archives themselves, so future readers should prefer the archived phase details for exact plan names.
+
+### Patterns Established
+- Treat demo shell scripts as public maintainer contracts: syntax-check them, assert allowed destructive scope, and keep docs/tests synchronized.
+- Separate public browser URL truth from container-local readiness URL and listener bind IP.
+- Keep CI deterministic by validating Docker source contracts instead of requiring a local Docker lifecycle in CI.
+
+### Key Lessons
+1. Local demo DX is part of product trust for an embedded auth library; ambiguous startup, cleanup, or smoke instructions erode confidence quickly.
+2. Project-name and port overrides need to be carried through every visible command, not only startup and cleanup.
+3. Milestone close should include an integration pass even when every phase verification is green, because cross-phase command drift tends to hide between individually correct slices.
+
+### Cost Observations
+- Model mix: not recorded.
+- Notable: The automated follow-up closed the audit's only tech-debt item before archive.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.30 | N/A | 5 | Docker demo lifecycle and hygiene commands became source-contracted maintainer surfaces. |
 | v1.29 | N/A | 4 | Route journey contract became the admin UI source of truth across docs, tests, screenshots, and page polish. |
 | v1.27 | ~6 | 6 | Hash-pinned canonical docs as an executable contract before code. |
 
@@ -87,6 +125,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.30 | Docker/source/docs/hygiene contracts plus smoke wrapper proof | High | POSIX shell lifecycle helpers and deterministic CI source checks |
 | v1.29 | Admin LiveView/design-system/browser/screenshot proof | High | BEM/design-token contract tests |
 | v1.27 | N/A | High | Contract tests |
 
@@ -95,3 +134,4 @@
 1. **Executable Documentation:** Pinning docs to tests prevents setup guides from drifting from the runtime implementation.
 2. **End-to-End Proof:** Smoke tests and generated-host tests are the ultimate arbitrator of feature completion.
 3. **Route Contracts for Operator UI:** UI polish scales better when every route has an explicit job, risk state, empty state, and follow-up route before component work starts.
+4. **Demo Lifecycle Contracts:** Maintainer-facing Docker scripts need the same source-contract and redaction discipline as protocol-facing code.

@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.30 Adoption Demo Docker DX & Repo Hygiene (Shipped: 2026-06-24)
+
+**Phases completed:** 5 phases, 12 plans, 33 tasks
+
+**Key accomplishments:**
+
+- Adoption demo config now derives Phoenix URL generation and Lockspire issuer from one normalized base URL, with Docker binding controlled by an explicit listener env.
+- Seed data, developer app output, and the adoption smoke now consume the same base URL contract and expose labelled drift diagnostics.
+- Direct Docker Compose adoption-demo stack with Phoenix/Bandit web, internal PostgreSQL, and isolated container build volumes
+- Idempotent Docker startup wrapper with Postgres wait, database prepare, public HTTP readiness, and direct smoke proof
+- Direct Docker adoption-demo conflict controls using Compose interpolation, opt-in DB host exposure, and active-project scoped reset.
+- Opt-in Traefik hostname routing for the adoption demo with configurable labels, web-only proxy network membership, and hostname-based smoke docs.
+- Redacted Docker startup information now prints the active demo URLs, seeded account/client allowlists, and exact smoke command after HTTP readiness.
+- Thin base-URL-driven smoke wrapper now delegates to the existing Python OAuth/OIDC proof and docker-info prints the running-service reprint command.
+- Docker-first adoption demo docs now cover startup output, reprint, smoke wrappers, stop/reset boundaries, overrides, optional Traefik, and troubleshooting.
+- Contract-proven adoption demo stop and cleanup helpers with active-project Docker scoping and dry-run-first deletion safeguards.
+- Local adoption-demo hygiene now reports scoped Docker leftovers and generated artifacts, while CI proves cleanup and smoke boundaries without daemon access.
+- Adoption demo docs and contracts now agree on stop, reset, cleanup, hygiene, CI, and local lifecycle proof boundaries.
+
+---
+
 ## v1.29 Admin UI Journey & Design-System Deep Polish (Shipped: 2026-06-04)
 
 **Phases completed:** 4 phases, 17 plans, 29 tasks
