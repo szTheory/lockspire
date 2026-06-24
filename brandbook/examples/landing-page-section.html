@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockspire — Landing Section Example</title>
+<link rel="icon" href="../logo/lockspire-favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<style>
+  /* A single marketing hero + feature strip, dark-first, built from brand tokens.
+     Demonstration fragment — not a full site. */
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ls-font-sans);background:var(--ls-color-gray-950);color:#c9d4e3;line-height:1.6}
+  .nav{max-width:1100px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;gap:18px}
+  .nav .logo{display:inline-flex;color:#f8fafc}
+  .nav .logo svg{height:26px;width:auto}
+  .nav a{color:#8a99ad;font-size:14px;font-weight:500;margin-left:22px;text-decoration:none}
+  .nav a:hover{color:#22d3ee}
+  .nav .cta{margin-left:auto;background:#22d3ee;color:#0b1220;font-weight:600;font-size:14px;padding:9px 16px;border-radius:var(--ls-radius-md);text-decoration:none}
+  .hero{max-width:1100px;margin:0 auto;padding:70px 28px 60px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;top:-120px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(34,211,238,.12),transparent 70%);pointer-events:none}
+  .eyebrow{font-family:var(--ls-font-mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#22d3ee}
+  .hero h1{font-family:var(--ls-font-display);font-size:clamp(38px,6vw,64px);font-weight:700;letter-spacing:-.02em;color:#f8fafc;margin:18px 0 0;max-width:16ch;line-height:1.05}
+  .hero h1 .hl{color:#22d3ee}
+  .hero p{font-size:20px;max-width:56ch;margin:22px 0 0;color:#c9d4e3}
+  .hero .actions{margin:34px 0 0;display:flex;gap:14px;flex-wrap:wrap}
+  .btn-primary{background:#22d3ee;color:#0b1220;font-weight:600;font-size:15px;padding:13px 22px;border-radius:var(--ls-radius-md);text-decoration:none;border:none;cursor:pointer}
+  .btn-ghost{background:transparent;color:#f8fafc;font-weight:600;font-size:15px;padding:13px 22px;border-radius:var(--ls-radius-md);border:1px solid #334155;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+  .install{margin-top:34px;font-family:var(--ls-font-mono);font-size:14px;background:#131c2e;border:1px solid #1e293b;border-radius:var(--ls-radius-lg);padding:14px 18px;color:#c9d4e3;max-width:480px;display:flex;justify-content:space-between;align-items:center}
+  .install .c{color:#8a99ad}
+  .features{max-width:1100px;margin:0 auto;padding:20px 28px 90px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:760px){.features{grid-template-columns:1fr}}
+  .feat{background:#131c2e;border:1px solid #1e293b;border-radius:var(--ls-radius-xl);padding:24px}
+  .feat .ic{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--ls-radius-md);background:rgba(34,211,238,.12);margin-bottom:14px}
+  .feat .ic svg{height:20px;width:auto}
+  .feat h3{font-family:var(--ls-font-display);font-size:17px;color:#f8fafc;margin:0 0 7px}
+  .feat p{font-size:14px;color:#8a99ad;margin:0}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="logo" aria-label="Lockspire"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="0 0 5507.6 1046"><path fill="#0e7490" d="M42.546 845.985h382.91l-42.546-85.091H85.091ZM234 37.618l85.092 212.728 42.546 510.548H234Z"/><path fill="#22d3ee" d="m234 37.618-85.09 212.728-42.546 510.548h127.637Z"/><path fill="#67e8f9" d="m234 80.164-42.545 170.182 10.637 510.548H234Z"/><path fill="#a5f3fc" d="m234 37.618-42.545 212.728h42.546Z"/><path fill="#f8fafc" d="M660 846V66h154v657.5h336.5V846Zm812.35 15q-146 0-217.75-85.5T1182.85 546t71.75-229.5 217.75-85.5 217.75 85.5 71.75 229.5-71.75 229.5-217.75 85.5m0-103q70.55 0 103.275-54.25t32.725-158.125-32.725-157.75T1472.35 334t-103.275 53.875-32.725 157.75 32.725 158.125T1472.35 758m628.1 103q-136.75 0-207.875-85.375T1821.45 546q0-150.75 74.75-232.875T2101.95 231q115.5 0 182.625 61.875T2364.95 463.5H2218.7q-7.5-60.25-37.25-92.625t-78-32.375q-63.25 0-95.875 54.25T1974.95 546t32.25 153.25 95.5 54.25q49 0 78.75-32.75t37.25-92.25h146.25q-14.5 107.5-81.875 170T2100.45 861m360.35-15V46h148v433.75h48l175-233.75h159v6l-210.75 274.5L3014.8 840v6h-174.75L2656.8 592.25h-48V846Zm827.1 15q-95.75 0-153.875-31t-85.5-78.875T3017.4 654h142q4.5 27 20.875 50.25t44.75 36.75 69.625 13.5q49.25 0 72.25-18t23-46.75q0-26-20.25-44t-65-32.75l-71.75-24.25q-51-18-93.625-39.5t-68.25-55.125T3045.4 407.5q0-79.25 59.5-127.875T3272.4 231q78 0 128 24.75t75.5 66.25 29.5 92h-136.5q-4.75-36.5-30-58.75T3266.65 333q-41 0-61.875 16.375T3183.9 394q0 28 21.75 46.25t66 33.25l71.75 23.25q51 16.5 93.125 38t67 55.375 24.875 87.625q0 82.25-61.625 132.75T3287.9 861m331.6 185V246H3756v78h24q19.75-37.5 60-64.125t107.75-26.625q80.75 0 134 40t79.875 110.625 26.625 162.875q0 92.75-27 163.375t-80.5 109.625-132.5 39q-58.75 0-96.75-21.75t-59.5-58.5h-24V1046Zm289-295.25q59.5 0 92.875-51.875T4034.75 546t-33.375-152.875-92.875-51.875q-64.5 0-102.875 55.25T3767.25 546q0 93.5 38.375 149.125T3908.5 750.75M4288.1 846V246h148.5v600Zm287.6 0V246h135v108h24q6-28.75 22.125-54.875T4806.7 256.5t91.5-16.5h29v135h-40.5q-86.25 0-124.375 43.875T4724.2 552v294Zm662.85 15q-139.5 0-212.5-85.375t-73-230.375q0-97 32.75-167.125t96-108.625 155-38.5q131.25 0 201 80.75t69.75 236.5v33.25H5097.8q5 79 41 125.75t100 46.75q49.5 0 79.625-29t40.625-71h141q-10 56.5-40.75 103.375t-85.25 75.25T5238.55 861m-140.5-375.5h264.75q-3.75-72.75-36-112.375t-91-39.625q-59 0-94.25 38.375t-43.5 113.625"/><path fill="#22d3ee" d="m4362.6 180 90-90-90-90-90 90Z"/><path fill="#0e7490" d="m4362.6 180-90-90 90-90Z"/></svg></span>
+    <a href="#">Docs</a><a href="#">Guides</a><a href="#">Pricing</a>
+    <a class="cta" href="#">Get started</a>
+  </nav>
+
+  <section class="hero">
+    <div class="eyebrow">OAuth/OIDC for Phoenix</div>
+    <h1>Become a trusted <span class="hl">platform</span>, inside your own app.</h1>
+    <p>Lockspire turns your Phoenix application into a secure OAuth/OIDC provider — modern protocols, clean operator controls, and a surface that feels integrated, not outsourced.</p>
+    <div class="actions">
+      <a class="btn-primary" href="#">Read the quickstart</a>
+      <a class="btn-ghost" href="#">★ Star on GitHub</a>
+    </div>
+    <div class="install"><span><span class="c">def deps do</span> {:lockspire, "~&gt; 1.2"}</span><button style="background:none;border:none;color:#22d3ee;font:inherit;cursor:pointer">copy</button></div>
+  </section>
+
+  <section class="features">
+    <div class="feat"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="2 4 40 80"><path fill="#0e7490" d="M4 82h36l-4-8H8ZM22 6l8 20 4 48H22Z"/><path fill="#22d3ee" d="m22 6-8 20-4 48h12Z"/><path fill="#67e8f9" d="m22 10-4 16 1 48h3Z"/><path fill="#a5f3fc" d="m22 6-4 20h4Z"/></svg></div><h3>Embedded, not bolted on</h3><p>Runs inside your app. Keep your accounts, login UX, and branding — Lockspire owns only the protocol surface.</p></div>
+    <div class="feat"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="2 4 40 80"><path fill="#0e7490" d="M4 82h36l-4-8H8ZM22 6l8 20 4 48H22Z"/><path fill="#22d3ee" d="m22 6-8 20-4 48h12Z"/><path fill="#67e8f9" d="m22 10-4 16 1 48h3Z"/><path fill="#a5f3fc" d="m22 6-4 20h4Z"/></svg></div><h3>Operational calm</h3><p>Clients, scopes, consent, tokens, and key rotation in one orderly, low-anxiety admin console.</p></div>
+    <div class="feat"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Lockspire" viewBox="2 4 40 80"><path fill="#0e7490" d="M4 82h36l-4-8H8ZM22 6l8 20 4 48H22Z"/><path fill="#22d3ee" d="m22 6-8 20-4 48h12Z"/><path fill="#67e8f9" d="m22 10-4 16 1 48h3Z"/><path fill="#a5f3fc" d="m22 6-4 20h4Z"/></svg></div><h3>Modern by default</h3><p>PAR, DPoP, dynamic client registration, and token inspection — current OAuth/OIDC, done correctly.</p></div>
+  </section>
+</body>
+</html>
