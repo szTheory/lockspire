@@ -2,16 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.30
 milestone_name: Adoption Demo Docker DX & Repo Hygiene
+current_phase: 114
+current_phase_name: startup-output-smoke-wrapper-docs
 status: executing
 stopped_at: Phase 113 verified and complete
-last_updated: "2026-06-24T16:45:58.706Z"
+last_updated: "2026-06-24T16:52:06.987Z"
 last_activity: 2026-06-24
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 9
-  completed_plans: 7
-  percent: 60
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -27,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 114 (startup-output-smoke-wrapper-docs) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-24
 
@@ -79,6 +81,9 @@ Last activity: 2026-06-24
 - [Phase 113]: Phase 113 Plan 02 kept LOCKSPIRE_DEMO_BASE_URL as the hostname smoke truth for Traefik mode.
 - [Phase 114]: Plan 01 docker-info uses static allowlisted fixture truth instead of database inspection or seed stdout.
 - [Phase 114]: Plan 01 docker-start prints startup information only after wait_for_http succeeds.
+- [Phase 114]: Plan 02 kept scripts/demo/adoption_smoke.py as the only black-box OAuth/OIDC proof implementation.
+- [Phase 114]: Plan 02 used LOCKSPIRE_DEMO_BASE_URL as the only direct Docker versus optional Traefik smoke switch.
+- [Phase 114]: Plan 02 recorded docker compose exec against the running web service as INFO-04 reprint truth.
 
 ## Blockers/Concerns
 
@@ -120,7 +125,8 @@ Last activity: 2026-06-24
 | Phase 113 P01 | 6 min | 3 tasks | 5 files |
 | Phase 113 P02 | 4min | 2 tasks | 3 files |
 | Phase 114 P01 | 5 min | 2 tasks | 3 files |
+| Phase 114 P02 | 4 min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
-- Execute Phase 114 Plan 02.
+- Execute Phase 114 Plan 03.
