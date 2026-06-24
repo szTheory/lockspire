@@ -340,17 +340,17 @@ BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://127.0.0.1:4100").rs
 |---|-------|---------|---------------|
 | A1 | A POSIX shell `docker-info` script is preferable to a Mix task for this phase. [ASSUMED] | Standard Stack / Architecture Patterns | If the team wants Elixir-derived data instead, planner should swap implementation to a Mix task while preserving the same output contract. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `northstar-dcr-self-registered` and `legacy-disabled-reporter` appear in startup output?**
+1. **RESOLVED: `northstar-dcr-self-registered` and `legacy-disabled-reporter` should appear in startup output when printed by safe ID/shape.**
    - What we know: Success criteria says seeded OAuth client IDs and demo shapes; seed file contains five clients, while smoke/docs focus on three primary demo clients. [VERIFIED: examples/adoption_demo/priv/repo/seeds.exs]
-   - What's unclear: Whether startup should list all five clients or only the primary maintainer demo shapes. [ASSUMED]
-   - Recommendation: Print all seeded client IDs with concise safe shapes, but visually group the three maintainer-flow clients first. [ASSUMED]
+   - Decision: Print all seeded clients that are safe to print by ID and shape, including `acme-ledger-public`, `acme-tv-device`, `acme-ledger-backend`, `northstar-dcr-self-registered`, and `legacy-disabled-reporter`; do not print hashes, plaintext secrets, tokens, private keys, cookies, authorization codes, or raw seed output. [RESOLVED]
+   - Implementation allowance: The planner/executor may visually prioritize the maintainer-flow clients first in docs/scripts, as long as the remaining safe seeded client IDs/shapes are still present and redaction checks pass. [RESOLVED]
 
-2. **Should stop/cleanup docs point to Phase 115 commands before they exist?**
+2. **RESOLVED: DOCS-02 cleanup coverage should document current stop/reset truth and mark cleanup command details as Phase 115 until implemented.**
    - What we know: DOCS-02 asks docs to cover stop, reset, cleanup, and troubleshooting; cleanup implementation is Phase 115. [VERIFIED: .planning/REQUIREMENTS.md]
-   - What's unclear: Whether Phase 114 should document a placeholder cleanup section or only explain current reset/stop commands and say cleanup lands in Phase 115. [ASSUMED]
-   - Recommendation: Document stop and existing reset concretely; include cleanup as a Phase 115-scoped note only if no cleanup command exists yet. [ASSUMED]
+   - Decision: Document the current stop command and existing reset behavior concretely, including that reset is scoped to active-project volumes. Do not claim a cleanup command exists before Phase 115 implements it. [RESOLVED]
+   - Implementation allowance: Include a cleanup section that states detailed cleanup command coverage is Phase 115/future work until implemented, so docs satisfy DOCS-02 without false command claims. [RESOLVED]
 
 ## Environment Availability
 

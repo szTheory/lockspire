@@ -46,8 +46,8 @@ created: 2026-06-24
 | 114-02-01 | 02 | 2 | INFO-04 | T-114-03 | Reprint path is read-only and does not recreate containers | source/docs/runtime | `rg -n "docker compose.*exec web ./bin/docker-info" docs/adoption-demo.md examples/adoption_demo/bin/*` | no, Wave 0 | pending |
 | 114-02-02 | 02 | 2 | SMOKE-01 | T-114-04 | Direct Docker smoke uses the active direct base URL | runtime | `LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 python3 scripts/demo/adoption_smoke.py` | yes | pending |
 | 114-02-03 | 02 | 2 | SMOKE-02 | T-114-04 | Traefik smoke uses the active hostname base URL when Traefik is enabled | runtime/manual | `LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py` | yes | pending |
-| 114-03-01 | 03 | 2 | DOCS-01 | T-114-05 | Docker remains the default documented path and host-local remains fallback | docs contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | yes | pending |
-| 114-03-02 | 03 | 2 | DOCS-02 | T-114-05 | Docs cover startup, Traefik, smoke, stop, reset, cleanup, env overrides, and troubleshooting | docs contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | yes | pending |
+| 114-03-01 | 03 | 3 | DOCS-01 | T-114-05 | Docker remains the default documented path and host-local remains fallback | docs contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | yes | pending |
+| 114-03-02 | 03 | 3 | DOCS-02 | T-114-05 | Docs cover startup, Traefik, smoke, stop, reset, cleanup, env overrides, and troubleshooting | docs contract | `mix test test/lockspire/adoption_demo_docker_contract_test.exs --seed 0` | yes | pending |
 
 ---
 
