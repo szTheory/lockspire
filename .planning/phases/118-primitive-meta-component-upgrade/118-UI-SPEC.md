@@ -36,6 +36,7 @@ Phase 118 must make the admin UI read as structured trust: calm, dense, precise 
 Required visual qualities:
 
 - Surfaces stay quiet and work-focused: muted page background, white/dark panels, restrained borders, compact rows, and clear hierarchy.
+- The primary visual anchor for upgraded admin compositions is the `entity_header` title/status/action cluster, followed by pane headings and lifecycle rows.
 - Signal Cyan remains restrained. Use Deep Cyan `#0e7490` for light-mode action text/fills and Signal Cyan `#22d3ee` for dark-mode accent, focus, logo, and large non-text signal only.
 - No decorative security tropes: no shields, threat maps, novelty console styling, panic language, or generic cyber visuals.
 - Components must tolerate generated long values, dense scopes, repeated badges, and destructive clusters without horizontal page overflow.
@@ -50,16 +51,15 @@ Declared values are the existing 4px baseline token scale:
 |-------|-------|-------|
 | `--ls-space-1` | 4px | Dot gaps, required-marker gaps, tight inline rhythm |
 | `--ls-space-2` | 8px | Badge gaps, help/error stack gaps, compact control padding |
-| `--ls-space-3` | 12px | Button clusters, row metadata gaps, compact section padding |
-| `--ls-space-4` | 16px | Default element spacing, form/filter padding, metric padding |
-| `--ls-space-5` | 20px | Form stack rhythm and compact workflow breaks |
+| `--ls-space-4` | 16px | Default element spacing, form/filter padding, metric padding, button clusters, row metadata gaps, compact section padding |
 | `--ls-space-6` | 24px | Section/card padding and ordinary page group gaps |
 | `--ls-space-8` | 32px | Page body padding and page-hero padding |
-| `--ls-space-10` | 40px | Reserved for expanded structural spacing when existing CSS uses it |
 | `--ls-space-12` | 48px | Empty-state vertical padding and major group breathing room |
+| `--ls-space-16` | 64px | Largest structural page breathing room when a primitive needs explicit major separation |
 
 Exceptions:
 
+- Existing legacy tokens or CSS values at 12px, 20px, and 40px may remain only as compatibility values already shipped in current CSS. They are not active Phase 118 spacing choices and must not be used for new primitive, meta-component, or lab spacing declarations.
 - Control minimum height stays `--ls-control-height: 40px` because it is already shipped. Do not introduce smaller interactive targets.
 - Badge pill radius may remain `9999px`; cards and panels stay at `--ls-radius-lg` or less unless existing CSS already uses the token.
 - Dense rows may reduce internal gap to `--ls-space-2` only when long values still wrap and focus remains visible.
