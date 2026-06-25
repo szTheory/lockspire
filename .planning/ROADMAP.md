@@ -91,6 +91,21 @@ Plans:
 - Keep Phoenix function components as the default. Use LiveComponents only where stateful reuse is genuinely needed.
 - Preserve existing component call sites while enabling better group-level composition.
 
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 118-01-PLAN.md — Structural primitive/meta-component upgrade for DS-02
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 118-02-PLAN.md — Domain-aware status semantics for DS-03
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 118-03-PLAN.md — Form/workflow primitive adoption proof, exception inventory, and stress/lab coverage for DS-04
+
 ### Phase 119: Weak-Page Application & IA/Copy Pass
 
 **Goal:** Apply the strengthened design system to the highest-drift routes and verify each page/group serves its operator job.
