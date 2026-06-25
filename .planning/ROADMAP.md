@@ -25,19 +25,26 @@
 **Requirements:** LAB-01, LAB-03
 
 **Success criteria:**
+
 1. The inventory derives routes from `Lockspire.Web.AdminRouter` and explicitly includes the query-driven client logout-propagation workflow.
 2. The component inventory lists primitives, meta-components, production usage points, missing states, and known exceptions.
 3. The visual/UX rubric names Lockspire brand principles from `brandbook/`, including architectural structure, restrained Signal Cyan, calm operator hierarchy, light/dark/system parity, and no generic security tropes.
 4. The component lab contract states that the lab is maintainer/demo/test-only and does not create a new supported admin route or public API.
 
 **Implementation notes:**
+
 - Treat Phase 107 route vocabulary, Phase 108 component primitives, Phase 109 weak-page polish, and Phase 110 browser evidence as baseline inputs.
 - Do not add PhoenixStorybook in this phase; record it as a rejected/default-deferred alternative unless later evidence forces a change.
 
 **Plans:** 2 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 116-01-PLAN.md — Source-derived route/workflow inventory and brandbook visual rubric
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 116-02-PLAN.md — Component/group inventory and maintainer-only lab contract
 
 ### Phase 117: Component Lab, Fixtures & Foundation Hardening
@@ -47,12 +54,14 @@ Plans:
 **Requirements:** LAB-02, DS-01, DS-05, PROOF-01
 
 **Success criteria:**
+
 1. The stress surface renders real admin components and component groups across normal, empty, error, disabled, destructive, long-value, dense-data, light, dark, system, and reduced-motion states.
 2. Demo/test fixtures cover healthy, warning, incident, disabled, self-registered, expired, revoked, reuse-detected, copy-once, empty, dense, and long-value states without storing or exposing plaintext secrets.
 3. Admin CSS explicitly supports light color-scheme behavior, preserves semantic dark-mode remapping, strengthens dark surface/elevation readability, and keeps Signal Cyan restrained on light surfaces.
 4. Motion uses explicit transition properties, short purposeful feedback, no broad `transition: all`, and reduced-motion-safe active states.
 
 **Implementation notes:**
+
 - Prefer a Lockspire-owned Phoenix component stress module or demo-only page over a packaged route.
 - Add browser harness scaffolding here if adopting Playwright + axe; keep it outside Hex package files and documented as maintainer proof tooling.
 
@@ -63,12 +72,14 @@ Plans:
 **Requirements:** DS-02, DS-03, DS-04
 
 **Success criteria:**
+
 1. Shared components expose backward-compatible attrs/slots for architectural panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, and table/list alternatives.
 2. Status badges intentionally classify all real Configure, Support, and Operate statuses used by current admin pages.
 3. Forms use shared field, help, error, and workflow primitives wherever practical; any exception is documented and covered by tests.
 4. Component stress tests cover disabled links, destructive action groups, dense filters, secondary navigation, empty tables/lists, repeated badges, and generated long values.
 
 **Implementation notes:**
+
 - Keep Phoenix function components as the default. Use LiveComponents only where stateful reuse is genuinely needed.
 - Preserve existing component call sites while enabling better group-level composition.
 
@@ -79,6 +90,7 @@ Plans:
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, FLOW-05
 
 **Success criteria:**
+
 1. Client detail separates identity, posture, credentials, endpoints, DCR/RAT, support pivots, and destructive lifecycle actions into clearer panes/groups.
 2. DCR policy separates gate, allowlist, lifetime, auth-method, and risk decisions without changing policy semantics.
 3. IAT index/new, token detail, consent detail, device authorization, interaction, and logout queue surfaces state page job, primary decision, empty state, risk state, and next safe action.
@@ -86,6 +98,7 @@ Plans:
 5. Microcopy is concise, domain-accurate, calm, and consequence-oriented without high-anxiety or generic wording.
 
 **Implementation notes:**
+
 - Start from the weakest/highest-drift surfaces identified during planning: client detail, DCR policy, IATs, support details, and operation queues.
 - Avoid a full route rewrite. Change shared components first, then production pages where the shared pattern materially improves scanability or safety.
 
@@ -96,12 +109,14 @@ Plans:
 **Requirements:** PROOF-02, PROOF-03, PROOF-04
 
 **Success criteria:**
+
 1. Browser proof covers 320px, 390px, 768px, 1024px, and 1440px widths across representative routes and light, dark, system, and reduced-motion modes.
 2. Automated guardrails cover brand-token drift, raw color drift, responsive overflow, focus reachability, accessible labels/descriptions, duplicate IDs, contrast token pairs, plaintext secret leakage, and generic CTA drift.
 3. Operator docs explain the strengthened design-system workflow, component lab boundary, theme behavior, and verification expectations without creating new public support claims.
 4. Final adversarial review checks for host-app integration weight, inaccessible custom behavior, generic template UI drift, dark/mobile regressions, screenshot-only quality, and protocol/support-surface creep.
 
 **Implementation notes:**
+
 - Fresh browser evidence is required after CSS/component/page changes; do not rely on Phase 110 screenshots as current proof.
 - If Playwright + axe proves too heavy during implementation, fall back to Elixir-only contracts plus manual browser evidence while preserving the same acceptance matrix.
 
