@@ -42,7 +42,6 @@ created: 2026-06-25
 | 117-01-02 | 01 | 1 | PROOF-01 | T-117-02 | Fixtures expose only fake/redacted/handle-only values, never plaintext secrets | render/source contract | `mix test test/lockspire/web/live/admin/design_system_component_stress_test.exs --max-failures 1` | yes | pending |
 | 117-02-01 | 02 | 1 | DS-01 | T-117-03 | CSS preserves semantic light/dark/system behavior without unsupported public surface | source contract | `mix test test/lockspire/web/live/admin/design_system_contract_test.exs --max-failures 1` | yes | pending |
 | 117-02-02 | 02 | 1 | DS-05 | T-117-04 | Motion uses explicit properties and reduced-motion-safe active states | source contract | `mix test test/lockspire/web/live/admin/design_system_contract_test.exs --max-failures 1` | yes | pending |
-| 117-03-01 | 03 | 2 | PROOF-01 | T-117-05 | Optional browser proof, if adopted, stays quarantined and package installs are checkpointed | docs/tooling contract | `mix test test/lockspire/web/live/admin/design_system_contract_test.exs --max-failures 1` | yes | pending |
 
 *Status: pending, green, red, flaky*
 

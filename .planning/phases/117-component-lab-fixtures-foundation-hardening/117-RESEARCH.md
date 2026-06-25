@@ -319,17 +319,15 @@ test('component lab has no automated WCAG A/AA violations', async ({ page }) => 
 | A2 | Demo data often copies production nouns and can drift from redaction policy. | Common Pitfalls | Medium; if wrong, centralized redaction tests are still useful. |
 | A3 | A local contrast bug may be patched at a component selector instead of the token alias layer. | Common Pitfalls | Low; source tests still prevent token discipline drift. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should optional Playwright+axe scaffolding be implemented in Phase 117 or deferred to Phase 120?**
    - What we know: State says adopt Playwright+axe as quarantined proof unless too heavy, while Phase 117 notes say add browser harness scaffolding here if adopting it. [VERIFIED: .planning/STATE.md; VERIFIED: .planning/ROADMAP.md]
-   - What's unclear: Whether Phase 117 should install npm packages now or only design the harness path. [VERIFIED: package-legitimacy seam]
-   - Recommendation: Plan core ExUnit/CSS work first; add a separate optional task with `checkpoint:human-verify` before npm install. [VERIFIED: package-legitimacy seam]
+   - RESOLVED: Phase 117 will not install npm packages or create a browser harness plan. It will satisfy this phase with ExUnit-rendered lab proof, CSS source contracts, and boundary tests that keep future browser proof quarantined. Playwright+axe package installation is deferred to a later browser-proof phase with `checkpoint:human-verify` before install because the latest package releases were flagged `SUS`. [VERIFIED: package-legitimacy seam]
 
 2. **Should lab modules live under `lib/` or `test/support/`?**
    - What we know: Hex package files include `lib`, `priv`, `docs`, and root package docs; putting lab modules under `lib` would include them in the Hex artifact unless package files change. [VERIFIED: mix.exs]
-   - What's unclear: Whether maintainers want internal lab modules available to docs/demo proof outside test. [ASSUMED]
-   - Recommendation: Prefer `test/support/lockspire/web/admin_lab/*` for test-only proof unless implementation needs demo/browser reuse; if using `lib`, keep `@moduledoc false` and verify no public docs claim. [VERIFIED: mix.exs; VERIFIED: .planning/phases/116-inventory-rubric-lab-contract/116-LAB-CONTRACT.md]
+   - RESOLVED: Phase 117 lab modules will live under `test/support/lockspire/web/admin_lab/*` so they remain test-only, outside Hex package files, and unavailable as public admin or host extension surface. Future demo/browser reuse can add an explicit follow-up if needed. [VERIFIED: mix.exs; VERIFIED: .planning/phases/116-inventory-rubric-lab-contract/116-LAB-CONTRACT.md]
 
 ## Environment Availability
 
