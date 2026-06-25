@@ -393,17 +393,17 @@ end
 | A2 | Component snapshot tests are brittle and should be avoided. | Common Pitfalls | Low; this is consistent with locked Phase 118 guidance but not separately verified. |
 | A3 | A new component that accepts a field and renders all input markup would conflict with Phase 118 intent. | Common Pitfalls | Medium; locked decisions already discourage this, but exact acceptable wrapper shape is implementation-dependent. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `domain` or `context` be the public attr name on `status_badge`?**
+1. **RESOLVED: Should `domain` or `context` be the public attr name on `status_badge`?**
    - What we know: The context locks either `:domain` or `:context` as acceptable. [VERIFIED: 118-CONTEXT.md]
-   - What's unclear: Which name best matches current admin vocabulary. [ASSUMED]
-   - Recommendation: Use `domain` if the mapping distinguishes Configure/Support/Operate/resource domains; use `context` only if the same resource has state-dependent ambiguity. [ASSUMED]
+   - Resolution: Use public `domain` as the additive disambiguation attr on `status_badge/1`. Preserve all existing `status_badge status={...}` calls, and require `domain={...}` only for ambiguous statuses where Configure, Support, Operate, or resource-specific meaning changes the label/tone/title. [VERIFIED: 118-CONTEXT.md, 118-UI-SPEC.md]
+   - Implementation note: Do not introduce a parallel public `context` attr in Phase 118 unless an existing call-site constraint makes `domain` impossible. [VERIFIED: 118-CONTEXT.md]
 
-2. **How much production migration belongs in Phase 118?**
+2. **RESOLVED: How much production migration belongs in Phase 118?**
    - What we know: The phase must prove forms use shared primitives where practical and exceptions are tested. [VERIFIED: .planning/ROADMAP.md]
-   - What's unclear: Whether every existing form/filter should migrate now or only representative pressure points. [ASSUMED]
-   - Recommendation: Migrate representative high-pressure forms/filters and add source-contract tests that document remaining exceptions. [VERIFIED: 118-CONTEXT.md]
+   - Resolution: Phase 118 production form migration scope is representative proof plus documented/tested exceptions, not every admin page. Apply shared field/help/error/workflow primitives to the planned high-pressure form and filter surfaces, then document and test exceptions for complex checkbox confirmations, lifecycle action forms, and copy-once secret/RAT/IAT flows. [VERIFIED: 118-CONTEXT.md, 118-UI-SPEC.md]
+   - Phase boundary: Phase 119 owns broader weak-page application after the primitive and proof contract lands. [VERIFIED: .planning/ROADMAP.md, 118-CONTEXT.md]
 
 ## Environment Availability
 
