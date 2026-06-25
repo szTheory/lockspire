@@ -116,6 +116,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     end
   end
 
+  test "stress surface renders its empty-state proof with empty fixture groups" do
+    html =
+      render_component(&StressSurface.render/1,
+        fixture_set: %{
+          clients: [],
+          tokens: [],
+          operations: [],
+          dcr_iat: []
+        }
+      )
+
+    assert html =~ "No lab scenarios rendered"
+    assert html =~ "0"
+    assert html =~ "Redacted"
+    refute html =~ "tenant-with-a-long-name.example.invalid"
+  end
+
   test "component lab stays internal, test-only, and outside package/public routes" do
     router = File.read!(@admin_router_path)
     mix = File.read!(@mix_path)

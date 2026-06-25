@@ -12,10 +12,18 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
     assigns =
       assigns
       |> assign_new(:states, fn -> Fixtures.scenario_states() end)
-      |> assign_new(:clients, fn -> assigns.fixture_set.clients end)
-      |> assign_new(:tokens, fn -> assigns.fixture_set.tokens end)
-      |> assign_new(:operations, fn -> assigns.fixture_set.operations end)
-      |> assign_new(:copy_once, fn -> List.first(assigns.fixture_set.dcr_iat) end)
+      |> assign_new(:clients, fn -> Map.get(assigns.fixture_set, :clients, []) end)
+      |> assign_new(:tokens, fn -> Map.get(assigns.fixture_set, :tokens, []) end)
+      |> assign_new(:operations, fn -> Map.get(assigns.fixture_set, :operations, []) end)
+      |> assign_new(:copy_once, fn ->
+        assigns.fixture_set |> Map.get(:dcr_iat, []) |> List.first()
+      end)
+      |> assign_new(:redirect_uri, fn ->
+        assigns.fixture_set
+        |> Map.get(:clients, [])
+        |> List.first(%{})
+        |> Map.get(:redirect_uri, "")
+      end)
 
     ~H"""
     <section
@@ -98,7 +106,7 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
             name="redirect_uri"
             aria-invalid="true"
             aria-describedby="stress-redirect-uri-help stress-redirect-uri-error"
-            value={hd(@clients).redirect_uri}
+            value={@redirect_uri}
           />
         </AdminComponents.form_field>
 
@@ -114,7 +122,7 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
       <AdminComponents.copy_once_secret_panel
         title="Copy-once credential"
         body="Copy this value now. Lockspire stores only the hash after this response."
-        value={@copy_once.value}
+        value={@copy_once && @copy_once.value}
       />
 
       <AdminComponents.confirmation_panel
