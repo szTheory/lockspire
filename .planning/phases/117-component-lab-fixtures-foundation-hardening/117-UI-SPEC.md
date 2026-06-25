@@ -138,6 +138,12 @@ Microcopy rules:
 | Package boundary | Keep browser harness scaffolding outside Hex package files unless a later explicit packaging decision changes that boundary. |
 | Tooling | PhoenixStorybook, React Storybook, Tailwind, shadcn, and third-party visual registries remain out of scope for Phase 117. |
 
+Primary visual priority:
+
+- The stress-surface matrix header is the screen anchor. It must show the active component group, theme, motion mode, and fixture set before any preview content.
+- The active scenario preview is the second focal point. It should carry the densest visual weight inside the lab body, while surrounding matrix controls stay compact and scan-first.
+- Supporting inventory, fixture, and proof metadata must not visually outrank the matrix header or active scenario preview.
+
 Minimum lab matrix:
 
 - Component states: normal, empty, error, disabled, destructive, long-value, dense-data, copy-once, redacted.
@@ -196,14 +202,14 @@ No `npx shadcn init`, `npx shadcn add`, PhoenixStorybook package, React Storyboo
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved
 
 ---
 
