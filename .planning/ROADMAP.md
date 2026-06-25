@@ -34,6 +34,12 @@
 - Treat Phase 107 route vocabulary, Phase 108 component primitives, Phase 109 weak-page polish, and Phase 110 browser evidence as baseline inputs.
 - Do not add PhoenixStorybook in this phase; record it as a rejected/default-deferred alternative unless later evidence forces a change.
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 116-01-PLAN.md — Source-derived route/workflow inventory and brandbook visual rubric
+- [ ] 116-02-PLAN.md — Component/group inventory and maintainer-only lab contract
+
 ### Phase 117: Component Lab, Fixtures & Foundation Hardening
 
 **Goal:** Build the lightweight stress surface and harden foundations before touching production pages.
