@@ -20,6 +20,18 @@ The most recently completed feature milestone, `v1.30 Adoption Demo Docker DX & 
 
 The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
 
+## Current Milestone: v1.31 Admin Design-System Stress Test
+
+**Goal:** Systematically strengthen the Lockspire admin/operator design system so foundations, primitives, component groups, weak pages, fixtures, and browser evidence all move forward together without regressions.
+
+**Target features:**
+- Create a lightweight Lockspire-owned component lab and stress surface that renders real admin primitives, component groups, ugly fixture data, light/dark/system theme states, reduced-motion states, and key empty/error/disabled/danger paths without adding a supported runtime admin route.
+- Upgrade shared Phoenix function components and embedded BEM/design-token CSS around architectural panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, form/error primitives, semantic status coverage, theme behavior, and motion guardrails.
+- Apply the strengthened system to the highest-drift admin surfaces: client detail, DCR policy, IAT index/new, token and consent support pages, and device/interactions/logout operation queues.
+- Add regression guardrails and fresh browser evidence for responsive widths, theme modes, focus, accessibility, long values, redaction, and no-page-overflow behavior.
+
+**Why now:** v1.29 made the admin UI coherent and v1.30 made the adoption demo boring to start and inspect. The next leverage point is not protocol breadth; it is making the admin UI's design system compound at the component and group level so future operator pages can be improved idempotently without reintroducing generic styling, inaccessible controls, dark-mode regressions, mobile overflow, or host-integration weight.
+
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
 **Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
@@ -158,7 +170,10 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-- None. Fresh requirements should be defined by the next milestone.
+- [ ] Build a lightweight admin component lab/stress surface for foundations, primitives, component groups, theme modes, reduced motion, ugly data, and key operator states.
+- [ ] Upgrade shared admin components and embedded CSS so brand, spacing, typography, shape, motion, status, focus, and responsive behavior are stronger at the system level.
+- [ ] Apply the strengthened system to weak/high-drift admin pages without changing OAuth/OIDC protocol behavior, storage schemas, host-owned seams, or supported router shape.
+- [ ] Add fixtures, tests, browser evidence, docs, and adversarial review guardrails so future UI passes only move the design system forward.
 
 ### Validated
 
@@ -305,4 +320,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-24 after v1.30 milestone completion*
+*Last updated: 2026-06-25 after v1.31 milestone initialization*

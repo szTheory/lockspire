@@ -1,19 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.30
-milestone_name: Adoption Demo Docker DX & Repo Hygiene
-current_phase: 30
-status: Awaiting next milestone
-stopped_at: Phase 115 verified and v1.30 milestone complete
-last_updated: "2026-06-24T18:45:29.466Z"
-last_activity: 2026-06-24
-last_activity_desc: Milestone v1.30 completed and archived
+milestone: v1.31
+milestone_name: Admin Design-System Stress Test
+current_phase: 116
+status: ready_for_phase_planning
+last_updated: "2026-06-25T02:12:41.542Z"
+last_activity: 2026-06-25
 progress:
   total_phases: 5
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Milestone complete
+**Current focus:** Phase 116 — Inventory, Rubric & Lab Contract
 
 ## Current Position
 
-Phase: Milestone v1.30 complete
+Phase: 116 — Inventory, Rubric & Lab Contract
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-24 — Milestone v1.30 completed and archived
+Status: Ready for phase planning
+Last activity: 2026-06-25 — Milestone v1.31 requirements and roadmap initialized
 
 ## Most Recent Release
 
@@ -52,15 +50,15 @@ Last activity: 2026-06-24 — Milestone v1.30 completed and archived
 | v1.26 | 94-96 | 3 | 5 | shipped |
 | v1.25 | 91-93 | 9 | 9 | shipped |
 
-## v1.30 Phase Plan
+## v1.31 Phase Plan
 
 | Phase | Name | REQs | Focus |
 |-------|------|------|-------|
-| 111 | Demo URL Contract & Config Unification | 5 | Docker DX |
-| 112 | Default Docker Compose App + DB | 6 | Docker DX |
-| 113 | Conflict Controls & Optional Traefik | 6 | Docker DX |
-| 114 | Startup Output, Smoke Wrapper & Docs | 8 | Demo DX |
-| 115 | Repo Hygiene Gate & Scoped Cleanup | 10 | Hygiene |
+| 116 | Inventory, Rubric & Lab Contract | 2 | Scope and contracts |
+| 117 | Component Lab, Fixtures & Foundation Hardening | 4 | Stress harness and tokens |
+| 118 | Primitive & Meta-Component Upgrade | 3 | Shared components |
+| 119 | Weak-Page Application & IA/Copy Pass | 5 | Page/group polish |
+| 120 | Browser Proof, Docs & Regression Audit | 3 | Verification |
 
 ## Decisions
 
@@ -87,6 +85,13 @@ Last activity: 2026-06-24 — Milestone v1.30 completed and archived
 - [Phase 114]: Plan 03 kept Docker as the default maintainer path with host-local Mix/Postgres as fallback.
 - [Phase 114]: Plan 03 documented scripts/demo/adoption_smoke.sh as the maintainer smoke entrypoint while preserving the Python smoke as the black-box proof.
 - [Phase 114]: Plan 03 left broader cleanup and hygiene command implementation to Phase 115.
+- v1.31 is an admin design-system stress-test milestone, not a protocol, storage, hosted-auth, or public theming milestone.
+- The newest brand source is `brandbook/`; older prompt brand guidance is subordinate when it conflicts.
+- Keep Phoenix function components and embedded `lockspire-admin-*` BEM/design-token CSS as the default implementation shape.
+- Use a lightweight Lockspire-owned component lab/stress surface by default; PhoenixStorybook remains a future option if the bespoke lab stops scaling.
+- Adopt Playwright plus axe as quarantined dev/test browser proof unless implementation proves the dependency weight is too high; fallback is Elixir-only contracts plus manual browser evidence with the same matrix.
+- Fresh v1.31 browser proof is required after CSS/component/page changes; Phase 110 screenshots are baseline evidence, not current proof.
+- No logout retry/discard UI should be added unless an existing domain API backs the action.
 
 ## Blockers/Concerns
 
@@ -103,9 +108,9 @@ Last activity: 2026-06-24 — Milestone v1.30 completed and archived
 
 **Last session:** 2026-06-24T18:08:50.708Z
 
-**Next action:** Complete/archive the v1.30 milestone with `$gsd-complete-milestone`.
-**Resume file:** .planning/phases/115-repo-hygiene-gate-scoped-cleanup/115-VERIFICATION.md
-**Stopped at:** Phase 115 verified and v1.30 milestone complete
+**Next action:** Plan Phase 116 with `$gsd-plan-phase 116`.
+**Resume file:** .planning/ROADMAP.md
+**Stopped at:** Milestone v1.31 initialized and ready for Phase 116 planning
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
