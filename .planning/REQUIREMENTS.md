@@ -7,17 +7,17 @@
 
 ### Inventory And Lab
 
-- [ ] **LAB-01**: Maintainer can inspect every admin primitive and recurring component group in a lightweight Lockspire-owned stress surface without mounting a new supported admin route.
-- [ ] **LAB-02**: The stress surface covers normal, empty, error, disabled, destructive, long-value, dense-data, light, dark, system, and reduced-motion states.
-- [ ] **LAB-03**: Route inventory for stress proof derives from `Lockspire.Web.AdminRouter` plus the query-driven client logout-propagation workflow.
+- [x] **LAB-01**: Maintainer can inspect every admin primitive and recurring component group in a lightweight Lockspire-owned stress surface without mounting a new supported admin route.
+- [x] **LAB-02**: The stress surface covers normal, empty, error, disabled, destructive, long-value, dense-data, light, dark, system, and reduced-motion states.
+- [x] **LAB-03**: Route inventory for stress proof derives from `Lockspire.Web.AdminRouter` plus the query-driven client logout-propagation workflow.
 
 ### Foundations And Components
 
-- [ ] **DS-01**: Admin CSS declares explicit light and dark color-scheme behavior while preserving semantic-alias dark-mode remapping from the brand book.
+- [x] **DS-01**: Admin CSS declares explicit light and dark color-scheme behavior while preserving semantic-alias dark-mode remapping from the brand book.
 - [ ] **DS-02**: Shared admin components expose backward-compatible primitives for architectural panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, and table/list alternatives.
 - [ ] **DS-03**: Every real admin status used by Configure, Support, and Operate surfaces maps to intentional badge semantics instead of falling through to disabled styling.
 - [ ] **DS-04**: Production admin forms use shared field, help, error, and workflow primitives or document a tested exception.
-- [ ] **DS-05**: Admin motion uses explicit properties, purposeful short feedback, and reduced-motion-safe behavior with no `transition: all`.
+- [x] **DS-05**: Admin motion uses explicit properties, purposeful short feedback, and reduced-motion-safe behavior with no `transition: all`.
 
 ### Page And Flow Polish
 
@@ -29,7 +29,7 @@
 
 ### Fixtures And Evidence
 
-- [ ] **PROOF-01**: Demo seeds or reusable test fixtures cover healthy, warning, incident, disabled, self-registered, expired, revoked, reuse-detected, copy-once, empty, dense, and long-value states while preserving redaction.
+- [x] **PROOF-01**: Demo seeds or reusable test fixtures cover healthy, warning, incident, disabled, self-registered, expired, revoked, reuse-detected, copy-once, empty, dense, and long-value states while preserving redaction.
 - [ ] **PROOF-02**: Browser proof covers 320px, 390px, 768px, 1024px, and 1440px widths across light, dark, system, and reduced-motion modes for the representative route matrix.
 - [ ] **PROOF-03**: Automated guardrails cover brand-token drift, raw color drift, responsive overflow, focus reachability, accessible labels/descriptions, duplicate IDs, contrast token pairs, plaintext secret leakage, and generic CTA drift.
 - [ ] **PROOF-04**: Operator docs explain the strengthened design-system workflow, component lab boundary, theme behavior, and verification expectations without creating new public support claims.
@@ -57,25 +57,26 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LAB-01 | Phase 116 | Pending |
-| LAB-02 | Phase 117 | Pending |
-| LAB-03 | Phase 116 | Pending |
-| DS-01 | Phase 117 | Pending |
+| LAB-01 | Phase 116 | Complete |
+| LAB-02 | Phase 117 | Complete |
+| LAB-03 | Phase 116 | Complete |
+| DS-01 | Phase 117 | Complete |
 | DS-02 | Phase 118 | Pending |
 | DS-03 | Phase 118 | Pending |
 | DS-04 | Phase 118 | Pending |
-| DS-05 | Phase 117 | Pending |
+| DS-05 | Phase 117 | Complete |
 | FLOW-01 | Phase 119 | Pending |
 | FLOW-02 | Phase 119 | Pending |
 | FLOW-03 | Phase 119 | Pending |
 | FLOW-04 | Phase 119 | Pending |
 | FLOW-05 | Phase 119 | Pending |
-| PROOF-01 | Phase 117 | Pending |
+| PROOF-01 | Phase 117 | Complete |
 | PROOF-02 | Phase 120 | Pending |
 | PROOF-03 | Phase 120 | Pending |
 | PROOF-04 | Phase 120 | Pending |
 
 **Coverage:**
+
 - v1.31 requirements: 17 total
 - Mapped to phases: 17
 - Unmapped: 0

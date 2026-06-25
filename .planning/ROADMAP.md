@@ -10,8 +10,8 @@
 
 | Phase | Name | Requirements | Focus |
 |-------|------|--------------|-------|
-| 116 | Inventory, Rubric & Lab Contract | LAB-01, LAB-03 | Scope and contracts |
-| 117 | Component Lab, Fixtures & Foundation Hardening | LAB-02, DS-01, DS-05, PROOF-01 | Stress harness and tokens |
+| 116 | 2/2 | Complete    | 2026-06-25 |
+| 117 | 2/2 | Complete    | 2026-06-25 |
 | 118 | Primitive & Meta-Component Upgrade | DS-02, DS-03, DS-04 | Shared components |
 | 119 | Weak-Page Application & IA/Copy Pass | FLOW-01, FLOW-02, FLOW-03, FLOW-04, FLOW-05 | Page/group polish |
 | 120 | Browser Proof, Docs & Regression Audit | PROOF-02, PROOF-03, PROOF-04 | Verification |
@@ -36,16 +36,16 @@
 - Treat Phase 107 route vocabulary, Phase 108 component primitives, Phase 109 weak-page polish, and Phase 110 browser evidence as baseline inputs.
 - Do not add PhoenixStorybook in this phase; record it as a rejected/default-deferred alternative unless later evidence forces a change.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
 
-- [ ] 116-01-PLAN.md — Source-derived route/workflow inventory and brandbook visual rubric
+- [x] 116-01-PLAN.md — Source-derived route/workflow inventory and brandbook visual rubric
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 116-02-PLAN.md — Component/group inventory and maintainer-only lab contract
+- [x] 116-02-PLAN.md — Component/group inventory and maintainer-only lab contract
 
 ### Phase 117: Component Lab, Fixtures & Foundation Hardening
 
@@ -64,6 +64,14 @@ Plans:
 
 - Prefer a Lockspire-owned Phoenix component stress module or demo-only page over a packaged route.
 - Add browser harness scaffolding here if adopting Playwright + axe; keep it outside Hex package files and documented as maintainer proof tooling.
+
+**Plans:** 2/2 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 117-01-PLAN.md — Test-support component lab fixtures, stress surface, and redaction proof
+- [x] 117-02-PLAN.md — Admin CSS light/dark/system and motion foundation hardening
 
 ### Phase 118: Primitive & Meta-Component Upgrade
 
