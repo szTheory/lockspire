@@ -417,17 +417,15 @@ assert html =~ "lockspire-admin-empty"
 | A2 | Local CSS changes can bypass token truth. | Common Pitfalls | Low; existing tests already cover raw hex and token alignment. |
 | A3 | Inventory phases tend to expose tempting implementation gaps. | Common Pitfalls | Low; phase boundary explicitly prevents implementation work. |
 
-## Open Questions
+## Open Questions - RESOLVED
 
 1. **Should Phase 116 create separate contract files or one combined contract?**
    - What we know: Context requires four contracts but leaves filenames to planner discretion. [VERIFIED: .planning/phases/116-inventory-rubric-lab-contract/116-CONTEXT.md]
-   - What's unclear: Whether maintainers prefer one artifact or four.
-   - Recommendation: Use four focused files for planner/phase handoff clarity, plus one contract test that validates required headings/rows. [ASSUMED]
+   - RESOLVED: Use four focused files for planner/phase handoff clarity: `116-ROUTE-WORKFLOW-INVENTORY.md`, `116-COMPONENT-GROUP-INVENTORY.md`, `116-VISUAL-UX-RUBRIC.md`, and `116-LAB-CONTRACT.md`. [VERIFIED: .planning/phases/116-inventory-rubric-lab-contract/116-CONTEXT.md]
 
 2. **Should route/component inventory generation be implemented as reusable helper code?**
    - What we know: Existing tests use local helper functions and simple source parsing. [VERIFIED: test/lockspire/web/live/admin/design_system_contract_test.exs]
-   - What's unclear: Whether future phases need a reusable Mix task or helper module.
-   - Recommendation: Keep Phase 116 to test-local helpers unless duplication becomes real in Phase 117/120. [ASSUMED]
+   - RESOLVED: Keep Phase 116 to test-local helpers unless later duplication in Phase 117 or Phase 120 proves a shared helper is needed. [VERIFIED: test/lockspire/web/live/admin/design_system_contract_test.exs]
 
 ## Environment Availability
 
