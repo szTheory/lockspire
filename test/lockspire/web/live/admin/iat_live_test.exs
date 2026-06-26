@@ -62,10 +62,15 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert html =~ "Used"
       assert html =~ "Expired"
       assert html =~ "Revoked"
+      assert html =~ "Total intake"
       assert html =~ "Single-use"
       assert html =~ "Creator"
+      assert html =~ "Expires"
+      assert html =~ "Last state change"
+      assert html =~ "Usage/limit"
       assert html =~ "Revoke initial access token"
-      assert html =~ "lockspire-admin-resource-list__item"
+      assert html =~ "lockspire-admin-pane"
+      assert html =~ "lockspire-admin-dense-resource-row"
       assert html =~ "lockspire-admin-long-value"
       refute html =~ secret
 
@@ -90,6 +95,13 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert initial_html =~ "Configure"
       assert initial_html =~ "Mint initial access token"
       assert initial_html =~ "DCR policy"
+      assert initial_html =~ "lockspire-admin-workflow-shell"
+      assert initial_html =~ "iat_single_use-help"
+      assert initial_html =~ "iat_expires_in_days-help"
+      assert initial_html =~ ~s(name="single_use")
+      assert initial_html =~ ~s(name="expires_in_days")
+      assert initial_html =~ ~s(phx-submit="mint")
+      assert initial_html =~ "Review initial access tokens"
       refute initial_html =~ "Initial access token minted"
 
       # Mint a new token
@@ -100,9 +112,14 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert html_after_mint =~ "Initial access token minted"
       assert html_after_mint =~ "lockspire-admin-copy-once-secret"
-      assert html_after_mint =~ "Copy once"
-      assert html_after_mint =~ "not stored or shown again as plaintext"
+      assert html_after_mint =~ "Copy this value now. Lockspire stores only the hash after this response."
       assert html_after_mint =~ "I have copied this secret"
+
+      [_, plaintext] =
+        Regex.run(
+          ~r/<code[^>]*>(?<plaintext>lsiat_[^<]+)<\/code>/,
+          html_after_mint
+        )
 
       # Clicking the acknowledge button
       html_after_ack =
@@ -112,6 +129,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       refute html_after_ack =~ "Initial access token minted"
       refute html_after_ack =~ "I have copied this secret"
+      refute html_after_ack =~ plaintext
     end
   end
 
