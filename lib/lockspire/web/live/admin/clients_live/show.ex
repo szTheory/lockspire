@@ -485,7 +485,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:item>
           </AdminComponents.description_list>
           <p :if={@client.provenance == :self_registered} class="lockspire-admin-help">
-            Registration access token rotation is grouped with credential actions above.
+            Self-registered client (DCR). Registration access token rotation is grouped with credential actions above.
           </p>
           <AdminComponents.action_group>
             <:secondary>

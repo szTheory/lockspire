@@ -91,7 +91,9 @@ Device authorization, interaction, and logout delivery admin queues now use read
 - `mix test test/lockspire/web/live/admin/logout_deliveries_live_test.exs test/lockspire/web/live/admin/design_system_contract_test.exs` passed.
 - `mix test test/lockspire/web/live/admin/design_system_contract_test.exs` passed.
 - Final Phase 119 quick command from `119-VALIDATION.md` passed: `78 tests, 0 failures`.
-- Extra broad check `mix test.fast` was attempted and failed with one out-of-scope existing failure in `test/lockspire/web/live/admin/clients_live_test.exs:152`, where the test expects `Self-registered client (DCR)`. No 119-04 source or test file was involved in that failure.
+- Extra broad check `mix test.fast` initially found a client-detail copy regression in `test/lockspire/web/live/admin/clients_live_test.exs:152`, where the test expects `Self-registered client (DCR)`. A post-wave fix restored that DCR provenance label in the Phase 119 client detail pane.
+- `mix test test/lockspire/web/live/admin/clients_live_test.exs:152 test/lockspire/web/live/admin/clients_live/show_test.exs` passed after the post-wave fix: 15 tests, 0 failures.
+- `mix test.fast` passed after the post-wave fix: 1135 tests, 0 failures, 287 excluded.
 
 ## Deviations from Plan
 
@@ -117,7 +119,6 @@ Device authorization, interaction, and logout delivery admin queues now use read
 
 ## Deferred Issues
 
-- The extra broad `mix test.fast` check currently fails outside this plan in `test/lockspire/web/live/admin/clients_live_test.exs:152` on the expected `Self-registered client (DCR)` copy. This was not introduced by 119-04 changes and was not fixed under the plan scope.
 - `.planning/STATE.md`, `.planning/ROADMAP.md`, and `.planning/REQUIREMENTS.md` were left untouched and unstaged per the execution prompt because they were already dirty with unrelated planning work.
 
 ## Known Stubs
