@@ -14,7 +14,7 @@
 | 117 | 2/2 | Complete    | 2026-06-25 |
 | 118 | 3/3 | Complete   | 2026-06-26 |
 | 119 | 4/4 | Complete    | 2026-06-26 |
-| 120 | Browser Proof, Docs & Regression Audit | PROOF-02, PROOF-03, PROOF-04 | Verification |
+| 120 | 1/3 | In Progress|  |
 
 ## Phase Details
 
