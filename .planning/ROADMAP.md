@@ -12,8 +12,8 @@
 |-------|------|--------------|-------|
 | 116 | 2/2 | Complete    | 2026-06-25 |
 | 117 | 2/2 | Complete    | 2026-06-25 |
-| 118 | Primitive & Meta-Component Upgrade | DS-02, DS-03, DS-04 | Shared components |
-| 119 | Weak-Page Application & IA/Copy Pass | FLOW-01, FLOW-02, FLOW-03, FLOW-04, FLOW-05 | Page/group polish |
+| 118 | 3/3 | Complete   | 2026-06-26 |
+| 119 | 4/4 | Complete    | 2026-06-26 |
 | 120 | Browser Proof, Docs & Regression Audit | PROOF-02, PROOF-03, PROOF-04 | Verification |
 
 ## Phase Details
@@ -91,20 +91,20 @@ Plans:
 - Keep Phoenix function components as the default. Use LiveComponents only where stateful reuse is genuinely needed.
 - Preserve existing component call sites while enabling better group-level composition.
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
 
-- [ ] 118-01-PLAN.md — Structural primitive/meta-component upgrade for DS-02
+- [x] 118-01-PLAN.md — Structural primitive/meta-component upgrade for DS-02
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 118-02-PLAN.md — Domain-aware status semantics for DS-03
+- [x] 118-02-PLAN.md — Domain-aware status semantics for DS-03
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 118-03-PLAN.md — Form/workflow primitive adoption proof, exception inventory, and stress/lab coverage for DS-04
+- [x] 118-03-PLAN.md — Form/workflow primitive adoption proof, exception inventory, and stress/lab coverage for DS-04
 
 ### Phase 119: Weak-Page Application & IA/Copy Pass
 
@@ -124,6 +124,22 @@ Plans:
 
 - Start from the weakest/highest-drift surfaces identified during planning: client detail, DCR policy, IATs, support details, and operation queues.
 - Avoid a full route rewrite. Change shared components first, then production pages where the shared pattern materially improves scanability or safety.
+
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 119-01-PLAN.md — Client detail IA and pane/group structure
+- [x] 119-02-PLAN.md — DCR policy one-form workflow grouping
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 119-03-PLAN.md — IAT and support detail primitive/copy alignment
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 119-04-PLAN.md — Operate queue read-only cleanup and final source/copy guardrails
 
 ### Phase 120: Browser Proof, Docs & Regression Audit
 

@@ -14,18 +14,18 @@
 ### Foundations And Components
 
 - [x] **DS-01**: Admin CSS declares explicit light and dark color-scheme behavior while preserving semantic-alias dark-mode remapping from the brand book.
-- [ ] **DS-02**: Shared admin components expose backward-compatible primitives for architectural panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, and table/list alternatives.
-- [ ] **DS-03**: Every real admin status used by Configure, Support, and Operate surfaces maps to intentional badge semantics instead of falling through to disabled styling.
-- [ ] **DS-04**: Production admin forms use shared field, help, error, and workflow primitives or document a tested exception.
+- [x] **DS-02**: Shared admin components expose backward-compatible primitives for architectural panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, and table/list alternatives.
+- [x] **DS-03**: Every real admin status used by Configure, Support, and Operate surfaces maps to intentional badge semantics instead of falling through to disabled styling.
+- [x] **DS-04**: Production admin forms use shared field, help, error, and workflow primitives or document a tested exception.
 - [x] **DS-05**: Admin motion uses explicit properties, purposeful short feedback, and reduced-motion-safe behavior with no `transition: all`.
 
 ### Page And Flow Polish
 
-- [ ] **FLOW-01**: Client detail uses clearer pane/group structure for identity, posture, credentials, endpoints, DCR/RAT, support pivots, and destructive lifecycle actions.
-- [ ] **FLOW-02**: DCR policy uses a workflow structure that separates gate, allowlist, lifetime, auth-method, and risk decisions without changing policy semantics.
-- [ ] **FLOW-03**: IAT index/new, token detail, consent detail, and operation queues render clear page jobs, primary decisions, empty states, risk states, and next safe actions.
-- [ ] **FLOW-04**: Read-only operation queues describe current supported actions truthfully and do not add retry/discard UI unless backed by existing domain APIs.
-- [ ] **FLOW-05**: UX microcopy is concise, domain-accurate, calm under operator stress, and names destructive consequences without fear language.
+- [x] **FLOW-01**: Client detail uses clearer pane/group structure for identity, posture, credentials, endpoints, DCR/RAT, support pivots, and destructive lifecycle actions.
+- [x] **FLOW-02**: DCR policy uses a workflow structure that separates gate, allowlist, lifetime, auth-method, and risk decisions without changing policy semantics.
+- [x] **FLOW-03**: IAT index/new, token detail, consent detail, and operation queues render clear page jobs, primary decisions, empty states, risk states, and next safe actions.
+- [x] **FLOW-04**: Read-only operation queues describe current supported actions truthfully and do not add retry/discard UI unless backed by existing domain APIs.
+- [x] **FLOW-05**: UX microcopy is concise, domain-accurate, calm under operator stress, and names destructive consequences without fear language.
 
 ### Fixtures And Evidence
 
@@ -61,15 +61,15 @@
 | LAB-02 | Phase 117 | Complete |
 | LAB-03 | Phase 116 | Complete |
 | DS-01 | Phase 117 | Complete |
-| DS-02 | Phase 118 | Pending |
-| DS-03 | Phase 118 | Pending |
-| DS-04 | Phase 118 | Pending |
+| DS-02 | Phase 118 | Complete |
+| DS-03 | Phase 118 | Complete |
+| DS-04 | Phase 118 | Complete |
 | DS-05 | Phase 117 | Complete |
-| FLOW-01 | Phase 119 | Pending |
-| FLOW-02 | Phase 119 | Pending |
-| FLOW-03 | Phase 119 | Pending |
-| FLOW-04 | Phase 119 | Pending |
-| FLOW-05 | Phase 119 | Pending |
+| FLOW-01 | Phase 119 | Complete |
+| FLOW-02 | Phase 119 | Complete |
+| FLOW-03 | Phase 119 | Complete |
+| FLOW-04 | Phase 119 | Complete |
+| FLOW-05 | Phase 119 | Complete |
 | PROOF-01 | Phase 117 | Complete |
 | PROOF-02 | Phase 120 | Pending |
 | PROOF-03 | Phase 120 | Pending |

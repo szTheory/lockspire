@@ -32,6 +32,8 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 **Why now:** v1.29 made the admin UI coherent and v1.30 made the adoption demo boring to start and inspect. The next leverage point is not protocol breadth; it is making the admin UI's design system compound at the component and group level so future operator pages can be improved idempotently without reintroducing generic styling, inaccessible controls, dark-mode regressions, mobile overflow, or host-integration weight.
 
+**Progress:** Phases 116-119 are complete. The component lab contract, design-system primitives, and highest-drift admin page/group pass are implemented and verified; Phase 120 remains for browser proof, docs, and regression audit evidence.
+
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
 **Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
@@ -320,4 +322,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-25 after v1.31 milestone initialization*
+*Last updated: 2026-06-26 after Phase 119 completion*
