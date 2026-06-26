@@ -513,7 +513,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/tokens"}>Review tokens</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/consents"}>Review consent grants</.link>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/logout-deliveries"}>Review logout deliveries</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/logouts"}>Review logout deliveries</.link>
             </:secondary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
