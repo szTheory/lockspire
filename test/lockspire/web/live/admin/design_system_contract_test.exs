@@ -87,6 +87,41 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   ]
   @phase_109_sources @phase_109_support_sources ++
                        @phase_109_operations_sources ++ @phase_109_configure_sources
+  @phase_119_client_sources [
+    Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__)
+  ]
+  @phase_119_dcr_sources [
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/policies_live/dcr.html.heex",
+      __DIR__
+    )
+  ]
+  @phase_119_iat_sources [
+    Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/index.html.heex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/new.html.heex", __DIR__)
+  ]
+  @phase_119_support_sources [
+    Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/show.ex", __DIR__),
+    Path.expand("../../../../../lib/lockspire/web/live/admin/consents_live/show.ex", __DIR__)
+  ]
+  @phase_119_operate_sources [
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
+      __DIR__
+    ),
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/interactions_live/index.ex",
+      __DIR__
+    ),
+    Path.expand(
+      "../../../../../lib/lockspire/web/live/admin/logout_deliveries_live/index.ex",
+      __DIR__
+    )
+  ]
+  @phase_119_sources @phase_119_client_sources ++
+                       @phase_119_dcr_sources ++
+                       @phase_119_iat_sources ++
+                       @phase_119_support_sources ++ @phase_119_operate_sources
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -853,6 +888,202 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     refute sources =~ "visual regression"
   end
 
+  test "phase 119 source inventory covers touched routes and shared primitive adoption" do
+    for suffix <- [
+          "clients_live/show.ex",
+          "policies_live/dcr.html.heex",
+          "iat_live/index.html.heex",
+          "iat_live/new.html.heex",
+          "tokens_live/show.ex",
+          "consents_live/show.ex",
+          "device_authorizations_live/index.ex",
+          "interactions_live/index.ex",
+          "logout_deliveries_live/index.ex"
+        ] do
+      assert source_for_phase_119(suffix)
+    end
+
+    client = source_for_phase_119("clients_live/show.ex")
+
+    for primitive <- [
+          "AdminComponents.entity_header",
+          "AdminComponents.pane",
+          "AdminComponents.action_group",
+          "AdminComponents.long_value"
+        ] do
+      assert client =~ primitive
+    end
+
+    for copy <- [
+          "Identity and current status",
+          "Effective posture",
+          "Credentials and assertion keys",
+          "Endpoints and logout",
+          "DCR and RAT context",
+          "Support pivots",
+          "Lifecycle and destructive actions"
+        ] do
+      assert client =~ copy
+    end
+
+    assert client =~ "post-logout redirect URIs"
+    assert client =~ "logout propagation URIs"
+
+    iat_index = source_for_phase_119("iat_live/index.html.heex")
+    iat_new = source_for_phase_119("iat_live/new.html.heex")
+
+    for primitive <- [
+          "AdminComponents.pane",
+          "AdminComponents.resource_list",
+          "AdminComponents.dense_resource_row",
+          "AdminComponents.long_value"
+        ] do
+      assert iat_index =~ primitive
+    end
+
+    for primitive <- [
+          "AdminComponents.workflow_shell",
+          "AdminComponents.form_field",
+          "AdminComponents.copy_once_secret_panel"
+        ] do
+      assert iat_new =~ primitive
+    end
+
+    for source <- @phase_119_support_sources |> Enum.map(&File.read!/1) do
+      assert source =~ "AdminComponents.entity_header"
+      assert source =~ "AdminComponents.pane"
+      assert source =~ "AdminComponents.confirmation_panel"
+      assert source =~ "AdminComponents.long_value"
+    end
+
+    for source <- @phase_119_operate_sources |> Enum.map(&File.read!/1) do
+      assert source =~ "AdminComponents.pane"
+      assert source =~ "AdminComponents.resource_list"
+      assert source =~ "AdminComponents.dense_resource_row"
+      assert source =~ "AdminComponents.status_badge"
+      assert source =~ "AdminComponents.long_value"
+    end
+  end
+
+  test "phase 119 DCR one-form semantics preserve policy fields and grouping" do
+    dcr = source_for_phase_119("policies_live/dcr.html.heex")
+
+    assert occurrence_count(dcr, ~s(phx-submit="save_policy")) == 1
+    assert dcr =~ "Save global DCR policy"
+
+    for heading <- [
+          "Registration gate",
+          "Allowlist decisions",
+          "Lifetime defaults",
+          "Token endpoint auth methods",
+          "Risk and posture"
+        ] do
+      assert dcr =~ heading
+    end
+
+    for field_name <- [
+          "policy[registration_policy]",
+          "policy[dcr_allowed_scopes]",
+          "policy[dcr_allowed_grant_types]",
+          "policy[dcr_allowed_response_types]",
+          "policy[dcr_allowed_redirect_uri_schemes]",
+          "policy[dcr_allowed_redirect_uri_hosts]",
+          "policy[dcr_allowed_token_endpoint_auth_methods]",
+          "policy[dcr_default_client_lifetime_seconds]",
+          "policy[dcr_default_client_secret_lifetime_seconds]",
+          "policy[dcr_default_registration_access_token_lifetime_seconds]"
+        ] do
+      assert dcr =~ ~s(name="#{field_name}")
+    end
+
+    refute dcr =~ "phx-submit=\"mint\""
+    refute dcr =~ "rotate_registration_access_token"
+    refute dcr =~ "registration access token plaintext"
+  end
+
+  test "phase 119 operate queues stay read-only non-table and non-secret" do
+    for source <- @phase_119_operate_sources |> Enum.map(&File.read!/1) do
+      assert source =~ "Operate"
+      assert source =~ "waiting for operator review"
+      refute source =~ "lockspire-admin-table-wrap"
+      refute source =~ ~r/phx-(click|submit)=/
+
+      refute Regex.match?(
+               ~r/\b(Retry now|Discard|Approve|Deny|Logout now|Worker control|Requeue|Run worker|Pause worker)\b/i,
+               source
+             )
+
+      for forbidden <- [
+            "device_code_hash",
+            "user_code_hash",
+            "client_secret_hash",
+            "authorization_code",
+            "refresh_token",
+            "access_token",
+            "private_key",
+            "verifier_material"
+          ] do
+        refute source =~ forbidden
+      end
+    end
+
+    assert source_for_phase_119("device_authorizations_live/index.ex") =~
+             "without exposing device or user code material"
+
+    assert source_for_phase_119("interactions_live/index.ex") =~
+             "safe review context"
+
+    assert source_for_phase_119("logout_deliveries_live/index.ex") =~
+             "without adding worker controls"
+  end
+
+  test "phase 119 copy redaction and browser-boundary fences stay scoped" do
+    sources = phase_119_source_blob()
+    mix = File.read!(Path.expand("../../../../../mix.exs", __DIR__))
+
+    for phrase <- [
+          "DCR onboarding",
+          "DCR policy",
+          "post-logout redirect URIs",
+          "logout propagation URIs",
+          "Copy this value now. Lockspire stores only the hash after this response.",
+          "redacted_handle",
+          "plaintext",
+          "copy_once_secret_panel",
+          "family-wide action",
+          "remembered grant will no longer"
+        ] do
+      assert sources =~ phrase
+    end
+
+    refute Regex.match?(
+             ~r/(?:^|>|\n)\s*(Submit|Continue|Go|Manage)\s*(?:<|\n|$)/,
+             sources
+           )
+
+    for forbidden <- [
+          "dangerous",
+          "critical breach",
+          "panic",
+          "threat center",
+          "attack map",
+          "extreme caution",
+          "Playwright",
+          "playwright",
+          "axe-core",
+          "@axe-core",
+          "screenshot",
+          "browser proof",
+          "visual regression"
+        ] do
+      refute sources =~ forbidden
+    end
+
+    for forbidden <- ["playwright", "axe-core", "@axe-core", "proof/browser", "package.json"] do
+      refute mix =~ forbidden
+    end
+  end
+
   test "phase 110 demo seeds cover required proof states with artificial data" do
     seeds = File.read!(@adoption_demo_seeds_path)
 
@@ -1311,6 +1542,24 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   defp phase_109_test_blob do
     @phase_109_focused_tests
     |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp phase_119_source_blob do
+    @phase_119_sources
+    |> Enum.map_join("\n", &File.read!/1)
+  end
+
+  defp source_for_phase_119(suffix) do
+    @phase_119_sources
+    |> Enum.find(fn path -> String.ends_with?(path, suffix) end)
+    |> File.read!()
+  end
+
+  defp occurrence_count(source, needle) do
+    source
+    |> String.split(needle)
+    |> length()
+    |> Kernel.-(1)
   end
 
   defp phase_110_artifact_blob do
