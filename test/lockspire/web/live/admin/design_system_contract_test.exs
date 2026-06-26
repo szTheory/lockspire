@@ -1535,6 +1535,286 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  defp phase_120_contract_sources do
+    %{
+      css: File.read!(@admin_css_path),
+      tokens: @brandbook_tokens_path |> File.read!() |> Jason.decode!(),
+      admin_sources:
+        [@admin_components_path | Path.wildcard(@admin_live_glob)]
+        |> Enum.map_join("\n", &File.read!/1),
+      operation_sources: @phase_119_operate_sources |> Enum.map_join("\n", &File.read!/1),
+      operator_doc: File.read!(@operator_admin_doc_path),
+      supported_surface:
+        File.read!(Path.expand("../../../../../docs/supported-surface.md", __DIR__)),
+      mix: File.read!(Path.expand("../../../../../mix.exs", __DIR__))
+    }
+  end
+
+  defp assert_phase_120_brand_token_anchors(%{css: css, tokens: tokens}) do
+    expected_color_tokens = %{
+      "--ls-color-brand-500" => get_in(tokens, ["color", "brand", "500", "value"]),
+      "--ls-color-brand-600" => get_in(tokens, ["color", "brand", "600", "value"]),
+      "--ls-color-brand-700" => get_in(tokens, ["color", "brand", "700", "value"]),
+      "--ls-color-gray-50" => get_in(tokens, ["color", "neutral", "50", "value"]),
+      "--ls-color-gray-950" => get_in(tokens, ["color", "neutral", "950", "value"]),
+      "--ls-color-info-border-dark" => get_in(tokens, ["status", "dark", "info", "border"])
+    }
+
+    for {token, value} <- expected_color_tokens do
+      assert css =~ "#{token}: #{value};"
+    end
+
+    for {token, token_path} <- [
+          {"--ls-surface-page", ["semantic", "light", "surface-page", "value"]},
+          {"--ls-surface-panel", ["semantic", "light", "surface-panel", "value"]},
+          {"--ls-text-body", ["semantic", "light", "text-body", "value"]},
+          {"--ls-text-accent", ["semantic", "light", "text-accent", "value"]},
+          {"--ls-focus-ring-color", ["semantic", "light", "focus-ring", "value"]}
+        ] do
+      assert css =~ "#{token}: #{css_token_value(get_in(tokens, token_path))};"
+    end
+
+    dark_vars = phase_120_dark_vars(css)
+
+    for {token, token_path} <- [
+          {"--ls-surface-page", ["semantic", "dark", "surface-page", "value"]},
+          {"--ls-surface-panel", ["semantic", "dark", "surface-panel", "value"]},
+          {"--ls-text-body", ["semantic", "dark", "text-body", "value"]},
+          {"--ls-text-accent", ["semantic", "dark", "text-accent", "value"]},
+          {"--ls-focus-ring-color", ["semantic", "dark", "focus-ring", "value"]}
+        ] do
+      assert dark_vars =~ "#{token}: #{css_token_value(get_in(tokens, token_path))};"
+    end
+
+    assert css =~ "--ls-focus-ring-width: #{get_in(tokens, ["focus", "ring-width", "value"])};"
+    assert css =~ "--ls-focus-ring-offset: #{get_in(tokens, ["focus", "ring-offset", "value"])};"
+
+    assert css =~
+             "--ls-motion-duration-fast: #{get_in(tokens, ["motion", "duration-fast", "value"])};"
+
+    assert css =~
+             "--ls-motion-duration-medium: #{get_in(tokens, ["motion", "duration-medium", "value"])};"
+  end
+
+  defp assert_phase_120_raw_color_allowlist(%{css: css, tokens: tokens}) do
+    allowed_hex = tokens |> brandbook_hex_values() |> MapSet.new()
+
+    offenders =
+      ~r/#[0-9a-fA-F]{3,8}/
+      |> Regex.scan(css)
+      |> List.flatten()
+      |> Enum.map(&String.downcase/1)
+      |> Enum.uniq()
+      |> Enum.reject(&MapSet.member?(allowed_hex, &1))
+
+    assert offenders == [],
+           "expected raw admin CSS hex colors to be backed by brandbook tokens, found #{inspect(offenders)}"
+  end
+
+  defp assert_phase_120_contrast_token_pairs(%{css: css, tokens: tokens}) do
+    for mode <- ["light", "dark"],
+        tone <- ["success", "warning", "danger", "info"],
+        slot <- ["bg", "text", "border"] do
+      assert get_in(tokens, ["status", mode, tone, slot])
+      assert get_in(tokens, ["status", mode, tone, "wcag"]) in ["AA", "AAA"]
+    end
+
+    for tone <- ["success", "warning", "danger", "info"],
+        slot <- ["bg", "text", "border"] do
+      assert css =~
+               "--ls-color-#{tone}-#{slot}: #{get_in(tokens, ["status", "light", tone, slot])};"
+
+      assert css =~
+               "--ls-color-#{tone}-#{slot}-dark: #{get_in(tokens, ["status", "dark", tone, slot])};"
+
+      assert css =~ "--ls-status-#{tone}-#{slot}: var(--ls-color-#{tone}-#{slot});"
+      assert css =~ "--ls-status-#{tone}-#{slot}: var(--ls-color-#{tone}-#{slot}-dark);"
+    end
+
+    for token <- [
+          "--ls-surface-page",
+          "--ls-surface-panel",
+          "--ls-surface-muted",
+          "--ls-text-strong",
+          "--ls-text-body",
+          "--ls-text-muted",
+          "--ls-text-accent",
+          "--ls-border-subtle",
+          "--ls-border-strong",
+          "--ls-focus-ring-color"
+        ] do
+      assert css =~ token <> ":"
+      assert phase_120_dark_vars(css) =~ token <> ":"
+    end
+  end
+
+  defp assert_phase_120_responsive_focus_theme_motion(%{css: css}) do
+    assert css =~ "@media (max-width: 720px)"
+    assert css =~ "grid-template-columns: minmax(0, 1fr)"
+    assert css =~ "overflow-wrap: anywhere"
+    assert css =~ "flex-wrap: wrap"
+    assert css =~ "max-width: 100%"
+    assert css =~ "min-width: 0"
+
+    for selector <- [
+          ".lockspire-admin-nav-item:focus-visible",
+          ".lockspire-admin-theme-control select:focus-visible",
+          ".lockspire-admin-field input:focus-visible",
+          ".lockspire-admin-field select:focus-visible",
+          ".lockspire-admin-field textarea:focus-visible",
+          ".lockspire-admin-error-summary:focus-visible"
+        ] do
+      assert css =~ selector
+    end
+
+    assert css =~ "outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color)"
+    assert css =~ "outline-offset: var(--ls-focus-ring-offset)"
+    assert css =~ "box-shadow: var(--ls-focus-ring-shadow)"
+
+    for phrase <- [
+          "color-scheme: light;",
+          ":root[data-theme=\"light\"]",
+          ":root[data-theme=\"dark\"]",
+          "@media (prefers-color-scheme: dark)",
+          ":root:not([data-theme=\"light\"])",
+          "color-scheme: dark;"
+        ] do
+      assert css =~ phrase
+    end
+
+    assert css =~ "@media (prefers-reduced-motion: reduce)"
+    assert css =~ "transition-duration: 0.01ms !important"
+    assert css =~ "animation-duration: 0.01ms !important"
+    assert css =~ "scroll-behavior: auto !important"
+    assert css =~ "transform: none;"
+  end
+
+  defp assert_phase_120_public_boundary(%{
+         operator_doc: operator_doc,
+         supported_surface: supported_surface,
+         mix: mix
+       }) do
+    public_blob = String.downcase(operator_doc <> "\n" <> supported_surface)
+
+    for forbidden <- [
+          "public component lab",
+          "component lab route",
+          "component-lab route",
+          "design-system api",
+          "design system api",
+          "public design system",
+          "public theming engine",
+          "theme engine",
+          "screenshot product",
+          "screenshot support",
+          "playwright support",
+          "required playwright",
+          "axe support",
+          "required axe",
+          "wcag certification",
+          "wcag certified"
+        ] do
+      refute public_blob =~ forbidden
+    end
+
+    assert operator_doc =~
+             "Lockspire owns protocol and operator state after the request reaches its LiveViews"
+
+    assert operator_doc =~
+             "the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+
+    for forbidden <- [
+          "playwright",
+          "axe-core",
+          "@axe-core",
+          "playwright.config",
+          "package.json",
+          "browser proof",
+          "visual regression"
+        ] do
+      refute String.downcase(mix) =~ forbidden
+    end
+  end
+
+  defp assert_phase_120_copy_boundaries(%{
+         admin_sources: admin_sources,
+         operation_sources: operation_sources,
+         operator_doc: operator_doc,
+         supported_surface: supported_surface
+       }) do
+    source_and_docs = admin_sources <> "\n" <> operator_doc <> "\n" <> supported_surface
+
+    refute Regex.match?(
+             ~r/(?:^|>|\n)\s*(Click here|Learn more|Read more|Submit|OK)\s*(?:<|\n|$)/i,
+             source_and_docs
+           )
+
+    for forbidden <- [
+          "critical breach",
+          "panic",
+          "threat center",
+          "attack map",
+          "extreme caution",
+          "real-client-secret",
+          "production-secret",
+          "prod-access-token",
+          "prod-refresh-token",
+          "customer.example.com",
+          "tenant.example.com",
+          "sk_live_",
+          "pk_live_",
+          "eyJhbGci",
+          "BEGIN PRIVATE KEY"
+        ] do
+      refute source_and_docs =~ forbidden
+    end
+
+    refute Regex.match?(~r/\beyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/, source_and_docs)
+
+    refute Regex.match?(
+             ~r/\b(Retry now|Discard|Approve|Deny|Logout now|Worker control|Requeue|Run worker|Pause worker)\b/i,
+             operation_sources
+           )
+
+    refute operation_sources =~ ~r/phx-(click|submit)=/
+  end
+
+  defp css_token_value("{" <> reference) do
+    reference =
+      reference
+      |> String.trim_trailing("}")
+      |> String.replace_prefix("color.neutral.", "color.gray.")
+      |> String.replace(".", "-")
+
+    "var(--ls-#{reference})"
+  end
+
+  defp css_token_value(value), do: value
+
+  defp brandbook_hex_values(value) when is_map(value) do
+    value
+    |> Map.values()
+    |> Enum.flat_map(&brandbook_hex_values/1)
+    |> Enum.map(&String.downcase/1)
+  end
+
+  defp brandbook_hex_values(value) when is_list(value) do
+    Enum.flat_map(value, &brandbook_hex_values/1)
+  end
+
+  defp brandbook_hex_values(value) when is_binary(value) do
+    if Regex.match?(~r/^#[0-9a-fA-F]{3,8}$/, value), do: [value], else: []
+  end
+
+  defp brandbook_hex_values(_value), do: []
+
+  defp phase_120_dark_vars(css) do
+    case Regex.run(~r/@dark_vars\s+\"\"\"\n(?<vars>.*?)\n\s+\"\"\"/s, css, capture: [:vars]) do
+      [vars] -> vars
+      nil -> flunk("missing embedded @dark_vars CSS contract")
+    end
+  end
+
   defp inventory_row!(inventory, route) do
     row_prefix = "| `#{route}` |"
 
