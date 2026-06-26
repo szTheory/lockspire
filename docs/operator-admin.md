@@ -65,6 +65,8 @@ Theme behavior is intentionally narrow:
 
 Maintainer verification should keep this boundary intact: source contracts check shared primitives, token drift, focus, responsive behavior, theme modes, reduced motion, route links, docs truth, and redaction; manual evidence, when captured, remains maintainer proof and must not include secrets or copy-once plaintext. These checks do not make browser tooling, screenshots, lab routes, or theming overrides part of the public support contract.
 
+The Phase 120 docs/support-boundary contract treats this section as maintainer-facing operator guidance. It verifies that the public support ceiling stays in `docs/supported-surface.md` while internal proof artifacts, package contents, and admin route behavior remain bounded.
+
 Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
 
 Route groups remain concrete entries inside those journeys:
