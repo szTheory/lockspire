@@ -5,6 +5,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
 
   alias Lockspire.Web.AdminLab.Fixtures
   alias Lockspire.Web.AdminLab.StressSurface
+  alias Lockspire.Web.AdminProof.HtmlAssertions
 
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @mix_path Path.expand("../../../../../mix.exs", __DIR__)
@@ -55,6 +56,19 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
 
   test "stress surface renders real admin components across required states" do
     html = render_component(&StressSurface.render/1, fixture_set: Fixtures.all())
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+
+    HtmlAssertions.assert_no_text(html, [
+      "Click here",
+      "Learn more",
+      "Read more",
+      "Submit"
+    ])
+
+    HtmlAssertions.assert_no_text(html, Fixtures.forbidden_substrings())
 
     for phrase <- [
           "Render stress surface",
