@@ -77,27 +77,52 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    page_html = page_markup(html)
 
-    assert html =~ "Operate"
-    assert html =~ "Logout propagation queue"
-    assert html =~ "Review logout deliveries"
-    assert html =~ "Waiting"
-    assert html =~ "Retrying"
-    assert html =~ "Failed"
-    assert html =~ "Discarded"
-    assert html =~ "Completed"
-    assert summary_stat?(html, "Waiting", 1)
-    assert summary_stat?(html, "Retrying", 1)
-    assert summary_stat?(html, "Failed", 1)
-    assert html =~ "lockspire-admin-resource-list__item"
-    assert html =~ "lockspire-admin-long-value"
-    assert html =~ "test-delivery-123"
-    assert html =~ "test-delivery-attempted"
-    assert html =~ "test-delivery-retryable"
-    refute html =~ "<table"
+    assert page_html =~ "Operate"
+    assert page_html =~ "Logout propagation queue"
+    assert page_html =~ "Review logout deliveries"
+    assert page_html =~ "Waiting"
+    assert page_html =~ "Retrying"
+    assert page_html =~ "Failed"
+    assert page_html =~ "Discarded"
+    assert page_html =~ "Completed"
+    assert summary_stat?(page_html, "Waiting", 1)
+    assert summary_stat?(page_html, "Retrying", 1)
+    assert summary_stat?(page_html, "Failed", 1)
+    assert page_html =~ "lockspire-admin-pane"
+    assert page_html =~ "lockspire-admin-resource-list"
+    assert page_html =~ "lockspire-admin-dense-resource-row"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ "test-delivery-123"
+    assert page_html =~ "test-delivery-attempted"
+    assert page_html =~ "test-delivery-retryable"
+    refute page_html =~ "<table"
+    refute page_html =~ "lockspire-admin-table-wrap"
+    refute page_html =~ "phx-click"
+    refute page_html =~ "phx-submit"
+    refute_unsupported_worker_controls(page_html)
+    assert page_html =~ "Pending"
+  end
+
+  test "logout deliveries empty state names operator review without controls" do
+    html =
+      %{
+        current_section: :logouts,
+        page_title: "Logout deliveries",
+        deliveries: [],
+        delivery_metrics: %{waiting: 0, retrying: 0, failed: 0, discarded: 0, completed: 0},
+        __changed__: %{}
+      }
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert html =~ "No logout deliveries waiting for review"
+    assert html =~ "There are no logout propagation records waiting for operator review."
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
-    assert html =~ "Pending"
+    refute_unsupported_worker_controls(html)
   end
 
   defp socket_for(action) do
@@ -114,4 +139,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       html
     )
   end
+
+  defp refute_unsupported_worker_controls(html) do
+    refute Regex.match?(
+             ~r/\b(Retry now|Discard|Logout now|Worker control|Requeue|Approve|Deny)\b/i,
+             html
+           )
+  end
+
+  defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
 end
