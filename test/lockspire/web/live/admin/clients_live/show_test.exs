@@ -251,6 +251,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     refute html =~ "client_secret_hash"
   end
 
+  test "client detail support pivots link to supported logout queue route", %{client: client} do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Support pivots"
+    assert html =~ "Review logout deliveries"
+    assert html =~ ~s(href="/admin/logouts")
+    refute html =~ "/admin/logout-deliveries"
+  end
+
   test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
     client: client
   } do
