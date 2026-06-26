@@ -41,10 +41,18 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     doc = document(html)
     id_set = id_set(doc)
 
-    missing =
+    values =
       doc
       |> LazyHTML.query("[#{attribute}]")
       |> LazyHTML.attribute(attribute)
+
+    blank_values = Enum.filter(values, &(String.trim(&1) == ""))
+
+    assert blank_values == [],
+           "expected #{attribute} values to be non-empty"
+
+    missing =
+      values
       |> Enum.flat_map(&String.split(&1, ~r/\s+/, trim: true))
       |> Enum.reject(&MapSet.member?(id_set, &1))
       |> Enum.uniq()
@@ -77,14 +85,14 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
 
     unlabeled =
       doc
-      |> LazyHTML.query("input[id], select[id], textarea[id]")
+      |> LazyHTML.query("input, select, textarea")
       |> LazyHTML.attributes()
       |> Enum.reject(&hidden_input?/1)
       |> Enum.reject(&control_labelled?(&1, label_targets, id_set))
-      |> Enum.map(&attribute_value(&1, "id"))
+      |> Enum.map(fn attrs -> attribute_value(attrs, "id") || inspect(attrs) end)
 
     assert unlabeled == [],
-           "expected every rendered form control with an ID to have a label or ARIA label, missing: #{inspect(unlabeled)}"
+           "expected every rendered form control to have a label or ARIA label, missing: #{inspect(unlabeled)}"
 
     html
   end
@@ -195,10 +203,17 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     labelledby = attribute_value(attrs, "aria-labelledby")
 
     cond do
-      id in label_targets -> true
-      is_binary(aria_label) and aria_label != "" -> true
-      is_binary(labelledby) -> labelledby_targets_exist?(labelledby, id_set)
-      true -> false
+      is_binary(id) and id != "" and id in label_targets ->
+        true
+
+      is_binary(aria_label) and String.trim(aria_label) != "" ->
+        true
+
+      is_binary(labelledby) and String.trim(labelledby) != "" ->
+        labelledby_targets_exist?(labelledby, id_set)
+
+      true ->
+        false
     end
   end
 

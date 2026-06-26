@@ -1758,7 +1758,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "Reduced-motion preferences",
           "Maintainer verification",
           "source contracts check shared primitives",
-          "Phase 120 docs/support-boundary contract",
+          "This section is maintainer-facing operator guidance",
           "Lockspire owns protocol and operator state after the request reaches its LiveViews",
           "host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
         ] do

@@ -147,6 +147,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     refute html =~ "tenant-with-a-long-name.example.invalid"
   end
 
+  test "HTML proof helper fails blank ARIA references" do
+    html = ~s(<p id="help">Help</p><input id="client-name" aria-describedby="">)
+
+    assert_raise ExUnit.AssertionError, ~r/aria-describedby values to be non-empty/, fn ->
+      HtmlAssertions.assert_describedby_targets_exist(html)
+    end
+  end
+
+  test "HTML proof helper fails form controls that lose IDs and labels" do
+    html =
+      ~s(<form><label for="client-name">Client name</label><input id="client-name" name="client_name"><input name="redirect_uri" type="url"></form>)
+
+    assert_raise ExUnit.AssertionError, ~r/every rendered form control to have a label/, fn ->
+      HtmlAssertions.assert_label_targets_exist(html)
+    end
+  end
+
   test "component lab stays internal, test-only, and outside package/public routes" do
     router = File.read!(@admin_router_path)
     mix = File.read!(@mix_path)
