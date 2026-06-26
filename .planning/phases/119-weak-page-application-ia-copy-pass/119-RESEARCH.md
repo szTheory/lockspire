@@ -392,17 +392,15 @@ All claims in this research were verified or cited in this session; no `[ASSUMED
 |---|-------|---------|---------------|
 | — | — | — | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How deeply should token and consent detail be restructured?**  
    - What we know: Phase 119 context says these pages need targeted primitive/copy alignment only where it improves hierarchy or readability. [VERIFIED: .planning/phases/119-weak-page-application-ia-copy-pass/119-CONTEXT.md]  
-   - What's unclear: Exact pane titles and ordering are discretionary. [VERIFIED: .planning/phases/119-weak-page-application-ia-copy-pass/119-CONTEXT.md]  
-   - Recommendation: Keep actions and confirmations intact; use `entity_header`/`pane` only for incident hierarchy, family/grant context, and destructive lifecycle separation. [VERIFIED: codebase grep]
+   - RESOLVED: Plan `119-03`, task `119-03-02`, uses targeted primitive/copy alignment only for incident hierarchy, mobile readability, and consequence scanning. It preserves `Admin.revoke_token/2`, `Admin.revoke_token_family/2`, `Admin.revoke_consent/2`, `phx-submit="revoke_token"`, `phx-submit="revoke_family"`, `phx-submit="revoke_consent"`, checkbox confirmation params, current assigns, redaction helpers, and missing-record handling. Exact pane titles and ordering remain executor discretion within D-10, D-14, and D-15. [VERIFIED: .planning/phases/119-weak-page-application-ia-copy-pass/119-03-PLAN.md]
 
 2. **Should client detail add support pivots even if no dedicated route is linked today?**  
    - What we know: FLOW-01 names support pivots, and existing admin routes include token/consent/logouts support/operate surfaces. [VERIFIED: .planning/REQUIREMENTS.md] [VERIFIED: codebase grep]  
-   - What's unclear: Whether current data always supports useful filter links for every client. [VERIFIED: codebase grep]  
-   - Recommendation: Add only safe, existing route links with query params or route destinations already supported; otherwise render a read-only pane naming available follow-up surfaces. [VERIFIED: codebase grep]
+   - RESOLVED: Plan `119-01`, task `119-01-01`, adds support pivots only to existing route/filter destinations already backed by current route tests. When no stable filter contract exists, the client detail renders non-mutating review context instead of inventing a route, query param, or mutation path. [VERIFIED: .planning/phases/119-weak-page-application-ia-copy-pass/119-01-PLAN.md]
 
 ## Environment Availability
 
