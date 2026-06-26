@@ -67,7 +67,9 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert html =~ "Denied"
     assert html =~ "Expired"
     assert html =~ "Completed"
-    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-pane"
+    assert html =~ "lockspire-admin-resource-list"
+    assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "Device authorization"
     refute html =~ "hash1"
@@ -75,6 +77,28 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     refute html =~ "device_code"
     refute html =~ "user_code"
     refute html =~ "test-client"
+    refute html =~ "client_secret"
+    refute html =~ "phx-click"
+    refute html =~ "phx-submit"
+
+    refute_unsupported_queue_controls(html)
+  end
+
+  test "device authorization empty state names operator review without controls" do
+    html =
+      %{
+        current_section: :device_authorizations,
+        page_title: "Device Authorizations",
+        device_authorizations: [],
+        __changed__: %{}
+      }
+      |> Index.render()
+      |> rendered_to_string()
+
+    assert html =~ "No device authorizations waiting for review"
+    assert html =~ "There are no device authorization records waiting for operator review."
+    refute html =~ "phx-click"
+    refute html =~ "phx-submit"
   end
 
   defp conn_for_admin do
@@ -83,5 +107,12 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp refute_unsupported_queue_controls(html) do
+    refute Regex.match?(
+             ~r/\b(Retry|Discard|Approve|Deny|Logout now|Worker control|Requeue)\b/i,
+             html
+           )
   end
 end

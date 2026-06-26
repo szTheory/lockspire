@@ -64,11 +64,34 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert html =~ "Completed"
     assert html =~ "Denied"
     assert html =~ "Expired"
-    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-pane"
+    assert html =~ "lockspire-admin-resource-list"
+    assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "test-interaction-123"
     refute html =~ "<table"
+    refute html =~ "lockspire-admin-table-wrap"
+    refute html =~ "phx-click"
+    refute html =~ "phx-submit"
+    refute_unsupported_queue_controls(html)
     assert html =~ "Pending login"
+  end
+
+  test "interactions empty state names operator review without controls" do
+    html =
+      %{
+        current_section: :interactions,
+        page_title: "Active interactions",
+        interactions: [],
+        __changed__: %{}
+      }
+      |> Index.render()
+      |> rendered_to_string()
+
+    assert html =~ "No authorization interactions waiting for review"
+    assert html =~ "There are no authorization interaction records waiting for operator review."
+    refute html =~ "phx-click"
+    refute html =~ "phx-submit"
   end
 
   defp socket_for(action) do
@@ -77,5 +100,12 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp refute_unsupported_queue_controls(html) do
+    refute Regex.match?(
+             ~r/\b(Retry|Discard|Approve|Deny|Logout now|Worker control|Requeue)\b/i,
+             html
+           )
   end
 end
