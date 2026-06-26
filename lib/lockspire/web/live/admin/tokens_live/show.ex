@@ -112,9 +112,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         </:actions>
       </AdminComponents.page_hero>
 
-      <AdminComponents.section_card
+      <AdminComponents.entity_header
         title={@token_detail.token.handle}
         subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts or plaintext recovery."
+        identifier={@token_detail.token.handle}
+      >
+        <:status>
+          <AdminComponents.status_badge status={@token_detail.status} />
+          <AdminComponents.status_badge status={@token_detail.token.token_type} />
+        </:status>
+      </AdminComponents.entity_header>
+
+      <AdminComponents.pane
+        title="Token identity and current state"
+        subtitle="Review the durable token pivots used by support without rendering hashes or plaintext token material."
       >
         <AdminComponents.description_list>
           <:item label="Client">
@@ -161,9 +172,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           </:item>
           <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
         </AdminComponents.description_list>
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
 
-      <AdminComponents.section_card
+      <AdminComponents.pane
         title="Refresh family lineage"
         subtitle="Family status is derived from the stored lineage used by refresh, revocation, and introspection."
       >
@@ -178,9 +189,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           </:item>
         </AdminComponents.description_list>
 
-        <ul class="lockspire-admin-resource-list lockspire-admin-section-spaced">
+        <AdminComponents.resource_list>
           <%= for entry <- @token_detail.family_tokens do %>
-            <AdminComponents.resource_item
+            <AdminComponents.dense_resource_row
               title={if(entry.current?, do: "Current token", else: entry.token.handle)}
               subtitle={"#{entry.token.token_type} token generation #{entry.token.generation}"}
             >
@@ -193,14 +204,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
               <:status>
                 <AdminComponents.status_badge status={entry.status} />
               </:status>
-            </AdminComponents.resource_item>
+            </AdminComponents.dense_resource_row>
           <% end %>
-        </ul>
-      </AdminComponents.section_card>
+        </AdminComponents.resource_list>
+      </AdminComponents.pane>
 
-      <AdminComponents.section_card
+      <AdminComponents.pane
         title="Corrective actions"
-        subtitle="Choose the smallest safe action first. Single-token revoke and family revoke stay distinct."
+        subtitle="Choose the smallest safe action first. Single-token revoke and family-wide refresh-token invalidation stay distinct."
       >
         <p :if={@revoke_error}>{@revoke_error}</p>
         <p :if={@family_error}>{@family_error}</p>
@@ -242,8 +253,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                   />
                   for client {@token_detail.token.client_display} and subject
                   {@token_detail.token.account_handle || "not recorded"}. This family-wide action
-                  revokes every active token in the refresh lineage and cannot recover plaintext token
-                  material.
+                  revokes every active token in the refresh lineage and cannot recover plaintext
+                  token material.
                 </span>
               </label>
               <AdminComponents.action_bar>
@@ -254,7 +265,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
             </form>
           </:body>
         </AdminComponents.confirmation_panel>
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
     </AdminLayoutLive.shell>
     """
   end

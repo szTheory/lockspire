@@ -82,9 +82,20 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         </:actions>
       </AdminComponents.page_hero>
 
-      <AdminComponents.section_card
+      <AdminComponents.entity_header
         title={@consent.client && (@consent.client.name || @consent.client.client_id) || @consent.grant.client_id}
         subtitle="Durable consent truth for support workflows. This screen does not infer from event history."
+        identifier={redacted_handle(:consent_grant, @consent.grant.id)}
+      >
+        <:status>
+          <AdminComponents.status_badge status={@consent.grant.status} />
+          <AdminComponents.status_badge status={@consent.grant.kind} />
+        </:status>
+      </AdminComponents.entity_header>
+
+      <AdminComponents.pane
+        title="Durable grant identity and current state"
+        subtitle="Use redacted grant, account, and client handles as support pivots without exposing raw credential material."
       >
         <AdminComponents.description_list>
           <:item label="Grant ID">
@@ -118,12 +129,16 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
             <code>{@consent.grant.revoked_reason || "Not recorded"}</code>
           </:item>
         </AdminComponents.description_list>
+      </AdminComponents.pane>
 
-        <h3 class="lockspire-admin-section-heading">Scopes</h3>
+      <AdminComponents.pane
+        title="Scope context"
+        subtitle="Scopes explain what this remembered grant may authorize if it remains active."
+      >
         <AdminComponents.long_value value={scope_label(@consent.grant.scopes)} kind={:text} />
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
 
-      <AdminComponents.section_card
+      <AdminComponents.pane
         title="Revoke consent grant"
         subtitle="Use this only when the durable grant should stop authorizing future reuse."
       >
@@ -140,7 +155,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                   {client_display(@consent)}, subject
                   {redacted_handle(:account, @consent.grant.account_id)}, and scopes
                   {scope_label(@consent.grant.scopes)}. This remembered grant will no longer
-                  authorize future consent reuse.
+                  authorize future remembered-consent reuse.
                 </span>
               </label>
               <AdminComponents.action_bar>
@@ -153,7 +168,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
             </form>
           </:body>
         </AdminComponents.confirmation_panel>
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
     </AdminLayoutLive.shell>
     """
   end
