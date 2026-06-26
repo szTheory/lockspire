@@ -368,6 +368,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert_phase_120_public_boundary(sources)
     end
 
+    test "operator docs support-boundary and package DX contracts stay bounded" do
+      sources = phase_120_contract_sources()
+
+      assert_phase_120_operator_docs_proof(sources)
+      assert_phase_120_supported_surface_ceiling(sources)
+      assert_phase_120_package_dx_boundary(sources)
+    end
+
     test "source and docs copy rejects generic CTAs secret samples and unsupported queue controls" do
       sources = phase_120_contract_sources()
 
@@ -1733,6 +1741,72 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "visual regression"
         ] do
       refute String.downcase(mix) =~ forbidden
+    end
+  end
+
+  defp assert_phase_120_operator_docs_proof(%{operator_doc: operator_doc}) do
+    for phrase <- [
+          "Design system workflow and proof boundary",
+          "shared Phoenix components",
+          "public component API",
+          "component lab and stress surface are internal maintainer proof only",
+          "not mounted through `Lockspire.Web.AdminRouter`",
+          "not a supported admin route",
+          "not part of `docs/supported-surface.md`",
+          "**System** is the default",
+          "**Light** and **Dark** are explicit admin-only choices",
+          "Reduced-motion preferences",
+          "Maintainer verification",
+          "source contracts check shared primitives",
+          "Phase 120 docs/support-boundary contract",
+          "Lockspire owns protocol and operator state after the request reaches its LiveViews",
+          "host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+        ] do
+      assert operator_doc =~ phrase
+    end
+  end
+
+  defp assert_phase_120_supported_surface_ceiling(%{supported_surface: supported_surface}) do
+    supported_surface = String.downcase(supported_surface)
+
+    for forbidden <- [
+          "component lab",
+          "stress surface",
+          "design system workflow",
+          "design-system workflow",
+          "public component api",
+          "public design-system",
+          "public theming",
+          "theme engine",
+          "playwright",
+          "axe",
+          "screenshot product",
+          "browser proof"
+        ] do
+      refute supported_surface =~ forbidden
+    end
+  end
+
+  defp assert_phase_120_package_dx_boundary(%{mix: mix}) do
+    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+
+    for required <- ["lib", "priv", "docs", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"] do
+      assert package_files =~ required
+    end
+
+    for forbidden <- [
+          ".planning",
+          "120-BROWSER-PROOF",
+          "package.json",
+          "package-lock.json",
+          "node_modules",
+          "playwright.config",
+          "screenshots",
+          "traces",
+          "tmp/admin-ui-polish"
+        ] do
+      refute String.downcase(package_files) =~ String.downcase(forbidden)
+      refute String.downcase(mix) =~ String.downcase(forbidden)
     end
   end
 
