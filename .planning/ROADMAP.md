@@ -14,7 +14,7 @@
 | 117 | 2/2 | Complete    | 2026-06-25 |
 | 118 | 3/3 | Complete   | 2026-06-26 |
 | 119 | 4/4 | Complete    | 2026-06-26 |
-| 120 | 1/3 | In Progress|  |
+| 120 | 2/3 | In Progress|  |
 
 ## Phase Details
 
@@ -158,6 +158,21 @@ Plans:
 
 - Fresh browser evidence is required after CSS/component/page changes; do not rely on Phase 110 screenshots as current proof.
 - If Playwright + axe proves too heavy during implementation, fall back to Elixir-only contracts plus manual browser evidence while preserving the same acceptance matrix.
+
+**Plans:** 2/3 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 120-01-PLAN.md — Browser proof route matrix, maintainer evidence artifact, and route-drift fix
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 120-02-PLAN.md — Automated PROOF-03 source, rendered component, and mounted route guardrails
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 120-03-PLAN.md — Operator workflow docs, support-boundary proof, and final adversarial signoff
 
 ## Shipped Milestones
 
