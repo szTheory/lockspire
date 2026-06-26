@@ -146,6 +146,25 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     assert_no_text(html, @generic_cta_text)
   end
 
+  def assert_no_interactive_controls(html, opts \\ []) do
+    source = html_source(html)
+
+    opts
+    |> Keyword.get(:events, ["phx-click", "phx-submit"])
+    |> Enum.each(fn event ->
+      refute source =~ event, "expected rendered HTML to omit interactive event #{inspect(event)}"
+    end)
+
+    opts
+    |> Keyword.get(:text, [])
+    |> Enum.each(fn text ->
+      refute Regex.match?(~r/\b#{Regex.escape(text)}\b/i, source),
+             "expected rendered HTML to omit unsupported control text #{inspect(text)}"
+    end)
+
+    html
+  end
+
   def assert_no_text(html, denied_values) when is_list(denied_values) do
     source = html_source(html)
 
