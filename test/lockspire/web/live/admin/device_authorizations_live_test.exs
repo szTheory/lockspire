@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index
 
   @endpoint Lockspire.Web.Endpoint
@@ -60,6 +61,22 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/device_authorizations")
     page_html = page_markup(html)
 
+    HtmlAssertions.assert_no_duplicate_ids(page_html)
+    HtmlAssertions.assert_describedby_targets_exist(page_html)
+    HtmlAssertions.assert_no_generic_cta_text(page_html)
+
+    HtmlAssertions.assert_no_text(page_html, [
+      "hash1",
+      "hash2",
+      "device_code",
+      "user_code",
+      "test-client"
+    ])
+
+    HtmlAssertions.assert_no_interactive_controls(page_html,
+      text: unsupported_queue_control_text()
+    )
+
     assert page_html =~ "Operate"
     assert page_html =~ "Device authorization queue"
     assert page_html =~ "Review device authorizations"
@@ -101,6 +118,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert html =~ "There are no device authorization records waiting for operator review."
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
   defp conn_for_admin do
@@ -116,6 +134,10 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
              ~r/\b(Retry|Discard|Approve|Deny|Logout now|Worker control|Requeue)\b/i,
              html
            )
+  end
+
+  defp unsupported_queue_control_text do
+    ["Retry", "Discard", "Approve", "Deny", "Logout now", "Worker control", "Requeue"]
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")

@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
   import Phoenix.ConnTest
 
   alias Lockspire.Admin.InitialAccessTokens
+  alias Lockspire.Web.AdminProof.HtmlAssertions
 
   @endpoint Lockspire.Web.Endpoint
 
@@ -55,6 +56,12 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 
+      HtmlAssertions.assert_no_duplicate_ids(html)
+      HtmlAssertions.assert_describedby_targets_exist(html)
+      HtmlAssertions.assert_no_generic_cta_text(html)
+      HtmlAssertions.assert_has_link(html, "/admin/iats/new")
+      HtmlAssertions.assert_no_text(html, [secret | forbidden_secret_samples()])
+
       assert html =~ "Configure"
       assert html =~ "Initial access token inventory"
       assert html =~ "Review initial access tokens"
@@ -92,6 +99,13 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       # Initial state should have no secret
       initial_html = render(view)
+
+      HtmlAssertions.assert_no_duplicate_ids(initial_html)
+      HtmlAssertions.assert_describedby_targets_exist(initial_html)
+      HtmlAssertions.assert_label_targets_exist(initial_html)
+      HtmlAssertions.assert_no_generic_cta_text(initial_html)
+      HtmlAssertions.assert_no_text(initial_html, forbidden_secret_samples())
+
       assert initial_html =~ "Configure"
       assert initial_html =~ "Mint initial access token"
       assert initial_html =~ "DCR policy"
@@ -130,6 +144,8 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         |> element("button[phx-click=\"acknowledge_copy\"]")
         |> render_click()
 
+      HtmlAssertions.assert_no_text(html_after_ack, [plaintext | forbidden_secret_samples()])
+
       refute html_after_ack =~ "Initial access token minted"
       refute html_after_ack =~ "I have copied this secret"
       refute html_after_ack =~ plaintext
@@ -138,5 +154,18 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp forbidden_secret_samples do
+    [
+      "real-client-secret",
+      "production-secret",
+      "prod-access-token",
+      "prod-refresh-token",
+      "sk_live_",
+      "pk_live_",
+      "eyJhbGci",
+      "BEGIN PRIVATE KEY"
+    ]
   end
 end

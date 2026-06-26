@@ -5,6 +5,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
   alias Lockspire.Domain.Interaction
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.InteractionsLive.Index
   alias Phoenix.Router
 
@@ -57,6 +58,22 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     html = rendered_to_string(Index.render(socket.assigns))
     page_html = page_markup(html)
 
+    HtmlAssertions.assert_no_duplicate_ids(page_html)
+    HtmlAssertions.assert_describedby_targets_exist(page_html)
+    HtmlAssertions.assert_no_generic_cta_text(page_html)
+
+    HtmlAssertions.assert_no_text(page_html, [
+      "authorization_code",
+      "refresh_token",
+      "access_token",
+      "private_key",
+      "verifier_material"
+    ])
+
+    HtmlAssertions.assert_no_interactive_controls(page_html,
+      text: unsupported_queue_control_text()
+    )
+
     assert page_html =~ "Operate"
     assert page_html =~ "Authorization interaction queue"
     assert page_html =~ "Review interactions"
@@ -94,6 +111,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert html =~ "There are no authorization interaction records waiting for operator review."
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
   defp socket_for(action) do
@@ -109,6 +127,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
              ~r/\b(Retry|Discard|Approve|Deny|Logout now|Worker control|Requeue)\b/i,
              html
            )
+  end
+
+  defp unsupported_queue_control_text do
+    ["Retry", "Discard", "Approve", "Deny", "Logout now", "Worker control", "Requeue"]
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")

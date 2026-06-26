@@ -5,6 +5,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
   import Phoenix.ConnTest
 
   alias Lockspire.Admin.ServerPolicy
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.PoliciesLive.Dcr
 
   @endpoint Lockspire.Web.Endpoint
@@ -60,6 +61,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
   test "global DCR policy page renders one grouped workflow form with unchanged fields" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
     assert html =~ "Save global DCR policy"
@@ -176,6 +183,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     |> String.split(pattern)
     |> length()
     |> Kernel.-(1)
+  end
+
+  defp forbidden_secret_samples do
+    [
+      "real-client-secret",
+      "production-secret",
+      "prod-access-token",
+      "prod-refresh-token",
+      "sk_live_",
+      "pk_live_",
+      "eyJhbGci",
+      "BEGIN PRIVATE KEY"
+    ]
   end
 
   defp live_route?(route, path, view) do

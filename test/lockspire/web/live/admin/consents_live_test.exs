@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.ConsentsLive.Index
   alias Lockspire.Web.Live.Admin.ConsentsLive.Show
   alias Phoenix.Router
@@ -109,6 +110,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              )
 
     html = rendered_to_string(Show.render(socket.assigns))
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_has_link(html, "/lockspire/admin/consents")
+    HtmlAssertions.assert_no_text(html, ["account-consent-ui", "sha256:consent-ui:hash"])
 
     assert html =~ "Support"
     assert html =~ "Stored grant decision"

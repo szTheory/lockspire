@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.TokensLive.Index
   alias Lockspire.Web.Live.Admin.TokensLive.Show
   alias Phoenix.Router
@@ -126,6 +127,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     html = rendered_to_string(Show.render(socket.assigns))
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_has_link(html, "/lockspire/admin/tokens")
+
+    HtmlAssertions.assert_no_text(html, [
+      "token-ui-refresh-hash",
+      "family-ui-123",
+      "account-token-ui"
+    ])
 
     assert html =~ "Support"
     assert html =~ "Token health decision"

@@ -3,6 +3,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   import Phoenix.LiveViewTest
 
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index
   alias Phoenix.Router
 
@@ -79,6 +80,21 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     html = rendered_to_string(Index.render(socket.assigns))
     page_html = page_markup(html)
 
+    HtmlAssertions.assert_no_duplicate_ids(page_html)
+    HtmlAssertions.assert_describedby_targets_exist(page_html)
+    HtmlAssertions.assert_no_generic_cta_text(page_html)
+
+    HtmlAssertions.assert_no_text(page_html, [
+      "authorization_code",
+      "refresh_token",
+      "access_token",
+      "private_key"
+    ])
+
+    HtmlAssertions.assert_no_interactive_controls(page_html,
+      text: unsupported_worker_control_text()
+    )
+
     assert page_html =~ "Operate"
     assert page_html =~ "Logout propagation queue"
     assert page_html =~ "Review logout deliveries"
@@ -122,6 +138,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert html =~ "There are no logout propagation records waiting for operator review."
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_worker_control_text())
     refute_unsupported_worker_controls(html)
   end
 
@@ -145,6 +162,10 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
              ~r/\b(Retry now|Discard|Logout now|Worker control|Requeue|Approve|Deny)\b/i,
              html
            )
+  end
+
+  defp unsupported_worker_control_text do
+    ["Retry now", "Discard", "Logout now", "Worker control", "Requeue", "Approve", "Deny"]
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
