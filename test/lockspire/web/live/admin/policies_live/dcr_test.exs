@@ -148,6 +148,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert {:ok, policy} = ServerPolicy.get_server_policy()
     assert policy.registration_policy == :open
     assert policy.dcr_allowed_scopes == ["openid", "email"]
+
     assert policy.dcr_allowed_token_endpoint_auth_methods == [
              "private_key_jwt",
              "client_secret_basic"
