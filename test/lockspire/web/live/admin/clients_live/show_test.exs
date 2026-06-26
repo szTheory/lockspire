@@ -223,12 +223,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Edit client metadata"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/redirects"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/logout-uris"
-    assert html =~ "/admin/clients/#{self_registered_client.client_id}/edit?workflow=logout-propagation"
+
+    assert html =~
+             "/admin/clients/#{self_registered_client.client_id}/edit?workflow=logout-propagation"
+
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/par-policy"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/security-profile"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/rotate-secret"
+
     assert html =~
              "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
+
     assert html =~ "Rotate client secret"
     assert html =~ "Rotate registration access token"
     assert html =~ "Review DCR onboarding"
