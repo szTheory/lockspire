@@ -32,7 +32,7 @@
 - [x] **PROOF-01**: Demo seeds or reusable test fixtures cover healthy, warning, incident, disabled, self-registered, expired, revoked, reuse-detected, copy-once, empty, dense, and long-value states while preserving redaction.
 - [x] **PROOF-02**: Browser proof covers 320px, 390px, 768px, 1024px, and 1440px widths across light, dark, system, and reduced-motion modes for the representative route matrix.
 - [x] **PROOF-03**: Automated guardrails cover brand-token drift, raw color drift, responsive overflow, focus reachability, accessible labels/descriptions, duplicate IDs, contrast token pairs, plaintext secret leakage, and generic CTA drift.
-- [ ] **PROOF-04**: Operator docs explain the strengthened design-system workflow, component lab boundary, theme behavior, and verification expectations without creating new public support claims.
+- [x] **PROOF-04**: Operator docs explain the strengthened design-system workflow, component lab boundary, theme behavior, and verification expectations without creating new public support claims.
 
 ## Future Requirements
 
@@ -73,7 +73,7 @@
 | PROOF-01 | Phase 117 | Complete |
 | PROOF-02 | Phase 120 | Complete |
 | PROOF-03 | Phase 120 | Complete |
-| PROOF-04 | Phase 120 | Pending |
+| PROOF-04 | Phase 120 | Complete |
 
 **Coverage:**
 
