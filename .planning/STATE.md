@@ -4,7 +4,7 @@ milestone: v1.31
 milestone_name: Admin Design-System Stress Test
 status: executing
 stopped_at: Completed 120-01-PLAN.md
-last_updated: "2026-06-26T12:48:13.423Z"
+last_updated: "2026-06-26T12:48:41.594Z"
 last_activity: 2026-06-26
 progress:
   total_phases: 5
@@ -92,6 +92,8 @@ Last activity: 2026-06-26
 - Adopt Playwright plus axe as quarantined dev/test browser proof unless implementation proves the dependency weight is too high; fallback is Elixir-only contracts plus manual browser evidence with the same matrix.
 - Fresh v1.31 browser proof is required after CSS/component/page changes; Phase 110 screenshots are baseline evidence, not current proof.
 - No logout retry/discard UI should be added unless an existing domain API backs the action.
+- [Phase 120]: Plan 01 derives browser proof route truth from AdminRouter plus only the logout-propagation query workflow. — Keeps Phase 120 route proof source-derived and prevents screenshot filenames from becoming route truth.
+- [Phase 120]: Plan 01 keeps browser evidence maintainer-only/manual unless Playwright and axe are human-verified behind checkpoint:human-verify. — Preserves the embedded-library boundary and avoids unverified Node/browser tooling becoming runtime or public support surface.
 
 ## Blockers/Concerns
 
