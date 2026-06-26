@@ -36,6 +36,16 @@ LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh
 
 Manual browser evidence is recorded as notes under `tmp/admin-ui-polish/phase-120/`. Do not commit screenshots, traces, reports, cookies, tokens, private keys, auth codes, verifier material, user codes, copy-once plaintext, or token-looking strings.
 
+## Tooling Boundary
+
+ExUnit, Phoenix LiveViewTest, and LazyHTML guardrails are the blocking proof path for Phase 120. Browser notes are maintainer-only evidence that supplements those guardrails; they do not define runtime behavior, public documentation truth, or package support.
+
+This plan uses manual browser evidence against the same route, viewport, theme, and reduced-motion matrix unless a maintainer later chooses browser automation. Optional browser automation is conditional maintainer proof only and not a phase-success requirement.
+
+Any package-manager install, `package.json`, lockfile, Playwright config, browser download, axe dependency, npm script, browser report, trace, or screenshot workflow must stop at `checkpoint:human-verify` before it is created. `@playwright/test` and `@axe-core/playwright` are named here only as conditional maintainer tooling that requires human package verification before any package-manager install or package/config file is added.
+
+Do not add public docs, Hex package content, CI browser gates, runtime browser-test behavior, or a supported admin route for this proof lane. If automation is not adopted, manual browser evidence remains the required fallback and the explicit gap notes in this artifact stay current.
+
 ## Representative Matrix
 
 | Route / Surface | Source | Journey / JTBD | Viewport / Theme / Motion Risk | Seeded Or Fixture State | Evidence Path Or Note | Accessibility Note | Sensitive Evidence Check | Gap Note |
