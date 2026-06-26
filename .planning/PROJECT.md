@@ -16,7 +16,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently completed feature milestone, `v1.30 Adoption Demo Docker DX & Repo Hygiene`, made the repo-local adoption demo easier to start, harder to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI pass. v1.30 intentionally preserved the embedded-library boundary and did not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
+The most recently completed feature milestone, `v1.31 Admin Design-System Stress Test`, systematically strengthened the admin/operator design system across inventory, lab fixtures, primitives, weak pages, browser proof, docs, and regression guardrails. v1.31 intentionally preserved OAuth/OIDC protocol behavior, storage schemas, host-owned operator authentication, the embedded-library shape, and the supported admin router boundary.
 
 The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
 
@@ -32,7 +32,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 **Why now:** v1.29 made the admin UI coherent and v1.30 made the adoption demo boring to start and inspect. The next leverage point is not protocol breadth; it is making the admin UI's design system compound at the component and group level so future operator pages can be improved idempotently without reintroducing generic styling, inaccessible controls, dark-mode regressions, mobile overflow, or host-integration weight.
 
-**Progress:** Phases 116-119 are complete. The component lab contract, design-system primitives, and highest-drift admin page/group pass are implemented and verified; Phase 120 remains for browser proof, docs, and regression audit evidence.
+**Progress:** Phases 116-120 are complete and verified. The component lab contract, stress fixtures, shared primitives, highest-drift admin page/group pass, browser proof matrix, deterministic regression guardrails, bounded operator docs, and final adversarial audit are implemented without adding public lab/design-system/theming support or browser-tooling product surface.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -322,4 +322,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-26 after Phase 119 completion*
+*Last updated: 2026-06-26 after Phase 120 completion*
