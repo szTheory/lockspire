@@ -352,6 +352,29 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  describe "Phase 120 source docs CSS contracts" do
+    test "brand tokens raw colors contrast pairs and motion contracts stay source-derived" do
+      sources = phase_120_contract_sources()
+
+      assert_phase_120_brand_token_anchors(sources)
+      assert_phase_120_raw_color_allowlist(sources)
+      assert_phase_120_contrast_token_pairs(sources)
+      assert_phase_120_responsive_focus_theme_motion(sources)
+    end
+
+    test "public docs and package content do not claim lab browser or theming support" do
+      sources = phase_120_contract_sources()
+
+      assert_phase_120_public_boundary(sources)
+    end
+
+    test "source and docs copy rejects generic CTAs secret samples and unsupported queue controls" do
+      sources = phase_120_contract_sources()
+
+      assert_phase_120_copy_boundaries(sources)
+    end
+  end
+
   test "raw hex colors are declared only on Lockspire admin token lines" do
     css = File.read!(@admin_css_path)
 
