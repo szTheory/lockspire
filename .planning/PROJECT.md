@@ -10,7 +10,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now archived twenty-nine planning milestones, including the v1.30 adoption-demo Docker DX and repo-hygiene milestone. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, and adoption-demo Docker DX plus repo hygiene in v1.30.
+Lockspire has now archived v1.31 as the latest planning milestone. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, and the admin design-system stress test in v1.31.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
@@ -20,7 +20,7 @@ The most recently completed feature milestone, `v1.31 Admin Design-System Stress
 
 The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
 
-## Current Milestone: v1.31 Admin Design-System Stress Test
+## Completed Milestone: v1.31 Admin Design-System Stress Test
 
 **Goal:** Systematically strengthen the Lockspire admin/operator design system so foundations, primitives, component groups, weak pages, fixtures, and browser evidence all move forward together without regressions.
 
@@ -32,7 +32,11 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 **Why now:** v1.29 made the admin UI coherent and v1.30 made the adoption demo boring to start and inspect. The next leverage point is not protocol breadth; it is making the admin UI's design system compound at the component and group level so future operator pages can be improved idempotently without reintroducing generic styling, inaccessible controls, dark-mode regressions, mobile overflow, or host-integration weight.
 
-**Progress:** Phases 116-120 are complete and verified. The component lab contract, stress fixtures, shared primitives, highest-drift admin page/group pass, browser proof matrix, deterministic regression guardrails, bounded operator docs, and final adversarial audit are implemented without adding public lab/design-system/theming support or browser-tooling product surface.
+**Delivered:** Phases 116-120 are complete, verified, audited, and archived. The component lab contract, stress fixtures, shared primitives, highest-drift admin page/group pass, browser proof matrix, deterministic regression guardrails, bounded operator docs, and final adversarial audit shipped without adding public lab/design-system/theming support or browser-tooling product surface.
+
+## Next Milestone Goals
+
+No active feature milestone is defined. The default posture returns to the sustaining GA release train until `$gsd-new-milestone` defines the next scoped requirement set from current adopter, release, or support evidence.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -172,10 +176,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-- [ ] Build a lightweight admin component lab/stress surface for foundations, primitives, component groups, theme modes, reduced motion, ugly data, and key operator states.
-- [ ] Upgrade shared admin components and embedded CSS so brand, spacing, typography, shape, motion, status, focus, and responsive behavior are stronger at the system level.
-- [ ] Apply the strengthened system to weak/high-drift admin pages without changing OAuth/OIDC protocol behavior, storage schemas, host-owned seams, or supported router shape.
-- [ ] Add fixtures, tests, browser evidence, docs, and adversarial review guardrails so future UI passes only move the design system forward.
+- [ ] Define the next milestone requirements via `$gsd-new-milestone` when there is enough scoped adopter, release, or support evidence to leave the sustaining train.
 
 ### Validated
 
@@ -239,6 +240,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 - Validated in Phase 113: conflict-resistant adoption-demo Docker controls support configurable Compose project names, app ports, scoped reset of active-project volumes, optional PostgreSQL host-port exposure, and opt-in Traefik hostname routing while keeping direct Docker as the default path.
 - Validated in Phase 114: startup output prints redacted URL/account/client/smoke/reprint information from `docker-info`, `docker-start` uses container-local readiness separate from the public base URL, `scripts/demo/adoption_smoke.sh` wraps the existing Python OAuth/OIDC proof for direct and optional Traefik targets, and `docs/adoption-demo.md` documents Docker-first startup, smoke, stop, reset, cleanup boundary, overrides, and troubleshooting.
 - Validated in Phase 115: adoption-demo stop, reset, cleanup, and hygiene commands are scoped to the active Compose project and allowlisted repo-owned artifacts; local hygiene reports PASS/WARN/BLOCK findings; CI hygiene remains Docker-daemon-free; useful admin UI evidence is preserved; lifecycle proof can leave no demo-owned BLOCK findings; and v1.30 does not broaden OAuth/OIDC protocol behavior, admin workflow behavior, production Docker packaging, hosted-auth shape, or public support claims.
+- Delivered v1.31 Admin Design-System Stress Test: route/component/lab inventory and brandbook-derived visual rubric (LAB-01/LAB-03, Phase 116); redaction-safe test-only component lab fixtures plus light/dark/system and motion CSS foundations (LAB-02/PROOF-01/DS-01/DS-05, Phase 117); shared structural primitives, domain-aware status semantics, and representative form/workflow primitive adoption (DS-02/DS-03/DS-04, Phase 118); client detail, DCR policy, IAT, token, consent, device authorization, interaction, and logout queue IA/copy polish without protocol or support-surface creep (FLOW-01..FLOW-05, Phase 119); and source-derived browser proof, deterministic guardrails, bounded operator docs, and final adversarial signoff (PROOF-02..PROOF-04, Phase 120).
 
 ### Out of Scope
 
@@ -303,6 +305,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start v1.28 as an admin UI polish milestone | The admin surface now spans setup proof, partner onboarding, support investigation, security posture review, operations triage, DCR, and key lifecycle. The highest-leverage adoption wedge is coherent operator UX and reusable design-system primitives, not more OAuth/OIDC protocol breadth. | Adopted at v1.28 milestone start (2026-06-03); archived in `.planning/milestones/v1.28-REQUIREMENTS.md` |
 | Start v1.29 as an admin journey and design-system deep polish milestone | v1.28 established the coherent admin UI baseline. The next value is a systematic route-by-route operator journey pass, with strongest attention on support/operations/mobile/design-system weak spots rather than more protocol breadth or a UI rewrite. | Adopted at v1.29 milestone start (2026-06-03); archived 2026-06-04 |
 | Start and complete v1.30 as adoption-demo Docker DX and repo hygiene | v1.29 produced route-complete admin UI proof, but the next UI iteration needed a boring, repeatable local demo base with fewer Docker conflicts, clearer startup output, wrapper-driven smoke proof, and scoped cleanup/hygiene before more UI polish. | Adopted at v1.30 milestone start (2026-06-04); archived 2026-06-24 |
+| Start and complete v1.31 as an admin design-system stress test | v1.29 made the admin UI coherent and v1.30 made the demo easier to inspect; the next leverage point was making shared components, fixtures, page IA, browser proof, and docs compound without protocol/storage/host-seam creep. | Adopted at v1.31 milestone start (2026-06-25); archived 2026-06-26 |
 
 ## Evolution
 
@@ -322,4 +325,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-26 after Phase 120 completion*
+*Last updated: 2026-06-26 after v1.31 milestone completion*

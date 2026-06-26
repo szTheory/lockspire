@@ -50,6 +50,7 @@ decisions:
   - Keep device authorization, interaction, and logout delivery queues read-only with no operator mutation controls.
   - Use pane/resource_list/dense_resource_row primitives for non-table queue surfaces instead of table wrappers.
   - Keep Phase 119 guardrails deterministic and source-backed rather than browser-tooling dependent.
+requirements-completed: [FLOW-04, FLOW-05]
 metrics:
   started_at: 2026-06-26T08:37:25Z
   completed_at: 2026-06-26T08:48:00Z

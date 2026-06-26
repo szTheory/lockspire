@@ -111,12 +111,51 @@
 
 ---
 
+## Milestone: v1.31 — Admin Design-System Stress Test
+
+**Shipped:** 2026-06-26
+**Phases:** 5 | **Plans:** 14
+
+### What Was Built
+- Source-derived admin route/workflow and component/group inventories, plus a brandbook visual rubric and internal lab boundary contract.
+- A test-only Phoenix component stress lab with redaction-safe fixtures for dense, empty, disabled, destructive, long-value, theme, and reduced-motion states.
+- Shared admin primitives for panes, entity headers, workflow shells, status/action clusters, lifecycle rows, dense resource rows, responsive alternatives, status semantics, and form/workflow chrome.
+- Highest-drift admin pages now use clearer operator IA and consequence-oriented copy across client detail, DCR policy, IAT, token, consent, device authorization, interaction, and logout queues.
+- Browser-proof matrix, deterministic ExUnit/LiveView/LazyHTML guardrails, bounded operator docs, and final adversarial signoff now protect the admin design system without public lab/theming/tooling creep.
+
+### What Worked
+- Starting with inventory and lab contracts kept the stress test systematic instead of page-by-page polish.
+- Keeping the component lab under `test/support` preserved the embedded-library boundary while still making ugly states inspectable.
+- LazyHTML and mounted LiveView assertions were a better fit than adding browser tooling as the blocking proof path.
+
+### What Was Inefficient
+- Phase 118 implementation proof existed in tests and summaries, but the missing `118-VERIFICATION.md` blocked the milestone audit until reconstructed.
+- Phase 119 and Phase 120 validation metadata lagged actual verification, creating closeout noise despite green tests.
+- The generated milestone accomplishments needed manual cleanup to remove low-level review-note extraction.
+
+### Patterns Established
+- Use source-derived route/component inventories before large admin UI system work.
+- Keep design-system proof layered: source contracts, rendered component stress, mounted route assertions, docs/package boundary checks, and maintainer-only browser notes.
+- Treat public support-surface drift as a first-class UI regression, not only a docs concern.
+
+### Key Lessons
+1. Component systems get stronger when the lab renders real components with hostile data before production pages adopt the primitives.
+2. Milestone audits should fail on missing verification artifacts even when tests pass; the artifact is part of the project memory.
+3. Browser proof does not have to mean browser tooling in the package path; deterministic rendered checks plus bounded manual evidence can be the right tradeoff.
+
+### Cost Observations
+- Model mix: not recorded.
+- Notable: Closeout required an inline audit repair pass, but no product code changes were needed during archival.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.31 | N/A | 5 | Admin UI quality moved from page polish to source-derived design-system stress contracts. |
 | v1.30 | N/A | 5 | Docker demo lifecycle and hygiene commands became source-contracted maintainer surfaces. |
 | v1.29 | N/A | 4 | Route journey contract became the admin UI source of truth across docs, tests, screenshots, and page polish. |
 | v1.27 | ~6 | 6 | Hash-pinned canonical docs as an executable contract before code. |
@@ -125,6 +164,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.31 | ExUnit/LiveView/LazyHTML source, rendered component, mounted route, docs, and package-boundary guardrails | High | Test-only admin lab fixtures, stress surface, and HTML assertion helpers |
 | v1.30 | Docker/source/docs/hygiene contracts plus smoke wrapper proof | High | POSIX shell lifecycle helpers and deterministic CI source checks |
 | v1.29 | Admin LiveView/design-system/browser/screenshot proof | High | BEM/design-token contract tests |
 | v1.27 | N/A | High | Contract tests |
@@ -135,3 +175,4 @@
 2. **End-to-End Proof:** Smoke tests and generated-host tests are the ultimate arbitrator of feature completion.
 3. **Route Contracts for Operator UI:** UI polish scales better when every route has an explicit job, risk state, empty state, and follow-up route before component work starts.
 4. **Demo Lifecycle Contracts:** Maintainer-facing Docker scripts need the same source-contract and redaction discipline as protocol-facing code.
+5. **Design-System Stress Before Polish:** Real component labs with hostile fixture data make reusable UI improvements safer than isolated route edits.

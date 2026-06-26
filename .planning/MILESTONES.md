@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.31 Admin Design-System Stress Test (Shipped: 2026-06-26)
+
+**Delivered:** A systematic admin/operator design-system stress test covering inventory, fixtures, primitives, page IA, proof, docs, and support-boundary guardrails.
+
+**Phases completed:** 5 phases, 14 plans, 31 tasks
+
+**Key accomplishments:**
+
+- Source-derived admin route/workflow inventory, component/group inventory, and brandbook visual rubric with contract proof.
+- Test-only Phoenix component stress lab with centralized redaction-safe fixtures and explicit light/dark/system plus reduced-motion CSS foundations.
+- Shared admin structural primitives, domain-aware status semantics, and representative form/workflow primitive adoption.
+- Client detail, DCR policy, IAT, token, consent, device authorization, interaction, and logout queue pages now use clearer operator IA and consequence-oriented copy.
+- Browser-proof matrix, LazyHTML/LiveView/source guardrails, route drift checks, and bounded operator docs prove the pass without public lab, theming, or browser-tooling support creep.
+- Milestone audit passed after closing verification metadata gaps for Phase 118 and Phase 119.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.31-MILESTONE-AUDIT.md`](milestones/v1.31-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.31-ROADMAP.md`, `milestones/v1.31-REQUIREMENTS.md`, `milestones/v1.31-MILESTONE-AUDIT.md` · **Git tag:** `v1.31`
+
+---
+
 ## v1.30 Adoption Demo Docker DX & Repo Hygiene (Shipped: 2026-06-24)
 
 **Phases completed:** 5 phases, 12 plans, 33 tasks

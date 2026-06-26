@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.31
 milestone_name: Admin Design-System Stress Test
-current_phase: 120
-status: complete
-stopped_at: Phase 120 verified and complete
-last_updated: "2026-06-26T15:01:47.364Z"
+current_phase: null
+status: Awaiting next milestone
+stopped_at: Completed 120-03-PLAN.md
+last_updated: "2026-06-26T17:22:13.083Z"
 last_activity: 2026-06-26
-last_activity_desc: Phase 120 complete
+last_activity_desc: Milestone v1.31 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** v1.31 Admin Design-System Stress Test — complete
+**Current focus:** Awaiting next milestone; default posture is the sustaining GA release train.
 
 ## Current Position
 
-Phase: 120
-Plan: Complete
-Status: Phase verified and complete
-Last activity: 2026-06-26 — Phase 120 complete
+Phase: Milestone v1.31 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-26 — Milestone v1.31 completed and archived
 
 ## Most Recent Release
 
@@ -46,11 +46,11 @@ Last activity: 2026-06-26 — Phase 120 complete
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.31 | 116-120 | 14 | 17 | shipped |
+| v1.30 | 111-115 | 12 | 17 | shipped |
 | v1.29 | 107-110 | 17 | 24 | shipped |
 | v1.28 | 103-106 | 2 | 17 | shipped |
 | v1.27 | 97-102 | 24 | 28 | shipped |
-| v1.26 | 94-96 | 3 | 5 | shipped |
-| v1.25 | 91-93 | 9 | 9 | shipped |
 
 ## v1.31 Phase Plan
 
@@ -117,7 +117,7 @@ Last activity: 2026-06-26 — Phase 120 complete
 
 **Last session:** 2026-06-26T14:20:27.583Z
 
-**Next action:** Verify Phase 120 with `$gsd-verify-work 120`.
+**Next action:** Start the next milestone with `$gsd-new-milestone` when ready.
 **Resume file:** None
 **Stopped at:** Completed 120-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
