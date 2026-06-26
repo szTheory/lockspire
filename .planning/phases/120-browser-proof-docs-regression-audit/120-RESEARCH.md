@@ -438,22 +438,19 @@ await expect
 | A2 | A small maintainer script under `scripts/maintainer/` is an acceptable optional browser proof entrypoint. | Recommended Project Structure | Medium; planner may need to choose a different location to match repo conventions. |
 | A3 | Real browser overflow/focus proof is meaningfully stronger than source-only responsive checks for 320/390px. | Common Pitfalls | Medium; manual browser proof can satisfy the same risk if Playwright is not adopted. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 120 install Playwright/axe or use manual browser evidence?**
+1. **RESOLVED: Should Phase 120 install Playwright/axe or use manual browser evidence?**
    - What we know: Node and npm are available, but no `package.json`, `node_modules`, or Playwright binary exists in the repo, and the legitimacy seam flagged latest browser packages as `SUS` due to very recent publishes. [VERIFIED: local environment] [VERIFIED: package-legitimacy seam]
-   - What's unclear: Whether maintainers want to accept a Node dev-tool footprint in this repo for Phase 120. [ASSUMED]
-   - Recommendation: Plan the browser lane behind `checkpoint:human-verify`; if rejected, require the same route/width/theme/motion table with manual browser notes. [VERIFIED: 120-CONTEXT.md]
+   - Resolution: Use manual browser evidence by default with the same route/width/theme/motion table. Do not add `package.json`, Playwright config, browser installs, or axe dependencies during planning; any later package/tooling addition must stop at `checkpoint:human-verify`. [VERIFIED: 120-01-PLAN.md]
 
-2. **What exact proof artifact name should the planner choose?**
+2. **RESOLVED: What exact proof artifact name should the planner choose?**
    - What we know: Context allows names such as `120-BROWSER-PROOF.md` or `120-DOCS-DX-PROOF.md`. [VERIFIED: 120-CONTEXT.md]
-   - What's unclear: Whether docs proof and browser proof should be one artifact or two. [ASSUMED]
-   - Recommendation: Use one `120-BROWSER-PROOF.md` artifact with sections for route matrix, commands, evidence paths, docs checks, gaps, and adversarial audit. [ASSUMED]
+   - Resolution: Use one `.planning/phases/120-browser-proof-docs-regression-audit/120-BROWSER-PROOF.md` artifact with sections for route matrix, commands, evidence paths, docs checks, gaps, and adversarial audit. [VERIFIED: 120-01-PLAN.md] [VERIFIED: 120-03-PLAN.md]
 
-3. **Which seeded browser data source should be used?**
+3. **RESOLVED: Which seeded browser data source should be used?**
    - What we know: Existing adoption demo seeds and lab fixtures are redaction-safe proof sources. [VERIFIED: codebase]
-   - What's unclear: Whether all representative route states can be reached through the current adoption smoke path without additional harness work. [ASSUMED]
-   - Recommendation: Prefer existing adoption-demo seeds for real routes and internal lab fixtures for component-only stress proof. [VERIFIED: codebase]
+   - Resolution: Prefer existing adoption-demo seeds for real admin route evidence and internal lab fixtures for component-only stress proof. If a representative route state is unreachable through the existing adoption smoke path, record the gap in `120-BROWSER-PROOF.md` rather than broadening runtime/admin behavior. [VERIFIED: 120-01-PLAN.md] [VERIFIED: 120-02-PLAN.md]
 
 ## Environment Availability
 
