@@ -36,7 +36,7 @@ Keep the more specific admin forward before the general public OAuth/OIDC forwar
 
 ## Admin navigation model
 
-The admin UI uses the same four top-level journey labels as `Lockspire.Web.Live.AdminLayoutLive`:
+The admin UI uses the same four top-level journey labels as the embedded admin layout:
 
 - **Orient**: Overview. The `/admin` cockpit answers what needs attention and points to the next workflow.
 - **Configure**: Clients, Security, Keys, and DCR. These routes own setup, issuer posture, client posture, endpoint configuration, credentials, DCR onboarding, DCR policy, IAT inventory, and key lifecycle.
@@ -46,6 +46,26 @@ The admin UI uses the same four top-level journey labels as `Lockspire.Web.Live.
 This organization is deliberate: Orient, Configure, Support, and Operate are separate journeys even when they reference the same client.
 
 The v1.29 proof artifacts under `.planning/phases/110-demo-state-screenshots-docs-and-regression-proof/` record screenshot inventory and browser evidence for this route surface. Those artifacts are maintainer evidence only; runtime code and operator docs do not depend on screenshot files.
+
+## Design system workflow and proof boundary
+
+The admin UI uses Lockspire-owned design tokens and shared Phoenix components for its operator surface. The runtime tokens intentionally mirror `brandbook/tokens/` so maintainers can audit brand drift without introducing a second styling system or a public component API.
+
+Shared primitives cover the common operator building blocks: page heroes, section cards, action groups, status badges, alerts, resource lists, summaries, long identifiers, copy-once secret panels, confirmation panels, form fields, and error summaries. When adding or revising admin routes, prefer these primitives over page-local class assemblies and keep each change tied to the Orient, Configure, Support, or Operate job it serves.
+
+The component lab and stress surface are internal maintainer proof only. They render real admin primitives and hostile redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRouter`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
+
+Theme behavior is intentionally narrow:
+
+- **System** is the default and follows `prefers-color-scheme`.
+- **Light** and **Dark** are explicit admin-only choices exposed in the shell theme selector.
+- The selector persists only a local browser preference for the Lockspire admin surface.
+- Dark mode remaps semantic aliases such as surface, text, border, status, focus, and shadow tokens while primitive palette tokens stay stable.
+- Reduced-motion preferences must neutralize nonessential transitions and keep focus, form feedback, and queue state understandable without animation.
+
+Maintainer verification should keep this boundary intact: source contracts check shared primitives, token drift, focus, responsive behavior, theme modes, reduced motion, route links, docs truth, and redaction; manual evidence, when captured, remains maintainer proof and must not include secrets or copy-once plaintext. These checks do not make browser tooling, screenshots, lab routes, or theming overrides part of the public support contract.
+
+Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
 
 Route groups remain concrete entries inside those journeys:
 
