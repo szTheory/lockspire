@@ -201,26 +201,49 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _view, html} =
              live(conn_for_admin(), "/admin/clients/#{self_registered_client.client_id}")
 
+    assert html =~ "lockspire-admin-entity-header"
+    assert html =~ "lockspire-admin-pane"
+    assert html =~ "lockspire-admin-status-cluster"
+    assert html =~ "lockspire-admin-long-value"
+
+    for group <- [
+          "Identity and current status",
+          "Effective posture",
+          "Credentials and assertion keys",
+          "Endpoints and logout",
+          "DCR and RAT context",
+          "Support pivots",
+          "Lifecycle and destructive actions"
+        ] do
+      assert html =~ group
+    end
+
     assert html =~ "lockspire-admin-action-group"
-    assert html =~ "Routine configuration"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/edit"
     assert html =~ "Edit client metadata"
-    assert html =~ "Credential and RAT rotation"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/redirects"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/logout-uris"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/edit?workflow=logout-propagation"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/par-policy"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/security-profile"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/rotate-secret"
+    assert html =~
+             "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
     assert html =~ "Rotate client secret"
     assert html =~ "Rotate registration access token"
-    assert html =~ "DCR context"
     assert html =~ "Review DCR onboarding"
     assert html =~ "/admin/dcr"
-    assert html =~ "Endpoint and logout settings"
     assert html =~ "Edit redirect URIs"
     assert html =~ "Edit post-logout redirect URIs"
     assert html =~ "Edit logout propagation URIs"
-    assert html =~ "PAR and security posture"
     assert html =~ "Edit PAR policy"
     assert html =~ "Edit security profile"
-    assert html =~ "Lifecycle and destructive actions"
+    assert html =~ ~s(phx-click="toggle_client")
     assert html =~ "Disable client"
     assert html =~ "Registration access token rotation is grouped with credential actions above."
     refute html =~ "Rotate Registration Access Token (RAT)"
+    refute html =~ "sha256:show:hash"
+    refute html =~ "client_secret_hash"
   end
 
   test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
@@ -275,8 +298,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
 
     assert html =~ "Post-logout redirect URIs"
-    assert html =~ "Logout propagation"
-    assert html =~ "These logout propagation URIs stay separate from post-logout redirect URIs."
+    assert html =~ "Post-logout redirect URIs are browser destinations after RP-initiated logout."
+    assert html =~ "Logout propagation URIs are RP cleanup endpoints."
+    assert html =~ "These logout propagation endpoints stay separate from browser destinations."
+    assert html =~ "/admin/clients/#{client.client_id}/edit?workflow=logout-propagation"
     assert html =~ "/end_session/complete"
     assert html =~ "Front-channel logout remains best effort browser cleanup."
   end
