@@ -11,7 +11,7 @@
     </:actions>
   </Lockspire.Web.Components.AdminComponents.page_hero>
 
-  <Lockspire.Web.Components.AdminComponents.section_card
+  <Lockspire.Web.Components.AdminComponents.pane
     title="Review initial access tokens"
     subtitle="DCR onboarding inventory for active, used, expired, and revoked partner intake tokens."
   >
@@ -52,9 +52,9 @@
     <% else %>
       <Lockspire.Web.Components.AdminComponents.resource_list>
         <%= for token <- @tokens do %>
-          <Lockspire.Web.Components.AdminComponents.resource_item
+          <Lockspire.Web.Components.AdminComponents.dense_resource_row
             title={token_title(token)}
-            subtitle={usage_label(token)}
+            subtitle="DCR onboarding intake token"
           >
             <:meta>
               <span>
@@ -78,6 +78,13 @@
                   kind={:timestamp}
                 />
               </span>
+              <span>
+                Usage/limit
+                <Lockspire.Web.Components.AdminComponents.long_value
+                  value={usage_label(token)}
+                  kind={:text}
+                />
+              </span>
             </:meta>
             <:status>
               <Lockspire.Web.Components.AdminComponents.status_badge status={iat_status(token)} />
@@ -94,9 +101,9 @@
                 </Lockspire.Web.Components.AdminComponents.admin_button>
               <% end %>
             </:actions>
-          </Lockspire.Web.Components.AdminComponents.resource_item>
+          </Lockspire.Web.Components.AdminComponents.dense_resource_row>
         <% end %>
       </Lockspire.Web.Components.AdminComponents.resource_list>
     <% end %>
-  </Lockspire.Web.Components.AdminComponents.section_card>
+  </Lockspire.Web.Components.AdminComponents.pane>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

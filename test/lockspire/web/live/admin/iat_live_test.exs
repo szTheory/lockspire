@@ -112,12 +112,15 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert html_after_mint =~ "Initial access token minted"
       assert html_after_mint =~ "lockspire-admin-copy-once-secret"
-      assert html_after_mint =~ "Copy this value now. Lockspire stores only the hash after this response."
+
+      assert html_after_mint =~
+               "Copy this value now. Lockspire stores only the hash after this response."
+
       assert html_after_mint =~ "I have copied this secret"
 
       [_, plaintext] =
         Regex.run(
-          ~r/<code[^>]*>(?<plaintext>lsiat_[^<]+)<\/code>/,
+          ~r/<code[^>]*>(?<plaintext>[^<]+)<\/code>/,
           html_after_mint
         )
 

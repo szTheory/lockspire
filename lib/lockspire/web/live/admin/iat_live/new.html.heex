@@ -5,14 +5,14 @@
     body="Create a DCR onboarding intake token. DCR policy controls issuer registration posture; this token is the partner handoff credential."
   />
 
-  <Lockspire.Web.Components.AdminComponents.section_card
+  <Lockspire.Web.Components.AdminComponents.workflow_shell
     title="Mint initial access token"
-    subtitle="Use short-lived, scoped intake tokens for partner onboarding. Plaintext is shown once and not shown again."
+    help="Use short-lived, scoped intake tokens for partner onboarding. Plaintext is not stored or shown again as plaintext."
   >
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
         title="Initial access token minted"
-        body="Copy once now. This initial access token is not stored or shown again as plaintext."
+        body="Copy this value now. Lockspire stores only the hash after this response."
         label="Initial access token"
         value={@iat_secret}
       />
@@ -25,17 +25,24 @@
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% else %>
-      <form phx-submit="mint" class="lockspire-admin-form-shell">
-        <div class="lockspire-admin-field">
-          <label for="iat_single_use">Single use</label>
+      <form phx-submit="mint" class="lockspire-admin-form-stack">
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="iat_single_use"
+          label="Single use"
+          help="Keep partner intake to one registration unless a deliberate multi-use handoff is required."
+        >
           <select id="iat_single_use" name="single_use">
             <option value="true" selected={@form["single_use"].value == "true"}>Yes (Recommended)</option>
             <option value="false" selected={@form["single_use"].value == "false"}>No (Multi-use)</option>
           </select>
-        </div>
+        </Lockspire.Web.Components.AdminComponents.form_field>
 
-        <div class="lockspire-admin-field">
-          <label for="iat_expires_in_days">Expires in days</label>
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="iat_expires_in_days"
+          label="Expires in days"
+          help="Bound how long this DCR onboarding credential can be used."
+          required
+        >
           <input
             id="iat_expires_in_days"
             type="number"
@@ -44,7 +51,7 @@
             required
             min="1"
           />
-        </div>
+        </Lockspire.Web.Components.AdminComponents.form_field>
 
         <Lockspire.Web.Components.AdminComponents.action_bar>
           <Lockspire.Web.Components.AdminComponents.admin_button variant={:primary} type="submit">
@@ -59,5 +66,5 @@
         </Lockspire.Web.Components.AdminComponents.action_bar>
       </form>
     <% end %>
-  </Lockspire.Web.Components.AdminComponents.section_card>
+  </Lockspire.Web.Components.AdminComponents.workflow_shell>
 </Lockspire.Web.Live.AdminLayoutLive.shell>
