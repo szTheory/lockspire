@@ -58,6 +58,46 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "Current mode is initial_access_token"
   end
 
+  test "global DCR policy page renders one grouped workflow form with unchanged fields" do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
+    assert html =~ "Save global DCR policy"
+
+    for name <- [
+          "policy[registration_policy]",
+          "policy[dcr_allowed_scopes]",
+          "policy[dcr_allowed_grant_types]",
+          "policy[dcr_allowed_response_types]",
+          "policy[dcr_allowed_redirect_uri_schemes]",
+          "policy[dcr_allowed_redirect_uri_hosts]",
+          "policy[dcr_allowed_token_endpoint_auth_methods]",
+          "policy[dcr_default_client_lifetime_seconds]",
+          "policy[dcr_default_client_secret_lifetime_seconds]",
+          "policy[dcr_default_registration_access_token_lifetime_seconds]"
+        ] do
+      assert html =~ ~s(name="#{name}")
+    end
+
+    for heading <- [
+          "Registration gate",
+          "Allowlist decisions",
+          "Lifetime defaults",
+          "Token endpoint auth methods",
+          "Risk and posture"
+        ] do
+      assert html =~ heading
+    end
+
+    assert occurrence_count(html, "lockspire-admin-workflow-shell") >= 5
+    assert html =~ "Disabled"
+    assert html =~ "Initial Access Token"
+    assert html =~ "Open registration"
+    assert html =~ "private_key_jwt posture"
+    assert html =~ "client_secret_jwt posture"
+    refute html =~ "extreme caution"
+  end
+
   test "global DCR policy page explains private_key_jwt registration posture and algorithms" do
     assert {:ok, _policy} =
              ServerPolicy.put_dcr_policy(%{
@@ -97,13 +137,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     view
     |> form("form[phx-submit=save_policy]", %{
-      policy: %{registration_policy: "open", dcr_allowed_scopes: "openid, email"}
+      policy: %{
+        registration_policy: "open",
+        dcr_allowed_scopes: "openid, email",
+        dcr_allowed_token_endpoint_auth_methods: "private_key_jwt, client_secret_basic"
+      }
     })
     |> render_submit()
 
     assert {:ok, policy} = ServerPolicy.get_server_policy()
     assert policy.registration_policy == :open
     assert policy.dcr_allowed_scopes == ["openid", "email"]
+    assert policy.dcr_allowed_token_endpoint_auth_methods == [
+             "private_key_jwt",
+             "client_secret_basic"
+           ]
   end
 
   test "invalid input shows form errors" do
@@ -120,6 +168,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp occurrence_count(html, pattern) do
+    html
+    |> String.split(pattern)
+    |> length()
+    |> Kernel.-(1)
   end
 
   defp live_route?(route, path, view) do
