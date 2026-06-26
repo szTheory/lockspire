@@ -58,30 +58,31 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
   test "device authorizations index renders operate queue rows without code material" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/device_authorizations")
+    page_html = page_markup(html)
 
-    assert html =~ "Operate"
-    assert html =~ "Device authorization queue"
-    assert html =~ "Review device authorizations"
-    assert html =~ "Pending"
-    assert html =~ "Approved"
-    assert html =~ "Denied"
-    assert html =~ "Expired"
-    assert html =~ "Completed"
-    assert html =~ "lockspire-admin-pane"
-    assert html =~ "lockspire-admin-resource-list"
-    assert html =~ "lockspire-admin-dense-resource-row"
-    assert html =~ "lockspire-admin-long-value"
-    assert html =~ "Device authorization"
-    refute html =~ "hash1"
-    refute html =~ "hash2"
-    refute html =~ "device_code"
-    refute html =~ "user_code"
-    refute html =~ "test-client"
-    refute html =~ "client_secret"
-    refute html =~ "phx-click"
-    refute html =~ "phx-submit"
+    assert page_html =~ "Operate"
+    assert page_html =~ "Device authorization queue"
+    assert page_html =~ "Review device authorizations"
+    assert page_html =~ "Pending"
+    assert page_html =~ "Approved"
+    assert page_html =~ "Denied"
+    assert page_html =~ "Expired"
+    assert page_html =~ "Completed"
+    assert page_html =~ "lockspire-admin-pane"
+    assert page_html =~ "lockspire-admin-resource-list"
+    assert page_html =~ "lockspire-admin-dense-resource-row"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ "Device authorization"
+    refute page_html =~ "hash1"
+    refute page_html =~ "hash2"
+    refute page_html =~ "device_code"
+    refute page_html =~ "user_code"
+    refute page_html =~ "test-client"
+    refute page_html =~ "client_secret"
+    refute page_html =~ "phx-click"
+    refute page_html =~ "phx-submit"
 
-    refute_unsupported_queue_controls(html)
+    refute_unsupported_queue_controls(page_html)
   end
 
   test "device authorization empty state names operator review without controls" do
@@ -94,6 +95,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       }
       |> Index.render()
       |> rendered_to_string()
+      |> page_markup()
 
     assert html =~ "No device authorizations waiting for review"
     assert html =~ "There are no device authorization records waiting for operator review."
@@ -115,4 +117,6 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
              html
            )
   end
+
+  defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
 end

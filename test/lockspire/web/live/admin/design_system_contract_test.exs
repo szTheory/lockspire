@@ -348,7 +348,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "form_field",
           "error_summary",
           "resource_item",
-          "status_badge"
+          "status_badge",
+          "pane",
+          "entity_header",
+          "workflow_shell",
+          "status_cluster",
+          "lifecycle_row",
+          "dense_resource_row",
+          "responsive_table"
         ] do
       assert components =~ "def #{function_name}"
     end
@@ -370,7 +377,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "metric_grid",
           "task_card",
           "filter_bar",
-          "action_group"
+          "action_group",
+          "pane",
+          "entity_header",
+          "workflow_shell",
+          "status_cluster",
+          "lifecycle_row",
+          "dense_resource_row",
+          "responsive_table"
         ] do
       assert component_declaration_block(components, primitive) =~ "slot("
     end
@@ -390,11 +404,186 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "lockspire-admin-field-errors",
           "lockspire-admin-long-value",
           "lockspire-admin-status-cluster",
+          "lockspire-admin-pane",
+          "lockspire-admin-pane__header",
+          "lockspire-admin-pane__body",
+          "lockspire-admin-entity-header",
+          "lockspire-admin-entity-header__main",
+          "lockspire-admin-entity-header__identifier",
+          "lockspire-admin-workflow-shell",
+          "lockspire-admin-workflow-shell__body",
+          "lockspire-admin-lifecycle-row",
+          "lockspire-admin-dense-resource-row",
+          "lockspire-admin-responsive-table",
+          "lockspire-admin-responsive-table__list",
           "lockspire-admin-badge-group",
           "lockspire-admin-action-group"
         ] do
       assert css =~ "." <> class
     end
+  end
+
+  test "phase 118 status badge semantics cover real Configure Support and Operate statuses" do
+    components = File.read!(@admin_components_path)
+    css = File.read!(@admin_css_path)
+
+    assert component_declaration_block(components, "status_badge") =~ "attr(:domain, :atom"
+    assert components =~ "defp status_metadata"
+
+    for status <- [
+          :active,
+          :open,
+          :approved,
+          :pending,
+          :pending_login,
+          :pending_consent,
+          :enqueued,
+          :attempted,
+          :retiring,
+          :retryable,
+          :denied,
+          :reuse_detected,
+          :discarded,
+          :disabled,
+          :retired,
+          :completed,
+          :consumed,
+          :used,
+          :succeeded,
+          :rendered,
+          :skipped,
+          :operator,
+          :self_registered,
+          :self_registered_client,
+          :system,
+          :host_app,
+          :dcr,
+          :one_time,
+          :remembered,
+          :initial_access_token,
+          :upcoming,
+          :revoked,
+          :expired
+        ] do
+      assert components =~ inspect(status)
+    end
+
+    assert components =~ "status_metadata(:approved, :device_authorization)"
+
+    for class <- [
+          "lockspire-admin-badge-healthy",
+          "lockspire-admin-badge-waiting",
+          "lockspire-admin-badge-warning",
+          "lockspire-admin-badge-danger",
+          "lockspire-admin-badge-disabled",
+          "lockspire-admin-badge-completed",
+          "lockspire-admin-badge-provenance"
+        ] do
+      assert css =~ "." <> class
+    end
+  end
+
+  test "phase 118 representative form adoption keeps explicit Phoenix controls and named exceptions" do
+    adoption_paths = [
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/clients_live/form_component.ex",
+        __DIR__
+      ),
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/policies_live/dcr.html.heex",
+        __DIR__
+      ),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex", __DIR__),
+      Path.expand("../../../../../lib/lockspire/web/live/admin/consents_live/index.ex", __DIR__)
+    ]
+
+    for path <- adoption_paths do
+      source = File.read!(path)
+
+      assert source =~ "AdminComponents.form_field" or
+               source =~ "Lockspire.Web.Components.AdminComponents.form_field"
+
+      assert source =~ ~r/<(?:input|select|textarea)\b/
+    end
+
+    exception_inventory = %{
+      "complex checkbox confirmations" => [
+        "lib/lockspire/web/live/admin/clients_live/rotate_secret_component.ex"
+      ],
+      "lifecycle action forms" => ["lib/lockspire/web/live/admin/keys_live/action_component.ex"],
+      "copy-once secret/RAT/IAT flows" => [
+        "lib/lockspire/web/live/admin/tokens_live/show.ex",
+        "lib/lockspire/web/live/admin/consents_live/show.ex"
+      ]
+    }
+
+    assert Map.has_key?(exception_inventory, "complex checkbox confirmations")
+    assert Map.has_key?(exception_inventory, "lifecycle action forms")
+    assert Map.has_key?(exception_inventory, "copy-once secret/RAT/IAT flows")
+
+    for paths <- Map.values(exception_inventory), path <- paths do
+      source = File.read!(Path.expand("../../../../../#{path}", __DIR__))
+      assert source =~ ~r/(redacted|Redacted|copy-once|not stored|consequence|confirm|plaintext)/
+    end
+  end
+
+  test "phase 118 automated UAT proof covers responsive primitive guardrails" do
+    css = File.read!(@admin_css_path)
+    components = File.read!(@admin_components_path)
+
+    for selector <- [
+          ".lockspire-admin-pane",
+          ".lockspire-admin-workflow-shell",
+          ".lockspire-admin-responsive-table"
+        ] do
+      assert declaration_block(css, selector) =~ "min-width: 0"
+    end
+
+    assert css_rule(
+             css,
+             ".lockspire-admin-pane__header,\n  .lockspire-admin-entity-header,\n  .lockspire-admin-lifecycle-row,\n  .lockspire-admin-dense-resource-row"
+           ) =~ "min-width: 0"
+
+    for selector <- [
+          ".lockspire-admin-status-cluster",
+          ".lockspire-admin-dense-resource-row__meta",
+          ".lockspire-admin-action-group",
+          ".lockspire-admin-action-group__destructive"
+        ] do
+      assert declaration_block(css, selector) =~ "flex-wrap: wrap"
+    end
+
+    for selector <- [
+          ".lockspire-admin-entity-header__main",
+          ".lockspire-admin-dense-resource-row__main",
+          ".lockspire-admin-lifecycle-row__main",
+          ".lockspire-admin-long-value"
+        ] do
+      assert declaration_block(css, selector) =~ "min-width: 0"
+    end
+
+    assert css_rule(css, ".lockspire-admin-long-value") =~ "overflow-wrap: anywhere"
+    assert css_rule(css, ".lockspire-admin-responsive-table__list") =~ "display: none"
+
+    mobile_css = css_media_rule(css, "@media (max-width: 720px)")
+
+    assert css_rule(
+             mobile_css,
+             ".lockspire-admin-responsive-table .lockspire-admin-table-wrap"
+           ) =~ "display: none"
+
+    assert css_rule(mobile_css, ".lockspire-admin-responsive-table__list") =~ "display: grid"
+    assert css_rule(mobile_css, ".lockspire-admin-action-group__destructive") =~ "border-top:"
+    assert css_rule(mobile_css, ".lockspire-admin-action-group__destructive") =~ "padding-top:"
+
+    assert css_rule(
+             mobile_css,
+             ".lockspire-admin-filter-bar__fields,\n    .lockspire-admin-filter-bar__actions,\n    .lockspire-admin-action-group,\n    .lockspire-admin-action-group__primary,\n    .lockspire-admin-action-group__secondary,\n    .lockspire-admin-action-group__destructive,\n    .lockspire-admin-pane__header,\n    .lockspire-admin-entity-header,\n    .lockspire-admin-lifecycle-row,\n    .lockspire-admin-dense-resource-row,\n    .lockspire-admin-task-card__header,\n    .lockspire-admin-task-card__actions"
+           ) =~ "flex-direction: column"
+
+    assert components =~ ~s(role="link")
+    assert components =~ ~s(aria-disabled="true")
+    refute components =~ "Phoenix.LiveComponent"
   end
 
   test "admin shell exposes progressive system light dark theme control" do
@@ -562,7 +751,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert source =~ "Operate"
       assert source =~ "AdminComponents.metric_grid"
       assert source =~ "AdminComponents.summary_stat"
-      assert source =~ "AdminComponents.resource_item"
+
+      assert source =~ "AdminComponents.resource_item" or
+               source =~ "AdminComponents.dense_resource_row"
+
       assert source =~ "AdminComponents.long_value"
     end
 

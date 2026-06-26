@@ -33,7 +33,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
         body="Triage pending, approved, denied, expired, and completed device-flow state without exposing device or user code material."
       />
 
-      <AdminComponents.section_card
+      <AdminComponents.pane
         title="Review device authorizations"
         subtitle="Read-only queue rows expose client, status, subject, expiration, and durable non-secret identifiers."
       >
@@ -62,13 +62,13 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
 
         <%= if @device_authorizations == [] do %>
           <AdminComponents.empty_state
-            title="No device authorizations"
-            body="There are no device flow requests waiting for operator review."
+            title="No device authorizations waiting for review"
+            body="There are no device authorization records waiting for operator review."
           />
         <% else %>
           <AdminComponents.resource_list>
             <%= for auth <- @device_authorizations do %>
-              <AdminComponents.resource_item
+              <AdminComponents.dense_resource_row
                 title="Device authorization"
                 subtitle="Review device authorizations"
               >
@@ -79,13 +79,13 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
                   <span>Expires <AdminComponents.long_value value={formatted_timestamp(auth.expires_at)} kind={:timestamp} /></span>
                 </:meta>
                 <:status>
-                  <AdminComponents.status_badge status={auth.status} />
+                  <AdminComponents.status_badge status={auth.status} domain={:device_authorization} />
                 </:status>
-              </AdminComponents.resource_item>
+              </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
         <% end %>
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
     </AdminLayoutLive.shell>
     """
   end

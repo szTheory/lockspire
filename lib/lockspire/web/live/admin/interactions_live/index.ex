@@ -32,10 +32,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
       <AdminComponents.page_hero
         eyebrow="Operate"
         title="Authorization interaction queue"
-        body="Triage active and closed authorization interactions by status, client, subject, age, expiration, and safe review context."
+        body="Review authorization interaction state by status, client, subject, age, expiration, and safe review context."
       />
 
-      <AdminComponents.section_card
+      <AdminComponents.pane
         title="Review interactions"
         subtitle="Read-only interaction rows expose non-secret queue context without raw-table overload."
       >
@@ -61,31 +61,32 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
 
         <%= if @interactions == [] do %>
           <AdminComponents.empty_state
-            title="No active interactions"
-            body="There are no authorization interactions waiting for operator review."
+            title="No authorization interactions waiting for review"
+            body="There are no authorization interaction records waiting for operator review."
           />
         <% else %>
-          <div class="lockspire-admin-table-wrap">
-            <AdminComponents.resource_list>
-              <%= for interaction <- @interactions do %>
-                <AdminComponents.resource_item title="Authorization interaction" subtitle="Review interactions">
-                  <:meta>
-                    <span>Interaction <AdminComponents.long_value value={interaction.interaction_id} kind={:id} /></span>
-                    <span>Client <AdminComponents.long_value value={redacted_handle(:client, interaction.client_id)} kind={:id} /></span>
-                    <span>Subject <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
-                    <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
-                    <span>Created <AdminComponents.long_value value={formatted_timestamp(interaction.inserted_at)} kind={:timestamp} /></span>
-                    <span>Expires <AdminComponents.long_value value={formatted_timestamp(interaction.expires_at)} kind={:timestamp} /></span>
-                  </:meta>
-                  <:status>
-                    <AdminComponents.status_badge status={interaction.status} />
-                  </:status>
-                </AdminComponents.resource_item>
-              <% end %>
-            </AdminComponents.resource_list>
-          </div>
+          <AdminComponents.resource_list>
+            <%= for interaction <- @interactions do %>
+              <AdminComponents.dense_resource_row
+                title="Authorization interaction"
+                subtitle="Review interactions"
+              >
+                <:meta>
+                  <span>Interaction <AdminComponents.long_value value={interaction.interaction_id} kind={:id} /></span>
+                  <span>Client <AdminComponents.long_value value={redacted_handle(:client, interaction.client_id)} kind={:id} /></span>
+                  <span>Subject <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
+                  <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
+                  <span>Created <AdminComponents.long_value value={formatted_timestamp(interaction.inserted_at)} kind={:timestamp} /></span>
+                  <span>Expires <AdminComponents.long_value value={formatted_timestamp(interaction.expires_at)} kind={:timestamp} /></span>
+                </:meta>
+                <:status>
+                  <AdminComponents.status_badge status={interaction.status} />
+                </:status>
+              </AdminComponents.dense_resource_row>
+            <% end %>
+          </AdminComponents.resource_list>
         <% end %>
-      </AdminComponents.section_card>
+      </AdminComponents.pane>
     </AdminLayoutLive.shell>
     """
   end

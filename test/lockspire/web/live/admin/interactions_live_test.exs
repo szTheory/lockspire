@@ -55,26 +55,27 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    page_html = page_markup(html)
 
-    assert html =~ "Operate"
-    assert html =~ "Authorization interaction queue"
-    assert html =~ "Review interactions"
-    assert html =~ "Pending login"
-    assert html =~ "Pending consent"
-    assert html =~ "Completed"
-    assert html =~ "Denied"
-    assert html =~ "Expired"
-    assert html =~ "lockspire-admin-pane"
-    assert html =~ "lockspire-admin-resource-list"
-    assert html =~ "lockspire-admin-dense-resource-row"
-    assert html =~ "lockspire-admin-long-value"
-    assert html =~ "test-interaction-123"
-    refute html =~ "<table"
-    refute html =~ "lockspire-admin-table-wrap"
-    refute html =~ "phx-click"
-    refute html =~ "phx-submit"
-    refute_unsupported_queue_controls(html)
-    assert html =~ "Pending login"
+    assert page_html =~ "Operate"
+    assert page_html =~ "Authorization interaction queue"
+    assert page_html =~ "Review interactions"
+    assert page_html =~ "Pending login"
+    assert page_html =~ "Pending consent"
+    assert page_html =~ "Completed"
+    assert page_html =~ "Denied"
+    assert page_html =~ "Expired"
+    assert page_html =~ "lockspire-admin-pane"
+    assert page_html =~ "lockspire-admin-resource-list"
+    assert page_html =~ "lockspire-admin-dense-resource-row"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ "test-interaction-123"
+    refute page_html =~ "<table"
+    refute page_html =~ "lockspire-admin-table-wrap"
+    refute page_html =~ "phx-click"
+    refute page_html =~ "phx-submit"
+    refute_unsupported_queue_controls(page_html)
+    assert page_html =~ "Pending login"
   end
 
   test "interactions empty state names operator review without controls" do
@@ -87,6 +88,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       }
       |> Index.render()
       |> rendered_to_string()
+      |> page_markup()
 
     assert html =~ "No authorization interactions waiting for review"
     assert html =~ "There are no authorization interaction records waiting for operator review."
@@ -108,4 +110,6 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
              html
            )
   end
+
+  defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
 end
