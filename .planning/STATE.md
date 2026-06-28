@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
+current_phase: 122
+current_phase_name: support-investigation-flow-polish
 status: executing
-stopped_at: Completed 122-01-PLAN.md
-last_updated: "2026-06-28T21:50:29.881Z"
+stopped_at: Completed 122-02-PLAN.md
+last_updated: "2026-06-28T22:06:35.461Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 20
 ---
 
@@ -27,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 122 (support-investigation-flow-polish) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-28
 
@@ -125,6 +127,8 @@ Last activity: 2026-06-28
 - [Phase 122]: Kept token and consent index behavior inside the existing LiveViews and existing Lockspire.Admin list APIs. — Preserves the embedded-library boundary and avoids new storage or route capabilities for support index polish.
 - [Phase 122]: Kept raw filter values editable in filter inputs while summaries and rows render redacted account/client/family handles. — Support staff can refine case filters without exposing durable identifiers in decision summaries and dense rows.
 - [Phase 122]: Used decision_summary and dense_resource_row instead of adding a new support-row component or table primitive. — Matches Phase 122 design constraints and keeps the admin design-system surface stable.
+- [Phase 122]: Token detail uses a four-slot decision summary ahead of metadata. — This preserves the support flow order from the phase UI spec: health, lineage, reuse pressure, and smallest safe action must be visible before raw token fields.
+- [Phase 122]: Token and refresh-family destructive actions expose disabled closed-state controls with exact support copy. — This avoids implying retries or broader host actions when the token is already revoked, expired, lacks a family, or the family is already closed.
 
 ## Blockers/Concerns
 
@@ -139,11 +143,11 @@ Last activity: 2026-06-28
 
 ## Session Continuity
 
-**Last session:** 2026-06-28T21:50:29.875Z
+**Last session:** 2026-06-28T22:03:52.078Z
 
 **Next action:** Verify Phase 121 with `/gsd-verify-work 121`.
 **Resume file:** None
-**Stopped at:** Completed 122-01-PLAN.md
+**Stopped at:** Completed 122-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -180,6 +184,7 @@ Last activity: 2026-06-28
 | Phase 121 P02 | 7 min | 2 tasks | 2 files |
 | Phase 121 P03 | 5 min | 1 tasks | 2 files |
 | Phase 122 P01 | 11m45s | 3 tasks | 5 files |
+| Phase 122 P02 | 7m23s | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
