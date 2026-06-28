@@ -75,6 +75,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
+    rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert html =~ "Support"
     assert html =~ "Consent grant investigation"
@@ -83,7 +85,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Selected status: active"
     assert html =~ "Filter consent grants"
     assert html =~ "Review stored grant"
-    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-decision-summary"
+    assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "Consent UI Client"
     assert html =~ "Scopes"
@@ -91,11 +94,41 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Keys"
     assert html =~ "Overview"
     assert html =~ "DCR"
+
+    assert decision_summary =~ "Selected filters"
+    assert decision_summary =~ "Grant status"
+    assert decision_summary =~ "Scope context"
+    assert decision_summary =~ "Smallest safe action"
+    assert decision_summary =~ "account_"
+    assert decision_summary =~ "client_"
+    refute decision_summary =~ "account-consent-ui"
+    refute decision_summary =~ "consent-ui-client"
+
+    assert html_index(html, "lockspire-admin-decision-summary") <
+             html_index(html, "lockspire-admin-filter-bar")
+
+    assert rows =~ "Review stored grant"
+    assert rows =~ "account_"
+    assert rows =~ "client_"
+    assert rows =~ "openid, email"
+    refute rows =~ "account-consent-ui"
+    refute rows =~ "consent-ui-client"
+
     refute html =~ "sha256:consent-ui:hash"
     refute html =~ "client_secret"
     refute html =~ "refresh_token"
     refute html =~ "user_code"
     refute html =~ "verifier"
+
+    assert {:noreply, empty_socket} =
+             Index.handle_params(
+               %{"account" => "missing-account-consent-ui"},
+               "/lockspire/admin/consents?account=missing-account-consent-ui",
+               socket
+             )
+
+    assert rendered_to_string(Index.render(empty_socket.assigns)) =~
+             "No investigation results match these filters"
   end
 
   test "consent detail renders support-grade detail and guarded revoke action", %{grant: grant} do
@@ -150,5 +183,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp fragment_html(html, selector) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(selector)
+    |> LazyHTML.to_html()
+  end
+
+  defp html_index(html, needle) do
+    case :binary.match(html, needle) do
+      {index, _length} -> index
+      :nomatch -> flunk("expected rendered HTML to contain #{inspect(needle)}")
+    end
   end
 end

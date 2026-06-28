@@ -992,7 +992,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       source = File.read!(path)
 
       assert source =~ "AdminComponents.filter_bar"
-      assert source =~ "AdminComponents.resource_item"
+      assert source =~ "AdminComponents.dense_resource_row"
+      refute source =~ "AdminComponents.resource_item"
     end
 
     for path <- @phase_109_operations_sources do

@@ -91,6 +91,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
+    rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert html =~ "Support"
     assert html =~ "Token investigation"
@@ -98,7 +100,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Selected status: active"
     assert html =~ "Filter tokens"
     assert html =~ "Review token"
-    assert html =~ "lockspire-admin-resource-list__item"
+    assert html =~ "lockspire-admin-decision-summary"
+    assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "Token UI Client"
     assert html =~ "Account"
@@ -107,10 +110,41 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Keys"
     assert html =~ "Overview"
     assert html =~ "DCR"
+
+    assert decision_summary =~ "Selected filters"
+    assert decision_summary =~ "Token health"
+    assert decision_summary =~ "Family pressure"
+    assert decision_summary =~ "Smallest safe action"
+    assert decision_summary =~ "account_"
+    refute decision_summary =~ "account-token-ui"
+
+    assert html_index(html, "lockspire-admin-decision-summary") <
+             html_index(html, "lockspire-admin-filter-bar")
+
+    assert rows =~ "Review token"
+    assert rows =~ "account_"
+    assert rows =~ "client_"
+    assert rows =~ "family_"
+    refute rows =~ "account-token-ui"
+    refute rows =~ "family-ui-123"
+
     refute html =~ "token-ui-refresh-hash"
+    refute html =~ "token-ui-access-hash"
     refute html =~ "client_secret"
     refute html =~ "verifier"
+    refute html =~ "authorization_code"
+    refute html =~ "code_verifier"
     refute html =~ "user_code"
+
+    assert {:noreply, empty_socket} =
+             Index.handle_params(
+               %{"account" => "missing-account-token-ui"},
+               "/lockspire/admin/tokens?account=missing-account-token-ui",
+               socket
+             )
+
+    assert rendered_to_string(Index.render(empty_socket.assigns)) =~
+             "No investigation results match these filters"
   end
 
   test "token detail shows lineage and guarded single-token and family revoke flows", %{
@@ -193,5 +227,19 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp fragment_html(html, selector) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(selector)
+    |> LazyHTML.to_html()
+  end
+
+  defp html_index(html, needle) do
+    case :binary.match(html, needle) do
+      {index, _length} -> index
+      :nomatch -> flunk("expected rendered HTML to contain #{inspect(needle)}")
+    end
   end
 end
