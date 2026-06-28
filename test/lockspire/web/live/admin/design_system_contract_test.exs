@@ -1,6 +1,8 @@
 defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   use ExUnit.Case, async: true
 
+  alias Lockspire.Web.AdminProof.RouteScorecards
+
   @admin_live_glob Path.expand(
                      "../../../../../lib/lockspire/web/live/admin/**/*.{ex,heex}",
                      __DIR__
@@ -33,6 +35,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                          "../../../../../.planning/phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
                          __DIR__
                        )
+  @phase_121_scorecards_path Path.expand(
+                               "../../../../../.planning/phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md",
+                               __DIR__
+                             )
   @phase_109_support_sources [
     Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex", __DIR__),
     Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/show.ex", __DIR__),
@@ -380,6 +386,22 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       sources = phase_120_contract_sources()
 
       assert_phase_120_copy_boundaries(sources)
+    end
+  end
+
+  describe "Phase 121 route scorecard contracts" do
+    test "phase 121 route scorecards cover AdminRouter route truth" do
+      scorecards =
+        @phase_121_scorecards_path
+        |> File.read!()
+        |> RouteScorecards.parse!()
+
+      assert Map.keys(scorecards) |> Enum.sort() == RouteScorecards.expected_routes()
+      assert length(RouteScorecards.expected_routes()) == 29
+
+      assert RouteScorecards.workflow_exceptions() == [
+               "/admin/clients/:client_id/edit?workflow=logout-propagation"
+             ]
     end
   end
 
