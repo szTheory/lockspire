@@ -530,6 +530,27 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert_phase_121_package_boundary(mix)
     end
 
+    test "phase 121 secret evidence guard catches OAuth credential leak shapes" do
+      for source <- [
+            "Authorization: Bearer mF_9.B5f-4.1JqM2x3Y4z5a6b7c8d9e0",
+            "client_secret=s3cr3t-value-123",
+            "https://client.example/callback?access_token=abc1234567890DEF",
+            ~s("refresh_token": "refresh-token-value-123"),
+            "-----BEGIN EC PRIVATE KEY-----"
+          ] do
+        assert_raise ExUnit.AssertionError, fn -> assert_no_phase_121_secret_evidence(source) end
+      end
+
+      for source <- [
+            "Authorization bearer token evidence is prohibited by policy.",
+            "client_secret_jwt is documented as a narrow client-auth method.",
+            "conn.assigns.access_token is host-owned enforcement context.",
+            "device_code_test.exs is a file path reference."
+          ] do
+        assert_no_phase_121_secret_evidence(source)
+      end
+    end
+
     test "phase 121 operate scorecards preserve read-only support truth" do
       scorecards = phase_121_scorecards()
 
@@ -1793,6 +1814,15 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
 
     refute Regex.match?(~r/\beyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/, source)
+
+    for pattern <- [
+          ~r/\bauthorization:\s*bearer\s+[a-z0-9._~+\/=-]{20,}/i,
+          ~r/(?:^|[?&\s])(?:client_secret|access_token|refresh_token|id_token|device_code|user_code)=["']?[a-z0-9._~+\/=-]{8,}/i,
+          ~r/"(?:client_secret|access_token|refresh_token|id_token|device_code|user_code)"\s*:\s*"[^"]{8,}"/i,
+          ~r/-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/
+        ] do
+      refute Regex.match?(pattern, source)
+    end
   end
 
   defp assert_phase_121_supported_surface_ceiling(supported_surface) do
