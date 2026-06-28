@@ -675,22 +675,22 @@ All claims in this research were verified against project files, local environme
 |---|-------|---------|---------------|
 | none | No assumed claims. [VERIFIED: codebase] | n/a | n/a |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should selected-filter summaries show redacted handles while form inputs keep raw filter values?**  
    What we know: the phase forbids raw sensitive account values, while current index tests assert visible raw account filter text. [VERIFIED: 122-CONTEXT.md] [VERIFIED: codebase]  
    What's unclear: whether raw filter values are acceptable inside editable form controls when the operator typed them. [VERIFIED: codebase]  
-   Recommendation: planner should keep submitted form values intact for functionality but require redacted display in decision summaries and rows. [VERIFIED: 122-CONTEXT.md]
+   RESOLVED: Keep submitted form values intact in editable controls so URL-owned filters remain functional, but require redacted display in decision summaries and dense rows. Fragment-level tests should inspect summary/row regions separately from form controls. [VERIFIED: 122-CONTEXT.md]
 
 2. **Should list-load failures become visible page errors instead of empty lists?**  
    What we know: current token and consent index `load_*` helpers collapse Admin read failures to empty result lists. [VERIFIED: codebase]  
    What's unclear: the UI spec covers validation/mutation errors more explicitly than read failures. [VERIFIED: 122-UI-SPEC.md]  
-   Recommendation: planner should add a non-secret load-error state only if tests can force an Admin read error without widening Admin APIs. [VERIFIED: codebase]
+   DEFERRED: Do not add a visible list-load error state in Phase 122 because there is no existing route-local way to force Admin read errors without widening Admin APIs or adding new capabilities. Keep empty/no-match coverage and mutation/validation error coverage inside existing LiveView/Admin boundaries. [VERIFIED: codebase]
 
 3. **Should summary predicates live in each LiveView or a tiny shared helper?**  
    What we know: context allows a narrow helper/read-model layer only if duplicated summary predicates would otherwise put security-sensitive decisions in templates. [VERIFIED: 122-CONTEXT.md]  
    What's unclear: final duplication level after token and consent summaries are drafted. [VERIFIED: codebase]  
-   Recommendation: planner should start with private route helpers and extract only duplicated predicate/copy logic that spans token and consent pages. [VERIFIED: 122-CONTEXT.md]
+   RESOLVED: Start with private helpers in the existing token and consent LiveViews. Do not create a new module in this phase unless implementation proves duplicated predicate/copy logic spans token and consent detail pages and would otherwise move security-sensitive decisions into templates. [VERIFIED: 122-CONTEXT.md]
 
 ## Environment Availability
 
