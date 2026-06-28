@@ -12,7 +12,7 @@
 
 | Phase | Name | Requirements | Focus |
 |-------|------|--------------|-------|
-| 121 | 1/3 | In Progress|  |
+| 121 | 2/3 | In Progress|  |
 | 122 | Support Investigation Flow Polish | SUPPORT-01, SUPPORT-02, SUPPORT-03 | Tokens and consents |
 | 123 | Operate Queue Flow Polish | OPERATE-01, OPERATE-02, OPERATE-03 | Interactions, device auth, logouts |
 | 124 | Configure Onboarding Propagation Pass | CONFIG-01, CONFIG-02, CONFIG-03 | Clients, DCR/IAT, keys, policies |
