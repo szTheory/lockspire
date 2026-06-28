@@ -58,6 +58,52 @@ Rubric application notes:
 - Component fit: Phoenix function components, `lockspire-admin-*` BEM classes, and `--ls-*` tokens remain the default implementation shape.
 - Brand fit: Signal Cyan is constrained to the brandbook role; light-mode action text uses contrast-safe deep cyan or darker tokens.
 
+## Baseline Candidate Classification
+
+Authoritative baseline truth for Phase 121 is committed source plus committed planning artifacts. Current dirty admin UI/proof changes are candidate evidence only. They may sharpen scorecard judgment, but they are not accepted v1.32 implementation truth, route truth, source truth, evidence classes, or success criteria.
+
+The observed worktree baseline from context capture named branch `milestone/v1.28-admin-ui-operator-experience-polish` at commit `8515245`. That branch name is stale context and must not be treated as Phase 121 implementation truth.
+
+### Admin candidate evidence
+
+These dirty files and path families may inform route scorecard questions, while remaining candidate evidence only:
+
+- `lib/lockspire/web/admin_css.ex` and `lib/lockspire/web/admin*` style/source changes.
+- `lib/lockspire/web/components/admin_components.ex` shared component changes.
+- `lib/lockspire/web/live/admin/**` LiveView and HEEx changes.
+- `test/lockspire/web/live/admin/**` admin proof and route contract changes.
+- `test/support/lockspire/web/admin_lab/**` internal lab fixture and stress-surface changes.
+- `.planning/threads/next-roadmap-assessment.md` narrow admin refresh notes.
+
+Candidate evidence can be used to ask whether later page polish should adopt, reject, or refine:
+
+- confirmation-form lifecycle safety on client enable/disable and other risky actions;
+- DCR decision summaries that make policy posture and allowed methods scan faster;
+- logout queue scanability for status, attempts, target URI, and read-only support truth;
+- theme controls and light/dark/system parity where route-level orientation is affected;
+- form-field consistency, help/error associations, and copy-once consequence framing;
+- shared component stress coverage for dense rows, long values, disabled states, destructive confirmations, status fallback, and mobile pressure.
+
+### Excluded dirty work
+
+These dirty files and path families are excluded from Phase 121 truth and must not create admin scorecard requirements or v1.32 success criteria:
+
+- `README.md`
+- `docs/adoption-demo.md`
+- `Makefile`
+- `.dockerignore`
+- `.gitignore`
+- `examples/adoption_demo/**`
+- `scripts/demo/**`
+- `scripts/maintainer/repo_hygiene_check.sh`
+- `test/lockspire/adoption_demo_docker_contract_test.exs`
+- `tools/traefik/**`
+- `.planning/research/.cache/**`
+
+Excluded dirty work is not a scorecard route, source truth, evidence class, runtime/package impact, or success criterion. It is Docker, adoption-demo, Traefik, repository-hygiene, or research-cache work outside Phase 121.
+
+No stash, revert, clean, or worktree split is part of Phase 121 unless separately requested. Executors must work around existing dirty changes without absorbing unrelated files into Phase 121 commits.
+
 ## Orient
 
 ### Scorecard: `/admin`
