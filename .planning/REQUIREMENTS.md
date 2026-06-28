@@ -7,9 +7,9 @@
 
 ### Page IA And Judgment
 
-- [ ] **IA-01**: Maintainer can review a scorecard for every admin route that names persona, JTBD, top task, entry point, primary decision, primary action, empty state, error state, long-data state, mobile/theme/focus risk, and follow-up route.
-- [ ] **IA-02**: Maintainer can run deterministic guardrails that flag page sections whose hierarchy, redundant actions, generic copy, unsupported affordances, or unearned UI elements violate the v1.32 judgment rubric.
-- [ ] **IA-03**: Maintainer can verify v1.32 preserves the v1.31 design-system boundary: Phoenix function components by default, BEM/token CSS, internal lab only, no public design-system route, no required PhoenixStorybook dependency, and no public theming API.
+- [x] **IA-01**: Maintainer can review a scorecard for every admin route that names persona, JTBD, top task, entry point, primary decision, primary action, empty state, error state, long-data state, mobile/theme/focus risk, and follow-up route.
+- [x] **IA-02**: Maintainer can run deterministic guardrails that flag page sections whose hierarchy, redundant actions, generic copy, unsupported affordances, or unearned UI elements violate the v1.32 judgment rubric.
+- [x] **IA-03**: Maintainer can verify v1.32 preserves the v1.31 design-system boundary: Phoenix function components by default, BEM/token CSS, internal lab only, no public design-system route, no required PhoenixStorybook dependency, and no public theming API.
 
 ### Support Investigation
 
@@ -59,9 +59,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IA-01 | Phase 121 | Pending |
-| IA-02 | Phase 121 | Pending |
-| IA-03 | Phase 121 | Pending |
+| IA-01 | Phase 121 | Complete |
+| IA-02 | Phase 121 | Complete |
+| IA-03 | Phase 121 | Complete |
 | SUPPORT-01 | Phase 122 | Pending |
 | SUPPORT-02 | Phase 122 | Pending |
 | SUPPORT-03 | Phase 122 | Pending |

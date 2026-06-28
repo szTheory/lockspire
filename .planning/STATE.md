@@ -2,15 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
+current_phase: 121
+current_phase_name: route-scorecards-judgment-contract
 status: executing
-stopped_at: Phase 121 context gathered (assumptions mode, research-expanded)
-last_updated: "2026-06-28T17:17:29.292Z"
-last_activity: 2026-06-28 -- Phase 121 execution started
+stopped_at: Completed 121-01-PLAN.md
+last_updated: "2026-06-28T17:30:33.737Z"
+last_activity: 2026-06-28
+last_activity_desc: Phase 121 execution started
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -27,8 +30,8 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 121 (route-scorecards-judgment-contract) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 121
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-06-28 -- Phase 121 execution started
 
 ## Most Recent Release
@@ -116,6 +119,8 @@ Last activity: 2026-06-28 -- Phase 121 execution started
 - [2026-06-28]: v1.32 is a page-first admin IA and interaction-model polish milestone, not another foundation rebuild. — Use route scorecards and Support/Operate page evidence before propagating patterns into Configure flows.
 - [2026-06-28]: v1.32 persona/JTBD judge artifacts stay deterministic and maintainer-only. — Optional AI reviews may inform taste, but CI and release gates should rely on source/rendered guardrails, fixtures, browser evidence, and human review.
 - [2026-06-28]: v1.32 preserves the v1.31 boundary: Phoenix function components, BEM/token CSS, internal lab, no public Storybook/design-system route, and no public theming API. — Prevents design-system polish from becoming new supported product surface.
+- [Phase 121]: Plan 121-01 route truth is Lockspire.Web.AdminRouter plus exactly /admin/clients/:client_id/edit?workflow=logout-propagation. — Keeps Phase 121 route judgment deterministic and prevents screenshot filenames or host-specific mounts from becoming route truth.
+- [Phase 121]: Plan 121-01 treats dirty admin UI/proof files as candidate evidence only and excludes Docker/demo/Traefik/repo-hygiene dirty work. — Preserves plan scope while keeping useful admin judgment evidence available for later polish.
 
 ## Blockers/Concerns
 
@@ -130,11 +135,11 @@ Last activity: 2026-06-28 -- Phase 121 execution started
 
 ## Session Continuity
 
-**Last session:** 2026-06-28T16:37:09.257Z
+**Last session:** 2026-06-28T17:30:33.730Z
 
 **Next action:** Start Phase 121 with `/gsd-plan-phase 121`.
-**Resume file:** .planning/phases/121-route-scorecards-judgment-contract/121-CONTEXT.md
-**Stopped at:** Phase 121 context gathered (assumptions mode, research-expanded)
+**Resume file:** None
+**Stopped at:** Completed 121-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -167,6 +172,7 @@ Last activity: 2026-06-28 -- Phase 121 execution started
 | Phase 120 P01 | 7 min | 3 tasks | 5 files |
 | Phase 120 P02 | 13 min | 3 tasks | 10 files |
 | Phase 120 P03 | 7 min | 3 tasks | 4 files |
+| Phase 121 P01 | 10 min | 2 tasks | 1 files |
 
 ## Operator Next Steps
 
