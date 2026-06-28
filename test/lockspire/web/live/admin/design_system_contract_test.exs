@@ -454,6 +454,19 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       end
     end
 
+    test "phase 121 route scorecard parser rejects duplicate field labels" do
+      markdown = """
+      ### Scorecard: `/admin`
+
+      - **Route:** `/admin`
+      - **Route:** duplicate value
+      """
+
+      error = assert_raise ArgumentError, fn -> RouteScorecards.parse!(markdown) end
+
+      assert Exception.message(error) =~ ~s(duplicate field "Route" in scorecard "/admin")
+    end
+
     test "phase 121 route scorecard follow-up routes stay inside known route truth" do
       scorecards = phase_121_scorecards()
 

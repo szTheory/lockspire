@@ -89,8 +89,16 @@ defmodule Lockspire.Web.AdminProof.RouteScorecards do
       |> Enum.reverse()
       |> Enum.reduce(%{}, fn line, fields ->
         case Regex.run(~r/^- \*\*([^*]+):\*\*\s*(.*)$/, line) do
-          [_, field, value] -> Map.put(fields, field, String.trim(value))
-          nil -> fields
+          [_, field, value] ->
+            if Map.has_key?(fields, field) do
+              raise ArgumentError,
+                    "duplicate field #{inspect(field)} in scorecard #{inspect(route)}"
+            end
+
+            Map.put(fields, field, String.trim(value))
+
+          nil ->
+            fields
         end
       end)
 
