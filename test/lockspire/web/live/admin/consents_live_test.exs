@@ -80,8 +80,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Consent grant investigation"
-    assert html =~ "Selected account: account-consent-ui"
-    assert html =~ "Selected client: consent-ui-client"
+    assert html =~ "Selected account: account_"
+    assert html =~ "Selected client: client_"
     assert html =~ "Selected status: active"
     assert html =~ "Filter consent grants"
     assert html =~ "Review stored grant"
@@ -104,8 +104,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     refute decision_summary =~ "account-consent-ui"
     refute decision_summary =~ "consent-ui-client"
 
-    assert html_index(html, "lockspire-admin-decision-summary") <
-             html_index(html, "lockspire-admin-filter-bar")
+    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
+             html_index(
+               html,
+               ~s(<form method="get" action="/lockspire/admin/consents" class="lockspire-admin-filter-bar)
+             )
 
     assert rows =~ "Review stored grant"
     assert rows =~ "account_"

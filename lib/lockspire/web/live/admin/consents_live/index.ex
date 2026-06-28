@@ -45,11 +45,42 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
         body="Investigate stored grants by account, client, status, scopes, and safe revocation path without exposing secret material."
       >
         <:summary>
-          <span>Selected account: {selected_filter(@filters["account"])}</span>
-          <span>Selected client: {selected_filter(@filters["client"])}</span>
-          <span>Selected status: {selected_filter(@filters["status"])}</span>
+          <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
+          <span>Selected client: {selected_filter(:client, @filters["client"])}</span>
+          <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
         </:summary>
       </AdminComponents.page_hero>
+
+      <AdminComponents.decision_summary>
+        <:item
+          label="Selected filters"
+          value={selected_filter_summary(@filters)}
+          detail="Raw URL filters stay editable below while summaries use redacted handles."
+          tone={:info}
+        >
+        </:item>
+        <:item
+          label="Grant status"
+          value={grant_status_summary(@consent_metrics)}
+          detail={"#{@total_consents} matching stored grants in this support view."}
+          tone={grant_status_tone(@consent_metrics)}
+        >
+        </:item>
+        <:item
+          label="Scope context"
+          value={scope_context_summary(@consents)}
+          detail="Scope values wrap in rows so long grant context stays scannable."
+          tone={scope_context_tone(@consents)}
+        >
+        </:item>
+        <:item
+          label="Smallest safe action"
+          value={consent_smallest_safe_action(@consents)}
+          detail="Open one stored grant before choosing any revocation path."
+          tone={if @consents == [], do: :neutral, else: :info}
+        >
+        </:item>
+      </AdminComponents.decision_summary>
 
       <AdminComponents.section_card
         title="Filter consent grants"
@@ -57,24 +88,21 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       >
         <AdminComponents.filter_bar action={consents_index_path()}>
           <:fields>
-            <div class="lockspire-admin-field">
-              <label for="consent_account">Account</label>
+            <AdminComponents.form_field id="consent_account" label="Account">
               <input id="consent_account" name="account" type="text" value={@filters["account"]} />
-            </div>
+            </AdminComponents.form_field>
 
-            <div class="lockspire-admin-field">
-              <label for="consent_client">Client</label>
+            <AdminComponents.form_field id="consent_client" label="Client">
               <input id="consent_client" name="client" type="text" value={@filters["client"]} />
-            </div>
+            </AdminComponents.form_field>
 
-            <div class="lockspire-admin-field">
-              <label for="consent_status">Status</label>
+            <AdminComponents.form_field id="consent_status" label="Status">
               <select id="consent_status" name="status">
                 <option value="all" selected={@filters["status"] == "all"}>All</option>
                 <option value="active" selected={@filters["status"] == "active"}>Active</option>
                 <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
               </select>
-            </div>
+            </AdminComponents.form_field>
           </:fields>
           <:help>
             <p>Total matching consents: {@total_consents}</p>
@@ -93,15 +121,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
         <%= if @consents == [] do %>
           <AdminComponents.empty_state
             title="No investigation results match these filters"
-            body="Adjust the account, client, or status filters, or return to the overview to choose a different support workflow."
+            body="Adjust the account, client, status, or scope filters, or return to the overview to choose a different Support workflow."
           />
         <% else %>
           <AdminComponents.resource_list>
             <%= for consent <- @consents do %>
-              <AdminComponents.resource_item
-                href={consent_show_path(consent.grant.id)}
-                title={consent_title(consent)}
-                subtitle={"#{consent.grant.kind} consent grant"}
+              <AdminComponents.dense_resource_row
+                title={consent_row_title(consent)}
+                subtitle={consent_row_subtitle(consent)}
               >
                 <:meta>
                   <span>
@@ -132,13 +159,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                 </:meta>
                 <:status>
                   <AdminComponents.status_badge status={consent.grant.status} />
+                  <AdminComponents.status_badge status={consent.grant.kind} />
                 </:status>
                 <:actions>
                   <AdminComponents.admin_button href={consent_show_path(consent.grant.id)}>
                     Review stored grant
                   </AdminComponents.admin_button>
                 </:actions>
-              </AdminComponents.resource_item>
+              </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
         <% end %>
@@ -186,9 +214,88 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
     }
   end
 
-  defp selected_filter(""), do: "All"
-  defp selected_filter("all"), do: "All"
-  defp selected_filter(value), do: value
+  defp selected_filter(_type, ""), do: "All"
+  defp selected_filter(_type, "all"), do: "All"
+
+  defp selected_filter(type, value) when type in [:account, :client],
+    do: redacted_handle(type, value)
+
+  defp selected_filter(_type, value), do: value
+
+  defp selected_filter_summary(filters) do
+    [
+      selected_filter_part("Account", :account, filters["account"]),
+      selected_filter_part("Client", :client, filters["client"]),
+      selected_status_filter_part(filters["status"])
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> "All stored consent grants"
+      parts -> Enum.join(parts, " | ")
+    end
+  end
+
+  defp selected_filter_part(_label, _type, value) when value in [nil, "", "all"], do: nil
+
+  defp selected_filter_part(label, type, value),
+    do: "#{label} #{redacted_handle(type, value)}"
+
+  defp selected_status_filter_part(status) when status in [nil, "", "all"], do: nil
+  defp selected_status_filter_part(status), do: "Status #{status}"
+
+  defp grant_status_summary(metrics),
+    do: "#{metrics.active} active, #{metrics.revoked} revoked"
+
+  defp grant_status_tone(%{revoked: revoked}) when revoked > 0, do: :warning
+  defp grant_status_tone(%{active: active}) when active > 0, do: :success
+  defp grant_status_tone(_metrics), do: :neutral
+
+  defp scope_context_summary([]), do: "No scopes in matching grants"
+
+  defp scope_context_summary(consents) do
+    case unique_scope_count(consents) do
+      0 -> "No scopes in matching grants"
+      1 -> "1 scope across matching grants"
+      count -> "#{count} scopes across matching grants"
+    end
+  end
+
+  defp scope_context_tone([]), do: :neutral
+  defp scope_context_tone(consents) when is_list(consents), do: :info
+
+  defp unique_scope_count(consents) do
+    consents
+    |> Enum.flat_map(& &1.grant.scopes)
+    |> Enum.uniq()
+    |> length()
+  end
+
+  defp consent_smallest_safe_action([]), do: "Adjust filters"
+  defp consent_smallest_safe_action(_consents), do: "Review stored grant"
+
+  defp consent_row_title(consent),
+    do: "#{status_label(consent.grant.status)} #{grant_kind_label(consent.grant.kind)} grant"
+
+  defp consent_row_subtitle(consent) do
+    "Client #{consent_title(consent)}"
+  end
+
+  defp status_label(status) when is_atom(status) do
+    status
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+    |> String.capitalize()
+  end
+
+  defp status_label(status), do: to_string(status)
+
+  defp grant_kind_label(kind) when is_atom(kind) do
+    kind
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+  end
+
+  defp grant_kind_label(kind), do: to_string(kind)
 
   defp consent_title(consent) do
     (consent.client && (consent.client.name || consent.client.client_id)) ||
