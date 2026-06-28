@@ -274,6 +274,51 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert socket.assigns.family_notice =~ "Revoked"
   end
 
+  test "token detail clears stale sibling form errors after alternate revoke actions succeed", %{
+    refresh_token: refresh_token
+  } do
+    {socket, _html} = render_show_for(refresh_token)
+
+    assert {:noreply, socket_with_family_error} = Show.handle_event("revoke_family", %{}, socket)
+
+    assert socket_with_family_error.assigns.family_error ==
+             "Select the confirmation checkbox to revoke this refresh family."
+
+    assert {:noreply, token_success_socket} =
+             Show.handle_event(
+               "revoke_token",
+               %{"revoke" => %{"confirm" => "true"}},
+               socket_with_family_error
+             )
+
+    assert is_nil(token_success_socket.assigns.family_error)
+    assert is_nil(token_success_socket.assigns.revoke_error)
+
+    alternate_token =
+      store_support_token!(
+        token_hash: "token-ui-clear-sibling-errors-hash",
+        family_id: "family-ui-clear-sibling-errors"
+      )
+
+    {alternate_socket, _html} = render_show_for(alternate_token)
+
+    assert {:noreply, socket_with_token_error} =
+             Show.handle_event("revoke_token", %{}, alternate_socket)
+
+    assert socket_with_token_error.assigns.revoke_error ==
+             "Select the confirmation checkbox to revoke this token."
+
+    assert {:noreply, family_success_socket} =
+             Show.handle_event(
+               "revoke_family",
+               %{"family" => %{"confirm" => "true"}},
+               socket_with_token_error
+             )
+
+    assert is_nil(family_success_socket.assigns.revoke_error)
+    assert is_nil(family_success_socket.assigns.family_error)
+  end
+
   test "token detail renders revoked, expired, no-family, and reuse-detected closed states" do
     revoked_token =
       store_support_token!(
@@ -333,6 +378,40 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              "This token is already revoked. No further token action is available."
 
     assert reuse_revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token already revoked/s
+    assert reuse_revoked_html =~ "No currently unrevoked tokens remain in the refresh family."
+    assert reuse_revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token family already revoked/s
+
+    reusable_family_current =
+      store_support_token!(
+        token_hash: "token-ui-reuse-revoked-with-active-sibling-hash",
+        family_id: "family-ui-reuse-with-sibling",
+        generation: 0,
+        reuse_detected_at: DateTime.utc_now(),
+        revoked_at: DateTime.utc_now()
+      )
+
+    _active_sibling =
+      store_support_token!(
+        token_hash: "token-ui-reuse-active-sibling-hash",
+        family_id: "family-ui-reuse-with-sibling",
+        generation: 1,
+        parent_token_id: reusable_family_current.id
+      )
+
+    {_socket, reusable_family_html} = render_show_for(reusable_family_current)
+
+    reusable_family_summary =
+      fragment_html(reusable_family_html, ".lockspire-admin-decision-summary")
+
+    assert reusable_family_summary =~ "Smallest safe action"
+    assert reusable_family_summary =~ "Revoke token family"
+
+    assert reusable_family_summary =~
+             "Reuse evidence means family-wide revocation is the safest available token action."
+
+    assert reusable_family_html =~ "1 currently unrevoked tokens in the refresh family."
+    assert reusable_family_html =~ "Revoke token family"
+    refute reusable_family_html =~ "Token family already revoked"
   end
 
   defp socket_for(action) do

@@ -42,10 +42,16 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def handle_event("revoke_token", %{"revoke" => %{"confirm" => "true"}}, socket) do
     case Admin.revoke_token(socket.assigns.token_id, %{revoked_by: "operator"}) do
       {:ok, detail} ->
-        {:noreply, assign(socket, token_detail: detail, revoke_error: nil)}
+        {:noreply,
+         assign(socket,
+           token_detail: detail,
+           revoke_error: nil,
+           family_error: nil,
+           family_notice: nil
+         )}
 
       {:error, _reason} ->
-        {:noreply, assign(socket, revoke_error: @revocation_failure)}
+        {:noreply, assign(socket, revoke_error: @revocation_failure, family_error: nil)}
     end
   end
 
@@ -53,6 +59,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     {:noreply,
      assign(socket,
        revoke_error: @token_confirm_error,
+       family_error: nil,
        family_notice: nil
      )}
   end
@@ -69,14 +76,15 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
          assign(socket,
            token_detail: detail,
            family_notice: notice,
-           family_error: nil
+           family_error: nil,
+           revoke_error: nil
          )}
 
       {:error, :no_family} ->
-        {:noreply, assign(socket, family_error: @no_family_copy)}
+        {:noreply, assign(socket, family_error: @no_family_copy, revoke_error: nil)}
 
       {:error, _reason} ->
-        {:noreply, assign(socket, family_error: @revocation_failure)}
+        {:noreply, assign(socket, family_error: @revocation_failure, revoke_error: nil)}
     end
   end
 
@@ -84,6 +92,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     {:noreply,
      assign(socket,
        family_error: @family_confirm_error,
+       revoke_error: nil,
        family_notice: nil
      )}
   end
@@ -389,10 +398,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     do: refresh_family_present?(token_detail) and family_unrevoked_count(token_detail) == 0
 
   defp family_unrevoked_count(token_detail) do
-    token_detail.family_tokens
-    |> length()
-    |> Kernel.-(token_detail.family_revoked_count)
-    |> max(0)
+    Enum.count(token_detail.family_tokens, fn entry ->
+      not match?(%DateTime{}, Map.get(entry.token, :revoked_at))
+    end)
   end
 
   defp token_health_summary(token_detail) do
@@ -420,18 +428,18 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
       not refresh_family_present?(token_detail) ->
         summary("No refresh family", @no_family_copy, :warning)
 
-      token_detail.family_status == :reuse_detected ->
-        summary(
-          "Reuse evidence in family",
-          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
-          :danger
-        )
-
       family_already_closed?(token_detail) ->
         summary(
           "Family closed",
           "No currently unrevoked tokens remain in the refresh family.",
           :warning
+        )
+
+      token_detail.family_status == :reuse_detected ->
+        summary(
+          "Reuse evidence in family",
+          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
+          :danger
         )
 
       true ->
@@ -457,7 +465,18 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   end
 
   defp token_detail_smallest_safe_action(token_detail) do
+    family_reuse? =
+      token_reuse_detected?(token_detail) or token_detail.family_status == :reuse_detected
+
     cond do
+      family_reuse? and refresh_family_present?(token_detail) and
+          family_unrevoked_count(token_detail) > 0 ->
+        summary(
+          "Revoke token family",
+          "Reuse evidence means family-wide revocation is the safest available token action.",
+          :danger
+        )
+
       token_revoked?(token_detail) ->
         summary("No token action", @already_revoked_copy, :warning)
 
@@ -469,13 +488,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           "Revoke token only",
           "Family-wide revocation is unavailable; only this token can be revoked if still active.",
           :info
-        )
-
-      token_reuse_detected?(token_detail) or token_detail.family_status == :reuse_detected ->
-        summary(
-          "Revoke token family",
-          "Reuse evidence means family-wide revocation is the safest available token action.",
-          :danger
         )
 
       true ->

@@ -130,7 +130,7 @@ defmodule Lockspire.Admin.Tokens do
       status: token_status(token),
       family_tokens: family_tokens,
       family_status: family_status(family_tokens),
-      family_revoked_count: Enum.count(family_tokens, &(&1.status == :revoked)),
+      family_revoked_count: Enum.count(family_tokens, &token_entry_revoked?/1),
       family_active_count: Enum.count(family_tokens, &(&1.status == :active)),
       family_reuse_detected_at:
         family_tokens
@@ -173,12 +173,16 @@ defmodule Lockspire.Admin.Tokens do
         handle: token_handle(token),
         token_type: token.token_type,
         generation: token.generation,
+        revoked_at: token.revoked_at,
         reuse_detected_at: token.reuse_detected_at
       },
       status: token_status(token),
       current?: token.id == current_token_id
     }
   end
+
+  defp token_entry_revoked?(%{token: %{revoked_at: %DateTime{}}}), do: true
+  defp token_entry_revoked?(_entry), do: false
 
   defp fetch_client(client_id) do
     case Clients.get_client(client_id) do
