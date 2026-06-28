@@ -13,9 +13,9 @@
 
 ### Support Investigation
 
-- [ ] **SUPPORT-01**: Support operator can use token index and detail pages to understand selected filters, token health, family context, smallest safe action, and incident pressure without token plaintext or redundant metadata dumps.
-- [ ] **SUPPORT-02**: Support operator can use consent index and detail pages to understand selected filters, grant status, scope context, client/account pivots, and revocation consequences without exposing secret material.
-- [ ] **SUPPORT-03**: Support investigation pages handle empty, no-match, revoked, expired, reuse-detected, long identifier, dense result, validation/error, and already-revoked states with concise, consequence-oriented copy.
+- [x] **SUPPORT-01**: Support operator can use token index and detail pages to understand selected filters, token health, family context, smallest safe action, and incident pressure without token plaintext or redundant metadata dumps.
+- [x] **SUPPORT-02**: Support operator can use consent index and detail pages to understand selected filters, grant status, scope context, client/account pivots, and revocation consequences without exposing secret material.
+- [x] **SUPPORT-03**: Support investigation pages handle empty, no-match, revoked, expired, reuse-detected, long identifier, dense result, validation/error, and already-revoked states with concise, consequence-oriented copy.
 
 ### Operate Queues
 
@@ -62,9 +62,9 @@
 | IA-01 | Phase 121 | Complete |
 | IA-02 | Phase 121 | Complete |
 | IA-03 | Phase 121 | Complete |
-| SUPPORT-01 | Phase 122 | Pending |
-| SUPPORT-02 | Phase 122 | Pending |
-| SUPPORT-03 | Phase 122 | Pending |
+| SUPPORT-01 | Phase 122 | Complete |
+| SUPPORT-02 | Phase 122 | Complete |
+| SUPPORT-03 | Phase 122 | Complete |
 | OPERATE-01 | Phase 123 | Pending |
 | OPERATE-02 | Phase 123 | Pending |
 | OPERATE-03 | Phase 123 | Pending |

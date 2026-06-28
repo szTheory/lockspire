@@ -13,7 +13,7 @@
 | Phase | Name | Requirements | Focus |
 |-------|------|--------------|-------|
 | 121 | 3/3 | Complete    | 2026-06-28 |
-| 122 | Support Investigation Flow Polish | SUPPORT-01, SUPPORT-02, SUPPORT-03 | Tokens and consents |
+| 122 | 1/3 | In Progress|  |
 | 123 | Operate Queue Flow Polish | OPERATE-01, OPERATE-02, OPERATE-03 | Interactions, device auth, logouts |
 | 124 | Configure Onboarding Propagation Pass | CONFIG-01, CONFIG-02, CONFIG-03 | Clients, DCR/IAT, keys, policies |
 | 125 | Browser Proof, Docs & Adversarial Ratchet | PROOF-01, PROOF-02, PROOF-03 | Fixtures, proof, docs |

@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-current_phase: 122
 status: executing
-stopped_at: Phase 122 context gathered (assumptions mode, research-expanded)
-last_updated: "2026-06-28T21:15:29.421Z"
+stopped_at: Completed 122-01-PLAN.md
+last_updated: "2026-06-28T21:50:29.881Z"
 last_activity: 2026-06-28
-last_activity_desc: Phase 122 planning complete
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 20
 ---
 
@@ -24,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 122 - support investigation flow polish
+**Current focus:** Phase 122 — support-investigation-flow-polish
 
 ## Current Position
 
-Phase: 122
-Plan: Not started
+Phase: 122 (support-investigation-flow-polish) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-28 — Phase 122 planning complete
+Last activity: 2026-06-28
 
 ## Most Recent Release
 
@@ -124,6 +122,9 @@ Last activity: 2026-06-28 — Phase 122 planning complete
 - [Phase 121]: Phase 121 Plan 02 keeps scorecard proof test-only with no runtime/package/browser/public theming surface. — Preserves the embedded-library and supported-surface boundary while enabling deterministic CI guardrails.
 - [Phase 121]: Plan 121-03 keeps the scorecard workflow maintainer-facing and subordinate to docs/supported-surface.md. — Preserves public support truth while documenting maintainer route judgment workflow.
 - [Phase 121]: Plan 121-03 names 121-ROUTE-SCORECARDS.md as the canonical scorecard artifact sourced from AdminRouter plus the logout-propagation query workflow. — Keeps later Support, Operate, and Configure polish anchored to route/judgment guardrails.
+- [Phase 122]: Kept token and consent index behavior inside the existing LiveViews and existing Lockspire.Admin list APIs. — Preserves the embedded-library boundary and avoids new storage or route capabilities for support index polish.
+- [Phase 122]: Kept raw filter values editable in filter inputs while summaries and rows render redacted account/client/family handles. — Support staff can refine case filters without exposing durable identifiers in decision summaries and dense rows.
+- [Phase 122]: Used decision_summary and dense_resource_row instead of adding a new support-row component or table primitive. — Matches Phase 122 design constraints and keeps the admin design-system surface stable.
 
 ## Blockers/Concerns
 
@@ -138,11 +139,11 @@ Last activity: 2026-06-28 — Phase 122 planning complete
 
 ## Session Continuity
 
-**Last session:** 2026-06-28T19:26:28.863Z
+**Last session:** 2026-06-28T21:50:29.875Z
 
 **Next action:** Verify Phase 121 with `/gsd-verify-work 121`.
-**Resume file:** .planning/phases/122-support-investigation-flow-polish/122-CONTEXT.md
-**Stopped at:** Phase 122 context gathered (assumptions mode, research-expanded)
+**Resume file:** None
+**Stopped at:** Completed 122-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -178,6 +179,7 @@ Last activity: 2026-06-28 — Phase 122 planning complete
 | Phase 121 P01 | 10 min | 2 tasks | 1 files |
 | Phase 121 P02 | 7 min | 2 tasks | 2 files |
 | Phase 121 P03 | 5 min | 1 tasks | 2 files |
+| Phase 122 P01 | 11m45s | 3 tasks | 5 files |
 
 ## Operator Next Steps
 
