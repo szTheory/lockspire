@@ -1,7 +1,7 @@
 defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   use ExUnit.Case, async: true
 
-  alias Lockspire.Web.AdminProof.RouteScorecards
+  alias Lockspire.Web.AdminProof.{HtmlAssertions, RouteScorecards}
 
   @admin_live_glob Path.expand(
                      "../../../../../lib/lockspire/web/live/admin/**/*.{ex,heex}",
@@ -19,6 +19,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                      )
   @brandbook_tokens_path Path.expand("../../../../../brandbook/tokens/tokens.json", __DIR__)
   @operator_admin_doc_path Path.expand("../../../../../docs/operator-admin.md", __DIR__)
+  @supported_surface_doc_path Path.expand("../../../../../docs/supported-surface.md", __DIR__)
+  @mix_path Path.expand("../../../../../mix.exs", __DIR__)
   @adoption_demo_seeds_path Path.expand(
                               "../../../../../examples/adoption_demo/priv/repo/seeds.exs",
                               __DIR__
@@ -39,6 +41,18 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                                "../../../../../.planning/phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md",
                                __DIR__
                              )
+  @phase_121_journeys ["Orient", "Configure", "Support", "Operate"]
+  @phase_121_rubric_scopes ["Page", "Section", "Action", "Component Group"]
+  @phase_121_rubric_questions [
+    "redundant?",
+    "least-surprising?",
+    "user-flow-oriented?",
+    "visually intentional?",
+    "on-brand?"
+  ]
+  @phase_121_generic_ctas ["click here", "learn more", "read more", "submit", "ok"]
+  @phase_121_non_final_values ["", "tbd", "todo", "fixme", "placeholder", "coming soon"]
+  @phase_121_unearned_fit_values ["decorative", "placeholder", "nice-to-have", "later"]
   @phase_109_support_sources [
     Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/index.ex", __DIR__),
     Path.expand("../../../../../lib/lockspire/web/live/admin/tokens_live/show.ex", __DIR__),
@@ -391,10 +405,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   describe "Phase 121 route scorecard contracts" do
     test "phase 121 route scorecards cover AdminRouter route truth" do
-      scorecards =
-        @phase_121_scorecards_path
-        |> File.read!()
-        |> RouteScorecards.parse!()
+      scorecards = phase_121_scorecards()
 
       assert Map.keys(scorecards) |> Enum.sort() == RouteScorecards.expected_routes()
       assert length(RouteScorecards.expected_routes()) == 29
@@ -402,6 +413,118 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert RouteScorecards.workflow_exceptions() == [
                "/admin/clients/:client_id/edit?workflow=logout-propagation"
              ]
+    end
+
+    test "phase 121 route scorecards enforce required judgment fields" do
+      markdown = phase_121_scorecards_markdown()
+      scorecards = RouteScorecards.parse!(markdown)
+
+      assert Map.keys(scorecards) |> Enum.filter(&String.contains?(&1, "?workflow=")) ==
+               RouteScorecards.workflow_exceptions()
+
+      for {_route, fields} <- scorecards,
+          required_field <- RouteScorecards.required_fields() do
+        assert Map.has_key?(fields, required_field), "missing #{required_field}"
+        refute non_final_scorecard_value?(fields[required_field])
+      end
+
+      for {route, fields} <- scorecards do
+        assert trimmed_backtick_value(fields["Route"]) == route
+        assert fields["Journey"] in @phase_121_journeys
+        assert fields["Evidence class"] in RouteScorecards.allowed_evidence_classes()
+        assert fields["Public support promise"] == RouteScorecards.support_promise()
+        assert generic_cta?(fields["Primary action"]) == false
+
+        for field <- ["Earned-place check", "Component/group fit"],
+            unearned <- @phase_121_unearned_fit_values do
+          refute Regex.match?(~r/\b#{Regex.escape(unearned)}\b/i, fields[field])
+        end
+      end
+
+      rendered_primary_actions =
+        scorecards
+        |> Enum.map_join("\n", fn {_route, fields} ->
+          "<button>#{fields["Primary action"]}</button>"
+        end)
+
+      HtmlAssertions.assert_no_generic_cta_text(rendered_primary_actions)
+
+      for scope <- @phase_121_rubric_scopes do
+        assert phase_121_rubric_questions(markdown, scope) == @phase_121_rubric_questions
+      end
+    end
+
+    test "phase 121 route scorecard follow-up routes stay inside known route truth" do
+      scorecards = phase_121_scorecards()
+
+      known_routes =
+        scorecards
+        |> Map.keys()
+        |> MapSet.new()
+        |> MapSet.union(MapSet.new(RouteScorecards.workflow_exceptions()))
+
+      for {route, fields} <- scorecards do
+        follow_up = String.trim(fields["Follow-up route"])
+
+        assert MapSet.member?(known_routes, trimmed_backtick_value(follow_up)) or
+                 explicit_non_route_follow_up?(follow_up),
+               "invalid follow-up route #{inspect(follow_up)} in #{route}"
+      end
+    end
+
+    test "phase 121 scorecards preserve support boundary and deny public surface creep" do
+      markdown = phase_121_scorecards_markdown()
+      scorecards = RouteScorecards.parse!(markdown)
+      operator_doc = File.read!(@operator_admin_doc_path)
+      supported_surface = File.read!(@supported_surface_doc_path)
+      router = File.read!(@admin_router_path)
+      mix = File.read!(@mix_path)
+
+      for {_route, fields} <- scorecards do
+        assert fields["Public support promise"] == RouteScorecards.support_promise()
+
+        assert fields["Runtime/package impact"] =~
+                 "no router, runtime, browser package, docs support-surface, or Hex package change"
+      end
+
+      for source <- [
+            markdown,
+            operator_doc,
+            supported_surface,
+            mix,
+            router,
+            phase_121_proof_blob()
+          ] do
+        assert_no_phase_121_secret_evidence(source)
+      end
+
+      assert operator_doc =~
+               "Lockspire owns protocol and operator state after the request reaches its LiveViews"
+
+      assert operator_doc =~
+               "the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+
+      for forbidden <- ["component_lab", "design_system_lab", "scorecard", "storybook"] do
+        refute String.downcase(router) =~ forbidden
+      end
+
+      assert_phase_121_supported_surface_ceiling(supported_surface)
+      assert_phase_121_package_boundary(mix)
+    end
+
+    test "phase 121 operate scorecards preserve read-only support truth" do
+      scorecards = phase_121_scorecards()
+
+      for route <- ["/admin/interactions", "/admin/device_authorizations", "/admin/logouts"] do
+        fields = Map.fetch!(scorecards, route)
+        unsupported_action = fields["Unsupported action check"]
+
+        assert unsupported_action =~ "Read-only support truth only"
+        assert unsupported_action =~ "unless an existing backed domain API exists"
+
+        refute unsupported_action =~
+                 ~r/\b(Retry now|Discard now|Approve now|Deny now|Logout now|Run worker|Pause worker|Worker control)\b/i
+      end
     end
   end
 
@@ -1562,6 +1685,132 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
     for forbidden <- ["component lab", "design system lab", "design-system lab"] do
       refute supported_surface =~ forbidden
+    end
+  end
+
+  defp phase_121_scorecards_markdown do
+    File.read!(@phase_121_scorecards_path)
+  end
+
+  defp phase_121_scorecards do
+    @phase_121_scorecards_path
+    |> File.read!()
+    |> RouteScorecards.parse!()
+  end
+
+  defp non_final_scorecard_value?(value) do
+    value
+    |> trimmed_backtick_value()
+    |> String.downcase()
+    |> then(&(&1 in @phase_121_non_final_values))
+  end
+
+  defp generic_cta?(value) do
+    value
+    |> trimmed_backtick_value()
+    |> String.downcase()
+    |> then(&(&1 in @phase_121_generic_ctas))
+  end
+
+  defp trimmed_backtick_value(value) do
+    value
+    |> to_string()
+    |> String.trim()
+    |> String.trim_leading("`")
+    |> String.trim_trailing("`")
+    |> String.trim()
+  end
+
+  defp phase_121_rubric_questions(markdown, scope) do
+    pattern =
+      ~r/^### #{Regex.escape(scope)}\n\n(?<questions>(?:- .+\n)+)/m
+
+    case Regex.named_captures(pattern, markdown) do
+      %{"questions" => questions} ->
+        questions
+        |> String.split("\n", trim: true)
+        |> Enum.map(&String.trim_leading(&1, "- "))
+
+      nil ->
+        flunk("missing Phase 121 rubric scope #{scope}")
+    end
+  end
+
+  defp explicit_non_route_follow_up?(value) do
+    value = String.downcase(value)
+
+    Enum.any?(["external", "documentation-only", "docs-only", "absent", "none"], fn marker ->
+      String.contains?(value, marker)
+    end)
+  end
+
+  defp phase_121_proof_blob do
+    [
+      "test/support/lockspire/web/admin_proof/route_scorecards.ex",
+      "test/support/lockspire/web/admin_proof/html_assertions.ex"
+    ]
+    |> Enum.map_join("\n", fn path ->
+      File.read!(Path.expand("../../../../../#{path}", __DIR__))
+    end)
+  end
+
+  defp assert_no_phase_121_secret_evidence(source) do
+    for forbidden <- [
+          "real-client-secret",
+          "production-secret",
+          "prod-access-token",
+          "prod-refresh-token",
+          "customer.example.com",
+          "tenant.example.com",
+          "sk_live_",
+          "pk_live_",
+          "eyJhbGci",
+          "BEGIN PRIVATE KEY",
+          "BEGIN RSA PRIVATE KEY"
+        ] do
+      refute source =~ forbidden
+    end
+
+    refute Regex.match?(~r/\beyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/, source)
+  end
+
+  defp assert_phase_121_supported_surface_ceiling(supported_surface) do
+    supported_surface = String.downcase(supported_surface)
+
+    for forbidden <- [
+          "component lab",
+          "stress surface",
+          "route scorecard",
+          "design system workflow",
+          "design-system workflow",
+          "public component api",
+          "public design-system",
+          "public theming",
+          "theme engine",
+          "playwright",
+          "axe",
+          "screenshot product",
+          "browser proof"
+        ] do
+      refute supported_surface =~ forbidden
+    end
+  end
+
+  defp assert_phase_121_package_boundary(mix) do
+    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+
+    for forbidden <- [
+          ".planning",
+          "121-ROUTE-SCORECARDS",
+          "package.json",
+          "package-lock.json",
+          "node_modules",
+          "playwright.config",
+          "screenshots",
+          "traces"
+        ] do
+      refute String.downcase(package_files) =~ String.downcase(forbidden)
+      refute String.downcase(mix) =~ String.downcase(forbidden)
     end
   end
 
