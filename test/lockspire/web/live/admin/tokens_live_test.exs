@@ -179,6 +179,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Support"
     assert html =~ "Token health decision"
     assert html =~ "Opaque tokens stay opaque here"
+    assert html =~ "lockspire-admin-decision-summary"
     assert html =~ "Token identity and current state"
     assert html =~ "Refresh family lineage"
     assert html =~ "Corrective actions"
@@ -197,15 +198,69 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "lockspire-admin-confirmation-panel"
     assert html =~ ~s(phx-submit="revoke_token")
     assert html =~ ~s(phx-submit="revoke_family")
+    assert html =~ "Token health"
+    assert html =~ "Family lineage"
+    assert html =~ "Reuse pressure"
+    assert html =~ "Smallest safe action"
     assert html =~ "Revoke token"
     assert html =~ "Revoke token family"
-    assert html =~ "family-wide action"
     assert html =~ "family-wide refresh-token invalidation"
-    assert html =~ "revokes every active token"
+    assert html =~ "currently unrevoked tokens in the refresh family"
+    refute html =~ "revokes every active token"
     refute html =~ "token-ui-refresh-hash"
     refute html =~ "family-ui-123"
     refute html =~ "account-token-ui"
     refute html =~ "Token ##{refresh_token.id}"
+
+    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
+
+    assert decision_summary =~ "Token health"
+    assert decision_summary =~ "Family lineage"
+    assert decision_summary =~ "Reuse pressure"
+    assert decision_summary =~ "Smallest safe action"
+
+    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
+             html_index(html, "Token identity and current state")
+
+    assert {:noreply, missing_token_socket} = Show.handle_event("revoke_token", %{}, socket)
+
+    assert missing_token_socket.assigns.revoke_error ==
+             "Select the confirmation checkbox to revoke this token."
+
+    missing_token_html = rendered_to_string(Show.render(missing_token_socket.assigns))
+    assert missing_token_html =~ "Select the confirmation checkbox to revoke this token."
+    assert missing_token_html =~ "lockspire-admin-errors"
+
+    assert {:noreply, missing_family_socket} = Show.handle_event("revoke_family", %{}, socket)
+
+    assert missing_family_socket.assigns.family_error ==
+             "Select the confirmation checkbox to revoke this refresh family."
+
+    missing_family_html = rendered_to_string(Show.render(missing_family_socket.assigns))
+
+    assert missing_family_html =~
+             "Select the confirmation checkbox to revoke this refresh family."
+
+    assert missing_family_html =~ "lockspire-admin-errors"
+
+    failed_revoke_socket = put_in(socket.assigns.token_id, -1)
+
+    assert {:noreply, failed_revoke_socket} =
+             Show.handle_event(
+               "revoke_token",
+               %{"revoke" => %{"confirm" => "true"}},
+               failed_revoke_socket
+             )
+
+    assert failed_revoke_socket.assigns.revoke_error ==
+             "Revocation could not be confirmed. The token may still be active; reload this Support workflow before retrying."
+
+    failed_revoke_html = rendered_to_string(Show.render(failed_revoke_socket.assigns))
+
+    assert failed_revoke_html =~
+             "Revocation could not be confirmed. The token may still be active; reload this Support workflow before retrying."
+
+    assert failed_revoke_html =~ "lockspire-admin-errors"
 
     assert {:noreply, socket} =
              Show.handle_event("revoke_token", %{"revoke" => %{"confirm" => "true"}}, socket)
@@ -217,15 +272,105 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              Show.handle_event("revoke_family", %{"family" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.family_notice =~ "Revoked"
+  end
 
-    assert {:noreply, socket} = Show.handle_event("revoke_family", %{}, socket)
+  test "token detail renders revoked, expired, no-family, and reuse-detected closed states" do
+    revoked_token =
+      store_support_token!(
+        token_hash: "token-ui-already-revoked-hash",
+        family_id: "family-ui-revoked",
+        revoked_at: DateTime.utc_now()
+      )
 
-    assert socket.assigns.family_error =~ "Confirm the family-wide action"
-    assert is_nil(socket.assigns.family_notice)
+    {_socket, revoked_html} = render_show_for(revoked_token)
+
+    assert revoked_html =~ "This token is already revoked. No further token action is available."
+    assert revoked_html =~ "Token already revoked"
+    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token already revoked/s
+
+    expired_token =
+      store_support_token!(
+        token_hash: "token-ui-expired-hash",
+        family_id: "family-ui-expired",
+        issued_at: DateTime.add(DateTime.utc_now(), -7_200, :second),
+        expires_at: DateTime.add(DateTime.utc_now(), -3_600, :second)
+      )
+
+    {_socket, expired_html} = render_show_for(expired_token)
+
+    assert expired_html =~
+             "This token is expired. No active token remains because its expiration time has passed."
+
+    assert expired_html =~ "Expired"
+    assert expired_html =~ ~r/<button[^>]*disabled[^>]*>.*Token expired/s
+
+    no_family_token =
+      store_support_token!(
+        token_hash: "token-ui-no-family-hash",
+        family_id: nil
+      )
+
+    {_socket, no_family_html} = render_show_for(no_family_token)
+
+    assert no_family_html =~
+             "This token is not part of a refresh family, so family-wide revocation is unavailable."
+
+    assert no_family_html =~ ~r/<button[^>]*disabled[^>]*>.*Family-wide revocation unavailable/s
+
+    reuse_revoked_token =
+      store_support_token!(
+        token_hash: "token-ui-reuse-revoked-hash",
+        family_id: "family-ui-reuse-revoked",
+        reuse_detected_at: DateTime.utc_now(),
+        revoked_at: DateTime.utc_now()
+      )
+
+    {_socket, reuse_revoked_html} = render_show_for(reuse_revoked_token)
+
+    assert reuse_revoked_html =~ "Reuse detected"
+
+    assert reuse_revoked_html =~
+             "This token is already revoked. No further token action is available."
+
+    assert reuse_revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token already revoked/s
   end
 
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+  end
+
+  defp store_support_token!(attrs) do
+    now = DateTime.utc_now()
+
+    token =
+      struct(
+        %Token{
+          token_hash: "token-ui-#{System.unique_integer([:positive])}",
+          token_type: :refresh_token,
+          family_id: "family-ui-#{System.unique_integer([:positive])}",
+          generation: 0,
+          client_id: "token-ui-client",
+          account_id: "account-token-ui",
+          scopes: ["offline_access"],
+          issued_at: now,
+          expires_at: DateTime.add(now, 86_400, :second)
+        },
+        attrs
+      )
+
+    assert {:ok, stored_token} = Repository.store_token(token)
+    stored_token
+  end
+
+  defp render_show_for(token) do
+    id = Integer.to_string(token.id)
+
+    assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(%{"id" => id}, "/lockspire/admin/tokens/#{id}", socket)
+
+    {socket, rendered_to_string(Show.render(socket.assigns))}
   end
 
   defp live_route?(route, path, view) do
