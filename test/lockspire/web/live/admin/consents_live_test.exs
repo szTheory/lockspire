@@ -23,6 +23,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    long_scope = "urn:lockspire:consent:scope:#{String.duplicate("wrapped-", 12)}read"
 
     {:ok, _client} =
       Repository.register_client(%Client{
@@ -31,7 +32,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
         client_type: :confidential,
         name: "Consent UI Client",
         redirect_uris: ["https://consent-ui.example.com/callback"],
-        allowed_scopes: ["openid", "email"],
+        allowed_scopes: ["openid", "email", long_scope],
         allowed_grant_types: ["authorization_code", "refresh_token"],
         allowed_response_types: ["code"],
         token_endpoint_auth_method: :client_secret_basic,
@@ -45,12 +46,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       Repository.grant_consent(%ConsentGrant{
         account_id: "account-consent-ui",
         client_id: "consent-ui-client",
-        scopes: ["openid", "email"],
+        scopes: ["openid", "email", long_scope],
         granted_at: DateTime.utc_now(),
         metadata: %{}
       })
 
-    %{grant: grant}
+    %{grant: grant, long_scope: long_scope}
   end
 
   test "router exposes admin consent routes" do
@@ -134,7 +135,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              "No investigation results match these filters"
   end
 
-  test "consent detail renders support-grade detail and guarded revoke action", %{grant: grant} do
+  test "consent detail renders support-grade detail and guarded revoke action", %{
+    grant: grant,
+    long_scope: long_scope
+  } do
     assert {:ok, socket} =
              Show.mount(%{"id" => Integer.to_string(grant.id)}, %{}, socket_for(:show))
 
@@ -151,11 +155,23 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_has_link(html, "/lockspire/admin/consents")
-    HtmlAssertions.assert_no_text(html, ["account-consent-ui", "sha256:consent-ui:hash"])
+
+    HtmlAssertions.assert_no_text(html, [
+      "account-consent-ui",
+      "consent-ui-client",
+      "sha256:consent-ui:hash",
+      "client_secret",
+      "refresh_token",
+      "token_hash",
+      "verifier",
+      "authorization_code",
+      "user_code"
+    ])
 
     assert html =~ "Support"
     assert html =~ "Stored grant decision"
     assert html =~ "Durable consent truth"
+    assert html =~ "lockspire-admin-decision-summary"
     assert html =~ "Durable grant identity and current state"
     assert html =~ "Scope context"
     assert html =~ "Review stored grant"
@@ -166,18 +182,72 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "remembered grant will no longer"
     assert html =~ "future remembered-consent reuse"
     assert html =~ "openid, email"
+    assert html =~ long_scope
     assert html =~ "lockspire-admin-long-value"
+    assert html =~ "account_"
+    assert html =~ "client_"
     refute html =~ "account-consent-ui"
+    refute html =~ "consent-ui-client"
     refute html =~ "sha256:consent-ui:hash"
+
+    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
+
+    assert decision_summary =~ "Grant status"
+    assert decision_summary =~ "Scope context"
+    assert decision_summary =~ "Client/account pivot"
+    assert decision_summary =~ "Revocation consequence"
+    assert decision_summary =~ "account_"
+    assert decision_summary =~ "client_"
+    assert decision_summary =~ "future remembered-consent reuse"
+    refute decision_summary =~ "account-consent-ui"
+    refute decision_summary =~ "consent-ui-client"
+
+    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
+             html_index(html, "Durable grant identity and current state")
+
+    assert {:noreply, missing_confirm_socket} = Show.handle_event("revoke_consent", %{}, socket)
+
+    assert missing_confirm_socket.assigns.revoke_error ==
+             "Select the confirmation checkbox to revoke this consent grant."
+
+    missing_confirm_html = rendered_to_string(Show.render(missing_confirm_socket.assigns))
+
+    assert missing_confirm_html =~
+             "Select the confirmation checkbox to revoke this consent grant."
+
+    assert missing_confirm_html =~ "lockspire-admin-errors"
+
+    failed_revoke_socket = put_in(socket.assigns.consent_id, -1)
+
+    assert {:noreply, failed_revoke_socket} =
+             Show.handle_event(
+               "revoke_consent",
+               %{"revoke" => %{"confirm" => "true"}},
+               failed_revoke_socket
+             )
+
+    assert failed_revoke_socket.assigns.revoke_error ==
+             "Revocation could not be confirmed. The consent grant may still be active; reload this Support workflow before retrying."
+
+    failed_revoke_html = rendered_to_string(Show.render(failed_revoke_socket.assigns))
+
+    assert failed_revoke_html =~
+             "Revocation could not be confirmed. The consent grant may still be active; reload this Support workflow before retrying."
+
+    assert failed_revoke_html =~ "lockspire-admin-errors"
 
     assert {:noreply, socket} =
              Show.handle_event("revoke_consent", %{"revoke" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.consent.grant.status == :revoked
 
-    assert {:noreply, socket} = Show.handle_event("revoke_consent", %{}, socket)
+    revoked_html = rendered_to_string(Show.render(socket.assigns))
 
-    assert socket.assigns.revoke_error =~ "Confirm the revoke action"
+    assert revoked_html =~
+             "This consent grant is already revoked. It no longer authorizes future remembered-consent reuse."
+
+    assert revoked_html =~ "Consent grant already revoked"
+    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
   end
 
   defp socket_for(action) do
