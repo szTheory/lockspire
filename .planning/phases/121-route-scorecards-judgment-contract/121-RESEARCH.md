@@ -576,17 +576,15 @@ Provenance: [VERIFIED: `design_system_component_stress_test.exs`; VERIFIED: `htm
 |---|-------|---------|---------------|
 | none | All recommendations are grounded in the supplied context, local code/artifacts, local command output, or official HexDocs. | all | No assumed claims logged. [VERIFIED: local research session] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 121 create a new test file or extend `design_system_contract_test.exs`?**
    - What we know: Existing Phase 107/116/120 artifact guardrails live in `design_system_contract_test.exs`. [VERIFIED: `design_system_contract_test.exs`]
-   - What's unclear: The scorecard parser may make that file harder to scan. [VERIFIED: file is already 2040 lines by `wc -l`]
-   - Recommendation: Keep one or two focused tests in `design_system_contract_test.exs` if small; extract a test-only helper if parser/support functions would bloat the file. [VERIFIED: `121-CONTEXT.md` discretion]
+   - Resolution: Plan 02 extracts parser and route expectation support into `test/support/lockspire/web/admin_proof/route_scorecards.ex`, then extends `test/lockspire/web/live/admin/design_system_contract_test.exs` with the Phase 121 scorecard contract tests. This keeps route/field parsing reusable without creating a separate public/runtime module. [RESOLVED: `121-02-PLAN.md`; VERIFIED: `121-CONTEXT.md` discretion]
 
 2. **How should the current docs-only commit drift be described?**
    - What we know: Context captured `8515245` as the v1.32 initialization baseline; current research observed `63cd550` after docs-only context/state commits on the same branch. [VERIFIED: `121-CONTEXT.md`; VERIFIED: `git log --oneline -5`]
-   - What's unclear: Whether implementation planning wants to name the source baseline commit or the current HEAD. [VERIFIED: local git state]
-   - Recommendation: Treat `8515245` as the source baseline named by context and `63cd550` as the current planning-doc HEAD; rerun `git status --short` before implementation. [VERIFIED: `git status --short`]
+   - Resolution: Plan 01 and the scorecard baseline wording use context baseline commit `8515245` as the source baseline truth, while documenting current planning-doc drift as docs/context movement on top of that baseline. Executors should rerun `git status --short` before implementation and must not treat the current planning-doc HEAD as proof that dirty admin UI work has shipped. [RESOLVED: `121-01-PLAN.md`; VERIFIED: `121-CONTEXT.md`; VERIFIED: `git status --short`]
 
 ## Environment Availability
 
