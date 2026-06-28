@@ -470,6 +470,11 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                  explicit_non_route_follow_up?(follow_up),
                "invalid follow-up route #{inspect(follow_up)} in #{route}"
       end
+
+      assert explicit_non_route_follow_up?("none")
+      assert explicit_non_route_follow_up?("Documentation-only: operator runbook")
+      refute explicit_non_route_follow_up?("/admin/nonexistent")
+      refute explicit_non_route_follow_up?("/admin/none")
     end
 
     test "phase 121 scorecards preserve support boundary and deny public surface creep" do
@@ -1737,11 +1742,14 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   end
 
   defp explicit_non_route_follow_up?(value) do
-    value = String.downcase(value)
+    value =
+      value
+      |> trimmed_backtick_value()
+      |> String.downcase()
 
-    Enum.any?(["external", "documentation-only", "docs-only", "absent", "none"], fn marker ->
-      String.contains?(value, marker)
-    end)
+    not String.starts_with?(value, "/admin") and
+      (value in ["none", "absent"] or
+         Regex.match?(~r/\b(external|documentation-only|docs-only)\b/, value))
   end
 
   defp phase_121_proof_blob do
