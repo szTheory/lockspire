@@ -231,6 +231,7 @@ Active milestone v1.32 focuses on page-first admin IA and interaction-model poli
 - Update Discovery metadata and provide executable documentation for the v1.14 advanced authorization surface. Validated in archived v1.14.
 - Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
 - Phase 121 validated the v1.32 route scorecard and judgment contract foundation: source-derived admin route scorecards, deterministic rubric guardrails, review-fix regressions, and bounded operator docs now anchor the remaining Support, Operate, Configure, and proof phases.
+- Phase 122 validated Support investigation flow polish: token and consent index/detail routes now lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, inline confirmation errors, and verified reuse/closed-state behavior without new public surface.
 - Delivered 1.0.0 GA public release artifacts and post-release execution verification in archived v1.17 and v1.18.
 - Delivered FAPI 2.0 Message Signing support including JARM and JWT introspection responses in archived v1.19.
 - Delivered Mutual TLS client authentication, certificate-bound tokens, and truthful MTLS discovery metadata in archived v1.20.
@@ -341,4 +342,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-28 after Phase 121 completion*
+*Last updated: 2026-06-28 after Phase 122 completion*
