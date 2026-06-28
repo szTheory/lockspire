@@ -4,8 +4,8 @@ milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
 status: executing
 stopped_at: Phase 121 context gathered (assumptions mode, research-expanded)
-last_updated: "2026-06-28T17:16:08.957Z"
-last_activity: 2026-06-28 -- Phase 121 planning complete
+last_updated: "2026-06-28T17:17:29.292Z"
+last_activity: 2026-06-28 -- Phase 121 execution started
 progress:
   total_phases: 5
   completed_phases: 0
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** v1.32 Admin Page IA & Interaction Model Polish; start with Phase 121 route scorecards and judgment contracts, then polish Support + Operate pages before Configure propagation.
+**Current focus:** Phase 121 — route-scorecards-judgment-contract
 
 ## Current Position
 
-Phase: 121 — Route Scorecards & Judgment Contract
-Plan: —
-Status: Ready to execute
-Last activity: 2026-06-28 -- Phase 121 planning complete
+Phase: 121 (route-scorecards-judgment-contract) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 121
+Last activity: 2026-06-28 -- Phase 121 execution started
 
 ## Most Recent Release
 
