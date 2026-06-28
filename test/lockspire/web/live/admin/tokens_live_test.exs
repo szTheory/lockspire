@@ -96,7 +96,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Token investigation"
-    assert html =~ "Selected account: account-token-ui"
+    assert html =~ "Selected account: account_"
     assert html =~ "Selected status: active"
     assert html =~ "Filter tokens"
     assert html =~ "Review token"
@@ -118,8 +118,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert decision_summary =~ "account_"
     refute decision_summary =~ "account-token-ui"
 
-    assert html_index(html, "lockspire-admin-decision-summary") <
-             html_index(html, "lockspire-admin-filter-bar")
+    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
+             html_index(
+               html,
+               ~s(<form method="get" action="/lockspire/admin/tokens" class="lockspire-admin-filter-bar)
+             )
 
     assert rows =~ "Review token"
     assert rows =~ "account_"

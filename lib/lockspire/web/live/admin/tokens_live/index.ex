@@ -45,11 +45,42 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         body="Investigate account, client, status, refresh-family, expiration, and revocation state without exposing token material."
       >
         <:summary>
-          <span>Selected account: {selected_filter(@filters["account"])}</span>
-          <span>Selected client: {selected_filter(@filters["client"])}</span>
-          <span>Selected status: {selected_filter(@filters["status"])}</span>
+          <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
+          <span>Selected client: {selected_filter(:client, @filters["client"])}</span>
+          <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
         </:summary>
       </AdminComponents.page_hero>
+
+      <AdminComponents.decision_summary>
+        <:item
+          label="Selected filters"
+          value={selected_filter_summary(@filters)}
+          detail="Raw URL filters stay editable below while summaries use redacted handles."
+          tone={:info}
+        >
+        </:item>
+        <:item
+          label="Token health"
+          value={token_health_summary(@token_metrics)}
+          detail={"#{@total_tokens} matching token lifecycle records in this support view."}
+          tone={token_health_tone(@token_metrics)}
+        >
+        </:item>
+        <:item
+          label="Family pressure"
+          value={family_pressure_summary(@tokens)}
+          detail="Refresh-family context appears as redacted handles before the detail route."
+          tone={family_pressure_tone(@tokens)}
+        >
+        </:item>
+        <:item
+          label="Smallest safe action"
+          value={token_smallest_safe_action(@tokens)}
+          detail="Open one token before choosing any revocation path."
+          tone={if @tokens == [], do: :neutral, else: :info}
+        >
+        </:item>
+      </AdminComponents.decision_summary>
 
       <AdminComponents.section_card
         title="Filter token investigation"
@@ -57,18 +88,15 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
       >
         <AdminComponents.filter_bar action={tokens_index_path()}>
           <:fields>
-            <div class="lockspire-admin-field">
-              <label for="token_account">Account</label>
+            <AdminComponents.form_field id="token_account" label="Account">
               <input id="token_account" name="account" type="text" value={@filters["account"]} />
-            </div>
+            </AdminComponents.form_field>
 
-            <div class="lockspire-admin-field">
-              <label for="token_client">Client</label>
+            <AdminComponents.form_field id="token_client" label="Client">
               <input id="token_client" name="client" type="text" value={@filters["client"]} />
-            </div>
+            </AdminComponents.form_field>
 
-            <div class="lockspire-admin-field">
-              <label for="token_status">Status</label>
+            <AdminComponents.form_field id="token_status" label="Status">
               <select id="token_status" name="status">
                 <option value="all" selected={@filters["status"] == "all"}>All</option>
                 <option value="active" selected={@filters["status"] == "active"}>Active</option>
@@ -78,7 +106,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
                   Reuse detected
                 </option>
               </select>
-            </div>
+            </AdminComponents.form_field>
           </:fields>
           <:help>
             <p>Total matching tokens: {@total_tokens}</p>
@@ -101,15 +129,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         <%= if @tokens == [] do %>
           <AdminComponents.empty_state
             title="No investigation results match these filters"
-            body="Adjust the account, client, or status filters, or return to the overview to choose a different support workflow."
+            body="Adjust the account, client, status, or scope filters, or return to the overview to choose a different Support workflow."
           />
         <% else %>
           <AdminComponents.resource_list>
             <%= for entry <- @tokens do %>
-              <AdminComponents.resource_item
-                href={token_show_path(entry.token.id)}
-                title={token_title(entry)}
-                subtitle={"#{entry.token.token_type} token"}
+              <AdminComponents.dense_resource_row
+                title={token_row_title(entry)}
+                subtitle={token_row_subtitle(entry)}
               >
                 <:meta>
                   <span>
@@ -146,7 +173,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
                     Review token
                   </AdminComponents.admin_button>
                 </:actions>
-              </AdminComponents.resource_item>
+              </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
         <% end %>
@@ -201,9 +228,112 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
     }
   end
 
-  defp selected_filter(""), do: "All"
-  defp selected_filter("all"), do: "All"
-  defp selected_filter(value), do: value
+  defp selected_filter(_type, ""), do: "All"
+  defp selected_filter(_type, "all"), do: "All"
+
+  defp selected_filter(type, value) when type in [:account, :client],
+    do: redacted_handle(type, value)
+
+  defp selected_filter(_type, value), do: value
+
+  defp selected_filter_summary(filters) do
+    [
+      selected_filter_part("Account", :account, filters["account"]),
+      selected_filter_part("Client", :client, filters["client"]),
+      selected_status_filter_part(filters["status"])
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> "All token lifecycle records"
+      parts -> Enum.join(parts, " | ")
+    end
+  end
+
+  defp selected_filter_part(_label, _type, value) when value in [nil, "", "all"], do: nil
+
+  defp selected_filter_part(label, type, value),
+    do: "#{label} #{redacted_handle(type, value)}"
+
+  defp selected_status_filter_part(status) when status in [nil, "", "all"], do: nil
+  defp selected_status_filter_part(status), do: "Status #{status}"
+
+  defp token_health_summary(metrics) do
+    "#{metrics.active} active, #{metrics.revoked} revoked, #{metrics.expired} expired, #{metrics.reuse_detected} reuse detected"
+  end
+
+  defp token_health_tone(%{reuse_detected: count}) when count > 0, do: :danger
+
+  defp token_health_tone(%{revoked: revoked, expired: expired}) when revoked + expired > 0,
+    do: :warning
+
+  defp token_health_tone(%{active: active}) when active > 0, do: :success
+  defp token_health_tone(_metrics), do: :neutral
+
+  defp family_pressure_summary([]), do: "No matching refresh families"
+
+  defp family_pressure_summary(tokens) do
+    cond do
+      Enum.any?(tokens, &(&1.status == :reuse_detected)) ->
+        "Reuse evidence in matching family"
+
+      family_count(tokens) == 0 ->
+        "No refresh families in matching records"
+
+      family_count(tokens) == 1 ->
+        "1 refresh family in view"
+
+      true ->
+        "#{family_count(tokens)} refresh families in view"
+    end
+  end
+
+  defp family_pressure_tone(tokens) do
+    cond do
+      Enum.any?(tokens, &(&1.status == :reuse_detected)) -> :danger
+      family_count(tokens) > 0 -> :info
+      true -> :neutral
+    end
+  end
+
+  defp family_count(tokens) do
+    tokens
+    |> Enum.map(& &1.token.family_id)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> length()
+  end
+
+  defp token_smallest_safe_action([]), do: "Adjust filters"
+
+  defp token_smallest_safe_action(tokens) do
+    if Enum.any?(tokens, &(&1.status == :reuse_detected)),
+      do: "Review affected token",
+      else: "Review token"
+  end
+
+  defp token_row_title(entry),
+    do: "#{status_label(entry.status)} #{token_type_label(entry.token.token_type)}"
+
+  defp token_row_subtitle(entry) do
+    "Client #{token_title(entry)}"
+  end
+
+  defp status_label(status) when is_atom(status) do
+    status
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+    |> String.capitalize()
+  end
+
+  defp status_label(status), do: to_string(status)
+
+  defp token_type_label(type) when is_atom(type) do
+    type
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+  end
+
+  defp token_type_label(type), do: to_string(type)
 
   defp token_title(entry) do
     (entry.client && (entry.client.name || entry.client.client_id)) ||
