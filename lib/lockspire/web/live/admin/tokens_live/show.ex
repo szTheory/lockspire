@@ -7,6 +7,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
+  @token_confirm_error "Select the confirmation checkbox to revoke this token."
+  @family_confirm_error "Select the confirmation checkbox to revoke this refresh family."
+  @revocation_failure "Revocation could not be confirmed. The token may still be active; reload this Support workflow before retrying."
+  @already_revoked_copy "This token is already revoked. No further token action is available."
+  @expired_copy "This token is expired. No active token remains because its expiration time has passed."
+  @no_family_copy "This token is not part of a refresh family, so family-wide revocation is unavailable."
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     {:ok,
@@ -38,14 +45,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         {:noreply, assign(socket, token_detail: detail, revoke_error: nil)}
 
       {:error, _reason} ->
-        {:noreply, assign(socket, revoke_error: "Token could not be revoked.")}
+        {:noreply, assign(socket, revoke_error: @revocation_failure)}
     end
   end
 
   def handle_event("revoke_token", _params, socket) do
     {:noreply,
      assign(socket,
-       revoke_error: "Confirm the single-token action before changing lifecycle state.",
+       revoke_error: @token_confirm_error,
        family_notice: nil
      )}
   end
@@ -56,7 +63,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         notice =
           if count == 0,
             do: "This refresh family was already fully revoked.",
-            else: "Revoked #{count} token(s) in this refresh family."
+            else: "Revoked #{count} currently unrevoked token(s) in this refresh family."
 
         {:noreply,
          assign(socket,
@@ -66,18 +73,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
          )}
 
       {:error, :no_family} ->
-        {:noreply,
-         assign(socket, family_error: "This token does not belong to a refresh family.")}
+        {:noreply, assign(socket, family_error: @no_family_copy)}
 
       {:error, _reason} ->
-        {:noreply, assign(socket, family_error: "Refresh family could not be revoked.")}
+        {:noreply, assign(socket, family_error: @revocation_failure)}
     end
   end
 
   def handle_event("revoke_family", _params, socket) do
     {:noreply,
      assign(socket,
-       family_error: "Confirm the family-wide action before revoking the lineage.",
+       family_error: @family_confirm_error,
        family_notice: nil
      )}
   end
@@ -114,7 +120,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
       <AdminComponents.entity_header
         title={@token_detail.token.handle}
-        subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts or plaintext recovery."
+        subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts or bearer-value inspection."
         identifier={@token_detail.token.handle}
       >
         <:status>
@@ -122,6 +128,37 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           <AdminComponents.status_badge status={@token_detail.token.token_type} />
         </:status>
       </AdminComponents.entity_header>
+
+      <AdminComponents.decision_summary>
+        <:item
+          label="Token health"
+          value={token_health_summary(@token_detail).value}
+          detail={token_health_summary(@token_detail).detail}
+          tone={token_health_summary(@token_detail).tone}
+        >
+        </:item>
+        <:item
+          label="Family lineage"
+          value={family_lineage_summary(@token_detail).value}
+          detail={family_lineage_summary(@token_detail).detail}
+          tone={family_lineage_summary(@token_detail).tone}
+        >
+        </:item>
+        <:item
+          label="Reuse pressure"
+          value={reuse_pressure_summary(@token_detail).value}
+          detail={reuse_pressure_summary(@token_detail).detail}
+          tone={reuse_pressure_summary(@token_detail).tone}
+        >
+        </:item>
+        <:item
+          label="Smallest safe action"
+          value={token_detail_smallest_safe_action(@token_detail).value}
+          detail={token_detail_smallest_safe_action(@token_detail).detail}
+          tone={token_detail_smallest_safe_action(@token_detail).tone}
+        >
+        </:item>
+      </AdminComponents.decision_summary>
 
       <AdminComponents.pane
         title="Token identity and current state"
@@ -213,15 +250,26 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         title="Corrective actions"
         subtitle="Choose the smallest safe action first. Single-token revoke and family-wide refresh-token invalidation stay distinct."
       >
-        <p :if={@revoke_error}>{@revoke_error}</p>
-        <p :if={@family_error}>{@family_error}</p>
         <p :if={@family_notice}>{@family_notice}</p>
 
-        <AdminComponents.confirmation_panel title="Revoke token" variant={:danger}>
+        <AdminComponents.confirmation_panel
+          title="Revoke token"
+          variant={:danger}
+          errors={token_revoke_errors(@revoke_error)}
+        >
           <:body>
             <form class="lockspire-admin-form-stack" phx-submit="revoke_token">
+              <p :if={token_revoked?(@token_detail)}>{already_revoked_copy()}</p>
+              <p :if={token_expired?(@token_detail) and not token_revoked?(@token_detail)}>
+                {expired_copy()}
+              </p>
               <label class="lockspire-admin-checkbox-field">
-                <input type="checkbox" name="revoke[confirm]" value="true" />
+                <input
+                  type="checkbox"
+                  name="revoke[confirm]"
+                  value="true"
+                  disabled={token_action_disabled?(@token_detail)}
+                />
                 <span>
                   Revoke only this {@token_detail.token.token_type} token for client
                   {@token_detail.token.client_display}, subject
@@ -230,21 +278,38 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                 </span>
               </label>
               <AdminComponents.action_bar>
-                <AdminComponents.admin_button type="submit" variant={:danger}>
-                  {if @token_detail.status == :revoked,
-                    do: "Token already revoked",
-                    else: "Revoke token"}
+                <AdminComponents.admin_button
+                  type="submit"
+                  variant={:danger}
+                  disabled={token_action_disabled?(@token_detail)}
+                >
+                  {token_revoke_button_label(@token_detail)}
                 </AdminComponents.admin_button>
               </AdminComponents.action_bar>
             </form>
           </:body>
         </AdminComponents.confirmation_panel>
 
-        <AdminComponents.confirmation_panel title="Revoke token family" variant={:danger}>
+        <AdminComponents.confirmation_panel
+          title="Revoke token family"
+          variant={:danger}
+          errors={family_revoke_errors(@family_error)}
+        >
           <:body>
             <form class="lockspire-admin-form-stack" phx-submit="revoke_family">
+              <p :if={not refresh_family_present?(@token_detail)}>
+                {no_family_copy()}
+              </p>
+              <p :if={family_already_closed?(@token_detail)}>
+                This refresh family has no currently unrevoked tokens, so family-wide revocation is already closed.
+              </p>
               <label class="lockspire-admin-checkbox-field">
-                <input type="checkbox" name="family[confirm]" value="true" />
+                <input
+                  type="checkbox"
+                  name="family[confirm]"
+                  value="true"
+                  disabled={family_action_disabled?(@token_detail)}
+                />
                 <span>
                   Revoke token family
                   <AdminComponents.long_value
@@ -253,13 +318,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                   />
                   for client {@token_detail.token.client_display} and subject
                   {@token_detail.token.account_handle || "not recorded"}. This family-wide action
-                  revokes every active token in the refresh lineage and cannot recover plaintext
-                  token material.
+                  revokes currently unrevoked tokens in the refresh family. It is irreversible and
+                  does not expose token plaintext.
                 </span>
               </label>
               <AdminComponents.action_bar>
-                <AdminComponents.admin_button type="submit" variant={:danger}>
-                  Revoke token family
+                <AdminComponents.admin_button
+                  type="submit"
+                  variant={:danger}
+                  disabled={family_action_disabled?(@token_detail)}
+                >
+                  {family_revoke_button_label(@token_detail)}
                 </AdminComponents.admin_button>
               </AdminComponents.action_bar>
             </form>
@@ -289,6 +358,158 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   end
 
   defp parse_id(_value), do: nil
+
+  defp already_revoked_copy, do: @already_revoked_copy
+  defp expired_copy, do: @expired_copy
+  defp no_family_copy, do: @no_family_copy
+
+  defp token_revoked?(token_detail),
+    do: match?(%DateTime{}, token_detail.token.revoked_at)
+
+  defp token_expired?(token_detail) do
+    case token_detail.token.expires_at do
+      %DateTime{} = expires_at -> DateTime.compare(expires_at, DateTime.utc_now()) != :gt
+      _other -> false
+    end
+  end
+
+  defp token_reuse_detected?(token_detail),
+    do: match?(%DateTime{}, token_detail.token.reuse_detected_at)
+
+  defp refresh_family_present?(token_detail),
+    do: is_binary(token_detail.token.family_id) and token_detail.token.family_id != ""
+
+  defp token_action_disabled?(token_detail),
+    do: token_revoked?(token_detail) or token_expired?(token_detail)
+
+  defp family_action_disabled?(token_detail),
+    do: not refresh_family_present?(token_detail) or family_already_closed?(token_detail)
+
+  defp family_already_closed?(token_detail),
+    do: refresh_family_present?(token_detail) and family_unrevoked_count(token_detail) == 0
+
+  defp family_unrevoked_count(token_detail) do
+    token_detail.family_tokens
+    |> length()
+    |> Kernel.-(token_detail.family_revoked_count)
+    |> max(0)
+  end
+
+  defp token_health_summary(token_detail) do
+    cond do
+      token_revoked?(token_detail) ->
+        summary("Revoked", @already_revoked_copy, :danger)
+
+      token_expired?(token_detail) ->
+        summary("Expired", @expired_copy, :warning)
+
+      token_reuse_detected?(token_detail) ->
+        summary(
+          "Reuse detected",
+          "Reuse evidence is present; review family-wide revocation before metadata.",
+          :danger
+        )
+
+      true ->
+        summary("Active", "Token is not revoked or expired.", :success)
+    end
+  end
+
+  defp family_lineage_summary(token_detail) do
+    cond do
+      not refresh_family_present?(token_detail) ->
+        summary("No refresh family", @no_family_copy, :warning)
+
+      token_detail.family_status == :reuse_detected ->
+        summary(
+          "Reuse evidence in family",
+          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
+          :danger
+        )
+
+      family_already_closed?(token_detail) ->
+        summary(
+          "Family closed",
+          "No currently unrevoked tokens remain in the refresh family.",
+          :warning
+        )
+
+      true ->
+        summary(
+          "Family present",
+          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
+          :info
+        )
+    end
+  end
+
+  defp reuse_pressure_summary(token_detail) do
+    if token_reuse_detected?(token_detail) or
+         match?(%DateTime{}, token_detail.family_reuse_detected_at) do
+      summary(
+        "Reuse pressure present",
+        "Reuse evidence means family-wide revocation is the safest available token action.",
+        :danger
+      )
+    else
+      summary("No reuse evidence", "No reuse signal is recorded for this token family.", :success)
+    end
+  end
+
+  defp token_detail_smallest_safe_action(token_detail) do
+    cond do
+      token_revoked?(token_detail) ->
+        summary("No token action", @already_revoked_copy, :warning)
+
+      token_expired?(token_detail) ->
+        summary("No token action", @expired_copy, :warning)
+
+      not refresh_family_present?(token_detail) ->
+        summary(
+          "Revoke token only",
+          "Family-wide revocation is unavailable; only this token can be revoked if still active.",
+          :info
+        )
+
+      token_reuse_detected?(token_detail) or token_detail.family_status == :reuse_detected ->
+        summary(
+          "Revoke token family",
+          "Reuse evidence means family-wide revocation is the safest available token action.",
+          :danger
+        )
+
+      true ->
+        summary(
+          "Revoke token if needed",
+          "Start with this token before using family-wide revocation.",
+          :info
+        )
+    end
+  end
+
+  defp token_revoke_errors(nil), do: []
+  defp token_revoke_errors(error), do: [error]
+
+  defp family_revoke_errors(nil), do: []
+  defp family_revoke_errors(error), do: [error]
+
+  defp token_revoke_button_label(token_detail) do
+    cond do
+      token_revoked?(token_detail) -> "Token already revoked"
+      token_expired?(token_detail) -> "Token expired"
+      true -> "Revoke token"
+    end
+  end
+
+  defp family_revoke_button_label(token_detail) do
+    cond do
+      not refresh_family_present?(token_detail) -> "Family-wide revocation unavailable"
+      family_already_closed?(token_detail) -> "Token family already revoked"
+      true -> "Revoke token family"
+    end
+  end
+
+  defp summary(value, detail, tone), do: %{value: value, detail: detail, tone: tone}
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
 end
