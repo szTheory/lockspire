@@ -76,6 +76,16 @@ Route groups remain concrete entries inside those journeys:
 - **Support** covers Consents and Tokens.
 - **Operations** covers Device Auth, Interactions, and Logouts.
 
+## Page-first scorecards and judgment guardrails
+
+Use `.planning/phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md` as the canonical Phase 121 route scorecard artifact before changing admin pages. It is maintainer evidence for page-first route judgment, sourced from `Lockspire.Web.AdminRouter` plus the single `/admin/clients/:client_id/edit?workflow=logout-propagation` query workflow. Screenshot filenames, host mount prefixes, browser notes, and markdown-only route lists are not route truth.
+
+Before page edits, review the scorecard fields in order: persona, JTBD, top task, entry point, primary decision, primary action, earned-place check, empty/error/long-data states, mobile/theme/focus/motion risk, redaction/security check, unsupported-action check, follow-up route, component/group fit, evidence class, public support promise, and runtime/package impact. Treat the fields as guardrails for what earns a place on the page, what action is backed by real Lockspire behavior, and whether follow-up routes stay inside the known admin route set.
+
+Scorecards and any lab/stress/browser/judge notes are maintainer evidence only. They do not create supported admin routes, public APIs, host extension points, theming interfaces, browser-testing products, Hex package surface, or public support claims. Do not preserve secrets, copy-once values, screenshots with plaintext credentials, traces, reports, cookies, token-looking strings, auth codes, private keys, verifier material, user codes, or production-looking identifiers as evidence; prefer deterministic Mix guardrails and redaction-safe fixture notes.
+
+The same host seam applies to scorecard work: Lockspire owns protocol and operator state after the request reaches the host-guarded admin router, while the host owns staff sessions, MFA, role checks, tenant policy, outer layouts, branding, product-specific authorization, IP policy, and audit framing. Keep this guide subordinate to `docs/supported-surface.md`; scorecards explain maintainer judgment workflow and do not raise the public support ceiling.
+
 ## DCR onboarding and DCR policy
 
 Keep DCR onboarding separate from DCR policy:
