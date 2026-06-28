@@ -1,8 +1,116 @@
 # Lockspire Roadmap
 
-## Current Milestone
+## Current Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
-No active milestone. Start the next scoped milestone with `$gsd-new-milestone` when there is enough adopter, release, or support evidence to leave the sustaining GA release train.
+**Goal:** Make the admin/operator UI feel deliberately composed page by page, with judgment-level IA, component-group, copy, interaction, and responsive polish that advances from v1.31 without regressions.
+
+**Milestone posture:** This is an admin/operator UI and design-system quality milestone. It preserves OAuth/OIDC protocol behavior, storage schemas, host-owned operator authentication, the embedded-library shape, the supported admin router boundary, and the maintainer-only lab/proof boundary.
+
+**Research anchors:** Phoenix function components with attrs/slots remain the default shared UI shape; LiveView JS remains the preferred browser-behavior escape hatch before custom hooks; WAI-ARIA APG patterns guide accessible custom interactions; GOV.UK-style user-need and top-task thinking informs page IA; Emil Kowalski-style motion guidance informs restrained, origin-aware, reduced-motion-safe micro-interactions.
+
+## Phase Plan
+
+| Phase | Name | Requirements | Focus |
+|-------|------|--------------|-------|
+| 121 | Route Scorecards & Judgment Contract | IA-01, IA-02, IA-03 | Baseline and scorecards |
+| 122 | Support Investigation Flow Polish | SUPPORT-01, SUPPORT-02, SUPPORT-03 | Tokens and consents |
+| 123 | Operate Queue Flow Polish | OPERATE-01, OPERATE-02, OPERATE-03 | Interactions, device auth, logouts |
+| 124 | Configure Onboarding Propagation Pass | CONFIG-01, CONFIG-02, CONFIG-03 | Clients, DCR/IAT, keys, policies |
+| 125 | Browser Proof, Docs & Adversarial Ratchet | PROOF-01, PROOF-02, PROOF-03 | Fixtures, proof, docs |
+
+## Phase Details
+
+### Phase 121: Route Scorecards & Judgment Contract
+
+**Goal:** Lock the page-first judgment rubric and scorecard inventory before changing more UI, so every later page edit has a clear operator job and regression target.
+
+**Requirements:** IA-01, IA-02, IA-03
+
+**Success criteria:**
+
+1. Every `Lockspire.Web.AdminRouter` route plus the documented logout-propagation query workflow has a scorecard with persona, JTBD, top task, primary decision, earned-place check, empty/error/long-data states, mobile/theme/focus risk, and follow-up route.
+2. The judgment rubric explicitly asks whether each page, section, action, and component group is redundant, least-surprising, user-flow-oriented, visually intentional, and on-brand.
+3. Source/rendered guardrails fail on missing scorecards, unsupported actions, generic CTA drift, unearned page sections, or public lab/theming/storybook creep.
+4. Existing uncommitted ad hoc admin coherence work is classified as baseline candidate work without mixing unrelated Docker/adoption-demo changes into v1.32 planning truth.
+
+**Implementation notes:**
+
+- Extend the v1.31 route/component/lab inventories rather than replacing them.
+- Keep scorecards deterministic markdown/source artifacts; do not require runtime LLM review.
+- Do not run destructive `.planning/phases` cleanup while legacy tracked phase directories remain active in the worktree.
+
+### Phase 122: Support Investigation Flow Polish
+
+**Goal:** Make token and consent investigation pages read like calm support workflows instead of metadata inventories.
+
+**Requirements:** SUPPORT-01, SUPPORT-02, SUPPORT-03
+
+**Success criteria:**
+
+1. Token index and detail pages make selected filters, token health, family lineage, reuse pressure, and smallest safe action scannable under long and dense data.
+2. Consent index and detail pages make selected filters, grant status, scope context, client/account pivots, and revocation consequences scannable under long and dense data.
+3. Revocation panels use consistent confirmation forms, consequence copy, disabled/already-revoked states, and accessible errors.
+4. Support pages avoid plaintext token/secret exposure, generic failure copy, redundant metadata dumps, and page-level overflow at narrow widths.
+
+**Implementation notes:**
+
+- Prefer shared `decision_summary`, `entity_header`, `dense_resource_row`, `long_value`, `confirmation_panel`, and form primitives when they reduce page complexity.
+- Keep domain behavior inside existing Admin APIs; this phase should not add token or consent capabilities.
+
+### Phase 123: Operate Queue Flow Polish
+
+**Goal:** Make operation queues clear under stress while truthfully preserving their read-only support boundary.
+
+**Requirements:** OPERATE-01, OPERATE-02, OPERATE-03
+
+**Success criteria:**
+
+1. Interactions, device authorizations, and logout deliveries expose status pressure, channel or prompt, client, subject, age, expiry or last activity, attempts, endpoint, and support note where applicable.
+2. Empty, dense, incident, expired, retryable, discarded, skipped, rendered, completed, and long-value states remain understandable without tables squashing content.
+3. No retry, discard, approve, deny, logout-now, or worker-control UI appears unless backed by an existing domain API and explicitly in scope.
+4. Light, dark, system, reduced-motion, keyboard focus, and mobile layouts are covered by rendered/source proof.
+
+**Implementation notes:**
+
+- Treat logout deliveries as the strongest existing pattern, then align interactions and device authorizations where it improves scanability.
+- Preserve operation queues as support-review surfaces, not command centers.
+
+### Phase 124: Configure Onboarding Propagation Pass
+
+**Goal:** Propagate the strongest v1.32 page patterns into Configure flows without broadening public APIs or rebuilding the admin shell.
+
+**Requirements:** CONFIG-01, CONFIG-02, CONFIG-03
+
+**Success criteria:**
+
+1. Clients, DCR onboarding, IATs, keys, and policy pages share a deliberate hierarchy for current posture, next safe action, support pivot, and risky action.
+2. DCR/IAT copy-once and partner handoff flows clearly separate policy posture, intake token creation, self-registered client review, and RAT rotation.
+3. Dangerous Configure actions use confirmation forms, consequence copy, and action grouping consistent with token, consent, key, and client lifecycle behavior.
+4. Configure pages remain on-brand, mobile-safe, accessible, and bounded to existing LiveView/Admin API behavior.
+
+**Implementation notes:**
+
+- Promote only patterns proven by Support/Operate work; avoid speculative new components.
+- Keep the host-owned boundary explicit: Lockspire does not own staff auth, tenant policy, host layout, or developer portal UX.
+
+### Phase 125: Browser Proof, Docs & Adversarial Ratchet
+
+**Goal:** Prove the page-first polish is repeatable, accessible, responsive, and bounded.
+
+**Requirements:** PROOF-01, PROOF-02, PROOF-03
+
+**Success criteria:**
+
+1. Redaction-safe fixtures cover ugly Support, Operate, and Configure states including empty, one item, many items, long IDs, long URLs, dense data, missing fields, incidents, disabled, expired, revoked, reuse-detected, copy-once, stale/read-only, theme modes, reduced motion, and mobile widths.
+2. Automated guardrails cover scorecard drift, unsupported action drift, redaction drift, generic CTA drift, focus/label references, duplicate IDs, long-value handling, theme token usage, and no-page-overflow claims for changed pages.
+3. Browser/manual evidence covers representative v1.32 routes at 320px, 390px, 768px, 1024px, and 1440px across light, dark, system, reduced motion, keyboard focus, empty, dense, and long-data states.
+4. Operator docs explain the page-first improvement loop, scorecards, proof boundary, and maintainer-only lab/judge/browser evidence without creating public support claims.
+5. Final adversarial review checks for aesthetic overfit, inaccessible custom behavior, generic admin-template drift, host integration weight, screenshot-only quality, and accidental support-surface expansion.
+
+**Implementation notes:**
+
+- Browser tooling remains maintainer proof unless separately approved and documented as non-runtime, non-Hex surface.
+- AI/persona judge prompts may be documented as optional maintainer evidence, but CI and release gates stay deterministic.
 
 ## Shipped Milestones
 
@@ -19,4 +127,4 @@ No active milestone. Start the next scoped milestone with `$gsd-new-milestone` w
 
 ## Archives
 
-Full milestone details live in `.planning/milestones/`. Fresh requirements for the next milestone should be created by `$gsd-new-milestone`.
+Full shipped milestone details live in `.planning/milestones/`.

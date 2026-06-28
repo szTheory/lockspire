@@ -1,19 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.31
-milestone_name: Admin Design-System Stress Test
-current_phase: null
-status: Awaiting next milestone
-stopped_at: Completed 120-03-PLAN.md
-last_updated: "2026-06-26T17:22:13.083Z"
-last_activity: 2026-06-26
-last_activity_desc: Milestone v1.31 completed and archived
+milestone: v1.32
+milestone_name: Admin Page IA & Interaction Model Polish
+status: planning
+last_updated: "2026-06-28T16:07:10.182Z"
+last_activity: 2026-06-28
 progress:
   total_phases: 5
-  completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Awaiting next milestone; default posture is the sustaining GA release train.
+**Current focus:** v1.32 Admin Page IA & Interaction Model Polish; start with Phase 121 route scorecards and judgment contracts, then polish Support + Operate pages before Configure propagation.
 
 ## Current Position
 
-Phase: Milestone v1.31 complete
+Phase: 121 — Route Scorecards & Judgment Contract
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-26 — Milestone v1.31 completed and archived
+Status: Ready for phase planning
+Last activity: 2026-06-28 — Milestone v1.32 roadmap created
 
 ## Most Recent Release
 
@@ -61,6 +58,16 @@ Last activity: 2026-06-26 — Milestone v1.31 completed and archived
 | 118 | Primitive & Meta-Component Upgrade | 3 | Shared components |
 | 119 | Weak-Page Application & IA/Copy Pass | 5 | Page/group polish |
 | 120 | Browser Proof, Docs & Regression Audit | 3 | Verification |
+
+## v1.32 Phase Plan
+
+| Phase | Name | REQs | Focus |
+|-------|------|------|-------|
+| 121 | Route Scorecards & Judgment Contract | 3 | Baseline and scorecards |
+| 122 | Support Investigation Flow Polish | 3 | Tokens and consents |
+| 123 | Operate Queue Flow Polish | 3 | Interactions, device auth, logouts |
+| 124 | Configure Onboarding Propagation Pass | 3 | Clients, DCR/IAT, keys, policies |
+| 125 | Browser Proof, Docs & Adversarial Ratchet | 3 | Fixtures, proof, docs |
 
 ## Decisions
 
@@ -101,6 +108,13 @@ Last activity: 2026-06-26 — Milestone v1.31 completed and archived
 - [Phase 120]: Operator admin docs explain the v1.31 design-system workflow as maintainer/operator guidance, not a public component API. — Preserves the embedded-library and public-support boundary while giving maintainers the proof workflow they need.
 - [Phase 120]: The component lab and stress surface remain internal maintainer proof, not supported admin routes or support-surface truth. — Prevents lab/test infrastructure from becoming runtime behavior, host extension points, or public support claims.
 - [Phase 120]: Final proof closes through deterministic Mix guardrails plus explicit manual evidence gaps, without adopting browser package tooling. — Keeps browser tooling weight out of Hex/runtime/package contents while making the remaining manual evidence path explicit.
+- [2026-06-27]: The next-roadmap admin coherence pass should stay page-first and narrow: client detail lifecycle safety, DCR policy decision summary, logout queue scanability, and proven shared primitives. — Preserves v1.31's design-system investment without starting a broad redesign.
+- [2026-06-27]: Client enable/disable now follows the same explicit confirmation-form pattern as other dangerous admin actions. — Avoids one-click lifecycle mutation while preserving existing admin event semantics and domain APIs.
+- [2026-06-27]: `decision_summary` is an internal admin primitive for compact policy/operator posture summaries, not a public theming, storybook, or extension surface. — Keeps admin UI polish inside the embedded-library boundary.
+- [2026-06-27]: Logout delivery rows remain read-only support truth with no retry/discard/worker controls unless a backed domain API exists. — Maintains the no-fake-controls operator boundary.
+- [2026-06-28]: v1.32 is a page-first admin IA and interaction-model polish milestone, not another foundation rebuild. — Use route scorecards and Support/Operate page evidence before propagating patterns into Configure flows.
+- [2026-06-28]: v1.32 persona/JTBD judge artifacts stay deterministic and maintainer-only. — Optional AI reviews may inform taste, but CI and release gates should rely on source/rendered guardrails, fixtures, browser evidence, and human review.
+- [2026-06-28]: v1.32 preserves the v1.31 boundary: Phoenix function components, BEM/token CSS, internal lab, no public Storybook/design-system route, and no public theming API. — Prevents design-system polish from becoming new supported product surface.
 
 ## Blockers/Concerns
 
@@ -115,11 +129,11 @@ Last activity: 2026-06-26 — Milestone v1.31 completed and archived
 
 ## Session Continuity
 
-**Last session:** 2026-06-26T14:20:27.583Z
+**Last session:** 2026-06-28T16:07:10Z
 
-**Next action:** Start the next milestone with `$gsd-new-milestone` when ready.
+**Next action:** Start Phase 121 with `/gsd-plan-phase 121`.
 **Resume file:** None
-**Stopped at:** Completed 120-03-PLAN.md
+**Stopped at:** v1.32 milestone initialized and ready for Phase 121 planning
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -155,4 +169,4 @@ Last activity: 2026-06-26 — Milestone v1.31 completed and archived
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 121 with /gsd-plan-phase 121
