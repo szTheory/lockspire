@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-status: verifying
-stopped_at: Completed 121-03-PLAN.md
-last_updated: "2026-06-28T17:50:17.273Z"
+status: ready_to_plan
+stopped_at: Phase 121 complete (3/3) - ready to discuss Phase 122
+last_updated: 2026-06-28T18:54:00.737Z
 last_activity: 2026-06-28
 progress:
   total_phases: 5
@@ -22,13 +22,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 121 — route-scorecards-judgment-contract
+**Current focus:** Phase 122 - support investigation flow polish
 
 ## Current Position
 
-Phase: 121 (route-scorecards-judgment-contract) — READY FOR VERIFICATION
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 122
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-28
 
 ## Most Recent Release
