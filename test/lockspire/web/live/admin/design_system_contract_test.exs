@@ -198,6 +198,58 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     "AdminComponents.long_value",
     "AdminComponents.empty_state"
   ]
+  @phase_123_sensitive_render_patterns %{
+    "/interactions" => [
+      "interaction.authorization_code",
+      "interaction.request_object",
+      "interaction.session_token",
+      "interaction.cookie",
+      "interaction.nonce",
+      "interaction.state",
+      "interaction.code_challenge",
+      "interaction.code_verifier",
+      "interaction.raw_params",
+      "interaction.return_value"
+    ],
+    "/device_authorizations" => [
+      "auth.device_code",
+      "auth.user_code",
+      "auth.device_code_hash",
+      "auth.user_code_hash",
+      "value={auth.verification_handle}",
+      "auth.authorization_code",
+      "auth.token",
+      "auth.code_challenge",
+      "auth.code_verifier",
+      "auth.state",
+      "auth.nonce",
+      "auth.raw_params",
+      "auth.updated_at"
+    ],
+    "/logouts" => [
+      "delivery.logout_token_jti",
+      "delivery.oban",
+      "delivery.job_id",
+      "delivery.raw_response",
+      "delivery.response_body",
+      "delivery.cookie",
+      "delivery.endpoint_secret",
+      "delivery.sql",
+      "delivery.session_data"
+    ]
+  }
+  @phase_123_public_boundary_forbidden [
+    "component-lab",
+    "component_lab",
+    "browser-proof",
+    "browser_proof",
+    "storybook",
+    "phoenixstorybook",
+    "design-system route",
+    "design_system route",
+    "public theming api",
+    "theme_lab"
+  ]
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -1442,6 +1494,104 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
         end
       end
     end
+
+    test "operate layout CSS preserves wrapping mobile focus theme and reduced motion contracts" do
+      css = File.read!(@admin_css_path)
+
+      assert Regex.match?(
+               ~r/\.lockspire-admin-long-value\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*word-break:\s*break-word;/s,
+               css
+             )
+
+      assert Regex.match?(
+               ~r/\.lockspire-admin-lifecycle-row__meta,\s*\.lockspire-admin-dense-resource-row__meta\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;/s,
+               css
+             )
+
+      assert Regex.match?(
+               ~r/\.lockspire-admin-dense-resource-row__note\s*\{[^}]*flex:\s*1 1 100%;/s,
+               css
+             )
+
+      assert Regex.match?(
+               ~r/@media \(max-width: 720px\).*?\.lockspire-admin-dense-resource-row,[^{]*\{[^}]*flex-direction:\s*column;/s,
+               css
+             )
+
+      assert css =~ ":focus-visible"
+      assert css =~ "--ls-focus-ring-color"
+      assert css =~ "outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color);"
+      assert css =~ ":root[data-theme=\"light\"]"
+      assert css =~ ":root[data-theme=\"dark\"]"
+      assert css =~ "@media (prefers-color-scheme: dark)"
+      assert css =~ "--ls-status-info-bg-dark"
+      assert css =~ "@media (prefers-reduced-motion: reduce)"
+      assert css =~ "transition-duration: 0.01ms !important"
+      assert css =~ "transform: none;"
+    end
+
+    test "operate row components keep visible status text and wrapped long values" do
+      components = File.read!(@admin_components_path)
+
+      dense_row = component_declaration_block(components, "dense_resource_row")
+      status_badge = component_declaration_block(components, "status_badge")
+      long_value = component_declaration_block(components, "long_value")
+
+      for slot <- ["slot(:meta)", "slot(:status)", "slot(:actions)"] do
+        assert dense_row =~ slot
+      end
+
+      assert dense_row =~ "lockspire-admin-dense-resource-row__main"
+      assert dense_row =~ "lockspire-admin-dense-resource-row__meta"
+      assert dense_row =~ "render_slot(@status)"
+      assert status_badge =~ "{@label}"
+      assert status_badge =~ "data-status-tone"
+      assert status_badge =~ "title={@title_text}"
+      assert long_value =~ "{@value}"
+      assert long_value =~ "Redacted"
+      assert long_value =~ "lockspire-admin-redacted-value"
+      assert components =~ "defp status_metadata(:approved, :device_authorization)"
+      assert components =~ "defp status_label(:pending_login)"
+      assert components =~ "defp status_label(:pending_consent)"
+    end
+
+    test "operate sources avoid raw protocol backend and worker field rendering" do
+      for {route, forbidden_patterns} <- @phase_123_sensitive_render_patterns do
+        source = phase_123_source_for(route)
+
+        for forbidden <- forbidden_patterns do
+          refute source =~ forbidden
+        end
+      end
+
+      assert phase_123_source_for("/device_authorizations") =~
+               "Redaction.handle(:device_authorization"
+
+      assert phase_123_source_for("/logouts") =~ "delivery_failure_context"
+      assert phase_123_source_for("/logouts") =~ "safe_failure_detail"
+      refute phase_123_operate_source_blob() =~ "operate_queue_row"
+      refute phase_123_operate_source_blob() =~ "operate_queue_page"
+    end
+
+    test "internal proof surfaces stay out of public routes docs and package inputs" do
+      public_boundary =
+        [
+          File.read!(@admin_router_path),
+          File.read!(@supported_surface_doc_path),
+          File.read!(@mix_path)
+        ]
+        |> Enum.join("\n")
+        |> String.downcase()
+
+      for forbidden <- @phase_123_public_boundary_forbidden do
+        refute public_boundary =~ forbidden
+      end
+
+      assert Path.expand("../../../../support/lockspire/web/admin_lab/fixtures.ex", __DIR__) =~
+               "/test/support/lockspire/web/admin_lab/fixtures.ex"
+
+      refute File.read!(@mix_path) =~ ~r/files:\s+~w\([^)]*test\/support/
+    end
   end
 
   test "phase 110 demo seeds cover required proof states with artificial data" do
@@ -1880,6 +2030,12 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp phase_123_source_for("/logouts"),
     do: File.read!(Map.fetch!(@phase_123_operate_sources, :logouts))
+
+  defp phase_123_operate_source_blob do
+    @phase_123_operate_sources
+    |> Map.values()
+    |> Enum.map_join("\n", &File.read!/1)
+  end
 
   defp phase_121_scorecards_markdown do
     File.read!(@phase_121_scorecards_path)
