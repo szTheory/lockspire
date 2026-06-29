@@ -142,6 +142,62 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                        @phase_119_dcr_sources ++
                        @phase_119_iat_sources ++
                        @phase_119_support_sources ++ @phase_119_operate_sources
+  @phase_123_operate_sources %{
+    interactions:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/interactions_live/index.ex", __DIR__),
+    device_authorizations:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
+        __DIR__
+      ),
+    logouts:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/logout_deliveries_live/index.ex",
+        __DIR__
+      )
+  }
+  @phase_123_route_contracts %{
+    "/interactions" => %{
+      module: Lockspire.Web.Live.Admin.InteractionsLive.Index,
+      title: "Authorization interaction queue",
+      pane: "Review interactions",
+      read_path: "Repository.list_interactions"
+    },
+    "/device_authorizations" => %{
+      module: Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index,
+      title: "Device authorization queue",
+      pane: "Review device authorizations",
+      read_path: "Admin.list_device_authorizations"
+    },
+    "/logouts" => %{
+      module: Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index,
+      title: "Logout propagation queue",
+      pane: "Review logout deliveries",
+      read_path: "Repository.list_all_logout_deliveries"
+    }
+  }
+  @phase_123_unsupported_command_labels [
+    "Retry now",
+    "Discard now",
+    "Approve now",
+    "Deny now",
+    "Logout now",
+    "Requeue",
+    "Run worker",
+    "Worker control",
+    "Pause worker",
+    "Resume worker"
+  ]
+  @phase_123_required_primitives [
+    "AdminComponents.page_hero",
+    "AdminComponents.pane",
+    "AdminComponents.metric_grid",
+    "AdminComponents.resource_list",
+    "AdminComponents.dense_resource_row",
+    "AdminComponents.status_badge",
+    "AdminComponents.long_value",
+    "AdminComponents.empty_state"
+  ]
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -1300,6 +1356,94 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  describe "Phase 123 operate queue contracts" do
+    test "operate routes stay bounded to existing read-only queue pages" do
+      router_source = File.read!(@admin_router_path)
+
+      routes =
+        Lockspire.Web.AdminRouter
+        |> Phoenix.Router.routes()
+        |> Enum.map(&{&1.path, &1.plug, &1.plug_opts})
+
+      route_paths = Enum.map(routes, fn {path, _plug, _plug_opts} -> path end)
+
+      for {path, contract} <- @phase_123_route_contracts do
+        assert {path, contract.module, :index} in routes
+      end
+
+      operate_paths =
+        route_paths
+        |> Enum.filter(fn path ->
+          path in Map.keys(@phase_123_route_contracts) or
+            String.starts_with?(path, "/operate") or
+            String.starts_with?(path, "/interactions/") or
+            String.starts_with?(path, "/device_authorizations/") or
+            String.starts_with?(path, "/logouts/")
+        end)
+
+      assert Enum.sort(operate_paths) == Enum.sort(Map.keys(@phase_123_route_contracts))
+
+      for forbidden <- [
+            "component_lab",
+            "component-lab",
+            "browser_proof",
+            "browser-proof",
+            "storybook",
+            "Storybook",
+            "design_system",
+            "design-system",
+            "theme_lab",
+            "theming"
+          ] do
+        refute router_source =~ forbidden
+      end
+    end
+
+    test "Lockspire.Admin exposes no Operate queue mutation delegates" do
+      admin_source = File.read!(Path.expand("../../../../../lib/lockspire/admin.ex", __DIR__))
+
+      for forbidden_pattern <- [
+            ~r/defdelegate\s+\w*(?:retry|discard|approve|deny|logout_now|requeue|pause|resume|worker)\w*_(?:interaction|device_authorization|logout_delivery|logout)/,
+            ~r/defdelegate\s+(?:create|update|put|delete|retry|discard|approve|deny|logout_now|requeue|pause|resume|worker)\w*_(?:interaction|device_authorization|logout_delivery)/,
+            ~r/defdelegate\s+(?:interaction|device_authorization|logout_delivery)\w*_(?:create|update|put|delete|retry|discard|approve|deny|logout_now|requeue|pause|resume|worker)\w*/
+          ] do
+        refute Regex.match?(forbidden_pattern, admin_source)
+      end
+
+      assert admin_source =~ "defdelegate list_device_authorizations"
+      refute admin_source =~ "defdelegate list_interactions"
+      refute admin_source =~ "defdelegate list_logout_deliveries"
+    end
+
+    test "operate LiveViews stay read-only non-table source surfaces with required primitives" do
+      for {route, contract} <- @phase_123_route_contracts do
+        source = phase_123_source_for(route)
+
+        assert source =~ "Operate"
+        assert source =~ contract.title
+        assert source =~ contract.pane
+        assert source =~ contract.read_path
+        assert source =~ "Read-only"
+        assert source =~ "redacted_handle"
+
+        for primitive <- @phase_123_required_primitives do
+          assert source =~ primitive
+        end
+
+        refute source =~ "def handle_event"
+        refute source =~ "phx-click"
+        refute source =~ "phx-submit"
+        refute source =~ "<table"
+        refute source =~ "responsive_table"
+        refute source =~ "lockspire-admin-table-wrap"
+
+        for label <- @phase_123_unsupported_command_labels do
+          refute Regex.match?(~r/\b#{Regex.escape(label)}\b/i, source)
+        end
+      end
+    end
+  end
+
   test "phase 110 demo seeds cover required proof states with artificial data" do
     seeds = File.read!(@adoption_demo_seeds_path)
 
@@ -1727,6 +1871,15 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       refute supported_surface =~ forbidden
     end
   end
+
+  defp phase_123_source_for("/interactions"),
+    do: File.read!(Map.fetch!(@phase_123_operate_sources, :interactions))
+
+  defp phase_123_source_for("/device_authorizations"),
+    do: File.read!(Map.fetch!(@phase_123_operate_sources, :device_authorizations))
+
+  defp phase_123_source_for("/logouts"),
+    do: File.read!(Map.fetch!(@phase_123_operate_sources, :logouts))
 
   defp phase_121_scorecards_markdown do
     File.read!(@phase_121_scorecards_path)
