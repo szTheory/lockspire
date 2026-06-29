@@ -387,20 +387,17 @@ field :secret_value, :string, redact: true, load_in_query: false
 |---|-------|---------|---------------|
 | A1 | Exact relative age strings can make tests brittle unless helpers accept fixed time or assertions stay category-level. [ASSUMED] | Common Pitfalls | Planner may over-specify wall-clock assertions and create flaky tests. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 123 introduce an internal read-model module or keep private LiveView helpers?**  
    - What we know: D-08 allows queue-specific internal read models or tightly equivalent private helpers. [VERIFIED: 123-CONTEXT.md]  
-   - What's unclear: The implementation may decide duplication is tolerable after writing the three row-shaping helpers. [VERIFIED: 123-CONTEXT.md]  
-   - Recommendation: Start with page-local private helpers; promote only if duplication becomes error-prone across all three pages. [VERIFIED: 123-CONTEXT.md]
+   - RESOLVED: The accepted plan set defaults to page-local private helpers in Plans 123-01, 123-02, and 123-03. A shared helper/read-model module is not planned by default; promotion is allowed only if route-specific duplication becomes error-prone and the Plan 123-04 source contract proves the D-06 attrs/slots boundary. [VERIFIED: 123-CONTEXT.md] [VERIFIED: 123-01-PLAN.md] [VERIFIED: 123-02-PLAN.md] [VERIFIED: 123-03-PLAN.md] [VERIFIED: 123-04-PLAN.md]
 2. **Should logout rows show HTTP status or failure class?**  
    - What we know: D-09 allows HTTP status or failure class when useful, and `LogoutDelivery` carries `http_status` and `failure_reason`. [VERIFIED: 123-CONTEXT.md] [VERIFIED: codebase]  
-   - What's unclear: Current UI does not show either field, and raw response bodies remain forbidden. [VERIFIED: codebase] [VERIFIED: 123-CONTEXT.md]  
-   - Recommendation: Add concise failure class/status only when tests prove retryable/incident state is clearer, and never render raw response content. [VERIFIED: 123-CONTEXT.md]
+   - RESOLVED: Plan 123-03 permits optional concise, sanitized HTTP status or failure-class context only when it materially clarifies retryable or incident logout delivery state. Raw response bodies, cookies, endpoint secrets, worker internals, SQL details, logout token JTI, and Oban job IDs remain forbidden. [VERIFIED: 123-CONTEXT.md] [VERIFIED: 123-03-PLAN.md]
 3. **Is browser/manual evidence needed in Phase 123 or can it defer to Phase 125?**  
    - What we know: Phase 123 success criteria mention rendered/source proof, and D-20 says browser/axe/manual evidence is supplemental when CSS/layout changes are material. [VERIFIED: ROADMAP.md] [VERIFIED: 123-CONTEXT.md]  
-   - What's unclear: Whether implementation will touch CSS enough to require a browser note. [VERIFIED: codebase]  
-   - Recommendation: Plan deterministic tests as required; add a maintainer-only browser/manual checkpoint only if CSS/layout changes are non-trivial. [VERIFIED: 123-CONTEXT.md]
+   - RESOLVED: The accepted plan set uses deterministic ExUnit/LiveView/source proof as the required evidence path. Browser, axe, screenshot, or manual evidence is supplemental and maintainer-only, and should be recorded only if CSS/layout changes are material. [VERIFIED: 123-CONTEXT.md] [VERIFIED: 123-04-PLAN.md] [VERIFIED: 123-05-PLAN.md]
 
 ## Environment Availability
 
