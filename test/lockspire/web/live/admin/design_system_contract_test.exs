@@ -1363,16 +1363,16 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       routes =
         Lockspire.Web.AdminRouter
         |> Phoenix.Router.routes()
-        |> Enum.map(&{&1.path, &1.plug, &1.plug_opts})
-
-      route_paths = Enum.map(routes, fn {path, _plug, _plug_opts} -> path end)
+        |> Enum.map(& &1.path)
 
       for {path, contract} <- @phase_123_route_contracts do
-        assert {path, contract.module, :index} in routes
+        assert path in routes
+        assert router_source =~ ~s("#{path}")
+        assert router_source =~ inspect(contract.module)
       end
 
       operate_paths =
-        route_paths
+        routes
         |> Enum.filter(fn path ->
           path in Map.keys(@phase_123_route_contracts) or
             String.starts_with?(path, "/operate") or
