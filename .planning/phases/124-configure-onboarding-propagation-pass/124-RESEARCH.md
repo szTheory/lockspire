@@ -416,22 +416,22 @@ This is the clearest CONFIG-03 refactor candidate because Phase 124 says Configu
 |---|-------|---------|---------------|
 | A1 | Research validity is estimated at 30 days because this is a repo-local UI planning artifact and no external package/API decision is being made. [ASSUMED] | Metadata | Planner may need to re-run local grep if Phase 124 starts after more admin UI changes land. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How should planner handle existing uncommitted admin diffs?**  
    - What we know: The worktree has uncommitted changes in `admin_css.ex`, `admin_components.ex`, client LiveViews, DCR policy files, and design-system tests. [VERIFIED: git status --short]  
-   - What's unclear: Which dirty changes are user-owned work to preserve versus intended baseline candidates for Phase 124. [VERIFIED: git diff --stat]  
-   - Recommendation: Add a Wave 0 task to inspect diffs for touched files and avoid staging unrelated Docker/demo/hygiene changes. [VERIFIED: user prompt]
+   - Original uncertainty: Which dirty changes are user-owned work to preserve versus intended baseline candidates for Phase 124. [VERIFIED: git diff --stat]  
+   - RESOLVED: Plans 124-01, 124-04, and 124-06 require `git diff -- <file>` inspection before touching dirty Phase 124 files, preserve unrelated/user-owned hunks, and stage only Phase 124 hunks. Plan 124-06-02 now forbids edits outside `test/lockspire/web/live/admin/design_system_component_stress_test.exs`, and Plan 124-06-03 verifies `git status --short`, no schema/package touches, and Phase-124-only staging. [VERIFIED: 124-01-PLAN.md] [VERIFIED: 124-04-PLAN.md] [VERIFIED: 124-06-PLAN.md]
 
 2. **Should PAR/DPoP/security policy pages receive `decision_summary` or lighter hero/pane polish?**  
    - What we know: DCR policy already uses a four-item decision summary; PAR/DPoP/security pages currently use policy nav plus section cards and summary grids. [VERIFIED: codebase grep]  
-   - What's unclear: Whether summaries reduce ambiguity enough on each page to justify added structure. [VERIFIED: 124-CONTEXT.md]  
-   - Recommendation: Plan route-specific decisions: use `decision_summary` where posture plus next safe action is ambiguous; otherwise keep metric/section hierarchy. [VERIFIED: 124-CONTEXT.md]
+   - Original uncertainty: Whether summaries reduce ambiguity enough on each page to justify added structure. [VERIFIED: 124-CONTEXT.md]  
+   - RESOLVED: Plans 124-04 and 124-05 make route-specific policy decisions. DCR keeps the four-item `decision_summary`; PAR, DPoP, and security-profile each receive posture-first `decision_summary` items because global scope, inherited-client impact, strict readiness, and next safe action are the operator decisions those routes must clarify. [VERIFIED: 124-04-PLAN.md] [VERIFIED: 124-05-PLAN.md]
 
 3. **Does Phase 124 need shared component edits?**  
    - What we know: Existing primitives already cover the approved page patterns, but some primitives are dirty in the worktree. [VERIFIED: lib/lockspire/web/components/admin_components.ex] [VERIFIED: git diff --stat]  
-   - What's unclear: Whether Phase 124 can land entirely in route LiveViews/tests without touching shared components/CSS. [VERIFIED: 124-UI-SPEC.md]  
-   - Recommendation: Prefer route-only changes; touch shared components/CSS only if a route cannot meet mobile/accessibility/copy-once/confirmation requirements with existing primitives. [VERIFIED: 124-CONTEXT.md]
+   - Original uncertainty: Whether Phase 124 can land entirely in route LiveViews/tests without touching shared components/CSS. [VERIFIED: 124-UI-SPEC.md]  
+   - RESOLVED: Shared runtime component/CSS edits are not part of the Phase 124 plan set. Plans use existing AdminComponents and `lockspire-admin-*` CSS; Plan 124-06-02 treats `admin_components.ex`, `admin_css.ex`, and AdminLab fixtures as read-only inspection inputs, updates only the stress test, and stops for replanning if a shared runtime or fixture edit becomes necessary. [VERIFIED: 124-06-PLAN.md]
 
 ## Environment Availability
 
