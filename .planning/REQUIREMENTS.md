@@ -19,9 +19,9 @@
 
 ### Operate Queues
 
-- [ ] **OPERATE-01**: Operator can scan interactions, device authorizations, and logout delivery queues by status pressure, channel/prompt, client, subject, age, expiry or last activity, and durable non-secret identifiers without table-like overload.
-- [ ] **OPERATE-02**: Operate queue pages truthfully remain read-only unless a backed domain API exists; no retry, discard, approve, deny, or worker-control UI is introduced by polish alone.
-- [ ] **OPERATE-03**: Operate queue pages remain usable at mobile widths, in light/dark/system themes, with reduced motion, keyboard focus, empty states, dense states, long URLs, and incident states.
+- [x] **OPERATE-01**: Operator can scan interactions, device authorizations, and logout delivery queues by status pressure, channel/prompt, client, subject, age, expiry or last activity, and durable non-secret identifiers without table-like overload.
+- [x] **OPERATE-02**: Operate queue pages truthfully remain read-only unless a backed domain API exists; no retry, discard, approve, deny, or worker-control UI is introduced by polish alone.
+- [x] **OPERATE-03**: Operate queue pages remain usable at mobile widths, in light/dark/system themes, with reduced motion, keyboard focus, empty states, dense states, long URLs, and incident states.
 
 ### Configure Propagation
 
@@ -65,9 +65,9 @@
 | SUPPORT-01 | Phase 122 | Complete |
 | SUPPORT-02 | Phase 122 | Complete |
 | SUPPORT-03 | Phase 122 | Complete |
-| OPERATE-01 | Phase 123 | Pending |
-| OPERATE-02 | Phase 123 | Pending |
-| OPERATE-03 | Phase 123 | Pending |
+| OPERATE-01 | Phase 123 | Complete |
+| OPERATE-02 | Phase 123 | Complete |
+| OPERATE-03 | Phase 123 | Complete |
 | CONFIG-01 | Phase 124 | Pending |
 | CONFIG-02 | Phase 124 | Pending |
 | CONFIG-03 | Phase 124 | Pending |
