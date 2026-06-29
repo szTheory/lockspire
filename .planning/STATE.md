@@ -2,18 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-current_phase: 123
-current_phase_name: Operate Queue Flow Polish
-status: ready
-stopped_at: Phase 123 planning complete - 5 plans ready
-last_updated: "2026-06-29T19:53:11.000Z"
+status: executing
+stopped_at: Completed 123-01-PLAN.md
+last_updated: "2026-06-29T20:12:38.781Z"
 last_activity: 2026-06-29
-last_activity_desc: Phase 123 planning complete - 5 plans ready
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 11
+  completed_plans: 7
   percent: 40
 ---
 
@@ -29,10 +26,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 123 — Operate Queue Flow Polish
-Plan: 5 plans ready
+Phase: 123 (Operate Queue Flow Polish) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-29 - Phase 123 planning complete
+Last activity: 2026-06-29
 
 ## Most Recent Release
 
@@ -133,6 +130,9 @@ Last activity: 2026-06-29 - Phase 123 planning complete
 - [Phase 122]: Consent detail keeps reads and mutation behind existing Lockspire.Admin get/revoke delegations. — Preserves the embedded-library boundary and avoids new storage, route, or protocol capabilities for remembered-grant support polish.
 - [Phase 122]: Consent detail derives closed-state UI from remembered grant status with locked copy and disabled controls. — Keeps already-revoked consent UI exact, accessible, and non-action-looking.
 - [Phase 122]: Consent revocation consequence copy is limited to future remembered-consent reuse. — Avoids implying host account changes, session termination, token revocation, plaintext recovery, worker control, or broader protocol behavior.
+- [Phase 123]: Plan 123-01 kept interaction queue shaping page-local in the existing LiveView and Repository.list_interactions/1 read path. — Preserves the embedded-library boundary while improving /admin/interactions scanability.
+- [Phase 123]: Plan 123-01 renders interaction rows with status-derived pressure, safe durable IDs, redacted client/subject handles, prompt, created/activity time, and expiry. — Keeps D-10 allowed fields explicit and protocol-sensitive fixture values hidden.
+- [Phase 123]: Plan 123-01 preserved /admin/interactions as read-only support truth with no LiveView command events, routes, storage changes, CSS, or package additions. — Maintains OPERATE-02 and no-fake-controls boundary.
 
 ## Blockers/Concerns
 
@@ -147,11 +147,11 @@ Last activity: 2026-06-29 - Phase 123 planning complete
 
 ## Session Continuity
 
-**Last session:** 2026-06-29T19:53:11.000Z
+**Last session:** 2026-06-29T20:12:38.777Z
 
 **Next action:** Execute Phase 123 with `/gsd-execute-phase 123`.
-**Resume file:** .planning/phases/123-operate-queue-flow-polish/123-01-PLAN.md
-**Stopped at:** Phase 123 planning complete - 5 plans ready
+**Resume file:** None
+**Stopped at:** Completed 123-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -190,6 +190,7 @@ Last activity: 2026-06-29 - Phase 123 planning complete
 | Phase 122 P01 | 11m45s | 3 tasks | 5 files |
 | Phase 122 P02 | 7m23s | 2 tasks | 2 files |
 | Phase 122 P03 | 5m | 2 tasks | 4 files |
+| Phase 123 P01 | 6 min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
