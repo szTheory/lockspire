@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
 status: executing
-stopped_at: Completed 123-01-PLAN.md
-last_updated: "2026-06-29T20:12:38.781Z"
+stopped_at: Completed 123-02-PLAN.md
+last_updated: "2026-06-29T20:24:26.554Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 7
+  completed_plans: 8
   percent: 40
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 123 (Operate Queue Flow Polish) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-29
 
@@ -133,6 +133,9 @@ Last activity: 2026-06-29
 - [Phase 123]: Plan 123-01 kept interaction queue shaping page-local in the existing LiveView and Repository.list_interactions/1 read path. — Preserves the embedded-library boundary while improving /admin/interactions scanability.
 - [Phase 123]: Plan 123-01 renders interaction rows with status-derived pressure, safe durable IDs, redacted client/subject handles, prompt, created/activity time, and expiry. — Keeps D-10 allowed fields explicit and protocol-sensitive fixture values hidden.
 - [Phase 123]: Plan 123-01 preserved /admin/interactions as read-only support truth with no LiveView command events, routes, storage changes, CSS, or package additions. — Maintains OPERATE-02 and no-fake-controls boundary.
+- [Phase 123]: Phase 123 Plan 02 kept device authorization queue shaping page-local in the existing LiveView and Admin.list_device_authorizations/1 read path. — Preserves the embedded-library boundary while improving /admin/device_authorizations scanability.
+- [Phase 123]: Phase 123 Plan 02 renders device authorization rows with status-derived pressure, redacted client/subject/authorization handles, expiry, poll interval, next-poll, and lifecycle activity. — Keeps D-11 allowed fields explicit and protocol-sensitive code/hash/verification values hidden.
+- [Phase 123]: Phase 123 Plan 02 preserved /admin/device_authorizations as read-only support truth with no LiveView command events, routes, storage changes, CSS, or package additions. — Maintains OPERATE-02 and no-fake-controls boundary.
 
 ## Blockers/Concerns
 
@@ -147,11 +150,11 @@ Last activity: 2026-06-29
 
 ## Session Continuity
 
-**Last session:** 2026-06-29T20:12:38.777Z
+**Last session:** 2026-06-29T20:24:07.460Z
 
 **Next action:** Execute Phase 123 with `/gsd-execute-phase 123`.
 **Resume file:** None
-**Stopped at:** Completed 123-01-PLAN.md
+**Stopped at:** Completed 123-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -191,6 +194,7 @@ Last activity: 2026-06-29
 | Phase 122 P02 | 7m23s | 2 tasks | 2 files |
 | Phase 122 P03 | 5m | 2 tasks | 4 files |
 | Phase 123 P01 | 6 min | 2 tasks | 3 files |
+| Phase 123 P02 | 6 min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
