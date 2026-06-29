@@ -14,7 +14,7 @@
 |-------|------|--------------|-------|
 | 121 | 3/3 | Complete    | 2026-06-28 |
 | 122 | 3/3 | Complete    | 2026-06-28 |
-| 123 | 3/5 | In Progress|  |
+| 123 | 4/5 | In Progress|  |
 | 124 | Configure Onboarding Propagation Pass | CONFIG-01, CONFIG-02, CONFIG-03 | Clients, DCR/IAT, keys, policies |
 | 125 | Browser Proof, Docs & Adversarial Ratchet | PROOF-01, PROOF-02, PROOF-03 | Fixtures, proof, docs |
 
