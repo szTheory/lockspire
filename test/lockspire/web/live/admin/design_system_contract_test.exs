@@ -144,7 +144,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                        @phase_119_support_sources ++ @phase_119_operate_sources
   @phase_123_operate_sources %{
     interactions:
-      Path.expand("../../../../../lib/lockspire/web/live/admin/interactions_live/index.ex", __DIR__),
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/interactions_live/index.ex",
+        __DIR__
+      ),
     device_authorizations:
       Path.expand(
         "../../../../../lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
