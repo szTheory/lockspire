@@ -65,14 +65,12 @@ Browser, axe, screenshot, component-lab, and manual evidence remains supplementa
 
 ## Command Outcomes
 
-Task 123-05-02 will fill this table with exact command strings, dates, pass/fail status, and scoped caveats.
-
 | Command | Date | Result | Notes |
 |---------|------|--------|-------|
-| `MIX_ENV=test mix test test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs --max-failures 1` | pending | pending | Focused Operate route proof. |
-| `MIX_ENV=test mix test test/lockspire/web/live/admin/design_system_contract_test.exs test/lockspire/web/live/admin/design_system_component_stress_test.exs --max-failures 1` | pending | pending | Design-system/source/stress proof. |
-| `mix format --check-formatted lib/lockspire/web/live/admin/interactions_live/index.ex lib/lockspire/web/live/admin/device_authorizations_live/index.ex lib/lockspire/web/live/admin/logout_deliveries_live/index.ex test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs test/lockspire/web/live/admin/design_system_contract_test.exs` | pending | pending | Phase 123 modified source/test formatting proof. |
-| `MIX_ENV=test mix test.fast --max-failures 5` | pending | pending | Full-suite status or scoped caveat. |
+| `MIX_ENV=test mix test test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs --max-failures 1` | 2026-06-29 | PASS | `9 tests, 0 failures`. Output included the known non-fatal KeyCache startup log before `Lockspire.TestRepo` started. |
+| `MIX_ENV=test mix test test/lockspire/web/live/admin/design_system_contract_test.exs test/lockspire/web/live/admin/design_system_component_stress_test.exs --max-failures 1` | 2026-06-29 | PASS | `63 tests, 0 failures`. Output included the known non-fatal KeyCache startup log before `Lockspire.TestRepo` started. |
+| `mix format --check-formatted lib/lockspire/web/live/admin/interactions_live/index.ex lib/lockspire/web/live/admin/device_authorizations_live/index.ex lib/lockspire/web/live/admin/logout_deliveries_live/index.ex test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs test/lockspire/web/live/admin/design_system_contract_test.exs` | 2026-06-29 | PASS | Command exited `0` with no output. |
+| `MIX_ENV=test mix test.fast --max-failures 5` | 2026-06-29 | FAIL, scoped outside Phase 123 | `1164 tests, 4 failures, 287 excluded`. Failures were all in `Lockspire.ReleaseReadinessContractTest`: `phase 115 local hygiene classifies Docker state with calm exact remediation` at `test/lockspire/release_readiness_contract_test.exs:640`; `phase 115 adoption demo docs stay repo-local without production Docker claims` at `test/lockspire/release_readiness_contract_test.exs:726`; `phase 115 CI and docs keep deterministic Docker validation only` at `test/lockspire/release_readiness_contract_test.exs:687`; `phase 115 CI source contracts prove lifecycle allowlists and public surface boundaries` at `test/lockspire/release_readiness_contract_test.exs:741`. These assertions target pre-existing adoption-demo docs and lifecycle script dirty work, not Phase 123 Operate queues. |
 
 ## No Schema Push Required
 
@@ -86,4 +84,4 @@ This proof is under `.planning` and is maintainer-only. It does not update `docs
 
 - The repository had unrelated dirty work before Plan 123-05 started. This proof records Phase 123 plan-owned evidence and does not stage or commit unrelated source/test/docs changes.
 - Focused commands in prior Phase 120-123 summaries consistently reported a non-fatal KeyCache startup log before `Lockspire.TestRepo` started; passing command outcomes should be read with that known benign log caveat when it appears.
-- Plan 122-03 previously recorded `MIX_ENV=test mix test.fast --max-failures 5` failures in `Lockspire.ReleaseReadinessContractTest` tied to pre-existing Phase 115 adoption-demo documentation/lifecycle dirty work. If the same failure class appears again, it is scoped outside Phase 123 unless the failing module or assertion names Phase 123 files.
+- `MIX_ENV=test mix test.fast --max-failures 5` failed again in `Lockspire.ReleaseReadinessContractTest` against Phase 115 adoption-demo documentation and lifecycle script contracts. No failing module or assertion named Phase 123 Operate source, Phase 123 route tests, or Phase 123 source-contract tests.
