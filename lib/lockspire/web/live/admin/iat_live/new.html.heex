@@ -12,7 +12,7 @@
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
         title="Initial access token minted"
-        body="Copy this value now. Lockspire stores only the hash after this response."
+        body="Plaintext is shown once. Lockspire stores only the hash and redacted durable state after this response."
         label="Initial access token"
         value={@iat_secret}
       />

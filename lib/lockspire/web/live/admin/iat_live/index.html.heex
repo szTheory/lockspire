@@ -17,26 +17,28 @@
   >
     <Lockspire.Web.Components.AdminComponents.metric_grid>
       <Lockspire.Web.Components.AdminComponents.summary_stat
-        value={iat_metrics(@tokens).active}
+        value={iat_inventory_status_counts(@tokens).active}
         label="Active"
       />
       <Lockspire.Web.Components.AdminComponents.summary_stat
-        value={iat_metrics(@tokens).used}
+        value={iat_inventory_status_counts(@tokens).used}
         label="Used"
       />
       <Lockspire.Web.Components.AdminComponents.summary_stat
-        value={iat_metrics(@tokens).expired}
+        value={iat_inventory_status_counts(@tokens).expired}
         label="Expired"
       />
       <Lockspire.Web.Components.AdminComponents.summary_stat
-        value={iat_metrics(@tokens).revoked}
+        value={iat_inventory_status_counts(@tokens).revoked}
         label="Revoked"
       />
       <Lockspire.Web.Components.AdminComponents.summary_stat
-        value={iat_metrics(@tokens).total}
+        value={iat_inventory_status_counts(@tokens).total}
         label="Total intake"
       />
     </Lockspire.Web.Components.AdminComponents.metric_grid>
+
+    <p :if={@revoke_notice} class="lockspire-admin-help">{@revoke_notice}</p>
 
     <Lockspire.Web.Components.AdminComponents.action_bar>
       <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
@@ -91,14 +93,39 @@
             </:status>
             <:actions>
               <%= if iat_status(token) == :active do %>
-                <Lockspire.Web.Components.AdminComponents.admin_button
-                  phx-click="revoke"
-                  phx-value-id={token.id}
-                  data-confirm={"Revoke initial access token #{redacted_handle(:iat, token.id)}. Partners using this intake token will no longer be able to dynamically register clients."}
+                <Lockspire.Web.Components.AdminComponents.confirmation_panel
+                  title="Revoke initial access token"
                   variant={:danger}
+                  errors={iat_revoke_error(@revoke_error)}
                 >
-                  Revoke initial access token
-                </Lockspire.Web.Components.AdminComponents.admin_button>
+                  <:body>
+                    <form class="lockspire-admin-form-stack" phx-submit="confirm_revoke_iat">
+                      <input type="hidden" name="revoke[id]" value={token.id} />
+                      <label
+                        class="lockspire-admin-checkbox-field"
+                        for={"revoke_iat_#{token.id}_confirm"}
+                      >
+                        <input
+                          id={"revoke_iat_#{token.id}_confirm"}
+                          type="checkbox"
+                          name="revoke[confirm]"
+                          value="true"
+                        />
+                        <span>
+                          {iat_revoke_confirmation_copy(token)}
+                        </span>
+                      </label>
+                      <Lockspire.Web.Components.AdminComponents.action_bar>
+                        <Lockspire.Web.Components.AdminComponents.admin_button
+                          type="submit"
+                          variant={:danger}
+                        >
+                          Revoke initial access token
+                        </Lockspire.Web.Components.AdminComponents.admin_button>
+                      </Lockspire.Web.Components.AdminComponents.action_bar>
+                    </form>
+                  </:body>
+                </Lockspire.Web.Components.AdminComponents.confirmation_panel>
               <% end %>
             </:actions>
           </Lockspire.Web.Components.AdminComponents.dense_resource_row>
