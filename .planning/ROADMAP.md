@@ -16,7 +16,7 @@
 | 122 | 3/3 | Complete    | 2026-06-28 |
 | 123 | 5/5 | Complete    | 2026-06-29 |
 | 124 | 6/6 | Complete    | 2026-06-30 |
-| 125 | 2/6 | In Progress|  |
+| 125 | 3/6 | In Progress|  |
 
 ## Phase Details
 
@@ -99,7 +99,7 @@
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -109,7 +109,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 125-03-PLAN.md — Support and Operate route proof ratchet
+- [x] 125-03-PLAN.md — Support and Operate route proof ratchet
 - [ ] 125-04-PLAN.md — Configure client, credential, key, and DCR proof
 - [ ] 125-05-PLAN.md — Orient and policy route proof ratchet
 

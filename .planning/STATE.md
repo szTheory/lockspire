@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
+current_phase: 125
+current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: executing
-stopped_at: Completed 125-02-PLAN.md
-last_updated: "2026-06-30T15:59:34.195Z"
+stopped_at: Completed 125-03-PLAN.md
+last_updated: "2026-06-30T16:15:16.866Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 19
+  completed_plans: 20
   percent: 80
 ---
 
@@ -27,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 125 (Browser Proof, Docs & Adversarial Ratchet) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-06-30
 
@@ -166,6 +168,8 @@ Last activity: 2026-06-30
 - [Phase 125]: Phase 125 Plan 02 kept PROOF-02 guardrails deterministic in ExUnit/LazyHTML/source contracts with no browser, Node, package, route, schema, or public support-surface expansion. — Preserves D-01, D-02, D-14, D-15, and the embedded-library/package boundary while adding a blocking proof layer.
 - [Phase 125]: Rendered HTML redaction and disabled-link semantics were centralized in test-only AdminProof helpers so later route proof can reuse them without creating runtime API. — Follows D-08 and D-09 by extending existing proof assets rather than adding a second proof framework or public helper surface.
 - [Phase 125]: Global contracts derive route truth from RouteScorecards.expected_routes/0 and keep browser/manual evidence subordinate to repo-native proof. — Preserves D-10 and D-11 source-derived route truth before Wave 2 route proof adds focused rendered evidence.
+- [Phase 125]: Plan 125-03 kept Support and Operate proof coverage test-only in focused LiveView route tests with no runtime, route, schema, CSS, package, browser-tooling, or public docs changes.
+- [Phase 125]: Plan 125-03 applied HtmlAssertions to rendered page fragments and direct LiveView renders so token-like denial targets route content, not Phoenix test harness session attributes.
 
 ## Blockers/Concerns
 
@@ -180,11 +184,11 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T15:59:34.189Z
+**Last session:** 2026-06-30T16:15:16.858Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
 **Resume file:** None
-**Stopped at:** Completed 125-02-PLAN.md
+**Stopped at:** Completed 125-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -236,6 +240,7 @@ Last activity: 2026-06-30
 | Phase 124 P06 | 33min | 3 tasks | 3 files |
 | Phase 125 P01 | 7 min | 2 tasks | 3 files |
 | Phase 125 P02 | 8 min | 2 tasks | 2 files |
+| Phase 125 P03 | 8m | 2 tasks | 6 files |
 
 ## Operator Next Steps
 
