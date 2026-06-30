@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
   alias Lockspire.Web.Live.Admin.OverviewLive
@@ -153,6 +154,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients?q=Alpha&status=active&provenance=operator")
 
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+
     assert html =~ "Configure"
     assert html =~ "Client inventory"
     assert html =~ "Selected client context"
@@ -186,6 +192,90 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert created_html =~ "Plaintext is shown once"
     assert created_html =~ "Lockspire stores only the hash and does not re-show it"
     refute created_html =~ "client_secret_hash"
+
+    plaintext_secret = extract_copy_once_value(created_html)
+
+    {:ok, _detail_view, durable_detail_html} =
+      live(conn_for_admin(), "/admin/clients/#{extract_created_client_id(created_html)}")
+
+    HtmlAssertions.assert_no_text(durable_detail_html, [
+      plaintext_secret,
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "raw request object",
+      "verifier material",
+      "host tenant policy",
+      "developer portal"
+    ])
+
+    {:ok, _index_view, durable_index_html} = live(conn_for_admin(), "/admin/clients")
+    HtmlAssertions.assert_no_text(durable_index_html, [plaintext_secret, "client_secret_hash"])
+  end
+
+  test "clients index proves empty, disabled, many-count, and long-value Configure states" do
+    long_client_id =
+      "client-" <>
+        String.duplicate("very-long-partner-identifier-", 4) <>
+        "terminal"
+
+    {:ok, _disabled_client} =
+      Repository.register_client(%Client{
+        client_id: long_client_id,
+        client_secret_hash: "sha256:disabled:secret:hash",
+        client_type: :confidential,
+        name: "Disabled " <> String.duplicate("long partner workspace ", 4),
+        redirect_uris: [
+          "https://partners.example.test/" <>
+            String.duplicate("deep/path-segment/", 8) <>
+            "callback"
+        ],
+        allowed_scopes: ["email", "profile"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        active: false,
+        disabled_at: DateTime.utc_now(),
+        disabled_by: "test-operator",
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    {:ok, _view, disabled_html} = live(conn_for_admin(), "/admin/clients?status=disabled")
+
+    assert disabled_html =~ "Status: disabled"
+    assert disabled_html =~ "Matching clients: 1"
+    assert disabled_html =~ "Total clients: 4"
+    assert disabled_html =~ long_client_id
+    assert disabled_html =~ "Disabled"
+    assert disabled_html =~ "lockspire-admin-resource-list"
+
+    disabled_html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_label_targets_exist()
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_text([
+      "sha256:disabled:secret:hash",
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "Reveal secret",
+      "Export credential",
+      "force-publish",
+      "host tenant policy",
+      "developer portal"
+    ])
+
+    {:ok, _view, empty_html} = live(conn_for_admin(), "/admin/clients?q=does-not-exist")
+
+    assert empty_html =~ "Search: does-not-exist"
+    assert empty_html =~ "Matching clients: 0"
+    assert empty_html =~ "Total clients: 4"
+    assert empty_html =~ "No clients match this view"
+    assert empty_html =~ "Adjust the search or status filter"
+
+    HtmlAssertions.assert_no_generic_cta_text(empty_html)
   end
 
   test "client detail shows self-registered panel for DCR clients" do
@@ -394,6 +484,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   end
 
   test "saving dedicated logout propagation settings persists backchannel and frontchannel fields separately from post-logout redirects" do
+    backchannel_logout_uri =
+      "https://alpha.example.com/" <>
+        String.duplicate("backchannel/logout/path/", 6) <>
+        "durable-delivery"
+
+    frontchannel_logout_uri =
+      "https://alpha.example.com/" <>
+        String.duplicate("frontchannel/logout/path/", 6) <>
+        "browser-cleanup"
+
     assert {:ok, view, _html} =
              live(
                conn_for_admin(),
@@ -404,20 +504,56 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     |> form("form[phx-submit=save_client]", %{
       client: %{
         mode: "logout_propagation",
-        backchannel_logout_uri: "https://alpha.example.com/backchannel-logout",
+        backchannel_logout_uri: backchannel_logout_uri,
         backchannel_logout_session_required: "true",
-        frontchannel_logout_uri: "https://alpha.example.com/frontchannel-logout",
+        frontchannel_logout_uri: frontchannel_logout_uri,
         frontchannel_logout_session_required: "true"
       }
     })
     |> render_submit()
 
     assert {:ok, client} = Lockspire.Admin.get_client("alpha-client")
-    assert client.backchannel_logout_uri == "https://alpha.example.com/backchannel-logout"
+    assert client.backchannel_logout_uri == backchannel_logout_uri
     assert client.backchannel_logout_session_required == true
-    assert client.frontchannel_logout_uri == "https://alpha.example.com/frontchannel-logout"
+    assert client.frontchannel_logout_uri == frontchannel_logout_uri
     assert client.frontchannel_logout_session_required == true
     assert client.post_logout_redirect_uris == []
+
+    html = render(view)
+
+    assert html =~ backchannel_logout_uri
+    assert html =~ frontchannel_logout_uri
+    assert html =~ "Back-channel logout URI"
+    assert html =~ "Front-channel logout URI"
+    assert html =~ "Save logout propagation"
+
+    HtmlAssertions.assert_no_generic_cta_text(html)
+
+    HtmlAssertions.assert_no_text(html, [
+      "post_logout_redirect_uris: #{backchannel_logout_uri}",
+      "Reveal secret",
+      "Export credential",
+      "host tenant policy",
+      "developer portal"
+    ])
+
+    assert html =~ ~s(label for="client_backchannel_logout_uri")
+    assert html =~ ~s(label for="client_frontchannel_logout_uri")
+  end
+
+  defp extract_created_client_id(html) do
+    [_, client_id] = Regex.run(~r/Client ID:\s*<code[^>]*>([^<]+)<\/code>/, html)
+    client_id
+  end
+
+  defp extract_copy_once_value(html) do
+    [_, value] =
+      Regex.run(
+        ~r/<section class="[^"]*lockspire-admin-copy-once-secret[^"]*".*?<code[^>]*>([^<]+)<\/code>/s,
+        html
+      )
+
+    value
   end
 
   defp conn_for_admin do
