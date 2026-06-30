@@ -5,14 +5,14 @@ milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 125
 current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: executing
-stopped_at: Completed 125-03-PLAN.md
-last_updated: "2026-06-30T16:29:40.253Z"
+stopped_at: Completed 125-05-PLAN.md
+last_updated: "2026-06-30T16:41:21.829Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 21
+  completed_plans: 22
   percent: 80
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 125 (Browser Proof, Docs & Adversarial Ratchet) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-06-30
 
@@ -173,6 +173,8 @@ Last activity: 2026-06-30
 - [Phase 125]: Plan 125-04 kept browser-proof ratchets test-only; no runtime, schema, route, docs, or dependency changes were made. — Plan 04 was scoped to adversarial browser-proof test ratchets.
 - [Phase 125]: Plan 125-04 used direct LiveView render fragments for durable token-like redaction checks to avoid Phoenix wrapper transport tokens. — The proof target is the admin surface, not LiveView session/static wrapper data.
 - [Phase 125]: Plan 125-04 proved unsupported Configure controls with explicit negative assertions instead of broadening product scope. — AGENTS.md and the phase context preserve Lockspire as a narrow embedded OAuth/OIDC library.
+- [Phase 125]: Browser-proof coverage for Orient and Configure policy pages stays test-only and source-derived. — Plan 05 strengthened rendered LiveView assertions without adding any browser tooling, public docs API, runtime routes, or host policy surface.
+- [Phase 125]: Policy route proof now asserts both expected admin navigation and denied host-owned/security controls. — PAR, DPoP, and security profile proof must protect narrow embedded-library boundaries while still checking concrete Configure routes.
 
 ## Blockers/Concerns
 
@@ -187,11 +189,11 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T16:29:13.227Z
+**Last session:** 2026-06-30T16:39:36.088Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
 **Resume file:** None
-**Stopped at:** Completed 125-03-PLAN.md
+**Stopped at:** Completed 125-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -245,6 +247,7 @@ Last activity: 2026-06-30
 | Phase 125 P02 | 8 min | 2 tasks | 2 files |
 | Phase 125 P03 | 8m | 2 tasks | 6 files |
 | Phase 125 P04 | 10m22s | 2 tasks | 5 files |
+| Phase 125-browser-proof-docs-adversarial-ratchet P05 | 6 min | 2 tasks | 6 files |
 
 ## Operator Next Steps
 
