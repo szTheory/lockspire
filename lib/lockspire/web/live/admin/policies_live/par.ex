@@ -53,11 +53,30 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Global PAR policy"
+        body="Review the issuer PAR default, inherited-client impact, and the next safe policy save before changing enforcement."
+      >
+        <:summary>
+          <AdminComponents.decision_summary>
+            <:item
+              :for={item <- par_decision_summary_items(%{policy: @policy, summary: @summary})}
+              label={item.label}
+              value={item.value}
+              tone={item.tone}
+              detail={item.detail}
+            >
+            </:item>
+          </AdminComponents.decision_summary>
+        </:summary>
+      </AdminComponents.page_hero>
+
       <AdminComponents.policy_nav />
 
       <AdminComponents.section_card
         title="Global PAR policy"
-        subtitle={"Current mode is #{@policy.par_policy}. This governs all clients that inherit their policy."}
+        subtitle={"Current mode is #{@policy.par_policy}. #{policy_scope_copy(:par)}"}
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
@@ -133,5 +152,44 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       end)
 
     assign(socket, summary: summary)
+  end
+
+  defp par_decision_summary_items(%{policy: %ServerPolicy{} = policy, summary: summary}) do
+    [
+      %{
+        label: "Global posture",
+        value: par_policy_label(policy.par_policy),
+        tone: par_policy_tone(policy.par_policy),
+        detail: "This is the global issuer PAR default for clients that inherit PAR policy."
+      },
+      %{
+        label: "Clients that inherit",
+        value: inherited_clients_value(summary.inherit),
+        tone: :info,
+        detail:
+          "These clients use the global issuer PAR default; client overrides stay on client policy routes."
+      },
+      %{
+        label: "Next safe action",
+        value: "Save global PAR policy",
+        tone: :info,
+        detail: policy_scope_copy(:par)
+      }
+    ]
+  end
+
+  defp par_policy_label(:required), do: "Required"
+  defp par_policy_label(:optional), do: "Optional"
+  defp par_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
+
+  defp par_policy_tone(:required), do: :warning
+  defp par_policy_tone(:optional), do: :success
+  defp par_policy_tone(_value), do: :info
+
+  defp inherited_clients_value(1), do: "1 client"
+  defp inherited_clients_value(count), do: "#{count} clients"
+
+  defp policy_scope_copy(:par) do
+    "This save changes the global issuer PAR default for future authorization requests from clients that inherit issuer policy. Existing client overrides stay on their client policy routes."
   end
 end

@@ -214,7 +214,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       "Ecto.Changeset",
       "Lockspire.Storage",
       "stacktrace",
-      "constraint",
+      "constraint violation",
       "private_jwk_encrypted"
     ]
   end

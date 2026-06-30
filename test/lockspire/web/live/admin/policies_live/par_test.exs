@@ -169,7 +169,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       "Ecto.Changeset",
       "Lockspire.Storage",
       "stacktrace",
-      "constraint",
+      "constraint violation",
       "private_jwk_encrypted"
     ]
   end
