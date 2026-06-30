@@ -1,7 +1,7 @@
 defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   use ExUnit.Case, async: true
 
-  alias Lockspire.Web.AdminProof.{HtmlAssertions, RouteScorecards}
+  alias Lockspire.Web.AdminProof.{BrowserEvidence, HtmlAssertions, RouteScorecards}
 
   @admin_live_glob Path.expand(
                      "../../../../../lib/lockspire/web/live/admin/**/*.{ex,heex}",
@@ -401,6 +401,112 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       safe_html = "<p>client_secret_jwt support is documented without sample keys.</p>"
 
       assert HtmlAssertions.assert_no_token_like_text(safe_html) == safe_html
+    end
+  end
+
+  describe "Phase 125 browser evidence artifact contracts" do
+    test "browser evidence parser accepts strict representative evidence rows" do
+      markdown = """
+      ## Evidence Rows
+
+      | Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |
+      |---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|
+      | `/admin` | Orient | 320px | light | default | overview nav -> Configure link | dense cockpit | 320 | 320 | pass | local maintainer note; no screenshots retained | passed denylist | none | contract test pass |
+      | `AdminLab.StressSurface` | Internal lab | 1440px | system | reduced-motion | stress fixture tab order | long-data fixture | 1440 | 1440 | pass | internal lab render only; values synthetic | passed denylist | none | component stress pass |
+      """
+
+      assert [
+               %{
+                 "Route / Surface" => "/admin",
+                 "Journey" => "Orient",
+                 "Viewport" => "320px",
+                 "scrollWidth" => 320,
+                 "clientWidth" => 320,
+                 "Result" => "pass"
+               },
+               %{
+                 "Route / Surface" => "AdminLab.StressSurface",
+                 "Journey" => "Internal lab",
+                 "Viewport" => "1440px",
+                 "scrollWidth" => 1440,
+                 "clientWidth" => 1440,
+                 "Result" => "pass"
+               }
+             ] = BrowserEvidence.parse!(markdown)
+
+      assert BrowserEvidence.required_columns() == [
+               "Route / Surface",
+               "Journey",
+               "Viewport",
+               "Theme",
+               "Motion",
+               "Focus path",
+               "State",
+               "scrollWidth",
+               "clientWidth",
+               "Result",
+               "Scrubbed notes",
+               "Sensitive evidence check",
+               "Gap note",
+               "Deterministic command outcome"
+             ]
+
+      assert BrowserEvidence.allowed_results() == ["pass", "fail", "gap", "blocked"]
+    end
+
+    test "browser evidence parser rejects malformed artifact rows" do
+      missing_columns = """
+      | Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |
+      |---|---|---|---|---|---|---|---:|---|---|---|---|---|
+      | `/admin` | Orient | 320px | light | default | overview nav | dense | 320 | pass | local note | passed denylist | none | contract test pass |
+      """
+
+      error = assert_raise ArgumentError, fn -> BrowserEvidence.parse!(missing_columns) end
+      assert Exception.message(error) =~ "missing required evidence columns"
+      assert Exception.message(error) =~ "clientWidth"
+
+      invalid_result = String.replace(valid_browser_evidence_markdown(), "| pass |", "| maybe |")
+      error = assert_raise ArgumentError, fn -> BrowserEvidence.parse!(invalid_result) end
+      assert Exception.message(error) =~ ~s(invalid Result "maybe")
+
+      invalid_width =
+        String.replace(valid_browser_evidence_markdown(), "| 390 | 390 |", "| wide | 390 |")
+
+      error = assert_raise ArgumentError, fn -> BrowserEvidence.parse!(invalid_width) end
+      assert Exception.message(error) =~ ~s(nonnumeric scrollWidth "wide")
+
+      malformed_route =
+        String.replace(valid_browser_evidence_markdown(), "`/admin/tokens`", "`admin/tokens`")
+
+      error = assert_raise ArgumentError, fn -> BrowserEvidence.parse!(malformed_route) end
+      assert Exception.message(error) =~ ~s(malformed Route / Surface "admin/tokens")
+
+      duplicate = valid_browser_evidence_markdown() <> valid_browser_evidence_markdown()
+      error = assert_raise ArgumentError, fn -> BrowserEvidence.parse!(duplicate) end
+      assert Exception.message(error) =~ "duplicate evidence row"
+    end
+
+    test "browser evidence redaction checks reject sensitive evidence text" do
+      for forbidden <- [
+            "cookie=session_id%3Dabcdef1234567890",
+            "authorization_code=SplxlOBeZQQYbYS6WxSbIA",
+            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2NvdW50LTEyMyJ9.signaturevalue1234567890",
+            "client_secret=plaintext-secret-value",
+            "-----BEGIN PRIVATE KEY-----",
+            "code_verifier=verifier-material-value",
+            "device_code=ABCD-EFGH-IJKL",
+            "user_code=WDJB-MJHT",
+            "copy-once secret shown in screenshot",
+            "https://accounts.lockspire.com/admin"
+          ] do
+        error = assert_raise ArgumentError, fn -> BrowserEvidence.assert_redaction_safe!(forbidden) end
+        assert Exception.message(error) =~ "sensitive evidence"
+      end
+
+      safe_note =
+        "local maintainer note with scrubbed route, numeric widths, no screenshots retained"
+
+      assert BrowserEvidence.assert_redaction_safe!(safe_note) == safe_note
     end
   end
 
@@ -2299,6 +2405,16 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp phase_123_source_for("/logouts"),
     do: File.read!(Map.fetch!(@phase_123_operate_sources, :logouts))
+
+  defp valid_browser_evidence_markdown do
+    """
+    ## Evidence Rows
+
+    | Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |
+    |---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|
+    | `/admin/tokens` | Support | 390px | dark | reduced-motion | token filters -> revoked row | dense support | 390 | 390 | pass | local maintainer note; no screenshots retained | passed denylist | none | focused route proof pass |
+    """
+  end
 
   defp phase_125_contract_sources do
     %{
