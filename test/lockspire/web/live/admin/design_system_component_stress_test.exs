@@ -19,6 +19,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
              :keys,
              :dcr_iat,
              :operations,
+             :structural_rows,
+             :status_matrix,
              :theme_modes,
              :motion_modes
            ]
@@ -42,7 +44,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
           :expired,
           :revoked,
           :reuse_detected,
-          :copy_once
+          :copy_once,
+          :waiting,
+          :completed,
+          :provenance
         ] do
       assert state in Fixtures.scenario_states()
     end
@@ -94,7 +99,19 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
           "revoked",
           "reuse-detected",
           "copy-once",
-          "redacted"
+          "redacted",
+          "Acme Ledger client",
+          "Registration gate",
+          "IAT-gated",
+          "Decision summaries must keep dense policy state readable",
+          "Dense queue row with generated identifier",
+          "Token family incident",
+          "Responsive table and list alternative",
+          "Empty table/list alternative",
+          "Workflow shell validation proof",
+          "Approved, waiting",
+          "Initial access token",
+          "Unknown lab only"
         ] do
       assert html =~ phrase
     end
@@ -110,6 +127,22 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     for class <- [
           "lockspire-admin-page-hero",
           "lockspire-admin-badge-group",
+          "lockspire-admin-badge-healthy",
+          "lockspire-admin-badge-waiting",
+          "lockspire-admin-badge-warning",
+          "lockspire-admin-badge-danger",
+          "lockspire-admin-badge-disabled",
+          "lockspire-admin-badge-completed",
+          "lockspire-admin-badge-provenance",
+          "lockspire-admin-pane",
+          "lockspire-admin-entity-header",
+          "lockspire-admin-workflow-shell",
+          "lockspire-admin-decision-summary",
+          "lockspire-admin-status-cluster",
+          "lockspire-admin-lifecycle-row",
+          "lockspire-admin-dense-resource-row",
+          "lockspire-admin-responsive-table",
+          "lockspire-admin-responsive-table__list",
           "lockspire-admin-summary-stat",
           "lockspire-admin-card",
           "lockspire-admin-resource-list__item",
@@ -119,11 +152,40 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
           "lockspire-admin-copy-once-secret",
           "lockspire-admin-confirmation-panel-danger",
           "lockspire-admin-action-group",
+          "lockspire-admin-action-group__destructive",
           "lockspire-admin-btn",
           "lockspire-admin-empty"
         ] do
       assert html =~ class
     end
+
+    for marker <- [
+          ~s(role="link" aria-disabled="true"),
+          ~s(id="stress-redirect-uri-help"),
+          ~s(id="stress-redirect-uri-error"),
+          ~s(aria-invalid="true"),
+          ~s(aria-describedby="stress-redirect-uri-help stress-redirect-uri-error")
+        ] do
+      assert html =~ marker
+    end
+
+    for phrase <- [
+          "Approved, waiting",
+          "Reuse detected",
+          "Revoked",
+          "Completed",
+          "Initial access token",
+          "Unknown lab only",
+          "Family-wide revocation is required when reuse is detected.",
+          "Revoking this family invalidates all active refresh tokens",
+          "Copy this value now. Lockspire stores only the hash after this response.",
+          "Stored hash is shown for correlation only."
+        ] do
+      assert html =~ phrase
+    end
+
+    refute html =~ ~r/<a[^>]*aria-disabled="true"/
+    refute html =~ ~r/<a[^>]*>\s*Disabled link action\s*<\/a>/s
 
     for forbidden <- Fixtures.forbidden_substrings() do
       refute html =~ forbidden
@@ -144,7 +206,28 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     assert html =~ "No lab scenarios rendered"
     assert html =~ "0"
     assert html =~ "Redacted"
+    assert html =~ "lockspire-admin-responsive-table__list"
     refute html =~ "tenant-with-a-long-name.example.invalid"
+  end
+
+  test "Phase 124 CONFIG-01 CONFIG-02 CONFIG-03 Configure primitive stress proof covers copy-once confirmation grouping and long values" do
+    html = phase_124_configure_stress_html()
+
+    assert html =~ "Initial access token minted"
+    assert html =~ "phase-124-copy-once-value"
+    assert html =~ "I have copied this secret"
+    assert html =~ "name=\"revoke[confirm]\""
+    assert html =~ "Revoke initial access token"
+    assert html =~ "Review initial access tokens"
+    assert html =~ "Keep token active"
+    assert html =~ "lockspire-admin-action-group__primary"
+    assert html =~ "lockspire-admin-action-group__secondary"
+    assert html =~ "lockspire-admin-action-group__destructive"
+    assert html =~ "redacted_handle_iat_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ_wraps_anywhere"
+    assert html =~ "https://tenant-with-a-long-name.example.invalid/oauth/callbacks/configure"
+    assert html =~ "Decision summary detail text stays visible before risky actions."
+
+    HtmlAssertions.assert_no_text(html, Fixtures.forbidden_substrings())
   end
 
   test "HTML proof helper fails blank ARIA references" do
@@ -178,5 +261,9 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
       refute router =~ forbidden
       refute supported_surface =~ forbidden
     end
+  end
+
+  defp phase_124_configure_stress_html do
+    render_component(&StressSurface.render/1, fixture_set: Fixtures.all())
   end
 end
