@@ -2,10 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-status: Pending — ready for context discussion
-stopped_at: Phase 125 context gathered (assumptions mode + subagent research)
-last_updated: "2026-06-30T12:04:27.320Z"
-last_activity: 2026-06-30 — Phase 124 complete, transitioned to Phase 125
+current_phase: 125
+current_phase_name: Browser Proof, Docs & Adversarial Ratchet
+status: Pending — UI-SPEC approved, ready for planning
+stopped_at: Phase 125 UI-SPEC approved
+last_updated: "2026-06-30T14:39:28Z"
+last_activity: 2026-06-30
+last_activity_desc: Phase 125 UI-SPEC approved
 progress:
   total_phases: 5
   completed_phases: 4
@@ -28,8 +31,8 @@ See: .planning/PROJECT.md
 
 Phase: 125 — Browser Proof, Docs & Adversarial Ratchet
 Plan: Not started
-Status: Pending — ready for context discussion
-Last activity: 2026-06-30 — Phase 124 complete, transitioned to Phase 125
+Status: Pending — UI-SPEC approved, ready for planning
+Last activity: 2026-06-30 — Phase 125 UI-SPEC approved
 
 ## Most Recent Release
 
@@ -175,11 +178,11 @@ Last activity: 2026-06-30 — Phase 124 complete, transitioned to Phase 125
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T12:04:27.315Z
+**Last session:** 2026-06-30T14:38:16.119Z
 
-**Next action:** Verify Phase 124 completion and prepare Phase 125.
-**Resume file:** .planning/phases/125-browser-proof-docs-adversarial-ratchet/125-CONTEXT.md
-**Stopped at:** Phase 125 context gathered (assumptions mode + subagent research)
+**Next action:** Plan Phase 125 using the approved UI-SPEC.
+**Resume file:** .planning/phases/125-browser-proof-docs-adversarial-ratchet/125-UI-SPEC.md
+**Stopped at:** Phase 125 UI-SPEC approved
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
