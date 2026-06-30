@@ -431,16 +431,14 @@ No claims in this research are tagged `[ASSUMED]`; all material findings are sou
 |---|-------|---------|---------------|
 | none | none | n/a | n/a |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does implementation find a concrete ambiguity in `docs/supported-surface.md`?** [VERIFIED: 125-CONTEXT.md]
-   - What we know: Phase 125 says to leave the file unchanged unless a concrete ambiguity appears. [VERIFIED: 125-CONTEXT.md]
-   - What's unclear: The ambiguity can only be known after the docs diff is drafted. [VERIFIED: 125-CONTEXT.md]
-   - Recommendation: Plan a checkpoint before touching `docs/supported-surface.md`; default to no edit. [VERIFIED: 125-CONTEXT.md]
-2. **How much helper extraction is warranted?** [VERIFIED: 125-CONTEXT.md]
-   - What we know: `HtmlAssertions` and `RouteScorecards` are canonical, and new helpers are allowed only when they reduce duplicated proof. [VERIFIED: 125-CONTEXT.md]
-   - What's unclear: The exact duplication only appears once tests are written. [VERIFIED: codebase grep]
-   - Recommendation: Start with route/contract tests, then extract sensitive-value or evidence-parsing helpers only after repeated logic appears. [VERIFIED: 125-CONTEXT.md]
+1. **RESOLVED - Does implementation find a concrete ambiguity in `docs/supported-surface.md`?** [VERIFIED: 125-CONTEXT.md]
+   - Decision used: D-14 controls the plan. `docs/supported-surface.md` remains unchanged unless implementation finds and documents a concrete public-support ambiguity. [VERIFIED: 125-CONTEXT.md]
+   - Plan impact: Task 125-06-03 reads `docs/supported-surface.md` as the support ceiling, modifies only `docs/operator-admin.md` by default, and requires the summary to name the exact ambiguity before any `docs/supported-surface.md` edit. No checkpoint or new scope is planned because the locked decision already supplies the default.
+2. **RESOLVED - How much helper extraction is warranted?** [VERIFIED: 125-CONTEXT.md]
+   - Decision used: D-08 and D-09 control the plan. `HtmlAssertions` and `RouteScorecards` stay canonical; new test-support helpers are allowed only when they reduce duplicated proof logic without becoming runtime API. [VERIFIED: 125-CONTEXT.md]
+   - Plan impact: Plans extract only the concrete helpers already justified by task ownership: `HtmlAssertions` gains rendered HTML checks in 125-02, and `BrowserEvidence` is created in 125-06 to parse and scrub the proof artifact. A separate sensitive-values helper is not planned; route-local proof reuses existing helpers unless implementation discovers duplication and records the justification in the summary.
 
 ## Environment Availability
 
