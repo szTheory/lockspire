@@ -16,7 +16,7 @@
 | 122 | 3/3 | Complete    | 2026-06-28 |
 | 123 | 5/5 | Complete    | 2026-06-29 |
 | 124 | 6/6 | Complete    | 2026-06-30 |
-| 125 | 5/6 | In Progress|  |
+| 125 | 6/6 | Complete   | 2026-06-30 |
 
 ## Phase Details
 
@@ -99,7 +99,7 @@
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -115,7 +115,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 125-06-PLAN.md — Maintainer proof artifact and operator docs closeout
+- [x] 125-06-PLAN.md — Maintainer proof artifact and operator docs closeout
 
 **Success criteria:**
 
