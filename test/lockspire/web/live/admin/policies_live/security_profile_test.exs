@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
   alias Lockspire.Admin
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile
 
   @endpoint Lockspire.Web.Endpoint
@@ -96,6 +97,46 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
+  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 security profile posture explains strict readiness and host boundary" do
+    assert {:ok, _policy} = Admin.put_security_profile(:none)
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
+
+    assert html =~ "Configure"
+    assert html =~ "Global security profile"
+    assert html =~ "Strict readiness"
+    assert html =~ "Clients that inherit"
+    assert html =~ "Next safe action"
+    assert html =~ "Save global security profile"
+    assert html =~ "global issuer security profile default"
+    assert html =~ "future requests from inheriting clients"
+    assert html =~ "issuer signing-key readiness"
+
+    HtmlAssertions.assert_no_text(html, [
+      "host staff authentication",
+      "host MFA",
+      "role management",
+      "role-management",
+      "tenant policy editor",
+      "developer portal",
+      "Create client",
+      "Disable client",
+      "Enable client",
+      "Rotate client secret",
+      "Rotate registration access token",
+      "Reveal secret",
+      "Export credential",
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage"
+    ])
+  end
+
   test "saving global security profile persists change across reload" do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/security-profile")
@@ -146,11 +187,36 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     assert html =~ "security_profile"
     assert html =~ "invalid_security_profile"
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
     assert {:ok, %{security_profile: :none}} = Admin.get_server_policy()
   end
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp forbidden_secret_samples do
+    [
+      "real-client-secret",
+      "production-secret",
+      "prod-access-token",
+      "prod-refresh-token",
+      "sk_live_",
+      "pk_live_",
+      "eyJhbGci",
+      "BEGIN PRIVATE KEY"
+    ]
+  end
+
+  defp backend_leak_samples do
+    [
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage",
+      "stacktrace",
+      "constraint",
+      "private_jwk_encrypted"
+    ]
   end
 
   defp live_route?(route, path, view) do
