@@ -253,6 +253,112 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     "public theming api",
     "theme_lab"
   ]
+  @phase_124_configure_source_paths %{
+    clients_index:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/index.ex", __DIR__),
+    clients_show:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__),
+    clients_form:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/clients_live/form_component.ex",
+        __DIR__
+      ),
+    clients_rotate_secret:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/clients_live/rotate_secret_component.ex",
+        __DIR__
+      ),
+    dcr_index:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/dcr_live/index.ex", __DIR__),
+    iat_index:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/index.ex", __DIR__),
+    iat_index_template:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/iat_live/index.html.heex",
+        __DIR__
+      ),
+    iat_new: Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/new.ex", __DIR__),
+    iat_new_template:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/iat_live/new.html.heex", __DIR__),
+    keys_index:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/index.ex", __DIR__),
+    keys_show:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/keys_live/show.ex", __DIR__),
+    keys_action_component:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/keys_live/action_component.ex",
+        __DIR__
+      ),
+    policies_index:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/policies_live/index.ex", __DIR__),
+    policies_par:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/policies_live/par.ex", __DIR__),
+    policies_dpop:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/policies_live/dpop.ex", __DIR__),
+    policies_security_profile:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/policies_live/security_profile.ex",
+        __DIR__
+      ),
+    policies_dcr:
+      Path.expand("../../../../../lib/lockspire/web/live/admin/policies_live/dcr.ex", __DIR__),
+    policies_dcr_template:
+      Path.expand(
+        "../../../../../lib/lockspire/web/live/admin/policies_live/dcr.html.heex",
+        __DIR__
+      )
+  }
+  @phase_124_expected_configure_routes [
+    "/admin/clients",
+    "/admin/clients/:client_id",
+    "/admin/clients/:client_id/edit",
+    "/admin/clients/:client_id/edit?workflow=logout-propagation",
+    "/admin/clients/:client_id/logout-uris",
+    "/admin/clients/:client_id/par-policy",
+    "/admin/clients/:client_id/redirects",
+    "/admin/clients/:client_id/rotate-registration-access-token",
+    "/admin/clients/:client_id/rotate-secret",
+    "/admin/clients/:client_id/security-profile",
+    "/admin/dcr",
+    "/admin/iats",
+    "/admin/iats/new",
+    "/admin/keys",
+    "/admin/keys/:id",
+    "/admin/policies",
+    "/admin/policies/dcr",
+    "/admin/policies/dpop",
+    "/admin/policies/par",
+    "/admin/policies/security-profile"
+  ]
+  @phase_124_required_primitives %{
+    clients_index: [:page_hero, :copy_once_secret_panel, :status_badge],
+    clients_show: [
+      :page_hero,
+      :action_group,
+      :confirmation_panel,
+      :copy_once_secret_panel,
+      :long_value,
+      :status_badge
+    ],
+    clients_rotate_secret: [:copy_once_secret_panel],
+    dcr_index: [:page_hero, :decision_summary],
+    iat_index_template: [
+      :page_hero,
+      :dense_resource_row,
+      :long_value,
+      :status_badge,
+      :confirmation_panel
+    ],
+    iat_new_template: [:page_hero, :copy_once_secret_panel],
+    keys_index: [:page_hero, :action_group, :long_value, :status_badge],
+    keys_show: [:page_hero, :long_value, :status_badge],
+    keys_action_component: [:confirmation_panel, :long_value],
+    policies_index: [:page_hero],
+    policies_par: [:page_hero, :decision_summary],
+    policies_dpop: [:page_hero, :decision_summary],
+    policies_security_profile: [:page_hero, :decision_summary],
+    policies_dcr_template: [:page_hero, :decision_summary]
+  }
 
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
@@ -1206,8 +1312,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
     assert source_for("iat_live/index.html.heex") =~ "data-confirm="
     assert source_for("iat_live/index.html.heex") =~ "Revoke initial access token"
-    assert source_for("clients_live/show.ex") =~ "<:destructive>"
-    assert source_for("clients_live/show.ex") =~ "phx-click=\"toggle_client\""
+    assert source_for("clients_live/show.ex") =~ "AdminComponents.confirmation_panel"
+    assert source_for("clients_live/show.ex") =~ "variant={if @client.active, do: :danger"
+    assert source_for("clients_live/show.ex") =~ "phx-submit=\"toggle_client\""
+    assert source_for("clients_live/show.ex") =~ "name=\"toggle[confirm]\""
 
     refute sources =~ "Playwright"
     refute sources =~ "screenshot"
@@ -1595,6 +1703,88 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                "/test/support/lockspire/web/admin_lab/fixtures.ex"
 
       refute File.read!(@mix_path) =~ ~r/files:\s+~w\([^)]*test\/support/
+    end
+  end
+
+  describe "Phase 124 Configure propagation contracts" do
+    test "CONFIG-01 D-01 D-02 route truth stays AdminRouter and scorecard derived" do
+      assert_configure_route_boundary!()
+      assert_no_phase_124_public_surface!()
+    end
+
+    test "CONFIG-01 CONFIG-02 CONFIG-03 D-03 through D-10 Configure sources use approved primitives and action semantics" do
+      sources = phase_124_configure_sources()
+      source_blob = phase_124_configure_source_blob()
+
+      assert Map.keys(sources) |> Enum.sort() ==
+               @phase_124_configure_source_paths |> Map.keys() |> Enum.sort()
+
+      for group <- [:clients_index, :dcr_index, :iat_index_template, :keys_index, :policies_index] do
+        assert Map.has_key?(sources, group), "missing Configure source group #{inspect(group)}"
+      end
+
+      for {source_key, primitives} <- @phase_124_required_primitives do
+        source = Map.fetch!(sources, source_key)
+
+        for primitive <- primitives do
+          assert phase_124_primitive_present?(source, primitive),
+                 "expected #{source_key} to use AdminComponents.#{primitive}"
+        end
+      end
+
+      for label <- [
+            "Filter clients",
+            "Create client",
+            "Review client configuration",
+            "Edit client metadata",
+            "Save metadata",
+            "Save redirect URIs",
+            "Save post-logout redirect URIs",
+            "Save logout propagation",
+            "Save PAR policy",
+            "Save security profile",
+            "Rotate client secret",
+            "Rotate registration access token",
+            "Review DCR onboarding",
+            "Mint initial access token",
+            "Review initial access tokens",
+            "Review PAR policy",
+            "Review security profile",
+            "Review DPoP policy",
+            "Review DCR policy",
+            "Save global PAR policy",
+            "Save global security profile",
+            "Save global DPoP policy",
+            "Save global DCR policy",
+            "Generate signing key",
+            "Generate encryption key",
+            "Review key lifecycle",
+            "Publish key",
+            "Activate key",
+            "Retire key"
+          ] do
+        assert source_blob =~ label, "missing approved Configure label #{inspect(label)}"
+      end
+
+      for denied <- phase_124_denied_action_labels() do
+        refute Regex.match?(phase_124_action_label_pattern(denied), source_blob),
+               "unexpected unsupported Configure action label #{inspect(denied)}"
+      end
+
+      for phrase <- [
+            "Plaintext is shown once",
+            "stores only the hash",
+            "does not store or re-show",
+            "redacted durable state",
+            "name=\"toggle[confirm]\"",
+            "name=\"revoke[confirm]\"",
+            "AdminComponents.confirmation_panel",
+            "AdminComponents.action_group"
+          ] do
+        assert source_blob =~ phrase, "missing Phase 124 copy/action contract #{inspect(phrase)}"
+      end
+
+      refute source_blob =~ "data-confirm="
     end
   end
 
@@ -2034,6 +2224,155 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   defp phase_123_source_for("/logouts"),
     do: File.read!(Map.fetch!(@phase_123_operate_sources, :logouts))
+
+  defp phase_124_configure_sources do
+    Map.new(@phase_124_configure_source_paths, fn {key, path} -> {key, File.read!(path)} end)
+  end
+
+  defp phase_124_configure_source_blob do
+    phase_124_configure_sources()
+    |> Map.values()
+    |> Enum.join("\n")
+  end
+
+  defp phase_124_denied_action_labels do
+    [
+      "Apply",
+      "Submit",
+      "OK",
+      "Open workflow",
+      "Revoke",
+      "Mint IAT",
+      "Rotate secret",
+      "Rotate RAT",
+      "Reveal secret",
+      "Reveal token",
+      "Recover token",
+      "Export credential",
+      "Bulk revoke",
+      "Force publish",
+      "Retry logout delivery",
+      "Discard queue item",
+      "Approve DCR request",
+      "Deny DCR request",
+      "Reset nonce",
+      "Debug token",
+      "Fetch remote JWKS",
+      "Developer portal",
+      "Host tenant policy",
+      "Public theming",
+      "Component lab route",
+      "Storybook"
+    ]
+  end
+
+  defp assert_configure_route_boundary! do
+    router_source = File.read!(@admin_router_path)
+    scorecards = phase_121_scorecards()
+
+    configure_routes =
+      Lockspire.Web.AdminRouter
+      |> Phoenix.Router.routes()
+      |> Enum.map(&mounted_admin_route(&1.path))
+      |> Kernel.++(RouteScorecards.workflow_exceptions())
+      |> Enum.filter(&phase_124_configure_route?/1)
+      |> Enum.sort()
+
+    assert configure_routes == @phase_124_expected_configure_routes
+
+    for route <- @phase_124_expected_configure_routes do
+      assert Map.has_key?(scorecards, route), "missing scorecard for #{route}"
+    end
+
+    for forbidden <- [
+          "component_lab",
+          "component-lab",
+          "design_system",
+          "design-system",
+          "storybook",
+          "Storybook",
+          "browser_proof",
+          "browser-proof",
+          "theme_lab",
+          "theming"
+        ] do
+      refute router_source =~ forbidden
+    end
+  end
+
+  defp assert_no_phase_124_public_surface! do
+    mix = File.read!(@mix_path)
+    supported_surface = File.read!(@supported_surface_doc_path)
+    router = File.read!(@admin_router_path)
+
+    public_boundary = String.downcase(Enum.join([mix, supported_surface, router], "\n"))
+
+    for forbidden <- [
+          "public configure api",
+          "public component api",
+          "public design-system",
+          "public theming",
+          "theme engine",
+          "component lab route",
+          "component-lab route",
+          "storybook route",
+          "browser proof route",
+          "developer portal",
+          "tenant policy editor",
+          "host-owned policy editor",
+          "playwright support",
+          "required playwright",
+          "axe support",
+          "required axe"
+        ] do
+      refute public_boundary =~ forbidden
+    end
+
+    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+
+    for forbidden <- [
+          ".planning",
+          "test/support/lockspire/web/admin_lab",
+          "package.json",
+          "package-lock.json",
+          "node_modules",
+          "playwright.config",
+          "storybook",
+          "stories",
+          "browser-proof"
+        ] do
+      refute String.downcase(package_files) =~ String.downcase(forbidden)
+      refute String.downcase(mix) =~ String.downcase(forbidden)
+    end
+
+    assert Path.wildcard(Path.expand("../../../../../priv/repo/migrations/*124*", __DIR__)) == []
+    refute File.exists?(Path.expand("../../../../../package.json", __DIR__))
+  end
+
+  defp phase_124_configure_route?(route) do
+    route in RouteScorecards.workflow_exceptions() or
+      Enum.any?(
+        [
+          "/admin/clients",
+          "/admin/dcr",
+          "/admin/iats",
+          "/admin/keys",
+          "/admin/policies"
+        ],
+        &String.starts_with?(route, &1)
+      )
+  end
+
+  defp phase_124_primitive_present?(source, primitive) do
+    primitive = Atom.to_string(primitive)
+
+    source =~ "AdminComponents.#{primitive}" or
+      source =~ "Lockspire.Web.Components.AdminComponents.#{primitive}"
+  end
+
+  defp phase_124_action_label_pattern(label) do
+    ~r/(?:^|>|\n|")\s*#{Regex.escape(label)}\s*(?:<|\n|"|$)/i
+  end
 
   defp phase_123_operate_source_blob do
     @phase_123_operate_sources
