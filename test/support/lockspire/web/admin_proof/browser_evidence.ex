@@ -24,25 +24,6 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   @allowed_motion ["default", "reduced-motion"]
   @allowed_viewports ["320px", "390px", "768px", "1024px", "1440px"]
 
-  @sensitive_patterns [
-    {"cookie", ~r/\b(?:cookie|session|session_id)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
-    {"auth code", ~r/\b(?:authorization_code|auth_code)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
-    {"JWT-looking token",
-     ~r/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,})?\b/},
-    {"token parameter",
-     ~r/(?:^|[?&\s])(?:access_token|refresh_token|id_token)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
-    {"plaintext credential",
-     ~r/\b(?:client_secret|password|plaintext[_ -]?password)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
-    {"private key", ~r/-----BEGIN [A-Z ]*PRIVATE KEY-----/},
-    {"verifier material",
-     ~r/\b(?:code_verifier|verifier_material)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
-    {"device or user code", ~r/\b(?:device_code|user_code)=["']?[A-Za-z0-9._~+%\/=-]{4,}/i},
-    {"copy-once secret",
-     ~r/(?:copy[- ]once\s+(?:secret|plaintext|value|credential)|(?:secret|credential).{0,24}copy[- ]once)/i},
-    {"production-looking hostname",
-     ~r/\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud)(?::\d+)?(?:\/|\b)/i}
-  ]
-
   def required_columns, do: @required_columns
 
   def allowed_results, do: @allowed_results
@@ -61,13 +42,34 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   end
 
   def assert_redaction_safe!(source) when is_binary(source) do
-    for {label, pattern} <- @sensitive_patterns do
+    for {label, pattern} <- sensitive_patterns() do
       if Regex.match?(pattern, source) do
         raise ArgumentError, "sensitive evidence #{label} detected"
       end
     end
 
     source
+  end
+
+  defp sensitive_patterns do
+    [
+      {"cookie", ~r/\b(?:cookie|session|session_id)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
+      {"auth code", ~r/\b(?:authorization_code|auth_code)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
+      {"JWT-looking token",
+       ~r/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,})?\b/},
+      {"token parameter",
+       ~r/(?:^|[?&\s])(?:access_token|refresh_token|id_token)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
+      {"plaintext credential",
+       ~r/\b(?:client_secret|password|plaintext[_ -]?password)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
+      {"private key", ~r/-----BEGIN [A-Z ]*PRIVATE KEY-----/},
+      {"verifier material",
+       ~r/\b(?:code_verifier|verifier_material)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
+      {"device or user code", ~r/\b(?:device_code|user_code)=["']?[A-Za-z0-9._~+%\/=-]{4,}/i},
+      {"copy-once secret",
+       ~r/(?:copy[- ]once\s+(?:secret|plaintext|value|credential)|(?:secret|credential).{0,24}copy[- ]once)/i},
+      {"production-looking hostname",
+       ~r/\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud)(?::\d+)?(?:\/|\b)/i}
+    ]
   end
 
   defp evidence_tables!(markdown) do
