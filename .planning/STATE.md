@@ -1,20 +1,20 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.32
-milestone_name: Admin Page IA & Interaction Model Polish
-current_phase: 125
-status: complete
-stopped_at: Verified Phase 125 and updated project closeout state
-last_updated: "2026-06-30T18:39:26Z"
+milestone: none
+milestone_name: null
+current_phase: null
+status: awaiting_next_milestone
+stopped_at: Milestone v1.32 archived; waiting for next milestone
+last_updated: "2026-06-30T19:10:00Z"
 last_activity: 2026-06-30
-last_activity_desc: Phase 125 complete
+last_activity_desc: Milestone v1.32 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
   total_plans: 24
   completed_plans: 24
   percent: 100
-current_phase_name: Browser Proof, Docs & Adversarial Ratchet
+current_phase_name: null
 ---
 
 # Project State
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** v1.32 phase work complete — milestone closeout
+**Current focus:** Sustaining GA release train; start a fresh milestone only with concrete adopter, support, or release evidence.
 
 ## Current Position
 
-Phase: 125
-Plan: 7/7 complete
-Status: Verified and complete — ready for milestone closeout
-Last activity: 2026-06-30 — Phase 125 complete
+Phase: Milestone v1.32 complete
+Plan: -
+Status: Awaiting next milestone
+Last activity: 2026-06-30 — Milestone v1.32 completed and archived
 
 ## Most Recent Release
 
@@ -47,6 +47,7 @@ Last activity: 2026-06-30 — Phase 125 complete
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.32 | 121-125 | 24 | 15 | shipped |
 | v1.31 | 116-120 | 14 | 17 | shipped |
 | v1.30 | 111-115 | 12 | 17 | shipped |
 | v1.29 | 107-110 | 17 | 24 | shipped |
@@ -259,4 +260,4 @@ Last activity: 2026-06-30 — Phase 125 complete
 
 ## Operator Next Steps
 
-- Discuss Phase 123 with /gsd-discuss-phase 123
+- Start the next milestone with /gsd-new-milestone

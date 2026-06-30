@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.32 Admin Page IA & Interaction Model Polish (Shipped: 2026-06-30)
+
+**Delivered:** Page-first admin IA and interaction polish across route scorecards, Support, Operate, Configure, fixtures, proof, docs, and adversarial review without broadening protocol, storage, host-seam, lab, theming, browser-tooling, or public support surface.
+
+**Phases completed:** 5 phases, 24 plans, 49 tasks
+
+**Key accomplishments:**
+
+- Route scorecards and deterministic guardrails now cover every AdminRouter route plus the logout-propagation workflow, with a documented page/section/action/component judgment rubric.
+- Support investigation pages for tokens and consents now lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior.
+- Operate queues for interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while remaining read-only.
+- Configure pages for clients, DCR/IAT, keys, and policies now share page-first posture, copy-once handoffs, confirmation-backed risky actions, and source/stress contracts.
+- Phase 125 added redaction-safe fixtures, route-family rendered-HTML guardrails, browser/manual maintainer evidence, operator docs, empty/no-match proof, and adversarial closeout artifacts.
+- Milestone audit found no blockers; 5 non-blocking tech-debt warnings were accepted and documented in the archived audit.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.32-MILESTONE-AUDIT.md`](milestones/v1.32-MILESTONE-AUDIT.md) (`tech_debt`, no blockers).
+
+**Archives:** `milestones/v1.32-ROADMAP.md`, `milestones/v1.32-REQUIREMENTS.md`, `milestones/v1.32-MILESTONE-AUDIT.md` · **Git tag:** `v1.32`
+
+---
+
 ## v1.31 Admin Design-System Stress Test (Shipped: 2026-06-26)
 
 **Delivered:** A systematic admin/operator design-system stress test covering inventory, fixtures, primitives, page IA, proof, docs, and support-boundary guardrails.

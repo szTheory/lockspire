@@ -10,19 +10,19 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has now completed Phase 125, the final planned phase of v1.32. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, the admin design-system stress test in v1.31, and admin page IA and interaction-model polish in v1.32.
+Lockspire has now shipped v1.32. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent shipped sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, the admin design-system stress test in v1.31, and admin page IA and interaction-model polish in v1.32.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently finished feature work, `v1.32 Admin Page IA & Interaction Model Polish`, made the admin/operator UI more deliberately composed page by page across route scorecards, Support and Operate flows, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, and bounded operator docs. v1.32 intentionally preserved OAuth/OIDC protocol behavior, storage schemas, host-owned operator authentication, the embedded-library shape, and the supported admin router boundary.
+The most recently shipped feature work, `v1.32 Admin Page IA & Interaction Model Polish`, made the admin/operator UI more deliberately composed page by page across route scorecards, Support and Operate flows, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, and bounded operator docs. v1.32 intentionally preserved OAuth/OIDC protocol behavior, storage schemas, host-owned operator authentication, the embedded-library shape, and the supported admin router boundary.
 
 Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
 
 The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
 
-## Current Milestone: v1.32 Admin Page IA & Interaction Model Polish
+## Completed Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
 **Goal:** Make the admin/operator UI feel deliberately composed page by page, with judgment-level IA, component-group, copy, interaction, and responsive polish that advances from v1.31 without regressions.
 
@@ -33,6 +33,8 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 - Lock the improvement loop with ugly redaction-safe fixtures, source/rendered guardrails, browser/manual evidence, operator docs, and a final adversarial review that keeps lab, judge, and browser proof maintainer-only.
 
 **Why now:** v1.31 strengthened foundations, primitives, fixtures, and broad weak-page coverage. The remaining quality gap is more judgmental than structural: make each page and component group feel necessary, coherent, least-surprising, and operator-flow-oriented instead of drifting toward info dumps or generic admin density. This milestone preserves the embedded-library boundary and treats Support + Operate pages as the first quality bar before propagating patterns.
+
+**Delivered:** Phases 121-125 are complete, verified, audited, and archived. v1.32 shipped route scorecards, Support and Operate flow polish, Configure propagation, redaction-safe fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and adversarial proof without protocol, storage, host-seam, public lab, theming, browser-tooling, or support-surface creep.
 
 ## Completed Milestone: v1.31 Admin Design-System Stress Test
 
@@ -50,7 +52,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-With v1.32 phase work complete, run milestone closeout/security/UI follow-up gates and then return to the sustaining GA release train unless concrete adopter, support, or release evidence justifies another scoped feature milestone.
+Return to the sustaining GA release train unless concrete adopter, support, or release evidence justifies another scoped feature milestone. The next feature milestone should start through `/gsd-new-milestone` with fresh requirements rather than reusing the archived v1.32 requirements file.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -190,7 +192,7 @@ With v1.32 phase work complete, run milestone closeout/security/UI follow-up gat
 
 ### Active
 
-No active feature milestone requirement is selected until v1.32 closeout confirms the next planning target.
+No active feature milestone requirement is selected. Lockspire is back on the sustaining GA release train until fresh evidence justifies a new scoped milestone.
 
 ### Validated
 
@@ -327,7 +329,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start v1.29 as an admin journey and design-system deep polish milestone | v1.28 established the coherent admin UI baseline. The next value is a systematic route-by-route operator journey pass, with strongest attention on support/operations/mobile/design-system weak spots rather than more protocol breadth or a UI rewrite. | Adopted at v1.29 milestone start (2026-06-03); archived 2026-06-04 |
 | Start and complete v1.30 as adoption-demo Docker DX and repo hygiene | v1.29 produced route-complete admin UI proof, but the next UI iteration needed a boring, repeatable local demo base with fewer Docker conflicts, clearer startup output, wrapper-driven smoke proof, and scoped cleanup/hygiene before more UI polish. | Adopted at v1.30 milestone start (2026-06-04); archived 2026-06-24 |
 | Start and complete v1.31 as an admin design-system stress test | v1.29 made the admin UI coherent and v1.30 made the demo easier to inspect; the next leverage point was making shared components, fixtures, page IA, browser proof, and docs compound without protocol/storage/host-seam creep. | Adopted at v1.31 milestone start (2026-06-25); archived 2026-06-26 |
-| Start and phase-complete v1.32 as a page-first admin IA and interaction-model polish milestone | v1.31 strengthened foundations and broad weak-page coverage; the remaining quality gap was judgment-level page composition, user-flow hierarchy, copy, and component-group polish under ugly Support/Operate data before wider Configure propagation and final proof ratchets. | Adopted at v1.32 milestone start (2026-06-28); phase-complete 2026-06-30 |
+| Start and complete v1.32 as a page-first admin IA and interaction-model polish milestone | v1.31 strengthened foundations and broad weak-page coverage; the remaining quality gap was judgment-level page composition, user-flow hierarchy, copy, and component-group polish under ugly Support/Operate data before wider Configure propagation and final proof ratchets. | Adopted 2026-06-28; shipped and archived 2026-06-30 |
 
 ## Evolution
 
@@ -347,4 +349,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-30 after Phase 125 completion*
+*Last updated: 2026-06-30 after v1.32 milestone completion*

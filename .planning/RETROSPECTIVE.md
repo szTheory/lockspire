@@ -149,12 +149,51 @@
 
 ---
 
+## Milestone: v1.32 — Admin Page IA & Interaction Model Polish
+
+**Shipped:** 2026-06-30
+**Phases:** 5 | **Plans:** 24
+
+### What Was Built
+- Route scorecards and deterministic guardrails now cover every AdminRouter route plus the logout-propagation workflow.
+- Token and consent Support flows now lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior.
+- Interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving read-only boundaries.
+- Clients, DCR/IAT onboarding, keys, and policy pages now share page-first posture, copy-once handoffs, confirmation-backed risky actions, and source/stress proof.
+- Redaction-safe fixtures, rendered-HTML guardrails, browser/manual maintainer evidence, operator docs, empty/no-match proof, and adversarial artifacts close the proof loop.
+
+### What Worked
+- Starting with route scorecards gave later Support, Operate, Configure, and proof work a clear operator job and regression target.
+- Propagating patterns only after Support and Operate proved them kept Configure polish grounded instead of speculative.
+- Keeping browser/manual evidence maintainer-only while making parsed proof rows deterministic preserved the package/runtime boundary.
+
+### What Was Inefficient
+- The first milestone audit was run before Phases 123-125 existed, so closeout needed a fresh audit repair pass.
+- Broad `mix test.fast` remained noisy because out-of-scope Phase 115 adoption-demo/release-readiness failures and one `jwks_fetcher_test.exs` rerun failure were carried as deferred debt.
+- Browser/manual evidence was captured from the maintainer working tree, not a clean detached checkout, so deterministic tests had to remain the blocking proof.
+
+### Patterns Established
+- Treat route scorecards as a maintainer contract tying persona, top task, state coverage, follow-up route, and public-boundary truth together.
+- Use pressure-first dense rows for support and operation queues when tables would hide lifecycle and consequence information.
+- Parse proof artifacts structurally when manual/browser evidence is accepted, instead of relying on screenshot filenames or raw markdown grep.
+
+### Key Lessons
+1. Page-first UI polish is easier to verify when every route has a scorecard before implementation work starts.
+2. Read-only operator surfaces need explicit negative assertions for unsupported controls, not just absence by convention.
+3. Manual/browser evidence can be useful at closeout, but the milestone gate should stay deterministic and repo-native.
+
+### Cost Observations
+- Model mix: not recorded.
+- Notable: The formal audit ended as `tech_debt` rather than `passed` because the remaining issues were non-blocking support-hardening and proof-environment caveats.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.32 | N/A | 5 | Admin UI quality moved from component stress to page-first IA and interaction proof. |
 | v1.31 | N/A | 5 | Admin UI quality moved from page polish to source-derived design-system stress contracts. |
 | v1.30 | N/A | 5 | Docker demo lifecycle and hygiene commands became source-contracted maintainer surfaces. |
 | v1.29 | N/A | 4 | Route journey contract became the admin UI source of truth across docs, tests, screenshots, and page polish. |
@@ -164,6 +203,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.32 | ExUnit/LiveView/LazyHTML rendered route proof, source contracts, parsed browser evidence, docs, and adversarial artifacts | High | Route scorecards, BrowserEvidence parser, redaction-safe proof matrix extensions |
 | v1.31 | ExUnit/LiveView/LazyHTML source, rendered component, mounted route, docs, and package-boundary guardrails | High | Test-only admin lab fixtures, stress surface, and HTML assertion helpers |
 | v1.30 | Docker/source/docs/hygiene contracts plus smoke wrapper proof | High | POSIX shell lifecycle helpers and deterministic CI source checks |
 | v1.29 | Admin LiveView/design-system/browser/screenshot proof | High | BEM/design-token contract tests |
@@ -176,3 +216,4 @@
 3. **Route Contracts for Operator UI:** UI polish scales better when every route has an explicit job, risk state, empty state, and follow-up route before component work starts.
 4. **Demo Lifecycle Contracts:** Maintainer-facing Docker scripts need the same source-contract and redaction discipline as protocol-facing code.
 5. **Design-System Stress Before Polish:** Real component labs with hostile fixture data make reusable UI improvements safer than isolated route edits.
+6. **Proof Artifacts Need Parsers:** Manual/browser evidence becomes more reliable when closeout tests parse structured rows and enforce redaction, viewport, and gap fields.
