@@ -294,6 +294,59 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     refute_unsupported_worker_controls(html)
   end
 
+  test "phase 125 logout delivery proof keeps incident review sanitized and read-only", %{
+    long_endpoint: long_endpoint
+  } do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(%{}, "/lockspire/admin/logouts", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert_operate_route_guardrails(page_html, [
+      "authorization_code",
+      "refresh_token",
+      "access_token",
+      "private_key",
+      "logout_token_jti",
+      "logout_token_jti_secret_fixture",
+      "oban_job_id",
+      "4_242_424",
+      "4242424",
+      "raw response",
+      "cookie",
+      "endpoint secret",
+      "SQL row",
+      "worker internals"
+    ])
+
+    assert page_html =~ "Review logout deliveries"
+    assert page_html =~ "Waiting"
+    assert page_html =~ "Retrying"
+    assert page_html =~ "Failed"
+    assert page_html =~ "Discarded"
+    assert page_html =~ "Completed"
+    assert page_html =~ "Pending"
+    assert page_html =~ "Attempted"
+    assert page_html =~ "Retryable"
+    assert page_html =~ "Skipped"
+    assert page_html =~ "Rendered"
+    assert page_html =~ "Succeeded"
+    assert page_html =~ "Retryable failure"
+    assert page_html =~ "HTTP 503"
+    assert page_html =~ "Failure class Request failed / timeout"
+    assert page_html =~ "Terminal queue outcome"
+    assert page_html =~ "Delivery work completed"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ long_endpoint
+    refute_unsupported_worker_controls(page_html)
+  end
+
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
@@ -318,6 +371,26 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   defp unsupported_worker_control_text do
     ["Retry now", "Discard", "Logout now", "Worker control", "Requeue", "Approve", "Deny"]
+  end
+
+  defp assert_operate_route_guardrails(html, denied_values) do
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
+    |> HtmlAssertions.assert_aria_targets_exist("aria-controls")
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_disabled_links_have_semantics()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text(denied_values)
+
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_worker_control_text())
+
+    refute html =~ "<table"
+    refute html =~ "lockspire-admin-table-wrap"
+
+    html
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")

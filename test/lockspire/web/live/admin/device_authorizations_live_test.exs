@@ -186,8 +186,87 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
+  test "phase 125 device authorization proof keeps queue review redaction-safe and read-only", %{
+    authorizations: authorizations
+  } do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(%{}, "/admin/device_authorizations", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    [pending, approved, denied, expired, consumed] = authorizations
+
+    assert_operate_route_guardrails(page_html, [
+      "raw-device-code-pending",
+      "raw-user-code-pending",
+      "device-code-hash-pending",
+      "user-code-hash-pending",
+      "device-code-hash-approved",
+      "user-code-hash-approved",
+      "device-code-hash-denied",
+      "user-code-hash-denied",
+      "device-code-hash-expired",
+      "user-code-hash-expired",
+      "device-code-hash-consumed",
+      "user-code-hash-consumed",
+      "verification-handle-pending",
+      "verification-handle-approved",
+      "verification-handle-denied",
+      "verification-handle-expired",
+      "verification-handle-consumed",
+      "device_code",
+      "user_code",
+      "authorization_code",
+      "access_token",
+      "refresh_token",
+      "raw params",
+      "SQL row",
+      "database failure",
+      "backend storage"
+    ])
+
+    assert page_html =~ "Review device authorizations"
+    assert page_html =~ "Pending device authorization"
+    assert page_html =~ "Approved device authorization"
+    assert page_html =~ "Denied device authorization"
+    assert page_html =~ "Expired device authorization"
+    assert page_html =~ "Completed device authorization"
+    assert page_html =~ "Approved, waiting"
+    assert page_html =~ "Waiting for the user to finish verification before expiry."
+
+    assert page_html =~
+             "Denied before completion; preserve the durable handle for support follow-up."
+
+    assert page_html =~
+             "Expired before completion; no device authorization action is exposed from this page."
+
+    assert page_html =~ "Consumed by the token flow; use the record as read-only support truth."
+    assert page_html =~ "Not recorded"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ Redaction.handle(:client, pending.client_id)
+    assert page_html =~ Redaction.handle(:client, approved.client_id)
+    assert page_html =~ Redaction.handle(:client, denied.client_id)
+    assert page_html =~ Redaction.handle(:device_authorization, expired.verification_handle)
+    assert page_html =~ Redaction.handle(:device_authorization, consumed.verification_handle)
+    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
+    refute page_html =~ "account-with-a-very-long-safe-fixture-value"
+    refute_protocol_field_context(page_html, "state")
+    refute_protocol_field_context(page_html, "nonce")
+    refute_unsupported_queue_controls(page_html)
+  end
+
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp socket_for(action) do
+    %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
 
   defp live_route?(route, path, view) do
@@ -315,6 +394,26 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       "Pause",
       "Resume"
     ]
+  end
+
+  defp assert_operate_route_guardrails(html, denied_values) do
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
+    |> HtmlAssertions.assert_aria_targets_exist("aria-controls")
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_disabled_links_have_semantics()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text(denied_values)
+
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
+
+    refute html =~ "<table"
+    refute html =~ "lockspire-admin-table-wrap"
+
+    html
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")

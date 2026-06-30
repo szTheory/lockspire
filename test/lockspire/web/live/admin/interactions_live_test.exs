@@ -162,6 +162,54 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
+  test "phase 125 interactions proof keeps queue review redaction-safe and read-only" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(%{}, "/lockspire/admin/interactions", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert_operate_route_guardrails(page_html, [
+      "raw-nonce-value",
+      "raw-state-value",
+      "pkce-material-value",
+      "authorization_code",
+      "request object",
+      "cookie",
+      "session token",
+      "refresh_token",
+      "access_token",
+      "private_key",
+      "verifier_material",
+      "raw params"
+    ])
+
+    assert page_html =~ "Review interactions"
+    assert page_html =~ "Pending login"
+    assert page_html =~ "Pending consent"
+    assert page_html =~ "Completed"
+    assert page_html =~ "Denied"
+    assert page_html =~ "Expired"
+    assert page_html =~ "Waiting for login interaction"
+    assert page_html =~ "Waiting for consent interaction"
+    assert page_html =~ "Completed interaction"
+    assert page_html =~ "Denied interaction"
+    assert page_html =~ "Expired interaction"
+    assert page_html =~ "Not recorded"
+    assert page_html =~ "lockspire-admin-long-value"
+    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
+    refute page_html =~ "account-with-a-very-long-safe-fixture-value"
+    refute_protocol_field_context(page_html, "state")
+    refute_protocol_field_context(page_html, "nonce")
+    refute_unsupported_queue_controls(page_html)
+  end
+
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
@@ -273,6 +321,26 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
   defp unsupported_queue_control_text do
     ["Retry", "Discard", "Approve", "Deny", "Logout now", "Worker control", "Requeue"]
+  end
+
+  defp assert_operate_route_guardrails(html, denied_values) do
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
+    |> HtmlAssertions.assert_aria_targets_exist("aria-controls")
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_disabled_links_have_semantics()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text(denied_values)
+
+    HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
+
+    refute html =~ "<table"
+    refute html =~ "lockspire-admin-table-wrap"
+
+    html
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
