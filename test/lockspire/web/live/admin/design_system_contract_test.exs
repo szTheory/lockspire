@@ -362,7 +362,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
 
   describe "Phase 125 rendered HTML assertion helper contracts" do
     test "disabled link helper rejects anchor-shaped disabled actions and accepts semantic links" do
-      disabled_anchor = ~s(<a href="/admin/clients" class="lockspire-admin-btn lockspire-admin-btn-disabled">Disabled link action</a>)
+      disabled_anchor =
+        ~s(<a href="/admin/clients" class="lockspire-admin-btn lockspire-admin-btn-disabled">Disabled link action</a>)
 
       error =
         assert_raise ExUnit.AssertionError, fn ->

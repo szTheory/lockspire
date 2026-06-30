@@ -10,6 +10,14 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     "Submit"
   ]
 
+  @token_like_text_patterns [
+    {"JWT-looking text", ~r/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,})?\b/},
+    {"live-key-looking text", ~r/\b(?:sk|pk)_live_[A-Za-z0-9]{8,}\b/},
+    {"cookie/auth-code-like text",
+     ~r/\b(?:cookie|session|authorization_code|auth_code|code_verifier|device_code|user_code)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
+    {"private-key-like text", ~r/-----BEGIN [A-Z ]*PRIVATE KEY-----/}
+  ]
+
   def document(html) when is_binary(html), do: LazyHTML.from_fragment(html)
   def document(%LazyHTML{} = html), do: html
 
@@ -150,8 +158,36 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     html
   end
 
+  def assert_disabled_links_have_semantics(html) do
+    disabled_links =
+      html
+      |> document()
+      |> LazyHTML.query("a, [role=\"link\"]")
+      |> LazyHTML.attributes()
+      |> Enum.filter(&disabled_link_like?/1)
+
+    missing_semantics =
+      disabled_links
+      |> Enum.reject(&disabled_link_semantic?/1)
+
+    assert missing_semantics == [],
+           "expected disabled link actions to expose role=\"link\" and aria-disabled=\"true\" without href, found: #{inspect(missing_semantics)}"
+
+    html
+  end
+
   def assert_no_generic_cta_text(html) do
     assert_no_text(html, @generic_cta_text)
+  end
+
+  def assert_no_token_like_text(html) do
+    source = html_source(html)
+
+    for {label, pattern} <- @token_like_text_patterns do
+      refute Regex.match?(pattern, source), "expected rendered HTML to omit #{label}"
+    end
+
+    html
   end
 
   def assert_no_interactive_controls(html, opts \\ []) do
@@ -215,6 +251,19 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
       true ->
         false
     end
+  end
+
+  defp disabled_link_like?(attrs) do
+    class = attribute_value(attrs, "class") || ""
+    aria_disabled = attribute_value(attrs, "aria-disabled")
+
+    String.contains?(class, "disabled") or aria_disabled == "true"
+  end
+
+  defp disabled_link_semantic?(attrs) do
+    attribute_value(attrs, "role") == "link" and
+      attribute_value(attrs, "aria-disabled") == "true" and
+      is_nil(attribute_value(attrs, "href"))
   end
 
   defp labelledby_targets_exist?(labelledby, id_set) do
