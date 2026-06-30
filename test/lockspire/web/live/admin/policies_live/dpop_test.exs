@@ -85,6 +85,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dpop")
 
     HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_label_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
@@ -97,18 +98,34 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
     assert html =~ "Save global DPoP policy"
     assert html =~ "global issuer DPoP default"
     assert html =~ "future token-bound requests"
+    assert html =~ "Existing client overrides stay on their client policy routes."
+
+    for href <- policy_nav_hrefs() do
+      HtmlAssertions.assert_has_link(html, href)
+    end
 
     HtmlAssertions.assert_no_text(html, [
       "Reset nonce",
       "Inspect proof",
       "Debug token",
+      "Fetch remote key",
+      "Remote key fetch",
+      "Raw proof",
+      "Proof replay",
       "Create client",
       "Disable client",
       "Enable client",
       "Rotate client secret",
       "Rotate registration access token",
+      "per-client mutation",
       "host tenant policy",
+      "host-owned product policy",
+      "Tenant policy editor",
       "developer portal",
+      "public theming",
+      "AI judge",
+      "AI gate",
+      "browser gate",
       "Reveal token",
       "Export credential",
       "Postgrex",
@@ -167,6 +184,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
       "stacktrace",
       "constraint violation",
       "private_jwk_encrypted"
+    ]
+  end
+
+  defp policy_nav_hrefs do
+    [
+      "/admin/policies/par",
+      "/admin/policies/security-profile",
+      "/admin/policies/dpop",
+      "/admin/policies/dcr"
     ]
   end
 

@@ -88,6 +88,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/par")
 
     HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_label_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
@@ -100,6 +101,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     assert html =~ "Save global PAR policy"
     assert html =~ "global issuer PAR default"
     assert html =~ "future authorization requests"
+    assert html =~ "Existing client overrides stay on their client policy routes."
+
+    for href <- policy_nav_hrefs() do
+      HtmlAssertions.assert_has_link(html, href)
+    end
 
     HtmlAssertions.assert_no_text(html, [
       "Create client",
@@ -107,10 +113,23 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       "Enable client",
       "Rotate client secret",
       "Rotate registration access token",
+      "Reset nonce",
+      "Inspect proof",
+      "Debug token",
+      "Fetch remote key",
+      "Remote key fetch",
+      "Raw proof",
+      "Per-client mutation",
       "mutate existing clients",
       "update existing client records",
       "host tenant policy",
+      "host-owned product policy",
+      "Tenant policy editor",
       "developer portal",
+      "public theming",
+      "AI judge",
+      "AI gate",
+      "browser gate",
       "Reveal secret",
       "Export credential",
       "Postgrex",
@@ -171,6 +190,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       "stacktrace",
       "constraint violation",
       "private_jwk_encrypted"
+    ]
+  end
+
+  defp policy_nav_hrefs do
+    [
+      "/admin/policies/par",
+      "/admin/policies/security-profile",
+      "/admin/policies/dpop",
+      "/admin/policies/dcr"
     ]
   end
 

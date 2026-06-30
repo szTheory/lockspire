@@ -103,6 +103,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
     HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_label_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
@@ -116,6 +117,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "global issuer security profile default"
     assert html =~ "future requests from inheriting clients"
     assert html =~ "issuer signing-key readiness"
+    assert html =~ "Existing client overrides stay on their client policy routes."
+    assert html =~ "Not ready yet"
+    assert html =~ "Issuer prerequisites are not complete yet."
+
+    for href <- policy_nav_hrefs() do
+      HtmlAssertions.assert_has_link(html, href)
+    end
 
     HtmlAssertions.assert_no_text(html, [
       "host staff authentication",
@@ -123,14 +131,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       "role management",
       "role-management",
       "tenant policy editor",
+      "Tenant policy editor",
+      "host-owned product policy",
       "developer portal",
       "Create client",
       "Disable client",
       "Enable client",
       "Rotate client secret",
       "Rotate registration access token",
+      "Reset nonce",
+      "Inspect proof",
+      "Raw proof",
+      "Debug token",
+      "Fetch remote key",
+      "Remote key fetch",
       "Reveal secret",
       "Export credential",
+      "private key export",
+      "public theming",
+      "AI judge",
+      "AI gate",
+      "browser gate",
       "Postgrex",
       "Ecto.Changeset",
       "Lockspire.Storage"
@@ -216,6 +237,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       "stacktrace",
       "constraint violation",
       "private_jwk_encrypted"
+    ]
+  end
+
+  defp policy_nav_hrefs do
+    [
+      "/admin/policies/par",
+      "/admin/policies/security-profile",
+      "/admin/policies/dpop",
+      "/admin/policies/dcr"
     ]
   end
 
