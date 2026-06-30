@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 125
-status: verifying
-stopped_at: Completed 125-05-PLAN.md
-last_updated: "2026-06-30T18:35:04.503Z"
+status: complete
+stopped_at: Verified Phase 125 and updated project closeout state
+last_updated: "2026-06-30T18:39:26Z"
 last_activity: 2026-06-30
 last_activity_desc: Phase 125 complete
 progress:
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 125 — Browser Proof, Docs & Adversarial Ratchet
+**Current focus:** v1.32 phase work complete — milestone closeout
 
 ## Current Position
 
 Phase: 125
-Plan: Not started
-Status: Phase complete — ready for verification
+Plan: 7/7 complete
+Status: Verified and complete — ready for milestone closeout
 Last activity: 2026-06-30 — Phase 125 complete
 
 ## Most Recent Release
@@ -195,11 +195,11 @@ Last activity: 2026-06-30 — Phase 125 complete
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T18:26:46.785Z
+**Last session:** 2026-06-30T18:39:26Z
 
-**Next action:** Plan Phase 125 using the approved UI-SPEC.
+**Next action:** Run v1.32 milestone closeout/security/UI follow-up gates.
 **Resume file:** None
-**Stopped at:** Completed 125-05-PLAN.md
+**Stopped at:** Verified Phase 125 and updated project closeout state.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
