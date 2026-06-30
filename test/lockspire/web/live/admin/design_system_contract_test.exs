@@ -2605,7 +2605,13 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "maintainer evidence only",
           "not a supported admin route",
           "not mounted through `Lockspire.Web.AdminRouter`",
-          "not part of `docs/supported-surface.md`"
+          "not part of `docs/supported-surface.md`",
+          "scorecard -> page change -> deterministic guardrails -> browser/manual notes -> adversarial signoff",
+          "Deterministic ExUnit, LiveViewTest, LazyHTML, source, and rendered HTML proof is the blocking path",
+          "Browser/manual notes are supplemental maintainer proof",
+          "internal lab and stress surfaces are test/support infrastructure",
+          "AI/persona judge prompts are advisory maintainer input with human signoff only",
+          "`docs/supported-surface.md` remains the public support ceiling"
         ] do
       assert operator_doc =~ phrase
     end
