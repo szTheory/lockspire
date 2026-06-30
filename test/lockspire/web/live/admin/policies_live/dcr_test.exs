@@ -70,6 +70,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
     assert html =~ "Save global DCR policy"
+    assert html =~ "Configure"
 
     for name <- [
           "policy[registration_policy]",
@@ -88,7 +89,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     for heading <- [
           "Registration gate",
+          "Metadata allowlists",
           "Allowlist decisions",
+          "Default lifetimes",
           "Lifetime defaults",
           "Token endpoint auth methods",
           "Risk and posture"
@@ -103,6 +106,40 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "private_key_jwt posture"
     assert html =~ "client_secret_jwt posture"
     refute html =~ "extreme caution"
+  end
+
+  test "CONFIG-03 D-01 D-02 D-03 D-04 D-09 D-10 DCR policy scope stays global and future-only" do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
+    assert html =~ "Save global DCR policy"
+    assert html =~ "future Dynamic Client Registration requests"
+    assert html =~ "existing client records keep their stored configuration"
+    assert html =~ "does not mint Initial Access Tokens"
+    assert html =~ "rotate registration access tokens"
+    assert html =~ "update existing client records"
+    assert html =~ "create credential material"
+
+    HtmlAssertions.assert_no_text(html, [
+      "Mint initial access token",
+      "Rotate registration access token",
+      "Rotate client secret",
+      "Create client",
+      "Disable client",
+      "Enable client",
+      "host tenant policy",
+      "developer portal",
+      "Reveal",
+      "Export",
+      "Approve",
+      "Deny",
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "BEGIN PRIVATE KEY",
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage"
+    ])
   end
 
   test "global DCR policy page explains private_key_jwt registration posture and algorithms" do
@@ -172,6 +209,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     assert html =~ "must be greater than or equal to 0"
+    assert html =~ "dcr_default_client_lifetime_seconds"
+
+    HtmlAssertions.assert_no_text(html, [
+      "Ecto.Changeset",
+      "Postgrex",
+      "Lockspire.Storage",
+      "constraint",
+      "stacktrace"
+    ])
   end
 
   defp conn_for_admin do
