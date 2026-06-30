@@ -321,6 +321,35 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     end
   end
 
+  test "PROOF-01 D-06 D-16 stress surface renders shared fixture matrix as internal lab evidence" do
+    html = render_component(&StressSurface.render/1, fixture_set: Fixtures.all())
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_no_text(html, Fixtures.forbidden_substrings())
+
+    assert html =~ ~s(data-phase="125-proof-matrix")
+    assert html =~ "PROOF-01 shared fixture matrix"
+    assert html =~ "Not recorded"
+    assert html =~ "Internal lab boundary"
+    assert html =~ "Mobile width"
+    assert html =~ "Keyboard focus"
+    assert html =~ "phase-125-long-fixture.example.invalid"
+
+    for class <- @phase_125_required_classes do
+      assert html =~ ~s(data-fixture-class="#{class}"),
+             "rendered D-05 proof matrix must expose #{inspect(class)} class markers"
+    end
+
+    for state <- @phase_125_required_states do
+      assert html =~ ~s(data-fixture-state="#{state}"),
+             "rendered D-05 proof matrix must expose #{inspect(state)} state markers"
+    end
+
+    refute html =~ ~r/(package\.json|playwright\.config|storybook|browser-proof)/
+  end
+
   test "stress surface renders its empty-state proof with empty fixture groups" do
     html =
       render_component(&StressSurface.render/1,
