@@ -1842,6 +1842,27 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
   end
 
+  describe "Phase 125 PROOF-02 global guardrail contracts" do
+    test "route scorecards remain source-derived with stable evidence and support promises" do
+      assert_phase_125_route_scorecard_contract!()
+    end
+
+    test "source docs package and router boundaries reject public proof surface creep" do
+      phase_125_contract_sources()
+      |> assert_phase_125_public_surface_boundary!()
+    end
+
+    test "source and rendered contracts reject generic CTAs unsupported actions and redaction drift" do
+      phase_125_contract_sources()
+      |> assert_phase_125_copy_and_redaction_boundary!()
+    end
+
+    test "CSS source contracts preserve long value focus theme motion and responsive no-overflow claims" do
+      phase_125_contract_sources()
+      |> assert_phase_125_css_and_responsive_contract!()
+    end
+  end
+
   test "phase 110 demo seeds cover required proof states with artificial data" do
     seeds = File.read!(@adoption_demo_seeds_path)
 
