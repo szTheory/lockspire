@@ -30,37 +30,36 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.policy_nav />
 
-      <section class="lockspire-admin-hero">
-        <div>
-          <p class="lockspire-admin-eyebrow">Security policy</p>
-          <h2>Issuer posture, override pressure, and registration gates in one place.</h2>
-          <p>
-            Use this landing page to decide which detailed policy workflow to enter. Each
-            policy remains its own explicit operator action surface.
-          </p>
-        </div>
-      </section>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Policy posture"
+        body="Choose the issuer-level policy route that owns the setting you need to review. Each policy remains its own explicit operator action surface."
+      />
 
       <div class="lockspire-admin-dashboard-grid">
         <.policy_card
+          route={:par}
           title="PAR"
           value={@policy.par_policy}
           detail={"#{@summary.par.required} clients require PAR; #{@summary.par.optional} mark it optional."}
           href={admin_path("/policies/par")}
         />
         <.policy_card
+          route={:security_profile}
           title="Security profile"
           value={@policy.security_profile}
           detail={"#{@summary.security.fapi} clients require FAPI; #{@summary.security.message_signing} require message signing."}
           href={admin_path("/policies/security-profile")}
         />
         <.policy_card
+          route={:dpop}
           title="DPoP"
           value={@policy.dpop_policy}
           detail={"#{@summary.dpop.dpop} clients require DPoP; #{@summary.dpop.bearer} force bearer."}
           href={admin_path("/policies/dpop")}
         />
         <.policy_card
+          route={:dcr}
           title="Dynamic Client Registration"
           value={@policy.registration_policy}
           detail={"#{@summary.dcr.self_registered} self-registered clients and #{@summary.dcr.active_iats} active IATs."}
@@ -75,14 +74,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   attr(:value, :any, required: true)
   attr(:detail, :string, required: true)
   attr(:href, :string, required: true)
+  attr(:route, :atom, required: true)
 
   defp policy_card(assigns) do
     ~H"""
     <AdminComponents.section_card title={@title} subtitle={@detail}>
       <p class="lockspire-admin-kicker">Current setting</p>
       <p class="lockspire-admin-display-value">{@value}</p>
+      <p class="lockspire-admin-help">{policy_review_detail(@route)}</p>
       <AdminComponents.action_bar>
-        <AdminComponents.admin_button href={@href}>Open workflow</AdminComponents.admin_button>
+        <AdminComponents.admin_button href={@href}>{policy_review_label(@route)}</AdminComponents.admin_button>
       </AdminComponents.action_bar>
     </AdminComponents.section_card>
     """
@@ -137,6 +138,23 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
         :active
     end
   end
+
+  defp policy_review_label(:par), do: "Review PAR policy"
+  defp policy_review_label(:security_profile), do: "Review security profile"
+  defp policy_review_label(:dpop), do: "Review DPoP policy"
+  defp policy_review_label(:dcr), do: "Review DCR policy"
+
+  defp policy_review_detail(:par),
+    do: "Review issuer PAR defaults and client override pressure."
+
+  defp policy_review_detail(:security_profile),
+    do: "Review inherited security profile posture and strict readiness."
+
+  defp policy_review_detail(:dpop),
+    do: "Review sender-constrained token defaults and client exceptions."
+
+  defp policy_review_detail(:dcr),
+    do: "Review future registration gates, metadata allowlists, and DCR lifetimes."
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 end

@@ -1,9 +1,48 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.page_hero
+    eyebrow="Configure"
+    title="Global DCR policy"
+    body={"Current mode is #{@policy.registration_policy}. Decide who can self-register and what metadata future DCR requests may ask Lockspire to store."}
+  >
+    <:summary>
+      <Lockspire.Web.Components.AdminComponents.decision_summary>
+        <:item
+          label="Registration gate"
+          value={registration_policy_label(@policy.registration_policy)}
+          tone={registration_policy_tone(@policy.registration_policy)}
+          detail={registration_policy_detail(@policy.registration_policy)}
+        >
+        </:item>
+        <:item
+          label="Metadata allowlists"
+          value={allowlist_summary(@policy)}
+          tone={:info}
+          detail="Scopes, grants, responses, redirect schemes, and hosts bound requested metadata."
+        >
+        </:item>
+        <:item
+          label="Token auth methods"
+          value={auth_methods_summary(@policy)}
+          tone={:info}
+          detail="This allowlist controls what self-registered clients may request."
+        >
+        </:item>
+        <:item
+          label="Default lifetimes"
+          value={lifetime_summary(@policy)}
+          tone={:info}
+          detail="Applies only to clients and credentials created through DCR."
+        >
+        </:item>
+      </Lockspire.Web.Components.AdminComponents.decision_summary>
+    </:summary>
+  </Lockspire.Web.Components.AdminComponents.page_hero>
+
   <Lockspire.Web.Components.AdminComponents.policy_nav />
 
   <Lockspire.Web.Components.AdminComponents.section_card
-    title="Global DCR policy"
-    subtitle={"Current mode is #{@policy.registration_policy}. Configure issuer registration posture for Dynamic Client Registration without changing existing client records."}
+    title="Edit future registration policy"
+    subtitle={"Current mode is #{@policy.registration_policy}. This save changes future Dynamic Client Registration requests only; existing client records keep their stored configuration."}
   >
     <Lockspire.Web.Components.AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
