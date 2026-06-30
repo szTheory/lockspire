@@ -13,6 +13,43 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @mix_path Path.expand("../../../../../mix.exs", __DIR__)
   @supported_surface_path Path.expand("../../../../../docs/supported-surface.md", __DIR__)
+  @phase_125_required_states [
+    :empty,
+    :one_item,
+    :many_items,
+    :dense_data,
+    :high_count,
+    :zero_count,
+    :long_value,
+    :missing_optional,
+    :warning,
+    :incident,
+    :disabled,
+    :expired,
+    :revoked,
+    :reuse_detected,
+    :copy_once,
+    :stale_read_only,
+    :light,
+    :dark,
+    :system,
+    :reduced_motion,
+    :focus,
+    :mobile_width,
+    :orient,
+    :configure,
+    :support,
+    :operate,
+    :internal_lab
+  ]
+  @phase_125_required_classes [
+    :cardinality_layout,
+    :string_pressure,
+    :optionality,
+    :lifecycle_security,
+    :visual_accessibility,
+    :journey_boundary
+  ]
   @phase_124_configure_source_paths [
     Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/index.ex", __DIR__),
     Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__),
@@ -52,6 +89,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
              :operations,
              :structural_rows,
              :status_matrix,
+             :proof_matrix,
              :theme_modes,
              :motion_modes
            ]
@@ -76,6 +114,19 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
           :revoked,
           :reuse_detected,
           :copy_once,
+          :one_item,
+          :many_items,
+          :high_count,
+          :zero_count,
+          :missing_optional,
+          :stale_read_only,
+          :focus,
+          :mobile_width,
+          :orient,
+          :configure,
+          :support,
+          :operate,
+          :internal_lab,
           :waiting,
           :completed,
           :provenance
@@ -88,6 +139,49 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     for forbidden <- Fixtures.forbidden_substrings() do
       refute fixture_blob =~ forbidden
     end
+  end
+
+  test "PROOF-01 D-04 D-05 D-06 D-16 shared fixtures expose complete redaction-safe ugly-state matrix" do
+    scenario_states = MapSet.new(Fixtures.scenario_states())
+    fixtures = Fixtures.all()
+    proof_matrix = Map.fetch!(fixtures, :proof_matrix)
+
+    for state <- @phase_125_required_states do
+      assert MapSet.member?(scenario_states, state),
+             "D-05 PROOF-01 missing scenario state #{inspect(state)} in Fixtures.scenario_states/0"
+    end
+
+    matrix_states = proof_matrix |> Enum.map(& &1.state) |> MapSet.new()
+
+    for state <- @phase_125_required_states do
+      assert MapSet.member?(matrix_states, state),
+             "D-04/D-05 shared fixture matrix must expose #{inspect(state)} without public lab surface"
+    end
+
+    matrix_classes = proof_matrix |> Enum.map(& &1.class) |> MapSet.new()
+
+    for class <- @phase_125_required_classes do
+      assert MapSet.member?(matrix_classes, class),
+             "D-05 fixture matrix must include #{inspect(class)} coverage"
+    end
+
+    assert Enum.any?(proof_matrix, &(&1[:count] == 0)),
+           "D-05 cardinality coverage must include zero-count state"
+
+    assert Enum.any?(proof_matrix, &(&1[:count] > 100)),
+           "D-05 cardinality coverage must include dense/high-count state"
+
+    assert Enum.any?(proof_matrix, &(&1[:display_value] == "Not recorded")),
+           "D-05 optionality coverage must include missing optional fields rendered as Not recorded"
+
+    assert Enum.any?(proof_matrix, &String.contains?(to_string(&1[:long_url]), ".example.invalid")),
+           "D-16 string-pressure URLs must stay synthetic and non-production-looking"
+
+    matrix_blob = inspect(proof_matrix)
+
+    HtmlAssertions.assert_no_text(matrix_blob, Fixtures.forbidden_substrings())
+
+    refute matrix_blob =~ ~r/(sk_live_|pk_live_|BEGIN PRIVATE KEY|eyJhbGci|prod-access-token|prod-refresh-token)/
   end
 
   test "stress surface renders real admin components across required states" do
