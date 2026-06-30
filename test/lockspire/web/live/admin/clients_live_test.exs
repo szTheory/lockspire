@@ -149,6 +149,46 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Beta Client"
   end
 
+  test "clients index renders Configure filter context and copy-once client-secret handoff" do
+    assert {:ok, view, html} =
+             live(conn_for_admin(), "/admin/clients?q=Alpha&status=active&provenance=operator")
+
+    assert html =~ "Configure"
+    assert html =~ "Client inventory"
+    assert html =~ "Selected client context"
+    assert html =~ "Search: Alpha"
+    assert html =~ "Status: active"
+    assert html =~ "Provenance: operator"
+    assert html =~ "Matching clients: 1"
+    assert html =~ "Total clients: 3"
+    assert html =~ "Filter clients"
+    assert html =~ "Create client"
+    refute html =~ "Apply"
+    refute html =~ "Clients are the default operator entrypoint"
+    refute html =~ "Client secret"
+    refute html =~ "lockspire-admin-copy-once-secret__value"
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        name: "Phase 124 Client",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://phase124.example.com/callback",
+        allowed_scopes: "openid email"
+      }
+    })
+    |> render_submit()
+
+    created_html = render(view)
+
+    assert created_html =~ "Client created"
+    assert created_html =~ "Client secret"
+    assert created_html =~ "Plaintext is shown once"
+    assert created_html =~ "Lockspire stores only the hash and does not re-show it"
+    refute created_html =~ "client_secret_hash"
+  end
+
   test "client detail shows self-registered panel for DCR clients" do
     assert {:ok, alpha_socket} =
              Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
@@ -200,7 +240,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     |> element("a", "Rotate registration access token")
     |> render_click()
 
-    assert render(view) =~ "Rotate Registration Access Token (RAT)"
+    rat_prompt_html = render(view)
+
+    assert rat_prompt_html =~ "Rotate registration access token"
+    assert rat_prompt_html =~ "previous RAT stops being current"
+    assert rat_prompt_html =~ "Plaintext is shown once"
+    refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm
     view

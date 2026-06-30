@@ -192,6 +192,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
                pkce_required: true,
                subject_type: :public,
                provenance: :self_registered,
+               registration_access_token_hash: "sha256:rat:show",
                registration_client_uri:
                  "https://issuer.example.com/register/self-registered-action-client",
                created_at: DateTime.utc_now(),
@@ -205,6 +206,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "lockspire-admin-pane"
     assert html =~ "lockspire-admin-status-cluster"
     assert html =~ "lockspire-admin-long-value"
+    assert html =~ "Review client configuration"
 
     for group <- [
           "Identity and current status",
@@ -219,6 +221,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     end
 
     assert html =~ "lockspire-admin-action-group"
+    assert html =~ "lockspire-admin-action-group__primary"
+    assert html =~ "lockspire-admin-action-group__secondary"
+    assert html =~ "lockspire-admin-confirmation-panel"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/edit"
     assert html =~ "Edit client metadata"
     assert html =~ "/admin/clients/#{self_registered_client.client_id}/redirects"
@@ -236,6 +241,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert html =~ "Rotate client secret"
     assert html =~ "Rotate registration access token"
+    assert html =~ "Registration access token"
+    assert html =~ "Redacted"
     assert html =~ "Review DCR onboarding"
     assert html =~ "/admin/dcr"
     assert html =~ "Edit redirect URIs"
@@ -243,12 +250,54 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Edit logout propagation URIs"
     assert html =~ "Edit PAR policy"
     assert html =~ "Edit security profile"
-    assert html =~ ~s(phx-click="toggle_client")
+    assert html =~ ~s(phx-submit="toggle_client")
+    assert html =~ ~s(name="toggle[confirm]")
+    assert html =~ "Confirm client disable"
     assert html =~ "Disable client"
+
+    assert html =~
+             "future OAuth/OIDC requests for this client are blocked until an operator enables it again"
+
     assert html =~ "Registration access token rotation is grouped with credential actions above."
     refute html =~ "Rotate Registration Access Token (RAT)"
     refute html =~ "sha256:show:hash"
+    refute html =~ "sha256:rat:show"
     refute html =~ "client_secret_hash"
+    refute html =~ "registration_access_token_hash"
+  end
+
+  test "client secret rotation uses copy-once consequence copy", %{client: client} do
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
+
+    assert html =~ "Rotate client secret"
+    assert html =~ "previous secret stops being the current credential"
+    assert html =~ "Plaintext is shown once"
+    assert html =~ "Lockspire does not store or re-show it"
+    refute html =~ "sha256:show:hash"
+    refute html =~ "client_secret_hash"
+  end
+
+  test "client lifecycle changes require explicit confirmation", %{client: client} do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Confirm client disable"
+
+    html_without_confirm =
+      view
+      |> form("form[phx-submit=toggle_client]", %{toggle: %{}})
+      |> render_submit()
+
+    assert html_without_confirm =~ "confirm this lifecycle change"
+    assert {:ok, unchanged_client} = Admin.get_client(client.client_id)
+    assert unchanged_client.active
+
+    view
+    |> form("form[phx-submit=toggle_client]", %{toggle: %{confirm: "true"}})
+    |> render_submit()
+
+    assert {:ok, disabled_client} = Admin.get_client(client.client_id)
+    refute disabled_client.active
   end
 
   test "client detail support pivots link to supported logout queue route", %{client: client} do
