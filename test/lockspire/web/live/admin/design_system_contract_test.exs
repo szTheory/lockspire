@@ -544,7 +544,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
         assert row["Sensitive evidence check"] == "passed denylist"
       end
 
-      assert Enum.map(rows, & &1["Viewport"]) |> Enum.sort() == [
+      empty_state_row =
+        Enum.find(rows, fn row ->
+          empty_or_no_match_evidence? =
+            [row["State"], row["Scrubbed notes"]]
+            |> Enum.join(" ")
+            |> String.match?(~r/(?:\bempty\b|\bno[- ]match\b)/i)
+
+          empty_or_no_match_evidence? and row["Result"] == "pass" and
+            row["Gap note"] == "none" and
+            row["Sensitive evidence check"] == "passed denylist" and
+            is_integer(row["scrollWidth"]) and is_integer(row["clientWidth"])
+        end)
+
+      assert empty_state_row,
+             "missing required empty/no-match proof row with pass result, numeric widths, no gap, and passing denylist check"
+
+      assert Enum.map(rows, & &1["Viewport"]) |> Enum.uniq() |> Enum.sort() == [
                "1024px",
                "1440px",
                "320px",
