@@ -5,14 +5,14 @@ milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 124
 current_phase_name: Configure Onboarding Propagation Pass
 status: executing
-stopped_at: Completed 124-04-PLAN.md
-last_updated: "2026-06-30T02:21:38.633Z"
+stopped_at: Completed 124-05-PLAN.md
+last_updated: "2026-06-30T02:32:06.954Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
   percent: 60
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 124 (Configure Onboarding Propagation Pass) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-06-30
 
@@ -157,6 +157,9 @@ Last activity: 2026-06-30
 - [Phase 124]: Plan 124-03 used route-local lifecycle helpers instead of a new Configure component. — Keeps propagation page-local and avoids speculative shared component surface.
 - [Phase 124]: Plan 124-04 keeps policy overview review labels as private LiveView helpers. — Preserves route-specific operator copy without adding public component, route, API, schema, package, or host-owned surface.
 - [Phase 124]: Plan 124-04 keeps DCR policy as one ServerPolicy-backed global future-request save path. — Prevents policy review from minting IATs, rotating RATs, mutating clients, or implying host tenant/developer-portal ownership.
+- [Phase 124]: Plan 124-05 kept PAR, DPoP, and security-profile policy posture summaries route-local instead of adding a shared Configure component. — Preserves the embedded-library boundary and avoids speculative shared component surface.
+- [Phase 124]: Plan 124-05 preserved existing save_policy handlers and Lockspire.Admin/ServerPolicy behavior for all non-DCR policy pages. — Keeps policy saves on the existing global issuer persistence path without route, API, schema, or package expansion.
+- [Phase 124]: Plan 124-05 scoped policy copy to global issuer defaults and inheriting clients without host-owned policy controls. — Maintains the explicit host seam while making Configure scope semantics visible before save.
 
 ## Blockers/Concerns
 
@@ -171,11 +174,11 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T02:21:38.627Z
+**Last session:** 2026-06-30T02:32:06.950Z
 
-**Next action:** Execute Phase 124 Plan 124-05.
+**Next action:** Execute Phase 124 Plan 124-06.
 **Resume file:** None
-**Stopped at:** Completed 124-04-PLAN.md
+**Stopped at:** Completed 124-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -223,6 +226,7 @@ Last activity: 2026-06-30
 | Phase 124 P02 | 45m | 2 tasks | 6 files |
 | Phase 124 P03 | 7 min | 2 tasks | 4 files |
 | Phase 124 P04 | 5 min | 2 tasks | 5 files |
+| Phase 124 P05 | 5m29s | 2 tasks | 6 files |
 
 ## Operator Next Steps
 
