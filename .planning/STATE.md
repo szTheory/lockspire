@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
+current_phase: 125
+current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: executing
-stopped_at: Phase 125 UI-SPEC approved
-last_updated: "2026-06-30T15:15:57.308Z"
-last_activity: 2026-06-30 -- Phase 125 planning complete
+stopped_at: Completed 125-01-PLAN.md
+last_updated: "2026-06-30T15:47:28.288Z"
+last_activity: 2026-06-30
+last_activity_desc: Phase 125 execution started
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 17
-  percent: 74
+  completed_plans: 18
+  percent: 78
 ---
 
 # Project State
@@ -26,10 +29,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 125 — Browser Proof, Docs & Adversarial Ratchet
-Plan: Not started
+Phase: 125 (Browser Proof, Docs & Adversarial Ratchet) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-30 -- Phase 125 planning complete
+Last activity: 2026-06-30 — Phase 125 execution started
 
 ## Most Recent Release
 
@@ -161,6 +164,8 @@ Last activity: 2026-06-30 -- Phase 125 planning complete
 - [Phase 124]: 124-06 kept Configure proof test-only: no runtime, CSS, fixture, route, schema, package, or public-surface files were edited.
 - [Phase 124]: 124-06 derives Configure route truth from AdminRouter and route-scorecard expectations rather than introducing a public route model.
 - [Phase 124]: 124-06 uses test-local AdminComponents stress proof instead of expanding AdminLab, Storybook, browser-proof, or public theming surfaces.
+- [Phase 125]: Plan 125-01 kept PROOF-01 shared fixture coverage test-only through AdminLab.Fixtures.proof_matrix. — Preserves the internal lab and embedded-library boundary while giving later proof plans stable ugly-state fixtures.
+- [Phase 125]: Plan 125-01 rendered proof-matrix markers inside AdminLab.StressSurface. — Uses existing lockspire-admin-* classes and avoids public routes, browser tooling, or package surface.
 
 ## Blockers/Concerns
 
@@ -175,11 +180,11 @@ Last activity: 2026-06-30 -- Phase 125 planning complete
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T14:38:16.119Z
+**Last session:** 2026-06-30T15:47:28.281Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
-**Resume file:** .planning/phases/125-browser-proof-docs-adversarial-ratchet/125-UI-SPEC.md
-**Stopped at:** Phase 125 UI-SPEC approved
+**Resume file:** None
+**Stopped at:** Completed 125-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -229,6 +234,7 @@ Last activity: 2026-06-30 -- Phase 125 planning complete
 | Phase 124 P04 | 5 min | 2 tasks | 5 files |
 | Phase 124 P05 | 5m29s | 2 tasks | 6 files |
 | Phase 124 P06 | 33min | 3 tasks | 3 files |
+| Phase 125 P01 | 7 min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
