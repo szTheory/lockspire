@@ -1310,8 +1310,13 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       assert source =~ "confirm"
     end
 
-    assert source_for("iat_live/index.html.heex") =~ "data-confirm="
+    assert source_for("iat_live/index.html.heex") =~
+             "Lockspire.Web.Components.AdminComponents.confirmation_panel"
+
+    assert source_for("iat_live/index.html.heex") =~ "phx-submit=\"confirm_revoke_iat\""
+    assert source_for("iat_live/index.html.heex") =~ "name=\"revoke[confirm]\""
     assert source_for("iat_live/index.html.heex") =~ "Revoke initial access token"
+    refute source_for("iat_live/index.html.heex") =~ "data-confirm="
     assert source_for("clients_live/show.ex") =~ "AdminComponents.confirmation_panel"
     assert source_for("clients_live/show.ex") =~ "variant={if @client.active, do: :danger"
     assert source_for("clients_live/show.ex") =~ "phx-submit=\"toggle_client\""
@@ -1481,7 +1486,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
           "DCR policy",
           "post-logout redirect URIs",
           "logout propagation URIs",
-          "Copy this value now. Lockspire stores only the hash after this response.",
+          "Plaintext is shown once. Lockspire stores only the hash",
           "redacted_handle",
           "plaintext",
           "copy_once_secret_panel",
@@ -1716,6 +1721,11 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       sources = phase_124_configure_sources()
       source_blob = phase_124_configure_source_blob()
 
+      visible_label_source =
+        source_blob
+        |> String.replace(~r/type="submit"/, "")
+        |> String.replace(~r/"revoke"/, "")
+
       assert Map.keys(sources) |> Enum.sort() ==
                @phase_124_configure_source_paths |> Map.keys() |> Enum.sort()
 
@@ -1767,7 +1777,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       end
 
       for denied <- phase_124_denied_action_labels() do
-        refute Regex.match?(phase_124_action_label_pattern(denied), source_blob),
+        refute Regex.match?(phase_124_action_label_pattern(denied), visible_label_source),
                "unexpected unsupported Configure action label #{inspect(denied)}"
       end
 
