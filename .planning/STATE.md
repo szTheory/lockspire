@@ -5,15 +5,14 @@ milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 124
 current_phase_name: Configure Onboarding Propagation Pass
 status: executing
-stopped_at: Completed 124-01-PLAN.md
-last_updated: "2026-06-30T00:11:58.587Z"
-last_activity: 2026-06-29
-last_activity_desc: Phase 124 execution started
+stopped_at: Completed 124-02-PLAN.md
+last_updated: "2026-06-30T01:18:46.815Z"
+last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 12
+  completed_plans: 13
   percent: 60
 ---
 
@@ -30,9 +29,9 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 124 (Configure Onboarding Propagation Pass) — EXECUTING
-Plan: 2 of 6
-Status: Ready to execute Plan 124-02
-Last activity: 2026-06-29 — Phase 124 execution started
+Plan: 3 of 6
+Status: Ready to execute
+Last activity: 2026-06-30
 
 ## Most Recent Release
 
@@ -150,6 +149,9 @@ Last activity: 2026-06-29 — Phase 124 execution started
 - [Phase 124]: Client Configure propagation stays inside existing LiveViews, Lockspire.Admin calls, and protocol rotation calls. — Plan 124-01 forbids new public routes, APIs, schema, packages, or host-owned seams.
 - [Phase 124]: Plaintext client secret and RAT values remain limited to immediate copy-once panels, with durable surfaces redacted. — This preserves the Phase 124 copy-once threat mitigation while improving operator consequence copy.
 - [Phase 124]: Client inventory renders selected filter context and counts before dense rows. — Operators need the current Configure decision frame visible before scanning the client table.
+- [Phase 124]: Plan 124-02 kept DCR/IAT onboarding polish inside existing LiveViews, AdminComponents, and InitialAccessTokens behavior. — Preserves the embedded-library boundary while improving Configure partner intake clarity.
+- [Phase 124]: Plan 124-02 requires checkbox confirmation before IAT revoke calls revoke_iat/1. — Prevents browser-confirm-only destructive mutation and keeps consequence copy visible.
+- [Phase 124]: Plan 124-02 keeps IAT plaintext copy-once: render only after mint, clear on acknowledgement, and keep durable inventory redacted. — Maintains CONFIG-02 and T-124-05 mitigation.
 
 ## Blockers/Concerns
 
@@ -164,11 +166,11 @@ Last activity: 2026-06-29 — Phase 124 execution started
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T00:11:58.580Z
+**Last session:** 2026-06-30T01:18:46.808Z
 
-**Next action:** Execute Phase 124 Plan 124-02.
+**Next action:** Execute Phase 124 Plan 124-03.
 **Resume file:** None
-**Stopped at:** Completed 124-01-PLAN.md
+**Stopped at:** Completed 124-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -213,6 +215,7 @@ Last activity: 2026-06-29 — Phase 124 execution started
 | Phase 123 P04 | 9 min | 2 tasks | 2 files |
 | Phase 123 P05 | 4 min | 2 tasks | 2 files |
 | Phase 124 P01 | 10m | 2 tasks | 7 files |
+| Phase 124 P02 | 45m | 2 tasks | 6 files |
 
 ## Operator Next Steps
 
