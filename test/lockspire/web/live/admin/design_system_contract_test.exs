@@ -360,6 +360,49 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     policies_dcr_template: [:page_hero, :decision_summary]
   }
 
+  describe "Phase 125 rendered HTML assertion helper contracts" do
+    test "disabled link helper rejects anchor-shaped disabled actions and accepts semantic links" do
+      disabled_anchor = ~s(<a href="/admin/clients" class="lockspire-admin-btn lockspire-admin-btn-disabled">Disabled link action</a>)
+
+      error =
+        assert_raise ExUnit.AssertionError, fn ->
+          HtmlAssertions.assert_disabled_links_have_semantics(disabled_anchor)
+        end
+
+      assert Exception.message(error) =~ "expected disabled link actions to expose"
+
+      semantic_disabled_link =
+        ~s(<span role="link" aria-disabled="true" class="lockspire-admin-btn lockspire-admin-btn-secondary">Disabled link action</span>)
+
+      assert HtmlAssertions.assert_disabled_links_have_semantics(semantic_disabled_link) ==
+               semantic_disabled_link
+    end
+
+    test "token-like text helper rejects rendered credential and private-key shapes" do
+      denied_examples = [
+        {"JWT-looking text",
+         "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2NvdW50LTEyMyJ9.signaturevalue1234567890"},
+        {"live-key-looking text", "sk_live_51JxExampleSecretValue"},
+        {"cookie/auth-code-like text", "cookie=session_id%3Dabcdef1234567890"},
+        {"cookie/auth-code-like text", "authorization_code=SplxlOBeZQQYbYS6WxSbIA"},
+        {"private-key-like text", "-----BEGIN PRIVATE KEY-----"}
+      ]
+
+      for {label, value} <- denied_examples do
+        error =
+          assert_raise ExUnit.AssertionError, fn ->
+            HtmlAssertions.assert_no_token_like_text("<p>#{value}</p>")
+          end
+
+        assert Exception.message(error) =~ "expected rendered HTML to omit #{label}"
+      end
+
+      safe_html = "<p>client_secret_jwt support is documented without sample keys.</p>"
+
+      assert HtmlAssertions.assert_no_token_like_text(safe_html) == safe_html
+    end
+  end
+
   test "admin LiveViews use namespaced Lockspire admin button classes" do
     offenders =
       @admin_live_glob
