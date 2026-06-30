@@ -28,8 +28,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
               <span>
-                Publish key {@key_detail.key.handle} for {@key_detail.key.use} verification overlap.
-                Verifiers can see the public key before signing or encryption cutover.
+                Publish this public key for verification overlap before activation.
+                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
+                becomes visible in JWKS while the current signer remains active.
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -50,8 +51,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="activate[confirm]" value="true" />
               <span>
-                Activate key {@key_detail.key.handle} for {@key_detail.key.use}. This changes the
-                active signing/encryption key and moves the previous active key into retiring overlap.
+                Activate this public key only when verifiers can accept the cutover signer.
+                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
+                becomes active and the previous active signer moves into retiring overlap.
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -73,8 +75,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
               <span>
-                Retire key {@key_detail.key.handle} for {@key_detail.key.use}. This removes the key
-                from publication overlap after verifiers have moved off it.
+                Retire this public key only after verifiers have moved off publication overlap.
+                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
+                leaves JWKS once retirement succeeds.
               </span>
             </label>
             <AdminComponents.action_bar>

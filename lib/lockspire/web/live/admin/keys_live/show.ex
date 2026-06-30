@@ -38,12 +38,16 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
         {:noreply,
          assign(socket,
            key_detail: key_detail,
-           action_notice: "Key published for verification overlap.",
+           action_notice: key_transition_notice(:published),
            action_error: nil
          )}
 
       {:error, :already_published} ->
-        {:noreply, assign(socket, action_error: "This upcoming key is already published.")}
+        {:noreply,
+         assign(socket,
+           action_notice: key_transition_notice(:already_published),
+           action_error: nil
+         )}
 
       {:error, :invalid_state} ->
         {:noreply, assign(socket, action_error: "Only upcoming keys can be published.")}
@@ -68,7 +72,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
          socket
          |> assign(
            key_detail: key_detail,
-           action_notice: "Key activated. The prior signer is now retiring.",
+           action_notice: key_transition_notice(:activated),
            action_error: nil
          )
          |> load_key(socket.assigns.key_id)}
@@ -99,12 +103,16 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
         {:noreply,
          assign(socket,
            key_detail: key_detail,
-           action_notice: "Key retired from publication overlap.",
+           action_notice: key_transition_notice(:retired),
            action_error: nil
          )}
 
       {:error, :already_retired} ->
-        {:noreply, assign(socket, action_error: "This key is already retired.")}
+        {:noreply,
+         assign(socket,
+           action_notice: key_transition_notice(:already_retired),
+           action_error: nil
+         )}
 
       {:error, :invalid_state} ->
         {:noreply, assign(socket, action_error: "Only retiring keys can be retired.")}
@@ -140,7 +148,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Review key lifecycle"
-        body="Review public key metadata, publication state, and lifecycle consequences without exposing private key material."
+        body="Review public key metadata, publication state, and lifecycle consequences without exposing non-public key material."
       />
 
       <AdminComponents.section_card
@@ -159,6 +167,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
           <:item label="Key type"><code>{@key_detail.key.kty}</code></:item>
           <:item label="Use"><code>{@key_detail.key.use}</code></:item>
           <:item label="Visible in JWKS"><code>{to_string(@key_detail.publishable)}</code></:item>
+          <:item label="Next safe action">
+            <AdminComponents.long_value value={key_next_action_summary(@key_detail)} kind={:text} />
+          </:item>
           <:item label="Published at"><AdminComponents.timestamp value={@key_detail.key.published_at} /></:item>
           <:item label="Activated at"><AdminComponents.timestamp value={@key_detail.key.activated_at} /></:item>
           <:item label="Retiring at"><AdminComponents.timestamp value={@key_detail.key.retiring_at} /></:item>
@@ -168,7 +179,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
 
       <AdminComponents.section_card
         title="Public JWK metadata"
-        subtitle="Only public members are shown here. Private key material stays hidden."
+        subtitle="Only public members are shown here. Non-public key material stays hidden."
       >
         <AdminComponents.description_list>
           <:item label="kid">
@@ -213,4 +224,27 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   end
 
   defp parse_id(_value), do: nil
+
+  defp key_next_action_summary(%{next_actions: [:publish]}),
+    do: "Publish key for verification overlap"
+
+  defp key_next_action_summary(%{next_actions: [:activate]}),
+    do: "Activate key for signer cutover"
+
+  defp key_next_action_summary(%{next_actions: [:retire]}),
+    do: "Retire key after verifier overlap"
+
+  defp key_next_action_summary(%{next_actions: []}), do: "No lifecycle action available"
+
+  defp key_transition_notice(:published), do: "Key published for verification overlap."
+
+  defp key_transition_notice(:already_published),
+    do: "Key is already published for verification overlap."
+
+  defp key_transition_notice(:activated), do: "Key activated for signer cutover."
+
+  defp key_transition_notice(:retired), do: "Key retired from publication overlap."
+
+  defp key_transition_notice(:already_retired),
+    do: "Key is already retired from publication overlap."
 end
