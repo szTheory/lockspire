@@ -41,6 +41,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                                "../../../../../.planning/phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md",
                                __DIR__
                              )
+  @phase_125_proof_path Path.expand(
+                          "../../../../../.planning/phases/125-browser-proof-docs-adversarial-ratchet/125-V1.32-PROOF.md",
+                          __DIR__
+                        )
   @phase_121_journeys ["Orient", "Configure", "Support", "Operate"]
   @phase_121_rubric_scopes ["Page", "Section", "Action", "Component Group"]
   @phase_121_rubric_questions [
@@ -509,6 +513,95 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
         "local maintainer note with scrubbed route, numeric widths, no screenshots retained"
 
       assert BrowserEvidence.assert_redaction_safe!(safe_note) == safe_note
+    end
+
+    test "closeout proof artifact has required non-gap representative evidence rows" do
+      artifact = File.read!(@phase_125_proof_path)
+      BrowserEvidence.assert_redaction_safe!(artifact)
+
+      rows = BrowserEvidence.parse!(artifact)
+
+      required_rows = [
+        {"/admin", "Orient", "320px", "light", "default"},
+        {"/admin/clients", "Configure", "390px", "dark", "reduced-motion"},
+        {"/admin/tokens", "Support", "768px", "system", "default"},
+        {"/admin/logouts", "Operate", "1024px", "dark", "reduced-motion"},
+        {"AdminLab.StressSurface", "Internal lab", "1440px", "system", "default"}
+      ]
+
+      for {route, journey, viewport, theme, motion} <- required_rows do
+        row =
+          Enum.find(rows, fn row ->
+            row["Route / Surface"] == route and row["Journey"] == journey and
+              row["Viewport"] == viewport and row["Theme"] == theme and
+              row["Motion"] == motion
+          end)
+
+        assert row, "missing required proof row for #{route} #{viewport} #{theme} #{motion}"
+        assert row["Result"] == "pass"
+        assert row["scrollWidth"] <= row["clientWidth"]
+        assert row["Gap note"] == "none"
+        assert row["Sensitive evidence check"] == "passed denylist"
+      end
+
+      assert Enum.map(rows, & &1["Viewport"]) |> Enum.sort() == [
+               "1024px",
+               "1440px",
+               "320px",
+               "390px",
+               "768px"
+             ]
+
+      assert Enum.uniq(Enum.map(rows, & &1["Theme"])) |> Enum.sort() == [
+               "dark",
+               "light",
+               "system"
+             ]
+
+      assert Enum.uniq(Enum.map(rows, & &1["Motion"])) |> Enum.sort() == [
+               "default",
+               "reduced-motion"
+             ]
+    end
+
+    test "closeout proof artifact records source truth, commands, and adversarial signoff" do
+      artifact = File.read!(@phase_125_proof_path)
+
+      for phrase <- [
+            "Maintainer-only final proof artifact",
+            "AdminRouter source truth",
+            "`/admin/clients/:client_id/edit?workflow=logout-propagation`",
+            "Deterministic commands are the blocking proof path",
+            "Representative browser/manual evidence rows",
+            "Sensitive evidence denylist",
+            "Explicit gaps",
+            "Final adversarial review",
+            "aesthetic overfit",
+            "accessibility",
+            "generic admin-template drift",
+            "backend implementation leakage",
+            "host integration weight",
+            "screenshot-only quality",
+            "theme, motion, and focus regressions",
+            "redaction failures",
+            "unsupported action creep",
+            "stale route evidence",
+            "package/runtime creep",
+            "support-surface expansion"
+          ] do
+        assert artifact =~ phrase
+      end
+
+      for forbidden <- [
+            "package.json",
+            "playwright.config",
+            "node_modules",
+            "CI browser gate",
+            "public browser proof route",
+            "WCAG certification"
+          ] do
+        refute artifact =~ forbidden
+      end
     end
   end
 
