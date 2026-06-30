@@ -11,6 +11,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
   alias Lockspire.Web.Live.Admin.ConsentsLive.Show
   alias Phoenix.Router
 
+  @unsupported_support_controls [
+    "Reveal secret",
+    "Reveal token",
+    "Recover consent",
+    "Export consent",
+    "Edit grant",
+    "Bulk revoke",
+    "Copy secret",
+    "Terminate host session",
+    "Revoke token",
+    "Run worker"
+  ]
+
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "/lockspire")
@@ -250,12 +263,192 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
   end
 
+  test "support consent route proof covers ugly grant states and redaction guardrails" do
+    now = DateTime.utc_now()
+
+    long_client_id = "consent-proof-client-" <> String.duplicate("wrap-", 10) <> "client"
+    long_account_id = "account-consent-proof-" <> String.duplicate("case-", 10) <> "subject"
+    long_scope = "urn:lockspire:consent:scope:" <> String.duplicate("wrapped-", 10) <> "read"
+
+    {:ok, _client} =
+      Repository.register_client(%Client{
+        client_id: long_client_id,
+        client_secret_hash: "sha256:consent-proof-secret-hash",
+        client_type: :confidential,
+        name: "Consent Proof Client With Dense State",
+        redirect_uris: ["https://consent-proof.invalid/callback"],
+        allowed_scopes: ["openid", "email", long_scope],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: now,
+        metadata: %{}
+      })
+
+    active_grant =
+      store_support_consent!(
+        account_id: long_account_id,
+        client_id: long_client_id,
+        scopes: ["openid", "email", long_scope],
+        granted_at: DateTime.add(now, -1_200, :second)
+      )
+
+    _sparse_grant =
+      store_support_consent!(
+        account_id: "account-consent-proof-sparse",
+        client_id: long_client_id,
+        scopes: [],
+        kind: :one_time,
+        granted_at: DateTime.add(now, -900, :second)
+      )
+
+    revoked_grant =
+      store_support_consent!(
+        account_id: long_account_id,
+        client_id: long_client_id,
+        scopes: ["openid"],
+        granted_at: DateTime.add(now, -3_600, :second),
+        status: :revoked,
+        revoked_at: DateTime.add(now, -600, :second),
+        revoked_by: "operator-proof-id",
+        revoked_reason: "operator_revoked"
+      )
+
+    assert {:ok, index_socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, index_socket} =
+             Index.handle_params(
+               %{"client" => long_client_id, "status" => "all"},
+               "/lockspire/admin/consents?client=#{long_client_id}&status=all",
+               index_socket
+             )
+
+    index_html = rendered_to_string(Index.render(index_socket.assigns))
+    decision_summary = fragment_html(index_html, ".lockspire-admin-decision-summary")
+    rows = fragment_html(index_html, ".lockspire-admin-dense-resource-row")
+
+    assert_support_route_guardrails(index_html, [
+      "sha256:consent-proof-secret-hash",
+      "client_secret",
+      "refresh_token",
+      "token_hash",
+      "authorization_code",
+      "code_verifier",
+      "user_code"
+    ])
+
+    HtmlAssertions.assert_label_targets_exist(index_html)
+
+    assert decision_summary =~ "Selected filters"
+    assert decision_summary =~ "Grant status"
+    assert decision_summary =~ "Scope context"
+    assert decision_summary =~ "Smallest safe action"
+    assert decision_summary =~ "2 active, 1 revoked"
+    assert decision_summary =~ "3 scopes across matching grants"
+    assert decision_summary =~ "Review stored grant"
+    refute decision_summary =~ long_client_id
+    refute decision_summary =~ long_account_id
+
+    assert rows =~ "Active remembered grant"
+    assert rows =~ "Active one time grant"
+    assert rows =~ "Revoked remembered grant"
+    assert rows =~ "Consent Proof Client With Dense State"
+    assert rows =~ "No scopes recorded"
+    assert rows =~ long_scope
+    assert rows =~ "lockspire-admin-long-value"
+    assert rows =~ "Review stored grant"
+    refute rows =~ long_client_id
+    refute rows =~ long_account_id
+
+    {_active_socket, active_html} = render_show_for(active_grant)
+    active_summary = fragment_html(active_html, ".lockspire-admin-decision-summary")
+
+    assert_support_route_guardrails(active_html, [
+      "sha256:consent-proof-secret-hash",
+      long_client_id,
+      long_account_id
+    ])
+
+    assert active_summary =~ "Grant status"
+    assert active_summary =~ "Active remembered grant"
+    assert active_summary =~ "Scope context"
+    assert active_summary =~ "Client/account pivot"
+    assert active_summary =~ "Revocation consequence"
+    assert active_summary =~ "Stops future reuse"
+    assert active_html =~ long_scope
+    assert active_html =~ "Not recorded"
+    assert active_html =~ "future remembered-consent reuse"
+    assert active_html =~ "lockspire-admin-long-value"
+
+    {_revoked_socket, revoked_html} = render_show_for(revoked_grant)
+    revoked_summary = fragment_html(revoked_html, ".lockspire-admin-decision-summary")
+
+    assert_support_route_guardrails(revoked_html, [
+      "sha256:consent-proof-secret-hash",
+      long_client_id,
+      long_account_id
+    ])
+
+    assert revoked_summary =~ "Already revoked"
+
+    assert revoked_html =~
+             "This consent grant is already revoked. It no longer authorizes future remembered-consent reuse."
+
+    assert revoked_html =~ "Consent grant already revoked"
+    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
+  end
+
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
+  end
+
+  defp store_support_consent!(attrs) do
+    now = DateTime.utc_now()
+
+    grant =
+      struct(
+        %ConsentGrant{
+          account_id: "account-consent-proof",
+          client_id: "consent-ui-client",
+          scopes: ["openid"],
+          granted_at: now,
+          metadata: %{}
+        },
+        attrs
+      )
+
+    assert {:ok, stored_grant} = Repository.grant_consent(grant)
+    stored_grant
+  end
+
+  defp render_show_for(grant) do
+    id = Integer.to_string(grant.id)
+
+    assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(%{"id" => id}, "/lockspire/admin/consents/#{id}", socket)
+
+    {socket, rendered_to_string(Show.render(socket.assigns))}
+  end
+
+  defp assert_support_route_guardrails(html, denied_values) do
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
+    |> HtmlAssertions.assert_aria_targets_exist("aria-controls")
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_disabled_links_have_semantics()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text(@unsupported_support_controls ++ denied_values)
   end
 
   defp fragment_html(html, selector) do

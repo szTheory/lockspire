@@ -11,6 +11,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
   alias Lockspire.Web.Live.Admin.TokensLive.Show
   alias Phoenix.Router
 
+  @unsupported_support_controls [
+    "Reveal token",
+    "Recover token",
+    "Export token",
+    "Copy token",
+    "Inspect hash",
+    "Show token hash",
+    "Show client secret",
+    "Bulk revoke",
+    "Replay authorization code",
+    "Terminate host session",
+    "Run worker"
+  ]
+
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "/lockspire")
@@ -414,6 +428,163 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute reusable_family_html =~ "Token family already revoked"
   end
 
+  test "support token route proof covers ugly states and redaction guardrails" do
+    now = DateTime.utc_now()
+
+    long_client_id = "token-proof-client-" <> String.duplicate("wrap-", 10) <> "client"
+    long_account_id = "account-proof-" <> String.duplicate("case-", 10) <> "subject"
+    long_family_id = "family-proof-" <> String.duplicate("lineage-", 8) <> "reuse"
+    long_scope = "urn:lockspire:token:scope:" <> String.duplicate("wrapped-", 10) <> "read"
+
+    {:ok, _client} =
+      Repository.register_client(%Client{
+        client_id: long_client_id,
+        client_secret_hash: "sha256:token-proof-secret-hash",
+        client_type: :confidential,
+        name: "Token Proof Client With Dense State",
+        redirect_uris: ["https://token-proof.invalid/callback"],
+        allowed_scopes: ["openid", "offline_access", long_scope],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: now,
+        metadata: %{}
+      })
+
+    active_token =
+      store_support_token!(
+        token_hash: "token-proof-active-hash-must-not-render",
+        client_id: long_client_id,
+        account_id: long_account_id,
+        family_id: long_family_id,
+        scopes: ["offline_access", long_scope],
+        issued_at: now,
+        expires_at: DateTime.add(now, 86_400, :second)
+      )
+
+    _active_sibling =
+      store_support_token!(
+        token_hash: "token-proof-active-sibling-hash-must-not-render",
+        client_id: long_client_id,
+        account_id: long_account_id,
+        family_id: long_family_id,
+        generation: 1,
+        parent_token_id: active_token.id,
+        scopes: ["openid", long_scope],
+        issued_at: DateTime.add(now, 30, :second),
+        expires_at: DateTime.add(now, 86_400, :second)
+      )
+
+    _revoked_token =
+      store_support_token!(
+        token_hash: "token-proof-revoked-hash-must-not-render",
+        client_id: long_client_id,
+        account_id: long_account_id,
+        family_id: "family-proof-revoked-" <> String.duplicate("closed-", 8),
+        revoked_at: DateTime.add(now, -900, :second),
+        issued_at: DateTime.add(now, -3_600, :second),
+        expires_at: DateTime.add(now, 86_400, :second)
+      )
+
+    _expired_token =
+      store_support_token!(
+        token_hash: "token-proof-expired-hash-must-not-render",
+        client_id: long_client_id,
+        account_id: nil,
+        family_id: nil,
+        issued_at: DateTime.add(now, -7_200, :second),
+        expires_at: DateTime.add(now, -3_600, :second)
+      )
+
+    reuse_token =
+      store_support_token!(
+        token_hash: "token-proof-reuse-hash-must-not-render",
+        client_id: long_client_id,
+        account_id: long_account_id,
+        family_id: long_family_id,
+        generation: 2,
+        parent_token_id: active_token.id,
+        scopes: ["offline_access", long_scope],
+        reuse_detected_at: DateTime.add(now, -60, :second),
+        issued_at: DateTime.add(now, -1_200, :second),
+        expires_at: DateTime.add(now, 86_400, :second)
+      )
+
+    assert {:ok, index_socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, index_socket} =
+             Index.handle_params(
+               %{"client" => long_client_id, "status" => "all"},
+               "/lockspire/admin/tokens?client=#{long_client_id}&status=all",
+               index_socket
+             )
+
+    index_html = rendered_to_string(Index.render(index_socket.assigns))
+    decision_summary = fragment_html(index_html, ".lockspire-admin-decision-summary")
+    rows = fragment_html(index_html, ".lockspire-admin-dense-resource-row")
+
+    assert_support_route_guardrails(index_html, [
+      "token-proof-active-hash-must-not-render",
+      "token-proof-active-sibling-hash-must-not-render",
+      "token-proof-revoked-hash-must-not-render",
+      "token-proof-expired-hash-must-not-render",
+      "token-proof-reuse-hash-must-not-render",
+      "sha256:token-proof-secret-hash"
+    ])
+
+    HtmlAssertions.assert_label_targets_exist(index_html)
+
+    assert decision_summary =~ "Selected filters"
+    assert decision_summary =~ "Token health"
+    assert decision_summary =~ "Family pressure"
+    assert decision_summary =~ "Smallest safe action"
+    assert decision_summary =~ "2 active, 1 revoked, 1 expired, 1 reuse detected"
+    assert decision_summary =~ "Reuse evidence in matching family"
+    assert decision_summary =~ "Review affected token"
+    refute decision_summary =~ long_client_id
+    refute decision_summary =~ long_account_id
+    refute decision_summary =~ long_family_id
+
+    assert rows =~ "Active refresh token"
+    assert rows =~ "Revoked refresh token"
+    assert rows =~ "Expired refresh token"
+    assert rows =~ "Reuse detected refresh token"
+    assert rows =~ "Token Proof Client With Dense State"
+    assert rows =~ "Not recorded"
+    assert rows =~ "lockspire-admin-long-value"
+    assert rows =~ "Review token"
+    refute rows =~ long_client_id
+    refute rows =~ long_account_id
+    refute rows =~ long_family_id
+
+    {_detail_socket, detail_html} = render_show_for(reuse_token)
+    detail_summary = fragment_html(detail_html, ".lockspire-admin-decision-summary")
+
+    assert_support_route_guardrails(detail_html, [
+      "token-proof-reuse-hash-must-not-render",
+      "token-proof-active-hash-must-not-render",
+      "token-proof-active-sibling-hash-must-not-render",
+      "sha256:token-proof-secret-hash",
+      long_client_id,
+      long_account_id,
+      long_family_id
+    ])
+
+    assert detail_summary =~ "Token health"
+    assert detail_summary =~ "Reuse detected"
+    assert detail_summary =~ "Family lineage"
+    assert detail_summary =~ "Reuse pressure present"
+    assert detail_summary =~ "Smallest safe action"
+    assert detail_summary =~ "Revoke token family"
+    assert detail_html =~ long_scope
+    assert detail_html =~ "lockspire-admin-long-value"
+    assert detail_html =~ "family-wide refresh-token invalidation"
+    assert detail_html =~ "does not expose token plaintext"
+    refute detail_html =~ "revokes every active token"
+  end
+
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
@@ -450,6 +621,19 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              Show.handle_params(%{"id" => id}, "/lockspire/admin/tokens/#{id}", socket)
 
     {socket, rendered_to_string(Show.render(socket.assigns))}
+  end
+
+  defp assert_support_route_guardrails(html, denied_values) do
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
+    |> HtmlAssertions.assert_aria_targets_exist("aria-controls")
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_disabled_links_have_semantics()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text(@unsupported_support_controls ++ denied_values)
   end
 
   defp live_route?(route, path, view) do
