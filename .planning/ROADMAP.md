@@ -16,7 +16,7 @@
 | 122 | 3/3 | Complete    | 2026-06-28 |
 | 123 | 5/5 | Complete    | 2026-06-29 |
 | 124 | 6/6 | Complete    | 2026-06-30 |
-| 125 | 6/6 | Complete   | 2026-06-30 |
+| 125 | 7/7 | Complete   | 2026-06-30 |
 
 ## Phase Details
 
@@ -99,9 +99,12 @@
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 6/6 plans complete
+**Plans:** 7/7 plans complete
 
 Plans:
+
+- [x] 125-07-PLAN.md
+
 **Wave 1**
 
 - [x] 125-01-PLAN.md — Shared fixture and component stress proof

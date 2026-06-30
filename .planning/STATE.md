@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
+current_phase: 125
+current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: verifying
 stopped_at: Completed 125-05-PLAN.md
-last_updated: "2026-06-30T17:18:11.459Z"
+last_updated: "2026-06-30T18:27:09.669Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 24
+  completed_plans: 24
   percent: 100
 ---
 
@@ -176,6 +178,8 @@ Last activity: 2026-06-30
 - [Phase 125]: Browser/manual proof remains maintainer-only supplemental evidence and is validated by strict contract tests.
 - [Phase 125]: Operator docs name the scorecard to adversarial-signoff loop while staying subordinate to docs/supported-surface.md.
 - [Phase 125]: Out-of-scope Phase 115 test.fast failures were deferred instead of fixed in Phase 125.
+- [Phase 125]: Plan 125-07 enforces empty/no-match browser evidence through parsed BrowserEvidence rows rather than raw markdown grep.
+- [Phase 125]: Plan 125-07 keeps empty/no-match proof maintainer-only with no browser tooling, runtime route, package, schema, or public support-surface expansion.
 
 ## Blockers/Concerns
 
@@ -190,7 +194,7 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T17:17:41.488Z
+**Last session:** 2026-06-30T18:26:46.785Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
 **Resume file:** None
@@ -250,6 +254,7 @@ Last activity: 2026-06-30
 | Phase 125 P04 | 10m22s | 2 tasks | 5 files |
 | Phase 125-browser-proof-docs-adversarial-ratchet P05 | 6 min | 2 tasks | 6 files |
 | Phase 125 P06 | 31m | 3 tasks | 6 files |
+| Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
