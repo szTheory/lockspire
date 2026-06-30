@@ -52,6 +52,14 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
 
     assert html =~ "Configure"
     assert html =~ "Policy posture"
+    assert html =~ "issuer-level policy route"
+    assert html =~ "Current setting"
+    assert html =~ "Review issuer PAR defaults and client override pressure."
+    assert html =~ "Review inherited security profile posture and strict readiness."
+    assert html =~ "Review sender-constrained token defaults and client exceptions."
+    assert html =~ "Review future registration gates, metadata allowlists, and DCR lifetimes."
+    assert html =~ "0 clients require PAR; 0 mark it optional."
+    assert html =~ "0 self-registered clients and 0 active IATs."
 
     for {label, href} <- [
           {"Review PAR policy", "/admin/policies/par"},
@@ -64,10 +72,56 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
     end
 
     refute html =~ "Open workflow"
+
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
+
+    HtmlAssertions.assert_no_text(html, [
+      "Save global PAR policy",
+      "Save global security profile",
+      "Save global DPoP policy",
+      "Save global DCR policy",
+      "Rotate client secret",
+      "Rotate registration access token",
+      "Mint initial access token",
+      "Reset nonce",
+      "Inspect proof",
+      "Debug token",
+      "host tenant policy",
+      "developer portal",
+      "public theming",
+      "browser proof API",
+      "AI judge gate"
+    ])
   end
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp forbidden_secret_samples do
+    [
+      "real-client-secret",
+      "production-secret",
+      "prod-access-token",
+      "prod-refresh-token",
+      "sk_live_",
+      "pk_live_",
+      "eyJhbGci",
+      "BEGIN PRIVATE KEY",
+      "authorization_code=",
+      "code_verifier="
+    ]
+  end
+
+  defp backend_leak_samples do
+    [
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage",
+      "stacktrace",
+      "constraint violation",
+      "private_jwk_encrypted"
+    ]
   end
 
   defp live_route?(route, path, view) do
