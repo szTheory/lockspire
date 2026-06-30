@@ -2,19 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-current_phase: 125
-current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: executing
-stopped_at: Completed 125-01-PLAN.md
-last_updated: "2026-06-30T15:47:28.288Z"
+stopped_at: Completed 125-02-PLAN.md
+last_updated: "2026-06-30T15:59:34.195Z"
 last_activity: 2026-06-30
-last_activity_desc: Phase 125 execution started
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 18
-  percent: 78
+  completed_plans: 19
+  percent: 80
 ---
 
 # Project State
@@ -30,9 +27,9 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 125 (Browser Proof, Docs & Adversarial Ratchet) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
-Last activity: 2026-06-30 — Phase 125 execution started
+Last activity: 2026-06-30
 
 ## Most Recent Release
 
@@ -166,6 +163,9 @@ Last activity: 2026-06-30 — Phase 125 execution started
 - [Phase 124]: 124-06 uses test-local AdminComponents stress proof instead of expanding AdminLab, Storybook, browser-proof, or public theming surfaces.
 - [Phase 125]: Plan 125-01 kept PROOF-01 shared fixture coverage test-only through AdminLab.Fixtures.proof_matrix. — Preserves the internal lab and embedded-library boundary while giving later proof plans stable ugly-state fixtures.
 - [Phase 125]: Plan 125-01 rendered proof-matrix markers inside AdminLab.StressSurface. — Uses existing lockspire-admin-* classes and avoids public routes, browser tooling, or package surface.
+- [Phase 125]: Phase 125 Plan 02 kept PROOF-02 guardrails deterministic in ExUnit/LazyHTML/source contracts with no browser, Node, package, route, schema, or public support-surface expansion. — Preserves D-01, D-02, D-14, D-15, and the embedded-library/package boundary while adding a blocking proof layer.
+- [Phase 125]: Rendered HTML redaction and disabled-link semantics were centralized in test-only AdminProof helpers so later route proof can reuse them without creating runtime API. — Follows D-08 and D-09 by extending existing proof assets rather than adding a second proof framework or public helper surface.
+- [Phase 125]: Global contracts derive route truth from RouteScorecards.expected_routes/0 and keep browser/manual evidence subordinate to repo-native proof. — Preserves D-10 and D-11 source-derived route truth before Wave 2 route proof adds focused rendered evidence.
 
 ## Blockers/Concerns
 
@@ -180,11 +180,11 @@ Last activity: 2026-06-30 — Phase 125 execution started
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T15:47:28.281Z
+**Last session:** 2026-06-30T15:59:34.189Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
 **Resume file:** None
-**Stopped at:** Completed 125-01-PLAN.md
+**Stopped at:** Completed 125-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -235,6 +235,7 @@ Last activity: 2026-06-30 — Phase 125 execution started
 | Phase 124 P05 | 5m29s | 2 tasks | 6 files |
 | Phase 124 P06 | 33min | 3 tasks | 3 files |
 | Phase 125 P01 | 7 min | 2 tasks | 3 files |
+| Phase 125 P02 | 8 min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 

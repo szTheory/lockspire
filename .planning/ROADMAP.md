@@ -16,7 +16,7 @@
 | 122 | 3/3 | Complete    | 2026-06-28 |
 | 123 | 5/5 | Complete    | 2026-06-29 |
 | 124 | 6/6 | Complete    | 2026-06-30 |
-| 125 | 1/6 | In Progress|  |
+| 125 | 2/6 | In Progress|  |
 
 ## Phase Details
 
@@ -99,13 +99,13 @@
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 1/6 plans executed
+**Plans:** 2/6 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 125-01-PLAN.md — Shared fixture and component stress proof
-- [ ] 125-02-PLAN.md — Global deterministic guardrail contracts
+- [x] 125-02-PLAN.md — Global deterministic guardrail contracts
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

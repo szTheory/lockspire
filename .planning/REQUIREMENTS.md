@@ -32,7 +32,7 @@
 ### Fixtures And Proof
 
 - [x] **PROOF-01**: Maintainer can render redaction-safe fixtures for v1.32 scorecards covering empty, one item, many items, long names, long IDs, long URLs, high counts, zero counts, missing optional fields, warning, incident, disabled, expired, revoked, reuse-detected, copy-once, stale/read-only, light, dark, system, reduced motion, and mobile states.
-- [ ] **PROOF-02**: Automated guardrails cover route scorecard drift, unsupported action drift, generic CTA drift, redaction drift, long-value handling, focus/label references, duplicate IDs, light/dark/system token usage, and responsive no-page-overflow claims for the changed pages.
+- [x] **PROOF-02**: Automated guardrails cover route scorecard drift, unsupported action drift, generic CTA drift, redaction drift, long-value handling, focus/label references, duplicate IDs, light/dark/system token usage, and responsive no-page-overflow claims for the changed pages.
 - [ ] **PROOF-03**: Maintainer can review browser/manual evidence and operator docs for the representative v1.32 route matrix without turning screenshots, browser tooling, AI judges, or lab artifacts into public support surface.
 
 ## Future Requirements
@@ -72,7 +72,7 @@
 | CONFIG-02 | Phase 124 | Complete |
 | CONFIG-03 | Phase 124 | Complete |
 | PROOF-01 | Phase 125 | Complete |
-| PROOF-02 | Phase 125 | Pending |
+| PROOF-02 | Phase 125 | Complete |
 | PROOF-03 | Phase 125 | Pending |
 
 **Coverage:**
