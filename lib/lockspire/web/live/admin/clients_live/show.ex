@@ -38,7 +38,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
-       revealed_rat: nil
+       revealed_rat: nil,
+       lifecycle_errors: []
      )}
   end
 
@@ -49,7 +50,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
     {:noreply,
      socket
-     |> assign(action: action, form_mode: form_mode, form_errors: [], rotation_errors: [])
+     |> assign(
+       action: action,
+       form_mode: form_mode,
+       form_errors: [],
+       rotation_errors: [],
+       lifecycle_errors: []
+     )
      |> load_client(Map.get(params, "client_id", socket.assigns.client_id))}
   end
 
@@ -140,14 +147,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   def handle_event(
         "toggle_client",
-        _params,
+        %{"toggle" => %{"confirm" => "true"}},
         %{assigns: %{client: %Client{active: true}}} = socket
       ) do
     {:noreply, apply_toggle(socket, false)}
   end
 
-  def handle_event("toggle_client", _params, socket) do
+  def handle_event("toggle_client", %{"toggle" => %{"confirm" => "true"}}, socket) do
     {:noreply, apply_toggle(socket, true)}
+  end
+
+  def handle_event("toggle_client", _params, socket) do
+    {:noreply,
+     assign(socket,
+       lifecycle_errors: [
+         %{field: :confirm, reason: :required, detail: "confirm this lifecycle change"}
+       ]
+     )}
   end
 
   @impl true
@@ -476,6 +492,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                 kind={:url}
               />
             </:item>
+            <:item :if={@client.provenance == :self_registered} label="Registration access token">
+              <AdminComponents.long_value value="redacted" kind={:token} redacted />
+            </:item>
             <:item label="Allowed scopes">
               <AdminComponents.badge_group>
                 <%= for scope <- @client.allowed_scopes do %>
@@ -536,21 +555,40 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                 else: "Enabling this client allows configured OAuth/OIDC use to resume."
             }
           >
-            <:actions>
-              <AdminComponents.action_group>
-                <:destructive>
-                  <button :if={@client.active} class="lockspire-admin-btn lockspire-admin-btn-danger" phx-click="toggle_client" type="button">
-                    Disable client
-                  </button>
-                </:destructive>
-                <:secondary>
-                  <button :if={!@client.active} class="lockspire-admin-btn lockspire-admin-btn-secondary" phx-click="toggle_client" type="button">
-                    Enable client
-                  </button>
-                </:secondary>
-              </AdminComponents.action_group>
-            </:actions>
           </AdminComponents.lifecycle_row>
+
+          <AdminComponents.confirmation_panel
+            title={if @client.active, do: "Confirm client disable", else: "Confirm client enable"}
+            variant={if @client.active, do: :danger, else: :warning}
+            errors={@lifecycle_errors}
+          >
+            <:body>
+              <form class="lockspire-admin-form-stack" phx-submit="toggle_client">
+                <label class="lockspire-admin-checkbox-field">
+                  <input type="checkbox" name="toggle[confirm]" value="true" />
+                  <span>
+                    <%= if @client.active do %>
+                      Disable
+                      <AdminComponents.long_value value={@client.client_id} kind={:id} />
+                      so future OAuth/OIDC requests for this client are blocked until an operator enables it again.
+                    <% else %>
+                      Enable
+                      <AdminComponents.long_value value={@client.client_id} kind={:id} />
+                      so configured OAuth/OIDC use can resume.
+                    <% end %>
+                  </span>
+                </label>
+                <AdminComponents.action_bar>
+                  <AdminComponents.admin_button
+                    type="submit"
+                    variant={if @client.active, do: :danger, else: :secondary}
+                  >
+                    {if @client.active, do: "Disable client", else: "Enable client"}
+                  </AdminComponents.admin_button>
+                </AdminComponents.action_bar>
+              </form>
+            </:body>
+          </AdminComponents.confirmation_panel>
         </AdminComponents.pane>
       </div>
 
@@ -571,12 +609,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
-        title="Rotate Registration Access Token (RAT)"
-        subtitle="Rotation is explicit and reveals the new RAT once."
+        title="Rotate registration access token"
+        subtitle="Rotation is explicit: the previous RAT stops being current and plaintext is shown once."
       >
         <section class="lockspire-admin-form-shell">
           <header>
-            <p>Lockspire reveals the new RAT once. It is redacted immediately after this state.</p>
+            <p>
+              Plaintext is shown once. The previous RAT stops being current after rotation;
+              Lockspire keeps only the durable redacted state.
+            </p>
           </header>
 
           <AdminComponents.error_list errors={@rotation_errors} />
@@ -584,7 +625,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           <div :if={@revealed_rat}>
             <AdminComponents.copy_once_secret_panel
               title="New Registration Access Token"
-              body="Copy it now. Lockspire does not store or re-show plaintext tokens."
+              body="Plaintext is shown once. Copy it now; Lockspire does not store or re-show plaintext tokens."
               label="Registration access token"
               value={@revealed_rat}
             />
@@ -685,7 +726,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       {:ok, %Client{} = client} ->
         assign(socket,
           client: client,
-          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+          lifecycle_errors: []
         )
 
       {:error, _reason} ->

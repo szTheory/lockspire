@@ -505,7 +505,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp format_default_for_select(nil), do: "inherit"
   defp format_default_for_select(format), do: Atom.to_string(format)
 
-  defp title_for(:new), do: "Register client"
+  defp title_for(:new), do: "Create client"
   defp title_for(:edit), do: "Update safe metadata"
   defp title_for(:logout_propagation), do: "Update logout propagation"
   defp title_for(:redirects), do: "Update redirect URIs"

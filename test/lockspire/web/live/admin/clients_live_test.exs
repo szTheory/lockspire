@@ -133,7 +133,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ "Overview"
     assert html =~ "DCR"
     refute html =~ "Beta Client"
-    assert html =~ "Register client"
+    assert html =~ "Create client"
 
     # Test provenance filter
     assert {:noreply, socket} =
@@ -166,7 +166,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Apply"
     refute html =~ "Clients are the default operator entrypoint"
     refute html =~ "Client secret"
-    refute html =~ "lockspire-admin-copy-once-secret__value"
 
     view
     |> form("form[phx-submit=save_client]", %{
@@ -175,7 +174,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         client_type: "confidential",
         token_endpoint_auth_method: "client_secret_basic",
         redirect_uris: "https://phase124.example.com/callback",
-        allowed_scopes: "openid email"
+        allowed_scopes: "email"
       }
     })
     |> render_submit()

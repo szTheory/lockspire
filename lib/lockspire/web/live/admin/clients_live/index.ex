@@ -17,6 +17,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        page_title: "Clients",
        current_section: :clients,
        clients: [],
+       matching_clients: 0,
+       total_clients: 0,
        filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
        created_result: nil
@@ -27,12 +29,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
     clients = load_clients(filters)
+    total_clients = load_clients(base_filters()) |> length()
 
     {:noreply,
      assign(socket,
        filters: filters,
        clients: paginate(clients, filters),
-       total_clients: length(clients)
+       matching_clients: length(clients),
+       total_clients: total_clients
      )}
   end
 
@@ -48,7 +52,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
            created_result: result,
            form_errors: [],
            clients: paginate(load_clients(filters), filters),
-           total_clients: length(load_clients(filters))
+           matching_clients: length(load_clients(filters)),
+           total_clients: load_clients(base_filters()) |> length()
          )}
 
       {:error, errors} ->
@@ -60,10 +65,24 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.section_card
+      <AdminComponents.page_hero
+        eyebrow="Configure"
         title="Client inventory"
-        subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
+        body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
+      />
+
+      <AdminComponents.section_card
+        title="Selected client context"
+        subtitle="Current filters and inventory counts are shown before dense client rows."
       >
+        <div class="lockspire-admin-detail-section">
+          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
+          <p>Status: {@filters["status"]}</p>
+          <p>Provenance: {@filters["provenance"]}</p>
+          <p>Matching clients: {@matching_clients}</p>
+          <p>Total clients: {@total_clients}</p>
+        </div>
+
         <AdminComponents.filter_bar action={clients_index_path()}>
           <:fields>
             <div class="lockspire-admin-field">
@@ -98,10 +117,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </div>
           </:fields>
           <:help>
-            <p>Total matching clients: {@total_clients}</p>
+            <p>Matching clients: {@matching_clients} of {@total_clients}</p>
           </:help>
           <:actions>
-            <AdminComponents.admin_button variant={:secondary} type="submit">Apply</AdminComponents.admin_button>
+            <AdminComponents.admin_button variant={:secondary} type="submit">
+              Filter clients
+            </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
@@ -129,8 +150,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Register client"
-        subtitle="Registration reuses the canonical Lockspire client API and reveals plaintext only once."
+        title="Create client"
+        subtitle="Create a client through the existing Lockspire Admin API and copy any plaintext secret before leaving this state."
       >
         <FormComponent.client_form mode={:new} errors={@form_errors} />
 
@@ -140,7 +161,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             title="Client created"
             body={
               if @created_result.client_secret,
-                do: "Copy it now. Lockspire does not store or re-show plaintext secrets.",
+                do:
+                  "Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response.",
                 else: "This public client does not use a client secret."
             }
             label="Client secret"
@@ -177,6 +199,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       "provenance" => normalize_provenance(Map.get(params, "provenance", "all")),
       "page" => Integer.to_string(parse_page(Map.get(params, "page", "1")))
     }
+  end
+
+  defp base_filters do
+    %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"}
   end
 
   defp create_attrs(params) do
@@ -255,4 +281,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       normalized -> normalized
     end
   end
+
+  defp selected_filter_label("", fallback), do: fallback
+  defp selected_filter_label(nil, fallback), do: fallback
+  defp selected_filter_label(value, _fallback), do: value
 end

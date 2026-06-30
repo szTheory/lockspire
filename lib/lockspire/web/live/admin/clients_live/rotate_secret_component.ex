@@ -13,7 +13,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
     <section class="lockspire-admin-form-shell">
       <header>
         <h2>Rotate client secret</h2>
-        <p>Lockspire reveals the new secret once. It is redacted immediately after this state.</p>
+        <p>
+          The previous secret stops being the current credential after rotation. Plaintext is shown once.
+          Lockspire does not store or re-show it.
+        </p>
       </header>
 
       <AdminComponents.error_list errors={@errors} />
@@ -21,7 +24,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
       <AdminComponents.copy_once_secret_panel
         :if={@revealed_secret}
         title="New client secret"
-        body="Copy it now. Lockspire does not store or re-show plaintext secrets."
+        body="Plaintext is shown once. Copy it now; Lockspire does not store or re-show it after this response."
         label="Client secret"
         value={@revealed_secret}
       />
@@ -34,7 +37,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
 
         <AdminComponents.action_bar>
           <AdminComponents.admin_button type="submit" variant={:danger}>
-            Rotate secret
+            Rotate client secret
           </AdminComponents.admin_button>
         </AdminComponents.action_bar>
       </form>
