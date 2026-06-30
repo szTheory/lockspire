@@ -5,15 +5,15 @@ milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 124
 current_phase_name: Configure Onboarding Propagation Pass
 status: executing
-stopped_at: Phase 124 UI-SPEC approved
-last_updated: "2026-06-29T23:57:03.729Z"
+stopped_at: Completed 124-01-PLAN.md
+last_updated: "2026-06-30T00:11:58.587Z"
 last_activity: 2026-06-29
-last_activity_desc: Phase 123 complete, transitioned to Phase 124
+last_activity_desc: Phase 124 execution started
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 17
+  completed_plans: 12
   percent: 60
 ---
 
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 123 — Operate Queue Flow Polish
+**Current focus:** Phase 124 — Configure Onboarding Propagation Pass
 
 ## Current Position
 
-Phase: 124 — Configure Onboarding Propagation Pass
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-29 — Phase 123 complete, transitioned to Phase 124
+Phase: 124 (Configure Onboarding Propagation Pass) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute Plan 124-02
+Last activity: 2026-06-29 — Phase 124 execution started
 
 ## Most Recent Release
 
@@ -147,6 +147,9 @@ Last activity: 2026-06-29 — Phase 123 complete, transitioned to Phase 124
 - [Phase 123]: Plan 123-04 asserts dark theme support through color-token-to-semantic-alias remapping. — The admin CSS uses dark --ls-color-* variables to remap semantic --ls-status-* aliases rather than adding new public theme variables.
 - [Phase 123]: Plan 123-05 proof stays maintainer-only — Closeout evidence stayed in .planning/123-OPERATE-PROOF.md with no public docs, browser tooling, runtime route, package, source, or test edits.
 - [Phase 123]: Plan 123-05 full-suite caveat is scoped outside Operate — Focused Phase 123 route, source-contract, and format checks passed; test.fast failures were in Phase 115 adoption-demo release-readiness assertions and did not name Phase 123 files.
+- [Phase 124]: Client Configure propagation stays inside existing LiveViews, Lockspire.Admin calls, and protocol rotation calls. — Plan 124-01 forbids new public routes, APIs, schema, packages, or host-owned seams.
+- [Phase 124]: Plaintext client secret and RAT values remain limited to immediate copy-once panels, with durable surfaces redacted. — This preserves the Phase 124 copy-once threat mitigation while improving operator consequence copy.
+- [Phase 124]: Client inventory renders selected filter context and counts before dense rows. — Operators need the current Configure decision frame visible before scanning the client table.
 
 ## Blockers/Concerns
 
@@ -161,11 +164,11 @@ Last activity: 2026-06-29 — Phase 123 complete, transitioned to Phase 124
 
 ## Session Continuity
 
-**Last session:** 2026-06-29T21:39:15.454Z
+**Last session:** 2026-06-30T00:11:58.580Z
 
-**Next action:** Execute Phase 123 with `/gsd-execute-phase 123`.
-**Resume file:** .planning/phases/124-configure-onboarding-propagation-pass/124-UI-SPEC.md
-**Stopped at:** Phase 124 UI-SPEC approved
+**Next action:** Execute Phase 124 Plan 124-02.
+**Resume file:** None
+**Stopped at:** Completed 124-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -209,6 +212,7 @@ Last activity: 2026-06-29 — Phase 123 complete, transitioned to Phase 124
 | Phase 123 P03 | 8 min | 2 tasks | 3 files |
 | Phase 123 P04 | 9 min | 2 tasks | 2 files |
 | Phase 123 P05 | 4 min | 2 tasks | 2 files |
+| Phase 124 P01 | 10m | 2 tasks | 7 files |
 
 ## Operator Next Steps
 

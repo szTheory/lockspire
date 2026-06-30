@@ -25,9 +25,9 @@
 
 ### Configure Propagation
 
-- [ ] **CONFIG-01**: Configure operator can move through clients, DCR onboarding, IATs, keys, and policy pages with page hierarchy, summaries, actions, and follow-up routes aligned to one deliberate interaction model.
-- [ ] **CONFIG-02**: Partner-onboarding operator can complete DCR/IAT copy-once and handoff workflows with clear current posture, short-lived credential guidance, and no plaintext leakage after creation.
-- [ ] **CONFIG-03**: Security/platform owner can distinguish safe, secondary, and destructive Configure actions through consistent confirmation forms, consequence copy, status semantics, and action grouping.
+- [x] **CONFIG-01**: Configure operator can move through clients, DCR onboarding, IATs, keys, and policy pages with page hierarchy, summaries, actions, and follow-up routes aligned to one deliberate interaction model.
+- [x] **CONFIG-02**: Partner-onboarding operator can complete DCR/IAT copy-once and handoff workflows with clear current posture, short-lived credential guidance, and no plaintext leakage after creation.
+- [x] **CONFIG-03**: Security/platform owner can distinguish safe, secondary, and destructive Configure actions through consistent confirmation forms, consequence copy, status semantics, and action grouping.
 
 ### Fixtures And Proof
 
@@ -68,9 +68,9 @@
 | OPERATE-01 | Phase 123 | Complete |
 | OPERATE-02 | Phase 123 | Complete |
 | OPERATE-03 | Phase 123 | Complete |
-| CONFIG-01 | Phase 124 | Pending |
-| CONFIG-02 | Phase 124 | Pending |
-| CONFIG-03 | Phase 124 | Pending |
+| CONFIG-01 | Phase 124 | Complete |
+| CONFIG-02 | Phase 124 | Complete |
+| CONFIG-03 | Phase 124 | Complete |
 | PROOF-01 | Phase 125 | Pending |
 | PROOF-02 | Phase 125 | Pending |
 | PROOF-03 | Phase 125 | Pending |
