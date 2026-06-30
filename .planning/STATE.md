@@ -5,14 +5,14 @@ milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 124
 current_phase_name: Configure Onboarding Propagation Pass
 status: executing
-stopped_at: Completed 124-02-PLAN.md
-last_updated: "2026-06-30T01:18:46.815Z"
+stopped_at: Completed 124-03-PLAN.md
+last_updated: "2026-06-30T02:11:24.442Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 13
+  completed_plans: 14
   percent: 60
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 124 (Configure Onboarding Propagation Pass) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-06-30
 
@@ -152,6 +152,9 @@ Last activity: 2026-06-30
 - [Phase 124]: Plan 124-02 kept DCR/IAT onboarding polish inside existing LiveViews, AdminComponents, and InitialAccessTokens behavior. — Preserves the embedded-library boundary while improving Configure partner intake clarity.
 - [Phase 124]: Plan 124-02 requires checkbox confirmation before IAT revoke calls revoke_iat/1. — Prevents browser-confirm-only destructive mutation and keeps consequence copy visible.
 - [Phase 124]: Plan 124-02 keeps IAT plaintext copy-once: render only after mint, clear on acknowledgement, and keep durable inventory redacted. — Maintains CONFIG-02 and T-124-05 mitigation.
+- [Phase 124]: Plan 124-03 kept key Configure polish inside existing key LiveViews, action component, Lockspire.Admin key calls, and protocol rotation behavior. — Preserves the embedded-library boundary while aligning key lifecycle posture and actions with Configure patterns.
+- [Phase 124]: Plan 124-03 renders key pages with public metadata only and denies private-key/export/remote-fetch/force-publish copy. — Maintains T-124-09 and T-124-12 mitigations without new key APIs or controls.
+- [Phase 124]: Plan 124-03 used route-local lifecycle helpers instead of a new Configure component. — Keeps propagation page-local and avoids speculative shared component surface.
 
 ## Blockers/Concerns
 
@@ -166,11 +169,11 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T01:18:46.808Z
+**Last session:** 2026-06-30T02:11:07.263Z
 
-**Next action:** Execute Phase 124 Plan 124-03.
+**Next action:** Execute Phase 124 Plan 124-04.
 **Resume file:** None
-**Stopped at:** Completed 124-02-PLAN.md
+**Stopped at:** Completed 124-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -216,6 +219,7 @@ Last activity: 2026-06-30
 | Phase 123 P05 | 4 min | 2 tasks | 2 files |
 | Phase 124 P01 | 10m | 2 tasks | 7 files |
 | Phase 124 P02 | 45m | 2 tasks | 6 files |
+| Phase 124 P03 | 7 min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 
