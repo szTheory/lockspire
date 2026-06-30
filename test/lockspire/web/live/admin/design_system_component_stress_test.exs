@@ -174,14 +174,18 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     assert Enum.any?(proof_matrix, &(&1[:display_value] == "Not recorded")),
            "D-05 optionality coverage must include missing optional fields rendered as Not recorded"
 
-    assert Enum.any?(proof_matrix, &String.contains?(to_string(&1[:long_url]), ".example.invalid")),
+    assert Enum.any?(
+             proof_matrix,
+             &String.contains?(to_string(&1[:long_url]), ".example.invalid")
+           ),
            "D-16 string-pressure URLs must stay synthetic and non-production-looking"
 
     matrix_blob = inspect(proof_matrix)
 
     HtmlAssertions.assert_no_text(matrix_blob, Fixtures.forbidden_substrings())
 
-    refute matrix_blob =~ ~r/(sk_live_|pk_live_|BEGIN PRIVATE KEY|eyJhbGci|prod-access-token|prod-refresh-token)/
+    refute matrix_blob =~
+             ~r/(sk_live_|pk_live_|BEGIN PRIVATE KEY|eyJhbGci|prod-access-token|prod-refresh-token)/
   end
 
   test "stress surface renders real admin components across required states" do
