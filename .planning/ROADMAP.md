@@ -15,7 +15,7 @@
 | 121 | 3/3 | Complete    | 2026-06-28 |
 | 122 | 3/3 | Complete    | 2026-06-28 |
 | 123 | 5/5 | Complete    | 2026-06-29 |
-| 124 | 6/6 | Complete   | 2026-06-30 |
+| 124 | 6/6 | Complete    | 2026-06-30 |
 | 125 | Browser Proof, Docs & Adversarial Ratchet | PROOF-01, PROOF-02, PROOF-03 | Fixtures, proof, docs |
 
 ## Phase Details

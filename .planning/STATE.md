@@ -2,12 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
-current_phase: 124
-current_phase_name: Configure Onboarding Propagation Pass
+current_phase: 125
+current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: verifying
 stopped_at: Completed 124-06-PLAN.md
-last_updated: "2026-06-30T03:08:26.757Z"
+last_updated: "2026-06-30T03:16:35.084Z"
 last_activity: 2026-06-30
+last_activity_desc: Phase 124 complete, transitioned to Phase 125
 progress:
   total_phases: 5
   completed_phases: 4
@@ -28,10 +29,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 124 (Configure Onboarding Propagation Pass) — VERIFYING
-Plan: 6 of 6
+Phase: 125 — Browser Proof, Docs & Adversarial Ratchet
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-06-30
+Last activity: 2026-06-30 — Phase 124 complete, transitioned to Phase 125
 
 ## Most Recent Release
 
