@@ -99,6 +99,24 @@
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
+**Plans:** 6 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 125-01-PLAN.md — Shared fixture and component stress proof
+- [ ] 125-02-PLAN.md — Global deterministic guardrail contracts
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 125-03-PLAN.md — Support and Operate route proof ratchet
+- [ ] 125-04-PLAN.md — Configure client, credential, key, and DCR proof
+- [ ] 125-05-PLAN.md — Orient and policy route proof ratchet
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 125-06-PLAN.md — Maintainer proof artifact and operator docs closeout
+
 **Success criteria:**
 
 1. Redaction-safe fixtures cover ugly Support, Operate, and Configure states including empty, one item, many items, long IDs, long URLs, dense data, missing fields, incidents, disabled, expired, revoked, reuse-detected, copy-once, stale/read-only, theme modes, reduced motion, and mobile widths.
