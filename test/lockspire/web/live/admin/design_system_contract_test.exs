@@ -2300,6 +2300,274 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   defp phase_123_source_for("/logouts"),
     do: File.read!(Map.fetch!(@phase_123_operate_sources, :logouts))
 
+  defp phase_125_contract_sources do
+    %{
+      css: File.read!(@admin_css_path),
+      router: File.read!(@admin_router_path),
+      mix: File.read!(@mix_path),
+      operator_doc: File.read!(@operator_admin_doc_path),
+      supported_surface: File.read!(@supported_surface_doc_path),
+      admin_sources:
+        [@admin_components_path | Path.wildcard(@admin_live_glob)]
+        |> Enum.map_join("\n", &File.read!/1)
+    }
+  end
+
+  defp assert_phase_125_route_scorecard_contract! do
+    scorecards = phase_121_scorecards()
+    expected_routes = RouteScorecards.expected_routes()
+
+    assert Map.keys(scorecards) |> Enum.sort() == expected_routes
+    assert length(expected_routes) == 29
+
+    assert RouteScorecards.workflow_exceptions() == [
+             "/admin/clients/:client_id/edit?workflow=logout-propagation"
+           ]
+
+    for {route, fields} <- scorecards do
+      assert trimmed_backtick_value(fields["Route"]) == route
+      assert fields["Evidence class"] in RouteScorecards.allowed_evidence_classes()
+      assert fields["Public support promise"] == RouteScorecards.support_promise()
+
+      assert fields["Runtime/package impact"] =~
+               "no router, runtime, browser package, docs support-surface, or Hex package change"
+
+      refute generic_cta?(fields["Primary action"])
+
+      assert Regex.match?(
+               ~r/\b(?:Do not|No |Only backed|Read-only|unless an existing backed domain API exists)\b/i,
+               fields["Unsupported action check"]
+             )
+    end
+  end
+
+  defp assert_phase_125_public_surface_boundary!(%{
+         router: router,
+         mix: mix,
+         operator_doc: operator_doc,
+         supported_surface: supported_surface
+       }) do
+    canonical_public_surface = String.downcase(supported_surface)
+    router_and_package = String.downcase(router <> "\n" <> mix)
+    operator_doc_downcase = String.downcase(operator_doc)
+
+    for forbidden <- [
+          "component lab",
+          "stress surface",
+          "browser proof",
+          "browser-proof",
+          "route scorecard",
+          "public design-system",
+          "public theming",
+          "theme engine",
+          "playwright",
+          "axe",
+          "screenshot",
+          "trace",
+          "ai judge"
+        ] do
+      refute canonical_public_surface =~ forbidden
+    end
+
+    for forbidden <- [
+          "component_lab",
+          "component-lab",
+          "browser_proof",
+          "browser-proof",
+          "storybook",
+          "design_system",
+          "design-system",
+          "theme_lab",
+          "public_theming",
+          "playwright",
+          "axe-core",
+          "@axe-core",
+          "screenshot",
+          "trace",
+          "browser binary"
+        ] do
+      refute router_and_package =~ forbidden
+    end
+
+    for phrase <- [
+          "docs/supported-surface.md",
+          "maintainer evidence only",
+          "not a supported admin route",
+          "not mounted through `Lockspire.Web.AdminRouter`",
+          "not part of `docs/supported-surface.md`"
+        ] do
+      assert operator_doc =~ phrase
+    end
+
+    for forbidden <- [
+          "public component lab",
+          "public browser proof",
+          "public browser-proof",
+          "public design system",
+          "public design-system",
+          "public theming api",
+          "browser-proof support",
+          "playwright support",
+          "required playwright",
+          "axe support",
+          "required axe",
+          "screenshot support",
+          "trace support",
+          "ai judge gate",
+          "ai judge release gate"
+        ] do
+      refute operator_doc_downcase =~ forbidden
+    end
+
+    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+
+    for required <- ["lib", "priv", "docs", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"] do
+      assert package_files =~ required
+    end
+
+    for forbidden <- [
+          ".planning",
+          "test/support",
+          "test/lockspire",
+          "125-V1.32-PROOF"
+        ] do
+      refute String.downcase(package_files) =~ String.downcase(forbidden)
+    end
+
+    for forbidden <- [
+          "package.json",
+          "package-lock.json",
+          "node_modules",
+          "playwright.config",
+          "screenshots",
+          "traces",
+          "browser-proof"
+        ] do
+      refute String.downcase(package_files) =~ String.downcase(forbidden)
+      refute String.downcase(mix) =~ String.downcase(forbidden)
+    end
+
+    assert Path.wildcard(Path.expand("../../../../../package*.json", __DIR__)) == []
+    assert Path.wildcard(Path.expand("../../../../../playwright.config.*", __DIR__)) == []
+  end
+
+  defp assert_phase_125_copy_and_redaction_boundary!(%{
+         admin_sources: admin_sources,
+         operator_doc: operator_doc,
+         supported_surface: supported_surface
+       }) do
+    source_and_docs = Enum.join([admin_sources, operator_doc, supported_surface], "\n")
+
+    HtmlAssertions.assert_no_generic_cta_text(source_and_docs)
+    HtmlAssertions.assert_no_token_like_text(source_and_docs)
+    assert_no_phase_121_secret_evidence(source_and_docs)
+
+    semantic_disabled_link =
+      ~s(<span role="link" aria-disabled="true" class="lockspire-admin-btn lockspire-admin-btn-secondary">Disabled link action</span>)
+
+    HtmlAssertions.assert_disabled_links_have_semantics(semantic_disabled_link)
+
+    assert_raise ExUnit.AssertionError, fn ->
+      HtmlAssertions.assert_disabled_links_have_semantics(
+        ~s(<a href="/admin/logouts" class="lockspire-admin-btn lockspire-admin-btn-disabled">Disabled link action</a>)
+      )
+    end
+
+    for label <- phase_125_unsupported_action_labels() do
+      refute Regex.match?(~r/\b#{Regex.escape(label)}\b/i, admin_sources),
+             "unexpected unsupported admin action label #{inspect(label)}"
+    end
+  end
+
+  defp assert_phase_125_css_and_responsive_contract!(%{css: css, admin_sources: admin_sources}) do
+    refute css =~ ~r/transition(?:-property)?\s*:\s*all\b/
+    refute admin_sources =~ ~r/\sstyle=/
+
+    assert css_rule(css, ".lockspire-admin-long-value") =~ "overflow-wrap: anywhere"
+    assert css_rule(css, ".lockspire-admin-long-value") =~ "word-break: break-word"
+    assert css_rule(css, ".lockspire-admin-copy-once-secret__value") =~ "overflow-wrap: anywhere"
+    assert css_rule(css, ".lockspire-admin-description-list dd") =~ "overflow-wrap: anywhere"
+
+    assert declaration_block(css, ".lockspire-admin-page-hero__main") =~ "min-width: 0"
+
+    assert css_rule(
+             css,
+             ".lockspire-admin-pane__header,\n  .lockspire-admin-entity-header,\n  .lockspire-admin-lifecycle-row,\n  .lockspire-admin-dense-resource-row"
+           ) =~ "min-width: 0"
+
+    assert css_rule(
+             css,
+             ".lockspire-admin-pane__status,\n  .lockspire-admin-pane__actions,\n  .lockspire-admin-entity-header__actions,\n  .lockspire-admin-workflow-shell__actions,\n  .lockspire-admin-dense-resource-row__actions,\n  .lockspire-admin-lifecycle-row__actions"
+           ) =~ "flex-wrap: wrap"
+
+    assert css_rule(
+             css,
+             ".lockspire-admin-lifecycle-row__meta,\n  .lockspire-admin-dense-resource-row__meta"
+           ) =~ "flex-wrap: wrap"
+
+    assert css_rule(css, ".lockspire-admin-action-group") =~ "max-width: 100%"
+    assert css_rule(css, ".lockspire-admin-action-group") =~ "min-width: 0"
+    assert css_rule(css, ".lockspire-admin-responsive-table") =~ "min-width: 0"
+
+    mobile_css = css_media_rule(css, "@media (max-width: 720px)")
+
+    assert mobile_css =~ ".lockspire-admin-filter-bar"
+    assert mobile_css =~ ".lockspire-admin-action-group"
+    assert mobile_css =~ ".lockspire-admin-dense-resource-row"
+    assert css_rule(mobile_css, ".lockspire-admin-responsive-table__list") =~ "display: grid"
+
+    for selector <- [
+          ".lockspire-admin-nav-item:focus-visible",
+          ".lockspire-admin-theme-control select:focus-visible",
+          ".lockspire-admin-field input:focus-visible",
+          ".lockspire-admin-field select:focus-visible",
+          ".lockspire-admin-field textarea:focus-visible",
+          ".lockspire-admin-error-summary:focus-visible"
+        ] do
+      assert css =~ selector
+    end
+
+    assert css =~ "outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color)"
+    assert css =~ ":root[data-theme=\"light\"]"
+    assert css =~ ":root[data-theme=\"dark\"]"
+    assert css =~ "@media (prefers-color-scheme: dark)"
+    assert phase_120_dark_vars(css) =~ "--ls-status-info-bg: var(--ls-color-info-bg-dark);"
+    assert phase_120_dark_vars(css) =~ "--ls-focus-ring-color: var(--ls-color-brand-500);"
+    assert css =~ "@media (prefers-reduced-motion: reduce)"
+    assert css =~ "transition-duration: 0.01ms !important"
+    assert css =~ "animation-duration: 0.01ms !important"
+    assert css =~ "scroll-behavior: auto !important"
+    assert css =~ "transform: none;"
+  end
+
+  defp phase_125_unsupported_action_labels do
+    [
+      "Retry now",
+      "Discard now",
+      "Approve now",
+      "Deny now",
+      "Logout now",
+      "Run worker",
+      "Worker control",
+      "Pause worker",
+      "Resume worker",
+      "Reveal secret",
+      "Reveal token",
+      "Recover token",
+      "Export credential",
+      "Bulk revoke",
+      "Force publish",
+      "Debug token",
+      "Fetch remote JWKS",
+      "Developer portal",
+      "Host tenant policy",
+      "Public theming",
+      "Component lab route",
+      "Browser proof route",
+      "Storybook"
+    ]
+  end
+
   defp phase_124_configure_sources do
     Map.new(@phase_124_configure_source_paths, fn {key, path} -> {key, File.read!(path)} end)
   end
