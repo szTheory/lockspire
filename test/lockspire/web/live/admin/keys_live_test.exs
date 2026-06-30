@@ -5,6 +5,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.KeysLive.Index
   alias Lockspire.Web.Live.Admin.KeysLive.Show
   alias Phoenix.Router
@@ -75,6 +76,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_token_like_text(html)
+
     assert html =~ "Configure"
     assert html =~ "Review key lifecycle"
     assert html =~ "Key lifecycle posture"
@@ -103,6 +109,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Keys"
     assert html =~ "Overview"
     assert html =~ "DCR"
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
   end
 
@@ -123,6 +130,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_token_like_text(html)
+
     assert html =~ "Review key lifecycle"
     assert html =~ "Lifecycle actions"
     assert html =~ "Publish key"
@@ -139,6 +151,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute html =~ "ui-upcoming"
     refute html =~ ~r/>\s*#{upcoming_key.id}\s*</
     assert_before(html, "Public JWK metadata", "Lifecycle actions")
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
 
     assert {:noreply, socket} = Show.handle_event("publish_key", %{}, socket)
@@ -158,6 +171,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Activate this public key only when verifiers can accept the cutover signer."
     assert html =~ "name=\"activate[confirm]\""
     assert html =~ "phx-submit=\"activate_key\""
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
 
     assert {:noreply, socket} =
@@ -201,6 +215,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     assert html =~ "name=\"retire[confirm]\""
     assert html =~ "phx-submit=\"retire_key\""
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
 
     assert {:noreply, socket} = Show.handle_event("retire_key", %{}, socket)
@@ -216,6 +231,41 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     assert socket.assigns.key_detail.key.status == :retired
     assert socket.assigns.action_notice == "Key retired from publication overlap."
+  end
+
+  test "D-01/D-03/D-04 retired key detail is public-only and exposes no unsupported actions",
+       %{retired_key: retired_key} do
+    assert {:ok, socket} =
+             Show.mount(%{"id" => Integer.to_string(retired_key.id)}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"id" => Integer.to_string(retired_key.id)},
+               "/lockspire/admin/keys/#{retired_key.id}",
+               socket
+             )
+
+    html = rendered_to_string(Show.render(socket.assigns))
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_token_like_text(html)
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
+
+    assert html =~ "Review key lifecycle"
+    assert html =~ "Public JWK metadata"
+    assert html =~ "No lifecycle action available"
+    assert html =~ "kid_"
+    assert html =~ "Retired"
+    refute html =~ "ui-retired"
+    refute html =~ "Publish key"
+    refute html =~ "Activate key"
+    refute html =~ "Retire key"
+    refute html =~ ~s(phx-submit="publish_key")
+    refute html =~ ~s(phx-submit="activate_key")
+    refute html =~ ~s(phx-submit="retire_key")
+    refute_forbidden_key_copy(html)
   end
 
   defp signing_key(kid, status, now, attrs \\ []) do
@@ -267,5 +317,17 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
         ] do
       refute downcased =~ forbidden, "expected no forbidden key copy #{inspect(forbidden)}"
     end
+  end
+
+  defp forbidden_key_material_samples do
+    [
+      "private_jwk_encrypted",
+      "BEGIN PRIVATE KEY",
+      "-----BEGIN",
+      "export key",
+      "raw key material",
+      "force publish",
+      "fetch remote key"
+    ]
   end
 end

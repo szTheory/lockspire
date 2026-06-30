@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
   import Phoenix.ConnTest
 
   alias Lockspire.Admin.InitialAccessTokens
+  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.AdminProof.HtmlAssertions
 
   @endpoint Lockspire.Web.Endpoint
@@ -52,6 +53,9 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       "Developer portal",
       "Approve registration",
       "Deny registration",
+      "Force publish",
+      "Remote key fetch",
+      "Tenant policy editor",
       "Reveal secret",
       "Reveal token",
       "Export credential"
@@ -70,12 +74,52 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
   describe "Index" do
     test "D-03/D-04/D-08/D-09/D-10 renders intake inventory and requires inline revoke confirmation" do
-      {:ok, iat, secret} =
+      {:ok, active_iat, active_secret} =
         InitialAccessTokens.mint_iat(%{
           single_use: true,
-          created_by: "test",
+          created_by: "operator-with-a-long-durable-intake-context-#{String.duplicate("x", 64)}",
           expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
         })
+
+      {:ok, expired_iat, expired_secret} =
+        InitialAccessTokens.mint_iat(%{
+          single_use: true,
+          created_by: "expired-fixture",
+          expires_at: DateTime.add(DateTime.utc_now(), -1, :day)
+        })
+
+      {:ok, used_iat, used_secret} =
+        InitialAccessTokens.mint_iat(%{
+          single_use: false,
+          created_by: "used-fixture",
+          expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+        })
+
+      assert {:ok, used_iat_after_redeem} =
+               Repository.redeem_initial_access_token(used_iat.token_hash, DateTime.utc_now())
+
+      assert used_iat_after_redeem.used_at != nil
+
+      {:ok, revoked_iat, revoked_secret} =
+        InitialAccessTokens.mint_iat(%{
+          single_use: true,
+          created_by: "revoked-fixture",
+          expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+        })
+
+      assert :ok = InitialAccessTokens.revoke_iat(revoked_iat.id)
+
+      denied_material =
+        [
+          active_secret,
+          expired_secret,
+          used_secret,
+          revoked_secret,
+          active_iat.token_hash,
+          expired_iat.token_hash,
+          used_iat.token_hash,
+          revoked_iat.token_hash
+        ] ++ forbidden_secret_samples()
 
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 
@@ -83,7 +127,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       HtmlAssertions.assert_describedby_targets_exist(html)
       HtmlAssertions.assert_no_generic_cta_text(html)
       HtmlAssertions.assert_has_link(html, "/admin/iats/new")
-      HtmlAssertions.assert_no_text(html, [secret | forbidden_secret_samples()])
+      HtmlAssertions.assert_no_text(html, denied_material)
 
       assert html =~ "Configure"
       assert html =~ "Initial access token inventory"
@@ -101,6 +145,10 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert html =~ "Revoke initial access token"
       assert html =~ ~s(phx-submit="confirm_revoke_iat")
       assert html =~ ~s(name="revoke[confirm]")
+      assert html =~ "Multi-use"
+      assert html =~ "expired-fixture"
+      assert html =~ "used-fixture"
+      assert html =~ "revoked-fixture"
 
       assert html =~
                "Partners using this intake token can no longer dynamically register clients with it."
@@ -110,35 +158,42 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert html =~ "lockspire-admin-pane"
       assert html =~ "lockspire-admin-dense-resource-row"
       assert html =~ "lockspire-admin-long-value"
-      refute html =~ secret
+      refute html =~ active_secret
 
       html_without_confirmation =
         view
         |> element("form[phx-submit=\"confirm_revoke_iat\"]")
-        |> render_submit(%{"revoke" => %{"id" => Integer.to_string(iat.id)}})
+        |> render_submit(%{"revoke" => %{"id" => Integer.to_string(active_iat.id)}})
 
       assert html_without_confirmation =~
                "Select the confirmation checkbox to revoke this initial access token."
 
       assert html_without_confirmation =~ "lockspire-admin-errors"
 
-      {:ok, [active_after_missing_confirmation]} = InitialAccessTokens.list_iats()
-      assert active_after_missing_confirmation.id == iat.id
+      {:ok, tokens_after_missing_confirmation} = InitialAccessTokens.list_iats()
+
+      active_after_missing_confirmation =
+        Enum.find(tokens_after_missing_confirmation, &(&1.id == active_iat.id))
+
       assert active_after_missing_confirmation.revoked_at == nil
+      HtmlAssertions.assert_no_text(html_without_confirmation, denied_material)
 
       html_after_revoke =
         view
         |> element("form[phx-submit=\"confirm_revoke_iat\"]")
         |> render_submit(%{
-          "revoke" => %{"id" => Integer.to_string(iat.id), "confirm" => "true"}
+          "revoke" => %{"id" => Integer.to_string(active_iat.id), "confirm" => "true"}
         })
 
-      {:ok, [revoked_after_confirmation]} = InitialAccessTokens.list_iats()
-      assert revoked_after_confirmation.id == iat.id
+      {:ok, tokens_after_confirmation} = InitialAccessTokens.list_iats()
+      revoked_after_confirmation = Enum.find(tokens_after_confirmation, &(&1.id == active_iat.id))
+
       assert revoked_after_confirmation.revoked_at != nil
 
       refute html_after_revoke =~ ~s(phx-submit="confirm_revoke_iat")
       refute html_after_revoke =~ "Revoke initial access token</button>"
+      assert html_after_revoke =~ "Initial access token revoked."
+      HtmlAssertions.assert_no_text(html_after_revoke, denied_material)
     end
   end
 

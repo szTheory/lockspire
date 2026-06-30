@@ -108,8 +108,57 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     refute html =~ "extreme caution"
   end
 
+  test "global DCR policy page keeps long allowlists wrapped and public-only" do
+    long_host =
+      "partner-#{String.duplicate("deep-subdomain-", 8)}registration.example.internal"
+
+    assert {:ok, _policy} =
+             ServerPolicy.put_dcr_policy(%{
+               registration_policy: :open,
+               dcr_allowed_scopes: ["openid", "profile", "partner.deep.audit.read"],
+               dcr_allowed_grant_types: ["authorization_code", "refresh_token"],
+               dcr_allowed_response_types: ["code"],
+               dcr_allowed_redirect_uri_schemes: ["https"],
+               dcr_allowed_redirect_uri_hosts: ["partners.example.com", long_host],
+               dcr_allowed_token_endpoint_auth_methods: [
+                 "private_key_jwt",
+                 "client_secret_jwt",
+                 "client_secret_basic"
+               ],
+               dcr_default_client_lifetime_seconds: 86_400,
+               dcr_default_client_secret_lifetime_seconds: 3_600,
+               dcr_default_registration_access_token_lifetime_seconds: 900
+             })
+
+    html = render_policy_html()
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_describedby_targets_exist(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_token_like_text(html)
+
+    HtmlAssertions.assert_no_text(
+      html,
+      forbidden_secret_samples() ++ unsupported_policy_controls()
+    )
+
+    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
+    assert html =~ "Current mode is open"
+    assert html =~ "Open registration"
+    assert html =~ "partner.deep.audit.read"
+    assert html =~ long_host
+    assert html =~ "Default lifetimes configured"
+    assert html =~ "private_key_jwt"
+    assert html =~ "client_secret_jwt"
+    assert html =~ "client_secret_basic"
+    assert html =~ "This page is descriptive only for this slice."
+    assert html =~ "does not create a remote key-fetch or algorithm-management workflow"
+    refute html =~ "self-service"
+  end
+
   test "CONFIG-03 D-01 D-02 D-03 D-04 D-09 D-10 DCR policy scope stays global and future-only" do
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+    html = render_policy_html()
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
     assert html =~ "Save global DCR policy"
@@ -134,6 +183,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       "Export credential",
       "Approve DCR request",
       "Deny DCR request",
+      "Fetch remote key",
+      "Force publish",
+      "Tenant policy editor",
       "client_secret_hash",
       "registration_access_token_hash",
       "BEGIN PRIVATE KEY",
@@ -232,6 +284,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     |> Kernel.-(1)
   end
 
+  defp render_policy_html do
+    assert {:ok, socket} = Dcr.mount(%{}, %{}, socket_for(:dcr))
+    rendered_to_string(Dcr.render(socket.assigns))
+  end
+
+  defp socket_for(action) do
+    %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+  end
+
   defp forbidden_secret_samples do
     [
       "real-client-secret",
@@ -242,6 +303,33 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       "pk_live_",
       "eyJhbGci",
       "BEGIN PRIVATE KEY"
+    ]
+  end
+
+  defp unsupported_policy_controls do
+    [
+      "Mint initial access token",
+      "Rotate registration access token",
+      "Rotate client secret",
+      "Create client",
+      "Disable client",
+      "Enable client",
+      "host tenant policy",
+      "developer portal",
+      "Reveal secret",
+      "Reveal token",
+      "Export credential",
+      "Approve DCR request",
+      "Deny DCR request",
+      "Fetch remote key",
+      "Force publish",
+      "Tenant policy editor",
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "BEGIN PRIVATE KEY",
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage"
     ]
   end
 
