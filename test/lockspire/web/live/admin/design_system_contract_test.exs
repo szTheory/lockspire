@@ -499,7 +499,9 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
             "copy-once secret shown in screenshot",
             "https://accounts.lockspire.com/admin"
           ] do
-        error = assert_raise ArgumentError, fn -> BrowserEvidence.assert_redaction_safe!(forbidden) end
+        error =
+          assert_raise ArgumentError, fn -> BrowserEvidence.assert_redaction_safe!(forbidden) end
+
         assert Exception.message(error) =~ "sensitive evidence"
       end
 
