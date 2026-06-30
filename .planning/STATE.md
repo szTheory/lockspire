@@ -4,9 +4,9 @@ milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 125
 current_phase_name: Browser Proof, Docs & Adversarial Ratchet
-status: verifying
-stopped_at: Completed 124-06-PLAN.md
-last_updated: "2026-06-30T03:16:35.084Z"
+status: pending
+stopped_at: Phase 124 complete; Phase 125 context not started
+last_updated: "2026-06-30T03:18:14Z"
 last_activity: 2026-06-30
 last_activity_desc: Phase 124 complete, transitioned to Phase 125
 progress:
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 124 — Configure Onboarding Propagation Pass
+**Current focus:** Phase 125 — Browser Proof, Docs & Adversarial Ratchet
 
 ## Current Position
 
 Phase: 125 — Browser Proof, Docs & Adversarial Ratchet
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Pending — ready for context discussion
 Last activity: 2026-06-30 — Phase 124 complete, transitioned to Phase 125
 
 ## Most Recent Release
