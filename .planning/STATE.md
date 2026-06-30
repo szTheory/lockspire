@@ -6,13 +6,13 @@ current_phase: 125
 current_phase_name: Browser Proof, Docs & Adversarial Ratchet
 status: executing
 stopped_at: Completed 125-03-PLAN.md
-last_updated: "2026-06-30T16:15:16.866Z"
+last_updated: "2026-06-30T16:29:40.253Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 23
-  completed_plans: 20
+  completed_plans: 21
   percent: 80
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 125 (Browser Proof, Docs & Adversarial Ratchet) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-06-30
 
@@ -170,6 +170,9 @@ Last activity: 2026-06-30
 - [Phase 125]: Global contracts derive route truth from RouteScorecards.expected_routes/0 and keep browser/manual evidence subordinate to repo-native proof. — Preserves D-10 and D-11 source-derived route truth before Wave 2 route proof adds focused rendered evidence.
 - [Phase 125]: Plan 125-03 kept Support and Operate proof coverage test-only in focused LiveView route tests with no runtime, route, schema, CSS, package, browser-tooling, or public docs changes.
 - [Phase 125]: Plan 125-03 applied HtmlAssertions to rendered page fragments and direct LiveView renders so token-like denial targets route content, not Phoenix test harness session attributes.
+- [Phase 125]: Plan 125-04 kept browser-proof ratchets test-only; no runtime, schema, route, docs, or dependency changes were made. — Plan 04 was scoped to adversarial browser-proof test ratchets.
+- [Phase 125]: Plan 125-04 used direct LiveView render fragments for durable token-like redaction checks to avoid Phoenix wrapper transport tokens. — The proof target is the admin surface, not LiveView session/static wrapper data.
+- [Phase 125]: Plan 125-04 proved unsupported Configure controls with explicit negative assertions instead of broadening product scope. — AGENTS.md and the phase context preserve Lockspire as a narrow embedded OAuth/OIDC library.
 
 ## Blockers/Concerns
 
@@ -184,7 +187,7 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T16:15:16.858Z
+**Last session:** 2026-06-30T16:29:13.227Z
 
 **Next action:** Plan Phase 125 using the approved UI-SPEC.
 **Resume file:** None
@@ -241,6 +244,7 @@ Last activity: 2026-06-30
 | Phase 125 P01 | 7 min | 2 tasks | 3 files |
 | Phase 125 P02 | 8 min | 2 tasks | 2 files |
 | Phase 125 P03 | 8m | 2 tasks | 6 files |
+| Phase 125 P04 | 10m22s | 2 tasks | 5 files |
 
 ## Operator Next Steps
 
