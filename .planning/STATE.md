@@ -4,16 +4,16 @@ milestone: v1.32
 milestone_name: Admin Page IA & Interaction Model Polish
 current_phase: 124
 current_phase_name: Configure Onboarding Propagation Pass
-status: executing
-stopped_at: Completed 124-05-PLAN.md
-last_updated: "2026-06-30T02:32:06.954Z"
+status: verifying
+stopped_at: Completed 124-06-PLAN.md
+last_updated: "2026-06-30T03:08:26.757Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 16
-  percent: 60
+  completed_plans: 17
+  percent: 80
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 124 (Configure Onboarding Propagation Pass) — EXECUTING
+Phase: 124 (Configure Onboarding Propagation Pass) — VERIFYING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-30
 
 ## Most Recent Release
@@ -160,6 +160,9 @@ Last activity: 2026-06-30
 - [Phase 124]: Plan 124-05 kept PAR, DPoP, and security-profile policy posture summaries route-local instead of adding a shared Configure component. — Preserves the embedded-library boundary and avoids speculative shared component surface.
 - [Phase 124]: Plan 124-05 preserved existing save_policy handlers and Lockspire.Admin/ServerPolicy behavior for all non-DCR policy pages. — Keeps policy saves on the existing global issuer persistence path without route, API, schema, or package expansion.
 - [Phase 124]: Plan 124-05 scoped policy copy to global issuer defaults and inheriting clients without host-owned policy controls. — Maintains the explicit host seam while making Configure scope semantics visible before save.
+- [Phase 124]: 124-06 kept Configure proof test-only: no runtime, CSS, fixture, route, schema, package, or public-surface files were edited.
+- [Phase 124]: 124-06 derives Configure route truth from AdminRouter and route-scorecard expectations rather than introducing a public route model.
+- [Phase 124]: 124-06 uses test-local AdminComponents stress proof instead of expanding AdminLab, Storybook, browser-proof, or public theming surfaces.
 
 ## Blockers/Concerns
 
@@ -174,11 +177,11 @@ Last activity: 2026-06-30
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T02:32:06.950Z
+**Last session:** 2026-06-30T03:08:26.751Z
 
-**Next action:** Execute Phase 124 Plan 124-06.
+**Next action:** Verify Phase 124 completion and prepare Phase 125.
 **Resume file:** None
-**Stopped at:** Completed 124-05-PLAN.md
+**Stopped at:** Completed 124-06-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -227,6 +230,7 @@ Last activity: 2026-06-30
 | Phase 124 P03 | 7 min | 2 tasks | 4 files |
 | Phase 124 P04 | 5 min | 2 tasks | 5 files |
 | Phase 124 P05 | 5m29s | 2 tasks | 6 files |
+| Phase 124 P06 | 33min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
