@@ -34,3 +34,27 @@ Do not turn `v1.26` into hosted auth, a generic gateway, a service mesh, SAML/LD
 - Adopter-first "done" lens: judge next work by Phoenix SaaS adoption friction, not phase count or protocol checklists.
 - Support-truth before feature breadth: close doc/discovery/runtime drift before opening a new milestone.
 - Milestone PR discipline: large feature work uses one `milestone/vNEXT-short-slug` branch and one PR to `main`; patch work stays narrow and release-train friendly.
+
+## 2026-06-27 Refresh
+
+**Status:** Implemented narrow admin coherence pass outside a formal GSD milestone.
+
+**Current judgment:** Lockspire is now roughly `90-93%` done for the intended embedded Phoenix OAuth/OIDC provider scope. The remaining high-leverage work is narrow admin/operator product quality and proof, not protocol breadth or platform expansion.
+
+**Implemented wedge:**
+- Client detail lifecycle safety now uses an explicit confirmation form for enable/disable instead of a one-click `phx-click`, while preserving the existing `toggle_client` event and Admin API calls.
+- DCR policy now has a compact decision-summary layer for registration gate, allowlists, token auth methods, and lifetime posture before the long policy form.
+- Logout deliveries now render more scan-oriented read-only queue rows with channel, endpoint, attempts, last activity, status pressure, and support notes.
+- A new internal `decision_summary` admin primitive is covered by CSS, component inventory, and stress-surface guardrails.
+
+**Verified:**
+- `mix test test/lockspire/web/live/admin/clients_live/show_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs --max-failures 3`
+- `mix test test/lockspire/web/live/admin/design_system_contract_test.exs test/lockspire/web/live/admin/design_system_component_stress_test.exs --max-failures 5`
+- `mix test test/lockspire/web/live/admin --max-failures 5`
+
+**Next recommendation:** Do not open a broad admin redesign. If more work is justified, make it release/proof oriented: current browser/manual evidence, docs screenshots if needed, and one last adoption walkthrough. Avoid public theming, required Storybook/PhoenixStorybook, visual snapshot tooling, and logout retry/discard controls unless adopter evidence or domain APIs justify them.
+
+**Graduation candidates:**
+- Page-first admin polish is now the default pattern: fix the highest-pressure workflow, then generalize only proven primitives.
+- Dangerous admin lifecycle actions should use confirmation forms, not immediate click handlers.
+- Policy pages benefit from a compact decision summary before detailed controls.
