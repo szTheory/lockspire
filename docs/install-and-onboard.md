@@ -86,6 +86,22 @@ If you plan to support device login, keep that host-owned `/verify` seam paired 
 
 ## 4. Run migrations
 
+Generated new installs set:
+
+```elixir
+config :lockspire,
+  storage_prefix: "lockspire",
+  oban_prefix: "lockspire"
+```
+
+That keeps Lockspire-owned tables and Lockspire's Oban tables in a dedicated Postgres schema instead of the host app's default schema. If you intentionally want the default/public schema, generate with:
+
+```bash
+mix lockspire.install --storage-prefix public --oban-prefix public
+```
+
+Existing apps that installed Lockspire before this config key keep their current public/default-schema behavior until they explicitly add a prefix and run a data-move plan. Do not point an existing production install at `storage_prefix: "lockspire"` without first moving the existing `lockspire_*` and Oban tables.
+
 Run:
 
 ```bash
@@ -105,8 +121,9 @@ This is the canonical post-install diagnostics step. It checks:
 - required `:lockspire` runtime config
 - the generated seam modules are present
 - the host router still exposes the host-owned `/verify` routes
-- the host router still forwards the embedded Lockspire routes at your mount path
-- Lockspire and Oban migrations are applied
+- the host router still mounts `Lockspire.Web.AdminRouter` at `<mount_path>/admin`
+- the host router still forwards the public embedded Lockspire routes at your mount path
+- Lockspire and Oban migrations are applied in the configured schema/prefix
 
 `mix lockspire.verify` does not diagnose runtime remote-`jwks_uri` incidents. For those, use `mix lockspire.doctor remote-jwks --client <client_id>` and the matching admin Remote JWKS summary described in `docs/private-key-jwt-host-guide.md`.
 

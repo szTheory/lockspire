@@ -1,5 +1,6 @@
 services:
   web:
+    ports: !reset []
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}"

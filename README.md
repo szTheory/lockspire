@@ -33,6 +33,24 @@ Normal sustaining releases ride the repo-owned automated release lane from `main
 
 For exact scope, non-claims, and repo-owned proof, read [`docs/supported-surface.md`](docs/supported-surface.md) before relying on a feature or topology.
 
+## Launch The Admin UI Locally
+
+From the repo root:
+
+```sh
+make demo
+```
+
+Open `http://lockspire-demo.localhost/lockspire/admin` and log in as `ops`.
+
+Useful follow-ups:
+
+```sh
+make demo-smoke
+make demo-logs
+make demo-stop
+```
+
 ## Guides
 
 - [Getting started](docs/getting-started.md)

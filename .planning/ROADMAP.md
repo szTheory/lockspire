@@ -6,6 +6,14 @@ No active feature milestone. Lockspire is back on the sustaining GA release trai
 
 Start the next milestone with `/gsd-new-milestone`.
 
+## Current Worktree Milestone Records
+
+The 2026-06-30 implementation pass added milestone records that are implemented in the worktree but not yet archived as shipped GSD milestones:
+
+- [v1.33 OSS Adoption Trust](milestones/v1.33-ROADMAP.md) - public/admin router separation, verifier truth, package hygiene, and adoption-demo support-boundary repairs.
+- [v1.34 Prefix-Isolated Storage](milestones/v1.34-ROADMAP.md) - default generated `lockspire` PostgreSQL schema, prefix-aware migrations/runtime queries, Oban prefixing, example app, and upgrade docs.
+- [v1.35 CI/CD Efficiency And Release Hygiene](milestones/v1.35-ROADMAP.md) - duplicate CI work removal, minimum supported Elixir/OTP compatibility job, release cache precision, Dialyzer opt-in, and package hygiene proof.
+
 ## Shipped Milestones
 
 - [v1.32 Admin Page IA & Interaction Model Polish](milestones/v1.32-ROADMAP.md) - shipped 2026-06-30; phases 121-125; route scorecards, Support and Operate flow polish, Configure propagation, redaction-safe fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and adversarial proof now make the admin/operator UI more deliberately composed without protocol, storage, host-seam, public lab, theming, browser-tooling, or support-surface creep.

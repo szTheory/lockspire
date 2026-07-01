@@ -5,16 +5,27 @@ BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
 BASE_URL="$(printf '%s' "$BASE_URL" | sed 's:/*$::')"
 
 cat <<INFO
+Lockspire admin demo
 Adoption demo ready at ${BASE_URL}
 
-URLs
+Ready
+  Operator admin: ${BASE_URL}/lockspire/admin
+  Login: ops
+
+Next
+  Smoke: make demo-smoke
+  Info: make demo-info
+  Logs: make demo-logs
+  Stop: make demo-stop
+
+Details
   Base URL: ${BASE_URL}
+  Admin: ${BASE_URL}/lockspire/admin
+  Developer apps: ${BASE_URL}/developer/apps
+  Device verification: ${BASE_URL}/verify
   Issuer: ${BASE_URL}/lockspire
   Discovery: ${BASE_URL}/lockspire/.well-known/openid-configuration
   JWKS: ${BASE_URL}/lockspire/jwks
-  Admin: ${BASE_URL}/lockspire/admin
-  Device verification: ${BASE_URL}/verify
-  Developer apps: ${BASE_URL}/developer/apps
   OAuth callback: ${BASE_URL}/oauth/callback
   Protected API: ${BASE_URL}/api/billing/summary
 
@@ -32,6 +43,17 @@ Seeded OAuth clients
 
 Smoke command
   LOCKSPIRE_DEMO_BASE_URL=${BASE_URL} scripts/demo/adoption_smoke.sh
+
+Launcher
+  make demo
+  make demo-smoke
+  make demo-stop
+  scripts/demo/admin-ui up
+  scripts/demo/admin-ui smoke
+  scripts/demo/admin-ui logs
+  scripts/demo/admin-ui stop
+  examples/adoption_demo/bin/docker-up
+  examples/adoption_demo/bin/docker-up --direct
 
 Reprint:
   docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info

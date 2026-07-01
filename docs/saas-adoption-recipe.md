@@ -6,6 +6,16 @@ Use this when you are wiring Lockspire into a real Phoenix SaaS for the first ti
 
 Run `mix lockspire.install`, import `config/lockspire.exs`, run migrations, and call the generated `lockspire_routes/0` helper from your host router.
 
+New generated installs use a dedicated Postgres schema by default:
+
+```elixir
+config :lockspire,
+  storage_prefix: "lockspire",
+  oban_prefix: "lockspire"
+```
+
+Use `--storage-prefix public --oban-prefix public` only when you explicitly want Lockspire tables in the default/public schema.
+
 Keep three boundaries separate:
 
 - Host account routes such as `/verify` and `/authorized-apps` stay inside your normal browser/session pipeline.

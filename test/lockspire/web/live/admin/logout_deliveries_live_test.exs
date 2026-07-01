@@ -5,7 +5,6 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index
-  alias Phoenix.Router
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -170,7 +169,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
   end
 
   test "router exposes admin logout deliveries routes" do
-    routes = Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/logouts", Index))
   end

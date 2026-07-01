@@ -1,4 +1,6 @@
 defmodule Lockspire.SeedingHelpers do
+  @moduledoc false
+
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.KeyCache

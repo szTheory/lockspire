@@ -2652,9 +2652,20 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       refute operator_doc_downcase =~ forbidden
     end
 
-    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+    package_files = package_files_contract_text()
 
-    for required <- ["lib", "priv", "docs", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"] do
+    for required <- [
+          "lib/lockspire.ex",
+          "lib/lockspire/web/admin_router.ex",
+          "priv/repo/migrations/",
+          "priv/templates/lockspire.install/router.ex",
+          "docs/supported-surface.md",
+          "mix.exs",
+          "README.md",
+          "CHANGELOG.md",
+          "SECURITY.md",
+          "LICENSE"
+        ] do
       assert package_files =~ required
     end
 
@@ -2904,7 +2915,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       refute public_boundary =~ forbidden
     end
 
-    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+    package_files = package_files_contract_text()
 
     for forbidden <- [
           ".planning",
@@ -3077,7 +3088,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   end
 
   defp assert_phase_121_package_boundary(mix) do
-    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+    package_files = package_files_contract_text()
 
     for forbidden <- [
           ".planning",
@@ -3092,6 +3103,13 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       refute String.downcase(package_files) =~ String.downcase(forbidden)
       refute String.downcase(mix) =~ String.downcase(forbidden)
     end
+  end
+
+  defp package_files_contract_text do
+    Mix.Project.config()
+    |> Keyword.fetch!(:package)
+    |> Keyword.fetch!(:files)
+    |> Enum.join("\n")
   end
 
   defp phase_120_contract_sources do
@@ -3339,9 +3357,20 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
   end
 
   defp assert_phase_120_package_dx_boundary(%{mix: mix}) do
-    [_, package_files] = Regex.run(~r/files:\s*~w\(([^)]*)\)/s, mix)
+    package_files = package_files_contract_text()
 
-    for required <- ["lib", "priv", "docs", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"] do
+    for required <- [
+          "lib/lockspire.ex",
+          "lib/lockspire/web/admin_router.ex",
+          "priv/repo/migrations/",
+          "priv/templates/lockspire.install/router.ex",
+          "docs/supported-surface.md",
+          "mix.exs",
+          "README.md",
+          "CHANGELOG.md",
+          "SECURITY.md",
+          "LICENSE"
+        ] do
       assert package_files =~ required
     end
 

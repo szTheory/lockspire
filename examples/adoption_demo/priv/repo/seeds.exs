@@ -14,26 +14,38 @@ alias Lockspire.Storage.Ecto.LogoutEventRecord
 
 repo = AdoptionDemo.Repo
 
+lockspire_tables =
+  ~w(
+    lockspire_audit_events
+    lockspire_ciba_authorizations
+    lockspire_consent_grants
+    lockspire_device_authorizations
+    lockspire_dpop_replay
+    lockspire_initial_access_tokens
+    lockspire_interactions
+    lockspire_logout_deliveries
+    lockspire_logout_events
+    lockspire_pushed_authorization_requests
+    lockspire_server_policies
+    lockspire_signing_keys
+    lockspire_tokens
+    lockspire_used_jtis
+    lockspire_clients
+  )
+  |> Enum.map_join(",\n    ", &Lockspire.Storage.Ecto.Migration.qualified_lockspire_table/1)
+
+oban_table =
+  case Lockspire.Config.oban_prefix() do
+    nil -> ~s("oban_jobs")
+    prefix -> Lockspire.Storage.Ecto.Prefix.quoted_identifier(prefix) <> ~s(."oban_jobs")
+  end
+
 Ecto.Adapters.SQL.query!(
   repo,
   """
   TRUNCATE
-    oban_jobs,
-    lockspire_audit_events,
-    lockspire_ciba_authorizations,
-    lockspire_consent_grants,
-    lockspire_device_authorizations,
-    lockspire_dpop_replay,
-    lockspire_initial_access_tokens,
-    lockspire_interactions,
-    lockspire_logout_deliveries,
-    lockspire_logout_events,
-    lockspire_pushed_authorization_requests,
-    lockspire_server_policies,
-    lockspire_signing_keys,
-    lockspire_tokens,
-    lockspire_used_jtis,
-    lockspire_clients
+    #{oban_table},
+    #{lockspire_tables}
   RESTART IDENTITY CASCADE
   """,
   []

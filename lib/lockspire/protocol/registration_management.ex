@@ -146,11 +146,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     result =
       Repository.transact(fn ->
         repo = Config.repo!()
+        repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
 
         ClientRecord
         |> where([c], c.id == ^client.id)
         |> lock("FOR UPDATE")
-        |> repo.one()
+        |> repo.one(repo_opts)
         |> case do
           nil ->
             repo.rollback(:not_found)
@@ -161,7 +162,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
               registration_access_token_hash: new_rat_hash,
               updated_at: DateTime.utc_now()
             )
-            |> repo.update()
+            |> repo.update(repo_opts)
             |> case do
               {:ok, updated_record} ->
                 audit_attrs = %{
@@ -200,11 +201,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
     Repository.transact(fn ->
       repo = Config.repo!()
+      repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
 
       ClientRecord
       |> where([c], c.id == ^client.id)
       |> lock("FOR UPDATE")
-      |> repo.one()
+      |> repo.one(repo_opts)
       |> case do
         nil ->
           repo.rollback(:not_found)
@@ -216,7 +218,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
             registration_access_token_hash: new_rat_hash,
             updated_at: DateTime.utc_now()
           )
-          |> repo.update()
+          |> repo.update(repo_opts)
           |> case do
             {:ok, updated_record} ->
               audit_attrs = %{

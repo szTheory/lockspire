@@ -61,12 +61,63 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
     <style>
       <%= Phoenix.HTML.raw(Lockspire.Web.Admin.CSS.get()) %>
     </style>
+    <script>
+      (() => {
+        const storageKey = "lockspire-admin-theme";
+        const root = document.documentElement;
+        const applyTheme = (theme) => {
+          if (theme === "light" || theme === "dark") {
+            root.dataset.theme = theme;
+          } else {
+            root.removeAttribute("data-theme");
+          }
+          document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
+            select.value = theme || "system";
+          });
+        };
+
+        let savedTheme = "system";
+        try {
+          savedTheme = window.localStorage.getItem(storageKey) || "system";
+        } catch (_error) {}
+
+        applyTheme(savedTheme);
+
+        document.addEventListener("change", (event) => {
+          const select = event.target.closest("[data-lockspire-theme-select]");
+          if (!select) return;
+
+          const nextTheme = select.value;
+          try {
+            if (nextTheme === "system") {
+              window.localStorage.removeItem(storageKey);
+            } else {
+              window.localStorage.setItem(storageKey, nextTheme);
+            }
+          } catch (_error) {}
+
+          applyTheme(nextTheme);
+        });
+      })();
+    </script>
     <section class="lockspire-admin-shell">
       <header class="lockspire-admin-header">
-        <div class="lockspire-admin-brand">
-          <span aria-label="Lockspire Admin">{Phoenix.HTML.raw(brand_lockup())}</span>
+        <div class="lockspire-admin-header-row">
+          <div class="lockspire-admin-header-title">
+            <div class="lockspire-admin-brand">
+              <span aria-label="Lockspire Admin">{Phoenix.HTML.raw(brand_lockup())}</span>
+            </div>
+            <h1>{@page_title}</h1>
+          </div>
+          <div class="lockspire-admin-theme-control">
+            <label for="lockspire-admin-theme-select">Theme</label>
+            <select id="lockspire-admin-theme-select" data-lockspire-theme-select>
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
         </div>
-        <h1>{@page_title}</h1>
       </header>
 
       <nav aria-label="Operator navigation" class="lockspire-admin-nav">

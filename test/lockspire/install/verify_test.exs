@@ -34,6 +34,10 @@ defmodule Lockspire.Install.VerifyTest do
       post("/verify/:handle/deny", PlaceholderController, :deny)
     end
 
+    scope "/lockspire/admin" do
+      forward("/", Lockspire.Web.AdminRouter)
+    end
+
     scope "/" do
       forward("/lockspire", Lockspire.Web.Router)
     end
@@ -42,9 +46,43 @@ defmodule Lockspire.Install.VerifyTest do
   defmodule RouterMissingVerify do
     use Phoenix.Router
 
+    scope "/lockspire/admin" do
+      forward("/", Lockspire.Web.AdminRouter)
+    end
+
     scope "/" do
       forward("/lockspire", Lockspire.Web.Router)
     end
+  end
+
+  defmodule RouterMissingAdmin do
+    use Phoenix.Router
+
+    scope "/", Lockspire.Install.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+    end
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+  end
+
+  defmodule RouterPublicBeforeAdmin do
+    def __routes__ do
+      [
+        route(:get, "/verify", PlaceholderController),
+        route(:post, "/verify", PlaceholderController),
+        route(:post, "/verify/:handle/approve", PlaceholderController),
+        route(:post, "/verify/:handle/deny", PlaceholderController),
+        route(:*, "/lockspire", Lockspire.Web.Router),
+        route(:*, "/lockspire/admin", Lockspire.Web.AdminRouter)
+      ]
+    end
+
+    defp route(verb, path, plug), do: %{verb: verb, path: path, plug: plug}
   end
 
   defmodule PlaceholderController do
@@ -110,5 +148,43 @@ defmodule Lockspire.Install.VerifyTest do
     refute result.ok?
     assert %{status: :error, details: details} = Enum.find(result.checks, &(&1.id == :router))
     assert details =~ "get /verify"
+  end
+
+  test "returns a failing result set for a missing guarded admin mount" do
+    result =
+      Verify.run(
+        router: RouterMissingAdmin,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire"
+      )
+
+    refute result.ok?
+
+    assert %{status: :error, details: details, fix: fix} =
+             Enum.find(result.checks, &(&1.id == :router))
+
+    assert details =~ "forward /lockspire/admin -> Lockspire.Web.AdminRouter"
+    assert fix =~ "host-owned operator auth pipeline"
+  end
+
+  test "returns a failing result when public forward shadows the admin mount" do
+    result =
+      Verify.run(
+        router: RouterPublicBeforeAdmin,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire"
+      )
+
+    refute result.ok?
+
+    assert %{status: :error, details: details, fix: fix} =
+             Enum.find(result.checks, &(&1.id == :router))
+
+    assert details =~ "public forward /lockspire -> Lockspire.Web.Router appears before admin"
+    assert fix =~ "Move the guarded `Lockspire.Web.AdminRouter` mount above"
   end
 end

@@ -7,6 +7,7 @@
 **/.DS_Store
 /.bg-shell/
 /doc/
+/tmp/
 /.gsd/
 /priv/plts/
 # .planning/ tracked in git; ignore only transient GSD scratch
@@ -16,6 +17,7 @@
 /.planning/state_snapshot.json
 /.planning/roadmap_analyze.json
 /.planning/ALL_STATE.txt
+/.planning/research/.cache/
 /prompts/
 /lockspire-idea.md
 *.tar

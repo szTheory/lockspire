@@ -415,7 +415,8 @@ defmodule Lockspire.Web.Admin.CSS do
     width: 0.45rem;
   }
 
-  .lockspire-admin-badge-active {
+  .lockspire-admin-badge-active,
+  .lockspire-admin-badge-healthy {
     background-color: var(--ls-status-success-bg);
     color: var(--ls-status-success-text);
   }
@@ -435,9 +436,165 @@ defmodule Lockspire.Web.Admin.CSS do
     color: var(--ls-status-danger-text);
   }
 
-  .lockspire-admin-badge-info {
+  .lockspire-admin-badge-info,
+  .lockspire-admin-badge-waiting,
+  .lockspire-admin-badge-provenance {
     background-color: var(--ls-status-info-bg);
     color: var(--ls-status-info-text);
+  }
+
+  .lockspire-admin-badge-completed {
+    background-color: var(--ls-status-success-bg);
+    color: var(--ls-status-success-text);
+    border-style: double;
+  }
+
+  .lockspire-admin-pane,
+  .lockspire-admin-workflow-shell {
+    background: var(--ls-surface-panel);
+    border: 1px solid var(--ls-border-subtle);
+    border-radius: var(--ls-radius-lg);
+    box-shadow: var(--ls-shadow-sm);
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+    padding: var(--ls-space-6);
+  }
+
+  .lockspire-admin-pane__header,
+  .lockspire-admin-entity-header,
+  .lockspire-admin-lifecycle-row,
+  .lockspire-admin-dense-resource-row {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--ls-space-4);
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .lockspire-admin-pane__header h2,
+  .lockspire-admin-entity-header h2,
+  .lockspire-admin-workflow-shell h2 {
+    color: var(--ls-text-strong);
+    font-family: var(--ls-font-display);
+    font-size: var(--ls-type-heading-size);
+    font-weight: var(--ls-type-weight-semibold);
+    line-height: var(--ls-type-line-heading);
+    margin: 0;
+  }
+
+  .lockspire-admin-pane__header p,
+  .lockspire-admin-entity-header p,
+  .lockspire-admin-workflow-shell p,
+  .lockspire-admin-lifecycle-row p {
+    color: var(--ls-text-muted);
+    font-size: var(--ls-type-body-size);
+    line-height: var(--ls-type-line-body);
+    margin: 0;
+  }
+
+  .lockspire-admin-pane__body,
+  .lockspire-admin-workflow-shell__body,
+  .lockspire-admin-entity-header__main,
+  .lockspire-admin-dense-resource-row__main,
+  .lockspire-admin-lifecycle-row__main {
+    display: grid;
+    gap: var(--ls-space-2);
+    min-width: 0;
+  }
+
+  .lockspire-admin-pane__status,
+  .lockspire-admin-pane__actions,
+  .lockspire-admin-entity-header__actions,
+  .lockspire-admin-workflow-shell__actions,
+  .lockspire-admin-dense-resource-row__actions,
+  .lockspire-admin-lifecycle-row__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .lockspire-admin-entity-header {
+    background: var(--ls-surface-panel);
+    border: 1px solid var(--ls-border-subtle);
+    border-radius: var(--ls-radius-lg);
+    padding: var(--ls-space-6);
+  }
+
+  .lockspire-admin-entity-header__identifier {
+    color: var(--ls-text-muted);
+  }
+
+  .lockspire-admin-lifecycle-row,
+  .lockspire-admin-dense-resource-row {
+    border-bottom: 1px solid var(--ls-border-subtle);
+    padding: var(--ls-space-4) 0;
+  }
+
+  .lockspire-admin-resource-list > .lockspire-admin-dense-resource-row {
+    background: var(--ls-surface-muted);
+    border: 1px solid var(--ls-border-subtle);
+    border-radius: var(--ls-radius-md);
+    padding: var(--ls-space-4);
+  }
+
+  .lockspire-admin-dense-resource-row__main {
+    flex: 1 1 13rem;
+    min-width: 0;
+  }
+
+  .lockspire-admin-dense-resource-row__main strong {
+    color: var(--ls-text-strong);
+    font-family: var(--ls-font-display);
+    font-size: var(--ls-type-heading-size);
+    font-weight: var(--ls-type-weight-semibold);
+    line-height: var(--ls-type-line-heading);
+  }
+
+  .lockspire-admin-dense-resource-row__main span {
+    color: var(--ls-text-muted);
+    font-size: var(--ls-type-body-size);
+    line-height: var(--ls-type-line-body);
+  }
+
+  .lockspire-admin-lifecycle-row__meta,
+  .lockspire-admin-dense-resource-row__meta {
+    align-items: center;
+    color: var(--ls-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+    min-width: 0;
+  }
+
+  .lockspire-admin-dense-resource-row__meta {
+    flex: 2 1 22rem;
+  }
+
+  .lockspire-admin-dense-resource-row__meta > span {
+    min-width: 0;
+  }
+
+  .lockspire-admin-dense-resource-row__note {
+    background: var(--ls-surface-panel);
+    border: 1px solid var(--ls-border-subtle);
+    border-radius: var(--ls-radius-md);
+    color: var(--ls-text-body);
+    flex: 1 1 100%;
+    padding: var(--ls-space-2) var(--ls-space-3);
+  }
+
+  .lockspire-admin-responsive-table {
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+  }
+
+  .lockspire-admin-responsive-table__list {
+    display: none;
+    gap: var(--ls-space-3);
   }
 
   .lockspire-admin-alert {
@@ -998,6 +1155,71 @@ defmodule Lockspire.Web.Admin.CSS do
     letter-spacing: 0.05em;
   }
 
+  .lockspire-admin-decision-summary {
+    display: grid;
+    gap: var(--ls-space-3);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    margin: 0 0 var(--ls-space-5);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .lockspire-admin-decision-summary__item {
+    background: var(--ls-surface-muted);
+    border: 1px solid var(--ls-border-subtle);
+    border-left: 3px solid var(--ls-border-strong);
+    border-radius: var(--ls-radius-md);
+    display: grid;
+    gap: var(--ls-space-1);
+    min-width: 0;
+    padding: var(--ls-space-4);
+  }
+
+  .lockspire-admin-decision-summary__item-success {
+    border-left-color: var(--ls-status-success-border);
+  }
+
+  .lockspire-admin-decision-summary__item-warning {
+    border-left-color: var(--ls-status-warning-border);
+  }
+
+  .lockspire-admin-decision-summary__item-danger {
+    border-left-color: var(--ls-status-danger-border);
+  }
+
+  .lockspire-admin-decision-summary__item-info {
+    border-left-color: var(--ls-status-info-border);
+  }
+
+  .lockspire-admin-decision-summary dt {
+    color: var(--ls-text-muted);
+    font-size: var(--ls-type-label-size);
+    font-weight: var(--ls-type-weight-semibold);
+    line-height: var(--ls-type-line-label);
+    text-transform: uppercase;
+  }
+
+  .lockspire-admin-decision-summary dd {
+    color: var(--ls-text-strong);
+    font-family: var(--ls-font-display);
+    font-size: var(--ls-type-heading-size);
+    font-weight: var(--ls-type-weight-semibold);
+    line-height: var(--ls-type-line-heading);
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .lockspire-admin-decision-summary p,
+  .lockspire-admin-decision-summary__extra {
+    color: var(--ls-text-muted);
+    font-size: var(--ls-type-label-size);
+    line-height: var(--ls-type-line-body);
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .lockspire-admin-task-card {
     background: var(--ls-surface-panel);
     border: 1px solid var(--ls-border-subtle);
@@ -1442,6 +1664,10 @@ defmodule Lockspire.Web.Admin.CSS do
     .lockspire-admin-action-group__primary,
     .lockspire-admin-action-group__secondary,
     .lockspire-admin-action-group__destructive,
+    .lockspire-admin-pane__header,
+    .lockspire-admin-entity-header,
+    .lockspire-admin-lifecycle-row,
+    .lockspire-admin-dense-resource-row,
     .lockspire-admin-task-card__header,
     .lockspire-admin-task-card__actions {
       align-items: stretch;
@@ -1485,6 +1711,14 @@ defmodule Lockspire.Web.Admin.CSS do
       max-width: 100%;
       min-width: 0;
       width: 100%;
+    }
+
+    .lockspire-admin-responsive-table .lockspire-admin-table-wrap {
+      display: none;
+    }
+
+    .lockspire-admin-responsive-table__list {
+      display: grid;
     }
   }
 

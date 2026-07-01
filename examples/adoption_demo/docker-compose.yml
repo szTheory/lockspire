@@ -10,7 +10,7 @@ services:
         condition: service_healthy
     command: ["./bin/docker-start"]
     ports:
-      - "${LOCKSPIRE_DEMO_APP_PORT:-4100}:${LOCKSPIRE_DEMO_APP_PORT:-4100}"
+      - "127.0.0.1:${LOCKSPIRE_DEMO_APP_PORT:-4100}:${LOCKSPIRE_DEMO_APP_PORT:-4100}"
     volumes:
       - ../..:/workspace
       # Isolate Linux build artifacts from host artifacts.

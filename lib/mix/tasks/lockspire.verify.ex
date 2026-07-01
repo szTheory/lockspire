@@ -43,8 +43,9 @@ defmodule Mix.Tasks.Lockspire.Verify do
     Canonical post-install verification:
       1. Confirm required :lockspire runtime config is present and valid
       2. Confirm the host seam modules compile
-      3. Confirm the host router mounts Lockspire and exposes /verify routes
-      4. Confirm Lockspire and Oban migrations are applied
+      3. Confirm the host router exposes /verify routes
+      4. Confirm the host router mounts the guarded admin router and public protocol router separately
+      5. Confirm Lockspire and Oban migrations are applied in the configured schema/prefix
     """
   end
 

@@ -5,17 +5,28 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @compose_file "examples/adoption_demo/docker-compose.yml"
   @db_host_compose_file "examples/adoption_demo/docker-compose.db-host.yml"
   @traefik_compose_file "examples/adoption_demo/docker-compose.traefik.yml"
+  @makefile_path Path.join(@repo_root, "Makefile")
+  @admin_ui_path Path.join(@repo_root, "scripts/demo/admin-ui")
   @docker_info_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-info")
+  @docker_up_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-up")
   @docker_reset_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-reset")
   @docker_stop_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-stop")
   @docker_cleanup_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-cleanup")
+  @dockerignore_path Path.join(@repo_root, ".dockerignore")
   @adoption_smoke_wrapper_path Path.join(@repo_root, "scripts/demo/adoption_smoke.sh")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
   test "docker-info prints base URL derived startup links and exact smoke command" do
     output = docker_info_output("http://127.0.0.1:4101/")
 
+    assert output =~ "Lockspire admin demo"
     assert output =~ "Adoption demo ready at http://127.0.0.1:4101"
+    assert output =~ "Operator admin: http://127.0.0.1:4101/lockspire/admin"
+    assert output =~ "Login: ops"
+    assert output =~ "Smoke: make demo-smoke"
+    assert output =~ "Info: make demo-info"
+    assert output =~ "Logs: make demo-logs"
+    assert output =~ "Stop: make demo-stop"
     assert output =~ "Base URL: http://127.0.0.1:4101"
     assert output =~ "Issuer: http://127.0.0.1:4101/lockspire"
     assert output =~ "Discovery: http://127.0.0.1:4101/lockspire/.well-known/openid-configuration"
@@ -28,6 +39,12 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     assert output =~
              "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 scripts/demo/adoption_smoke.sh"
+
+    assert_ordered(output, [
+      "Operator admin: http://127.0.0.1:4101/lockspire/admin",
+      "Base URL: http://127.0.0.1:4101",
+      "Issuer: http://127.0.0.1:4101/lockspire"
+    ])
 
     refute output =~ "http://127.0.0.1:4101//"
     refute output =~ "python3 scripts/demo/adoption_smoke.py"
@@ -77,18 +94,141 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   test "docker-info prints canonical reprint command for running web service" do
     output = docker_info_output()
     source = File.read!(@docker_info_path)
-    reprint_command = "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+
+    reprint_command =
+      "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+
     project_reprint_command =
       "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert output =~ "Reprint:"
     assert output =~ reprint_command
     assert output =~ project_reprint_command
+    assert output =~ "examples/adoption_demo/bin/docker-up"
+    assert output =~ "examples/adoption_demo/bin/docker-up --direct"
+    assert output =~ "make demo"
+    assert output =~ "make demo-smoke"
+    assert output =~ "make demo-stop"
+    assert output =~ "scripts/demo/admin-ui up"
+    assert output =~ "scripts/demo/admin-ui smoke"
+    assert output =~ "scripts/demo/admin-ui stop"
     assert source =~ reprint_command
     assert source =~ project_reprint_command
+    assert source =~ "examples/adoption_demo/bin/docker-up"
+    assert source =~ "scripts/demo/admin-ui up"
 
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml up"
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml run"
+  end
+
+  test "top-level Makefile exposes simple admin UI demo targets" do
+    assert File.regular?(@makefile_path)
+
+    source = File.read!(@makefile_path)
+
+    for target <- [
+          "demo:",
+          "demo-info:",
+          "demo-smoke:",
+          "demo-logs:",
+          "demo-stop:",
+          "demo-reset:",
+          "demo-clean:",
+          "demo-clean-execute:"
+        ] do
+      assert source =~ target
+    end
+
+    assert source =~ "scripts/demo/admin-ui up"
+    assert source =~ "scripts/demo/admin-ui smoke"
+    assert source =~ "scripts/demo/admin-ui stop"
+    refute source =~ "docker compose"
+  end
+
+  test "admin-ui wrapper owns simple detached lifecycle commands" do
+    assert File.regular?(@admin_ui_path)
+    assert executable?(@admin_ui_path)
+
+    source = File.read!(@admin_ui_path)
+    help = command_output(@admin_ui_path, ["--help"])
+
+    for expected <- [
+          "up",
+          "info",
+          "smoke",
+          "logs",
+          "stop",
+          "reset",
+          "cleanup",
+          "status",
+          "--project NAME"
+        ] do
+      assert source =~ expected
+      assert help =~ expected
+    end
+
+    assert source =~ "examples/adoption_demo/bin/docker-up --project \"$project\" --detach"
+    assert source =~ "scripts/demo/adoption_smoke.sh"
+    assert source =~ "docker-reset --project \"$project\" --db-only"
+    assert source =~ "docker-cleanup --project \"$project\""
+    assert source =~ "label=com.docker.compose.project=${project}"
+    refute source =~ "docker system prune"
+    refute source =~ "docker volume prune"
+  end
+
+  test "docker-up launcher supports direct and Traefik startup modes" do
+    assert File.regular?(@docker_up_path)
+    assert executable?(@docker_up_path)
+
+    source = File.read!(@docker_up_path)
+    help = command_output(@docker_up_path, ["--help"])
+
+    for expected <- [
+          "--direct",
+          "--traefik",
+          "--project NAME",
+          "--host HOST",
+          "--port PORT",
+          "--no-proxy-start",
+          "--detach",
+          "--print-command",
+          "http://lockspire-demo.localhost"
+        ] do
+      assert source =~ expected
+      assert help =~ expected
+    end
+
+    for expected <- [
+          "LOCKSPIRE_DEMO_BASE_URL",
+          "LOCKSPIRE_DEMO_TRAEFIK_HOST",
+          "docker compose -f examples/adoption_demo/docker-compose.yml up --build",
+          "docker compose -f examples/adoption_demo/docker-compose.yml up --build -d",
+          "docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml up --build"
+        ] do
+      assert source =~ expected
+    end
+
+    assert source =~
+             "docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml up --build -d"
+
+    assert source =~ "docker network inspect \"$network\""
+    assert source =~ "docker network create \"$network\""
+    assert source =~ "tcp_port_has_listener"
+    assert source =~ "lsof -nP -iTCP"
+    assert source =~ "compatible_traefik_networks"
+    assert source =~ "docker port \"$container\" 80/tcp"
+    assert source =~ "--providers\\.docker"
+    assert source =~ "Detected existing compatible Traefik proxy"
+    assert source =~ "Multiple compatible Traefik proxy networks"
+    assert source =~ "Cannot use --no-proxy-start"
+    assert source =~ "wait_for_public_url"
+    assert source =~ "print_running_info"
+    assert source =~ "does not match the Traefik host"
+    assert source =~ "Open after readiness:"
+    assert source =~ "/lockspire/admin"
+    assert source =~ "COMPOSE_PROJECT_NAME=${project} make demo-smoke"
+    assert source =~ "COMPOSE_PROJECT_NAME=${project} make demo-stop"
+    assert source =~ "scripts/demo/adoption_smoke.sh"
   end
 
   test "adoption smoke wrapper normalizes base URL and delegates to Python smoke" do
@@ -149,7 +289,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     with_compose_config(["-f", @compose_file], [env: env], fn config ->
       web = get_in(config, ["services", "web"])
 
-      assert_port(web, "4101", 4101)
+      assert_port(web, "4101", 4101, "127.0.0.1")
       assert env_value(web, "PORT") == "4101"
       assert env_value(web, "LOCKSPIRE_DEMO_BASE_URL") == "http://127.0.0.1:4101"
     end)
@@ -166,13 +306,17 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   test "database host-port exposure is opt-in and keeps app DB wiring internal" do
     env = [{"LOCKSPIRE_DEMO_DB_HOST_PORT", "15432"}]
 
-    with_compose_config(["-f", @compose_file, "-f", @db_host_compose_file], [env: env], fn config ->
-      db = get_in(config, ["services", "db"])
-      web = get_in(config, ["services", "web"])
+    with_compose_config(
+      ["-f", @compose_file, "-f", @db_host_compose_file],
+      [env: env],
+      fn config ->
+        db = get_in(config, ["services", "db"])
+        web = get_in(config, ["services", "web"])
 
-      assert_port(db, "15432", 5432, "127.0.0.1")
-      assert env_value(web, "LOCKSPIRE_DEMO_DB_PORT") == "5432"
-    end)
+        assert_port(db, "15432", 5432, "127.0.0.1")
+        assert env_value(web, "LOCKSPIRE_DEMO_DB_PORT") == "5432"
+      end
+    )
   end
 
   test "direct Compose has no Traefik labels or external proxy dependency" do
@@ -180,7 +324,9 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       web = get_in(config, ["services", "web"])
       encoded_config = Jason.encode!(config)
 
-      refute labels(web) |> Enum.any?(fn {key, _value} -> String.starts_with?(key, "traefik.") end)
+      refute labels(web)
+             |> Enum.any?(fn {key, _value} -> String.starts_with?(key, "traefik.") end)
+
       refute encoded_config =~ "traefik.enable"
       refute encoded_config =~ "traefik.http"
       refute encoded_config =~ "local-dev-proxy"
@@ -190,37 +336,47 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   test "Traefik override renders configured hostname router service network and port labels" do
     env = traefik_env()
 
-    with_compose_config(["-f", @compose_file, "-f", @traefik_compose_file], [env: env], fn config ->
-      web = get_in(config, ["services", "web"])
+    with_compose_config(
+      ["-f", @compose_file, "-f", @traefik_compose_file],
+      [env: env],
+      fn config ->
+        web = get_in(config, ["services", "web"])
 
-      assert label_value(web, "traefik.enable") == "true"
-      assert label_value(web, "traefik.docker.network") == "lockspire-alt-proxy"
+        assert label_value(web, "traefik.enable") == "true"
+        assert label_value(web, "traefik.docker.network") == "lockspire-alt-proxy"
 
-      assert label_value(web, "traefik.http.routers.lockspire-alt-router.rule") ==
-               "Host(`lockspire-alt.localhost`)"
+        assert label_value(web, "traefik.http.routers.lockspire-alt-router.rule") ==
+                 "Host(`lockspire-alt.localhost`)"
 
-      assert label_value(web, "traefik.http.routers.lockspire-alt-router.service") ==
-               "lockspire-alt-service"
+        assert label_value(web, "traefik.http.routers.lockspire-alt-router.service") ==
+                 "lockspire-alt-service"
 
-      assert label_value(
-               web,
-               "traefik.http.services.lockspire-alt-service.loadbalancer.server.port"
-             ) == "4102"
-    end)
+        assert label_value(
+                 web,
+                 "traefik.http.services.lockspire-alt-service.loadbalancer.server.port"
+               ) == "4102"
+
+        refute Map.has_key?(web, "ports")
+      end
+    )
   end
 
   test "Traefik override attaches only web to the external proxy network" do
     env = traefik_env()
 
-    with_compose_config(["-f", @compose_file, "-f", @traefik_compose_file], [env: env], fn config ->
-      web = get_in(config, ["services", "web"])
-      db = get_in(config, ["services", "db"])
+    with_compose_config(
+      ["-f", @compose_file, "-f", @traefik_compose_file],
+      [env: env],
+      fn config ->
+        web = get_in(config, ["services", "web"])
+        db = get_in(config, ["services", "db"])
 
-      assert get_in(config, ["networks", "traefik_proxy", "external"]) == true
-      assert get_in(config, ["networks", "traefik_proxy", "name"]) == "lockspire-alt-proxy"
-      assert "traefik_proxy" in service_network_keys(web)
-      refute "traefik_proxy" in service_network_keys(db)
-    end)
+        assert get_in(config, ["networks", "traefik_proxy", "external"]) == true
+        assert get_in(config, ["networks", "traefik_proxy", "name"]) == "lockspire-alt-proxy"
+        assert "traefik_proxy" in service_network_keys(web)
+        refute "traefik_proxy" in service_network_keys(db)
+      end
+    )
   end
 
   test "reset helper targets only the active demo project volumes" do
@@ -229,6 +385,9 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ "lockspire-adoption-demo"
     assert source =~ "COMPOSE_PROJECT_NAME"
     assert source =~ "--project"
+    assert source =~ "--db-only"
+    assert source =~ "--cache-only"
+    assert source =~ "--all"
     assert source =~ ~r/docker compose .*--project-name "\$project".* down/
 
     volume_suffixes =
@@ -239,6 +398,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
       |> Enum.sort()
 
     assert volume_suffixes == ["build_volume", "db_data", "deps_volume"]
+    assert source =~ "reset_db=1"
+    assert source =~ "reset_cache=1"
 
     refute source =~ "docker volume prune"
     refute source =~ "docker system prune"
@@ -256,7 +417,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ "lockspire-adoption-demo"
     assert source =~ "COMPOSE_PROJECT_NAME"
     assert source =~ "--project"
-    assert source =~ ~r/docker compose .*--project-name "\$project".*-f examples\/adoption_demo\/docker-compose\.yml down/
+
+    assert source =~
+             ~r/docker compose .*--project-name "\$project".*-f examples\/adoption_demo\/docker-compose\.yml down/
+
     assert help =~ "--project NAME"
     assert help =~ "COMPOSE_PROJECT_NAME"
     assert help =~ "lockspire-adoption-demo"
@@ -298,6 +462,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ ~r/\$\{project\}_db_data/
     assert source =~ ~r/\$\{project\}_deps_volume/
     assert source =~ ~r/\$\{project\}_build_volume/
+    assert source =~ "com.docker.compose.project=${project}"
+    assert source =~ "Refusing cleanup while project containers still exist"
+    assert source =~ "removed_volumes=0"
+    assert source =~ "removed_artifacts=0"
     assert help =~ "Dry run"
     assert help =~ "default"
     assert help =~ "Preserved"
@@ -306,8 +474,28 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ ~r/rm -rf "?tmp"?/
     refute source =~ ~r/rm -rf "?tmp\/"?/
     refute source =~ ~r/rm -rf .*admin-ui-polish/
-    refute source =~ "com.docker.compose.project="
     refute source =~ "adoption_demo_"
+  end
+
+  test "Docker build context excludes generated repo artifacts" do
+    assert File.regular?(@dockerignore_path)
+
+    dockerignore = File.read!(@dockerignore_path)
+
+    for expected <- [
+          ".git",
+          "_build",
+          "deps",
+          "doc",
+          "tmp",
+          ".planning/research/.cache",
+          "examples/adoption_demo/_build",
+          "examples/adoption_demo/deps",
+          "*.tar",
+          "erl_crash.dump"
+        ] do
+      assert dockerignore =~ expected
+    end
   end
 
   test "cleanup helper explicitly preserves admin UI polish evidence" do
@@ -349,6 +537,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "examples/adoption_demo/docker-compose.db-host.yml"
     assert docs =~ "LOCKSPIRE_DEMO_DB_HOST_PORT"
     assert docs =~ "examples/adoption_demo/bin/docker-reset"
+
     assert docs =~
              "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 scripts/demo/adoption_smoke.sh"
   end
@@ -356,51 +545,59 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   test "docs present Docker startup before host-local fallback" do
     docs = File.read!(@adoption_demo_docs_path)
 
-    docker_position = docs_position!(docs, "## Run it with Docker")
-    host_local_position = docs_position!(docs, "## Run it host-local")
+    docker_position = docs_position!(docs, "## Quick Start")
+    host_local_position = docs_position!(docs, "## Run It Host-Local")
 
     assert docker_position < host_local_position
     assert docs =~ "Docker is the default maintainer path"
     assert docs =~ "Host-local Mix/Postgres remains a fallback"
+    assert docs =~ "make demo"
+    assert docs =~ "examples/adoption_demo/bin/docker-up"
     assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml up --build"
   end
 
   test "docs cover startup output reprint smoke stop reset cleanup and troubleshooting" do
     docs = File.read!(@adoption_demo_docs_path)
 
-    assert docs =~ "## Startup output"
-    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL is the single public URL truth"
-    assert docs =~ "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+    assert docs =~ "## Startup Output"
+    assert docs =~ "`LOCKSPIRE_DEMO_BASE_URL` is the single public URL truth"
+
+    assert docs =~
+             "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+
     assert docs =~
              "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert docs =~ "If the demo was started with an alternate Compose project"
     assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh"
-    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
+
+    assert docs =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
+
     assert docs =~ "examples/adoption_demo/bin/docker-stop"
     assert docs =~ "examples/adoption_demo/bin/docker-reset"
     assert docs =~ "examples/adoption_demo/bin/docker-cleanup --execute"
     assert docs =~ "repo_hygiene_check.sh --ci"
-    assert docs =~ "## Environment overrides"
+    assert docs =~ "## Environment Overrides"
     assert docs =~ "LOCKSPIRE_DEMO_DB_HOST_PORT"
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_HOST"
     assert docs =~ "## Troubleshooting"
-    assert docs =~ "Port conflict"
-    assert docs =~ "Readiness failure"
+    assert docs =~ "Port Conflict"
+    assert docs =~ "Readiness Failure"
     assert docs =~ "LOCKSPIRE_DEMO_READINESS_URL"
     assert docs =~ "`LOCKSPIRE_DEMO_BASE_URL` remains the public issuer/browser URL"
-    assert docs =~ "Traefik network"
-    assert docs =~ "Base URL drift"
+    assert docs =~ "Traefik Network"
+    assert docs =~ "Base URL Drift"
   end
 
   test "docs present the final Phase 115 lifecycle command surface" do
     docs = File.read!(@adoption_demo_docs_path)
 
     lifecycle_commands = [
-      "docker compose -f examples/adoption_demo/docker-compose.yml up --build",
-      "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh",
-      "examples/adoption_demo/bin/docker-stop",
-      "examples/adoption_demo/bin/docker-cleanup --execute",
+      "make demo",
+      "make demo-smoke",
+      "make demo-stop",
+      "make demo-clean-execute",
       "./scripts/maintainer/repo_hygiene_check.sh --project lockspire-adoption-demo --skip-mix-ci"
     ]
 
@@ -423,6 +620,9 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "db_data"
     assert docs =~ "deps_volume"
     assert docs =~ "build_volume"
+    assert docs =~ "--db-only"
+    assert docs =~ "--cache-only"
+    assert docs =~ "--all"
     assert docs =~ "Dry run"
     assert docs =~ "--execute"
     assert docs =~ "--project"
@@ -437,7 +637,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "unrelated Docker resources"
     assert docs =~ "host-wide Docker state"
     assert docs =~ "repo_hygiene_check.sh --ci"
-    assert docs =~ "running active-project demo containers"
+    assert docs =~ "Running active-project demo containers"
     assert docs =~ "BLOCK"
 
     refute docs =~ "docker system prune"
@@ -452,20 +652,31 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "scripts/demo/adoption_smoke.sh"
     assert docs =~ "delegates to `scripts/demo/adoption_smoke.py`"
     assert docs =~ "examples/adoption_demo/bin/docker-info"
-    refute docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
-    refute docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py"
+
+    refute docs =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 python3 scripts/demo/adoption_smoke.py"
+
+    refute docs =~
+             "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost python3 scripts/demo/adoption_smoke.py"
   end
 
   test "docs explain optional Traefik hostname routing and smoke base URL" do
     docs = File.read!(@adoption_demo_docs_path)
 
+    assert docs =~ "docker network inspect \"${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}\""
     assert docs =~ "docker network create \"${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}\""
     assert docs =~ "tools/traefik/docker-compose.yml"
     assert docs =~ "examples/adoption_demo/docker-compose.traefik.yml"
+    assert docs =~ "auto-reuses a compatible existing Docker Traefik"
+
+    assert docs =~
+             "LOCKSPIRE_DEMO_TRAEFIK_NETWORK=proxy examples/adoption_demo/bin/docker-up --no-proxy-start --host lockspire-demo.localhost"
+
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_HOST"
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_ROUTER"
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_SERVICE"
     assert docs =~ "LOCKSPIRE_DEMO_TRAEFIK_NETWORK"
+
     assert docs =~
              "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
   end
@@ -490,7 +701,9 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
         fun.(config)
 
       :skip ->
-        IO.puts("Skipping adoption demo Docker contract assertions: docker compose is unavailable")
+        IO.puts(
+          "Skipping adoption demo Docker contract assertions: docker compose is unavailable"
+        )
     end
   end
 
@@ -578,11 +791,11 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert get_in(config, ["volumes", "build_volume", "name"]) == "#{project}_build_volume"
   end
 
-  defp assert_port(service, published, target, host_ip \\ nil) do
+  defp assert_port(service, published, target, host_ip) do
     assert Enum.any?(service["ports"], fn port ->
              port["published"] == published and
                port["target"] == target and
-               (is_nil(host_ip) or port["host_ip"] == host_ip)
+               port["host_ip"] == host_ip
            end)
   end
 

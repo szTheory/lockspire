@@ -367,6 +367,36 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute release_workflow =~ "mix package.verify"
   end
 
+  test "ci and release cache restore keys stay scoped to the active beam pair" do
+    ci_workflow = File.read!(@ci_workflow_path)
+    release_workflow = File.read!(@release_workflow_path)
+    workflows = [ci_workflow, release_workflow]
+
+    for workflow <- workflows do
+      refute workflow =~ ~r/^\s+\$\{\{ runner\.os \}\}-mix-[A-Za-z0-9-]+-v\d+-\s*$/m
+      refute workflow =~ ~r/^\s+\$\{\{ runner\.os \}\}-dialyzer-v\d+-\s*$/m
+    end
+
+    assert ci_workflow =~
+             ~S/${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
+
+    assert ci_workflow =~
+             ~S/${{ runner.os }}-mix-compat-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-/
+
+    assert ci_workflow =~
+             ~S/${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
+
+    assert ci_workflow =~
+             ~S/${{ runner.os }}-mix-adoption-demo-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
+
+    refute ci_workflow =~ "Restore Dialyzer PLT cache"
+    refute ci_workflow =~ "priv/plts"
+    refute ci_workflow =~ "dialyzer-v"
+
+    assert release_workflow =~
+             ~S/${{ runner.os }}-mix-release-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
+  end
+
   test "release please automerge workflow only merges guarded bot release prs after green main ci" do
     workflow = File.read!(@release_please_automerge_workflow_path)
 
@@ -552,6 +582,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert mixfile =~ "ci: ["
     assert mixfile =~ "\"test.fast\": [\"test.setup\", \"test\"]"
     assert mixfile =~ "\"cmd sh -lc 'mix qa'\""
+    assert mixfile =~ "\"qa.dialyzer\": ["
     assert mixfile =~ "\"cmd sh -lc 'mix docs.verify'\""
     assert mixfile =~ "\"cmd sh -lc 'HEX_API_KEY= mix deps.audit'\""
     assert mixfile =~ "\"cmd sh -lc 'HEX_API_KEY= mix package.build'\""
@@ -604,7 +635,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     ci_branch =
       repo_hygiene_script
-      |> String.split("if [[ \"$MODE\" != \"ci\" ]]; then", parts: 2)
+      |> String.split(~S(if [[ "$MODE" != "ci" ]]; then), parts: 2)
       |> hd()
 
     refute ci_branch =~ "docker ps"
@@ -646,7 +677,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert repo_hygiene_script =~ "running active-project demo containers"
     assert repo_hygiene_script =~ "BLOCK"
     assert repo_hygiene_script =~ "examples/adoption_demo/bin/docker-stop --project $project"
-    assert repo_hygiene_script =~ "examples/adoption_demo/bin/docker-cleanup --project $project --execute"
+
+    assert repo_hygiene_script =~
+             "examples/adoption_demo/bin/docker-cleanup --project $project --execute"
+
     assert repo_hygiene_script =~ "docker-cleanup --execute"
   end
 
@@ -667,6 +701,48 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert repo_hygiene_script =~ "Preserved"
     refute repo_hygiene_script =~ "rm -rf tmp"
     refute repo_hygiene_script =~ "find tmp"
+  end
+
+  test "Hex package inputs stay slim and exclude local build artifacts" do
+    package_files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files)
+
+    assert "lib/lockspire.ex" in package_files
+    assert "lib/lockspire/storage/ecto/prefix.ex" in package_files
+    assert "lib/lockspire/web/live/admin/iat_live/index.html.heex" in package_files
+    assert Enum.any?(package_files, &String.starts_with?(&1, "priv/repo/migrations/"))
+    assert "priv/templates/lockspire.install/router.ex" in package_files
+    assert "priv/templates/lockspire.install/config.exs" in package_files
+    assert "priv/templates/lockspire.install/authorized_apps/index.html.heex" in package_files
+    assert "docs/upgrading/storage-prefix.md" in package_files
+    assert "SECURITY.md" in package_files
+
+    refute Enum.any?(package_files, &String.contains?(&1, "*"))
+    refute "lib" in package_files
+    refute "priv" in package_files
+    refute "priv/repo/migrations" in package_files
+    refute "priv/templates" in package_files
+    refute "docs" in package_files
+    refute "lib/lockspire/test_repo.ex" in package_files
+    refute "lib/mix/tasks/lockspire.test.setup.ex" in package_files
+
+    package_paths =
+      package_files
+      |> Enum.flat_map(fn rel_path ->
+        path = Path.expand("../../#{rel_path}", __DIR__)
+
+        cond do
+          String.contains?(rel_path, "*") -> Path.wildcard(path, match_dot: true)
+          File.dir?(path) -> Path.wildcard(Path.join(path, "**/*"), match_dot: true)
+          File.exists?(path) -> [path]
+          true -> []
+        end
+      end)
+      |> Enum.reject(&File.dir?/1)
+      |> Enum.map(&Path.relative_to(&1, Path.expand("../..", __DIR__)))
+
+    refute Enum.any?(package_paths, &String.ends_with?(&1, ".bak"))
+    refute Enum.any?(package_paths, &String.ends_with?(&1, ".DS_Store"))
+    refute Enum.any?(package_paths, &String.starts_with?(&1, "priv/plts/"))
   end
 
   test "phase 115 CI keeps Python smoke proof and avoids full Docker Compose smoke" do
@@ -744,9 +820,14 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert repo_hygiene_script =~ "docker-reset contract"
     assert repo_hygiene_script =~ "db_data deps_volume build_volume"
     assert repo_hygiene_script =~ "smoke wrapper contract"
-    assert repo_hygiene_script =~ "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof"
+
+    assert repo_hygiene_script =~
+             "scripts/demo/adoption_smoke.py remains the black-box OAuth/OIDC proof"
+
     assert repo_hygiene_script =~ "public surface contract"
-    assert repo_hygiene_script =~ "no Mix cleanup task, runtime module, protocol/admin behavior, packaged Docker surface, or hosted-auth support expansion"
+
+    assert repo_hygiene_script =~
+             "no Mix cleanup task, runtime module, protocol/admin behavior, packaged Docker surface, or hosted-auth support expansion"
 
     refute repo_hygiene_script =~ "mix lockspire.demo.cleanup"
     refute repo_hygiene_script =~ "defmodule Lockspire.RepoHygiene"

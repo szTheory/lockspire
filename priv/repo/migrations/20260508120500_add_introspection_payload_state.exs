@@ -1,15 +1,15 @@
 defmodule Lockspire.Storage.Ecto.Repository.Migrations.AddIntrospectionPayloadState do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    alter table(:lockspire_consent_grants) do
+    alter lockspire_table(:lockspire_consent_grants) do
       add(:authorization_details, {:array, :map}, default: [])
     end
 
-    alter table(:lockspire_tokens) do
+    alter lockspire_table(:lockspire_tokens) do
       add(:consent_grant_id, :bigint)
     end
 
-    create(index(:lockspire_tokens, [:consent_grant_id]))
+    create(lockspire_index(:lockspire_tokens, [:consent_grant_id]))
   end
 end

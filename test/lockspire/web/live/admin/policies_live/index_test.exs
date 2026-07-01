@@ -38,7 +38,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
   end
 
   test "router exposes policy overview route" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/policies", Index))
   end

@@ -54,6 +54,8 @@ defmodule Lockspire.Install.Manifest do
       "version" => to_string(Mix.Project.config()[:version]),
       "inputs" => %{
         "mount_path" => assigns.mount_path,
+        "storage_prefix" => assigns.storage_prefix,
+        "oban_prefix" => assigns.oban_prefix,
         "web_module" => assigns.web_module,
         "scope_module" => assigns.scope_module
       },

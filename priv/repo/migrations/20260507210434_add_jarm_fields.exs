@@ -1,13 +1,13 @@
 defmodule Lockspire.TestRepo.Migrations.AddJarmFields do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    alter table(:lockspire_clients) do
-      add :authorization_signed_response_alg, :string
+    alter lockspire_table(:lockspire_clients) do
+      add(:authorization_signed_response_alg, :string)
     end
 
-    alter table(:lockspire_interactions) do
-      add :response_mode, :string
+    alter lockspire_table(:lockspire_interactions) do
+      add(:response_mode, :string)
     end
   end
 end

@@ -90,14 +90,30 @@ if [ "$execute" -ne 1 ]; then
   exit 0
 fi
 
+project_containers="$(docker container ls --all --filter "label=com.docker.compose.project=${project}" --format '{{.Names}}' 2>/dev/null || true)"
+
+if [ -n "$project_containers" ]; then
+  echo "Refusing cleanup while project containers still exist for ${project}:" >&2
+  printf '%s\n' "$project_containers" >&2
+  echo "Run: examples/adoption_demo/bin/docker-stop --project ${project}" >&2
+  exit 1
+fi
+
+removed_volumes=0
+removed_artifacts=0
+
 for volume in $volume_names; do
-  docker volume rm "$volume" >/dev/null 2>&1 || true
+  if docker volume inspect "$volume" >/dev/null 2>&1; then
+    docker volume rm "$volume" >/dev/null
+    removed_volumes=$((removed_volumes + 1))
+  fi
 done
 
 for path in $artifact_paths; do
   if [ -e "$path" ]; then
     rm -rf "$path"
+    removed_artifacts=$((removed_artifacts + 1))
   fi
 done
 
-echo "Cleaned allowlisted adoption demo resources for project ${project}."
+echo "Cleaned allowlisted adoption demo resources for project ${project}: ${removed_volumes} Docker volume(s), ${removed_artifacts} artifact path(s)."

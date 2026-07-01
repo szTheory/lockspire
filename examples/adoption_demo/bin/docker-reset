@@ -5,8 +5,12 @@ usage() {
   cat <<'USAGE'
 Usage: examples/adoption_demo/bin/docker-reset [--project NAME]
 
-Reset only the active adoption demo Docker volumes:
-  db_data deps_volume build_volume
+Reset active adoption demo Docker volumes.
+
+Modes:
+  --db-only     Reset only the demo database volume.
+  --cache-only  Reset only the Mix deps and _build cache volumes.
+  --all         Reset database and cache volumes. This is the default.
 
 The default project is COMPOSE_PROJECT_NAME, or lockspire-adoption-demo when
 COMPOSE_PROJECT_NAME is not set. Pass --project NAME to match docker compose
@@ -15,6 +19,8 @@ USAGE
 }
 
 project="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+reset_db=1
+reset_cache=1
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -26,6 +32,21 @@ while [ "$#" -gt 0 ]; do
       fi
       project="$2"
       shift 2
+      ;;
+    --db-only)
+      reset_db=1
+      reset_cache=0
+      shift
+      ;;
+    --cache-only)
+      reset_db=0
+      reset_cache=1
+      shift
+      ;;
+    --all)
+      reset_db=1
+      reset_cache=1
+      shift
       ;;
     -h | --help)
       usage
@@ -54,8 +75,16 @@ cd "$REPO_ROOT"
 
 docker compose --project-name "$project" -f examples/adoption_demo/docker-compose.yml down
 
-for suffix in db_data deps_volume build_volume; do
-  docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
-done
+if [ "$reset_db" -eq 1 ]; then
+  for suffix in db_data; do
+    docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
+  done
+fi
+
+if [ "$reset_cache" -eq 1 ]; then
+  for suffix in deps_volume build_volume; do
+    docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
+  done
+fi
 
 echo "Reset adoption demo Docker project ${project}"

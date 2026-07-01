@@ -50,7 +50,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
   end
 
   test "router exposes admin device authorizations" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
     assert Enum.any?(routes, &live_route?(&1, "/admin/device_authorizations", Index))
   end
 

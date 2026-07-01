@@ -95,8 +95,9 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
       doc
       |> LazyHTML.query("input, select, textarea")
       |> LazyHTML.attributes()
-      |> Enum.reject(&hidden_input?/1)
-      |> Enum.reject(&control_labelled?(&1, label_targets, id_set))
+      |> Enum.reject(fn attrs ->
+        hidden_input?(attrs) or control_labelled?(attrs, label_targets, id_set)
+      end)
       |> Enum.map(fn attrs -> attribute_value(attrs, "id") || inspect(attrs) end)
 
     assert unlabeled == [],

@@ -1,8 +1,8 @@
 defmodule Lockspire.TestRepo.Migrations.ExtendLockspireClientsDcr do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    alter table(:lockspire_clients) do
+    alter lockspire_table(:lockspire_clients) do
       # D-08 / D-09 / D-02: provenance text column with in-place default-backfill.
       # Postgres ADD COLUMN ... NOT NULL DEFAULT is atomic; no separate UPDATE step.
       # Two-value enum (:operator | :self_registered); the 3-value form is deferred.
@@ -21,7 +21,7 @@ defmodule Lockspire.TestRepo.Migrations.ExtendLockspireClientsDcr do
       # only retirement path (D-12).
       add(
         :initial_access_token_id,
-        references(:lockspire_initial_access_tokens, on_delete: :restrict),
+        lockspire_references(:lockspire_initial_access_tokens, on_delete: :restrict),
         null: true
       )
     end

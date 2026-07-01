@@ -9,7 +9,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
   alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.ConsentsLive.Index
   alias Lockspire.Web.Live.Admin.ConsentsLive.Show
-  alias Phoenix.Router
 
   @unsupported_support_controls [
     "Reveal secret",
@@ -68,7 +67,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
   end
 
   test "router exposes admin consent routes" do
-    routes = Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/consents", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/consents/:id", Show))

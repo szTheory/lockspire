@@ -1,8 +1,8 @@
 defmodule Lockspire.TestRepo.Migrations.CreateLockspirePushedAuthorizationRequests do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    create table(:lockspire_pushed_authorization_requests) do
+    create lockspire_table(:lockspire_pushed_authorization_requests) do
       add(:request_uri_hash, :text, null: false)
       add(:client_id, :text, null: false)
       add(:redirect_uri, :text, null: false)
@@ -17,8 +17,8 @@ defmodule Lockspire.TestRepo.Migrations.CreateLockspirePushedAuthorizationReques
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(unique_index(:lockspire_pushed_authorization_requests, [:request_uri_hash]))
-    create(index(:lockspire_pushed_authorization_requests, [:client_id]))
-    create(index(:lockspire_pushed_authorization_requests, [:expires_at]))
+    create(lockspire_unique_index(:lockspire_pushed_authorization_requests, [:request_uri_hash]))
+    create(lockspire_index(:lockspire_pushed_authorization_requests, [:client_id]))
+    create(lockspire_index(:lockspire_pushed_authorization_requests, [:expires_at]))
   end
 end

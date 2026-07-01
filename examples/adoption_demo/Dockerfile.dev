@@ -1,6 +1,6 @@
 FROM hexpm/elixir:1.18.4-erlang-28.5-ubuntu-noble-20260509.1
 
-# Install essential build tools and readiness utilities for Phoenix live-reload.
+# Install build tools and readiness utilities for the repo-local Phoenix demo.
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
@@ -10,7 +10,6 @@ RUN apt-get update && \
       curl \
       git \
       inotify-tools \
-      npm \
       postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 

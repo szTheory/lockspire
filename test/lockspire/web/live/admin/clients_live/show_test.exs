@@ -62,7 +62,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   end
 
   test "router exposes per-client security profile edit route" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/security-profile", Show))
   end

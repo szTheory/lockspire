@@ -11,7 +11,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
   alias Lockspire.Web.Live.Admin.OverviewLive
-  alias Phoenix.Router
 
   @endpoint Lockspire.Web.Endpoint
 
@@ -96,7 +95,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   end
 
   test "router exposes overview as the operator entrypoint and keeps client workflows" do
-    routes = Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin", OverviewLive.Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/overview", OverviewLive.Index))

@@ -9,7 +9,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
   alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.TokensLive.Index
   alias Lockspire.Web.Live.Admin.TokensLive.Show
-  alias Phoenix.Router
 
   @unsupported_support_controls [
     "Reveal token",
@@ -88,7 +87,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
   end
 
   test "router exposes admin token routes" do
-    routes = Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/tokens", Index))
     assert Enum.any?(routes, &live_route?(&1, "/admin/tokens/:id", Show))

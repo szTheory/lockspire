@@ -1,8 +1,8 @@
 defmodule Lockspire.Storage.Ecto.Migrations.CreateLockspireCibaAuthorizations do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    create table(:lockspire_ciba_authorizations) do
+    create lockspire_table(:lockspire_ciba_authorizations) do
       add(:auth_req_id_hash, :string, null: false)
       add(:client_id, :string, null: false)
       add(:scopes, {:array, :string}, null: false, default: [])
@@ -20,9 +20,9 @@ defmodule Lockspire.Storage.Ecto.Migrations.CreateLockspireCibaAuthorizations do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create unique_index(:lockspire_ciba_authorizations, [:auth_req_id_hash])
-    create index(:lockspire_ciba_authorizations, [:client_id])
-    create index(:lockspire_ciba_authorizations, [:subject_id])
-    create index(:lockspire_ciba_authorizations, [:expires_at])
+    create(lockspire_unique_index(:lockspire_ciba_authorizations, [:auth_req_id_hash]))
+    create(lockspire_index(:lockspire_ciba_authorizations, [:client_id]))
+    create(lockspire_index(:lockspire_ciba_authorizations, [:subject_id]))
+    create(lockspire_index(:lockspire_ciba_authorizations, [:expires_at]))
   end
 end

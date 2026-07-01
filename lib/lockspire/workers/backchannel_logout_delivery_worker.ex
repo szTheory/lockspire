@@ -108,7 +108,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
     LogoutDeliveryRecord
     |> preload(:logout_event)
     |> where([delivery], delivery.id == ^logout_delivery_id)
-    |> repo().one()
+    |> repo().one(prefix_opts())
     |> case do
       nil -> {:error, :not_found}
       %LogoutDeliveryRecord{} = delivery_record -> {:ok, delivery_record}
@@ -134,7 +134,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       last_attempted_at: attempted_at,
       failure_reason: nil
     )
-    |> repo().update()
+    |> repo().update(prefix_opts())
   end
 
   defp deliver_logout_token(target_uri, logout_token) do
@@ -222,7 +222,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       logout_token_jti: logout_token_jti,
       failure_reason: nil
     )
-    |> repo().update!()
+    |> repo().update!(prefix_opts())
   end
 
   defp mark_retryable(
@@ -240,7 +240,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       failure_reason: failure_reason
     )
     |> maybe_put_attempted_at(attempted_at)
-    |> repo().update!()
+    |> repo().update!(prefix_opts())
   end
 
   defp mark_discarded(
@@ -257,7 +257,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
       failure_reason: failure_reason
     )
     |> maybe_put_attempted_at(attempted_at)
-    |> repo().update!()
+    |> repo().update!(prefix_opts())
   end
 
   defp maybe_put_attempted_at(changeset, attempted_at) do
@@ -266,6 +266,10 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorker do
 
   defp repo do
     Config.repo!()
+  end
+
+  defp prefix_opts do
+    Lockspire.Storage.Ecto.Prefix.prefix_opts()
   end
 
   defp emit_lifecycle(stage, %LogoutDeliveryRecord{} = delivery_record, metadata)

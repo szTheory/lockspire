@@ -206,7 +206,10 @@ defmodule Lockspire.Web.EndSessionController do
       %LogoutDelivery{id: id, channel: :frontchannel} when is_integer(id) ->
         LogoutDeliveryRecord
         |> where([delivery], delivery.id == ^id and delivery.channel == :frontchannel)
-        |> Config.repo!().update_all(set: [status: :rendered, rendered_at: now, updated_at: now])
+        |> Config.repo!().update_all(
+          [set: [status: :rendered, rendered_at: now, updated_at: now]],
+          Lockspire.Storage.Ecto.Prefix.prefix_opts()
+        )
 
       _other ->
         :ok

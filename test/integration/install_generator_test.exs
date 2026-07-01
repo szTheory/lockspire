@@ -45,6 +45,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert manifest["version"] == to_string(Mix.Project.config()[:version])
     assert manifest["inputs"]["mount_path"] == "/lockspire"
+    assert manifest["inputs"]["storage_prefix"] == "lockspire"
+    assert manifest["inputs"]["oban_prefix"] == "lockspire"
 
     managed_paths =
       manifest["managed_files"]
@@ -61,6 +63,12 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "account_resolver: GeneratedHostApp.Lockspire.AccountResolver"
+
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(storage_prefix: "lockspire")
+
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(oban_prefix: "lockspire")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s(forward "/lockspire", Lockspire.Web.Router)
@@ -252,6 +260,20 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "interaction_id"
     assert resolver =~ "Lockspire must not import Sigra at compile"
     assert resolver =~ "current_account(conn_or_socket)"
+  end
+
+  test "mix lockspire.install requires explicit public-schema opt in" do
+    capture_io(fn ->
+      install_fixture!(["--storage-prefix", "public", "--oban-prefix", "public"])
+    end)
+
+    config = File.read!(Path.join(@fixture_root, "config/lockspire.exs"))
+    manifest = load_manifest!()
+
+    assert config =~ ~s(storage_prefix: "public")
+    assert config =~ ~s(oban_prefix: "public")
+    assert manifest["inputs"]["storage_prefix"] == "public"
+    assert manifest["inputs"]["oban_prefix"] == "public"
   end
 
   test "mix lockspire.install --sigra-host keeps the canonical generated file set unchanged" do

@@ -64,10 +64,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
   end
 
   test "router exposes admin key routes" do
-    routes = Router.routes(Lockspire.Web.Router)
+    routes = Router.routes(Lockspire.Web.AdminRouter)
 
-    assert Enum.any?(routes, &live_route?(&1, "/admin/keys", Index))
-    assert Enum.any?(routes, &live_route?(&1, "/admin/keys/:id", Show))
+    assert Enum.any?(routes, &live_route?(&1, "/keys", Index))
+    assert Enum.any?(routes, &live_route?(&1, "/keys/:id", Show))
   end
 
   test "D-01/D-03/D-04/D-09/D-10 key index renders posture, safe generation grouping, and public lifecycle rows" do

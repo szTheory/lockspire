@@ -1,8 +1,8 @@
 defmodule Lockspire.TestRepo.Migrations.AddMtlsAttributesToClients do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    alter table(:lockspire_clients) do
+    alter lockspire_table(:lockspire_clients) do
       add(:tls_client_auth_subject_dn, :string)
       add(:tls_client_auth_san_dns, :string)
       add(:tls_client_auth_san_uri, :string)

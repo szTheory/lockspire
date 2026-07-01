@@ -122,6 +122,32 @@ script_has_active_project_precedence() {
     grep -Fq 'lockspire-adoption-demo' "$file"
 }
 
+makefile_has_admin_demo_shortcuts() {
+  [[ -f Makefile ]] &&
+    grep -Fq 'demo:' Makefile &&
+    grep -Fq 'demo-info:' Makefile &&
+    grep -Fq 'demo-smoke:' Makefile &&
+    grep -Fq 'demo-logs:' Makefile &&
+    grep -Fq 'demo-stop:' Makefile &&
+    grep -Fq 'demo-reset:' Makefile &&
+    grep -Fq 'demo-clean:' Makefile &&
+    grep -Fq 'demo-clean-execute:' Makefile &&
+    grep -Fq 'scripts/demo/admin-ui up' Makefile &&
+    grep -Fq 'scripts/demo/admin-ui smoke' Makefile &&
+    grep -Fq 'scripts/demo/admin-ui stop' Makefile &&
+    ! grep -Fq 'docker compose' Makefile
+}
+
+admin_ui_has_lifecycle_shortcuts() {
+  [[ -x scripts/demo/admin-ui ]] &&
+    grep -Fq 'examples/adoption_demo/bin/docker-up --project "$project" --detach' scripts/demo/admin-ui &&
+    grep -Fq 'scripts/demo/adoption_smoke.sh' scripts/demo/admin-ui &&
+    grep -Fq 'docker-reset --project "$project" --db-only' scripts/demo/admin-ui &&
+    grep -Fq 'docker-cleanup --project "$project"' scripts/demo/admin-ui &&
+    grep -Fq 'label=com.docker.compose.project=${project}' scripts/demo/admin-ui &&
+    source_has_no_broad_cleanup scripts/demo/admin-ui
+}
+
 ci_source_contract_checks() {
   if source_has_no_broad_cleanup examples/adoption_demo/bin/docker-stop &&
      source_has_no_broad_cleanup examples/adoption_demo/bin/docker-reset &&
@@ -129,6 +155,27 @@ ci_source_contract_checks() {
     record_result "PASS" "demo cleanup source" "lifecycle scripts avoid host-wide Docker prune and broad Compose volume deletion"
   else
     record_result "BLOCK" "demo cleanup source" "lifecycle scripts must not use docker system prune, docker volume prune, or docker compose down --volumes"
+  fi
+
+  if [[ -x examples/adoption_demo/bin/docker-up ]] &&
+     grep -Fq -- '--direct' examples/adoption_demo/bin/docker-up &&
+     grep -Fq -- '--traefik' examples/adoption_demo/bin/docker-up &&
+     grep -Fq -- '--no-proxy-start' examples/adoption_demo/bin/docker-up &&
+     grep -Fq -- '--detach' examples/adoption_demo/bin/docker-up &&
+     grep -Fq 'LOCKSPIRE_DEMO_BASE_URL=' examples/adoption_demo/bin/docker-up &&
+     grep -Fq 'LOCKSPIRE_DEMO_TRAEFIK_HOST=' examples/adoption_demo/bin/docker-up &&
+     grep -Fq 'wait_for_public_url' examples/adoption_demo/bin/docker-up &&
+     grep -Fq 'print_running_info' examples/adoption_demo/bin/docker-up &&
+     grep -Fq 'docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml up --build' examples/adoption_demo/bin/docker-up; then
+    record_result "PASS" "docker-up contract" "launcher supports direct and Traefik modes with detached readiness output"
+  else
+    record_result "BLOCK" "docker-up contract" "launcher must support direct and Traefik modes with detached readiness output"
+  fi
+
+  if makefile_has_admin_demo_shortcuts && admin_ui_has_lifecycle_shortcuts; then
+    record_result "PASS" "admin UI shortcut contract" "make demo and scripts/demo/admin-ui provide simple scoped lifecycle commands"
+  else
+    record_result "BLOCK" "admin UI shortcut contract" "make demo and scripts/demo/admin-ui must remain the simple scoped lifecycle surface"
   fi
 
   if grep -Fq -- '--execute' examples/adoption_demo/bin/docker-cleanup &&
@@ -139,10 +186,12 @@ ci_source_contract_checks() {
      grep -Fq 'tmp/adoption_demo.log' examples/adoption_demo/bin/docker-cleanup &&
      grep -Fq 'examples/adoption_demo/_build' examples/adoption_demo/bin/docker-cleanup &&
      grep -Fq 'examples/adoption_demo/deps' examples/adoption_demo/bin/docker-cleanup &&
-     grep -Fq 'tmp/admin-ui-polish/' examples/adoption_demo/bin/docker-cleanup; then
-    record_result "PASS" "docker-cleanup contract" "cleanup is dry-run-first, execute-gated, allowlisted, and preserves tmp/admin-ui-polish/"
+     grep -Fq 'tmp/admin-ui-polish/' examples/adoption_demo/bin/docker-cleanup &&
+     grep -Fq 'com.docker.compose.project=${project}' examples/adoption_demo/bin/docker-cleanup &&
+     grep -Fq 'Refusing cleanup while project containers still exist' examples/adoption_demo/bin/docker-cleanup; then
+    record_result "PASS" "docker-cleanup contract" "cleanup is dry-run-first, execute-gated, allowlisted, state-aware, and preserves tmp/admin-ui-polish/"
   else
-    record_result "BLOCK" "docker-cleanup contract" "cleanup script drifted from dry-run, execute flag, allowlist, or preservation requirements"
+    record_result "BLOCK" "docker-cleanup contract" "cleanup script drifted from dry-run, execute flag, allowlist, state-awareness, or preservation requirements"
   fi
 
   if grep -Fq 'docker compose --project-name "$project"' examples/adoption_demo/bin/docker-stop &&
@@ -153,20 +202,49 @@ ci_source_contract_checks() {
     record_result "BLOCK" "docker-stop contract" "stop must stay project-scoped and must not delete volumes"
   fi
 
-  if grep -Fq 'for suffix in db_data deps_volume build_volume' examples/adoption_demo/bin/docker-reset &&
+  # docker-reset contract: the active-project volume allowlist is db_data deps_volume build_volume.
+  if grep -Fq -- '--db-only' examples/adoption_demo/bin/docker-reset &&
+     grep -Fq -- '--cache-only' examples/adoption_demo/bin/docker-reset &&
+     grep -Fq -- '--all' examples/adoption_demo/bin/docker-reset &&
+     grep -Fq 'for suffix in db_data' examples/adoption_demo/bin/docker-reset &&
+     grep -Fq 'for suffix in deps_volume build_volume' examples/adoption_demo/bin/docker-reset &&
      ! grep -Eq 'docker[[:space:]]+volume[[:space:]]+prune|down[[:space:]].*(-v|--volumes)' examples/adoption_demo/bin/docker-reset; then
-    record_result "PASS" "docker-reset contract" "reset remains scoped to db_data deps_volume build_volume"
+    record_result "PASS" "docker-reset contract" "reset remains scoped and can preserve database or cache volumes"
   else
-    record_result "BLOCK" "docker-reset contract" "reset must keep the active-project volume suffix allowlist: db_data deps_volume build_volume"
+    record_result "BLOCK" "docker-reset contract" "reset must keep scoped db-only cache-only and all modes"
   fi
 
   if script_has_active_project_precedence scripts/maintainer/repo_hygiene_check.sh &&
+     script_has_active_project_precedence examples/adoption_demo/bin/docker-up &&
+     script_has_active_project_precedence scripts/demo/admin-ui &&
      script_has_active_project_precedence examples/adoption_demo/bin/docker-stop &&
      script_has_active_project_precedence examples/adoption_demo/bin/docker-reset &&
      script_has_active_project_precedence examples/adoption_demo/bin/docker-cleanup; then
     record_result "PASS" "active project precedence" "--project, COMPOSE_PROJECT_NAME, and lockspire-adoption-demo are supported consistently"
   else
     record_result "BLOCK" "active project precedence" "hygiene and lifecycle helpers must share active-project resolution"
+  fi
+
+  if grep -Fq '127.0.0.1:${LOCKSPIRE_DEMO_APP_PORT:-4100}:${LOCKSPIRE_DEMO_APP_PORT:-4100}' examples/adoption_demo/docker-compose.yml &&
+     grep -Fq 'ports: !reset []' examples/adoption_demo/docker-compose.traefik.yml &&
+     grep -Fq '127.0.0.1:${LOCKSPIRE_DEMO_DB_HOST_PORT:?' examples/adoption_demo/docker-compose.db-host.yml &&
+     grep -Fq '127.0.0.1:80:80' tools/traefik/docker-compose.yml &&
+     grep -Fq '127.0.0.1:8080:8080' tools/traefik/docker-compose.yml; then
+    record_result "PASS" "compose port contract" "direct ports are loopback-scoped and Traefik mode removes app host-port publishing"
+  else
+    record_result "BLOCK" "compose port contract" "Compose files must keep direct ports loopback-scoped and Traefik mode host-port-free"
+  fi
+
+  if [[ -f .dockerignore ]] &&
+     grep -Fxq '.git' .dockerignore &&
+     grep -Fxq '_build' .dockerignore &&
+     grep -Fxq 'deps' .dockerignore &&
+     grep -Fxq 'tmp' .dockerignore &&
+     grep -Fxq 'examples/adoption_demo/_build' .dockerignore &&
+     grep -Fxq 'examples/adoption_demo/deps' .dockerignore; then
+    record_result "PASS" "docker build context" ".dockerignore keeps large generated artifacts out of the demo image build context"
+  else
+    record_result "BLOCK" "docker build context" ".dockerignore must exclude generated build, deps, tmp, and git state from Docker context"
   fi
 
   if grep -Fq 'python3 scripts/demo/adoption_smoke.py' .github/workflows/ci.yml &&
@@ -273,19 +351,19 @@ local_demo_docker_hygiene_checks() {
   project_volumes="$(docker volume list --filter "name=^${project}_(db_data|deps_volume|build_volume)$" --format '{{.Name}}' 2>/dev/null || true)"
 
   if [[ -n "$running_containers" ]]; then
-    record_result "BLOCK" "adoption demo Docker" "running active-project demo containers remain for $project: $(printf '%s' "$running_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-stop --project $project"
+    record_result "BLOCK" "adoption demo Docker" "running active-project demo containers remain for $project: $(printf '%s' "$running_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-stop --project $project or COMPOSE_PROJECT_NAME=$project make demo-stop"
   else
     record_result "PASS" "adoption demo containers" "no running active-project demo containers found for $project"
   fi
 
   if [[ -n "$stopped_containers" ]]; then
-    record_result "WARN" "adoption demo stopped containers" "stopped project containers remain for $project: $(printf '%s' "$stopped_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute if cleanup is intended (docker-cleanup --execute)"
+    record_result "WARN" "adoption demo stopped containers" "stopped project containers remain for $project: $(printf '%s' "$stopped_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute or COMPOSE_PROJECT_NAME=$project make demo-clean-execute if cleanup is intended (docker-cleanup --execute)"
   else
     record_result "PASS" "adoption demo stopped containers" "no stopped project containers found for $project"
   fi
 
   if [[ -n "$project_volumes" ]]; then
-    record_result "WARN" "adoption demo volumes" "active project volumes remain for $project: $(printf '%s' "$project_volumes" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute if cleanup is intended (docker-cleanup --execute)"
+    record_result "WARN" "adoption demo volumes" "active project volumes remain for $project: $(printf '%s' "$project_volumes" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute or COMPOSE_PROJECT_NAME=$project make demo-clean-execute if cleanup is intended (docker-cleanup --execute)"
   else
     record_result "PASS" "adoption demo volumes" "no active-project demo volumes found for $project"
   fi
@@ -301,7 +379,7 @@ local_demo_artifact_hygiene_checks() {
   done
 
   if [[ "${#found[@]}" -gt 0 ]]; then
-    record_result "WARN" "adoption demo artifacts" "allowlisted generated artifacts remain: ${found[*]}; run examples/adoption_demo/bin/docker-cleanup --project $project --execute if cleanup is intended"
+    record_result "WARN" "adoption demo artifacts" "allowlisted generated artifacts remain: ${found[*]}; run examples/adoption_demo/bin/docker-cleanup --project $project --execute or COMPOSE_PROJECT_NAME=$project make demo-clean-execute if cleanup is intended"
   else
     record_result "PASS" "adoption demo artifacts" "no allowlisted generated demo artifacts found"
   fi

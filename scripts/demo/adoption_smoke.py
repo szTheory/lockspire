@@ -185,6 +185,25 @@ def exercise_discovery_and_admin():
 
     admin = browser.request("GET", "/lockspire/admin")
     assert_status(admin, 200, "operator admin access")
+    assert_contains(admin, "lockspire-admin-shell", "admin design system shell")
+    assert_contains(admin, "data-lockspire-theme-select", "admin theme selector")
+    assert_contains(admin, "--ls-text-accent", "admin embedded semantic tokens")
+    assert_contains(admin, "Lockspire Admin", "admin brand lockup")
+
+    for route in [
+        "/lockspire/admin/clients",
+        "/lockspire/admin/policies",
+        "/lockspire/admin/keys",
+        "/lockspire/admin/dcr",
+        "/lockspire/admin/consents",
+        "/lockspire/admin/tokens",
+        "/lockspire/admin/interactions",
+        "/lockspire/admin/device_authorizations",
+        "/lockspire/admin/logouts",
+    ]:
+        page = browser.request("GET", route)
+        assert_status(page, 200, f"operator admin route {route}")
+        assert_contains(page, "lockspire-admin-shell", f"admin shell on {route}")
 
 
 def exercise_authorization_code():

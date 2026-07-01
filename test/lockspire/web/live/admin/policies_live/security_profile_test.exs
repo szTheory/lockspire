@@ -68,7 +68,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
   end
 
   test "router exposes global security profile management route" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(
              routes,

@@ -33,20 +33,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
 
         <div :if={@mode == :new} class="lockspire-admin-fieldset">
-          <div class="lockspire-admin-field">
-            <label for="client_name">Name</label>
+          <AdminComponents.form_field id="client_name" label="Name">
             <input id="client_name" name="client[name]" type="text" value={@defaults.name} />
-          </div>
+          </AdminComponents.form_field>
 
-          <div class="lockspire-admin-field">
-            <label for="client_type">Client type</label>
+          <AdminComponents.form_field id="client_type" label="Client type">
             <select id="client_type" name="client[client_type]">
               <option value="confidential" selected={@defaults.client_type == "confidential"}>
                 Confidential
               </option>
               <option value="public" selected={@defaults.client_type == "public"}>Public</option>
             </select>
-          </div>
+          </AdminComponents.form_field>
 
           <div class="lockspire-admin-field">
             <label for="client_auth_method">Token endpoint auth method</label>
