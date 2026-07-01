@@ -1,5 +1,35 @@
 # Milestones
 
+## v1.35 : CI/CD Efficiency And Release Hygiene (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.34 : Prefix-Isolated Storage (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.33 : OSS Adoption Trust (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.22 : DPoP Nonce Support (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.15 : JWKS URI & Private Key JWT Client Authentication (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
 ## v1.32 Admin Page IA & Interaction Model Polish (Shipped: 2026-06-30)
 
 **Delivered:** Page-first admin IA and interaction polish across route scorecards, Support, Operate, Configure, fixtures, proof, docs, and adversarial review without broadening protocol, storage, host-seam, lab, theming, browser-tooling, or public support surface.
