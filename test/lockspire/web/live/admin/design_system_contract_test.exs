@@ -26,23 +26,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
                               __DIR__
                             )
   @phase_110_dir Path.expand(
-                   "../../../../../.planning/phases/110-demo-state-screenshots-docs-and-regression-proof",
+                   "../../../../../.planning/milestones/v1.29-phases/110-demo-state-screenshots-docs-and-regression-proof",
                    __DIR__
                  )
   @phase_116_dir Path.expand(
-                   "../../../../../.planning/phases/116-inventory-rubric-lab-contract",
+                   "../../../../../.planning/milestones/v1.31-phases/116-inventory-rubric-lab-contract",
                    __DIR__
                  )
   @route_contract_path Path.expand(
-                         "../../../../../.planning/phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
+                         "../../../../../.planning/milestones/v1.29-phases/107-admin-journey-contract-ia-audit/107-ROUTE-JOURNEY-CONTRACT.md",
                          __DIR__
                        )
   @phase_121_scorecards_path Path.expand(
-                               "../../../../../.planning/phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md",
+                               "../../../../../.planning/milestones/v1.32-phases/121-route-scorecards-judgment-contract/121-ROUTE-SCORECARDS.md",
                                __DIR__
                              )
   @phase_125_proof_path Path.expand(
-                          "../../../../../.planning/phases/125-browser-proof-docs-adversarial-ratchet/125-V1.32-PROOF.md",
+                          "../../../../../.planning/milestones/v1.32-phases/125-browser-proof-docs-adversarial-ratchet/125-V1.32-PROOF.md",
                           __DIR__
                         )
   @phase_121_journeys ["Orient", "Configure", "Support", "Operate"]
