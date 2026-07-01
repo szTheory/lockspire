@@ -47,7 +47,7 @@ Contributors should have one canonical answer before merge: run `mix ci`.
 
 `mix ci` is the maintained contributor lane and it covers:
 
-- `mix qa`
+- `mix qa` for format, warnings-as-errors compile, Credo, and Sobelow
 - `mix docs.verify`
 - `mix deps.audit`
 - `mix package.build`
@@ -56,6 +56,8 @@ Contributors should have one canonical answer before merge: run `mix ci`.
 - `mix test.phase3`
 
 CI may keep those checks split into separate jobs for cacheability and diagnostics, but that workflow still needs to remain mechanically equivalent to `mix ci`.
+
+Dialyzer is currently an explicit maintainer check via `mix qa.dialyzer`, not a required contributor gate. Do not make it mandatory in PR CI until the baseline is clean; a known-noisy type gate wastes runner time and trains maintainers to ignore red checks.
 
 Release Please generated PR checks are informative review context. They are not authoritative release proof, because trusted proof starts only after merge in the protected `hex-publish` lane.
 

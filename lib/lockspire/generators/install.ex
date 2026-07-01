@@ -34,6 +34,8 @@ defmodule Lockspire.Generators.Install do
     web_module = Keyword.get(opts, :web, "#{root_module}Web")
     scope_module = Keyword.get(opts, :scope, "#{root_module}.Lockspire")
     mount_path = Keyword.get(opts, :mount_path, "/lockspire")
+    storage_prefix = Keyword.get(opts, :storage_prefix, "lockspire")
+    oban_prefix = Keyword.get(opts, :oban_prefix, storage_prefix)
 
     %{
       project_root: Keyword.get(opts, :path, File.cwd!()),
@@ -44,6 +46,8 @@ defmodule Lockspire.Generators.Install do
       scope_module: scope_module,
       scope_path: Macro.underscore(scope_module),
       mount_path: mount_path,
+      storage_prefix: Lockspire.Storage.Ecto.Prefix.normalize(storage_prefix),
+      oban_prefix: Lockspire.Storage.Ecto.Prefix.normalize(oban_prefix),
       router_module: "#{web_module}.Router",
       resolver_module: "#{scope_module}.AccountResolver",
       interaction_handler_module: "#{scope_module}.InteractionHandler",

@@ -57,15 +57,41 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Global security profile"
+        body="Review the issuer security profile default, strict readiness, inherited-client impact, and the next safe policy save before changing enforcement."
+      >
+        <:summary>
+          <AdminComponents.decision_summary>
+            <:item
+              :for={
+                item <-
+                  security_profile_decision_summary_items(%{
+                    policy: @policy,
+                    summary: @summary,
+                    strict_readiness: @strict_readiness
+                  })
+              }
+              label={item.label}
+              value={item.value}
+              tone={item.tone}
+              detail={item.detail}
+            >
+            </:item>
+          </AdminComponents.decision_summary>
+        </:summary>
+      </AdminComponents.page_hero>
+
       <AdminComponents.policy_nav />
 
       <AdminComponents.section_card
         title="Global security profile"
-        subtitle={"Current profile is #{security_profile_label(@policy.security_profile)}. This governs all clients that inherit their profile."}
+        subtitle={"Current profile is #{security_profile_label(@policy.security_profile)}. #{policy_scope_copy(:security_profile)}"}
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-        <form phx-submit="save_policy">
+        <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="security_profile">Active profile</label>
             <select id="security_profile" name="policy[security_profile]">
@@ -84,13 +110,17 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
             </p>
           </div>
 
-          <button class="lockspire-admin-btn-primary" type="submit">Save global security profile</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit" variant={:primary}>
+              Save global security profile
+            </AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Strict message-signing readiness"
-        subtitle="Canonical readiness for the stricter JARM and JWT introspection tier."
+        title="Strict readiness"
+        subtitle="Strict message-signing readiness for the stricter JARM and JWT introspection tier."
       >
         <p>
           <strong>Status:</strong> {strict_readiness_status(@policy.security_profile, @strict_readiness)}
@@ -221,5 +251,57 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
 
   defp strict_readiness_summary(_profile, _readiness) do
     "Issuer prerequisites are not complete yet. Fix the items below before enabling the stricter profile."
+  end
+
+  defp security_profile_decision_summary_items(%{
+         policy: %ServerPolicy{} = policy,
+         summary: summary,
+         strict_readiness: readiness
+       }) do
+    [
+      %{
+        label: "Global security profile",
+        value: security_profile_label(policy.security_profile),
+        tone: security_profile_tone(policy.security_profile),
+        detail:
+          "This is the global issuer security profile default for clients that inherit security policy."
+      },
+      %{
+        label: "Strict readiness",
+        value: strict_readiness_status(policy.security_profile, readiness),
+        tone: strict_readiness_tone(policy.security_profile, readiness),
+        detail: "Shows issuer signing-key readiness for the FAPI 2.0 Message Signing profile."
+      },
+      %{
+        label: "Clients that inherit",
+        value: inherited_clients_value(summary.inherit),
+        tone: :info,
+        detail:
+          "These clients use the global issuer security profile default; client overrides stay on client policy routes."
+      },
+      %{
+        label: "Next safe action",
+        value: "Save global security profile",
+        tone: :info,
+        detail: policy_scope_copy(:security_profile)
+      }
+    ]
+  end
+
+  defp security_profile_tone(:none), do: :neutral
+  defp security_profile_tone(:fapi_2_0_security), do: :warning
+  defp security_profile_tone(:fapi_2_0_message_signing), do: :warning
+  defp security_profile_tone(_profile), do: :info
+
+  defp strict_readiness_tone(:fapi_2_0_message_signing, %{ready?: true}), do: :success
+  defp strict_readiness_tone(:fapi_2_0_message_signing, _readiness), do: :danger
+  defp strict_readiness_tone(_profile, %{ready?: true}), do: :success
+  defp strict_readiness_tone(_profile, _readiness), do: :warning
+
+  defp inherited_clients_value(1), do: "1 client"
+  defp inherited_clients_value(count), do: "#{count} clients"
+
+  defp policy_scope_copy(:security_profile) do
+    "This save changes the global issuer security profile default for future requests from inheriting clients. Existing client overrides stay on their client policy routes."
   end
 end

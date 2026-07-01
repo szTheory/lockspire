@@ -131,7 +131,7 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
   defp fetch_authorization(id) do
     CibaAuthorizationRecord
     |> where([a], a.id == ^id)
-    |> repo().one()
+    |> repo().one(prefix_opts())
     |> case do
       nil ->
         {:error, :not_found}
@@ -148,7 +148,7 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
   defp fetch_client(client_id) do
     ClientRecord
     |> where([c], c.client_id == ^client_id)
-    |> repo().one()
+    |> repo().one(prefix_opts())
     |> case do
       nil -> {:error, :not_found}
       record -> {:ok, ClientRecord.to_domain(record)}
@@ -172,4 +172,8 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
   end
 
   defp repo, do: Config.repo!()
+
+  defp prefix_opts do
+    Lockspire.Storage.Ecto.Prefix.prefix_opts()
+  end
 end

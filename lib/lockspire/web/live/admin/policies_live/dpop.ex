@@ -54,15 +54,34 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Global DPoP policy"
+        body="Review sender-constraint posture, inherited-client impact, and the next safe policy save before changing enforcement."
+      >
+        <:summary>
+          <AdminComponents.decision_summary>
+            <:item
+              :for={item <- dpop_decision_summary_items(%{policy: @policy, summary: @summary})}
+              label={item.label}
+              value={item.value}
+              tone={item.tone}
+              detail={item.detail}
+            >
+            </:item>
+          </AdminComponents.decision_summary>
+        </:summary>
+      </AdminComponents.page_hero>
+
       <AdminComponents.policy_nav />
 
       <AdminComponents.section_card
         title="Global DPoP policy"
-        subtitle={"Current mode is #{@policy.dpop_policy}. This governs all clients that inherit their policy."}
+        subtitle={"Current mode is #{@policy.dpop_policy}. #{policy_scope_copy(:dpop)}"}
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-        <form phx-submit="save_policy">
+        <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="dpop_policy">Enforcement mode</label>
             <select id="dpop_policy" name="policy[dpop_policy]">
@@ -76,7 +95,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
             </p>
           </div>
 
-          <button class="lockspire-admin-btn-primary" type="submit">Save global DPoP policy</button>
+          <AdminComponents.action_bar>
+            <AdminComponents.admin_button type="submit" variant={:primary}>
+              Save global DPoP policy
+            </AdminComponents.admin_button>
+          </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 
@@ -130,5 +153,44 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
       end)
 
     assign(socket, summary: summary)
+  end
+
+  defp dpop_decision_summary_items(%{policy: %ServerPolicy{} = policy, summary: summary}) do
+    [
+      %{
+        label: "Sender constraint posture",
+        value: dpop_policy_label(policy.dpop_policy),
+        tone: dpop_policy_tone(policy.dpop_policy),
+        detail: "This is the global issuer DPoP default for clients that inherit DPoP policy."
+      },
+      %{
+        label: "Clients that inherit",
+        value: inherited_clients_value(summary.inherit),
+        tone: :info,
+        detail:
+          "These clients use the global issuer DPoP default; client overrides stay on client policy routes."
+      },
+      %{
+        label: "Next safe action",
+        value: "Save global DPoP policy",
+        tone: :info,
+        detail: policy_scope_copy(:dpop)
+      }
+    ]
+  end
+
+  defp dpop_policy_label(:dpop), do: "DPoP required"
+  defp dpop_policy_label(:bearer), do: "Bearer allowed"
+  defp dpop_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
+
+  defp dpop_policy_tone(:dpop), do: :warning
+  defp dpop_policy_tone(:bearer), do: :success
+  defp dpop_policy_tone(_value), do: :info
+
+  defp inherited_clients_value(1), do: "1 client"
+  defp inherited_clients_value(count), do: "#{count} clients"
+
+  defp policy_scope_copy(:dpop) do
+    "This save changes the global issuer DPoP default for future token-bound requests from clients that inherit issuer policy. Existing client overrides stay on their client policy routes."
   end
 end

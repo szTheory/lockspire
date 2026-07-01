@@ -34,6 +34,10 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
       post("/verify/:handle/deny", PlaceholderController, :deny)
     end
 
+    scope "/lockspire/admin" do
+      forward("/", Lockspire.Web.AdminRouter)
+    end
+
     scope "/" do
       forward("/lockspire", Lockspire.Web.Router)
     end
@@ -41,6 +45,10 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
 
   defmodule RouterMissingVerify do
     use Phoenix.Router
+
+    scope "/lockspire/admin" do
+      forward("/", Lockspire.Web.AdminRouter)
+    end
 
     scope "/" do
       forward("/lockspire", Lockspire.Web.Router)

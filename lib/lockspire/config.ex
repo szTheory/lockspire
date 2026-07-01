@@ -183,6 +183,30 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured Postgres schema/prefix for Lockspire-owned tables.
+
+  Missing config intentionally means "legacy/default search path" so existing
+  public-schema installs do not silently point at an empty `lockspire` schema
+  after upgrading. Generated new installs set `"lockspire"` explicitly.
+  """
+  @spec storage_prefix() :: String.t() | nil
+  def storage_prefix do
+    @app
+    |> Application.get_env(:storage_prefix)
+    |> Lockspire.Storage.Ecto.Prefix.normalize()
+  end
+
+  @doc """
+  Returns the configured Postgres schema/prefix for Lockspire's Oban tables.
+  """
+  @spec oban_prefix() :: String.t() | nil
+  def oban_prefix do
+    @app
+    |> Application.get_env(:oban_prefix, storage_prefix())
+    |> Lockspire.Storage.Ecto.Prefix.normalize()
+  end
+
+  @doc """
   Returns the schedule string for the pruner, or false if disabled.
   """
   @spec pruner_schedule() :: String.t() | false

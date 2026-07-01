@@ -1,11 +1,50 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-  <Lockspire.Web.Components.AdminComponents.section_card
-    title="Initial Access Tokens"
-    subtitle="Manage dynamic client registration intake tokens."
+  <Lockspire.Web.Components.AdminComponents.page_hero
+    eyebrow="Configure"
+    title="Initial access token inventory"
+    body="Review DCR onboarding intake tokens by status, expiration, creator, usage limit, and safe revocation context. Plaintext tokens are not shown after creation."
   >
-    <div class="lockspire-admin-actions" style="margin-bottom: 1rem;">
-      <a href={iat_new_path()} class="button">Mint IAT</a>
-    </div>
+    <:actions>
+      <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
+        Mint initial access token
+      </Lockspire.Web.Components.AdminComponents.admin_button>
+    </:actions>
+  </Lockspire.Web.Components.AdminComponents.page_hero>
+
+  <Lockspire.Web.Components.AdminComponents.pane
+    title="Review initial access tokens"
+    subtitle="DCR onboarding inventory for active, used, expired, and revoked partner intake tokens."
+  >
+    <Lockspire.Web.Components.AdminComponents.metric_grid>
+      <Lockspire.Web.Components.AdminComponents.summary_stat
+        value={iat_inventory_status_counts(@tokens).active}
+        label="Active"
+      />
+      <Lockspire.Web.Components.AdminComponents.summary_stat
+        value={iat_inventory_status_counts(@tokens).used}
+        label="Used"
+      />
+      <Lockspire.Web.Components.AdminComponents.summary_stat
+        value={iat_inventory_status_counts(@tokens).expired}
+        label="Expired"
+      />
+      <Lockspire.Web.Components.AdminComponents.summary_stat
+        value={iat_inventory_status_counts(@tokens).revoked}
+        label="Revoked"
+      />
+      <Lockspire.Web.Components.AdminComponents.summary_stat
+        value={iat_inventory_status_counts(@tokens).total}
+        label="Total intake"
+      />
+    </Lockspire.Web.Components.AdminComponents.metric_grid>
+
+    <p :if={@revoke_notice} class="lockspire-admin-help">{@revoke_notice}</p>
+
+    <Lockspire.Web.Components.AdminComponents.action_bar>
+      <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
+        Mint initial access token
+      </Lockspire.Web.Components.AdminComponents.admin_button>
+    </Lockspire.Web.Components.AdminComponents.action_bar>
 
     <%= if @tokens == [] do %>
       <Lockspire.Web.Components.AdminComponents.empty_state
@@ -13,23 +52,85 @@
         body="Mint a token to allow partners to dynamically register clients."
       />
     <% else %>
-      <ul class="lockspire-admin-token-list">
+      <Lockspire.Web.Components.AdminComponents.resource_list>
         <%= for token <- @tokens do %>
-          <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid #eee;">
-            <div>
-              <strong>ID:</strong> {token.id} <br/>
-              <small>Created by: {token.created_by}</small> <br/>
-              <small>Single use: {if token.single_use, do: "Yes", else: "No"}</small>
-            </div>
-            <div>
+          <Lockspire.Web.Components.AdminComponents.dense_resource_row
+            title={token_title(token)}
+            subtitle="DCR onboarding intake token"
+          >
+            <:meta>
+              <span>
+                Creator
+                <Lockspire.Web.Components.AdminComponents.long_value
+                  value={token.created_by || "operator"}
+                  kind={:id}
+                />
+              </span>
+              <span>
+                Expires
+                <Lockspire.Web.Components.AdminComponents.long_value
+                  value={formatted_timestamp(token.expires_at)}
+                  kind={:timestamp}
+                />
+              </span>
+              <span>
+                Last state change
+                <Lockspire.Web.Components.AdminComponents.long_value
+                  value={formatted_timestamp(token_timestamp(token))}
+                  kind={:timestamp}
+                />
+              </span>
+              <span>
+                Usage/limit
+                <Lockspire.Web.Components.AdminComponents.long_value
+                  value={usage_label(token)}
+                  kind={:text}
+                />
+              </span>
+            </:meta>
+            <:status>
               <Lockspire.Web.Components.AdminComponents.status_badge status={iat_status(token)} />
+            </:status>
+            <:actions>
               <%= if iat_status(token) == :active do %>
-                <button phx-click="revoke" phx-value-id={token.id} data-confirm="Are you sure you want to revoke this IAT?" class="button button-small" style="margin-left: 1rem;">Revoke</button>
+                <Lockspire.Web.Components.AdminComponents.confirmation_panel
+                  title="Revoke initial access token"
+                  variant={:danger}
+                  errors={iat_revoke_error(@revoke_error)}
+                >
+                  <:body>
+                    <form class="lockspire-admin-form-stack" phx-submit="confirm_revoke_iat">
+                      <input type="hidden" name="revoke[id]" value={token.id} />
+                      <label
+                        class="lockspire-admin-checkbox-field"
+                        for={"revoke_iat_#{token.id}_confirm"}
+                      >
+                        <input
+                          id={"revoke_iat_#{token.id}_confirm"}
+                          type="checkbox"
+                          name="revoke[confirm]"
+                          value="true"
+                        />
+                        <span>
+                          {iat_revoke_confirmation_copy(token)}
+                        </span>
+                      </label>
+                      <Lockspire.Web.Components.AdminComponents.action_bar>
+                        <Lockspire.Web.Components.AdminComponents.admin_button
+                          type="submit"
+                          variant={:danger}
+                        >
+                          Revoke initial access token
+                        </Lockspire.Web.Components.AdminComponents.admin_button>
+                      </Lockspire.Web.Components.AdminComponents.action_bar>
+                    </form>
+                  </:body>
+                </Lockspire.Web.Components.AdminComponents.confirmation_panel>
               <% end %>
-            </div>
-          </li>
+            </:actions>
+          </Lockspire.Web.Components.AdminComponents.dense_resource_row>
         <% end %>
-      </ul>
+      </Lockspire.Web.Components.AdminComponents.resource_list>
     <% end %>
-  </Lockspire.Web.Components.AdminComponents.section_card>
+  </Lockspire.Web.Components.AdminComponents.pane>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

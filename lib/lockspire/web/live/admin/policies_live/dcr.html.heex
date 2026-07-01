@@ -1,98 +1,202 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+  <Lockspire.Web.Components.AdminComponents.page_hero
+    eyebrow="Configure"
+    title="Global DCR policy"
+    body={"Current mode is #{@policy.registration_policy}. Decide who can self-register and what metadata future DCR requests may ask Lockspire to store."}
+  >
+    <:summary>
+      <Lockspire.Web.Components.AdminComponents.decision_summary>
+        <:item
+          label="Registration gate"
+          value={registration_policy_label(@policy.registration_policy)}
+          tone={registration_policy_tone(@policy.registration_policy)}
+          detail={registration_policy_detail(@policy.registration_policy)}
+        >
+        </:item>
+        <:item
+          label="Metadata allowlists"
+          value={allowlist_summary(@policy)}
+          tone={:info}
+          detail="Scopes, grants, responses, redirect schemes, and hosts bound requested metadata."
+        >
+        </:item>
+        <:item
+          label="Token auth methods"
+          value={auth_methods_summary(@policy)}
+          tone={:info}
+          detail="This allowlist controls what self-registered clients may request."
+        >
+        </:item>
+        <:item
+          label="Default lifetimes"
+          value={lifetime_summary(@policy)}
+          tone={:info}
+          detail="Applies only to clients and credentials created through DCR."
+        >
+        </:item>
+      </Lockspire.Web.Components.AdminComponents.decision_summary>
+    </:summary>
+  </Lockspire.Web.Components.AdminComponents.page_hero>
+
   <Lockspire.Web.Components.AdminComponents.policy_nav />
 
   <Lockspire.Web.Components.AdminComponents.section_card
-    title="Global DCR policy"
-    subtitle={"Current mode is #{@policy.registration_policy}. This governs Dynamic Client Registration."}
+    title="Edit future registration policy"
+    subtitle={"Current mode is #{@policy.registration_policy}. This save changes future Dynamic Client Registration requests only; existing client records keep their stored configuration."}
   >
     <Lockspire.Web.Components.AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
-    <form phx-submit="save_policy">
-      <div class="lockspire-admin-field">
-        <label for="registration_policy">Enforcement mode</label>
-        <select id="registration_policy" name="policy[registration_policy]">
-          <option value="disabled" selected={@policy.registration_policy == :disabled}>Disabled</option>
-          <option value="initial_access_token" selected={@policy.registration_policy == :initial_access_token}>Initial Access Token</option>
-          <option value="open" selected={@policy.registration_policy == :open}>Open</option>
-        </select>
+    <form class="lockspire-admin-form-stack" phx-submit="save_policy">
+      <Lockspire.Web.Components.AdminComponents.workflow_shell
+        title="Registration gate"
+        help="Choose how issuer registration requests are admitted before any client metadata is accepted."
+      >
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="registration_policy"
+          label="Enforcement mode"
+          help="Choose how Dynamic Client Registration requests are admitted."
+        >
+          <select id="registration_policy" name="policy[registration_policy]">
+            <option value="disabled" selected={@policy.registration_policy == :disabled}>Disabled</option>
+            <option value="initial_access_token" selected={@policy.registration_policy == :initial_access_token}>Initial Access Token</option>
+            <option value="open" selected={@policy.registration_policy == :open}>Open</option>
+          </select>
+          <p class="lockspire-admin-help">
+            <strong>Disabled:</strong> Dynamic Client Registration is disabled at the issuer.
+            <br />
+            <strong>Initial Access Token:</strong> Registration requires a valid Initial Access Token before client metadata is accepted.
+            <br />
+            <strong>Open registration:</strong> Unauthenticated registration requests may create clients; keep allowlists narrow and lifetimes bounded.
+          </p>
+        </Lockspire.Web.Components.AdminComponents.form_field>
+      </Lockspire.Web.Components.AdminComponents.workflow_shell>
+
+      <Lockspire.Web.Components.AdminComponents.workflow_shell
+        title="Allowlist decisions"
+        help="Bound the scopes, grant types, response types, and redirect URI metadata self-registered clients may request."
+      >
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_scopes"
+          label="Allowed scopes"
+          help="Comma-separated scopes self-registered clients may request."
+        >
+          <input type="text" id="dcr_allowed_scopes" name="policy[dcr_allowed_scopes]" value={Enum.join(@policy.dcr_allowed_scopes || [], ", ")} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_grant_types"
+          label="Allowed grant types"
+          help="Comma-separated grant types accepted from DCR metadata."
+        >
+          <input type="text" id="dcr_allowed_grant_types" name="policy[dcr_allowed_grant_types]" value={Enum.join(@policy.dcr_allowed_grant_types || [], ", ")} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_response_types"
+          label="Allowed response types"
+          help="Comma-separated response types accepted from DCR metadata."
+        >
+          <input type="text" id="dcr_allowed_response_types" name="policy[dcr_allowed_response_types]" value={Enum.join(@policy.dcr_allowed_response_types || [], ", ")} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_redirect_uri_schemes"
+          label="Allowed redirect URI schemes"
+          help="Comma-separated URI schemes accepted for registered redirect URIs."
+        >
+          <input type="text" id="dcr_allowed_redirect_uri_schemes" name="policy[dcr_allowed_redirect_uri_schemes]" value={Enum.join(@policy.dcr_allowed_redirect_uri_schemes || [], ", ")} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_redirect_uri_hosts"
+          label="Allowed redirect URI hosts"
+          help="Comma-separated host allowlist for registered redirect URIs."
+        >
+          <input type="text" id="dcr_allowed_redirect_uri_hosts" name="policy[dcr_allowed_redirect_uri_hosts]" value={Enum.join(@policy.dcr_allowed_redirect_uri_hosts || [], ", ")} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+      </Lockspire.Web.Components.AdminComponents.workflow_shell>
+
+      <Lockspire.Web.Components.AdminComponents.workflow_shell
+        title="Lifetime defaults"
+        help="Set default registration and client lifetimes for clients created through Dynamic Client Registration."
+      >
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_default_client_lifetime_seconds"
+          label="Default client lifetime (seconds)"
+          help="Optional lifetime applied to newly registered clients."
+        >
+          <input type="number" id="dcr_default_client_lifetime_seconds" name="policy[dcr_default_client_lifetime_seconds]" value={@policy.dcr_default_client_lifetime_seconds} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_default_client_secret_lifetime_seconds"
+          label="Default client secret lifetime (seconds)"
+          help="Optional lifetime applied to generated client secrets."
+        >
+          <input type="number" id="dcr_default_client_secret_lifetime_seconds" name="policy[dcr_default_client_secret_lifetime_seconds]" value={@policy.dcr_default_client_secret_lifetime_seconds} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_default_registration_access_token_lifetime_seconds"
+          label="Default registration access token lifetime (seconds)"
+          help="Optional lifetime applied to registration access tokens created for registered clients."
+        >
+          <input type="number" id="dcr_default_registration_access_token_lifetime_seconds" name="policy[dcr_default_registration_access_token_lifetime_seconds]" value={@policy.dcr_default_registration_access_token_lifetime_seconds} />
+        </Lockspire.Web.Components.AdminComponents.form_field>
+      </Lockspire.Web.Components.AdminComponents.workflow_shell>
+
+      <Lockspire.Web.Components.AdminComponents.workflow_shell
+        title="Token endpoint auth methods"
+        help="Choose which token endpoint authentication methods self-registered clients may request."
+      >
+        <Lockspire.Web.Components.AdminComponents.form_field
+          id="dcr_allowed_token_endpoint_auth_methods"
+          label="Allowed token endpoint auth methods"
+          help="Comma-separated methods accepted from DCR metadata."
+        >
+          <input type="text" id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]" value={Enum.join(@policy.dcr_allowed_token_endpoint_auth_methods || [], ", ")} />
+          <p class="lockspire-admin-help">
+            <strong>private_key_jwt posture:</strong>
+            <%= if @private_key_jwt_truth.self_registration_allowed? do %>
+              Self-registered clients may use private_key_jwt when they register key material with inline <code>jwks</code> or a remote <code>jwks_uri</code>.
+            <% else %>
+              Self-registered clients may not use private_key_jwt until this auth method is present in the DCR allowlist.
+            <% end %>
+            <br />
+            Lockspire will accept JWT client assertions signed with <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code> under the current issuer security posture.
+            <br />
+            <strong>client_secret_jwt posture:</strong>
+            <%= cond do %>
+              <% @client_secret_jwt_truth.fapi_effective? -> %>
+                FAPI-effective posture disables <code>client_secret_jwt</code>; Lockspire does not publish or accept the symmetric JWT slice there.
+              <% @client_secret_jwt_truth.self_registration_allowed? -> %>
+                Self-registered clients may use <code>client_secret_jwt</code> on the shared direct-client token and revocation surfaces with explicit <code>{@client_secret_jwt_truth.signing_algorithm}</code>.
+              <% true -> %>
+                Self-registered clients may not use <code>client_secret_jwt</code> until this auth method is present in the DCR allowlist.
+            <% end %>
+            <br />
+            This page is descriptive only for this slice. It does not create a remote key-fetch or algorithm-management workflow.
+          </p>
+        </Lockspire.Web.Components.AdminComponents.form_field>
+      </Lockspire.Web.Components.AdminComponents.workflow_shell>
+
+      <Lockspire.Web.Components.AdminComponents.workflow_shell
+        title="Risk and posture"
+        help="Review what this issuer policy changes before saving."
+      >
         <p class="lockspire-admin-help">
-          <strong>Disabled:</strong> Dynamic client registration is completely disabled.
-          <br />
-          <strong>Initial Access Token:</strong> Registration requires a valid Initial Access Token (RFC 7592).
-          <br />
-          <strong>Open:</strong> Anyone can register clients. Use with extreme caution.
+          This form updates global issuer policy for future Dynamic Client Registration requests. It does not mint Initial Access Tokens, rotate registration access tokens, update existing client records, or create credential material.
         </p>
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_scopes">Allowed Scopes</label>
-        <input type="text" id="dcr_allowed_scopes" name="policy[dcr_allowed_scopes]" value={Enum.join(@policy.dcr_allowed_scopes || [], ", ")} />
-        <p class="lockspire-admin-help">Comma-separated list of allowed scopes.</p>
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_grant_types">Allowed Grant Types</label>
-        <input type="text" id="dcr_allowed_grant_types" name="policy[dcr_allowed_grant_types]" value={Enum.join(@policy.dcr_allowed_grant_types || [], ", ")} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_response_types">Allowed Response Types</label>
-        <input type="text" id="dcr_allowed_response_types" name="policy[dcr_allowed_response_types]" value={Enum.join(@policy.dcr_allowed_response_types || [], ", ")} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_redirect_uri_schemes">Allowed Redirect URI Schemes</label>
-        <input type="text" id="dcr_allowed_redirect_uri_schemes" name="policy[dcr_allowed_redirect_uri_schemes]" value={Enum.join(@policy.dcr_allowed_redirect_uri_schemes || [], ", ")} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_redirect_uri_hosts">Allowed Redirect URI Hosts</label>
-        <input type="text" id="dcr_allowed_redirect_uri_hosts" name="policy[dcr_allowed_redirect_uri_hosts]" value={Enum.join(@policy.dcr_allowed_redirect_uri_hosts || [], ", ")} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_allowed_token_endpoint_auth_methods">Allowed Token Endpoint Auth Methods</label>
-        <input type="text" id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]" value={Enum.join(@policy.dcr_allowed_token_endpoint_auth_methods || [], ", ")} />
         <p class="lockspire-admin-help">
-          <strong>private_key_jwt posture:</strong>
-          <%= if @private_key_jwt_truth.self_registration_allowed? do %>
-            Self-registered clients may use private_key_jwt when they register key material with inline <code>jwks</code> or a remote <code>jwks_uri</code>.
-          <% else %>
-            Self-registered clients may not use private_key_jwt until this auth method is present in the DCR allowlist.
-          <% end %>
-          <br />
-          Lockspire will accept JWT client assertions signed with <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code> under the current issuer security posture.
-          <br />
-          <strong>client_secret_jwt posture:</strong>
-          <%= cond do %>
-            <% @client_secret_jwt_truth.fapi_effective? -> %>
-              FAPI-effective posture disables <code>client_secret_jwt</code>; Lockspire does not publish or accept the symmetric JWT slice there.
-            <% @client_secret_jwt_truth.self_registration_allowed? -> %>
-              Self-registered clients may use <code>client_secret_jwt</code> on the shared direct-client token and revocation surfaces with explicit <code>{@client_secret_jwt_truth.signing_algorithm}</code>.
-            <% true -> %>
-              Self-registered clients may not use <code>client_secret_jwt</code> until this auth method is present in the DCR allowlist.
-          <% end %>
-          <br />
-          This page is descriptive only for this slice. It does not create a remote key-fetch or algorithm-management workflow.
+          Keep allowlists and lifetimes aligned with the issuer posture operators expect partners to use. Existing clients keep their stored configuration unless another workflow changes them.
         </p>
-      </div>
+      </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
-      <div class="lockspire-admin-field">
-        <label for="dcr_default_client_lifetime_seconds">Default Client Lifetime (seconds)</label>
-        <input type="number" id="dcr_default_client_lifetime_seconds" name="policy[dcr_default_client_lifetime_seconds]" value={@policy.dcr_default_client_lifetime_seconds} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_default_client_secret_lifetime_seconds">Default Client Secret Lifetime (seconds)</label>
-        <input type="number" id="dcr_default_client_secret_lifetime_seconds" name="policy[dcr_default_client_secret_lifetime_seconds]" value={@policy.dcr_default_client_secret_lifetime_seconds} />
-      </div>
-
-      <div class="lockspire-admin-field">
-        <label for="dcr_default_registration_access_token_lifetime_seconds">Default Registration Access Token Lifetime (seconds)</label>
-        <input type="number" id="dcr_default_registration_access_token_lifetime_seconds" name="policy[dcr_default_registration_access_token_lifetime_seconds]" value={@policy.dcr_default_registration_access_token_lifetime_seconds} />
-      </div>
-
-      <button class="lockspire-admin-btn-primary" type="submit">Save global DCR policy</button>
+      <Lockspire.Web.Components.AdminComponents.action_bar>
+        <Lockspire.Web.Components.AdminComponents.admin_button type="submit" variant={:primary}>
+          Save global DCR policy
+        </Lockspire.Web.Components.AdminComponents.admin_button>
+      </Lockspire.Web.Components.AdminComponents.action_bar>
     </form>
   </Lockspire.Web.Components.AdminComponents.section_card>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

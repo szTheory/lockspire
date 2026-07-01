@@ -1,8 +1,8 @@
 defmodule Lockspire.TestRepo.Migrations.CreateLockspireInitialAccessTokens do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    create table(:lockspire_initial_access_tokens) do
+    create lockspire_table(:lockspire_initial_access_tokens) do
       # D-11: hash-at-rest (sha256 lowercase hex via Security.Policy.hash_token/1 in Plan 04 fixtures);
       # plaintext is NEVER stored.
       add(:token_hash, :text, null: false)
@@ -32,6 +32,6 @@ defmodule Lockspire.TestRepo.Migrations.CreateLockspireInitialAccessTokens do
 
     # D-03: REQUIRED — Phase 26 atomic redemption depends on this index existing.
     # Lookup-by-hash MUST be unique (collision-free) for the UPDATE ... WHERE used_at IS NULL pattern.
-    create(unique_index(:lockspire_initial_access_tokens, [:token_hash]))
+    create(lockspire_unique_index(:lockspire_initial_access_tokens, [:token_hash]))
   end
 end

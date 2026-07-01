@@ -38,7 +38,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        form_errors: [],
        rotation_errors: [],
        revealed_secret: nil,
-       revealed_rat: nil
+       revealed_rat: nil,
+       lifecycle_errors: []
      )}
   end
 
@@ -49,7 +50,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
     {:noreply,
      socket
-     |> assign(action: action, form_mode: form_mode, form_errors: [], rotation_errors: [])
+     |> assign(
+       action: action,
+       form_mode: form_mode,
+       form_errors: [],
+       rotation_errors: [],
+       lifecycle_errors: []
+     )
      |> load_client(Map.get(params, "client_id", socket.assigns.client_id))}
   end
 
@@ -140,14 +147,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   def handle_event(
         "toggle_client",
-        _params,
+        %{"toggle" => %{"confirm" => "true"}},
         %{assigns: %{client: %Client{active: true}}} = socket
       ) do
     {:noreply, apply_toggle(socket, false)}
   end
 
-  def handle_event("toggle_client", _params, socket) do
+  def handle_event("toggle_client", %{"toggle" => %{"confirm" => "true"}}, socket) do
     {:noreply, apply_toggle(socket, true)}
+  end
+
+  def handle_event("toggle_client", _params, socket) do
+    {:noreply,
+     assign(socket,
+       lifecycle_errors: [
+         %{field: :confirm, reason: :required, detail: "confirm this lifecycle change"}
+       ]
+     )}
   end
 
   @impl true
@@ -165,210 +181,416 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.section_card
-        title={@client.name || @client.client_id}
-        subtitle="Immutable security posture stays fixed. Safe edits are targeted workflows."
-      >
-        <div style="display: grid; grid-template-columns: minmax(200px, max-content) 1fr; gap: var(--ls-space-2) var(--ls-space-4); margin-bottom: var(--ls-space-6);">
-          <strong style="color: var(--ls-color-gray-700);">Client ID</strong> 
-          <code class="lockspire-admin-tabular">{@client.client_id}</code>
+      <AdminComponents.page_hero
+        eyebrow="Configure"
+        title="Review client configuration"
+        body="Review identity, effective posture, credentials, endpoints, DCR context, and lifecycle actions for this client."
+      />
 
-          <strong style="color: var(--ls-color-gray-700);">Type</strong> 
-          <code>{@client.client_type}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Token auth</strong> 
-          <code>{@client.token_endpoint_auth_method}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">PKCE required</strong> 
-          <code>{to_string(@client.pkce_required)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Global security profile</strong> 
-          <code>{security_profile_label(@effective_security_profile.global_profile)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Client security override</strong> 
-          <code>{security_profile_label(@client.security_profile)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Effective security profile</strong> 
-          <strong style="color: var(--ls-color-gray-900);">{security_verdict_for(@effective_security_profile)}</strong>
-
-          <strong style="color: var(--ls-color-gray-700);">Global PAR policy</strong> 
-          <code>{par_policy_label(@effective_par_policy.global_policy)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Client PAR override</strong> 
-          <code>{par_policy_label(@client.par_policy)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Effective PAR requirement</strong> 
-          <strong style="color: var(--ls-color-gray-900);">{verdict_for(@effective_par_policy)}</strong>
-
-          <strong style="color: var(--ls-color-gray-700);">Global access token format</strong> 
-          <code>{@global_access_token_format}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Client access token override</strong> 
-          <code>{access_token_format_override_label(@client.access_token_format)}</code>
-
-          <strong style="color: var(--ls-color-gray-700);">Effective access token format</strong> 
-          <strong style="color: var(--ls-color-gray-900);">{@effective_access_token_format}</strong>
-
-          <strong style="color: var(--ls-color-gray-700);">Current secret</strong> 
-          <span style="color: var(--ls-color-gray-500); font-style: italic;">redacted</span>
-
-          <strong style="color: var(--ls-color-gray-700);">Last secret rotation</strong> 
-          <span class="lockspire-admin-tabular">{format_datetime(@client.last_secret_rotated_at)}</span>
-
-          <strong style="color: var(--ls-color-gray-700);">Status</strong> 
-          <div style="display: flex; align-items: center;"><AdminComponents.status_badge status={status_for(@client)} /></div>
-        </div>
-
-        <section :if={show_strict_message_signing_panel?(@effective_security_profile)} class="lockspire-admin-help" style="margin-bottom: var(--ls-space-6);">
-          <h3 style="margin-top: 0; color: var(--ls-color-gray-900);">Strict message-signing posture</h3>
-          <p>
-            <strong>Effective posture:</strong> {strict_posture_label(@effective_security_profile)}
-          </p>
-          <p>
-            <strong>Issuer readiness:</strong> {strict_readiness_label(@effective_security_profile, @strict_readiness)}
-          </p>
-          <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
-            `/authorize` requires an explicit JWT response mode and `/introspect` requires
-            `Accept: application/token-introspection+jwt`.
-          </p>
-          <p :if={mixed_mode_override?(@effective_security_profile)}>
-            This client is using the explicit mixed-mode escape hatch. Strict message-signing
-            enforcement does not apply to this client even though the issuer is stricter.
-          </p>
-          <ul :if={@strict_readiness.remediation != [] and @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
-            <%= for item <- @strict_readiness.remediation do %>
-              <li>{item}</li>
-            <% end %>
-          </ul>
-        </section>
-
-        <div
-          :if={mixed_mode_override?(@effective_security_profile)}
-          class="lockspire-admin-alert lockspire-admin-alert-warning"
-          role="alert"
-          style="background-color: var(--ls-color-warning-bg); color: var(--ls-color-warning-text); padding: var(--ls-space-4); border-radius: var(--ls-radius-md); margin-bottom: var(--ls-space-6);"
+      <div class="lockspire-admin-client-workspace">
+        <AdminComponents.entity_header
+          eyebrow="Client workspace"
+          title={@client.name || @client.client_id}
+          subtitle="Identity, posture, credentials, endpoints, DCR context, support pivots, and lifecycle actions for this client."
+          identifier={@client.client_id}
         >
-          <strong>Warning:</strong> This client overrides the global FAPI 2.0 Security Profile
-          to None. FAPI 2.0 boundary checks (PAR, DPoP) will NOT be enforced for this client.
-          This is an intentional mixed-mode bypass. Confirm the client genuinely needs standard
-          OIDC.
-        </div>
+          <:status>
+            <AdminComponents.status_badge status={status_for(@client)} />
+            <AdminComponents.status_badge status={@client.provenance} />
+          </:status>
+          <:actions>
+            <AdminComponents.action_group>
+              <:primary>
+                <.link
+                  class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                  patch={show_path(@client.client_id, :edit)}
+                >
+                  Edit client metadata
+                </.link>
+              </:primary>
+            </AdminComponents.action_group>
+          </:actions>
+        </AdminComponents.entity_header>
 
-        <section :if={client_secret_jwt_client?(@client)} style="margin-bottom: var(--ls-space-6);">
-          <h3 style="margin-top: 0;">Shared JWT client secret posture</h3>
-          <p>
-            Stored auth method: <code>client_secret_jwt</code>
-          </p>
-          <p>
-            Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
-          </p>
-          <p class="lockspire-admin-help">
-            This slice is limited to the shared direct-client verifier surfaces. Lockspire
-            keeps <code>HS256</code> read-only here and never exposes secret-derived verifier
-            material.
-          </p>
-        </section>
-
-        <section :if={private_key_jwt_client?(@client)} style="margin-bottom: var(--ls-space-6);">
-          <h3 style="margin-top: 0;">Client assertion keys</h3>
-          <p>
-            Remote JWKS URI configured:
-            <code>{value_or_not_configured(@client.jwks_uri)}</code>
-          </p>
-          <p>
-            Inline JWKS configured:
-            <code>{boolean_label(not is_nil(@client.jwks))}</code>
-          </p>
-          <p>
-            Issuer-supported assertion algorithms:
-            <code>{supported_assertion_algorithms(@private_key_jwt_truth)}</code>
-          </p>
-          <p class="lockspire-admin-help">
-            This client uses <code>private_key_jwt</code>. Key material stays read-only in
-            Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
-            not by ad hoc admin actions.
-          </p>
-        </section>
-
-        <section
-          :if={show_remote_jwks_summary?(@client, @remote_jwks_summary)}
-          class="lockspire-admin-help"
-          style="margin-bottom: var(--ls-space-6); padding: var(--ls-space-4); background: var(--ls-color-gray-50); border-radius: var(--ls-radius-md);"
+        <AdminComponents.pane
+          title="Identity and current status"
+          subtitle="Stable identity, client class, and current availability."
         >
-          <h3 style="margin-top: 0; color: var(--ls-color-gray-900);">Remote JWKS</h3>
-          <div style="display: grid; grid-template-columns: minmax(100px, max-content) 1fr; gap: var(--ls-space-1) var(--ls-space-4);">
-            <strong>Status</strong> <code>{@remote_jwks_summary.status}</code>
-            <strong>Summary</strong> <span>{@remote_jwks_summary.headline}</span>
-            <strong>Details</strong> <span>{@remote_jwks_summary.detail}</span>
-            <strong>Next step</strong> <span>{@remote_jwks_summary.next_step}</span>
-            <strong>Ownership</strong> <span>{@remote_jwks_summary.ownership}</span>
-            <strong :if={@remote_jwks_summary.incident}>Incident class</strong>
-            <code :if={@remote_jwks_summary.incident}>{@remote_jwks_summary.incident.class}</code>
-            <strong :if={@remote_jwks_summary.command_hint}>Support command</strong>
-            <code :if={@remote_jwks_summary.command_hint}>{@remote_jwks_summary.command_hint}</code>
+          <:status>
+            <AdminComponents.status_badge status={status_for(@client)} />
+          </:status>
+          <AdminComponents.description_list>
+            <:item label="Client ID">
+              <AdminComponents.long_value value={@client.client_id} kind={:id} />
+            </:item>
+            <:item label="Type"><code>{@client.client_type}</code></:item>
+            <:item label="Token auth"><code>{@client.token_endpoint_auth_method}</code></:item>
+            <:item label="PKCE required"><code>{to_string(@client.pkce_required)}</code></:item>
+            <:item label="Created">
+              <AdminComponents.long_value value={format_datetime(@client.created_at)} kind={:timestamp} />
+            </:item>
+          </AdminComponents.description_list>
+        </AdminComponents.pane>
+
+        <AdminComponents.pane
+          title="Effective posture"
+          subtitle="Issuer defaults and client overrides shown together."
+        >
+          <:status>
+            <AdminComponents.status_cluster>
+              <span>Security: {security_verdict_for(@effective_security_profile)}</span>
+              <span>PAR: {verdict_for(@effective_par_policy)}</span>
+              <span>Access tokens: {@effective_access_token_format}</span>
+            </AdminComponents.status_cluster>
+          </:status>
+          <AdminComponents.description_list>
+            <:item label="Global security profile">
+              <code>{security_profile_label(@effective_security_profile.global_profile)}</code>
+            </:item>
+            <:item label="Client security override">
+              <code>{security_profile_label(@client.security_profile)}</code>
+            </:item>
+            <:item label="Effective security profile">
+              <strong>{security_verdict_for(@effective_security_profile)}</strong>
+            </:item>
+            <:item label="Global PAR policy">
+              <code>{par_policy_label(@effective_par_policy.global_policy)}</code>
+            </:item>
+            <:item label="Client PAR override">
+              <code>{par_policy_label(@client.par_policy)}</code>
+            </:item>
+            <:item label="Effective PAR requirement">
+              <strong>{verdict_for(@effective_par_policy)}</strong>
+            </:item>
+            <:item label="Global access token format">
+              <code>{@global_access_token_format}</code>
+            </:item>
+            <:item label="Client access token override">
+              <code>{access_token_format_override_label(@client.access_token_format)}</code>
+            </:item>
+            <:item label="Effective access token format">
+              <strong>{@effective_access_token_format}</strong>
+            </:item>
+          </AdminComponents.description_list>
+
+          <AdminComponents.alert
+            :if={show_strict_message_signing_panel?(@effective_security_profile)}
+            variant={if mixed_mode_override?(@effective_security_profile), do: :warning, else: :info}
+            title="Strict message-signing posture"
+          >
+            <p>
+              <strong>Effective posture:</strong> {strict_posture_label(@effective_security_profile)}
+            </p>
+            <p>
+              <strong>Issuer readiness:</strong> {strict_readiness_label(@effective_security_profile, @strict_readiness)}
+            </p>
+            <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
+              `/authorize` requires an explicit JWT response mode and `/introspect` requires
+              `Accept: application/token-introspection+jwt`.
+            </p>
+            <p :if={mixed_mode_override?(@effective_security_profile)}>
+              This client is using the explicit mixed-mode escape hatch. Strict message-signing
+              enforcement does not apply to this client even though the issuer is stricter.
+            </p>
+            <ul :if={@strict_readiness.remediation != [] and @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
+              <%= for item <- @strict_readiness.remediation do %>
+                <li>{item}</li>
+              <% end %>
+            </ul>
+          </AdminComponents.alert>
+
+          <AdminComponents.alert
+            :if={mixed_mode_override?(@effective_security_profile)}
+            variant={:warning}
+            role="alert"
+            title="Warning: mixed-mode bypass"
+          >
+            <p>
+              This client overrides the global FAPI 2.0 Security Profile to None. FAPI 2.0
+              boundary checks (PAR, DPoP) will NOT be enforced for this client.
+            </p>
+            This is an intentional mixed-mode bypass. Confirm the client genuinely needs standard
+            OIDC.
+          </AdminComponents.alert>
+
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
+            </:primary>
+          </AdminComponents.action_group>
+        </AdminComponents.pane>
+
+        <AdminComponents.pane
+          title="Credentials and assertion keys"
+          subtitle="Credential rotation and assertion-key posture without exposing raw credential material."
+        >
+          <AdminComponents.description_list>
+            <:item label="Current secret">
+              <AdminComponents.long_value value="redacted" kind={:token} redacted />
+            </:item>
+            <:item label="Last secret rotation">
+              <AdminComponents.long_value
+                value={format_datetime(@client.last_secret_rotated_at)}
+                kind={:timestamp}
+              />
+            </:item>
+          </AdminComponents.description_list>
+
+          <div :if={client_secret_jwt_client?(@client)} class="lockspire-admin-detail-section">
+            <h3>Shared JWT client secret posture</h3>
+            <p>
+              Stored auth method: <code>client_secret_jwt</code>
+            </p>
+            <p>
+              Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
+            </p>
+            <p class="lockspire-admin-help">
+              This slice is limited to the shared direct-client assertion surfaces. Lockspire
+              keeps <code>HS256</code> read-only here and never exposes secret-derived values.
+            </p>
           </div>
-        </section>
 
-        <h3 style="margin-top: 0;">Redirect URIs</h3>
-        <ul style="margin-bottom: var(--ls-space-6);">
-          <%= for redirect_uri <- @client.redirect_uris do %>
-            <li>{redirect_uri}</li>
-          <% end %>
-        </ul>
+          <div :if={private_key_jwt_client?(@client)} class="lockspire-admin-detail-section">
+            <h3>Client assertion keys</h3>
+            <p>
+              Remote JWKS URI configured:
+              <AdminComponents.long_value
+                value={value_or_not_configured(@client.jwks_uri)}
+                kind={:url}
+              />
+            </p>
+            <p>
+              Inline JWKS configured:
+              <code>{boolean_label(not is_nil(@client.jwks))}</code>
+            </p>
+            <p>
+              Issuer-supported assertion algorithms:
+              <code>{supported_assertion_algorithms(@private_key_jwt_truth)}</code>
+            </p>
+            <p class="lockspire-admin-help">
+              This client uses <code>private_key_jwt</code>. Key material stays read-only in
+              Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
+              not by ad hoc admin actions.
+            </p>
+          </div>
 
-        <h3 style="margin-top: 0;">Post-logout redirect URIs</h3>
-        <ul style="margin-bottom: var(--ls-space-6);">
-          <%= for uri <- @client.post_logout_redirect_uris do %>
-            <li>{uri}</li>
-          <% end %>
-        </ul>
+          <div
+            :if={show_remote_jwks_summary?(@client, @remote_jwks_summary)}
+            class="lockspire-admin-detail-section lockspire-admin-detail-section-muted"
+          >
+            <h3>Remote JWKS</h3>
+            <AdminComponents.description_list>
+              <:item label="Status"><code>{@remote_jwks_summary.status}</code></:item>
+              <:item label="Summary"><span>{@remote_jwks_summary.headline}</span></:item>
+              <:item label="Details"><span>{@remote_jwks_summary.detail}</span></:item>
+              <:item label="Next step"><span>{@remote_jwks_summary.next_step}</span></:item>
+              <:item label="Ownership"><span>{@remote_jwks_summary.ownership}</span></:item>
+              <:item :if={@remote_jwks_summary.incident} label="Incident class">
+                <code>{@remote_jwks_summary.incident.class}</code>
+              </:item>
+              <:item :if={@remote_jwks_summary.command_hint} label="Support command">
+                <code>{@remote_jwks_summary.command_hint}</code>
+              </:item>
+            </AdminComponents.description_list>
+          </div>
 
-        <h3 style="margin-top: 0;">Logout propagation</h3>
-        <div style="display: grid; grid-template-columns: minmax(200px, max-content) 1fr; gap: var(--ls-space-2) var(--ls-space-4); margin-bottom: var(--ls-space-4);">
-          <strong style="color: var(--ls-color-gray-700);">Back-channel logout URI</strong> 
-          <code>{value_or_not_configured(@client.backchannel_logout_uri)}</code>
-          
-          <strong style="color: var(--ls-color-gray-700);">Back-channel session required</strong> 
-          <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
-          
-          <strong style="color: var(--ls-color-gray-700);">Front-channel logout URI</strong> 
-          <code>{value_or_not_configured(@client.frontchannel_logout_uri)}</code>
-          
-          <strong style="color: var(--ls-color-gray-700);">Front-channel session required</strong> 
-          <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
-        </div>
-        <div class="lockspire-admin-help" style="margin-bottom: var(--ls-space-6);">
-          <p>These logout propagation URIs stay separate from post-logout redirect URIs.</p>
-          <p>Back-channel delivery stays durable through the protocol-owned <code>/end_session/complete</code> flow.</p>
-          <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
-        </div>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
+                Rotate client secret
+              </.link>
+            </:primary>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.provenance == :self_registered} patch={show_path(@client.client_id, :rotate_registration_access_token)}>
+                Rotate registration access token
+              </.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </AdminComponents.pane>
 
-        <h3 style="margin-top: 0;">Allowed scopes</h3>
-        <div style="display: flex; gap: var(--ls-space-2); flex-wrap: wrap; margin-bottom: var(--ls-space-6);">
-          <%= for scope <- @client.allowed_scopes do %>
-            <span class="lockspire-admin-badge lockspire-admin-badge-disabled">{scope}</span>
-          <% end %>
-        </div>
+        <AdminComponents.pane
+          title="Endpoints and logout"
+          subtitle="Browser destinations are separate from RP cleanup endpoints."
+        >
+          <AdminComponents.description_list>
+            <:item label="Redirect URIs">
+              <ul class="lockspire-admin-value-list">
+                <%= for redirect_uri <- @client.redirect_uris do %>
+                  <li><AdminComponents.long_value value={redirect_uri} kind={:url} /></li>
+                <% end %>
+              </ul>
+            </:item>
+            <:item label="Post-logout redirect URIs">
+              <p class="lockspire-admin-help">
+                Post-logout redirect URIs are browser destinations after RP-initiated logout.
+              </p>
+              <ul class="lockspire-admin-value-list">
+                <%= for uri <- @client.post_logout_redirect_uris do %>
+                  <li><AdminComponents.long_value value={uri} kind={:url} /></li>
+                <% end %>
+              </ul>
+            </:item>
+            <:item label="Back-channel logout URI">
+              <AdminComponents.long_value
+                value={value_or_not_configured(@client.backchannel_logout_uri)}
+                kind={:url}
+              />
+            </:item>
+            <:item label="Back-channel session required">
+              <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
+            </:item>
+            <:item label="Front-channel logout URI">
+              <AdminComponents.long_value
+                value={value_or_not_configured(@client.frontchannel_logout_uri)}
+                kind={:url}
+              />
+            </:item>
+            <:item label="Front-channel session required">
+              <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
+            </:item>
+          </AdminComponents.description_list>
+          <div class="lockspire-admin-help lockspire-admin-help-block">
+            <p>Logout propagation URIs are RP cleanup endpoints.</p>
+            <p>These logout propagation endpoints stay separate from browser destinations.</p>
+            <p>
+              Back-channel delivery stays durable through the protocol-owned
+              <code>/end_session/complete</code>
+              flow.
+            </p>
+            <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
+          </div>
+          <AdminComponents.action_group>
+            <:primary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
+                Edit post-logout redirect URIs
+              </.link>
+            </:primary>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
+                Edit logout propagation URIs
+              </.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </AdminComponents.pane>
 
-        <div class="lockspire-admin-actions" style="flex-wrap: wrap;">
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :edit)}>Edit metadata</.link>
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
-            Edit logout propagation
-          </.link>
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
-          <.link class="lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
-            Edit post-logout redirect URIs
-          </.link>
-          <.link class="lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
-            Rotate secret
-          </.link>
-          <button class="lockspire-admin-btn-secondary" style="border-color: var(--ls-color-danger-bg); color: var(--ls-color-danger-text);" phx-click="toggle_client" type="button">
-            {if @client.active, do: "Disable client", else: "Enable client"}
-          </button>
-        </div>
-      </AdminComponents.section_card>
+        <AdminComponents.pane
+          title="DCR and RAT context"
+          subtitle="DCR onboarding, self-registered provenance, allowed scopes, and RAT handling."
+        >
+          <:status>
+            <AdminComponents.status_badge status={@client.provenance} />
+          </:status>
+          <AdminComponents.description_list>
+            <:item label="Provenance">
+              <code>{@client.provenance}</code>
+            </:item>
+            <:item :if={@client.provenance == :self_registered} label="Registration Client URI">
+              <AdminComponents.long_value
+                value={@client.registration_client_uri || "N/A"}
+                kind={:url}
+              />
+            </:item>
+            <:item :if={@client.provenance == :self_registered} label="Registration access token">
+              <AdminComponents.long_value value="redacted" kind={:token} redacted />
+            </:item>
+            <:item label="Allowed scopes">
+              <AdminComponents.badge_group>
+                <%= for scope <- @client.allowed_scopes do %>
+                  <span class="lockspire-admin-badge lockspire-admin-badge-disabled">{scope}</span>
+                <% end %>
+              </AdminComponents.badge_group>
+            </:item>
+          </AdminComponents.description_list>
+          <p :if={@client.provenance == :self_registered} class="lockspire-admin-help">
+            Self-registered client (DCR). Registration access token rotation is grouped with credential actions above.
+          </p>
+          <AdminComponents.action_group>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/dcr"}>Review DCR onboarding</.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </AdminComponents.pane>
+
+        <AdminComponents.pane
+          title="Support pivots"
+          subtitle="Use stable identifiers to review adjacent support and operate surfaces without inventing new filters."
+        >
+          <AdminComponents.description_list>
+            <:item label="Client pivot">
+              <AdminComponents.long_value value={@client.client_id} kind={:id} />
+            </:item>
+            <:item label="Review context">
+              <span>
+                Use this client ID when reviewing token, consent, and logout delivery surfaces.
+                No client-specific support mutation is introduced here.
+              </span>
+            </:item>
+          </AdminComponents.description_list>
+          <AdminComponents.action_group>
+            <:secondary>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/tokens"}>Review tokens</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/consents"}>Review consent grants</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/logouts"}>Review logout deliveries</.link>
+            </:secondary>
+          </AdminComponents.action_group>
+        </AdminComponents.pane>
+
+        <AdminComponents.pane
+          title="Lifecycle and destructive actions"
+          subtitle="Client availability changes are explicit and keep the existing toggle event."
+        >
+          <:status>
+            <AdminComponents.status_badge status={status_for(@client)} />
+          </:status>
+          <AdminComponents.lifecycle_row
+            title={if @client.active, do: "Disable client", else: "Enable client"}
+            state={status_for(@client)}
+            timestamp={@client.disabled_at}
+            actor={@client.disabled_by}
+            consequence={
+              if @client.active,
+                do: "Disabling this client blocks future OAuth/OIDC use until it is enabled again.",
+                else: "Enabling this client allows configured OAuth/OIDC use to resume."
+            }
+          >
+          </AdminComponents.lifecycle_row>
+
+          <AdminComponents.confirmation_panel
+            title={if @client.active, do: "Confirm client disable", else: "Confirm client enable"}
+            variant={if @client.active, do: :danger, else: :warning}
+            errors={@lifecycle_errors}
+          >
+            <:body>
+              <form class="lockspire-admin-form-stack" phx-submit="toggle_client">
+                <label class="lockspire-admin-checkbox-field">
+                  <input type="checkbox" name="toggle[confirm]" value="true" />
+                  <span>
+                    <%= if @client.active do %>
+                      Disable
+                      <AdminComponents.long_value value={@client.client_id} kind={:id} />
+                      so future OAuth/OIDC requests for this client are blocked until an operator enables it again.
+                    <% else %>
+                      Enable
+                      <AdminComponents.long_value value={@client.client_id} kind={:id} />
+                      so configured OAuth/OIDC use can resume.
+                    <% end %>
+                  </span>
+                </label>
+                <AdminComponents.action_bar>
+                  <AdminComponents.admin_button
+                    type="submit"
+                    variant={if @client.active, do: :danger, else: :secondary}
+                  >
+                    {if @client.active, do: "Disable client", else: "Enable client"}
+                  </AdminComponents.admin_button>
+                </AdminComponents.action_bar>
+              </form>
+            </:body>
+          </AdminComponents.confirmation_panel>
+        </AdminComponents.pane>
+      </div>
 
       <AdminComponents.section_card
         :if={not is_nil(@form_mode)}
@@ -386,48 +608,45 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        :if={@client.provenance == :self_registered}
-        title="Self-registered client (DCR)"
-        subtitle="This client was dynamically registered by a third party."
-      >
-        <p>Registration Client URI: <code>{@client.registration_client_uri || "N/A"}</code></p>
-        <div class="lockspire-admin-actions">
-          <.link patch={show_path(@client.client_id, :rotate_registration_access_token)}>
-            Rotate Registration Access Token (RAT)
-          </.link>
-        </div>
-      </AdminComponents.section_card>
-
-      <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
-        title="Rotate Registration Access Token (RAT)"
-        subtitle="Rotation is explicit and reveals the new RAT once."
+        title="Rotate registration access token"
+        subtitle="Rotation is explicit: the previous RAT stops being current and plaintext is shown once."
       >
         <section class="lockspire-admin-form-shell">
           <header>
-            <p>Lockspire reveals the new RAT once. It is redacted immediately after this state.</p>
+            <p>
+              Plaintext is shown once. The previous RAT stops being current after rotation;
+              Lockspire keeps only the durable redacted state.
+            </p>
           </header>
 
-          <ul :if={@rotation_errors != []} class="lockspire-admin-errors">
-            <%= for error <- @rotation_errors do %>
-              <li>{inspect(error)}</li>
-            <% end %>
-          </ul>
+          <AdminComponents.error_list errors={@rotation_errors} />
 
-          <div :if={@revealed_rat} class="lockspire-admin-secret-reveal">
-            <h3>New Registration Access Token</h3>
-            <code>{@revealed_rat}</code>
-            <p>Copy it now. Lockspire does not store or re-show plaintext tokens.</p>
-            <button type="button" phx-click="acknowledge_rat">I have copied the token</button>
+          <div :if={@revealed_rat}>
+            <AdminComponents.copy_once_secret_panel
+              title="New Registration Access Token"
+              body="Plaintext is shown once. Copy it now; Lockspire does not store or re-show plaintext tokens."
+              label="Registration access token"
+              value={@revealed_rat}
+            />
+            <AdminComponents.action_bar>
+              <AdminComponents.admin_button phx-click="acknowledge_rat">
+                I have copied the token
+              </AdminComponents.admin_button>
+            </AdminComponents.action_bar>
           </div>
 
           <form :if={is_nil(@revealed_rat)} phx-submit="rotate_rat">
-            <label>
+            <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="rotate[confirm]" value="true" />
-              I understand the previous RAT stops being the current credential after rotation.
+              <span>I understand the previous RAT stops being the current credential after rotation.</span>
             </label>
 
-            <button type="submit">Rotate RAT</button>
+            <AdminComponents.action_bar>
+              <AdminComponents.admin_button type="submit" variant={:danger}>
+                Rotate registration access token
+              </AdminComponents.admin_button>
+            </AdminComponents.action_bar>
           </form>
         </section>
       </AdminComponents.section_card>
@@ -507,7 +726,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       {:ok, %Client{} = client} ->
         assign(socket,
           client: client,
-          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+          lifecycle_errors: []
         )
 
       {:error, _reason} ->

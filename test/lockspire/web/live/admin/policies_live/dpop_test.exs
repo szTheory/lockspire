@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
   alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.PoliciesLive.Dpop
 
   @endpoint Lockspire.Web.Endpoint
@@ -60,7 +61,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
   end
 
   test "router exposes global DPoP policy management route" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/policies/dpop", Dpop))
   end
@@ -76,6 +77,61 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
     assert html =~ "client inherits"
     assert html =~ "client uses bearer"
     assert html =~ "client requires DPoP"
+  end
+
+  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 DPoP posture explains global sender constraint scope" do
+    assert {:ok, _policy} = ServerPolicy.put_dpop_policy(:dpop)
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dpop")
+
+    HtmlAssertions.assert_no_duplicate_ids(html)
+    HtmlAssertions.assert_links_have_hrefs(html)
+    HtmlAssertions.assert_label_targets_exist(html)
+    HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
+
+    assert html =~ "Configure"
+    assert html =~ "Global DPoP policy"
+    assert html =~ "Sender constraint posture"
+    assert html =~ "Clients that inherit"
+    assert html =~ "Next safe action"
+    assert html =~ "Save global DPoP policy"
+    assert html =~ "global issuer DPoP default"
+    assert html =~ "future token-bound requests"
+    assert html =~ "Existing client overrides stay on their client policy routes."
+
+    for href <- policy_nav_hrefs() do
+      HtmlAssertions.assert_has_link(html, href)
+    end
+
+    HtmlAssertions.assert_no_text(html, [
+      "Reset nonce",
+      "Inspect proof",
+      "Debug token",
+      "Fetch remote key",
+      "Remote key fetch",
+      "Raw proof",
+      "Proof replay",
+      "Create client",
+      "Disable client",
+      "Enable client",
+      "Rotate client secret",
+      "Rotate registration access token",
+      "per-client mutation",
+      "host tenant policy",
+      "host-owned product policy",
+      "Tenant policy editor",
+      "developer portal",
+      "public theming",
+      "AI judge",
+      "AI gate",
+      "browser gate",
+      "Reveal token",
+      "Export credential",
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage"
+    ])
   end
 
   test "saving global DPoP policy persists change" do
@@ -99,11 +155,45 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
 
     assert html =~ "dpop_policy"
     assert html =~ "invalid_dpop_policy"
+    HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
     assert {:ok, %{dpop_policy: :bearer}} = ServerPolicy.get_server_policy()
   end
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp forbidden_secret_samples do
+    [
+      "real-client-secret",
+      "production-secret",
+      "prod-access-token",
+      "prod-refresh-token",
+      "sk_live_",
+      "pk_live_",
+      "eyJhbGci",
+      "BEGIN PRIVATE KEY"
+    ]
+  end
+
+  defp backend_leak_samples do
+    [
+      "Postgrex",
+      "Ecto.Changeset",
+      "Lockspire.Storage",
+      "stacktrace",
+      "constraint violation",
+      "private_jwk_encrypted"
+    ]
+  end
+
+  defp policy_nav_hrefs do
+    [
+      "/admin/policies/par",
+      "/admin/policies/security-profile",
+      "/admin/policies/dpop",
+      "/admin/policies/dcr"
+    ]
   end
 
   defp live_route?(route, path, view) do

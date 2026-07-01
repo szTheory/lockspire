@@ -1,0 +1,530 @@
+#!/usr/bin/env sh
+set -eu
+
+usage() {
+  cat <<'USAGE'
+Usage: examples/adoption_demo/bin/docker-up [options]
+
+Start the adoption demo with preflight checks and copy-pasteable output.
+
+Default mode starts the demo behind the repo-local Traefik helper at:
+  http://lockspire-demo.localhost
+
+Options:
+  --direct           Use direct localhost port publishing instead of Traefik.
+  --traefik         Use Traefik hostname routing. This is the default.
+  --project NAME    Compose project name for containers, networks, and volumes.
+  --host HOST       Traefik hostname. Default: lockspire-demo.localhost.
+  --port PORT       Direct host port, or internal Phoenix port in Traefik mode.
+  --no-proxy-start  Do not start the repo-local Traefik helper.
+  --detach          Start containers in the background, wait for readiness, and print demo info.
+  --print-command   Print the resolved docker compose command and exit.
+  -h, --help        Show this help.
+
+Examples:
+  examples/adoption_demo/bin/docker-up
+  examples/adoption_demo/bin/docker-up --direct
+  examples/adoption_demo/bin/docker-up --direct --port 4101 --project lockspire-adoption-demo-alt
+  examples/adoption_demo/bin/docker-up --host lockspire-demo.localhost
+USAGE
+}
+
+mode="${LOCKSPIRE_DEMO_DOCKER_MODE:-traefik}"
+project="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+host="${LOCKSPIRE_DEMO_TRAEFIK_HOST:-lockspire-demo.localhost}"
+port="${LOCKSPIRE_DEMO_APP_PORT:-4100}"
+base_url="${LOCKSPIRE_DEMO_BASE_URL:-}"
+network="${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}"
+router="${LOCKSPIRE_DEMO_TRAEFIK_ROUTER:-}"
+service="${LOCKSPIRE_DEMO_TRAEFIK_SERVICE:-}"
+proxy_start=1
+print_command=0
+detach=0
+explicit_port=0
+explicit_base_url=0
+explicit_network=0
+
+if [ -n "${LOCKSPIRE_DEMO_APP_PORT:-}" ]; then
+  explicit_port=1
+fi
+
+if [ -n "${LOCKSPIRE_DEMO_BASE_URL:-}" ]; then
+  explicit_base_url=1
+fi
+
+if [ -n "${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-}" ]; then
+  explicit_network=1
+fi
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --direct)
+      mode="direct"
+      shift
+      ;;
+    --traefik)
+      mode="traefik"
+      shift
+      ;;
+    --project)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --project" >&2
+        usage >&2
+        exit 1
+      fi
+      project="$2"
+      shift 2
+      ;;
+    --host)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --host" >&2
+        usage >&2
+        exit 1
+      fi
+      host="$2"
+      shift 2
+      ;;
+    --port)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --port" >&2
+        usage >&2
+        exit 1
+      fi
+      port="$2"
+      explicit_port=1
+      shift 2
+      ;;
+    --no-proxy-start)
+      proxy_start=0
+      shift
+      ;;
+    --detach)
+      detach=1
+      shift
+      ;;
+    --print-command)
+      print_command=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "$mode" in
+  direct | traefik) ;;
+  *)
+    echo "Unknown mode: ${mode}. Use --direct or --traefik." >&2
+    exit 1
+    ;;
+esac
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "git is required to locate the Lockspire repo root" >&2
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required to start the adoption demo" >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required for adoption demo port preflight checks" >&2
+  exit 1
+fi
+
+if ! docker version >/dev/null 2>&1; then
+  echo "Docker is installed but the daemon is not reachable" >&2
+  exit 1
+fi
+
+if ! docker compose version >/dev/null 2>&1; then
+  echo "docker compose is required to start the adoption demo" >&2
+  exit 1
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
+
+normalize_url() {
+  printf '%s' "$1" | sed 's:/*$::'
+}
+
+port_is_busy() {
+  python3 - "$1" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try:
+    sock.bind(("127.0.0.1", port))
+except OSError:
+    sys.exit(0)
+finally:
+    sock.close()
+
+sys.exit(1)
+PY
+}
+
+find_free_port() {
+  python3 - "$1" <<'PY'
+import socket
+import sys
+
+start = int(sys.argv[1])
+for port in range(start, start + 100):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", port))
+    except OSError:
+        continue
+    finally:
+        sock.close()
+    print(port)
+    sys.exit(0)
+
+sys.exit("No free localhost port found in the next 100 ports")
+PY
+}
+
+tcp_port_has_listener() {
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+  else
+    docker ps --format '{{.Ports}}' | grep -Eq "(^|[ ,])([0-9.]+:)?$1->"
+  fi
+}
+
+traefik_ports_busy() {
+  tcp_port_has_listener 80 || tcp_port_has_listener 8080
+}
+
+compatible_traefik_networks() {
+  docker ps --format '{{.Names}}' | while IFS= read -r container; do
+    [ -n "$container" ] || continue
+
+    image="$(docker inspect "$container" --format '{{.Config.Image}}' 2>/dev/null || true)"
+    labels="$(docker inspect "$container" --format '{{json .Config.Labels}}' 2>/dev/null || true)"
+    args="$(docker inspect "$container" --format '{{range .Args}}{{.}} {{end}}' 2>/dev/null || true)"
+    identity="$(printf '%s %s' "$image" "$labels" | tr '[:upper:]' '[:lower:]')"
+
+    case "$identity" in
+      *traefik*) ;;
+      *) continue ;;
+    esac
+
+    printf '%s\n' "$args" | grep -Eq -- '(^| )--providers\.docker(=true)?( |$)' || continue
+    docker port "$container" 80/tcp 2>/dev/null | grep -Eq '(^|:)80$' || continue
+
+    docker inspect "$container" --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}' 2>/dev/null |
+      while IFS= read -r candidate; do
+        case "$candidate" in
+          "" | bridge | host | none) ;;
+          *) printf '%s\n' "$candidate" ;;
+        esac
+      done
+  done | awk '!seen[$0]++'
+}
+
+network_list_contains() {
+  printf '%s\n' "$1" | grep -Fxq "$2"
+}
+
+print_detected_networks() {
+  detected="$1"
+
+  if [ -n "$detected" ]; then
+    echo "Detected compatible Traefik networks:" >&2
+    printf '%s\n' "$detected" | sed 's/^/  /' >&2
+  fi
+}
+
+if [ "$mode" = "direct" ]; then
+  if port_is_busy "$port"; then
+    if [ "$explicit_port" -eq 1 ] || [ "$explicit_base_url" -eq 1 ]; then
+      cat >&2 <<ERROR
+Port ${port} is already in use.
+
+Use Traefik hostname mode:
+  examples/adoption_demo/bin/docker-up
+
+Or choose an explicit direct port and matching project:
+  examples/adoption_demo/bin/docker-up --direct --port 4101 --project lockspire-adoption-demo-alt
+ERROR
+      exit 1
+    fi
+
+    next_port="$(find_free_port "$port")"
+    echo "Port ${port} is already in use; using ${next_port} for direct mode."
+    port="$next_port"
+  fi
+
+  if [ -z "$base_url" ]; then
+    base_url="http://127.0.0.1:${port}"
+  fi
+else
+  if [ -z "$base_url" ]; then
+    base_url="http://${host}"
+  fi
+
+  if [ -z "$router" ]; then
+    router="$project"
+  fi
+
+  if [ -z "$service" ]; then
+    service="$project"
+  fi
+fi
+
+base_url="$(normalize_url "$base_url")"
+
+if [ "$mode" = "traefik" ] && [ "$explicit_base_url" -eq 1 ]; then
+  expected_base_url="http://${host}"
+
+  if [ "$base_url" != "$expected_base_url" ]; then
+    cat >&2 <<ERROR
+LOCKSPIRE_DEMO_BASE_URL (${base_url}) does not match the Traefik host (${expected_base_url}).
+
+Use matching values:
+  examples/adoption_demo/bin/docker-up --host ${host}
+
+Or clear LOCKSPIRE_DEMO_BASE_URL and let the launcher set it.
+ERROR
+    exit 1
+  fi
+fi
+
+print_direct_command() {
+  up_args="up --build"
+  if [ "$detach" -eq 1 ]; then
+    up_args="${up_args} -d"
+  fi
+
+  cat <<COMMAND
+COMPOSE_PROJECT_NAME=${project} \\
+LOCKSPIRE_DEMO_APP_PORT=${port} \\
+LOCKSPIRE_DEMO_BASE_URL=${base_url} \\
+docker compose -f examples/adoption_demo/docker-compose.yml ${up_args}
+COMMAND
+}
+
+print_traefik_command() {
+  up_args="up --build"
+  if [ "$detach" -eq 1 ]; then
+    up_args="${up_args} -d"
+  fi
+
+  cat <<COMMAND
+COMPOSE_PROJECT_NAME=${project} \\
+LOCKSPIRE_DEMO_APP_PORT=${port} \\
+LOCKSPIRE_DEMO_BASE_URL=${base_url} \\
+LOCKSPIRE_DEMO_TRAEFIK_HOST=${host} \\
+LOCKSPIRE_DEMO_TRAEFIK_ROUTER=${router} \\
+LOCKSPIRE_DEMO_TRAEFIK_SERVICE=${service} \\
+LOCKSPIRE_DEMO_TRAEFIK_NETWORK=${network} \\
+docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml ${up_args}
+COMMAND
+}
+
+wait_for_public_url() {
+  attempt=1
+
+  while [ "$attempt" -le 90 ]; do
+    if curl -fsS "${base_url}/" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+
+  echo "Adoption demo did not become ready at ${base_url}" >&2
+  return 1
+}
+
+print_running_info() {
+  COMPOSE_PROJECT_NAME="$project" \
+    docker compose --project-name "$project" -f examples/adoption_demo/docker-compose.yml exec -T web ./bin/docker-info
+}
+
+if [ "$print_command" -eq 1 ]; then
+  if [ "$mode" = "direct" ]; then
+    print_direct_command
+  else
+    print_traefik_command
+  fi
+  exit 0
+fi
+
+if [ "$mode" = "traefik" ]; then
+  if [ "$proxy_start" -eq 1 ]; then
+    if LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" docker compose -f tools/traefik/docker-compose.yml ps --status running -q traefik 2>/dev/null | grep -q .; then
+      echo "Reusing repo-local Traefik helper on network ${network}."
+    elif traefik_ports_busy; then
+      detected_networks="$(compatible_traefik_networks)"
+
+      if [ "$explicit_network" -eq 1 ]; then
+        if network_list_contains "$detected_networks" "$network"; then
+          echo "Reusing existing compatible Traefik proxy on configured network ${network}."
+        else
+          cat >&2 <<ERROR
+Ports 80 or 8080 are already in use, but no compatible Docker Traefik proxy was found on network ${network}.
+
+Set LOCKSPIRE_DEMO_TRAEFIK_NETWORK to the existing proxy network and skip helper startup:
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK=proxy examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
+
+Or use direct mode:
+  examples/adoption_demo/bin/docker-up --direct --port 4101
+ERROR
+          print_detected_networks "$detected_networks"
+          exit 1
+        fi
+      else
+        detected_count="$(printf '%s\n' "$detected_networks" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+        case "$detected_count" in
+          1)
+            network="$(printf '%s\n' "$detected_networks" | sed -n '1p')"
+            echo "Detected existing compatible Traefik proxy on network ${network}; reusing it instead of starting the repo-local helper."
+            ;;
+          0)
+            cat >&2 <<ERROR
+Ports 80 or 8080 are already in use, but no compatible Docker Traefik proxy with Docker provider support was found.
+
+If another proxy owns those ports, attach Lockspire to its Docker network:
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK=<network> examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
+
+Or use direct mode:
+  examples/adoption_demo/bin/docker-up --direct --port 4101
+ERROR
+            exit 1
+            ;;
+          *)
+            cat >&2 <<ERROR
+Multiple compatible Traefik proxy networks are available, so the launcher cannot choose safely.
+
+Choose the proxy network explicitly:
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK=<network> examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
+ERROR
+            print_detected_networks "$detected_networks"
+            exit 1
+            ;;
+        esac
+      fi
+    else
+      if ! docker network inspect "$network" >/dev/null 2>&1; then
+        docker network create "$network" >/dev/null
+        echo "Created Docker network ${network} for local hostname routing."
+      fi
+
+      echo "Starting repo-local Traefik helper on http://127.0.0.1 and dashboard http://127.0.0.1:8080."
+      if ! LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" docker compose -f tools/traefik/docker-compose.yml up -d; then
+        cat >&2 <<ERROR
+Could not start the repo-local Traefik helper.
+
+If another proxy already owns port 80 or 8080, start Lockspire against that proxy:
+  examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
+
+Or use direct mode:
+  examples/adoption_demo/bin/docker-up --direct --port 4101
+ERROR
+        exit 1
+      fi
+    fi
+  else
+    if ! docker network inspect "$network" >/dev/null 2>&1; then
+      cat >&2 <<ERROR
+Cannot use --no-proxy-start because Docker network ${network} does not exist.
+
+Set LOCKSPIRE_DEMO_TRAEFIK_NETWORK to the existing proxy network, for example:
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK=proxy examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
+ERROR
+      exit 1
+    fi
+
+    echo "Skipping Traefik helper startup; expecting an existing proxy on network ${network}."
+  fi
+fi
+
+cat <<INFO
+Starting Lockspire adoption demo
+  Mode: ${mode}
+  Project: ${project}
+  Base URL: ${base_url}
+
+Open after readiness:
+  App: ${base_url}
+  Admin: ${base_url}/lockspire/admin
+  Developer apps: ${base_url}/developer/apps
+  Device verification: ${base_url}/verify
+
+Smoke:
+  COMPOSE_PROJECT_NAME=${project} make demo-smoke
+
+Info:
+  COMPOSE_PROJECT_NAME=${project} make demo-info
+
+Logs:
+  COMPOSE_PROJECT_NAME=${project} make demo-logs
+
+Stop:
+  COMPOSE_PROJECT_NAME=${project} make demo-stop
+
+Explicit smoke command:
+  LOCKSPIRE_DEMO_BASE_URL=${base_url} scripts/demo/adoption_smoke.sh
+
+Resolved Compose command:
+INFO
+
+if [ "$mode" = "direct" ]; then
+  print_direct_command
+  if [ "$detach" -eq 1 ]; then
+    COMPOSE_PROJECT_NAME="$project" \
+      LOCKSPIRE_DEMO_APP_PORT="$port" \
+      LOCKSPIRE_DEMO_BASE_URL="$base_url" \
+      docker compose -f examples/adoption_demo/docker-compose.yml up --build -d
+
+    wait_for_public_url
+    print_running_info
+  else
+    COMPOSE_PROJECT_NAME="$project" \
+      LOCKSPIRE_DEMO_APP_PORT="$port" \
+      LOCKSPIRE_DEMO_BASE_URL="$base_url" \
+      docker compose -f examples/adoption_demo/docker-compose.yml up --build
+  fi
+else
+  print_traefik_command
+  if [ "$detach" -eq 1 ]; then
+    COMPOSE_PROJECT_NAME="$project" \
+      LOCKSPIRE_DEMO_APP_PORT="$port" \
+      LOCKSPIRE_DEMO_BASE_URL="$base_url" \
+      LOCKSPIRE_DEMO_TRAEFIK_HOST="$host" \
+      LOCKSPIRE_DEMO_TRAEFIK_ROUTER="$router" \
+      LOCKSPIRE_DEMO_TRAEFIK_SERVICE="$service" \
+      LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" \
+      docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml up --build -d
+
+    wait_for_public_url
+    print_running_info
+  else
+    COMPOSE_PROJECT_NAME="$project" \
+      LOCKSPIRE_DEMO_APP_PORT="$port" \
+      LOCKSPIRE_DEMO_BASE_URL="$base_url" \
+      LOCKSPIRE_DEMO_TRAEFIK_HOST="$host" \
+      LOCKSPIRE_DEMO_TRAEFIK_ROUTER="$router" \
+      LOCKSPIRE_DEMO_TRAEFIK_SERVICE="$service" \
+      LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" \
+      docker compose -f examples/adoption_demo/docker-compose.yml -f examples/adoption_demo/docker-compose.traefik.yml up --build
+  fi
+fi

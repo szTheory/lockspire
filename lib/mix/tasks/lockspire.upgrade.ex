@@ -17,6 +17,8 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     scope: :string,
     path: :string,
     mount_path: :string,
+    storage_prefix: :string,
+    oban_prefix: :string,
     dry_run: :boolean,
     help: :boolean
   ]
@@ -38,10 +40,11 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
 
   def help do
     """
-    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--dry-run]
+    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--dry-run]
 
     Upgrades only manifest-tracked Lockspire-managed scaffolding.
     Host-owned seams stay untouched and drifted managed files are refused with manual guidance.
+    Pass --storage-prefix public --oban-prefix public only for an intentional public-schema install.
     """
   end
 

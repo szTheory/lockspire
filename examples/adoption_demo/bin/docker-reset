@@ -1,0 +1,90 @@
+#!/usr/bin/env sh
+set -eu
+
+usage() {
+  cat <<'USAGE'
+Usage: examples/adoption_demo/bin/docker-reset [--project NAME]
+
+Reset active adoption demo Docker volumes.
+
+Modes:
+  --db-only     Reset only the demo database volume.
+  --cache-only  Reset only the Mix deps and _build cache volumes.
+  --all         Reset database and cache volumes. This is the default.
+
+The default project is COMPOSE_PROJECT_NAME, or lockspire-adoption-demo when
+COMPOSE_PROJECT_NAME is not set. Pass --project NAME to match docker compose
+--project-name NAME / -p NAME startup.
+USAGE
+}
+
+project="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+reset_db=1
+reset_cache=1
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --project)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --project" >&2
+        usage >&2
+        exit 1
+      fi
+      project="$2"
+      shift 2
+      ;;
+    --db-only)
+      reset_db=1
+      reset_cache=0
+      shift
+      ;;
+    --cache-only)
+      reset_db=0
+      reset_cache=1
+      shift
+      ;;
+    --all)
+      reset_db=1
+      reset_cache=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "git is required to locate the Lockspire repo root" >&2
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required to reset the adoption demo" >&2
+  exit 1
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
+
+docker compose --project-name "$project" -f examples/adoption_demo/docker-compose.yml down
+
+if [ "$reset_db" -eq 1 ]; then
+  for suffix in db_data; do
+    docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
+  done
+fi
+
+if [ "$reset_cache" -eq 1 ]; then
+  for suffix in deps_volume build_volume; do
+    docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
+  done
+fi
+
+echo "Reset adoption demo Docker project ${project}"

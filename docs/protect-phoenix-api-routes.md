@@ -2,9 +2,7 @@
 
 Lockspire issues RFC 9068 `at+jwt` access tokens by default. `Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes. Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable. To opt a client back to opaque, see the admin Client Detail page.
 
-<!-- PHASE-102: delete this caveat sentence when issuance flip ships -->
-
-This page describes the contract `Lockspire.Plug.VerifyToken` enforces; the runtime narrowing and the default-issuance flip land in v1.27. Until v1.27 is fully shipped, opaque tokens may still be silently accepted on these routes.
+This page describes the contract `Lockspire.Plug.VerifyToken` enforces after the v1.27 runtime narrowing and default-issuance flip.
 
 For the public support contract around this surface, see [`docs/supported-surface.md`](supported-surface.md).
 

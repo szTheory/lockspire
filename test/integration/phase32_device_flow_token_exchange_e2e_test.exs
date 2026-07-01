@@ -3,12 +3,15 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
 
   @moduletag :integration
   @endpoint GeneratedHostAppWeb.Endpoint
+  @token_endpoint_uri "https://example.test/lockspire/token"
+  @dpop_client_secret "phase32-device-dpop-secret"
 
   import Phoenix.ConnTest
   import Plug.Conn
 
   alias Lockspire.Domain.Client
   alias Lockspire.JarTestHelpers
+  alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -106,9 +109,10 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     assert replay_token_body["error"] == "invalid_grant"
   end
 
-  test "host-denied device authorization returns authorization_pending (or slow_down) then access_denied", %{
-    client: client
-  } do
+  test "host-denied device authorization returns authorization_pending (or slow_down) then access_denied",
+       %{
+         client: client
+       } do
     device_code_conn =
       build_conn()
       |> post("/lockspire/device/code", %{
@@ -131,7 +135,11 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
       })
 
     assert pending_conn.status == 400
-    assert Jason.decode!(pending_conn.resp_body)["error"] in ["authorization_pending", "slow_down"]
+
+    assert Jason.decode!(pending_conn.resp_body)["error"] in [
+             "authorization_pending",
+             "slow_down"
+           ]
 
     # Deny the request
     verification_handle = lookup_verification_handle(device_code_body["device_code"])
@@ -155,15 +163,27 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     assert Jason.decode!(denied_token_conn.resp_body)["error"] == "access_denied"
   end
 
-  test "DPoP-bound device authorization enforces binding through to introspection", %{client: client} do
+  test "DPoP-bound device authorization enforces binding through to introspection" do
     dpop_keys = JarTestHelpers.generate_ec_keys()
 
-    # Enable DPoP on client
-    {:ok, client} = Repository.update_client(client, %{dpop_policy: :dpop})
+    # Use a confidential client so the e2e can authenticate to introspection.
+    {:ok, client} =
+      Repository.register_client(%Client{
+        client_id: "phase32-device-dpop-client",
+        client_secret_hash: Policy.hash_client_secret(@dpop_client_secret),
+        client_type: :confidential,
+        name: "Bedroom TV DPoP",
+        token_endpoint_auth_method: :client_secret_basic,
+        allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+        allowed_scopes: ["profile", "email"],
+        created_at: DateTime.utc_now(),
+        dpop_policy: :dpop
+      })
 
     # Step 1: Start device flow
     device_code_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth(client.client_id, @dpop_client_secret))
       |> post("/lockspire/device/code", %{
         "client_id" => client.client_id,
         "scope" => "profile email"
@@ -181,27 +201,32 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     # Small wait for shared DB state to propagate
     Process.sleep(50)
 
-    # Step 3: Redeem WITH DPoP (nonce dance)
-    # Request 1: No proof -> 401 use_dpop_nonce
+    # Step 3: Redeem WITH DPoP (authorization-server nonce dance)
+    # Request 1: proof without nonce -> 400 use_dpop_nonce + DPoP-Nonce
+    proof_without_nonce =
+      generate_dpop_proof(dpop_keys.private_jwk, "POST", @token_endpoint_uri, nil)
+
     challenge_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth(client.client_id, @dpop_client_secret))
+      |> put_req_header("dpop", proof_without_nonce)
       |> post("/lockspire/token", %{
         "client_id" => client.client_id,
         "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
         "device_code" => device_code_body["device_code"]
       })
 
-    assert challenge_conn.status == 401
-    assert [nonce_challenge] = get_resp_header(challenge_conn, "www-authenticate")
-    assert nonce_challenge =~ "error=\"use_dpop_nonce\""
+    assert challenge_conn.status == 400
+    assert Jason.decode!(challenge_conn.resp_body)["error"] == "use_dpop_nonce"
+    assert get_resp_header(challenge_conn, "www-authenticate") == []
     assert [retry_nonce] = get_resp_header(challenge_conn, "dpop-nonce")
 
     # Request 2: Valid proof + nonce -> 200
-    token_url = GeneratedHostAppWeb.Endpoint.url() <> "/lockspire/token"
-    proof = generate_dpop_proof(dpop_keys.private_jwk, "POST", token_url, retry_nonce)
+    proof = generate_dpop_proof(dpop_keys.private_jwk, "POST", @token_endpoint_uri, retry_nonce)
 
     first_token_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth(client.client_id, @dpop_client_secret))
       |> put_req_header("dpop", proof)
       |> post("/lockspire/token", %{
         "client_id" => client.client_id,
@@ -217,6 +242,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     # Step 4: Verify binding via introspection
     introspection_conn =
       build_conn()
+      |> put_req_header("authorization", basic_auth(client.client_id, @dpop_client_secret))
       |> post("/lockspire/introspect", %{"token" => first_token_body["access_token"]})
 
     assert introspection_conn.status == 200
@@ -229,17 +255,21 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
   defp bypass_poll_interval(device_code) do
     hash = Lockspire.Security.Policy.hash_token(device_code)
     import Ecto.Query
+
     Lockspire.Storage.Ecto.DeviceAuthorizationRecord
     |> where(device_code_hash: ^hash)
-    |> Lockspire.TestRepo.update_all(set: [
-         effective_poll_interval_seconds: 0,
-         next_poll_allowed_at: ~U[2000-01-01 00:00:00Z]
-       ])
+    |> Lockspire.TestRepo.update_all(
+      set: [
+        effective_poll_interval_seconds: 0,
+        next_poll_allowed_at: ~U[2000-01-01 00:00:00Z]
+      ]
+    )
   end
 
   defp lookup_verification_handle(device_code) do
     hash = Lockspire.Security.Policy.hash_token(device_code)
     import Ecto.Query
+
     Lockspire.Storage.Ecto.DeviceAuthorizationRecord
     |> where(device_code_hash: ^hash)
     |> Lockspire.TestRepo.one()
@@ -269,5 +299,9 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
       |> JOSE.JWS.compact()
 
     token
+  end
+
+  defp basic_auth(client_id, client_secret) do
+    "Basic " <> Base.encode64("#{client_id}:#{client_secret}")
   end
 end

@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   alias Lockspire.Admin
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
 
   @endpoint Lockspire.Web.Endpoint
@@ -61,7 +62,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   end
 
   test "router exposes per-client security profile edit route" do
-    routes = Phoenix.Router.routes(Lockspire.Web.Router)
+    routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/security-profile", Show))
   end
@@ -176,6 +177,257 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
+  test "client detail groups routine, credential, endpoint, posture, and lifecycle actions",
+       %{client: client} do
+    assert {:ok, self_registered_client} =
+             Repository.register_client(%Client{
+               client_id: "self-registered-action-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "Self Registered Action Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_access_token_hash: "sha256:rat:show",
+               registration_client_uri:
+                 "https://issuer.example.com/register/self-registered-action-client",
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/clients/#{self_registered_client.client_id}")
+
+    assert html =~ "lockspire-admin-entity-header"
+    assert html =~ "lockspire-admin-pane"
+    assert html =~ "lockspire-admin-status-cluster"
+    assert html =~ "lockspire-admin-long-value"
+    assert html =~ "Review client configuration"
+
+    for group <- [
+          "Identity and current status",
+          "Effective posture",
+          "Credentials and assertion keys",
+          "Endpoints and logout",
+          "DCR and RAT context",
+          "Support pivots",
+          "Lifecycle and destructive actions"
+        ] do
+      assert html =~ group
+    end
+
+    assert html =~ "lockspire-admin-action-group"
+    assert html =~ "lockspire-admin-action-group__primary"
+    assert html =~ "lockspire-admin-action-group__secondary"
+    assert html =~ "lockspire-admin-confirmation-panel"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/edit"
+    assert html =~ "Edit client metadata"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/redirects"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/logout-uris"
+
+    assert html =~
+             "/admin/clients/#{self_registered_client.client_id}/edit?workflow=logout-propagation"
+
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/par-policy"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/security-profile"
+    assert html =~ "/admin/clients/#{self_registered_client.client_id}/rotate-secret"
+
+    assert html =~
+             "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
+
+    assert html =~ "Rotate client secret"
+    assert html =~ "Rotate registration access token"
+    assert html =~ "Registration access token"
+    assert html =~ "Redacted"
+    assert html =~ "Review DCR onboarding"
+    assert html =~ "/admin/dcr"
+    assert html =~ "Edit redirect URIs"
+    assert html =~ "Edit post-logout redirect URIs"
+    assert html =~ "Edit logout propagation URIs"
+    assert html =~ "Edit PAR policy"
+    assert html =~ "Edit security profile"
+    assert html =~ ~s(phx-submit="toggle_client")
+    assert html =~ ~s(name="toggle[confirm]")
+    assert html =~ "Confirm client disable"
+    assert html =~ "Disable client"
+
+    assert html =~
+             "future OAuth/OIDC requests for this client are blocked until an operator enables it again"
+
+    assert html =~ "Registration access token rotation is grouped with credential actions above."
+    refute html =~ "Rotate Registration Access Token (RAT)"
+    refute html =~ "sha256:show:hash"
+    refute html =~ "sha256:rat:show"
+    refute html =~ "client_secret_hash"
+    refute html =~ "registration_access_token_hash"
+  end
+
+  test "client detail keeps long Configure values wrapped and durable credential material redacted",
+       %{client: client} do
+    long_redirect_uri =
+      "https://client.example.com/" <>
+        String.duplicate("deep/redirect-segment/", 7) <>
+        "callback"
+
+    long_post_logout_uri =
+      "https://client.example.com/" <>
+        String.duplicate("post/logout-segment/", 7) <>
+        "complete"
+
+    long_backchannel_uri =
+      "https://client.example.com/" <>
+        String.duplicate("backchannel/logout-segment/", 7) <>
+        "deliver"
+
+    long_frontchannel_uri =
+      "https://client.example.com/" <>
+        String.duplicate("frontchannel/logout-segment/", 7) <>
+        "cleanup"
+
+    long_registration_uri =
+      "https://issuer.example.com/register/" <>
+        String.duplicate("self-registered-partner-", 5) <>
+        "client"
+
+    assert {:ok, long_client} =
+             Repository.register_client(%Client{
+               client_id: "long-configure-client",
+               client_secret_hash: "sha256:long:client:secret:hash",
+               client_type: :confidential,
+               name: "Long Configure Client",
+               redirect_uris: [long_redirect_uri],
+               post_logout_redirect_uris: [long_post_logout_uri],
+               backchannel_logout_uri: long_backchannel_uri,
+               frontchannel_logout_uri: long_frontchannel_uri,
+               allowed_scopes: ["openid", "profile"],
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_access_token_hash: "sha256:long:rat:hash",
+               registration_client_uri: long_registration_uri,
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    html = render_show_html(long_client.client_id)
+
+    assert html =~ long_redirect_uri
+    assert html =~ long_post_logout_uri
+    assert html =~ long_backchannel_uri
+    assert html =~ long_frontchannel_uri
+    assert html =~ long_registration_uri
+    assert html =~ "lockspire-admin-long-value"
+    assert html =~ "Current secret"
+    assert html =~ "redacted"
+    assert html =~ "Registration access token"
+    assert html =~ "Review DCR onboarding"
+    assert html =~ "No client-specific support mutation is introduced here."
+
+    html
+    |> HtmlAssertions.assert_no_duplicate_ids()
+    |> HtmlAssertions.assert_describedby_targets_exist()
+    |> HtmlAssertions.assert_links_have_hrefs()
+    |> HtmlAssertions.assert_no_generic_cta_text()
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text([
+      "sha256:long:client:secret:hash",
+      "sha256:long:rat:hash",
+      "client_secret_hash",
+      "registration_access_token_hash",
+      "verifier material",
+      "raw request object",
+      "host tenant policy",
+      "developer portal",
+      "Reveal secret",
+      "Export credential",
+      "force-publish",
+      "public theming"
+    ])
+  end
+
+  test "client secret rotation uses copy-once consequence copy", %{client: client} do
+    assert {:ok, view, html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
+
+    assert html =~ "Rotate client secret"
+    assert html =~ "previous secret stops being the current credential"
+    assert html =~ "Plaintext is shown once"
+    assert html =~ "Lockspire does not store or re-show it"
+    refute html =~ "sha256:show:hash"
+    refute html =~ "client_secret_hash"
+
+    html_after_rotate =
+      view
+      |> form("form[phx-submit=rotate_secret]", %{rotate: %{confirm: "true"}})
+      |> render_submit()
+
+    assert html_after_rotate =~ "New client secret"
+    assert html_after_rotate =~ "Plaintext is shown once"
+
+    plaintext_secret = extract_copy_once_value(html_after_rotate)
+
+    assert html_after_rotate =~ plaintext_secret
+
+    durable_html = render_show_html(client.client_id)
+
+    durable_html
+    |> HtmlAssertions.assert_no_token_like_text()
+    |> HtmlAssertions.assert_no_text([
+      plaintext_secret,
+      "sha256:show:hash",
+      "client_secret_hash",
+      "verifier material",
+      "Reveal secret",
+      "Export credential"
+    ])
+  end
+
+  test "client lifecycle changes require explicit confirmation", %{client: client} do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Confirm client disable"
+
+    html_without_confirm =
+      view
+      |> form("form[phx-submit=toggle_client]", %{toggle: %{}})
+      |> render_submit()
+
+    assert html_without_confirm =~ "confirm this lifecycle change"
+    assert {:ok, unchanged_client} = Admin.get_client(client.client_id)
+    assert unchanged_client.active
+
+    view
+    |> form("form[phx-submit=toggle_client]", %{toggle: %{confirm: "true"}})
+    |> render_submit()
+
+    assert {:ok, disabled_client} = Admin.get_client(client.client_id)
+    refute disabled_client.active
+
+    disabled_html = render(view)
+
+    assert disabled_html =~ "Confirm client enable"
+    assert disabled_html =~ "Enable client"
+    assert disabled_html =~ "configured OAuth/OIDC use can resume"
+    HtmlAssertions.assert_no_text(disabled_html, ["data-confirm", "force enable"])
+  end
+
+  test "client detail support pivots link to supported logout queue route", %{client: client} do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Support pivots"
+    assert html =~ "Review logout deliveries"
+    assert html =~ ~s(href="/admin/logouts")
+    refute html =~ "/admin/logout-deliveries"
+  end
+
   test "client detail shows read-only private_key_jwt posture for jwks_uri clients", %{
     client: client
   } do
@@ -228,8 +480,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
 
     assert html =~ "Post-logout redirect URIs"
-    assert html =~ "Logout propagation"
-    assert html =~ "These logout propagation URIs stay separate from post-logout redirect URIs."
+    assert html =~ "Post-logout redirect URIs are browser destinations after RP-initiated logout."
+    assert html =~ "Logout propagation URIs are RP cleanup endpoints."
+    assert html =~ "These logout propagation endpoints stay separate from browser destinations."
+    assert html =~ "/admin/clients/#{client.client_id}/edit?workflow=logout-propagation"
     assert html =~ "/end_session/complete"
     assert html =~ "Front-channel logout remains best effort browser cleanup."
   end
@@ -413,6 +667,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp render_show_html(client_id) do
+    assert {:ok, socket} =
+             Show.mount(%{"client_id" => client_id}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :show, __changed__: %{}}
+             })
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"client_id" => client_id},
+               "/admin/clients/#{client_id}",
+               socket
+             )
+
+    rendered_to_string(Show.render(socket.assigns))
+  end
+
+  defp extract_copy_once_value(html) do
+    [_, value] =
+      Regex.run(
+        ~r/<section class="[^"]*lockspire-admin-copy-once-secret[^"]*".*?<code[^>]*>([^<]+)<\/code>/s,
+        html
+      )
+
+    value
   end
 
   defp live_route?(route, path, view) do

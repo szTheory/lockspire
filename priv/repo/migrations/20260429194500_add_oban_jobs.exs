@@ -1,7 +1,18 @@
 defmodule Lockspire.TestRepo.Migrations.AddObanJobs do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
-  def up, do: Oban.Migrations.up(version: 14)
+  def up do
+    Oban.Migrations.up(oban_migration_opts(version: 14))
+  end
 
-  def down, do: Oban.Migrations.down(version: 1)
+  def down do
+    Oban.Migrations.down(oban_migration_opts(version: 1))
+  end
+
+  defp oban_migration_opts(opts) do
+    case Lockspire.Config.oban_prefix() do
+      nil -> opts
+      prefix -> Keyword.put(opts, :prefix, prefix)
+    end
+  end
 end

@@ -10,6 +10,8 @@ defmodule Lockspire.ConfigTest do
             :mount_path,
             :logout_path,
             :oban,
+            :storage_prefix,
+            :oban_prefix,
             :signing_alg
           ],
           into: %{} do
@@ -36,6 +38,8 @@ defmodule Lockspire.ConfigTest do
     Application.put_env(:lockspire, :mount_path, "/oauth")
     Application.put_env(:lockspire, :logout_path, "/sign-out")
     Application.put_env(:lockspire, :oban, repo: Lockspire.TestRepo, queues: false)
+    Application.put_env(:lockspire, :storage_prefix, "lockspire")
+    Application.put_env(:lockspire, :oban_prefix, "lockspire_jobs")
 
     assert Lockspire.Config.repo!() == Lockspire.TestRepo
     assert Lockspire.Config.account_resolver!() == Lockspire.TestAccountResolver
@@ -43,6 +47,8 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.Config.mount_path() == "/oauth"
     assert Lockspire.Config.logout_path() == "/sign-out"
     assert Lockspire.Config.oban_config() == [repo: Lockspire.TestRepo, queues: false]
+    assert Lockspire.Config.storage_prefix() == "lockspire"
+    assert Lockspire.Config.oban_prefix() == "lockspire_jobs"
 
     assert Lockspire.config() == %{
              repo: Lockspire.TestRepo,
@@ -50,6 +56,8 @@ defmodule Lockspire.ConfigTest do
              issuer: "https://example.test/oauth",
              mount_path: "/oauth",
              logout_path: "/sign-out",
+             storage_prefix: "lockspire",
+             oban_prefix: "lockspire_jobs",
              oban: [repo: Lockspire.TestRepo, queues: false]
            }
 
@@ -57,6 +65,29 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.mount_path() == "/oauth"
     assert Lockspire.logout_path() == "/sign-out"
     assert Lockspire.account_resolver!() == Lockspire.TestAccountResolver
+  end
+
+  test "storage_prefix/0 keeps missing config legacy-compatible and validates explicit values" do
+    Application.delete_env(:lockspire, :storage_prefix)
+    Application.delete_env(:lockspire, :oban_prefix)
+
+    assert Lockspire.Config.storage_prefix() == nil
+    assert Lockspire.Config.oban_prefix() == nil
+
+    Application.put_env(:lockspire, :storage_prefix, "lockspire")
+    assert Lockspire.Config.storage_prefix() == "lockspire"
+    assert Lockspire.Config.oban_prefix() == "lockspire"
+
+    Application.put_env(:lockspire, :storage_prefix, "public")
+    Application.put_env(:lockspire, :oban_prefix, "oban_lockspire")
+    assert Lockspire.Config.storage_prefix() == "public"
+    assert Lockspire.Config.oban_prefix() == "oban_lockspire"
+
+    Application.put_env(:lockspire, :storage_prefix, "bad-prefix")
+
+    assert_raise ArgumentError, ~r/invalid :storage_prefix/, fn ->
+      Lockspire.Config.storage_prefix()
+    end
   end
 
   test "repo!/0 raises a clear error when repo config is missing" do

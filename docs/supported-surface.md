@@ -12,7 +12,8 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 
 - Embedded Phoenix install flow through `mix lockspire.install`
 - One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology
-- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, and migrations
+- New generated installs default Lockspire-owned tables and Lockspire's Oban tables into a dedicated `lockspire` Postgres schema; public/default schema use is explicit through `--storage-prefix public --oban-prefix public`
+- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, guarded admin mount, and prefix-aware migrations
 - `mix lockspire.upgrade` for manifest-tracked Lockspire-managed scaffolding only
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it

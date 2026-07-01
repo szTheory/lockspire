@@ -1,11 +1,11 @@
 defmodule Lockspire.Repo.Migrations.AddSidToLockspireTokens do
-  use Ecto.Migration
+  use Lockspire.Storage.Ecto.Migration
 
   def change do
-    alter table(:lockspire_tokens) do
-      add :sid, :string
+    alter lockspire_table(:lockspire_tokens) do
+      add(:sid, :string)
     end
 
-    create index(:lockspire_tokens, [:sid])
+    create(lockspire_index(:lockspire_tokens, [:sid]))
   end
 end

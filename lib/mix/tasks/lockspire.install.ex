@@ -20,6 +20,8 @@ defmodule Mix.Tasks.Lockspire.Install do
           scope: :string,
           path: :string,
           mount_path: :string,
+          storage_prefix: :string,
+          oban_prefix: :string,
           help: :boolean,
           sigra_host: :boolean
         ]
@@ -38,7 +40,7 @@ defmodule Mix.Tasks.Lockspire.Install do
 
   def help do
     """
-    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--sigra-host]
+    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--sigra-host]
 
     Canonical Phoenix-first onboarding:
       1. Add the :lockspire dependency
@@ -62,6 +64,13 @@ defmodule Mix.Tasks.Lockspire.Install do
     Options:
       --mount-path PATH   Embedded Lockspire mount path to generate into router/config
                           (default: /lockspire)
+      --storage-prefix PREFIX
+                          Postgres schema/prefix for Lockspire-owned tables.
+                          New installs default to lockspire. Use public only when
+                          you explicitly want Lockspire tables in the default schema.
+      --oban-prefix PREFIX
+                          Postgres schema/prefix for Lockspire's Oban tables.
+                          Defaults to --storage-prefix.
     """
   end
 end

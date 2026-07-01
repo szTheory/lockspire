@@ -90,8 +90,7 @@ defmodule Lockspire.TestSupport.AdvancedSetupSupportTruth do
       "`Lockspire.Plug.VerifyToken` accepts JWT bearer tokens for host Phoenix API routes.",
       "Lockspire-owned `/userinfo` and `/introspect` use stored opaque tokens; those are not interchangeable.",
       "To opt a client back to opaque, see the admin Client Detail page.",
-      "the runtime narrowing and the default-issuance flip land in v1.27",
-      "opaque tokens may still be silently accepted on these routes"
+      "after the v1.27 runtime narrowing and default-issuance flip"
     ])
   end
 

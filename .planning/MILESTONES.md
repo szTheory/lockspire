@@ -1,5 +1,143 @@
 # Milestones
 
+## v1.35 : CI/CD Efficiency And Release Hygiene (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.34 : Prefix-Isolated Storage (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.33 : OSS Adoption Trust (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.22 : DPoP Nonce Support (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.15 : JWKS URI & Private Key JWT Client Authentication (Backfilled: 2026-07-01)
+
+**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+
+---
+
+## v1.32 Admin Page IA & Interaction Model Polish (Shipped: 2026-06-30)
+
+**Delivered:** Page-first admin IA and interaction polish across route scorecards, Support, Operate, Configure, fixtures, proof, docs, and adversarial review without broadening protocol, storage, host-seam, lab, theming, browser-tooling, or public support surface.
+
+**Phases completed:** 5 phases, 24 plans, 49 tasks
+
+**Key accomplishments:**
+
+- Route scorecards and deterministic guardrails now cover every AdminRouter route plus the logout-propagation workflow, with a documented page/section/action/component judgment rubric.
+- Support investigation pages for tokens and consents now lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior.
+- Operate queues for interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while remaining read-only.
+- Configure pages for clients, DCR/IAT, keys, and policies now share page-first posture, copy-once handoffs, confirmation-backed risky actions, and source/stress contracts.
+- Phase 125 added redaction-safe fixtures, route-family rendered-HTML guardrails, browser/manual maintainer evidence, operator docs, empty/no-match proof, and adversarial closeout artifacts.
+- Milestone audit found no blockers; 5 non-blocking tech-debt warnings were accepted and documented in the archived audit.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.32-MILESTONE-AUDIT.md`](milestones/v1.32-MILESTONE-AUDIT.md) (`tech_debt`, no blockers).
+
+**Archives:** `milestones/v1.32-ROADMAP.md`, `milestones/v1.32-REQUIREMENTS.md`, `milestones/v1.32-MILESTONE-AUDIT.md` · **Git tag:** `v1.32`
+
+---
+
+## v1.31 Admin Design-System Stress Test (Shipped: 2026-06-26)
+
+**Delivered:** A systematic admin/operator design-system stress test covering inventory, fixtures, primitives, page IA, proof, docs, and support-boundary guardrails.
+
+**Phases completed:** 5 phases, 14 plans, 31 tasks
+
+**Key accomplishments:**
+
+- Source-derived admin route/workflow inventory, component/group inventory, and brandbook visual rubric with contract proof.
+- Test-only Phoenix component stress lab with centralized redaction-safe fixtures and explicit light/dark/system plus reduced-motion CSS foundations.
+- Shared admin structural primitives, domain-aware status semantics, and representative form/workflow primitive adoption.
+- Client detail, DCR policy, IAT, token, consent, device authorization, interaction, and logout queue pages now use clearer operator IA and consequence-oriented copy.
+- Browser-proof matrix, LazyHTML/LiveView/source guardrails, route drift checks, and bounded operator docs prove the pass without public lab, theming, or browser-tooling support creep.
+- Milestone audit passed after closing verification metadata gaps for Phase 118 and Phase 119.
+
+**Pre-close audit:** `audit-open` clear. Formal milestone audit: [`.planning/milestones/v1.31-MILESTONE-AUDIT.md`](milestones/v1.31-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.31-ROADMAP.md`, `milestones/v1.31-REQUIREMENTS.md`, `milestones/v1.31-MILESTONE-AUDIT.md` · **Git tag:** `v1.31`
+
+---
+
+## v1.30 Adoption Demo Docker DX & Repo Hygiene (Shipped: 2026-06-24)
+
+**Phases completed:** 5 phases, 12 plans, 33 tasks
+
+**Key accomplishments:**
+
+- Adoption demo config now derives Phoenix URL generation and Lockspire issuer from one normalized base URL, with Docker binding controlled by an explicit listener env.
+- Seed data, developer app output, and the adoption smoke now consume the same base URL contract and expose labelled drift diagnostics.
+- Direct Docker Compose adoption-demo stack with Phoenix/Bandit web, internal PostgreSQL, and isolated container build volumes
+- Idempotent Docker startup wrapper with Postgres wait, database prepare, public HTTP readiness, and direct smoke proof
+- Direct Docker adoption-demo conflict controls using Compose interpolation, opt-in DB host exposure, and active-project scoped reset.
+- Opt-in Traefik hostname routing for the adoption demo with configurable labels, web-only proxy network membership, and hostname-based smoke docs.
+- Redacted Docker startup information now prints the active demo URLs, seeded account/client allowlists, and exact smoke command after HTTP readiness.
+- Thin base-URL-driven smoke wrapper now delegates to the existing Python OAuth/OIDC proof and docker-info prints the running-service reprint command.
+- Docker-first adoption demo docs now cover startup output, reprint, smoke wrappers, stop/reset boundaries, overrides, optional Traefik, and troubleshooting.
+- Contract-proven adoption demo stop and cleanup helpers with active-project Docker scoping and dry-run-first deletion safeguards.
+- Local adoption-demo hygiene now reports scoped Docker leftovers and generated artifacts, while CI proves cleanup and smoke boundaries without daemon access.
+- Adoption demo docs and contracts now agree on stop, reset, cleanup, hygiene, CI, and local lifecycle proof boundaries.
+
+---
+
+## v1.29 Admin UI Journey & Design-System Deep Polish (Shipped: 2026-06-04)
+
+**Phases completed:** 4 phases, 17 plans, 29 tasks
+
+**Key accomplishments:**
+
+- Route-by-route admin journey contract with evidence-backed IA strength ratings and locked DCR/logout vocabulary
+- Operator guide aligned to the Phase 107 journey model and host-owned admin boundary
+- Deterministic admin contract test for route coverage, journey vocabulary, docs alignment, and style fences
+- Semantic embedded admin CSS tokens with reduced-motion-safe interaction styles and deterministic raw-color drift fences
+- Phoenix function components for reusable admin heroes, metrics, filters, rows, copy-once secrets, long values, and action groups
+- Admin LiveViews now consume shared hero, metric, filter, and copy-once secret primitives without changing route behavior
+- Support token investigation pages with redacted pivots, status metrics, mobile-safe resource rows, and separate guarded token/family revocation actions
+- Support consent grant investigation pages with filtered context, redacted pivots, scope visibility, and guarded remembered-grant revocation copy
+- Operate queue pages for logout deliveries, device authorizations, and interactions with status buckets, resource rows, long values, and no new protocol actions
+- DCR onboarding and initial access token workflows with locked vocabulary, inventory metrics, mobile-safe rows, and shared copy-once secret treatment
+- Key lifecycle and client-detail actions now have clearer Configure context, mobile-safe identifiers, and risk-separated action grouping
+- Phase 109 now has deterministic contract coverage for journey labels, shared primitives, redaction, risky actions, and style discipline
+- Client workspace mobile overflow closed with embedded CSS shrink/wrap rules, deterministic source coverage, and passing 390px browser proof.
+
+**Pre-close audit:** `audit-open` clear after adding the legacy-compatible quick-task `SUMMARY.md`. Formal milestone audit: [`.planning/milestones/v1.29-MILESTONE-AUDIT.md`](milestones/v1.29-MILESTONE-AUDIT.md) (`passed`).
+
+**Archives:** `milestones/v1.29-ROADMAP.md`, `milestones/v1.29-REQUIREMENTS.md`, `milestones/v1.29-MILESTONE-AUDIT.md` · **Git tag:** `v1.29`
+
+---
+
+## v1.28 Admin UI Operator Experience Polish (Shipped + archived: 2026-06-03)
+
+**Phases completed:** **4** (**103-106**), **2** plans, **17** requirements closed.
+
+**Package posture:** Lockspire's admin UI now reads as one coherent operator product across setup proof, partner/client onboarding, support investigation, security posture review, runtime operations, DCR, and key lifecycle workflows while preserving protocol behavior and the embedded-library boundary.
+
+**Key accomplishments:**
+
+- Added shared admin components and BEM/design-token CSS primitives for buttons, action bars, alerts, data display, forms, confirmation panels, resource rows, badges, and responsive/focus states.
+- Reworked client detail into a scannable client workspace covering identity, effective posture, credentials, endpoints, logout, DCR/RAT context, and safe actions.
+- Polished support, operations, policy, DCR, and key lifecycle screens so queues, exceptions, handoff context, and safety panels are easier to scan and act on.
+- Verified demo seed expressiveness, operator admin docs, desktop/mobile screenshot coverage, and design-system regression contracts in Phase 106.
+
+**Pre-close audit:** `audit-open` clear. Formal v1.28 milestone audit artifact was not present at close; `roadmap.analyze` reported 100% completion and Phase 106 summary recorded closeout proof.
+
+**Archives:** `milestones/v1.28-ROADMAP.md`, `milestones/v1.28-REQUIREMENTS.md` · **Git tag:** `v1.28`
+
+---
+
 ## v1.27 Phoenix Resource Server Token Acceptance (Shipped: 2026-06-03)
 
 **Phases completed:** 6 phases, 24 plans, 45 tasks

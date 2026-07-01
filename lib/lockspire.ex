@@ -14,6 +14,8 @@ defmodule Lockspire do
           issuer: String.t(),
           mount_path: String.t(),
           logout_path: String.t(),
+          storage_prefix: String.t() | nil,
+          oban_prefix: String.t() | nil,
           oban: keyword()
         }
   def config do
@@ -23,6 +25,8 @@ defmodule Lockspire do
       issuer: Config.issuer!(),
       mount_path: Config.mount_path(),
       logout_path: Config.logout_path(),
+      storage_prefix: Config.storage_prefix(),
+      oban_prefix: Config.oban_prefix(),
       oban: Config.oban_config()
     }
   end

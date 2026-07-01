@@ -14,6 +14,7 @@ defmodule Lockspire.Oban do
       |> Application.get_env(:oban, [])
       |> Keyword.merge(name: __MODULE__)
       |> Keyword.put_new(:repo, repo!())
+      |> maybe_put_prefix()
       |> apply_plugins()
       |> Keyword.put_new(:queues, @default_queues)
       |> maybe_put_testing_mode()
@@ -48,6 +49,13 @@ defmodule Lockspire.Oban do
       Keyword.put_new(config, :testing, :manual)
     else
       config
+    end
+  end
+
+  defp maybe_put_prefix(config) do
+    case Lockspire.Config.oban_prefix() do
+      nil -> config
+      prefix -> Keyword.put_new(config, :prefix, prefix)
     end
   end
 

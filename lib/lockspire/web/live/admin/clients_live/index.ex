@@ -17,6 +17,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        page_title: "Clients",
        current_section: :clients,
        clients: [],
+       matching_clients: 0,
+       total_clients: 0,
        filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
        created_result: nil
@@ -27,12 +29,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
     clients = load_clients(filters)
+    total_clients = load_clients(base_filters()) |> length()
 
     {:noreply,
      assign(socket,
        filters: filters,
        clients: paginate(clients, filters),
-       total_clients: length(clients)
+       matching_clients: length(clients),
+       total_clients: total_clients
      )}
   end
 
@@ -48,7 +52,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
            created_result: result,
            form_errors: [],
            clients: paginate(load_clients(filters), filters),
-           total_clients: length(load_clients(filters))
+           matching_clients: length(load_clients(filters)),
+           total_clients: load_clients(base_filters()) |> length()
          )}
 
       {:error, errors} ->
@@ -60,40 +65,66 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.section_card
+      <AdminComponents.page_hero
+        eyebrow="Configure"
         title="Client inventory"
-        subtitle="Clients are the default operator entrypoint. Search and filters stay URL-driven."
+        body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
+      />
+
+      <AdminComponents.section_card
+        title="Selected client context"
+        subtitle="Current filters and inventory counts are shown before dense client rows."
       >
-        <form method="get" action={clients_index_path()} class="lockspire-admin-form-shell" style="margin-bottom: var(--ls-space-6);">
-          <div class="lockspire-admin-field">
-            <label for="client_search">Search</label>
-            <input id="client_search" name="q" type="text" value={@filters["q"]} />
-          </div>
+        <div class="lockspire-admin-detail-section">
+          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
+          <p>Status: {@filters["status"]}</p>
+          <p>Provenance: {@filters["provenance"]}</p>
+          <p>Matching clients: {@matching_clients}</p>
+          <p>Total clients: {@total_clients}</p>
+        </div>
 
-          <div class="lockspire-admin-field">
-            <label for="client_status">Status</label>
-            <select id="client_status" name="status">
-              <option value="all" selected={@filters["status"] == "all"}>All</option>
-              <option value="active" selected={@filters["status"] == "active"}>Active</option>
-              <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
-            </select>
-          </div>
+        <AdminComponents.filter_bar action={clients_index_path()}>
+          <:fields>
+            <div class="lockspire-admin-field">
+              <label for="client_search">Search</label>
+              <input
+                id="client_search"
+                name="q"
+                type="text"
+                value={@filters["q"]}
+                autocomplete="off"
+              />
+            </div>
 
-          <div class="lockspire-admin-field">
-            <label for="client_provenance">Provenance</label>
-            <select id="client_provenance" name="provenance">
-              <option value="all" selected={@filters["provenance"] == "all"}>All</option>
-              <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
-              <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>Self-Registered</option>
-            </select>
-          </div>
+            <div class="lockspire-admin-field">
+              <label for="client_status">Status</label>
+              <select id="client_status" name="status">
+                <option value="all" selected={@filters["status"] == "all"}>All</option>
+                <option value="active" selected={@filters["status"] == "active"}>Active</option>
+                <option value="disabled" selected={@filters["status"] == "disabled"}>Disabled</option>
+              </select>
+            </div>
 
-          <div class="lockspire-admin-actions">
-            <button class="lockspire-admin-btn-secondary" type="submit">Apply</button>
-          </div>
-        </form>
-
-        <p class="lockspire-admin-help" style="margin-bottom: var(--ls-space-4);">Total matching clients: {@total_clients}</p>
+            <div class="lockspire-admin-field">
+              <label for="client_provenance">Provenance</label>
+              <select id="client_provenance" name="provenance">
+                <option value="all" selected={@filters["provenance"] == "all"}>All</option>
+                <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+                <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>
+                  Self-Registered
+                </option>
+              </select>
+            </div>
+          </:fields>
+          <:help>
+            <p>Matching clients: {@matching_clients} of {@total_clients}</p>
+          </:help>
+          <:actions>
+            <AdminComponents.admin_button variant={:secondary} type="submit">
+              Filter clients
+            </AdminComponents.admin_button>
+          </:actions>
+        </AdminComponents.filter_bar>
 
         <%= if @clients == [] do %>
           <AdminComponents.empty_state
@@ -101,36 +132,43 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             body="Adjust the search or status filter, or register a new client."
           />
         <% else %>
-          <ul class="lockspire-admin-client-list" style="list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--ls-space-4);">
+          <AdminComponents.resource_list>
             <%= for client <- @clients do %>
-              <li style="padding: var(--ls-space-4); background: var(--ls-color-gray-50); border: 1px solid var(--ls-color-gray-200); border-radius: var(--ls-radius-md); display: flex; align-items: center; justify-content: space-between; gap: var(--ls-space-4);">
-                <div style="display: flex; flex-direction: column; gap: var(--ls-space-1);">
-                  <a href={client_show_path(client.client_id)} style="font-weight: 600; color: var(--ls-color-brand-600); text-decoration: none;">{client.name || client.client_id}</a>
-                  <span class="lockspire-admin-tabular" style="color: var(--ls-color-gray-500);">{client.client_id}</span>
-                </div>
-                <div style="display: flex; gap: var(--ls-space-2);">
+              <AdminComponents.resource_item
+                href={client_show_path(client.client_id)}
+                title={client.name || client.client_id}
+                subtitle={client.client_id}
+              >
+                <:meta>
                   <AdminComponents.status_badge status={status_for(client)} />
                   <AdminComponents.status_badge status={client.provenance} />
-                </div>
-              </li>
+                </:meta>
+              </AdminComponents.resource_item>
             <% end %>
-          </ul>
+          </AdminComponents.resource_list>
         <% end %>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Register client"
-        subtitle="Registration reuses the canonical Lockspire client API and reveals plaintext only once."
+        title="Create client"
+        subtitle="Create a client through the existing Lockspire Admin API and copy any plaintext secret before leaving this state."
       >
         <FormComponent.client_form mode={:new} errors={@form_errors} />
 
-        <div :if={@created_result} class="lockspire-admin-secret-reveal">
-          <h3>Client created</h3>
+        <div :if={@created_result}>
           <p>Client ID: <code>{@created_result.client.client_id}</code></p>
-          <p :if={@created_result.client_secret}>
-            Client secret: <code>{@created_result.client_secret}</code>
-          </p>
-          <p :if={!@created_result.client_secret}>This public client does not use a client secret.</p>
+          <AdminComponents.copy_once_secret_panel
+            title="Client created"
+            body={
+              if @created_result.client_secret,
+                do:
+                  "Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response.",
+                else: "This public client does not use a client secret."
+            }
+            label="Client secret"
+            value={@created_result.client_secret}
+            redacted={is_nil(@created_result.client_secret)}
+          />
         </div>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
@@ -163,6 +201,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     }
   end
 
+  defp base_filters do
+    %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"}
+  end
+
   defp create_attrs(params) do
     attrs = %{
       name: blank_to_nil(params["name"]),
@@ -184,7 +226,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp status_for(%{active: true}), do: :active
   defp status_for(_client), do: :disabled
 
-  defp clients_index_path, do: Lockspire.mount_path() <> "/admin"
+  defp clients_index_path, do: Lockspire.mount_path() <> "/admin/clients"
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
 
   defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)
@@ -239,4 +281,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       normalized -> normalized
     end
   end
+
+  defp selected_filter_label("", fallback), do: fallback
+  defp selected_filter_label(nil, fallback), do: fallback
+  defp selected_filter_label(value, _fallback), do: value
 end

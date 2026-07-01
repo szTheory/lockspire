@@ -1,0 +1,17 @@
+services:
+  web:
+    ports: !reset []
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}"
+      - "traefik.http.routers.${LOCKSPIRE_DEMO_TRAEFIK_ROUTER:-lockspire-adoption-demo}.rule=Host(`${LOCKSPIRE_DEMO_TRAEFIK_HOST:-lockspire-demo.localhost}`)"
+      - "traefik.http.routers.${LOCKSPIRE_DEMO_TRAEFIK_ROUTER:-lockspire-adoption-demo}.service=${LOCKSPIRE_DEMO_TRAEFIK_SERVICE:-lockspire-adoption-demo}"
+      - "traefik.http.services.${LOCKSPIRE_DEMO_TRAEFIK_SERVICE:-lockspire-adoption-demo}.loadbalancer.server.port=${LOCKSPIRE_DEMO_APP_PORT:-4100}"
+    networks:
+      - default
+      - traefik_proxy
+
+networks:
+  traefik_proxy:
+    external: true
+    name: "${LOCKSPIRE_DEMO_TRAEFIK_NETWORK:-local-dev-proxy}"

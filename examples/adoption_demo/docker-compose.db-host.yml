@@ -1,0 +1,4 @@
+services:
+  db:
+    ports:
+      - "127.0.0.1:${LOCKSPIRE_DEMO_DB_HOST_PORT:?Set LOCKSPIRE_DEMO_DB_HOST_PORT to opt in to host PostgreSQL exposure}:5432"

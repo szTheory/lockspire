@@ -215,6 +215,6 @@ defmodule Lockspire.Protocol.LogoutPropagation do
   defp insert_backchannel_job(logout_delivery_id) when is_integer(logout_delivery_id) do
     changeset = BackchannelLogoutDeliveryWorker.new(%{logout_delivery_id: logout_delivery_id})
 
-    Config.repo!().insert(changeset)
+    Config.repo!().insert(changeset, Lockspire.Storage.Ecto.Prefix.oban_opts())
   end
 end

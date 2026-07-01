@@ -92,4 +92,69 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
       %{field: field, reason: Enum.join(messages, ", "), detail: nil}
     end)
   end
+
+  defp registration_policy_label(:disabled), do: "Disabled"
+  defp registration_policy_label(:initial_access_token), do: "IAT-gated"
+  defp registration_policy_label(:open), do: "Open registration"
+  defp registration_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
+
+  defp registration_policy_tone(:disabled), do: :neutral
+  defp registration_policy_tone(:initial_access_token), do: :success
+  defp registration_policy_tone(:open), do: :warning
+  defp registration_policy_tone(_value), do: :info
+
+  defp registration_policy_detail(:disabled), do: "No new clients can self-register."
+
+  defp registration_policy_detail(:initial_access_token),
+    do: "Partners need a valid intake token before metadata is accepted."
+
+  defp registration_policy_detail(:open),
+    do: "Unauthenticated registration is allowed; keep allowlists and lifetimes narrow."
+
+  defp registration_policy_detail(_value), do: "Issuer registration posture."
+
+  defp allowlist_summary(%ServerPolicy{} = policy) do
+    counts = [
+      {"scopes", policy.dcr_allowed_scopes},
+      {"grant types", policy.dcr_allowed_grant_types},
+      {"response types", policy.dcr_allowed_response_types},
+      {"schemes", policy.dcr_allowed_redirect_uri_schemes},
+      {"hosts", policy.dcr_allowed_redirect_uri_hosts}
+    ]
+
+    configured =
+      counts
+      |> Enum.filter(fn {_label, values} -> values not in [nil, []] end)
+      |> Enum.map(fn {label, values} -> "#{length(values)} #{label}" end)
+
+    case configured do
+      [] -> "No metadata allowlists"
+      values -> Enum.join(values, ", ")
+    end
+  end
+
+  defp auth_methods_summary(%ServerPolicy{dcr_allowed_token_endpoint_auth_methods: methods})
+       when methods in [nil, []],
+       do: "No auth methods allowed"
+
+  defp auth_methods_summary(%ServerPolicy{dcr_allowed_token_endpoint_auth_methods: methods}) do
+    Enum.join(methods, ", ")
+  end
+
+  defp lifetime_summary(%ServerPolicy{} = policy) do
+    values = [
+      policy.dcr_default_client_lifetime_seconds,
+      policy.dcr_default_client_secret_lifetime_seconds,
+      policy.dcr_default_registration_access_token_lifetime_seconds
+    ]
+
+    if Enum.any?(values, &configured_lifetime?/1) do
+      "Default lifetimes configured"
+    else
+      "No default expiry limits"
+    end
+  end
+
+  defp configured_lifetime?(value) when is_integer(value), do: value > 0
+  defp configured_lifetime?(_value), do: false
 end

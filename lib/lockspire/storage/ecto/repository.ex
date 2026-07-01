@@ -81,7 +81,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> maybe_filter_client_provenance(Keyword.get(opts, :provenance))
     |> order_by([client], asc: client.name, asc: client.client_id)
     |> maybe_limit_clients(Keyword.get(opts, :limit))
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -114,7 +114,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       ClientRecord
       |> where([client], client.id == ^id)
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one()
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -122,7 +122,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %ClientRecord{} = record ->
           record
           |> ClientRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-          |> repo().update()
+          |> repo_update()
           |> map_one(&ClientRecord.to_domain/1)
           |> unwrap_or_rollback()
       end
@@ -156,7 +156,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         ServerPolicyRecord
         |> where([stored_policy], stored_policy.id == ^singleton_id)
         |> lock("FOR UPDATE")
-        |> repo().one()
+        |> repo_one()
 
       current =
         case current_record do
@@ -216,7 +216,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def put_interaction(%Interaction{} = interaction) do
     %InteractionRecord{}
     |> InteractionRecord.changeset(interaction)
-    |> repo().insert(
+    |> repo_insert(
       on_conflict: {:replace_all_except, [:id, :inserted_at]},
       conflict_target: [:interaction_id]
     )
@@ -227,7 +227,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def fetch_interaction(interaction_id) when is_binary(interaction_id) do
     InteractionRecord
     |> where([interaction], interaction.interaction_id == ^interaction_id)
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -241,7 +241,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([interaction], interaction.interaction_id == ^interaction_id)
     |> where([interaction], interaction.status in ^@active_interaction_statuses)
     |> where([interaction], interaction.expires_at > ^now)
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -251,7 +251,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def list_interactions(_opts \\ []) do
     InteractionRecord
     |> order_by(desc: :inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &InteractionRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -263,7 +263,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       interaction_id
       |> locked_interaction_query()
-      |> repo().one()
+      |> repo_one()
       |> transition_interaction_record(expected_statuses, attrs)
     end)
   end
@@ -282,7 +282,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def put_pushed_authorization_request(%PushedAuthorizationRequest{} = request) do
     %PushedAuthorizationRequestRecord{}
     |> PushedAuthorizationRequestRecord.changeset(request)
-    |> repo().insert(
+    |> repo_insert(
       on_conflict: {:replace_all_except, [:id, :inserted_at]},
       conflict_target: [:request_uri_hash]
     )
@@ -329,7 +329,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def list_device_authorizations(opts \\ []) when is_list(opts) do
     DeviceAuthorizationRecord
     |> order_by([auth], desc: auth.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &DeviceAuthorizationRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -393,7 +393,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       verification_handle
       |> locked_device_authorization_query()
-      |> repo().one()
+      |> repo_one()
       |> consume_device_authorization_record(client_id, now)
     end)
   end
@@ -428,7 +428,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     expires_at = DateTime.truncate(replay.expires_at, :microsecond)
 
     {count, _rows} =
-      repo().insert_all(
+      repo_insert_all(
         DpopReplayRecord,
         [
           %{
@@ -465,7 +465,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
     if changeset.valid? do
       {count, _rows} =
-        repo().insert_all(
+        repo_insert_all(
           UsedJtiRecord,
           [
             %{
@@ -496,7 +496,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       verification_handle
       |> locked_device_authorization_query()
-      |> repo().one()
+      |> repo_one()
       |> transition_device_authorization_record(expected_statuses, attrs)
     end)
   end
@@ -537,7 +537,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       auth_req_id_hash
       |> locked_ciba_authorization_query()
-      |> repo().one()
+      |> repo_one()
       |> transition_ciba_authorization_record(expected_statuses, attrs)
     end)
   end
@@ -580,7 +580,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def grant_consent(%ConsentGrant{} = grant) do
     %ConsentGrantRecord{}
     |> ConsentGrantRecord.changeset(grant)
-    |> repo().insert()
+    |> repo_insert()
     |> map_one(&ConsentGrantRecord.to_domain/1)
   end
 
@@ -592,7 +592,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> maybe_filter_consent_status(Keyword.get(opts, :status))
     |> order_by([grant], desc: grant.granted_at, desc: grant.id)
     |> maybe_limit_consents(Keyword.get(opts, :limit))
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -607,7 +607,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def fetch_consent_grant(grant_id) when is_integer(grant_id) do
     ConsentGrantRecord
     |> where([grant], grant.id == ^grant_id)
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &ConsentGrantRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -621,7 +621,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([grant], grant.kind == :remembered and grant.status == :active)
     |> where([grant], is_nil(grant.revoked_at))
     |> order_by([grant], desc: grant.granted_at, desc: grant.id)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -633,7 +633,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       ConsentGrantRecord
       |> where([grant], grant.id == ^grant_id)
       |> lock("FOR UPDATE")
-      |> repo().one()
+      |> repo_one()
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -648,7 +648,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
             |> Map.put_new(:status, :revoked)
             |> Map.put(:updated_at, DateTime.utc_now())
           )
-          |> repo().update()
+          |> repo_update()
           |> map_one(&ConsentGrantRecord.to_domain/1)
           |> unwrap_or_rollback()
       end
@@ -674,7 +674,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> maybe_filter_token_status(Keyword.get(opts, :status), now)
     |> order_by([token], desc: token.issued_at, desc: token.id)
     |> maybe_limit_tokens(Keyword.get(opts, :limit))
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -685,7 +685,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.id == ^token_id)
     |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -697,7 +697,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([token], token.family_id == ^family_id)
     |> where([token], token.token_type in [:access_token, :refresh_token])
     |> order_by([token], asc: token.generation, asc: token.issued_at, asc: token.id)
-    |> repo().all(repo_log_options(sensitive: true))
+    |> repo_all(sensitive: true)
     |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -765,7 +765,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def list_all_logout_deliveries do
     LogoutDeliveryRecord
     |> order_by(desc: :inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &LogoutDeliveryRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -777,7 +777,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     LogoutDeliveryRecord
     |> where([delivery], delivery.logout_event_id == ^logout_event_id)
     |> order_by([delivery], asc: delivery.id)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &LogoutDeliveryRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -790,7 +790,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     LogoutDeliveryRecord
     |> where([delivery], delivery.id == ^logout_delivery_id)
     |> lock("FOR UPDATE")
-    |> repo().one()
+    |> repo_one()
     |> case do
       nil ->
         {:error, :not_found}
@@ -802,7 +802,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
           oban_job_id: oban_job_id,
           updated_at: DateTime.utc_now()
         )
-        |> repo().update()
+        |> repo_update()
         |> map_one(&LogoutDeliveryRecord.to_domain/1)
     end
   end
@@ -945,7 +945,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def list_initial_access_tokens(_opts \\ []) do
     InitialAccessTokenRecord
     |> order_by([iat], desc: iat.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> Enum.map(&InitialAccessTokenRecord.to_domain/1)
     |> then(&{:ok, &1})
   end
@@ -953,7 +953,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def save_initial_access_token(%Lockspire.Domain.InitialAccessToken{} = iat) do
     %InitialAccessTokenRecord{}
     |> InitialAccessTokenRecord.changeset(iat)
-    |> repo().insert()
+    |> repo_insert()
     |> map_one(&InitialAccessTokenRecord.to_domain/1)
   end
 
@@ -961,7 +961,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       when is_integer(id) and is_struct(revoked_at, DateTime) do
     InitialAccessTokenRecord
     |> where([iat], iat.id == ^id)
-    |> repo().update_all(set: [revoked_at: revoked_at, updated_at: DateTime.utc_now()])
+    |> repo_update_all(set: [revoked_at: revoked_at, updated_at: DateTime.utc_now()])
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :not_found}
@@ -972,7 +972,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def publish_key(%SigningKey{} = key) do
     %SigningKeyRecord{}
     |> SigningKeyRecord.changeset(key)
-    |> repo().insert(
+    |> repo_insert(
       on_conflict: {:replace_all_except, [:id, :inserted_at]},
       conflict_target: [:kid]
     )
@@ -984,7 +984,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     SigningKeyRecord
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records ->
       {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
     end)
@@ -997,7 +997,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     SigningKeyRecord
     |> maybe_filter_signing_key_status(Keyword.get(opts, :status))
     |> order_by([key], desc: key.inserted_at, desc: key.id)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records -> {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -1012,7 +1012,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         (key.status == :upcoming and not is_nil(key.published_at))
     )
     |> order_by([key], asc: key.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records ->
       records
       |> Enum.map(&(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))
@@ -1029,7 +1029,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([key], key.use == :enc)
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> then(fn records ->
       {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)}
     end)
@@ -1066,7 +1066,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([key], key.status == :active)
     |> where([key], key.use == :sig)
     |> order_by([key], asc: key.inserted_at)
-    |> repo().all()
+    |> repo_all()
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
     |> filter_keys_for_alg(Keyword.get(opts, :alg))
@@ -1097,7 +1097,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   def fetch_signing_key_by_id(id) when is_integer(id) do
     SigningKeyRecord
     |> where([key], key.id == ^id)
-    |> repo().one()
+    |> repo_one()
     |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
@@ -1109,7 +1109,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       id
       |> locked_signing_key_query()
-      |> repo().one()
+      |> repo_one()
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -1117,7 +1117,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %SigningKeyRecord{status: :upcoming, published_at: nil} = record ->
           record
           |> SigningKeyRecord.update_changeset(%{published_at: published_at})
-          |> repo().update()
+          |> repo_update()
           |> map_one(&SigningKeyRecord.to_domain/1)
           |> unwrap_or_rollback()
 
@@ -1136,7 +1136,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       id
       |> locked_signing_key_query()
-      |> repo().one()
+      |> repo_one()
       |> activate_signing_key_record(activated_at)
     end)
   end
@@ -1147,7 +1147,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     transact(fn ->
       id
       |> locked_signing_key_query()
-      |> repo().one()
+      |> repo_one()
       |> case do
         nil ->
           repo().rollback(:not_found)
@@ -1158,7 +1158,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
             status: :retired,
             retired_at: retired_at
           })
-          |> repo().update()
+          |> repo_update()
           |> map_one(&SigningKeyRecord.to_domain/1)
           |> unwrap_or_rollback()
 
@@ -1344,7 +1344,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
          client_id,
          now
        ) do
-    case repo().delete(record, repo_log_options(sensitive: true))
+    case repo_delete(record, sensitive: true)
          |> map_one(&PushedAuthorizationRequestRecord.to_domain(&1)) do
       {:ok, %PushedAuthorizationRequest{} = consumed} ->
         cond do
@@ -1446,7 +1446,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     if record.status in expected_statuses do
       record
       |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-      |> repo().update()
+      |> repo_update()
       |> map_one(&InteractionRecord.to_domain/1)
       |> unwrap_or_rollback()
     else
@@ -1467,7 +1467,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> DeviceAuthorizationRecord.update_changeset(
         Map.put(attrs, :updated_at, DateTime.utc_now())
       )
-      |> repo().update()
+      |> repo_update()
       |> map_one(&DeviceAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
     else
@@ -1486,7 +1486,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     if record.status in expected_statuses do
       record
       |> CibaAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-      |> repo().update()
+      |> repo_update()
       |> map_one(&CibaAuthorizationRecord.to_domain/1)
       |> unwrap_or_rollback()
     else
@@ -1738,7 +1738,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([r], r.expires_at < ^now)
       |> select([r], r.id)
       |> limit(1000)
-      |> repo().all(log: false)
+      |> repo_all(log: false)
 
     if ids == [] do
       count
@@ -1746,7 +1746,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       {deleted, _} =
         schema
         |> where([r], r.id in ^ids)
-        |> repo().delete_all(log: false)
+        |> repo_delete_all(log: false)
 
       prune_expired_records(schema, now, count + deleted)
     end
@@ -1755,7 +1755,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp prune_expired_dpop_replay_records(%DateTime{} = seen_at) do
     DpopReplayRecord
     |> where([replay], replay.expires_at <= ^seen_at)
-    |> repo().delete_all(log: false)
+    |> repo_delete_all(log: false)
 
     :ok
   end
@@ -1911,7 +1911,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> where([key], key.status == :active)
     |> where([key], key.use == ^use)
     |> lock("FOR UPDATE")
-    |> repo().all()
+    |> repo_all()
   end
 
   defp activate_selected_signing_key(%SigningKeyRecord{} = record, activated_at) do
@@ -1922,7 +1922,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       retiring_at: nil,
       retired_at: nil
     })
-    |> repo().update()
+    |> repo_update()
     |> map_one(&SigningKeyRecord.to_domain/1)
     |> unwrap_or_rollback()
   end
@@ -1934,7 +1934,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       retiring_at: activated_at,
       retired_at: nil
     })
-    |> repo().update()
+    |> repo_update()
     |> map_one(&SigningKeyRecord.to_domain/1)
     |> unwrap_or_rollback()
   end
@@ -2125,7 +2125,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     LogoutEventRecord
     |> where([event], event.event_id == ^event_id)
     |> lock("FOR UPDATE")
-    |> repo().one()
+    |> repo_one()
   end
 
   defp list_logout_deliveries!(logout_event_id) do
@@ -2169,7 +2169,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       |> where([token], is_nil(token.revoked_at))
       |> select([token], token.client_id)
       |> distinct(true)
-      |> repo().all(repo_log_options(sensitive: true))
+      |> repo_all(sensitive: true)
 
     ClientRecord
     |> where([client], client.client_id in ^client_ids)
@@ -2178,7 +2178,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       not is_nil(client.backchannel_logout_uri) or not is_nil(client.frontchannel_logout_uri)
     )
     |> order_by([client], asc: client.client_id)
-    |> repo().all()
+    |> repo_all()
   end
 
   defp build_logout_deliveries(client_records, logout_event_id) when is_list(client_records) do
@@ -2240,24 +2240,47 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
+  defp repo_all(query, opts \\ []) do
+    repo().all(query, repo_options(opts))
+  end
+
   defp repo_one(query, opts \\ []) do
-    repo().one(query, repo_log_options(opts))
+    repo().one(query, repo_options(opts))
   end
 
   defp repo_insert(changeset, opts \\ []) do
-    repo().insert(changeset, repo_log_options(opts))
+    repo().insert(changeset, repo_options(opts))
   end
 
-  defp repo_update(changeset, opts) do
-    repo().update(changeset, repo_log_options(opts))
+  defp repo_insert_all(schema_or_source, entries, opts) do
+    repo().insert_all(schema_or_source, entries, repo_options(opts))
   end
 
-  defp repo_update_all(query, updates, opts, keyword_opts \\ []) do
-    repo().update_all(query, Keyword.merge(updates, keyword_opts), repo_log_options(opts))
+  defp repo_update(changeset, opts \\ []) do
+    repo().update(changeset, repo_options(opts))
   end
 
-  defp repo_log_options(opts) do
-    if Keyword.get(opts, :sensitive, false), do: [log: false], else: []
+  defp repo_update_all(query, updates, opts \\ [], keyword_opts \\ []) do
+    repo().update_all(query, Keyword.merge(updates, keyword_opts), repo_options(opts))
+  end
+
+  defp repo_delete(record, opts) do
+    repo().delete(record, repo_options(opts))
+  end
+
+  defp repo_delete_all(query, opts) do
+    repo().delete_all(query, repo_options(opts))
+  end
+
+  defp repo_options(opts) do
+    opts
+    |> Keyword.drop([:sensitive])
+    |> maybe_disable_sensitive_logging(opts)
+    |> Keyword.merge(Lockspire.Storage.Ecto.Prefix.prefix_opts())
+  end
+
+  defp maybe_disable_sensitive_logging(options, opts) do
+    if Keyword.get(opts, :sensitive, false), do: Keyword.put(options, :log, false), else: options
   end
 
   defp strip_private_key_material(%SigningKey{} = key) do

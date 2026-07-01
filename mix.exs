@@ -1,6 +1,11 @@
 defmodule Lockspire.MixProject do
   use Mix.Project
 
+  @package_excluded_files ~w(
+    lib/lockspire/test_repo.ex
+    lib/mix/tasks/lockspire.test.setup.ex
+  )
+
   def project do
     [
       app: :lockspire,
@@ -96,7 +101,9 @@ defmodule Lockspire.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "credo --strict",
-        "sobelow --config",
+        "sobelow --config"
+      ],
+      "qa.dialyzer": [
         "dialyzer"
       ],
       "docs.verify": ["docs --warnings-as-errors"],
@@ -130,6 +137,7 @@ defmodule Lockspire.MixProject do
       "conformance.phase37": :test,
       "test.phase3": :test,
       qa: :dev,
+      "qa.dialyzer": :dev,
       "docs.verify": :dev,
       "deps.audit": :dev,
       "package.build": :dev,
@@ -156,9 +164,12 @@ defmodule Lockspire.MixProject do
         "docs/rar-consent-host-guide.md",
         "docs/operator-admin.md",
         "docs/dynamic-registration.md",
+        "docs/telemetry.md",
         "docs/supported-surface.md",
         "docs/maintainer-conformance.md",
         "docs/maintainer-release.md",
+        "docs/upgrading/v1.27.md",
+        "docs/upgrading/storage-prefix.md",
         "docs/sigra-companion-host.md"
       ],
       groups_for_extras: [
@@ -173,8 +184,13 @@ defmodule Lockspire.MixProject do
           "docs/rar-consent-host-guide.md",
           "docs/operator-admin.md",
           "docs/dynamic-registration.md",
+          "docs/telemetry.md",
           "docs/supported-surface.md",
           "docs/sigra-companion-host.md"
+        ],
+        Upgrading: [
+          "docs/upgrading/v1.27.md",
+          "docs/upgrading/storage-prefix.md"
         ],
         Maintainers: [
           "CHANGELOG.md",
@@ -208,7 +224,21 @@ defmodule Lockspire.MixProject do
         "Docs" => "https://hexdocs.pm/lockspire",
         "Supported surface" => "https://hexdocs.pm/lockspire/supported-surface.html"
       },
-      files: ~w(lib priv docs .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
+      files: package_files()
     ]
+  end
+
+  defp package_files do
+    [
+      Path.wildcard("lib/**/*.ex"),
+      Path.wildcard("lib/**/*.heex"),
+      Path.wildcard("priv/repo/migrations/*.exs"),
+      Path.wildcard("priv/templates/**/*.{ex,exs,heex}"),
+      Path.wildcard("docs/**/*.md"),
+      ~w(.formatter.exs mix.exs README.md CHANGELOG.md SECURITY.md LICENSE)
+    ]
+    |> List.flatten()
+    |> Enum.reject(&(&1 in @package_excluded_files))
+    |> Enum.sort()
   end
 end

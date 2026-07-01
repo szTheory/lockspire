@@ -1,0 +1,119 @@
+#!/usr/bin/env sh
+set -eu
+
+usage() {
+  cat <<'USAGE'
+Usage: examples/adoption_demo/bin/docker-cleanup [--project NAME] [--execute]
+
+Report scoped adoption demo cleanup candidates. Dry run is the default.
+Pass --execute to remove only the listed active-project resources.
+
+The default project is COMPOSE_PROJECT_NAME, or lockspire-adoption-demo when
+COMPOSE_PROJECT_NAME is not set. Pass --project NAME to match docker compose
+--project-name NAME / -p NAME startup.
+
+Docker volume allowlist:
+  db_data deps_volume build_volume
+
+Generated artifact allowlist:
+  tmp/adoption_demo.log
+  examples/adoption_demo/_build
+  examples/adoption_demo/deps
+
+Preserved: tmp/admin-ui-polish/ is admin UI evidence and is not removed by
+default by docker-cleanup.
+USAGE
+}
+
+project="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+execute=0
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --project)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --project" >&2
+        usage >&2
+        exit 1
+      fi
+      project="$2"
+      shift 2
+      ;;
+    --execute)
+      execute=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "git is required to locate the Lockspire repo root" >&2
+  exit 1
+fi
+
+if [ "$execute" -eq 1 ] && ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required to execute adoption demo cleanup" >&2
+  exit 1
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
+
+volume_names="${project}_db_data ${project}_deps_volume ${project}_build_volume"
+artifact_paths="tmp/adoption_demo.log examples/adoption_demo/_build examples/adoption_demo/deps"
+
+echo "Adoption demo cleanup candidates for project ${project}:"
+
+echo "Docker volumes:"
+for volume in ${project}_db_data ${project}_deps_volume ${project}_build_volume; do
+  echo "  ${volume}"
+done
+
+echo "Generated artifacts:"
+for path in tmp/adoption_demo.log examples/adoption_demo/_build examples/adoption_demo/deps; do
+  echo "  ${path}"
+done
+
+echo "Preserved: tmp/admin-ui-polish/ is out of cleanup scope."
+
+if [ "$execute" -ne 1 ]; then
+  echo "Dry run only. Re-run with --execute to remove the listed allowlisted resources."
+  exit 0
+fi
+
+project_containers="$(docker container ls --all --filter "label=com.docker.compose.project=${project}" --format '{{.Names}}' 2>/dev/null || true)"
+
+if [ -n "$project_containers" ]; then
+  echo "Refusing cleanup while project containers still exist for ${project}:" >&2
+  printf '%s\n' "$project_containers" >&2
+  echo "Run: examples/adoption_demo/bin/docker-stop --project ${project}" >&2
+  exit 1
+fi
+
+removed_volumes=0
+removed_artifacts=0
+
+for volume in $volume_names; do
+  if docker volume inspect "$volume" >/dev/null 2>&1; then
+    docker volume rm "$volume" >/dev/null
+    removed_volumes=$((removed_volumes + 1))
+  fi
+done
+
+for path in $artifact_paths; do
+  if [ -e "$path" ]; then
+    rm -rf "$path"
+    removed_artifacts=$((removed_artifacts + 1))
+  fi
+done
+
+echo "Cleaned allowlisted adoption demo resources for project ${project}: ${removed_volumes} Docker volume(s), ${removed_artifacts} artifact path(s)."

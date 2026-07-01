@@ -3,6 +3,30 @@ import Config
 config :adoption_demo,
   ecto_repos: [AdoptionDemo.Repo]
 
+demo_base_url =
+  "LOCKSPIRE_DEMO_BASE_URL"
+  |> System.get_env("http://127.0.0.1:4100")
+  |> String.trim()
+  |> String.trim_trailing("/")
+
+demo_uri = URI.parse(demo_base_url)
+
+if demo_uri.scheme in [nil, ""] or demo_uri.host in [nil, ""] or
+     demo_uri.query not in [nil, ""] or demo_uri.fragment not in [nil, ""] or
+     demo_uri.path not in [nil, "", "/"] do
+  raise ArgumentError,
+        "LOCKSPIRE_DEMO_BASE_URL must be an absolute root URL without query or fragment"
+end
+
+config :adoption_demo, :demo_base_url, demo_base_url
+
+demo_bind_ip =
+  case System.get_env("LOCKSPIRE_DEMO_BIND_IP", "127.0.0.1") do
+    "127.0.0.1" -> {127, 0, 0, 1}
+    "0.0.0.0" -> {0, 0, 0, 0}
+    other -> raise ArgumentError, "unsupported LOCKSPIRE_DEMO_BIND_IP=#{inspect(other)}"
+  end
+
 config :adoption_demo, AdoptionDemo.Repo,
   username:
     System.get_env("LOCKSPIRE_DEMO_DB_USER") || System.get_env("PGUSER") ||
@@ -22,13 +46,13 @@ config :adoption_demo, AdoptionDemo.Repo,
 config :adoption_demo, AdoptionDemoWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   http: [
-    ip: {127, 0, 0, 1},
+    ip: demo_bind_ip,
     port: String.to_integer(System.get_env("PORT") || "4100")
   ],
   url: [
-    scheme: "http",
-    host: System.get_env("LOCKSPIRE_DEMO_HOST") || "127.0.0.1",
-    port: String.to_integer(System.get_env("PORT") || "4100")
+    scheme: demo_uri.scheme,
+    host: demo_uri.host,
+    port: demo_uri.port
   ],
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") ||
@@ -38,8 +62,10 @@ config :adoption_demo, AdoptionDemoWeb.Endpoint,
 
 config :lockspire,
   repo: AdoptionDemo.Repo,
-  issuer: "http://127.0.0.1:4100/lockspire",
+  issuer: demo_base_url <> "/lockspire",
   mount_path: "/lockspire",
+  storage_prefix: "lockspire",
+  oban_prefix: "lockspire",
   known_scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
   account_resolver: AdoptionDemo.Lockspire.AccountResolver,
   signing_alg: "RS256",
