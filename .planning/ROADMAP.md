@@ -6,9 +6,9 @@ No active feature milestone. Lockspire is back on the sustaining GA release trai
 
 Start the next milestone with `/gsd-new-milestone`.
 
-## Current Worktree Milestone Records
+## Recently Landed Mainline Milestone Records
 
-The 2026-06-30 implementation pass added milestone records that are implemented in the worktree but not yet archived as shipped GSD milestones:
+The 2026-06-30 implementation pass and 2026-07-01 release-hygiene merge landed these records on `main` through PR #58. They are mainline readiness work, not separate Hex releases yet:
 
 - [v1.33 OSS Adoption Trust](milestones/v1.33-ROADMAP.md) - public/admin router separation, verifier truth, package hygiene, and adoption-demo support-boundary repairs.
 - [v1.34 Prefix-Isolated Storage](milestones/v1.34-ROADMAP.md) - default generated `lockspire` PostgreSQL schema, prefix-aware migrations/runtime queries, Oban prefixing, example app, and upgrade docs.

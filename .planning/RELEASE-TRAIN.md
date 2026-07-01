@@ -22,6 +22,7 @@ The default operating mode is not "find the next milestone." The default is: kee
 - Push-triggered Hex publish remains guarded by Release Please release-SHA equality with the current `main` push SHA as a stale-event defense, but normal automated publishing should happen through the auto-merge workflow's exact-ref dispatch.
 - Eligible Release Please PRs should auto-merge only after green `main` CI and only through the guarded Release Please branch/title/file allowlist.
 - Exact-ref dispatch publish must ensure the matching `lockspire-v<version>` GitHub release exists before Hex publish so GitHub release truth, changelog links, tags, Hex, and HexDocs stay coherent.
+- Before starting a new milestone or cutting a release, run the reusable hygiene checklist in `.planning/REPO-HYGIENE-CHECKLIST.md`.
 
 ## Patch-Eligible Change Classes
 
@@ -43,3 +44,7 @@ Feature milestones should run on `milestone/vNEXT-short-slug` branches and merge
 ## Next Cut Condition
 
 Cut the next patch release when there is at least one merged patch-eligible change on `main`, the latest `main` CI is green, the repo hygiene gate reports no `BLOCK`, and release truth still points to `docs/supported-surface.md` as the canonical contract.
+
+## Current Main Readiness
+
+As of 2026-07-01, `main` includes the v1.33-v1.35 readiness work from PR #58 at `9fb219b`. No new Hex release was published by this hygiene checkpoint; the latest public release remains `1.2.0`.

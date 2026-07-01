@@ -4,16 +4,16 @@ milestone: none
 milestone_name: null
 current_phase: null
 status: awaiting_next_milestone
-stopped_at: Milestone v1.32 archived; waiting for next milestone
-last_updated: "2026-06-30T19:10:00Z"
-last_activity: 2026-06-30
-last_activity_desc: Milestone v1.32 completed and archived
+stopped_at: Main is clean after v1.33-v1.35 landed; waiting for next milestone
+last_updated: "2026-07-01T15:45:00Z"
+last_activity: 2026-07-01
+last_activity_desc: Repo hygiene checkpoint reconciled after v1.33-v1.35 landed on main
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 24
-  completed_plans: 24
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 current_phase_name: null
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: Milestone v1.32 complete
+Phase: No active feature milestone
 Plan: -
 Status: Awaiting next milestone
-Last activity: 2026-06-30 — Milestone v1.32 completed and archived
+Last activity: 2026-07-01 - Repo hygiene checkpoint reconciled after v1.33-v1.35 landed on main
 
 ## Most Recent Release
 
@@ -47,6 +47,9 @@ Last activity: 2026-06-30 — Milestone v1.32 completed and archived
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.35 | - | - | 9 | landed on main |
+| v1.34 | - | - | 11 | landed on main |
+| v1.33 | - | - | 7 | landed on main |
 | v1.32 | 121-125 | 24 | 15 | shipped |
 | v1.31 | 116-120 | 14 | 17 | shipped |
 | v1.30 | 111-115 | 12 | 17 | shipped |
@@ -186,7 +189,7 @@ Last activity: 2026-06-30 — Milestone v1.32 completed and archived
 ## Blockers/Concerns
 
 - None active.
-- `gsd-sdk query init.new-milestone` reported stale helper metadata for latest completed milestone and phase archive path after v1.28 closeout. Do not run destructive phase cleanup from that stale path without rechecking archive targets.
+- Historical note: earlier GSD SDK metadata reported stale archive targets after v1.28 closeout. Continue to verify archive targets before destructive phase cleanup.
 
 ## Quick Tasks Completed
 
@@ -196,11 +199,11 @@ Last activity: 2026-06-30 — Milestone v1.32 completed and archived
 
 ## Session Continuity
 
-**Last session:** 2026-06-30T18:39:26Z
+**Last session:** 2026-07-01T15:45:00Z
 
-**Next action:** Run v1.32 milestone closeout/security/UI follow-up gates.
+**Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly.
 **Resume file:** None
-**Stopped at:** Verified Phase 125 and updated project closeout state.
+**Stopped at:** Main is clean after v1.33-v1.35 landed; waiting for the next scoped milestone.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics

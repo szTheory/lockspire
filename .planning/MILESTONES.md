@@ -1,20 +1,26 @@
 # Milestones
 
-## v1.35 : CI/CD Efficiency And Release Hygiene (Backfilled: 2026-07-01)
+## v1.35 CI/CD Efficiency And Release Hygiene (Shipped: 2026-07-01)
 
-**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+**Delivered:** Duplicate low-value CI work was removed, minimum supported Elixir/OTP compatibility proof was added, Release workflow cache keys were tightened, Dialyzer stayed opt-in until the baseline is clean, and package hygiene guards now catch broad globs that would include local artifacts.
 
----
-
-## v1.34 : Prefix-Isolated Storage (Backfilled: 2026-07-01)
-
-**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+**Mainline proof:** Merged through PR #58 at `9fb219b` after the v1.33-v1.35 readiness pass. Latest `main` CI, Release, and Release Please Auto Merge runs were green on 2026-07-01.
 
 ---
 
-## v1.33 : OSS Adoption Trust (Backfilled: 2026-07-01)
+## v1.34 Prefix-Isolated Storage (Shipped: 2026-07-01)
 
-**Note:** Synthesized from archive snapshot by `/gsd-health --backfill`. Original completion date unknown.
+**Delivered:** New generated installs default Lockspire-owned Ecto tables and Oban jobs into a dedicated `lockspire` PostgreSQL schema while existing public-schema installs remain compatible until they opt in. Prefix-aware config, migration helpers, repository calls, worker paths, install/upgrade CLI options, docs, and adoption-demo wiring landed together.
+
+**Mainline proof:** Merged through PR #58 at `9fb219b` after the v1.33-v1.35 readiness pass.
+
+---
+
+## v1.33 OSS Adoption Trust (Shipped: 2026-07-01)
+
+**Delivered:** Public and admin router exposure was separated, installer verification now checks public/admin/device routes plus migration and prefix-aware table truth, generator tests assert guarded admin mounting, and package inputs now exclude local build artifacts and backup files while preserving source, migrations, templates, docs, metadata, and license.
+
+**Mainline proof:** Merged through PR #58 at `9fb219b` after the v1.33-v1.35 readiness pass.
 
 ---
 
