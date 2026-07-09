@@ -40,7 +40,7 @@ defmodule Lockspire.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.8.5"},
-      {:phoenix_live_view, "~> 1.1.28"},
+      {:phoenix_live_view, "~> 1.2.6"},
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},
