@@ -4,10 +4,10 @@ milestone: none
 milestone_name: null
 current_phase: null
 status: awaiting_next_milestone
-stopped_at: Main is clean after v1.33-v1.35 landed; waiting for next milestone
-last_updated: "2026-07-01T15:45:00Z"
-last_activity: 2026-07-01
-last_activity_desc: Repo hygiene checkpoint reconciled after v1.33-v1.35 landed on main
+stopped_at: Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone
+last_updated: "2026-07-10T22:25:12Z"
+last_activity: 2026-07-10
+last_activity_desc: Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
 progress:
   total_phases: 0
   completed_phases: 0
@@ -32,7 +32,14 @@ See: .planning/PROJECT.md
 Phase: No active feature milestone
 Plan: -
 Status: Awaiting next milestone
-Last activity: 2026-07-01 - Repo hygiene checkpoint reconciled after v1.33-v1.35 landed on main
+Last activity: 2026-07-10 - Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
+
+## Completed Ad Hoc Work
+
+- Docker/adoption demo DX hardening made hostname-first Traefik access the normal browser path and kept direct host ports as explicit fallback.
+- Operator/admin anonymous access now redirects to `/login?return_to=%2Flockspire%2Fadmin`; signed-in non-operators still receive operator-only 403 guidance.
+- Manual browser UAT passed at `http://lockspire-demo.localhost/lockspire/admin` after logging in as `ops`.
+- Cairnloop still owns `127.0.0.1:4100`; do not treat that direct port as Lockspire unless a launcher explicitly prints it.
 
 ## Most Recent Release
 
@@ -199,11 +206,11 @@ Last activity: 2026-07-01 - Repo hygiene checkpoint reconciled after v1.33-v1.35
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T15:45:00Z
+**Last session:** 2026-07-10T22:25:12Z
 
-**Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly.
+**Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
 **Resume file:** None
-**Stopped at:** Main is clean after v1.33-v1.35 landed; waiting for the next scoped milestone.
+**Stopped at:** Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics

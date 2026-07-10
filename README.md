@@ -41,7 +41,8 @@ From the repo root:
 make demo
 ```
 
-Open `http://lockspire-demo.localhost/lockspire/admin` and log in as `ops`.
+Open `http://lockspire-demo.localhost/lockspire/admin` and log in as `ops` if prompted.
+Do not use `127.0.0.1:4100` unless the launcher explicitly started direct mode on that port; hostname routing avoids collisions with other local Phoenix demos.
 
 Useful follow-ups:
 

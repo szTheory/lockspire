@@ -1,8 +1,17 @@
 #!/usr/bin/env sh
 set -eu
 
-BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
+BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://lockspire-demo.localhost}"
 BASE_URL="$(printf '%s' "$BASE_URL" | sed 's:/*$::')"
+PROJECT="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+
+if [ "$PROJECT" = "lockspire-adoption-demo" ]; then
+  MAKE_PREFIX=""
+else
+  MAKE_PREFIX="COMPOSE_PROJECT_NAME=${PROJECT} "
+fi
+
+COMPOSE_CMD="docker compose --project-name ${PROJECT} -f examples/adoption_demo/docker-compose.yml"
 
 cat <<INFO
 Lockspire admin demo
@@ -10,13 +19,13 @@ Adoption demo ready at ${BASE_URL}
 
 Ready
   Operator admin: ${BASE_URL}/lockspire/admin
-  Login: ops
+  Login: ops (choose it if prompted)
 
 Next
-  Smoke: make demo-smoke
-  Info: make demo-info
-  Logs: make demo-logs
-  Stop: make demo-stop
+  Smoke: ${MAKE_PREFIX}make demo-smoke
+  Info: ${MAKE_PREFIX}make demo-info
+  Logs: ${MAKE_PREFIX}make demo-logs
+  Stop: ${MAKE_PREFIX}make demo-stop
 
 Details
   Base URL: ${BASE_URL}
@@ -45,17 +54,16 @@ Smoke command
   LOCKSPIRE_DEMO_BASE_URL=${BASE_URL} scripts/demo/adoption_smoke.sh
 
 Launcher
-  make demo
-  make demo-smoke
-  make demo-stop
-  scripts/demo/admin-ui up
-  scripts/demo/admin-ui smoke
-  scripts/demo/admin-ui logs
-  scripts/demo/admin-ui stop
+  ${MAKE_PREFIX}make demo
+  ${MAKE_PREFIX}make demo-smoke
+  ${MAKE_PREFIX}make demo-stop
+  scripts/demo/admin-ui --project ${PROJECT} up
+  scripts/demo/admin-ui --project ${PROJECT} smoke
+  scripts/demo/admin-ui --project ${PROJECT} logs
+  scripts/demo/admin-ui --project ${PROJECT} stop
   examples/adoption_demo/bin/docker-up
   examples/adoption_demo/bin/docker-up --direct
 
 Reprint:
-  docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
-  COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+  ${COMPOSE_CMD} exec web ./bin/docker-info
 INFO

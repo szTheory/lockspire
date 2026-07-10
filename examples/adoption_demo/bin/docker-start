@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"
+BASE_URL="${LOCKSPIRE_DEMO_BASE_URL:-http://lockspire-demo.localhost}"
 BASE_URL="${BASE_URL%/}"
 PORT="${PORT:-4100}"
 READINESS_URL="${LOCKSPIRE_DEMO_READINESS_URL:-http://127.0.0.1:${PORT}}"
@@ -43,6 +43,29 @@ create_database() {
 
   cat "$create_output" >&2
   rm -f "$create_output"
+  return 1
+}
+
+migrate_database() {
+  migrate_output="$(mktemp)"
+
+  if mix ecto.migrate --migrations-path ../../priv/repo/migrations >"$migrate_output" 2>&1; then
+    rm -f "$migrate_output"
+    return 0
+  fi
+
+  if grep -qi "duplicate_table" "$migrate_output" || grep -qi "already exists" "$migrate_output"; then
+    cat "$migrate_output" >&2
+    rm -f "$migrate_output"
+    echo "Detected existing untracked demo tables; resetting the demo database and rerunning migrations." >&2
+    mix ecto.drop
+    mix ecto.create
+    mix ecto.migrate --migrations-path ../../priv/repo/migrations
+    return 0
+  fi
+
+  cat "$migrate_output" >&2
+  rm -f "$migrate_output"
   return 1
 }
 
@@ -88,7 +111,7 @@ trap cleanup INT TERM EXIT
 wait_for_postgres
 mix deps.get
 create_database
-mix ecto.migrate --migrations-path ../../priv/repo/migrations
+migrate_database
 seed_database
 
 mix phx.server &

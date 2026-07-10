@@ -757,6 +757,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
 
     assert smoke_script =~ "exercise_authorization_code"
     assert smoke_script =~ "exercise_discovery_and_admin"
+    assert smoke_script =~ "anonymous admin login redirect"
+    assert smoke_script =~ "non-operator admin access"
     assert smoke_wrapper =~ "exec python3 scripts/demo/adoption_smoke.py"
   end
 
