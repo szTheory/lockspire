@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
-DEFAULT_BASE_URL="http://127.0.0.1:4100"
-HOSTNAME_BASE_URL="http://lockspire-demo.localhost"
+DEFAULT_BASE_URL="http://lockspire-demo.localhost"
+DIRECT_BASE_URL="http://127.0.0.1:4100"
 
 usage() {
   cat <<USAGE
@@ -10,11 +10,11 @@ Usage: scripts/demo/adoption_smoke.sh [--help]
 
 Runs the adoption demo smoke against LOCKSPIRE_DEMO_BASE_URL.
 
-Default direct Docker URL:
-  LOCKSPIRE_DEMO_BASE_URL=${DEFAULT_BASE_URL} scripts/demo/adoption_smoke.sh
+Default Traefik hostname URL:
+  scripts/demo/adoption_smoke.sh
 
-Optional Traefik hostname URL:
-  LOCKSPIRE_DEMO_BASE_URL=${HOSTNAME_BASE_URL} scripts/demo/adoption_smoke.sh
+Direct Docker fallback URL:
+  LOCKSPIRE_DEMO_BASE_URL=${DIRECT_BASE_URL} scripts/demo/adoption_smoke.sh
 USAGE
 }
 

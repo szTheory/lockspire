@@ -18,6 +18,7 @@ services:
       - build_volume:/workspace/examples/adoption_demo/_build
     environment:
       PHX_SERVER: "true"
+      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
       PORT: "${LOCKSPIRE_DEMO_APP_PORT:-4100}"
       LOCKSPIRE_DEMO_BASE_URL: "${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:${LOCKSPIRE_DEMO_APP_PORT:-4100}}"
       LOCKSPIRE_DEMO_BIND_IP: "0.0.0.0"

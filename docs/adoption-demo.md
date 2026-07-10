@@ -4,6 +4,8 @@ Lockspire includes a small Phoenix host app at `examples/adoption_demo`. It exis
 
 Docker is the default maintainer path. It starts Phoenix/Bandit plus PostgreSQL, keeps state scoped to one Compose project, and prints the URLs worth opening. The demo is repo-local adopter proof, not a production deployment guide, not hosted authentication, and not an expansion beyond `docs/supported-surface.md`. The canonical support contract still lives in `docs/supported-surface.md`.
 
+The normal browser path uses Traefik hostname routing instead of a fixed localhost port. Do not open `127.0.0.1:4100` unless you intentionally started direct mode and the launcher printed that exact URL.
+
 ## Quick Start
 
 From the repo root:
@@ -18,7 +20,7 @@ Open:
 http://lockspire-demo.localhost/lockspire/admin
 ```
 
-Login with the host-owned demo account:
+Login with the host-owned demo account if prompted:
 
 ```text
 ops
@@ -37,7 +39,7 @@ make demo-stop
 The demo starts a Phoenix SaaS host with Lockspire mounted as the embedded provider. The ready output leads with the operator job:
 
 - Operator admin: `http://lockspire-demo.localhost/lockspire/admin`
-- Login: `ops`
+- Login: `ops` if prompted
 - Smoke: `make demo-smoke`
 - Logs: `make demo-logs`
 - Stop: `make demo-stop`
@@ -101,13 +103,13 @@ make demo-info
 Raw Compose reprint commands still work:
 
 ```sh
-docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+docker compose --project-name lockspire-adoption-demo -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 ```
 
 If the demo was started with an alternate Compose project:
 
 ```sh
-COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
+docker compose --project-name lockspire-adoption-demo-alt -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info
 ```
 
 ## Smoke It
@@ -118,13 +120,13 @@ Run:
 make demo-smoke
 ```
 
-The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, anonymous admin rejection, operator admin access, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
+The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, anonymous admin login redirect, operator admin access, non-operator denial, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
 
 The explicit smoke commands remain:
 
 ```sh
+scripts/demo/adoption_smoke.sh
 LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh
-LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh
 LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4101 scripts/demo/adoption_smoke.sh
 ```
 
@@ -136,10 +138,20 @@ adoption demo smoke passed
 
 ## Many Local Demos
 
-Use hostname mode when running multiple local UI demos. It avoids app-specific host ports by routing through Traefik and keeps project resources isolated through `COMPOSE_PROJECT_NAME`.
+Use hostname mode when running multiple local UI demos. It avoids app-specific host ports by routing through one shared Traefik proxy and keeps project resources isolated through `COMPOSE_PROJECT_NAME`.
+
+If a shared local Traefik is already running, attach Lockspire to that proxy network instead of starting another proxy:
 
 ```sh
-COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt scripts/demo/admin-ui up --host lockspire-alt.localhost
+LOCKSPIRE_DEMO_TRAEFIK_NETWORK=proxy \
+  examples/adoption_demo/bin/docker-up --no-proxy-start --host lockspire-demo.localhost
+```
+
+For another Lockspire demo instance, use a distinct project and hostname:
+
+```sh
+COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt \
+  scripts/demo/admin-ui up --host lockspire-alt.localhost
 ```
 
 Direct mode is still useful when you intentionally do not want a proxy:
@@ -163,7 +175,7 @@ Most maintainers should use `make demo`. These variables exist for explicit Comp
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `COMPOSE_PROJECT_NAME` | `lockspire-adoption-demo` | Compose project namespace for containers, networks, and volumes. |
-| `LOCKSPIRE_DEMO_APP_PORT` | `4100` | Direct localhost host/container port, or internal Phoenix port in Traefik mode. |
+| `LOCKSPIRE_DEMO_APP_PORT` | `4100` | Direct localhost port in direct mode; internal Phoenix container port in Traefik mode. It is not the browser URL in hostname mode. |
 | `LOCKSPIRE_DEMO_BASE_URL` | mode-specific | Browser-visible public URL truth for issuer, redirects, startup output, docs, and smoke. |
 | `LOCKSPIRE_DEMO_DB_HOST_PORT` | unset | Required only when using the DB host-port override. |
 | `LOCKSPIRE_DEMO_TRAEFIK_HOST` | `lockspire-demo.localhost` | Hostname routed to the demo. |
@@ -266,19 +278,32 @@ mix ecto.setup
 mix phx.server
 ```
 
-Then open `http://127.0.0.1:4100`.
+Then open the host-local URL printed by Phoenix, usually `http://127.0.0.1:4100` when no other local demo owns that port.
 
 ## Troubleshooting
 
 ### Port Conflict
 
-For normal use, prefer:
+If `http://127.0.0.1:4100` shows another project, you are looking at a direct localhost port owned by that project. For normal Lockspire UI review, use hostname routing:
 
 ```sh
 make demo
 ```
 
-For direct mode, let the launcher pick the next available port:
+Open:
+
+```text
+http://lockspire-demo.localhost/lockspire/admin
+```
+
+If a shared Traefik already owns ports `80` and `8080`, attach to its Docker network:
+
+```sh
+LOCKSPIRE_DEMO_TRAEFIK_NETWORK=proxy \
+  examples/adoption_demo/bin/docker-up --no-proxy-start --host lockspire-demo.localhost
+```
+
+For direct mode, let the launcher pick the next available port and use only the URL it prints:
 
 ```sh
 examples/adoption_demo/bin/docker-up --direct
@@ -315,6 +340,8 @@ make demo-info
 ### Traefik Network
 
 Direct Docker mode does not require the Traefik network. Hostname routing uses `LOCKSPIRE_DEMO_TRAEFIK_NETWORK`.
+
+The preferred multi-project setup is one shared local Traefik bound to `127.0.0.1:80`, with each project attached to the proxy network and routed by a unique `*.localhost` hostname. Lockspire exposes only the `web` service to that network; PostgreSQL stays project-internal.
 
 ### Traefik Ports
 
