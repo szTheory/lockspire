@@ -155,6 +155,7 @@ defmodule Lockspire.MixProject do
         "CHANGELOG.md",
         "SECURITY.md",
         "docs/ecosystem-overview.md",
+        "docs/oauth-oidc-for-phoenix-adopters.md",
         "docs/getting-started.md",
         "docs/saas-adoption-recipe.md",
         "docs/adoption-demo.md",
@@ -175,6 +176,7 @@ defmodule Lockspire.MixProject do
       groups_for_extras: [
         Guides: [
           "docs/ecosystem-overview.md",
+          "docs/oauth-oidc-for-phoenix-adopters.md",
           "docs/getting-started.md",
           "docs/saas-adoption-recipe.md",
           "docs/adoption-demo.md",
