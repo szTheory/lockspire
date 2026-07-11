@@ -2,6 +2,11 @@
 
 Use this when you are wiring Lockspire into a real Phoenix SaaS for the first time.
 
+If you want the OAuth/OIDC mental model before the checklist, read
+[OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.md) first. This
+recipe assumes you already understand clients, redirect URIs, scopes, consent,
+tokens, and the host-owned account seam at a high level.
+
 ## 1. Install and mount
 
 Run `mix lockspire.install`, import `config/lockspire.exs`, run migrations, and call the generated `lockspire_routes/0` helper from your host router.

@@ -2,7 +2,7 @@
 
 If you're evaluating or adopting Lockspire, you're solving one specific problem: **letting other software call your API on behalf of your users.** That's a different job from "let users log in to my app." This page explains where Lockspire sits in a full Phoenix auth stack, what fits next to it, and how the pieces compose.
 
-> **New to Lockspire?** Start with the [Install and onboard](install-and-onboard.html) guide for the canonical Phoenix-first setup path, then use this page to place Lockspire in the wider auth stack.
+> **New to OAuth/OIDC provider work?** Start with [OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.html) for the mental model, then use [Install and onboard](install-and-onboard.html) for the canonical Phoenix-first setup path.
 
 > **TL;DR.** Lockspire is the *outbound* half of an auth stack — your users prove who they are *to your app* via a separate library (Sigra is the recommended pairing, or `phx.gen.auth`), and then Lockspire mints OAuth/OIDC tokens that let *external apps* trust that identity. SAML logins from your customers' corporate IdPs are a third concern handled by Relyra. All three compose through small, host-owned glue modules.
 
@@ -157,6 +157,7 @@ Each library has tight non-goals. Sigra never owns OAuth issuance. Lockspire nev
 ## See also
 
 - **[Lockspire + Sigra companion host](sigra-companion-host.html)** — practical Lockspire↔Sigra wiring details
+- **[OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.html)** — plain-language OAuth/OIDC mental model using the Billingo demo
 - **[Getting started](getting-started.html)** — Lockspire setup walkthrough
 - **[Install and onboard](install-and-onboard.html)** — `mix lockspire.install` reference
 - **[Supported surface](supported-surface.html)** — exactly which RFCs and OIDC specs Lockspire implements (and which it doesn't)
