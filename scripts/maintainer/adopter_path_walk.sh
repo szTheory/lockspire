@@ -133,6 +133,12 @@ HOST_APP_DIR="$WORKDIR/host_app"
 SERVER_LOG="$WORKDIR/server.log"
 SERVER_PID=""
 
+# The walk's own base URL and Lockspire mount path -- installer defaults, since step-02-install
+# never passes --mount-path. step-03a's config completion needs a real issuer; step-03b's router
+# wiring and later plans' flow driver need the same mount path.
+WALK_BASE_URL="http://127.0.0.1:${PORT}"
+MOUNT_PATH="/lockspire"
+
 # Fixed, obviously non-production walk credentials -- a cross-plan contract
 # consumed unchanged by the flow driver (plan 126-03) and the secret-absence
 # assertion (plan 126-06). Never substitute different values here without
@@ -447,6 +453,134 @@ ELIXIR
   mark_done "$step_id"
 }
 
+# step-01-add-dep: guide §1 "Add Lockspire" -- insert {:lockspire, path: $REPO_ROOT} into the
+# generated host's mix.exs deps list. Never a Hex pin (D-04): a pin would prove the last release
+# rather than the branch Phases 127-129 are repairing.
+run_step_01_add_dep() {
+  should_run "step-01-add-dep" || return 0
+
+  local mix_exs="$HOST_APP_DIR/mix.exs"
+
+  if ! grep -Fq ':lockspire, path:' "$mix_exs"; then
+    sed_i -e "s#{:phoenix,#{:lockspire, path: \"${REPO_ROOT}\"},\n      {:phoenix,#" "$mix_exs"
+  fi
+
+  local add_dep_log="$WORKDIR/step_01_add_dep.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix deps.get) >"$add_dep_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$add_dep_log")"
+    record_result "FAIL" "step-01-add-dep" "§1 Add Lockspire: mix deps.get failed (${error_detail})"
+    return
+  fi
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >>"$add_dep_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$add_dep_log")"
+    record_result "FAIL" "step-01-add-dep" "§1 Add Lockspire: mix compile failed (${error_detail})"
+    return
+  fi
+
+  record_result "PASS" "step-01-add-dep" "§1 Add Lockspire: mix deps.get resolved :lockspire from ${REPO_ROOT}"
+  mark_done "step-01-add-dep"
+}
+
+# step-02-install: guide §2 "Generate the host seam" -- mix lockspire.install with no flags. The
+# generated defaults are what a real adopter gets; passing --storage-prefix/--oban-prefix here
+# would hide a real schema failure instead of recording it (RESEARCH Open Question 4).
+run_step_02_install() {
+  should_run "step-02-install" || return 0
+
+  local install_log="$WORKDIR/step_02_install.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix lockspire.install) >"$install_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$install_log")"
+    record_result "FAIL" "step-02-install" "§2 Generate the host seam: mix lockspire.install failed (${error_detail})"
+    return
+  fi
+
+  if [[ ! -f "$HOST_APP_DIR/.lockspire/install_manifest.json" ]]; then
+    record_result "FAIL" "step-02-install" "§2 Generate the host seam: mix lockspire.install exited 0 but .lockspire/install_manifest.json is missing"
+    return
+  fi
+
+  record_result "PASS" "step-02-install" "§2 Generate the host seam: mix lockspire.install exited 0 and wrote .lockspire/install_manifest.json"
+  mark_done "step-02-install"
+}
+
+# step-03a-config-import: guide §3 "Wire the generated files" (first instruction) --
+# import_config "lockspire.exs" from the host's main config entrypoint. The installer's own
+# config template emits a placeholder issuer and omits known_scopes, signing_alg,
+# secret_key_base, and oban: (D-45); this step records that gap and then applies the smallest
+# completion needed to keep walking, so later steps have a config that can actually boot.
+run_step_03a_config_import() {
+  should_run "step-03a-config-import" || return 0
+
+  local host_config="$HOST_APP_DIR/config/config.exs"
+  local lockspire_config="$HOST_APP_DIR/config/lockspire.exs"
+
+  if [[ ! -f "$lockspire_config" ]]; then
+    record_result "FAIL" "step-03a-config-import" "§3 Wire the generated files: config/lockspire.exs is missing (step-02-install did not complete)"
+    return
+  fi
+
+  if ! grep -Fq 'import_config "lockspire.exs"' "$host_config"; then
+    printf '\nimport_config "lockspire.exs"\n' >>"$host_config"
+  fi
+
+  local compile_log="$WORKDIR/step_03a_config_import.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "step-03a-config-import" "§3 Wire the generated files: host fails to compile after import_config lockspire.exs (${error_detail})"
+    return
+  fi
+
+  local missing_keys=()
+  local key
+
+  for key in known_scopes signing_alg secret_key_base oban:; do
+    if ! grep -Fq "$key" "$lockspire_config"; then
+      missing_keys+=("$key")
+    fi
+  done
+
+  if [[ "${#missing_keys[@]}" -eq 0 ]]; then
+    record_result "PASS" "step-03a-config-import" "§3 Wire the generated files: import_config lockspire.exs is sufficient to boot"
+    mark_done "step-03a-config-import"
+    return
+  fi
+
+  local missing_list
+  missing_list="$(
+    IFS=,
+    echo "${missing_keys[*]}"
+  )"
+  record_result "FAIL" "step-03a-config-import" "§3 Wire the generated files: config/lockspire.exs omits ${missing_list} and issuer is a placeholder -- imported config is not sufficient to boot (ADOPT-D04)"
+
+  if ! grep -Fq 'known_scopes' "$lockspire_config"; then
+    local lockspire_secret
+    lockspire_secret="$(cd "$HOST_APP_DIR" && mix phx.gen.secret 2>/dev/null | tail -n 1)"
+
+    if [[ -z "$lockspire_secret" ]]; then
+      lockspire_secret="$(date +%s%N)-lockspire-walk-fallback-secret"
+    fi
+
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D04
+    # The installer's config template emits a placeholder issuer and omits known_scopes,
+    # signing_alg, secret_key_base, and oban:, all of which
+    # examples/adoption_demo/config/config.exs:62-77 proves are required. Apply the smallest
+    # completion that lets the walk keep moving -- never copy the committed demo secret_key_base
+    # literal (T-126-04); generate a fresh one the same way step-00b-phx-new does.
+    sed_i -e "s#issuer: \"https://example.com\"#issuer: \"${WALK_BASE_URL}${MOUNT_PATH}\"#" "$lockspire_config"
+    sed_i -E -e "s#oban_prefix: \"[^\"]*\"#&,\n  known_scopes: [\"openid\", \"email\", \"profile\", \"read:billing\", \"write:reports\"],\n  signing_alg: \"RS256\",\n  secret_key_base: \"${lockspire_secret}\",\n  oban: [queues: false, plugins: false]#" "$lockspire_config"
+  fi
+
+  mark_done "step-03a-config-import"
+}
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -482,7 +616,11 @@ run_step_00b_phx_new
 run_step_00c_gen_auth
 run_step_00d_seed_user
 
-# Guide steps (step-01 onward) are added by later plans in this phase; the
+run_step_01_add_dep
+run_step_02_install
+run_step_03a_config_import
+
+# Guide steps step-03b onward are added by later plans in this phase; the
 # skeleton and pre-guide steps above are what they plug into via
 # should_run/record_result/mark_done.
 

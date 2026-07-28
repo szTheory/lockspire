@@ -5,6 +5,11 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
   @walk_script_path Path.join(@repo_root, "scripts/maintainer/adopter_path_walk.sh")
   @mix_exs_path Path.join(@repo_root, "mix.exs")
   @gitignore_path Path.join(@repo_root, ".gitignore")
+  @guide_path Path.join(@repo_root, "docs/install-and-onboard.md")
+  # plan 126-03 delivers this file in the same wave; it may not exist yet when this test runs on
+  # its own plan, and an absent driver must contribute nothing to the mapping gate rather than
+  # erroring (D-16 union scope).
+  @flow_driver_path Path.join(@repo_root, "scripts/maintainer/adopter_path_flow.py")
 
   test "walk script exists and uses FAIL-tolerant strict mode" do
     assert File.regular?(@walk_script_path)
@@ -132,5 +137,117 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     assert source =~ "build_email_token"
     assert source =~ "login_user_by_magic_link"
     assert source =~ "update_user_password"
+  end
+
+  # -- ADOPT-03 step-ID <-> guide-section mapping (D-16) -------------------------------------
+  #
+  # The gate scans two sources, not one: `record_result` calls in the shell script, and the
+  # printed `[PASS|FAIL] step-NN...: §N ...` result-line literals plan 126-05 folds verbatim into
+  # the shell harness's RESULTS accumulator from `scripts/maintainer/adopter_path_flow.py` (plan
+  # 126-03, not yet delivered when this test is first written). Every assertion below runs over
+  # the union of both, so a driver-emitted step is exactly as protected as a shell step.
+
+  defp shell_steps(source) do
+    ~r/record_result\s+"(?:PASS|FAIL)"\s+"(step-0[1-8][a-z]?-[a-zA-Z0-9_-]+)"\s+"([^"]*)"/
+    |> Regex.scan(source, capture: :all_but_first)
+    |> Enum.map(fn [id, detail] -> {id, detail} end)
+  end
+
+  defp driver_steps(source) do
+    ~r/\[(?:PASS|FAIL)\]\s+(step-0[1-8][a-z]?-[a-zA-Z0-9_-]+):\s*(§\d+[^\n"]*)/
+    |> Regex.scan(source, capture: :all_but_first)
+    |> Enum.map(fn [id, detail] -> {id, detail} end)
+  end
+
+  defp combined_steps do
+    shell_source = File.read!(@walk_script_path)
+
+    driver_source =
+      if File.regular?(@flow_driver_path) do
+        File.read!(@flow_driver_path)
+      else
+        ""
+      end
+
+    shell_steps(shell_source) ++ driver_steps(driver_source)
+  end
+
+  defp step_section_number(id) do
+    id
+    |> String.replace_prefix("step-", "")
+    |> String.slice(0, 2)
+    |> String.to_integer()
+    |> Integer.to_string()
+  end
+
+  defp label_section_number(detail) do
+    case Regex.run(~r/§(\d+)/, detail) do
+      [_, number] -> number
+      nil -> nil
+    end
+  end
+
+  test "every guide-mapped step ID resolves to a real docs/install-and-onboard.md section (ADOPT-03 structural mapping)" do
+    guide = File.read!(@guide_path)
+
+    section_headings =
+      ~r/^## (\d+)\./m
+      |> Regex.scan(guide, capture: :all_but_first)
+      |> List.flatten()
+      |> MapSet.new()
+
+    steps = combined_steps()
+    assert steps != [], "expected at least one guide-mapped step-0[1-8] to be present"
+
+    for {id, _detail} <- steps do
+      section = step_section_number(id)
+
+      assert section in section_headings,
+             "#{id} has no matching '## #{section}.' heading in docs/install-and-onboard.md"
+    end
+  end
+
+  test "every step's §N label agrees with its own step ID number (ADOPT-03 semantic mapping)" do
+    for {id, detail} <- combined_steps() do
+      section = step_section_number(id)
+      label = label_section_number(detail)
+
+      refute is_nil(label), "#{id}'s detail #{inspect(detail)} carries no §N label"
+
+      assert label == section,
+             "#{id} labels itself §#{label} but its own ID number is #{section}"
+    end
+  end
+
+  test "no two steps share a step-NN number while labelling different guide sections (ADOPT-03 uniqueness)" do
+    combined_steps()
+    |> Enum.map(fn {id, detail} ->
+      nn = id |> String.replace_prefix("step-", "") |> String.slice(0, 2)
+      {nn, label_section_number(detail)}
+    end)
+    |> Enum.group_by(fn {nn, _label} -> nn end, fn {_nn, label} -> label end)
+    |> Enum.each(fn {nn, labels} ->
+      unique_labels = labels |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+      assert length(unique_labels) <= 1,
+             "step-#{nn}* steps disagree on guide section: #{inspect(unique_labels)}"
+    end)
+  end
+
+  test "every workaround marker matches the exact LOCKSPIRE_WALK_WORKAROUND ADOPT-D shape" do
+    source = File.read!(@walk_script_path)
+
+    marker_lines =
+      source
+      |> String.split("\n")
+      |> Enum.map(&String.trim/1)
+      |> Enum.filter(&(&1 =~ "LOCKSPIRE_WALK_WORKAROUND"))
+
+    assert marker_lines != [], "expected at least one workaround marker"
+
+    for line <- marker_lines do
+      assert line =~ ~r/^# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D\d+$/,
+             "malformed workaround marker: #{inspect(line)}"
+    end
   end
 end
