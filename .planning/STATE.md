@@ -4,10 +4,10 @@ milestone: none
 milestone_name: null
 current_phase: null
 status: awaiting_next_milestone
-stopped_at: Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone
-last_updated: "2026-07-10T22:25:12Z"
-last_activity: 2026-07-10
-last_activity_desc: Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
+stopped_at: 1.4.0 shipped and the release train unstalled; awaiting next scoped milestone
+last_updated: "2026-07-28T18:49:26Z"
+last_activity: 2026-07-28
+last_activity_desc: 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
 progress:
   total_phases: 0
   completed_phases: 0
@@ -32,9 +32,20 @@ See: .planning/PROJECT.md
 Phase: No active feature milestone
 Plan: -
 Status: Awaiting next milestone
-Last activity: 2026-07-10 - Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
+Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
 
 ## Completed Ad Hoc Work
+
+### 2026-07-28 sustaining pass (1.3.0 -> 1.4.0)
+
+- The adoption demo host app was rebranded Acme Ledger -> Billingo, gained a host-owned 404/500 error view, and its authorized-apps screen now reads real consent grants with a working Disconnect scoped to the signed-in customer (#75).
+- Building that screen surfaced a protocol-layer defect: re-approving a client the account already remembered created a duplicate active grant, so a host revoke UI would list an app twice and Disconnect only one of the pair. Fixed with `ConsentPolicy.duplicate_grant/2` (#77).
+- `phoenix_live_view` moved from a `~> 1.1.28` pin to a `>= 1.1.28 and < 2.0.0` range so adopters are not forced onto 1.2.x to upgrade Lockspire (#76).
+- Published architecture and code-walkthrough guides, with a documentation contract test pinning their ExDoc/README/package wiring (#73, #74).
+- **Release Please had been aborting on every run since 1.3.0** with "There are untagged, merged release PRs outstanding", while reporting success. No release PR had been proposed since. Cause: the repo runs Release Please with `skip-github-release: true`, so nothing advanced the merged release PR's `autorelease:` label. The publish job now advances it after a successful publish (#78).
+- Release ledger drift blocked `main` after both 1.3.0 and 1.4.0. `.planning/RELEASE-TRAIN.md` is now a Release Please `extra-files` target, so the release PR bumps the ledger alongside `mix.exs` (#80, #81).
+
+### Earlier
 
 - Docker/adoption demo DX hardening made hostname-first Traefik access the normal browser path and kept direct host ports as explicit fallback.
 - Operator/admin anonymous access now redirects to `/login?return_to=%2Flockspire%2Fadmin`; signed-in non-operators still receive operator-only 403 guidance.
@@ -43,12 +54,14 @@ Last activity: 2026-07-10 - Docker/adoption demo DX and operator admin login-flo
 
 ## Most Recent Release
 
-- Version: `1.2.0`
-- Release PR: `#41 chore(main): release lockspire 1.2.0`
-- Milestone PR: `#40 v1.26 Host Integration & Operator Boundary Hardening`
-- Protected publish proof: GitHub Actions run `26502800103`
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.2.0`
-- GitHub release: `lockspire-v1.2.0`
+- Version: `1.4.0`
+- Release PR: `#79 chore(main): release lockspire 1.4.0`
+- Milestone PR: none; 1.4.0 was a sustaining release, not a milestone
+- Protected publish proof: GitHub Actions run `30386337705`
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.4.0`
+- GitHub release: `lockspire-v1.4.0` at `ee32dbd`
+
+`1.3.0` shipped earlier the same day from the exact-ref dispatch lane (run `30323976705`, release PR `#71`).
 
 ## Recently Shipped Milestones
 
