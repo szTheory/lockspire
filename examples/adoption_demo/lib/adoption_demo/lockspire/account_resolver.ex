@@ -22,9 +22,18 @@ defmodule AdoptionDemo.Lockspire.AccountResolver do
     end
   end
 
+  @doc """
+  Stable subject Lockspire records for a Billingo account.
+
+  Lockspire keys protocol state (consent grants, tokens, sessions) by this
+  subject rather than by the bare Billingo account id, so host-owned screens
+  that read those records back must look them up by subject too.
+  """
+  def subject_for(account) when is_map(account), do: "user:" <> account.id
+
   @impl true
   def build_claims(account, _context) when is_map(account) do
-    subject = "user:" <> account.id
+    subject = subject_for(account)
 
     claims = %{
       "email" => account.email,

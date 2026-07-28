@@ -3,7 +3,7 @@ defmodule AdoptionDemo.Accounts do
 
   @accounts %{
     "alice" => %{
-      id: "acct_alice",
+      id: "acct-alice",
       login: "alice",
       email: "alice@billingo.test",
       name: "Alice Rivera",
@@ -12,7 +12,7 @@ defmodule AdoptionDemo.Accounts do
       operator?: false
     },
     "bob" => %{
-      id: "acct_bob",
+      id: "acct-bob",
       login: "bob",
       email: "bob@northstar.test",
       name: "Bob Chen",
@@ -21,7 +21,7 @@ defmodule AdoptionDemo.Accounts do
       operator?: false
     },
     "ops" => %{
-      id: "acct_ops",
+      id: "acct-ops",
       login: "ops",
       email: "ops@billingo.test",
       name: "Ops Maintainer",

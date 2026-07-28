@@ -258,9 +258,12 @@ Enum.each(
   end
 )
 
+# Consent grants are keyed by the subject Lockspire records during a real
+# authorization (`AdoptionDemo.Lockspire.AccountResolver.subject_for/1`), not by
+# the bare Billingo account id, so seeded rows match what live flows produce.
 {:ok, remembered_consent} =
   Repository.grant_consent(%ConsentGrant{
-    account_id: "acct-alice",
+    account_id: "user:acct-alice",
     client_id: "billingo-dashboard-public",
     scopes: ["openid", "email", "profile", "read:billing"],
     granted_at: DateTime.add(now, -3_600, :second),
@@ -270,7 +273,7 @@ Enum.each(
 
 {:ok, _revoked_consent} =
   Repository.grant_consent(%ConsentGrant{
-    account_id: "acct-bob",
+    account_id: "user:acct-bob",
     client_id: "legacy-csv-reporter",
     scopes: ["openid", "profile"],
     granted_at: DateTime.add(now, -172_800, :second),
