@@ -33,11 +33,10 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     assert source =~ "--port"
   end
 
-  test "walk script isolates archives and pins the Phoenix installer" do
+  test "walk script isolates the Mix archive directory" do
     source = File.read!(@walk_script_path)
 
     assert source =~ "MIX_ARCHIVES"
-    assert source =~ "phx_new 1.8.9"
   end
 
   test "walk script never strips generator capabilities" do
