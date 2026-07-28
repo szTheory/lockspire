@@ -4,6 +4,20 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.4.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.3.0...lockspire-v1.4.0) (2026-07-28)
+
+
+### Features
+
+* **demo:** host-owned 404 page and working Disconnect for authorized apps ([#75](https://github.com/szTheory/lockspire/issues/75)) ([d5532d5](https://github.com/szTheory/lockspire/commit/d5532d540e44efe0b078a9a9a24a1c69a09d12de))
+
+
+### Bug Fixes
+
+* **ci:** keep Release Please unblocked after a publish ([#78](https://github.com/szTheory/lockspire/issues/78)) ([ddf1b1b](https://github.com/szTheory/lockspire/commit/ddf1b1b1485a324c7416e9eee1e21a26bf42465b))
+* **consent:** reuse a remembered grant instead of duplicating it on re-approval ([#77](https://github.com/szTheory/lockspire/issues/77)) ([2e597ad](https://github.com/szTheory/lockspire/commit/2e597ad957e9c308efa60428deb79db960fd3a48))
+* **deps:** allow phoenix_live_view 1.2.x without forcing adopters onto it ([#76](https://github.com/szTheory/lockspire/issues/76)) ([6ecc37a](https://github.com/szTheory/lockspire/commit/6ecc37aa78fbb10b3a8263ca7313e6f8aabb0256))
+
 ## [1.3.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.2.0...lockspire-v1.3.0) (2026-07-28)
 
 
