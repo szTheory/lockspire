@@ -99,10 +99,10 @@ key = JOSE.JWK.generate_key({:rsa, 2048})
 
 clients = [
   %Client{
-    client_id: "acme-ledger-public",
+    client_id: "billingo-dashboard-public",
     client_secret_hash: nil,
     client_type: :public,
-    name: "Acme Ledger Demo SPA",
+    name: "Billingo Dashboard SPA",
     redirect_uris: [oauth_callback_url],
     allowed_scopes: ["openid", "email", "profile", "read:billing"],
     allowed_grant_types: ["authorization_code", "refresh_token"],
@@ -115,10 +115,10 @@ clients = [
     metadata: %{"demo" => true, "phase110_state" => "healthy"}
   },
   %Client{
-    client_id: "acme-tv-device",
+    client_id: "billingo-display-device",
     client_secret_hash: nil,
     client_type: :public,
-    name: "Acme Boardroom TV",
+    name: "Billingo Lobby Display",
     redirect_uris: [],
     allowed_scopes: ["openid", "profile", "read:billing"],
     allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
@@ -131,10 +131,10 @@ clients = [
     metadata: %{"demo" => true, "phase110_state" => "warning pending device"}
   },
   %Client{
-    client_id: "acme-ledger-backend",
+    client_id: "billingo-reports-backend",
     client_secret_hash: Lockspire.Security.Policy.hash_client_secret("demo-backend-secret"),
     client_type: :confidential,
-    name: "Acme Ledger Backend",
+    name: "Billingo Reports Backend",
     redirect_uris: [oauth_callback_url],
     allowed_scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
     allowed_grant_types: ["authorization_code", "refresh_token"],
@@ -147,10 +147,10 @@ clients = [
     metadata: %{"demo" => true, "phase110_state" => "copy-once client secret rotation"}
   },
   %Client{
-    client_id: "northstar-dcr-self-registered",
+    client_id: "northstar-payables-portal",
     client_secret_hash: Lockspire.Security.Policy.hash_client_secret("demo-rat-secret"),
     client_type: :confidential,
-    name: "Northstar Partner Portal (self-registered)",
+    name: "Northstar Payables Portal (self-registered)",
     redirect_uris: [
       "https://partners.northstar.example.com/oauth/callback",
       "https://partners.northstar.example.com/oauth/callback/backup"
@@ -172,7 +172,7 @@ clients = [
     created_by: "dcr",
     created_at: now,
     provenance: :self_registered,
-    registration_client_uri: lockspire_base_url <> "/register/northstar-dcr-self-registered",
+    registration_client_uri: lockspire_base_url <> "/register/northstar-payables-portal",
     registration_access_token_hash: Lockspire.Security.Policy.hash_token("demo-rat-northstar"),
     contacts: ["security@northstar.example.com", "integrations@northstar.example.com"],
     metadata: %{
@@ -182,10 +182,10 @@ clients = [
     }
   },
   %Client{
-    client_id: "legacy-disabled-reporter",
+    client_id: "legacy-csv-reporter",
     client_secret_hash: Lockspire.Security.Policy.hash_client_secret("demo-disabled-secret"),
     client_type: :confidential,
-    name: "Legacy Disabled Reporter With A Long Name",
+    name: "Legacy CSV Reporter With A Long Name",
     redirect_uris: ["https://legacy-reporter.example.com/oauth/callback"],
     allowed_scopes: ["openid", "profile", "read:billing"],
     allowed_grant_types: ["authorization_code", "refresh_token"],
@@ -261,7 +261,7 @@ Enum.each(
 {:ok, remembered_consent} =
   Repository.grant_consent(%ConsentGrant{
     account_id: "acct-alice",
-    client_id: "acme-ledger-public",
+    client_id: "billingo-dashboard-public",
     scopes: ["openid", "email", "profile", "read:billing"],
     granted_at: DateTime.add(now, -3_600, :second),
     kind: :remembered,
@@ -271,7 +271,7 @@ Enum.each(
 {:ok, _revoked_consent} =
   Repository.grant_consent(%ConsentGrant{
     account_id: "acct-bob",
-    client_id: "legacy-disabled-reporter",
+    client_id: "legacy-csv-reporter",
     scopes: ["openid", "profile"],
     granted_at: DateTime.add(now, -172_800, :second),
     status: :revoked,
@@ -287,12 +287,12 @@ tokens = [
     token_hash: Lockspire.Security.Policy.hash_token("demo-access-active"),
     token_type: :access_token,
     jti: "demo-active-jti",
-    client_id: "acme-ledger-public",
+    client_id: "billingo-dashboard-public",
     account_id: "acct-alice",
     interaction_id: "interaction-pending-consent",
     consent_grant_id: remembered_consent.id,
     scopes: ["openid", "email", "read:billing"],
-    audience: ["https://billing.acme-ledger.test"],
+    audience: ["https://api.billingo.test/billing"],
     issued_at: DateTime.add(now, -900, :second),
     expires_at: DateTime.add(now, 2_700, :second)
   },
@@ -301,7 +301,7 @@ tokens = [
     token_type: :refresh_token,
     family_id: "family-demo-1",
     generation: 1,
-    client_id: "acme-ledger-public",
+    client_id: "billingo-dashboard-public",
     account_id: "acct-alice",
     scopes: ["openid", "email", "read:billing"],
     issued_at: DateTime.add(now, -900, :second),
@@ -312,7 +312,7 @@ tokens = [
     token_type: :refresh_token,
     family_id: "family-demo-reuse",
     generation: 2,
-    client_id: "northstar-dcr-self-registered",
+    client_id: "northstar-payables-portal",
     account_id: "acct-bob",
     scopes: ["openid", "profile", "write:reports"],
     issued_at: DateTime.add(now, -7_200, :second),
@@ -322,7 +322,7 @@ tokens = [
   %Token{
     token_hash: Lockspire.Security.Policy.hash_token("demo-access-revoked"),
     token_type: :access_token,
-    client_id: "legacy-disabled-reporter",
+    client_id: "legacy-csv-reporter",
     account_id: "acct-bob",
     scopes: ["openid", "profile"],
     issued_at: DateTime.add(now, -86_400, :second),
@@ -332,7 +332,7 @@ tokens = [
   %Token{
     token_hash: Lockspire.Security.Policy.hash_token("demo-access-expired"),
     token_type: :access_token,
-    client_id: "acme-ledger-backend",
+    client_id: "billingo-reports-backend",
     account_id: "acct-alice",
     scopes: ["openid", "read:billing"],
     issued_at: DateTime.add(now, -7_200, :second),
@@ -343,7 +343,7 @@ tokens = [
     token_type: :refresh_token,
     family_id: "family-demo-long-value-refresh-token-family-id-for-mobile-wrapping-proof-001",
     generation: 3,
-    client_id: "northstar-dcr-self-registered",
+    client_id: "northstar-payables-portal",
     account_id: "acct-phase110-long-value-subject-for-mobile-proof",
     scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
     audience: ["https://very-long-resource-indicator.partners.northstar.example.com/billing"],
@@ -361,7 +361,7 @@ Enum.each(
   [
     %Interaction{
       interaction_id: "interaction-pending-login",
-      client_id: "acme-ledger-public",
+      client_id: "billingo-dashboard-public",
       return_to: lockspire_base_url <> "/interactions/interaction-pending-login",
       status: :pending_login,
       scopes_requested: ["openid", "email"],
@@ -371,19 +371,19 @@ Enum.each(
     },
     %Interaction{
       interaction_id: "interaction-pending-consent",
-      client_id: "northstar-dcr-self-registered",
+      client_id: "northstar-payables-portal",
       account_id: "acct-alice",
       return_to: lockspire_base_url <> "/interactions/interaction-pending-consent",
       status: :pending_consent,
       scopes_requested: ["openid", "profile", "write:reports"],
-      resources_requested: ["https://billing.acme-ledger.test"],
+      resources_requested: ["https://api.billingo.test/billing"],
       expires_at: DateTime.add(now, 600, :second),
       inserted_at: DateTime.add(now, -120, :second),
       updated_at: DateTime.add(now, -120, :second)
     },
     %Interaction{
       interaction_id: "interaction-denied",
-      client_id: "legacy-disabled-reporter",
+      client_id: "legacy-csv-reporter",
       account_id: "acct-bob",
       return_to: "https://legacy-reporter.example.com/callback",
       status: :denied,
@@ -395,9 +395,9 @@ Enum.each(
     },
     %Interaction{
       interaction_id: "interaction-expired",
-      client_id: "acme-ledger-backend",
+      client_id: "billingo-reports-backend",
       account_id: "acct-phase110-long-value-subject-for-mobile-proof",
-      return_to: "https://backend.acme-ledger.example.com/very/long/oauth/callback/path",
+      return_to: "https://reports.billingo.example.com/very/long/oauth/callback/path",
       status: :expired,
       scopes_requested: ["openid", "email", "profile", "read:billing"],
       expired_at: DateTime.add(now, -900, :second),
@@ -417,7 +417,7 @@ Enum.each(
       device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-pending"),
       user_code_hash: Lockspire.Security.Policy.hash_token("ABCD1234"),
       verification_handle: "demo-device-pending",
-      client_id: "acme-tv-device",
+      client_id: "billingo-display-device",
       scopes: ["openid", "profile"],
       status: :pending,
       effective_poll_interval_seconds: 5,
@@ -428,7 +428,7 @@ Enum.each(
       device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-approved"),
       user_code_hash: Lockspire.Security.Policy.hash_token("EFGH5678"),
       verification_handle: "demo-device-approved",
-      client_id: "acme-tv-device",
+      client_id: "billingo-display-device",
       scopes: ["openid", "profile"],
       status: :approved,
       subject_id: "acct-alice",
@@ -441,7 +441,7 @@ Enum.each(
       device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-expired"),
       user_code_hash: Lockspire.Security.Policy.hash_token("IJKL9012"),
       verification_handle: "demo-device-expired",
-      client_id: "acme-tv-device",
+      client_id: "billingo-display-device",
       scopes: ["openid"],
       status: :expired,
       expired_at: DateTime.add(now, -60, :second),
@@ -453,7 +453,7 @@ Enum.each(
       device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-denied"),
       user_code_hash: Lockspire.Security.Policy.hash_token("MNOP3456"),
       verification_handle: "demo-device-denied-long-value-handle-for-mobile-proof",
-      client_id: "acme-tv-device",
+      client_id: "billingo-display-device",
       scopes: ["openid", "profile"],
       status: :denied,
       subject_id: "acct-bob",
@@ -466,7 +466,7 @@ Enum.each(
       device_code_hash: Lockspire.Security.Policy.hash_token("demo-device-consumed"),
       user_code_hash: Lockspire.Security.Policy.hash_token("QRST7890"),
       verification_handle: "demo-device-consumed",
-      client_id: "acme-tv-device",
+      client_id: "billingo-display-device",
       scopes: ["openid", "profile"],
       status: :consumed,
       subject_id: "acct-alice",
@@ -569,7 +569,7 @@ Enum.each(
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-succeeded",
       logout_event_id: logout_event.id,
-      client_id: "northstar-dcr-self-registered",
+      client_id: "northstar-payables-portal",
       channel: :backchannel,
       target_uri: "https://partners.northstar.example.com/backchannel-logout",
       session_required: true,
@@ -582,7 +582,7 @@ Enum.each(
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-retryable",
       logout_event_id: logout_event.id,
-      client_id: "legacy-disabled-reporter",
+      client_id: "legacy-csv-reporter",
       channel: :backchannel,
       target_uri: "https://legacy-reporter.example.com/backchannel-logout",
       session_required: false,
@@ -595,7 +595,7 @@ Enum.each(
     %LogoutDelivery{
       delivery_id: "demo-logout-frontchannel-rendered",
       logout_event_id: logout_event.id,
-      client_id: "northstar-dcr-self-registered",
+      client_id: "northstar-payables-portal",
       channel: :frontchannel,
       target_uri: "https://partners.northstar.example.com/frontchannel-logout",
       session_required: false,
@@ -606,7 +606,7 @@ Enum.each(
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-pending-long-value-delivery-id-for-mobile-proof",
       logout_event_id: pending_logout_event.id,
-      client_id: "northstar-dcr-self-registered",
+      client_id: "northstar-payables-portal",
       channel: :backchannel,
       target_uri:
         "https://partners.northstar.example.com/backchannel-logout/very/long/path/for/mobile-proof",
@@ -617,7 +617,7 @@ Enum.each(
     %LogoutDelivery{
       delivery_id: "demo-logout-backchannel-discarded",
       logout_event_id: discarded_logout_event.id,
-      client_id: "legacy-disabled-reporter",
+      client_id: "legacy-csv-reporter",
       channel: :backchannel,
       target_uri: "https://legacy-reporter.example.com/backchannel-logout",
       session_required: false,
@@ -638,14 +638,14 @@ Enum.each(
 
 IO.puts("""
 
-Acme Ledger demo seeded.
+Billingo demo seeded.
 
 Accounts:
   alice / bob: tenant users
   ops: operator admin
 
 OAuth:
-  public client: acme-ledger-public
-  device client: acme-tv-device
+  public client: billingo-dashboard-public
+  device client: billingo-display-device
   redirect URI: #{oauth_callback_url}
 """)
