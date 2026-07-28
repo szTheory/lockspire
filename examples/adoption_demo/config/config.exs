@@ -58,6 +58,7 @@ config :adoption_demo, AdoptionDemoWeb.Endpoint,
     System.get_env("SECRET_KEY_BASE") ||
       "a3e20c7a13116f2415ef29e0714cc5901d0d0ed48390b78781625d0ef4dbfd328ed05f017f89cc3c0eb579d9fb3af16b",
   server: true,
+  render_errors: [formats: [html: AdoptionDemoWeb.ErrorHTML], layout: false],
   live_view: [signing_salt: "adoption_demo_live"]
 
 config :lockspire,

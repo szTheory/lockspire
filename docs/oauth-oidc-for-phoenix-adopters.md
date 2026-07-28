@@ -299,7 +299,7 @@ Common claims:
 The most important identity claim is `sub`.
 
 Use a stable internal identifier, not email. Emails change. A Billingo subject
-might look like `user:acct_alice`. Your app can choose its own stable subject
+might look like `user:acct-alice`. Your app can choose its own stable subject
 format through the account resolver.
 
 Your app decides which business facts become claims. Be conservative. Email and
@@ -351,7 +351,7 @@ Client -> Lockspire /userinfo
 
 Lockspire -> client
   {
-    "sub": "user:acct_alice",
+    "sub": "user:acct-alice",
     "email": "alice@billingo.test",
     "name": "Alice Rivera"
   }
@@ -382,7 +382,7 @@ Billingo session
         |
         v
 AccountResolver
-  subject: "user:acct_alice"
+  subject: "user:acct-alice"
   id_token claims: email, name
   userinfo claims: email, name, tenant display facts
         |

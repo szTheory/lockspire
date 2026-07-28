@@ -57,6 +57,7 @@ defmodule AdoptionDemoWeb.HTML do
           </div>
         </header>
         <main class="shell main">
+          #{flash_region(conn)}
           #{body}
         </main>
       </body>
@@ -91,6 +92,28 @@ defmodule AdoptionDemoWeb.HTML do
       |> Enum.map_join("\n", &scope_meaning_row/1)
 
     ~s(<div class="scope-meaning-list">#{rows}</div>)
+  end
+
+  defp flash_region(conn) do
+    flash = conn.assigns[:flash] || %{}
+
+    messages =
+      [{:info, "callout"}, {:error, "inline-alert"}]
+      |> Enum.map(fn {key, class} -> {class, Phoenix.Flash.get(flash, key)} end)
+      |> Enum.reject(fn {_class, message} -> message in [nil, ""] end)
+
+    case messages do
+      [] ->
+        ""
+
+      messages ->
+        banners =
+          Enum.map_join(messages, "\n", fn {class, message} ->
+            ~s(<p class="#{class}">#{escape(message)}</p>)
+          end)
+
+        ~s(<div class="flash-stack" role="status" aria-live="polite">#{banners}</div>)
+    end
   end
 
   defp session_action(nil, _csrf) do
@@ -194,6 +217,8 @@ defmodule AdoptionDemoWeb.HTML do
     .nav-link:hover, .nav-link.active { background: white; border-color: var(--line); color: var(--blue); box-shadow: 0 8px 24px rgba(30, 41, 59, 0.07); }
 
     .main { padding: 32px 0 72px; }
+    .flash-stack { display: grid; gap: 12px; margin: 0 auto 22px; max-width: 960px; }
+    .flash-stack p { margin-bottom: 0; }
     .main > section + section { margin-top: var(--section-gap); }
     .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr); gap: 24px; align-items: stretch; }
     .hero-copy, .panel, .card, .visual-card { background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(23, 32, 42, 0.11); border-radius: 8px; box-shadow: var(--shadow); min-width: 0; }
@@ -260,6 +285,7 @@ defmodule AdoptionDemoWeb.HTML do
     .task-header p, .result-header p, .record-header p { max-width: 66ch; margin-bottom: 0; }
     .task-form { display: grid; gap: 16px; margin-top: 22px; }
     .task-actions, .record-actions, .result-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .task-actions + .fine-print { margin-top: 12px; }
     .task-note, .demo-note { margin-top: 22px; padding: 16px; border-radius: 8px; background: #f8fbff; border: 1px solid rgba(34, 81, 209, 0.12); }
     .task-note p:last-child, .demo-note p:last-child { margin-bottom: 0; }
     .inline-alert { border-left: 4px solid var(--coral); background: #fff5f3; border-radius: 8px; color: #9f2f20; font-weight: 800; padding: 12px 14px; }
