@@ -55,6 +55,10 @@ defmodule Lockspire.AdoptionDemoOperatorGuardTest do
   end
 
   defp call_guard(conn) do
+    # apply/3 on purpose: the plug lives in examples/adoption_demo and is only
+    # compiled at runtime by setup_all, so a direct remote call would emit an
+    # "module is not available" warning here.
+    # credo:disable-for-next-line Credo.Check.Refactor.Apply
     apply(AdoptionDemoWeb.Plugs.RequireOperator, :call, [conn, []])
   end
 end
