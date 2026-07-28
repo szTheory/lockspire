@@ -76,30 +76,41 @@ Acknowledged, deliberately deferred out of v1.36.
 
 ## Traceability
 
-Populated during roadmap creation.
+Populated during roadmap creation on 2026-07-28. See `.planning/ROADMAP.md`.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADOPT-01 | TBD | Pending |
-| ADOPT-02 | TBD | Pending |
-| ADOPT-03 | TBD | Pending |
-| ADOPT-04 | TBD | Pending |
-| INSTALL-01 | TBD | Pending |
-| INSTALL-02 | TBD | Pending |
-| INSTALL-03 | TBD | Pending |
-| WIRE-01 | TBD | Pending |
-| WIRE-02 | TBD | Pending |
-| WIRE-03 | TBD | Pending |
-| REF-01 | TBD | Pending |
-| REF-02 | TBD | Pending |
-| GUARD-01 | TBD | Pending |
-| GUARD-02 | TBD | Pending |
-| GUARD-03 | TBD | Pending |
+| ADOPT-01 | Phase 126 | Pending |
+| ADOPT-02 | Phase 126 | Pending |
+| ADOPT-03 | Phase 126 | Pending |
+| ADOPT-04 | Phase 126 | Pending |
+| INSTALL-01 | Phase 127 | Pending |
+| INSTALL-02 | Phase 127 | Pending |
+| INSTALL-03 | Phase 127 | Pending |
+| WIRE-01 | Phase 128 | Pending |
+| WIRE-02 | Phase 128 | Pending |
+| WIRE-03 | Phase 128 | Pending |
+| REF-01 | Phase 129 | Pending |
+| REF-02 | Phase 129 | Pending |
+| GUARD-01 | Phase 130 | Pending |
+| GUARD-02 | Phase 130 | Pending |
+| GUARD-03 | Phase 130 | Pending |
 
 **Coverage:**
 - Milestone requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️ (roadmap not yet created)
+- Mapped to phases: 15 ✓
+- Unmapped: 0
+
+Each requirement maps to exactly one phase. Phase span for v1.36 is 126-130, continuing from
+Phase 125 (milestone v1.32).
+
+| Phase | Name | Requirements |
+|-------|------|--------------|
+| 126 | Adopter Path Walk & Defect Ledger | ADOPT-01, ADOPT-02, ADOPT-03, ADOPT-04 |
+| 127 | Installer Against A Real Host | INSTALL-01, INSTALL-02, INSTALL-03 |
+| 128 | Documented Wiring Truth | WIRE-01, WIRE-02, WIRE-03 |
+| 129 | Reference Artifact Alignment | REF-01, REF-02 |
+| 130 | Adopter Path Guardrail | GUARD-01, GUARD-02, GUARD-03 |
 
 ## Evidence Behind These Requirements
 
@@ -114,4 +125,4 @@ later reader can tell whether a requirement was grounded or assumed.
 
 ---
 *Requirements defined: 2026-07-28*
-*Last updated: 2026-07-28 at milestone v1.36 start*
+*Last updated: 2026-07-28 at v1.36 roadmap creation (phases 126-130)*

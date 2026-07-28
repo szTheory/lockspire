@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-status: planning
-last_updated: "2026-07-28T19:16:41.006Z"
+status: roadmapped
+last_updated: "2026-07-28T20:05:00.000Z"
 last_activity: 2026-07-28
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Sustaining GA release train; start a fresh milestone only with concrete adopter, support, or release evidence.
+**Current focus:** Milestone v1.36 Adopter Path Proof — walk the documented `mix phx.new` to working-OAuth-flow path in one run, fix every break it finds, and leave a guardrail so it cannot silently rot again.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 126 — Adopter Path Walk & Defect Ledger (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-28 — Milestone v1.36 started
+Status: Roadmapped; ready to plan Phase 126
+Last activity: 2026-07-28 — v1.36 roadmap created (phases 126-130, 15/15 requirements mapped)
 
 ## Completed Ad Hoc Work
 
@@ -92,6 +92,23 @@ Last activity: 2026-07-28 — Milestone v1.36 started
 | 123 | Operate Queue Flow Polish | 3 | Interactions, device auth, logouts |
 | 124 | Configure Onboarding Propagation Pass | 3 | Clients, DCR/IAT, keys, policies |
 | 125 | Browser Proof, Docs & Adversarial Ratchet | 3 | Fixtures, proof, docs |
+
+## v1.36 Phase Plan
+
+Phase numbering continues from Phase 125 (v1.32), the last numbered phase in project history.
+
+| Phase | Name | REQs | Focus |
+|-------|------|------|-------|
+| 126 | Adopter Path Walk & Defect Ledger | 4 | Evidence: walk the path, record what breaks |
+| 127 | Installer Against A Real Host | 3 | Fix installer defects the walk found |
+| 128 | Documented Wiring Truth | 3 | Fix wiring/guide defects the walk found |
+| 129 | Reference Artifact Alignment | 2 | Demo vs installer path truth |
+| 130 | Adopter Path Guardrail | 3 | Automate the green path, correct install-truth claims |
+
+**Sequencing rule:** Phase 126 records defects but does not fix them. Phases 127-129 are scoped
+to "fix what the walk found in area X" — their defect lists are intentionally unknown at roadmap
+time and are read from the Phase 126 ledger. Phase 130 is last because automating a red path
+institutionalizes a known failure.
 
 ## Decisions
 
@@ -201,6 +218,12 @@ Last activity: 2026-07-28 — Milestone v1.36 started
 - [Phase 125]: Out-of-scope Phase 115 test.fast failures were deferred instead of fixed in Phase 125.
 - [Phase 125]: Plan 125-07 enforces empty/no-match browser evidence through parsed BrowserEvidence rows rather than raw markdown grep.
 - [Phase 125]: Plan 125-07 keeps empty/no-match proof maintainer-only with no browser tooling, runtime route, package, schema, or public support-surface expansion.
+- [2026-07-28]: v1.36 is an adoption-hardening milestone, not protocol breadth. No new protocol surface, no widening of `docs/supported-surface.md`, no host-owned seam changes, no admin/operator UI work.
+- [2026-07-28]: v1.36 is deliberately evidence-generating. Phase 126 walks the real adopter path and records defects without fixing them, so the evidence stays separable from the repair.
+- [2026-07-28]: Phases 127-129 are scoped to "fix the defects the walk found in area X". Their defect lists are intentionally unspecified at roadmap time; a planner should read the Phase 126 ledger rather than treat the openness as an error.
+- [2026-07-28]: The guardrail phase (130) runs last. Automating a red adopter path would only institutionalize a known failure.
+- [2026-07-28]: Making the installer inject into the host router/config/application is deferred pending walk evidence, not assumed. Same for rewriting `examples/adoption_demo` as a generated app — the demo's in-repo path dependency may make full installer parity wrong.
+- [2026-07-28]: Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built.
 
 ## Blockers/Concerns
 
@@ -217,9 +240,9 @@ Last activity: 2026-07-28 — Milestone v1.36 started
 
 **Last session:** 2026-07-10T22:25:12Z
 
-**Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
+**Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone.
+**Stopped at:** v1.36 roadmap created on `milestone/v1.36-adopter-path-proof`; phases 126-130 defined, 15/15 requirements mapped, no phase planned yet.
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -279,4 +302,5 @@ Last activity: 2026-07-28 — Milestone v1.36 started
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 126 with `/gsd-plan-phase 126`.
+- Expect the first walk to come back RED. A red first run with a complete defect ledger is a passing Phase 126; an empty ledger is not.

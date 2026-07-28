@@ -1,10 +1,155 @@
 # Lockspire Roadmap
 
-## Current Milestone
+## Current Milestone: v1.36 Adopter Path Proof
 
-No active feature milestone. Lockspire is back on the sustaining GA release train until concrete adopter, support, or release evidence justifies another scoped milestone.
+**Goal:** Prove the documented path from `mix phx.new` to a working third-party OAuth flow end to end in one run, and fix every break found along the way.
 
-Start the next milestone with `/gsd-new-milestone`.
+**Milestone posture:** This is an adoption-hardening milestone, not protocol breadth. It adds no protocol surface, does not widen `docs/supported-surface.md`, does not change host-owned seams (accounts, login UX, layouts, branding, policy), and does no admin/operator UI work. Two tempting outcomes — making the installer inject into the host router/config/application, and rewriting `examples/adoption_demo` as a generated app — are explicitly deferred pending evidence from the walk itself.
+
+**Sequencing rule (read this before planning any phase):** This milestone is deliberately evidence-generating. Phase 126 walks the real adopter path and *records* what breaks; it does not fix. Phases 127-129 are scoped to "fix the defects the walk found in area X" and their defect lists are intentionally unknown at roadmap time — a planner encountering that openness should treat it as the design, not as a missing detail, and should read the Phase 126 defect ledger as its input. Phase 130 comes last because automating a red path only institutionalizes a known failure.
+
+**Evidence anchors:** `scripts/publish/verify_install_truth.sh` proves package resolution only — it never runs the installer, migrates, boots, or completes a flow. `test/integration/install_generator_test.exs` wipes its fixture to a bare `.keep`, so the installer runs into an empty directory. `lib/mix/tasks/lockspire.install.ex` injects nothing into host router, config, or application; section 3 of `docs/install-and-onboard.md` is unexecuted hand-work. `examples/adoption_demo` has zero references to `mix lockspire.install`.
+
+## Phases
+
+- [ ] **Phase 126: Adopter Path Walk & Defect Ledger** - One command walks the whole documented path against a stock Phoenix app and records every defect it surfaces
+- [ ] **Phase 127: Installer Against A Real Host** - Fix the installer defects the walk found, and exercise `mix lockspire.install` against a real generated app instead of an empty fixture
+- [ ] **Phase 128: Documented Wiring Truth** - Fix the wiring defects the walk found at their real source and close the gap between the guide and what actually works
+- [ ] **Phase 129: Reference Artifact Alignment** - Make the relationship between `examples/adoption_demo` and the installer path explicit and accurate
+- [ ] **Phase 130: Adopter Path Guardrail** - Automate the now-green walk and stop `verify_install_truth.sh` from overstating what it proves
+
+## Phase Details
+
+### Phase 126: Adopter Path Walk & Defect Ledger
+
+**Goal**: A maintainer can run one command that walks the entire documented adopter path against a stock Phoenix app and gets an attributable verdict plus a written record of every defect the walk surfaced. This phase deliberately does not fix what it finds — its deliverables are a working harness and evidence.
+
+**Depends on**: Nothing (first phase of v1.36)
+
+**Requirements**: ADOPT-01, ADOPT-02, ADOPT-03, ADOPT-04
+
+**Success Criteria** (what must be TRUE):
+
+1. A maintainer runs a single command and the walk generates a stock `mix phx.new` application with the defaults a real adopter would use — Ecto and HTML included, not a stripped-down variant — then runs `mix lockspire.install`, performs the documented wiring, migrates, boots the app, registers a client, and drives an authorization-code + PKCE flow, ending in one pass/fail verdict.
+2. When the walk fails, the output names which documented step failed and the underlying error, and a maintainer can inspect or resume from that step without re-running the earlier steps by hand.
+3. The walk fails when the flow does not yield a usable access token — the token is exercised against a token-consuming endpoint rather than merely observed to exist — so a run cannot pass on exit codes alone.
+4. A committed defect ledger records every break the walk surfaced, each attributed to its real source (installer, generated scaffolding, guide, reference demo, or library) and to the requirement area that will fix it.
+5. Any temporary workaround the harness needs in order to reach a later step is recorded in the ledger as a defect rather than left silently in the harness as if it were normal.
+
+**Plans**: TBD
+
+**Implementation notes**:
+
+- The walk is expected to come back RED. That is the point of the phase; a red first run with a complete ledger is a passing phase, an empty ledger is not.
+- If an early-step break blocks the walk from reaching later steps, use the smallest local workaround needed to keep walking and record it per criterion 5. Later phases remove those workarounds by fixing the source.
+- Do not fix defects in this phase beyond what is required to make the harness itself function. Fixes belong to Phases 127-129 so the evidence stays separable from the repair.
+- Prefer a maintainer-facing script plus a Mix alias consistent with existing repo lanes (`scripts/`, `mix test.integration`) over new tooling weight. This walk generates a real app and boots it, so it will not be daemon-free or fast; do not force it into the default `mix ci` lane in this phase.
+
+### Phase 127: Installer Against A Real Host
+
+**Goal**: Fix the installer-area defects the Phase 126 walk recorded, and prove `mix lockspire.install` against a freshly generated Phoenix application instead of an empty fixture directory. The specific defect list is unknown until the walk runs — this phase is scoped to "whatever the ledger attributed to the installer", and that openness is intended.
+
+**Depends on**: Phase 126 (the defect ledger is this phase's input)
+
+**Requirements**: INSTALL-01, INSTALL-02, INSTALL-03
+
+**Success Criteria** (what must be TRUE):
+
+1. The installer's integration proof runs `mix lockspire.install` into a freshly generated Phoenix application rather than into a directory the test emptied first.
+2. A maintainer can confirm the installer's generated files match the host they were generated into — app name, web module, router module, and repo module all resolve against the real host rather than a placeholder.
+3. Re-running the installer against a host that already contains conflicting files or prior Lockspire output behaves observably and predictably, and does not leave the host in an unclear half-installed state.
+4. Every installer-attributed defect in the Phase 126 ledger is either fixed in `mix lockspire.install` or its templates, or explicitly deferred with a stated reason recorded in the ledger.
+
+**Implementation notes**:
+
+- Out of scope, deliberately: making the installer inject into the host's router, config, or application. That is a real design possibility, but v1.36 treats it as a decision the walk should *inform*, not a conclusion assumed before walking. If the evidence argues for it, log it as a future candidate.
+- Host-owned seams stay host-owned. Reducing adopter friction must not absorb accounts, login UX, layouts, branding, or policy into the library.
+- `test/integration/install_generator_test.exs` already asserts generated content thoroughly; extend the host-interaction gap rather than rewriting the content assertions.
+
+### Phase 128: Documented Wiring Truth
+
+**Goal**: Close the gap between `docs/install-and-onboard.md` and reality using the wiring defects the Phase 126 walk recorded, so the manual "wire the generated files" step is verified to produce a working provider rather than trusted. As with Phase 127, the defect list is discovered rather than pre-specified.
+
+**Depends on**: Phase 126 (defect ledger); Phase 127 (installer output must be correct before the wiring steps on top of it can be re-proven)
+
+**Requirements**: WIRE-01, WIRE-02, WIRE-03
+
+**Success Criteria** (what must be TRUE):
+
+1. Every manual step in `docs/install-and-onboard.md` is executed by the path walk, and a drift check fails when the guide gains or changes a step the walk does not perform.
+2. An adopter following only the guide reaches a booting provider — any knowledge the walk needed that the guide did not state has been added to the guide.
+3. Every wiring-attributed defect in the Phase 126 ledger is fixed in the library, the generator templates, or the guide, rather than worked around inside the walk harness.
+4. The walk harness performs only steps the guide tells an adopter to perform; the temporary workarounds recorded under Phase 126 criterion 5 are gone from the harness.
+
+**Implementation notes**:
+
+- Phase 126 makes the walk execute the wiring steps well enough to reach a token. This phase hardens that into provable coverage of *every* documented step plus a drift fence, which is why WIRE-01 lands here and not in Phase 126.
+- Sections 1-8 of the guide are not all on the minimum path to a token (upgrade and the device-login verification seam, for example). Decide explicitly which steps the walk executes and which the drift check exempts with a stated reason; silent omission is the failure mode this phase exists to close.
+- Findings that would widen `docs/supported-surface.md` are logged as future candidates, not built. Narrowing drift is in scope; widening claims is not.
+
+### Phase 129: Reference Artifact Alignment
+
+**Goal**: Make the relationship between `examples/adoption_demo` and the installer path explicit and accurate, so the reference artifact adopters are pointed at cannot quietly teach a different integration than the one Lockspire ships.
+
+**Depends on**: Phase 127 (the installer's real generated wiring is the thing the demo is diffed against)
+
+**Requirements**: REF-01, REF-02
+
+**Success Criteria** (what must be TRUE):
+
+1. A reader of `examples/adoption_demo` can tell from the demo itself whether it demonstrates the documented `mix lockspire.install` path or a hand-wired alternative, and why.
+2. Each divergence between the demo's wiring and the installer's generated wiring is either removed or documented with its reason.
+3. Deliberate divergences — the demo's in-repo path dependency being the clearest — are stated as deliberate rather than left for a reader to infer.
+
+**Implementation notes**:
+
+- Out of scope, deliberately: rewriting the adoption demo as a generated app. That may turn out to be the right answer, but forcing it up front presumes the conclusion, and the demo's in-repo path dependency may make full installer parity wrong. If the evidence argues for it, log it as a future candidate.
+- No admin/operator UI work. v1.28-v1.32 covered that surface; adopter-path defects in admin UI get logged unless they block the walk.
+- The demo's shipped Docker DX, `LOCKSPIRE_DEMO_BASE_URL` contract, and smoke lane are working assets from v1.30 — align the demo's *story* about the install path without destabilizing its startup path.
+
+### Phase 130: Adopter Path Guardrail
+
+**Goal**: Leave behind automation that fails when the adopter path breaks, and stop `verify_install_truth.sh` from overstating its coverage — so this surface cannot silently rot again. This phase runs last on purpose: automating a red path institutionalizes a known failure.
+
+**Depends on**: Phases 126, 127, 128, 129 (the walk must actually be green before it is automated)
+
+**Requirements**: GUARD-01, GUARD-02, GUARD-03
+
+**Success Criteria** (what must be TRUE):
+
+1. The adopter path walk runs automatically — on a schedule, on release, or both — so a break is detected without a maintainer remembering to check.
+2. `scripts/publish/verify_install_truth.sh` either proves the adopter path or states plainly what it does not prove, so "Install Truth proven" cannot overstate its coverage again.
+3. A failing walk is visible as a distinct, attributable failure rather than a generic red build — a maintainer can tell from the failure alone that the adopter path broke and at which documented step.
+4. The walk is green at the moment automation is switched on, and that green run is recorded as the baseline.
+
+**Implementation notes**:
+
+- Respect the repo's existing CI economics from v1.35: this walk generates and boots a real Phoenix app, so a scheduled or release-triggered lane is the expected shape rather than adding it to every PR run.
+- `.planning/RELEASE-TRAIN.md` records install-truth proof per release. If GUARD-02 changes what that proof means, update the ledger's wording so release truth and the script agree.
+- The guardrail reports on Lockspire's own adopter path. It does not become a new public support claim or a supported-surface entry.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 126. Adopter Path Walk & Defect Ledger | 0/TBD | Not started | - |
+| 127. Installer Against A Real Host | 0/TBD | Not started | - |
+| 128. Documented Wiring Truth | 0/TBD | Not started | - |
+| 129. Reference Artifact Alignment | 0/TBD | Not started | - |
+| 130. Adopter Path Guardrail | 0/TBD | Not started | - |
+
+## Requirement Coverage
+
+All 15 v1.36 requirements map to exactly one phase. No orphans, no duplicates.
+
+| Phase | Requirements | Count |
+|-------|--------------|-------|
+| 126 | ADOPT-01, ADOPT-02, ADOPT-03, ADOPT-04 | 4 |
+| 127 | INSTALL-01, INSTALL-02, INSTALL-03 | 3 |
+| 128 | WIRE-01, WIRE-02, WIRE-03 | 3 |
+| 129 | REF-01, REF-02 | 2 |
+| 130 | GUARD-01, GUARD-02, GUARD-03 | 3 |
+| **Total** | | **15/15** |
 
 ## Recently Landed Mainline Milestone Records
 
