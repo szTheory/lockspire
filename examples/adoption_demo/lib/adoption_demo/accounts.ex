@@ -5,28 +5,28 @@ defmodule AdoptionDemo.Accounts do
     "alice" => %{
       id: "acct_alice",
       login: "alice",
-      email: "alice@acme.test",
+      email: "alice@billingo.test",
       name: "Alice Rivera",
-      tenant_id: "tenant_acme",
-      tenant_name: "Acme Ledger",
+      tenant_id: "tenant_billingo",
+      tenant_name: "Billingo",
       operator?: false
     },
     "bob" => %{
       id: "acct_bob",
       login: "bob",
-      email: "bob@globex.test",
+      email: "bob@northstar.test",
       name: "Bob Chen",
-      tenant_id: "tenant_globex",
-      tenant_name: "Globex Finance",
+      tenant_id: "tenant_northstar",
+      tenant_name: "Northstar Retail",
       operator?: false
     },
     "ops" => %{
       id: "acct_ops",
       login: "ops",
-      email: "ops@acme.test",
+      email: "ops@billingo.test",
       name: "Ops Maintainer",
-      tenant_id: "tenant_acme",
-      tenant_name: "Acme Ledger",
+      tenant_id: "tenant_billingo",
+      tenant_name: "Billingo",
       operator?: true
     }
   }

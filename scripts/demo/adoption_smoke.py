@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 
 BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://lockspire-demo.localhost").rstrip("/")
-BILLING_RESOURCE = "https://billing.acme-ledger.test"
+BILLING_RESOURCE = "https://api.billingo.test/billing"
 
 
 class Browser:
@@ -224,7 +224,7 @@ def exercise_authorization_code():
     state = "smoke-state"
     authorize_params = {
         "response_type": "code",
-        "client_id": "acme-ledger-public",
+        "client_id": "billingo-dashboard-public",
         "redirect_uri": BASE_URL + "/oauth/callback",
         "scope": "openid email profile read:billing",
         "state": state,
@@ -277,7 +277,7 @@ def exercise_authorization_code():
         "/lockspire/token",
         {
             "grant_type": "authorization_code",
-            "client_id": "acme-ledger-public",
+            "client_id": "billingo-dashboard-public",
             "redirect_uri": BASE_URL + "/oauth/callback",
             "code": code,
             "code_verifier": verifier,
@@ -296,11 +296,11 @@ def exercise_authorization_code():
     )
     assert_status(userinfo, 200, "userinfo accepts issued access token")
     userinfo_json = json_body(userinfo, "userinfo")
-    assert userinfo_json["email"] == "alice@acme.test"
+    assert userinfo_json["email"] == "alice@billingo.test"
 
     # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
     # pipeline :lockspire_protected_api do
-    #   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://billing.acme-ledger.test", enforce_audience: true
+    #   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://api.billingo.test/billing", enforce_audience: true
     #   plug Lockspire.Plug.EnforceSenderConstraints,
     #     dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
     #   plug Lockspire.Plug.RequireToken
@@ -326,7 +326,7 @@ def exercise_device_flow():
     issued = browser.request(
         "POST",
         "/lockspire/device/code",
-        {"client_id": "acme-tv-device", "scope": "openid profile read:billing"},
+        {"client_id": "billingo-display-device", "scope": "openid profile read:billing"},
     )
     assert_status(issued, 200, "device authorization")
     issued_json = json_body(issued, "device authorization")
@@ -370,7 +370,7 @@ def exercise_device_flow():
         {
             "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
             "device_code": issued_json["device_code"],
-            "client_id": "acme-tv-device",
+            "client_id": "billingo-display-device",
         },
     )
     assert_status(token, 200, "device token exchange")
