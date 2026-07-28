@@ -140,6 +140,13 @@ None - no external service configuration required. PostgreSQL was already reacha
 - `LOCKSPIRE_WALK_EMAIL`/`LOCKSPIRE_WALK_PASSWORD` are exported by the script exactly as the cross-plan contract requires, ready for plan 126-03's flow driver and plan 126-06's secret-absence ledger assertion to consume unchanged.
 - No blockers. The one flagged assumption in the plan (RESEARCH A1: `--install` suppresses the "Fetch and install dependencies?" prompt non-interactively) was confirmed empirically -- the real `mix phx.new host_app --database postgres --install` run completed with no interactive prompt and no `yes` piping needed.
 
+## Self-Check: PASSED
+
+- FOUND: scripts/maintainer/adopter_path_walk.sh
+- FOUND: test/lockspire/maintainer/adopter_walk_contract_test.exs
+- FOUND: .planning/phases/126-adopter-path-walk-defect-ledger/126-01-SUMMARY.md
+- FOUND: f774d5e, 0a9553c, 82a4783, 7f6aad6
+
 ---
 *Phase: 126-adopter-path-walk-defect-ledger*
 *Completed: 2026-07-28*
