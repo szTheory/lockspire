@@ -55,6 +55,8 @@ make demo-stop
 ## Guides
 
 - [OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md)
+- [Architecture](docs/architecture.md)
+- [Code walkthrough](docs/code-walkthrough.md)
 - [Getting started](docs/getting-started.md)
 - [Install and onboard](docs/install-and-onboard.md)
 - [SaaS adoption recipe](docs/saas-adoption-recipe.md)
