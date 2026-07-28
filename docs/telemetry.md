@@ -1,6 +1,6 @@
 # Lockspire Telemetry
 
-Lockspire leverages the [telemetry](https://hexdocs.pm/telemetry/) library for observability and instrumentation.
+Lockspire leverages the [telemetry](https://hexdocs.pm/telemetry/) library for observability, instrumentation, and audit logging. 
 
 All core domain events are emitted using the internal `Lockspire.Observability.emit/4` and `Lockspire.Observability.emit_logout/3` helpers. This ensures uniform event structure, consistent measurements, and mandatory secret redaction before any event reaches reporters or audit sinks.
 
@@ -11,7 +11,7 @@ Every event emitted by Lockspire produces two paths:
 1. **Standard Telemetry Path:** `[:lockspire, <entity>, <action>]`
 2. **Audit Mirror Path:** `[:lockspire, :audit, <entity>, <action>]`
 
-Both paths carry the exact same measurements and metadata. The audit mirror is still a telemetry event; it is not a durable audit record. Security-sensitive state transitions separately persist normalized `Lockspire.Audit.Event` records so incident evidence can commit with the state change that produced it.
+Both paths carry the exact same measurements and metadata.
 
 ### Measurements
 
