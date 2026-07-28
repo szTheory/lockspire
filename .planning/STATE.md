@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: planning
-stopped_at: Phase 126 context gathered (assumptions mode)
-last_updated: "2026-07-28T20:47:06.676Z"
-last_activity: 2026-07-28 — v1.36 roadmap created (phases 126-130, 15/15 requirements mapped)
+stopped_at: Phase 126 planned (6 plans, 5 waves) — ready to execute
+last_updated: "2026-07-28T22:15:00.000Z"
+last_activity: 2026-07-28 — Phase 126 planned (6 plans in 5 waves; 3 plan-checker passes clean, decision coverage 49/49)
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 6
   completed_plans: 0
   percent: 0
 ---
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 126 — Adopter Path Walk & Defect Ledger (not started)
-Plan: —
-Status: Roadmapped; ready to plan Phase 126
-Last activity: 2026-07-28 — v1.36 roadmap created (phases 126-130, 15/15 requirements mapped)
+Phase: 126 — Adopter Path Walk & Defect Ledger (planned, not started)
+Plan: 6 plans in 5 waves (126-01 … 126-06)
+Status: Ready to execute
+Last activity: 2026-07-28 — Phase 126 planned (6 plans in 5 waves; 3 plan-checker passes clean, decision coverage 49/49)
 
 ## Completed Ad Hoc Work
 

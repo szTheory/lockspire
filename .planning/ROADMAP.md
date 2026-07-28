@@ -39,11 +39,25 @@
 **Plans**: 6 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 126-01-PLAN.md — Walk harness skeleton and clean-room generation of the stock host app
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 126-02-PLAN.md — Guide §1-§3b: add the dependency, run the installer, wire config and router
 - [ ] 126-03-PLAN.md — Stdlib flow driver and the two-layer ADOPT-04 token proof
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 126-04-PLAN.md — Guide §3c-§3e: account resolver, application start, protected host route
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 126-05-PLAN.md — Guide §4-§6: migrate, verify, client and key, then boot and drive
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 126-06-PLAN.md — Run the walk, author the committed defect ledger, reconcile workaround markers
 
 **Implementation notes**:
