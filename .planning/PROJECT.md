@@ -10,13 +10,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has landed mainline work through v1.35 while the latest public Hex release remains `1.2.0`. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, the admin design-system stress test in v1.31, admin page IA and interaction-model polish in v1.32, OSS adoption-trust hardening in v1.33, prefix-isolated storage in v1.34, and CI/CD efficiency plus release hygiene in v1.35.
+Lockspire has landed mainline work through v1.35, and the latest public Hex release is `1.4.0`, published on 2026-07-28. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, the admin design-system stress test in v1.31, admin page IA and interaction-model polish in v1.32, OSS adoption-trust hardening in v1.33, prefix-isolated storage in v1.34, and CI/CD efficiency plus release hygiene in v1.35.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently landed mainline work, `v1.33-v1.35`, tightened OSS adoption trust, moved new installs toward prefix-isolated storage by default, and made CI/release hygiene more explicit without publishing a new Hex package in this checkpoint. The latest shipped feature milestone, `v1.32 Admin Page IA & Interaction Model Polish`, made the admin/operator UI more deliberately composed page by page across route scorecards, Support and Operate flows, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, and bounded operator docs.
+The most recently landed mainline work, `v1.33-v1.35`, tightened OSS adoption trust, moved new installs toward prefix-isolated storage by default, and made CI/release hygiene more explicit. A subsequent sustaining pass published `1.3.0` and `1.4.0` on 2026-07-28, carrying the host-owned demo 404 page and working Disconnect, a remembered-consent duplication fix, a `phoenix_live_view` requirement widened to a range, and a Release Please bookkeeping repair that had been silently stalling every release since `1.3.0`. The latest shipped feature milestone, `v1.32 Admin Page IA & Interaction Model Polish`, made the admin/operator UI more deliberately composed page by page across route scorecards, Support and Operate flows, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, and bounded operator docs.
 
 Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
 
@@ -50,9 +50,27 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 **Delivered:** Phases 116-120 are complete, verified, audited, and archived. The component lab contract, stress fixtures, shared primitives, highest-drift admin page/group pass, browser proof matrix, deterministic regression guardrails, bounded operator docs, and final adversarial audit shipped without adding public lab/design-system/theming support or browser-tooling product surface.
 
-## Next Milestone Goals
+## Current Milestone: v1.36 Adopter Path Proof
 
-Return to the sustaining GA release train unless concrete adopter, support, or release evidence justifies another scoped feature milestone. The next feature milestone should start through `/gsd-new-milestone` with fresh requirements rather than reusing the archived v1.32 requirements file.
+**Goal:** Prove the documented path from `mix phx.new` to a working third-party OAuth flow end to end in one run, and fix every break found along the way.
+
+**Target features:**
+- Prove the full adopter path in one continuous run: generate a stock Phoenix app, run `mix lockspire.install`, wire it, migrate, boot, register a client, and complete an authorization-code + PKCE flow against it.
+- Exercise `mix lockspire.install` against a real generated Phoenix app instead of an empty fixture directory, so installer behavior against actual host files is proven rather than assumed.
+- Close the gap between `docs/install-and-onboard.md` and reality, so the manual "wire the generated files" step is verified to produce a working provider rather than trusted.
+- Reconcile the adoption demo with the installer path, so the reference artifact adopters are pointed at does not bypass the path they are told to walk.
+- Leave behind a durable guardrail that fails when the adopter path breaks, so this surface cannot silently rot again.
+
+**Why now:** Every real defect found in the recent sustaining pass came from running the software rather than from the roadmap — the demo 404, the non-functional Disconnect, and the duplicate remembered-consent grants all surfaced within a single afternoon of use. Repo inspection found the same shape one layer earlier, at the adopter's first hour. Each segment of the install path is proven, but each is proven against a substitute:
+
+- `scripts/publish/verify_install_truth.sh` generates a clean-room Phoenix app with `--no-ecto --no-html --no-assets`, injects the dependency, runs `deps.get` and `compile`, and reports "Install Truth proven". It never runs `mix lockspire.install`, never migrates, never boots, and never completes a flow. It proves the package resolves.
+- `test/integration/install_generator_test.exs` wipes its fixture to a bare `.keep` and runs the installer into an empty directory. Generated file content is asserted thoroughly; installer behavior against a real `mix phx.new` app is never exercised.
+- `mix lockspire.install` injects nothing into the host's router, config, or application. Section 3 of `docs/install-and-onboard.md` is hand-work performed by the adopter, and no test proves those instructions yield a working provider.
+- `examples/adoption_demo` contains no reference to `mix lockspire.install`. It is hand-wired, so it proves the library works but not that the install path does.
+
+This milestone is adoption hardening, not protocol breadth, consistent with the ordering rule in `.planning/MILESTONE-ARC.md`.
+
+**Boundary:** No new protocol surface. Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built. Host-owned seams — accounts, login UX, layouts, branding, policy — stay host-owned.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -192,7 +210,7 @@ Return to the sustaining GA release train unless concrete adopter, support, or r
 
 ### Active
 
-No active feature milestone requirement is selected. Lockspire is back on the sustaining GA release train until fresh evidence justifies a new scoped milestone.
+Milestone v1.36 Adopter Path Proof is active. Its scoped requirements live in `.planning/REQUIREMENTS.md`.
 
 ### Validated
 
@@ -350,4 +368,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-01 after repo hygiene checkpoint*
+*Last updated: 2026-07-28 at the start of milestone v1.36 Adopter Path Proof*

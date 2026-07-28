@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: null
-current_phase: null
-status: awaiting_next_milestone
-stopped_at: 1.4.0 shipped and the release train unstalled; awaiting next scoped milestone
-last_updated: "2026-07-28T18:49:26Z"
+milestone: v1.36
+milestone_name: Adopter Path Proof
+status: planning
+last_updated: "2026-07-28T19:16:41.006Z"
 last_activity: 2026-07-28
-last_activity_desc: 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
 progress:
   total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
-current_phase_name: null
 ---
 
 # Project State
@@ -29,10 +25,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: No active feature milestone
-Plan: -
-Status: Awaiting next milestone
-Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-28 — Milestone v1.36 started
 
 ## Completed Ad Hoc Work
 
