@@ -123,6 +123,9 @@ jobs:
     environment: hex-publish
     permissions:
       contents: write
+      # Needed to advance the merged release PR's `autorelease:` label once the
+      # publish has actually happened. See the final step of this job.
+      pull-requests: write
     steps:
       - name: Check out repository for the merged release commit
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -219,3 +222,44 @@ jobs:
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --yes
+
+      # Release Please tracks whether a merged release PR has been tagged using
+      # its `autorelease:` label. This repo runs Release Please with
+      # `skip-github-release: true` because this lane owns tag, release, and
+      # Hex publish, so Release Please never advances that label itself.
+      #
+      # Left alone it aborts every subsequent run with "There are untagged,
+      # merged release PRs outstanding" and stops proposing release PRs
+      # entirely -- the train silently stalls after the first publish.
+      #
+      # This runs only after `mix hex.publish` has succeeded, so the label
+      # records something that actually happened.
+      - name: Mark the merged release PR as tagged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(grep -E '^[[:space:]]*version:' mix.exs | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+
+          pull_request="$(
+            gh pr list \
+              --state merged \
+              --label 'autorelease: pending' \
+              --search "release lockspire ${version} in:title" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [ -z "$pull_request" ]; then
+            echo "No merged release PR is pending tagging for ${version}."
+            exit 0
+          fi
+
+          gh pr edit "$pull_request" \
+            --add-label 'autorelease: tagged' \
+            --remove-label 'autorelease: pending'
+
+          echo "Marked #${pull_request} as tagged for ${version}."
