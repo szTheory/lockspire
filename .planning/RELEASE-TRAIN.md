@@ -6,11 +6,11 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.2.0`
-- Release date: `2026-05-27`
-- Protected publish proof: GitHub Actions run `26502800103` succeeded end to end on the trusted `hex-publish` environment.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.2.0` on `2026-05-27`.
-- GitHub release truth: `lockspire-v1.2.0` was backfilled on `2026-05-27` after the dispatch-only publish lane exposed that Release Please was bypassed during auto-merge recovery dispatch.
+- Latest released version: `1.3.0`
+- Release date: `2026-07-28`
+- Protected publish proof: GitHub Actions run `30323976705` succeeded end to end on the trusted `hex-publish` environment, publishing from the exact-ref dispatch lane at `197608f`.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.3.0` on `2026-07-28`.
+- GitHub release truth: `lockspire-v1.3.0` was created on `2026-07-28` at `197608f` by the exact-ref dispatch publish lane, after Release Please auto-merged the `1.3.0` release PR (#71) on `main`. No backfill was needed.
 
 ## Normal Train Rules
 
