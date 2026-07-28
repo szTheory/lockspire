@@ -13,7 +13,7 @@ Lockspire enforces the token contract via `Lockspire.Plug.VerifyToken`, `Lockspi
 ```elixir
 # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
 pipeline :lockspire_protected_api do
-  plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://billing.acme-ledger.test", enforce_audience: true
+  plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://api.billingo.test/billing", enforce_audience: true
   plug Lockspire.Plug.EnforceSenderConstraints,
     dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
   plug Lockspire.Plug.RequireToken
@@ -37,7 +37,7 @@ See the canonical pipeline above; this example narrows it to a single `scopes:` 
 
 ## Audience-restricted route example
 
-See the canonical pipeline above; this example pins `audience:` (e.g., `audience: "https://billing.acme-ledger.test"`) to constrain the route to tokens minted for a specific resource server. Route-level audience checks are exact-match against the token `aud` set.
+See the canonical pipeline above; this example pins `audience:` (e.g., `audience: "https://api.billingo.test/billing"`) to constrain the route to tokens minted for a specific resource server. Route-level audience checks are exact-match against the token `aud` set.
 
 ## Access-token assigns contract
 

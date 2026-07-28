@@ -150,18 +150,25 @@ defmodule Lockspire.MixProject do
   defp docs do
     [
       main: "readme",
+      favicon: "brandbook/logo/lockspire-favicon.svg",
+      before_closing_head_tag: &docs_before_closing_head_tag/1,
+      before_closing_body_tag: &docs_before_closing_body_tag/1,
       extras: [
         "README.md",
         "CHANGELOG.md",
         "SECURITY.md",
         "docs/ecosystem-overview.md",
         "docs/oauth-oidc-for-phoenix-adopters.md",
+        "docs/architecture.md",
+        "docs/code-walkthrough.md",
         "docs/getting-started.md",
         "docs/saas-adoption-recipe.md",
         "docs/adoption-demo.md",
         "docs/install-and-onboard.md",
         "docs/protect-phoenix-api-routes.md",
+        "docs/device-flow-host-guide.md",
         "docs/private-key-jwt-host-guide.md",
+        "docs/client-secret-jwt-host-guide.md",
         "docs/rar-consent-host-guide.md",
         "docs/operator-admin.md",
         "docs/dynamic-registration.md",
@@ -177,12 +184,16 @@ defmodule Lockspire.MixProject do
         Guides: [
           "docs/ecosystem-overview.md",
           "docs/oauth-oidc-for-phoenix-adopters.md",
+          "docs/architecture.md",
+          "docs/code-walkthrough.md",
           "docs/getting-started.md",
           "docs/saas-adoption-recipe.md",
           "docs/adoption-demo.md",
           "docs/install-and-onboard.md",
           "docs/protect-phoenix-api-routes.md",
+          "docs/device-flow-host-guide.md",
           "docs/private-key-jwt-host-guide.md",
+          "docs/client-secret-jwt-host-guide.md",
           "docs/rar-consent-host-guide.md",
           "docs/operator-admin.md",
           "docs/dynamic-registration.md",
@@ -230,6 +241,237 @@ defmodule Lockspire.MixProject do
     ]
   end
 
+  defp docs_before_closing_head_tag(:html) do
+    ~S"""
+    <style>
+      .lockspire-mermaid {
+        margin: 1.5rem 0;
+        overflow-x: auto;
+        text-align: center;
+      }
+
+      .lockspire-mermaid svg {
+        display: block;
+        height: auto;
+        margin-inline: auto;
+        max-width: 100% !important;
+      }
+
+      .lockspire-mermaid svg[data-lockspire-wide="true"] {
+        min-width: 52rem;
+      }
+
+      .lockspire-mermaid svg:not([data-lockspire-wide="true"]) {
+        max-width: 36rem !important;
+      }
+    </style>
+    """
+  end
+
+  defp docs_before_closing_head_tag(_format), do: ""
+
+  defp docs_before_closing_body_tag(:html) do
+    ~S"""
+    <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js" onload="window.mermaid.initialize({startOnLoad: false}); window.dispatchEvent(new Event('lockspire:mermaid-ready'))"></script>
+    <script>
+      (() => {
+        const diagramSelector = "pre > code.mermaid, pre > code.language-mermaid";
+        const state = {
+          assetReady: Boolean(window.mermaid),
+          contentReady: document.readyState !== "loading",
+          frame: null,
+          generation: 0,
+          theme: null
+        };
+
+        const captureSources = () => {
+          document.querySelectorAll(diagramSelector).forEach((code) => {
+            if (!code.dataset.lockspireMermaidSource && !code.querySelector("svg")) {
+              code.dataset.lockspireMermaidSource = code.textContent;
+            }
+          });
+        };
+
+        captureSources();
+
+        const themeVariables = {
+          light: {
+            background: "#ffffff",
+            primaryColor: "#ecfeff",
+            primaryTextColor: "#0f172a",
+            primaryBorderColor: "#0e7490",
+            lineColor: "#334155",
+            secondaryColor: "#f8fafc",
+            tertiaryColor: "#eef2ff",
+            textColor: "#0f172a",
+            noteBkgColor: "#f0fdfa",
+            noteTextColor: "#0f172a",
+            actorBkg: "#ecfeff",
+            actorBorder: "#0e7490",
+            actorTextColor: "#0f172a",
+            signalColor: "#334155",
+            signalTextColor: "#0f172a",
+            labelBoxBkgColor: "#ffffff",
+            labelBoxBorderColor: "#0e7490",
+            labelTextColor: "#0f172a",
+            loopTextColor: "#0f172a",
+            activationBkgColor: "#cffafe",
+            activationBorderColor: "#0e7490",
+            fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+          },
+          dark: {
+            background: "#111827",
+            primaryColor: "#164e63",
+            primaryTextColor: "#ecfeff",
+            primaryBorderColor: "#22d3ee",
+            lineColor: "#a5f3fc",
+            secondaryColor: "#1f2937",
+            tertiaryColor: "#0f172a",
+            textColor: "#ecfeff",
+            noteBkgColor: "#164e63",
+            noteTextColor: "#ecfeff",
+            actorBkg: "#0f172a",
+            actorBorder: "#22d3ee",
+            actorTextColor: "#ecfeff",
+            signalColor: "#a5f3fc",
+            signalTextColor: "#ecfeff",
+            labelBoxBkgColor: "#1f2937",
+            labelBoxBorderColor: "#22d3ee",
+            labelTextColor: "#ecfeff",
+            loopTextColor: "#ecfeff",
+            activationBkgColor: "#164e63",
+            activationBorderColor: "#67e8f9",
+            fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+          }
+        };
+
+        const currentTheme = () => document.body.classList.contains("dark") ? "dark" : "light";
+
+        const fallbackFor = (code) => code.closest("pre");
+
+        const sourceFor = (code) => code.dataset.lockspireMermaidSource || code.textContent;
+
+        const containerFor = (fallback) => {
+          const sibling = fallback.nextElementSibling;
+
+          if (sibling && sibling.classList.contains("lockspire-mermaid")) {
+            return sibling;
+          }
+
+          const container = document.createElement("div");
+          container.className = "lockspire-mermaid";
+          container.hidden = true;
+          fallback.insertAdjacentElement("afterend", container);
+          return container;
+        };
+
+        const renderDiagram = async (code, index, generation) => {
+          const fallback = fallbackFor(code);
+          if (!fallback) return;
+
+          const container = containerFor(fallback);
+          const diagramId = `lockspire-mermaid-${generation}-${index}`;
+
+          try {
+            const {svg, bindFunctions} = await window.mermaid.render(diagramId, sourceFor(code));
+
+            if (generation !== state.generation || !document.contains(code)) return;
+
+            container.innerHTML = svg;
+            const renderedSvg = container.querySelector("svg");
+            const viewBox = renderedSvg && renderedSvg.viewBox.baseVal;
+
+            if (viewBox && viewBox.width / viewBox.height > 1.45) {
+              renderedSvg.dataset.lockspireWide = "true";
+            }
+
+            container.hidden = false;
+            fallback.hidden = true;
+            if (bindFunctions) bindFunctions(container);
+          } catch (error) {
+            if (generation !== state.generation || !document.contains(code)) return;
+
+            container.replaceChildren();
+            container.hidden = true;
+            code.textContent = sourceFor(code);
+            code.removeAttribute("data-processed");
+            fallback.hidden = false;
+            console.warn("Lockspire Mermaid render failed; showing source fallback.", error);
+          }
+        };
+
+        const renderAll = () => {
+          if (!state.assetReady || !state.contentReady || !window.mermaid) return;
+
+          state.generation += 1;
+          const generation = state.generation;
+          const theme = currentTheme();
+          state.theme = theme;
+          captureSources();
+
+          window.mermaid.initialize({
+            flowchart: {
+              diagramPadding: 8,
+              nodeSpacing: 24,
+              rankSpacing: 32,
+              useMaxWidth: true
+            },
+            securityLevel: "strict",
+            sequence: {
+              actorMargin: 24,
+              diagramMarginX: 10,
+              diagramMarginY: 10,
+              height: 50,
+              messageMargin: 24,
+              useMaxWidth: true,
+              width: 120
+            },
+            startOnLoad: false,
+            theme: "base",
+            themeVariables: themeVariables[theme]
+          });
+
+          document.querySelectorAll(diagramSelector).forEach((code, index) => {
+            renderDiagram(code, index, generation);
+          });
+        };
+
+        const scheduleRender = () => {
+          if (!state.assetReady || !state.contentReady) return;
+          if (state.frame) cancelAnimationFrame(state.frame);
+          state.frame = requestAnimationFrame(() => {
+            state.frame = null;
+            renderAll();
+          });
+        };
+
+        window.addEventListener("exdoc:loaded", () => {
+          state.contentReady = true;
+          scheduleRender();
+        });
+
+        window.addEventListener("lockspire:mermaid-ready", () => {
+          state.assetReady = true;
+          scheduleRender();
+        });
+
+        new MutationObserver((mutations) => {
+          if (
+            mutations.some((mutation) => mutation.attributeName === "class") &&
+            currentTheme() !== state.theme
+          ) {
+            scheduleRender();
+          }
+        }).observe(document.body, {attributes: true, attributeFilter: ["class"]});
+
+        scheduleRender();
+      })();
+    </script>
+    """
+  end
+
+  defp docs_before_closing_body_tag(_format), do: ""
+
   defp package_files do
     [
       Path.wildcard("lib/**/*.ex"),
@@ -237,7 +479,7 @@ defmodule Lockspire.MixProject do
       Path.wildcard("priv/repo/migrations/*.exs"),
       Path.wildcard("priv/templates/**/*.{ex,exs,heex}"),
       Path.wildcard("docs/**/*.md"),
-      ~w(.formatter.exs mix.exs README.md CHANGELOG.md SECURITY.md LICENSE)
+      ~w(.formatter.exs mix.exs README.md CHANGELOG.md SECURITY.md LICENSE brandbook/logo/lockspire-favicon.svg)
     ]
     |> List.flatten()
     |> Enum.reject(&(&1 in @package_excluded_files))

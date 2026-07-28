@@ -68,16 +68,31 @@ defmodule AdoptionDemoWeb.DeviceVerificationController do
 
   defp render_entry(conn, user_code, error_message) do
     body = """
-    <section class="panel">
-      <h1>Device verification</h1>
-      <p>Enter the code from your device. This host page is side-effect free until review.</p>
-      #{error_html(error_message)}
-      <form action="/verify" method="post">
-        <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
-        <label for="user_code">Device code</label>
-        <input id="user_code" name="user_code" value="#{HTML.escape(user_code)}" />
-        <button class="primary" type="submit">Review device request</button>
-      </form>
+    <section class="task-stage">
+      <article class="panel task-card">
+        <header class="task-header">
+          <p class="kicker">Device code</p>
+          <h1>Enter the code shown on your device.</h1>
+          <p>Billingo owns this human check. Lockspire tracks the device authorization while you confirm the code, app, and requested access.</p>
+        </header>
+
+        #{error_html(error_message)}
+
+        <form class="task-form" action="/verify" method="post">
+          <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
+          <div>
+            <label for="user_code">Device code</label>
+            <input id="user_code" name="user_code" value="#{HTML.escape(user_code)}" autocomplete="one-time-code" />
+          </div>
+          <button class="primary" type="submit">Review device request</button>
+        </form>
+
+        <div class="task-note">
+          <p class="kicker">Safe review path</p>
+          <p>Enter the code first, then approve only if the app and requested Billingo access match the device in front of you.</p>
+          <p class="fine-print">The smoke test creates a real Lockspire device authorization and submits the generated code here.</p>
+        </div>
+      </article>
     </section>
     """
 
@@ -85,24 +100,48 @@ defmodule AdoptionDemoWeb.DeviceVerificationController do
   end
 
   defp render_review(conn, pending, subject) do
+    scope_meanings = HTML.scope_meaning_list(pending.scopes)
+
     body = """
-    <section class="panel">
-      <h1>Review device request</h1>
-      <p>Confirm the code and approve only if it matches the requesting device.</p>
-      <dl>
-        <dt>Code</dt><dd><code>#{HTML.escape(pending.user_code)}</code></dd>
-        <dt>Client</dt><dd><code>#{HTML.escape(pending.client_id)}</code></dd>
-        <dt>Scopes</dt><dd><code>#{HTML.escape(Enum.join(pending.scopes, " "))}</code></dd>
-        <dt>Signed-in subject</dt><dd><code>#{HTML.escape(subject || "anonymous")}</code></dd>
-      </dl>
-      <form action="/verify/#{pending.verification_handle}/approve" method="post">
-        <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
-        <button class="primary" type="submit">Approve device</button>
-      </form>
-      <form action="/verify/#{pending.verification_handle}/deny" method="post">
-        <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
-        <button type="submit">Deny request</button>
-      </form>
+    <section class="consent-stage">
+      <article class="panel consent-card" aria-labelledby="device-review-title">
+        <header class="consent-card-header">
+          <div class="consent-heading">
+            <p class="kicker">Device review</p>
+            <h1 id="device-review-title">Approve this Billingo device sign-in?</h1>
+            <p>Approve only when this code and app match the device in front of you. Billingo never shares your password with the device.</p>
+          </div>
+          <span class="status-pill warn">Code #{HTML.escape(pending.user_code)}</span>
+        </header>
+
+        <div class="consent-grid">
+          <section class="consent-summary" aria-label="Device request details">
+            <div class="consent-detail-row"><span>Displayed code</span><strong><code>#{HTML.escape(pending.user_code)}</code></strong></div>
+            <div class="consent-detail-row"><span>Client</span><strong><code>#{HTML.escape(pending.client_id)}</code></strong></div>
+            <div class="consent-detail-row"><span>Signed-in subject</span><strong><code>#{HTML.escape(subject || "anonymous")}</code></strong></div>
+
+            <div class="scope-block">
+              <p class="kicker">Requested access</p>
+              #{scope_meanings}
+            </div>
+          </section>
+
+          <section class="consent-decision" aria-label="Approve or deny device access">
+            <p class="kicker">Decision</p>
+            <h2>Approve device access?</h2>
+            <p>This lets Lockspire finish the device authorization for the signed-in Billingo subject.</p>
+
+            <form class="approve-form" action="/verify/#{pending.verification_handle}/approve" method="post">
+              <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
+              <button class="primary" type="submit">Approve device</button>
+            </form>
+            <form class="deny-form" action="/verify/#{pending.verification_handle}/deny" method="post">
+              <input type="hidden" name="_csrf_token" value="#{Plug.CSRFProtection.get_csrf_token()}" />
+              <button class="danger" type="submit">Deny request</button>
+            </form>
+          </section>
+        </div>
+      </article>
     </section>
     """
 
@@ -150,5 +189,5 @@ defmodule AdoptionDemoWeb.DeviceVerificationController do
   end
 
   defp error_html(nil), do: ""
-  defp error_html(message), do: ~s(<p class="danger">#{HTML.escape(message)}</p>)
+  defp error_html(message), do: ~s(<p class="inline-alert">#{HTML.escape(message)}</p>)
 end

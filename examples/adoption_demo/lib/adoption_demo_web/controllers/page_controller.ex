@@ -5,29 +5,70 @@ defmodule AdoptionDemoWeb.PageController do
 
   def home(conn, _params) do
     body = """
-    <section class="panel">
-      <h1>Embedded OAuth/OIDC provider inside a SaaS app</h1>
-      <p>
-        This demo is a small billing SaaS that uses Lockspire as its embedded provider.
-        The host app owns account login, tenant claims, operator access, and product routes.
-      </p>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Billingo workspace</p>
+        <h1>Revenue operations, with Lockspire embedded.</h1>
+        <p>
+          Billingo already signs users in. Lockspire lets other software use
+          that trusted Billingo identity safely, through the OAuth/OIDC provider
+          mounted at <code>/lockspire</code>.
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="/developer/apps">Review developer app</a>
+          <a class="button secondary" href="/authorized-apps">Authorized apps</a>
+          <a class="button ghost" href="/lockspire/admin">Open Lockspire admin</a>
+        </div>
+      </div>
+      <aside class="visual-card" aria-label="Billingo revenue summary">
+        <p class="kicker">Live billing sample</p>
+        <div class="ledger-row"><span>July usage invoices</span><strong>$128,400</strong></div>
+        <div class="ledger-row"><span>Open usage disputes</span><strong>3</strong></div>
+        <div class="ledger-row"><span>Partner integrations</span><strong>5</strong></div>
+        <div class="total-line">
+          <p class="muted">Protected API</p>
+          <strong>/api/billing/summary</strong>
+          <p class="fine-print">Requires a Lockspire-issued access token with <code>read:billing</code>.</p>
+        </div>
+      </aside>
     </section>
 
     <section class="grid">
-      <article class="panel">
-        <h2>Users</h2>
-        <p><code>alice</code> and <code>bob</code> are tenant users. <code>ops</code> can reach the operator UI.</p>
-        <a href="/login">Choose demo account</a>
+      <article class="card highlight">
+        <p class="metric">1</p>
+        <p class="metric-label">Billingo proves user</p>
+        <p><code>alice</code> and <code>bob</code> are Billingo users. <code>ops</code> is the host-owned operator account.</p>
+        <a href="/login">Choose account</a>
       </article>
-      <article class="panel">
-        <h2>OAuth client</h2>
-        <p>Use the seeded public client to run auth-code + PKCE against <code>/lockspire</code>.</p>
-        <a href="/developer/apps">View client details</a>
+      <article class="card">
+        <p class="metric">2</p>
+        <p class="metric-label">Lockspire issues artifacts</p>
+        <p>Authorization code + PKCE turns Billingo's signed-in subject into standards-based tokens.</p>
+        <a href="/developer/apps">Start OAuth proof</a>
       </article>
-      <article class="panel">
-        <h2>Protected API</h2>
-        <p><code>/api/billing/summary</code> requires a Lockspire-issued access token with <code>read:billing</code>.</p>
+      <article class="card">
+        <p class="metric">3</p>
+        <p class="metric-label">Billingo API enforces policy</p>
+        <p>The access token needs <code>read:billing</code>; Billingo still checks tenant and product rules.</p>
+        <a href="/lockspire/.well-known/openid-configuration">View discovery</a>
       </article>
+    </section>
+
+    <section class="panel integration-map">
+      <div class="section-heading">
+        <p class="kicker">Embedded provider boundary</p>
+        <h2>Billingo runs product decisions; Lockspire runs protocol artifacts.</h2>
+      </div>
+      <div class="boundary-list">
+        <div class="boundary-item">
+          <strong>Billingo</strong>
+          <p>Accounts, login, consent words, developer UX, billing APIs, and product authorization.</p>
+        </div>
+        <div class="boundary-item">
+          <strong>Lockspire</strong>
+          <p>Clients, authorization codes, consent records, tokens, keys, discovery, and operator workflows.</p>
+        </div>
+      </div>
     </section>
     """
 

@@ -14,7 +14,7 @@ fi
 COMPOSE_CMD="docker compose --project-name ${PROJECT} -f examples/adoption_demo/docker-compose.yml"
 
 cat <<INFO
-Lockspire admin demo
+Billingo + Lockspire demo
 Adoption demo ready at ${BASE_URL}
 
 Ready
@@ -39,16 +39,16 @@ Details
   Protected API: ${BASE_URL}/api/billing/summary
 
 Seeded accounts
-  alice | alice@acme.test | Acme Ledger | developer account
-  bob   | bob@globex.test | Globex Finance | developer account
-  ops   | ops@acme.test | Acme Ledger | operator account
+  alice | alice@billingo.test | Billingo | developer account
+  bob   | bob@northstar.test | Northstar Retail | developer account
+  ops   | ops@billingo.test | Billingo | operator account
 
 Seeded OAuth clients
-  acme-ledger-public | public | grants: authorization_code,refresh_token | auth: none | PKCE required
-  acme-tv-device | public | grants: device_code | auth: none | PKCE required
-  acme-ledger-backend | confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
-  northstar-dcr-self-registered | confidential self-registered | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required | PAR required | DPoP required
-  legacy-disabled-reporter | disabled confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
+  billingo-dashboard-public | public | grants: authorization_code,refresh_token | auth: none | PKCE required
+  billingo-display-device | public | grants: device_code | auth: none | PKCE required
+  billingo-reports-backend | confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
+  northstar-payables-portal | confidential self-registered | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required | PAR required | DPoP required
+  legacy-csv-reporter | disabled confidential | grants: authorization_code,refresh_token | auth: client_secret_basic | PKCE required
 
 Smoke command
   LOCKSPIRE_DEMO_BASE_URL=${BASE_URL} scripts/demo/adoption_smoke.sh

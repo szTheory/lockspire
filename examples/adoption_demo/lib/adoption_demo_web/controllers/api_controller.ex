@@ -5,7 +5,7 @@ defmodule AdoptionDemoWeb.ApiController do
     token = conn.assigns.access_token
 
     json(conn, %{
-      tenant: "Acme Ledger",
+      tenant: "Billingo",
       monthly_recurring_revenue: 128_400,
       invoices_due: 7,
       access_token: %{

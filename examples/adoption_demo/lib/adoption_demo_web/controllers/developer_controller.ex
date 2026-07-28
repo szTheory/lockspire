@@ -8,14 +8,16 @@ defmodule AdoptionDemoWeb.DeveloperController do
     challenge = code_challenge(verifier)
     demo_base_url = Application.fetch_env!(:adoption_demo, :demo_base_url)
     oauth_callback_url = demo_base_url <> "/oauth/callback"
+    requested_scope = "openid email profile read:billing"
+    scope_meanings = HTML.scope_meaning_list(requested_scope)
 
     authorize_url =
       "/lockspire/authorize?" <>
         URI.encode_query(%{
-          "client_id" => "acme-ledger-public",
+          "client_id" => "billingo-dashboard-public",
           "response_type" => "code",
           "redirect_uri" => oauth_callback_url,
-          "scope" => "openid email profile read:billing",
+          "scope" => requested_scope,
           "state" => "demo-state",
           "nonce" => "demo-nonce",
           "prompt" => "consent",
@@ -24,15 +26,50 @@ defmodule AdoptionDemoWeb.DeveloperController do
         })
 
     body = """
-    <section class="panel">
-      <h1>Developer apps</h1>
-      <p>The public client below is seeded for a browser-based auth-code + PKCE proof.</p>
-      <dl>
-        <dt>Client ID</dt><dd><code>acme-ledger-public</code></dd>
-        <dt>Redirect URI</dt><dd><code>#{oauth_callback_url}</code></dd>
-        <dt>PKCE verifier for the demo smoke</dt><dd><code>#{verifier}</code></dd>
-      </dl>
-      <p><a class="primary" href="#{authorize_url}">Start OAuth authorization</a></p>
+    <section class="record-layout">
+      <article class="panel record-main">
+        <header class="record-header">
+          <p class="kicker">Developer console</p>
+          <h1>Billingo Dashboard SPA</h1>
+          <p>Public browser client for Billingo dashboards. Billingo owns partner-facing setup; Lockspire validates the OAuth/OIDC request after launch.</p>
+          <div class="record-actions">
+            <a class="button" href="#{authorize_url}">Start OAuth authorization</a>
+            <a class="button secondary" href="/lockspire/admin/clients">Review in Lockspire admin</a>
+          </div>
+        </header>
+
+        <section class="record-section">
+          <p class="kicker">OAuth request preview</p>
+          <dl class="data-list">
+            <div class="data-row"><dt>Software client</dt><dd><code>billingo-dashboard-public</code></dd></div>
+            <div class="data-row"><dt>Redirect URI</dt><dd><code>#{oauth_callback_url}</code></dd></div>
+            <div class="data-row"><dt>Requested access</dt><dd>#{scope_meanings}</dd></div>
+            <div class="data-row"><dt>PKCE proof</dt><dd><code>S256</code> challenge protects the short-lived authorization code.</dd></div>
+            <div class="data-row"><dt>Smoke verifier</dt><dd><code>#{verifier}</code></dd></div>
+            <div class="data-row"><dt>Provider</dt><dd><code>/lockspire</code> inside Billingo</dd></div>
+          </dl>
+        </section>
+      </article>
+
+      <aside class="panel record-side">
+        <span class="status-pill good">PKCE required</span>
+        <h2>Browser OAuth handoff</h2>
+        <ol class="handoff-steps">
+          <li class="handoff-step">
+            <span class="step-index">1</span>
+            <p><strong>Start request.</strong> Billingo sends the browser to <code>/lockspire/authorize</code>.</p>
+          </li>
+          <li class="handoff-step">
+            <span class="step-index">2</span>
+            <p><strong>Human decision.</strong> Billingo handles login and consent copy.</p>
+          </li>
+          <li class="handoff-step">
+            <span class="step-index">3</span>
+            <p><strong>Protocol result.</strong> Lockspire returns an authorization code to Billingo's callback.</p>
+          </li>
+        </ol>
+        <p class="fine-print">Operator policy and protocol state remain visible in <code>/lockspire/admin</code>.</p>
+      </aside>
     </section>
     """
 
