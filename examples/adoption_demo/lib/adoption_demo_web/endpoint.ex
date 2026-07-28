@@ -9,6 +9,10 @@ defmodule AdoptionDemoWeb.Endpoint do
     json_decoder: Phoenix.json_library()
   )
 
+  # Lets host-owned HTML forms reach verb-specific routes such as
+  # `delete "/authorized-apps/:id"` via a `_method` field.
+  plug(Plug.MethodOverride)
+
   plug(Plug.Session,
     store: :cookie,
     key: "_adoption_demo_key",

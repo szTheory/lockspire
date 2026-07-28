@@ -1,6 +1,6 @@
 # Adoption Demo
 
-Lockspire includes a small Phoenix host app at `examples/adoption_demo`. It exists so maintainers can launch a realistic host app, open the Lockspire operator UI, and smoke the OAuth/OIDC path without wiring a separate project.
+Lockspire includes a small Phoenix host app at `examples/adoption_demo`. The host app is branded as **Billingo**, a fictional subscription billing SaaS, so maintainers can launch a realistic product shell, open the Lockspire operator UI, and smoke the OAuth/OIDC path without wiring a separate project.
 
 Docker is the default maintainer path. It starts Phoenix/Bandit plus PostgreSQL, keeps state scoped to one Compose project, and prints the URLs worth opening. The demo is repo-local adopter proof, not a production deployment guide, not hosted authentication, and not an expansion beyond `docs/supported-surface.md`. The canonical support contract still lives in `docs/supported-surface.md`.
 
@@ -36,7 +36,7 @@ make demo-stop
 
 ## What Starts
 
-The demo starts a Phoenix SaaS host with Lockspire mounted as the embedded provider. The ready output leads with the operator job:
+The demo starts Billingo, a Phoenix SaaS host with Lockspire mounted as the embedded provider. Billingo owns the customer-facing dashboard, developer app, login, authorized-apps, device verification, consent, and callback pages. Lockspire owns the protocol and operator surfaces under `/lockspire`. The ready output leads with the operator job:
 
 - Operator admin: `http://lockspire-demo.localhost/lockspire/admin`
 - Login: `ops` if prompted
@@ -57,11 +57,11 @@ Seeded accounts:
 
 | Login | Role | Account |
 | --- | --- | --- |
-| `alice` | SaaS user | `alice@acme.test` |
-| `bob` | SaaS user | `bob@globex.test` |
-| `ops` | Operator | `ops@acme.test` |
+| `alice` | Billingo user | `alice@billingo.test` |
+| `bob` | Customer user | `bob@northstar.test` |
+| `ops` | Operator | `ops@billingo.test` |
 
-Seeded OAuth clients include `acme-ledger-public`, `acme-tv-device`, and `acme-ledger-backend`.
+Seeded OAuth clients include `billingo-dashboard-public`, `billingo-display-device`, and `billingo-reports-backend`.
 
 ## Daily Commands
 
