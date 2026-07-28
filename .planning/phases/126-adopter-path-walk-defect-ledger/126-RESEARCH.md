@@ -592,6 +592,21 @@ Guide §7 (`mix lockspire.upgrade`) and §8 (device `/verify` seam) are outside 
 path. **Record them explicitly as "not walked"** in the ledger rather than leaving them
 unaccounted — a reader must be able to tell "checked, out of scope" from "missed".
 
+> **CORRECTION APPLIED AT PLAN TIME — the last three rows above are wrong and were renumbered.**
+> This table numbers the flow and token-proof steps 07 and 08 while labelling both `§6`, and it also
+> asks for §7 and §8 "not walked" entries. That collides: under D-16 the step ID *is* the join key
+> Phase 128's WIRE-01 drift fence and every ledger row use to resolve a defect to a guide section, so
+> `step-07-flow` resolves to guide §7 (upgrade) and misattributes every defect it surfaces. A
+> sub-letter-stripping mapping test passes it mechanically, which makes the defect invisible to the
+> very gate meant to catch it. The plan set therefore sub-letters all three §6 steps —
+> **`step-06a-client`, `step-06b-flow`, `step-06c-token-proof`** — exactly as §3 is sub-lettered, and
+> reserves `step-07-` and `step-08-` for the two not-walked sections
+> (`step-07-upgrade`, `step-08-verify-seam`). This honours D-16's binding rule ("step IDs mirror the
+> guide's section numbers"); D-16's inline `step-07-flow` example is illustrative, and CONTEXT's
+> "Claude's Discretion" explicitly covers step count and boundaries "provided D-16's guide↔step
+> mapping holds". Plan 126-02's mapping contract test now enforces both halves: a step's `§N` label
+> must agree with its own ID number, and no `step-NN` number may be reused across two guide sections.
+
 Resume mechanics:
 
 ```bash
@@ -1054,7 +1069,10 @@ fi
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All four questions were carried into planning and each recommendation was adopted. The `RESOLVED`
+line under each question records where the adopted resolution lives in the plan set.
 
 1. **Does `Lockspire.Admin.generate_key/1` publish the key, or only create it?**
    - What we know: `generate_key/1` delegates to `Lockspire.Admin.Keys`; a separate `publish_key/2`
@@ -1064,6 +1082,12 @@ fi
    - Recommendation: `step-06` should assert `GET <mount>/jwks` returns at least one key **before**
      proceeding to `step-07`, and call `publish_key/2` if not. Either outcome is a ledger entry —
      if two calls are needed and nothing documents that, it is a D-47 sub-defect.
+   - **RESOLVED (adopted):** plan 126-05 Task 2 asserts a non-empty JWKS inside `step-06a-client`
+     immediately after key generation and calls the publish path only if required, recording which was
+     needed; plan 126-03 Task 1 additionally makes a non-empty JWKS a readiness precondition of the
+     driver, so an empty key set surfaces as a named failure rather than an opaque signing error.
+     Recorded as ledger entry `ADOPT-D06` either way. Resolution is empirical at execution time; both
+     plans carry it as a flagged assumption rather than an assumption baked into a gate.
 
 2. **Which interpretation of `lockspire_routes/0` does Phase 128's WIRE-01 drift fence consume?**
    - What we know: the guide says "call"; the heredoc's contents are what actually work.
@@ -1071,6 +1095,11 @@ fi
      ("zero routes" + "`:require_operator` undefined").
    - Recommendation: record two, per Pitfall 4. Phase 127 may fix them with one change, but the walk's
      job is evidence, and the two failure modes are observably different.
+   - **RESOLVED (adopted):** plan 126-02 Task 2 exercises both interpretations as separate steps,
+     `step-03b-router-call` and `step-03b-router-paste`, recorded as separate ledger entries
+     `ADOPT-D01` and `ADOPT-D02`, with `step-03b-router-wire` applying the marked workaround.
+     126-02's contract test fails if either sub-step ID is removed, so the two cannot be collapsed
+     back into one and silently lose a defect.
 
 3. **Should `tmp/adopter-walk/` be added to `repo_hygiene_check.sh`'s artifact allowlist?**
    - What we know: the hygiene script WARNs on `tmp/adoption_demo.log` and preserves
@@ -1080,6 +1109,10 @@ fi
      WARN.
    - Recommendation: out of scope for Phase 126 — flag it as a Phase 130 (GUARD) candidate. Do not
      edit `repo_hygiene_check.sh` in this phase.
+   - **RESOLVED (adopted):** no plan modifies `scripts/maintainer/repo_hygiene_check.sh` — it appears
+     only in `<read_first>` blocks as a pattern source. Plan 126-06's `<flagged_assumptions>` records
+     the allowlist question as a Phase 130 candidate to be written into the ledger rather than acted
+     on here.
 
 4. **Does the walk need `mix lockspire.install --storage-prefix public`?**
    - What we know: the installer defaults to `storage_prefix: "lockspire"`, and the first migration
@@ -1089,6 +1122,9 @@ fi
    - Recommendation: keep the default (that is what a real adopter gets) and let any schema failure
      become a ledger entry. Do not pass `--storage-prefix public` to make the walk easier — that
      would be the same mistake `verify_install_truth.sh` makes with `--no-ecto`.
+   - **RESOLVED (adopted):** plan 126-02 Task 1 runs `mix lockspire.install` with no flags and states
+     explicitly that no prefix override may be passed, so any schema failure becomes real evidence.
+     Recorded as a reasoned `OPT-OUT` row in `COVERAGE.md` under the host-facing Mix task surface.
 
 ---
 
