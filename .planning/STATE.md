@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-status: roadmapped
-last_updated: "2026-07-28T20:05:00.000Z"
-last_activity: 2026-07-28
+status: planning
+stopped_at: Phase 126 context gathered (assumptions mode)
+last_updated: "2026-07-28T20:47:06.676Z"
+last_activity: 2026-07-28 — v1.36 roadmap created (phases 126-130, 15/15 requirements mapped)
 progress:
   total_phases: 5
   completed_phases: 0
@@ -238,11 +239,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-10T22:25:12Z
+**Last session:** 2026-07-28T20:47:06.670Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
-**Resume file:** None
-**Stopped at:** v1.36 roadmap created on `milestone/v1.36-adopter-path-proof`; phases 126-130 defined, 15/15 requirements mapped, no phase planned yet.
+**Resume file:** .planning/phases/126-adopter-path-walk-defect-ledger/126-CONTEXT.md
+**Stopped at:** Phase 126 context gathered (assumptions mode)
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
