@@ -2099,11 +2099,11 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
     end
 
     for phrase <- [
-          "acme-ledger-public",
-          "acme-tv-device",
-          "acme-ledger-backend",
-          "northstar-dcr-self-registered",
-          "legacy-disabled-reporter"
+          "billingo-dashboard-public",
+          "billingo-display-device",
+          "billingo-reports-backend",
+          "northstar-payables-portal",
+          "legacy-csv-reporter"
         ] do
       assert seeds =~ phrase
     end
