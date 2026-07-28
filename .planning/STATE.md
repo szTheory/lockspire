@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-status: planning
-stopped_at: Phase 126 planned (6 plans, 5 waves) — ready to execute
-last_updated: "2026-07-28T22:15:00.000Z"
-last_activity: 2026-07-28 — Phase 126 planned (6 plans in 5 waves; 3 plan-checker passes clean, decision coverage 49/49)
+status: executing
+stopped_at: Completed 126-01-PLAN.md
+last_updated: "2026-07-28T23:32:11.140Z"
+last_activity: 2026-07-28
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Milestone v1.36 Adopter Path Proof — walk the documented `mix phx.new` to working-OAuth-flow path in one run, fix every break it finds, and leave a guardrail so it cannot silently rot again.
+**Current focus:** Phase 126 — adopter-path-walk-defect-ledger
 
 ## Current Position
 
-Phase: 126 — Adopter Path Walk & Defect Ledger (planned, not started)
-Plan: 6 plans in 5 waves (126-01 … 126-06)
+Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-07-28 — Phase 126 planned (6 plans in 5 waves; 3 plan-checker passes clean, decision coverage 49/49)
+Last activity: 2026-07-28
 
 ## Completed Ad Hoc Work
 
@@ -225,6 +225,8 @@ institutionalizes a known failure.
 - [2026-07-28]: The guardrail phase (130) runs last. Automating a red adopter path would only institutionalize a known failure.
 - [2026-07-28]: Making the installer inject into the host router/config/application is deferred pending walk evidence, not assumed. Same for rewriting `examples/adoption_demo` as a generated app — the demo's in-repo path dependency may make full installer parity wrong.
 - [2026-07-28]: Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built.
+- [Phase 126]: Plan 126-01 isolated MIX_ARCHIVES under .harness/archives and pinned phx_new 1.8.9 in the walk harness so mix archive.install never touches the maintainer's global installer archive.
+- [Phase 126]: Plan 126-01 folded the generated host's own mix ecto.create/mix ecto.migrate into step-00d-seed-user (distinct from and preceding guide section 4's later Lockspire migration step) since seeding a phx.gen.auth user requires those migrations first.
 
 ## Blockers/Concerns
 
@@ -239,11 +241,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-28T20:47:06.670Z
+**Last session:** 2026-07-28T23:32:11.131Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
-**Resume file:** .planning/phases/126-adopter-path-walk-defect-ledger/126-CONTEXT.md
-**Stopped at:** Phase 126 context gathered (assumptions mode)
+**Resume file:** None
+**Stopped at:** Completed 126-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -300,6 +302,7 @@ institutionalizes a known failure.
 | Phase 125-browser-proof-docs-adversarial-ratchet P05 | 6 min | 2 tasks | 6 files |
 | Phase 125 P06 | 31m | 3 tasks | 6 files |
 | Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
+| Phase 126 P01 | 23min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 

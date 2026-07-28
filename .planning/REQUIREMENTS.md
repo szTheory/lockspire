@@ -14,9 +14,9 @@ Requirements scoped to v1.36 only. Each maps to exactly one roadmap phase.
 The path an adopter actually follows, executed as one continuous run rather than as
 independently-proven segments.
 
-- [ ] **ADOPT-01**: A maintainer can run a single command that walks the whole documented adopter path — generate a Phoenix app, install Lockspire, wire it, migrate, boot it, register a client, complete an authorization-code + PKCE flow — and get one pass/fail verdict.
-- [ ] **ADOPT-02**: The walk uses a stock `mix phx.new` app with the defaults a real adopter would use, including Ecto and HTML, rather than a stripped-down variant chosen to make the walk easier.
-- [ ] **ADOPT-03**: When the walk fails, a maintainer can see which documented step failed and the underlying error without re-running the earlier steps by hand.
+- [x] **ADOPT-01**: A maintainer can run a single command that walks the whole documented adopter path — generate a Phoenix app, install Lockspire, wire it, migrate, boot it, register a client, complete an authorization-code + PKCE flow — and get one pass/fail verdict.
+- [x] **ADOPT-02**: The walk uses a stock `mix phx.new` app with the defaults a real adopter would use, including Ecto and HTML, rather than a stripped-down variant chosen to make the walk easier.
+- [x] **ADOPT-03**: When the walk fails, a maintainer can see which documented step failed and the underlying error without re-running the earlier steps by hand.
 - [ ] **ADOPT-04**: The walk asserts that the flow actually issued a usable token, not merely that each command exited zero.
 
 ### Installer Against A Real Host
@@ -80,9 +80,9 @@ Populated during roadmap creation on 2026-07-28. See `.planning/ROADMAP.md`.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADOPT-01 | Phase 126 | Pending |
-| ADOPT-02 | Phase 126 | Pending |
-| ADOPT-03 | Phase 126 | Pending |
+| ADOPT-01 | Phase 126 | Complete |
+| ADOPT-02 | Phase 126 | Complete |
+| ADOPT-03 | Phase 126 | Complete |
 | ADOPT-04 | Phase 126 | Pending |
 | INSTALL-01 | Phase 127 | Pending |
 | INSTALL-02 | Phase 127 | Pending |

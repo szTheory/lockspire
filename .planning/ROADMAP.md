@@ -41,7 +41,7 @@
 Plans:
 **Wave 1**
 
-- [ ] 126-01-PLAN.md — Walk harness skeleton and clean-room generation of the stock host app
+- [x] 126-01-PLAN.md — Walk harness skeleton and clean-room generation of the stock host app
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 0/TBD | Not started | - |
+| 126. Adopter Path Walk & Defect Ledger | 1/6 | In Progress | - |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
