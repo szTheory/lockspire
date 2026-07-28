@@ -25,7 +25,9 @@ defmodule AdoptionDemo.MixProject do
     [
       {:lockspire, path: "../.."},
       {:phoenix, "~> 1.8.5"},
-      {:phoenix_live_view, "~> 1.1.28"},
+      # Kept in step with the root mix.exs range so the path-dependency on
+      # Lockspire can always resolve.
+      {:phoenix_live_view, ">= 1.1.28 and < 2.0.0"},
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},

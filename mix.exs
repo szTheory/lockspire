@@ -40,7 +40,10 @@ defmodule Lockspire.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.8.5"},
-      {:phoenix_live_view, "~> 1.1.28"},
+      # Range, not a pin: Lockspire mounts inside a host Phoenix app, so a hard
+      # `~> 1.2.x` requirement would force every adopter to upgrade LiveView in
+      # lockstep with Lockspire. Hosts on 1.1.x stay supported; CI resolves 1.2.x.
+      {:phoenix_live_view, ">= 1.1.28 and < 2.0.0"},
       {:ecto_sql, "~> 3.13.5"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},
