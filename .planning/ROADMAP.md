@@ -45,7 +45,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 126-02-PLAN.md — Guide §1-§3b: add the dependency, run the installer, wire config and router
+- [x] 126-02-PLAN.md — Guide §1-§3b: add the dependency, run the installer, wire config and router
 - [ ] 126-03-PLAN.md — Stdlib flow driver and the two-layer ADOPT-04 token proof
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 1/6 | In Progress | - |
+| 126. Adopter Path Walk & Defect Ledger | 2/6 | In Progress|  |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |

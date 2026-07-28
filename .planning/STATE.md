@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: executing
-stopped_at: Completed 126-01-PLAN.md
-last_updated: "2026-07-28T23:32:11.140Z"
+stopped_at: Completed 126-02-PLAN.md
+last_updated: "2026-07-28T23:53:00.482Z"
 last_activity: 2026-07-28
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-07-28
 
@@ -227,6 +227,7 @@ institutionalizes a known failure.
 - [2026-07-28]: Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built.
 - [Phase 126]: Plan 126-01 isolated MIX_ARCHIVES under .harness/archives and pinned phx_new 1.8.9 in the walk harness so mix archive.install never touches the maintainer's global installer archive.
 - [Phase 126]: Plan 126-01 folded the generated host's own mix ecto.create/mix ecto.migrate into step-00d-seed-user (distinct from and preceding guide section 4's later Lockspire migration step) since seeding a phx.gen.auth user requires those migrations first.
+- [Phase 126]: Plan 126-02 generates a fresh secret_key_base for Lockspire's config completion (mix phx.gen.secret) rather than copying the adoption demo's committed literal, and step-03b-router-wire mounts Lockspire's own ConsentLive rather than the demo's substitute controller.
 
 ## Blockers/Concerns
 
@@ -241,11 +242,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-28T23:32:11.131Z
+**Last session:** 2026-07-28T23:53:00.475Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 126-01-PLAN.md
+**Stopped at:** Completed 126-02-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -303,6 +304,7 @@ institutionalizes a known failure.
 | Phase 125 P06 | 31m | 3 tasks | 6 files |
 | Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
 | Phase 126 P01 | 23min | 2 tasks | 4 files |
+| Phase 126 P02 | 19min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
