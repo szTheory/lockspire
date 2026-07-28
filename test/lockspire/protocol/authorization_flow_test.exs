@@ -826,6 +826,48 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
              )
   end
 
+  test "re-approving with prompt=consent reuses the remembered grant instead of duplicating it" do
+    approve = fn suffix ->
+      assert {:consent_required, %Interaction{} = interaction} =
+               AuthorizationFlow.start_authorization(
+                 validated_request(state: "dup-#{suffix}", prompt: ["consent"]),
+                 %{subject_id: "subject_123"},
+                 interaction_store: Store,
+                 consent_store: Store,
+                 token_store: Store,
+                 now: &fixed_now/0,
+                 code_generator: fn -> "dup-code-#{suffix}" end,
+                 interaction_id_generator: fn -> "interaction-dup-#{suffix}" end
+               )
+
+      assert {:approved, _redirect} =
+               AuthorizationFlow.approve_interaction(
+                 interaction.interaction_id,
+                 %{subject_id: "subject_123"},
+                 remember: true,
+                 interaction_store: Store,
+                 consent_store: Store,
+                 token_store: Store,
+                 now: &fixed_now/0,
+                 code_generator: fn -> "dup-code-#{suffix}" end
+               )
+    end
+
+    approve.("first")
+    approve.("second")
+
+    {:ok, grants} = Store.list_consents_for_account("subject_123")
+
+    active =
+      Enum.filter(grants, &(&1.client_id == "client_123" and &1.status == :active))
+
+    # `prompt=consent` deliberately re-shows the consent screen, but approving
+    # the same client for the same scopes a second time must not leave the
+    # account holding two identical active grants — the host's authorized-apps
+    # screen would list the app twice and each Disconnect would revoke only one.
+    assert length(active) == 1
+  end
+
   defp validated_request(overrides \\ []) do
     defaults = %{
       client_id: "client_123",

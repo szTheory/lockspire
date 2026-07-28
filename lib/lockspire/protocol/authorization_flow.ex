@@ -329,6 +329,33 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       kind: ConsentPolicy.approval_kind(remember?)
     }
 
+    store_consent(grant, subject_id, interaction.client_id, opts)
+  end
+
+  # Approving the same client for the same scopes again must not leave the
+  # account holding two identical active grants: a host's authorized-apps
+  # screen would list the app twice, and each Disconnect would revoke only one
+  # of them. `prompt=consent` re-shows the consent screen by design, so this is
+  # reached on every repeat authorization, not just an edge case.
+  #
+  # One-time approvals are deliberately excluded — each records a single
+  # approval event and is not durable consent to reuse.
+  defp store_consent(%ConsentGrant{kind: :remembered} = grant, subject_id, client_id, opts) do
+    case consent_store(opts).list_reusable_consents(subject_id, client_id) do
+      {:ok, grants} ->
+        case ConsentPolicy.duplicate_grant(grants, grant) do
+          {:reuse, %ConsentGrant{} = existing} -> {:ok, existing}
+          :none -> consent_store(opts).grant_consent(grant)
+        end
+
+      # Fall back to storing rather than failing the authorization: a duplicate
+      # grant is recoverable, a rejected approval is not.
+      {:error, _reason} ->
+        consent_store(opts).grant_consent(grant)
+    end
+  end
+
+  defp store_consent(%ConsentGrant{} = grant, _subject_id, _client_id, opts) do
     consent_store(opts).grant_consent(grant)
   end
 
