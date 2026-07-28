@@ -241,6 +241,46 @@ sed_i() {
   fi
 }
 
+# Inserts multi-line text immediately before the last unindented "end" in a file -- the
+# module-closing `end` of a freshly generated Phoenix router.ex, which is always column 0.
+# Deliberately head/tail/grep-based rather than `awk -v` with an embedded newline: the BSD awk
+# shipped on maintainer laptops (the "one true awk", not gawk) rejects a `-v` string containing a
+# literal newline ("newline in string"), so this must not depend on GNU awk semantics.
+insert_before_final_module_end() {
+  local file="$1"
+  local text="$2"
+  local line_no
+
+  line_no="$(grep -n '^end$' "$file" | tail -n 1 | cut -d: -f1)"
+
+  if [[ -z "$line_no" ]]; then
+    line_no=$(($(wc -l <"$file") + 1))
+  fi
+
+  local tmp="${file}.walk-tmp"
+
+  head -n $((line_no - 1)) "$file" >"$tmp"
+  printf '%s\n' "$text" >>"$tmp"
+  tail -n +"$line_no" "$file" >>"$tmp"
+  mv "$tmp" "$file"
+}
+
+# Extracts the body of priv/templates/lockspire.install/router.ex's `lockspire_routes/0` heredoc
+# from the already-rendered generated file -- the literal text a human reader would paste, per
+# RESEARCH Pitfall 4. The template renders the body between two lines that are exactly four
+# spaces of indentation followed by a bare `"""`.
+extract_lockspire_routes_body() {
+  local generated_helper="$1"
+
+  awk '
+    /^    """$/ {
+      marker_count++
+      next
+    }
+    marker_count == 1 { print }
+  ' "$generated_helper"
+}
+
 # Isolated in a subshell with `set -e` so the first missing command short
 # circuits the loop -- the only place this script uses abort-on-error.
 preflight_required_commands() {
@@ -581,6 +621,163 @@ run_step_03a_config_import() {
   mark_done "step-03a-config-import"
 }
 
+# step-03b-router-call: guide §3 "Wire the generated files" -- follow the guide literally: import
+# the generated HostAppWeb.Router.Lockspire module and call lockspire_routes/0 in the router
+# body. lockspire_routes/0 returns a heredoc String, not a quoted macro, so calling it defines
+# zero routes and raises no compile error -- the expected observation is that exact
+# counter-intuitive shape (RESEARCH Pitfall 4). A clean compile is never recorded as PASS here.
+run_step_03b_router_call() {
+  should_run "step-03b-router-call" || return 0
+
+  local host_router="$HOST_APP_DIR/lib/host_app_web/router.ex"
+  local generated_helper="$HOST_APP_DIR/lib/host_app_web/router/lockspire.ex"
+
+  if [[ ! -f "$generated_helper" ]]; then
+    record_result "FAIL" "step-03b-router-call" "§3 Wire the generated files: lib/host_app_web/router/lockspire.ex is missing (step-02-install did not complete)"
+    return
+  fi
+
+  if ! grep -Fq 'import HostAppWeb.Router.Lockspire' "$host_router"; then
+    insert_before_final_module_end "$host_router" "$(printf '  import HostAppWeb.Router.Lockspire\n\n  lockspire_routes()')"
+  fi
+
+  local compile_log="$WORKDIR/step_03b_router_call.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "step-03b-router-call" "§3 Wire the generated files: calling lockspire_routes() failed to compile (${error_detail})"
+    return
+  fi
+
+  local routes_log="$WORKDIR/step_03b_router_call_routes.log"
+  (cd "$HOST_APP_DIR" && mix phx.routes) >"$routes_log" 2>&1 || true
+
+  if grep -Fq "${MOUNT_PATH}" "$routes_log"; then
+    record_result "PASS" "step-03b-router-call" "§3 Wire the generated files: calling lockspire_routes() as documented defines the Lockspire mount"
+    mark_done "step-03b-router-call"
+    return
+  fi
+
+  record_result "FAIL" "step-03b-router-call" "§3 Wire the generated files: calling lockspire_routes() as documented compiles clean, zero routes defined (ADOPT-D01 -- the generated helper returns a String, not a quoted macro)"
+  mark_done "step-03b-router-call"
+}
+
+# step-03b-router-paste: guide §3 "Wire the generated files" -- apply the other documented
+# reading a human would take: paste the heredoc's own contents into the host router. The pasted
+# body's admin scope references a :require_operator pipeline no stock router defines, so this is
+# expected to fail compilation with that exact error (RESEARCH Pitfall 4). This sub-step
+# deliberately leaves the host non-compiling, so it restores the router before returning --
+# step-03b-router-wire must start from a known point.
+run_step_03b_router_paste() {
+  should_run "step-03b-router-paste" || return 0
+
+  local host_router="$HOST_APP_DIR/lib/host_app_web/router.ex"
+  local generated_helper="$HOST_APP_DIR/lib/host_app_web/router/lockspire.ex"
+
+  if [[ ! -f "$generated_helper" ]]; then
+    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: lib/host_app_web/router/lockspire.ex is missing (step-02-install did not complete)"
+    return
+  fi
+
+  mkdir -p "$WORKDIR/.walk"
+  local backup="$WORKDIR/.walk/router_pre_paste.bak"
+  cp "$host_router" "$backup"
+
+  local pasted_body
+  pasted_body="$(extract_lockspire_routes_body "$generated_helper")"
+  insert_before_final_module_end "$host_router" "$pasted_body"
+
+  local compile_log="$WORKDIR/step_03b_router_paste.log"
+
+  if (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes()'s body compiled unexpectedly -- expected the undefined :require_operator pipeline to fail compilation"
+  else
+    local error_detail
+    error_detail="$(grep -m 1 -i 'pipeline' "$compile_log")"
+
+    if [[ -z "$error_detail" ]]; then
+      error_detail="$(head -n 1 "$compile_log")"
+    fi
+
+    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes()'s body fails to compile (${error_detail}) (ADOPT-D02 -- :require_operator is not defined in a stock host router)"
+  fi
+
+  cp "$backup" "$host_router"
+  mark_done "step-03b-router-paste"
+}
+
+# step-03b-router-wire: guide §3 "Wire the generated files" -- apply the smallest real wiring
+# that lets the walk reach step-04: define a stand-in :require_operator pipeline (ADOPT-D02's
+# workaround) and route the session-/CSRF-dependent interaction routes and the consent LiveView
+# through the host's :browser pipeline before the general forward (ADOPT-D03's workaround),
+# following examples/adoption_demo/lib/adoption_demo_web/router.ex:53-59, the only place in the
+# repo that gets this right.
+run_step_03b_router_wire() {
+  should_run "step-03b-router-wire" || return 0
+
+  local host_router="$HOST_APP_DIR/lib/host_app_web/router.ex"
+  local generated_helper="$HOST_APP_DIR/lib/host_app_web/router/lockspire.ex"
+
+  if [[ ! -f "$generated_helper" ]]; then
+    record_result "FAIL" "step-03b-router-wire" "§3 Wire the generated files: lib/host_app_web/router/lockspire.ex is missing (step-02-install did not complete)"
+    return
+  fi
+
+  if ! grep -Fq 'pipeline :require_operator do' "$host_router"; then
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D02
+    # priv/templates/lockspire.install/router.ex references a :require_operator pipeline that no
+    # stock mix phx.new router defines. The stand-in exists only in this throwaway generated
+    # host, guards no real staff surface, and Phase 127 must remove the need for it.
+    insert_before_final_module_end "$host_router" "$(printf '  pipeline :require_operator do\n  end')"
+  fi
+
+  if ! grep -Fq 'Lockspire.Web.AdminRouter' "$host_router"; then
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D03
+    # priv/templates/lockspire.install/router.ex forwards the mount path in a pipeline-less
+    # scope, so the session- and CSRF-dependent interaction routes and the consent LiveView get
+    # no fetch_session and no protect_from_forgery. Route them through the host's :browser
+    # pipeline before the general forward, following
+    # examples/adoption_demo/lib/adoption_demo_web/router.ex:53-59.
+    local wired_body
+    wired_body="$(
+      printf '  scope "%s/admin" do\n    pipe_through [:browser, :require_operator]\n    forward "/", Lockspire.Web.AdminRouter\n  end\n\n  scope "%s" do\n    pipe_through [:browser]\n\n    get "/interactions/:interaction_id", Lockspire.Web.InteractionController, :show\n    post "/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete\n    live "/consent/:interaction_id", Lockspire.Web.ConsentLive, :show\n  end\n\n  scope "/" do\n    forward "%s", Lockspire.Web.Router\n  end' \
+        "$MOUNT_PATH" "$MOUNT_PATH" "$MOUNT_PATH"
+    )"
+    insert_before_final_module_end "$host_router" "$wired_body"
+  fi
+
+  local compile_log="$WORKDIR/step_03b_router_wire.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "step-03b-router-wire" "§3 Wire the generated files: real wiring still fails to compile (${error_detail})"
+    return
+  fi
+
+  local routes_log="$WORKDIR/step_03b_router_wire_routes.log"
+  (cd "$HOST_APP_DIR" && mix phx.routes) >"$routes_log" 2>&1 || true
+
+  local missing_route=""
+
+  if ! grep -Fq "${MOUNT_PATH}" "$routes_log"; then
+    missing_route="Lockspire mount"
+  elif ! grep -Fq 'InteractionController' "$routes_log"; then
+    missing_route="interaction routes"
+  elif ! grep -Fq 'ConsentLive' "$routes_log"; then
+    missing_route="consent LiveView route"
+  fi
+
+  if [[ -n "$missing_route" ]]; then
+    record_result "FAIL" "step-03b-router-wire" "§3 Wire the generated files: real wiring compiled but mix phx.routes is missing the ${missing_route}"
+    return
+  fi
+
+  record_result "PASS" "step-03b-router-wire" "§3 Wire the generated files: Lockspire mount, interaction routes, and consent LiveView route are all defined"
+  mark_done "step-03b-router-wire"
+}
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -619,8 +816,11 @@ run_step_00d_seed_user
 run_step_01_add_dep
 run_step_02_install
 run_step_03a_config_import
+run_step_03b_router_call
+run_step_03b_router_paste
+run_step_03b_router_wire
 
-# Guide steps step-03b onward are added by later plans in this phase; the
+# Guide steps step-04 onward are added by later plans in this phase; the
 # skeleton and pre-guide steps above are what they plug into via
 # should_run/record_result/mark_done.
 

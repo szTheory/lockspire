@@ -250,4 +250,12 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
              "malformed workaround marker: #{inspect(line)}"
     end
   end
+
+  test "both lockspire_routes/0 interpretations are exercised as separate walk steps" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-03b-router-call"
+    assert source =~ "step-03b-router-paste"
+    assert source =~ "step-03b-router-wire"
+  end
 end
