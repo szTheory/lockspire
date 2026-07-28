@@ -133,6 +133,13 @@ HOST_APP_DIR="$WORKDIR/host_app"
 SERVER_LOG="$WORKDIR/server.log"
 SERVER_PID=""
 
+# Fixed, obviously non-production walk credentials -- a cross-plan contract
+# consumed unchanged by the flow driver (plan 126-03) and the secret-absence
+# assertion (plan 126-06). Never substitute different values here without
+# updating plan 126-06's ledger secret-absence criterion.
+export LOCKSPIRE_WALK_EMAIL="walker@adopter.test"
+export LOCKSPIRE_WALK_PASSWORD="walk-adopter-password-2026"
+
 declare -a RESULTS=()
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -218,6 +225,16 @@ port_is_bound() {
   return 1
 }
 
+# BSD/GNU `sed -i` portability split, same shape as
+# scripts/publish/verify_install_truth.sh:76-81.
+sed_i() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
 # Isolated in a subshell with `set -e` so the first missing command short
 # circuits the loop -- the only place this script uses abort-on-error.
 preflight_required_commands() {
@@ -277,6 +294,159 @@ run_preflight() {
   fi
 }
 
+# step-00b-phx-new: install the pinned, isolated phx_new archive and generate
+# a stock host app -- Ecto, HTML, LiveView, mailer, and assets all kept
+# (ADOPT-02, D-05). Never strip a generator capability here.
+run_step_00b_phx_new() {
+  local step_id="step-00b-phx-new"
+
+  should_run "$step_id" || return 0
+
+  mkdir -p "$WORKDIR"
+
+  if ! mix local.hex --force --if-missing >/dev/null 2>&1; then
+    record_result "FAIL" "$step_id" "mix local.hex --force --if-missing failed"
+    return
+  fi
+
+  if ! mix local.rebar --force >/dev/null 2>&1; then
+    record_result "FAIL" "$step_id" "mix local.rebar --force failed"
+    return
+  fi
+
+  # Pinned and forced (D-06): archives are keyed one entry per app name, so
+  # an unpinned or unforced install either drifts or blocks on a replace
+  # prompt even with stdin closed.
+  if ! mix archive.install hex phx_new 1.8.9 --force >/dev/null 2>&1; then
+    record_result "FAIL" "$step_id" "mix archive.install hex phx_new 1.8.9 --force failed"
+    return
+  fi
+
+  # D-07: this is the only reliable way to assert the resolved installer
+  # version. Application.spec(:phx_new, :vsn) returns nil for archives and
+  # Mix.Local.archives_path/0 does not exist on Elixir 1.19 -- do not use
+  # either.
+  local installer_version
+  installer_version="$(mix phx.new --version 2>&1 | tr -d '\r' | tail -n 1)"
+
+  if [[ "$installer_version" != "Phoenix installer v1.8.9" ]]; then
+    fail_prerequisite "phx_new" "expected 'Phoenix installer v1.8.9', resolved '${installer_version}'"
+  fi
+
+  if [[ -e "$HOST_APP_DIR" ]]; then
+    record_result "FAIL" "$step_id" "refusing to regenerate: ${HOST_APP_DIR} already exists without a resume marker (pass --force to override)"
+    return
+  fi
+
+  # --install is a correctness requirement (D-09), not an optimization:
+  # without the esbuild/tailwind binaries the dev endpoint's watcher child
+  # re-raises past the endpoint supervisor's restart budget. No `--no-*`
+  # capability-stripping flag is ever passed here (ADOPT-02, D-05).
+  local phx_new_log="$WORKDIR/phx_new.log"
+
+  if ! (cd "$WORKDIR" && mix phx.new host_app --database postgres --install) >"$phx_new_log" 2>&1; then
+    record_result "FAIL" "$step_id" "mix phx.new host_app --database postgres --install failed (see ${phx_new_log})"
+    return
+  fi
+
+  local dev_config="$HOST_APP_DIR/config/dev.exs"
+
+  # Port and DB wiring patch (RESEARCH assumption A2, D-12/D-13): default
+  # port 4200, never 4100 (pinned elsewhere in this repo). phx.new 1.8.9's
+  # dev.exs template ships no explicit http port key at all -- inject one
+  # rather than assuming a "port: 4000" literal exists to replace.
+  sed_i -e "s/http: \[ip: {127, 0, 0, 1}\]/http: [ip: {127, 0, 0, 1}, port: ${PORT}]/" "$dev_config"
+  sed_i -e "s/hostname: \"localhost\"/hostname: \"${WALK_DB_HOST}\"/" "$dev_config"
+  sed_i -e "s/username: \"postgres\"/username: \"${WALK_DB_USER}\"/" "$dev_config"
+  sed_i -e "s/password: \"postgres\"/password: \"${WALK_DB_PASSWORD}\"/" "$dev_config"
+  sed_i -e "s/database: \"host_app_dev\"/database: \"${WALK_DB_NAME}\"/" "$dev_config"
+
+  # Generate a fresh secret_key_base for this run. Never copy the committed
+  # examples/adoption_demo/config/config.exs literal (T-126-04).
+  local secret
+  secret="$(cd "$HOST_APP_DIR" && mix phx.gen.secret 2>/dev/null | tail -n 1)"
+
+  if [[ -n "$secret" ]]; then
+    sed_i -e "s/secret_key_base: \"[^\"]*\"/secret_key_base: \"${secret}\"/" "$dev_config"
+  fi
+
+  record_result "PASS" "$step_id" "generated stock Phoenix 1.8.9 host app (Ecto/HTML/LiveView/mailer/assets) at ${HOST_APP_DIR}"
+  mark_done "$step_id"
+}
+
+# step-00c-gen-auth: the strongest ADOPT-02 claim available -- Phoenix's own
+# default authentication, with --live mandatory so the generator's
+# interactive prompt never hangs the harness (D-21/D-22).
+run_step_00c_gen_auth() {
+  local step_id="step-00c-gen-auth"
+
+  should_run "$step_id" || return 0
+
+  local gen_auth_log="$WORKDIR/phx_gen_auth.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix phx.gen.auth Accounts User users --live) >"$gen_auth_log" 2>&1; then
+    record_result "FAIL" "$step_id" "mix phx.gen.auth Accounts User users --live failed (see ${gen_auth_log})"
+    return
+  fi
+
+  # phx.gen.auth adds bcrypt_elixir ~> 3.0 (a C NIF -- why step-00a-preflight
+  # probes cc/make, D-26) and prompts the adopter to re-fetch dependencies.
+  if ! (cd "$HOST_APP_DIR" && mix deps.get) >>"$gen_auth_log" 2>&1; then
+    record_result "FAIL" "$step_id" "mix deps.get failed after phx.gen.auth (see ${gen_auth_log})"
+    return
+  fi
+
+  record_result "PASS" "$step_id" "generated phx.gen.auth Accounts/User/users --live login seam"
+  mark_done "$step_id"
+}
+
+# step-00d-seed-user: a password-capable, confirmed user via the generator's
+# own context functions in the exact D-23 order. Never hand-insert a
+# hashed_password -- a direct insert silently produces a password-less user.
+# The host app's OWN phx.gen.auth migrations must be applied first; this is
+# distinct from -- and precedes -- guide section 4's Lockspire migration
+# step landed in a later plan.
+run_step_00d_seed_user() {
+  local step_id="step-00d-seed-user"
+
+  should_run "$step_id" || return 0
+
+  local seed_log="$WORKDIR/seed_user.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix ecto.create) >"$seed_log" 2>&1; then
+    record_result "FAIL" "$step_id" "mix ecto.create failed for the generated host's own database (see ${seed_log})"
+    return
+  fi
+
+  if ! (cd "$HOST_APP_DIR" && mix ecto.migrate) >>"$seed_log" 2>&1; then
+    record_result "FAIL" "$step_id" "mix ecto.migrate failed for the generated host's own phx.gen.auth migrations (see ${seed_log})"
+    return
+  fi
+
+  local seed_script
+  seed_script="$(
+    cat <<'ELIXIR'
+email = System.fetch_env!("LOCKSPIRE_WALK_EMAIL")
+password = System.fetch_env!("LOCKSPIRE_WALK_PASSWORD")
+
+{:ok, user} = HostApp.Accounts.register_user(%{email: email})
+{encoded, user_token} = HostApp.Accounts.UserToken.build_email_token(user, "login")
+HostApp.Repo.insert!(user_token)
+{:ok, {user, _}} = HostApp.Accounts.login_user_by_magic_link(encoded)
+{:ok, {_user, _}} = HostApp.Accounts.update_user_password(user, %{password: password})
+IO.puts("adopter-walk: seeded password-capable user")
+ELIXIR
+  )"
+
+  if ! (cd "$HOST_APP_DIR" && mix run -e "$seed_script") >>"$seed_log" 2>&1; then
+    record_result "FAIL" "$step_id" "seeding ${LOCKSPIRE_WALK_EMAIL} failed (see ${seed_log})"
+    return
+  fi
+
+  record_result "PASS" "$step_id" "seeded confirmed password-capable user ${LOCKSPIRE_WALK_EMAIL}"
+  mark_done "$step_id"
+}
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -308,8 +478,12 @@ if [[ "$PREFLIGHT_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
-# Pre-guide and guide steps (step-00b onward) are added by later plans in
-# this phase; the skeleton above is what they plug into via
+run_step_00b_phx_new
+run_step_00c_gen_auth
+run_step_00d_seed_user
+
+# Guide steps (step-01 onward) are added by later plans in this phase; the
+# skeleton and pre-guide steps above are what they plug into via
 # should_run/record_result/mark_done.
 
 print_report
