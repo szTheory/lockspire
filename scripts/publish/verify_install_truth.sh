@@ -52,7 +52,10 @@ fi
 
 echo "==> Verifying Hexdocs availability..."
 DOCS_URL="https://hexdocs.pm/lockspire/$EXPECTED_VERSION/supported-surface.html"
-DOCS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DOCS_URL" || true)
+# -L is required: hexdocs.pm/lockspire/... now 301-redirects to the
+# per-package host lockspire.hexdocs.pm/..., so a non-following curl reports 301
+# and fails the check even when the docs are published and reachable.
+DOCS_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" "$DOCS_URL" || true)
 
 if [ "$DOCS_STATUS" -ne 200 ]; then
   echo "Error: Failed to fetch documentation at $DOCS_URL (HTTP $DOCS_STATUS)"
