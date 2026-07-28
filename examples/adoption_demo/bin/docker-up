@@ -206,8 +206,19 @@ tcp_port_has_listener() {
   fi
 }
 
+port_owner_summary() {
+  docker ps --format '{{.Names}} {{.Ports}}' |
+    awk -v port="$1" '$0 ~ ":" port "->" {print; found=1; exit} END {exit found ? 0 : 1}'
+}
+
 traefik_ports_busy() {
   tcp_port_has_listener 80 || tcp_port_has_listener 8080
+}
+
+repo_local_traefik_running() {
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" \
+    docker compose -f tools/traefik/docker-compose.yml ps --status running -q traefik 2>/dev/null |
+    grep -q .
 }
 
 compatible_traefik_networks() {
@@ -252,12 +263,28 @@ print_detected_networks() {
 
 if [ "$mode" = "direct" ]; then
   if port_is_busy "$port"; then
+    owner="$(port_owner_summary "$port" 2>/dev/null || true)"
+
     if [ "$explicit_port" -eq 1 ] || [ "$explicit_base_url" -eq 1 ]; then
       cat >&2 <<ERROR
 Port ${port} is already in use.
+ERROR
 
-Use Traefik hostname mode:
+      if [ -n "$owner" ]; then
+        cat >&2 <<ERROR
+
+Detected Docker listener:
+  ${owner}
+ERROR
+      fi
+
+      cat >&2 <<ERROR
+
+Use Traefik hostname mode instead:
   examples/adoption_demo/bin/docker-up
+
+If a shared proxy is already running on a non-default network:
+  LOCKSPIRE_DEMO_TRAEFIK_NETWORK=<network> examples/adoption_demo/bin/docker-up --no-proxy-start --host ${host}
 
 Or choose an explicit direct port and matching project:
   examples/adoption_demo/bin/docker-up --direct --port 4101 --project lockspire-adoption-demo-alt
@@ -267,6 +294,10 @@ ERROR
 
     next_port="$(find_free_port "$port")"
     echo "Port ${port} is already in use; using ${next_port} for direct mode."
+    if [ -n "$owner" ]; then
+      echo "Detected Docker listener: ${owner}"
+    fi
+    echo "For normal browser work, prefer Traefik hostname mode: examples/adoption_demo/bin/docker-up"
     port="$next_port"
   fi
 
@@ -288,6 +319,41 @@ else
 fi
 
 base_url="$(normalize_url "$base_url")"
+
+url_matches_direct_port() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+url = sys.argv[1]
+expected_port = int(sys.argv[2])
+parsed = urlparse(url)
+
+if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"127.0.0.1", "localhost"}:
+    sys.exit(1)
+
+port = parsed.port
+if port is None:
+    port = 443 if parsed.scheme == "https" else 80
+
+sys.exit(0 if port == expected_port else 1)
+PY
+}
+
+if [ "$mode" = "direct" ] && [ "$explicit_base_url" -eq 1 ]; then
+  if ! url_matches_direct_port "$base_url" "$port"; then
+    cat >&2 <<ERROR
+LOCKSPIRE_DEMO_BASE_URL (${base_url}) does not match direct mode port ${port}.
+
+Use matching values:
+  LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:${port} examples/adoption_demo/bin/docker-up --direct --port ${port}
+
+Or use hostname routing:
+  examples/adoption_demo/bin/docker-up --host ${host}
+ERROR
+    exit 1
+  fi
+fi
 
 if [ "$mode" = "traefik" ] && [ "$explicit_base_url" -eq 1 ]; then
   expected_base_url="http://${host}"
@@ -358,6 +424,16 @@ print_running_info() {
     docker compose --project-name "$project" -f examples/adoption_demo/docker-compose.yml exec -T web ./bin/docker-info
 }
 
+if [ "$print_command" -eq 1 ] && [ "$mode" = "traefik" ] && [ "$proxy_start" -eq 1 ] &&
+  ! repo_local_traefik_running && traefik_ports_busy && [ "$explicit_network" -eq 0 ]; then
+  detected_networks="$(compatible_traefik_networks)"
+  detected_count="$(printf '%s\n' "$detected_networks" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+  if [ "$detected_count" = "1" ]; then
+    network="$(printf '%s\n' "$detected_networks" | sed -n '1p')"
+  fi
+fi
+
 if [ "$print_command" -eq 1 ]; then
   if [ "$mode" = "direct" ]; then
     print_direct_command
@@ -369,7 +445,7 @@ fi
 
 if [ "$mode" = "traefik" ]; then
   if [ "$proxy_start" -eq 1 ]; then
-    if LOCKSPIRE_DEMO_TRAEFIK_NETWORK="$network" docker compose -f tools/traefik/docker-compose.yml ps --status running -q traefik 2>/dev/null | grep -q .; then
+    if repo_local_traefik_running; then
       echo "Reusing repo-local Traefik helper on network ${network}."
     elif traefik_ports_busy; then
       detected_networks="$(compatible_traefik_networks)"

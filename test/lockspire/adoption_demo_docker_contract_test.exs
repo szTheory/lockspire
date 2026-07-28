@@ -96,26 +96,25 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     source = File.read!(@docker_info_path)
 
     reprint_command =
-      "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
-
-    project_reprint_command =
-      "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+      "docker compose --project-name lockspire-adoption-demo -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert output =~ "Reprint:"
     assert output =~ reprint_command
-    assert output =~ project_reprint_command
     assert output =~ "examples/adoption_demo/bin/docker-up"
     assert output =~ "examples/adoption_demo/bin/docker-up --direct"
     assert output =~ "make demo"
     assert output =~ "make demo-smoke"
     assert output =~ "make demo-stop"
-    assert output =~ "scripts/demo/admin-ui up"
-    assert output =~ "scripts/demo/admin-ui smoke"
-    assert output =~ "scripts/demo/admin-ui stop"
-    assert source =~ reprint_command
-    assert source =~ project_reprint_command
+    assert output =~ "scripts/demo/admin-ui --project lockspire-adoption-demo up"
+    assert output =~ "scripts/demo/admin-ui --project lockspire-adoption-demo smoke"
+    assert output =~ "scripts/demo/admin-ui --project lockspire-adoption-demo stop"
+
+    assert source =~
+             "COMPOSE_CMD=\"docker compose --project-name ${PROJECT} -f examples/adoption_demo/docker-compose.yml\""
+
+    assert source =~ "${COMPOSE_CMD} exec web ./bin/docker-info"
     assert source =~ "examples/adoption_demo/bin/docker-up"
-    assert source =~ "scripts/demo/admin-ui up"
+    assert source =~ "scripts/demo/admin-ui --project ${PROJECT} up"
 
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml up"
     refute output =~ "docker compose -f examples/adoption_demo/docker-compose.yml run"
@@ -169,6 +168,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     assert source =~ "examples/adoption_demo/bin/docker-up --project \"$project\" --detach"
     assert source =~ "scripts/demo/adoption_smoke.sh"
+    assert source =~ "http://lockspire-demo.localhost"
     assert source =~ "docker-reset --project \"$project\" --db-only"
     assert source =~ "docker-cleanup --project \"$project\""
     assert source =~ "label=com.docker.compose.project=${project}"
@@ -218,6 +218,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ "compatible_traefik_networks"
     assert source =~ "docker port \"$container\" 80/tcp"
     assert source =~ "--providers\\.docker"
+    assert source =~ "port_owner_summary"
+    assert source =~ "Detected Docker listener"
+    assert source =~ "url_matches_direct_port"
+    assert source =~ "does not match direct mode port"
     assert source =~ "Detected existing compatible Traefik proxy"
     assert source =~ "Multiple compatible Traefik proxy networks"
     assert source =~ "Cannot use --no-proxy-start"
@@ -238,6 +242,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     source = File.read!(@adoption_smoke_wrapper_path)
 
     assert source =~ "http://127.0.0.1:4100"
+    assert source =~ "http://lockspire-demo.localhost"
     assert source =~ "BASE_URL="
     assert source =~ ~r/BASE_URL=.*LOCKSPIRE_DEMO_BASE_URL/
     assert source =~ ~r/BASE_URL=.*%\//
@@ -250,8 +255,14 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
   test "adoption smoke wrapper keeps OAuth proof logic in Python smoke" do
     source = File.read!(@adoption_smoke_wrapper_path)
+    smoke_source = File.read!(Path.join(@repo_root, "scripts/demo/adoption_smoke.py"))
 
     assert source =~ "scripts/demo/adoption_smoke.py"
+    assert smoke_source =~ "anonymous admin login redirect"
+    assert smoke_source =~ "/login?return_to=%2Flockspire%2Fadmin"
+    assert smoke_source =~ "non-operator admin access"
+    assert smoke_source =~ "Sign out, then choose ops"
+
     refute source =~ "oauth/callback"
     refute source =~ "code_verifier"
     refute source =~ "code_challenge"
@@ -267,6 +278,9 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     with_compose_config(["-f", @compose_file], fn config ->
       assert config["name"] == "lockspire-adoption-demo"
       assert_volume_names(config, "lockspire-adoption-demo")
+
+      web = get_in(config, ["services", "web"])
+      assert env_value(web, "COMPOSE_PROJECT_NAME") == "lockspire-adoption-demo"
     end)
   end
 
@@ -518,6 +532,17 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ ~r/create_database\s+\.\/bin\/docker-info/
   end
 
+  test "docker-start recovers from stale untracked demo migration state" do
+    source = File.read!(Path.join(@repo_root, "examples/adoption_demo/bin/docker-start"))
+
+    assert source =~ "migrate_database()"
+    assert source =~ "duplicate_table"
+    assert source =~ "Detected existing untracked demo tables"
+    assert source =~ "mix ecto.drop"
+    assert source =~ "mix ecto.create"
+    assert source =~ "mix ecto.migrate --migrations-path ../../priv/repo/migrations"
+  end
+
   test "docker-start uses container-local readiness separate from public base URL" do
     source = File.read!(Path.join(@repo_root, "examples/adoption_demo/bin/docker-start"))
 
@@ -563,13 +588,13 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert docs =~ "`LOCKSPIRE_DEMO_BASE_URL` is the single public URL truth"
 
     assert docs =~
-             "docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+             "docker compose --project-name lockspire-adoption-demo -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert docs =~
-             "COMPOSE_PROJECT_NAME=lockspire-adoption-demo-alt docker compose -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
+             "docker compose --project-name lockspire-adoption-demo-alt -f examples/adoption_demo/docker-compose.yml exec web ./bin/docker-info"
 
     assert docs =~ "If the demo was started with an alternate Compose project"
-    assert docs =~ "LOCKSPIRE_DEMO_BASE_URL=http://127.0.0.1:4100 scripts/demo/adoption_smoke.sh"
+    assert docs =~ "scripts/demo/adoption_smoke.sh"
 
     assert docs =~
              "LOCKSPIRE_DEMO_BASE_URL=http://lockspire-demo.localhost scripts/demo/adoption_smoke.sh"
@@ -651,6 +676,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     assert docs =~ "scripts/demo/adoption_smoke.sh"
     assert docs =~ "delegates to `scripts/demo/adoption_smoke.py`"
+    assert docs =~ "anonymous admin login redirect"
+    assert docs =~ "non-operator denial"
     assert docs =~ "examples/adoption_demo/bin/docker-info"
 
     refute docs =~

@@ -2,6 +2,11 @@
 
 Lockspire is for Phoenix teams that need to become an OAuth/OIDC provider inside an existing product.
 
+If the OAuth/OIDC words are still fuzzy, start with
+[OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.md). It uses the
+Billingo demo to explain the roles, flow, tokens, scopes, consent, and host
+boundary before you install anything.
+
 Use it when:
 
 - Your product already owns accounts and login UX.

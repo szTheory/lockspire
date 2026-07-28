@@ -66,7 +66,7 @@ compose() {
 }
 
 demo_base_url() {
-  url="$(compose exec -T web sh -lc 'printf "%s" "${LOCKSPIRE_DEMO_BASE_URL:-http://127.0.0.1:4100}"' 2>/dev/null || true)"
+  url="$(compose exec -T web sh -lc 'printf "%s" "${LOCKSPIRE_DEMO_BASE_URL:-http://lockspire-demo.localhost}"' 2>/dev/null || true)"
 
   if [ -z "$url" ]; then
     url="${LOCKSPIRE_DEMO_BASE_URL:-http://lockspire-demo.localhost}"

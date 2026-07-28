@@ -11,7 +11,7 @@ from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 
-BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://127.0.0.1:4100").rstrip("/")
+BASE_URL = os.environ.get("LOCKSPIRE_DEMO_BASE_URL", "http://lockspire-demo.localhost").rstrip("/")
 BILLING_RESOURCE = "https://billing.acme-ledger.test"
 
 
@@ -177,7 +177,12 @@ def exercise_discovery_and_admin():
     assert json_body(jwks, "jwks")["keys"], "jwks must publish at least one signing key"
 
     denied = browser.request("GET", "/lockspire/admin")
-    assert_status(denied, 403, "anonymous admin access")
+    assert_status(denied, 302, "anonymous admin login redirect")
+    assert_equal(location(denied), "/login?return_to=%2Flockspire%2Fadmin", "anonymous admin redirect target")
+
+    login_page = browser.request("GET", location(denied))
+    assert_status(login_page, 200, "admin login page")
+    assert_contains(login_page, "Demo login", "admin login page")
 
     logged_in = login(browser, "ops", "/lockspire/admin")
     assert_status(logged_in, 302, "operator login")
@@ -204,6 +209,13 @@ def exercise_discovery_and_admin():
         page = browser.request("GET", route)
         assert_status(page, 200, f"operator admin route {route}")
         assert_contains(page, "lockspire-admin-shell", f"admin shell on {route}")
+
+    non_operator = Browser(BASE_URL)
+    logged_in = login(non_operator, "alice", "/lockspire/admin")
+    assert_status(logged_in, 302, "non-operator login")
+    forbidden = non_operator.request("GET", "/lockspire/admin")
+    assert_status(forbidden, 403, "non-operator admin access")
+    assert_contains(forbidden, "Sign out, then choose ops", "non-operator admin guidance")
 
 
 def exercise_authorization_code():
