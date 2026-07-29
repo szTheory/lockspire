@@ -112,7 +112,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 127-08-PLAN.md — `--dry-run`, manifest input drift, and refuse-on-drift manifest writes (INSTALL-03)
+- [x] 127-08-PLAN.md — `--dry-run`, manifest input drift, and refuse-on-drift manifest writes (INSTALL-03)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
@@ -185,7 +185,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
-| 127. Installer Against A Real Host | 7/9 | In Progress|  |
+| 127. Installer Against A Real Host | 8/9 | In Progress|  |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
 | 130. Adopter Path Guardrail | 0/TBD | Not started | - |
