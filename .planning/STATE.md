@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-status: executing
-stopped_at: Completed 127-08-PLAN.md
-last_updated: "2026-07-29T17:16:35.589Z"
+status: verifying
+stopped_at: Completed 127-10-PLAN.md
+last_updated: "2026-07-29T18:29:57.520Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 15
-  completed_plans: 14
+  total_plans: 16
+  completed_plans: 15
   percent: 20
 ---
 
@@ -27,8 +27,10 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 127 (installer-against-a-real-host) — EXECUTING
-Plan: 9 of 9
-Status: Ready to execute
+Plan: 10 of 10 (127-10 complete; 127-09 Task 3 remains a pending checkpoint:human-verify —
+  run mix adopter.walk once and record the PASS/FAIL delta before the phase closes)
+Status: 127-10 complete — instrumentation ready; awaiting the confirming mix adopter.walk /
+  mix adopter.walk.verify run
 Last activity: 2026-07-29
 
 ## Completed Ad Hoc Work
@@ -254,6 +256,7 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 127]: Plan 127-07 falls back to "host edit detected" whenever a conflicted destination's relative path has no manifest entry, covering both no-manifest-yet and host-owned-scaffolding-never-tracked in one branch.
 - [Phase ?]: [Phase 127]: Plan 127-08 split the two-task plan into two atomic commits along Task 1's own file-list boundary (Task 1 excludes manifest.ex), folding the manifest into Install.plan/1's classification first without input-drift, then adding classify_manifest/3 + check_input_drift/2 in Task 2's commit.
 - [Phase ?]: [Phase 127]: Plan 127-08 kept mix lockspire.upgrade's refusal-before-dry-run ordering for mix lockspire.install --dry-run (still exits non-zero on a conflicted host) rather than the ergonomic report-and-exit-zero alternative, for consistency between the two sibling tasks.
+- [Phase ?]: [Phase 127]: Plan 127-10 derived the adopter-walk baseline's 28 rows directly from record_result call sites (never a remembered summary), keeping the dead ADOPT-D01 FAIL branch traceable as a PASS row so the baseline contract test's two-way static mapping stays satisfied.
 
 ## Blockers/Concerns
 
@@ -268,11 +271,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T17:16:35.582Z
+**Last session:** 2026-07-29T18:29:57.510Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 127-08-PLAN.md
+**Stopped at:** Completed 127-10-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -347,6 +350,7 @@ institutionalizes a known failure.
 | Phase 127 P06 | 20min | 3 tasks | 5 files |
 | Phase 127 P07 | 15min | 1 tasks | 3 files |
 | Phase 127 P08 | 25min | 2 tasks | 5 files |
+| Phase 127 P10 | 35min | 5 tasks | 9 files |
 
 ## Operator Next Steps
 
