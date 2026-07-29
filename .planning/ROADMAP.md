@@ -50,7 +50,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 126-04-PLAN.md — Guide §3c-§3e: account resolver, application start, protected host route
+- [x] 126-04-PLAN.md — Guide §3c-§3e: account resolver, application start, protected host route
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 3/6 | In Progress|  |
+| 126. Adopter Path Walk & Defect Ledger | 4/6 | In Progress|  |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
