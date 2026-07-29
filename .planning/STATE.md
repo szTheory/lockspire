@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: executing
-stopped_at: Completed 126-02-PLAN.md
-last_updated: "2026-07-28T23:53:00.482Z"
-last_activity: 2026-07-28
+stopped_at: Completed 126-03-PLAN.md
+last_updated: "2026-07-29T00:19:35.890Z"
+last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
-Last activity: 2026-07-28
+Last activity: 2026-07-29
 
 ## Completed Ad Hoc Work
 
@@ -228,6 +228,10 @@ institutionalizes a known failure.
 - [Phase 126]: Plan 126-01 isolated MIX_ARCHIVES under .harness/archives and pinned phx_new 1.8.9 in the walk harness so mix archive.install never touches the maintainer's global installer archive.
 - [Phase 126]: Plan 126-01 folded the generated host's own mix ecto.create/mix ecto.migrate into step-00d-seed-user (distinct from and preceding guide section 4's later Lockspire migration step) since seeding a phx.gen.auth user requires those migrations first.
 - [Phase 126]: Plan 126-02 generates a fresh secret_key_base for Lockspire's config completion (mix phx.gen.secret) rather than copying the adoption demo's committed literal, and step-03b-router-wire mounts Lockspire's own ConsentLive rather than the demo's substitute controller.
+- [Phase 126]: Plan 126-03 wrote the full driver (core PKCE sequence plus the ADOPT-04 two-layer token proof) in a single authoring pass rather than splitting Task 1's core sequence from Task 2's token-proof extension as two separate diffs -- no functional gap, both tasks' acceptance criteria pass against the commits as landed.
+- [Phase 126]: Plan 126-03's csrf() meta-tag fallback is annotated # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D10 because Lockspire's shipped ConsentLive renders raw form tags with zero _csrf_token input -- the fallback reads the root layout's meta csrf-token tag instead.
+- [Phase 126]: Plan 126-03's driver GETs return_to itself after the login POST (# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D14) rather than passing return_to as a login parameter, because phx.gen.auth's log_in_user/3 redirect target is only written by the GET path.
+- [Phase 126]: Plan 126-03 hardcodes the redirect URI as {base_url}/oauth/callback (no --redirect-uri flag), matching the plan's exhaustive CLI flag list which omits that flag deliberately.
 
 ## Blockers/Concerns
 
@@ -242,11 +246,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-28T23:53:00.475Z
+**Last session:** 2026-07-29T00:19:35.880Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 126-02-PLAN.md
+**Stopped at:** Completed 126-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -305,6 +309,7 @@ institutionalizes a known failure.
 | Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
 | Phase 126 P01 | 23min | 2 tasks | 4 files |
 | Phase 126 P02 | 19min | 2 tasks | 2 files |
+| Phase 126 P03 | 21min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
