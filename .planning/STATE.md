@@ -4,9 +4,9 @@ milestone: v1.36
 milestone_name: Adopter Path Proof
 current_phase: 126
 current_phase_name: adopter-path-walk-defect-ledger
-status: verifying
-stopped_at: Completed 126-06-PLAN.md -- Phase 126 (Adopter Path Walk & Defect Ledger) fully executed, ready for verification
-last_updated: "2026-07-29T02:25:50.791Z"
+status: ready_to_plan
+stopped_at: Phase 126 complete (6/6) — ready to discuss Phase 127
+last_updated: 2026-07-29T02:32:18.524Z
 last_activity: 2026-07-28
 progress:
   total_phases: 5
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 126 — adopter-path-walk-defect-ledger
+**Current focus:** Phase 127 — installer against a real host
 
 ## Current Position
 
-Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-07-28
+Phase: 127
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-29
 
 ## Completed Ad Hoc Work
 

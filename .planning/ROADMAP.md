@@ -12,7 +12,7 @@
 
 ## Phases
 
-- [ ] **Phase 126: Adopter Path Walk & Defect Ledger** - One command walks the whole documented path against a stock Phoenix app and records every defect it surfaces
+- [x] **Phase 126: Adopter Path Walk & Defect Ledger** - One command walks the whole documented path against a stock Phoenix app and records every defect it surfaces (completed 2026-07-29)
 - [ ] **Phase 127: Installer Against A Real Host** - Fix the installer defects the walk found, and exercise `mix lockspire.install` against a real generated app instead of an empty fixture
 - [ ] **Phase 128: Documented Wiring Truth** - Fix the wiring defects the walk found at their real source and close the gap between the guide and what actually works
 - [ ] **Phase 129: Reference Artifact Alignment** - Make the relationship between `examples/adoption_demo` and the installer path explicit and accurate
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 6/6 | In Progress|  |
+| 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
