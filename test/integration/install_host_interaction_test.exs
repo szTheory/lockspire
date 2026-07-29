@@ -96,4 +96,31 @@ defmodule Lockspire.Integration.InstallHostInteractionTest do
              "expected #{path} to exist after the install run"
     end
   end
+
+  test "the install manifest records Lockspire's own version, not the pushed host project's",
+       %{scratch: scratch} do
+    capture_io(fn ->
+      Mix.Project.in_project(:host_app, scratch, fn _module ->
+        Lockspire.Generators.Install.run([])
+      end)
+    end)
+
+    manifest =
+      scratch
+      |> Path.join(".lockspire/install_manifest.json")
+      |> File.read!()
+      |> Jason.decode!()
+
+    lockspire_version = Application.spec(:lockspire, :vsn) |> List.to_string()
+
+    # The host snapshot's own mix.exs pins "0.1.0" -- see
+    # priv/test_fixtures/phx_new_host/mix.exs. Pinning that literal here (not
+    # deriving it) is deliberate: it is the value the pre-fix defect actually
+    # produced, so this assertion pins the shape of the regression, not just
+    # its absence.
+    host_version = "0.1.0"
+
+    assert manifest["version"] == lockspire_version
+    refute manifest["version"] == host_version
+  end
 end
