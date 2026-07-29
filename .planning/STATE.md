@@ -1,20 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: null
-current_phase: null
-status: awaiting_next_milestone
-stopped_at: 1.4.0 shipped and the release train unstalled; awaiting next scoped milestone
-last_updated: "2026-07-28T18:49:26Z"
-last_activity: 2026-07-28
-last_activity_desc: 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
+milestone: v1.36
+milestone_name: Adopter Path Proof
+status: verifying
+stopped_at: Completed 127-10-PLAN.md
+last_updated: "2026-07-29T18:29:57.520Z"
+last_activity: 2026-07-29
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
-current_phase_name: null
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 16
+  completed_plans: 15
+  percent: 20
 ---
 
 # Project State
@@ -25,14 +22,16 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Sustaining GA release train; start a fresh milestone only with concrete adopter, support, or release evidence.
+**Current focus:** Phase 127 — installer-against-a-real-host
 
 ## Current Position
 
-Phase: No active feature milestone
-Plan: -
-Status: Awaiting next milestone
-Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a remembered-consent duplication fix, and repairs to a silently stalled Release Please lane
+Phase: 127 (installer-against-a-real-host) — EXECUTING
+Plan: 10 of 10 (127-10 complete; 127-09 Task 3 remains a pending checkpoint:human-verify —
+  run mix adopter.walk once and record the PASS/FAIL delta before the phase closes)
+Status: 127-10 complete — instrumentation ready; awaiting the confirming mix adopter.walk /
+  mix adopter.walk.verify run
+Last activity: 2026-07-29
 
 ## Completed Ad Hoc Work
 
@@ -96,6 +95,23 @@ Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a re
 | 123 | Operate Queue Flow Polish | 3 | Interactions, device auth, logouts |
 | 124 | Configure Onboarding Propagation Pass | 3 | Clients, DCR/IAT, keys, policies |
 | 125 | Browser Proof, Docs & Adversarial Ratchet | 3 | Fixtures, proof, docs |
+
+## v1.36 Phase Plan
+
+Phase numbering continues from Phase 125 (v1.32), the last numbered phase in project history.
+
+| Phase | Name | REQs | Focus |
+|-------|------|------|-------|
+| 126 | Adopter Path Walk & Defect Ledger | 4 | Evidence: walk the path, record what breaks |
+| 127 | Installer Against A Real Host | 3 | Fix installer defects the walk found |
+| 128 | Documented Wiring Truth | 3 | Fix wiring/guide defects the walk found |
+| 129 | Reference Artifact Alignment | 2 | Demo vs installer path truth |
+| 130 | Adopter Path Guardrail | 3 | Automate the green path, correct install-truth claims |
+
+**Sequencing rule:** Phase 126 records defects but does not fix them. Phases 127-129 are scoped
+to "fix what the walk found in area X" — their defect lists are intentionally unknown at roadmap
+time and are read from the Phase 126 ledger. Phase 130 is last because automating a red path
+institutionalizes a known failure.
 
 ## Decisions
 
@@ -205,6 +221,42 @@ Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a re
 - [Phase 125]: Out-of-scope Phase 115 test.fast failures were deferred instead of fixed in Phase 125.
 - [Phase 125]: Plan 125-07 enforces empty/no-match browser evidence through parsed BrowserEvidence rows rather than raw markdown grep.
 - [Phase 125]: Plan 125-07 keeps empty/no-match proof maintainer-only with no browser tooling, runtime route, package, schema, or public support-surface expansion.
+- [2026-07-28]: v1.36 is an adoption-hardening milestone, not protocol breadth. No new protocol surface, no widening of `docs/supported-surface.md`, no host-owned seam changes, no admin/operator UI work.
+- [2026-07-28]: v1.36 is deliberately evidence-generating. Phase 126 walks the real adopter path and records defects without fixing them, so the evidence stays separable from the repair.
+- [2026-07-28]: Phases 127-129 are scoped to "fix the defects the walk found in area X". Their defect lists are intentionally unspecified at roadmap time; a planner should read the Phase 126 ledger rather than treat the openness as an error.
+- [2026-07-28]: The guardrail phase (130) runs last. Automating a red adopter path would only institutionalize a known failure.
+- [2026-07-28]: Making the installer inject into the host router/config/application is deferred pending walk evidence, not assumed. Same for rewriting `examples/adoption_demo` as a generated app — the demo's in-repo path dependency may make full installer parity wrong.
+- [2026-07-28]: Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built.
+- [Phase 126]: Plan 126-01 isolated MIX_ARCHIVES under .harness/archives and pinned phx_new 1.8.9 in the walk harness so mix archive.install never touches the maintainer's global installer archive.
+- [Phase 126]: Plan 126-01 folded the generated host's own mix ecto.create/mix ecto.migrate into step-00d-seed-user (distinct from and preceding guide section 4's later Lockspire migration step) since seeding a phx.gen.auth user requires those migrations first.
+- [Phase 126]: Plan 126-02 generates a fresh secret_key_base for Lockspire's config completion (mix phx.gen.secret) rather than copying the adoption demo's committed literal, and step-03b-router-wire mounts Lockspire's own ConsentLive rather than the demo's substitute controller.
+- [Phase 126]: Plan 126-03 wrote the full driver (core PKCE sequence plus the ADOPT-04 two-layer token proof) in a single authoring pass rather than splitting Task 1's core sequence from Task 2's token-proof extension as two separate diffs -- no functional gap, both tasks' acceptance criteria pass against the commits as landed.
+- [Phase 126]: Plan 126-03's csrf() meta-tag fallback is annotated # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D10 because Lockspire's shipped ConsentLive renders raw form tags with zero _csrf_token input -- the fallback reads the root layout's meta csrf-token tag instead.
+- [Phase 126]: Plan 126-03's driver GETs return_to itself after the login POST (# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D14) rather than passing return_to as a login parameter, because phx.gen.auth's log_in_user/3 redirect target is only written by the GET path.
+- [Phase 126]: Plan 126-03 hardcodes the redirect URI as {base_url}/oauth/callback (no --redirect-uri flag), matching the plan's exhaustive CLI flag list which omits that flag deliberately.
+- [Phase 126]: Plan 126-04 discovered and fixed a real gap in the ADOPT-D05 included_applications workaround -- :oban and :cachex must also be named in the host's extra_applications, since Application.ensure_all_started/1 never walks an included application's own dependency chain (confirmed against a real generated host).
+- [Phase ?]: [Phase 126]: Plan 126-05 dropped 'openid' from the walk client's registered allowed_scopes -- Lockspire.Clients.register_client/1 rejects it as :invalid_scope since AuthorizationRequest already treats it as implicitly allowed for every client regardless of registered scopes.
+- [Phase ?]: [Phase 126]: Plan 126-05 exports PORT explicitly when booting mix phx.server -- a stock mix phx.new host's generated config/runtime.exs sets the endpoint http port from PORT unconditionally (not gated to config_env() == :prod), silently overriding dev.exs's compile-time port even in MIX_ENV=dev.
+- [Phase ?]: [Phase 126]: Plan 126-05 confirmed end-to-end against a real generated host that step-04-migrate/step-05-verify correctly detect and work around 37 genuinely pending Lockspire migrations, step-06a-client demonstrates the real repo-not-started defect, and the walk correctly reports RED with a real newly-surfaced authorize-handoff defect for plan 126-06's ledger.
+- [Phase ?]: [Phase 126] Plan 126-06 ran the walk end to end (19 PASS, 12 FAIL, RED) and authored 126-DEFECT-LEDGER.md, mechanically reconciled against every LOCKSPIRE_WALK_WORKAROUND marker in scripts/maintainer/ -- 17 entries, no defect fixed in lib/priv/docs/examples.
+- [Phase ?]: [Phase 126] Plan 126-06 discovered four new real defects only a live run could surface: ADOPT-D15 (ecto_sql lock conflict on a fresh phx.new host), ADOPT-D16 (installer-generated HEEx syntax that fails to compile against phoenix_live_view 1.2.8), ADOPT-D18 (consent LiveView needs its own live_session on_mount hook or an actually logged-in adopter is treated as anonymous), and ADOPT-D19 (docs/protect-phoenix-api-routes.md documents access_token struct fields that do not exist).
+- [Phase ?]: [Phase 126] Plan 126-06 dropped ADOPT-D12 from the numbered ledger (never observed by this walk, since it never invokes examples/adoption_demo) and never assigned ADOPT-D17 (the symptom it would have covered was a harness fixture bug, not a real defect), documenting both decisions in the ledger itself.
+- [Phase ?]: [Phase 127]: Plan 127-01 stripped Phase 126 walk-installed Lockspire wiring and a local absolute path from the committed phx_new_host snapshot so it represents a genuine pre-install host, and rebuilt the install manifest version field from Application.spec(:lockspire, :vsn) instead of the pushed Mix project's config.
+- [Phase ?]: [Phase 127]: Plan 127-02 accepted the resolver's natural ecto 3.14.1 pick (not the plan-authored 3.14.0 target) after widening ecto_sql to a range, verifying 3.14.1's legitimacy directly against the hex.pm API rather than forcing an artificial downgrade via a transitive override.
+- [Phase ?]: [Phase 127]: Plan 127-03 confirmed the ADOPT-D08 pre-fix defect empirically (toggling implementation content via Edit, not git) rather than trusting the plan description, and added on_exit-based DB cleanup for Mix-task integration tests whose task-owned Ecto.Migrator.with_repo/2 call persists non-sandboxed rows.
+- [Phase ?]: [Phase 127]: Plan 127-04 kept defp instructions/1 private (matching the plan's own awk-region acceptance criteria) and instead captured stdout via Install.run/1 against a disposable scratch tmp dir for testing.
+- [Phase ?]: [Phase 127]: Plan 127-04 extracted Verify.evaluate_supervision_children/3 as a public pure function so the OK/missing-children paths are unit-testable without stopping Lockspire's own live Oban/Cachex/KeyCache children mid test-suite.
+- [Phase ?]: [Phase 127]: Plan 127-04 fixed all four in-scope verify.ex migrate remediation sites (pending, storage-prefix, oban-prefix, up-to-date), not just the two CONTEXT named, since the storage/oban-prefix wording also implied a bare command.
+- [Phase ?]: [Phase 127]: Plan 127-05 rewrote priv/templates/lockspire.install/router.ex to use fully parenthesized macro calls so the byte-compared runtime fixture under test/ satisfies mix format --check-formatted -- the paren-less style used to be invisible to the formatter inside a discarded heredoc String.
+- [Phase ?]: [Phase 127]: Plan 127-05 kept the interaction routes and consent LiveView routed to the existing Lockspire.Web.InteractionController/Lockspire.Web.ConsentLive modules, not the separately-generated host-owned interaction_handler.ex/consent_live.ex templates, which serve login-flow handoff rather than routing.
+- [Phase ?]: [Phase 127]: Plan 127-06 kept the login change-me comment on a single line so a substring assertion could prove both the phx.gen.auth attribution and the change-me instruction without a multi-line regex.
+- [Phase ?]: [Phase 127]: Plan 127-06 chose a secret_key_base placeholder that deliberately trips the length-only secret-literal fence by design (contains REPLACE) rather than by luck, naming mix phx.gen.secret as the exact remedy.
+- [Phase ?]: [Phase 127]: Plan 127-06 included openid explicitly in known_scopes even though AuthorizationRequest.unknown_scope?/1 treats it as always-known, matching the one working config :lockspire reference in the repo.
+- [Phase ?]: [Phase 127]: Plan 127-07 tested the containment guard by overriding assigns.web_path directly after build_assigns/1, since Macro.underscore/1 always inserts a / between adjacent literal dots and never lets a real .. survive the --web/--scope derivation chain -- verified empirically this session.
+- [Phase ?]: [Phase 127]: Plan 127-07 falls back to "host edit detected" whenever a conflicted destination's relative path has no manifest entry, covering both no-manifest-yet and host-owned-scaffolding-never-tracked in one branch.
+- [Phase ?]: [Phase 127]: Plan 127-08 split the two-task plan into two atomic commits along Task 1's own file-list boundary (Task 1 excludes manifest.ex), folding the manifest into Install.plan/1's classification first without input-drift, then adding classify_manifest/3 + check_input_drift/2 in Task 2's commit.
+- [Phase ?]: [Phase 127]: Plan 127-08 kept mix lockspire.upgrade's refusal-before-dry-run ordering for mix lockspire.install --dry-run (still exits non-zero on a conflicted host) rather than the ergonomic report-and-exit-zero alternative, for consistency between the two sibling tasks.
+- [Phase ?]: [Phase 127]: Plan 127-10 derived the adopter-walk baseline's 28 rows directly from record_result call sites (never a remembered summary), keeping the dead ADOPT-D01 FAIL branch traceable as a PASS row so the baseline contract test's two-way static mapping stays satisfied.
 
 ## Blockers/Concerns
 
@@ -219,11 +271,11 @@ Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a re
 
 ## Session Continuity
 
-**Last session:** 2026-07-10T22:25:12Z
+**Last session:** 2026-07-29T18:29:57.510Z
 
-**Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
+**Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone.
+**Stopped at:** Completed 127-10-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -280,7 +332,27 @@ Last activity: 2026-07-28 - 1.4.0 published after demo 404/Disconnect work, a re
 | Phase 125-browser-proof-docs-adversarial-ratchet P05 | 6 min | 2 tasks | 6 files |
 | Phase 125 P06 | 31m | 3 tasks | 6 files |
 | Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
+| Phase 126 P01 | 23min | 2 tasks | 4 files |
+| Phase 126 P02 | 19min | 2 tasks | 2 files |
+| Phase 126 P03 | 21min | 2 tasks | 2 files |
+| Phase 126 P04 | 42min | 2 tasks | 2 files |
+| Phase 126 P05 | 65min | 2 tasks | 2 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 126 P06 | 70min | 3 tasks | 4 files |
+| Phase 127 P01 | 40min | 2 tasks | 13 files |
+| Phase 127 P02 | 20min | 2 tasks | 3 files |
+| Phase 127 P03 | 25min | 1 tasks | 2 files |
+| Phase 127 P04 | 30min | 2 tasks | 4 files |
+| Phase 127 P05 | 35min | 2 tasks | 5 files |
+| Phase 127 P06 | 20min | 3 tasks | 5 files |
+| Phase 127 P07 | 15min | 1 tasks | 3 files |
+| Phase 127 P08 | 25min | 2 tasks | 5 files |
+| Phase 127 P10 | 35min | 5 tasks | 9 files |
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 126 with `/gsd-plan-phase 126`.
+- Expect the first walk to come back RED. A red first run with a complete defect ledger is a passing Phase 126; an empty ledger is not.

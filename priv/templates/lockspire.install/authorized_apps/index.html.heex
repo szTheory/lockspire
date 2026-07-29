@@ -16,7 +16,7 @@
   <%% else %>
     <ul>
       <%%= for consent <- @consents do %>
-        <li id={"authorized-app-<%%= consent.grant.id %>"}>
+        <li id={"authorized-app-#{consent.grant.id}"}>
           <div>
             <h2><%%= consent.client && (consent.client.name || consent.client.client_id) || consent.grant.client_id %></h2>
             <p>Client ID: <code><%%= consent.grant.client_id %></code></p>

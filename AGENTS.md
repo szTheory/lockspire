@@ -24,7 +24,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 - Phoenix `1.8.5`
 - Phoenix LiveView `1.1.28`
-- Ecto SQL `3.13.5`
+- Ecto SQL `>= 3.13.5 and < 4.0.0`
 - PostgreSQL `14+`
 - Bandit `1.6.1`
 - Oban `2.21.x`

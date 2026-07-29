@@ -46,6 +46,7 @@ defmodule Mix.Tasks.Lockspire.Verify do
       3. Confirm the host router exposes /verify routes
       4. Confirm the host router mounts the guarded admin router and public protocol router separately
       5. Confirm Lockspire and Oban migrations are applied in the configured schema/prefix
+      6. Confirm Lockspire's Oban, JWKS cache, and key cache supervision children are running
     """
   end
 

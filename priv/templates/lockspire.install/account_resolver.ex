@@ -72,7 +72,8 @@ defmodule <%= @resolver_module %> do
   @impl true
   def redirect_for_login(_conn_or_socket, context) do
     %InteractionResult{
-      login_path: "/login",
+      # Phoenix 1.8's `phx.gen.auth --live` default. Change this to your host's real login route if it differs.
+      login_path: "/users/log-in",
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
       params: %{
         "interaction_id" => Map.get(context, :interaction_id) || Map.get(context, "interaction_id")
@@ -83,6 +84,7 @@ defmodule <%= @resolver_module %> do
   @impl true
   def redirect_for_logout(_conn_or_socket, context) do
     %InteractionResult{
+      # Change this to your host's real logout route if it differs.
       login_path: "/logout",
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
       params: %{

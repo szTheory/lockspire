@@ -44,7 +44,10 @@ defmodule Lockspire.MixProject do
       # `~> 1.2.x` requirement would force every adopter to upgrade LiveView in
       # lockstep with Lockspire. Hosts on 1.1.x stay supported; CI resolves 1.2.x.
       {:phoenix_live_view, ">= 1.1.28 and < 2.0.0"},
-      {:ecto_sql, "~> 3.13.5"},
+      # Range, not a pin: a stock `phx.new --database postgres` host already
+      # locks the current `ecto_sql`, so a patch pin fails the adopter's first
+      # `mix deps.get`. The `>= 3.13.5` floor carries the PostgreSQL 18 constraint-mapping fix.
+      {:ecto_sql, ">= 3.13.5 and < 4.0.0"},
       {:postgrex, ">= 0.0.0"},
       {:bandit, "~> 1.11"},
       {:oban, "~> 2.21.0"},
@@ -96,6 +99,8 @@ defmodule Lockspire.MixProject do
         "test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs",
         "cmd bash scripts/conformance/run_phase37_suite.sh"
       ],
+      "adopter.walk": ["cmd bash scripts/maintainer/adopter_path_walk.sh"],
+      "adopter.walk.verify": ["cmd bash scripts/maintainer/adopter_walk_ci.sh"],
       "test.phase3": [
         "test.setup",
         "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/userinfo_controller_test.exs"

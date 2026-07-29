@@ -43,7 +43,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
     manifest = load_manifest!()
 
-    assert manifest["version"] == to_string(Mix.Project.config()[:version])
+    assert manifest["version"] == Application.spec(:lockspire, :vsn) |> List.to_string()
+    assert manifest["version"] =~ ~r/^\d+\.\d+\.\d+/
     assert manifest["inputs"]["mount_path"] == "/lockspire"
     assert manifest["inputs"]["storage_prefix"] == "lockspire"
     assert manifest["inputs"]["oban_prefix"] == "lockspire"
@@ -70,29 +71,66 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(oban_prefix: "lockspire")
 
-    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/lockspire", Lockspire.Web.Router)
+    config = File.read!(Path.join(@fixture_root, "config/lockspire.exs"))
+
+    # ADOPT-D04: the issuer must include the mount path or Lockspire's own
+    # issuer/mount-path consistency check raises at boot.
+    assert config =~ ~s(issuer: "https://example.com/lockspire")
+    assert config =~ ~s(known_scopes: ["openid", "email", "profile"])
+    assert config =~ ~s(signing_alg: "RS256")
+    assert config =~ "secret_key_base:"
+
+    # ADOPT-D04/T-127-02: assert the placeholder positively (so a missing key
+    # can't vacuously satisfy the negative check below) and assert no run of
+    # 32+ hex/base64url characters exists anywhere in the rendered config
+    # except one naming its own replacement -- no secret literal may ship.
+    assert config =~ "REPLACE"
+
+    long_runs = Regex.scan(~r/[A-Za-z0-9+\/=_-]{32,}/, config) |> List.flatten()
+
+    assert Enum.all?(long_runs, &(&1 =~ ~r/REPLACE|GENERATE/)),
+           "rendered config must not contain an unlabeled secret-shaped literal: #{inspect(long_runs)}"
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(get "/authorized-apps", AuthorizedAppsController, :index)
+             ~s<forward("/lockspire", Lockspire.Web.Router)>
+
+    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
+             ~s<get("/authorized-apps", AuthorizedAppsController, :index)>
 
     router =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
 
-    assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
-    assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
-    assert router =~ ~s(post "/verify/:handle/approve", LockspireVerificationController, :approve)
-    assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
+    assert router =~ ~s<get("/verify", LockspireVerificationController, :show)>
+    assert router =~ ~s<post("/verify", LockspireVerificationController, :lookup)>
+
+    assert router =~
+             ~s<post("/verify/:handle/approve", LockspireVerificationController, :approve)>
+
+    assert router =~ ~s<post("/verify/:handle/deny", LockspireVerificationController, :deny)>
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
     assert router =~ ~s(scope "/lockspire/admin")
-    assert router =~ "pipe_through [:browser, :require_operator]"
-    assert router =~ ~s(forward "/", Lockspire.Web.AdminRouter)
+    assert router =~ "pipe_through([:browser, :lockspire_require_operator])"
+    assert router =~ ~s<forward("/", Lockspire.Web.AdminRouter)>
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
-    assert router =~ ~s(forward "/lockspire", Lockspire.Web.Router)
+    assert router =~ ~s<forward("/lockspire", Lockspire.Web.Router)>
 
-    assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through \[:browser, :require_operator\]\s+forward "\/", Lockspire.Web.AdminRouter\s+end/
+    # The namespaced operator pipeline is defined by the generated file itself --
+    # a stock host needs to declare no pipeline of its own for the admin mount.
+    assert router =~ "pipeline :lockspire_require_operator"
+
+    # Route ordering, proven over the raw source position (not a fixed-shape
+    # regex): the admin forward must be emitted before the public forward so it
+    # cannot be shadowed. `install_template_compile_test.exs` proves the same
+    # property over the real, compiled `Phoenix.Router.routes/1` table.
+    {admin_forward_index, _} =
+      :binary.match(router, ~s<forward("/", Lockspire.Web.AdminRouter)>)
+
+    {public_forward_index, _} =
+      :binary.match(router, ~s<forward("/lockspire", Lockspire.Web.Router)>)
+
+    assert admin_forward_index < public_forward_index,
+           "admin forward must appear before the public forward in the generated router"
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
@@ -110,6 +148,14 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "Keep tenant authorization, billing tier checks, and product policy"
     assert resolver =~ "raise"
     refute resolver =~ "Sigra"
+
+    # ADOPT-D09: the generated login redirect must match a real Phoenix 1.8
+    # `phx.gen.auth --live` host, and say so, so the adopter knows it's a
+    # change-me default and not Lockspire claiming ownership of login.
+    assert resolver =~ ~s(login_path: "/users/log-in")
+    assert resolver =~ "Phoenix 1.8's `phx.gen.auth --live` default"
+    assert resolver =~ "Change this to your host's real login route"
+    assert resolver =~ "Change this to your host's real logout route"
 
     assert File.read!(
              Path.join(@fixture_root, "lib/generated_host_app/lockspire/interaction_handler.ex")
@@ -262,6 +308,17 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "current_account(conn_or_socket)"
   end
 
+  test "mix lockspire.install renders a mount-path-consistent issuer for a custom mount path" do
+    capture_io(fn ->
+      install_fixture!(["--mount-path", "/auth"])
+    end)
+
+    config = File.read!(Path.join(@fixture_root, "config/lockspire.exs"))
+
+    assert config =~ ~s(issuer: "https://example.com/auth")
+    assert config =~ ~s(mount_path: "/auth")
+  end
+
   test "mix lockspire.install requires explicit public-schema opt in" do
     capture_io(fn ->
       install_fixture!(["--storage-prefix", "public", "--oban-prefix", "public"])
@@ -328,7 +385,7 @@ defmodule Lockspire.InstallGeneratorTest do
     router_path = Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
     File.write!(router_path, File.read!(router_path) <> "\n# host customization\n")
 
-    assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
+    assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
       File.cd!(@fixture_root, fn ->
         Mix.Task.reenable("lockspire.install")
         Mix.Tasks.Lockspire.Install.run(base_args())
@@ -352,7 +409,7 @@ defmodule Lockspire.InstallGeneratorTest do
       File.read!(verification_path) <> "\n# host verification customization\n"
     )
 
-    assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
+    assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
       File.cd!(@fixture_root, fn ->
         Mix.Task.reenable("lockspire.install")
         Mix.Tasks.Lockspire.Install.run(base_args())

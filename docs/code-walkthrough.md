@@ -63,48 +63,39 @@ state.
 ## Install: generated files get owners
 
 `Lockspire.Generators.Install` renders both ownership classes, but the manifest
-receives only managed templates. Rerunning the task leaves identical files alone
-and refuses to overwrite drift.
+receives only managed templates. `plan/1` is a side-effect-free classification
+pass: it never writes, and it classifies the manifest itself alongside the
+twelve rendered destinations, so a re-run whose module or mount-path switches
+drifted from the manifest's recorded inputs -- or a manifest the host edited
+directly -- refuses like every other managed file instead of being silently
+overwritten. `apply_plan!/3` only writes once the plan carries zero conflicts.
 
 ```elixir
-defp write_manifest!(assigns, rendered_templates) do
+def plan(assigns) do
+  rendered_templates = rendered_templates(assigns)
+  # ... classify_destination/3 for each of the twelve rendered destinations
+
   managed_templates =
     rendered_templates
     |> Enum.filter(&(&1.template.ownership == :managed))
 
-  assigns
-  |> Manifest.build(managed_templates)
-  |> then(&Manifest.write(assigns.project_root, &1))
-end
+  manifest_rendered = build_manifest_rendered(assigns, managed_templates)
 
-defp ensure_file!(destination, rendered) do
-  File.mkdir_p!(Path.dirname(destination))
+  case classify_manifest(manifest_rendered, assigns, expanded_root) do
+    {:conflict, reason} = outcome ->
+      {[{manifest_rendered, outcome} | classified], [{manifest_rendered, reason} | conflicts]}
 
-  case File.read(destination) do
-    {:ok, ^rendered} ->
-      Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
-
-    {:ok, _existing} ->
-      Mix.raise("""
-      Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
-
-      Keep the host-owned edits and reconcile this file manually before rerunning
-      `mix lockspire.install`.
-      """)
-
-    {:error, :enoent} ->
-      File.write!(destination, rendered)
-      Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-    {:error, reason} ->
-      Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+    outcome ->
+      {[{manifest_rendered, outcome} | classified], conflicts}
   end
 end
 ```
 
-That filter is the upgrade boundary. The generated account, interaction,
-consent, device, and product UX modules remain host-owned even though Lockspire
-created their first version.
+Unchanged reruns and overwrite refusal read the same way for every managed
+file, including the manifest: `classify_destination/3` compares current bytes
+against freshly rendered bytes and never writes. That filter is the upgrade
+boundary. The generated account, interaction, consent, device, and product UX
+modules remain host-owned even though Lockspire created their first version.
 
 `Lockspire.Install.Verify` then checks the assembled application rather than
 assuming generation was enough:
