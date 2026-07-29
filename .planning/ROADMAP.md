@@ -36,7 +36,7 @@
 4. A committed defect ledger records every break the walk surfaced, each attributed to its real source (installer, generated scaffolding, guide, reference demo, or library) and to the requirement area that will fix it.
 5. Any temporary workaround the harness needs in order to reach a later step is recorded in the ledger as a defect rather than left silently in the harness as if it were normal.
 
-**Plans**: 6 plans
+**Plans**: 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -58,7 +58,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 126-06-PLAN.md — Run the walk, author the committed defect ledger, reconcile workaround markers
+- [x] 126-06-PLAN.md — Run the walk, author the committed defect ledger, reconcile workaround markers
 
 **Implementation notes**:
 
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 5/6 | In Progress|  |
+| 126. Adopter Path Walk & Defect Ledger | 6/6 | In Progress|  |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |

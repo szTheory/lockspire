@@ -2,16 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-status: executing
-stopped_at: Completed 126-05-PLAN.md
-last_updated: "2026-07-29T01:13:28.988Z"
-last_activity: 2026-07-29
+current_phase: 126
+current_phase_name: adopter-path-walk-defect-ledger
+status: verifying
+stopped_at: Completed 126-06-PLAN.md -- Phase 126 (Adopter Path Walk & Defect Ledger) fully executed, ready for verification
+last_updated: "2026-07-29T02:25:50.791Z"
+last_activity: 2026-07-28
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 6
-  completed_plans: 5
-  percent: 0
+  completed_plans: 6
+  percent: 20
 ---
 
 # Project State
@@ -28,8 +30,8 @@ See: .planning/PROJECT.md
 
 Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-07-29
+Status: Phase complete — ready for verification
+Last activity: 2026-07-28
 
 ## Completed Ad Hoc Work
 
@@ -236,6 +238,9 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 126]: Plan 126-05 dropped 'openid' from the walk client's registered allowed_scopes -- Lockspire.Clients.register_client/1 rejects it as :invalid_scope since AuthorizationRequest already treats it as implicitly allowed for every client regardless of registered scopes.
 - [Phase ?]: [Phase 126]: Plan 126-05 exports PORT explicitly when booting mix phx.server -- a stock mix phx.new host's generated config/runtime.exs sets the endpoint http port from PORT unconditionally (not gated to config_env() == :prod), silently overriding dev.exs's compile-time port even in MIX_ENV=dev.
 - [Phase ?]: [Phase 126]: Plan 126-05 confirmed end-to-end against a real generated host that step-04-migrate/step-05-verify correctly detect and work around 37 genuinely pending Lockspire migrations, step-06a-client demonstrates the real repo-not-started defect, and the walk correctly reports RED with a real newly-surfaced authorize-handoff defect for plan 126-06's ledger.
+- [Phase ?]: [Phase 126] Plan 126-06 ran the walk end to end (19 PASS, 12 FAIL, RED) and authored 126-DEFECT-LEDGER.md, mechanically reconciled against every LOCKSPIRE_WALK_WORKAROUND marker in scripts/maintainer/ -- 17 entries, no defect fixed in lib/priv/docs/examples.
+- [Phase ?]: [Phase 126] Plan 126-06 discovered four new real defects only a live run could surface: ADOPT-D15 (ecto_sql lock conflict on a fresh phx.new host), ADOPT-D16 (installer-generated HEEx syntax that fails to compile against phoenix_live_view 1.2.8), ADOPT-D18 (consent LiveView needs its own live_session on_mount hook or an actually logged-in adopter is treated as anonymous), and ADOPT-D19 (docs/protect-phoenix-api-routes.md documents access_token struct fields that do not exist).
+- [Phase ?]: [Phase 126] Plan 126-06 dropped ADOPT-D12 from the numbered ledger (never observed by this walk, since it never invokes examples/adoption_demo) and never assigned ADOPT-D17 (the symptom it would have covered was a harness fixture bug, not a real defect), documenting both decisions in the ledger itself.
 
 ## Blockers/Concerns
 
@@ -250,11 +255,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T01:13:28.983Z
+**Last session:** 2026-07-29T02:25:50.782Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 126-05-PLAN.md
+**Stopped at:** Completed 126-06-PLAN.md -- Phase 126 (Adopter Path Walk & Defect Ledger) fully executed, ready for verification
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -316,6 +321,11 @@ institutionalizes a known failure.
 | Phase 126 P03 | 21min | 2 tasks | 2 files |
 | Phase 126 P04 | 42min | 2 tasks | 2 files |
 | Phase 126 P05 | 65min | 2 tasks | 2 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 126 P06 | 70min | 3 tasks | 4 files |
 
 ## Operator Next Steps
 
