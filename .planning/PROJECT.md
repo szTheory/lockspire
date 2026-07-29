@@ -72,6 +72,8 @@ This milestone is adoption hardening, not protocol breadth, consistent with the 
 
 **Boundary:** No new protocol surface. Findings that would widen `docs/supported-surface.md` are logged as future candidates rather than built. Host-owned seams — accounts, login UX, layouts, branding, policy — stay host-owned.
 
+**Progress:** Phase 126 complete — `mix adopter.walk` now walks the entire documented adopter path against a stock `mix phx.new` + `phx.gen.auth` host in one command, drives a real authorization-code + PKCE flow, and proves the issued token at two independent layers (Lockspire `userinfo` plus a host-owned protected route, so a Lockspire-only regression cannot pass). Its first honest verdict is RED — 19 PASS / 12 FAIL — and the phase's deliverable is the evidence, not a repair: `126-DEFECT-LEDGER.md` records 17 defects, each attributed to its real source and to the requirement area that will fix it, with every temporary harness workaround carrying a `LOCKSPIRE_WALK_WORKAROUND` marker reconciled two-way against the ledger by contract test. Nothing under `lib/`, `priv/`, `docs/` or `examples/` was changed, keeping the evidence separable from the repair. Notable findings: the guide's documented `mix ecto.migrate` runs zero Lockspire migrations while still exiting zero (ADOPT-D07), `mix lockspire.client.create` fails on an unstarted repo (ADOPT-D08), the generated `AccountResolver` raises with no worked example and hardcodes a login path no generated host has (ADOPT-D09), and `included_applications` alone cannot start Lockspire's own dependency chain, so hosts must list `:oban`/`:cachex` in their own `extra_applications` (ADOPT-D05). Phases 127-129 consume this ledger as their input.
+
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
 **Goal:** Make the repo-local adoption demo easy to start, hard to conflict with other local projects, and clean enough to serve as the stable base for the next admin UI polish milestone.
@@ -368,4 +370,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-28 at the start of milestone v1.36 Adopter Path Proof*
+*Last updated: 2026-07-29 after Phase 126 (Adopter Path Walk & Defect Ledger) completed in milestone v1.36 Adopter Path Proof*
