@@ -21,10 +21,11 @@ KEEP=0
 FORCE=0
 PORT=4200
 PREFLIGHT_ONLY=0
+REPORT_JSON=""
 
 usage() {
   cat <<'EOF'
-Usage: adopter_path_walk.sh [--workdir DIR] [--from-step NN] [--keep] [--force] [--port N] [--preflight-only] [-h|--help]
+Usage: adopter_path_walk.sh [--workdir DIR] [--from-step NN] [--keep] [--force] [--port N] [--preflight-only] [--report-json PATH] [-h|--help]
 
 Walks the documented Lockspire adopter path end to end: generates a stock
 Phoenix host app, wires the installer, migrates, boots, and drives an
@@ -44,6 +45,9 @@ Flags:
                       says they already completed.
   --port N           Port the generated host app binds (default: 4200).
   --preflight-only   Run only the prerequisite probes, then print the report and exit.
+  --report-json PATH Where to write the machine-readable JSON report (default:
+                      WORKDIR/.walk/report.json). Always written, on every code path
+                      that prints the human-readable report.
   -h, --help         Show this help.
 
 Examples:
@@ -94,6 +98,15 @@ while [[ "$#" -gt 0 ]]; do
       PREFLIGHT_ONLY=1
       shift
       ;;
+    --report-json)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --report-json" >&2
+        usage >&2
+        exit 1
+      fi
+      REPORT_JSON="$2"
+      shift 2
+      ;;
     -h | --help)
       usage
       exit 0
@@ -113,6 +126,18 @@ fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
+
+# The report path defaults inside WORKDIR, which .gitignore already ignores, and is always
+# written -- never gated behind an opt-in flag (D-50).
+if [[ -z "$REPORT_JSON" ]]; then
+  REPORT_JSON="$WORKDIR/.walk/report.json"
+fi
+
+# RECORD_STREAM is truncated once here, at startup, so each invocation's report describes
+# that invocation alone -- never a prior run's rows bleeding into a resumed one's report.
+mkdir -p "$WORKDIR/.walk"
+RECORD_STREAM="$WORKDIR/.walk/records.nul"
+: >"$RECORD_STREAM"
 
 # Every archive-touching command (mix local.hex, mix local.rebar,
 # mix archive.install, mix phx.new) must see this before it runs, so the
@@ -149,6 +174,10 @@ export LOCKSPIRE_WALK_PASSWORD="walk-adopter-password-2026"
 declare -a RESULTS=()
 PASS_COUNT=0
 FAIL_COUNT=0
+RESOLVED_ELIXIR=""
+RESOLVED_OTP=""
+RESOLVED_POSTGRESQL=""
+RESOLVED_PHX_NEW=""
 
 record_result() {
   local level="$1"
@@ -156,6 +185,13 @@ record_result() {
   local detail="$3"
 
   RESULTS+=("[$level] $label: $detail")
+
+  # NUL is the one byte that cannot appear in level/label/detail -- detail strings already
+  # carry `"`, section signs, `%`, parentheses, and interpolated mix-compile output that can
+  # contain newlines and backslashes. Passing content as printf ARGUMENTS (never inside the
+  # format string) is injection-proof; scripts/maintainer/adopter_walk_report.py reads this
+  # stream back and converts it to JSON -- no JSON is ever constructed in bash.
+  printf '%s\0%s\0%s\0' "$level" "$label" "$detail" >>"$RECORD_STREAM"
 
   case "$level" in
     PASS) PASS_COUNT=$((PASS_COUNT + 1)) ;;
@@ -381,6 +417,7 @@ run_step_00b_phx_new() {
   # either.
   local installer_version
   installer_version="$(mix phx.new --version 2>&1 | tr -d '\r' | tail -n 1)"
+  RESOLVED_PHX_NEW="$installer_version"
 
   if [[ "$installer_version" != "Phoenix installer v1.8.9" ]]; then
     fail_prerequisite "phx_new" "expected 'Phoenix installer v1.8.9', resolved '${installer_version}'"
@@ -1414,9 +1451,58 @@ cleanup() {
   fi
 }
 
+# Best effort, matching the same four keys as the ledger frontmatter (elixir, otp,
+# postgresql, phx_new). A version probe failing must never fail the walk -- every command
+# here is guarded so a missing tool just leaves its field null in the report rather than
+# aborting.
+collect_resolved_versions() {
+  local elixir_version_output
+  elixir_version_output="$(elixir --version 2>/dev/null | tail -n 1)" || true
+
+  if [[ -n "$elixir_version_output" ]]; then
+    RESOLVED_ELIXIR="$(printf '%s' "$elixir_version_output" | sed -E -e 's/^Elixir ([0-9][0-9.]*).*/\1/')"
+    RESOLVED_OTP="$(printf '%s' "$elixir_version_output" | grep -oE 'Erlang/OTP [0-9]+' | sed -E -e 's#Erlang/OTP ##')"
+  fi
+
+  local psql_version_output
+  psql_version_output="$(psql --version 2>/dev/null | tail -n 1)" || true
+
+  if [[ -n "$psql_version_output" ]]; then
+    RESOLVED_POSTGRESQL="$(printf '%s' "$psql_version_output" | sed -E -e 's/^psql \(PostgreSQL\) ([0-9][0-9.]*).*/\1/')"
+  fi
+}
+
+# Reads RECORD_STREAM and writes REPORT_JSON via the committed Python emitter -- never
+# constructs JSON in bash. Called from print_report() before its own `exit 1`, so both the
+# preflight-only path and a completed run write the same report.
+emit_report_json() {
+  local report_dir
+  report_dir="$(dirname "$REPORT_JSON")"
+  mkdir -p "$report_dir"
+
+  collect_resolved_versions
+
+  python3 scripts/maintainer/adopter_walk_report.py \
+    --records "$RECORD_STREAM" \
+    --output "$REPORT_JSON" \
+    --workdir "$WORKDIR" \
+    --from-step "$FROM_STEP" \
+    --force "$FORCE" \
+    --keep "$KEEP" \
+    --port "$PORT" \
+    --preflight-only "$PREFLIGHT_ONLY" \
+    --elixir "$RESOLVED_ELIXIR" \
+    --otp "$RESOLVED_OTP" \
+    --postgresql "$RESOLVED_POSTGRESQL" \
+    --phx-new "$RESOLVED_PHX_NEW" \
+    2>"$WORKDIR/.walk/report_emit_error.log" || echo "adopter-walk: WARNING -- failed to write ${REPORT_JSON} (see ${WORKDIR}/.walk/report_emit_error.log)" >&2
+}
+
 trap cleanup EXIT INT TERM
 
 print_report() {
+  emit_report_json
+
   printf 'Adopter path walk report\n'
   printf '%s\n' "${RESULTS[@]}"
   printf 'Summary: %s PASS, %s FAIL\n' "$PASS_COUNT" "$FAIL_COUNT"
