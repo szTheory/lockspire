@@ -1280,10 +1280,44 @@ run_step_05_verify() {
   # release (D-49). A source-tree relative form under the dependency's own checkout is forbidden
   # here: it is a path that does not exist in a compiled release, and using it in this harness
   # would teach adopters a pattern that breaks the moment they build one.
+  local migrate_workaround_exit="<skipped>"
+
   if [[ -n "$lockspire_migrations_path" ]]; then
     (cd "$HOST_APP_DIR" && mix ecto.migrate --migrations-path "$lockspire_migrations_path") \
-      >"$migrate_workaround_log" 2>&1 || true
+      >"$migrate_workaround_log" 2>&1
+    migrate_workaround_exit=$?
   fi
+
+  # Evidence, not decoration. In CI (run 30484208316) this command printed "== Migrated" for all
+  # 37 of Lockspire's migrations with no error, and `mix lockspire.verify` -- run seconds later
+  # against the same host -- reported every one of them as still pending; locally the same
+  # sequence leaves 38 rows in public.schema_migrations and verify passes. That combination is
+  # only possible if the writer and the reader resolved different databases, so this dumps the
+  # applied-version rows straight from psql (bypassing both Mix invocations) and records the
+  # migrate command's own exit code, which the previous `|| true` discarded entirely.
+  local migration_state_log="$WORKDIR/step_05_migration_state.log"
+  {
+    printf 'workaround migrate exit: %s\n' "$migrate_workaround_exit"
+    printf 'workaround migrations path: %s\n' "${lockspire_migrations_path:-<empty>}"
+    printf 'walk database: %s@%s:%s/%s\n' \
+      "$WALK_DB_USER" "$WALK_DB_HOST" "$WALK_DB_PORT" "$WALK_DB_NAME"
+    printf 'MIX_ENV in this shell: %s\n' "${MIX_ENV:-<unset>}"
+    printf 'DATABASE_URL in this shell: %s\n' "${DATABASE_URL:+<set>}"
+    printf -- '--- host config/dev.exs repo block ---\n'
+    sed -n '/HostApp.Repo/,/^$/p' "$HOST_APP_DIR/config/dev.exs"
+    printf -- '--- schema_migrations tables present ---\n'
+    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
+      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
+      "SELECT table_schema || '.' || table_name FROM information_schema.tables WHERE table_name = 'schema_migrations';"
+    printf -- '--- applied versions in public.schema_migrations ---\n'
+    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
+      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
+      "SELECT version FROM public.schema_migrations ORDER BY version;"
+    printf -- '--- databases on this server ---\n'
+    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
+      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
+      "SELECT datname FROM pg_database WHERE datname NOT IN ('template0', 'template1');"
+  } >"$migration_state_log" 2>&1
 
   # Follow-up observation: because the explicit path above shares the single schema_migrations
   # table with the host's own migrations, a later `mix ecto.migrations` run against the default
@@ -1295,7 +1329,7 @@ run_step_05_verify() {
   (cd "$HOST_APP_DIR" && mix lockspire.verify) >"$verify_post_log" 2>&1 || true
 
   if grep -Fq 'Pending Lockspire or Oban migrations detected' "$verify_post_log"; then
-    record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround, mix lockspire.verify still reports pending migrations -- the migrations themselves do not apply, not merely the documented command"
+    record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (exit ${migrate_workaround_exit}), mix lockspire.verify still reports pending migrations -- the migrations themselves do not apply, not merely the documented command (applied-version evidence in ${migration_state_log})"
   else
     record_result "PASS" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (Application.app_dir(:lockspire, \"priv/repo/migrations\")), mix lockspire.verify reports zero pending Lockspire/Oban migrations"
   fi

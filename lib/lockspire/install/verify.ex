@@ -321,7 +321,7 @@ defmodule Lockspire.Install.Verify do
     }
   end
 
-  defp migration_result(%{pending: [_ | _] = pending}, _repo) do
+  defp migration_result(%{pending: [_ | _] = pending}, repo) do
     details =
       Enum.map_join(pending, ", ", fn {:down, version, name} ->
         "#{version}:#{name}"
@@ -330,7 +330,7 @@ defmodule Lockspire.Install.Verify do
     Check.error(
       :migrations,
       "Pending Lockspire or Oban migrations detected",
-      details,
+      "#{details} (#{repo_target(repo)})",
       "Run `mix ecto.migrate --migrations-path #{migrations_path()}` before using the embedded Lockspire surfaces."
     )
   end
@@ -359,9 +359,30 @@ defmodule Lockspire.Install.Verify do
     Check.ok(
       :migrations,
       "Lockspire and Oban migrations are up to date",
-      "repo=#{inspect(repo)} applied_migrations=#{length(state.statuses)} storage_prefix=#{inspect(state.storage_prefix)} oban_prefix=#{inspect(state.oban_prefix)}",
+      "repo=#{inspect(repo)} #{repo_target(repo)} applied_migrations=#{length(state.statuses)} storage_prefix=#{inspect(state.storage_prefix)} oban_prefix=#{inspect(state.oban_prefix)}",
       "Keep running `mix ecto.migrate --migrations-path #{migrations_path()}` before booting new Lockspire features."
     )
+  end
+
+  # "there are N pending migrations" is uninterpretable on its own: the single most common cause
+  # is that the command that applied them and the check that reads them back resolved different
+  # databases (a differing MIX_ENV, a runtime.exs override, a DATABASE_URL in the environment).
+  # Naming the connection target turns that from a guess into a one-line diff. Best-effort by
+  # construction -- `repo.config/0` reads runtime config and may raise on a partially configured
+  # host, which is exactly the host most likely to reach this line, so it must never be the thing
+  # that breaks the diagnostic it is annotating.
+  defp repo_target(repo) do
+    config = repo.config()
+
+    database = Keyword.get(config, :database)
+    hostname = Keyword.get(config, :hostname)
+    port = Keyword.get(config, :port)
+
+    "database=#{inspect(database)} hostname=#{inspect(hostname)} port=#{inspect(port)}"
+  rescue
+    _ -> "database=<unavailable>"
+  catch
+    :exit, _ -> "database=<unavailable>"
   end
 
   defp table_exists?(repo, prefix, table_name) do

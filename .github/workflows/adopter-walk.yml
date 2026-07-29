@@ -149,11 +149,18 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: adopter-walk-evidence
+          # The cross-attempt files live in tmp/adopter-walk-ci-state, NOT under
+          # tmp/adopter-walk/.walk: adopter_walk_ci.sh archives the whole walk tree before
+          # attempt 2, so anything kept inside it would move out from under the retry
+          # comparison. Both attempts' evidence trees are uploaded -- attempt 1's is the
+          # tmp/adopter-walk.attempt1.* glob -- because a reproducible-regression verdict is
+          # only auditable if both runs' logs survive.
           path: |
             tmp/adopter-walk/*.log
             tmp/adopter-walk/.walk/report.json
-            tmp/adopter-walk/.walk/verify_attempt1.log
-            tmp/adopter-walk/.walk/mismatch_attempt1.tsv
-            tmp/adopter-walk/.walk/mismatch_attempt2.tsv
+            tmp/adopter-walk.attempt1.*/*.log
+            tmp/adopter-walk.attempt1.*/.walk/report.json
+            tmp/adopter-walk-ci-state/*.log
+            tmp/adopter-walk-ci-state/*.tsv
           retention-days: 7
           if-no-files-found: warn
