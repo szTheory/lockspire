@@ -179,6 +179,98 @@ defmodule Lockspire.Install.InstallInstructionsTest do
     end
   end
 
+  describe "Verify migrations check: shadowed schema_migrations bookkeeping" do
+    alias Lockspire.Install.Verify
+
+    defp state(overrides) do
+      Map.merge(
+        %{
+          oban_prefix: nil,
+          oban_table_exists?: nil,
+          pending: [],
+          shadowed_bookkeeping?: false,
+          statuses: [],
+          storage_prefix: "lockspire",
+          storage_table_exists?: nil
+        },
+        Map.new(overrides)
+      )
+    end
+
+    test "explains an unclearable pending list rather than telling the adopter to migrate again" do
+      result =
+        Verify.evaluate_migration_state(
+          state(
+            shadowed_bookkeeping?: true,
+            pending: [{:down, 20_260_422_000_100, "create_lockspire_core_tables"}]
+          ),
+          Lockspire.TestRepo
+        )
+
+      assert result.status == :error
+      assert result.summary =~ "two schema_migrations tables"
+      assert result.details =~ "lockspire.schema_migrations"
+
+      # The remediation must name the actual cause. Re-running the migrations is what an adopter
+      # does on their own, and it fails on "table already exists" -- so the fix text has to say
+      # so explicitly and name search_path.
+      assert result.fix =~ "search_path"
+      assert result.fix =~ "Running the migrations again will not fix this"
+    end
+
+    test "stays silent for a host that deliberately keeps bookkeeping in the prefixed schema" do
+      # Shadow table present but nothing pending: the bookkeeping is wherever this host put it and
+      # is working. Warning here would fire on a legitimate setup.
+      result =
+        Verify.evaluate_migration_state(
+          state(shadowed_bookkeeping?: true, pending: [], statuses: [{:up, 1, "x"}]),
+          Lockspire.TestRepo
+        )
+
+      assert result.status == :ok
+    end
+
+    @tag :integration
+    test "PostgreSQL really does create a second bookkeeping table when the prefix shadows public" do
+      # Pins the platform behaviour the whole check rests on. If this ever stops reproducing, the
+      # remediation text above is wrong and the check should be reconsidered -- not silently kept.
+      schema = "lockspire_shadow_probe_#{System.unique_integer([:positive])}"
+
+      # Its own dedicated Postgrex connection, not the repo's pool: this test needs one
+      # connection for the whole sequence (a `SET search_path` on a pooled connection would
+      # otherwise leak into an unrelated later test), and Lockspire.TestRepo is not started in
+      # this suite at all.
+      conn_opts =
+        Application.get_env(:lockspire, Lockspire.TestRepo)
+        |> Keyword.take([:username, :password, :hostname, :port, :database])
+
+      {:ok, conn} = Postgrex.start_link(conn_opts)
+      query = fn sql -> Postgrex.query!(conn, sql, []) end
+
+      on_exit(fn ->
+        {:ok, cleanup} = Postgrex.start_link(conn_opts)
+        Postgrex.query!(cleanup, "DROP SCHEMA IF EXISTS \"#{schema}\" CASCADE", [])
+      end)
+
+      query.("CREATE SCHEMA \"#{schema}\"")
+      query.("CREATE TABLE IF NOT EXISTS public.schema_migrations (version bigint primary key)")
+
+      # Simulates a role named after the schema: PostgreSQL's default search_path is
+      # `"$user", public`, so the role's own schema precedes public for unqualified names.
+      query.("SET search_path TO \"#{schema}\", public")
+      query.("CREATE TABLE IF NOT EXISTS schema_migrations (version bigint primary key)")
+
+      %{rows: rows} =
+        query.("""
+        SELECT table_schema FROM information_schema.tables
+        WHERE table_name = 'schema_migrations' AND table_schema = '#{schema}'
+        """)
+
+      assert rows == [[schema]],
+             "expected CREATE TABLE IF NOT EXISTS to resolve into #{schema} despite public.schema_migrations already existing"
+    end
+  end
+
   defmodule NoopRouter do
     use Phoenix.Router
   end

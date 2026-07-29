@@ -272,6 +272,17 @@ defmodule Lockspire.Install.Verify do
     Application.app_dir(:lockspire, "priv/repo/migrations")
   end
 
+  @doc """
+  Renders the migrations check from an already-gathered migration state.
+
+  A pure decision function separated from the live database probes in `migration_state/1` so
+  every branch -- including the shadowed-bookkeeping branch, whose real-world trigger is a
+  PostgreSQL role name -- can be exercised without manufacturing that state in a shared test
+  database.
+  """
+  @spec evaluate_migration_state(map(), module()) :: Check.result()
+  def evaluate_migration_state(state, repo), do: migration_result(state, repo)
+
   defp migrations_check(repo) do
     repo
     |> migration_state()
@@ -291,10 +302,16 @@ defmodule Lockspire.Install.Verify do
     storage_prefix = Lockspire.Config.storage_prefix()
     oban_prefix = Lockspire.Config.oban_prefix()
 
-    {:ok, {statuses, storage_table_exists?, oban_table_exists?}, _apps} =
+    {:ok, {statuses, storage_table_exists?, oban_table_exists?, shadowed_bookkeeping?}, _apps} =
       Ecto.Migrator.with_repo(repo, fn started_repo ->
         statuses = Ecto.Migrator.migrations(started_repo, migrations_path)
         pending = pending_migrations(statuses)
+
+        # Probed unconditionally (it is one cheap catalogue lookup) but only ever reported
+        # alongside a non-empty pending list -- a host that deliberately keeps its bookkeeping in
+        # the prefixed schema has no pending migrations and must not be warned at all.
+        shadowed_bookkeeping? =
+          storage_prefix != nil and table_exists?(started_repo, storage_prefix, "schema_migrations")
 
         storage_table_exists? =
           if pending == [] and storage_prefix do
@@ -306,7 +323,7 @@ defmodule Lockspire.Install.Verify do
             table_exists?(started_repo, oban_prefix, "oban_jobs")
           end
 
-        {statuses, storage_table_exists?, oban_table_exists?}
+        {statuses, storage_table_exists?, oban_table_exists?, shadowed_bookkeeping?}
       end)
 
     pending = pending_migrations(statuses)
@@ -315,10 +332,42 @@ defmodule Lockspire.Install.Verify do
       oban_prefix: oban_prefix,
       oban_table_exists?: oban_table_exists?,
       pending: pending,
+      shadowed_bookkeeping?: shadowed_bookkeeping?,
       statuses: statuses,
       storage_prefix: storage_prefix,
       storage_table_exists?: storage_table_exists?
     }
+  end
+
+  # Must be matched before the generic pending-migrations clause: this is the one cause of a
+  # pending list that running the migrations again cannot clear, so reporting it as ordinary
+  # pending work sends the adopter into a loop that fails on "table already exists".
+  #
+  # PostgreSQL's default search_path is `"$user", public`, so a database role whose name equals
+  # :storage_prefix (a role named `lockspire` is an entirely natural choice) puts Lockspire's own
+  # schema ahead of public for every unqualified table reference. Lockspire's own DDL is always
+  # prefix-qualified and is unaffected -- but Ecto's schema_migrations bookkeeping is not
+  # qualified, so the moment Lockspire's first migration creates the schema, the next connection's
+  # `CREATE TABLE IF NOT EXISTS schema_migrations` resolves to the prefixed schema, finds nothing
+  # there, and creates a second, empty bookkeeping table. Every migration then reads back as
+  # pending forever while its tables plainly exist, and Phoenix.Ecto rejects every request with
+  # PendingMigrationError. Verified against PostgreSQL 16 and observed in CI (adopter walk run
+  # 30484208316) with a role named `lockspire`.
+  defp migration_result(
+         %{
+           shadowed_bookkeeping?: true,
+           storage_prefix: storage_prefix,
+           pending: [_ | _] = pending
+         },
+         repo
+       )
+       when is_binary(storage_prefix) do
+    Check.error(
+      :migrations,
+      "Migration bookkeeping is split across two schema_migrations tables",
+      "found #{storage_prefix}.schema_migrations alongside public.schema_migrations in #{inspect(repo)}; #{length(pending)} migration(s) read back as pending (#{repo_target(repo)})",
+      "PostgreSQL's default search_path is `\"$user\", public`, so a database role named #{inspect(storage_prefix)} shadows public for unqualified table names and forks Ecto's schema_migrations. Running the migrations again will not fix this. Point the role at public explicitly (`ALTER ROLE #{storage_prefix} SET search_path TO public`), or connect as a role whose name differs from config :lockspire, storage_prefix, then drop the empty #{storage_prefix}.schema_migrations table."
+    )
   end
 
   defp migration_result(%{pending: [_ | _] = pending}, repo) do

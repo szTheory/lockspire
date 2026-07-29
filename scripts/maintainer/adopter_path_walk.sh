@@ -1200,6 +1200,47 @@ ELIXIR
   mark_done "$step_id"
 }
 
+# Samples the walk database's migration bookkeeping directly, bypassing Mix entirely. Called
+# either side of `mix lockspire.verify` so a "N pending migrations" report can be attributed to a
+# real absence of applied-version rows rather than to the reader resolving a different table --
+# a distinction no amount of Mix output can make, and the one this walk could not make in CI runs
+# 30484208316 and 30498912897.
+#
+# Note the connecting role: PostgreSQL's default search_path is `"$user", public`, so if
+# WALK_DB_USER happens to equal Lockspire's storage_prefix, that role's own schema precedes public
+# for every unqualified table name -- which is exactly why the schema of each schema_migrations
+# table is printed rather than assumed.
+dump_migration_bookkeeping() {
+  local label="$1"
+
+  local psql_args=(
+    -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc
+  )
+
+  printf -- '===== migration bookkeeping: %s =====\n' "$label"
+  printf 'walk database: %s@%s:%s/%s\n' \
+    "$WALK_DB_USER" "$WALK_DB_HOST" "$WALK_DB_PORT" "$WALK_DB_NAME"
+  printf 'MIX_ENV in this shell: %s\n' "${MIX_ENV:-<unset>}"
+  printf 'DATABASE_URL in this shell: %s\n' "${DATABASE_URL:+<set>}"
+
+  printf -- '--- schema_migrations tables present (schema-qualified) ---\n'
+  PGPASSWORD="$WALK_DB_PASSWORD" psql "${psql_args[@]}" \
+    "SELECT table_schema || '.' || table_name FROM information_schema.tables WHERE table_name = 'schema_migrations' ORDER BY table_schema;"
+
+  printf -- '--- row count per schema_migrations table ---\n'
+  PGPASSWORD="$WALK_DB_PASSWORD" psql "${psql_args[@]}" \
+    "SELECT n.nspname || ' => ' || (xpath('/row/c/text()', query_to_xml('SELECT count(*) AS c FROM ' || quote_ident(n.nspname) || '.schema_migrations', false, true, '')))[1]::text FROM pg_class r JOIN pg_namespace n ON n.oid = r.relnamespace WHERE r.relname = 'schema_migrations' AND r.relkind = 'r' ORDER BY n.nspname;"
+
+  printf -- '--- effective search_path for role %s ---\n' "$WALK_DB_USER"
+  PGPASSWORD="$WALK_DB_PASSWORD" psql "${psql_args[@]}" "SHOW search_path;"
+  PGPASSWORD="$WALK_DB_PASSWORD" psql "${psql_args[@]}" \
+    "SELECT current_schemas(true)::text;"
+
+  printf -- '--- applied versions in public.schema_migrations ---\n'
+  PGPASSWORD="$WALK_DB_PASSWORD" psql "${psql_args[@]}" \
+    "SELECT version FROM public.schema_migrations ORDER BY version;"
+}
+
 # step-04-migrate: guide §4 "Run migrations" -- run the documented `mix ecto.create` and bare
 # `mix ecto.migrate` exactly as written. No --migrations-path flag is added here: the point of
 # this step is to observe what the documented command actually does, never to make it succeed.
@@ -1291,33 +1332,22 @@ run_step_05_verify() {
   # Evidence, not decoration. In CI (run 30484208316) this command printed "== Migrated" for all
   # 37 of Lockspire's migrations with no error, and `mix lockspire.verify` -- run seconds later
   # against the same host -- reported every one of them as still pending; locally the same
-  # sequence leaves 38 rows in public.schema_migrations and verify passes. That combination is
-  # only possible if the writer and the reader resolved different databases, so this dumps the
-  # applied-version rows straight from psql (bypassing both Mix invocations) and records the
-  # migrate command's own exit code, which the previous `|| true` discarded entirely.
+  # sequence leaves 38 rows in public.schema_migrations and verify passes.
+  #
+  # The bookkeeping is sampled straight from psql (bypassing both Mix invocations) BOTH BEFORE AND
+  # AFTER verify, because the two samples answer different questions and only the pair is
+  # conclusive. Run 30498912897's single pre-verify sample showed all 38 rows correctly in
+  # public.schema_migrations with no second bookkeeping table anywhere -- which rules out "the
+  # migrate never persisted" and leaves "the reader resolved somewhere else", a state that by
+  # construction cannot exist until the reader has connected.
   local migration_state_log="$WORKDIR/step_05_migration_state.log"
+  dump_migration_bookkeeping "before mix lockspire.verify" >"$migration_state_log" 2>&1
   {
     printf 'workaround migrate exit: %s\n' "$migrate_workaround_exit"
     printf 'workaround migrations path: %s\n' "${lockspire_migrations_path:-<empty>}"
-    printf 'walk database: %s@%s:%s/%s\n' \
-      "$WALK_DB_USER" "$WALK_DB_HOST" "$WALK_DB_PORT" "$WALK_DB_NAME"
-    printf 'MIX_ENV in this shell: %s\n' "${MIX_ENV:-<unset>}"
-    printf 'DATABASE_URL in this shell: %s\n' "${DATABASE_URL:+<set>}"
     printf -- '--- host config/dev.exs repo block ---\n'
     sed -n '/HostApp.Repo/,/^$/p' "$HOST_APP_DIR/config/dev.exs"
-    printf -- '--- schema_migrations tables present ---\n'
-    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
-      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
-      "SELECT table_schema || '.' || table_name FROM information_schema.tables WHERE table_name = 'schema_migrations';"
-    printf -- '--- applied versions in public.schema_migrations ---\n'
-    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
-      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
-      "SELECT version FROM public.schema_migrations ORDER BY version;"
-    printf -- '--- databases on this server ---\n'
-    PGPASSWORD="$WALK_DB_PASSWORD" psql -h "$WALK_DB_HOST" -p "$WALK_DB_PORT" \
-      -U "$WALK_DB_USER" -d "$WALK_DB_NAME" -tAc \
-      "SELECT datname FROM pg_database WHERE datname NOT IN ('template0', 'template1');"
-  } >"$migration_state_log" 2>&1
+  } >>"$migration_state_log" 2>&1
 
   # Follow-up observation: because the explicit path above shares the single schema_migrations
   # table with the host's own migrations, a later `mix ecto.migrations` run against the default
@@ -1327,6 +1357,8 @@ run_step_05_verify() {
 
   local verify_post_log="$WORKDIR/step_05_verify_post.log"
   (cd "$HOST_APP_DIR" && mix lockspire.verify) >"$verify_post_log" 2>&1 || true
+
+  dump_migration_bookkeeping "after mix lockspire.verify" >>"$migration_state_log" 2>&1
 
   if grep -Fq 'Pending Lockspire or Oban migrations detected' "$verify_post_log"; then
     record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (exit ${migrate_workaround_exit}), mix lockspire.verify still reports pending migrations -- the migrations themselves do not apply, not merely the documented command (applied-version evidence in ${migration_state_log})"
