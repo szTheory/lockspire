@@ -294,4 +294,92 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09"
     assert source =~ "/users/log-in"
   end
+
+  test "walk script wires application-start ordering and supervision children as step-03d-app-tree (ADOPT-D05)" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-03d-app-tree"
+    assert source =~ "included_applications: [:lockspire]"
+    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D05"
+    assert source =~ "Lockspire.Oban"
+    assert source =~ "Lockspire.KeyCache"
+    assert source =~ "lockspire_jwks_cache"
+    assert source =~ "ADOPT-D05"
+
+    # included_applications alone is not sufficient: Application.ensure_all_started/1 never walks
+    # an included application's own dependency chain, so :oban's and :cachex's own supervision
+    # trees (Oban.Registry, the Cachex supervisor) never start unless named directly in the
+    # host's own extra_applications -- confirmed empirically (Registry.whereis_name/2 raised
+    # "unknown registry: Oban.Registry" against a real generated host until this was added).
+    assert source =~ "extra_applications: [:logger, :runtime_tools, :oban, :cachex]"
+
+    # ADOPT-D04's own marker (step-03a-config-import) must remain the only marker for the
+    # queue-disabling config key -- step-03d must not add a second one.
+    refute source =~ "LOCKSPIRE_WALK_WORKAROUND: ADOPT-D04\nLOCKSPIRE_WALK_WORKAROUND: ADOPT-D04"
+  end
+
+  test "walk script wires the protected host API route as step-03e-protected-route with the canonical plug order" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-03e-protected-route"
+    assert source =~ "BEGIN LOCKSPIRE_PROTECTED_PIPELINE"
+    assert source =~ "END LOCKSPIRE_PROTECTED_PIPELINE"
+    assert source =~ "read:walk"
+    assert source =~ "/api/walk/summary"
+
+    verify_index = index_of(source, "Lockspire.Plug.VerifyToken")
+    constraints_index = index_of(source, "Lockspire.Plug.EnforceSenderConstraints")
+    require_index = index_of(source, "Lockspire.Plug.RequireToken")
+
+    assert verify_index < constraints_index
+    assert constraints_index < require_index
+  end
+
+  test "the protected route path in the harness is byte-identical to the flow driver's default" do
+    walk_source = File.read!(@walk_script_path)
+
+    driver_default_path =
+      if File.regular?(@flow_driver_path) do
+        driver_source = File.read!(@flow_driver_path)
+
+        case Regex.run(~r/DEFAULT_PROTECTED_PATH\s*=\s*"([^"]+)"/, driver_source,
+               capture: :all_but_first
+             ) do
+          [path] -> path
+          nil -> nil
+        end
+      end
+
+    refute is_nil(driver_default_path),
+           "expected adopter_path_flow.py to define DEFAULT_PROTECTED_PATH"
+
+    assert walk_source =~ driver_default_path
+  end
+
+  test "the contract test fails if the protected route plug order is broken (regression guard)" do
+    source = File.read!(@walk_script_path)
+
+    # The plug order lives in a single-line `printf '...'` argument in the shell source, so the
+    # literal file text carries backslash-n escape pairs, not real newlines -- match on that
+    # literal text rather than an interpolated \n.
+    reordered =
+      String.replace(
+        source,
+        ~s(plug Lockspire.Plug.VerifyToken, scopes: ["read:walk"]\\n    plug Lockspire.Plug.EnforceSenderConstraints\\n    plug Lockspire.Plug.RequireToken),
+        ~s(plug Lockspire.Plug.RequireToken\\n    plug Lockspire.Plug.EnforceSenderConstraints\\n    plug Lockspire.Plug.VerifyToken, scopes: ["read:walk"])
+      )
+
+    verify_index = index_of(reordered, "Lockspire.Plug.VerifyToken")
+    constraints_index = index_of(reordered, "Lockspire.Plug.EnforceSenderConstraints")
+    require_index = index_of(reordered, "Lockspire.Plug.RequireToken")
+
+    refute verify_index < constraints_index and constraints_index < require_index
+  end
+
+  defp index_of(source, needle) do
+    case :binary.match(source, needle) do
+      {index, _length} -> index
+      :nomatch -> nil
+    end
+  end
 end

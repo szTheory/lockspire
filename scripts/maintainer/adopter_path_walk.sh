@@ -917,6 +917,152 @@ ELIXIR
   mark_done "$step_id"
 }
 
+# step-03d-app-tree: guide §3 "Wire the generated files" -- application-start ordering and
+# supervision children a working install actually needs. Neither the installer nor the guide
+# names either half: :lockspire declares mod: {Lockspire.Application, []} and is a plain
+# dependency of the host, so OTP starts it before the host application (and therefore before the
+# host Repo), and the installer's config template emits no oban: key, so Lockspire's default
+# queues are live and immediately try to reach a Repo that has not started.
+run_step_03d_app_tree() {
+  local step_id="step-03d-app-tree"
+
+  should_run "$step_id" || return 0
+
+  local precheck_log="$WORKDIR/step_03d_precheck.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$precheck_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$precheck_log")"
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: generated host does not compile ahead of application-start wiring (${error_detail})"
+    return
+  fi
+
+  # ADOPT-D05 (owning phase 127 for the installer half, phase 128 for the guide half): merged
+  # into one precisely attributed entry rather than two vague ones, per RESEARCH Pitfall 3.
+  record_result "FAIL" "$step_id" "§3 Wire the generated files: nothing in the installer or the guide tells the host to order Lockspire's application start behind its own Repo or to add Lockspire's supervision children -- :lockspire starts before the host Repo, and its default Oban queues are live because the installer's config template emits no oban: key (ADOPT-D05, owning phase 127 for the installer half and phase 128 for the guide half)"
+
+  local mix_exs="$HOST_APP_DIR/mix.exs"
+
+  if ! grep -Fq 'included_applications: [:lockspire]' "$mix_exs"; then
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D05
+    # :lockspire is a plain dependency of the host, so OTP starts its application (and therefore
+    # its supervision tree) before the host's own application -- and before the host Repo.
+    # included_applications suppresses that automatic start so the host can order its own Repo
+    # first. :oban and :cachex must still be named directly in extra_applications -- they are
+    # regular (not included) applications, and Application.ensure_all_started/1 never walks an
+    # included application's own dependency chain, so leaving them out means Oban's own registry
+    # and Cachex's own supervisor never start. Both fixes follow
+    # examples/adoption_demo/mix.exs:17-23.
+    sed_i -e 's/extra_applications: \[:logger, :runtime_tools\]/extra_applications: [:logger, :runtime_tools, :oban, :cachex]/' "$mix_exs"
+    sed_i -e 's/mod: {HostApp.Application, \[\]},/mod: {HostApp.Application, []},\n      included_applications: [:lockspire],/' "$mix_exs"
+  fi
+
+  local app_file="$HOST_APP_DIR/lib/host_app/application.ex"
+
+  if [[ ! -f "$app_file" ]]; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: lib/host_app/application.ex is missing (step-00b-phx-new did not complete)"
+    return
+  fi
+
+  if ! grep -Fq 'Lockspire.Oban' "$app_file"; then
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D05
+    # Add Lockspire's three supervision children -- the named Oban runtime built from its own
+    # runtime config, the JWKS cache child spec, and the key cache -- to the generated host's
+    # supervision tree after the host Repo, following
+    # examples/adoption_demo/lib/adoption_demo/application.ex:9-14. The queue-disabling oban:
+    # config key was already added in step-03a-config-import under ADOPT-D04; no second marker
+    # is added here for that half of the fix.
+    sed_i -e 's/HostApp.Repo,/HostApp.Repo,\n      {Lockspire.Oban, Lockspire.Oban.runtime_config!()},\n      Cachex.child_spec(name: :lockspire_jwks_cache),\n      Lockspire.KeyCache,/' "$app_file"
+  fi
+
+  local boot_log="$WORKDIR/step_03d_boot.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix run -e 'IO.puts("boot ok")') >"$boot_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$boot_log")"
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: generated host still fails to boot after application-start wiring (${error_detail})"
+    return
+  fi
+
+  record_result "PASS" "$step_id" "§3 Wire the generated files: generated host boots with included_applications: [:lockspire] ordering the host Repo first and Lockspire's supervision children (Oban, JWKS cache, key cache) wired after it"
+  mark_done "$step_id"
+}
+
+# step-03e-protected-route: guide §3/§6 -- wire the optional protected host API route so
+# ADOPT-04 gets its second, host-owned acceptance layer. Reproduces
+# docs/protect-phoenix-api-routes.md's canonical plug order exactly: VerifyToken (scope-restricted
+# to read:walk), EnforceSenderConstraints, RequireToken. No replay-store module is required --
+# dpop_replay_store is required: false.
+run_step_03e_protected_route() {
+  local step_id="step-03e-protected-route"
+
+  should_run "$step_id" || return 0
+
+  local host_router="$HOST_APP_DIR/lib/host_app_web/router.ex"
+
+  if [[ ! -f "$host_router" ]]; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: lib/host_app_web/router.ex is missing (step-00b-phx-new did not complete)"
+    return
+  fi
+
+  local controller_file="$HOST_APP_DIR/lib/host_app_web/controllers/walk_api_controller.ex"
+
+  if [[ ! -f "$controller_file" ]]; then
+    cat >"$controller_file" <<'ELIXIR'
+defmodule HostAppWeb.WalkApiController do
+  @moduledoc """
+  Host-owned controller behind the :lockspire_protected_api pipeline (docs/protect-phoenix-api-routes.md).
+  Reflects only the subject and granted scope from conn.assigns.access_token -- never the raw
+  bearer token itself.
+  """
+  use HostAppWeb, :controller
+
+  def show(conn, _params) do
+    access_token = conn.assigns.access_token
+
+    json(conn, %{
+      access_token: %{
+        subject: access_token.subject,
+        scope: access_token.scope
+      }
+    })
+  end
+end
+ELIXIR
+  fi
+
+  if ! grep -Fq 'BEGIN LOCKSPIRE_PROTECTED_PIPELINE' "$host_router"; then
+    # D-30: the guide presents the protected route as an optional adopter step, so the walk
+    # performs only what the guide instructs -- never narrowing or dropping the scope
+    # restriction to make the later assertion easier.
+    local protected_body
+    protected_body="$(
+      printf '  # BEGIN LOCKSPIRE_PROTECTED_PIPELINE\n  pipeline :lockspire_protected_api do\n    plug Lockspire.Plug.VerifyToken, scopes: ["read:walk"]\n    plug Lockspire.Plug.EnforceSenderConstraints\n    plug Lockspire.Plug.RequireToken\n  end\n  # END LOCKSPIRE_PROTECTED_PIPELINE\n\n  scope "/api", HostAppWeb do\n    pipe_through [:api, :lockspire_protected_api]\n\n    get "/walk/summary", WalkApiController, :show\n  end'
+    )"
+    insert_before_final_module_end "$host_router" "$protected_body"
+  fi
+
+  local compile_log="$WORKDIR/step_03e_protected_route.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: protected host API route wiring fails to compile (${error_detail})"
+    return
+  fi
+
+  local routes_log="$WORKDIR/step_03e_protected_route_routes.log"
+  (cd "$HOST_APP_DIR" && mix phx.routes) >"$routes_log" 2>&1 || true
+
+  if ! grep -Fq '/api/walk/summary' "$routes_log"; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: /api/walk/summary is not present in mix phx.routes after wiring the protected pipeline"
+    return
+  fi
+
+  record_result "PASS" "$step_id" "§3/§6 Wire the generated files: /api/walk/summary is wired behind the canonical VerifyToken -> EnforceSenderConstraints -> RequireToken pipeline, scope-restricted to read:walk"
+  mark_done "$step_id"
+}
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -959,6 +1105,8 @@ run_step_03b_router_call
 run_step_03b_router_paste
 run_step_03b_router_wire
 run_step_03c_resolver
+run_step_03d_app_tree
+run_step_03e_protected_route
 
 # Guide steps step-04 onward are added by later plans in this phase; the
 # skeleton and pre-guide steps above are what they plug into via
