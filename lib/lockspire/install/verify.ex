@@ -225,16 +225,29 @@ defmodule Lockspire.Install.Verify do
     )
   end
 
+  # Each of these answers "is this child running?" about a host that may not have wired it
+  # yet -- which is precisely the state this check exists to report -- so none of them may
+  # raise. `Oban.whereis/1` raises `ArgumentError: unknown registry: Oban.Registry` when the
+  # :oban application is not started, and `Cachex.size/1` can fail the same way, so a bare
+  # call crashes `mix lockspire.verify` on exactly the unwired host it is meant to diagnose.
   defp oban_child_running? do
-    is_pid(Oban.whereis(Lockspire.Oban))
+    running?(fn -> is_pid(Oban.whereis(Lockspire.Oban)) end)
   end
 
   defp jwks_cache_running? do
-    match?({:ok, _size}, Cachex.size(:lockspire_jwks_cache))
+    running?(fn -> match?({:ok, _size}, Cachex.size(:lockspire_jwks_cache)) end)
   end
 
   defp key_cache_running? do
-    is_pid(Process.whereis(Lockspire.KeyCache))
+    running?(fn -> is_pid(Process.whereis(Lockspire.KeyCache)) end)
+  end
+
+  defp running?(probe) do
+    probe.()
+  rescue
+    _ -> false
+  catch
+    :exit, _ -> false
   end
 
   defp migrations_path do

@@ -140,6 +140,37 @@ defmodule Lockspire.Install.InstallInstructionsTest do
 
       assert %{status: :ok} = Enum.find(result.checks, &(&1.id == :supervision))
     end
+
+    test "run/1 reports rather than raises when Oban is not started" do
+      # Regression: `Oban.whereis/1` raises `ArgumentError: unknown registry: Oban.Registry`
+      # when the :oban application is down, so the supervision check crashed
+      # `mix lockspire.verify` on exactly the unwired host it exists to diagnose. Observed
+      # against a real generated host in CI (adopter walk run 30482090338), where
+      # step-05-verify aborted with that ArgumentError instead of reporting a missing child.
+      # Stopping :oban takes Lockspire's own supervision tree down with it, so both
+      # applications have to come back before any sibling test observes the gap.
+      :ok = Application.stop(:oban)
+
+      on_exit(fn ->
+        {:ok, _} = Application.ensure_all_started(:oban)
+        {:ok, _} = Application.ensure_all_started(:lockspire)
+      end)
+
+      result =
+        Verify.run(
+          router: __MODULE__.NoopRouter,
+          resolver_module: __MODULE__.NoopResolver,
+          interaction_handler_module: __MODULE__.NoopInteractionHandler,
+          repo: Lockspire.TestRepo,
+          mount_path: "/lockspire"
+        )
+
+      supervision = Enum.find(result.checks, &(&1.id == :supervision))
+
+      refute is_nil(supervision)
+      assert supervision.status in [:error, :warning]
+      assert supervision.details =~ "Lockspire.Oban"
+    end
   end
 
   defmodule NoopRouter do
