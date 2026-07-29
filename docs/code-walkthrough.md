@@ -65,8 +65,10 @@ state.
 `Lockspire.Generators.Install` renders both ownership classes, but the manifest
 receives only managed templates. `plan/1` is a side-effect-free classification
 pass: it never writes, and it classifies the manifest itself alongside the
-twelve rendered destinations, so `apply_plan!/3` has one write/print path --
-including the `--dry-run` label swap -- for all thirteen destinations.
+twelve rendered destinations, so a re-run whose module or mount-path switches
+drifted from the manifest's recorded inputs -- or a manifest the host edited
+directly -- refuses like every other managed file instead of being silently
+overwritten. `apply_plan!/3` only writes once the plan carries zero conflicts.
 
 ```elixir
 def plan(assigns) do
@@ -79,7 +81,7 @@ def plan(assigns) do
 
   manifest_rendered = build_manifest_rendered(assigns, managed_templates)
 
-  case classify_destination(manifest_rendered, %{}, expanded_root) do
+  case classify_manifest(manifest_rendered, assigns, expanded_root) do
     {:conflict, reason} = outcome ->
       {[{manifest_rendered, outcome} | classified], [{manifest_rendered, reason} | conflicts]}
 

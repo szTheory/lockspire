@@ -21,12 +21,21 @@ defmodule Lockspire.Install.Manifest do
     end
   end
 
+  @doc """
+  Used by `mix lockspire.upgrade`, which has already decided a refresh is
+  needed and computed the new manifest content itself. This is the one
+  legitimate "content is expected to change" write path left in the codebase
+  -- `mix lockspire.install`'s own manifest write goes through
+  `Lockspire.Generators.Install.plan/1`'s classification instead, which
+  refuses on drift (including a differing recorded input) like every other
+  managed file rather than calling this function at all.
+  """
   @spec write(String.t(), map()) :: :ok
   def write(project_root, manifest) do
     destination = path(project_root)
     File.mkdir_p!(Path.dirname(destination))
 
-    contents = Jason.encode!(manifest, pretty: true)
+    contents = encode(manifest)
 
     case File.read(destination) do
       {:ok, ^contents} ->
@@ -34,7 +43,7 @@ defmodule Lockspire.Install.Manifest do
 
       {:ok, _existing} ->
         File.write!(destination, contents)
-        Mix.shell().info("* updated #{Path.relative_to_cwd(destination)}")
+        Mix.shell().info("* upgraded #{Path.relative_to_cwd(destination)}")
 
       {:error, :enoent} ->
         File.write!(destination, contents)
@@ -46,6 +55,9 @@ defmodule Lockspire.Install.Manifest do
 
     :ok
   end
+
+  @spec encode(map()) :: String.t()
+  def encode(manifest), do: Jason.encode!(manifest, pretty: true)
 
   @spec build(map(), [map()]) :: map()
   def build(assigns, rendered_templates) do

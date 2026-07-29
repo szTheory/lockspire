@@ -29,8 +29,10 @@ defmodule Lockspire.Generators.Install do
   directory, or removes a file. Returns the full per-destination
   classification plus the subset that conflict, in template-inventory order,
   with the install manifest itself classified last alongside the twelve
-  rendered destinations so `apply_plan!/3` has one write/print path for all
-  thirteen destinations, including for `--dry-run`.
+  rendered destinations -- a re-run whose recorded inputs (module or
+  mount-path switches) differ from this run's, or a manifest the host edited
+  directly, is a conflict like any other drifted managed file rather than a
+  silent overwrite.
   """
   @spec plan(map()) :: map()
   def plan(assigns) do
@@ -56,7 +58,7 @@ defmodule Lockspire.Generators.Install do
     manifest_rendered = build_manifest_rendered(assigns, managed_templates)
 
     {classified, conflicts} =
-      case classify_destination(manifest_rendered, %{}, expanded_root) do
+      case classify_manifest(manifest_rendered, assigns, expanded_root) do
         {:conflict, reason} = outcome ->
           {[{manifest_rendered, outcome} | classified], [{manifest_rendered, reason} | conflicts]}
 
@@ -192,15 +194,74 @@ defmodule Lockspire.Generators.Install do
   defp build_manifest_rendered(assigns, managed_templates) do
     expanded_root = Path.expand(assigns.project_root)
     destination = assigns.project_root |> Manifest.path() |> Path.expand()
-    manifest = Manifest.build(assigns, managed_templates)
 
     %{
       template: %{ownership: :managed},
       destination: destination,
       relative_path: Path.relative_to(destination, expanded_root),
-      rendered: Jason.encode!(manifest, pretty: true)
+      rendered: assigns |> Manifest.build(managed_templates) |> Manifest.encode()
     }
   end
+
+  # Classifies the manifest destination. Checked ahead of the ordinary
+  # content comparison: a manifest whose recorded inputs (web/scope module,
+  # mount path, storage/oban prefix) no longer match this run's assigns is
+  # refused with the specific delta named, since a silent pass here is what
+  # lets a re-run with different module switches write a second, orphaned
+  # file set the manifest never tracks (T-127-09). A manifest that decodes
+  # but carries no readable inputs map is refused as malformed rather than
+  # crashing (T-127-30). Otherwise the manifest is just another destination:
+  # `classify_destination/3` with an empty checksum map always resolves a
+  # content difference to "host edit detected", since the manifest is never
+  # itself an entry in its own `managed_files` list (T-127-31).
+  defp classify_manifest(rendered, assigns, expanded_root) do
+    case Manifest.load(assigns.project_root) do
+      {:error, :enoent} ->
+        classify_destination(rendered, %{}, expanded_root)
+
+      {:ok, manifest} ->
+        case check_input_drift(manifest, assigns) do
+          :ok -> classify_destination(rendered, %{}, expanded_root)
+          {:error, reason} -> {:conflict, reason}
+        end
+
+      {:error, _reason} ->
+        {:conflict, "manifest is unreadable or malformed"}
+    end
+  end
+
+  @manifest_input_keys ~w(mount_path storage_prefix oban_prefix web_module scope_module)
+
+  defp check_input_drift(manifest, assigns) do
+    case Map.get(manifest, "inputs") do
+      inputs when is_map(inputs) ->
+        Enum.reduce_while(@manifest_input_keys, :ok, fn key, :ok ->
+          case Map.fetch(inputs, key) do
+            {:ok, recorded} ->
+              current = current_input(key, assigns)
+
+              if recorded == current do
+                {:cont, :ok}
+              else
+                {:halt,
+                 {:error, "#{key} changed from #{inspect(recorded)} to #{inspect(current)}"}}
+              end
+
+            :error ->
+              {:halt, {:error, "manifest is missing recorded input `#{key}`"}}
+          end
+        end)
+
+      _other ->
+        {:error, "manifest inputs are missing or malformed"}
+    end
+  end
+
+  defp current_input("mount_path", assigns), do: assigns.mount_path
+  defp current_input("storage_prefix", assigns), do: assigns.storage_prefix
+  defp current_input("oban_prefix", assigns), do: assigns.oban_prefix
+  defp current_input("web_module", assigns), do: assigns.web_module
+  defp current_input("scope_module", assigns), do: assigns.scope_module
 
   # Classifies one rendered destination against the current host state. This
   # is a read-only decision: :unchanged, :create, or {:conflict, reason}.
@@ -278,8 +339,25 @@ defmodule Lockspire.Generators.Install do
     "check the --path/--web/--scope values that produced this destination."
   end
 
-  defp refusal_fix_line(_host_edit_or_read_error) do
-    "reconcile this file manually, then rerun `mix lockspire.install`."
+  defp refusal_fix_line(reason)
+       when reason in [
+              "manifest inputs are missing or malformed",
+              "manifest is unreadable or malformed"
+            ] do
+    "reconcile .lockspire/install_manifest.json manually, then rerun `mix lockspire.install`."
+  end
+
+  defp refusal_fix_line("manifest is missing recorded input" <> _rest) do
+    "reconcile .lockspire/install_manifest.json manually, then rerun `mix lockspire.install`."
+  end
+
+  defp refusal_fix_line(reason) do
+    if String.contains?(reason, "changed from") do
+      "rerun with the original switches, or remove .lockspire/install_manifest.json " <>
+        "to intentionally re-point ownership."
+    else
+      "reconcile this file manually, then rerun `mix lockspire.install`."
+    end
   end
 
   defp instructions(assigns) do

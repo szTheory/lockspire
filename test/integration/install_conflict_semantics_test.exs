@@ -195,6 +195,120 @@ defmodule Lockspire.Integration.InstallConflictSemanticsTest do
     end
   end
 
+  describe "manifest input and content drift" do
+    test "a re-run with a differing web module is refused naming both values",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      refusal_output =
+        capture_io(fn ->
+          assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+            install!(scratch, web: "OtherWeb")
+          end
+        end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a refused input-drift run to write nothing, including no second file set"
+
+      assert refusal_output =~ "REFUSE .lockspire/install_manifest.json"
+      assert refusal_output =~ "web_module"
+      assert refusal_output =~ "HostAppWeb"
+      assert refusal_output =~ "OtherWeb"
+    end
+
+    test "a re-run with a differing mount path is refused naming both values",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      refusal_output =
+        capture_io(fn ->
+          assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+            install!(scratch, mount_path: "/auth")
+          end
+        end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums
+
+      assert refusal_output =~ "REFUSE .lockspire/install_manifest.json"
+      assert refusal_output =~ "mount_path"
+      assert refusal_output =~ "/lockspire"
+      assert refusal_output =~ "/auth"
+    end
+
+    test "a manifest with a malformed inputs map is refused without crashing",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      manifest_path = Path.join(scratch, ".lockspire/install_manifest.json")
+      manifest = manifest_path |> File.read!() |> Jason.decode!()
+      malformed = Map.put(manifest, "inputs", "not-a-map")
+      File.write!(manifest_path, Jason.encode!(malformed, pretty: true))
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      refusal_output =
+        capture_io(fn ->
+          assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+            install!(scratch)
+          end
+        end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a refused malformed-manifest run to write nothing"
+
+      assert refusal_output =~ "REFUSE .lockspire/install_manifest.json"
+      assert refusal_output =~ "malformed"
+    end
+
+    test "a manifest the host edited directly is refused rather than overwritten",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      manifest_path = Path.join(scratch, ".lockspire/install_manifest.json")
+      File.write!(manifest_path, File.read!(manifest_path) <> "\n")
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      refusal_output =
+        capture_io(fn ->
+          assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+            install!(scratch)
+          end
+        end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a host-edited manifest to be refused, not silently overwritten"
+
+      assert refusal_output =~ "REFUSE .lockspire/install_manifest.json"
+    end
+
+    test "an identical re-run still reports the manifest unchanged and writes nothing",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      output = capture_io(fn -> install!(scratch) end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums
+      assert output =~ "* unchanged .lockspire/install_manifest.json"
+    end
+  end
+
   defp install!(scratch, opts \\ []) do
     Mix.Project.in_project(:host_app, scratch, fn _module ->
       Lockspire.Generators.Install.run(opts)
