@@ -149,6 +149,14 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "raise"
     refute resolver =~ "Sigra"
 
+    # ADOPT-D09: the generated login redirect must match a real Phoenix 1.8
+    # `phx.gen.auth --live` host, and say so, so the adopter knows it's a
+    # change-me default and not Lockspire claiming ownership of login.
+    assert resolver =~ ~s(login_path: "/users/log-in")
+    assert resolver =~ "Phoenix 1.8's `phx.gen.auth --live` default"
+    assert resolver =~ "Change this to your host's real login route"
+    assert resolver =~ "Change this to your host's real logout route"
+
     assert File.read!(
              Path.join(@fixture_root, "lib/generated_host_app/lockspire/interaction_handler.ex")
            ) =~ "consent_path"
