@@ -424,8 +424,17 @@ run_step_00b_phx_new() {
   fi
 
   if [[ -e "$HOST_APP_DIR" ]]; then
-    record_result "FAIL" "$step_id" "refusing to regenerate: ${HOST_APP_DIR} already exists without a resume marker (pass --force to override)"
-    return
+    if [[ "$FORCE" -ne 1 ]]; then
+      record_result "FAIL" "$step_id" "refusing to regenerate: ${HOST_APP_DIR} already exists without a resume marker (pass --force to override)"
+      return
+    fi
+
+    # --force moves the prior host aside rather than deleting it -- D-20's "the evidence tree
+    # is never deleted" posture applies to every generation, superseded or not. A timestamped
+    # destination keeps each prior host inspectable and never collides with itself, even across
+    # two --force runs in the same second (the trailing $$ breaks the tie).
+    local superseded_dir="${HOST_APP_DIR}.superseded.$(date -u +%Y%m%dT%H%M%SZ).$$"
+    mv "$HOST_APP_DIR" "$superseded_dir"
   fi
 
   # --install is a correctness requirement (D-09), not an optimization:
@@ -517,13 +526,29 @@ run_step_00d_seed_user() {
     return
   fi
 
+  # WALK_DB_NAME is a fixed name (D-13), so the database survives between runs and a
+  # regenerated host meets an existing users row -- looking the user up by email first and
+  # reusing it when present keeps a `--force` regeneration idempotent instead of failing the
+  # `{:ok, user} = register_user(...)` match on a duplicate email. A per-run database name is
+  # never the fix here: that would change the walk's recorded environment truth (D-13) and
+  # leak databases across runs. The token / magic-link / password sequence itself stays
+  # unchanged either way.
   local seed_script
   seed_script="$(
     cat <<'ELIXIR'
 email = System.fetch_env!("LOCKSPIRE_WALK_EMAIL")
 password = System.fetch_env!("LOCKSPIRE_WALK_PASSWORD")
 
-{:ok, user} = HostApp.Accounts.register_user(%{email: email})
+user =
+  case HostApp.Accounts.get_user_by_email(email) do
+    nil ->
+      {:ok, new_user} = HostApp.Accounts.register_user(%{email: email})
+      new_user
+
+    existing_user ->
+      existing_user
+  end
+
 {encoded, user_token} = HostApp.Accounts.UserToken.build_email_token(user, "login")
 HostApp.Repo.insert!(user_token)
 {:ok, {user, _}} = HostApp.Accounts.login_user_by_magic_link(encoded)
@@ -1365,6 +1390,12 @@ IO.puts("adopter-walk: key activated (a third undocumented call -- generate_key/
 # Reproduces .github/workflows/ci.yml:313-327's background-boot/pid-capture/log-redirect/drive/
 # kill/print-log-on-failure shape. Has no step ID of its own -- step-06b-flow and
 # step-06c-token-proof are the driver's own step IDs, folded in verbatim.
+#
+# Deliberately carries no `mark_done`/resume marker of its own, and this is by design, not an
+# oversight -- do not "fix" it by adding one. The flow drive is the walk's actual proof: a
+# marker here would let `--from-step 06` report "skipped (already done)" on a resume and
+# produce a report with no flow evidence in it at all, which is exactly the silent-regression
+# shape this whole harness exists to prevent.
 run_step_06_boot_drive_flow() {
   if [[ "06" < "$FROM_STEP" ]]; then
     return 0
