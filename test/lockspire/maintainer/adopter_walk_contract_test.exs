@@ -382,4 +382,54 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
       :nomatch -> nil
     end
   end
+
+  # -- Plan 126-05: guide §4 migrate, §5 verify, §6 client/signing-key, boot/drive/teardown -----
+
+  test "walk script implements guide §4 migrate and §5 verify as step-04-migrate and step-05-verify" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-04-migrate"
+    assert source =~ "step-05-verify"
+    assert source =~ "mix ecto.migrate"
+    assert source =~ "mix lockspire.verify"
+  end
+
+  test "step-04-migrate never records PASS -- the migration verdict is deferred to step-05-verify" do
+    source = File.read!(@walk_script_path)
+
+    refute source =~ ~s(record_result "PASS" "step-04-migrate")
+    assert source =~ ~s(record_result "FAIL" "step-04-migrate")
+  end
+
+  test "step-05-verify parses mix lockspire.verify's captured output instead of only checking its exit status" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-05-verify"
+    assert source =~ "Pending Lockspire or Oban migrations detected"
+    assert source =~ "pending_count"
+    assert source =~ "missing_tables"
+  end
+
+  test "the migrations workaround uses the release-safe application-directory form and never the dependency-directory form (ADOPT-D07)" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "ADOPT-D07"
+    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D07"
+    assert source =~ ~s[Application.app_dir(:lockspire, "priv/repo/migrations")]
+    refute source =~ "deps/lockspire/priv/repo/migrations"
+  end
+
+  test "the contract test fails if the release-safe migrations form is replaced by the dependency-directory form (regression guard)" do
+    source = File.read!(@walk_script_path)
+
+    mutated =
+      String.replace(
+        source,
+        ~s[Application.app_dir(:lockspire, "priv/repo/migrations")],
+        ~s(deps/lockspire/priv/repo/migrations)
+      )
+
+    refute mutated =~ ~s[Application.app_dir(:lockspire, "priv/repo/migrations")]
+    assert mutated =~ "deps/lockspire/priv/repo/migrations"
+  end
 end

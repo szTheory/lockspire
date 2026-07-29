@@ -1063,6 +1063,104 @@ ELIXIR
   mark_done "$step_id"
 }
 
+# step-04-migrate: guide §4 "Run migrations" -- run the documented `mix ecto.create` and bare
+# `mix ecto.migrate` exactly as written. No --migrations-path flag is added here: the point of
+# this step is to observe what the documented command actually does, never to make it succeed.
+# Its own exit code is never treated as the assertion (RESEARCH Pitfall 8) -- the verdict is
+# deferred to step-05-verify, the independent detector, so this step can never record PASS.
+run_step_04_migrate() {
+  should_run "step-04-migrate" || return 0
+
+  local migrate_log="$WORKDIR/step_04_migrate.log"
+
+  (cd "$HOST_APP_DIR" && mix ecto.create) >"$migrate_log" 2>&1 || true
+  (cd "$HOST_APP_DIR" && mix ecto.migrate) >>"$migrate_log" 2>&1
+  local migrate_exit=$?
+
+  # Never PASS here: the generated host's own phx.gen.auth migration was already applied by
+  # step-00d-seed-user, so the documented bare `mix ecto.migrate` has nothing of its own left to
+  # run and exits 0 having applied zero of Lockspire's migrations -- Lockspire's migrations live
+  # under Lockspire's own priv/repo/migrations, never the host's default migrations path, so no
+  # bare `mix ecto.migrate` invocation can ever reach them. A zero exit code here proves nothing
+  # about Lockspire's migration state; step-05-verify is the honest detector.
+  record_result "FAIL" "step-04-migrate" "§4 Run migrations: the documented \`mix ecto.create\` + bare \`mix ecto.migrate\` exited ${migrate_exit} against the host's own already-migrated database -- it ran zero of Lockspire's migrations, and its exit code alone proves nothing about Lockspire's migration state (see step-05-verify)"
+  mark_done "step-04-migrate"
+}
+
+# step-05-verify: guide §5 "Verify the install wiring" -- the honest detector for step-04's
+# silent no-op. Captures mix lockspire.verify's stdout regardless of exit code (RESEARCH
+# assumption A8: a host with still-broken wiring may make the task degrade rather than report
+# cleanly, and an opaque crash with no captured output would produce an unattributable ledger
+# row), then parses the pending-migration count and table-existence checks out of it rather than
+# branching on the task's own exit status.
+run_step_05_verify() {
+  should_run "step-05-verify" || return 0
+
+  local verify_pre_log="$WORKDIR/step_05_verify_pre.log"
+  (cd "$HOST_APP_DIR" && mix lockspire.verify) >"$verify_pre_log" 2>&1 || true
+
+  local pending_detail
+  pending_detail="$(grep -A 1 'Pending Lockspire or Oban migrations detected' "$verify_pre_log" | tail -n 1 | sed -e 's/^ *//')"
+
+  local comma_count pending_count
+  comma_count="$(grep -o ',' <<<"$pending_detail" | wc -l | tr -d ' ')"
+  pending_count=0
+  if [[ -n "$pending_detail" ]]; then
+    pending_count=$((comma_count + 1))
+  fi
+
+  local missing_tables=()
+  grep -Fq 'core tables are missing' "$verify_pre_log" && missing_tables+=("lockspire_clients")
+  grep -Fq 'oban_jobs is missing' "$verify_pre_log" && missing_tables+=("oban_jobs")
+
+  local missing_tables_str="none"
+  if [[ "${#missing_tables[@]}" -gt 0 ]]; then
+    missing_tables_str="$(
+      IFS=,
+      echo "${missing_tables[*]}"
+    )"
+  fi
+
+  # ADOPT-D07 (owning phase 127): mix lockspire.verify's independent Ecto.Migrator.with_repo/2
+  # check -- never the migrate command's own exit code -- is what surfaces that the documented
+  # §4 command applies none of Lockspire's migrations.
+  record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: mix lockspire.verify reports ${pending_count} pending Lockspire/Oban migration(s) and missing tables: ${missing_tables_str} -- the documented §4 migrate command's exit-zero result never applied Lockspire's own migrations (ADOPT-D07, owning phase 127)"
+
+  local lockspire_migrations_path
+  lockspire_migrations_path="$(cd "$HOST_APP_DIR" && mix run -e 'IO.puts(Application.app_dir(:lockspire, "priv/repo/migrations"))' 2>/dev/null | tail -n 1)"
+
+  local migrate_workaround_log="$WORKDIR/step_05_migrate_workaround.log"
+
+  # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D07
+  # The release-safe application-directory form -- Application.app_dir(:lockspire,
+  # "priv/repo/migrations") -- is the only form of this path that resolves correctly inside a Mix
+  # release (D-49). A source-tree relative form under the dependency's own checkout is forbidden
+  # here: it is a path that does not exist in a compiled release, and using it in this harness
+  # would teach adopters a pattern that breaks the moment they build one.
+  if [[ -n "$lockspire_migrations_path" ]]; then
+    (cd "$HOST_APP_DIR" && mix ecto.migrate --migrations-path "$lockspire_migrations_path") \
+      >"$migrate_workaround_log" 2>&1 || true
+  fi
+
+  # Follow-up observation: because the explicit path above shares the single schema_migrations
+  # table with the host's own migrations, a later `mix ecto.migrations` run against the default
+  # migrations path will report Lockspire's own migration versions as applied but file-not-found
+  # -- itself part of the evidence that neither the bare default-path form nor a forbidden
+  # source-tree-relative form can ever discover Lockspire's migrations on their own.
+
+  local verify_post_log="$WORKDIR/step_05_verify_post.log"
+  (cd "$HOST_APP_DIR" && mix lockspire.verify) >"$verify_post_log" 2>&1 || true
+
+  if grep -Fq 'Pending Lockspire or Oban migrations detected' "$verify_post_log"; then
+    record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround, mix lockspire.verify still reports pending migrations -- the migrations themselves do not apply, not merely the documented command"
+  else
+    record_result "PASS" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (Application.app_dir(:lockspire, \"priv/repo/migrations\")), mix lockspire.verify reports zero pending Lockspire/Oban migrations"
+  fi
+
+  mark_done "step-05-verify"
+}
+
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -1108,8 +1206,11 @@ run_step_03c_resolver
 run_step_03d_app_tree
 run_step_03e_protected_route
 
-# Guide steps step-04 onward are added by later plans in this phase; the
-# skeleton and pre-guide steps above are what they plug into via
+run_step_04_migrate
+run_step_05_verify
+
+# Guide §6 onward (client registration, signing key, boot/drive/teardown, and §7/§8 not-walked
+# accounting) is added by a later plan in this phase; the steps above are what it plugs into via
 # should_run/record_result/mark_done.
 
 print_report
