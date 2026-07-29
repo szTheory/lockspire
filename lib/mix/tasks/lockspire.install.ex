@@ -22,6 +22,7 @@ defmodule Mix.Tasks.Lockspire.Install do
           mount_path: :string,
           storage_prefix: :string,
           oban_prefix: :string,
+          dry_run: :boolean,
           help: :boolean,
           sigra_host: :boolean
         ]
@@ -40,7 +41,7 @@ defmodule Mix.Tasks.Lockspire.Install do
 
   def help do
     """
-    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--sigra-host]
+    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--dry-run] [--sigra-host]
 
     Canonical Phoenix-first onboarding:
       1. Add the :lockspire dependency
@@ -71,6 +72,10 @@ defmodule Mix.Tasks.Lockspire.Install do
       --oban-prefix PREFIX
                           Postgres schema/prefix for Lockspire's Oban tables.
                           Defaults to --storage-prefix.
+      --dry-run           Print the planned install without writing any file. Exits
+                          non-zero, printing the same refusal list as a real run, when
+                          the plan finds a conflict -- matching `mix lockspire.upgrade
+                          --dry-run` rather than inventing a second convention.
     """
   end
 end

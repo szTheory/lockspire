@@ -136,9 +136,68 @@ defmodule Lockspire.Integration.InstallConflictSemanticsTest do
            "expected no install manifest after a refused first-ever run"
   end
 
-  defp install!(scratch) do
+  describe "--dry-run" do
+    test "against a clean host prints the full plan and writes nothing", %{scratch: scratch} do
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      output = capture_io(fn -> install!(scratch, dry_run: true) end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a dry run against a clean host to write nothing"
+
+      assert output =~ "DRY-RUN config/lockspire.exs"
+      assert output =~ "DRY-RUN lib/host_app_web/router/lockspire.ex"
+      assert output =~ "DRY-RUN .lockspire/install_manifest.json"
+      refute output =~ "Lockspire canonical onboarding next steps"
+    end
+
+    test "against a drifted host prints the full refusal list and raises", %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      router_path = Path.join(scratch, "lib/host_app_web/router/lockspire.ex")
+      File.write!(router_path, File.read!(router_path) <> "# SENTINEL_DRY_RUN_DRIFT\n")
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      refusal_output =
+        capture_io(fn ->
+          assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+            install!(scratch, dry_run: true)
+          end
+        end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a refused dry run to write nothing"
+
+      assert refusal_output =~ "REFUSE lib/host_app_web/router/lockspire.ex"
+    end
+
+    test "against a byte-identical prior install reports unchanged and writes nothing",
+         %{scratch: scratch} do
+      capture_io(fn -> install!(scratch) end)
+
+      before_checksums = HostSnapshot.tree_checksums(scratch)
+
+      output = capture_io(fn -> install!(scratch, dry_run: true) end)
+
+      after_checksums = HostSnapshot.tree_checksums(scratch)
+
+      assert after_checksums == before_checksums,
+             "expected a dry run against an unchanged install to write nothing"
+
+      assert output =~ "* unchanged config/lockspire.exs"
+      assert output =~ "* unchanged .lockspire/install_manifest.json"
+      refute output =~ "DRY-RUN"
+    end
+  end
+
+  defp install!(scratch, opts \\ []) do
     Mix.Project.in_project(:host_app, scratch, fn _module ->
-      Lockspire.Generators.Install.run([])
+      Lockspire.Generators.Install.run(opts)
     end)
   end
 end

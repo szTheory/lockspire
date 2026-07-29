@@ -12,9 +12,13 @@ defmodule Lockspire.Generators.Install do
   def run(opts \\ []) do
     assigns = build_assigns(opts)
     install_plan = plan(assigns)
+    dry_run? = Keyword.get(opts, :dry_run, false)
 
-    apply_plan!(assigns, install_plan)
-    Mix.shell().info(instructions(assigns))
+    apply_plan!(assigns, install_plan, dry_run: dry_run?)
+
+    unless dry_run? do
+      Mix.shell().info(instructions(assigns))
+    end
 
     :ok
   end
@@ -23,7 +27,10 @@ defmodule Lockspire.Generators.Install do
   Side-effect-free classification pass. Reads every rendered template's
   destination and the install manifest (if any), but never writes, creates a
   directory, or removes a file. Returns the full per-destination
-  classification plus the subset that conflict, in template-inventory order.
+  classification plus the subset that conflict, in template-inventory order,
+  with the install manifest itself classified last alongside the twelve
+  rendered destinations so `apply_plan!/3` has one write/print path for all
+  thirteen destinations, including for `--dry-run`.
   """
   @spec plan(map()) :: map()
   def plan(assigns) do
@@ -42,6 +49,21 @@ defmodule Lockspire.Generators.Install do
         end
       end)
 
+    managed_templates =
+      rendered_templates
+      |> Enum.filter(&(&1.template.ownership == :managed))
+
+    manifest_rendered = build_manifest_rendered(assigns, managed_templates)
+
+    {classified, conflicts} =
+      case classify_destination(manifest_rendered, %{}, expanded_root) do
+        {:conflict, reason} = outcome ->
+          {[{manifest_rendered, outcome} | classified], [{manifest_rendered, reason} | conflicts]}
+
+        outcome ->
+          {[{manifest_rendered, outcome} | classified], conflicts}
+      end
+
     %{
       rendered_templates: rendered_templates,
       classified: Enum.reverse(classified),
@@ -52,11 +74,20 @@ defmodule Lockspire.Generators.Install do
   @doc """
   Apply pass. Only reached when the plan produced zero conflicts -- if any
   conflict is present, prints the full refusal list and raises exactly once,
-  having written nothing. Otherwise creates directories, writes files that
-  need creating, and writes the manifest.
+  having written nothing, regardless of `:dry_run`. Otherwise, for a real run,
+  creates directories, writes files that need creating (including the
+  manifest, since it is now one of `classified`'s entries), and prints the
+  existing `* created`/`* unchanged` lines. For `dry_run: true`, prints a
+  `DRY-RUN` line in place of `* created` for anything that would be written,
+  writes nothing, and still prints `* unchanged` for anything that would not
+  change -- mirroring `mix lockspire.upgrade`'s dry-run label swap.
   """
-  @spec apply_plan!(map(), map()) :: :ok
-  def apply_plan!(assigns, %{classified: classified, conflicts: conflicts} = install_plan) do
+  @spec apply_plan!(map(), map(), keyword()) :: :ok
+  def apply_plan!(assigns, install_plan, opts \\ [])
+
+  def apply_plan!(_assigns, %{classified: classified, conflicts: conflicts}, opts) do
+    dry_run? = Keyword.get(opts, :dry_run, false)
+
     if conflicts != [] do
       print_refusals(conflicts)
 
@@ -68,15 +99,17 @@ defmodule Lockspire.Generators.Install do
 
     Enum.each(classified, fn
       {rendered, :create} ->
-        File.mkdir_p!(Path.dirname(rendered.destination))
-        File.write!(rendered.destination, rendered.rendered)
-        Mix.shell().info("* created #{Path.relative_to_cwd(rendered.destination)}")
+        if dry_run? do
+          Mix.shell().info("DRY-RUN #{Path.relative_to_cwd(rendered.destination)}")
+        else
+          File.mkdir_p!(Path.dirname(rendered.destination))
+          File.write!(rendered.destination, rendered.rendered)
+          Mix.shell().info("* created #{Path.relative_to_cwd(rendered.destination)}")
+        end
 
       {rendered, :unchanged} ->
         Mix.shell().info("* unchanged #{Path.relative_to_cwd(rendered.destination)}")
     end)
-
-    write_manifest!(assigns, install_plan.rendered_templates)
 
     :ok
   end
@@ -151,14 +184,22 @@ defmodule Lockspire.Generators.Install do
     ownership_header(template, destination) <> rendered_body
   end
 
-  defp write_manifest!(assigns, rendered_templates) do
-    managed_templates =
-      rendered_templates
-      |> Enum.filter(&(&1.template.ownership == :managed))
+  # Builds the manifest's own rendered content as a synthetic destination in
+  # the same `%{template:, destination:, relative_path:, rendered:}` shape as
+  # every other template, so `apply_plan!/3`'s `classified` loop can create,
+  # skip, or refuse it exactly the way it treats the twelve rendered
+  # destinations -- no separate write path, no separate print path.
+  defp build_manifest_rendered(assigns, managed_templates) do
+    expanded_root = Path.expand(assigns.project_root)
+    destination = assigns.project_root |> Manifest.path() |> Path.expand()
+    manifest = Manifest.build(assigns, managed_templates)
 
-    assigns
-    |> Manifest.build(managed_templates)
-    |> then(&Manifest.write(assigns.project_root, &1))
+    %{
+      template: %{ownership: :managed},
+      destination: destination,
+      relative_path: Path.relative_to(destination, expanded_root),
+      rendered: Jason.encode!(manifest, pretty: true)
+    }
   end
 
   # Classifies one rendered destination against the current host state. This
