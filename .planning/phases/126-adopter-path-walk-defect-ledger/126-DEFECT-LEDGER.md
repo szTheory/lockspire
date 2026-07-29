@@ -57,6 +57,12 @@ step IDs, and `file:line` citations are recorded.
   never gates on a clean compile, only on whether `mix phx.routes` shows the mount, and it does
   not. The real wiring is applied separately as ADOPT-D02/ADOPT-D03's workaround under
   `step-03b-router-wire`.
+- **Disposition:** Fixed in Phase 127 (plan 127-05). `priv/templates/lockspire.install/router.ex`
+  now emits `lockspire_routes/1` as a `defmacro` returning a `quote do ... end` block instead of a
+  heredoc `String`, so calling it at a host router's top level injects a real, correctly ordered,
+  deny-closed route table. Fenced by `test/integration/install_template_compile_test.exs`, which
+  compiles the rendered helper and reads the real route table back via
+  `Phoenix.Router.routes/1`.
 
 ### ADOPT-D02
 
@@ -73,6 +79,12 @@ step IDs, and `file:line` citations are recorded.
   `:lockspire_require_operator` pipeline, deny-closed by default. No stand-in pipeline is
   defined in the generated host any longer; the harness's `# LOCKSPIRE_WALK_WORKAROUND:
   ADOPT-D02` marker and the block it guarded were removed in the same commit as this retirement.
+- **Disposition:** Fixed in Phase 127 (plan 127-05). The macro now defines its own deny-closed
+  `:lockspire_require_operator` pipeline, so no stand-in pipeline is needed in a stock host
+  router. Plan 127-09 removed the harness's stand-in-pipeline workaround and confirmed the
+  extracted paste reading now compiles cleanly. Fenced by
+  `test/integration/install_template_compile_test.exs` and
+  `test/lockspire/maintainer/defect_ledger_contract_test.exs`.
 
 ### ADOPT-D03
 
@@ -91,6 +103,12 @@ step IDs, and `file:line` citations are recorded.
   rewiring is required any longer; the guide half (§128) still applies. The consent route's own
   `live_session` on_mount: value remains harness-supplied -- that residual is tracked separately
   under the ADOPT-D18 entry below, which the ADOPT-D03 workaround previously nested inside.
+- **Disposition:** Fixed in Phase 127 (plan 127-05) for the installer half: the interaction
+  routes and consent LiveView are now emitted already browser-piped, ahead of the
+  pipeline-less public forward, so they get real `fetch_session` and `protect_from_forgery`
+  without any harness rewiring. The guide half (documenting this wiring for the adopter) remains
+  Phase 128's, per the joint source/owning-phase attribution above. Fenced by
+  `test/integration/install_template_compile_test.exs`.
 
 ### ADOPT-D04
 
@@ -103,12 +121,26 @@ step IDs, and `file:line` citations are recorded.
   `oban:` keys at all.
 - **Source:** installer
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D04` -- the walk's own issuer replaces the placeholder, a freshly
-  generated `secret_key_base` is patched in (never the committed
-  `examples/adoption_demo/config/config.exs` secret literal, per T-126-04), and
-  `known_scopes`/`signing_alg`/`oban:` are completed with the demo's own shapes plus
-  `read:walk`, the scope this harness's own protected-route proof needs (see the "Harness-only
-  correction" note below).
+- **Workaround:** `ADOPT-D04` -- narrowed in 127-09 after 127-06's config-template rewrite made
+  most of this workaround's original scope unnecessary. The template now emits a
+  mount-path-consistent issuer suffix, `known_scopes`, `signing_alg`, and a self-describing
+  `secret_key_base` placeholder on its own; only `oban:` is still genuinely absent. What the
+  harness still patches is walk-specific value substitution, each guarded independently by
+  whether that specific value still needs replacing: the placeholder `https://example.com` issuer
+  host is replaced with the walk's own reachable base URL (the mount-path suffix the template now
+  emits is left untouched), the `secret_key_base` placeholder is replaced with a freshly generated
+  secret (never the committed `examples/adoption_demo/config/config.exs` secret literal, per
+  T-126-04), `read:walk` is appended to the template's own `known_scopes` list (the scope this
+  harness's own protected-route proof invented, see the "Harness-only correction" note below), and
+  `oban:` is appended since the template still omits it.
+- **Disposition:** Fixed in Phase 127 (plan 127-06) for the template half: the config template now
+  emits a mount-path-consistent issuer suffix, `known_scopes`, `signing_alg`, and a
+  self-describing `secret_key_base` placeholder, so a stock import no longer raises at boot on a
+  bare placeholder issuer. What remains in the harness (plan 127-09's re-scoping) is
+  walk-specific value substitution -- a real reachable issuer host, a freshly generated secret,
+  and the `read:walk` scope this harness's own proof invented -- none of which is an
+  adopter-facing defect; no real adopter needs a scope this harness invented for its own proof.
+  Fenced by `test/integration/install_generator_test.exs`.
 
 ### ADOPT-D05
 
@@ -130,6 +162,15 @@ step IDs, and `file:line` citations are recorded.
   leaves `:oban`'s own registry unstarted, since `Application.ensure_all_started/1` never walks
   an included application's own dependency chain). Lockspire's three supervision children are
   added after the host's Repo.
+- **Disposition:** Fixed in part in Phase 127 (plan 127-04): the installer's printed onboarding
+  instructions (`instructions/1`) now name `included_applications: [:lockspire]`, the
+  `:oban`/`:cachex` `extra_applications` additions, and Lockspire's three supervision children
+  ordered after the host's Repo -- while stating explicitly that Lockspire never touches the
+  host's `mix.exs` or `application.ex` itself. The harness's own `ADOPT-D05` markers stay: the
+  installer deliberately performs zero injection (host action, by design), so the harness must
+  still perform this wiring itself on every run to keep walking. The guide half (a worked,
+  narrated example) remains Phase 128's. Fenced by
+  `test/lockspire/install/install_instructions_test.exs`.
 
 ### ADOPT-D06
 
@@ -155,6 +196,14 @@ step IDs, and `file:line` citations are recorded.
   question anticipated: publication (JWKS visibility) and activation (signing eligibility) are
   two separate lifecycle stages, and a first live token exchange is what actually surfaces the
   second one -- JWKS-non-empty alone is not sufficient evidence that a key can sign.
+- **Disposition:** Fixed in part in Phase 127 (plan 127-04): the installer's printed onboarding
+  instructions now name all three key-lifecycle calls by name and arity
+  (`Lockspire.Admin.generate_key/1`, `publish_key/2`, `activate_key/2`) as genuinely separate
+  stages, stating that a published key still cannot sign until activated. The harness's own
+  `ADOPT-D06` marker stays: minting and activating a signing key is a real per-install action
+  the harness must still perform on every run to keep walking. The guide half (a worked,
+  narrated example) remains Phase 128's. Fenced by
+  `test/lockspire/install/install_instructions_test.exs`.
 
 ### ADOPT-D07
 
@@ -172,6 +221,16 @@ step IDs, and `file:line` citations are recorded.
   "priv/repo/migrations")` form (never a source-tree-relative form, which does not exist inside
   a compiled release) is passed as `--migrations-path`, after which `mix lockspire.verify`
   reports zero pending migrations.
+- **Disposition:** Fixed in part in Phase 127 (plan 127-04): the wrong migrate-remediation
+  strings are corrected at all four in-scope `verify.ex` sites (pending, storage-prefix,
+  oban-prefix, and up-to-date), plus the installer's own printed migrate step -- all five now
+  name the release-safe `--migrations-path` switch. The underlying redesign (a dedicated migrate
+  Mix task, or a host migration generator writing a migration against versioned modules) is
+  deferred: both require new public surface, which this milestone's Out of Scope table forbids.
+  Logged below as a future candidate so Phase 128 does not silently inherit an unsolvable
+  documentation problem; adopters still need to pass `--migrations-path` themselves, and that is
+  the accepted cost. `docs/install-and-onboard.md:108`'s bare guide text is Phase 128's. Fenced
+  by `test/lockspire/install/install_instructions_test.exs`.
 
 ### ADOPT-D08
 
@@ -189,6 +248,10 @@ step IDs, and `file:line` citations are recorded.
   `mix lockspire.verify`'s migrations check already used, so the documented task now reaches a
   running repo in a stock host directly. No `mix run -e` workaround runs in the harness any
   longer.
+- **Disposition:** Fixed in Phase 127 (plan 127-03). `lib/mix/tasks/lockspire.client.create.ex`
+  now wraps its `Clients.register_client/1` call in `Ecto.Migrator.with_repo/2`, so the
+  documented task reaches a running repo directly in a stock host. Plan 127-09 removed the
+  harness's `mix run -e` workaround and confirmed the documented task now runs unaided.
 
 ### ADOPT-D09
 
@@ -205,6 +268,10 @@ step IDs, and `file:line` citations are recorded.
   `login_path: "/users/log-in"`, matching `mix phx.gen.auth Accounts User users --live`'s real
   login route. The generated host's own resolver file now ships with the correct default and no
   harness patch is applied.
+- **Disposition:** Fixed in Phase 127 (plan 127-06).
+  `priv/templates/lockspire.install/account_resolver.ex`'s `redirect_for_login/2` default now
+  matches `mix phx.gen.auth Accounts User users --live`'s real login route. Plan 127-09 removed
+  the harness's generated-file patch. Fenced by `test/integration/install_generator_test.exs`.
 
 ### ADOPT-D10
 
@@ -262,6 +329,12 @@ step IDs, and `file:line` citations are recorded.
 - **Owning phase:** 127 or 128
 - **Workaround:** `ADOPT-D14` -- the driver navigates to `return_to` itself with an explicit
   `GET` after the login POST, rather than trusting the login redirect.
+- **Disposition:** Deferred to Phase 128 (per CONTEXT decision D-29). The generated login
+  function that ignores a posted `return_to` parameter is host scaffolding
+  (`mix phx.gen.auth`'s own `log_in_user/3`) that the installer cannot and must not patch --
+  patching generated, host-owned authentication code is out of the installer's ownership model.
+  Phase 127 fixes only the sibling resolver login-path defect (ADOPT-D09); session-backed
+  interaction resume is logged below as a future candidate rather than built here.
 
 ### ADOPT-D15
 
@@ -283,6 +356,10 @@ step IDs, and `file:line` citations are recorded.
   `{:ecto_sql, "~> 3.13.5"}` to ranging `{:ecto_sql, ">= 3.13.5 and < 4.0.0"}`, so a stock host's
   own already-resolved ecto/ecto_sql versions now satisfy Lockspire's requirement without an
   unlock step. `mix deps.unlock` no longer runs in the harness.
+- **Disposition:** Fixed in Phase 127 (plan 127-02). `mix.exs` now ranges
+  `{:ecto_sql, ">= 3.13.5 and < 4.0.0"}` instead of pinning `"~> 3.13.5"`, so a stock host's own
+  already-resolved ecto/ecto_sql versions satisfy Lockspire's requirement without an unlock
+  step. Plan 127-09 removed the harness's `mix deps.unlock` workaround.
 
 ### ADOPT-D16
 
@@ -302,6 +379,11 @@ step IDs, and `file:line` citations are recorded.
   interpolation (`#{consent.grant.id}`) instead of the nested EEx tag, so the generated
   authorized-apps page now compiles as rendered. No patch to the generated host's own copy of
   the file is applied.
+- **Disposition:** Fixed in Phase 127 (plan 127-06).
+  `priv/templates/lockspire.install/authorized_apps/index.html.heex` now uses Elixir string
+  interpolation instead of a nested EEx tag inside a HEEx attribute expression, so the generated
+  page compiles as rendered. Plan 127-09 removed the harness's generated-file patch. Fenced by
+  `test/integration/install_template_compile_test.exs`.
 
 ### ADOPT-D18
 
@@ -356,6 +438,37 @@ step IDs, and `file:line` citations are recorded.
   struct; Phase 128 must correct the documented contract (or Phase 127/129 must add real
   accessor functions matching it) so no adopter has to read this workaround to discover the
   real shape.
+
+## Future candidates (Phase 127)
+
+Deferred designs, out of this milestone's scope because each would widen Lockspire's supported
+surface -- new installer-injected files, a new public Mix task, or a new host-owned protocol
+seam -- which `.planning/REQUIREMENTS.md`'s Out of Scope table forbids for v1.36. Logged here so
+a later milestone does not have to rediscover them from a live walk a second time:
+
+- **Installer injection into the host's router, config, or `mix.exs`.** `mix lockspire.install`
+  deliberately writes nothing into these three files (ADOPT-D01/D02/D03/D04/D05's installer
+  halves are fixed by making the *generated* templates self-sufficient, not by having the
+  installer edit host-owned files). Actually injecting would be a new capability, not a defect
+  fix, and was explicitly deferred pending walk evidence per the milestone's `2026-07-28`
+  decision log, not assumed away.
+- **The `mix ecto.migrate` redesign (ADOPT-D07), in both of its candidate forms:** a dedicated
+  `mix lockspire.migrate` Mix task, or a host migration generator that writes a real migration
+  file against Lockspire's own versioned migration modules. Either would be new public surface.
+  The accepted cost until a future milestone takes this on: adopters must pass
+  `--migrations-path Application.app_dir(:lockspire, "priv/repo/migrations")` themselves, as
+  `mix lockspire.verify`'s own remediation text now says.
+- **Session-backed interaction resume (ADOPT-D14).** Making the login POST's own redirect honor
+  a posted `return_to` parameter would require either patching host-owned `phx.gen.auth`
+  scaffolding (out of the installer's ownership model) or a new Lockspire-owned session/resume
+  primitive (new protocol surface). Phase 128's guide half can narrate the current two-request
+  workaround (POST login, then GET `return_to`) as the documented pattern instead.
+- **The 127-01 install-manifest version-field change.** Not a numbered defect -- no walk step
+  observed a break from it -- but a real behavior change to a generated artifact
+  (`.lockspire/install_manifest.json`'s `version` field now reads from
+  `Application.spec(:lockspire, :vsn)` instead of the pushed Mix project's own config) found by
+  exactly the method this phase exists to apply (running the installer against a real host). It
+  belongs in this record so a future manifest-format audit does not have to rediscover it.
 
 ## Dropped from the seed list
 
