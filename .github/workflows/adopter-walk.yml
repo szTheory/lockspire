@@ -1,0 +1,159 @@
+# This lane is deliberately advisory and must NEVER be added to branch protection required
+# checks, and it deliberately carries no schedule trigger (Phase 130 adds the cron). A real
+# `mix phx.new` host, a real database, and a real booted Phoenix server are expected to
+# occasionally flake on CDN/network conditions unrelated to any Lockspire defect -- demanding
+# this pass to merge would either block unrelated PRs on transient infrastructure or, worse,
+# train maintainers to bypass it, which is exactly the silent failure mode this comment exists
+# to prevent. Its verdict is "actual matches the recorded baseline" (see
+# scripts/maintainer/adopter_walk_verify.py), never "the walk exited 0" --
+# 126-DEFECT-LEDGER.md forbids that gate.
+name: Adopter Walk
+
+on:
+  pull_request:
+    paths:
+      - "priv/templates/lockspire.install/**"
+      - "lib/lockspire/generators/**"
+      - "lib/lockspire/install/**"
+      - "lib/mix/tasks/lockspire.*"
+      - "scripts/maintainer/adopter_path_*"
+      - "scripts/maintainer/adopter_walk_*"
+      - "docs/install-and-onboard.md"
+      - "mix.exs"
+  workflow_dispatch:
+    inputs:
+      from_step:
+        description: >-
+          Passed through to the preflight probe's --from-step. adopter_walk_ci.sh's own full
+          run always starts fresh from 00 -- the baseline can only adjudicate a from-scratch
+          walk (see adopter_walk_verify.py's own precondition on a non-"00" from_step).
+        required: false
+        default: ""
+      port:
+        description: "Port the generated host app binds (passed to --port)"
+        required: false
+        default: "4200"
+
+concurrency:
+  group: adopter-walk-${{ github.ref }}
+  # Never cancel a run mid-flight: the full walk plus its retry attempt can take upwards of
+  # fifteen minutes, and a superseding push should queue behind it rather than tear down
+  # in-progress evidence.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  ELIXIR_VERSION: "1.19.5"
+  OTP_VERSION: "28"
+
+jobs:
+  adopter-walk:
+    name: Adopter Path Walk (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: dev
+      LOCKSPIRE_WALK_DB_HOST: 127.0.0.1
+      LOCKSPIRE_WALK_DB_PORT: "5432"
+      LOCKSPIRE_WALK_DB_USER: lockspire
+      LOCKSPIRE_WALK_DB_PASSWORD: lockspire
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      # Caches only the Hex package-download cache and the walk's own isolated phx_new archive
+      # install directory (MIX_ARCHIVES, D-06) -- never the generated host's own
+      # tmp/adopter-walk/host_app/deps or _build. A stock `mix phx.new` host resolving its own
+      # dependencies against Hex's current constraints, not a warm already-resolved lock, is
+      # one of the highest-value things this walk proves; ADOPT-D15 was exactly a resolver
+      # failure a cached resolution would have silently skipped. Caching downloads is safe;
+      # caching resolution is not.
+      - name: Restore Hex package and archive cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.hex
+            .harness/archives
+          key: ${{ runner.os }}-adopter-walk-hex-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-adopter-walk-hex-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+
+      - name: Wait for PostgreSQL
+        run: |
+          for _attempt in $(seq 1 30); do
+            pg_isready -h "$LOCKSPIRE_WALK_DB_HOST" -p "$LOCKSPIRE_WALK_DB_PORT" -U "$LOCKSPIRE_WALK_DB_USER" && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL did not become ready in time" >&2
+          exit 1
+
+      # A cheap preflight-only pass runs first so a runner that lost cc/make/psql/git/mix/
+      # python3 -- or a PostgreSQL role without CREATE DATABASE -- is attributed to
+      # infrastructure before burning the run's time budget on an ambiguous downstream FAIL.
+      # The postgres:16 image's own POSTGRES_USER is created SUPERUSER by its entrypoint, which
+      # already satisfies the walk's CREATE DATABASE probe -- no extra role wiring is needed
+      # here.
+      - name: Preflight (attributes a missing runner prerequisite to infrastructure)
+        run: |
+          if ! bash scripts/maintainer/adopter_path_walk.sh --preflight-only --port "${{ github.event.inputs.port || '4200' }}"; then
+            preflight_status=$?
+            if [ "$preflight_status" -eq 2 ]; then
+              echo "::error::adopter-walk preflight failed -- a required runner tool or PostgreSQL prerequisite is missing (INFRA, not an adopter-path regression)"
+            fi
+            exit "$preflight_status"
+          fi
+
+      # No --no-ecto/--no-html/--no-assets/--no-mailer flag is ever passed anywhere in this
+      # lane -- stripping a generator capability would prove a substitute, not the documented
+      # path. `mix phx.new --install` successfully fetching its own esbuild/tailwind asset
+      # toolchain is part of what the adopter path is, so MIX_ESBUILD_PATH/MIX_TAILWIND_PATH
+      # are deliberately never set to dodge that download. continue-on-error is deliberately
+      # never set either -- it would render every result green and this lane decorative.
+      - name: Run the walk and verify against the baseline
+        run: |
+          if [ -n "${{ github.event.inputs.from_step }}" ]; then
+            echo "::notice::Manual dispatch requested from_step=${{ github.event.inputs.from_step }}; adopter_walk_ci.sh's own attempts always run a full walk from 00 -- the baseline can only adjudicate a from-scratch run."
+          fi
+          bash scripts/maintainer/adopter_walk_ci.sh
+
+      # server.log and the report JSON can carry live authorization codes and access tokens
+      # from the driven flow -- retention-days: 7 bounds their exposure window. The generated
+      # host_app tree itself (hundreds of megabytes of deps and build output) is deliberately
+      # excluded from upload.
+      - name: Upload walk evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: adopter-walk-evidence
+          path: |
+            tmp/adopter-walk/*.log
+            tmp/adopter-walk/.walk/report.json
+            tmp/adopter-walk/.walk/verify_attempt1.log
+            tmp/adopter-walk/.walk/mismatch_attempt1.tsv
+            tmp/adopter-walk/.walk/mismatch_attempt2.tsv
+          retention-days: 7
+          if-no-files-found: warn
