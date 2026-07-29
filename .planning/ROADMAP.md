@@ -99,7 +99,7 @@ Plans:
 
 - [x] 127-02-PLAN.md — Widen the `ecto_sql` requirement to a range, commit the resolved lock, prove `mix ci` against it (ADOPT-D15)
 - [x] 127-03-PLAN.md — `mix lockspire.client.create` reaches a started repo through `Ecto.Migrator.with_repo/2` (ADOPT-D08)
-- [ ] 127-04-PLAN.md — Installer instructions name the app-tree wiring and key lifecycle; all three migration remediation strings corrected (ADOPT-D05/D06/D07)
+- [x] 127-04-PLAN.md — Installer instructions name the app-tree wiring and key lifecycle; all three migration remediation strings corrected (ADOPT-D05/D06/D07)
 - [ ] 127-05-PLAN.md — Router template becomes a deny-closed `defmacro`; route-table compile fence; runtime fixture regenerated (ADOPT-D01/D02/D03)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -185,7 +185,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
-| 127. Installer Against A Real Host | 3/9 | In Progress|  |
+| 127. Installer Against A Real Host | 4/9 | In Progress|  |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
 | 130. Adopter Path Guardrail | 0/TBD | Not started | - |

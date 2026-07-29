@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: executing
-stopped_at: Completed 127-03-PLAN.md
-last_updated: "2026-07-29T13:22:43.463Z"
+stopped_at: Completed 127-04-PLAN.md
+last_updated: "2026-07-29T13:41:31.365Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 9
+  completed_plans: 10
   percent: 20
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 127 (installer-against-a-real-host) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -242,6 +242,9 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 127]: Plan 127-01 stripped Phase 126 walk-installed Lockspire wiring and a local absolute path from the committed phx_new_host snapshot so it represents a genuine pre-install host, and rebuilt the install manifest version field from Application.spec(:lockspire, :vsn) instead of the pushed Mix project's config.
 - [Phase ?]: [Phase 127]: Plan 127-02 accepted the resolver's natural ecto 3.14.1 pick (not the plan-authored 3.14.0 target) after widening ecto_sql to a range, verifying 3.14.1's legitimacy directly against the hex.pm API rather than forcing an artificial downgrade via a transitive override.
 - [Phase ?]: [Phase 127]: Plan 127-03 confirmed the ADOPT-D08 pre-fix defect empirically (toggling implementation content via Edit, not git) rather than trusting the plan description, and added on_exit-based DB cleanup for Mix-task integration tests whose task-owned Ecto.Migrator.with_repo/2 call persists non-sandboxed rows.
+- [Phase ?]: [Phase 127]: Plan 127-04 kept defp instructions/1 private (matching the plan's own awk-region acceptance criteria) and instead captured stdout via Install.run/1 against a disposable scratch tmp dir for testing.
+- [Phase ?]: [Phase 127]: Plan 127-04 extracted Verify.evaluate_supervision_children/3 as a public pure function so the OK/missing-children paths are unit-testable without stopping Lockspire's own live Oban/Cachex/KeyCache children mid test-suite.
+- [Phase ?]: [Phase 127]: Plan 127-04 fixed all four in-scope verify.ex migrate remediation sites (pending, storage-prefix, oban-prefix, up-to-date), not just the two CONTEXT named, since the storage/oban-prefix wording also implied a bare command.
 
 ## Blockers/Concerns
 
@@ -256,11 +259,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T13:22:43.460Z
+**Last session:** 2026-07-29T13:41:31.360Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 127-03-PLAN.md
+**Stopped at:** Completed 127-04-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -330,6 +333,7 @@ institutionalizes a known failure.
 | Phase 127 P01 | 40min | 2 tasks | 13 files |
 | Phase 127 P02 | 20min | 2 tasks | 3 files |
 | Phase 127 P03 | 25min | 1 tasks | 2 files |
+| Phase 127 P04 | 30min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 
