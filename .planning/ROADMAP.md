@@ -13,7 +13,7 @@
 ## Phases
 
 - [x] **Phase 126: Adopter Path Walk & Defect Ledger** - One command walks the whole documented path against a stock Phoenix app and records every defect it surfaces (completed 2026-07-29)
-- [ ] **Phase 127: Installer Against A Real Host** - Fix the installer defects the walk found, and exercise `mix lockspire.install` against a real generated app instead of an empty fixture
+- [x] **Phase 127: Installer Against A Real Host** - Fix the installer defects the walk found, and exercise `mix lockspire.install` against a real generated app instead of an empty fixture
 - [ ] **Phase 128: Documented Wiring Truth** - Fix the wiring defects the walk found at their real source and close the gap between the guide and what actually works
 - [ ] **Phase 129: Reference Artifact Alignment** - Make the relationship between `examples/adoption_demo` and the installer path explicit and accurate
 - [ ] **Phase 130: Adopter Path Guardrail** - Automate the now-green walk and stop `verify_install_truth.sh` from overstating what it proves
@@ -88,7 +88,7 @@ Plans:
 - Host-owned seams stay host-owned. Reducing adopter friction must not absorb accounts, login UX, layouts, branding, or policy into the library.
 - `test/integration/install_generator_test.exs` already asserts generated content thoroughly; extend the host-interaction gap rather than rewriting the content assertions.
 
-**Plans**: 7/9 plans executed
+**Plans**: 10/10 plans executed
 
 Plans:
 **Wave 1**
@@ -116,7 +116,8 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 127-09-PLAN.md — Retire six harness workarounds, record all twelve ledger dispositions, run the walk (criterion 4)
+- [x] 127-09-PLAN.md — Retire six harness workarounds, record all twelve ledger dispositions, run the walk (criterion 4)
+- [x] 127-10-PLAN.md — Machine-adjudicated walk: report JSON, expected-outcome baseline, verifier, advisory CI lane
 
 ### Phase 128: Documented Wiring Truth
 
@@ -185,7 +186,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
-| 127. Installer Against A Real Host | 9/10 | In Progress|  |
+| 127. Installer Against A Real Host | 10/10 | Complete|  |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
 | 130. Adopter Path Guardrail | 0/TBD | Not started | - |
