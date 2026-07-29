@@ -73,6 +73,62 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     refute ci_alias =~ "adopter_path_walk"
   end
 
+  test "mix.exs wires the adopter.walk.verify alias, outside ci, and it never references adopter_path_walk" do
+    source = File.read!(@mix_exs_path)
+
+    assert source =~
+             ~s("adopter.walk.verify": ["cmd bash scripts/maintainer/adopter_walk_ci.sh"])
+
+    ci_alias =
+      source
+      |> String.split(~r/\n\s*ci:\s*\[/, parts: 2)
+      |> List.last()
+      |> String.split(~r/\n\s*\]/, parts: 2)
+      |> List.first()
+
+    refute ci_alias =~ "adopter_path_walk"
+    refute ci_alias =~ "adopter.walk.verify"
+    refute ci_alias =~ "adopter_walk_ci"
+  end
+
+  test "walk script always writes a machine-readable JSON report" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "--report-json"
+    assert source =~ "REPORT_JSON"
+    assert source =~ "scripts/maintainer/adopter_walk_report.py"
+  end
+
+  test "record_result appends to the NUL-delimited record stream" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "RECORD_STREAM"
+    assert source =~ ~s(printf '%s\\0%s\\0%s\\0' "$level" "$label" "$detail" >>"$RECORD_STREAM")
+  end
+
+  test "the baseline file exists and parses as JSON" do
+    baseline_path = Path.join(@repo_root, "scripts/maintainer/adopter_walk_baseline.json")
+
+    assert File.regular?(baseline_path)
+
+    assert {:ok, %{"schema" => "lockspire.adopter_walk.baseline/1"}} =
+             baseline_path |> File.read!() |> Jason.decode()
+  end
+
+  test "the verifier never provides a --bless or --update-baseline flag" do
+    verify_path = Path.join(@repo_root, "scripts/maintainer/adopter_walk_verify.py")
+
+    assert File.regular?(verify_path)
+
+    source = File.read!(verify_path)
+
+    # Checks for an actual argparse flag registration, not the doc comment explaining this
+    # script deliberately never registers one.
+    refute source =~ ~s(add_argument("--bless")
+    refute source =~ ~s(add_argument("--update-baseline")
+    assert source =~ "--print-baseline-patch"
+  end
+
   test ".gitignore ignores the harness-local Mix archive directory" do
     source = File.read!(@gitignore_path)
 

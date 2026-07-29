@@ -100,6 +100,7 @@ defmodule Lockspire.MixProject do
         "cmd bash scripts/conformance/run_phase37_suite.sh"
       ],
       "adopter.walk": ["cmd bash scripts/maintainer/adopter_path_walk.sh"],
+      "adopter.walk.verify": ["cmd bash scripts/maintainer/adopter_walk_ci.sh"],
       "test.phase3": [
         "test.setup",
         "test --include integration test/integration/phase3_oidc_token_lifecycle_e2e_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/web/discovery_controller_test.exs test/lockspire/web/userinfo_controller_test.exs"
