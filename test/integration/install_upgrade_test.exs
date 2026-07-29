@@ -37,7 +37,7 @@ defmodule Lockspire.InstallUpgradeTest do
              ~s(mount_path: "/oauth")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/oauth", Lockspire.Web.Router)
+             ~s<forward("/oauth", Lockspire.Web.Router)>
 
     manifest = load_manifest!()
     assert manifest["inputs"]["mount_path"] == "/oauth"

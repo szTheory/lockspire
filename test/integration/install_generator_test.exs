@@ -72,28 +72,45 @@ defmodule Lockspire.InstallGeneratorTest do
              ~s(oban_prefix: "lockspire")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/lockspire", Lockspire.Web.Router)
+             ~s<forward("/lockspire", Lockspire.Web.Router)>
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(get "/authorized-apps", AuthorizedAppsController, :index)
+             ~s<get("/authorized-apps", AuthorizedAppsController, :index)>
 
     router =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
 
-    assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
-    assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
-    assert router =~ ~s(post "/verify/:handle/approve", LockspireVerificationController, :approve)
-    assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
+    assert router =~ ~s<get("/verify", LockspireVerificationController, :show)>
+    assert router =~ ~s<post("/verify", LockspireVerificationController, :lookup)>
+
+    assert router =~
+             ~s<post("/verify/:handle/approve", LockspireVerificationController, :approve)>
+
+    assert router =~ ~s<post("/verify/:handle/deny", LockspireVerificationController, :deny)>
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
     assert router =~ ~s(scope "/lockspire/admin")
-    assert router =~ "pipe_through [:browser, :require_operator]"
-    assert router =~ ~s(forward "/", Lockspire.Web.AdminRouter)
+    assert router =~ "pipe_through([:browser, :lockspire_require_operator])"
+    assert router =~ ~s<forward("/", Lockspire.Web.AdminRouter)>
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
-    assert router =~ ~s(forward "/lockspire", Lockspire.Web.Router)
+    assert router =~ ~s<forward("/lockspire", Lockspire.Web.Router)>
 
-    assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through \[:browser, :require_operator\]\s+forward "\/", Lockspire.Web.AdminRouter\s+end/
+    # The namespaced operator pipeline is defined by the generated file itself --
+    # a stock host needs to declare no pipeline of its own for the admin mount.
+    assert router =~ "pipeline :lockspire_require_operator"
+
+    # Route ordering, proven over the raw source position (not a fixed-shape
+    # regex): the admin forward must be emitted before the public forward so it
+    # cannot be shadowed. `install_template_compile_test.exs` proves the same
+    # property over the real, compiled `Phoenix.Router.routes/1` table.
+    {admin_forward_index, _} =
+      :binary.match(router, ~s<forward("/", Lockspire.Web.AdminRouter)>)
+
+    {public_forward_index, _} =
+      :binary.match(router, ~s<forward("/lockspire", Lockspire.Web.Router)>)
+
+    assert admin_forward_index < public_forward_index,
+           "admin forward must appear before the public forward in the generated router"
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))

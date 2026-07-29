@@ -36,7 +36,7 @@ defmodule <%= @web_module %>.Router.Lockspire do
       end
 
       scope "/", <%= @web_module %> do
-        pipe_through [:browser]
+        pipe_through([:browser])
 
         # Keep `/verify` host-owned. Require your normal auth/session wiring and add
         # host-owned rate limiting for both GET and POST before exposing device login.
@@ -44,15 +44,15 @@ defmodule <%= @web_module %>.Router.Lockspire do
         # free and must never lookup, approve, or deny on page load.
         # Read `docs/device-flow-host-guide.md` for the full rate-limit and anti-phishing
         # contract, and do not log raw verification query strings or raw user codes.
-        get "/verify", LockspireVerificationController, :show
-        post "/verify", LockspireVerificationController, :lookup
-        post "/verify/:handle/approve", LockspireVerificationController, :approve
-        post "/verify/:handle/deny", LockspireVerificationController, :deny
+        get("/verify", LockspireVerificationController, :show)
+        post("/verify", LockspireVerificationController, :lookup)
+        post("/verify/:handle/approve", LockspireVerificationController, :approve)
+        post("/verify/:handle/deny", LockspireVerificationController, :deny)
 
         # Keep this route host-owned. Most apps will place it behind an authenticated
         # account pipeline or move it under their existing settings area.
-        get "/authorized-apps", AuthorizedAppsController, :index
-        delete "/authorized-apps/:id", AuthorizedAppsController, :delete
+        get("/authorized-apps", AuthorizedAppsController, :index)
+        delete("/authorized-apps/:id", AuthorizedAppsController, :delete)
       end
 
       # Mount Lockspire's operator UI behind your host-owned operator auth
@@ -64,32 +64,34 @@ defmodule <%= @web_module %>.Router.Lockspire do
       # protocol/admin state after the request reaches these LiveViews; your host app
       # owns who may reach them.
       scope "<%= @mount_path %>/admin" do
-        pipe_through [:browser, :lockspire_require_operator]
-        forward "/", Lockspire.Web.AdminRouter
+        pipe_through([:browser, :lockspire_require_operator])
+        forward("/", Lockspire.Web.AdminRouter)
       end
 
       # The interaction routes and the consent LiveView must be piped through your
       # host's browser pipeline for session fetching and CSRF protection -- the
       # public forward below carries no pipeline of its own.
       scope "<%= @mount_path %>" do
-        pipe_through [:browser]
+        pipe_through([:browser])
 
-        get "/interactions/:interaction_id", Lockspire.Web.InteractionController, :show
+        get("/interactions/:interaction_id", Lockspire.Web.InteractionController, :show)
 
-        post "/interactions/:interaction_id/complete",
-             Lockspire.Web.InteractionController,
-             :complete
+        post(
+          "/interactions/:interaction_id/complete",
+          Lockspire.Web.InteractionController,
+          :complete
+        )
 
         # `on_mount:` is deliberately left for your host to supply here -- it is
         # specific to your account/session implementation (for example,
         # phx.gen.auth's `{MyAppWeb.UserAuth, :mount_current_scope}`).
         live_session :lockspire_consent do
-          live "/consent/:interaction_id", Lockspire.Web.ConsentLive, :show
+          live("/consent/:interaction_id", Lockspire.Web.ConsentLive, :show)
         end
       end
 
       scope "/" do
-        forward "<%= @mount_path %>", Lockspire.Web.Router
+        forward("<%= @mount_path %>", Lockspire.Web.Router)
       end
 
       defp lockspire_deny_operator_access(conn, _opts) do
