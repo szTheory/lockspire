@@ -809,6 +809,16 @@ run_step_03b_router_paste() {
   local backup="$WORKDIR/.walk/router_pre_paste.bak"
   cp "$host_router" "$backup"
 
+  # "In place of calling the macro" is literal: step-03b-router-call already wired a
+  # lockspire_routes() call into this router, and since 127-05 that call injects the whole
+  # route table -- including live_session :lockspire_consent. Pasting the body while the call
+  # is still present defines that live_session twice, which Phoenix.LiveView.Router rejects
+  # with "attempting to redefine live_session :lockspire_consent". That is an artifact of
+  # walking both readings against one router, not something an adopter following either
+  # reading alone would ever hit, so the call is dropped for the duration of the paste. The
+  # backup restored below puts it back.
+  sed_i -E -e '/^[[:space:]]*lockspire_routes\(\)[[:space:]]*$/d' "$host_router"
+
   local pasted_body
   pasted_body="$(extract_lockspire_routes_body "$generated_helper")"
   insert_before_final_module_end "$host_router" "$pasted_body"
