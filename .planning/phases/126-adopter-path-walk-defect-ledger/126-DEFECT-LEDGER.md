@@ -68,10 +68,11 @@ step IDs, and `file:line` citations are recorded.
   defines, so compilation fails with an undefined-pipeline error.
 - **Source:** installer
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D02` -- a stand-in empty `pipeline :require_operator do end` is
-  defined in the generated host only. It guards no real staff surface; it exists solely so the
-  walk can keep moving. Phase 127 must remove the need for it (either the template should
-  define the pipeline itself or document that the adopter must).
+- **Workaround:** none remaining. 127-05's router-template rewrite (D-11) turned
+  `lockspire_routes/1` into a `defmacro` that defines its own namespaced
+  `:lockspire_require_operator` pipeline, deny-closed by default. No stand-in pipeline is
+  defined in the generated host any longer; the harness's `# LOCKSPIRE_WALK_WORKAROUND:
+  ADOPT-D02` marker and the block it guarded were removed in the same commit as this retirement.
 
 ### ADOPT-D03
 
@@ -84,10 +85,12 @@ step IDs, and `file:line` citations are recorded.
   helper's own template body.
 - **Source:** installer and guide
 - **Owning phase:** 127 and 128
-- **Workaround:** `ADOPT-D03` -- the interaction routes and consent LiveView route are routed
-  through the host's `:browser` pipeline before the general forward, following
-  `examples/adoption_demo/lib/adoption_demo_web/router.ex:53-59`, the only place in the repo
-  that gets this right today.
+- **Workaround:** none remaining. 127-05's router-template rewrite (D-11) now emits the
+  interaction routes and consent LiveView route already browser-piped, ahead of the
+  pipeline-less public forward, directly from `lockspire_routes/1`'s own `quote` body. No harness
+  rewiring is required any longer; the guide half (§128) still applies. The consent route's own
+  `live_session` on_mount: value remains harness-supplied -- that residual is tracked separately
+  under the ADOPT-D18 entry below, which the ADOPT-D03 workaround previously nested inside.
 
 ### ADOPT-D04
 
@@ -181,9 +184,11 @@ step IDs, and `file:line` citations are recorded.
   tree the way `mix lockspire.verify`'s `Ecto.Migrator.with_repo/2` wrapper does.
 - **Source:** library
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D08` -- the client is registered via `mix run -e` instead (which does
-  start the application), calling `Lockspire.Clients.register_client/1` directly. This patches
-  only the walk harness; Phase 127 must make the documented task itself reach a running repo.
+- **Workaround:** none remaining. 127-03 wrapped `lib/mix/tasks/lockspire.client.create.ex`'s
+  `Clients.register_client/1` call in `Ecto.Migrator.with_repo/2`, the same pattern
+  `mix lockspire.verify`'s migrations check already used, so the documented task now reaches a
+  running repo in a stock host directly. No `mix run -e` workaround runs in the harness any
+  longer.
 
 ### ADOPT-D09
 
@@ -195,8 +200,11 @@ step IDs, and `file:line` citations are recorded.
   `login_path: "/login"`.
 - **Source:** installer
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D09` -- the generated host's own resolver file (never the template) is
-  patched to `login_path: "/users/log-in"`.
+- **Workaround:** none remaining. 127-06 changed
+  `priv/templates/lockspire.install/account_resolver.ex`'s `redirect_for_login/2` default to
+  `login_path: "/users/log-in"`, matching `mix phx.gen.auth Accounts User users --live`'s real
+  login route. The generated host's own resolver file now ships with the correct default and no
+  harness patch is applied.
 
 ### ADOPT-D10
 
@@ -271,9 +279,10 @@ step IDs, and `file:line` citations are recorded.
   constrains it -- the documented "fetch deps" instruction is not sufficient by itself.
 - **Source:** installer
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D15` -- `mix deps.unlock ecto ecto_sql && mix deps.get` (unlocking
-  both, not `ecto_sql` alone, which still leaves the locked `ecto` version incompatible with
-  the `ecto_sql` range Lockspire needs) lets the resolver settle on compatible versions.
+- **Workaround:** none remaining. 127-02 changed Lockspire's own `mix.exs` from pinning
+  `{:ecto_sql, "~> 3.13.5"}` to ranging `{:ecto_sql, ">= 3.13.5 and < 4.0.0"}`, so a stock host's
+  own already-resolved ecto/ecto_sql versions now satisfy Lockspire's requirement without an
+  unlock step. `mix deps.unlock` no longer runs in the harness.
 
 ### ADOPT-D16
 
@@ -288,10 +297,11 @@ step IDs, and `file:line` citations are recorded.
   expression outright.
 - **Source:** generated scaffolding
 - **Owning phase:** 127
-- **Workaround:** `ADOPT-D16` -- the generated host's own copy of the file (never the
-  template) is patched to use Elixir string interpolation
-  (`#{consent.grant.id}`) instead of the nested EEx tag, which is valid inside a HEEx `{...}`
-  expression.
+- **Workaround:** none remaining. 127-06 changed
+  `priv/templates/lockspire.install/authorized_apps/index.html.heex` to use Elixir string
+  interpolation (`#{consent.grant.id}`) instead of the nested EEx tag, so the generated
+  authorized-apps page now compiles as rendered. No patch to the generated host's own copy of
+  the file is applied.
 
 ### ADOPT-D18
 
@@ -312,8 +322,16 @@ step IDs, and `file:line` citations are recorded.
   (`docs/install-and-onboard.md:64-69`) never mentions this LiveView-specific requirement.
 - **Source:** guide
 - **Owning phase:** 128
-- **Workaround:** `ADOPT-D18` -- the consent route is wrapped in its own `live_session` with
-  `on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}]` in the generated host's router.
+- **Workaround:** `ADOPT-D18` -- narrowed in 127-09 after 127-05's router-template rewrite
+  (D-11) began emitting the consent route's own `live_session :lockspire_consent do ... end`
+  block directly from the macro's `quote` body, with `on_mount:` deliberately left absent for
+  the host to supply. The harness no longer wraps the route in a `live_session` of its own (that
+  would nest a second `live_session` around a route the template already wraps, and fail to
+  compile) -- it now patches only the `on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}]`
+  value into the generated host's own `lib/host_app_web/router/lockspire.ex`, never into
+  `priv/templates/lockspire.install/router.ex`. This is the same shape as ADOPT-D04's re-scoped
+  config workaround: the template gained the structure the harness used to supply, and the
+  harness narrowed to the one residual value rather than vanishing.
 
 ### ADOPT-D19
 

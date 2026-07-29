@@ -265,19 +265,26 @@ insert_before_final_module_end() {
   mv "$tmp" "$file"
 }
 
-# Extracts the body of priv/templates/lockspire.install/router.ex's `lockspire_routes/0` heredoc
+# Extracts the body of priv/templates/lockspire.install/router.ex's `lockspire_routes/1` macro
 # from the already-rendered generated file -- the literal text a human reader would paste, per
-# RESEARCH Pitfall 4. The template renders the body between two lines that are exactly four
-# spaces of indentation followed by a bare `"""`.
+# RESEARCH Pitfall 4. Since 127-05 the template renders `defmacro lockspire_routes(_opts \\ [])
+# do quote do ... end end`, so the body lives between the `quote do` line (four-space indent) and
+# its own matching `end` (also four-space indent) -- every construct inside the quote block sits
+# at six or more spaces, so the first four-space `end` after `quote do` is always the match, never
+# an interior pipeline/scope/defp end.
 extract_lockspire_routes_body() {
   local generated_helper="$1"
 
   awk '
-    /^    """$/ {
-      marker_count++
+    /^    quote do$/ {
+      capture = 1
       next
     }
-    marker_count == 1 { print }
+    capture && /^    end$/ {
+      capture = 0
+      next
+    }
+    capture { print }
   ' "$generated_helper"
 }
 
@@ -499,7 +506,10 @@ ELIXIR
 
 # step-01-add-dep: guide §1 "Add Lockspire" -- insert {:lockspire, path: $REPO_ROOT} into the
 # generated host's mix.exs deps list. Never a Hex pin (D-04): a pin would prove the last release
-# rather than the branch Phases 127-129 are repairing.
+# rather than the branch Phases 127-129 are repairing. Since 127-02, Lockspire's own mix.exs
+# ranges ecto_sql (">= 3.13.5 and < 4.0.0") instead of pinning "~> 3.13.5", so a stock
+# `mix phx.new --database postgres` host's own already-resolved ecto/ecto_sql versions now
+# satisfy Lockspire's requirement without an unlock step (closes ADOPT-D15).
 run_step_01_add_dep() {
   should_run "step-01-add-dep" || return 0
 
@@ -517,25 +527,8 @@ run_step_01_add_dep() {
     # noise (e.g. a transient Hex ETS cache warning) that may precede it in the log.
     error_detail="$(grep -m 1 '^Because ' "$add_dep_log" || true)"
     [[ -z "$error_detail" ]] && error_detail="$(head -n 1 "$add_dep_log")"
-    # ADOPT-D15 (owning phase 127): a stock `mix phx.new --database postgres` host resolves and
-    # locks ecto/ecto_sql to whatever Hex currently publishes as latest (observed: ecto_sql
-    # 3.14.0), which does not satisfy Lockspire's own `{:ecto_sql, "~> 3.13.5"}` pin. The
-    # documented "fetch deps" instruction (`mix deps.get`) never re-resolves an already-locked
-    # transitive dependency on its own, so this fails on a completely fresh host every time,
-    # not just in a stale workdir.
-    record_result "FAIL" "step-01-add-dep" "§1 Add Lockspire: mix deps.get failed (${error_detail}) (ADOPT-D15, owning phase 127)"
-
-    local unlock_log="$WORKDIR/step_01_add_dep_unlock.log"
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D15
-    # Unlocking both ecto and ecto_sql (not ecto_sql alone -- unlocking only ecto_sql still
-    # leaves the locked ecto version incompatible with the ecto_sql range Lockspire needs) lets
-    # the resolver settle on versions that satisfy every dependency's constraints at once.
-    if ! (cd "$HOST_APP_DIR" && mix deps.unlock ecto ecto_sql && mix deps.get) >"$unlock_log" 2>&1; then
-      local unlock_detail
-      unlock_detail="$(head -n 1 "$unlock_log")"
-      record_result "FAIL" "step-01-add-dep" "§1 Add Lockspire: ADOPT-D15 workaround (mix deps.unlock ecto ecto_sql && mix deps.get) also failed (${unlock_detail})"
-      return
-    fi
+    record_result "FAIL" "step-01-add-dep" "§1 Add Lockspire: mix deps.get failed (${error_detail})"
+    return
   fi
 
   if ! (cd "$HOST_APP_DIR" && mix compile) >>"$add_dep_log" 2>&1; then
@@ -569,33 +562,23 @@ run_step_02_install() {
     return
   fi
 
-  # ADOPT-D16 (owning phase 127): the generated authorized_apps_html/index.html.heex page
-  # nests an EEx tag (<%= %>) inside a HEEx {...} attribute expression, which the resolved
-  # phoenix_live_view tokenizer rejects. This blocks the generated host from compiling at
-  # all -- well before config/router/resolver wiring is ever exercised -- so every step from
-  # here on would otherwise fail on this one unrelated syntax error instead of surfacing its
-  # own evidence. First observed as an out-of-scope discovery during plan 126-04's manual
-  # verification; ledgered and worked around here because it now genuinely blocks the walk.
-  local authorized_apps_html="$HOST_APP_DIR/lib/host_app_web/controllers/authorized_apps_html/index.html.heex"
-  if [[ -f "$authorized_apps_html" ]] && grep -Fq '<%= consent.grant.id %>' "$authorized_apps_html"; then
-    record_result "FAIL" "step-02-install" "§2 Generate the host seam: generated authorized_apps_html/index.html.heex nests <%= %> inside a HEEx {...} attribute (line: <li id={\"authorized-app-<%= consent.grant.id %>\"}>), which fails to compile (ADOPT-D16, owning phase 127)"
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D16
-    # Elixir string interpolation (#{...}) is valid inside a HEEx {...} attribute expression;
-    # a nested <%= %> EEx tag is not. This patches only the generated host's own copy of the
-    # file -- never priv/templates/lockspire.install/, which stays unmodified so the defect
-    # remains reproducible for Phase 127 to fix at the template source.
-    sed_i -e 's/<%= consent\.grant\.id %>/#{consent.grant.id}/' "$authorized_apps_html"
-  fi
+  # ADOPT-D16 is closed as of 127-06: priv/templates/lockspire.install/authorized_apps/
+  # index.html.heex now uses Elixir string interpolation (#{consent.grant.id}) instead of a
+  # nested EEx tag inside a HEEx {...} attribute expression, so the generated
+  # authorized_apps_html/index.html.heex compiles as rendered -- no harness patch is applied
+  # here any longer.
 
   record_result "PASS" "step-02-install" "§2 Generate the host seam: mix lockspire.install exited 0 and wrote .lockspire/install_manifest.json"
   mark_done "step-02-install"
 }
 
 # step-03a-config-import: guide §3 "Wire the generated files" (first instruction) --
-# import_config "lockspire.exs" from the host's main config entrypoint. The installer's own
-# config template emits a placeholder issuer and omits known_scopes, signing_alg,
-# secret_key_base, and oban: (D-45); this step records that gap and then applies the smallest
-# completion needed to keep walking, so later steps have a config that can actually boot.
+# import_config "lockspire.exs" from the host's main config entrypoint. Since 127-06 the
+# installer's own config template already emits a mount-path-consistent issuer suffix,
+# known_scopes, signing_alg, and a self-describing secret_key_base placeholder on its own
+# (ADOPT-D04's template half is closed); what remains is genuinely walk-specific value
+# substitution -- a real reachable issuer host, a freshly generated secret, and the "read:walk"
+# scope this harness's own proof needs -- never an adopter-facing defect.
 run_step_03a_config_import() {
   should_run "step-03a-config-import" || return 0
 
@@ -621,13 +604,22 @@ run_step_03a_config_import() {
   fi
 
   local missing_keys=()
-  local key
 
-  for key in known_scopes signing_alg secret_key_base oban:; do
-    if ! grep -Fq "$key" "$lockspire_config"; then
-      missing_keys+=("$key")
-    fi
-  done
+  if ! grep -Fq 'oban:' "$lockspire_config"; then
+    missing_keys+=("oban:")
+  fi
+
+  if grep -Fq 'issuer: "https://example.com' "$lockspire_config"; then
+    missing_keys+=("a real reachable issuer host")
+  fi
+
+  if grep -Fq 'secret_key_base: "REPLACE_ME_WITH_A_MIX_PHX_GEN_SECRET_VALUE"' "$lockspire_config"; then
+    missing_keys+=("a real secret_key_base")
+  fi
+
+  if ! grep -Fq 'read:walk' "$lockspire_config"; then
+    missing_keys+=("read:walk in known_scopes")
+  fi
 
   if [[ "${#missing_keys[@]}" -eq 0 ]]; then
     record_result "PASS" "step-03a-config-import" "§3 Wire the generated files: import_config lockspire.exs is sufficient to boot"
@@ -640,9 +632,22 @@ run_step_03a_config_import() {
     IFS=,
     echo "${missing_keys[*]}"
   )"
-  record_result "FAIL" "step-03a-config-import" "§3 Wire the generated files: config/lockspire.exs omits ${missing_list} and issuer is a placeholder -- imported config is not sufficient to boot (ADOPT-D04)"
+  record_result "FAIL" "step-03a-config-import" "§3 Wire the generated files: config/lockspire.exs still needs ${missing_list} before a real walk can boot against it -- none of these are adopter-facing; they are values only this harness's own proof run needs (ADOPT-D04)"
 
-  if ! grep -Fq 'known_scopes' "$lockspire_config"; then
+  # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D04
+  # 127-06 closed the template half of this defect: the config template now emits a
+  # mount-path-consistent issuer suffix, known_scopes, signing_alg, and a self-describing
+  # secret_key_base placeholder on its own. Each substitution below is guarded independently by
+  # whether that specific value still needs replacing, rather than by one unrelated key's
+  # presence -- the previous guard tested only whether `known_scopes` was absent, which the
+  # template now always emits, so it silently skipped the issuer substitution the walk still
+  # needs (the template's own issuer is still a placeholder "https://example.com" host that no
+  # running walk can reach).
+  if grep -Fq 'issuer: "https://example.com' "$lockspire_config"; then
+    sed_i -e "s#issuer: \"https://example.com#issuer: \"${WALK_BASE_URL}#" "$lockspire_config"
+  fi
+
+  if grep -Fq 'secret_key_base: "REPLACE_ME_WITH_A_MIX_PHX_GEN_SECRET_VALUE"' "$lockspire_config"; then
     local lockspire_secret
     lockspire_secret="$(cd "$HOST_APP_DIR" && mix phx.gen.secret 2>/dev/null | tail -n 1)"
 
@@ -650,19 +655,22 @@ run_step_03a_config_import() {
       lockspire_secret="$(date +%s%N)-lockspire-walk-fallback-secret"
     fi
 
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D04
-    # The installer's config template emits a placeholder issuer and omits known_scopes,
-    # signing_alg, secret_key_base, and oban:, all of which
-    # examples/adoption_demo/config/config.exs:62-77 proves are required. Apply the smallest
-    # completion that lets the walk keep moving -- never copy the committed demo secret_key_base
-    # literal (T-126-04); generate a fresh one the same way step-00b-phx-new does.
-    # "read:walk" (not in the demo's own vocabulary) is added here too: it is the scope this
-    # harness's own step-03e-protected-route and adopter_path_flow.py invented for the
-    # /api/walk/summary proof, and known_scopes is what AuthorizationRequest checks an
-    # unrecognized scope against -- omitting it here caused a real "scope is unknown" failure
-    # at step-06b-flow, confirmed against a real generated host.
-    sed_i -e "s#issuer: \"https://example.com\"#issuer: \"${WALK_BASE_URL}${MOUNT_PATH}\"#" "$lockspire_config"
-    sed_i -E -e "s#oban_prefix: \"[^\"]*\"#&,\n  known_scopes: [\"openid\", \"email\", \"profile\", \"read:billing\", \"write:reports\", \"read:walk\"],\n  signing_alg: \"RS256\",\n  secret_key_base: \"${lockspire_secret}\",\n  oban: [queues: false, plugins: false]#" "$lockspire_config"
+    # Never copy the committed examples/adoption_demo/config/config.exs secret literal
+    # (T-126-04); replace the template's own placeholder rather than appending a second key.
+    sed_i -e "s#secret_key_base: \"REPLACE_ME_WITH_A_MIX_PHX_GEN_SECRET_VALUE\"#secret_key_base: \"${lockspire_secret}\"#" "$lockspire_config"
+  fi
+
+  if ! grep -Fq 'read:walk' "$lockspire_config"; then
+    # "read:walk" is the scope this harness's own step-03e-protected-route and
+    # adopter_path_flow.py invented for the /api/walk/summary proof -- no adopter requests it.
+    # known_scopes is what AuthorizationRequest checks an unrecognized scope against, so
+    # omitting it here caused a real "scope is unknown" failure at step-06b-flow, confirmed
+    # against a real generated host.
+    sed_i -e 's#known_scopes: \["openid", "email", "profile"\]#known_scopes: ["openid", "email", "profile", "read:walk"]#' "$lockspire_config"
+  fi
+
+  if ! grep -Fq 'oban:' "$lockspire_config"; then
+    sed_i -E -e "s#oban_prefix: \"[^\"]*\"#&,\n  oban: [queues: false, plugins: false]#" "$lockspire_config"
   fi
 
   mark_done "step-03a-config-import"
@@ -718,11 +726,12 @@ run_step_03b_router_call() {
 }
 
 # step-03b-router-paste: guide §3 "Wire the generated files" -- apply the other documented
-# reading a human would take: paste the heredoc's own contents into the host router. The pasted
-# body's admin scope references a :require_operator pipeline no stock router defines, so this is
-# expected to fail compilation with that exact error (RESEARCH Pitfall 4). This sub-step
-# deliberately leaves the host non-compiling, so it restores the router before returning --
-# step-03b-router-wire must start from a known point.
+# reading a human would take: paste lockspire_routes/1's own extracted quote body directly into
+# the host router, in place of calling the macro. Since 127-05 the emitted body is
+# self-contained -- it defines its own namespaced :lockspire_require_operator pipeline rather
+# than referencing an undefined :require_operator one -- so a direct paste is expected to
+# compile cleanly (ADOPT-D02 is closed). This sub-step always restores the router from backup
+# before returning, whichever way it goes, so step-03b-router-wire starts from a known point.
 run_step_03b_router_paste() {
   should_run "step-03b-router-paste" || return 0
 
@@ -745,32 +754,31 @@ run_step_03b_router_paste() {
   local compile_log="$WORKDIR/step_03b_router_paste.log"
 
   if (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
-    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes()'s body compiled unexpectedly -- expected the undefined :require_operator pipeline to fail compilation"
+    record_result "PASS" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes/1's own quote body directly into the host router compiles -- the emitted body defines its own namespaced :lockspire_require_operator pipeline rather than referencing an undefined one"
   else
     local error_detail
-    error_detail="$(grep -m 1 -i 'pipeline' "$compile_log")"
-
-    if [[ -z "$error_detail" ]]; then
-      error_detail="$(head -n 1 "$compile_log")"
-    fi
-
-    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes()'s body fails to compile (${error_detail}) (ADOPT-D02 -- :require_operator is not defined in a stock host router)"
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "step-03b-router-paste" "§3 Wire the generated files: pasting lockspire_routes/1's own quote body fails to compile (${error_detail})"
   fi
 
   cp "$backup" "$host_router"
   mark_done "step-03b-router-paste"
 }
 
-# step-03b-router-wire: guide §3 "Wire the generated files" -- apply the smallest real wiring
-# that lets the walk reach step-04: define a stand-in :require_operator pipeline (ADOPT-D02's
-# workaround) and route the session-/CSRF-dependent interaction routes and the consent LiveView
-# through the host's :browser pipeline before the general forward (ADOPT-D03's workaround),
-# following examples/adoption_demo/lib/adoption_demo_web/router.ex:53-59, the only place in the
-# repo that gets this right.
+# step-03b-router-wire: guide §3 "Wire the generated files" -- since 127-05, calling
+# lockspire_routes() (already wired into the host router by step-03b-router-call) injects the
+# entire real route table on its own: its own deny-closed :lockspire_require_operator pipeline,
+# the ordered admin/public forwards, and the browser-piped interaction routes and consent
+# LiveView (ADOPT-D02 and ADOPT-D03 are both closed -- no harness rewiring is required any
+# longer). The one value the template still deliberately leaves for the host to supply is the
+# consent live_session's on_mount: hook (127-05, D-11) -- specific to the host's own
+# account/session implementation. This step's only remaining job is patching that one value into
+# the generated helper (never inserting a wrapper of its own, which would nest a second
+# live_session around the same route and fail to compile) and confirming the whole route table,
+# including the consent route's on_mount hook, actually works.
 run_step_03b_router_wire() {
   should_run "step-03b-router-wire" || return 0
 
-  local host_router="$HOST_APP_DIR/lib/host_app_web/router.ex"
   local generated_helper="$HOST_APP_DIR/lib/host_app_web/router/lockspire.ex"
 
   if [[ ! -f "$generated_helper" ]]; then
@@ -778,40 +786,22 @@ run_step_03b_router_wire() {
     return
   fi
 
-  if ! grep -Fq 'pipeline :require_operator do' "$host_router"; then
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D02
-    # priv/templates/lockspire.install/router.ex references a :require_operator pipeline that no
-    # stock mix phx.new router defines. The stand-in exists only in this throwaway generated
-    # host, guards no real staff surface, and Phase 127 must remove the need for it.
-    insert_before_final_module_end "$host_router" "$(printf '  pipeline :require_operator do\n  end')"
-  fi
-
-  if ! grep -Fq 'Lockspire.Web.AdminRouter' "$host_router"; then
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D03
-    # priv/templates/lockspire.install/router.ex forwards the mount path in a pipeline-less
-    # scope, so the session- and CSRF-dependent interaction routes and the consent LiveView get
-    # no fetch_session and no protect_from_forgery. Route them through the host's :browser
-    # pipeline before the general forward, following
-    # examples/adoption_demo/lib/adoption_demo_web/router.ex:53-59.
-    #
-    # ADOPT-D18 (owning phase 128): a bare `live "/consent/:interaction_id", ...` route outside
-    # any live_session never gets a live-view-populated session assign -- the :browser
-    # pipeline's fetch_current_scope_for_user plug only reaches conn.assigns for ordinary
-    # Plug-based controller routes (the two above), never a LiveView socket's own assigns.
-    # Without a live_session declaring on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}],
-    # Lockspire.Web.ConsentLive's account_resolver call always sees current_scope as unset and
+  if ! grep -Fq 'on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}]' "$generated_helper"; then
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D18
+    # priv/templates/lockspire.install/router.ex (127-05, D-11) emits the consent route's own
+    # live_session block from the template, deliberately leaving on_mount: for the host to
+    # supply. Without it, a bare live_session never gets a live-view-populated session assign --
+    # the :browser pipeline's fetch_current_scope_for_user plug only reaches conn.assigns for
+    # ordinary Plug-based controller routes, never a LiveView socket's own assigns -- so
+    # Lockspire.Web.ConsentLive's account-resolver call always sees current_scope as unset and
     # treats an actually-logged-in adopter as anonymous -- confirmed against a real generated
     # host: the consent page rendered "Sign in is required" for a user whose own session cookie
     # was already valid (proven by the root layout showing their email in the nav bar on the
-    # same response). The guide's account-resolver checklist (docs/install-and-onboard.md §3)
-    # never mentions this LiveView-specific on_mount requirement.
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D18
-    local wired_body
-    wired_body="$(
-      printf '  scope "%s/admin" do\n    pipe_through [:browser, :require_operator]\n    forward "/", Lockspire.Web.AdminRouter\n  end\n\n  scope "%s" do\n    pipe_through [:browser]\n\n    get "/interactions/:interaction_id", Lockspire.Web.InteractionController, :show\n    post "/interactions/:interaction_id/complete", Lockspire.Web.InteractionController, :complete\n\n    live_session :lockspire_consent, on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}] do\n      live "/consent/:interaction_id", Lockspire.Web.ConsentLive, :show\n    end\n  end\n\n  scope "/" do\n    forward "%s", Lockspire.Web.Router\n  end' \
-        "$MOUNT_PATH" "$MOUNT_PATH" "$MOUNT_PATH"
-    )"
-    insert_before_final_module_end "$host_router" "$wired_body"
+    # same response). This patches only the value the template omits, into the generated host's
+    # own copy of the helper file (never priv/templates/lockspire.install/router.ex, and never a
+    # second live_session wrapper of the harness's own -- the template already wraps the route,
+    # so a second wrapper would nest and fail to compile).
+    sed_i -e 's/live_session :lockspire_consent do/live_session :lockspire_consent, on_mount: [{HostAppWeb.UserAuth, :mount_current_scope}] do/' "$generated_helper"
   fi
 
   local compile_log="$WORKDIR/step_03b_router_wire.log"
@@ -844,7 +834,7 @@ run_step_03b_router_wire() {
     return
   fi
 
-  record_result "PASS" "step-03b-router-wire" "§3 Wire the generated files: Lockspire mount, interaction routes, and consent LiveView route are all defined"
+  record_result "PASS" "step-03b-router-wire" "§3 Wire the generated files: Lockspire mount, interaction routes, and consent LiveView route (with the host-supplied on_mount: hook) are all defined"
   mark_done "step-03b-router-wire"
 }
 
@@ -871,22 +861,16 @@ run_step_03c_resolver() {
   # shape. The only guidance in the shipped template is the text inside its own raise.
   record_result "FAIL" "$step_id" "§3 Wire the generated files: the guide names resolve_account/2 and build_claims/2 to implement but supplies no worked example, subject-reference format contract, or claim map shape -- only the raise text inside the template itself (ADOPT-D11, owning phase 128)"
 
-  local pre_routes_log="$WORKDIR/step_03c_resolver_routes_pre.log"
-  (cd "$HOST_APP_DIR" && mix phx.routes) >"$pre_routes_log" 2>&1 || true
-
   local generated_login_path="/users/log-in"
-
-  if grep -Fq "$generated_login_path" "$pre_routes_log"; then
-    record_result "FAIL" "$step_id" "§3 Wire the generated files: the resolver template's redirect_for_login/2 hardcodes login_path \"/login\", but mix phx.gen.auth Accounts User users --live generates ${generated_login_path} instead -- no host has \"/login\" (ADOPT-D09, owning phase 127)"
-  else
-    record_result "FAIL" "$step_id" "§3 Wire the generated files: expected the generated host's phx.gen.auth login route ${generated_login_path} in mix phx.routes and did not find it"
-  fi
 
   # Writes only into the generated host at $resolver_file -- never into
   # priv/templates/lockspire.install/account_resolver.ex or lib/lockspire/. Implements
   # resolve_account/2 (subject reference is the seeded user's id, rendered as a string) and
   # build_claims/2 (emits the seeded user's email claim, the exact value
-  # scripts/maintainer/adopter_path_flow.py asserts at <mount>/userinfo).
+  # scripts/maintainer/adopter_path_flow.py asserts at <mount>/userinfo). The resolver template's
+  # own login-redirect default (127-06) already matches mix phx.gen.auth Accounts User users
+  # --live's real login route, so no harness patch of this generated file's login path is
+  # applied any longer.
   cat >"$resolver_file" <<'ELIXIR'
 defmodule HostApp.Lockspire.AccountResolver do
   @moduledoc false
@@ -927,11 +911,8 @@ defmodule HostApp.Lockspire.AccountResolver do
 
   @impl true
   def redirect_for_login(_conn_or_socket, context) do
-    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09
-    # priv/templates/lockspire.install/account_resolver.ex hardcodes login_path: "/login" in
-    # redirect_for_login/2, but `mix phx.gen.auth Accounts User users --live` generates
-    # /users/log-in -- no generated host has a /login route. Fixing the template is Phase 127's
-    # job; this only patches the generated host's own resolver file so the walk can keep moving.
+    # Matches mix phx.gen.auth Accounts User users --live's own login route -- the same default
+    # priv/templates/lockspire.install/account_resolver.ex ships since 127-06.
     %InteractionResult{
       login_path: "/users/log-in",
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
@@ -983,7 +964,7 @@ ELIXIR
     return
   fi
 
-  record_result "PASS" "$step_id" "§3 Wire the generated files: resolve_account/2 and build_claims/2 are implemented in the generated host and emit the seeded user's email claim; the corrected login path ${generated_login_path} resolves to a real route"
+  record_result "PASS" "$step_id" "§3 Wire the generated files: resolve_account/2 and build_claims/2 are implemented in the generated host and emit the seeded user's email claim; the login path ${generated_login_path} resolves to a real route"
   mark_done "$step_id"
 }
 
@@ -1250,68 +1231,38 @@ run_step_05_verify() {
   mark_done "step-05-verify"
 }
 
-# step-06a-client: guide §6 "Create a client and prove the flow" -- first follow the guide
-# literally: mix lockspire.client.create. Expect it to fail with a repository-not-started error,
-# because unlike mix lockspire.verify's migrations check (which wraps its Repo call in
-# Ecto.Migrator.with_repo/2), Lockspire.Clients.register_client/1 never does -- and the task's
-# own @requirements ["app.config"] never starts the application supervision tree.
+# step-06a-client: guide §6 "Create a client and prove the flow" -- follow the guide literally:
+# mix lockspire.client.create. Since 127-03, lib/mix/tasks/lockspire.client.create.ex wraps its
+# Clients.register_client/1 call in Ecto.Migrator.with_repo/2 (the same pattern
+# mix lockspire.verify's migrations check already used), so the documented task now reaches a
+# running repo in a stock host directly and no workaround remains.
 run_step_06a_client() {
   should_run "step-06a-client" || return 0
 
   local client_doc_log="$WORKDIR/step_06a_client_documented.log"
 
-  # "openid" is never passed as an allowed scope here (or below) -- Lockspire.Clients.register_client/1
+  # "openid" is never passed as an allowed scope here -- Lockspire.Clients.register_client/1
   # rejects it as :invalid_scope by design (lib/lockspire/clients.ex), because
   # Lockspire.Protocol.AuthorizationRequest already treats "openid" as implicitly allowed for
   # every client regardless of its registered allowed_scopes (unknown_scope?/disallowed_scope?
-  # both short-circuit true for "openid"). Passing it here would mask ADOPT-D08's real repo-not-
-  # started defect behind an unrelated scope-validation error -- confirmed empirically.
-  (cd "$HOST_APP_DIR" && mix lockspire.client.create \
+  # both short-circuit true for "openid").
+  if ! (cd "$HOST_APP_DIR" && mix lockspire.client.create \
     --client-type public \
     --redirect-uri "${WALK_BASE_URL}/oauth/callback" \
     --scope email --scope profile --scope read:walk \
     --grant-type authorization_code \
-    --client-id adopter-walk-public) >"$client_doc_log" 2>&1
-  local client_doc_exit=$?
+    --client-id adopter-walk-public) >"$client_doc_log" 2>&1; then
+    local client_doc_detail
+    client_doc_detail="$(grep -m 1 '^\*\* (' "$client_doc_log")"
+    if [[ -z "$client_doc_detail" ]]; then
+      client_doc_detail="$(tail -n 1 "$client_doc_log")"
+    fi
 
-  local client_doc_detail
-  client_doc_detail="$(grep -m 1 '^\*\* (' "$client_doc_log")"
-  if [[ -z "$client_doc_detail" ]]; then
-    client_doc_detail="$(tail -n 1 "$client_doc_log")"
-  fi
-
-  # ADOPT-D08 (owning phase 127): mix lockspire.client.create never reaches a running repo in a
-  # stock host, because Clients.register_client/1 never wraps its Repo call the way
-  # mix lockspire.verify's migrations check does.
-  record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: the documented \`mix lockspire.client.create\` exited ${client_doc_exit} (${client_doc_detail}) -- it never reaches a running repo in a stock host (ADOPT-D08, owning phase 127)"
-
-  local register_script
-  register_script="$(
-    cat <<ELIXIR
-{:ok, _result} =
-  Lockspire.Clients.register_client(%{
-    client_id: "adopter-walk-public",
-    client_type: "public",
-    redirect_uris: ["${WALK_BASE_URL}/oauth/callback"],
-    allowed_scopes: ["email", "profile", "read:walk"],
-    allowed_grant_types: ["authorization_code"],
-    token_endpoint_auth_method: "none"
-  })
-
-IO.puts("adopter-walk: registered client adopter-walk-public")
-ELIXIR
-  )"
-
-  local client_register_log="$WORKDIR/step_06a_client_register.log"
-
-  # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D08
-  # mix run -e does start the application (unlike the documented Mix task above), so it reaches a
-  # live repo. This only patches the walk harness so it can keep moving -- Phase 127 must make the
-  # documented task itself reach a running repo.
-  if ! (cd "$HOST_APP_DIR" && mix run -e "$register_script") >"$client_register_log" 2>&1; then
-    record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: workaround client registration via mix run -e failed (see ${client_register_log})"
+    record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: the documented \`mix lockspire.client.create\` failed (${client_doc_detail})"
     return
   fi
+
+  record_result "PASS" "step-06a-client" "§6 Create a client and prove the flow: registered public client adopter-walk-public (scopes email,profile,read:walk; grant authorization_code; token_endpoint_auth_method=none) via the documented mix lockspire.client.create task"
 
   # D-47/ADOPT-D06 (owning phase 127 for the installer half, phase 128 for the guide half): no
   # documented step mints a signing key. Lockspire.Admin.generate_key/1 exists but only
@@ -1367,7 +1318,7 @@ IO.puts("adopter-walk: key activated (a third undocumented call -- generate_key/
   local key_detail
   key_detail="$(tail -n 1 "$key_result_log")"
 
-  record_result "PASS" "step-06a-client" "§6 Create a client and prove the flow: registered public client adopter-walk-public (scopes openid,email,profile,read:walk; grant authorization_code; token_endpoint_auth_method=none) and JWKS now reports a key -- ${key_detail}"
+  record_result "PASS" "step-06a-client" "§6 Create a client and prove the flow: JWKS now reports a key -- ${key_detail}"
   mark_done "step-06a-client"
 }
 

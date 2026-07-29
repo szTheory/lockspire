@@ -287,11 +287,11 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
            |> elem(1) == 0
   end
 
-  test "the resolver template's hardcoded login-path mismatch is recorded and workaround-marked (ADOPT-D09)" do
+  test "the resolver's login path is /users/log-in with no harness workaround (ADOPT-D09 closed)" do
     source = File.read!(@walk_script_path)
 
-    assert source =~ "ADOPT-D09"
-    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09"
+    refute source =~ "ADOPT-D09"
+    refute source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09"
     assert source =~ "/users/log-in"
   end
 
@@ -441,8 +441,8 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     assert source =~ "adopter-walk-public"
     assert source =~ "read:walk"
     assert source =~ "Lockspire.Admin.generate_key"
-    assert source =~ "ADOPT-D08"
-    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D08"
+    refute source =~ "ADOPT-D08"
+    refute source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D08"
     assert source =~ "ADOPT-D06"
     assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D06"
   end
