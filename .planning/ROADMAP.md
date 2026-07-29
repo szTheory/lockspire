@@ -88,6 +88,36 @@ Plans:
 - Host-owned seams stay host-owned. Reducing adopter friction must not absorb accounts, login UX, layouts, branding, or policy into the library.
 - `test/integration/install_generator_test.exs` already asserts generated content thoroughly; extend the host-interaction gap rather than rewriting the content assertions.
 
+**Plans**: 9 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 127-01-PLAN.md — Tracer: install into a real committed `phx.new` host via `Mix.Project.in_project/4`; correct the manifest version field
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 127-02-PLAN.md — Widen the `ecto_sql` requirement to a range, commit the resolved lock, prove `mix ci` against it (ADOPT-D15)
+- [ ] 127-03-PLAN.md — `mix lockspire.client.create` reaches a started repo through `Ecto.Migrator.with_repo/2` (ADOPT-D08)
+- [ ] 127-04-PLAN.md — Installer instructions name the app-tree wiring and key lifecycle; all three migration remediation strings corrected (ADOPT-D05/D06/D07)
+- [ ] 127-05-PLAN.md — Router template becomes a deny-closed `defmacro`; route-table compile fence; runtime fixture regenerated (ADOPT-D01/D02/D03)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 127-06-PLAN.md — Config, resolver, and HEEx templates fixed; HEEx compile fence over every generated template (ADOPT-D04/D09/D16)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 127-07-PLAN.md — Plan-then-apply atomic refusal: all conflicts reported, zero bytes written (INSTALL-03)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 127-08-PLAN.md — `--dry-run`, manifest input drift, and refuse-on-drift manifest writes (INSTALL-03)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 127-09-PLAN.md — Retire six harness workarounds, record all twelve ledger dispositions, run the walk (criterion 4)
+
 ### Phase 128: Documented Wiring Truth
 
 **Goal**: Close the gap between `docs/install-and-onboard.md` and reality using the wiring defects the Phase 126 walk recorded, so the manual "wire the generated files" step is verified to produce a working provider rather than trusted. As with Phase 127, the defect list is discovered rather than pre-specified.
