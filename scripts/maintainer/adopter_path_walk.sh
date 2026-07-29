@@ -778,6 +778,145 @@ run_step_03b_router_wire() {
   mark_done "step-03b-router-wire"
 }
 
+# step-03c-resolver: guide §3 "Wire the generated files" -- implement the generated
+# AccountResolver host seam. This is host-owned work (AGENTS.md): resolve_account/2,
+# build_claims/2, and the login redirect are written into the generated host app, never into
+# lib/lockspire/ or priv/templates/lockspire.install/. current_account/1 needs no host code --
+# it already pattern-matches the current_scope.user assign mix phx.gen.auth --live sets.
+run_step_03c_resolver() {
+  local step_id="step-03c-resolver"
+
+  should_run "$step_id" || return 0
+
+  local resolver_file="$HOST_APP_DIR/lib/host_app/lockspire/account_resolver.ex"
+
+  if [[ ! -f "$resolver_file" ]]; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: lib/host_app/lockspire/account_resolver.ex is missing (step-02-install did not complete)"
+    return
+  fi
+
+  # ADOPT-D11 (owning phase 128): the guide's §3 resolver bullet list names what to implement --
+  # current-account lookup, account lookup by subject reference, claim building, login redirect
+  # -- but supplies no worked example, no subject-reference format contract, and no claim map
+  # shape. The only guidance in the shipped template is the text inside its own raise.
+  record_result "FAIL" "$step_id" "§3 Wire the generated files: the guide names resolve_account/2 and build_claims/2 to implement but supplies no worked example, subject-reference format contract, or claim map shape -- only the raise text inside the template itself (ADOPT-D11, owning phase 128)"
+
+  local pre_routes_log="$WORKDIR/step_03c_resolver_routes_pre.log"
+  (cd "$HOST_APP_DIR" && mix phx.routes) >"$pre_routes_log" 2>&1 || true
+
+  local generated_login_path="/users/log-in"
+
+  if grep -Fq "$generated_login_path" "$pre_routes_log"; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: the resolver template's redirect_for_login/2 hardcodes login_path \"/login\", but mix phx.gen.auth Accounts User users --live generates ${generated_login_path} instead -- no host has \"/login\" (ADOPT-D09, owning phase 127)"
+  else
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: expected the generated host's phx.gen.auth login route ${generated_login_path} in mix phx.routes and did not find it"
+  fi
+
+  # Writes only into the generated host at $resolver_file -- never into
+  # priv/templates/lockspire.install/account_resolver.ex or lib/lockspire/. Implements
+  # resolve_account/2 (subject reference is the seeded user's id, rendered as a string) and
+  # build_claims/2 (emits the seeded user's email claim, the exact value
+  # scripts/maintainer/adopter_path_flow.py asserts at <mount>/userinfo).
+  cat >"$resolver_file" <<'ELIXIR'
+defmodule HostApp.Lockspire.AccountResolver do
+  @moduledoc false
+
+  @behaviour Lockspire.Host.AccountResolver
+
+  alias Lockspire.Host.Claims
+  alias Lockspire.Host.InteractionResult
+
+  @impl true
+  def resolve_current_account(conn_or_socket, context) do
+    case current_account(conn_or_socket) do
+      nil -> {:redirect, redirect_for_login(conn_or_socket, context)}
+      account -> {:ok, account}
+    end
+  end
+
+  @impl true
+  def resolve_account(account_reference, _context) do
+    id =
+      case account_reference do
+        value when is_integer(value) -> value
+        value when is_binary(value) -> String.to_integer(value)
+      end
+
+    case HostApp.Repo.get(HostApp.Accounts.User, id) do
+      nil -> {:error, :not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  @impl true
+  def build_claims(account, _context) do
+    claims = %{"email" => account.email}
+
+    {:ok, %Claims{subject: to_string(account.id), id_token: claims, userinfo: claims}}
+  end
+
+  @impl true
+  def redirect_for_login(_conn_or_socket, context) do
+    # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09
+    # priv/templates/lockspire.install/account_resolver.ex hardcodes login_path: "/login" in
+    # redirect_for_login/2, but `mix phx.gen.auth Accounts User users --live` generates
+    # /users/log-in -- no generated host has a /login route. Fixing the template is Phase 127's
+    # job; this only patches the generated host's own resolver file so the walk can keep moving.
+    %InteractionResult{
+      login_path: "/users/log-in",
+      return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
+      params: %{
+        "interaction_id" => Map.get(context, :interaction_id) || Map.get(context, "interaction_id")
+      }
+    }
+  end
+
+  defp current_account(%Plug.Conn{assigns: %{current_scope: %{user: user}}}) when not is_nil(user),
+    do: user
+
+  defp current_account(%Plug.Conn{assigns: %{current_scope: scope}}) do
+    case Map.get(scope, :user) || Map.get(scope, "user") do
+      nil -> nil
+      user -> user
+    end
+  end
+
+  defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_scope: %{user: user}}})
+       when not is_nil(user),
+       do: user
+
+  defp current_account(%Phoenix.LiveView.Socket{assigns: %{current_scope: scope}}) do
+    case Map.get(scope, :user) || Map.get(scope, "user") do
+      nil -> nil
+      user -> user
+    end
+  end
+
+  defp current_account(_conn_or_socket), do: nil
+end
+ELIXIR
+
+  local compile_log="$WORKDIR/step_03c_resolver.log"
+
+  if ! (cd "$HOST_APP_DIR" && mix compile) >"$compile_log" 2>&1; then
+    local error_detail
+    error_detail="$(head -n 1 "$compile_log")"
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: generated host fails to compile after implementing the resolver (${error_detail})"
+    return
+  fi
+
+  local post_routes_log="$WORKDIR/step_03c_resolver_routes_post.log"
+  (cd "$HOST_APP_DIR" && mix phx.routes) >"$post_routes_log" 2>&1 || true
+
+  if ! grep -Fq "$generated_login_path" "$post_routes_log"; then
+    record_result "FAIL" "$step_id" "§3 Wire the generated files: the configured login path ${generated_login_path} does not resolve to a route in mix phx.routes"
+    return
+  fi
+
+  record_result "PASS" "$step_id" "§3 Wire the generated files: resolve_account/2 and build_claims/2 are implemented in the generated host and emit the seeded user's email claim; the corrected login path ${generated_login_path} resolves to a real route"
+  mark_done "$step_id"
+}
+
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
 # generated host app, the server log, or any step marker (D-20).
@@ -819,6 +958,7 @@ run_step_03a_config_import
 run_step_03b_router_call
 run_step_03b_router_paste
 run_step_03b_router_wire
+run_step_03c_resolver
 
 # Guide steps step-04 onward are added by later plans in this phase; the
 # skeleton and pre-guide steps above are what they plug into via

@@ -258,4 +258,40 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     assert source =~ "step-03b-router-paste"
     assert source =~ "step-03b-router-wire"
   end
+
+  # -- Plan 126-04: guide §3c host resolver seam, §3d app-tree wiring, §3e protected route -----
+
+  test "walk script implements the host resolver seam as step-03c-resolver" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-03c-resolver"
+    assert source =~ "resolve_account"
+    assert source =~ "build_claims"
+    assert source =~ "walker@adopter.test"
+  end
+
+  test "the host resolver seam is written into the generated host, never the library or templates" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ ~s(lib/host_app/lockspire/account_resolver.ex)
+
+    refute source =~ ~r/cat\s*>[^\n]*priv\/templates\/lockspire\.install\/account_resolver\.ex/
+    refute source =~ ~r/cat\s*>[^\n]*lib\/lockspire\/account_resolver\.ex/
+
+    assert System.cmd("git", ["diff", "--exit-code", "--", "priv/templates/lockspire.install/"],
+             cd: @repo_root
+           )
+           |> elem(1) == 0
+
+    assert System.cmd("git", ["diff", "--exit-code", "--", "lib/lockspire/"], cd: @repo_root)
+           |> elem(1) == 0
+  end
+
+  test "the resolver template's hardcoded login-path mismatch is recorded and workaround-marked (ADOPT-D09)" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "ADOPT-D09"
+    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D09"
+    assert source =~ "/users/log-in"
+  end
 end
