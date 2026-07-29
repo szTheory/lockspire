@@ -51,7 +51,7 @@ defmodule Lockspire.Install.Manifest do
   def build(assigns, rendered_templates) do
     %{
       "generator" => "lockspire.install",
-      "version" => to_string(Mix.Project.config()[:version]),
+      "version" => Application.spec(:lockspire, :vsn) |> List.to_string(),
       "inputs" => %{
         "mount_path" => assigns.mount_path,
         "storage_prefix" => assigns.storage_prefix,
