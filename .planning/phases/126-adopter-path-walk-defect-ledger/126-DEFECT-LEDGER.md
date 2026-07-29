@@ -500,17 +500,17 @@ workaround or editing the expectation.
   `current_schemas(true)` = `{pg_catalog,lockspire,public}`. The empty table did not exist until
   `mix lockspire.verify` connected -- verify created the table it then read. Reproduced at the
   SQL level in `install_instructions_test.exs` (`@tag :integration`).
-- **Source:** library (interaction between Lockspire's shipped schema name and Ecto's unqualified
-  bookkeeping); triggered by host/environment configuration
-- **Owning phase:** 127 (detection shipped); a structural fix is a future candidate
+- **Source:** library and environment
+- **Owning phase:** 127
+- **Workaround:** none -- and none should exist. The trigger was the walk's own PostgreSQL role
+  name, and harness scaffolding is not part of the documented adopter path, so the role is set to
+  a non-colliding name in `.github/workflows/adopter-walk.yml` (with a comment pointing here) and
+  no marker was added to the harness. Suppressing the collision in scaffolding is not the same as
+  suppressing the defect: it remains open, detected, and tested.
 - **Disposition:** `mix lockspire.verify` now reports the split explicitly, names `search_path` as
   the cause, and states that re-running the migrations will not fix it -- turning a silent,
   undiagnosable wall into a one-line diagnosis with three concrete remedies (point the role at
-  `public`, connect as a differently-named role, or change `:storage_prefix`). **No workaround
-  marker exists in the harness for this defect**, and none should: the walk's own role name was
-  the trigger, and scaffolding is not part of the documented adopter path. It is set to a
-  non-colliding name in `adopter-walk.yml` with a comment pointing here, so the lane measures the
-  adopter path rather than this single footgun.
+  `public`, connect as a differently-named role, or change `:storage_prefix`).
 - **Not closed by the above:** detection is not prevention. An adopter who never runs
   `mix lockspire.verify` still meets the same wall via `PendingMigrationError` alone. See the
   first Future candidate below.

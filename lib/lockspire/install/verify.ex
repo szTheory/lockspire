@@ -311,7 +311,8 @@ defmodule Lockspire.Install.Verify do
         # alongside a non-empty pending list -- a host that deliberately keeps its bookkeeping in
         # the prefixed schema has no pending migrations and must not be warned at all.
         shadowed_bookkeeping? =
-          storage_prefix != nil and table_exists?(started_repo, storage_prefix, "schema_migrations")
+          storage_prefix != nil and
+            table_exists?(started_repo, storage_prefix, "schema_migrations")
 
         storage_table_exists? =
           if pending == [] and storage_prefix do
