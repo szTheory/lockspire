@@ -109,6 +109,31 @@ defmodule Lockspire.Integration.InstallTemplateCompileTest do
     refute rendered_router_module =~ "unquote("
   end
 
+  test "every generated .heex template compiles under the LiveView tag engine" do
+    heex_templates =
+      @assigns
+      |> Install.rendered_templates()
+      |> Enum.filter(&(Path.extname(&1.destination) == ".heex"))
+
+    # A fence that silently iterates over zero templates would pass forever.
+    assert heex_templates != [],
+           "expected at least one generated .heex template destination to fence"
+
+    # `render_template_content/3` (install.ex:84-94) prepends an ownership
+    # header comment before the source template's own content, so a reported
+    # parse-error line number is offset from the source template's line
+    # number by the header's length. Report the rendered path in any failure
+    # message below rather than attempting to subtract the offset.
+    for rendered <- heex_templates do
+      Phoenix.LiveView.TagEngine.compile(rendered.rendered,
+        caller: __ENV__,
+        tag_handler: Phoenix.LiveView.HTMLEngine,
+        file: rendered.relative_path,
+        line: 1
+      )
+    end
+  end
+
   defp router_helper_source do
     router_template = Enum.find(Templates.all(), &(&1.template == "router.ex"))
 
