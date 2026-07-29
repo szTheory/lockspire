@@ -1160,6 +1160,184 @@ run_step_05_verify() {
   mark_done "step-05-verify"
 }
 
+# step-06a-client: guide §6 "Create a client and prove the flow" -- first follow the guide
+# literally: mix lockspire.client.create. Expect it to fail with a repository-not-started error,
+# because unlike mix lockspire.verify's migrations check (which wraps its Repo call in
+# Ecto.Migrator.with_repo/2), Lockspire.Clients.register_client/1 never does -- and the task's
+# own @requirements ["app.config"] never starts the application supervision tree.
+run_step_06a_client() {
+  should_run "step-06a-client" || return 0
+
+  local client_doc_log="$WORKDIR/step_06a_client_documented.log"
+
+  (cd "$HOST_APP_DIR" && mix lockspire.client.create \
+    --client-type public \
+    --redirect-uri "${WALK_BASE_URL}/oauth/callback" \
+    --scope openid --scope email --scope profile --scope read:walk \
+    --grant-type authorization_code \
+    --client-id adopter-walk-public) >"$client_doc_log" 2>&1
+  local client_doc_exit=$?
+
+  local client_doc_detail
+  client_doc_detail="$(head -n 1 "$client_doc_log")"
+
+  # ADOPT-D08 (owning phase 127): mix lockspire.client.create never reaches a running repo in a
+  # stock host, because Clients.register_client/1 never wraps its Repo call the way
+  # mix lockspire.verify's migrations check does.
+  record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: the documented \`mix lockspire.client.create\` exited ${client_doc_exit} (${client_doc_detail}) -- it never reaches a running repo in a stock host (ADOPT-D08, owning phase 127)"
+
+  local register_script
+  register_script="$(
+    cat <<ELIXIR
+{:ok, _result} =
+  Lockspire.Clients.register_client(%{
+    client_id: "adopter-walk-public",
+    client_type: "public",
+    redirect_uris: ["${WALK_BASE_URL}/oauth/callback"],
+    allowed_scopes: ["openid", "email", "profile", "read:walk"],
+    allowed_grant_types: ["authorization_code"],
+    token_endpoint_auth_method: "none"
+  })
+
+IO.puts("adopter-walk: registered client adopter-walk-public")
+ELIXIR
+  )"
+
+  local client_register_log="$WORKDIR/step_06a_client_register.log"
+
+  # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D08
+  # mix run -e does start the application (unlike the documented Mix task above), so it reaches a
+  # live repo. This only patches the walk harness so it can keep moving -- Phase 127 must make the
+  # documented task itself reach a running repo.
+  if ! (cd "$HOST_APP_DIR" && mix run -e "$register_script") >"$client_register_log" 2>&1; then
+    record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: workaround client registration via mix run -e failed (see ${client_register_log})"
+    return
+  fi
+
+  # D-47/ADOPT-D06 (owning phase 127 for the installer half, phase 128 for the guide half): no
+  # documented step mints a signing key. Lockspire.Admin.generate_key/1 exists but only
+  # examples/adoption_demo/priv/repo/seeds.exs:82 ever calls a key into existence, and that seed
+  # bypasses the Admin API entirely by inserting an already-active key straight through storage.
+  record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: no documented step mints a signing key -- JWKS and token issuance have nothing to sign with after a stock install (ADOPT-D06, owning phase 127 for the installer half and phase 128 for the guide half)"
+
+  local key_script
+  key_script='
+{:ok, key_view} = Lockspire.Admin.generate_key(:sig)
+key_id = key_view.key.id
+
+{:ok, %{"keys" => keys}} = Lockspire.Protocol.Jwks.public_jwk_set()
+
+if keys != [] do
+  IO.puts("adopter-walk: JWKS non-empty after generate_key/1 alone (one undocumented call sufficient)")
+else
+  IO.puts("adopter-walk: JWKS empty after generate_key/1 alone -- calling publish_key/2 as well")
+  {:ok, _published} = Lockspire.Admin.publish_key(key_id)
+  {:ok, %{"keys" => keys_after_publish}} = Lockspire.Protocol.Jwks.public_jwk_set()
+
+  if keys_after_publish == [] do
+    IO.puts("adopter-walk: JWKS STILL empty after generate_key/1 + publish_key/2")
+    System.halt(1)
+  else
+    IO.puts("adopter-walk: JWKS non-empty only after generate_key/1 + publish_key/2 (two undocumented calls required)")
+  end
+end
+'
+
+  local key_result_log="$WORKDIR/step_06a_signing_key.log"
+
+  # LOCKSPIRE_WALK_WORKAROUND: ADOPT-D06
+  # Lockspire.Admin.generate_key/1 is the shipped public API for minting a signing key; whether it
+  # alone is sufficient for JWKS to publish it is RESEARCH Open Question 1, asserted here rather
+  # than assumed -- either outcome is recorded as evidence on the same ledger entry.
+  if ! (cd "$HOST_APP_DIR" && mix run -e "$key_script") >"$key_result_log" 2>&1; then
+    record_result "FAIL" "step-06a-client" "§6 Create a client and prove the flow: JWKS is still empty even after Lockspire.Admin.generate_key/1 and publish_key/2 (see ${key_result_log})"
+    return
+  fi
+
+  local key_detail
+  key_detail="$(tail -n 1 "$key_result_log")"
+
+  record_result "PASS" "step-06a-client" "§6 Create a client and prove the flow: registered public client adopter-walk-public (scopes openid,email,profile,read:walk; grant authorization_code; token_endpoint_auth_method=none) and JWKS now reports a key -- ${key_detail}"
+  mark_done "step-06a-client"
+}
+
+# Boots the generated host in the background, drives the flow driver (plan 126-03) against it,
+# folds every [PASS]/[FAIL] result line the driver printed into this harness's own RESULTS
+# accumulator in the order it printed them, and tears the server down unless --keep was passed.
+# Reproduces .github/workflows/ci.yml:313-327's background-boot/pid-capture/log-redirect/drive/
+# kill/print-log-on-failure shape. Has no step ID of its own -- step-06b-flow and
+# step-06c-token-proof are the driver's own step IDs, folded in verbatim.
+run_step_06_boot_drive_flow() {
+  if [[ "06" < "$FROM_STEP" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$WORKDIR"
+
+  (cd "$HOST_APP_DIR" && MIX_ENV=dev mix phx.server) >"$SERVER_LOG" 2>&1 &
+  SERVER_PID=$!
+
+  local flow_log="$WORKDIR/flow_driver.log"
+
+  python3 scripts/maintainer/adopter_path_flow.py \
+    --base-url "$WALK_BASE_URL" \
+    --mount "$MOUNT_PATH" \
+    --client-id adopter-walk-public \
+    --email "$LOCKSPIRE_WALK_EMAIL" \
+    --password "$LOCKSPIRE_WALK_PASSWORD" \
+    --protected-path /api/walk/summary \
+    >"$flow_log" 2>&1
+  local flow_exit=$?
+
+  local driver_lines_found=0
+  local driver_fail_count=0
+  local level rest driver_step_id driver_detail
+
+  while IFS= read -r line; do
+    case "$line" in
+      "[PASS] "*) level="PASS" ;;
+      "[FAIL] "*) level="FAIL" ;;
+      *) continue ;;
+    esac
+
+    rest="${line#\["${level}"\] }"
+    driver_step_id="${rest%%:*}"
+    driver_detail="${rest#*:}"
+    driver_detail="${driver_detail# }"
+
+    record_result "$level" "$driver_step_id" "$driver_detail"
+    driver_lines_found=$((driver_lines_found + 1))
+
+    if [[ "$level" == "FAIL" ]]; then
+      driver_fail_count=$((driver_fail_count + 1))
+    fi
+  done <"$flow_log"
+
+  if [[ "$driver_lines_found" -eq 0 ]] && [[ "$flow_exit" -ne 0 ]]; then
+    # An unattributable crash: the driver exited non-zero without printing a single [PASS]/[FAIL]
+    # line (e.g. an exception outside the AssertionError paths main() already catches). Record it
+    # rather than silently dropping the walk's only evidence for this run (mirrors step-05-verify's
+    # own "opaque crash must still yield attributable evidence" posture).
+    record_result "FAIL" "step-06b-flow" "§6 prove the flow: adopter_path_flow.py exited ${flow_exit} without printing any step result line (see ${flow_log})"
+    driver_fail_count=$((driver_fail_count + 1))
+  fi
+
+  if [[ "$driver_fail_count" -gt 0 ]]; then
+    echo "--- ${SERVER_LOG} (flow driver reported a failure) ---"
+    cat "$SERVER_LOG" 2>/dev/null || true
+    echo "--- end ${SERVER_LOG} ---"
+  fi
+
+  if [[ "$KEEP" -eq 1 ]]; then
+    echo "adopter-walk: --keep passed -- leaving the booted host running at ${WALK_BASE_URL}"
+    echo "adopter-walk: WARNING -- port ${PORT} stays bound until you stop pid ${SERVER_PID} yourself; the next run's preflight will reject it"
+    SERVER_PID=""
+  else
+    kill "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+    SERVER_PID=""
+  fi
+}
 
 # The only trap in this script -- it terminates the server pid this run
 # started and does nothing else. It never deletes the workdir, the
@@ -1209,8 +1387,16 @@ run_step_03e_protected_route
 run_step_04_migrate
 run_step_05_verify
 
-# Guide §6 onward (client registration, signing key, boot/drive/teardown, and §7/§8 not-walked
-# accounting) is added by a later plan in this phase; the steps above are what it plugs into via
-# should_run/record_result/mark_done.
+run_step_06a_client
+run_step_06_boot_drive_flow
+
+# Guide §7 "Upgrade only the managed scaffolding" and §8 "Finish the verification seam before
+# shipping device login" are deliberately not walked -- §7 is an upgrade path rather than a
+# first-install path, and §8's device /verify seam sits outside the authorization-code + PKCE
+# path and out of this milestone. Recorded explicitly (D-16) so a reader can tell "out of scope"
+# from "missed"; the "(not walked)" label deliberately keeps these two out of the ADOPT-03
+# step-ID <-> guide-section mapping gate, and PASS never inflates FAIL_COUNT.
+record_result "PASS" "step-07-upgrade (not walked)" "§7 Upgrade only the managed scaffolding: not walked -- an upgrade path for existing installs, not the first-install path this walk proves"
+record_result "PASS" "step-08-verify-seam (not walked)" "§8 Finish the verification seam before shipping device login: not walked -- the device /verify seam sits outside the authorization-code + PKCE path and out of this milestone's scope"
 
 print_report

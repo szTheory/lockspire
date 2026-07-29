@@ -432,4 +432,78 @@ defmodule Lockspire.Maintainer.AdopterWalkContractTest do
     refute mutated =~ ~s[Application.app_dir(:lockspire, "priv/repo/migrations")]
     assert mutated =~ "deps/lockspire/priv/repo/migrations"
   end
+
+  test "walk script implements guide §6 client registration and signing key as step-06a-client" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-06a-client"
+    assert source =~ "mix lockspire.client.create"
+    assert source =~ "adopter-walk-public"
+    assert source =~ "read:walk"
+    assert source =~ "Lockspire.Admin.generate_key"
+    assert source =~ "ADOPT-D08"
+    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D08"
+    assert source =~ "ADOPT-D06"
+    assert source =~ "# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D06"
+  end
+
+  test "walk script boots the generated host, invokes the flow driver, and redirects server output to a workdir-local log" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "scripts/maintainer/adopter_path_flow.py"
+    assert source =~ "mix phx.server"
+    assert source =~ "SERVER_LOG"
+    assert source =~ "server.log"
+  end
+
+  test "walk script installs only a pid-only trap and never removes the workdir on exit" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "trap cleanup EXIT INT TERM"
+    refute source =~ ~r/trap[^\n]*rm -rf/
+  end
+
+  test "walk script folds the flow driver's PASS/FAIL result lines into its own RESULTS accumulator" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ ~s(record_result "$level")
+    assert source =~ "driver_step_id"
+    assert source =~ "driver_detail"
+  end
+
+  test "walk script terminates the server by default and respects --keep as the only opt-out" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ ~s(kill "$SERVER_PID")
+    assert source =~ "stays bound"
+    assert source =~ ~s(if [[ "$KEEP" -eq 1 ]])
+  end
+
+  test "walk script accounts for guide §7 and §8 as explicitly not walked" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "step-07-upgrade (not walked)"
+    assert source =~ "step-08-verify-seam (not walked)"
+    assert source =~ "not walked"
+  end
+
+  test "the not-walked §7/§8 report lines are excluded from the ADOPT-03 step-ID mapping gate by design" do
+    source = File.read!(@walk_script_path)
+
+    refute {"step-07-upgrade (not walked)",
+            "§7 Upgrade only the managed scaffolding: not walked -- an upgrade path for existing installs, not the first-install path this walk proves"} in shell_steps(
+             source
+           )
+
+    refute Enum.any?(shell_steps(source), fn {id, _detail} ->
+             id =~ "not walked"
+           end)
+  end
+
+  test "the protected route path used by step-06 boot/drive matches the flow driver invocation" do
+    source = File.read!(@walk_script_path)
+
+    assert source =~ "/api/walk/summary"
+    assert source =~ "--protected-path /api/walk/summary"
+  end
 end
