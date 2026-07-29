@@ -104,7 +104,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 127-06-PLAN.md — Config, resolver, and HEEx templates fixed; HEEx compile fence over every generated template (ADOPT-D04/D09/D16)
+- [x] 127-06-PLAN.md — Config, resolver, and HEEx templates fixed; HEEx compile fence over every generated template (ADOPT-D04/D09/D16)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -185,7 +185,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
-| 127. Installer Against A Real Host | 5/9 | In Progress|  |
+| 127. Installer Against A Real Host | 6/9 | In Progress|  |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
 | 130. Adopter Path Guardrail | 0/TBD | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: executing
-stopped_at: Completed 127-05-PLAN.md
-last_updated: "2026-07-29T16:30:20.838Z"
+stopped_at: Completed 127-06-PLAN.md
+last_updated: "2026-07-29T16:38:51.300Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 11
+  completed_plans: 12
   percent: 20
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 127 (installer-against-a-real-host) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -247,6 +247,9 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 127]: Plan 127-04 fixed all four in-scope verify.ex migrate remediation sites (pending, storage-prefix, oban-prefix, up-to-date), not just the two CONTEXT named, since the storage/oban-prefix wording also implied a bare command.
 - [Phase ?]: [Phase 127]: Plan 127-05 rewrote priv/templates/lockspire.install/router.ex to use fully parenthesized macro calls so the byte-compared runtime fixture under test/ satisfies mix format --check-formatted -- the paren-less style used to be invisible to the formatter inside a discarded heredoc String.
 - [Phase ?]: [Phase 127]: Plan 127-05 kept the interaction routes and consent LiveView routed to the existing Lockspire.Web.InteractionController/Lockspire.Web.ConsentLive modules, not the separately-generated host-owned interaction_handler.ex/consent_live.ex templates, which serve login-flow handoff rather than routing.
+- [Phase ?]: [Phase 127]: Plan 127-06 kept the login change-me comment on a single line so a substring assertion could prove both the phx.gen.auth attribution and the change-me instruction without a multi-line regex.
+- [Phase ?]: [Phase 127]: Plan 127-06 chose a secret_key_base placeholder that deliberately trips the length-only secret-literal fence by design (contains REPLACE) rather than by luck, naming mix phx.gen.secret as the exact remedy.
+- [Phase ?]: [Phase 127]: Plan 127-06 included openid explicitly in known_scopes even though AuthorizationRequest.unknown_scope?/1 treats it as always-known, matching the one working config :lockspire reference in the repo.
 
 ## Blockers/Concerns
 
@@ -261,11 +264,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T16:30:20.833Z
+**Last session:** 2026-07-29T16:38:51.295Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 127-05-PLAN.md
+**Stopped at:** Completed 127-06-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -337,6 +340,7 @@ institutionalizes a known failure.
 | Phase 127 P03 | 25min | 1 tasks | 2 files |
 | Phase 127 P04 | 30min | 2 tasks | 4 files |
 | Phase 127 P05 | 35min | 2 tasks | 5 files |
+| Phase 127 P06 | 20min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 
