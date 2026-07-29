@@ -37,6 +37,45 @@ No entry below quotes a raw access token, ID token, authorization code, session 
 seeded password (`LOCKSPIRE_WALK_PASSWORD` / the literal plan 126-01 seeds). Only error classes,
 step IDs, and `file:line` citations are recorded.
 
+## Phase 127 walk delta (recorded 2026-07-29)
+
+Phase 127 closed the installer-attributed defects and plan 127-09 retired the six workarounds they
+made obsolete. This is the delta from one real, from-scratch `mix adopter.walk` run against the
+frontmatter's recorded 19 PASS / 12 FAIL baseline:
+
+| | Phase 126 | Phase 127 |
+|---|---|---|
+| Summary | `Summary: 19 PASS, 12 FAIL` | `Summary: 22 PASS, 6 FAIL` |
+| Result | `Result: adopter path is RED` | `Result: adopter path is RED` |
+| Walk date | 2026-07-29T02:13:24Z | 2026-07-29T18:45:47Z |
+| Workaround markers in the harness | 13 | 7 |
+
+Six defects no longer require a harness workaround and their steps now pass unaided: **ADOPT-D02**
+and **ADOPT-D03** (router template), **ADOPT-D08** (`mix lockspire.client.create` reaching a started
+repo), **ADOPT-D09** (resolver login path), **ADOPT-D15** (`ecto_sql` requirement range), and
+**ADOPT-D16** (HEEx attribute interpolation).
+
+Six FAIL rows remain, each with an open disposition below: `step-03a-config-import` (ADOPT-D04),
+`step-03c-resolver` (ADOPT-D11), `step-03d-app-tree` (ADOPT-D05), `step-04-migrate` (structural --
+the documented bare `mix ecto.migrate` exits 0 having applied none of Lockspire's migrations, which
+is the defect), `step-05-verify` (ADOPT-D07), and `step-06a-client` (ADOPT-D06).
+
+The run is still correctly RED. Per this ledger's own inversion warning, that is a passing Phase 127
+outcome, not a failing one.
+
+This delta was adjudicated mechanically rather than by eye:
+`scripts/maintainer/adopter_walk_baseline.json` records the expected outcome per
+`(step_id, occurrence)`, was committed before the run so the run could refute it, and
+`scripts/maintainer/adopter_walk_verify.py` compared the two. The full report is archived at
+`.planning/phases/127-installer-against-a-real-host/127-WALK-REPORT-20260729.json`.
+
+The first run did refute the prediction, on one row: `step-03b-router-paste` was expected to PASS and
+observed FAIL. The cause was a harness defect rather than an adopter-path regression -- the paste
+sub-step appended the macro body to a router that still carried the `lockspire_routes()` call, so
+`live_session :lockspire_consent` was defined twice. Corrected in the harness (the step now pastes
+in place of the call, as its own doc comment always said it did) rather than by restoring a
+workaround or editing the expectation.
+
 ## Defects
 
 ### ADOPT-D01

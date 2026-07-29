@@ -232,8 +232,14 @@ defmodule Lockspire.Maintainer.AdopterWalkBaselineContractTest do
       "rows" => rows
     } = baseline()
 
+    # `authored_before_run` is the load-bearing claim: the expectation was written down
+    # before a run could influence it, so a run can refute it. `confirmed_by_run` records
+    # which run subsequently agreed -- nil until one has, an ISO 8601 UTC stamp after.
+    # Pinning it to nil forever would make a confirmed baseline unrepresentable.
     assert authored_before_run == true
-    assert is_nil(confirmed_by_run)
+
+    assert is_nil(confirmed_by_run) or
+             confirmed_by_run =~ ~r/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
 
     assert expected_pass_count == Enum.count(rows, &(&1["level"] == "PASS"))
     assert expected_fail_count == Enum.count(rows, &(&1["level"] == "FAIL"))

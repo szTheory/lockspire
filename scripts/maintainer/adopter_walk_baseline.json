@@ -2,7 +2,7 @@
   "schema": "lockspire.adopter_walk.baseline/1",
   "authored_from": "Derived from every `record_result \"PASS\"`/`record_result \"FAIL\"` call site in scripts/maintainer/adopter_path_walk.sh and the `[PASS]`/`[FAIL]` lines in scripts/maintainer/adopter_path_flow.py, cross-referenced with .planning/phases/126-adopter-path-walk-defect-ledger/126-DEFECT-LEDGER.md's dispositions and 127-09-PLAN.md's six workaround removals. authored_before_run: true -- no `mix adopter.walk` run backs this file; it is a falsifiable prediction the first real run can refute.",
   "authored_before_run": true,
-  "confirmed_by_run": null,
+  "confirmed_by_run": "2026-07-29T18:45:47Z",
   "expected_pass_count": 22,
   "expected_fail_count": 6,
   "rows": [
