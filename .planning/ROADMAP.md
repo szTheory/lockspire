@@ -88,7 +88,7 @@ Plans:
 - Host-owned seams stay host-owned. Reducing adopter friction must not absorb accounts, login UX, layouts, branding, or policy into the library.
 - `test/integration/install_generator_test.exs` already asserts generated content thoroughly; extend the host-interaction gap rather than rewriting the content assertions.
 
-**Plans**: 2/9 plans executed
+**Plans**: 7/9 plans executed
 
 Plans:
 **Wave 1**
@@ -108,7 +108,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 127-07-PLAN.md — Plan-then-apply atomic refusal: all conflicts reported, zero bytes written (INSTALL-03)
+- [x] 127-07-PLAN.md — Plan-then-apply atomic refusal: all conflicts reported, zero bytes written (INSTALL-03)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -185,7 +185,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 126. Adopter Path Walk & Defect Ledger | 6/6 | Complete    | 2026-07-29 |
-| 127. Installer Against A Real Host | 6/9 | In Progress|  |
+| 127. Installer Against A Real Host | 7/9 | In Progress|  |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
 | 130. Adopter Path Guardrail | 0/TBD | Not started | - |

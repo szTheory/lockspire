@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
+current_phase: 127
+current_phase_name: installer-against-a-real-host
 status: executing
-stopped_at: Completed 127-06-PLAN.md
-last_updated: "2026-07-29T16:38:51.300Z"
+stopped_at: Completed 127-07-PLAN.md
+last_updated: "2026-07-29T16:53:22.102Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 20
 ---
 
@@ -27,7 +29,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 127 (installer-against-a-real-host) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -250,6 +252,8 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 127]: Plan 127-06 kept the login change-me comment on a single line so a substring assertion could prove both the phx.gen.auth attribution and the change-me instruction without a multi-line regex.
 - [Phase ?]: [Phase 127]: Plan 127-06 chose a secret_key_base placeholder that deliberately trips the length-only secret-literal fence by design (contains REPLACE) rather than by luck, naming mix phx.gen.secret as the exact remedy.
 - [Phase ?]: [Phase 127]: Plan 127-06 included openid explicitly in known_scopes even though AuthorizationRequest.unknown_scope?/1 treats it as always-known, matching the one working config :lockspire reference in the repo.
+- [Phase ?]: [Phase 127]: Plan 127-07 tested the containment guard by overriding assigns.web_path directly after build_assigns/1, since Macro.underscore/1 always inserts a / between adjacent literal dots and never lets a real .. survive the --web/--scope derivation chain -- verified empirically this session.
+- [Phase ?]: [Phase 127]: Plan 127-07 falls back to "host edit detected" whenever a conflicted destination's relative path has no manifest entry, covering both no-manifest-yet and host-owned-scaffolding-never-tracked in one branch.
 
 ## Blockers/Concerns
 
@@ -264,11 +268,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T16:38:51.295Z
+**Last session:** 2026-07-29T16:53:22.066Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 127-06-PLAN.md
+**Stopped at:** Completed 127-07-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -341,6 +345,7 @@ institutionalizes a known failure.
 | Phase 127 P04 | 30min | 2 tasks | 4 files |
 | Phase 127 P05 | 35min | 2 tasks | 5 files |
 | Phase 127 P06 | 20min | 3 tasks | 5 files |
+| Phase 127 P07 | 15min | 1 tasks | 3 files |
 
 ## Operator Next Steps
 
