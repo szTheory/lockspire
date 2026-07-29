@@ -1170,16 +1170,25 @@ run_step_06a_client() {
 
   local client_doc_log="$WORKDIR/step_06a_client_documented.log"
 
+  # "openid" is never passed as an allowed scope here (or below) -- Lockspire.Clients.register_client/1
+  # rejects it as :invalid_scope by design (lib/lockspire/clients.ex), because
+  # Lockspire.Protocol.AuthorizationRequest already treats "openid" as implicitly allowed for
+  # every client regardless of its registered allowed_scopes (unknown_scope?/disallowed_scope?
+  # both short-circuit true for "openid"). Passing it here would mask ADOPT-D08's real repo-not-
+  # started defect behind an unrelated scope-validation error -- confirmed empirically.
   (cd "$HOST_APP_DIR" && mix lockspire.client.create \
     --client-type public \
     --redirect-uri "${WALK_BASE_URL}/oauth/callback" \
-    --scope openid --scope email --scope profile --scope read:walk \
+    --scope email --scope profile --scope read:walk \
     --grant-type authorization_code \
     --client-id adopter-walk-public) >"$client_doc_log" 2>&1
   local client_doc_exit=$?
 
   local client_doc_detail
-  client_doc_detail="$(head -n 1 "$client_doc_log")"
+  client_doc_detail="$(grep -m 1 '^\*\* (' "$client_doc_log")"
+  if [[ -z "$client_doc_detail" ]]; then
+    client_doc_detail="$(tail -n 1 "$client_doc_log")"
+  fi
 
   # ADOPT-D08 (owning phase 127): mix lockspire.client.create never reaches a running repo in a
   # stock host, because Clients.register_client/1 never wraps its Repo call the way
@@ -1194,7 +1203,7 @@ run_step_06a_client() {
     client_id: "adopter-walk-public",
     client_type: "public",
     redirect_uris: ["${WALK_BASE_URL}/oauth/callback"],
-    allowed_scopes: ["openid", "email", "profile", "read:walk"],
+    allowed_scopes: ["email", "profile", "read:walk"],
     allowed_grant_types: ["authorization_code"],
     token_endpoint_auth_method: "none"
   })
@@ -1274,7 +1283,12 @@ run_step_06_boot_drive_flow() {
 
   mkdir -p "$WORKDIR"
 
-  (cd "$HOST_APP_DIR" && MIX_ENV=dev mix phx.server) >"$SERVER_LOG" 2>&1 &
+  # PORT is passed explicitly, not left to dev.exs's compile-time port: value -- a stock
+  # mix phx.new host's generated config/runtime.exs sets `http: [port: ...]` from
+  # System.get_env("PORT", "4000") unconditionally (it is not gated behind config_env() ==
+  # :prod), and runtime.exs is evaluated after dev.exs, so it silently wins even in MIX_ENV=dev
+  # and would otherwise always bind port 4000 regardless of the walk's configured --port.
+  (cd "$HOST_APP_DIR" && MIX_ENV=dev PORT="$PORT" mix phx.server) >"$SERVER_LOG" 2>&1 &
   SERVER_PID=$!
 
   local flow_log="$WORKDIR/flow_driver.log"
