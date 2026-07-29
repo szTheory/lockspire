@@ -58,12 +58,21 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: lockspire
-          POSTGRES_PASSWORD: lockspire
+          # NOT "lockspire", and this is load-bearing (ADOPT-D20). PostgreSQL's default
+          # search_path is `"$user", public`, so a role named the same as Lockspire's
+          # :storage_prefix shadows public for unqualified table names -- which forks Ecto's
+          # schema_migrations bookkeeping into an empty second table and makes every migration
+          # read back as pending forever. That defect is real for adopters and is now detected by
+          # `mix lockspire.verify` and reproduced at the SQL level in install_instructions_test.exs;
+          # it is not, however, something this lane should re-derive on every run, because the
+          # role name is harness scaffolding rather than part of the documented adopter path and
+          # the collision masked every other signal in runs 30484208316/30498912897/30499416067.
+          POSTGRES_USER: lockspire_walk_ci
+          POSTGRES_PASSWORD: lockspire_walk_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U lockspire"
+          --health-cmd "pg_isready -U lockspire_walk_ci"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -72,8 +81,8 @@ jobs:
       MIX_ENV: dev
       LOCKSPIRE_WALK_DB_HOST: 127.0.0.1
       LOCKSPIRE_WALK_DB_PORT: "5432"
-      LOCKSPIRE_WALK_DB_USER: lockspire
-      LOCKSPIRE_WALK_DB_PASSWORD: lockspire
+      LOCKSPIRE_WALK_DB_USER: lockspire_walk_ci
+      LOCKSPIRE_WALK_DB_PASSWORD: lockspire_walk_ci
 
     steps:
       - name: Check out repository

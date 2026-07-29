@@ -478,6 +478,43 @@ workaround or editing the expectation.
   accessor functions matching it) so no adopter has to read this workaround to discover the
   real shape.
 
+### ADOPT-D20
+
+- **Walk step:** step-05-verify (and, downstream, step-06b-flow / step-06c-token-proof)
+- **Symptom:** `mix ecto.migrate --migrations-path …` applies all 37 of Lockspire's migrations
+  and exits 0, and `mix lockspire.verify` -- run seconds later against the same host and the same
+  database -- reports all 37 as still pending. The tables plainly exist and are queryable.
+  `Phoenix.Ecto` then rejects every request with `PendingMigrationError`, so the host never
+  serves and the driven flow cannot start. Re-running the migrations, which is what the
+  remediation text told the adopter to do, fails on "table already exists".
+- **Underlying error:** PostgreSQL's default `search_path` is `"$user", public`, so a database
+  role whose name equals `:storage_prefix` puts Lockspire's own schema ahead of `public` for
+  every *unqualified* table name. Lockspire's own DDL is always prefix-qualified and is
+  unaffected -- but Ecto's `schema_migrations` bookkeeping is not. Once Lockspire's first
+  migration has created the schema, the next connection's `CREATE TABLE IF NOT EXISTS
+  schema_migrations` resolves into the prefixed schema, finds nothing there, and creates a
+  **second, empty** bookkeeping table that every subsequent reader then consults.
+- **Evidence:** adopter-walk run 30499416067, `step_05_migration_state.log`, sampled from psql
+  either side of verify. Before: `public.schema_migrations` only, 38 rows. After:
+  `lockspire.schema_migrations => 0` alongside `public.schema_migrations => 38`, with
+  `current_schemas(true)` = `{pg_catalog,lockspire,public}`. The empty table did not exist until
+  `mix lockspire.verify` connected -- verify created the table it then read. Reproduced at the
+  SQL level in `install_instructions_test.exs` (`@tag :integration`).
+- **Source:** library (interaction between Lockspire's shipped schema name and Ecto's unqualified
+  bookkeeping); triggered by host/environment configuration
+- **Owning phase:** 127 (detection shipped); a structural fix is a future candidate
+- **Disposition:** `mix lockspire.verify` now reports the split explicitly, names `search_path` as
+  the cause, and states that re-running the migrations will not fix it -- turning a silent,
+  undiagnosable wall into a one-line diagnosis with three concrete remedies (point the role at
+  `public`, connect as a differently-named role, or change `:storage_prefix`). **No workaround
+  marker exists in the harness for this defect**, and none should: the walk's own role name was
+  the trigger, and scaffolding is not part of the documented adopter path. It is set to a
+  non-colliding name in `adopter-walk.yml` with a comment pointing here, so the lane measures the
+  adopter path rather than this single footgun.
+- **Not closed by the above:** detection is not prevention. An adopter who never runs
+  `mix lockspire.verify` still meets the same wall via `PendingMigrationError` alone. See the
+  first Future candidate below.
+
 ## Future candidates (Phase 127)
 
 Deferred designs, out of this milestone's scope because each would widen Lockspire's supported
@@ -485,6 +522,14 @@ surface -- new installer-injected files, a new public Mix task, or a new host-ow
 seam -- which `.planning/REQUIREMENTS.md`'s Out of Scope table forbids for v1.36. Logged here so
 a later milestone does not have to rediscover them from a live walk a second time:
 
+- **Preventing ADOPT-D20 structurally, rather than only detecting it.** Three candidate forms, all
+  wider than v1.36's surface: qualify Lockspire's migration bookkeeping explicitly (a dedicated
+  `migration_source` in a known schema, which changes the shape of an existing adopter's
+  database); refuse to boot when `:storage_prefix` is shadowed by the connecting role, promoting a
+  diagnosis to a hard failure; or add a walk scenario that runs the whole adopter path under a
+  deliberately colliding role name, so the collision is covered continuously instead of only by
+  the SQL-level integration test. The last is the cheapest and the most likely right answer, and
+  it needs the harness to parameterise the role name it currently hardcodes.
 - **Installer injection into the host's router, config, or `mix.exs`.** `mix lockspire.install`
   deliberately writes nothing into these three files (ADOPT-D01/D02/D03/D04/D05's installer
   halves are fixed by making the *generated* templates self-sufficient, not by having the

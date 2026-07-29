@@ -1360,7 +1360,12 @@ run_step_05_verify() {
 
   dump_migration_bookkeeping "after mix lockspire.verify" >>"$migration_state_log" 2>&1
 
-  if grep -Fq 'Pending Lockspire or Oban migrations detected' "$verify_post_log"; then
+  # Both summaries mean "verify still reports unusable migration state", and matching only the
+  # first would silently invert this step: ADOPT-D20's split-bookkeeping check reports its own
+  # distinct summary *instead of* the pending one, so a single-string grep would have recorded a
+  # PASS for the exact CI failure that motivated writing that check.
+  if grep -Fq 'Pending Lockspire or Oban migrations detected' "$verify_post_log" ||
+    grep -Fq 'Migration bookkeeping is split across two schema_migrations tables' "$verify_post_log"; then
     record_result "FAIL" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (exit ${migrate_workaround_exit}), mix lockspire.verify still reports pending migrations -- the migrations themselves do not apply, not merely the documented command (applied-version evidence in ${migration_state_log})"
   else
     record_result "PASS" "step-05-verify" "§5 Verify the install wiring: after applying the release-safe migrations workaround (Application.app_dir(:lockspire, \"priv/repo/migrations\")), mix lockspire.verify reports zero pending Lockspire/Oban migrations"
