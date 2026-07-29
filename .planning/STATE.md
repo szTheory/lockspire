@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
 status: executing
-stopped_at: Completed 126-04-PLAN.md
-last_updated: "2026-07-29T00:42:17.388Z"
+stopped_at: Completed 126-05-PLAN.md
+last_updated: "2026-07-29T01:13:28.988Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 126 (adopter-path-walk-defect-ledger) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -233,6 +233,9 @@ institutionalizes a known failure.
 - [Phase 126]: Plan 126-03's driver GETs return_to itself after the login POST (# LOCKSPIRE_WALK_WORKAROUND: ADOPT-D14) rather than passing return_to as a login parameter, because phx.gen.auth's log_in_user/3 redirect target is only written by the GET path.
 - [Phase 126]: Plan 126-03 hardcodes the redirect URI as {base_url}/oauth/callback (no --redirect-uri flag), matching the plan's exhaustive CLI flag list which omits that flag deliberately.
 - [Phase 126]: Plan 126-04 discovered and fixed a real gap in the ADOPT-D05 included_applications workaround -- :oban and :cachex must also be named in the host's extra_applications, since Application.ensure_all_started/1 never walks an included application's own dependency chain (confirmed against a real generated host).
+- [Phase ?]: [Phase 126]: Plan 126-05 dropped 'openid' from the walk client's registered allowed_scopes -- Lockspire.Clients.register_client/1 rejects it as :invalid_scope since AuthorizationRequest already treats it as implicitly allowed for every client regardless of registered scopes.
+- [Phase ?]: [Phase 126]: Plan 126-05 exports PORT explicitly when booting mix phx.server -- a stock mix phx.new host's generated config/runtime.exs sets the endpoint http port from PORT unconditionally (not gated to config_env() == :prod), silently overriding dev.exs's compile-time port even in MIX_ENV=dev.
+- [Phase ?]: [Phase 126]: Plan 126-05 confirmed end-to-end against a real generated host that step-04-migrate/step-05-verify correctly detect and work around 37 genuinely pending Lockspire migrations, step-06a-client demonstrates the real repo-not-started defect, and the walk correctly reports RED with a real newly-surfaced authorize-handoff defect for plan 126-06's ledger.
 
 ## Blockers/Concerns
 
@@ -247,11 +250,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T00:42:17.384Z
+**Last session:** 2026-07-29T01:13:28.983Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 126-04-PLAN.md
+**Stopped at:** Completed 126-05-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -312,6 +315,7 @@ institutionalizes a known failure.
 | Phase 126 P02 | 19min | 2 tasks | 2 files |
 | Phase 126 P03 | 21min | 2 tasks | 2 files |
 | Phase 126 P04 | 42min | 2 tasks | 2 files |
+| Phase 126 P05 | 65min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 

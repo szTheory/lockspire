@@ -54,7 +54,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 126-05-PLAN.md — Guide §4-§6: migrate, verify, client and key, then boot and drive
+- [x] 126-05-PLAN.md — Guide §4-§6: migrate, verify, client and key, then boot and drive
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -154,7 +154,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 126. Adopter Path Walk & Defect Ledger | 4/6 | In Progress|  |
+| 126. Adopter Path Walk & Defect Ledger | 5/6 | In Progress|  |
 | 127. Installer Against A Real Host | 0/TBD | Not started | - |
 | 128. Documented Wiring Truth | 0/TBD | Not started | - |
 | 129. Reference Artifact Alignment | 0/TBD | Not started | - |
