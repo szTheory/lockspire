@@ -385,7 +385,7 @@ defmodule Lockspire.InstallGeneratorTest do
     router_path = Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
     File.write!(router_path, File.read!(router_path) <> "\n# host customization\n")
 
-    assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
+    assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
       File.cd!(@fixture_root, fn ->
         Mix.Task.reenable("lockspire.install")
         Mix.Tasks.Lockspire.Install.run(base_args())
@@ -409,7 +409,7 @@ defmodule Lockspire.InstallGeneratorTest do
       File.read!(verification_path) <> "\n# host verification customization\n"
     )
 
-    assert_raise Mix.Error, ~r/Refusing to overwrite modified file/, fn ->
+    assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
       File.cd!(@fixture_root, fn ->
         Mix.Task.reenable("lockspire.install")
         Mix.Tasks.Lockspire.Install.run(base_args())

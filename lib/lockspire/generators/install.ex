@@ -11,14 +11,72 @@ defmodule Lockspire.Generators.Install do
   @spec run(keyword()) :: :ok
   def run(opts \\ []) do
     assigns = build_assigns(opts)
-    rendered_templates = rendered_templates(assigns)
+    install_plan = plan(assigns)
 
-    Enum.each(rendered_templates, fn rendered ->
-      ensure_file!(rendered.destination, rendered.rendered)
+    apply_plan!(assigns, install_plan)
+    Mix.shell().info(instructions(assigns))
+
+    :ok
+  end
+
+  @doc """
+  Side-effect-free classification pass. Reads every rendered template's
+  destination and the install manifest (if any), but never writes, creates a
+  directory, or removes a file. Returns the full per-destination
+  classification plus the subset that conflict, in template-inventory order.
+  """
+  @spec plan(map()) :: map()
+  def plan(assigns) do
+    rendered_templates = rendered_templates(assigns)
+    manifest_checksums = load_manifest_checksums(assigns.project_root)
+    expanded_root = Path.expand(assigns.project_root)
+
+    {classified, conflicts} =
+      Enum.reduce(rendered_templates, {[], []}, fn rendered, {classified, conflicts} ->
+        case classify_destination(rendered, manifest_checksums, expanded_root) do
+          {:conflict, reason} = outcome ->
+            {[{rendered, outcome} | classified], [{rendered, reason} | conflicts]}
+
+          outcome ->
+            {[{rendered, outcome} | classified], conflicts}
+        end
+      end)
+
+    %{
+      rendered_templates: rendered_templates,
+      classified: Enum.reverse(classified),
+      conflicts: Enum.reverse(conflicts)
+    }
+  end
+
+  @doc """
+  Apply pass. Only reached when the plan produced zero conflicts -- if any
+  conflict is present, prints the full refusal list and raises exactly once,
+  having written nothing. Otherwise creates directories, writes files that
+  need creating, and writes the manifest.
+  """
+  @spec apply_plan!(map(), map()) :: :ok
+  def apply_plan!(assigns, %{classified: classified, conflicts: conflicts} = install_plan) do
+    if conflicts != [] do
+      print_refusals(conflicts)
+
+      Mix.raise(
+        "Lockspire install refused: #{length(conflicts)} destination(s) conflict. " <>
+          "Fix each listed file, then rerun `mix lockspire.install`."
+      )
+    end
+
+    Enum.each(classified, fn
+      {rendered, :create} ->
+        File.mkdir_p!(Path.dirname(rendered.destination))
+        File.write!(rendered.destination, rendered.rendered)
+        Mix.shell().info("* created #{Path.relative_to_cwd(rendered.destination)}")
+
+      {rendered, :unchanged} ->
+        Mix.shell().info("* unchanged #{Path.relative_to_cwd(rendered.destination)}")
     end)
 
-    write_manifest!(assigns, rendered_templates)
-    Mix.shell().info(instructions(assigns))
+    write_manifest!(assigns, install_plan.rendered_templates)
 
     :ok
   end
@@ -103,28 +161,84 @@ defmodule Lockspire.Generators.Install do
     |> then(&Manifest.write(assigns.project_root, &1))
   end
 
-  defp ensure_file!(destination, rendered) do
-    File.mkdir_p!(Path.dirname(destination))
+  # Classifies one rendered destination against the current host state. This
+  # is a read-only decision: :unchanged, :create, or {:conflict, reason}.
+  # Never writes -- called only from plan/1.
+  defp classify_destination(rendered, manifest_checksums, expanded_root) do
+    if contained_in_root?(rendered.destination, expanded_root) do
+      case File.read(rendered.destination) do
+        {:ok, contents} when contents == rendered.rendered ->
+          :unchanged
 
-    case File.read(destination) do
-      {:ok, ^rendered} ->
-        Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
+        {:ok, contents} ->
+          {:conflict, conflict_reason(rendered, contents, manifest_checksums)}
 
-      {:ok, _existing} ->
-        Mix.raise("""
-        Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
+        {:error, :enoent} ->
+          :create
 
-        Keep the host-owned edits and reconcile this file manually before rerunning
-        `mix lockspire.install`.
-        """)
-
-      {:error, :enoent} ->
-        File.write!(destination, rendered)
-        Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-      {:error, reason} ->
-        Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+        {:error, reason} ->
+          {:conflict, "could not read file: #{inspect(reason)}"}
+      end
+    else
+      {:conflict, "destination escapes the project root: #{rendered.destination}"}
     end
+  end
+
+  defp contained_in_root?(destination, expanded_root) do
+    destination == expanded_root or String.starts_with?(destination, expanded_root <> "/")
+  end
+
+  # Three-way comparison, copied from `lockspire.upgrade`'s drift check: the
+  # manifest's recorded checksum distinguishes a host edit (current content
+  # never matched what Lockspire generated) from a Lockspire template change
+  # (current content still matches the recorded checksum, but the freshly
+  # rendered content differs -- the template itself moved on). A destination
+  # with no recorded checksum (unmanaged, or no manifest exists yet) falls
+  # back to reporting a host edit, since there is nothing to compare against.
+  defp conflict_reason(rendered, contents, manifest_checksums) do
+    case Map.fetch(manifest_checksums, rendered.relative_path) do
+      {:ok, expected_checksum} ->
+        if Manifest.checksum(contents) == expected_checksum do
+          "Lockspire template changed"
+        else
+          "host edit detected"
+        end
+
+      :error ->
+        "host edit detected"
+    end
+  end
+
+  defp load_manifest_checksums(project_root) do
+    case Manifest.load(project_root) do
+      {:ok, manifest} ->
+        manifest
+        |> Map.get("managed_files")
+        |> List.wrap()
+        |> Map.new(fn entry -> {entry["path"], entry["checksum"]} end)
+
+      {:error, _reason} ->
+        %{}
+    end
+  end
+
+  defp print_refusals(conflicts) do
+    Enum.each(conflicts, fn {rendered, reason} ->
+      Mix.shell().info("REFUSE #{rendered.relative_path} (#{reason})")
+      Mix.shell().info("  fix: #{refusal_fix_line(reason)}")
+    end)
+  end
+
+  defp refusal_fix_line("Lockspire template changed") do
+    "run `mix lockspire.upgrade` to update this Lockspire-managed file."
+  end
+
+  defp refusal_fix_line("destination escapes the project root" <> _rest) do
+    "check the --path/--web/--scope values that produced this destination."
+  end
+
+  defp refusal_fix_line(_host_edit_or_read_error) do
+    "reconcile this file manually, then rerun `mix lockspire.install`."
   end
 
   defp instructions(assigns) do
