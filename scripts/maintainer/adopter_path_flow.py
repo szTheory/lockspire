@@ -249,11 +249,15 @@ def exercise_authorization_code(base_url, mount, client_id, email, password, sco
     # writes, so a return_to query parameter POSTed to /users/log-in is inert.
     # The driver navigates to return_to itself rather than trusting the login
     # POST's own redirect target.
-    resumed_start = browser.request("GET", return_to)
-    assert_status(resumed_start, 302, "interaction resume")
-
-    consent = browser.request("GET", location(resumed_start))
-    assert_status(consent, 200, "consent page")
+    #
+    # return_to is the consent page itself (AuthorizeController wires it to
+    # consent_path/1, not an intermediate resume redirect), and ConsentLive's own
+    # ensure_ready_for_consent/2 transitions a :pending_login interaction to
+    # :pending_consent inline on this same request -- confirmed against a real
+    # generated host: this GET returns 200 with the consent page body directly,
+    # never a 302 to a separate resume hop.
+    consent = browser.request("GET", return_to)
+    assert_status(consent, 200, "consent page (via return_to)")
     assert_contains(consent, "Approve access", "consent page")
 
     completed = browser.request(

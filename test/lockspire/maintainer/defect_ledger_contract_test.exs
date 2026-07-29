@@ -21,7 +21,14 @@ defmodule Lockspire.Maintainer.DefectLedgerContractTest do
                )
   @maintainer_scripts_dir Path.join(@repo_root, "scripts/maintainer")
 
-  @allowed_sources ~w(installer generated-scaffolding guide reference-demo library environment)
+  @allowed_sources [
+    "installer",
+    "generated scaffolding",
+    "guide",
+    "reference demo",
+    "library",
+    "environment"
+  ]
   @allowed_owning_phases ~w(127 128 129 130 future)
 
   @seeded_password "walk-adopter-password-2026"
@@ -48,7 +55,7 @@ defmodule Lockspire.Maintainer.DefectLedgerContractTest do
   # simple prose (per CONTEXT D-39, never JSON) so a human reviewer and this parser agree on
   # where one entry ends and the next begins.
   defp parse_entries(body) do
-    ~r/^###\s+(ADOPT-D\d+)\s*\n(.*?)(?=\n###\s+ADOPT-D\d+|\z)/msU
+    ~r/^###\s+(ADOPT-D\d+)\s*\n(.*?)(?=\n###\s+ADOPT-D\d+|\z)/ms
     |> Regex.scan(body)
     |> Enum.map(fn [_full, id, section] -> {id, parse_fields(section)} end)
   end
@@ -133,14 +140,28 @@ defmodule Lockspire.Maintainer.DefectLedgerContractTest do
     end
   end
 
-  test "every entry's source is one of the six allowed values" do
+  # A defect can genuinely have joint attribution (e.g. "installer and guide") when the
+  # installer omits a step and the guide never documents the gap either -- each individual
+  # token still has to be one of the six allowed values.
+  defp source_tokens(source) do
+    source
+    |> String.split(~r/\s+and\s+|,/)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  test "every entry's source is one of the six allowed values (or a joint combination of them)" do
     entries = ledger_body() |> parse_entries()
 
     for {id, fields} <- entries do
-      source = fields[:source]
+      tokens = source_tokens(fields[:source])
 
-      assert source in @allowed_sources,
-             "#{id} has source #{inspect(source)}, expected one of #{inspect(@allowed_sources)}"
+      assert tokens != [], "#{id} has an empty source field"
+
+      for token <- tokens do
+        assert token in @allowed_sources,
+               "#{id} has source token #{inspect(token)}, expected one of #{inspect(@allowed_sources)}"
+      end
     end
   end
 
