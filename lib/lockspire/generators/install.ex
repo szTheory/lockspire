@@ -128,6 +128,8 @@ defmodule Lockspire.Generators.Install do
   end
 
   defp instructions(assigns) do
+    migrations_path = Application.app_dir(:lockspire, "priv/repo/migrations")
+
     """
 
     Lockspire canonical onboarding next steps:
@@ -137,7 +139,9 @@ defmodule Lockspire.Generators.Install do
       4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
       5. Point your login flow back through `#{assigns.interaction_handler_module}`.
       6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
-      7. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
+      7. Wire your app tree yourself -- Lockspire does not modify your `mix.exs` or `application.ex`. Add `included_applications: [:lockspire]` to your `application/0` in `mix.exs`, and add `:oban` and `:cachex` to `extra_applications` in that same `application/0` (required alongside `included_applications`, because `Application.ensure_all_started/1` never walks an included application's own dependency chain and would otherwise leave Oban's registry unstarted). Then add Lockspire's three supervision children to your `Application.start/2` child list, ordered after your own Repo: the Oban child built from `Lockspire.Oban.runtime_config!/0`, the Cachex child named `:lockspire_jwks_cache`, and `Lockspire.KeyCache`.
+      8. Generate, publish, and activate a signing key, in that order: `Lockspire.Admin.generate_key/1`, then `Lockspire.Admin.publish_key/2`, then `Lockspire.Admin.activate_key/2`. These are three separate stages -- generation alone leaves JWKS empty, publication makes the key visible in JWKS but still unable to sign, and only activation makes a published key eligible to sign tokens.
+      9. Run `mix ecto.migrate --migrations-path #{migrations_path}`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow. A bare migrate command runs none of Lockspire's migrations -- they live under the `:lockspire` dependency's own `priv/repo/migrations`.
     """
   end
 
