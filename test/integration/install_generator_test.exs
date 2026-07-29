@@ -43,7 +43,7 @@ defmodule Lockspire.InstallGeneratorTest do
 
     manifest = load_manifest!()
 
-    assert manifest["version"] == (Application.spec(:lockspire, :vsn) |> List.to_string())
+    assert manifest["version"] == Application.spec(:lockspire, :vsn) |> List.to_string()
     assert manifest["version"] =~ ~r/^\d+\.\d+\.\d+/
     assert manifest["inputs"]["mount_path"] == "/lockspire"
     assert manifest["inputs"]["storage_prefix"] == "lockspire"
