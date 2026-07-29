@@ -108,7 +108,26 @@ echo "adopter-walk-ci: attempt 1 mismatched the baseline -- running attempt 2 to
 
 mismatched_keys "$REPORT_JSON" >"$WORKDIR/.walk/mismatch_attempt1.tsv"
 
-echo "adopter-walk-ci: attempt 2 (resume markers only, never --force)"
+# Attempt 2 must be another FROM-SCRATCH walk, not a resumed one. Resuming would fill the
+# report with "skipped (already done)" rows, which adopter_walk_verify.py refuses outright
+# (its partial-run precondition) and whose mismatch set could never be compared like-for-like
+# against attempt 1's -- so every retry would degrade to UNSTABLE and the reproducible-regression
+# branch below would be unreachable. Archive the evidence tree rather than deleting it (D-20),
+# and reset the walk database, which otherwise carries attempt 1's rows into attempt 2 and
+# manufactures failures of its own (a duplicate client_id, an already-seeded user).
+echo "adopter-walk-ci: attempt 2 (from scratch -- prior evidence archived, walk database reset)"
+mv "$WORKDIR" "${WORKDIR}.attempt1.$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$WORKDIR/.walk"
+
+if command -v dropdb >/dev/null 2>&1; then
+  PGPASSWORD="${LOCKSPIRE_WALK_DB_PASSWORD:-}" dropdb \
+    --if-exists \
+    --host "${LOCKSPIRE_WALK_DB_HOST:-127.0.0.1}" \
+    --port "${LOCKSPIRE_WALK_DB_PORT:-5432}" \
+    --username "${LOCKSPIRE_WALK_DB_USER:-$(whoami)}" \
+    "${LOCKSPIRE_WALK_DB_NAME:-lockspire_adopter_walk_dev}" 2>/dev/null || true
+fi
+
 run_walk
 
 mismatched_keys "$REPORT_JSON" >"$WORKDIR/.walk/mismatch_attempt2.tsv"
