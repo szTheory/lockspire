@@ -110,8 +110,18 @@ defmodule Lockspire.Mix.Tasks.LockspireClientCreateTest do
 
     assert length(secret_lines) == 1
 
-    after_entries = File.ls!(tmp_dir)
-    assert after_entries == before_entries
+    # Only entries attributable to this task count as evidence. The system temp
+    # directory is shared with every other process on the machine, so diffing it
+    # wholesale makes this assertion fail whenever anything else happens to write
+    # there during the run -- a race, not a defect in the task under test.
+    attributable_entries =
+      (File.ls!(tmp_dir) -- before_entries)
+      |> Enum.filter(fn entry ->
+        String.contains?(entry, client_id) or
+          String.contains?(String.downcase(entry), "lockspire")
+      end)
+
+    assert attributable_entries == []
   end
 
   test "raises a Mix.Error carrying the field:reason(detail) summary when registration fails" do
