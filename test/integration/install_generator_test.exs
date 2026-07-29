@@ -71,6 +71,26 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(oban_prefix: "lockspire")
 
+    config = File.read!(Path.join(@fixture_root, "config/lockspire.exs"))
+
+    # ADOPT-D04: the issuer must include the mount path or Lockspire's own
+    # issuer/mount-path consistency check raises at boot.
+    assert config =~ ~s(issuer: "https://example.com/lockspire")
+    assert config =~ ~s(known_scopes: ["openid", "email", "profile"])
+    assert config =~ ~s(signing_alg: "RS256")
+    assert config =~ "secret_key_base:"
+
+    # ADOPT-D04/T-127-02: assert the placeholder positively (so a missing key
+    # can't vacuously satisfy the negative check below) and assert no run of
+    # 32+ hex/base64url characters exists anywhere in the rendered config
+    # except one naming its own replacement -- no secret literal may ship.
+    assert config =~ "REPLACE"
+
+    long_runs = Regex.scan(~r/[A-Za-z0-9+\/=_-]{32,}/, config) |> List.flatten()
+
+    assert Enum.all?(long_runs, &(&1 =~ ~r/REPLACE|GENERATE/)),
+           "rendered config must not contain an unlabeled secret-shaped literal: #{inspect(long_runs)}"
+
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
              ~s<forward("/lockspire", Lockspire.Web.Router)>
 
@@ -278,6 +298,17 @@ defmodule Lockspire.InstallGeneratorTest do
     assert resolver =~ "interaction_id"
     assert resolver =~ "Lockspire must not import Sigra at compile"
     assert resolver =~ "current_account(conn_or_socket)"
+  end
+
+  test "mix lockspire.install renders a mount-path-consistent issuer for a custom mount path" do
+    capture_io(fn ->
+      install_fixture!(["--mount-path", "/auth"])
+    end)
+
+    config = File.read!(Path.join(@fixture_root, "config/lockspire.exs"))
+
+    assert config =~ ~s(issuer: "https://example.com/auth")
+    assert config =~ ~s(mount_path: "/auth")
   end
 
   test "mix lockspire.install requires explicit public-schema opt in" do
