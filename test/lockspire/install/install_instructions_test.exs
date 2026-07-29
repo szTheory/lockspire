@@ -168,8 +168,14 @@ defmodule Lockspire.Install.InstallInstructionsTest do
       supervision = Enum.find(result.checks, &(&1.id == :supervision))
 
       refute is_nil(supervision)
-      assert supervision.status in [:error, :warning]
-      assert supervision.details =~ "Lockspire.Oban"
+      assert supervision.status == :error
+
+      # Either honest outcome is acceptable; a raised ArgumentError is not. Which branch
+      # applies depends on whether :lockspire itself survived :oban going down.
+      assert supervision.details =~ "Lockspire.Oban" or
+               supervision.details =~ "not running in this VM"
+
+      refute supervision.summary =~ "unknown registry"
     end
   end
 

@@ -218,11 +218,29 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp supervision_children_check do
-    evaluate_supervision_children(
-      oban_child_running?(),
-      jwks_cache_running?(),
-      key_cache_running?()
-    )
+    # `mix lockspire.verify` declares @requirements ["app.config"], which loads configuration
+    # without starting any application, so on a host that has not been started none of these
+    # children can be running no matter how correctly application.ex lists them. Reporting
+    # "children are missing" there names the wrong cause and sends an adopter to edit a file
+    # that is already right. Distinguish the two cases.
+    if lockspire_application_started?() do
+      evaluate_supervision_children(
+        oban_child_running?(),
+        jwks_cache_running?(),
+        key_cache_running?()
+      )
+    else
+      Check.error(
+        :supervision,
+        "Lockspire's supervision children cannot be checked from a non-started application",
+        "the :lockspire application is not running in this VM",
+        "Run this check against a started application -- `iex -S mix` on the host, or a booted release -- rather than a config-only Mix task. This result says nothing about whether your application.ex lists Lockspire's children correctly."
+      )
+    end
+  end
+
+  defp lockspire_application_started? do
+    Enum.any?(Application.started_applications(), &(elem(&1, 0) == :lockspire))
   end
 
   # Each of these answers "is this child running?" about a host that may not have wired it
