@@ -24,8 +24,8 @@ independently-proven segments.
 `mix lockspire.install` currently runs against an empty directory in test. This category
 covers proving it against a real generated application.
 
-- [ ] **INSTALL-01**: `mix lockspire.install` is exercised against a freshly generated Phoenix application instead of an empty fixture directory.
-- [ ] **INSTALL-02**: A maintainer can confirm the installer's generated files match the host they were generated into — app name, web module, router module, and repo module all resolve against the real host rather than a placeholder.
+- [x] **INSTALL-01**: `mix lockspire.install` is exercised against a freshly generated Phoenix application instead of an empty fixture directory.
+- [x] **INSTALL-02**: A maintainer can confirm the installer's generated files match the host they were generated into — app name, web module, router module, and repo module all resolve against the real host rather than a placeholder.
 - [ ] **INSTALL-03**: Installer behavior when the host already contains conflicting files or prior Lockspire output is observable and predictable, so a re-run does not leave the host in an unclear half-installed state.
 
 ### Documented Wiring Truth
@@ -84,8 +84,8 @@ Populated during roadmap creation on 2026-07-28. See `.planning/ROADMAP.md`.
 | ADOPT-02 | Phase 126 | Complete |
 | ADOPT-03 | Phase 126 | Complete |
 | ADOPT-04 | Phase 126 | Complete |
-| INSTALL-01 | Phase 127 | Pending |
-| INSTALL-02 | Phase 127 | Pending |
+| INSTALL-01 | Phase 127 | Complete |
+| INSTALL-02 | Phase 127 | Complete |
 | INSTALL-03 | Phase 127 | Pending |
 | WIRE-01 | Phase 128 | Pending |
 | WIRE-02 | Phase 128 | Pending |

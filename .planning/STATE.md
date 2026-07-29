@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-current_phase: 127
 status: executing
-stopped_at: Phase 127 context gathered (assumptions mode)
-last_updated: "2026-07-29T04:56:29.091Z"
+stopped_at: Completed 127-01-PLAN.md
+last_updated: "2026-07-29T12:59:13.348Z"
 last_activity: 2026-07-29
-last_activity_desc: Phase 127 planning complete
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 6
+  completed_plans: 7
   percent: 20
 ---
 
@@ -24,14 +22,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can turn an existing app into a trustworthy OAuth/OIDC provider with high-security defaults while keeping account, login, tenant policy, and operator authentication in the host app.
 
-**Current focus:** Phase 127 — installer against a real host
+**Current focus:** Phase 127 — installer-against-a-real-host
 
 ## Current Position
 
-Phase: 127
-Plan: Not started
+Phase: 127 (installer-against-a-real-host) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-07-29 — Phase 127 planning complete
+Last activity: 2026-07-29
 
 ## Completed Ad Hoc Work
 
@@ -241,6 +239,7 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 126] Plan 126-06 ran the walk end to end (19 PASS, 12 FAIL, RED) and authored 126-DEFECT-LEDGER.md, mechanically reconciled against every LOCKSPIRE_WALK_WORKAROUND marker in scripts/maintainer/ -- 17 entries, no defect fixed in lib/priv/docs/examples.
 - [Phase ?]: [Phase 126] Plan 126-06 discovered four new real defects only a live run could surface: ADOPT-D15 (ecto_sql lock conflict on a fresh phx.new host), ADOPT-D16 (installer-generated HEEx syntax that fails to compile against phoenix_live_view 1.2.8), ADOPT-D18 (consent LiveView needs its own live_session on_mount hook or an actually logged-in adopter is treated as anonymous), and ADOPT-D19 (docs/protect-phoenix-api-routes.md documents access_token struct fields that do not exist).
 - [Phase ?]: [Phase 126] Plan 126-06 dropped ADOPT-D12 from the numbered ledger (never observed by this walk, since it never invokes examples/adoption_demo) and never assigned ADOPT-D17 (the symptom it would have covered was a harness fixture bug, not a real defect), documenting both decisions in the ledger itself.
+- [Phase ?]: [Phase 127]: Plan 127-01 stripped Phase 126 walk-installed Lockspire wiring and a local absolute path from the committed phx_new_host snapshot so it represents a genuine pre-install host, and rebuilt the install manifest version field from Application.spec(:lockspire, :vsn) instead of the pushed Mix project's config.
 
 ## Blockers/Concerns
 
@@ -255,11 +254,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T03:20:43.308Z
+**Last session:** 2026-07-29T12:59:13.341Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
-**Resume file:** .planning/phases/127-installer-against-a-real-host/127-CONTEXT.md
-**Stopped at:** Phase 127 context gathered (assumptions mode)
+**Resume file:** None
+**Stopped at:** Completed 127-01-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -326,6 +325,7 @@ institutionalizes a known failure.
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 126 P06 | 70min | 3 tasks | 4 files |
+| Phase 127 P01 | 40min | 2 tasks | 13 files |
 
 ## Operator Next Steps
 
