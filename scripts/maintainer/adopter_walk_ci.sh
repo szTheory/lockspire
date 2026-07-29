@@ -13,10 +13,13 @@ set -uo pipefail
 # adopter_walk_contract_test.exs asserts stays empty) can never accidentally
 # match this file's own name.
 #
-# On a mismatch (verifier exit 3), this runs a second attempt relying on the
-# walk's own .walk/steps/*.done resume markers -- never --force -- so only
-# genuinely incomplete steps re-run. If the same (step_id, occurrence) keys
-# mismatch identically on both attempts, that is a reproducible regression.
+# On a mismatch (verifier exit 3), this runs a second FROM-SCRATCH attempt --
+# archiving the first attempt's evidence tree and resetting the walk database,
+# never resuming from .walk/steps/*.done markers, because a resumed report is
+# mostly "skipped (already done)" rows that adopter_walk_verify.py refuses
+# outright and whose mismatch set cannot be compared like-for-like against
+# attempt 1's. If the same (step_id, occurrence) keys mismatch identically on
+# both attempts, that is a reproducible regression.
 # If the mismatched key set differs between attempts, this reports UNSTABLE
 # and flags it INFRA rather than REGRESSION, because a real regression is
 # deterministic and a transient CDN blip, database hiccup, or similar is not.
@@ -30,6 +33,12 @@ REPORT_JSON="$WORKDIR/.walk/report.json"
 BASELINE="scripts/maintainer/adopter_walk_baseline.json"
 VERIFY="scripts/maintainer/adopter_walk_verify.py"
 
+# Cross-attempt state lives OUTSIDE $WORKDIR, because attempt 2 archives that whole tree --
+# keeping attempt 1's verdict inside it would move it out from under the comparison below
+# and make every retry look "different", i.e. permanently UNSTABLE.
+STATE_DIR="${WORKDIR}-ci-state"
+rm -rf "$STATE_DIR"
+mkdir -p "$STATE_DIR"
 mkdir -p "$WORKDIR/.walk"
 
 write_summary() {
@@ -83,7 +92,7 @@ PYEOF
 echo "adopter-walk-ci: attempt 1"
 run_walk
 
-VERIFY_LOG1="$WORKDIR/.walk/verify_attempt1.log"
+VERIFY_LOG1="$STATE_DIR/verify_attempt1.log"
 python3 "$VERIFY" --report "$REPORT_JSON" --baseline "$BASELINE" --print-baseline-patch \
   >"$VERIFY_LOG1" 2>&1
 VERIFY_EXIT1=$?
@@ -106,7 +115,7 @@ fi
 
 echo "adopter-walk-ci: attempt 1 mismatched the baseline -- running attempt 2 to check reproducibility"
 
-mismatched_keys "$REPORT_JSON" >"$WORKDIR/.walk/mismatch_attempt1.tsv"
+mismatched_keys "$REPORT_JSON" >"$STATE_DIR/mismatch_attempt1.tsv"
 
 # Attempt 2 must be another FROM-SCRATCH walk, not a resumed one. Resuming would fill the
 # report with "skipped (already done)" rows, which adopter_walk_verify.py refuses outright
@@ -130,9 +139,9 @@ fi
 
 run_walk
 
-mismatched_keys "$REPORT_JSON" >"$WORKDIR/.walk/mismatch_attempt2.tsv"
+mismatched_keys "$REPORT_JSON" >"$STATE_DIR/mismatch_attempt2.tsv"
 
-if diff -q "$WORKDIR/.walk/mismatch_attempt1.tsv" "$WORKDIR/.walk/mismatch_attempt2.tsv" >/dev/null 2>&1; then
+if diff -q "$STATE_DIR/mismatch_attempt1.tsv" "$STATE_DIR/mismatch_attempt2.tsv" >/dev/null 2>&1; then
   echo "adopter-walk-ci: attempt 2 reproduced the same mismatch set -- reproducible regression"
   write_summary "REGRESSION" "$(cat "$VERIFY_LOG1")"
   exit 3
@@ -141,7 +150,7 @@ fi
 echo "adopter-walk-ci: attempt 2 produced a different mismatch set than attempt 1 -- UNSTABLE, flagged INFRA rather than REGRESSION"
 write_summary "UNSTABLE (INFRA)" "$(
   printf 'Attempt 1 mismatches:\n%s\n\nAttempt 2 mismatches:\n%s\n' \
-    "$(cat "$WORKDIR/.walk/mismatch_attempt1.tsv")" \
-    "$(cat "$WORKDIR/.walk/mismatch_attempt2.tsv")"
+    "$(cat "$STATE_DIR/mismatch_attempt1.tsv")" \
+    "$(cat "$STATE_DIR/mismatch_attempt2.tsv")"
 )"
 exit 2
