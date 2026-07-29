@@ -1,0 +1,206 @@
+{
+  "schema": "lockspire.adopter_walk.baseline/1",
+  "authored_from": "Derived from every `record_result \"PASS\"`/`record_result \"FAIL\"` call site in scripts/maintainer/adopter_path_walk.sh and the `[PASS]`/`[FAIL]` lines in scripts/maintainer/adopter_path_flow.py, cross-referenced with .planning/phases/126-adopter-path-walk-defect-ledger/126-DEFECT-LEDGER.md's dispositions and 127-09-PLAN.md's six workaround removals. authored_before_run: true -- no `mix adopter.walk` run backs this file; it is a falsifiable prediction the first real run can refute.",
+  "authored_before_run": true,
+  "confirmed_by_run": null,
+  "expected_pass_count": 22,
+  "expected_fail_count": 6,
+  "rows": [
+    {
+      "step_id": "step-00a-preflight",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00a-preflight",
+      "occurrence": 2,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00a-preflight",
+      "occurrence": 3,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00a-preflight",
+      "occurrence": 4,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00b-phx-new",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00c-gen-auth",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-00d-seed-user",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-01-add-dep",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-02-install",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-03a-config-import",
+      "occurrence": 1,
+      "level": "FAIL",
+      "defect": "ADOPT-D04",
+      "why": "127-06's config template still omits the oban: key; this call site's unconditional FAIL records that before the harness patches issuer, secret, known_scopes, and oban: as walk-specific values -- none of which is adopter-facing (127-09 re-scoped the workaround, it did not remove it)."
+    },
+    {
+      "step_id": "step-03b-router-call",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": "ADOPT-D01",
+      "why": "ADOPT-D01 is closed by 127-05's router-template rewrite (lockspire_routes/1 is now a defmacro emitting a real quote block, not a heredoc String), so calling it as documented now defines the Lockspire mount. This PASS is the resolved counterpart of the dead ADOPT-D01 FAIL branch the harness still carries in source for regression detection -- if that branch ever fires again, the verifier reports it as an UNRECORDED regression against this defect."
+    },
+    {
+      "step_id": "step-03b-router-paste",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-03b-router-wire",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-03c-resolver",
+      "occurrence": 1,
+      "level": "FAIL",
+      "defect": "ADOPT-D11",
+      "why": "The guide's account-resolver checklist names resolve_account/2 and build_claims/2 to implement but supplies no worked example, subject-reference format contract, or claim-map shape (ADOPT-D11, owning phase 128). This call site fires unconditionally, before the harness writes its own resolver implementation from first principles."
+    },
+    {
+      "step_id": "step-03c-resolver",
+      "occurrence": 2,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-03d-app-tree",
+      "occurrence": 1,
+      "level": "FAIL",
+      "defect": "ADOPT-D05",
+      "why": "Nothing in the installer or the guide tells the host to order Lockspire's application start behind its own Repo or to add Lockspire's supervision children (ADOPT-D05, installer half owned by phase 127). This call site fires unconditionally, before the harness applies the included_applications/extra_applications/supervision-tree workaround."
+    },
+    {
+      "step_id": "step-03d-app-tree",
+      "occurrence": 2,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-03e-protected-route",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-04-migrate",
+      "occurrence": 1,
+      "level": "FAIL",
+      "defect": null,
+      "why": "This step structurally can never PASS by design: the documented bare `mix ecto.migrate` never reaches Lockspire's own priv/repo/migrations path, so its exit code alone proves nothing about Lockspire's migration state. step-05-verify is the honest detector for this same underlying gap (ADOPT-D07)."
+    },
+    {
+      "step_id": "step-05-verify",
+      "occurrence": 1,
+      "level": "FAIL",
+      "defect": "ADOPT-D07",
+      "why": "mix lockspire.verify's independent Ecto.Migrator.with_repo/2 check reports pending Lockspire/Oban migrations before the release-safe --migrations-path workaround is applied (ADOPT-D07). This call site fires unconditionally, ahead of the workaround."
+    },
+    {
+      "step_id": "step-05-verify",
+      "occurrence": 2,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-06a-client",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-06a-client",
+      "occurrence": 2,
+      "level": "FAIL",
+      "defect": "ADOPT-D06",
+      "why": "No documented step mints a signing key, so JWKS and token issuance have nothing to sign with after a stock install (ADOPT-D06, installer half owned by phase 127). This call site fires unconditionally, immediately after client registration succeeds and before the harness calls generate_key/1, publish_key/2, and activate_key/2."
+    },
+    {
+      "step_id": "step-06a-client",
+      "occurrence": 3,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-06b-flow",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-06c-token-proof",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-07-upgrade (not walked)",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    },
+    {
+      "step_id": "step-08-verify-seam (not walked)",
+      "occurrence": 1,
+      "level": "PASS",
+      "defect": null,
+      "why": null
+    }
+  ]
+}
