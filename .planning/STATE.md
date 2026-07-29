@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Adopter Path Proof
-current_phase: 127
-current_phase_name: installer-against-a-real-host
 status: executing
-stopped_at: Completed 127-02-PLAN.md
-last_updated: "2026-07-29T13:09:58.281Z"
+stopped_at: Completed 127-03-PLAN.md
+last_updated: "2026-07-29T13:22:43.463Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 15
-  completed_plans: 8
+  completed_plans: 9
   percent: 20
 ---
 
@@ -29,7 +27,7 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 127 (installer-against-a-real-host) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -243,6 +241,7 @@ institutionalizes a known failure.
 - [Phase ?]: [Phase 126] Plan 126-06 dropped ADOPT-D12 from the numbered ledger (never observed by this walk, since it never invokes examples/adoption_demo) and never assigned ADOPT-D17 (the symptom it would have covered was a harness fixture bug, not a real defect), documenting both decisions in the ledger itself.
 - [Phase ?]: [Phase 127]: Plan 127-01 stripped Phase 126 walk-installed Lockspire wiring and a local absolute path from the committed phx_new_host snapshot so it represents a genuine pre-install host, and rebuilt the install manifest version field from Application.spec(:lockspire, :vsn) instead of the pushed Mix project's config.
 - [Phase ?]: [Phase 127]: Plan 127-02 accepted the resolver's natural ecto 3.14.1 pick (not the plan-authored 3.14.0 target) after widening ecto_sql to a range, verifying 3.14.1's legitimacy directly against the hex.pm API rather than forcing an artificial downgrade via a transitive override.
+- [Phase ?]: [Phase 127]: Plan 127-03 confirmed the ADOPT-D08 pre-fix defect empirically (toggling implementation content via Edit, not git) rather than trusting the plan description, and added on_exit-based DB cleanup for Mix-task integration tests whose task-owned Ecto.Migrator.with_repo/2 call persists non-sandboxed rows.
 
 ## Blockers/Concerns
 
@@ -257,11 +256,11 @@ institutionalizes a known failure.
 
 ## Session Continuity
 
-**Last session:** 2026-07-29T13:09:58.273Z
+**Last session:** 2026-07-29T13:22:43.460Z
 
 **Next action:** Plan Phase 126 (Adopter Path Walk & Defect Ledger) with `/gsd-plan-phase 126`.
 **Resume file:** None
-**Stopped at:** Completed 127-02-PLAN.md
+**Stopped at:** Completed 127-03-PLAN.md
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -330,6 +329,7 @@ institutionalizes a known failure.
 | Phase 126 P06 | 70min | 3 tasks | 4 files |
 | Phase 127 P01 | 40min | 2 tasks | 13 files |
 | Phase 127 P02 | 20min | 2 tasks | 3 files |
+| Phase 127 P03 | 25min | 1 tasks | 2 files |
 
 ## Operator Next Steps
 
