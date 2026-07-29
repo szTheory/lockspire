@@ -26,7 +26,8 @@ defmodule Lockspire.Install.Verify do
       config_check(),
       seam_modules_check(resolver_module, interaction_handler_module),
       router_check(router, mount_path),
-      migrations_check(repo)
+      migrations_check(repo),
+      supervision_children_check()
     ]
 
     %{ok?: Enum.all?(checks, &(&1.status == :ok)), checks: checks}
@@ -179,6 +180,67 @@ defmodule Lockspire.Install.Verify do
 
   defp admin_mount_shadowed?(_public_mount_index, _admin_mount_index), do: false
 
+  @doc """
+  Reports whether Lockspire's supervision children are running for the given readiness state.
+
+  This is a pure decision function separated from the live process lookups in
+  `supervision_children_check/0` so the OK and error rendering can be exercised directly
+  without starting or stopping the host's supervision tree.
+  """
+  @spec evaluate_supervision_children(boolean(), boolean(), boolean()) :: Check.result()
+  def evaluate_supervision_children(oban_running?, jwks_cache_running?, key_cache_running?) do
+    missing =
+      [
+        {oban_running?, "Lockspire.Oban"},
+        {jwks_cache_running?, ":lockspire_jwks_cache"},
+        {key_cache_running?, "Lockspire.KeyCache"}
+      ]
+      |> Enum.reject(fn {running?, _name} -> running? end)
+      |> Enum.map(fn {_running?, name} -> name end)
+
+    case missing do
+      [] ->
+        Check.ok(
+          :supervision,
+          "Lockspire's supervision children are running",
+          "Lockspire.Oban, :lockspire_jwks_cache, Lockspire.KeyCache",
+          "Keep Lockspire's Oban child, the :lockspire_jwks_cache Cachex child, and Lockspire.KeyCache in your host's Application.start/2 child list, ordered after your own Repo."
+        )
+
+      _ ->
+        Check.error(
+          :supervision,
+          "Lockspire's supervision children are not all running",
+          "missing: #{Enum.join(missing, ", ")}",
+          "Add the missing children to your host's application.ex child list, ordered after your own Repo: the Oban child built from Lockspire.Oban.runtime_config!/0, the Cachex child named :lockspire_jwks_cache, and Lockspire.KeyCache."
+        )
+    end
+  end
+
+  defp supervision_children_check do
+    evaluate_supervision_children(
+      oban_child_running?(),
+      jwks_cache_running?(),
+      key_cache_running?()
+    )
+  end
+
+  defp oban_child_running? do
+    is_pid(Oban.whereis(Lockspire.Oban))
+  end
+
+  defp jwks_cache_running? do
+    match?({:ok, _size}, Cachex.size(:lockspire_jwks_cache))
+  end
+
+  defp key_cache_running? do
+    is_pid(Process.whereis(Lockspire.KeyCache))
+  end
+
+  defp migrations_path do
+    Application.app_dir(:lockspire, "priv/repo/migrations")
+  end
+
   defp migrations_check(repo) do
     repo
     |> migration_state()
@@ -194,7 +256,7 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp migration_state(repo) do
-    migrations_path = Application.app_dir(:lockspire, "priv/repo/migrations")
+    migrations_path = migrations_path()
     storage_prefix = Lockspire.Config.storage_prefix()
     oban_prefix = Lockspire.Config.oban_prefix()
 
@@ -238,7 +300,7 @@ defmodule Lockspire.Install.Verify do
       :migrations,
       "Pending Lockspire or Oban migrations detected",
       details,
-      "Run `mix ecto.migrate` in the host app before using the embedded Lockspire surfaces."
+      "Run `mix ecto.migrate --migrations-path #{migrations_path()}` before using the embedded Lockspire surfaces."
     )
   end
 
@@ -248,7 +310,7 @@ defmodule Lockspire.Install.Verify do
       :migrations,
       "Lockspire storage prefix is configured but core tables are missing",
       "expected #{storage_prefix}.lockspire_clients in #{inspect(repo)}",
-      "Run Lockspire migrations with config :lockspire, storage_prefix: #{inspect(storage_prefix)} before booting."
+      "Run `mix ecto.migrate --migrations-path #{migrations_path()}` with config :lockspire, storage_prefix: #{inspect(storage_prefix)} before booting."
     )
   end
 
@@ -258,7 +320,7 @@ defmodule Lockspire.Install.Verify do
       :migrations,
       "Lockspire Oban prefix is configured but oban_jobs is missing",
       "expected #{oban_prefix}.oban_jobs in #{inspect(repo)}",
-      "Run Lockspire migrations with config :lockspire, oban_prefix: #{inspect(oban_prefix)} before enabling Lockspire jobs."
+      "Run `mix ecto.migrate --migrations-path #{migrations_path()}` with config :lockspire, oban_prefix: #{inspect(oban_prefix)} before enabling Lockspire jobs."
     )
   end
 
@@ -267,7 +329,7 @@ defmodule Lockspire.Install.Verify do
       :migrations,
       "Lockspire and Oban migrations are up to date",
       "repo=#{inspect(repo)} applied_migrations=#{length(state.statuses)} storage_prefix=#{inspect(state.storage_prefix)} oban_prefix=#{inspect(state.oban_prefix)}",
-      "Keep running `mix ecto.migrate` before booting new Lockspire features."
+      "Keep running `mix ecto.migrate --migrations-path #{migrations_path()}` before booting new Lockspire features."
     )
   end
 
