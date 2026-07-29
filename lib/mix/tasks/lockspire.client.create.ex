@@ -34,10 +34,14 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
     if Keyword.get(opts, :help, false) do
       Mix.shell().info(help())
     else
-      opts
-      |> build_attrs()
-      |> Clients.register_client()
-      |> print_result()
+      attrs = build_attrs(opts)
+
+      {:ok, registration_result, _started_apps} =
+        Ecto.Migrator.with_repo(Lockspire.Config.repo!(), fn _started_repo ->
+          Clients.register_client(attrs)
+        end)
+
+      print_result(registration_result)
     end
   end
 
