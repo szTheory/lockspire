@@ -312,14 +312,16 @@ The consent API must precede the generated LiveView, and the router macro must p
 | A1 | `Lockspire.Web.ConsentContext` is the preferred exact public module name. | Architecture Patterns | Low: name is discretionary; semantics and boundary are locked. |
 | A2 | `--with-fapi-smoke` is the preferred exact opt-in switch. | Generated proof | Low: switch/template path is discretionary; opt-in separation is locked. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What exact default behavioral smoke should a generated host own?**
    - What we know: it must compile and execute the actual generated endpoint/router under `:none`; it must not require FAPI PAR rejection. [VERIFIED: codebase `131-CONTEXT.md`, `priv/templates/lockspire.install/fapi_smoke_e2e_test.exs`]
    - Recommendation: use discovery/JWKS plus default authorization-code + S256 routing and exact redirect rejection, borrowing the real host setup pattern from Phase 6 without attempting Phase 133’s separate-origin journey.
+   - Resolution: Plan 131-05 selects this default behavioral smoke—discovery/JWKS, default authorization-code + S256 routing, and exact redirect rejection—and keeps FAPI proof explicitly opt-in.
 2. **Should migration inventory be a section of the existing manifest or a small separate file?**
    - What we know: the existing manifest is already install-owned and versioned, but tracks only managed scaffolding. [VERIFIED: codebase `lib/lockspire/install/manifest.ex`]
    - Recommendation: add an optional `migrations` array to that manifest to keep one audit file and preserve old-manifest compatibility.
+   - Resolution: Plan 131-04 selects an optional `migrations` inventory in the existing install manifest with backward-compatible handling for old manifests that omit it.
 
 ## Environment Availability
 
