@@ -478,6 +478,20 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert [{^resolver_module, _binary}] =
              Code.compile_string(resolver, resolver_path)
+
+    previous_logout_path = Application.get_env(:lockspire, :logout_path)
+    Application.put_env(:lockspire, :logout_path, "/sign-out")
+
+    on_exit(fn ->
+      if is_nil(previous_logout_path) do
+        Application.delete_env(:lockspire, :logout_path)
+      else
+        Application.put_env(:lockspire, :logout_path, previous_logout_path)
+      end
+    end)
+
+    assert %Lockspire.Host.InteractionResult{login_path: "/sign-out", return_to: "/after-logout"} =
+             resolver_module.redirect_for_logout(nil, %{return_to: "/after-logout"})
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
