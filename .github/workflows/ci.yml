@@ -36,7 +36,7 @@ jobs:
         run: bash ./scripts/ci/lint_workflows.sh
 
       - name: Verify dependency setup did not rewrite locks
-        run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock .github/actions/release-please/runtime/package-lock.json
+        run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json
 
   fast:
     name: Fast Checks
@@ -125,7 +125,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
+        image: postgres:14@sha256:7e900619df8eca59f34c7fb280a0bcb46e51c75f1697e98bb99f31183f71b762 # postgres:14 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -162,9 +162,11 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-compat-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+            test/fixtures/phoenix_1_8_live_view_1_1/deps
+            test/fixtures/phoenix_1_8_live_view_1_1/_build
+          key: ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'test/fixtures/phoenix_1_8_live_view_1_1/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-compat-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-
+            ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-
 
       - name: Install dependencies
         run: mix deps.get --check-locked
@@ -183,6 +185,17 @@ jobs:
 
       - name: Run fast tests on minimum supported pair
         run: mix test.fast
+
+      - name: Install exact Phoenix and LiveView compatibility fixture
+        working-directory: test/fixtures/phoenix_1_8_live_view_1_1
+        run: mix deps.get --check-locked
+
+      - name: Compile exact Phoenix and LiveView compatibility fixture
+        working-directory: test/fixtures/phoenix_1_8_live_view_1_1
+        run: mix compile --warnings-as-errors
+
+      - name: Verify compatibility fixture lock stayed unchanged
+        run: git diff --exit-code -- mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock
 
   integration:
     name: Integration Checks

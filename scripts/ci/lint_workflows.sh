@@ -37,8 +37,15 @@ fi
 have_version actionlint "${ACTIONLINT_VERSION}"
 have_version shellcheck "${SHELLCHECK_VERSION}"
 
-mapfile -t workflows < <(find .github/workflows -type f -name '*.yml' -print | sort)
-mapfile -t scripts < <(find . -type f \( -name '*.sh' -o -perm -u+x \) \
+workflows=()
+while IFS= read -r workflow; do
+  workflows+=("$workflow")
+done < <(find .github/workflows -type f -name '*.yml' -print | sort)
+
+scripts=()
+while IFS= read -r script; do
+  scripts+=("$script")
+done < <(find . -type f \( -name '*.sh' -o -perm -u+x \) \
   -not -path './.git/*' -not -path './deps/*' -not -path './_build/*' -not -path './.github/actions/release-please/runtime/node_modules/*' \
   -exec sh -c 'head -n 1 "$1" | grep -qE "^#!.*(ba)?sh"' _ {} \; -print | sort)
 

@@ -23,6 +23,8 @@ defmodule Lockspire.CiStaticContractTest do
 
     assert ci =~ "mix deps.get --check-locked"
     assert release =~ "mix deps.get --check-locked"
-    assert ci =~ "git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock .github/actions/release-please/runtime/package-lock.json"
+
+    assert ci =~
+             "git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json"
   end
 end
