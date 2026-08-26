@@ -1,5 +1,6 @@
 /_build/
 /deps/
+**/node_modules/
 /examples/*/_build/
 /examples/*/deps/
 /.elixir_ls/
