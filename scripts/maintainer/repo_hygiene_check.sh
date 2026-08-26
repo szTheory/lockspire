@@ -206,7 +206,7 @@ ci_source_contract_checks() {
   if grep -Fq -- '--db-only' examples/adoption_demo/bin/docker-reset &&
      grep -Fq -- '--cache-only' examples/adoption_demo/bin/docker-reset &&
      grep -Fq -- '--all' examples/adoption_demo/bin/docker-reset &&
-     grep -Fq 'for suffix in db_data' examples/adoption_demo/bin/docker-reset &&
+     grep -Fq 'docker volume rm "${project}_db_data"' examples/adoption_demo/bin/docker-reset &&
      grep -Fq 'for suffix in deps_volume build_volume' examples/adoption_demo/bin/docker-reset &&
      ! grep -Eq 'docker[[:space:]]+volume[[:space:]]+prune|down[[:space:]].*(-v|--volumes)' examples/adoption_demo/bin/docker-reset; then
     record_result "PASS" "docker-reset contract" "reset remains scoped and can preserve database or cache volumes"
@@ -309,10 +309,13 @@ repo_owned_checks() {
   if grep -Fq 'uses: ./.github/actions/release-please' .github/workflows/release.yml &&
      grep -Fq 'config-file: release-please-config.json' .github/workflows/release.yml &&
      grep -Fq 'manifest-file: .release-please-manifest.json' .github/workflows/release.yml &&
-     grep -Fq 'needs.release-please.outputs.release_sha == github.sha' .github/workflows/release.yml &&
+     grep -Fq 'actions/runs/$SOURCE_CI_RUN_ID' .github/workflows/release.yml &&
+     grep -Fq "test \"\$(jq -r '.head_sha' <<< \"\$ci_run\")\" = \"\$verified_sha\"" .github/workflows/release.yml &&
+     grep -Fq "needs.recovery-validation.result == 'success'" .github/workflows/release.yml &&
+     grep -Fq 'git checkout --detach "$VERIFIED_SHA"' .github/workflows/release.yml &&
      grep -Fq 'run: mix release.preflight' .github/workflows/release.yml &&
      grep -Fq 'run: mix hex.publish --yes' .github/workflows/release.yml; then
-    record_result "PASS" "release workflow" "repo-controlled Release Please and protected publish commands are intact"
+    record_result "PASS" "release workflow" "repo-controlled Release Please and exact-CI-evidence publish commands are intact"
   else
     record_result "BLOCK" "release workflow" "release.yml no longer matches the trusted release lane"
   fi
