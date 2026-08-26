@@ -487,6 +487,7 @@ defmodule Lockspire.InstallGeneratorTest do
     File.rm_rf!(Path.join(@fixture_root, "config"))
     File.rm_rf!(Path.join(@fixture_root, "lib"))
     File.rm_rf!(Path.join(@fixture_root, "test"))
+    File.rm_rf!(Path.join(@fixture_root, "priv"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
   end

@@ -4,6 +4,7 @@ defmodule Lockspire.InstallUpgradeTest do
   import ExUnit.CaptureIO
 
   alias Lockspire.Install.Manifest
+  alias Lockspire.Install.Migrations
 
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
 
@@ -137,6 +138,182 @@ defmodule Lockspire.InstallUpgradeTest do
              ~s(mount_path: "/oauth")
   end
 
+  test "public install copies packaged migrations, records them, and repeats byte-identically" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "create widgets"
+      },
+      fn source_root ->
+        capture_io(&install_fixture!/0)
+
+        migration_path =
+          Path.join(@fixture_root, "priv/repo/migrations/20260826000100_create_widgets.exs")
+
+        assert File.read!(migration_path) == "create widgets"
+
+        assert [%{"path" => "priv/repo/migrations/20260826000100_create_widgets.exs"}] =
+                 load_manifest!()["migrations"]
+
+        before = tree_snapshot(@fixture_root)
+        output = capture_io(&install_fixture!/0)
+
+        assert output =~ "UNCHANGED priv/repo/migrations/20260826000100_create_widgets.exs"
+        assert tree_snapshot(@fixture_root) == before
+
+        assert source_root == Migrations.source_root()
+      end
+    )
+  end
+
+  test "public upgrade adds only newly packaged migrations and dry-run is non-mutating" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "create widgets"
+      },
+      fn source_root ->
+        capture_io(&install_fixture!/0)
+
+        second = Path.join(source_root, "20260826000200_create_gadgets.exs")
+        File.write!(second, "create gadgets")
+
+        before = tree_snapshot(@fixture_root)
+
+        dry_run =
+          capture_io(fn ->
+            upgrade_fixture!(["--dry-run"])
+          end)
+
+        assert dry_run =~ "DRY-RUN COPY priv/repo/migrations/20260826000200_create_gadgets.exs"
+        assert tree_snapshot(@fixture_root) == before
+
+        capture_io(fn ->
+          upgrade_fixture!([])
+        end)
+
+        assert File.read!(
+                 Path.join(
+                   @fixture_root,
+                   "priv/repo/migrations/20260826000200_create_gadgets.exs"
+                 )
+               ) == "create gadgets"
+
+        assert Enum.map(load_manifest!()["migrations"], & &1["version"]) == [
+                 "20260826000100",
+                 "20260826000200"
+               ]
+      end
+    )
+  end
+
+  test "a legacy manifest without migration metadata remains a valid public upgrade input" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "create widgets"
+      },
+      fn _source_root ->
+        capture_io(&install_fixture!/0)
+
+        legacy_manifest = load_manifest!() |> Map.delete("migrations")
+        File.write!(Manifest.path(@fixture_root), Jason.encode!(legacy_manifest, pretty: true))
+
+        capture_io(fn ->
+          upgrade_fixture!(["--mount-path", "/oauth"])
+        end)
+
+        assert File.read!(
+                 Path.join(
+                   @fixture_root,
+                   "priv/repo/migrations/20260826000100_create_widgets.exs"
+                 )
+               ) == "create widgets"
+
+        assert [%{"version" => "20260826000100"}] = load_manifest!()["migrations"]
+      end
+    )
+  end
+
+  test "a late upgrade migration collision leaves earlier additive candidates and manifest unchanged" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "create widgets"
+      },
+      fn source_root ->
+        capture_io(&install_fixture!/0)
+
+        File.write!(
+          Path.join(source_root, "20260826000200_create_gadgets.exs"),
+          "create gadgets"
+        )
+
+        conflict = "20260826000300_create_accounts.exs"
+        File.write!(Path.join(source_root, conflict), "package accounts")
+
+        host_conflict = Path.join(@fixture_root, "priv/repo/migrations/#{conflict}")
+        File.write!(host_conflict, "host accounts")
+        before = tree_snapshot(@fixture_root)
+
+        assert_raise Mix.Error, ~r/Lockspire upgrade refused/, fn ->
+          capture_io(fn -> upgrade_fixture!([]) end)
+        end
+
+        assert tree_snapshot(@fixture_root) == before
+
+        refute File.exists?(
+                 Path.join(
+                   @fixture_root,
+                   "priv/repo/migrations/20260826000200_create_gadgets.exs"
+                 )
+               )
+      end
+    )
+  end
+
+  test "a managed collision aborts public install before migrations or manifest mutate the host" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "create widgets"
+      },
+      fn _source_root ->
+        config_path = Path.join(@fixture_root, "config/lockspire.exs")
+        File.mkdir_p!(Path.dirname(config_path))
+        File.write!(config_path, "# host-owned config\n")
+        before = tree_snapshot(@fixture_root)
+
+        assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+          capture_io(&install_fixture!/0)
+        end
+
+        assert tree_snapshot(@fixture_root) == before
+        refute File.exists?(Path.join(@fixture_root, "priv/repo/migrations"))
+        refute File.exists?(Manifest.path(@fixture_root))
+      end
+    )
+  end
+
+  test "a migration collision aborts public install before generated files or manifest mutate the host" do
+    with_package_migrations!(
+      %{
+        "20260826000100_create_widgets.exs" => "package bytes"
+      },
+      fn _source_root ->
+        collision =
+          Path.join(@fixture_root, "priv/repo/migrations/20260826000100_create_widgets.exs")
+
+        File.mkdir_p!(Path.dirname(collision))
+        File.write!(collision, "host bytes")
+        before = tree_snapshot(@fixture_root)
+
+        assert_raise Mix.Error, ~r/Lockspire install refused/, fn ->
+          capture_io(&install_fixture!/0)
+        end
+
+        assert tree_snapshot(@fixture_root) == before
+        refute File.exists?(Path.join(@fixture_root, "config/lockspire.exs"))
+        refute File.exists?(Manifest.path(@fixture_root))
+      end
+    )
+  end
+
   defp install_fixture! do
     File.cd!(@fixture_root, fn ->
       Mix.Task.reenable("lockspire.install")
@@ -177,8 +354,48 @@ defmodule Lockspire.InstallUpgradeTest do
     File.rm_rf!(Path.join(@fixture_root, "config"))
     File.rm_rf!(Path.join(@fixture_root, "lib"))
     File.rm_rf!(Path.join(@fixture_root, "test"))
+    File.rm_rf!(Path.join(@fixture_root, "priv"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
+  end
+
+  defp with_package_migrations!(files, fun) do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "lockspire-package-migrations-#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(root)
+
+    Enum.each(files, fn {filename, contents} ->
+      File.write!(Path.join(root, filename), contents)
+    end)
+
+    try do
+      Migrations.with_test_source_root(root, fn -> fun.(root) end)
+    after
+      File.rm_rf!(root)
+    end
+  end
+
+  defp tree_snapshot(root) do
+    root
+    |> Path.join("**/*")
+    |> Path.wildcard(match_dot: true)
+    |> Enum.sort()
+    |> Enum.reduce(%{}, fn path, snapshot ->
+      relative_path = Path.relative_to(path, root)
+
+      value =
+        cond do
+          File.dir?(path) -> :directory
+          File.regular?(path) -> File.read!(path)
+          true -> :other
+        end
+
+      Map.put(snapshot, relative_path, value)
+    end)
   end
 
   defp forwards_lockspire_router?(source, mount_path) do

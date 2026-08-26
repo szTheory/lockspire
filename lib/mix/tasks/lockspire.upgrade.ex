@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
 
   alias Lockspire.Generators.Install
   alias Lockspire.Install.Manifest
+  alias Lockspire.Install.OperationPlan
 
   @switches [
     web: :string,
@@ -65,77 +66,39 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
           Mix.raise("Could not load install manifest: #{inspect(reason)}")
       end
 
-    rendered_by_path =
-      assigns
-      |> Install.rendered_templates()
-      |> Enum.filter(&(&1.template.ownership == :managed))
-      |> Map.new(&{&1.relative_path, &1})
+    rendered_templates = Install.rendered_templates(assigns)
 
-    {updates, drifts} =
-      manifest["managed_files"]
-      |> List.wrap()
-      |> Enum.reduce({[], []}, fn entry, {updates, drifts} ->
-        path = entry["path"]
-        expected_checksum = entry["checksum"]
-        rendered = Map.fetch!(rendered_by_path, path)
+    case OperationPlan.upgrade(assigns, rendered_templates, manifest) do
+      {:ok, plan} ->
+        OperationPlan.report(plan, if(dry_run?, do: :dry_run, else: :apply))
 
-        case File.read(rendered.destination) do
-          {:ok, contents} ->
-            current_checksum = Manifest.checksum(contents)
-            next_checksum = Manifest.checksum(rendered.rendered)
-
-            cond do
-              current_checksum != expected_checksum ->
-                {updates, [{path, "checksum drift detected"} | drifts]}
-
-              current_checksum == next_checksum ->
-                {updates, drifts}
-
-              true ->
-                {[rendered | updates], drifts}
-            end
-
-          {:error, :enoent} ->
-            {updates, [{path, "managed file is missing"} | drifts]}
-
-          {:error, reason} ->
-            {updates, [{path, inspect(reason)} | drifts]}
+        if dry_run? do
+          :ok
+        else
+          apply_plan!(plan)
         end
-      end)
 
-    if drifts != [] do
-      Enum.each(Enum.reverse(drifts), fn {path, reason} ->
-        Mix.shell().info("REFUSE #{path} (#{reason})")
-
-        Mix.shell().info(
-          "  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`."
-        )
-      end)
-
-      Mix.raise("Lockspire upgrade refused because managed scaffolding drifted.")
+      {:error, errors} ->
+        refuse!(errors)
     end
+  end
 
-    if updates == [] do
-      Mix.shell().info("No managed scaffolding updates were needed.")
-      :ok
-    else
-      Enum.each(Enum.reverse(updates), fn rendered ->
-        Mix.shell().info(
-          "#{if(dry_run?, do: "DRY-RUN", else: "UPDATE")} #{rendered.relative_path}"
-        )
-
-        unless dry_run? do
-          File.write!(rendered.destination, rendered.rendered)
-        end
-      end)
-
-      unless dry_run? do
-        assigns
-        |> Manifest.build(Map.values(rendered_by_path))
-        |> then(&Manifest.write(assigns.project_root, &1))
-      end
-
-      :ok
+  defp apply_plan!(plan) do
+    case OperationPlan.apply(plan) do
+      {:ok, _plan} -> :ok
+      {:error, errors} -> refuse!(errors)
     end
+  end
+
+  defp refuse!(errors) do
+    Enum.each(errors, fn error ->
+      Mix.shell().info("REFUSE #{error.message}")
+
+      Mix.shell().info(
+        "  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`."
+      )
+    end)
+
+    Mix.raise("Lockspire upgrade refused because managed scaffolding drifted.")
   end
 end

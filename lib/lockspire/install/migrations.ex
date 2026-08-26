@@ -10,6 +10,7 @@ defmodule Lockspire.Install.Migrations do
   alias Lockspire.Install.Manifest
 
   @default_source_root Application.app_dir(:lockspire, "priv/repo/migrations")
+  @test_source_root_key {__MODULE__, :test_source_root}
   @migration_pattern ~r/^(?<version>\d+)_(?<name>[A-Za-z0-9_]+)\.exs$/
 
   @type operation_status :: :copy | :unchanged
@@ -37,7 +38,7 @@ defmodule Lockspire.Install.Migrations do
   """
   @spec plan(keyword()) :: {:ok, plan()} | {:error, [map()]}
   def plan(opts \\ []) do
-    source_root = opts |> Keyword.get(:source_root, @default_source_root) |> Path.expand()
+    source_root = opts |> Keyword.get(:source_root, source_root()) |> Path.expand()
     project_root = opts |> Keyword.get(:project_root, File.cwd!()) |> Path.expand()
     destination_root = Path.join(project_root, "priv/repo/migrations")
 
@@ -51,6 +52,34 @@ defmodule Lockspire.Install.Migrations do
          operations: operations
        }}
     end
+  end
+
+  @doc false
+  @spec with_test_source_root(String.t(), (-> result)) :: result when result: var
+  def with_test_source_root(source_root, fun)
+      when is_binary(source_root) and is_function(fun, 0) do
+    if Mix.env() != :test do
+      raise ArgumentError, "test migration source roots are only available in Mix.env() == :test"
+    end
+
+    previous = Process.get(@test_source_root_key)
+    Process.put(@test_source_root_key, Path.expand(source_root))
+
+    try do
+      fun.()
+    after
+      if is_nil(previous) do
+        Process.delete(@test_source_root_key)
+      else
+        Process.put(@test_source_root_key, previous)
+      end
+    end
+  end
+
+  @doc false
+  @spec source_root() :: String.t()
+  def source_root do
+    Process.get(@test_source_root_key, @default_source_root)
   end
 
   @doc """

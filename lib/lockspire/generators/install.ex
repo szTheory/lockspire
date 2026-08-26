@@ -4,7 +4,7 @@ defmodule Lockspire.Generators.Install do
   """
 
   alias Lockspire.Generators.Templates
-  alias Lockspire.Install.Manifest
+  alias Lockspire.Install.OperationPlan
 
   @template_root Application.app_dir(:lockspire, "priv/templates/lockspire.install")
 
@@ -13,11 +13,9 @@ defmodule Lockspire.Generators.Install do
     assigns = build_assigns(opts)
     rendered_templates = rendered_templates(assigns)
 
-    Enum.each(rendered_templates, fn rendered ->
-      ensure_file!(rendered.destination, rendered.rendered)
-    end)
-
-    write_manifest!(assigns, rendered_templates)
+    plan = build_plan!(assigns, rendered_templates)
+    OperationPlan.report(plan, :apply)
+    apply_plan!(plan)
     Mix.shell().info(instructions(assigns))
 
     :ok
@@ -93,38 +91,33 @@ defmodule Lockspire.Generators.Install do
     ownership_header(template, destination) <> rendered_body
   end
 
-  defp write_manifest!(assigns, rendered_templates) do
-    managed_templates =
-      rendered_templates
-      |> Enum.filter(&(&1.template.ownership == :managed))
-
-    assigns
-    |> Manifest.build(managed_templates)
-    |> then(&Manifest.write(assigns.project_root, &1))
+  defp build_plan!(assigns, rendered_templates) do
+    case OperationPlan.install(assigns, rendered_templates) do
+      {:ok, plan} -> plan
+      {:error, errors} -> refuse!("install", errors)
+    end
   end
 
-  defp ensure_file!(destination, rendered) do
-    File.mkdir_p!(Path.dirname(destination))
-
-    case File.read(destination) do
-      {:ok, ^rendered} ->
-        Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
-
-      {:ok, _existing} ->
-        Mix.raise("""
-        Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
-
-        Keep the host-owned edits and reconcile this file manually before rerunning
-        `mix lockspire.install`.
-        """)
-
-      {:error, :enoent} ->
-        File.write!(destination, rendered)
-        Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-      {:error, reason} ->
-        Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+  defp apply_plan!(plan) do
+    case OperationPlan.apply(plan) do
+      {:ok, _plan} -> :ok
+      {:error, errors} -> refuse!("install", errors)
     end
+  end
+
+  defp refuse!(operation, errors) do
+    Enum.each(errors, fn error ->
+      Mix.shell().info("REFUSE #{error.message}")
+
+      Mix.shell().info(
+        "  fix: reconcile the host file manually, then rerun `mix lockspire.#{operation}`."
+      )
+    end)
+
+    Mix.raise(
+      "Lockspire #{operation} refused because planned host changes are unsafe: " <>
+        Enum.map_join(errors, "; ", & &1.message)
+    )
   end
 
   defp instructions(assigns) do
