@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Structural Quality Ratchet
 status: Awaiting next milestone
-stopped_at: Completed Phase 129 Token Endpoint Cohesion
+stopped_at: Milestone v1.36 completed and archived
 last_updated: "2026-08-26T19:12:52.970Z"
 last_activity: 2026-08-26
 last_activity_desc: Milestone v1.36 completed and archived
