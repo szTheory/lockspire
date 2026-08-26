@@ -3,6 +3,8 @@ defmodule Lockspire.InstallUpgradeTest do
 
   import ExUnit.CaptureIO
 
+  alias Lockspire.Install.Manifest
+
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
 
   setup do
@@ -24,6 +26,59 @@ defmodule Lockspire.InstallUpgradeTest do
     assert output =~ "DRY-RUN config/lockspire.exs"
     assert output =~ "DRY-RUN lib/generated_host_app_web/router/lockspire.ex"
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) == original_config
+  end
+
+  test "manifests keep legacy shape readable and audit a deterministic migration inventory" do
+    project_root =
+      Path.join(System.tmp_dir!(), "lockspire-manifest-#{System.unique_integer([:positive])}")
+
+    on_exit(fn -> File.rm_rf!(project_root) end)
+
+    assigns = %{
+      mount_path: "/lockspire",
+      storage_prefix: "lockspire",
+      oban_prefix: "lockspire",
+      web_module: "ExampleWeb",
+      scope_module: "Example.Lockspire"
+    }
+
+    managed = [%{relative_path: "config/lockspire.exs", rendered: "managed bytes"}]
+
+    migrations = [
+      %{
+        version: "20260826000200",
+        name: "create_gadgets",
+        relative_path: "priv/repo/migrations/20260826000200_create_gadgets.exs",
+        checksum: Manifest.checksum("gadgets")
+      },
+      %{
+        version: "20260826000100",
+        name: "create_widgets",
+        relative_path: "priv/repo/migrations/20260826000100_create_widgets.exs",
+        checksum: Manifest.checksum("widgets")
+      }
+    ]
+
+    manifest = Manifest.build(assigns, managed, migrations)
+
+    assert Enum.map(manifest["migrations"], & &1["version"]) == [
+             "20260826000100",
+             "20260826000200"
+           ]
+
+    assert Enum.all?(manifest["migrations"], fn migration ->
+             Map.keys(migration) == ["checksum", "name", "path", "version"]
+           end)
+
+    assert :ok = Manifest.write(project_root, manifest)
+    assert {:ok, ^manifest} = Manifest.load(project_root)
+
+    legacy = Map.delete(manifest, "migrations")
+    legacy_path = Manifest.path(project_root <> "-legacy")
+    File.mkdir_p!(Path.dirname(legacy_path))
+    File.write!(legacy_path, Jason.encode!(legacy, pretty: true))
+
+    assert {:ok, ^legacy} = Manifest.load(project_root <> "-legacy")
   end
 
   test "mix lockspire.upgrade updates unchanged managed scaffolding and refreshes the manifest" do
