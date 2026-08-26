@@ -162,7 +162,8 @@ defmodule Lockspire.Install.Migrations do
            %{
              type: :host_inventory_unavailable,
              destination: destination_root,
-             message: "Host migration directory could not be read: #{destination_root} (#{inspect(reason)})"
+             message:
+               "Host migration directory could not be read: #{destination_root} (#{inspect(reason)})"
            }
          ]}
     end
@@ -202,7 +203,8 @@ defmodule Lockspire.Install.Migrations do
               type: :content_collision,
               source: migration.source,
               destination: destination,
-              message: "Content collision: #{destination} differs from packaged migration #{migration.source}. Lockspire will not overwrite host files."
+              message:
+                "Content collision: #{destination} differs from packaged migration #{migration.source}. Lockspire will not overwrite host files."
             }
           ]
         end
@@ -230,7 +232,8 @@ defmodule Lockspire.Install.Migrations do
         source: migration.source,
         host: conflicting.path,
         version: migration.version,
-        message: "Version collision: packaged migration #{migration.source} conflicts with host migration #{conflicting.path} for version #{migration.version}."
+        message:
+          "Version collision: packaged migration #{migration.source} conflicts with host migration #{conflicting.path} for version #{migration.version}."
       }
     end)
   end
@@ -244,7 +247,8 @@ defmodule Lockspire.Install.Migrations do
         source: migration.source,
         host: conflicting.path,
         name: migration.name,
-        message: "Name collision: packaged migration #{migration.source} conflicts with host migration #{conflicting.path} for name #{migration.name}."
+        message:
+          "Name collision: packaged migration #{migration.source} conflicts with host migration #{conflicting.path} for name #{migration.name}."
       }
     end)
   end
@@ -284,20 +288,28 @@ defmodule Lockspire.Install.Migrations do
             do: [],
             else: [apply_error(operation.source, :source_changed)]
 
-        {:error, reason} -> [apply_error(operation.source, reason)]
+        {:error, reason} ->
+          [apply_error(operation.source, reason)]
       end
 
     destination_errors =
       case {operation.status, File.read(operation.destination)} do
-        {:copy, {:error, :enoent}} -> []
-        {:copy, {:ok, _contents}} -> [apply_error(operation.destination, :destination_created)]
-        {:copy, {:error, reason}} -> [apply_error(operation.destination, reason)]
+        {:copy, {:error, :enoent}} ->
+          []
+
+        {:copy, {:ok, _contents}} ->
+          [apply_error(operation.destination, :destination_created)]
+
+        {:copy, {:error, reason}} ->
+          [apply_error(operation.destination, reason)]
+
         {:unchanged, {:ok, contents}} ->
           if Manifest.checksum(contents) == operation.checksum,
             do: [],
             else: [apply_error(operation.destination, :destination_changed)]
 
-        {:unchanged, {:error, reason}} -> [apply_error(operation.destination, reason)]
+        {:unchanged, {:error, reason}} ->
+          [apply_error(operation.destination, reason)]
       end
 
     source_errors ++ destination_errors

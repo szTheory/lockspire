@@ -4,7 +4,9 @@ defmodule Lockspire.Install.MigrationsTest do
   alias Lockspire.Install.Migrations
 
   setup do
-    root = Path.join(System.tmp_dir!(), "lockspire-migrations-#{System.unique_integer([:positive])}")
+    root =
+      Path.join(System.tmp_dir!(), "lockspire-migrations-#{System.unique_integer([:positive])}")
+
     source_root = Path.join(root, "package/priv/repo/migrations")
     project_root = Path.join(root, "host")
 
@@ -15,7 +17,10 @@ defmodule Lockspire.Install.MigrationsTest do
     {:ok, source_root: source_root, project_root: project_root}
   end
 
-  test "plans missing packaged migrations as copies", %{source_root: source_root, project_root: project_root} do
+  test "plans missing packaged migrations as copies", %{
+    source_root: source_root,
+    project_root: project_root
+  } do
     write_migration!(source_root, "20260826000100_create_widgets.exs", "create widgets")
 
     assert {:ok, %{operations: [operation]}} =
@@ -46,7 +51,10 @@ defmodule Lockspire.Install.MigrationsTest do
     assert File.stat!(destination).mtime == before
   end
 
-  test "rejects an exact destination with different contents", %{source_root: source_root, project_root: project_root} do
+  test "rejects an exact destination with different contents", %{
+    source_root: source_root,
+    project_root: project_root
+  } do
     filename = "20260826000100_create_widgets.exs"
     write_migration!(source_root, filename, "package bytes")
     destination = write_host_migration!(project_root, filename, "host bytes")
@@ -63,7 +71,9 @@ defmodule Lockspire.Install.MigrationsTest do
     project_root: project_root
   } do
     write_migration!(source_root, "20260826000100_create_widgets.exs", "package bytes")
-    collision = write_host_migration!(project_root, "20260826000100_create_other_widgets.exs", "host bytes")
+
+    collision =
+      write_host_migration!(project_root, "20260826000100_create_other_widgets.exs", "host bytes")
 
     assert {:error, [%{type: :version_collision, host: ^collision, version: "20260826000100"}]} =
              Migrations.plan(source_root: source_root, project_root: project_root)
@@ -74,7 +84,9 @@ defmodule Lockspire.Install.MigrationsTest do
     project_root: project_root
   } do
     write_migration!(source_root, "20260826000100_create_widgets.exs", "package bytes")
-    collision = write_host_migration!(project_root, "20260826000200_create_widgets.exs", "host bytes")
+
+    collision =
+      write_host_migration!(project_root, "20260826000200_create_widgets.exs", "host bytes")
 
     assert {:error, [%{type: :name_collision, host: ^collision, name: "create_widgets"}]} =
              Migrations.plan(source_root: source_root, project_root: project_root)
@@ -122,36 +134,47 @@ defmodule Lockspire.Install.MigrationsTest do
     assert {:ok, result} = Migrations.apply(plan)
 
     assert Enum.map(result.operations, & &1.status) == [:copied, :copied]
+
     assert Enum.map(result.migrations, & &1.relative_path) == [
              "priv/repo/migrations/#{first}",
              "priv/repo/migrations/#{second}"
            ]
 
-    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{first}")) == "first package bytes"
-    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{second}")) == "second package bytes"
+    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{first}")) ==
+             "first package bytes"
+
+    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{second}")) ==
+             "second package bytes"
   end
 
-  test "reapplying unchanged migrations preserves their mtimes and copies only additive source growth", %{
-    source_root: source_root,
-    project_root: project_root
-  } do
+  test "reapplying unchanged migrations preserves their mtimes and copies only additive source growth",
+       %{
+         source_root: source_root,
+         project_root: project_root
+       } do
     first = "20260826000100_create_widgets.exs"
     second = "20260826000200_create_gadgets.exs"
     write_migration!(source_root, first, "first package bytes")
 
-    assert {:ok, first_plan} = Migrations.plan(source_root: source_root, project_root: project_root)
+    assert {:ok, first_plan} =
+             Migrations.plan(source_root: source_root, project_root: project_root)
+
     assert {:ok, _first_result} = Migrations.apply(first_plan)
     first_destination = Path.join(project_root, "priv/repo/migrations/#{first}")
     before = File.stat!(first_destination).mtime
 
     write_migration!(source_root, second, "second package bytes")
 
-    assert {:ok, additive_plan} = Migrations.plan(source_root: source_root, project_root: project_root)
+    assert {:ok, additive_plan} =
+             Migrations.plan(source_root: source_root, project_root: project_root)
+
     assert {:ok, result} = Migrations.apply(additive_plan)
 
     assert Enum.map(result.operations, & &1.status) == [:unchanged, :copied]
     assert File.stat!(first_destination).mtime == before
-    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{second}")) == "second package bytes"
+
+    assert File.read!(Path.join(project_root, "priv/repo/migrations/#{second}")) ==
+             "second package bytes"
   end
 
   test "refuses an approved plan when its packaged bytes change before apply", %{
@@ -178,7 +201,9 @@ defmodule Lockspire.Install.MigrationsTest do
     assert {:ok, plan} = Migrations.plan(source_root: source_root, project_root: project_root)
     destination = write_host_migration!(project_root, filename, "host bytes")
 
-    assert {:error, [%{type: :approved_plan_changed, path: ^destination}]} = Migrations.apply(plan)
+    assert {:error, [%{type: :approved_plan_changed, path: ^destination}]} =
+             Migrations.apply(plan)
+
     assert File.read!(destination) == "host bytes"
   end
 
