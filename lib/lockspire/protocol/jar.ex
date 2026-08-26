@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.Jar do
   """
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Protocol.PrivateJwk
 
   defstruct [:claims, :header]
 
@@ -39,7 +40,7 @@ defmodule Lockspire.Protocol.Jar do
     if length(String.split(jwt, ".")) == 5 do
       Enum.reduce_while(decryption_keys, {:error, :decryption_failed}, fn key, _acc ->
         try do
-          with {:ok, jwk_map} <- decode_private_jwk(key.private_jwk_encrypted),
+          with {:ok, jwk_map} <- PrivateJwk.decode(key.private_jwk_encrypted),
                jwk <- JOSE.JWK.from_map(jwk_map),
                {plain_text, %JOSE.JWE{}} <- JOSE.JWK.block_decrypt(jwt, jwk) do
             {:halt, {:ok, plain_text}}
@@ -55,22 +56,6 @@ defmodule Lockspire.Protocol.Jar do
     else
       {:ok, jwt}
     end
-  end
-
-  defp decode_private_jwk(binary) when is_binary(binary) do
-    case Jason.decode(binary) do
-      {:ok, %{} = jwk} -> {:ok, jwk}
-      _other -> decode_erlang_jwk(binary)
-    end
-  end
-
-  defp decode_erlang_jwk(binary) do
-    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
-      %{} = jwk -> {:ok, jwk}
-      _other -> {:error, :invalid_signing_key}
-    end
-  rescue
-    _ -> {:error, :invalid_signing_key}
   end
 
   @doc """

@@ -11,9 +11,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenFormatter
-
-  @access_token_ttl 3600
-  @refresh_token_ttl 2_592_000
+  alias Lockspire.Protocol.TokenLifetime
 
   @spec exchange_refresh_token(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange_refresh_token(%Client{} = client, request) when is_map(request) do
@@ -29,7 +27,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
          refresh_token: result.raw_refresh_token,
          id_token: nil,
          token_type: result.token_type,
-         expires_in: @access_token_ttl,
+         expires_in: TokenLifetime.access_token(),
          scope: Enum.join(result.access_token.scopes, " ")
        }}
     else
@@ -315,7 +313,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       audience: requested_resources,
       cnf: context.cnf,
       issued_at: rotated_at,
-      expires_at: DateTime.add(rotated_at, @access_token_ttl, :second)
+      expires_at: DateTime.add(rotated_at, TokenLifetime.access_token(), :second)
     }
   end
 
@@ -334,7 +332,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       consent_grant_id: source_token.consent_grant_id,
       sid: source_token.sid,
       cnf: context.cnf,
-      expires_at: DateTime.add(rotated_at, @refresh_token_ttl, :second)
+      expires_at: DateTime.add(rotated_at, TokenLifetime.refresh_token(), :second)
     }
   end
 

@@ -13,6 +13,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -57,7 +58,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
         audience: subject_token.audience,
         cnf: subject_token.cnf,
         issued_at: issued_at,
-        expires_at: DateTime.add(issued_at, 3600, :second)
+        expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
       }
 
       case token_store(request).store_token(access_token) do
@@ -67,7 +68,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
              access_token: token_string,
              token_type: "Bearer",
              issued_token_type: "urn:ietf:params:oauth:token-type:access_token",
-             expires_in: 3600,
+             expires_in: TokenLifetime.access_token(),
              scope: Enum.join(requested_scopes, " ")
            }}
 
@@ -321,7 +322,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
           scopes: scopes,
           cnf: subject_token.cnf,
           issued_at: issued_at,
-          expires_at: DateTime.add(issued_at, 3600, :second)
+          expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
         }
 
         AccessTokenSigner.issue_exchange(token, client, custom_claims, request)

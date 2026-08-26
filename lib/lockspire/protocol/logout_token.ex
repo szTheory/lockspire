@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.LogoutToken do
 
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
+  alias Lockspire.Protocol.PrivateJwk
 
   @logout_event_uri "http://schemas.openid.net/event/backchannel-logout"
 
@@ -31,7 +32,7 @@ defmodule Lockspire.Protocol.LogoutToken do
       Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(effective_profile)
 
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
-         {:ok, jwk_map} <- decode_private_jwk(private_jwk),
+         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk),
          {:ok, claims} <- build_claims(issuer, logout_event, delivery, issued_at),
          {_, compact} <-
            JOSE.JWT.sign(
@@ -98,25 +99,4 @@ defmodule Lockspire.Protocol.LogoutToken do
   end
 
   defp normalize_optional_string(_value), do: nil
-
-  defp decode_private_jwk(binary) when is_binary(binary) do
-    case Jason.decode(binary) do
-      {:ok, %{} = jwk_map} ->
-        {:ok, jwk_map}
-
-      _other ->
-        decode_term_private_jwk(binary)
-    end
-  end
-
-  defp decode_private_jwk(_binary), do: {:error, :invalid_signing_key}
-
-  defp decode_term_private_jwk(binary) do
-    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
-      %{} = jwk_map -> {:ok, jwk_map}
-      _other -> {:error, :invalid_signing_key}
-    end
-  rescue
-    _error -> {:error, :invalid_signing_key}
-  end
 end

@@ -15,13 +15,14 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.RefreshExchange
+  alias Lockspire.Protocol.TokenExchange.AuthorizationCodeGrant
+  alias Lockspire.Protocol.TokenExchange.CibaGrant
+  alias Lockspire.Protocol.TokenExchange.DeviceCodeGrant
   alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
-
-  @access_token_ttl 3600
-  @refresh_token_ttl 2_592_000
 
   defmodule Success do
     @moduledoc """
@@ -109,11 +110,22 @@ defmodule Lockspire.Protocol.TokenExchange do
         issuance_context,
         request
       ) do
-    redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
+    CibaGrant.issue_tokens(client, ciba_authorization, issuance_context, request)
   end
+
+  @doc false
+  @spec __issue_ciba_tokens__(Client.t(), CibaAuthorization.t(), map(), map()) :: result()
+  def __issue_ciba_tokens__(client, ciba_authorization, issuance_context, request),
+    do: redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
 
   @spec exchange_authorization_code(map()) :: result()
   def exchange_authorization_code(request) when is_map(request) do
+    AuthorizationCodeGrant.exchange(request)
+  end
+
+  @doc false
+  @spec __exchange_authorization_code__(map()) :: result()
+  def __exchange_authorization_code__(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
@@ -181,7 +193,11 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp exchange_device_code(request) do
+  defp exchange_device_code(request), do: DeviceCodeGrant.exchange(request)
+
+  @doc false
+  @spec __exchange_device_code__(map()) :: result()
+  def __exchange_device_code__(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
@@ -199,7 +215,11 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp exchange_ciba(request) do
+  defp exchange_ciba(request), do: CibaGrant.exchange(request)
+
+  @doc false
+  @spec __exchange_ciba__(map()) :: result()
+  def __exchange_ciba__(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
@@ -974,7 +994,7 @@ defmodule Lockspire.Protocol.TokenExchange do
           audience: ciba_grant.audience,
           cnf: issuance_context.cnf,
           issued_at: issued_at,
-          expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+          expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
         }
       else
         nil
@@ -1127,7 +1147,7 @@ defmodule Lockspire.Protocol.TokenExchange do
         refresh_token: raw_refresh_token,
         id_token: id_token,
         token_type: issuance_context.token_type,
-        expires_in: @access_token_ttl,
+        expires_in: TokenLifetime.access_token(),
         scope: Enum.join(persisted_access_token.scopes, " ")
       }
     end
@@ -1485,7 +1505,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       audience: authorization_code.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, @access_token_ttl, :second)
+      expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
     }
 
     # SIGNER-01: mint through the shared signer. The signer resolves the effective
@@ -1556,7 +1576,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       audience: device_grant.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
     }
 
     audit_event =
@@ -1635,7 +1655,7 @@ defmodule Lockspire.Protocol.TokenExchange do
       audience: authorization_code.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, @refresh_token_ttl, :second)
+      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
     }
 
     audit_event =

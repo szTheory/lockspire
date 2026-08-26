@@ -37,10 +37,10 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.TokenLifetime
+  alias Lockspire.Protocol.PrivateJwk
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
-
-  @access_token_ttl_seconds 3600
 
   @type result :: {:ok, String.t(), String.t()} | {:error, Error.t()}
 
@@ -136,7 +136,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
       "iss" => Config.issuer!(),
       "sub" => token.account_id,
       "aud" => aud,
-      "exp" => iat + @access_token_ttl_seconds,
+      "exp" => iat + TokenLifetime.access_token(),
       "iat" => iat,
       "client_id" => client.client_id,
       "jti" => generate_jti(),
@@ -166,7 +166,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   defp sign_jwt(claims, request) do
     with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} <-
            fetch_signing_key(request),
-         {:ok, jwk_map} <- decode_private_jwk(private_jwk) do
+         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk) do
       {_, compact} =
         JOSE.JWT.sign(
           JOSE.JWK.from_map(jwk_map),
@@ -214,21 +214,5 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
       {:error, _reason} ->
         {:error, :signing_key_lookup_failed}
     end
-  end
-
-  defp decode_private_jwk(binary) when is_binary(binary) do
-    case Jason.decode(binary) do
-      {:ok, %{} = jwk} -> {:ok, jwk}
-      _other -> decode_erlang_jwk(binary)
-    end
-  end
-
-  defp decode_erlang_jwk(binary) do
-    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
-      %{} = jwk -> {:ok, jwk}
-      _other -> {:error, :invalid_signing_key}
-    end
-  rescue
-    _ -> {:error, :invalid_signing_key}
   end
 end
