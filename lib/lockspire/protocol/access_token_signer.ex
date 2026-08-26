@@ -38,6 +38,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.Ecto.Repository
 
   @access_token_ttl_seconds 3600
 
@@ -197,7 +198,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
     key_store =
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:key_store, Config.repo!())
+      |> Keyword.get(:key_store, Repository)
 
     case key_store.fetch_active_signing_key([]) do
       {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}

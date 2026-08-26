@@ -77,7 +77,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
 
     client = %Client{client_id: "generated-host-api-client", access_token_format: :jwt}
     # server_policy_store omitted -> :jwt fallback per resolve_format/98 (A2)
-    request = %{opts: [key_store: Lockspire.Config.repo!()]}
+    request = %{opts: [key_store: Lockspire.Storage.Ecto.Repository]}
 
     {:ok, raw_at_jwt, _hash} = AccessTokenSigner.issue(token, client, request)
 
@@ -139,7 +139,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
     }
 
     client = %Client{client_id: "generated-host-api-client", access_token_format: :jwt}
-    request = %{opts: [key_store: Lockspire.Config.repo!()]}
+    request = %{opts: [key_store: Lockspire.Storage.Ecto.Repository]}
 
     {:ok, raw_at_jwt, _hash} = AccessTokenSigner.issue(token, client, request)
 
