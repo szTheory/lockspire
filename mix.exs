@@ -15,6 +15,9 @@ defmodule Lockspire.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      # The non-integration suite measured 73.11% on 2026-08-26. Keep the
+      # rounded-down floor stable so ordinary feature work can only ratchet it up.
+      test_coverage: [summary: [threshold: 73]],
       docs: docs(),
       dialyzer: dialyzer(),
       hex: hex(),
@@ -74,6 +77,7 @@ defmodule Lockspire.MixProject do
     [
       "test.setup": ["lockspire.test.setup"],
       "test.fast": ["test.setup", "test"],
+      "test.coverage": ["test.setup", "test --cover"],
       "test.integration": ["test.setup", "test --only integration"],
       "test.phase6.e2e": [
         "test.setup",
@@ -132,6 +136,7 @@ defmodule Lockspire.MixProject do
       "lockspire.test.setup": :test,
       "test.setup": :test,
       "test.fast": :test,
+      "test.coverage": :test,
       "test.integration": :test,
       "test.phase6.e2e": :test,
       "test.phase3.e2e": :test,

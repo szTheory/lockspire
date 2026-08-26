@@ -110,8 +110,8 @@ jobs:
       - name: Verify Hex package
         run: mix package.build
 
-      - name: Run fast tests
-        run: mix test.fast
+      - name: Run fast tests with built-in coverage
+        run: mix test.coverage
 
       - name: Verify migration reversibility
         run: |
@@ -162,8 +162,8 @@ jobs:
           path: |
             deps
             _build
-            test/fixtures/phoenix_1_8_live_view_1_1/deps
-            test/fixtures/phoenix_1_8_live_view_1_1/_build
+            tmp/lockspire-compatibility-fixture/deps
+            tmp/lockspire-compatibility-fixture/_build
           key: ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'test/fixtures/phoenix_1_8_live_view_1_1/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-

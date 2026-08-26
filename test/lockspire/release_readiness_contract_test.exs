@@ -325,7 +325,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
              ~S/${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
 
     assert ci_workflow =~
-             ~S/${{ runner.os }}-mix-compat-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-/
+             ~S/${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-/
 
     assert ci_workflow =~
              ~S/${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
@@ -534,7 +534,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
           "run: mix docs.verify",
           "run: mix deps.audit",
           "run: mix package.build",
-          "run: mix test.fast",
+          "run: mix test.coverage",
           "run: mix test.integration",
           "run: mix test.phase3"
         ] do
