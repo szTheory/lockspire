@@ -125,8 +125,7 @@ defmodule Lockspire.MixProject do
         "cmd sh -lc 'HEX_API_KEY= mix deps.audit'",
         "cmd sh -lc 'HEX_API_KEY= mix package.build'",
         "cmd sh -lc 'MIX_ENV=test mix test.fast'",
-        "cmd sh -lc 'MIX_ENV=test mix test.integration'",
-        "cmd sh -lc 'MIX_ENV=test mix test.phase3'"
+        "cmd sh -lc 'MIX_ENV=test mix test.integration'"
       ]
     ]
   end

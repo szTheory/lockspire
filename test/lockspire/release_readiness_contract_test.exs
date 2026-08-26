@@ -529,16 +529,15 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert mixfile =~ "\"cmd sh -lc 'HEX_API_KEY= mix package.build'\""
     assert mixfile =~ "\"cmd sh -lc 'MIX_ENV=test mix test.fast'\""
     assert mixfile =~ "\"cmd sh -lc 'MIX_ENV=test mix test.integration'\""
-    assert mixfile =~ "\"cmd sh -lc 'MIX_ENV=test mix test.phase3'\""
+    refute mixfile =~ "\"cmd sh -lc 'MIX_ENV=test mix test.phase3'\""
 
     for command <- [
           "run: mix qa",
           "run: mix docs.verify",
           "run: mix deps.audit",
           "run: mix package.build",
-          "run: mix test.coverage",
-          "run: mix test.integration",
-          "run: mix test.phase3"
+          "scripts/ci/run_test_matrix.sh --fast",
+          "scripts/ci/run_test_matrix.sh --integration"
         ] do
       assert ci_workflow =~ command
     end

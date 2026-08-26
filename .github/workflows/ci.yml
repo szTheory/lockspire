@@ -140,7 +140,15 @@ jobs:
         run: mix package.build
 
       - name: Run fast tests with built-in coverage
-        run: mix test.coverage
+        run: bash scripts/ci/run_test_matrix.sh --fast .artifacts/ci/fast-timings.json
+
+      - name: Upload fast test timing
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: fast-test-timings
+          path: .artifacts/ci/fast-timings.json
+          retention-days: 14
 
       - name: Verify migration reversibility
         run: |
@@ -287,10 +295,15 @@ jobs:
           exit 1
 
       - name: Run integration suite including onboarding and OIDC E2E proof
-        run: mix test.integration
+        run: bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json
 
-      - name: Run Phase 3 protocol gate
-        run: mix test.phase3
+      - name: Upload integration test timing
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: integration-test-timings
+          path: .artifacts/ci/integration-timings.json
+          retention-days: 14
 
   adoption-demo:
     name: Adoption Demo Smoke

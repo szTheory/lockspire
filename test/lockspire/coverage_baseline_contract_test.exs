@@ -23,9 +23,10 @@ defmodule Lockspire.CoverageBaselineContractTest do
   test "Fast Checks runs the test suite once under built-in coverage" do
     fast_job = ci_job!(File.read!(@ci), "fast")
 
-    assert fast_job =~ "run: mix test.coverage"
+    assert fast_job =~ "scripts/ci/run_test_matrix.sh --fast"
     refute fast_job =~ "run: mix test.fast"
-    assert fast_job =~ "mix test.coverage"
+    assert File.read!(Path.expand("../../scripts/ci/run_test_matrix.sh", __DIR__)) =~
+             "mix test.coverage"
   end
 
   defp ci_job!(workflow, name) do
