@@ -44,6 +44,7 @@ defmodule Lockspire.Web.ConsentContextTest do
   use ExUnit.Case, async: false
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.ConsentContext
@@ -96,7 +97,10 @@ defmodule Lockspire.Web.ConsentContextTest do
     assert context.client_name == "Context Client"
     assert context.requested_scopes == ["profile", "email"]
     assert context.authorization_detail_types == ["payment_initiation"]
-    assert context.finalize_path == "/lockspire/interactions/#{interaction.interaction_id}/complete"
+
+    assert context.finalize_path ==
+             "/lockspire/interactions/#{interaction.interaction_id}/complete"
+
     refute Map.has_key?(context, :interaction)
     refute Map.has_key?(context, :subject_id)
     refute inspect(context) =~ "never-render"
@@ -119,12 +123,35 @@ defmodule Lockspire.Web.ConsentContextTest do
   end
 
   test "does not return decision context for another subject" do
-    Application.put_env(:lockspire, :account_resolver, Lockspire.Web.ConsentContextMismatchResolver)
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      Lockspire.Web.ConsentContextMismatchResolver
+    )
 
     {:ok, interaction} =
-      Repository.put_interaction(interaction_fixture(status: :pending_consent, account_id: "account-123"))
+      Repository.put_interaction(
+        interaction_fixture(status: :pending_consent, account_id: "account-123")
+      )
 
     assert {:error, :subject_mismatch} = ConsentContext.load(%{}, interaction.interaction_id)
+  end
+
+  test "returns a terminal redirect when remembered consent satisfies a pending login" do
+    {:ok, _grant} =
+      Repository.grant_consent(%ConsentGrant{
+        account_id: "account-123",
+        client_id: "context-client",
+        scopes: ["profile", "email"],
+        granted_at: DateTime.utc_now(),
+        status: :active,
+        kind: :remembered
+      })
+
+    {:ok, interaction} = Repository.put_interaction(interaction_fixture(status: :pending_login))
+
+    assert {:redirect, redirect_uri} = ConsentContext.load(%{}, interaction.interaction_id)
+    assert redirect_uri =~ "https://client.example.com/callback"
   end
 
   defp interaction_fixture(overrides) do

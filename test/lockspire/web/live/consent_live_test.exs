@@ -110,15 +110,16 @@ defmodule Lockspire.Web.ConsentLiveTest do
     assert html =~ "Acme Integrations"
     assert html =~ "profile"
     assert html =~ "email"
-    assert html =~ "authorization_details"
+    assert html =~ "Requested access types"
     assert html =~ "payment_initiation"
     assert html =~ "account_access"
     assert html =~ "/lockspire/interactions/#{interaction.interaction_id}/complete"
     assert html =~ "Approve access"
     assert html =~ "Deny access"
 
-    assert socket.assigns.authorization_details == authorization_details_fixture()
     assert socket.assigns.authorization_detail_types == ["payment_initiation", "account_access"]
+    refute html =~ "instructedAmount"
+    refute html =~ "https://resource.example.com/payments"
   end
 
   test "pending login interactions resume into consent review for authenticated accounts" do
@@ -158,7 +159,8 @@ defmodule Lockspire.Web.ConsentLiveTest do
     html = rendered_to_string(ConsentLive.render(socket.assigns))
 
     assert html =~ "Authorization request rejected"
-    assert html =~ "expired"
+    assert html =~ "no longer available"
+    refute html =~ "interaction-"
   end
 
   test "mismatched interactions render a first-party error surface" do
@@ -183,7 +185,8 @@ defmodule Lockspire.Web.ConsentLiveTest do
     html = rendered_to_string(ConsentLive.render(socket.assigns))
 
     assert html =~ "Authorization request rejected"
-    assert html =~ "does not belong to this account"
+    assert html =~ "no longer available"
+    refute html =~ "account-123"
   end
 
   defp interaction_fixture(overrides) do
