@@ -71,28 +71,31 @@ defmodule Lockspire.InstallGeneratorTest do
              ~s(oban_prefix: "lockspire")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/lockspire", Lockspire.Web.Router)
+             "forward(\"/lockspire\", Lockspire.Web.Router)"
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(get "/authorized-apps", AuthorizedAppsController, :index)
+             "get(\"/authorized-apps\", AuthorizedAppsController, :index)"
 
     router =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
 
-    assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
-    assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
-    assert router =~ ~s(post "/verify/:handle/approve", LockspireVerificationController, :approve)
-    assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
+    assert router =~ "get(\"/verify\", LockspireVerificationController, :show)"
+    assert router =~ "post(\"/verify\", LockspireVerificationController, :lookup)"
+
+    assert router =~
+             "post(\"/verify/:handle/approve\", LockspireVerificationController, :approve)"
+
+    assert router =~ "post(\"/verify/:handle/deny\", LockspireVerificationController, :deny)"
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
     assert router =~ ~s(scope "/lockspire/admin")
-    assert router =~ "pipe_through [:browser, :require_operator]"
-    assert router =~ ~s(forward "/", Lockspire.Web.AdminRouter)
+    assert router =~ "pipe_through([:browser, :require_operator])"
+    assert router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
-    assert router =~ ~s(forward "/lockspire", Lockspire.Web.Router)
+    assert router =~ "forward(\"/lockspire\", Lockspire.Web.Router)"
 
     assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through \[:browser, :require_operator\]\s+forward "\/", Lockspire.Web.AdminRouter\s+end/
+             ~r/scope "\/lockspire\/admin" do\s+pipe_through\(\[:browser, :require_operator\]\)\s+forward\("\/", Lockspire.Web.AdminRouter\)\s+end/
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
@@ -243,6 +246,46 @@ defmodule Lockspire.InstallGeneratorTest do
     assert output =~ "Import `config/lockspire.exs`"
     assert output =~ "auth-code + PKCE flow"
     assert output =~ "docs/device-flow-host-guide.md"
+  end
+
+  test "the rendered router macro compiles through the generated host router" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    rendered_router =
+      File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
+
+    assert rendered_router ==
+             File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
+
+    routes = Phoenix.Router.routes(GeneratedHostAppWeb.Router)
+
+    assert Enum.any?(routes, &(&1.path == "/verify" and &1.verb == :get))
+    assert Enum.any?(routes, &(&1.path == "/authorized-apps" and &1.verb == :get))
+
+    admin_index = route_index!(routes, "/lockspire/admin")
+    public_index = route_index!(routes, "/lockspire")
+
+    assert admin_index < public_index
+
+    admin_route = Enum.at(routes, admin_index)
+    assert admin_route.plug == Lockspire.Web.AdminRouter
+
+    assert_raise CompileError, fn ->
+      Code.compile_string("""
+      defmodule GeneratedHostAppWeb.RouterWithoutOperator do
+        use Phoenix.Router
+        import GeneratedHostAppWeb.Router.Lockspire
+
+        pipeline :browser do
+          plug :accepts, [\"html\"]
+        end
+
+        lockspire_routes()
+      end
+      """)
+    end
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
@@ -398,5 +441,12 @@ defmodule Lockspire.InstallGeneratorTest do
     |> Path.join(".lockspire/install_manifest.json")
     |> File.read!()
     |> Jason.decode!()
+  end
+
+  defp route_index!(routes, path) do
+    Enum.find_index(routes, &(&1.path == path)) ||
+      flunk(
+        "expected a compiled route at #{inspect(path)}, got: #{inspect(Enum.map(routes, & &1.path))}"
+      )
   end
 end
