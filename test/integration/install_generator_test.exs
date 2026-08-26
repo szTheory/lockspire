@@ -119,8 +119,10 @@ defmodule Lockspire.InstallGeneratorTest do
     assert router =~ "device-flow-host-guide.md"
     assert router =~ ~s(scope "/lockspire/admin")
     assert router =~ "pipe_through([:browser, :require_operator])"
+
     assert router =~
              "forward(\"/\", Lockspire.Web.AdminRouter, [], metadata: %{lockspire_operator_guard: true})"
+
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
     assert router =~ "forward(\"/lockspire\", Lockspire.Web.Router)"
 

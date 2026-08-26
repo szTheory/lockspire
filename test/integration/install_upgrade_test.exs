@@ -43,8 +43,12 @@ defmodule Lockspire.InstallUpgradeTest do
     capture_io(fn -> upgrade_fixture!(["--mount-path", "/oauth"]) end)
 
     assert File.exists?(fapi_path)
-    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
-             Enum.map(load_manifest!()["managed_files"], & &1["path"])
+
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
+             load_manifest!()["managed_files"],
+             & &1["path"]
+           )
+
     assert load_manifest!()["inputs"]["with_fapi_smoke"] == true
   end
 
@@ -337,12 +341,14 @@ defmodule Lockspire.InstallUpgradeTest do
     File.cd!(@fixture_root, fn ->
       Mix.Task.reenable("lockspire.install")
 
-      Mix.Tasks.Lockspire.Install.run([
-        "--web",
-        "GeneratedHostAppWeb",
-        "--scope",
-        "GeneratedHostApp.Lockspire"
-      ] ++ extra_args)
+      Mix.Tasks.Lockspire.Install.run(
+        [
+          "--web",
+          "GeneratedHostAppWeb",
+          "--scope",
+          "GeneratedHostApp.Lockspire"
+        ] ++ extra_args
+      )
     end)
   end
 

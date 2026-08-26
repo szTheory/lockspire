@@ -69,7 +69,9 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
           Mix.raise("Could not load install manifest: #{inspect(reason)}")
       end
 
-    assigns = Install.build_assigns(Keyword.put(opts, :with_fapi_smoke, fapi_smoke?(opts, manifest)))
+    assigns =
+      Install.build_assigns(Keyword.put(opts, :with_fapi_smoke, fapi_smoke?(opts, manifest)))
+
     rendered_templates = Install.rendered_templates(assigns)
 
     case OperationPlan.upgrade(assigns, rendered_templates, manifest) do
