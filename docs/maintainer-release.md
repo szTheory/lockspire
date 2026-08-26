@@ -2,6 +2,15 @@
 
 Lockspire release work should stay boring, reviewable, tied to repo truth, and inside the 1.0 GA support contract defined in `docs/supported-surface.md`.
 
+## Repository evidence policy
+
+`tmp/admin-ui-polish/*.png` is retained, repo-only milestone evidence. Images
+must use demo data or be redaction-safe, must never be imported by runtime code
+or package inputs, and may be replaced only when a newer inventory supersedes
+them. Before deleting an image, update every retained evidence matrix that
+references it. Generated build outputs, logs, dependency directories, and
+one-off debug scripts are not durable evidence and must remain untracked.
+
 Lockspire now operates on a sustaining release train by default. That means the normal posture is not "open the next milestone"; it is "keep `main` green, keep release truth coherent, and let patch-eligible merged changes flow toward the next patch release."
 
 This guide is maintainer-only release operations guidance. It does not define a second public support contract.

@@ -69,6 +69,21 @@ The admin UI follows the same rule. It is a view and control surface over
 Lockspire-owned records. The host must authenticate and authorize the operator
 before forwarding a request to it.
 
+## Token endpoint ownership
+
+`Lockspire.Protocol.TokenExchange` is the stable token endpoint facade. It keeps
+the public request/result contract small and delegates authorization-code,
+device-code, and CIBA redemption to grant coordinators. Shared validation and
+issuance mechanics live in the internal `Lockspire.Protocol.TokenExchange.GrantSupport`
+module. Refresh and token-exchange grants remain delegated to their dedicated
+coordinators.
+
+The facade and coordinators use narrow storage ports; the Ecto implementation is
+`Lockspire.Storage.Ecto.Repository`. The internal TokenLifetime policy owns the
+existing token duration defaults, while the PrivateJwk decoder is the
+single fail-closed boundary for decoding a private signing key. These are
+implementation details, not expanded host APIs.
+
 ## Vocabulary for the trip
 
 An **authorization server** validates a client's request and issues tokens.

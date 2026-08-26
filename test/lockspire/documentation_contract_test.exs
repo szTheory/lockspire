@@ -130,11 +130,25 @@ defmodule Lockspire.DocumentationContractTest do
       "token_hash = Policy.hash_token(raw_code)"
     )
 
-    assert_anchor(
-      walkthrough,
-      "lib/lockspire/protocol/token_exchange.ex",
-      "token_store(request).redeem_authorization_code(code_hash, issued_at, access_token)"
-    )
+    assert Code.ensure_loaded?(Lockspire.Protocol.TokenExchange)
+    assert Code.ensure_loaded?(Lockspire.Protocol.TokenExchange.GrantSupport)
+    assert function_exported?(Lockspire.Protocol.TokenExchange, :exchange, 1)
+    assert function_exported?(Lockspire.Protocol.TokenExchange, :issue_ciba_tokens, 4)
+
+    assert Map.keys(struct(Lockspire.Protocol.TokenExchange.Success)) |> Enum.sort() ==
+             [
+               :__struct__,
+               :access_token,
+               :expires_in,
+               :id_token,
+               :issued_token_type,
+               :refresh_token,
+               :scope,
+               :token_type
+             ]
+
+    assert walkthrough =~ "Token endpoint: stable facade, focused coordinators"
+    assert walkthrough =~ "Lockspire.Protocol.TokenExchange.GrantSupport"
 
     assert_anchor(
       walkthrough,

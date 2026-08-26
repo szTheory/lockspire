@@ -3,11 +3,11 @@ defmodule Lockspire.Protocol.RegistrationAccessToken do
   Registration access token (RAT) primitives — generate, hash, verify.
 
   Hashing uses `Lockspire.Security.Policy.hash_token/1` (deterministic SHA-256
-  lowercase hex) per Phase 26 D-06, required for hash-equality lookup at RFC 7592
-  management calls (`Lockspire.Storage.Ecto.Repository.get_client_by_registration_access_token_hash/1`).
+  lowercase hex), required for hash-equality lookup during RFC 7592 management
+  calls.
 
   The plaintext RAT is generated via `:crypto.strong_rand_bytes/1` + `Base.url_encode64/2`
-  with `padding: false`. 32 bytes pre-encode (≈43 chars post-encode) per D-16, matching
+  with `padding: false`. 32 bytes pre-encode (≈43 chars post-encode) meet the
   the operator-token entropy floor.
   """
 

@@ -21,6 +21,20 @@ cut is marked with `# ...`. Internal modules and private functions are shown to
 explain the design; they are not promises of public API. The public ceiling
 remains the [supported surface](supported-surface.md).
 
+## Token endpoint: stable facade, focused coordinators
+
+Start token-endpoint tracing at `Lockspire.Protocol.TokenExchange`. Its public
+`exchange/1` dispatch is intentionally thin: authorization-code, device-code,
+and CIBA work belongs to dedicated grant coordinators, while shared mechanics
+are kept private in `Lockspire.Protocol.TokenExchange.GrantSupport`. Refresh and
+RFC 8693 exchange keep their established coordinators. The internal TokenLifetime
+policy owns token duration defaults, and signing paths decode private JWK material
+only through the PrivateJwk decoder.
+
+This organization keeps the host seam narrow: `Lockspire.Storage.Ecto.Repository`
+implements the storage ports, but host account resolution, claims, login UX, and
+product policy remain outside the library.
+
 ## Boot: host configuration becomes runtime mechanics
 
 Lockspire is a library application, but it is not passive. The host supplies the
