@@ -138,7 +138,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
     with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
-         {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
+         {:ok, result} <- record_dpop_proof(dpop_replay_store(request), replay) do
       case result do
         :accepted ->
           :ok
@@ -154,6 +154,20 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
         {:error, invalid_token("The DPoP proof is invalid", :invalid_dpop_proof)}
     end
   end
+
+  defp record_dpop_proof(store, %DpopReplay{} = replay) when is_atom(store) do
+    if Code.ensure_loaded?(store) and function_exported?(store, :record_dpop_proof, 1) do
+      store.record_dpop_proof(replay)
+    else
+      {:error, :invalid_dpop_replay_store}
+    end
+  rescue
+    _error -> {:error, :dpop_replay_store_unavailable}
+  catch
+    _kind, _reason -> {:error, :dpop_replay_store_unavailable}
+  end
+
+  defp record_dpop_proof(_store, _replay), do: {:error, :invalid_dpop_replay_store}
 
   defp build_dpop_replay(%DPoP{claims: claims, jkt: jkt}, request)
        when is_map(claims) and is_binary(jkt) do
@@ -276,11 +290,12 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     Observability.emit(:dpop, :failed, %{}, metadata)
   end
 
-  defp dpop_replay_store(request),
-    do:
-      Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
-        Keyword.get(request_options(request), :token_store, Repository)
-      end)
+  defp dpop_replay_store(request) do
+    case Keyword.get(request_options(request), :dpop_replay_store) do
+      nil -> Keyword.get(request_options(request), :token_store, Repository)
+      store -> store
+    end
+  end
 
   defp request_method(request) do
     request

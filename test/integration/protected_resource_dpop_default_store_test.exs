@@ -13,7 +13,7 @@ defmodule Lockspire.Integration.ProtectedResourceDPoPDefaultStoreTest do
   alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Storage.Ecto.DpopReplayRecord
 
-  @now ~U[2026-04-28 18:00:00Z]
+  @now DateTime.from_unix!(1_777_399_200_000_000, :microsecond)
   @raw_access_token "default-store-resource-dpop-access-token"
   @target_uri "https://api.example.test/resource"
 
