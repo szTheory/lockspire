@@ -254,6 +254,43 @@ defmodule Lockspire.InstallGeneratorTest do
     assert output =~ "docs/device-flow-host-guide.md"
   end
 
+  test "the default install emits only the default-profile smoke while FAPI proof is explicit" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
+
+    fapi_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e.exs")
+
+    assert File.exists?(default_smoke_path)
+    refute File.exists?(fapi_smoke_path)
+
+    default_manifest = load_manifest!()
+
+    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in
+             Enum.map(default_manifest["managed_files"], & &1["path"])
+
+    refute "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
+             Enum.map(default_manifest["managed_files"], & &1["path"])
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!(["--with-fapi-smoke"])
+    end)
+
+    assert File.exists?(default_smoke_path)
+    assert File.exists?(fapi_smoke_path)
+
+    fapi_manifest = load_manifest!()
+
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
+             Enum.map(fapi_manifest["managed_files"], & &1["path"])
+  end
+
   test "the rendered router macro compiles through the generated host router" do
     capture_io(fn ->
       install_fixture!()
