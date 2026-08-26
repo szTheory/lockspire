@@ -3,8 +3,12 @@ defmodule Lockspire.Generators.Templates do
   Template inventory for generated host-owned Lockspire integration files.
   """
 
-  @spec all() :: [map()]
-  def all do
+  @spec all(map()) :: [map()]
+  def all(assigns \\ %{}) do
+    base_templates() ++ optional_templates(assigns)
+  end
+
+  defp base_templates do
     [
       %{
         template: "router.ex",
@@ -63,6 +67,24 @@ defmodule Lockspire.Generators.Templates do
       },
       # Keep the template inventory assertion in install_generator_test.exs synchronized.
       %{
+        template: "default_smoke_e2e_test.exs",
+        output: fn assigns ->
+          host_app_path =
+            assigns.scope_module
+            |> String.split(".")
+            |> List.first()
+            |> Macro.underscore()
+
+          "test/#{host_app_path}/lockspire_smoke_e2e_test.exs"
+        end,
+        ownership: :managed
+      }
+    ]
+  end
+
+  defp optional_templates(%{with_fapi_smoke: true}) do
+    [
+      %{
         template: "fapi_smoke_e2e_test.exs",
         output: fn assigns ->
           host_app_path =
@@ -71,15 +93,17 @@ defmodule Lockspire.Generators.Templates do
             |> List.first()
             |> Macro.underscore()
 
-          "test/#{host_app_path}/lockspire_fapi_smoke_e2e_test.exs"
+          "test/#{host_app_path}/lockspire_fapi_smoke_e2e.exs"
         end,
         ownership: :managed
       }
     ]
   end
 
-  @spec managed() :: [map()]
-  def managed do
-    Enum.filter(all(), &(&1.ownership == :managed))
+  defp optional_templates(_assigns), do: []
+
+  @spec managed(map()) :: [map()]
+  def managed(assigns \\ %{}) do
+    Enum.filter(all(assigns), &(&1.ownership == :managed))
   end
 end

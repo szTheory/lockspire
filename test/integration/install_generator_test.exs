@@ -31,8 +31,8 @@ defmodule Lockspire.InstallGeneratorTest do
       end)
 
     # Sanity check: total templates rendered. Update this constant if a future plan
-    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the FAPI
-    # smoke template makes it 12.
+    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the default
+    # smoke template makes it 12 while the FAPI proof remains opt-in.
     assert length(Lockspire.Generators.Templates.all()) == 12
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
@@ -55,7 +55,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert "config/lockspire.exs" in managed_paths
     assert "lib/generated_host_app_web/router/lockspire.ex" in managed_paths
-    assert "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs" in managed_paths
+    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in managed_paths
+    refute Enum.any?(managed_paths, &String.contains?(&1, "fapi_smoke"))
     refute Enum.any?(managed_paths, &String.contains?(&1, "account_resolver.ex"))
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
@@ -218,40 +219,44 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) ==
              File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
 
-    fapi_smoke_path =
-      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs")
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
 
-    assert File.exists?(fapi_smoke_path),
-           "Expected FAPI smoke E2E test to be rendered to host fixture"
+    assert File.exists?(default_smoke_path),
+           "Expected default-profile smoke E2E test to be rendered to host fixture"
 
-    fapi_smoke = File.read!(fapi_smoke_path)
+    default_smoke = File.read!(default_smoke_path)
 
-    assert fapi_smoke =~ "defmodule GeneratedHostApp.Lockspire.FapiSmokeE2ETest"
-    assert fapi_smoke =~ "Lockspire-managed scaffolding"
-    assert fapi_smoke =~ "@endpoint GeneratedHostAppWeb.Endpoint"
-    assert fapi_smoke =~ ~s(get("/lockspire/authorize")
-    assert fapi_smoke =~ "Lockspire.Clients.register_client"
-    assert fapi_smoke =~ "Lockspire.issuer()"
-    assert fapi_smoke =~ "FAPI 2.0"
-    assert fapi_smoke =~ "redirect_uri must match a registered URI"
+    assert default_smoke =~ "defmodule GeneratedHostApp.Lockspire.SmokeE2ETest"
+    assert default_smoke =~ "Lockspire-managed scaffolding"
+    assert default_smoke =~ "@endpoint GeneratedHostAppWeb.Endpoint"
+    assert default_smoke =~ ~s(get("/lockspire/authorize")
+    assert default_smoke =~ "Lockspire.Clients.register_client"
+    assert default_smoke =~ ~s(allowed_scopes: ["profile"])
+    assert default_smoke =~ ~s("scope" => "openid profile")
+    assert default_smoke =~ "code_challenge_method\" => \"S256"
+    assert default_smoke =~ "redirect_uri must match a registered URI"
 
-    refute fapi_smoke =~ "Lockspire.TestRepo"
-    refute fapi_smoke =~ "Lockspire.Storage"
-    refute fapi_smoke =~ "Lockspire.Domain"
-    refute fapi_smoke =~ "Lockspire.Security"
-    refute fapi_smoke =~ "Application.compile_env"
-    refute fapi_smoke =~ "@endpoint Lockspire.Web.Router"
+    refute default_smoke =~ "Lockspire.TestRepo"
+    refute default_smoke =~ "Lockspire.Storage"
+    refute default_smoke =~ "Lockspire.Domain"
+    refute default_smoke =~ "Lockspire.Security"
+    refute default_smoke =~ "Application.compile_env"
+    refute default_smoke =~ "@endpoint Lockspire.Web.Router"
+    refute default_smoke =~ "fapi_2_0"
 
-    :code.purge(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
-    :code.delete(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
+    :code.purge(GeneratedHostApp.Lockspire.SmokeE2ETest)
+    :code.delete(GeneratedHostApp.Lockspire.SmokeE2ETest)
 
-    assert [{GeneratedHostApp.Lockspire.FapiSmokeE2ETest, _binary} | _rest] =
-             Code.compile_string(fapi_smoke, fapi_smoke_path)
+    assert [{GeneratedHostApp.Lockspire.SmokeE2ETest, _binary} | _rest] =
+             Code.compile_string(default_smoke, default_smoke_path)
 
     assert output =~ "Lockspire canonical onboarding next steps"
     assert output =~ "Import `config/lockspire.exs`"
     assert output =~ "auth-code + PKCE flow"
     assert output =~ "docs/device-flow-host-guide.md"
+    assert output =~ "lockspire_smoke_e2e_test.exs"
+    assert output =~ "--with-fapi-smoke"
   end
 
   test "the default install emits only the default-profile smoke while FAPI proof is explicit" do
@@ -289,6 +294,17 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
              Enum.map(fapi_manifest["managed_files"], & &1["path"])
+  end
+
+  test "the FAPI smoke flag is documented and rejects a positional value" do
+    assert Mix.Tasks.Lockspire.Install.help() =~ "--with-fapi-smoke"
+    assert Mix.Tasks.Lockspire.Install.help() =~ "--include fapi"
+
+    assert_raise Mix.Error, ~r/Unknown arguments: not-a-boolean/, fn ->
+      File.cd!(@fixture_root, fn ->
+        Mix.Tasks.Lockspire.Install.run(["--with-fapi-smoke", "not-a-boolean"])
+      end)
+    end
   end
 
   test "the rendered router macro compiles through the generated host router" do

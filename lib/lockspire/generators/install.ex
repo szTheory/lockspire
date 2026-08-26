@@ -54,13 +54,14 @@ defmodule Lockspire.Generators.Install do
       authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
       verification_controller_module: "#{web_module}.LockspireVerificationController",
       verification_html_module: "#{web_module}.LockspireVerificationHTML",
-      sigra_host: Keyword.get(opts, :sigra_host, false)
+      sigra_host: Keyword.get(opts, :sigra_host, false),
+      with_fapi_smoke: Keyword.get(opts, :with_fapi_smoke, false)
     }
   end
 
   @spec rendered_templates(map()) :: [map()]
   def rendered_templates(assigns) do
-    Enum.map(Templates.all(), fn template ->
+    Enum.map(Templates.all(assigns), fn template ->
       destination = destination_path(template, assigns)
 
       %{
@@ -130,7 +131,8 @@ defmodule Lockspire.Generators.Install do
       4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
       5. Point your login flow back through `#{assigns.interaction_handler_module}`.
       6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
-      7. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
+      7. Run `mix ecto.migrate`, create a client, and run `mix test test/#{assigns.app_path}/lockspire_smoke_e2e_test.exs` to verify discovery, JWKS, and an auth-code + PKCE flow.
+      8. If you explicitly operate a FAPI 2.0 security profile, generate its isolated proof with `mix lockspire.install --with-fapi-smoke`, then run `mix test test/#{assigns.app_path}/lockspire_fapi_smoke_e2e.exs --include fapi`.
     """
   end
 

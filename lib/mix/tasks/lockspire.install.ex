@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Lockspire.Install do
 
   @impl Mix.Task
   def run(args) do
-    {opts, _argv, invalid} =
+    {opts, argv, invalid} =
       OptionParser.parse(args,
         strict: [
           web: :string,
@@ -23,12 +23,17 @@ defmodule Mix.Tasks.Lockspire.Install do
           storage_prefix: :string,
           oban_prefix: :string,
           help: :boolean,
-          sigra_host: :boolean
+          sigra_host: :boolean,
+          with_fapi_smoke: :boolean
         ]
       )
 
     if invalid != [] do
       Mix.raise("Unknown options: #{Enum.map_join(invalid, ", ", &elem(&1, 0))}")
+    end
+
+    if argv != [] do
+      Mix.raise("Unknown arguments: #{Enum.join(argv, ", ")}")
     end
 
     if Keyword.get(opts, :help, false) do
@@ -40,7 +45,7 @@ defmodule Mix.Tasks.Lockspire.Install do
 
   def help do
     """
-    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--sigra-host]
+    mix lockspire.install [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--sigra-host] [--with-fapi-smoke]
 
     Canonical Phoenix-first onboarding:
       1. Add the :lockspire dependency
@@ -57,6 +62,7 @@ defmodule Mix.Tasks.Lockspire.Install do
       * lib/<web>/controllers/authorized_apps_controller.ex
       * lib/<web>/controllers/authorized_apps_html.ex
       * lib/<web>/controllers/authorized_apps_html/index.html.heex
+      * test/<app>/lockspire_smoke_e2e_test.exs
 
     When --sigra-host is passed, the AccountResolver stub includes Sigra-oriented
     moduledoc/comments (still host-owned; see Sigra companion recipe on hexdocs).
@@ -71,6 +77,9 @@ defmodule Mix.Tasks.Lockspire.Install do
       --oban-prefix PREFIX
                           Postgres schema/prefix for Lockspire's Oban tables.
                           Defaults to --storage-prefix.
+      --with-fapi-smoke  Also generate the isolated FAPI 2.0 proof. This is not
+                          emitted by default and must be run explicitly with:
+                          mix test test/<app>/lockspire_fapi_smoke_e2e.exs --include fapi
     """
   end
 end
