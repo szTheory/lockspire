@@ -147,9 +147,10 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp router_check(router, mount_path) when is_atom(router) do
-    with {:ok, routes} <- safely(fn -> Phoenix.Router.routes(router) end) do
-      router_result(router, routes, mount_path)
-    else
+    case safely(fn -> Phoenix.Router.routes(router) end) do
+      {:ok, routes} ->
+        router_result(router, routes, mount_path)
+
       {:error, message} ->
         Check.error(
           :router,
