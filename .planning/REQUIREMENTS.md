@@ -7,20 +7,20 @@
 
 - [x] **RUNTIME-01**: Protocol store fallbacks use the Lockspire storage adapter; `Config.repo` is used only for raw Ecto operations that an ordinary host Repo supports.
 - [x] **RUNTIME-02**: CIBA Push can issue JWT access and ID tokens when the host configures an ordinary Ecto Repo.
-- [ ] **RUNTIME-03**: One internal token-lifetime policy owns access, ID, and refresh defaults while preserving current values and behavior.
-- [ ] **RUNTIME-04**: Private signing-key decoding is centralized, fail-closed, and reused across all supported signing paths.
+- [x] **RUNTIME-03**: One internal token-lifetime policy owns access, ID, and refresh defaults while preserving current values and behavior.
+- [x] **RUNTIME-04**: Private signing-key decoding is centralized, fail-closed, and reused across all supported signing paths.
 
 ## Architecture
 
 - [x] **ARCH-01**: Executable fitness tests enforce the boundary between Ecto/query code, Lockspire storage adapters, and ordinary host repos.
 - [x] **ARCH-02**: Client, logout, initial-access-token, transaction, and audit operations use explicit narrow internal ports where required.
 - [x] **ARCH-03**: DCR persistence and admin reads go through protocol/admin services and ports rather than direct schema queries in protocol or LiveView modules.
-- [ ] **ARCH-04**: `Lockspire.Protocol.TokenExchange` remains the stable facade while grant-specific coordinators own authorization-code, device-code, and CIBA flows.
+- [x] **ARCH-04**: `Lockspire.Protocol.TokenExchange` remains the stable facade while grant-specific coordinators own authorization-code, device-code, and CIBA flows.
 
 ## Static Analysis and Tests
 
 - [x] **STATIC-01**: Credo analyzes every intended source file with no parser-timeout skips.
-- [ ] **STATIC-02**: Dialyzer reports zero warnings without a blanket ignore file and runs as a required cached CI gate.
+- [x] **STATIC-02**: Dialyzer reports zero warnings without a blanket ignore file and runs as a required cached CI gate.
 - [ ] **TEST-01**: Shared database and application-configuration isolation helpers replace repeated per-test setup patterns.
 - [ ] **TEST-02**: Oversized token, release, and admin design-contract tests are split by capability without reducing coverage.
 - [x] **COVER-01**: CI enforces a measured built-in ExUnit coverage floor based on the repository baseline.

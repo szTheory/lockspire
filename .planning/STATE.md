@@ -2,18 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Structural Quality Ratchet
+current_phase: 129
 current_phase_name: token endpoint cohesion
 status: ready_for_planning
-stopped_at: Completed Phase 128 Runtime Dependency Truth
-last_updated: "2026-08-26T15:23:38.800Z"
+stopped_at: Completed Phase 129 Token Endpoint Cohesion
+last_updated: "2026-08-26T15:40:32.049Z"
 last_activity: 2026-08-26
-last_activity_desc: Milestone v1.36 started
+last_activity_desc: Completed Phase 128 Runtime Dependency Truth
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 14
-  completed_plans: 14
-  percent: 60
+  completed_phases: 4
+  total_plans: 22
+  completed_plans: 22
+  percent: 80
 ---
 
 # Project State
@@ -193,6 +194,8 @@ Last activity: 2026-08-26 — Completed Phase 128 Runtime Dependency Truth
 - [Phase 125]: Plan 125-07 keeps empty/no-match proof maintainer-only with no browser tooling, runtime route, package, schema, or public support-surface expansion.
 - [Phase 128]: Protocol behavior stores default to Lockspire.Storage.Ecto.Repository; host Ecto repos remain raw persistence only.
 - [Phase 128]: DCR locks, audit writes, transaction rollback, and named Oban insertion live behind explicit Repository ports.
+- [Phase ?]: Token signing accepts the pre-persistence token shape while persisted tokens retain their stricter Token.t contract.
+- [Phase ?]: Dialyzer is a normal bounded cached CI job that runs the repository-owned strict entrypoint with no warning suppression.
 
 ## Blockers/Concerns
 
@@ -207,11 +210,11 @@ Last activity: 2026-08-26 — Completed Phase 128 Runtime Dependency Truth
 
 ## Session Continuity
 
-**Last session:** 2026-08-26T15:23:38.792Z
+**Last session:** 2026-08-26T15:40:32.038Z
 
 **Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
 **Resume file:** None
-**Stopped at:** Completed Phase 128 Runtime Dependency Truth
+**Stopped at:** Completed Phase 129 Token Endpoint Cohesion
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -276,6 +279,7 @@ Last activity: 2026-08-26 — Completed Phase 128 Runtime Dependency Truth
 | Phase 127 P02 | 14 min | 2 tasks | 8 files |
 | Phase 127 P03 | 12 min | 1 tasks | 6 files |
 | Phase 128 P06 | 35 min | 11 tasks | 32 files |
+| Phase 129 P08 | 45m | 18 tasks | 19 files |
 
 ## Operator Next Steps
 

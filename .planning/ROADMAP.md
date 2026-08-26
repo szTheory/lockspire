@@ -9,7 +9,7 @@
 - [ ] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
 - [x] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
 - [x] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
-- [ ] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
+- [x] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
 - [ ] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
 
 ## Phase Details
@@ -70,18 +70,18 @@ Plans:
 
 **Goal:** Grant orchestration is understandable behind the stable facade, while shared security policy has one fail-closed implementation.
 **Requirements:** RUNTIME-03, RUNTIME-04, ARCH-04, STATIC-02
-**Plans:** 8 plans
+**Plans:** 8/8 plans executed
 
 Plans:
 
-- [ ] 129-01-PLAN.md — Extract authorization-code coordination as the tracer and establish the lifetime policy.
-- [ ] 129-02-PLAN.md — Route every token duration through the shared policy with exact-value proof.
-- [ ] 129-03-PLAN.md — Introduce the fail-closed private JWK decoder and migrate access, ID, and JARM signing.
-- [ ] 129-04-PLAN.md — Complete private JWK decoder adoption across introspection, logout, and JAR.
-- [ ] 129-05-PLAN.md — Extract device-code polling and atomic redemption behind the facade.
-- [ ] 129-06-PLAN.md — Extract CIBA poll and Push issuance behind the facade.
-- [ ] 129-07-PLAN.md — Resolve every Dialyzer warning at its type or control-flow root.
-- [ ] 129-08-PLAN.md — Enforce zero-warning Dialyzer as a cached required CI job.
+- [x] 129-01-PLAN.md — Extract authorization-code coordination as the tracer and establish the lifetime policy.
+- [x] 129-02-PLAN.md — Route every token duration through the shared policy with exact-value proof.
+- [x] 129-03-PLAN.md — Introduce the fail-closed private JWK decoder and migrate access, ID, and JARM signing.
+- [x] 129-04-PLAN.md — Complete private JWK decoder adoption across introspection, logout, and JAR.
+- [x] 129-05-PLAN.md — Extract device-code polling and atomic redemption behind the facade.
+- [x] 129-06-PLAN.md — Extract CIBA poll and Push issuance behind the facade.
+- [x] 129-07-PLAN.md — Resolve every Dialyzer warning at its type or control-flow root.
+- [x] 129-08-PLAN.md — Enforce zero-warning Dialyzer as a cached required CI job.
 
 **Success criteria:**
 
