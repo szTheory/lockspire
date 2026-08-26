@@ -83,15 +83,15 @@ defmodule <%= host_app_module %>.Lockspire.SmokeE2ETest do
   end
 
   defp authorize_params(client) do
-    verifier = "lockspire-smoke-#{System.unique_integer([:positive])}"
+    verifier = random_request_value()
 
     %{
       "client_id" => client.client_id,
       "response_type" => "code",
       "redirect_uri" => client.redirect_uri,
       "scope" => "openid profile",
-      "nonce" => "nonce-#{System.unique_integer([:positive])}",
-      "state" => "state-#{System.unique_integer([:positive])}",
+      "nonce" => random_request_value(),
+      "state" => random_request_value(),
       "code_challenge" => code_challenge(verifier),
       "code_challenge_method" => "S256"
     }
@@ -100,6 +100,11 @@ defmodule <%= host_app_module %>.Lockspire.SmokeE2ETest do
   defp code_challenge(verifier) do
     :sha256
     |> :crypto.hash(verifier)
+    |> Base.url_encode64(padding: false)
+  end
+
+  defp random_request_value do
+    :crypto.strong_rand_bytes(32)
     |> Base.url_encode64(padding: false)
   end
 

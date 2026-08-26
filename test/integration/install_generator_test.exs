@@ -269,6 +269,11 @@ defmodule Lockspire.InstallGeneratorTest do
     assert default_smoke =~ ~s("scope" => "openid profile")
     assert default_smoke =~ "code_challenge_method\" => \"S256"
     assert default_smoke =~ "redirect_uri must match a registered URI"
+    assert default_smoke =~ ":crypto.strong_rand_bytes(32)"
+
+    refute default_smoke =~ ~s(verifier = "lockspire-smoke-)
+    refute default_smoke =~ ~s("nonce" => "nonce-)
+    refute default_smoke =~ ~s("state" => "state-)
 
     refute default_smoke =~ "Lockspire.TestRepo"
     refute default_smoke =~ "Lockspire.Storage"
