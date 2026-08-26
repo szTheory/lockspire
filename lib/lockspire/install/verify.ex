@@ -271,7 +271,8 @@ defmodule Lockspire.Install.Verify do
 
   defp admin_mount_route?(route, admin_mount_path) do
     route.verb == :* and route.path == admin_mount_path and
-      route.plug == Lockspire.Web.AdminRouter
+      route.plug == Lockspire.Web.AdminRouter and
+      Map.get(route, :metadata, %{})[:lockspire_operator_guard] == true
   end
 
   defp migrations_check(repo, project_root) do

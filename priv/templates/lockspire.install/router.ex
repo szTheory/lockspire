@@ -52,7 +52,9 @@ defmodule <%= @web_module %>.Router.Lockspire do
       # owns who may reach them.
       scope "<%= @mount_path %>/admin" do
         pipe_through([:browser, :require_operator])
-        forward("/", Lockspire.Web.AdminRouter)
+        # `mix lockspire.verify` requires this marker, which is emitted only
+        # after the host-owned operator pipeline in this generated macro.
+        forward("/", Lockspire.Web.AdminRouter, [], metadata: %{lockspire_operator_guard: true})
       end
 
       # This host-owned LiveView is intentionally defined before Lockspire's

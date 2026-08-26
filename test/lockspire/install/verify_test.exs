@@ -24,10 +24,23 @@ defmodule Lockspire.Install.VerifyTest do
     def consent_path(interaction_id), do: "/lockspire/consent/#{interaction_id}"
   end
 
+  defmodule OperatorGuard do
+    def init(opts), do: opts
+    def call(conn, _opts), do: conn
+  end
+
   defmodule Web.Router do
     use Phoenix.Router
 
     import Phoenix.LiveView.Router
+
+    pipeline :browser do
+      plug(:accepts, ["html"])
+    end
+
+    pipeline :require_operator do
+      plug(Lockspire.Install.VerifyTest.OperatorGuard)
+    end
 
     scope "/", Lockspire.Install.VerifyTest do
       get("/verify", PlaceholderController, :show)
@@ -43,7 +56,8 @@ defmodule Lockspire.Install.VerifyTest do
     end
 
     scope "/lockspire/admin" do
-      forward("/", Lockspire.Web.AdminRouter)
+      pipe_through([:browser, :require_operator])
+      forward("/", Lockspire.Web.AdminRouter, [], metadata: %{lockspire_operator_guard: true})
     end
 
     scope "/" do
@@ -97,6 +111,35 @@ defmodule Lockspire.Install.VerifyTest do
     end
   end
 
+  defmodule RouterUnguardedAdmin do
+    use Phoenix.Router
+
+    import Phoenix.LiveView.Router
+
+    scope "/", Lockspire.Install.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", Lockspire.Install.VerifyTest.ConsentLive, :show)
+    end
+
+    # A host can forward the admin router without its operator pipeline. The
+    # verifier must reject this even though the path and target are correct.
+    scope "/lockspire/admin" do
+      forward("/", Lockspire.Web.AdminRouter)
+    end
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+  end
+
   defmodule RouterPublicBeforeAdmin do
     def __routes__ do
       [
@@ -108,6 +151,14 @@ defmodule Lockspire.Install.VerifyTest do
         route(:*, "/lockspire/admin", Lockspire.Web.AdminRouter)
       ]
     end
+
+    defp route(:*, "/lockspire/admin" = path, Lockspire.Web.AdminRouter),
+      do: %{
+        verb: :*,
+        path: path,
+        plug: Lockspire.Web.AdminRouter,
+        metadata: %{lockspire_operator_guard: true}
+      }
 
     defp route(verb, path, plug), do: %{verb: verb, path: path, plug: plug}
   end
@@ -293,6 +344,24 @@ defmodule Lockspire.Install.VerifyTest do
 
     assert details =~ "forward /lockspire/admin -> Lockspire.Web.AdminRouter"
     assert fix =~ "host-owned operator pipeline"
+  end
+
+  test "rejects an admin forward without the generated host operator proof" do
+    result =
+      Verify.run(
+        router: RouterUnguardedAdmin,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire"
+      )
+
+    refute result.ok?
+
+    assert %{status: :error, details: details} =
+             Enum.find(result.checks, &(&1.id == :router))
+
+    assert details =~ "missing guarded admin forward"
   end
 
   test "returns a failing result when public forward shadows the admin mount" do
