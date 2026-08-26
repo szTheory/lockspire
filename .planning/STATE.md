@@ -5,15 +5,15 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 131
 current_phase_name: Executable Installation
 status: executing
-stopped_at: Completed 131-04-PLAN.md
-last_updated: "2026-08-26T21:43:05.451Z"
+stopped_at: Completed 131-05-PLAN.md
+last_updated: "2026-08-26T21:55:02.401Z"
 last_activity: 2026-08-26
 last_activity_desc: Phase 131 execution started
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 131 (Executable Installation) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-08-26 — Phase 131 execution started
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Accumulated Context
 
@@ -49,6 +49,7 @@ Progress: [███████░░░] 67%
 - [Phase ?]: Migration installation preflights the complete package and host inventories before creating files, and exclusive writes preserve the host no-overwrite boundary.
 - [Phase 131]: ConsentContext exposes only safe host display fields and terminal redirects.
 - [Phase 131]: Installer consent template must exactly match a compiling executable fixture.
+- [Phase 131]: Default generated smoke proves the :none profile, discovery/JWKS, S256 PKCE, and exact redirects; FAPI proof is explicit and separately discovered.
 
 ### Pending Todos
 
@@ -60,8 +61,8 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-08-26T21:43:05.445Z
-Stopped at: Completed 131-04-PLAN.md
+Last session: 2026-08-26T21:55:02.396Z
+Stopped at: Completed 131-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -72,3 +73,4 @@ Resume file: None
 | Phase 131 P02 | 4m | 2 tasks | 2 files |
 | Phase 131 P03 | 17min | 2 tasks | 11 files |
 | Phase 131 P04 | 18 min | 2 tasks | 7 files |
+| Phase 131 P05 | 7 min | 2 tasks | 7 files |

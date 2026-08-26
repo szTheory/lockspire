@@ -11,7 +11,7 @@
 - [x] **INST-02**: A Phoenix adopter can render a host-branded consent LiveView backed by real Lockspire interaction state and the supported completion flow.
 - [x] **INST-03**: A Phoenix adopter can install and upgrade Lockspire migrations idempotently without undocumented dependency paths, overwritten host files, or silent migration-version collisions.
 - [ ] **INST-04**: A Phoenix adopter receives every required Lockspire configuration seam, including logout behavior, and `mix lockspire.verify` reports missing configuration with executable remediation.
-- [ ] **INST-05**: A newly generated host can run its default Lockspire tests under default secure configuration, while FAPI-specific proof remains explicitly opt-in.
+- [x] **INST-05**: A newly generated host can run its default Lockspire tests under default secure configuration, while FAPI-specific proof remains explicitly opt-in.
 - [x] **INST-06**: A Phoenix adopter can compile and adapt the generated `%Lockspire.Host.Claims{}` example using the real `subject`, `id_token`, and `userinfo` fields.
 
 ### Public API and Resource Server Truth
@@ -91,7 +91,7 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | INST-02 | 131 | Complete |
 | INST-03 | 131 | Complete |
 | INST-04 | 131 | Pending |
-| INST-05 | 131 | Pending |
+| INST-05 | 131 | Complete |
 | INST-06 | 131 | Complete |
 | API-01 | 132 | Pending |
 | API-02 | 132 | Pending |

@@ -29,13 +29,13 @@
   4. Generated configuration and `mix lockspire.verify` expose every required seam with actionable missing-config remediation.
   5. A new generated host passes its default secure test suite and compiles the documented claims example; FAPI proof is explicitly opt-in.
 
-**Plans**: 4/6 plans executed
+**Plans**: 5/6 plans executed
 
 - [x] 131-01-PLAN.md
 - [x] 131-02-PLAN.md
 - [x] 131-03-PLAN.md
 - [x] 131-04-PLAN.md
-- [ ] 131-05-PLAN.md
+- [x] 131-05-PLAN.md
 - [ ] 131-06-PLAN.md
 
 **UI hint**: yes
@@ -144,7 +144,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 131. Executable Installation | 4/6 | In Progress|  |
+| 131. Executable Installation | 5/6 | In Progress|  |
 | 132. Public API and Resource-Server Truth | 0/TBD | Not started | - |
 | 133. Clean-Room SaaS Journey | 0/TBD | Not started | - |
 | 134. Architecture Topology | 0/TBD | Not started | - |
