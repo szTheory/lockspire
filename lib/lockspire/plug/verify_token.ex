@@ -222,8 +222,8 @@ defmodule Lockspire.Plug.VerifyToken do
     # the challenge atom for any failure they emit according to the binding mapping below.
     authorization_scheme = access_token.authorization_scheme
 
-    with :ok <- validate_audience(access_token.claims, opts, authorization_scheme),
-         :ok <- validate_scopes(access_token.claims, opts, authorization_scheme) do
+    with :ok <- validate_audience(access_token, opts, authorization_scheme),
+         :ok <- validate_scopes(access_token, opts, authorization_scheme) do
       access_token
     else
       {:error, error} ->
@@ -232,13 +232,13 @@ defmodule Lockspire.Plug.VerifyToken do
     end
   end
 
-  defp validate_audience(claims, opts, authorization_scheme) do
+  defp validate_audience(%AccessToken{} = access_token, opts, authorization_scheme) do
     case configured_audiences(opts) do
       [] ->
         :ok
 
       expected_audiences ->
-        with {:ok, token_audiences} <- normalize_token_audiences(claims),
+        with {:ok, token_audiences} <- AccessToken.normalize_audiences(access_token.claims),
              true <- Enum.any?(expected_audiences, &Enum.member?(token_audiences, &1)) do
           :ok
         else
@@ -247,7 +247,7 @@ defmodule Lockspire.Plug.VerifyToken do
              invalid_audience_error(
                reason_code,
                expected_audiences,
-               challenge_for(claims, authorization_scheme)
+               challenge_for(access_token.claims, authorization_scheme)
              )}
 
           false ->
@@ -255,25 +255,28 @@ defmodule Lockspire.Plug.VerifyToken do
              invalid_audience_error(
                :invalid_audience,
                expected_audiences,
-               challenge_for(claims, authorization_scheme)
+               challenge_for(access_token.claims, authorization_scheme)
              )}
         end
     end
   end
 
-  defp validate_scopes(claims, opts, authorization_scheme) do
+  defp validate_scopes(%AccessToken{} = access_token, opts, authorization_scheme) do
     required_scopes = Keyword.get(opts, :scopes, [])
 
     if required_scopes == [] do
       :ok
     else
-      token_scopes = normalize_token_scopes(Map.get(claims, "scope"))
+      token_scopes = AccessToken.scopes(access_token)
 
       if Enum.all?(required_scopes, &Enum.member?(token_scopes, &1)) do
         :ok
       else
         {:error,
-         insufficient_scope_error(required_scopes, challenge_for(claims, authorization_scheme))}
+         insufficient_scope_error(
+           required_scopes,
+           challenge_for(access_token.claims, authorization_scheme)
+         )}
       end
     end
   end
@@ -284,38 +287,6 @@ defmodule Lockspire.Plug.VerifyToken do
       :error -> Keyword.get(opts, :audiences, [])
     end
   end
-
-  defp normalize_token_audiences(claims) do
-    case Map.get(claims, "aud") do
-      nil ->
-        {:error, :missing_audience}
-
-      audience when is_binary(audience) ->
-        if String.trim(audience) == "" do
-          {:error, :invalid_audience}
-        else
-          {:ok, [audience]}
-        end
-
-      audiences when is_list(audiences) ->
-        cond do
-          audiences == [] -> {:error, :invalid_audience}
-          Enum.all?(audiences, &non_empty_string?/1) -> {:ok, audiences}
-          true -> {:error, :invalid_audience}
-        end
-
-      _other ->
-        {:error, :invalid_audience}
-    end
-  end
-
-  defp normalize_token_scopes(scope_claim) when is_binary(scope_claim) do
-    scope_claim
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.uniq()
-  end
-
-  defp normalize_token_scopes(_scope_claim), do: []
 
   defp invalid_audience_error(reason_code, expected_audiences, challenge) do
     %{
