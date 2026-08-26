@@ -5,7 +5,7 @@
   "description": "Checked-in runtime for the Lockspire Release Please composite action",
   "license": "UNLICENSED",
   "dependencies": {
-    "@actions/core": "1.10.0",
-    "release-please": "17.3.0"
+    "@actions/core": "3.0.1",
+    "release-please": "17.11.2"
   }
 }
