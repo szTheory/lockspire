@@ -49,8 +49,25 @@ defmodule Lockspire.Install.OperationPlan do
   def report(%__MODULE__{} = plan, mode) when mode in [:apply, :dry_run] do
     Enum.each(plan.migration_plan.operations, &report_migration(&1, mode))
     Enum.each(plan.file_operations, &report_file(&1, mode))
+    report_manifest(plan, mode)
 
     :ok
+  end
+
+  defp report_manifest(plan, mode) do
+    destination = Manifest.path(plan.assigns.project_root)
+    contents = Manifest.encode(plan.manifest)
+    prefix = if mode == :dry_run, do: "DRY-RUN ", else: "* "
+
+    action =
+      case File.read(destination) do
+        {:ok, ^contents} -> "unchanged"
+        {:ok, _} -> "updated"
+        {:error, :enoent} -> "created"
+        {:error, _} -> "will be checked"
+      end
+
+    Mix.shell().info("#{prefix}#{action} .lockspire/install_manifest.json")
   end
 
   defp report_migration(operation, :dry_run) do
