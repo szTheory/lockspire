@@ -149,7 +149,7 @@ jobs:
       - name: Publish package
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-        run: mix hex.publish --yes
+        run: bash scripts/publish/publish_hex_idempotently.sh
       - name: Create matching GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

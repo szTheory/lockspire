@@ -47,6 +47,7 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
 
   test "release workflow has one exact-CI-evidence publish lane" do
     release_workflow = File.read!(@release_workflow_path)
+    publish_script = File.read!("scripts/publish/publish_hex_idempotently.sh")
     release_please_job = release_workflow_job("release-please", "recovery-validation")
     recovery_validation_job = release_workflow_job("recovery-validation", "publish")
     publish_job = publish_job_section()
@@ -60,7 +61,11 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert publish_job =~ "needs.recovery-validation.result == 'success'"
     assert publish_job =~ "git checkout --detach \"$VERIFIED_SHA\""
     assert publish_job =~ "mix release.preflight"
-    assert publish_job =~ "mix hex.publish --yes"
+    assert publish_job =~ "bash scripts/publish/publish_hex_idempotently.sh"
+    assert publish_script =~ "mix hex.publish --yes"
+    assert publish_script =~ "mix hex.publish docs --yes"
+    assert publish_script =~ "test \"$published_checksum\" = \"$local_checksum\""
+    assert publish_script =~ "Hex release lookup failed closed"
     assert recovery_validation_job =~ "'.path'"
     assert recovery_validation_job =~ "'.workflow_id'"
     assert recovery_validation_job =~ ".github/workflows/ci.yml"
@@ -70,7 +75,7 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert release_please_job =~ "gh workflow run release-please-automerge.yml"
     assert release_please_job =~ ~s(--field source_sha="$SOURCE_SHA")
     assert release_please_job =~ ~s(--field source_ci_run_id="$ci_run_id")
-    refute release_please_job =~ "mix hex.publish --yes"
+    refute release_please_job =~ "publish_hex_idempotently.sh"
     refute release_workflow =~ "googleapis/release-please-action"
 
     {hex_offset, _} = :binary.match(publish_job, "- name: Publish package")
@@ -291,6 +296,7 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     release_workflow = File.read!(@release_workflow_path)
     oidf_conformance_workflow = File.read!(@oidf_conformance_workflow_path)
     mixfile = File.read!("mix.exs")
+    publish_script = File.read!("scripts/publish/publish_hex_idempotently.sh")
 
     assert ci_workflow =~ "name: Release Hygiene Drift"
     assert ci_workflow =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
@@ -323,7 +329,8 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert mixfile =~ "\"conformance.phase37\": :test"
 
     assert release_workflow =~ "mix release.preflight"
-    assert release_workflow =~ "mix hex.publish --yes"
+    assert release_workflow =~ "bash scripts/publish/publish_hex_idempotently.sh"
+    assert publish_script =~ "mix hex.publish --yes"
     assert release_workflow =~ "environment: hex-publish"
     assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
 

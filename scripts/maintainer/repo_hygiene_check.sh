@@ -314,7 +314,8 @@ repo_owned_checks() {
      grep -Fq "needs.recovery-validation.result == 'success'" .github/workflows/release.yml &&
      grep -Fq 'git checkout --detach "$VERIFIED_SHA"' .github/workflows/release.yml &&
      grep -Fq 'run: mix release.preflight' .github/workflows/release.yml &&
-     grep -Fq 'run: mix hex.publish --yes' .github/workflows/release.yml; then
+     grep -Fq 'run: bash scripts/publish/publish_hex_idempotently.sh' .github/workflows/release.yml &&
+     grep -Fq 'mix hex.publish --yes' scripts/publish/publish_hex_idempotently.sh; then
     record_result "PASS" "release workflow" "repo-controlled Release Please and exact-CI-evidence publish commands are intact"
   else
     record_result "BLOCK" "release workflow" "release.yml no longer matches the trusted release lane"

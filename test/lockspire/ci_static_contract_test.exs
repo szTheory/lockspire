@@ -29,7 +29,7 @@ defmodule Lockspire.CiStaticContractTest do
              "git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json"
 
     assert ci =~
-             "npm audit --omit=dev --audit-level=high --prefix .github/actions/release-please/runtime"
+             "npm audit --omit=dev --audit-level=moderate --prefix .github/actions/release-please/runtime"
   end
 
   test "Dialyzer is a bounded cached CI gate with no warning suppression" do
