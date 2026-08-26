@@ -309,6 +309,9 @@ defmodule Lockspire.Install.Migrations do
     if errors == [], do: :ok, else: {:error, errors}
   end
 
+  # Revalidating both source and destination states is intentionally exhaustive at
+  # this filesystem trust boundary; splitting it would obscure the approved-plan invariant.
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp approved_operation_errors(operation) do
     source_errors =
       case File.read(operation.source) do

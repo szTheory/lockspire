@@ -42,37 +42,33 @@ defmodule Lockspire.Install.OperationPlan do
   @doc "Reports the same immutable plan used by dry-run and apply."
   @spec report(t(), :apply | :dry_run) :: :ok
   def report(%__MODULE__{} = plan, mode) when mode in [:apply, :dry_run] do
-    prefix = if mode == :dry_run, do: "DRY-RUN ", else: ""
-
-    Enum.each(plan.migration_plan.operations, fn operation ->
-      action = if operation.status == :copy, do: "COPY", else: "UNCHANGED"
-      Mix.shell().info("#{prefix}#{action} #{operation.relative_path}")
-    end)
-
-    Enum.each(plan.file_operations, fn operation ->
-      action =
-        case operation.status do
-          :create -> "CREATE"
-          :update -> "UPDATE"
-          :unchanged -> "UNCHANGED"
-        end
-
-      message =
-        if mode == :dry_run do
-          "DRY-RUN #{operation.relative_path}"
-        else
-          case action do
-            "CREATE" -> "* created #{operation.relative_path}"
-            "UPDATE" -> "* updated #{operation.relative_path}"
-            "UNCHANGED" -> "* unchanged #{operation.relative_path}"
-          end
-        end
-
-      Mix.shell().info(message)
-    end)
+    Enum.each(plan.migration_plan.operations, &report_migration(&1, mode))
+    Enum.each(plan.file_operations, &report_file(&1, mode))
 
     :ok
   end
+
+  defp report_migration(operation, :dry_run) do
+    action = if operation.status == :copy, do: "COPY", else: "UNCHANGED"
+    Mix.shell().info("DRY-RUN #{action} #{operation.relative_path}")
+  end
+
+  defp report_migration(operation, :apply) do
+    action = if operation.status == :copy, do: "COPY", else: "UNCHANGED"
+    Mix.shell().info("#{action} #{operation.relative_path}")
+  end
+
+  defp report_file(operation, :dry_run),
+    do: Mix.shell().info("DRY-RUN #{operation.relative_path}")
+
+  defp report_file(%{status: :create, relative_path: path}, :apply),
+    do: Mix.shell().info("* created #{path}")
+
+  defp report_file(%{status: :update, relative_path: path}, :apply),
+    do: Mix.shell().info("* updated #{path}")
+
+  defp report_file(%{status: :unchanged, relative_path: path}, :apply),
+    do: Mix.shell().info("* unchanged #{path}")
 
   @spec apply(t()) :: {:ok, t()} | {:error, [map()]}
   def apply(%__MODULE__{} = plan) do
