@@ -76,47 +76,45 @@ state.
 
 ## Install: generated files get owners
 
-`Lockspire.Generators.Install` renders both ownership classes, but the manifest
-receives only managed templates. Rerunning the task leaves identical files alone
-and refuses to overwrite drift.
+`Lockspire.Generators.Install` renders both ownership classes in memory, then
+hands the complete rendered set to `Lockspire.Install.OperationPlan`. The plan
+preflights managed and host-owned destinations alongside the complete packaged
+migration inventory before it may create a directory, copy a migration, write a
+generated file, or refresh the manifest.
 
 ```elixir
-defp write_manifest!(assigns, rendered_templates) do
-  managed_templates =
-    rendered_templates
-    |> Enum.filter(&(&1.template.ownership == :managed))
-
-  assigns
-  |> Manifest.build(managed_templates)
-  |> then(&Manifest.write(assigns.project_root, &1))
+defp build(assigns, mode, rendered_templates, manifest) do
+  with {:ok, migration_plan} <- Migrations.plan(project_root: assigns.project_root),
+       {:ok, file_operations} <- file_operations(mode, rendered_templates, manifest),
+       {:ok, final_manifest} <- final_manifest(assigns, rendered_templates, migration_plan) do
+    {:ok,
+     %__MODULE__{
+       assigns: assigns,
+       mode: mode,
+       migration_plan: migration_plan,
+       file_operations: file_operations,
+       manifest: final_manifest
+     }}
+  end
 end
 
-defp ensure_file!(destination, rendered) do
-  File.mkdir_p!(Path.dirname(destination))
-
-  case File.read(destination) do
-    {:ok, ^rendered} ->
-      Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
-
-    {:ok, _existing} ->
-      Mix.raise("""
-      Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
-
-      Keep the host-owned edits and reconcile this file manually before rerunning
-      `mix lockspire.install`.
-      """)
-
-    {:error, :enoent} ->
-      File.write!(destination, rendered)
-      Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-    {:error, reason} ->
-      Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+def apply(%__MODULE__{} = plan) do
+  with :ok <- validate_file_operations(plan.file_operations),
+       {:ok, _migration_result} <- Migrations.apply(plan.migration_plan),
+       :ok <- apply_file_operations(plan.file_operations),
+       :ok <- Manifest.write(plan.assigns.project_root, plan.manifest) do
+    {:ok, plan}
   end
 end
 ```
 
-That filter is the upgrade boundary. The generated account, interaction,
+This is the all-artifact mutation boundary. A legacy manifest may omit its new
+migration audit inventory, but it never authorizes an overwrite: package and
+host filesystem state are rechecked for every operation. The manifest is
+written last. Repeat installs report unchanged artifacts, and upgrade dry-runs
+report this same approved plan without applying it.
+
+Managed templates remain the upgrade boundary; host-owned account, interaction,
 consent, device, and product UX modules remain host-owned even though Lockspire
 created their first version.
 

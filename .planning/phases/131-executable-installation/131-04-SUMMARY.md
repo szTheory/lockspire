@@ -82,6 +82,7 @@ status: complete
 1. **Task 1: Extend the install manifest with an old-compatible migration audit** — `119a6d4` (`feat`)
 2. **Task 2: Execute one immutable all-artifact plan through public install and upgrade** — `fb16fcd` (`feat`)
 3. **Static-analysis follow-up** — `e8773e8` (`refactor`)
+4. **Documentation-contract follow-up** — recorded with this summary update (`docs`)
 
 ## Verification
 
@@ -89,6 +90,9 @@ status: complete
 - `mix test test/integration/install_generator_test.exs test/lockspire/install/migrations_test.exs test/integration/install_upgrade_test.exs` — passed (31 tests).
 - `mix compile --warnings-as-errors` — passed.
 - `mix qa` — passed: formatting, compilation, Credo, and Sobelow. Sobelow retains its existing no-router informational warning but reported a successful scan.
+- `mix test test/lockspire/documentation_contract_test.exs` — passed (5 tests).
+- `mix docs.verify` — passed.
+- `mix test.fast --max-failures 1` — passed (1,313 tests; 252 integration tests excluded).
 
 The named ASVS high-severity evidence for T-131-14, T-131-15, and T-131-16 is green through the public lifecycle collision and legacy-metadata tests.
 
@@ -120,7 +124,15 @@ The named ASVS high-severity evidence for T-131-14, T-131-15, and T-131-16 is gr
 - **Verification:** `mix qa` passes.
 - **Committed in:** `e8773e8`
 
-**Total deviations:** 2 auto-fixed (1 Rule 1, 1 Rule 3). **Impact:** Both changes preserve deterministic filesystem safety and repository hygiene without widening the public product surface.
+**3. [Rule 1 - Documentation-contract repair] Replaced the obsolete scaffold-only walkthrough with the immutable all-artifact boundary.**
+
+- **Found during:** Wave 2 cumulative documentation gate
+- **Issue:** The code walkthrough and its contract test still anchored the removed `write_manifest!/2` implementation, so documentation described a scaffold-only mutation flow that no longer exists.
+- **Fix:** Documented `OperationPlan.build/4` and `apply/1`, including migration preflight, rendered-file validation, manifest-last ordering, and audit-only legacy-manifest behavior; moved the contract anchor to the real migration-plan preflight expression.
+- **Files modified:** `docs/code-walkthrough.md`, `test/lockspire/documentation_contract_test.exs`
+- **Verification:** Focused documentation contract, generated docs verification, and the fast suite all pass.
+
+**Total deviations:** 3 auto-fixed (2 Rule 1, 1 Rule 3). **Impact:** The walkthrough now protects the same atomic host-tree boundary that the runtime enforces.
 
 ## Known Stubs
 
@@ -142,4 +154,4 @@ The embedded installer now has an atomic, audited migration delivery path and pu
 
 - `lib/lockspire/install/operation_plan.ex` exists and is committed.
 - Task commits `119a6d4`, `fb16fcd`, and `e8773e8` exist in git history.
-- All required tests, compiler checks, and quality checks passed.
+- The current walkthrough anchor resolves to the immutable operation-plan preflight and all required tests, docs, and quality checks passed.

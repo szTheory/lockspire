@@ -114,8 +114,8 @@ defmodule Lockspire.DocumentationContractTest do
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/generators/install.ex",
-      "Enum.filter(&(&1.template.ownership == :managed))"
+      "lib/lockspire/install/operation_plan.ex",
+      "with {:ok, migration_plan} <- Migrations.plan(project_root: assigns.project_root)"
     )
 
     assert_anchor(
