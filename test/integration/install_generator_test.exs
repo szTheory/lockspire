@@ -171,6 +171,9 @@ defmodule Lockspire.InstallGeneratorTest do
       )
 
     assert consent_live =~ "ConsentContext.load"
+    assert consent_live =~ "start_async(:load_consent_context"
+    assert consent_live =~ "handle_async(:load_consent_context"
+    assert consent_live =~ "role=\"status\""
     assert consent_live =~ "phx-trigger-action"
     refute consent_live =~ "params[\"client_name\"]"
     refute consent_live =~ "interaction_id}</code>"
@@ -448,6 +451,10 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert rendered ==
              File.read!(Path.join(@runtime_fixture_root, "live/lockspire_consent_live.ex"))
+
+    assert rendered =~ "start_async(:load_consent_context"
+    assert rendered =~ "handle_async(:load_consent_context"
+    assert rendered =~ "role=\"status\""
 
     module = GeneratedHostAppWeb.LockspireConsentLive
     :code.purge(module)

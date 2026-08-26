@@ -39,6 +39,7 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
 
     {:ok, client} =
       Repository.register_client(%Client{
@@ -137,11 +138,30 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     assert resumed_consent_conn.status in [302, 303]
     assert redirected_to(resumed_consent_conn) == "/lockspire/consent/#{interaction_id}"
 
+    loading_conn =
+      signed_in_conn("generated-host-user", 30)
+      |> get("/lockspire/consent/#{interaction_id}")
+
+    assert loading_conn.status == 200
+    assert loading_conn.resp_body =~ ~s(role="status")
+    assert loading_conn.resp_body =~ "Loading authorization request…"
+    refute loading_conn.resp_body =~ "approve-consent"
+    refute loading_conn.resp_body =~ "deny-consent"
+    refute loading_conn.resp_body =~ "Generated Host App"
+    refute loading_conn.resp_body =~ interaction_id
+
     assert {:ok, consent_live, consent_html} =
              live(
                signed_in_conn("generated-host-user", 30),
                "/lockspire/consent/#{interaction_id}"
              )
+
+    assert consent_html =~ ~s(role="status")
+    assert consent_html =~ "Loading authorization request…"
+    refute consent_html =~ "approve-consent"
+    refute consent_html =~ "deny-consent"
+
+    consent_html = render_async(consent_live)
 
     assert consent_html =~ "Generated Host App"
     assert consent_html =~ "Approve access"
