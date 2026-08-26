@@ -461,8 +461,9 @@ defmodule Lockspire.Plug.VerifyToken do
   defp restriction_log_metadata(_error), do: []
 
   defp binding_type(%{"cnf" => %{} = cnf}) do
-    has_dpop? = present?(Map.get(cnf, "jkt"))
-    has_mtls? = present?(Map.get(cnf, "x5t#S256"))
+    confirmation = AccessToken.normalize_confirmation(cnf)
+    has_dpop? = is_map(confirmation) and Map.has_key?(confirmation, :dpop_jkt)
+    has_mtls? = is_map(confirmation) and Map.has_key?(confirmation, :mtls_x5t_s256)
 
     cond do
       has_dpop? and has_mtls? -> "dpop+mtls"
@@ -524,8 +525,9 @@ defmodule Lockspire.Plug.VerifyToken do
   # feeds the structured error map's `challenge:` for the WWW-Authenticate
   # scheme letter).
   defp challenge_for(%{"cnf" => %{} = cnf}, scheme) do
-    has_dpop? = present?(Map.get(cnf, "jkt"))
-    has_mtls? = present?(Map.get(cnf, "x5t#S256"))
+    confirmation = AccessToken.normalize_confirmation(cnf)
+    has_dpop? = is_map(confirmation) and Map.has_key?(confirmation, :dpop_jkt)
+    has_mtls? = is_map(confirmation) and Map.has_key?(confirmation, :mtls_x5t_s256)
 
     cond do
       has_dpop? -> :dpop
@@ -541,28 +543,8 @@ defmodule Lockspire.Plug.VerifyToken do
   defp challenge_from_scheme("DPoP"), do: :dpop
   defp challenge_from_scheme(_other), do: :bearer
 
-  defp binding_requirements(%{"cnf" => %{} = cnf}) do
-    requirements =
-      %{}
-      |> put_requirement(:dpop_jkt, Map.get(cnf, "jkt"))
-      |> put_requirement(:mtls_x5t_s256, Map.get(cnf, "x5t#S256"))
-
-    if map_size(requirements) == 0, do: nil, else: requirements
-  end
-
-  defp binding_requirements(_claims), do: nil
-
-  defp put_requirement(requirements, _key, value) when not is_binary(value), do: requirements
-
-  defp put_requirement(requirements, key, value) do
-    trimmed = String.trim(value)
-
-    if trimmed == "" do
-      requirements
-    else
-      Map.put(requirements, key, trimmed)
-    end
-  end
+  defp binding_requirements(claims),
+    do: AccessToken.normalize_confirmation(Map.get(claims, "cnf"))
 
   defp extract_kid(token) do
     # Decode the protected header once via peek_protected_header/1 and
@@ -745,6 +727,4 @@ defmodule Lockspire.Plug.VerifyToken do
         {:error, rfc9068_error(:missing_sub, challenge)}
     end
   end
-
-  defp present?(value), do: is_binary(value) and String.trim(value) != ""
 end

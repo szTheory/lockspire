@@ -83,6 +83,39 @@ defmodule Lockspire.AccessToken do
 
   def audiences(_token), do: []
 
+  @doc """
+  Returns the access-token expiration as a UTC `DateTime`.
+
+  Only integer JWT NumericDate values are accepted. Strings, floats, missing
+  values, and values outside `DateTime`'s supported range return `nil`.
+  """
+  @spec expires_at(t() | term()) :: DateTime.t() | nil
+  def expires_at(%__MODULE__{} = token) do
+    case claim(token, "exp") do
+      value when is_integer(value) ->
+        case DateTime.from_unix(value, :second) do
+          {:ok, datetime} -> datetime
+          {:error, _reason} -> nil
+        end
+
+      _other ->
+        nil
+    end
+  end
+
+  def expires_at(_token), do: nil
+
+  @doc """
+  Returns allowlisted confirmation values for the token's sender binding.
+
+  The returned map contains only nonblank `cnf.jkt` and `cnf["x5t#S256"]`
+  values. Unknown or malformed confirmation members are not exposed.
+  """
+  @spec confirmation(t() | term()) ::
+          %{optional(:dpop_jkt) => String.t(), optional(:mtls_x5t_s256) => String.t()} | nil
+  def confirmation(%__MODULE__{} = token), do: normalize_confirmation(claim(token, "cnf"))
+  def confirmation(_token), do: nil
+
   @doc false
   @spec normalize_audiences(map() | term()) ::
           {:ok, [String.t()]} | {:error, :missing_audience | :invalid_audience}
@@ -110,6 +143,20 @@ defmodule Lockspire.AccessToken do
 
   def normalize_audiences(_claims), do: {:error, :invalid_audience}
 
+  @doc false
+  @spec normalize_confirmation(map() | term()) ::
+          %{optional(:dpop_jkt) => String.t(), optional(:mtls_x5t_s256) => String.t()} | nil
+  def normalize_confirmation(confirmation) when is_map(confirmation) do
+    normalized =
+      %{}
+      |> put_confirmation(:dpop_jkt, Map.get(confirmation, "jkt"))
+      |> put_confirmation(:mtls_x5t_s256, Map.get(confirmation, "x5t#S256"))
+
+    if map_size(normalized) == 0, do: nil, else: normalized
+  end
+
+  def normalize_confirmation(_confirmation), do: nil
+
   defp claim(%__MODULE__{claims: claims}, key) when is_map(claims), do: Map.get(claims, key)
   defp claim(_token, _key), do: nil
 
@@ -121,6 +168,15 @@ defmodule Lockspire.AccessToken do
       |> Enum.uniq()
     else
       []
+    end
+  end
+
+  defp put_confirmation(confirmation, _key, value) when not is_binary(value), do: confirmation
+
+  defp put_confirmation(confirmation, key, value) do
+    case nonblank(value) do
+      nil -> confirmation
+      normalized -> Map.put(confirmation, key, normalized)
     end
   end
 
