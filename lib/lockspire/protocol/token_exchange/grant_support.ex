@@ -14,96 +14,14 @@ defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
   alias Lockspire.Protocol.AccessTokenSigner
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
-  alias Lockspire.Protocol.RefreshExchange
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
-  alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
   @type result :: {:ok, Success.t()} | {:error, Error.t()}
-
-  @spec exchange(map()) :: result()
-  def exchange(request) when is_map(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-
-    case normalize_optional_string(params["grant_type"]) do
-      "authorization_code" ->
-        exchange_authorization_code(request)
-
-      "refresh_token" ->
-        exchange_refresh_token(request)
-
-      "urn:ietf:params:oauth:grant-type:device_code" ->
-        exchange_device_code(request)
-
-      "urn:openid:params:grant-type:ciba" ->
-        exchange_ciba(request)
-
-      "urn:ietf:params:oauth:grant-type:token-exchange" ->
-        exchange_rfc8693(request)
-
-      _other ->
-        {:error,
-         oauth_error(
-           400,
-           "unsupported_grant_type",
-           "Only grant_type=authorization_code, grant_type=refresh_token, grant_type=urn:ietf:params:oauth:grant-type:device_code, grant_type=urn:openid:params:grant-type:ciba, and grant_type=urn:ietf:params:oauth:grant-type:token-exchange are supported",
-           :unsupported_grant_type
-         )}
-    end
-  end
-
-  @doc """
-  Issues tokens for a CIBA authorization directly.
-  Used by the Push delivery mode worker.
-  """
-  @spec issue_ciba_tokens(Client.t(), CibaAuthorization.t(), map(), map()) :: result()
-  def issue_ciba_tokens(
-        %Client{} = client,
-        %CibaAuthorization{} = ciba_authorization,
-        issuance_context,
-        request
-      ) do
-    redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
-  end
-
-  @doc false
-  @spec __issue_ciba_tokens__(Client.t(), CibaAuthorization.t(), map(), map()) :: result()
-  def __issue_ciba_tokens__(client, ciba_authorization, issuance_context, request),
-    do: redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
-
-  @spec exchange_authorization_code(map()) :: result()
-  def exchange_authorization_code(request) when is_map(request),
-    do: __exchange_authorization_code__(request)
-
-  @doc false
-  @spec __exchange_authorization_code__(map()) :: result()
-  def __exchange_authorization_code__(request) when is_map(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-
-    with :ok <- validate_grant_type(params),
-         {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
-         {:ok, %Token{} = authorization_code, code_hash} <-
-           fetch_authorization_code(params, request) do
-      handle_code_exchange(
-        client,
-        authorization_code,
-        code_hash,
-        params,
-        issuance_context,
-        request
-      )
-    else
-      {:error, %Error{} = error} ->
-        emit_failure(error, params, request)
-        {:error, error}
-    end
-  end
 
   @doc false
   def handle_code_exchange(
@@ -134,90 +52,6 @@ defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
         emit_failure(error, params, request)
         {:error, error}
     end
-  end
-
-  defp exchange_refresh_token(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-
-    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %Success{} = success} <- RefreshExchange.exchange_refresh_token(client, request) do
-      {:ok, success}
-    else
-      {:error, %Error{} = error} ->
-        emit_failure(error, params, request)
-        {:error, error}
-    end
-  end
-
-  defp exchange_device_code(request), do: __exchange_device_code__(request)
-
-  @doc false
-  @spec __exchange_device_code__(map()) :: result()
-  def __exchange_device_code__(request) when is_map(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-
-    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %DeviceAuthorizationState{} = device_authorization} <-
-           fetch_device_authorization_for_exchange(params, client, request),
-         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
-         {:ok, %Success{} = success} <-
-           redeem_device_authorization(client, device_authorization, issuance_context, request) do
-      {:ok, success}
-    else
-      {:error, %Error{} = error} ->
-        emit_failure(error, params, request)
-        {:error, error}
-    end
-  end
-
-  defp exchange_ciba(request), do: __exchange_ciba__(request)
-
-  @doc false
-  @spec __exchange_ciba__(map()) :: result()
-  def __exchange_ciba__(request) when is_map(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-
-    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %CibaAuthorization{} = ciba_authorization} <-
-           fetch_ciba_authorization_for_exchange(params, client, request),
-         {:ok, issuance_context} <- TokenEndpointDPoP.resolve_context(client, request),
-         {:ok, %Success{} = success} <-
-           redeem_ciba_authorization(client, ciba_authorization, issuance_context, request) do
-      {:ok, success}
-    else
-      {:error, %Error{} = error} ->
-        emit_failure(error, params, request)
-        {:error, error}
-    end
-  end
-
-  defp exchange_rfc8693(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-
-    with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, success} <- Lockspire.Protocol.Rfc8693Exchange.exchange(client, request) do
-      {:ok, success}
-    else
-      {:error, %Error{} = error} ->
-        emit_failure(error, params, request)
-        {:error, error}
-    end
-  end
-
-  defp validate_grant_type(%{"grant_type" => "authorization_code"}), do: :ok
-
-  defp validate_grant_type(_params) do
-    {:error,
-     oauth_error(
-       400,
-       "unsupported_grant_type",
-       "Only grant_type=authorization_code is supported",
-       :unsupported_grant_type
-     )}
   end
 
   @doc false

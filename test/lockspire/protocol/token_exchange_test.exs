@@ -49,6 +49,14 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     facade =
       File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange.ex", __DIR__))
 
+    grant_support =
+      File.read!(
+        Path.expand(
+          "../../../lib/lockspire/protocol/token_exchange/grant_support.ex",
+          __DIR__
+        )
+      )
+
     coordinators = [
       "authorization_code_grant.ex",
       "device_code_grant.ex",
@@ -58,6 +66,8 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     assert facade =~ "AuthorizationCodeGrant.exchange(request)"
     assert facade =~ "DeviceCodeGrant.exchange(request)"
     assert facade =~ "CibaGrant.exchange(request)"
+    refute Regex.match?(~r/^\s*def exchange\(/m, grant_support)
+    refute function_exported?(TokenExchange.GrantSupport, :exchange, 1)
 
     Enum.each(coordinators, fn coordinator ->
       source =
