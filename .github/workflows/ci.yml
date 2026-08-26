@@ -65,7 +65,7 @@ jobs:
         run: bash ./scripts/ci/lint_workflows.sh
 
       - name: Verify dependency setup did not rewrite locks
-        run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json
+        run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json
 
   fast:
     name: Fast Checks
@@ -193,7 +193,7 @@ jobs:
             _build
             tmp/lockspire-compatibility-fixture/deps
             tmp/lockspire-compatibility-fixture/_build
-          key: ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'test/fixtures/phoenix_1_8_live_view_1_1/mix.lock') }}
+          key: ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('mix.lock', 'compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-compat-v2-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-
 
@@ -216,15 +216,15 @@ jobs:
         run: mix test.fast
 
       - name: Install exact Phoenix and LiveView compatibility fixture
-        working-directory: test/fixtures/phoenix_1_8_live_view_1_1
+        working-directory: compatibility/phoenix_1_8_live_view_1_1
         run: mix deps.get --check-locked
 
       - name: Compile exact Phoenix and LiveView compatibility fixture
-        working-directory: test/fixtures/phoenix_1_8_live_view_1_1
+        working-directory: compatibility/phoenix_1_8_live_view_1_1
         run: mix compile --warnings-as-errors
 
       - name: Verify compatibility fixture lock stayed unchanged
-        run: git diff --exit-code -- mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock
+        run: git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock
 
   integration:
     name: Integration Checks

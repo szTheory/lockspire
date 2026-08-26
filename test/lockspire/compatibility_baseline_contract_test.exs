@@ -2,7 +2,7 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
   use ExUnit.Case, async: true
 
   @ci Path.expand("../../.github/workflows/ci.yml", __DIR__)
-  @fixture Path.expand("../fixtures/phoenix_1_8_live_view_1_1", __DIR__)
+  @fixture Path.expand("../../compatibility/phoenix_1_8_live_view_1_1", __DIR__)
 
   test "minimum compatibility job compiles the exact host fixture on PostgreSQL 14" do
     compatibility_job = ci_job!(File.read!(@ci), "compatibility")
@@ -12,12 +12,12 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     assert compatibility_job =~ "postgres:14@sha256:"
     assert compatibility_job =~ "mix compile --warnings-as-errors"
     assert compatibility_job =~ "mix test.fast"
-    assert compatibility_job =~ "test/fixtures/phoenix_1_8_live_view_1_1/mix.lock"
-    assert compatibility_job =~ "working-directory: test/fixtures/phoenix_1_8_live_view_1_1"
+    assert compatibility_job =~ "compatibility/phoenix_1_8_live_view_1_1/mix.lock"
+    assert compatibility_job =~ "working-directory: compatibility/phoenix_1_8_live_view_1_1"
     assert compatibility_job =~ "mix deps.get --check-locked"
 
     assert compatibility_job =~
-             "git diff --exit-code -- mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock"
+             "git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock"
   end
 
   test "fixture pins supported Phoenix and LiveView floors through the Lockspire host seam" do
@@ -25,7 +25,7 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     lock = File.read!(Path.join(@fixture, "mix.lock"))
     router = File.read!(Path.join(@fixture, "lib/lockspire_compatibility_fixture.ex"))
 
-    assert mixfile =~ "{:lockspire, path: \"../../..\"}"
+    assert mixfile =~ "{:lockspire, path: \"../..\"}"
     assert mixfile =~ "{:phoenix, \"== 1.8.5\"}"
     assert mixfile =~ "{:phoenix_live_view, \"== 1.1.28\"}"
     assert lock =~ "\"phoenix\": {:hex, :phoenix, \"1.8.5\""
