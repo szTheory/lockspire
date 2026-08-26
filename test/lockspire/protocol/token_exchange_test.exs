@@ -2263,7 +2263,7 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
 
   test "grant coordinators own facade dispatch without internal TokenExchange callbacks" do
     facade =
-      File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange_facade.ex", __DIR__))
+      File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange.ex", __DIR__))
 
     coordinators = [
       "authorization_code_grant.ex",
