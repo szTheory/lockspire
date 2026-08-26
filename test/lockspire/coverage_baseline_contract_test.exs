@@ -25,6 +25,7 @@ defmodule Lockspire.CoverageBaselineContractTest do
 
     assert fast_job =~ "scripts/ci/run_test_matrix.sh --fast"
     refute fast_job =~ "run: mix test.fast"
+
     assert File.read!(Path.expand("../../scripts/ci/run_test_matrix.sh", __DIR__)) =~
              "mix test.coverage"
   end

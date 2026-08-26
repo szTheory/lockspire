@@ -45,8 +45,10 @@ defmodule Lockspire.ConfigCase do
     originals = Process.get(@original_values_key, %{})
 
     unless Map.has_key?(originals, key) do
-      Process.put(@original_values_key, Map.put(originals, key, Application.fetch_env(:lockspire, key)))
+      Process.put(
+        @original_values_key,
+        Map.put(originals, key, Application.fetch_env(:lockspire, key))
+      )
     end
   end
-
 end

@@ -380,5 +380,4 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     |> limit(1)
     |> Lockspire.TestRepo.one!()
   end
-
 end
