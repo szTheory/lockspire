@@ -25,7 +25,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has landed mainline work through v1.36 while the latest public Hex release remains `1.2.0`. Beyond the earlier embedded-provider, release-hardening, protected-route, admin-polish, adoption-trust, prefix-storage, and CI-hygiene work, v1.36 raised release integrity, executable quality baselines, runtime dependency truth, token endpoint cohesion, and repository readability without broadening the public protocol surface.
+Lockspire has landed mainline work through v1.36 while the latest public Hex release remains `1.2.0`, and v1.37 is now underway. Phase 131 made packaged installation executable: real generated routes and consent, collision-safe migration delivery and upgrade transactions, complete install verification, truthful default/FAPI smoke proof, and generated host documentation are now verified, security-audited, and covered end to end.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
@@ -207,7 +207,6 @@ Execute v1.37 as an evidence-led readiness milestone. Fix the concrete generated
 
 ### Active
 
-- [ ] A fresh Phoenix/Ecto host can install packaged Lockspire, mount real generated routes, apply Lockspire migrations, configure required host seams, pass generated tests, and boot using only documented steps.
 - [ ] A separate-origin confidential client can complete authorization code + PKCE, validate OIDC responses, call an audience/scope-protected SaaS API, rotate refresh tokens, exercise revocation/introspection, and prove durable DPoP replay rejection.
 - [ ] Lockspire's public client and resource-server APIs match shipped behavior through additive accessors, coherent validation, accurate examples, and v1.x-compatible deprecations.
 - [ ] Protocol, admin, web, storage, and token internals have acyclic dependency direction, cohesive implementation modules, explicit dependencies, and preserved security-sensitive atomicity.
@@ -215,6 +214,7 @@ Execute v1.37 as an evidence-led readiness milestone. Fix the concrete generated
 
 ### Validated
 
+- Phase 131 delivered the executable packaged-install path: generated host/router/consent seams compile and run, migrations and managed files install and upgrade transactionally, `mix lockspire.verify` reports all required seams, default and opt-in FAPI smoke proofs match their profiles, and the generated consent flow completes through token exchange with 31/31 modeled threats closed.
 - Delivered v1.36 Structural Quality Ratchet: exact-ref release proof, executable quality and compatibility baselines, repaired storage boundaries, cohesive token internals, zero-warning Dialyzer, readable tests/runtime code, synchronized docs, and artifact hygiene were completed across Phases 126-130.
 - Delivered v1.32 Admin Page IA & Interaction Model Polish: route scorecards, Support and Operate flow polish, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and final adversarial proof were completed across Phases 121-125.
 - Embedded-library install and host-owned integration seams were delivered in the archived v1.0 milestone.

@@ -79,6 +79,20 @@ re_verification:
 | Consent context, generated loading/terminal states, approval-to-token flow | `mix test test/lockspire/web/consent_context_test.exs test/lockspire/web/live/consent_live_test.exs && mix test --include integration test/integration/phase6_onboarding_e2e_test.exs` | Passed | PASS |
 | Diagnostics, compile, and docs | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs && mix compile --warnings-as-errors && mix docs.verify` | Passed | PASS |
 
+### Final Quality Gates
+
+Fresh evidence after the security and generated-consent audit fixes:
+
+| Gate | Result |
+| --- | --- |
+| `mix compile --warnings-as-errors` | PASS |
+| `mix test.fast` | PASS — 1,330 tests, 0 failures (255 excluded) |
+| `mix test.integration` | PASS — 255 tests, 0 failures (1,326 excluded) |
+| `mix qa` | PASS — Credo found no issues; Sobelow completed with the library's expected no-router notice |
+| `mix docs.verify` | PASS |
+
+Security closed 31/31 declared threat entries after independent re-audit. The generated consent UI re-audit closed its three actionable source findings and scored 20/24; the remaining visual warnings require an installed host stylesheet and browser viewport proof and do not represent a generated-flow defect.
+
 ### Requirements Coverage
 
 | Requirement | Source Plan | Status | Evidence |
