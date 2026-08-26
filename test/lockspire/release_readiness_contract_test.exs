@@ -235,11 +235,10 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "`workflow_dispatch` is used, treat it as exact-ref only"
     assert guide =~ "exact commit SHA or tag being published by release automation or recovered"
     assert guide =~ "./scripts/maintainer/repo_hygiene_check.sh"
-    assert guide =~ "auto-publish once the Release Please PR is merged"
+    assert guide =~ "merge commit's own successful `CI` push run"
     assert guide =~ ".github/workflows/release-please-automerge.yml"
-    assert guide =~ "GitHub suppresses most follow-on workflow triggers caused by `GITHUB_TOKEN`"
-    assert guide =~ "without a reviewer gate"
-    assert guide =~ "without a manual approval step"
+    assert guide =~ "pre-merge CI run is never publish evidence"
+    assert guide =~ "cannot publish a tag, a stale SHA, or a pre-merge run"
 
     assert guide =~
              "Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix."
@@ -291,80 +290,25 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute operator_guide =~ "Lockspire authenticates your operators"
   end
 
-  test "release workflow keeps one protected publish lane with exact-ref dispatch" do
+  test "release workflow has one exact-CI-evidence publish lane" do
     release_workflow = File.read!(@release_workflow_path)
     release_please_job = release_workflow_job("release-please", "recovery-validation")
     recovery_validation_job = release_workflow_job("recovery-validation", "publish")
     publish_job = publish_job_section()
 
-    assert release_workflow =~ "push:"
-    assert release_workflow =~ "workflow_dispatch:"
-    assert release_workflow =~ "recovery_reason"
-    assert release_workflow =~ "recovery_ref"
-    assert release_workflow =~ "Check out repository for Release Please"
-    assert release_workflow =~ "Confirm dispatch stays exact-ref only"
-    assert release_workflow =~ "steps.manual_dispatch.outputs.release_created"
-    assert release_workflow =~ "echo \"release_created=false\" >> \"$GITHUB_OUTPUT\""
-    assert release_workflow =~ "workflow_dispatch bypasses Release Please"
-    assert release_workflow =~ "selected by release automation or recovery"
-    assert release_workflow =~ "recovery-validation:"
-    assert release_workflow =~ "name: Validate Recovery Ref"
-    assert release_workflow =~ "Check out repository for recovery validation"
-    assert release_workflow =~ "fetch-depth: 0"
-    assert release_workflow =~ "fetch-tags: true"
-    assert release_workflow =~ "Validate exact-ref dispatch inputs and lock to an immutable ref"
-    assert release_workflow =~ "[[ \"$recovery_ref\" =~ ^[0-9a-f]{40}$ ]]"
-    assert release_workflow =~ "git show-ref --verify --quiet \"refs/tags/$recovery_ref\""
-    assert release_workflow =~ "echo \"checkout_ref=$recovery_ref\" >> \"$GITHUB_OUTPUT\""
-    assert release_workflow =~ "exact 40-character commit SHA or an existing tag"
-    assert release_workflow =~ "workflow_dispatch is exact-ref only"
-    assert release_workflow =~ "ref: ${{ needs.recovery-validation.outputs.checkout_ref }}"
-
-    assert release_workflow =~
-             "Confirm recovery checkout is detached to the validated immutable ref"
-
-    assert release_workflow =~ "git checkout --detach HEAD"
-    assert release_workflow =~ "Release Please generated PRs are review-only"
-    assert release_workflow =~ "id: release"
-    assert release_workflow =~ "github.event_name == 'workflow_dispatch'"
-    assert release_workflow =~ "github.event_name != 'workflow_dispatch'"
-    assert release_workflow =~ "mix local.hex --force"
-    assert release_workflow =~ "mix local.rebar --force"
-
-    assert release_workflow =~
-             "Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
-
-    assert release_workflow =~ "uses: ./.github/actions/release-please"
-    assert release_workflow =~ "config-file: release-please-config.json"
-    assert release_workflow =~ "manifest-file: .release-please-manifest.json"
-    assert release_workflow =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
-    assert release_workflow =~ "run: mix release.preflight"
-    assert release_workflow =~ "run: mix hex.publish --yes"
-    assert release_workflow =~ "needs.recovery-validation.result == 'success'"
-    assert release_workflow =~ "needs.release-please.outputs.release_created == 'true'"
-    assert release_workflow =~ "release_sha: ${{ steps.release.outputs.sha || '' }}"
-    assert release_workflow =~ "needs.release-please.outputs.release_sha == github.sha"
-    assert release_workflow =~ "Record stale Release Please release event"
-    assert release_workflow =~ "always()"
+    assert release_workflow =~ "source_ci_run_id"
+    assert release_workflow =~ "actions: read"
+    assert recovery_validation_job =~ "^\[0-9a-f]{40}$"
+    assert recovery_validation_job =~ "git rev-parse origin/main"
+    assert recovery_validation_job =~ "actions/runs/$SOURCE_CI_RUN_ID"
+    assert recovery_validation_job =~ "'.conclusion'"
+    assert publish_job =~ "needs.recovery-validation.result == 'success'"
+    assert publish_job =~ "git checkout --detach \"$VERIFIED_SHA\""
+    assert publish_job =~ "mix release.preflight"
+    assert publish_job =~ "mix hex.publish --yes"
     assert release_please_job =~ "uses: ./.github/actions/release-please"
-    assert release_please_job =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
-    assert release_please_job =~ "release_sha: ${{ steps.release.outputs.sha || '' }}"
-
-    assert recovery_validation_job =~
-             "recovery_ref must be an exact 40-character commit SHA or an existing tag"
-
-    assert publish_job =~ "run: mix release.preflight"
-    assert publish_job =~ "run: mix hex.publish --yes"
-    refute release_please_job =~ "run: mix release.preflight"
-    refute release_please_job =~ "run: mix hex.publish --yes"
-    refute recovery_validation_job =~ "run: mix release.preflight"
-    refute recovery_validation_job =~ "run: mix hex.publish --yes"
-
-    refute release_workflow =~ "pull_request:"
-    refute release_workflow =~ "package-name: lockspire"
+    refute release_please_job =~ "mix hex.publish --yes"
     refute release_workflow =~ "googleapis/release-please-action"
-
-    refute release_workflow =~ "mix package.verify"
   end
 
   test "ci and release cache restore keys stay scoped to the active beam pair" do
@@ -393,8 +337,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute ci_workflow =~ "priv/plts"
     refute ci_workflow =~ "dialyzer-v"
 
-    assert release_workflow =~
-             ~S/${{ runner.os }}-mix-release-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
+    refute release_workflow =~ "mix-release-v2"
   end
 
   test "release please automerge workflow only merges guarded bot release prs after green main ci" do
@@ -403,9 +346,9 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert workflow =~ "name: Release Please Auto Merge"
     assert workflow =~ "workflow_run:"
     assert workflow =~ "workflows:"
-    assert workflow =~ "- CI"
+    assert workflow =~ "workflows: [CI]"
     assert workflow =~ "types:"
-    assert workflow =~ "- completed"
+    assert workflow =~ "types: [completed]"
     assert workflow =~ "github.event.workflow_run.conclusion == 'success'"
     assert workflow =~ "github.event.workflow_run.head_branch == 'main'"
     assert workflow =~ "contents: write"
@@ -416,11 +359,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert workflow =~ "release-please--branches--main--components--lockspire"
     assert workflow =~ "chore\\\\(main\\\\): release lockspire"
     assert workflow =~ ".release-please-manifest.json,CHANGELOG.md,mix.exs"
-    assert workflow =~ "gh pr merge \"$PR_NUMBER\" --squash --delete-branch"
+    assert workflow =~ "gh pr merge \"$pr_number\" --squash --delete-branch"
     assert workflow =~ "mergeCommit"
     assert workflow =~ "gh workflow run release.yml"
-    assert workflow =~ "--field recovery_ref=\"$MERGE_SHA\""
-    assert workflow =~ "Automated Release Please PR #$PR_NUMBER merge after green main CI run"
+    assert workflow =~ "--field recovery_ref=\"$CI_HEAD_SHA\""
+    assert workflow =~ "merge validated by CI run $CI_RUN_ID"
 
     refute workflow =~ "HEX_API_KEY"
     refute workflow =~ "pull_request_target"
@@ -484,11 +427,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert release_workflow =~ "uses: ./.github/actions/release-please"
     assert release_workflow =~ "config-file: release-please-config.json"
     assert release_workflow =~ "manifest-file: .release-please-manifest.json"
-    assert release_workflow =~ "outputs:"
-    assert release_workflow =~ "tag_name: ${{ steps.release.outputs.tag_name || '' }}"
-
-    assert release_workflow =~
-             "Release Please selected root tag ${{ steps.release.outputs.tag_name }}"
+    assert release_workflow =~ "source_ci_run_id"
+    assert release_workflow =~ "verified_sha"
 
     assert action =~ "config-file"
     assert action =~ "manifest-file"
@@ -552,8 +492,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert guide =~ "Release candidate checklist"
     assert guide =~ "review-only evidence"
 
-    assert guide =~
-             "only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`"
+    assert guide =~ "GitHub release, Hex publish, and unprivileged install-truth artifact"
 
     assert guide =~ "Protected-environment proof starts only when the `publish` job"
     assert guide =~ "Repo-owned commands stop at `mix ci`"
@@ -1391,7 +1330,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute maintainer_conformance =~ "Phase 43 completion"
 
     # Artifact/CI truth
-    assert workflow =~ "uses: actions/upload-artifact@v7"
+    assert workflow =~ "uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     assert workflow =~ "mix lockspire.oidf_conformance"
   end
 

@@ -19,6 +19,7 @@
 **Goal:** A release is publishable only when its exact immutable main commit has passed CI, and the published package is independently installable.
 **Requirements:** RELEASE-01, RELEASE-02, RELEASE-03, SUPPLY-01, SUPPLY-02, CI-01
 **Success criteria:**
+
 1. Release-PR merge waits for a successful CI run whose `head_sha` is the exact publish ref.
 2. Manual recovery validates immutable main ancestry and matching CI metadata without shell-injecting inputs.
 3. GitHub release, Hex publish, and post-publish install truth form one auditable flow.
@@ -29,6 +30,7 @@
 **Goal:** Quality and compatibility claims are measured in required CI lanes rather than held as conventions.
 **Requirements:** STATIC-01, COVER-01, COMPAT-01, COMPAT-02
 **Success criteria:**
+
 1. Credo cannot silently skip source files.
 2. CI enforces the measured repository coverage baseline.
 3. The minimum BEAM lane exercises PostgreSQL 14.
@@ -39,6 +41,7 @@
 **Goal:** Ordinary host repos and Lockspire storage adapters are never confused, and persistence boundaries are executable.
 **Requirements:** RUNTIME-01, RUNTIME-02, ARCH-01, ARCH-02, ARCH-03
 **Success criteria:**
+
 1. Protocol fallback paths work with an ordinary host Ecto Repo, including CIBA Push JWT/ID token issuance.
 2. Narrow ports own client, logout, IAT, transaction, and audit operations required by protocol/admin services.
 3. DCR and admin modules do not reach through those boundaries with direct schema queries.
@@ -49,6 +52,7 @@
 **Goal:** Grant orchestration is understandable behind the stable facade, while shared security policy has one fail-closed implementation.
 **Requirements:** RUNTIME-03, RUNTIME-04, ARCH-04, STATIC-02
 **Success criteria:**
+
 1. Grant-specific coordinators reduce `TokenExchange` complexity without changing its public API or structs.
 2. One internal policy owns existing token lifetime defaults.
 3. Every signing path uses one fail-closed private-key decoder.
@@ -59,6 +63,7 @@
 **Goal:** The repository is a joy to read and its quality proof is cheaper to maintain without deleting evidence.
 **Requirements:** TEST-01, TEST-02, CI-02, READ-01, READ-02, CLEAN-01
 **Success criteria:**
+
 1. Shared test helpers own sandbox and application-env restoration patterns.
 2. Large token, release, and admin contract tests are split along capability boundaries.
 3. CI timing evidence justifies any duplicate test-work removal.

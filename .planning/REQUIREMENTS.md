@@ -27,12 +27,12 @@
 
 ## Release and CI Integrity
 
-- [ ] **RELEASE-01**: Publish automation accepts only an exact `main` head SHA with a successful matching CI run.
-- [ ] **RELEASE-02**: Recovery publishing requires an immutable main-reachable ref, matching successful CI evidence, and safely passed environment inputs.
-- [ ] **RELEASE-03**: One coherent release flow covers release PR, merge, exact-ref publish, GitHub release, Hex publish, and post-publish install truth.
-- [ ] **SUPPLY-01**: The local Release Please runtime is dependency-audited and covered by Dependabot.
-- [ ] **SUPPLY-02**: Dependency review fails closed; actions and service images are immutable; workflows have bounded timeouts.
-- [ ] **CI-01**: Actionlint and ShellCheck pass with zero warnings, and lock verification is non-mutating.
+- [x] **RELEASE-01**: Publish automation accepts only an exact `main` head SHA with a successful matching CI run.
+- [x] **RELEASE-02**: Recovery publishing requires an immutable main-reachable ref, matching successful CI evidence, and safely passed environment inputs.
+- [x] **RELEASE-03**: One coherent release flow covers release PR, merge, exact-ref publish, GitHub release, Hex publish, and post-publish install truth.
+- [x] **SUPPLY-01**: The local Release Please runtime is dependency-audited and covered by Dependabot.
+- [x] **SUPPLY-02**: Dependency review fails closed; actions and service images are immutable; workflows have bounded timeouts.
+- [x] **CI-01**: Actionlint and ShellCheck pass with zero warnings, and lock verification is non-mutating.
 - [ ] **CI-02**: Duplicate test work is removed only where timing evidence proves it redundant.
 
 ## Compatibility and Readability
