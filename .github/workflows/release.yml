@@ -102,7 +102,10 @@ jobs:
           test "$verified_sha" = "$(git rev-parse origin/main)"
           git merge-base --is-ancestor "$verified_sha" origin/main
           ci_run="$(gh api "repos/$GH_REPO/actions/runs/$SOURCE_CI_RUN_ID")"
+          canonical_ci_workflow_id="$(gh api "repos/$GH_REPO/actions/workflows/ci.yml" --jq '.id')"
           test "$(jq -r '.name' <<< "$ci_run")" = "CI"
+          test "$(jq -r '.path' <<< "$ci_run")" = ".github/workflows/ci.yml"
+          test "$(jq -r '.workflow_id' <<< "$ci_run")" = "$canonical_ci_workflow_id"
           test "$(jq -r '.event' <<< "$ci_run")" = "push"
           test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
           test "$(jq -r '.status' <<< "$ci_run")" = "completed"

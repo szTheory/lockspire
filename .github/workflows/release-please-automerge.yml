@@ -50,19 +50,26 @@ jobs:
           else
             [[ "$DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
             [[ "$DISPATCH_RUN_ID" =~ ^[0-9]+$ ]]
-            ci_run="$(gh api "repos/$GH_REPO/actions/runs/$DISPATCH_RUN_ID")"
-            test "$(jq -r '.name' <<< "$ci_run")" = "CI"
-            test "$(jq -r '.status' <<< "$ci_run")" = "completed"
-            test "$(jq -r '.conclusion' <<< "$ci_run")" = "success"
-            test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
-            test "$(jq -r '.head_sha' <<< "$ci_run")" = "$DISPATCH_SHA"
-            test "$(jq -r '.repository.full_name' <<< "$ci_run")" = "$GH_REPO"
-            CI_EVENT="$(jq -r '.event' <<< "$ci_run")"
             CI_RUN_ID="$DISPATCH_RUN_ID"
             CI_HEAD_SHA="$DISPATCH_SHA"
           fi
 
-          test "$CI_EVENT" = "push"
+          ci_run="$(gh api "repos/$GH_REPO/actions/runs/$CI_RUN_ID")"
+          canonical_ci_workflow_id="$(gh api "repos/$GH_REPO/actions/workflows/ci.yml" --jq '.id')"
+          test "$(jq -r '.name' <<< "$ci_run")" = "CI"
+          test "$(jq -r '.path' <<< "$ci_run")" = ".github/workflows/ci.yml"
+          test "$(jq -r '.workflow_id' <<< "$ci_run")" = "$canonical_ci_workflow_id"
+          test "$(jq -r '.status' <<< "$ci_run")" = "completed"
+          test "$(jq -r '.conclusion' <<< "$ci_run")" = "success"
+          test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
+          test "$(jq -r '.head_sha' <<< "$ci_run")" = "$CI_HEAD_SHA"
+          test "$(jq -r '.repository.full_name' <<< "$ci_run")" = "$GH_REPO"
+          test "$(jq -r '.event' <<< "$ci_run")" = "push"
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            test "$CI_EVENT" = "push"
+          fi
+
           test "$CI_HEAD_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
 
           prs_json="$(gh pr list --state open --base main --author app/github-actions --json number,title,headRefName,baseRefName,isDraft,mergeable,files,url)"

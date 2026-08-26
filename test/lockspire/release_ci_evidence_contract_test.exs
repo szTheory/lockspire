@@ -14,8 +14,13 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "recovery_ref=\"$CI_HEAD_SHA\""
     assert workflow =~ "mergeCommit.oid == $sha"
     assert workflow =~ "workflow_dispatch:"
-    assert workflow =~ "actions/runs/$DISPATCH_RUN_ID"
-    assert workflow =~ "test \"$(jq -r '.head_sha' <<< \"$ci_run\")\" = \"$DISPATCH_SHA\""
+    assert workflow =~ "actions/runs/$CI_RUN_ID"
+    assert workflow =~ "test \"$(jq -r '.head_sha' <<< \"$ci_run\")\" = \"$CI_HEAD_SHA\""
+    assert workflow =~ "test \"$(jq -r '.path' <<< \"$ci_run\")\" = \".github/workflows/ci.yml\""
+
+    assert workflow =~
+             "test \"$(jq -r '.workflow_id' <<< \"$ci_run\")\" = \"$canonical_ci_workflow_id\""
+
     assert workflow =~ "No eligible or just-merged Release Please PR"
   end
 
@@ -28,6 +33,11 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "git rev-parse origin/main"
     assert workflow =~ "git merge-base --is-ancestor \"$verified_sha\" origin/main"
     assert workflow =~ "actions/runs/$SOURCE_CI_RUN_ID"
+    assert workflow =~ "test \"$(jq -r '.path' <<< \"$ci_run\")\" = \".github/workflows/ci.yml\""
+
+    assert workflow =~
+             "test \"$(jq -r '.workflow_id' <<< \"$ci_run\")\" = \"$canonical_ci_workflow_id\""
+
     assert workflow =~ "'.event'"
     assert workflow =~ "'.head_branch'"
     assert workflow =~ "'.conclusion'"
