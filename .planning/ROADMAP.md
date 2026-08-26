@@ -48,6 +48,17 @@ Plans:
 
 **Goal:** Ordinary host repos and Lockspire storage adapters are never confused, and persistence boundaries are executable.
 **Requirements:** RUNTIME-01, RUNTIME-02, ARCH-01, ARCH-02, ARCH-03
+**Plans:** 6 plans
+
+Plans:
+
+- [ ] 128-01-PLAN.md — Prove CIBA Push JWT and ID-token issuance with an ordinary host Repo.
+- [ ] 128-02-PLAN.md — Correct authorization and token-lifecycle storage defaults.
+- [ ] 128-03-PLAN.md — Correct signing, JWT client-authentication, and DPoP storage defaults.
+- [ ] 128-04-PLAN.md — Move DCR and IAT persistence behind explicit ports.
+- [ ] 128-05-PLAN.md — Make transaction, audit, logout, and named-Oban boundaries explicit.
+- [ ] 128-06-PLAN.md — Route admin reads through services and enforce architecture fitness tests.
+
 **Success criteria:**
 
 1. Protocol fallback paths work with an ordinary host Ecto Repo, including CIBA Push JWT/ID token issuance.
