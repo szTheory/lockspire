@@ -201,13 +201,9 @@ defmodule Lockspire.Plug.VerifyToken do
     end
   end
 
-  defp opaque_shape?(_token), do: true
-
   defp base64url_segment?(segment) when is_binary(segment) do
     segment != "" and Regex.match?(@base64url_segment, segment)
   end
-
-  defp base64url_segment?(_segment), do: false
 
   defp opaque_token_error(challenge) do
     %{

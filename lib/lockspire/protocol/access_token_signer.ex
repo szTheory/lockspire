@@ -42,6 +42,10 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
+  # Tokens are signed before their final raw-value hash is known. Persisted
+  # tokens tighten this field to String.t(), but signing deliberately accepts
+  # the pre-persistence shape too.
+  @type token_for_issuance :: %Token{token_hash: String.t() | nil}
   @type result :: {:ok, String.t(), String.t()} | {:error, Error.t()}
 
   @doc """
@@ -53,7 +57,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
 
   The `:jwt` branch emits a LIST `aud` derived from `token.audience`.
   """
-  @spec issue(Token.t(), Client.t(), map()) :: result()
+  @spec issue(token_for_issuance(), Client.t(), map()) :: result()
   def issue(%Token{} = token, %Client{} = client, request) do
     case resolve_format(client, server_policy(request)) do
       :opaque ->
@@ -73,7 +77,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   carve-out) and merges `custom_claims` over the base claims after dropping the
   restricted claims `iss sub aud exp iat jti client_id`.
   """
-  @spec issue_exchange(Token.t(), Client.t(), map(), map()) :: result()
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map()) :: result()
   def issue_exchange(%Token{} = token, %Client{} = client, custom_claims, request)
       when is_map(custom_claims) do
     base = base_claims(token, client, client.client_id)
