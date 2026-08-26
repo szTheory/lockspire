@@ -21,6 +21,7 @@ defmodule Lockspire.Protocol.Registration do
   """
 
   alias Lockspire.Admin
+  alias Lockspire.ClientRegistration.Shape, as: RegistrationShape
   alias Lockspire.Clients
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.InitialAccessToken, as: IatDomain
@@ -135,16 +136,71 @@ defmodule Lockspire.Protocol.Registration do
           :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
-    with :ok <- validate_jwks(metadata),
+    with :ok <- validate_registration_shape(metadata, server_policy),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
-         :ok <- validate_grant_response_coherence(metadata),
-         :ok <- validate_redirect_uris(metadata),
          :ok <- validate_logout_metadata(metadata),
          :ok <- validate_token_endpoint_auth_metadata(metadata, server_policy),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
     end
   end
+
+  defp validate_registration_shape(metadata, server_policy) do
+    resolved_profile =
+      SecurityProfile.resolve_effective_profile(server_policy, %{
+        security_profile:
+          atomize_security_profile(Map.get(metadata, "security_profile", "inherit"))
+      })
+
+    attrs = %{
+      client_type:
+        metadata
+        |> Map.get("token_endpoint_auth_method", "client_secret_basic")
+        |> atomize_auth_method()
+        |> client_type_from_auth_method(),
+      auth_method:
+        atomize_auth_method(
+          Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
+        ),
+      token_endpoint_auth_signing_alg:
+        atomize_token_endpoint_auth_signing_alg(
+          Map.get(metadata, "token_endpoint_auth_signing_alg")
+        ),
+      redirect_uris: Map.get(metadata, "redirect_uris", []) |> List.wrap(),
+      allowed_scopes: parse_scope(Map.get(metadata, "scope", "")),
+      allowed_grant_types:
+        Map.get(metadata, "grant_types", ["authorization_code"]) |> List.wrap(),
+      allowed_response_types: Map.get(metadata, "response_types", ["code"]) |> List.wrap(),
+      jwks: Map.get(metadata, "jwks"),
+      jwks_uri: Map.get(metadata, "jwks_uri")
+    }
+
+    case RegistrationShape.validate(attrs,
+           allow_jwks_uri_for_encryption: encrypted_jarm_requested?(metadata),
+           private_key_jwt_algs:
+             SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile)
+             |> Enum.map(&atomize_alg/1)
+         ) do
+      :ok ->
+        :ok
+
+      {:error, [%{field: field, reason: reason} | _]} ->
+        {:error,
+         %Error{
+           code: :invalid_client_metadata,
+           field: dcr_shape_field(field),
+           reason: dcr_shape_reason(reason)
+         }}
+    end
+  end
+
+  defp dcr_shape_field(:allowed_grant_types), do: :grant_types
+  defp dcr_shape_field(:allowed_response_types), do: :response_types
+  defp dcr_shape_field(field), do: field
+
+  defp dcr_shape_reason(:invalid_redirect_uri), do: :invalid_uri
+  defp dcr_shape_reason(:invalid_token_endpoint_auth_signing_alg), do: :unsupported
+  defp dcr_shape_reason(reason), do: reason
 
   defp validate_token_endpoint_auth_metadata(metadata, server_policy) do
     auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
@@ -303,52 +359,6 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  defp validate_jwks(metadata) do
-    has_jwks = Map.has_key?(metadata, "jwks")
-    has_jwks_uri = Map.has_key?(metadata, "jwks_uri")
-    auth_method = Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic")
-    jwks_uri = Map.get(metadata, "jwks_uri")
-    encrypted_jarm_requested? = encrypted_jarm_requested?(metadata)
-
-    cond do
-      has_jwks and has_jwks_uri ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :jwks,
-           reason: :mutually_exclusive_with_jwks_uri
-         }}
-
-      auth_method == "private_key_jwt" and not has_jwks and not has_jwks_uri ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :token_endpoint_auth_method,
-           reason: :missing_cryptographic_material
-         }}
-
-      has_jwks_uri and auth_method != "private_key_jwt" and not encrypted_jarm_requested? ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :jwks_uri,
-           reason: :unsupported_token_endpoint_auth_method
-         }}
-
-      has_jwks_uri and not https_uri?(jwks_uri) ->
-        {:error,
-         %Error{
-           code: :invalid_client_metadata,
-           field: :jwks_uri,
-           reason: :invalid_uri_scheme
-         }}
-
-      true ->
-        :ok
-    end
-  end
-
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_authorization_response_encryption_metadata(metadata) do
     signing_alg = Map.get(metadata, "authorization_signed_response_alg")
     encryption_alg = Map.get(metadata, "authorization_encrypted_response_alg")
@@ -410,38 +420,6 @@ defmodule Lockspire.Protocol.Registration do
 
       true ->
         :ok
-    end
-  end
-
-  # RFC 7591 §2 grant_types/response_types coherence.
-  defp validate_grant_response_coherence(metadata) do
-    grant_types = Map.get(metadata, "grant_types", []) |> List.wrap()
-    response_types = Map.get(metadata, "response_types", []) |> List.wrap()
-
-    cond do
-      "refresh_token" in grant_types and "authorization_code" not in grant_types ->
-        {:error,
-         %Error{code: :invalid_client_metadata, field: :grant_types, reason: :incoherent_pair}}
-
-      "code" in response_types and "authorization_code" not in grant_types ->
-        {:error,
-         %Error{code: :invalid_client_metadata, field: :response_types, reason: :incoherent_pair}}
-
-      true ->
-        :ok
-    end
-  end
-
-  defp validate_redirect_uris(metadata) do
-    redirect_uris = Map.get(metadata, "redirect_uris", [])
-
-    case Clients.validate_redirect_uris(redirect_uris) do
-      :ok ->
-        :ok
-
-      {:error, _reason} ->
-        {:error,
-         %Error{code: :invalid_client_metadata, field: :redirect_uris, reason: :invalid_uri}}
     end
   end
 
@@ -620,15 +598,6 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp parse_scope(_), do: []
-
-  defp https_uri?(uri) when is_binary(uri) do
-    case URI.parse(uri) do
-      %URI{scheme: "https", host: host} when is_binary(host) and host != "" -> true
-      _ -> false
-    end
-  end
-
-  defp https_uri?(_uri), do: false
 
   defp encrypted_jarm_requested?(metadata) when is_map(metadata) do
     Map.has_key?(metadata, "authorization_encrypted_response_alg") or

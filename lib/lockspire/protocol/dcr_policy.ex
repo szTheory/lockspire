@@ -92,7 +92,7 @@ defmodule Lockspire.Protocol.DcrPolicy do
            intersect_axis(
              :scope,
              scope_inbound(inbound_metadata),
-             server_policy.dcr_allowed_scopes,
+             ["openid" | server_policy.dcr_allowed_scopes || []] |> Enum.uniq(),
              override_for(iat_overrides, "allowed_scopes")
            ),
          {:ok, grant_types} <-

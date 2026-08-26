@@ -216,6 +216,49 @@ defmodule Lockspire.Protocol.RegistrationTest do
     end
   end
 
+  describe "shared registration capability matrix" do
+    test "accepts built-in openid and a redirectless device-only client after policy resolution" do
+      metadata = %{
+        "client_name" => "Device-only DCR client",
+        "redirect_uris" => [],
+        "grant_types" => ["urn:ietf:params:oauth:grant-type:device_code"],
+        "response_types" => [],
+        "token_endpoint_auth_method" => "none",
+        "scope" => "openid profile"
+      }
+
+      server_policy =
+        DcrFixtures.server_policy(%{
+          dcr_allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+          dcr_allowed_response_types: [],
+          dcr_allowed_token_endpoint_auth_methods: ["none"],
+          dcr_allowed_scopes: ["profile"]
+        })
+
+      assert {:ok, %Success{client: %Client{redirect_uris: [], allowed_scopes: scopes}}} =
+               Registration.register(
+                 DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
+               )
+
+      assert "openid" in scopes
+    end
+
+    test "rejects redirectless code-capable DCR metadata with a stable error" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("redirect_uris", [])
+        |> Map.put("grant_types", ["authorization_code"])
+        |> Map.put("response_types", ["code"])
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :redirect_uris,
+                reason: :invalid_uri
+              }} = Registration.register(DcrFixtures.register_request(metadata: metadata))
+    end
+  end
+
   describe "register/1 — IAT precondition gate (D-13 step 1 — RESEARCH Q5 RESOLVED)" do
     test "rejects with missing iat when server_policy.registration_policy == :initial_access_token AND iat == nil" do
       server_policy = DcrFixtures.server_policy(%{registration_policy: :initial_access_token})

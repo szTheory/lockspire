@@ -27,6 +27,7 @@ defmodule Lockspire.ClientRegistration.Shape do
       )
       |> validate_redirect_uris(attrs.redirect_uris, redirect_required?(attrs))
       |> validate_scopes(attrs.allowed_scopes)
+      |> validate_key_source_exclusivity(attrs)
       |> validate_private_key_jwt(attrs, opts)
 
     case Enum.reverse(errors) do
@@ -138,9 +139,6 @@ defmodule Lockspire.ClientRegistration.Shape do
     errors
     |> then(fn current ->
       cond do
-        has_jwks and has_jwks_uri ->
-          [issue(:jwks, :mutually_exclusive_with_jwks_uri, nil) | current]
-
         not has_jwks and not has_jwks_uri ->
           [issue(:token_endpoint_auth_method, :missing_cryptographic_material, nil) | current]
 
@@ -155,10 +153,29 @@ defmodule Lockspire.ClientRegistration.Shape do
   end
 
   defp validate_private_key_jwt(errors, attrs, opts) do
-    if attrs.jwks_uri && not Keyword.get(opts, :allow_jwks_uri_for_encryption, false) do
-      [issue(:jwks_uri, :unsupported_token_endpoint_auth_method, nil) | errors]
+    validate_non_private_key_sources(errors, attrs, opts)
+  end
+
+  defp validate_key_source_exclusivity(errors, attrs) do
+    if is_map(attrs.jwks) and is_binary(attrs.jwks_uri) and attrs.jwks_uri != "" do
+      [issue(:jwks, :mutually_exclusive_with_jwks_uri, nil) | errors]
     else
       errors
+    end
+  end
+
+  defp validate_non_private_key_sources(errors, attrs, opts) do
+    has_jwks_uri = is_binary(attrs.jwks_uri) and attrs.jwks_uri != ""
+
+    cond do
+      has_jwks_uri and not Keyword.get(opts, :allow_jwks_uri_for_encryption, false) ->
+        [issue(:jwks_uri, :unsupported_token_endpoint_auth_method, nil) | errors]
+
+      has_jwks_uri and not https_uri?(attrs.jwks_uri) ->
+        [issue(:jwks_uri, :invalid_uri_scheme, nil) | errors]
+
+      true ->
+        errors
     end
   end
 
