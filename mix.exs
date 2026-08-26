@@ -103,7 +103,7 @@ defmodule Lockspire.MixProject do
       qa: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "credo --strict",
+        "cmd bash scripts/ci/run_credo.sh",
         "sobelow --config"
       ],
       "qa.dialyzer": [
