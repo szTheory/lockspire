@@ -3,6 +3,8 @@ defmodule GeneratedHostAppWeb.Router do
 
   alias GeneratedHostAppWeb.Plugs.PutCurrentScope
 
+  import GeneratedHostAppWeb.Router.Lockspire
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -14,6 +16,12 @@ defmodule GeneratedHostAppWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+  end
+
+  # This is intentionally host-owned. Real applications replace the fixture's
+  # authorization plug with their operator session and product policy.
+  pipeline :require_operator do
+    plug(GeneratedHostAppWeb.Plugs.RequireOperator)
   end
 
   pipeline :lockspire_protected_api do
@@ -31,16 +39,9 @@ defmodule GeneratedHostAppWeb.Router do
 
     get("/login", SessionController, :new)
     post("/login", SessionController, :create)
-
-    get("/verify", LockspireVerificationController, :show)
-    post("/verify", LockspireVerificationController, :lookup)
-    post("/verify/:handle/approve", LockspireVerificationController, :approve)
-    post("/verify/:handle/deny", LockspireVerificationController, :deny)
   end
 
-  scope "/" do
-    forward("/lockspire", Lockspire.Web.Router)
-  end
+  lockspire_routes()
 
   scope "/api", GeneratedHostAppWeb do
     pipe_through([:api, :lockspire_protected_api])
