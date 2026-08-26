@@ -138,7 +138,7 @@ Suggested internal layout: `AccessToken` owns public accessors plus `@doc false`
 
 ### Pattern 2: One registration capability matrix, boundary-specific error translation
 
-Use a pure module such as `Lockspire.Clients.RegistrationShape` that receives normalized attributes/metadata and answers (a) capabilities, (b) persistence-ready normalized key fields, or (c) neutral `{field, reason, detail}` errors. `Clients` maps errors to its list format; `Protocol.Registration` maps them to `%Registration.Error{}`. [VERIFIED: codebase]
+Use a pure neutral module such as `Lockspire.ClientRegistration.Shape` that receives normalized attributes/metadata and answers (a) capabilities, (b) persistence-ready normalized key fields, or (c) neutral `{field, reason, detail}` errors. `Clients` maps errors to its list format; `Protocol.Registration` maps them to `%Registration.Error{}`. It must not depend on either boundary facade, Phoenix, or repository implementation. [VERIFIED: codebase]
 
 | Shape | `openid` | Grants / responses | Redirect URIs | Auth/key rules | Expected result |
 |---|---|---|---|---|---|
@@ -266,12 +266,12 @@ Plans 2 and 3 can execute in parallel after Plan 1's helper boundary is fixed; P
 |---|---|---|---|
 | A1 | `DateTime.from_unix/2` is the desired precision/return behavior for integer NumericDate accessor output. | Accessor contract | Low; verify through focused unit tests in this repo. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `expires_at/1` return `DateTime` or Unix seconds?**
-   - Recommendation: return `DateTime.t() | nil` because the named method reads as an expiry instant and host policy comparisons become type-safe; raw `claims["exp"]` remains available for integer consumers. [ASSUMED]
+   - **RESOLVED:** return `DateTime.t() | nil`. The named reader represents an expiry instant and keeps host-policy comparisons type-safe; raw `claims["exp"]` remains the compatible low-level path for integer consumers. Plan 132-01 declares this exact public signature and test matrix.
 2. **Should direct registration accept string-key JWKS attributes identically to atom keys?**
-   - Recommendation: yes, normalize both at public boundary just as existing direct fields do, then run the same shared validator. [ASSUMED]
+   - **RESOLVED:** yes. Normalize atom- and string-key direct inputs at the public boundary before the shared registration-shape validator, then persist only validated normalized key material. Plan 132-02 declares this behavior and both input forms in its focused tests.
 
 ## Sources
 

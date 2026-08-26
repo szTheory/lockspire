@@ -13,7 +13,7 @@
 | `lib/lockspire/plug/enforce_sender_constraints.ex` | Plug | request-response | existing DPoP request builder | exact |
 | `lib/lockspire/protocol/protected_resource_dpop.ex` | protocol service | request-response + persistence | existing lazy store resolution | exact |
 | `lib/lockspire/clients.ex` | public facade / registration service | CRUD | existing normalize → validate → persist pipeline | exact |
-| `lib/lockspire/clients/registration_shape.ex` (likely new) | pure validation utility | transform | `Registration.validate_intake_metadata/4` and `Clients.validation_errors/1` | role match |
+| `lib/lockspire/client_registration/shape.ex` (likely new) | neutral pure validation utility | transform | `Registration.validate_intake_metadata/4` and `Clients.validation_errors/1` | role match |
 | `lib/lockspire/protocol/registration.ex` | protocol registration orchestrator | request-response + CRUD | existing ordered `with` intake validation | exact |
 | `lib/lockspire/protocol/authorization_request.ex` | protocol validator | request-response | exact redirect-membership guard and built-in `openid` scope logic | exact |
 | `lib/lockspire/protocol/discovery.ex` | capability metadata provider | transform | mounted-route truthful capability methods | exact |
@@ -71,7 +71,7 @@ Put semantic accessors on the existing public `Lockspire.AccessToken` module rat
 
 ### Capability-aware registration shared by direct and DCR paths
 
-**Primary files:** `lib/lockspire/clients.ex`, likely a new pure `lib/lockspire/clients/registration_shape.ex`, `lib/lockspire/protocol/registration.ex`, `lib/lockspire/protocol/authorization_request.ex`, `lib/lockspire/protocol/discovery.ex` and their tests.
+**Primary files:** `lib/lockspire/clients.ex`, likely a new pure neutral `lib/lockspire/client_registration/shape.ex`, `lib/lockspire/protocol/registration.ex`, `lib/lockspire/protocol/authorization_request.ex`, `lib/lockspire/protocol/discovery.ex` and their tests.
 
 **Direct facade analog:** `lib/lockspire/clients.ex:105-179,211-230`.
 
@@ -192,7 +192,7 @@ Lockspire verifies JWT/route constraints/sender proof; hosts decide tenant membe
 
 | File | Role | Data flow | Reason |
 |---|---|---|---|
-| `lib/lockspire/clients/registration_shape.ex` (if introduced) | pure shared validator | transform | Existing logic is split between private direct-facade and DCR functions; no neutral shared collaborator exists yet. Keep it small and dependency-light pending Phase 134 topology work. |
+| `lib/lockspire/client_registration/shape.ex` (if introduced) | pure shared validator | transform | Existing logic is split between private direct-facade and DCR functions; no neutral shared collaborator exists yet. Keep it small, dependency-light, and independent of both boundary facades pending Phase 134 topology work. |
 
 ## Plan-Shaping Risks
 
