@@ -37,4 +37,38 @@ defmodule Lockspire.AccessTokenTest do
       assert token.error == :invalid_token
     end
   end
+
+  describe "semantic readers" do
+    test "normalizes subject, scopes, and audiences without changing raw claims" do
+      claims = %{
+        "sub" => "  user-123  ",
+        "scope" => " read:invoices  write:invoices read:invoices ",
+        "aud" => [" billing-api ", "ledger-api", "billing-api"]
+      }
+
+      token = %AccessToken{claims: claims}
+
+      assert AccessToken.subject(token) == "user-123"
+      assert AccessToken.scopes(token) == ["read:invoices", "write:invoices"]
+      assert AccessToken.audiences(token) == ["billing-api", "ledger-api"]
+      assert token.claims == claims
+    end
+
+    test "semantic readers are total for missing, blank, and malformed claim shapes" do
+      for claims <- [
+            nil,
+            %{},
+            %{"sub" => "   ", "scope" => ["read"], "aud" => nil},
+            %{"sub" => 42, "scope" => 42, "aud" => "   "},
+            %{"sub" => %{}, "scope" => %{}, "aud" => []},
+            %{"sub" => [], "scope" => nil, "aud" => ["billing-api", 42]}
+          ] do
+        token = %AccessToken{claims: claims}
+
+        assert AccessToken.subject(token) == nil
+        assert AccessToken.scopes(token) == []
+        assert AccessToken.audiences(token) == []
+      end
+    end
+  end
 end

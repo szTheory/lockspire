@@ -440,7 +440,26 @@ defmodule Lockspire.Plug.VerifyTokenTest do
                error: "insufficient_scope",
                error_description: "The access token is missing a required scope",
                required_scopes: ["read:billing"]
-             } = denied_conn.assigns.access_token.error
+      } = denied_conn.assigns.access_token.error
+    end
+
+    test "uses the semantic readers' normalized audience and scope values for signed-token restrictions" do
+      {token, _claims} =
+        generate_key_and_token(%{
+          "aud" => [" billing-api ", "billing-api", "ledger-api"],
+          "scope" => " read:billing  write:reports read:billing "
+        })
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "billing-api", scopes: ["read:billing", "write:reports"])
+
+      access_token = conn.assigns.access_token
+
+      assert access_token.error == nil
+      assert AccessToken.audiences(access_token) == ["billing-api", "ledger-api"]
+      assert AccessToken.scopes(access_token) == ["read:billing", "write:reports"]
     end
 
     test "emits redaction-safe logs for JWT failures and route restriction failures" do
