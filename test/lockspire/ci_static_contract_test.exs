@@ -4,6 +4,7 @@ defmodule Lockspire.CiStaticContractTest do
   @lint Path.expand("../../scripts/ci/lint_workflows.sh", __DIR__)
   @ci Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @release Path.expand("../../.github/workflows/release.yml", __DIR__)
+  @dialyzer_script Path.expand("../../scripts/ci/run_dialyzer.sh", __DIR__)
 
   test "CI owns checksum-verified zero-warning workflow and shell linting" do
     script = File.read!(@lint)
@@ -26,5 +27,23 @@ defmodule Lockspire.CiStaticContractTest do
 
     assert ci =~
              "git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock test/fixtures/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json"
+  end
+
+  test "Dialyzer is a bounded cached CI gate with no warning suppression" do
+    ci = File.read!(@ci)
+    script = File.read!(@dialyzer_script)
+
+    assert ci =~ "dialyzer:"
+    assert ci =~ "name: Dialyzer"
+    assert ci =~ "timeout-minutes: 20"
+    assert ci =~ "priv/plts"
+    assert ci =~ "Run zero-warning Dialyzer"
+    assert ci =~ "bash ./scripts/ci/run_dialyzer.sh"
+    assert script =~ "set -euo pipefail"
+    assert script =~ "mix deps.get --check-locked"
+    assert script =~ "mix compile --warnings-as-errors"
+    assert script =~ "mix qa.dialyzer"
+    refute script =~ "ignore_warnings"
+    refute script =~ "continue-on-error"
   end
 end
