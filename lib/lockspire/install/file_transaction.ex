@@ -163,9 +163,9 @@ defmodule Lockspire.Install.FileTransaction do
   defp validate_artifact(root, artifact) do
     path = Path.join(root, artifact.relative_path)
 
-    with :ok <- safe_ancestry(root, path, allow_missing?: true),
-         :ok <- expected_preimage(path, artifact.expected) do
-      :ok
+    case safe_ancestry(root, path, allow_missing?: true) do
+      :ok -> expected_preimage(path, artifact.expected)
+      error -> error
     end
   end
 
@@ -347,9 +347,10 @@ defmodule Lockspire.Install.FileTransaction do
                   ".lockspire-restore-#{System.unique_integer([:positive])}"
                 )
 
-              with :ok <- File.write(restore, File.read!(committed.backup), [:exclusive]),
-                   :ok <- File.rename(restore, target),
-                   do: :ok
+              case File.write(restore, File.read!(committed.backup), [:exclusive]) do
+                :ok -> File.rename(restore, target)
+                error -> error
+              end
             else
               {:error, :updated_target_changed}
             end
