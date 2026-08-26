@@ -87,11 +87,47 @@ Roadmap phase mapping is populated during milestone roadmapping.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| INST-01 | 131 | Pending |
+| INST-02 | 131 | Pending |
+| INST-03 | 131 | Pending |
+| INST-04 | 131 | Pending |
+| INST-05 | 131 | Pending |
+| INST-06 | 131 | Pending |
+| API-01 | 132 | Pending |
+| API-02 | 132 | Pending |
+| API-03 | 132 | Pending |
+| API-04 | 132 | Pending |
+| E2E-01 | 133 | Pending |
+| E2E-02 | 133 | Pending |
+| E2E-03 | 133 | Pending |
+| E2E-04 | 133 | Pending |
+| E2E-05 | 133 | Pending |
+| E2E-06 | 133 | Pending |
+| ARCH-01 | 134 | Pending |
+| ARCH-02 | 134 | Pending |
+| ARCH-03 | 134 | Pending |
+| ARCH-04 | 134 | Pending |
+| COH-01 | 135 | Pending |
+| COH-02 | 135 | Pending |
+| COH-03 | 135 | Pending |
+| COH-04 | 135 | Pending |
+| COH-05 | 135 | Pending |
+| QUAL-01 | 136 | Pending |
+| QUAL-02 | 136 | Pending |
+| QUAL-03 | 136 | Pending |
+| QUAL-04 | 136 | Pending |
+| CI-01 | 137 | Pending |
+| CI-02 | 137 | Pending |
+| CI-03 | 137 | Pending |
+| CONF-01 | 137 | Pending |
+| CONF-02 | 137 | Pending |
+| REL-01 | 137 | Pending |
+| REL-02 | 137 | Pending |
 
 **Coverage:**
 - v1.37 requirements: 36 total
-- Mapped to phases: 0
-- Unmapped: 36
+- Mapped to phases: 36
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-26*
