@@ -5,10 +5,10 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 131
 current_phase_name: Executable Installation
 status: executing
-stopped_at: Phase 131 UI-SPEC approved
-last_updated: "2026-08-26T21:04:53.697Z"
+stopped_at: Completed 131-01-PLAN.md
+last_updated: "2026-08-26T21:11:43.291Z"
 last_activity: 2026-08-26
-last_activity_desc: v1.37 roadmap created
+last_activity_desc: Phase 131 execution started
 progress:
   total_phases: 7
   completed_phases: 0
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 131 — executable installation from the packaged Lockspire artifact.
+**Current focus:** Phase 131 — Executable Installation
 
 ## Current Position
 
-Phase: 131 of 137 (Executable Installation)
-Plan: Not yet planned
+Phase: 131 (Executable Installation) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-08-26 — v1.37 roadmap created
+Last activity: 2026-08-26 — Phase 131 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -44,6 +44,8 @@ Progress: [░░░░░░░░░░] 0%
 - Public API changes are additive or deprecation-only; supported v1.x behavior and security defaults remain compatible.
 - The host owns accounts, login, branding, tenant/product policy, and operator authentication; Lockspire remains an embedded library.
 - Admin visual redesign and formal certification are excluded while maintainer review capacity is limited.
+- [Phase ?]: Generated Lockspire routes are an imported Phoenix macro; host-owned verification and consent routes precede an explicitly operator-guarded admin forward and public router.
+- [Phase ?]: Install config declares the host logout path, and the account-resolver example uses only subject, id_token, and userinfo Claims fields.
 
 ### Pending Todos
 
@@ -55,6 +57,12 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-08-26T20:40:54.359Z
-Stopped at: Phase 131 UI-SPEC approved
-Resume file: .planning/phases/131-executable-installation/131-UI-SPEC.md
+Last session: 2026-08-26T21:11:43.281Z
+Stopped at: Completed 131-01-PLAN.md
+Resume file: None
+
+## Performance Metrics
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 131 P01 | 8m | 2 tasks | 7 files |
