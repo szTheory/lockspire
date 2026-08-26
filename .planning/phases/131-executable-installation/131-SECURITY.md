@@ -73,6 +73,7 @@ The pure-Elixir file transaction protects ordinary failures, interrupted writes,
 |------------|---------------|--------|------|--------|
 | 2026-08-26 | 31 | 30 | 1 | `gsd-security-auditor` initial ASVS L1 audit |
 | 2026-08-26 | 31 | 31 | 0 | `gsd-security-auditor` re-audit after `03e7b6f` |
+| 2026-08-26 | 31 | 31 | 0 | `gsd-security-auditor` regression audit after consent markup polish `85b79ee` |
 
 Focused evidence:
 

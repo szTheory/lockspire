@@ -104,6 +104,23 @@ Implement the generated `AccountResolver` with:
 
 Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. The generated consent LiveView calls the supported Lockspire consent context and posts decisions to Lockspire's existing interaction completion endpoint; it must not call Lockspire repositories or protocol internals directly. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
 
+The consent template deliberately supplies semantic hooks instead of a
+Lockspire visual theme. Map these classes to your host components or tokens:
+
+| Hook | Host-owned role |
+|------|-----------------|
+| `host-consent-shell`, `--loading`, `--error` | Page shell and terminal state variants |
+| `host-consent-status`, `host-consent-alert` | Accessible loading and error presentation |
+| `host-consent-header`, `host-consent-section`, `host-consent-list` | Typography, spacing, and review hierarchy |
+| `host-consent-actions`, `host-consent-remember` | Decision grouping and remember-choice layout |
+| `host-consent-action--primary` | Your accessible primary token for **Approve access** only |
+| `host-consent-action--destructive` | Your accessible destructive token for **Deny access** only |
+| `host-consent-wrap` | Long client, scope, and authorization-detail values |
+
+Preserve visible keyboard focus, accessible touch targets, and contrast in
+your mappings. The generated long-value hook includes a defensive wrapping
+rule so unbroken protocol values cannot force horizontal scrolling.
+
 Set the generated `logout_path` to the host route that clears the browser
 session. The host logout endpoint clears the host session and returns to
 Lockspire's `/end_session/complete` endpoint; Lockspire then owns protocol
@@ -167,8 +184,9 @@ one run, so fix every `ERROR` line before continuing:
   `mount_path`, `logout_path`, and the Lockspire Oban runtime contract
 - the generated account-resolver and interaction-handler modules
 - compiled host `/verify`, `/authorized-apps`, and consent routes
-- a host-owned operator guard on `Lockspire.Web.AdminRouter` before the public
-  Lockspire forward at your configured mount path
+- the compiled generated admin forward, its named host-owned operator pipeline,
+  and its position before the public Lockspire forward at your configured
+  mount path (your host request tests still prove the pipeline's policy)
 - the packaged migration inventory in host `priv/repo/migrations` and its
   applied database state
 

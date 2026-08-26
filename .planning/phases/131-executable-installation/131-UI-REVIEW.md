@@ -28,6 +28,7 @@ Those tests execute loading, resolved populated/empty states, native approve com
 | Primary/destructive actions and UI states had no stable host-semantic styling hooks. | **CLOSED** | Host-owned status, alert, header, sections, lists, action-group, and primary/destructive action classes are emitted at `consent_live.ex:70-177`; the fixture test asserts the key hooks at `phase6_onboarding_e2e_test.exs:387-391`. |
 | Long client/scope/detail values had no wrapping guarantee. | **CLOSED** | The generated template applies `overflow-wrap: anywhere` to each rendered long-text value at `consent_live.ex:97-99`, `:115-117`, and `:126-128`; the fixture test renders long unbroken values at `phase6_onboarding_e2e_test.exs:362-394`. |
 | Actual host CSS, contrast, focus presentation, and narrow-viewport rendering were unproven. | **OPEN — WARNING** | No installed host stylesheet or browser capture was available to evaluate the host-owned implementation of the generated semantic hooks. |
+| Hosts needed a documented mapping contract for the new semantic hooks. | **CLOSED** | `docs/install-and-onboard.md` now maps shell/state/hierarchy/action/wrapping hooks to host-owned roles and calls out focus, touch-target, contrast, and wrapping obligations. |
 
 ---
 
@@ -50,7 +51,7 @@ Those tests execute loading, resolved populated/empty states, native approve com
 
 1. **Run a rendered generated-host audit at 375px, 768px, and 1440px** — validates the now-present long-text and grouping seams under real host CSS — capture the consent review, unavailable-client, error, and submission states.
 2. **Verify host token mapping and visible focus states** — semantic class names do not by themselves establish contrast or keyboard focus — map `host-consent-action--primary` and `--destructive` to the host's accessible action components/tokens and check contrast.
-3. **Document the semantic class contract in the host installation guide** — hosts need an explicit integration point for the new hooks — document the shell/status/alert/section/list/action/remember/wrap classes and their intended spacing/typography/color roles.
+3. **Keep custom consent edits within the supported seam** — map or replace the documented host-semantic hooks in the generated host file without moving protocol lookup, subject binding, or completion authority out of Lockspire.
 
 These are validation and integration follow-ups, not shipping blockers in the generated consent flow.
 
