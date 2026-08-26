@@ -9,6 +9,7 @@ defmodule Lockspire.Install.OperationPlan do
 
   alias Lockspire.Install.Manifest
   alias Lockspire.Install.Migrations
+  alias Lockspire.Install.FileTransaction
 
   @enforce_keys [:assigns, :mode, :migration_plan, :file_operations, :manifest]
   defstruct [:assigns, :mode, :migration_plan, :file_operations, :manifest]
@@ -31,12 +32,16 @@ defmodule Lockspire.Install.OperationPlan do
 
   @spec install(map(), [map()]) :: {:ok, t()} | {:error, [map()]}
   def install(assigns, rendered_templates) do
-    build(assigns, :install, rendered_templates, nil)
+    with :ok <- FileTransaction.recover(assigns.project_root) do
+      build(assigns, :install, rendered_templates, nil)
+    end
   end
 
   @spec upgrade(map(), [map()], map()) :: {:ok, t()} | {:error, [map()]}
   def upgrade(assigns, rendered_templates, manifest) when is_map(manifest) do
-    build(assigns, :upgrade, rendered_templates, manifest)
+    with :ok <- FileTransaction.recover(assigns.project_root) do
+      build(assigns, :upgrade, rendered_templates, manifest)
+    end
   end
 
   @doc "Reports the same immutable plan used by dry-run and apply."
@@ -73,10 +78,61 @@ defmodule Lockspire.Install.OperationPlan do
   @spec apply(t()) :: {:ok, t()} | {:error, [map()]}
   def apply(%__MODULE__{} = plan) do
     with :ok <- validate_file_operations(plan.file_operations),
-         {:ok, _migration_result} <- Migrations.apply(plan.migration_plan),
-         :ok <- apply_file_operations(plan.file_operations),
-         :ok <- Manifest.write(plan.assigns.project_root, plan.manifest) do
+         {:ok, artifacts} <- transaction_artifacts(plan),
+         :ok <- FileTransaction.apply(plan.assigns.project_root, artifacts) do
       {:ok, plan}
+    end
+  end
+
+  defp transaction_artifacts(plan) do
+    migrations =
+      plan.migration_plan.operations
+      |> Enum.filter(&(&1.status == :copy))
+      |> Enum.map(fn operation ->
+        %{
+          relative_path: operation.relative_path,
+          kind: :migration,
+          expected: :absent,
+          contents: operation.contents,
+          checksum: operation.checksum,
+          provenance: "packaged migration"
+        }
+      end)
+
+    managed =
+      plan.file_operations
+      |> Enum.reject(&(&1.status == :unchanged))
+      |> Enum.map(fn operation ->
+        %{
+          relative_path: operation.relative_path,
+          kind: :managed,
+          expected:
+            if(operation.status == :create, do: :absent, else: operation.expected_checksum),
+          contents: operation.rendered,
+          checksum: Manifest.checksum(operation.rendered),
+          provenance: "managed generator template"
+        }
+      end)
+
+    manifest_contents = Manifest.encode(plan.manifest)
+
+    manifest = %{
+      relative_path: ".lockspire/install_manifest.json",
+      kind: :manifest,
+      expected: manifest_expected(plan.assigns.project_root),
+      contents: manifest_contents,
+      checksum: Manifest.checksum(manifest_contents),
+      provenance: "install manifest"
+    }
+
+    {:ok, migrations ++ managed ++ [manifest]}
+  end
+
+  defp manifest_expected(project_root) do
+    case File.read(Manifest.path(project_root)) do
+      {:ok, contents} -> Manifest.checksum(contents)
+      {:error, :enoent} -> :absent
+      {:error, _} -> :absent
     end
   end
 
@@ -275,35 +331,6 @@ defmodule Lockspire.Install.OperationPlan do
         ]
     end
   end
-
-  defp apply_file_operations(operations) do
-    operations
-    |> Enum.reduce_while(:ok, fn operation, :ok ->
-      case apply_file_operation(operation) do
-        :ok -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, [error]}}
-      end
-    end)
-  end
-
-  defp apply_file_operation(%{status: :unchanged}), do: :ok
-
-  defp apply_file_operation(%{status: status, destination: destination, rendered: rendered})
-       when status in [:create, :update] do
-    with :ok <- File.mkdir_p(Path.dirname(destination)),
-         :ok <- write_file(destination, rendered, status) do
-      :ok
-    else
-      {:error, reason} ->
-        {:error,
-         error(:apply_failed, "Could not write #{relative_path(destination)}: #{inspect(reason)}")}
-    end
-  end
-
-  defp write_file(destination, rendered, :create),
-    do: File.write(destination, rendered, [:exclusive])
-
-  defp write_file(destination, rendered, :update), do: File.write(destination, rendered)
 
   defp collect_operations(results) do
     {operations, errors} =

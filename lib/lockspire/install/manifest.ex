@@ -47,6 +47,10 @@ defmodule Lockspire.Install.Manifest do
     :ok
   end
 
+  @doc "Returns the exact bytes written for a manifest transaction."
+  @spec encode(map()) :: String.t()
+  def encode(manifest), do: Jason.encode!(manifest, pretty: true)
+
   @spec build(map(), [map()]) :: map()
   def build(assigns, rendered_templates), do: build(assigns, rendered_templates, [])
 

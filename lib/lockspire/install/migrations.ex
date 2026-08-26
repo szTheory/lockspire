@@ -8,6 +8,7 @@ defmodule Lockspire.Install.Migrations do
   """
 
   alias Lockspire.Install.Manifest
+  alias Lockspire.Install.FileTransaction
 
   @default_source_root Application.app_dir(:lockspire, "priv/repo/migrations")
   @test_source_root_key {__MODULE__, :test_source_root}
@@ -92,12 +93,16 @@ defmodule Lockspire.Install.Migrations do
   @spec apply(plan()) :: {:ok, %{operations: [map()], migrations: [map()]}} | {:error, [map()]}
   def apply(%{destination_root: destination_root, operations: operations} = approved_plan)
       when is_list(operations) do
+    project_root = destination_root |> Path.dirname() |> Path.dirname() |> Path.dirname()
+
     with :ok <- validate_approved_plan(approved_plan),
-         :ok <- File.mkdir_p(destination_root),
-         {:ok, applied_operations} <- copy_operations(operations) do
+         :ok <-
+           FileTransaction.apply(project_root, migration_artifacts(operations),
+             require_manifest?: false
+           ) do
       {:ok,
        %{
-         operations: applied_operations,
+         operations: Enum.map(operations, &mark_copied/1),
          migrations: Enum.map(operations, &inventory_entry/1)
        }}
     else
@@ -107,6 +112,24 @@ defmodule Lockspire.Install.Migrations do
   end
 
   def apply(_plan), do: {:error, [%{type: :invalid_plan, message: "expected a migration plan"}]}
+
+  defp migration_artifacts(operations) do
+    operations
+    |> Enum.filter(&(&1.status == :copy))
+    |> Enum.map(fn operation ->
+      %{
+        relative_path: operation.relative_path,
+        kind: :migration,
+        expected: :absent,
+        contents: operation.contents,
+        checksum: operation.checksum,
+        provenance: "packaged migration"
+      }
+    end)
+  end
+
+  defp mark_copied(%{status: :copy} = operation), do: %{operation | status: :copied}
+  defp mark_copied(operation), do: operation
 
   defp packaged_migrations(source_root) do
     case File.ls(source_root) do
@@ -131,14 +154,15 @@ defmodule Lockspire.Install.Migrations do
   defp packaged_migration(source_root, filename) do
     source = Path.join(source_root, filename)
 
-    with {:ok, %{type: :regular}} <- File.stat(source),
+    with {:ok, %{type: :regular}} <- File.lstat(source),
          {:ok, identity} <- parse_filename(filename),
          {:ok, contents} <- File.read(source) do
       {:ok,
        Map.merge(identity, %{
          filename: filename,
          source: source,
-         checksum: Manifest.checksum(contents)
+         checksum: Manifest.checksum(contents),
+         contents: contents
        })}
     else
       {:error, :invalid_filename} ->
@@ -297,7 +321,8 @@ defmodule Lockspire.Install.Migrations do
       version: migration.version,
       name: migration.name,
       relative_path: Path.join("priv/repo/migrations", migration.filename),
-      checksum: migration.checksum
+      checksum: migration.checksum,
+      contents: migration.contents
     }
   end
 
@@ -314,31 +339,41 @@ defmodule Lockspire.Install.Migrations do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp approved_operation_errors(operation) do
     source_errors =
-      case File.read(operation.source) do
-        {:ok, contents} ->
-          if Manifest.checksum(contents) == operation.checksum,
-            do: [],
-            else: [apply_error(operation.source, :source_changed)]
+      case File.lstat(operation.source) do
+        {:ok, %{type: :symlink}} ->
+          [apply_error(operation.source, :symlink_refused)]
+
+        {:ok, %{type: :regular}} ->
+          source_checksum_errors(operation)
+
+        {:ok, _} ->
+          [apply_error(operation.source, :non_regular_source)]
 
         {:error, reason} ->
           [apply_error(operation.source, reason)]
       end
 
     destination_errors =
-      case {operation.status, File.read(operation.destination)} do
+      case {operation.status, File.lstat(operation.destination)} do
         {:copy, {:error, :enoent}} ->
           []
 
-        {:copy, {:ok, _contents}} ->
+        {_status, {:ok, %{type: :symlink}}} ->
+          [apply_error(operation.destination, :symlink_refused)]
+
+        {:copy, {:ok, _}} ->
           [apply_error(operation.destination, :destination_created)]
 
         {:copy, {:error, reason}} ->
           [apply_error(operation.destination, reason)]
 
-        {:unchanged, {:ok, contents}} ->
-          if Manifest.checksum(contents) == operation.checksum,
+        {:unchanged, {:ok, %{type: :regular}}} ->
+          if checksum_file?(operation.destination, operation.checksum),
             do: [],
             else: [apply_error(operation.destination, :destination_changed)]
+
+        {:unchanged, {:ok, _}} ->
+          [apply_error(operation.destination, :non_regular_destination)]
 
         {:unchanged, {:error, reason}} ->
           [apply_error(operation.destination, reason)]
@@ -347,28 +382,22 @@ defmodule Lockspire.Install.Migrations do
     source_errors ++ destination_errors
   end
 
-  defp copy_operations(operations) do
-    operations
-    |> Enum.reduce_while({:ok, []}, fn operation, {:ok, applied} ->
-      case copy_operation(operation) do
-        {:ok, updated_operation} -> {:cont, {:ok, [updated_operation | applied]}}
-        {:error, error} -> {:halt, {:error, [error]}}
-      end
-    end)
-    |> then(fn
-      {:ok, applied} -> {:ok, Enum.reverse(applied)}
-      error -> error
-    end)
+  defp source_checksum_errors(operation) do
+    case File.read(operation.source) do
+      {:ok, contents} ->
+        if Manifest.checksum(contents) == operation.checksum,
+          do: [],
+          else: [apply_error(operation.source, :source_changed)]
+
+      {:error, reason} ->
+        [apply_error(operation.source, reason)]
+    end
   end
 
-  defp copy_operation(%{status: :unchanged} = operation), do: {:ok, operation}
-
-  defp copy_operation(%{status: :copy} = operation) do
-    with {:ok, contents} <- File.read(operation.source),
-         :ok <- File.write(operation.destination, contents, [:exclusive]) do
-      {:ok, %{operation | status: :copied}}
-    else
-      {:error, reason} -> {:error, apply_error(operation.destination, reason)}
+  defp checksum_file?(path, checksum) do
+    case File.read(path) do
+      {:ok, contents} -> Manifest.checksum(contents) == checksum
+      _ -> false
     end
   end
 

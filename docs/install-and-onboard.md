@@ -44,6 +44,16 @@ tree: it copies only missing byte-identical migration files, never overwrites a
 host file, and stops with a collision report if an existing version, name, or
 content differs.
 
+Install and upgrade stage all generated artifacts, journal commit progress, and
+commit the manifest last. Ordinary write failures roll back generated files and
+restore managed-file/manifest bytes; a later install or upgrade recovers an
+interrupted process before planning new changes. Lockspire rejects detected
+symlinks and unexpected paths before staging and again before each commit.
+This is not descriptor-relative race-safe containment: pure Elixir path
+operations cannot eliminate a hostile same-user ancestor swap between `lstat`
+and write without native `openat`/`O_NOFOLLOW` support. Run generators only in
+a project tree that untrusted concurrent users cannot modify.
+
 The generator also creates host-owned files for:
 
 - Lockspire config
