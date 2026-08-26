@@ -413,6 +413,20 @@ defmodule Lockspire.InstallGeneratorTest do
     refute rendered_router =~ "dpop_replay_store:"
     assert rendered_router =~ "docs/protect-phoenix-api-routes.md"
 
+    protected_controller =
+      File.read!(
+        Path.join(
+          @runtime_fixture_root,
+          "controllers/protected_api_controller.ex"
+        )
+      )
+
+    for reader <- ["subject", "scopes", "audiences", "expires_at", "confirmation"] do
+      assert protected_controller =~ "AccessToken.#{reader}(access_token)"
+    end
+
+    assert protected_controller =~ "host_authorized_for_billing?"
+
     routes = Phoenix.Router.routes(GeneratedHostAppWeb.Router)
 
     assert Enum.any?(routes, &(&1.path == "/verify" and &1.verb == :get))
