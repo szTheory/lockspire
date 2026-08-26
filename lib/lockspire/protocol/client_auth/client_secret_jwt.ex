@@ -10,6 +10,7 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.Ecto.Repository
 
   @max_assertion_age 600
   @clock_skew 30
@@ -272,10 +273,10 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
       Keyword.get_lazy(opts, :server_policy_store, fn ->
         case Keyword.get(opts, :client_store) do
           nil ->
-            Config.repo!()
+            Repository
 
           store ->
-            if function_exported?(store, :get_server_policy, 0), do: store, else: Config.repo!()
+            if function_exported?(store, :get_server_policy, 0), do: store, else: Repository
         end
       end)
 

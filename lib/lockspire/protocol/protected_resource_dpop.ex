@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.Userinfo.Error
+  alias Lockspire.Storage.Ecto.Repository
 
   @spec validate_access(map(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
   def validate_access(binding_source, request) when is_map(binding_source) and is_map(request) do
@@ -278,7 +279,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   defp dpop_replay_store(request),
     do:
       Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
-        Keyword.get(request_options(request), :token_store, Config.repo!())
+        Keyword.get(request_options(request), :token_store, Repository)
       end)
 
   defp request_method(request) do

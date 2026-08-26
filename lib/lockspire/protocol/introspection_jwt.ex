@@ -3,9 +3,9 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
   Signs RFC 9701 JWT token introspection responses from protocol-owned success context.
   """
 
-  alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Storage.Ecto.Repository
 
   @type signing_key :: %{
           kid: String.t(),
@@ -26,7 +26,7 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
         } = params
       )
       when is_binary(issuer) and is_map(payload) and is_binary(caller_client_id) do
-    key_store = Map.get(params, :key_store, Config.repo!())
+    key_store = Map.get(params, :key_store, Repository)
     effective_security_profile = effective_security_profile(security_profile)
     alg = Map.get(params, :alg, default_alg(effective_security_profile))
 

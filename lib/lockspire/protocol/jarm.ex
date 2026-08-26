@@ -38,7 +38,7 @@ defmodule Lockspire.Protocol.Jarm do
   def sign(response_params, context) do
     client = Map.fetch!(context, :client)
     issuer = Map.fetch!(context, :issuer)
-    key_store = Map.get(context, :key_store, Config.repo!())
+    key_store = Map.get(context, :key_store, Repository)
     security_profile = effective_security_profile(context, client)
     alg = signing_alg(client, security_profile)
 
