@@ -288,6 +288,38 @@ defmodule Lockspire.InstallGeneratorTest do
     end
   end
 
+  test "rendered config and account resolver compile against the public host seam" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    config_path = Path.join(@fixture_root, "config/lockspire.exs")
+    {config, _imports} = Config.Reader.read_imports!(config_path)
+    lockspire_config = Keyword.fetch!(config, :lockspire)
+
+    assert Keyword.fetch!(lockspire_config, :logout_path) == "/logout"
+
+    assert Keyword.fetch!(lockspire_config, :account_resolver) ==
+             GeneratedHostApp.Lockspire.AccountResolver
+
+    resolver_module = GeneratedHostApp.Lockspire.AccountResolver
+
+    resolver_path =
+      Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
+
+    resolver = File.read!(resolver_path)
+
+    assert resolver =~ "id_token: %{"
+    assert resolver =~ "userinfo: %{"
+    refute resolver =~ "claims: %{"
+
+    :code.purge(resolver_module)
+    :code.delete(resolver_module)
+
+    assert [{^resolver_module, _binary}] =
+             Code.compile_string(resolver, resolver_path)
+  end
+
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
     capture_io(fn ->
       install_fixture!(["--sigra-host"])
