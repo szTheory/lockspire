@@ -27,11 +27,19 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
   defmodule Web.Router do
     use Phoenix.Router
 
+    import Phoenix.LiveView.Router
+
     scope "/", Mix.Tasks.Lockspire.VerifyTest do
       get("/verify", PlaceholderController, :show)
       post("/verify", PlaceholderController, :lookup)
       post("/verify/:handle/approve", PlaceholderController, :approve)
       post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", Mix.Tasks.Lockspire.VerifyTest.ConsentLive, :show)
     end
 
     scope "/lockspire/admin" do
@@ -62,11 +70,20 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     def lookup(conn, _params), do: conn
     def approve(conn, _params), do: conn
     def deny(conn, _params), do: conn
+    def index(conn, _params), do: conn
+    def delete(conn, _params), do: conn
+  end
+
+  defmodule ConsentLive do
+    use Phoenix.LiveView
+
+    def render(assigns), do: ~H"<main>Consent</main>"
   end
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :oban], into: %{} do
+      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban],
+          into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
 
@@ -86,6 +103,7 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     Application.put_env(:lockspire, :account_resolver, Scope.AccountResolver)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
+    Application.put_env(:lockspire, :logout_path, "/logout")
     Application.put_env(:lockspire, :oban, repo: Lockspire.TestRepo, queues: false)
 
     :ok
@@ -104,7 +122,8 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
         ])
       end)
 
-    assert output =~ "OK Runtime config is present"
+    assert output =~ "OK Runtime config :repo is present"
+    assert output =~ "OK Runtime config :logout_path is present"
     assert output =~ "OK Host router wiring is present"
     assert output =~ "Lockspire verification passed."
   end
