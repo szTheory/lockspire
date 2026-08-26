@@ -19,11 +19,11 @@
 
 ## Static Analysis and Tests
 
-- [ ] **STATIC-01**: Credo analyzes every intended source file with no parser-timeout skips.
+- [x] **STATIC-01**: Credo analyzes every intended source file with no parser-timeout skips.
 - [ ] **STATIC-02**: Dialyzer reports zero warnings without a blanket ignore file and runs as a required cached CI gate.
 - [ ] **TEST-01**: Shared database and application-configuration isolation helpers replace repeated per-test setup patterns.
 - [ ] **TEST-02**: Oversized token, release, and admin design-contract tests are split by capability without reducing coverage.
-- [ ] **COVER-01**: CI enforces a measured built-in ExUnit coverage floor based on the repository baseline.
+- [x] **COVER-01**: CI enforces a measured built-in ExUnit coverage floor based on the repository baseline.
 
 ## Release and CI Integrity
 
@@ -37,8 +37,8 @@
 
 ## Compatibility and Readability
 
-- [ ] **COMPAT-01**: A minimum supported BEAM lane runs against PostgreSQL 14.
-- [ ] **COMPAT-02**: A committed compatibility fixture proves Phoenix 1.8.5 and LiveView 1.1.28 integration.
+- [x] **COMPAT-01**: A minimum supported BEAM lane runs against PostgreSQL 14.
+- [x] **COMPAT-02**: A committed compatibility fixture proves Phoenix 1.8.5 and LiveView 1.1.28 integration.
 - [ ] **READ-01**: Runtime code no longer carries phase, plan, or acceptance-marker archaeology; durable RFC and security rationale remains.
 - [ ] **READ-02**: Documentation and walkthrough contracts stay synchronized with real code and public structs.
 - [ ] **CLEAN-01**: Obsolete scratch artifacts are removed and retained visual evidence has an explicit repository policy.

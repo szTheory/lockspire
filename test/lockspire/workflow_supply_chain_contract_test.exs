@@ -12,7 +12,8 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
                "#{path} has mutable external action #{reference}"
       end
 
-      for [image] <- Regex.scan(~r/image:\s+(postgres:[^\s#]+)/, workflow, capture: :all_but_first) do
+      for [image] <-
+            Regex.scan(~r/image:\s+(postgres:[^\s#]+)/, workflow, capture: :all_but_first) do
         assert image =~ "@sha256:", "#{path} has mutable PostgreSQL service image #{image}"
       end
     end

@@ -2,15 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Structural Quality Ratchet
+current_phase_name: defining requirements
 status: planning
-last_updated: "2026-08-26T14:29:56.261Z"
+stopped_at: Completed Phase 127 executable quality baselines
+last_updated: "2026-08-26T15:03:54.803Z"
 last_activity: 2026-08-26
+last_activity_desc: Milestone v1.36 started
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -202,11 +205,11 @@ Last activity: 2026-08-26 — Milestone v1.36 started
 
 ## Session Continuity
 
-**Last session:** 2026-07-10T22:25:12Z
+**Last session:** 2026-08-26T15:03:54.797Z
 
 **Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
 **Resume file:** None
-**Stopped at:** Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone.
+**Stopped at:** Completed Phase 127 executable quality baselines
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -263,6 +266,13 @@ Last activity: 2026-08-26 — Milestone v1.36 started
 | Phase 125-browser-proof-docs-adversarial-ratchet P05 | 6 min | 2 tasks | 6 files |
 | Phase 125 P06 | 31m | 3 tasks | 6 files |
 | Phase 125-browser-proof-docs-adversarial-ratchet P07 | 4min | 3 tasks | 3 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 127 P01 | 8 min | 1 tasks | 4 files |
+| Phase 127 P02 | 14 min | 2 tasks | 8 files |
+| Phase 127 P03 | 12 min | 1 tasks | 6 files |
 
 ## Operator Next Steps
 

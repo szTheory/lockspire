@@ -1,8 +1,14 @@
 defmodule Lockspire.ReleasePleaseRuntimeContractTest do
   use ExUnit.Case, async: true
 
-  @runtime_package Path.expand("../../.github/actions/release-please/runtime/package.json", __DIR__)
-  @runtime_lock Path.expand("../../.github/actions/release-please/runtime/package-lock.json", __DIR__)
+  @runtime_package Path.expand(
+                     "../../.github/actions/release-please/runtime/package.json",
+                     __DIR__
+                   )
+  @runtime_lock Path.expand(
+                  "../../.github/actions/release-please/runtime/package-lock.json",
+                  __DIR__
+                )
   @action Path.expand("../../.github/actions/release-please/action.yml", __DIR__)
   @dependabot Path.expand("../../.github/dependabot.yml", __DIR__)
 

@@ -7,7 +7,7 @@
 ## Phases
 
 - [ ] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
-- [ ] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
+- [x] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
 - [ ] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
 - [ ] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
 - [ ] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
@@ -29,12 +29,13 @@
 
 **Goal:** Quality and compatibility claims are measured in required CI lanes rather than held as conventions.
 **Requirements:** STATIC-01, COVER-01, COMPAT-01, COMPAT-02
-**Plans:** 3 plans
+**Plans:** 3/3 plans executed
 
 Plans:
-- [ ] 127-01-PLAN.md — Make Credo parse coverage fail closed through the existing qa gate.
-- [ ] 127-02-PLAN.md — Exercise PostgreSQL 14 and compile an exact Phoenix/LiveView lower-bound fixture.
-- [ ] 127-03-PLAN.md — Ratchet the measured built-in ExUnit coverage floor in Fast Checks.
+
+- [x] 127-01-PLAN.md — Make Credo parse coverage fail closed through the existing qa gate.
+- [x] 127-02-PLAN.md — Exercise PostgreSQL 14 and compile an exact Phoenix/LiveView lower-bound fixture.
+- [x] 127-03-PLAN.md — Ratchet the measured built-in ExUnit coverage floor in Fast Checks.
 
 **Success criteria:**
 
