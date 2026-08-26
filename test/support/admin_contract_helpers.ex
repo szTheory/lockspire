@@ -4,6 +4,9 @@ defmodule Lockspire.AdminContractHelpers do
   defmacro __using__(_opts) do
     contract_dir = Path.expand("../lockspire/web/live/admin", __DIR__)
 
+    # The quote deliberately installs compile-time paths and helper functions into each
+    # capability suite; keeping that shared contract here prevents split-suite drift.
+    # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote bind_quoted: [contract_dir: contract_dir] do
       @contract_dir contract_dir
 
