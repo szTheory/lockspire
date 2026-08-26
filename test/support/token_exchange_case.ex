@@ -22,8 +22,6 @@ defmodule Lockspire.TokenExchangeCase do
     quote do
       use Lockspire.DataCase, async: false
 
-      @moduletag :integration
-
       import Ecto.Query
       import Lockspire.TokenExchangeCase
 

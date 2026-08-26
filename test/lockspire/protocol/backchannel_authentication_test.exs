@@ -31,7 +31,10 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
     def fetch_client_by_id("client-1"),
       do: {:ok, %Client{client_id: "client-1", token_endpoint_auth_method: :none}}
 
+    def get_client_by_registration_access_token_hash(_), do: {:error, :not_implemented}
     def update_client(_, _), do: {:error, :not_implemented}
+    def replace_client_registration(_, _, _, _), do: {:error, :not_implemented}
+    def rotate_registration_access_token(_, _, _), do: {:error, :not_implemented}
     def rotate_client_secret(_, _, _, _), do: {:error, :not_implemented}
     def set_client_active(_, _, _), do: {:error, :not_implemented}
   end
