@@ -29,6 +29,7 @@ This creates one canonical Phoenix onboarding layout with two ownership classes:
   - `config/lockspire.exs`
   - `lib/<web>/router/lockspire.ex`
   - `test/<app>/lockspire_smoke_e2e_test.exs`
+  - byte-identical Lockspire migrations copied into `priv/repo/migrations`
   - `.lockspire/install_manifest.json`
 - Host-owned seams:
   - Account resolution
@@ -37,7 +38,11 @@ This creates one canonical Phoenix onboarding layout with two ownership classes:
   - Authorized apps account surface
   - Device verification controller and templates
 
-The manifest tracks only Lockspire-managed scaffolding. It is the source of truth for later safe upgrades.
+The manifest records managed scaffolding and the packaged migration inventory. The
+installer preflights every managed file and migration before changing the host
+tree: it copies only missing byte-identical migration files, never overwrites a
+host file, and stops with a collision report if an existing version, name, or
+content differs.
 
 The generator also creates host-owned files for:
 
@@ -55,9 +60,28 @@ The generator also creates host-owned files for:
 
 Import `config/lockspire.exs` from your main config entrypoint.
 
-Import `YourAppWeb.Router.Lockspire` from your host router and call `lockspire_routes/0` where your product wants the Lockspire routes to live.
+Import `YourAppWeb.Router.Lockspire` from your host router and call the imported
+`lockspire_routes/0` macro where your product wants the Lockspire routes to
+live. The host router must already define its normal `:browser` pipeline and a
+host-owned `:require_operator` pipeline:
+
+```elixir
+import YourAppWeb.Router.Lockspire
+
+pipeline :require_operator do
+  plug YourAppWeb.Plugs.RequireOperator
+end
+
+lockspire_routes()
+```
 
 The generated route helper separates host-owned account routes, a host-guarded admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your operator pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not authenticate your staff; your host app owns operator sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin LiveViews.
+
+The generated macro mounts the host-owned `/verify` and `/authorized-apps`
+routes, then the generated `lockspire_consent_live.ex` seam, then the guarded
+admin router, and finally the public Lockspire router. Do not replace this with
+hand-written route source strings: `mix lockspire.verify` checks the compiled
+Phoenix route table and its order.
 
 Implement the generated `AccountResolver` with:
 
@@ -68,7 +92,12 @@ Implement the generated `AccountResolver` with:
 - Login redirect behavior that preserves `interaction_id` and `return_to`
 - Post-login resume behavior that sends the browser back through the generated interaction path before consent continues
 
-Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
+Implement the generated interaction and consent modules in the host app where your product wants login and approval UX to live. The generated consent LiveView calls the supported Lockspire consent context and posts decisions to Lockspire's existing interaction completion endpoint; it must not call Lockspire repositories or protocol internals directly. Lockspire owns the OAuth/OIDC protocol flow; your host app owns the human-facing account and policy decisions.
+
+Set the generated `logout_path` to the host route that clears the browser
+session. The host logout endpoint clears the host session and returns to
+Lockspire's `/end_session/complete` endpoint; Lockspire then owns protocol
+revocation and logout propagation.
 
 If you also want to protect host-owned Phoenix API routes with Lockspire-issued access tokens, follow [`docs/protect-phoenix-api-routes.md`](protect-phoenix-api-routes.md). That guide is the canonical optional host-route path inside the same embedded-library product shape. It keeps the route middleware narrow: Lockspire verifies token protocol facts, while your host app keeps business authorization and tenant policy.
 
@@ -84,7 +113,7 @@ If you plan to support device login, keep that host-owned `/verify` seam paired 
 - `POST /token` accepts `grant_type=urn:ietf:params:oauth:grant-type:device_code`, returns `authorization_pending` while approval is still pending, and returns `slow_down` when the client polls too aggressively.
 - Approval still happens only through the host-owned `/verify` seam; Lockspire does not take over your browser UX.
 
-## 4. Run migrations
+## 4. Run host migrations
 
 Generated new installs set:
 
@@ -108,6 +137,11 @@ Run:
 mix ecto.migrate
 ```
 
+Run that ordinary host command from the project containing
+`priv/repo/migrations`. Do not point Ecto at Lockspire's dependency directory:
+the installer has already delivered the packaged migration files to the host's
+normal migration path.
+
 ## 5. Verify the install wiring
 
 Run:
@@ -116,14 +150,21 @@ Run:
 mix lockspire.verify
 ```
 
-This is the canonical post-install diagnostics step. It checks:
+This is the canonical post-install diagnostics step. It checks every item in
+one run, so fix every `ERROR` line before continuing:
 
-- required `:lockspire` runtime config
-- the generated seam modules are present
-- the host router still exposes the host-owned `/verify` routes
-- the host router still mounts `Lockspire.Web.AdminRouter` at `<mount_path>/admin`
-- the host router still forwards the public embedded Lockspire routes at your mount path
-- Lockspire and Oban migrations are applied in the configured schema/prefix
+- each required `:lockspire` runtime key: `repo`, `account_resolver`, `issuer`,
+  `mount_path`, `logout_path`, and the Lockspire Oban runtime contract
+- the generated account-resolver and interaction-handler modules
+- compiled host `/verify`, `/authorized-apps`, and consent routes
+- a host-owned operator guard on `Lockspire.Web.AdminRouter` before the public
+  Lockspire forward at your configured mount path
+- the packaged migration inventory in host `priv/repo/migrations` and its
+  applied database state
+
+Each failure includes the exact `config/lockspire.exs`, generated seam, router,
+installer/upgrade, or `mix ecto.migrate` remediation. The command does not
+inspect or print client secrets, tokens, claims, or interaction data.
 
 `mix lockspire.verify` does not diagnose runtime remote-`jwks_uri` incidents. For those, use `mix lockspire.doctor remote-jwks --client <client_id>` and the matching admin Remote JWKS summary described in `docs/private-key-jwt-host-guide.md`.
 
@@ -172,7 +213,7 @@ The maintained contributor gate for that proof is `mix ci`, which runs the docs,
 
 For a human-pokable host app, see `docs/adoption-demo.md`. That demo boots a small Phoenix SaaS host from `examples/adoption_demo` and CI runs its black-box smoke over HTTP.
 
-## 7. Upgrade only the managed scaffolding
+## 7. Upgrade managed artifacts and migrations
 
 When a newer Lockspire version changes generated managed files, preview the update with:
 
@@ -186,7 +227,7 @@ Apply it with:
 mix lockspire.upgrade
 ```
 
-`mix lockspire.upgrade` only touches manifest-tracked managed scaffolding that is still unchanged. It never rewrites host-owned seams, and it refuses risky overwrites when a managed file has drifted from the recorded checksum.
+`mix lockspire.upgrade` only touches manifest-tracked managed scaffolding that is still unchanged and copies only newly packaged migrations into the host's normal `priv/repo/migrations` path. It never rewrites host-owned seams or migrations, and it refuses risky overwrites when a managed file or migration has drifted from the recorded checksum. Run `mix ecto.migrate` after every successful upgrade that reports copied migrations.
 
 ## 8. Finish the verification seam before shipping device login
 
