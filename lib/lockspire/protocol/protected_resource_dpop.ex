@@ -292,7 +292,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp dpop_replay_store(request) do
     case Keyword.get(request_options(request), :dpop_replay_store) do
-      nil -> Keyword.get(request_options(request), :token_store, Repository)
+      nil -> Repository
       store -> store
     end
   end

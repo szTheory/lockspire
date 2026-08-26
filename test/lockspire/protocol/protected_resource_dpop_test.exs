@@ -20,6 +20,13 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     def record_dpop_proof(_replay), do: {:ok, :replay}
   end
 
+  defmodule FailingReplayStore do
+    def record_dpop_proof(_replay) do
+      send(self(), :failing_replay_store_called)
+      {:error, :unavailable}
+    end
+  end
+
   setup_all do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
@@ -104,6 +111,25 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     assert_invalid_token(
       ProtectedResourceDPoP.validate_userinfo_access(token, request),
       :dpop_proof_replayed
+    )
+  end
+
+  test "maps custom-store errors and invalid overrides to generic invalid proofs without fallback" do
+    %{request: request, token: token} = dpop_request_fixture(replay_store: FailingReplayStore)
+
+    assert_invalid_token(
+      ProtectedResourceDPoP.validate_userinfo_access(token, request),
+      :invalid_dpop_proof
+    )
+
+    assert_received :failing_replay_store_called
+
+    assert_invalid_token(
+      ProtectedResourceDPoP.validate_userinfo_access(
+        token,
+        put_in(request, [:opts, :dpop_replay_store], :not_a_replay_store)
+      ),
+      :invalid_dpop_proof
     )
   end
 

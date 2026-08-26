@@ -21,6 +21,13 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
     def record_dpop_proof(_replay), do: {:ok, :replay}
   end
 
+  defmodule FailingReplayStore do
+    def record_dpop_proof(_replay) do
+      send(self(), :failing_replay_store_called)
+      {:error, :unavailable}
+    end
+  end
+
   defmodule MTLSExtractor do
     def extract(_conn, opts) do
       case Keyword.fetch!(opts, :scenario) do
@@ -189,6 +196,34 @@ defmodule Lockspire.Plug.EnforceSenderConstraintsTest do
       )
 
     assert %{reason_code: :dpop_binding_mismatch} = wrong_key_conn.assigns.access_token.error
+  end
+
+  test "fails closed when an injected replay store is unavailable" do
+    %{proof: proof, jkt: jkt} = dpop_fixture()
+
+    access_token = %AccessToken{
+      token: @raw_access_token,
+      authorization_scheme: "DPoP",
+      binding_type: "dpop",
+      binding_requirements: %{dpop_jkt: jkt}
+    }
+
+    conn =
+      request_conn()
+      |> put_req_header("dpop", proof)
+      |> assign(:access_token, access_token)
+      |> EnforceSenderConstraints.call(dpop_replay_store: FailingReplayStore, now: fn -> @now end)
+
+    assert_received :failing_replay_store_called
+
+    assert %AccessToken{binding_verified: false, error: %{reason_code: :invalid_dpop_proof}} =
+             conn.assigns.access_token
+  end
+
+  test "rejects incompatible replay-store configuration before request handling" do
+    assert_raise ArgumentError, ~r/expected :dpop_replay_store/, fn ->
+      EnforceSenderConstraints.init(dpop_replay_store: :not_a_replay_store)
+    end
   end
 
   test "accepts mtls-bound tokens from conn.private or configured extractor and records typed failures otherwise" do

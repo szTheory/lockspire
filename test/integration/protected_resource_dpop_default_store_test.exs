@@ -60,6 +60,19 @@ defmodule Lockspire.Integration.ProtectedResourceDPoPDefaultStoreTest do
            } = replay_conn.assigns.access_token
   end
 
+  test "a legacy nil replay-store override still uses the configured repository" do
+    %{proof: proof, jkt: jkt} = dpop_fixture()
+
+    conn =
+      request_conn()
+      |> put_req_header("dpop", proof)
+      |> assign(:access_token, dpop_bound_access_token(jkt))
+      |> EnforceSenderConstraints.call(dpop_replay_store: nil, now: fn -> @now end)
+
+    assert %AccessToken{error: nil, binding_verified: true} = conn.assigns.access_token
+    assert [%DpopReplayRecord{jkt: ^jkt}] = Lockspire.TestRepo.all(DpopReplayRecord)
+  end
+
   defp dpop_bound_access_token(jkt) do
     %AccessToken{
       token: @raw_access_token,
