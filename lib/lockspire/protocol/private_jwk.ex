@@ -3,16 +3,14 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   @spec decode(term()) :: {:ok, map()} | {:error, :invalid_signing_key}
   def decode(binary) when is_binary(binary) do
-    try do
-      case Jason.decode(binary) do
-        {:ok, %{} = jwk} -> {:ok, jwk}
-        _other -> decode_safe_term(binary)
-      end
-    rescue
-      _exception -> {:error, :invalid_signing_key}
-    catch
-      _kind, _reason -> {:error, :invalid_signing_key}
+    case Jason.decode(binary) do
+      {:ok, %{} = jwk} -> {:ok, jwk}
+      _other -> decode_safe_term(binary)
     end
+  rescue
+    _exception -> {:error, :invalid_signing_key}
+  catch
+    _kind, _reason -> {:error, :invalid_signing_key}
   end
 
   def decode(_value), do: {:error, :invalid_signing_key}
