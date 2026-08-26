@@ -49,8 +49,8 @@ defmodule Lockspire.Install.FileTransaction do
     with :ok <- recover(project_root),
          :ok <- validate(project_root, artifacts, opts),
          {:ok, state} <- stage(project_root, artifacts),
-         {:ok, committed_state} <- commit(state) do
-      cleanup(committed_state)
+         {:ok, committed_state} <- commit(state),
+         :ok <- cleanup(committed_state) do
       :ok
     else
       {:simulated_interruption, hook} ->
@@ -76,6 +76,14 @@ defmodule Lockspire.Install.FileTransaction do
     project_root = Path.expand(project_root)
     journal = Path.join(project_root, @journal_rel)
 
+    with :ok <- safe_ancestry(project_root, journal, allow_missing?: true) do
+      inspect_journal(project_root, journal)
+    else
+      {:error, reason} -> {:error, [error(:unsafe_path, safe_reason(reason))]}
+    end
+  end
+
+  defp inspect_journal(project_root, journal) do
     case File.lstat(journal) do
       {:error, :enoent} ->
         :ok
@@ -104,8 +112,9 @@ defmodule Lockspire.Install.FileTransaction do
     with {:ok, encoded} <- File.read(journal),
          {:ok, state} <- Jason.decode(encoded),
          :ok <- valid_journal?(project_root, state),
-         :ok <- rollback(serialized_state(project_root, journal, state)) do
-      cleanup(serialized_state(project_root, journal, state))
+         serialized = serialized_state(project_root, journal, state),
+         :ok <- rollback(serialized),
+         :ok <- cleanup(serialized) do
       :ok
     else
       {:error, errors} when is_list(errors) ->
@@ -234,7 +243,18 @@ defmodule Lockspire.Install.FileTransaction do
         {:error, reason} ->
           case rollback(current) do
             :ok ->
-              {:halt, {:error, reason}}
+              case finalize_rolled_back(current) do
+                :ok ->
+                  {:halt, {:error, reason}}
+
+                {:error, cleanup_reason} ->
+                  {:halt,
+                   {:error,
+                    [
+                      error(:recovery_required, safe_reason(cleanup_reason)),
+                      error(:transaction_failed, safe_reason(reason))
+                    ]}}
+              end
 
             {:error, rollback_reason} ->
               {:halt,
@@ -335,7 +355,7 @@ defmodule Lockspire.Install.FileTransaction do
         case committed.action do
           "created" ->
             if checksum_file?(target, committed.checksum),
-              do: File.rm(target),
+              do: remove_created_target(state.root, target),
               else: {:error, :created_target_changed}
 
           "updated" ->
@@ -416,17 +436,84 @@ defmodule Lockspire.Install.FileTransaction do
       root: state.root,
       tx_root: state.tx_root,
       artifacts: state.artifacts,
-      committed: state.committed
+      committed: state.committed,
+      terminal: Map.get(state, :terminal)
     }
 
-  defp cleanup(state) do
-    case File.lstat(state.journal) do
-      {:ok, %{type: :regular}} -> File.rm(state.journal)
-      _ -> :ok
+  defp finalize_rolled_back(state) do
+    with :ok <- write_journal(Map.put(state, :terminal, "rolled_back")),
+         :ok <- cleanup(state) do
+      :ok
     end
+  end
 
-    File.rm_rf(state.tx_root)
-    :ok
+  defp cleanup(state) do
+    with :ok <- safe_ancestry(state.root, state.journal, allow_missing?: true),
+         :ok <- safe_ancestry(state.root, state.tx_root, allow_missing?: true),
+         :ok <- remove_regular_journal(state.journal),
+         :ok <- remove_staging_directory(state.tx_root),
+         :ok <- remove_empty_transaction_parent(Path.dirname(state.journal)) do
+      :ok
+    end
+  end
+
+  defp remove_regular_journal(journal) do
+    case File.lstat(journal) do
+      {:error, :enoent} -> :ok
+      {:ok, %{type: :regular}} -> File.rm(journal)
+      {:ok, _} -> {:error, :unsafe_journal_cleanup}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp remove_staging_directory(tx_root) do
+    case File.lstat(tx_root) do
+      {:error, :enoent} ->
+        :ok
+
+      {:ok, %{type: :directory}} ->
+        case File.rm_rf(tx_root) do
+          {:ok, _removed} -> :ok
+          {:error, reason, _path} -> {:error, reason}
+        end
+
+      {:ok, _} ->
+        {:error, :unsafe_staging_cleanup}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp remove_empty_transaction_parent(parent) do
+    case File.rmdir(parent) do
+      :ok -> :ok
+      {:error, reason} when reason in [:enotempty, :eexist] -> :ok
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp remove_created_target(root, target) do
+    with :ok <- File.rm(target),
+         :ok <- prune_empty_parents(root, Path.dirname(target)) do
+      :ok
+    end
+  end
+
+  defp prune_empty_parents(root, directory) do
+    if Path.expand(directory) == Path.expand(root) do
+      :ok
+    else
+      with :ok <- safe_ancestry(root, directory, allow_missing?: false) do
+        case File.rmdir(directory) do
+          :ok -> prune_empty_parents(root, Path.dirname(directory))
+          {:error, reason} when reason in [:enotempty, :eexist] -> :ok
+          {:error, :enoent} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+      end
+    end
   end
 
   defp expected_preimage(path, :absent) do
@@ -517,16 +604,23 @@ defmodule Lockspire.Install.FileTransaction do
   defp manifest_sort(%{kind: :manifest}), do: 1
   defp manifest_sort(_), do: 0
 
-  defp maybe_fail(hook),
-    do:
-      if(
-        Process.get(@test_hook_key) == hook or
-          (match?({:after_migration, _}, Process.get(@test_hook_key)) and
-             match?({:after_migration, _}, hook) and
-             elem(Process.get(@test_hook_key), 1) == elem(hook, 1)),
-        do: {:simulated_interruption, hook},
-        else: :ok
-      )
+  defp maybe_fail(hook) do
+    configured = Process.get(@test_hook_key)
+
+    cond do
+      configured == hook or migration_hook?(configured, hook) ->
+        {:simulated_interruption, hook}
+
+      configured == {:ordinary_failure, hook} ->
+        {:error, {:injected_failure, hook}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp migration_hook?({:after_migration, number}, {:after_migration, number}), do: true
+  defp migration_hook?(_, _), do: false
 
   defp collect_errors(results) do
     case Enum.filter(results, &(&1 != :ok)) do
