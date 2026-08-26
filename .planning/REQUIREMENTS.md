@@ -1,7 +1,7 @@
 # Requirements: v1.36 Structural Quality Ratchet
 
 **Defined:** 2026-08-26
-**Status:** Active
+**Status:** Complete
 
 ## Runtime Dependency Truth
 
@@ -40,8 +40,8 @@
 - [x] **COMPAT-01**: A minimum supported BEAM lane runs against PostgreSQL 14.
 - [x] **COMPAT-02**: A committed compatibility fixture proves Phoenix 1.8.5 and LiveView 1.1.28 integration.
 - [x] **READ-01**: Runtime code no longer carries phase, plan, or acceptance-marker archaeology; durable RFC and security rationale remains.
-- [ ] **READ-02**: Documentation and walkthrough contracts stay synchronized with real code and public structs.
-- [ ] **CLEAN-01**: Obsolete scratch artifacts are removed and retained visual evidence has an explicit repository policy.
+- [x] **READ-02**: Documentation and walkthrough contracts stay synchronized with real code and public structs.
+- [x] **CLEAN-01**: Obsolete scratch artifacts are removed and retained visual evidence has an explicit repository policy.
 
 ## Traceability
 

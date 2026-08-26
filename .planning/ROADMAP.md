@@ -6,11 +6,11 @@
 
 ## Phases
 
-- [ ] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
+- [x] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
 - [x] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
 - [x] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
 - [x] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
-- [ ] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
+- [x] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
 
 ## Phase Details
 
@@ -94,7 +94,7 @@ Plans:
 
 **Goal:** The repository is a joy to read and its quality proof is cheaper to maintain without deleting evidence.
 **Requirements:** TEST-01, TEST-02, CI-02, READ-01, READ-02, CLEAN-01
-**Plans:** 8 plans
+**Plans:** 8/8 plans executed
 
 Plans:
 - [x] 130-01-PLAN.md — Restore a green, warning-free test and compatibility baseline
@@ -104,7 +104,7 @@ Plans:
 - [x] 130-05-PLAN.md — Split admin design proof by CSS, routes, and evidence
 - [x] 130-06-PLAN.md — Measure CI partitions and remove only proven duplicate work
 - [x] 130-07-PLAN.md — Normalize runtime filenames and remove planning archaeology
-- [ ] 130-08-PLAN.md — Synchronize docs, clean artifacts, and run final proof
+- [x] 130-08-PLAN.md — Synchronize docs, clean artifacts, and run final proof
 
 **Success criteria:**
 
