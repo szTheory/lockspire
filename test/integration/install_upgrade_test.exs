@@ -36,8 +36,12 @@ defmodule Lockspire.InstallUpgradeTest do
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(mount_path: "/oauth")
 
-    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/oauth", Lockspire.Web.Router)
+    assert forwards_lockspire_router?(
+             File.read!(
+               Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
+             ),
+             "/oauth"
+           )
 
     manifest = load_manifest!()
     assert manifest["inputs"]["mount_path"] == "/oauth"
@@ -120,5 +124,22 @@ defmodule Lockspire.InstallUpgradeTest do
     File.rm_rf!(Path.join(@fixture_root, "test"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
+  end
+
+  defp forwards_lockspire_router?(source, mount_path) do
+    {_ast, found?} =
+      source
+      |> Code.string_to_quoted!()
+      |> Macro.prewalk(false, fn
+        {:forward, _meta, [^mount_path, {:__aliases__, _alias_meta, [:Lockspire, :Web, :Router]}]} =
+            node,
+        _found? ->
+          {node, true}
+
+        node, found? ->
+          {node, found?}
+      end)
+
+    found?
   end
 end
