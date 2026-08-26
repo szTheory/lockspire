@@ -83,3 +83,7 @@ status: complete
 ## Next Phase Readiness
 
 The CI floor claims are now executable and fixture outputs cannot pollute root test discovery.
+
+## Self-Check: PASSED
+
+- Summary file and task commits `78804a2` and `5401ea0` are present.
