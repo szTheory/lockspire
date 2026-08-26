@@ -76,9 +76,8 @@ defmodule Lockspire.Install.FileTransaction do
     project_root = Path.expand(project_root)
     journal = Path.join(project_root, @journal_rel)
 
-    with :ok <- safe_ancestry(project_root, journal, allow_missing?: true) do
-      inspect_journal(project_root, journal)
-    else
+    case safe_ancestry(project_root, journal, allow_missing?: true) do
+      :ok -> inspect_journal(project_root, journal)
       {:error, reason} -> {:error, [error(:unsafe_path, safe_reason(reason))]}
     end
   end
@@ -237,39 +236,46 @@ defmodule Lockspire.Install.FileTransaction do
         {:ok, next} ->
           {:cont, {:ok, next}}
 
-        {:simulated_interruption, _} = interruption ->
-          {:halt, interruption}
-
-        {:error, reason} ->
-          case rollback(current) do
-            :ok ->
-              case finalize_rolled_back(current) do
-                :ok ->
-                  {:halt, {:error, reason}}
-
-                {:error, cleanup_reason} ->
-                  {:halt,
-                   {:error,
-                    [
-                      error(:recovery_required, safe_reason(cleanup_reason)),
-                      error(:transaction_failed, safe_reason(reason))
-                    ]}}
-              end
-
-            {:error, rollback_reason} ->
-              {:halt,
-               {:error,
-                [
-                  error(:rollback_failed, safe_reason(rollback_reason)),
-                  error(:transaction_failed, safe_reason(reason))
-                ]}}
-          end
+        result ->
+          {:halt, halt_commit(current, result)}
       end
     end)
     |> case do
       {:ok, committed_state} -> {:ok, committed_state}
       other -> other
     end
+  end
+
+  defp halt_commit(_current, {:simulated_interruption, _} = interruption), do: interruption
+
+  defp halt_commit(current, {:error, reason}) do
+    case rollback(current) do
+      :ok -> rollback_completion(current, reason)
+      {:error, rollback_reason} -> rollback_failure(reason, rollback_reason)
+    end
+  end
+
+  defp rollback_completion(current, reason) do
+    case finalize_rolled_back(current) do
+      :ok -> {:error, reason}
+      {:error, cleanup_reason} -> recovery_failure(reason, cleanup_reason)
+    end
+  end
+
+  defp rollback_failure(reason, rollback_reason) do
+    {:error,
+     [
+       error(:rollback_failed, safe_reason(rollback_reason)),
+       error(:transaction_failed, safe_reason(reason))
+     ]}
+  end
+
+  defp recovery_failure(reason, cleanup_reason) do
+    {:error,
+     [
+       error(:recovery_required, safe_reason(cleanup_reason)),
+       error(:transaction_failed, safe_reason(reason))
+     ]}
   end
 
   defp commit_artifact(state, artifact) do
@@ -441,20 +447,34 @@ defmodule Lockspire.Install.FileTransaction do
     }
 
   defp finalize_rolled_back(state) do
-    with :ok <- write_journal(Map.put(state, :terminal, "rolled_back")),
-         :ok <- cleanup(state) do
-      :ok
+    case write_journal(Map.put(state, :terminal, "rolled_back")) do
+      :ok -> cleanup(state)
+      error -> error
     end
   end
 
   defp cleanup(state) do
-    with :ok <- safe_ancestry(state.root, state.journal, allow_missing?: true),
-         :ok <- safe_ancestry(state.root, state.tx_root, allow_missing?: true),
-         :ok <- remove_regular_journal(state.journal),
-         :ok <- remove_staging_directory(state.tx_root),
-         :ok <- remove_empty_transaction_parent(Path.dirname(state.journal)) do
-      :ok
-    end
+    cleanup_steps(state)
+    |> run_steps()
+  end
+
+  defp cleanup_steps(state) do
+    [
+      fn -> safe_ancestry(state.root, state.journal, allow_missing?: true) end,
+      fn -> safe_ancestry(state.root, state.tx_root, allow_missing?: true) end,
+      fn -> remove_regular_journal(state.journal) end,
+      fn -> remove_staging_directory(state.tx_root) end,
+      fn -> remove_empty_transaction_parent(Path.dirname(state.journal)) end
+    ]
+  end
+
+  defp run_steps(steps) do
+    Enum.reduce_while(steps, :ok, fn step, :ok ->
+      case step.() do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp remove_regular_journal(journal) do
@@ -495,9 +515,9 @@ defmodule Lockspire.Install.FileTransaction do
   end
 
   defp remove_created_target(root, target) do
-    with :ok <- File.rm(target),
-         :ok <- prune_empty_parents(root, Path.dirname(target)) do
-      :ok
+    case File.rm(target) do
+      :ok -> prune_empty_parents(root, Path.dirname(target))
+      error -> error
     end
   end
 
