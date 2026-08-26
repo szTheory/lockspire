@@ -2261,6 +2261,31 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     |> Enum.map(fn {event, metadata} -> {event, Map.take(metadata, [:reason_code])} end)
   end
 
+  test "grant coordinators own facade dispatch without internal TokenExchange callbacks" do
+    facade =
+      File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange_facade.ex", __DIR__))
+
+    coordinators = [
+      "authorization_code_grant.ex",
+      "device_code_grant.ex",
+      "ciba_grant.ex"
+    ]
+
+    assert facade =~ "AuthorizationCodeGrant.exchange(request)"
+    assert facade =~ "DeviceCodeGrant.exchange(request)"
+    assert facade =~ "CibaGrant.exchange(request)"
+
+    Enum.each(coordinators, fn coordinator ->
+      source =
+        File.read!(
+          Path.expand("../../../lib/lockspire/protocol/token_exchange/#{coordinator}", __DIR__)
+        )
+
+      refute source =~ "TokenExchange.__"
+      assert source =~ "GrantSupport"
+    end)
+  end
+
   defmodule PlainMethodTokenStore do
     def use_token(%Token{} = token), do: Process.put({__MODULE__, :token}, token)
 

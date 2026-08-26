@@ -1,4 +1,4 @@
-defmodule Lockspire.Protocol.TokenExchange do
+defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
   @moduledoc """
   Redeems Phase 2 authorization codes into durable opaque bearer access tokens.
   """
@@ -15,56 +15,13 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.RefreshExchange
-  alias Lockspire.Protocol.TokenExchange.AuthorizationCodeGrant
-  alias Lockspire.Protocol.TokenExchange.CibaGrant
-  alias Lockspire.Protocol.TokenExchange.DeviceCodeGrant
+  alias Lockspire.Protocol.TokenExchange.Error
+  alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
-
-  defmodule Success do
-    @moduledoc """
-    Successful token endpoint response payload.
-    """
-
-    @type t :: %__MODULE__{
-            access_token: String.t(),
-            refresh_token: String.t() | nil,
-            id_token: String.t() | nil,
-            token_type: String.t(),
-            issued_token_type: String.t() | nil,
-            expires_in: pos_integer(),
-            scope: String.t()
-          }
-
-    defstruct [
-      :access_token,
-      :refresh_token,
-      :id_token,
-      :token_type,
-      :issued_token_type,
-      :expires_in,
-      :scope
-    ]
-  end
-
-  defmodule Error do
-    @moduledoc """
-    Token endpoint error payload.
-    """
-
-    @type t :: %__MODULE__{
-            status: pos_integer(),
-            error: String.t(),
-            error_description: String.t(),
-            reason_code: atom(),
-            dpop_nonce: String.t() | nil
-          }
-
-    defstruct [:status, :error, :error_description, :reason_code, :dpop_nonce]
-  end
 
   @type result :: {:ok, Success.t()} | {:error, Error.t()}
 
@@ -110,7 +67,7 @@ defmodule Lockspire.Protocol.TokenExchange do
         issuance_context,
         request
       ) do
-    CibaGrant.issue_tokens(client, ciba_authorization, issuance_context, request)
+    redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
   end
 
   @doc false
@@ -119,9 +76,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     do: redeem_ciba_authorization(client, ciba_authorization, issuance_context, request)
 
   @spec exchange_authorization_code(map()) :: result()
-  def exchange_authorization_code(request) when is_map(request) do
-    AuthorizationCodeGrant.exchange(request)
-  end
+  def exchange_authorization_code(request) when is_map(request),
+    do: __exchange_authorization_code__(request)
 
   @doc false
   @spec __exchange_authorization_code__(map()) :: result()
@@ -149,14 +105,15 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp handle_code_exchange(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         code_hash,
-         params,
-         issuance_context,
-         request
-       ) do
+  @doc false
+  def handle_code_exchange(
+        %Client{} = client,
+        %Token{} = authorization_code,
+        code_hash,
+        params,
+        issuance_context,
+        request
+      ) do
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          {:ok, requested_resources} <- validate_requested_resources(params, authorization_code),
@@ -193,7 +150,7 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp exchange_device_code(request), do: DeviceCodeGrant.exchange(request)
+  defp exchange_device_code(request), do: __exchange_device_code__(request)
 
   @doc false
   @spec __exchange_device_code__(map()) :: result()
@@ -215,7 +172,7 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp exchange_ciba(request), do: CibaGrant.exchange(request)
+  defp exchange_ciba(request), do: __exchange_ciba__(request)
 
   @doc false
   @spec __exchange_ciba__(map()) :: result()
@@ -263,7 +220,8 @@ defmodule Lockspire.Protocol.TokenExchange do
      )}
   end
 
-  defp authenticate_client(params, authorization, request) do
+  @doc false
+  def authenticate_client(params, authorization, request) do
     case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
       {:ok, %Client{} = client} ->
         {:ok, client}
@@ -279,7 +237,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp fetch_authorization_code(params, request) do
+  @doc false
+  def fetch_authorization_code(params, request) do
     case normalize_optional_string(params["code"]) do
       code when is_binary(code) ->
         code_hash = Policy.hash_token(code)
@@ -290,7 +249,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
+  @doc false
+  def fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
     with {:ok, device_code} <- fetch_presented_device_code(params),
          {:ok, poll_outcome} <- record_device_poll(device_code, client, request) do
       case map_device_poll_outcome(poll_outcome, client) do
@@ -305,7 +265,8 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
+  @doc false
+  def fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
     with {:ok, auth_req_id} <- fetch_presented_auth_req_id(params),
          {:ok, poll_outcome} <- record_ciba_poll(auth_req_id, client, request) do
       case map_ciba_poll_outcome(poll_outcome, client) do
@@ -833,12 +794,13 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp redeem_device_authorization(
-         %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization,
-         issuance_context,
-         request
-       ) do
+  @doc false
+  def redeem_device_authorization(
+        %Client{} = client,
+        %DeviceAuthorizationState{} = device_authorization,
+        issuance_context,
+        request
+      ) do
     with {:ok, %Token{} = device_grant} <- build_device_grant(device_authorization),
          %Success{} = success <-
            redeem_device_grant(
@@ -857,12 +819,13 @@ defmodule Lockspire.Protocol.TokenExchange do
     end
   end
 
-  defp redeem_ciba_authorization(
-         %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization,
-         issuance_context,
-         request
-       ) do
+  @doc false
+  def redeem_ciba_authorization(
+        %Client{} = client,
+        %CibaAuthorization{} = ciba_authorization,
+        issuance_context,
+        request
+      ) do
     with {:ok, %Token{} = ciba_grant} <- build_ciba_grant(ciba_authorization),
          %Success{} = success <-
            redeem_ciba_grant(
@@ -1374,13 +1337,14 @@ defmodule Lockspire.Protocol.TokenExchange do
     Observability.emit(:token, :issued, %{}, metadata)
   end
 
-  defp emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
+  @doc false
+  def emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
     Observability.emit(:authorization_code, :replay_detected, %{}, metadata)
     Observability.emit(:token_exchange, :failed, %{}, metadata)
   end
 
-  defp emit_failure(%Error{} = error, params, request) do
+  def emit_failure(%Error{} = error, params, request) do
     Observability.emit(:token_exchange, :failed, %{}, failure_metadata(error, params, request))
   end
 
