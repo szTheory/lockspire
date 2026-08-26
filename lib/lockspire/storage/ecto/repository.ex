@@ -43,6 +43,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.Ecto.UsedJtiRecord
   alias Lockspire.Storage.InteractionStore
+  alias Lockspire.Storage.InitialAccessTokenStore
   alias Lockspire.Storage.KeyStore
   alias Lockspire.Storage.LogoutStore
   alias Lockspire.Storage.PushedAuthorizationRequestStore
@@ -62,6 +63,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour ServerPolicyStore
   @behaviour LogoutStore
   @behaviour UsedJtiStore
+  @behaviour InitialAccessTokenStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -97,8 +99,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec get_client_by_registration_access_token_hash(String.t()) ::
-          {:ok, Lockspire.Domain.Client.t() | nil} | {:error, term()}
+  @impl ClientStore
   def get_client_by_registration_access_token_hash(rat_hash) when is_binary(rat_hash) do
     ClientRecord
     |> where([client], client.registration_access_token_hash == ^rat_hash)
@@ -106,6 +107,62 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
     error -> {:error, error}
+  end
+
+  @impl ClientStore
+  def replace_client_registration(
+        %Client{id: id},
+        %Client{} = replacement,
+        new_rat_hash,
+        audit_attrs
+      )
+      when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
+    transact(fn ->
+      ClientRecord
+      |> where([client], client.id == ^id)
+      |> lock("FOR UPDATE")
+      |> repo_one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %ClientRecord{} = record ->
+          record
+          |> ClientRecord.changeset(replacement)
+          |> Ecto.Changeset.change(
+            registration_access_token_hash: new_rat_hash,
+            updated_at: DateTime.utc_now()
+          )
+          |> repo_update()
+          |> map_one(&ClientRecord.to_domain/1)
+          |> append_client_audit_or_rollback(audit_attrs)
+      end
+    end)
+  end
+
+  @impl ClientStore
+  def rotate_registration_access_token(%Client{id: id}, new_rat_hash, audit_attrs)
+      when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
+    transact(fn ->
+      ClientRecord
+      |> where([client], client.id == ^id)
+      |> lock("FOR UPDATE")
+      |> repo_one()
+      |> case do
+        nil ->
+          repo().rollback(:not_found)
+
+        %ClientRecord{} = record ->
+          record
+          |> Ecto.Changeset.change(
+            registration_access_token_hash: new_rat_hash,
+            updated_at: DateTime.utc_now()
+          )
+          |> repo_update()
+          |> map_one(&ClientRecord.to_domain/1)
+          |> append_client_audit_or_rollback(audit_attrs)
+      end
+    end)
   end
 
   @impl ClientStore
@@ -909,6 +966,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
+  @impl InitialAccessTokenStore
   def redeem_initial_access_token(token_hash, redeemed_at)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
     transact(fn ->
@@ -942,6 +1000,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
+  @impl InitialAccessTokenStore
   def list_initial_access_tokens(_opts \\ []) do
     InitialAccessTokenRecord
     |> order_by([iat], desc: iat.inserted_at)
@@ -950,6 +1009,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> then(&{:ok, &1})
   end
 
+  @impl InitialAccessTokenStore
   def save_initial_access_token(%Lockspire.Domain.InitialAccessToken{} = iat) do
     %InitialAccessTokenRecord{}
     |> InitialAccessTokenRecord.changeset(iat)
@@ -957,6 +1017,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> map_one(&InitialAccessTokenRecord.to_domain/1)
   end
 
+  @impl InitialAccessTokenStore
   def revoke_initial_access_token(id, revoked_at)
       when is_integer(id) and is_struct(revoked_at, DateTime) do
     InitialAccessTokenRecord
@@ -2239,6 +2300,17 @@ defmodule Lockspire.Storage.Ecto.Repository do
       _other -> false
     end)
   end
+
+  defp append_client_audit_or_rollback({:ok, %Client{} = client}, audit_attrs)
+       when is_map(audit_attrs) do
+    case append_audit_event(audit_attrs) do
+      {:ok, _event} -> client
+      {:error, reason} -> repo().rollback(reason)
+    end
+  end
+
+  defp append_client_audit_or_rollback({:error, reason}, _audit_attrs),
+    do: repo().rollback(reason)
 
   defp repo_all(query, opts \\ []) do
     repo().all(query, repo_options(opts))

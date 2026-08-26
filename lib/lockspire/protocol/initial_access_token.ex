@@ -4,7 +4,7 @@ defmodule Lockspire.Protocol.InitialAccessToken do
 
   Public entry: `redeem/1` accepts a plaintext IAT, hashes via
   `Lockspire.Security.Policy.hash_token/1`, delegates to
-  `Lockspire.Storage.Ecto.Repository.redeem_initial_access_token/2`, and collapses
+  `Lockspire.Storage.InitialAccessTokenStore.redeem_initial_access_token/2`, and collapses
   every rejection axis (`:not_found | :revoked | :expired | :already_used`) to
   `{:error, :invalid_token}` per Phase 26 D-11. The discriminator is preserved only
   in telemetry on the `:iat_redemption_failed` event as a `failure_reason`

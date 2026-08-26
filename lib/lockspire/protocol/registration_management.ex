@@ -15,16 +15,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   """
 
   alias Lockspire.Admin
-  alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Observability
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationAccessToken
-  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
-  import Ecto.Query, only: [where: 3, lock: 2]
 
   defmodule UpdateSuccess do
     @moduledoc false
@@ -144,45 +141,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     {new_rat_plaintext, new_rat_hash} = RegistrationAccessToken.generate()
 
     result =
-      Repository.transact(fn ->
-        repo = Config.repo!()
-        repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
-
-        ClientRecord
-        |> where([c], c.id == ^client.id)
-        |> lock("FOR UPDATE")
-        |> repo.one(repo_opts)
-        |> case do
-          nil ->
-            repo.rollback(:not_found)
-
-          record ->
-            record
-            |> Ecto.Changeset.change(
-              registration_access_token_hash: new_rat_hash,
-              updated_at: DateTime.utc_now()
-            )
-            |> repo.update(repo_opts)
-            |> case do
-              {:ok, updated_record} ->
-                audit_attrs = %{
-                  action: :dcr_management_rat_rotated,
-                  outcome: :success,
-                  actor: %{type: :operator, id: "admin-ui"},
-                  resource: %{type: :client, id: client.client_id},
-                  metadata: %{}
-                }
-
-                case Repository.append_audit_event(audit_attrs) do
-                  {:ok, _} -> ClientRecord.to_domain(updated_record)
-                  {:error, reason} -> repo.rollback(reason)
-                end
-
-              {:error, reason} ->
-                repo.rollback(reason)
-            end
-        end
-      end)
+      Repository.rotate_registration_access_token(client, new_rat_hash, %{
+        action: :dcr_management_rat_rotated,
+        outcome: :success,
+        actor: %{type: :operator, id: "admin-ui"},
+        resource: %{type: :client, id: client.client_id},
+        metadata: %{}
+      })
 
     case result do
       {:ok, updated_client} ->
@@ -199,46 +164,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   defp persist_update(%Client{} = client, metadata, new_rat_hash) do
     updated_client = apply_metadata_to_client(client, metadata)
 
-    Repository.transact(fn ->
-      repo = Config.repo!()
-      repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
-
-      ClientRecord
-      |> where([c], c.id == ^client.id)
-      |> lock("FOR UPDATE")
-      |> repo.one(repo_opts)
-      |> case do
-        nil ->
-          repo.rollback(:not_found)
-
-        record ->
-          record
-          |> ClientRecord.changeset(updated_client)
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> repo.update(repo_opts)
-          |> case do
-            {:ok, updated_record} ->
-              audit_attrs = %{
-                action: :dcr_management_updated,
-                outcome: :success,
-                actor: %{type: :self_registered_client, id: client.client_id},
-                resource: %{type: :client, id: client.client_id},
-                metadata: %{}
-              }
-
-              case Repository.append_audit_event(audit_attrs) do
-                {:ok, _} -> ClientRecord.to_domain(updated_record)
-                {:error, reason} -> repo.rollback(reason)
-              end
-
-            {:error, reason} ->
-              repo.rollback(reason)
-          end
-      end
-    end)
+    Repository.replace_client_registration(client, updated_client, new_rat_hash, %{
+      action: :dcr_management_updated,
+      outcome: :success,
+      actor: %{type: :self_registered_client, id: client.client_id},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{}
+    })
   end
 
   defp apply_metadata_to_client(%Client{} = client, metadata) do
