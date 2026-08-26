@@ -154,6 +154,34 @@ defmodule Lockspire.Install.MigrationsTest do
     assert File.read!(Path.join(project_root, "priv/repo/migrations/#{second}")) == "second package bytes"
   end
 
+  test "refuses an approved plan when its packaged bytes change before apply", %{
+    source_root: source_root,
+    project_root: project_root
+  } do
+    filename = "20260826000100_create_widgets.exs"
+    source = write_migration!(source_root, filename, "original package bytes")
+
+    assert {:ok, plan} = Migrations.plan(source_root: source_root, project_root: project_root)
+    File.write!(source, "changed package bytes")
+
+    assert {:error, [%{type: :approved_plan_changed, path: ^source}]} = Migrations.apply(plan)
+    refute File.exists?(Path.join(project_root, "priv/repo/migrations"))
+  end
+
+  test "refuses an approved plan when a host migration appears before apply", %{
+    source_root: source_root,
+    project_root: project_root
+  } do
+    filename = "20260826000100_create_widgets.exs"
+    write_migration!(source_root, filename, "package bytes")
+
+    assert {:ok, plan} = Migrations.plan(source_root: source_root, project_root: project_root)
+    destination = write_host_migration!(project_root, filename, "host bytes")
+
+    assert {:error, [%{type: :approved_plan_changed, path: ^destination}]} = Migrations.apply(plan)
+    assert File.read!(destination) == "host bytes"
+  end
+
   defp write_migration!(source_root, filename, contents) do
     path = Path.join(source_root, filename)
     File.write!(path, contents)
