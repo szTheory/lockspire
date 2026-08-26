@@ -26,11 +26,7 @@ defmodule GeneratedHostAppWeb.Router do
 
   pipeline :lockspire_protected_api do
     plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api")
-
-    plug(Lockspire.Plug.EnforceSenderConstraints,
-      dpop_replay_store: GeneratedHostAppWeb.ProtectedApiReplayStore
-    )
-
+    plug(Lockspire.Plug.EnforceSenderConstraints)
     plug(Lockspire.Plug.RequireToken)
   end
 

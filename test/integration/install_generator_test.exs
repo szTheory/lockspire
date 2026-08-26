@@ -410,6 +410,9 @@ defmodule Lockspire.InstallGeneratorTest do
     assert rendered_router ==
              File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
 
+    refute rendered_router =~ "dpop_replay_store:"
+    assert rendered_router =~ "docs/protect-phoenix-api-routes.md"
+
     routes = Phoenix.Router.routes(GeneratedHostAppWeb.Router)
 
     assert Enum.any?(routes, &(&1.path == "/verify" and &1.verb == :get))

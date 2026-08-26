@@ -182,6 +182,23 @@ end
 The router tells you where a value enters. The protocol coordinator tells you
 what it means.
 
+## Resource-server routes: protocol facts stop before product policy
+
+For a host Phoenix API route, the canonical pipeline is `VerifyToken`,
+`EnforceSenderConstraints`, then `RequireToken`. The ordinary sender-constraint
+path persists DPoP replay records through the configured Lockspire repository;
+a compatible custom replay store is an advanced override, not an installation
+requirement. Controllers receive `%Lockspire.AccessToken{}` and should use
+`AccessToken.subject/1`, `scopes/1`, `audiences/1`, `expires_at/1`, and
+`confirmation/1` instead of reparsing raw claims. Raw `claims` remain available
+for compatibility and extension data.
+
+This is intentionally not a product authorization engine. Lockspire proves
+token validity, scope, audience, and sender constraints; the host still decides
+tenant, object, billing, product, response, and rate-limit policy. See
+[Protect Phoenix API Routes](protect-phoenix-api-routes.md) for the executable
+host-route contract.
+
 ## Cross the host seam
 
 The host boundary is expressed as values, not callbacks that can mutate

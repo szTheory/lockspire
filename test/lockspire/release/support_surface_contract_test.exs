@@ -206,6 +206,19 @@ defmodule Lockspire.Release.SupportSurfaceContractTest do
     end
   end
 
+  test "canonical protected-route guidance uses the configured durable replay default" do
+    guide = File.read!(@protect_phoenix_api_routes_path)
+    template = File.read!(@install_template_router_path)
+
+    assert guide =~ "configured Lockspire repository"
+    assert guide =~ "advanced override"
+    assert guide =~ "Lockspire.AccessToken.subject(access_token)"
+    assert guide =~ "Lockspire.AccessToken.confirmation(access_token)"
+    assert guide =~ "tenant, object, billing, product, response, and additional rate-limit policy"
+
+    refute template =~ "dpop_replay_store: MyAppWeb.ProtectedApiReplayStore"
+  end
+
   test "mix lockspire.install never prompts for or branches on access-token format (SCAFFOLD-02, D-02 #1)" do
     # The install task + generator SOURCE must never gain a token-format decision.
     # The install TEMPLATE is intentionally NOT a refute target: it legitimately carries
