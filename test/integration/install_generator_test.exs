@@ -1,10 +1,38 @@
 defmodule Lockspire.InstallGeneratorTest do
-  use ExUnit.Case, async: false
+  use Lockspire.DataCase, async: false
 
   import ExUnit.CaptureIO
 
+  alias Lockspire.Storage.Ecto.Repository
+
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
   @runtime_fixture_root Path.expand("../support/generated_host_app_web", __DIR__)
+
+  setup_all do
+    Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
+      secret_key_base: String.duplicate("a", 64),
+      server: false,
+      live_view: [signing_salt: "generated_host_salt"]
+    )
+
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    Application.put_env(:lockspire, :known_scopes, ["openid", "profile"])
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
+
+    unless Process.whereis(Lockspire.TestRepo), do: start_supervised!(Lockspire.TestRepo)
+
+    unless Process.whereis(GeneratedHostAppWeb.Endpoint),
+      do: start_supervised!(GeneratedHostAppWeb.Endpoint)
+
+    :ok
+  end
 
   setup do
     reset_fixture!()
@@ -275,11 +303,15 @@ defmodule Lockspire.InstallGeneratorTest do
 
     default_manifest = load_manifest!()
 
-    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in
-             Enum.map(default_manifest["managed_files"], & &1["path"])
+    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in Enum.map(
+             default_manifest["managed_files"],
+             & &1["path"]
+           )
 
-    refute "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
-             Enum.map(default_manifest["managed_files"], & &1["path"])
+    refute "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
+             default_manifest["managed_files"],
+             & &1["path"]
+           )
 
     reset_fixture!()
 
@@ -292,8 +324,10 @@ defmodule Lockspire.InstallGeneratorTest do
 
     fapi_manifest = load_manifest!()
 
-    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
-             Enum.map(fapi_manifest["managed_files"], & &1["path"])
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
+             fapi_manifest["managed_files"],
+             & &1["path"]
+           )
   end
 
   test "the FAPI smoke flag is documented and rejects a positional value" do
@@ -305,6 +339,47 @@ defmodule Lockspire.InstallGeneratorTest do
         Mix.Tasks.Lockspire.Install.run(["--with-fapi-smoke", "not-a-boolean"])
       end)
     end
+  end
+
+  test "rendered default and opted-in FAPI smokes execute against the generated host" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
+
+    run_rendered_test!(
+      default_smoke_path,
+      GeneratedHostApp.Lockspire.SmokeE2ETest,
+      "discovery and JWKS are published"
+    )
+
+    run_rendered_test!(
+      default_smoke_path,
+      GeneratedHostApp.Lockspire.SmokeE2ETest,
+      "authorization-code requests require S256 and exact redirect matching"
+    )
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!(["--with-fapi-smoke"])
+    end)
+
+    {:ok, policy} = Repository.get_server_policy()
+
+    {:ok, _policy} =
+      Repository.put_server_policy(%{policy | security_profile: :fapi_2_0_security})
+
+    fapi_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e.exs")
+
+    run_rendered_test!(
+      fapi_smoke_path,
+      GeneratedHostApp.Lockspire.FapiSmokeE2ETest,
+      "FAPI 2.0 rejects direct authorize requests without PAR"
+    )
   end
 
   test "the rendered router macro compiles through the generated host router" do
@@ -565,5 +640,18 @@ defmodule Lockspire.InstallGeneratorTest do
       flunk(
         "expected a compiled route at #{inspect(path)}, got: #{inspect(Enum.map(routes, & &1.path))}"
       )
+  end
+
+  defp run_rendered_test!(path, module, test_name) do
+    source = File.read!(path)
+
+    :code.purge(module)
+    :code.delete(module)
+
+    assert [{^module, _binary} | _rest] = Code.compile_string(source, path)
+
+    test_name = String.to_atom("test " <> test_name)
+    assert Enum.member?(module.__info__(:functions), {test_name, 1})
+    assert :ok = apply(module, test_name, [%{}])
   end
 end

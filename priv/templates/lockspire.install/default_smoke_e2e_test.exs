@@ -16,6 +16,8 @@ defmodule <%= host_app_module %>.Lockspire.SmokeE2ETest do
   import Plug.Conn
 
   test "discovery and JWKS are published" do
+    ensure_default_security_profile!()
+
     discovery =
       build_conn()
       |> put_req_header("accept", "application/json")
@@ -35,6 +37,7 @@ defmodule <%= host_app_module %>.Lockspire.SmokeE2ETest do
   end
 
   test "authorization-code requests require S256 and exact redirect matching" do
+    ensure_default_security_profile!()
     client = register_client!()
 
     valid_request = authorize_params(client)
@@ -98,5 +101,9 @@ defmodule <%= host_app_module %>.Lockspire.SmokeE2ETest do
     :sha256
     |> :crypto.hash(verifier)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp ensure_default_security_profile! do
+    assert {:ok, %{security_profile: :none}} = Lockspire.Admin.ServerPolicy.get_server_policy()
   end
 end

@@ -28,7 +28,7 @@ This creates one canonical Phoenix onboarding layout with two ownership classes:
 - Lockspire-managed scaffolding:
   - `config/lockspire.exs`
   - `lib/<web>/router/lockspire.ex`
-  - `test/<app>/lockspire_fapi_smoke_e2e_test.exs`
+  - `test/<app>/lockspire_smoke_e2e_test.exs`
   - `.lockspire/install_manifest.json`
 - Host-owned seams:
   - Account resolution
@@ -128,6 +128,28 @@ This is the canonical post-install diagnostics step. It checks:
 `mix lockspire.verify` does not diagnose runtime remote-`jwks_uri` incidents. For those, use `mix lockspire.doctor remote-jwks --client <client_id>` and the matching admin Remote JWKS summary described in `docs/private-key-jwt-host-guide.md`.
 
 ## 6. Create a client and prove the flow
+
+Run the generated default-profile smoke as part of the ordinary host suite:
+
+```bash
+mix test test/<app>/lockspire_smoke_e2e_test.exs
+```
+
+It proves discovery/JWKS plus authorization-code routing with PKCE S256 and
+exact redirect matching under Lockspire's unchanged `:none` security profile.
+It registers `profile` as an application scope and requests `openid profile`
+only at authorization time.
+
+FAPI 2.0 proof is deliberately separate. Only hosts that explicitly operate
+the FAPI 2.0 security profile should generate and run it:
+
+```bash
+mix lockspire.install --with-fapi-smoke
+mix test test/<app>/lockspire_fapi_smoke_e2e.exs --include fapi
+```
+
+The opt-in test is not named `*_test.exs`, so a normal `mix test` does not make
+FAPI/PAR claims for a default-profile installation.
 
 The canonical proof bar is:
 
