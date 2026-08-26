@@ -13,15 +13,22 @@ defmodule Lockspire.ConfigCase do
   end
 
   setup do
-    Process.put(@original_values_key, %{})
-
-    on_exit(fn ->
-      @original_values_key
-      |> Process.get(%{})
-      |> Enum.each(fn {key, original} -> restore(key, original) end)
-    end)
-
+    preserve_lockspire_env!()
     :ok
+  end
+
+  def preserve_lockspire_env! do
+    Process.put(@original_values_key, %{})
+    initial = Map.new(Application.get_all_env(:lockspire))
+
+    ExUnit.Callbacks.on_exit(fn ->
+      Application.get_all_env(:lockspire)
+      |> Keyword.keys()
+      |> Enum.reject(&Map.has_key?(initial, &1))
+      |> Enum.each(&Application.delete_env(:lockspire, &1))
+
+      Enum.each(initial, fn {key, value} -> Application.put_env(:lockspire, key, value) end)
+    end)
   end
 
   def put_lockspire_env(key, value) do
@@ -42,6 +49,4 @@ defmodule Lockspire.ConfigCase do
     end
   end
 
-  defp restore(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)
-  defp restore(key, :error), do: Application.delete_env(:lockspire, key)
 end

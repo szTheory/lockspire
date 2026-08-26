@@ -1,5 +1,5 @@
 defmodule Lockspire.Storage.RepositoryTest do
-  use ExUnit.Case, async: false
+  use Lockspire.DataCase, async: false
 
   import ExUnit.CaptureLog
 
@@ -24,10 +24,6 @@ defmodule Lockspire.Storage.RepositoryTest do
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
     :ok
-  end
-
-  setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
   end
 
   test "registers and fetches a client through the repository contract" do

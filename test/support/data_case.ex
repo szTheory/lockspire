@@ -10,11 +10,9 @@ defmodule Lockspire.DataCase do
   end
 
   setup tags do
-    repo = Lockspire.TestRepo
+    Lockspire.ConfigCase.preserve_lockspire_env!()
 
-    unless Process.whereis(repo) do
-      start_supervised!(repo)
-    end
+    repo = Lockspire.TestRepo
 
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(repo, shared: not tags.async)
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
