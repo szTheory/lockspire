@@ -6,7 +6,7 @@ status: complete
 
 # Phase 129 Plan 01: Authorization Code Boundary Summary
 
-Added the stable authorization-code coordinator dispatch boundary while preserving the public `TokenExchange` API and result structs. Token lifetime defaults now have one internal owner.
+Moved authorization-code request authentication, DPoP resolution, code lookup, and error emission into `AuthorizationCodeGrant`; `TokenExchange` now remains the stable public router and result-struct owner. Token lifetime defaults have one internal owner.
 
 ## Verification
 
@@ -16,3 +16,4 @@ Added the stable authorization-code coordinator dispatch boundary while preservi
 ## Commits
 
 - `9a0d60e` refactor(129): centralize token policy and key decoding
+- `0eb3d98` refactor(129): move grant orchestration behind facade

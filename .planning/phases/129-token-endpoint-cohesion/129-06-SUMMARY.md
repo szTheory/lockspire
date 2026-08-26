@@ -6,7 +6,7 @@ status: complete
 
 # Phase 129 Plan 06: CIBA Grant Boundary Summary
 
-Added internal `CibaGrant` dispatch while preserving the public Push worker contract and the existing poll/Push redemption behavior.
+Moved CIBA client authentication, poll-state lookup, DPoP resolution, and Push issuance delegation into `CibaGrant`; the public worker contract and poll/Push behavior remain unchanged.
 
 ## Verification
 
@@ -15,3 +15,4 @@ Added internal `CibaGrant` dispatch while preserving the public Push worker cont
 ## Commits
 
 - `9a0d60e` refactor(129): centralize token policy and key decoding
+- `0eb3d98` refactor(129): move grant orchestration behind facade

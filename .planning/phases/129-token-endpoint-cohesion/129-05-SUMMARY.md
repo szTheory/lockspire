@@ -6,7 +6,7 @@ status: complete
 
 # Phase 129 Plan 05: Device Grant Boundary Summary
 
-Added internal `DeviceCodeGrant` dispatch while retaining device polling, redemption, atomic persistence, audit, and telemetry behavior in the stable facade contract.
+Moved device client authentication, poll-state lookup, DPoP resolution, and redemption dispatch into `DeviceCodeGrant`; atomic persistence, audit, and telemetry behavior remain unchanged in internal shared support.
 
 ## Verification
 
@@ -15,3 +15,4 @@ Added internal `DeviceCodeGrant` dispatch while retaining device polling, redemp
 ## Commits
 
 - `9a0d60e` refactor(129): centralize token policy and key decoding
+- `0eb3d98` refactor(129): move grant orchestration behind facade
