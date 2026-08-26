@@ -323,6 +323,13 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.exists?(default_smoke_path)
     assert File.exists?(fapi_smoke_path)
 
+    fapi_smoke = File.read!(fapi_smoke_path)
+    assert fapi_smoke =~ ":crypto.strong_rand_bytes(32)"
+    assert fapi_smoke =~ "\"code_challenge\" => code_challenge(verifier)"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-nonce"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-state"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-verifier"
+
     fapi_manifest = load_manifest!()
 
     assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
