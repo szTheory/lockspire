@@ -144,11 +144,11 @@ defmodule Lockspire.Integration.Phase57RarIntrospectionVerificationE2ETest do
 
     consent_html = rendered_to_string(ConsentLive.render(socket.assigns))
 
-    assert socket.assigns.authorization_details == normalized_details
     assert socket.assigns.authorization_detail_types == ["payment_initiation"]
-    assert consent_html =~ "authorization_details"
     assert consent_html =~ "payment_initiation"
-    assert consent_html =~ "&quot;validated&quot;: true"
+    refute Map.has_key?(socket.assigns, :authorization_details)
+    refute consent_html =~ "authorization_details"
+    refute consent_html =~ "validated"
 
     code = approve_interaction!(interaction_id)
     token_response = redeem_code!(client, code, code_verifier, "https://api.one")
