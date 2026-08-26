@@ -12,6 +12,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias Lockspire.Protocol.ConsentPolicy
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.Ecto.Repository
 
   @authorization_code_ttl 300
 
@@ -773,10 +774,10 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp default_return_to(interaction_id), do: "/lockspire/interactions/#{interaction_id}"
 
-  defp interaction_store(opts), do: Keyword.get(opts, :interaction_store, Config.repo!())
-  defp consent_store(opts), do: Keyword.get(opts, :consent_store, Config.repo!())
-  defp token_store(opts), do: Keyword.get(opts, :token_store, Config.repo!())
-  defp client_store(opts), do: Keyword.get(opts, :client_store, Config.repo!())
-  defp key_store(opts), do: Keyword.get(opts, :key_store, Config.repo!())
+  defp interaction_store(opts), do: Keyword.get(opts, :interaction_store, Repository)
+  defp consent_store(opts), do: Keyword.get(opts, :consent_store, Repository)
+  defp token_store(opts), do: Keyword.get(opts, :token_store, Repository)
+  defp client_store(opts), do: Keyword.get(opts, :client_store, Repository)
+  defp key_store(opts), do: Keyword.get(opts, :key_store, Repository)
   defp observability_module, do: Observability
 end

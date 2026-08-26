@@ -14,6 +14,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   alias Lockspire.Protocol.TokenExchange.Success
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.Ecto.Repository
 
   @spec exchange(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(%Client{} = client, request) do
@@ -192,7 +193,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
     store =
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:server_policy_store, Config.repo!())
+      |> Keyword.get(:server_policy_store, Repository)
 
     case store.get_server_policy() do
       {:ok, policy} -> policy
@@ -251,7 +252,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
   defp token_store(request) do
     request
     |> Map.get(:opts, [])
-    |> Keyword.get(:token_store, Config.repo!())
+    |> Keyword.get(:token_store, Repository)
   end
 
   defp token_format_options(request) do

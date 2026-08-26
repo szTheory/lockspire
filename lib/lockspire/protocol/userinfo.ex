@@ -198,11 +198,11 @@ defmodule Lockspire.Protocol.Userinfo do
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:server_policy_store, Config.repo!())
+      |> Keyword.get(:server_policy_store, Repository)
 
   defp token_store(request),
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:token_store, Config.repo!())
+      |> Keyword.get(:token_store, Repository)
 end
