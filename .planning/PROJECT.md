@@ -8,6 +8,15 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.37 Prime-Time Readiness Ratchet
+
+**Goal:** Make Lockspire's documented embedded-provider path genuinely installable, prove it through a separate SaaS client and resource-server journey, and tighten the architecture and executable quality gates around that truth.
+
+**Target features:**
+- Make generated routes, host consent, migrations, required configuration, claims examples, and default generated tests executable from a packaged Lockspire artifact.
+- Prove a clean-room Phoenix SaaS provider plus separate-origin confidential client and protected resource API across OIDC validation, token lifecycle, negative cases, and durable DPoP replay protection.
+- Improve public API truth, dependency topology, storage and token cohesion, static-analysis depth, test readability, CI signal, conformance reproducibility, and release artifact proof without breaking v1.x behavior.
+
 ## Completed Milestone: v1.36 Structural Quality Ratchet
 
 **Goal:** Raise Lockspire's correctness, release safety, architectural clarity, static-analysis signal, compatibility proof, and code readability through high-yield structural improvements without adding protocol surface or changing public behavior.
@@ -58,7 +67,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-Remain on the sustaining GA release train. Start the next bounded milestone only when concrete adopter, support, or release evidence identifies a higher-leverage outcome; do not widen Lockspire into hosted auth, host-owned product policy, or a standalone-service architecture.
+Execute v1.37 as an evidence-led readiness milestone. Fix the concrete generated-install and resource-server contract gaps first, use the clean-room SaaS journey as the acceptance spine, and make internal architecture and CI improvements serve that observable adoption path. Do not widen Lockspire into hosted auth, host-owned product policy, a standalone service, or additional protocol grants.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -198,7 +207,11 @@ Remain on the sustaining GA release train. Start the next bounded milestone only
 
 ### Active
 
-- None. Lockspire is between feature milestones on the sustaining GA release train.
+- [ ] A fresh Phoenix/Ecto host can install packaged Lockspire, mount real generated routes, apply Lockspire migrations, configure required host seams, pass generated tests, and boot using only documented steps.
+- [ ] A separate-origin confidential client can complete authorization code + PKCE, validate OIDC responses, call an audience/scope-protected SaaS API, rotate refresh tokens, exercise revocation/introspection, and prove durable DPoP replay rejection.
+- [ ] Lockspire's public client and resource-server APIs match shipped behavior through additive accessors, coherent validation, accurate examples, and v1.x-compatible deprecations.
+- [ ] Protocol, admin, web, storage, and token internals have acyclic dependency direction, cohesive implementation modules, explicit dependencies, and preserved security-sensitive atomicity.
+- [ ] Static analysis, behavior-oriented tests, quiet test runtime, complete-suite coverage, Sobelow, dependency hygiene, reproducible OIDF evidence, and package checksum/install proof fail closed on real regressions.
 
 ### Validated
 
@@ -301,6 +314,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
 | Start v1.36 as a structural quality ratchet | Audit evidence found high-leverage release-integrity, storage-boundary, static-analysis, compatibility, and readability gaps that can be fixed without adding product surface | Adopted and delivered across Phases 126-130; archived 2026-08-26 |
 | Ship Lockspire as a separate companion library, not a Sigra module | Keeps provider-side OAuth/OIDC concerns isolated from end-user authentication concerns | Adopted in archived v1.0 milestone |
 | Build as an embedded library rather than a standalone auth service | Matches Phoenix team deployment reality and preserves host control over UI, accounts, and app policy | Adopted in archived v1.0 milestone |
@@ -358,4 +372,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 after v1.36 milestone completion*
+*Last updated: 2026-08-26 at v1.37 milestone start*

@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.36
-milestone_name: Structural Quality Ratchet
-status: Awaiting next milestone
-stopped_at: Milestone v1.36 completed and archived
-last_updated: "2026-08-26T19:12:52.970Z"
+milestone: v1.37
+milestone_name: Prime-Time Readiness Ratchet
+status: planning
+last_updated: "2026-08-26T20:26:29.617Z"
 last_activity: 2026-08-26
-last_activity_desc: Milestone v1.36 completed and archived
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 30
-  completed_plans: 30
-  percent: 100
-current_phase: 130
-current_phase_name: readable code and sustainable proof
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -29,10 +25,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: Milestone v1.36 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-08-26 — Milestone v1.36 completed and archived
+Status: Defining requirements
+Last activity: 2026-08-26 — Milestone v1.37 started
 
 ## Completed Ad Hoc Work
 
