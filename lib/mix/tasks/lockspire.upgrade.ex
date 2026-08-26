@@ -20,6 +20,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     mount_path: :string,
     storage_prefix: :string,
     oban_prefix: :string,
+    with_fapi_smoke: :boolean,
     dry_run: :boolean,
     help: :boolean
   ]
@@ -41,21 +42,23 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
 
   def help do
     """
-    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--dry-run]
+    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--with-fapi-smoke] [--dry-run]
 
     Upgrades only manifest-tracked Lockspire-managed scaffolding.
     Host-owned seams stay untouched and drifted managed files are refused with manual guidance.
     Pass --storage-prefix public --oban-prefix public only for an intentional public-schema install.
+    An existing install manifest retains its opted-in FAPI smoke by default; use
+    --with-fapi-smoke to add it to a legacy install explicitly.
     """
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp do_run(opts) do
-    assigns = Install.build_assigns(opts)
+    base_assigns = Install.build_assigns(opts)
     dry_run? = Keyword.get(opts, :dry_run, false)
 
     manifest =
-      case Manifest.load(assigns.project_root) do
+      case Manifest.load(base_assigns.project_root) do
         {:ok, manifest} ->
           manifest
 
@@ -66,6 +69,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
           Mix.raise("Could not load install manifest: #{inspect(reason)}")
       end
 
+    assigns = Install.build_assigns(Keyword.put(opts, :with_fapi_smoke, fapi_smoke?(opts, manifest)))
     rendered_templates = Install.rendered_templates(assigns)
 
     case OperationPlan.upgrade(assigns, rendered_templates, manifest) do
@@ -81,6 +85,10 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
       {:error, errors} ->
         refuse!(errors)
     end
+  end
+
+  defp fapi_smoke?(opts, manifest) do
+    Keyword.get(opts, :with_fapi_smoke, get_in(manifest, ["inputs", "with_fapi_smoke"]) == true)
   end
 
   defp apply_plan!(plan) do

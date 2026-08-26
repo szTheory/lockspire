@@ -189,6 +189,10 @@ mix lockspire.install --with-fapi-smoke
 mix test test/<app>/lockspire_fapi_smoke_e2e.exs --include fapi
 ```
 
+That opt-in is recorded in the install manifest, so later `mix lockspire.upgrade`
+commands retain and update the FAPI smoke. For a legacy manifest, pass
+`mix lockspire.upgrade --with-fapi-smoke` once to add the managed proof.
+
 The opt-in test is not named `*_test.exs`, so a normal `mix test` does not make
 FAPI/PAR claims for a default-profile installation.
 

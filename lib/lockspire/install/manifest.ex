@@ -67,7 +67,8 @@ defmodule Lockspire.Install.Manifest do
         "storage_prefix" => assigns.storage_prefix,
         "oban_prefix" => assigns.oban_prefix,
         "web_module" => assigns.web_module,
-        "scope_module" => assigns.scope_module
+        "scope_module" => assigns.scope_module,
+        "with_fapi_smoke" => Map.get(assigns, :with_fapi_smoke, false)
       },
       "managed_files" =>
         Enum.map(rendered_templates, fn rendered ->

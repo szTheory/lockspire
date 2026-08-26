@@ -29,6 +29,25 @@ defmodule Lockspire.InstallUpgradeTest do
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) == original_config
   end
 
+  test "an opted-in FAPI smoke remains managed across dry-run and upgrade" do
+    install_fixture!(["--with-fapi-smoke"])
+
+    fapi_path = Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e.exs")
+    original = File.read!(fapi_path)
+
+    dry_run = capture_io(fn -> upgrade_fixture!(["--dry-run"]) end)
+
+    assert dry_run =~ "DRY-RUN test/generated_host_app/lockspire_fapi_smoke_e2e.exs"
+    assert File.read!(fapi_path) == original
+
+    capture_io(fn -> upgrade_fixture!(["--mount-path", "/oauth"]) end)
+
+    assert File.exists?(fapi_path)
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in
+             Enum.map(load_manifest!()["managed_files"], & &1["path"])
+    assert load_manifest!()["inputs"]["with_fapi_smoke"] == true
+  end
+
   test "manifests keep legacy shape readable and audit a deterministic migration inventory" do
     project_root =
       Path.join(System.tmp_dir!(), "lockspire-manifest-#{System.unique_integer([:positive])}")
@@ -314,7 +333,7 @@ defmodule Lockspire.InstallUpgradeTest do
     )
   end
 
-  defp install_fixture! do
+  defp install_fixture!(extra_args \\ []) do
     File.cd!(@fixture_root, fn ->
       Mix.Task.reenable("lockspire.install")
 
@@ -323,7 +342,7 @@ defmodule Lockspire.InstallUpgradeTest do
         "GeneratedHostAppWeb",
         "--scope",
         "GeneratedHostApp.Lockspire"
-      ])
+      ] ++ extra_args)
     end)
   end
 
