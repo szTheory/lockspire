@@ -49,6 +49,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.PushedAuthorizationRequestStore
   alias Lockspire.Storage.ServerPolicyStore
   alias Lockspire.Storage.TokenStore
+  alias Lockspire.Storage.TransactionStore
+  alias Lockspire.Storage.AuditStore
   alias Lockspire.Storage.UsedJtiStore
 
   @behaviour ClientStore
@@ -64,6 +66,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour LogoutStore
   @behaviour UsedJtiStore
   @behaviour InitialAccessTokenStore
+  @behaviour TransactionStore
+  @behaviour AuditStore
 
   @active_interaction_statuses InteractionRecord.active_statuses()
 
@@ -325,7 +329,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
-  @impl InteractionStore
+  @impl TransactionStore
   def transact(fun) when is_function(fun, 0) do
     case repo().transaction(fn -> run_transaction_fun(fun) end) do
       {:ok, result} -> {:ok, result}
@@ -334,6 +338,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
   rescue
     error -> {:error, error}
   end
+
+  @impl TransactionStore
+  def rollback(reason), do: repo().rollback(reason)
 
   @impl PushedAuthorizationRequestStore
   def put_pushed_authorization_request(%PushedAuthorizationRequest{} = request) do
@@ -599,7 +606,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
-  @spec append_audit_event(Event.t() | map()) :: {:ok, Event.t()} | {:error, term()}
+  @impl AuditStore
   def append_audit_event(%Event{} = event) do
     %AuditEventRecord{}
     |> AuditEventRecord.changeset(event)
@@ -615,8 +622,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec transact_with_audit(Event.t() | map(), (-> term())) ::
-          {:ok, term()} | {:error, term()}
+  @impl AuditStore
   def transact_with_audit(audit_event, fun) when is_function(fun, 0) do
     transact(fn ->
       result =
@@ -806,8 +812,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec fetch_logout_event_by_event_id(String.t()) ::
-          {:ok, Lockspire.Domain.LogoutEvent.t() | nil} | {:error, term()}
+  @impl LogoutStore
   def fetch_logout_event_by_event_id(event_id) when is_binary(event_id) do
     LogoutEventRecord
     |> where([event], event.event_id == ^event_id)
@@ -817,8 +822,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec list_all_logout_deliveries() ::
-          {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  @impl LogoutStore
   def list_all_logout_deliveries do
     LogoutDeliveryRecord
     |> order_by(desc: :inserted_at)
@@ -828,8 +832,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec list_logout_deliveries(integer()) ::
-          {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  @impl LogoutStore
   def list_logout_deliveries(logout_event_id) when is_integer(logout_event_id) do
     LogoutDeliveryRecord
     |> where([delivery], delivery.logout_event_id == ^logout_event_id)
@@ -840,8 +843,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     error -> {:error, error}
   end
 
-  @spec mark_logout_delivery_enqueued(integer(), integer()) ::
-          {:ok, Lockspire.Domain.LogoutDelivery.t()} | {:error, term()}
+  @impl LogoutStore
   def mark_logout_delivery_enqueued(logout_delivery_id, oban_job_id)
       when is_integer(logout_delivery_id) and is_integer(oban_job_id) do
     LogoutDeliveryRecord

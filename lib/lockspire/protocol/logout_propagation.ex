@@ -4,7 +4,6 @@ defmodule Lockspire.Protocol.LogoutPropagation do
   """
 
   alias Lockspire.Audit.Event
-  alias Lockspire.Config
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Observability
@@ -62,7 +61,7 @@ defmodule Lockspire.Protocol.LogoutPropagation do
           enqueued_metadata: enqueued_metadata
         }
       else
-        {:error, reason} -> Config.repo!().rollback(reason)
+        {:error, reason} -> Repository.rollback(reason)
       end
     end)
   end
@@ -215,6 +214,6 @@ defmodule Lockspire.Protocol.LogoutPropagation do
   defp insert_backchannel_job(logout_delivery_id) when is_integer(logout_delivery_id) do
     changeset = BackchannelLogoutDeliveryWorker.new(%{logout_delivery_id: logout_delivery_id})
 
-    Config.repo!().insert(changeset, Lockspire.Storage.Ecto.Prefix.oban_opts())
+    Oban.insert(Lockspire.Oban, changeset)
   end
 end

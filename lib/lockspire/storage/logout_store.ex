@@ -11,4 +11,12 @@ defmodule Lockspire.Storage.LogoutStore do
   @callback persist_logout_propagation(LogoutEvent.t()) ::
               {:ok, %{event: LogoutEvent.t(), deliveries: [LogoutDelivery.t()]}}
               | {:error, store_error()}
+  @callback fetch_logout_event_by_event_id(String.t()) ::
+              {:ok, LogoutEvent.t() | nil} | {:error, store_error()}
+  @callback list_all_logout_deliveries() ::
+              {:ok, [LogoutDelivery.t()]} | {:error, store_error()}
+  @callback list_logout_deliveries(integer()) ::
+              {:ok, [LogoutDelivery.t()]} | {:error, store_error()}
+  @callback mark_logout_delivery_enqueued(integer(), integer()) ::
+              {:ok, LogoutDelivery.t()} | {:error, store_error()}
 end
