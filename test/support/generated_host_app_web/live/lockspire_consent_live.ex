@@ -17,17 +17,49 @@ defmodule GeneratedHostAppWeb.LockspireConsentLive do
 
   @impl true
   def mount(%{"interaction_id" => interaction_id}, _session, socket) do
-    case ConsentContext.load(socket, interaction_id) do
-      {:ok, context} ->
-        {:ok,
-         assign(socket, Map.merge(context, %{submitting?: false, decision: nil, error: nil}))}
+    socket = assign(socket, loading?: true, submitting?: false, decision: nil, error: nil)
+    host_assigns = socket.assigns
+    connect_info = socket.private[:connect_info]
 
-      {:redirect, redirect_uri} ->
-        {:ok, redirect(socket, external: redirect_uri)}
-
-      {:error, reason} ->
-        {:ok, assign(socket, error: error_message(reason), submitting?: false, decision: nil)}
+    if connected?(socket) do
+      {:ok,
+       start_async(socket, :load_consent_context, fn ->
+         ConsentContext.load(
+           %Phoenix.LiveView.Socket{
+             assigns: host_assigns,
+             private: %{connect_info: connect_info}
+           },
+           interaction_id
+         )
+       end)}
+    else
+      {:ok, socket}
     end
+  end
+
+  @impl true
+  def handle_async(:load_consent_context, {:ok, {:ok, context}}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       Map.merge(context, %{loading?: false, submitting?: false, decision: nil, error: nil})
+     )}
+  end
+
+  def handle_async(:load_consent_context, {:ok, {:redirect, redirect_uri}}, socket) do
+    {:noreply, redirect(socket, external: redirect_uri)}
+  end
+
+  def handle_async(:load_consent_context, {:ok, {:error, reason}}, socket) do
+    {:noreply, assign_error(socket, reason)}
+  end
+
+  def handle_async(:load_consent_context, {:ok, _unexpected_result}, socket) do
+    {:noreply, assign_error(socket, :unavailable)}
+  end
+
+  def handle_async(:load_consent_context, {:exit, _reason}, socket) do
+    {:noreply, assign_error(socket, :unavailable)}
   end
 
   @impl true
@@ -37,6 +69,17 @@ defmodule GeneratedHostAppWeb.LockspireConsentLive do
   end
 
   @impl true
+  def render(%{loading?: true} = assigns) do
+    ~H"""
+    <section class="host-consent-shell">
+      <div role="status">
+        <h1>Authorize access</h1>
+        <p>Loading authorization request…</p>
+      </div>
+    </section>
+    """
+  end
+
   def render(%{error: error} = assigns) when not is_nil(error) do
     ~H"""
     <section class="host-consent-shell">
@@ -128,4 +171,13 @@ defmodule GeneratedHostAppWeb.LockspireConsentLive do
 
   defp error_message(_reason),
     do: "We could not load this authorization request. Return to the application and try again."
+
+  defp assign_error(socket, reason) do
+    assign(socket,
+      loading?: false,
+      error: error_message(reason),
+      submitting?: false,
+      decision: nil
+    )
+  end
 end
