@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Structural Quality Ratchet
-current_phase: 130
-current_phase_name: readable code and sustainable proof
-status: complete
-stopped_at: Completed v1.36 Structural Quality Ratchet
-last_updated: "2026-08-26T18:48:54.131Z"
+status: Awaiting next milestone
+stopped_at: Completed Phase 129 Token Endpoint Cohesion
+last_updated: "2026-08-26T19:12:52.970Z"
 last_activity: 2026-08-26
-last_activity_desc: "Completed quick task 260826-kkr: Normalize v1.36 verification reports to canonical frontmatter and fix Phase 126 aggregate summary counting"
+last_activity_desc: Milestone v1.36 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
   total_plans: 30
   completed_plans: 30
   percent: 100
+current_phase: 130
+current_phase_name: readable code and sustainable proof
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 130 of 130 (Readable Code & Sustainable Proof)
-Plan: Complete
-Status: Milestone complete
-Last activity: 2026-08-26 — Completed quick task 260826-kkr: Normalize v1.36 verification reports to canonical frontmatter and fix Phase 126 aggregate summary counting
+Phase: Milestone v1.36 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-26 — Milestone v1.36 completed and archived
 
 ## Completed Ad Hoc Work
 
@@ -54,6 +54,7 @@ Last activity: 2026-08-26 — Completed quick task 260826-kkr: Normalize v1.36 v
 
 | Milestone | Phases | Plans | Requirements | Status |
 |-----------|--------|-------|--------------|--------|
+| v1.36 | 126-130 | 30 | 25 | shipped |
 | v1.35 | - | - | 9 | landed on main |
 | v1.34 | - | - | 11 | landed on main |
 | v1.33 | - | - | 7 | landed on main |

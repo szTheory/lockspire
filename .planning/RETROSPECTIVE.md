@@ -187,12 +187,51 @@
 
 ---
 
+## Milestone: v1.36 — Structural Quality Ratchet
+
+**Shipped:** 2026-08-26
+**Phases:** 5 | **Plans:** 30 | **Tasks:** 63
+
+### What Was Built
+- Exact-ref CI evidence now gates release publication, recovery inputs fail closed, supply-chain dependencies are immutable, and the published Hex artifact has independent install-truth proof.
+- Credo parse coverage, a measured ExUnit coverage floor, PostgreSQL 14, Phoenix 1.8.5, LiveView 1.1.28, and zero-warning Dialyzer are executable quality baselines.
+- Narrow storage, transaction, audit, logout, Oban, and admin-query contracts repair the host-Repo versus Lockspire-storage boundary and prevent regression.
+- Token grant coordination now sits behind the stable `TokenExchange` facade with centralized lifetime policy and one fail-closed private JWK decoder.
+- Shared test isolation, capability-oriented contract suites, current-source documentation, and an explicit artifact policy reduce proof maintenance cost.
+
+### What Worked
+- Sequencing release proof, quality baselines, runtime boundaries, token cohesion, then readability let each phase consume stronger foundations from the previous one.
+- Architecture fitness tests turned subtle host-Repo/storage ownership rules into executable constraints instead of review conventions.
+- The final integration pass proved all 21 expected connections and all 6 representative flows, catching aggregate-reporting drift without finding product blockers.
+
+### What Was Inefficient
+- Phase 126 and Phase 129 summaries omitted `requirements-completed` metadata, so 10 behaviorally satisfied requirements could not achieve full three-source audit triangulation.
+- Nyquist was enabled but no Phase 126-130 `VALIDATION.md` reconciliation files existed, leaving a proof-process gap at closeout.
+- The milestone archiver reported zero tasks because these plan files did not expose task totals in the format it aggregates; the historical summary required correction to the verified 63-task count.
+
+### Patterns Established
+- Release publication must be tied to the exact immutable commit whose CI evidence is inspected, followed by independent installed-artifact proof.
+- Treat host Ecto repos and Lockspire storage adapters as different dependency types and enforce that distinction with narrow ports plus AST/runtime tests.
+- Split large proof suites by capability while retaining one shared test-only isolation layer and executable no-loss inventories.
+
+### Key Lessons
+1. Behavioral verification and metadata completeness are separate deliverables; both must be normalized before milestone audit to avoid preventable `tech_debt` verdicts.
+2. Architectural boundaries become durable when production indirection and regression fitness tests land together.
+3. Aggregate planning tools need their own closeout sanity checks even when every underlying phase report passes.
+
+### Cost Observations
+- Model mix: not recorded.
+- Notable: The milestone closed with accepted non-blocking proof debt; behavior, integration, and representative flows all passed.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.36 | N/A | 5 | Structural quality moved release, CI, architecture, token policy, and repository proof from convention to executable contracts. |
 | v1.32 | N/A | 5 | Admin UI quality moved from component stress to page-first IA and interaction proof. |
 | v1.31 | N/A | 5 | Admin UI quality moved from page polish to source-derived design-system stress contracts. |
 | v1.30 | N/A | 5 | Docker demo lifecycle and hygiene commands became source-contracted maintainer surfaces. |
@@ -203,6 +242,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.36 | Exact-ref release contracts, quality gates, architecture fitness tests, Dialyzer, split proof suites, and final integration flows | 73% floor | Storage ports/services, lifetime policy, private JWK decoder, shared isolation helpers |
 | v1.32 | ExUnit/LiveView/LazyHTML rendered route proof, source contracts, parsed browser evidence, docs, and adversarial artifacts | High | Route scorecards, BrowserEvidence parser, redaction-safe proof matrix extensions |
 | v1.31 | ExUnit/LiveView/LazyHTML source, rendered component, mounted route, docs, and package-boundary guardrails | High | Test-only admin lab fixtures, stress surface, and HTML assertion helpers |
 | v1.30 | Docker/source/docs/hygiene contracts plus smoke wrapper proof | High | POSIX shell lifecycle helpers and deterministic CI source checks |
@@ -217,3 +257,4 @@
 4. **Demo Lifecycle Contracts:** Maintainer-facing Docker scripts need the same source-contract and redaction discipline as protocol-facing code.
 5. **Design-System Stress Before Polish:** Real component labs with hostile fixture data make reusable UI improvements safer than isolated route edits.
 6. **Proof Artifacts Need Parsers:** Manual/browser evidence becomes more reliable when closeout tests parse structured rows and enforce redaction, viewport, and gap fields.
+7. **Metadata Is Part of Verification:** Passing behavior is not enough for durable project memory; summary frontmatter and Nyquist reconciliation must close with the implementation.
