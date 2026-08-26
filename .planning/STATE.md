@@ -6,9 +6,9 @@ current_phase: 130
 current_phase_name: readable code and sustainable proof
 status: complete
 stopped_at: Completed v1.36 Structural Quality Ratchet
-last_updated: "2026-08-26T15:40:32.049Z"
+last_updated: "2026-08-26T18:48:54.131Z"
 last_activity: 2026-08-26
-last_activity_desc: Completed Phase 130 and v1.36 final quality proof
+last_activity_desc: "Completed quick task 260826-kkr: Normalize v1.36 verification reports to canonical frontmatter and fix Phase 126 aggregate summary counting"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md
 Phase: 130 of 130 (Readable Code & Sustainable Proof)
 Plan: Complete
 Status: Milestone complete
-Last activity: 2026-08-26 — Final quality proof passed; Phase 130 and v1.36 complete
+Last activity: 2026-08-26 — Completed quick task 260826-kkr: Normalize v1.36 verification reports to canonical frontmatter and fix Phase 126 aggregate summary counting
 
 ## Completed Ad Hoc Work
 
@@ -207,6 +207,7 @@ Last activity: 2026-08-26 — Final quality proof passed; Phase 130 and v1.36 co
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260604-fpq | close v1.29 audit gaps from .planning/v1.29-MILESTONE-AUDIT.md | 2026-06-04 | docs-only | [260604-fpq-close-v1-29-audit-gaps-from-planning-v1-](./quick/260604-fpq-close-v1-29-audit-gaps-from-planning-v1-/) |
+| 260826-kkr | Normalize v1.36 verification reports to canonical frontmatter and fix Phase 126 aggregate summary counting | 2026-08-26 | c369d86 | [260826-kkr-normalize-v1-36-verification-reports-to-](./quick/260826-kkr-normalize-v1-36-verification-reports-to-/) |
 
 ## Session Continuity
 
