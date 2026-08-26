@@ -404,14 +404,19 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ "--all"
     assert source =~ ~r/docker compose .*--project-name "\$project".* down/
 
-    volume_suffixes =
-      ~r/\b(db_data|deps_volume|build_volume)\b/
+    # The database target is interpolated as `${project}_db_data`; `_` is a word
+    # character, so a word-boundary scan would miss it. Keep the explicit target
+    # assertion separate from the cache suffix loop the script owns.
+    assert source =~ "${project}_db_data"
+
+    cache_suffixes =
+      ~r/\b(deps_volume|build_volume)\b/
       |> Regex.scan(source, capture: :all_but_first)
       |> List.flatten()
       |> Enum.uniq()
       |> Enum.sort()
 
-    assert volume_suffixes == ["build_volume", "db_data", "deps_volume"]
+    assert cache_suffixes == ["build_volume", "deps_volume"]
     assert source =~ "reset_db=1"
     assert source =~ "reset_cache=1"
 
