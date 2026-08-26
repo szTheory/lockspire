@@ -2,9 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.37
 milestone_name: Prime-Time Readiness Ratchet
+current_phase: 131
+current_phase_name: Executable Installation
 status: planning
-last_updated: "2026-08-26T20:26:29.617Z"
+stopped_at: Phase 131 UI-SPEC approved
+last_updated: "2026-08-26T20:40:54.364Z"
 last_activity: 2026-08-26
+last_activity_desc: v1.37 roadmap created
 progress:
   total_phases: 7
   completed_phases: 0
@@ -51,6 +55,6 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-08-26
-Stopped at: Milestone roadmap created; Phase 131 is ready for detailed planning.
-Resume file: None
+Last session: 2026-08-26T20:40:54.359Z
+Stopped at: Phase 131 UI-SPEC approved
+Resume file: .planning/phases/131-executable-installation/131-UI-SPEC.md
