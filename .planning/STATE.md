@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: null
-current_phase: null
-status: awaiting_next_milestone
-stopped_at: Docker/admin UI DX sustaining patch completed; awaiting next scoped milestone
-last_updated: "2026-07-10T22:25:12Z"
-last_activity: 2026-07-10
-last_activity_desc: Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
+milestone: v1.36
+milestone_name: Structural Quality Ratchet
+status: planning
+last_updated: "2026-08-26T14:29:56.261Z"
+last_activity: 2026-08-26
 progress:
   total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
-current_phase_name: null
 ---
 
 # Project State
@@ -29,10 +25,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: No active feature milestone
-Plan: -
-Status: Awaiting next milestone
-Last activity: 2026-07-10 - Docker/adoption demo DX and operator admin login-flow hardening completed after ops-account browser UAT
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-08-26 — Milestone v1.36 started
 
 ## Completed Ad Hoc Work
 

@@ -1,33 +1,82 @@
 # Lockspire Roadmap
 
-## Current Milestone
+## Current Milestone: v1.36 Structural Quality Ratchet
 
-No active feature milestone. Lockspire is back on the sustaining GA release train until concrete adopter, support, or release evidence justifies another scoped milestone.
+**Goal:** Raise Lockspire's correctness, release safety, architectural clarity, static-analysis signal, compatibility proof, and readability through high-yield structural improvements without new public behavior.
 
-Start the next milestone with `/gsd-new-milestone`.
+## Phases
 
-## Recently Landed Mainline Milestone Records
+- [ ] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
+- [ ] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
+- [ ] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
+- [ ] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
+- [ ] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
 
-The 2026-06-30 implementation pass and 2026-07-01 release-hygiene merge landed these records on `main` through PR #58. They are mainline readiness work, not separate Hex releases yet:
+## Phase Details
 
-- [v1.33 OSS Adoption Trust](milestones/v1.33-ROADMAP.md) - public/admin router separation, verifier truth, package hygiene, and adoption-demo support-boundary repairs.
-- [v1.34 Prefix-Isolated Storage](milestones/v1.34-ROADMAP.md) - default generated `lockspire` PostgreSQL schema, prefix-aware migrations/runtime queries, Oban prefixing, example app, and upgrade docs.
-- [v1.35 CI/CD Efficiency And Release Hygiene](milestones/v1.35-ROADMAP.md) - duplicate CI work removal, minimum supported Elixir/OTP compatibility job, release cache precision, Dialyzer opt-in, and package hygiene proof.
+### Phase 126: Trusted Release Path
+
+**Goal:** A release is publishable only when its exact immutable main commit has passed CI, and the published package is independently installable.
+**Requirements:** RELEASE-01, RELEASE-02, RELEASE-03, SUPPLY-01, SUPPLY-02, CI-01
+**Success criteria:**
+1. Release-PR merge waits for a successful CI run whose `head_sha` is the exact publish ref.
+2. Manual recovery validates immutable main ancestry and matching CI metadata without shell-injecting inputs.
+3. GitHub release, Hex publish, and post-publish install truth form one auditable flow.
+4. Release automation dependencies, actions, images, timeouts, workflow lint, shell lint, and lock checks fail safely.
+
+### Phase 127: Executable Quality Baselines
+
+**Goal:** Quality and compatibility claims are measured in required CI lanes rather than held as conventions.
+**Requirements:** STATIC-01, COVER-01, COMPAT-01, COMPAT-02
+**Success criteria:**
+1. Credo cannot silently skip source files.
+2. CI enforces the measured repository coverage baseline.
+3. The minimum BEAM lane exercises PostgreSQL 14.
+4. A committed fixture compiles against Phoenix 1.8.5 and LiveView 1.1.28.
+
+### Phase 128: Runtime Dependency Truth
+
+**Goal:** Ordinary host repos and Lockspire storage adapters are never confused, and persistence boundaries are executable.
+**Requirements:** RUNTIME-01, RUNTIME-02, ARCH-01, ARCH-02, ARCH-03
+**Success criteria:**
+1. Protocol fallback paths work with an ordinary host Ecto Repo, including CIBA Push JWT/ID token issuance.
+2. Narrow ports own client, logout, IAT, transaction, and audit operations required by protocol/admin services.
+3. DCR and admin modules do not reach through those boundaries with direct schema queries.
+4. AST/runtime fitness tests fail on future boundary violations.
+
+### Phase 129: Token Endpoint Cohesion
+
+**Goal:** Grant orchestration is understandable behind the stable facade, while shared security policy has one fail-closed implementation.
+**Requirements:** RUNTIME-03, RUNTIME-04, ARCH-04, STATIC-02
+**Success criteria:**
+1. Grant-specific coordinators reduce `TokenExchange` complexity without changing its public API or structs.
+2. One internal policy owns existing token lifetime defaults.
+3. Every signing path uses one fail-closed private-key decoder.
+4. Dialyzer is a cached required CI gate with zero warnings and no blanket ignore file.
+
+### Phase 130: Readable Code & Sustainable Proof
+
+**Goal:** The repository is a joy to read and its quality proof is cheaper to maintain without deleting evidence.
+**Requirements:** TEST-01, TEST-02, CI-02, READ-01, READ-02, CLEAN-01
+**Success criteria:**
+1. Shared test helpers own sandbox and application-env restoration patterns.
+2. Large token, release, and admin contract tests are split along capability boundaries.
+3. CI timing evidence justifies any duplicate test-work removal.
+4. Runtime planning markers and obsolete scratch files are gone; retained screenshots have a documented policy.
+5. Docs and walkthrough contracts derive from current source/public structures.
+
+## Requirement Coverage
+
+| Phase | Requirements | Count |
+|-------|--------------|-------|
+| 126 | RELEASE-01, RELEASE-02, RELEASE-03, SUPPLY-01, SUPPLY-02, CI-01 | 6 |
+| 127 | STATIC-01, COVER-01, COMPAT-01, COMPAT-02 | 4 |
+| 128 | RUNTIME-01, RUNTIME-02, ARCH-01, ARCH-02, ARCH-03 | 5 |
+| 129 | RUNTIME-03, RUNTIME-04, ARCH-04, STATIC-02 | 4 |
+| 130 | TEST-01, TEST-02, CI-02, READ-01, READ-02, CLEAN-01 | 6 |
+
+**Total:** 25/25 requirements mapped.
 
 ## Shipped Milestones
 
-- [v1.32 Admin Page IA & Interaction Model Polish](milestones/v1.32-ROADMAP.md) - shipped 2026-06-30; phases 121-125; route scorecards, Support and Operate flow polish, Configure propagation, redaction-safe fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and adversarial proof now make the admin/operator UI more deliberately composed without protocol, storage, host-seam, public lab, theming, browser-tooling, or support-surface creep.
-- [v1.31 Admin Design-System Stress Test](milestones/v1.31-ROADMAP.md) - shipped 2026-06-26; phases 116-120; route/component/lab inventory, redaction-safe fixtures, shared admin primitives, weak-page IA/copy polish, source-derived browser proof, deterministic guardrails, bounded operator docs, and final adversarial signoff now strengthen the admin/operator design system without protocol, storage, host-seam, public lab, theming, or browser-tooling creep.
-- [v1.30 Adoption Demo Docker DX & Repo Hygiene](milestones/v1.30-ROADMAP.md) - shipped 2026-06-24; phases 111-115; the repo-local adoption demo now has one public URL contract, a direct Docker app+PostgreSQL path, conflict-resistant project/port controls, optional Traefik routing, redacted startup/reprint output, wrapper-driven smoke proof, scoped stop/reset/cleanup helpers, Docker-free CI hygiene, and no broadened protocol or hosted-auth surface.
-- [v1.29 Admin UI Journey & Design-System Deep Polish](milestones/v1.29-ROADMAP.md) - shipped 2026-06-04; phases 107-110; route-by-route admin journeys, shared BEM/design-token primitives, weak-spot support/operations/configuration polish, demo seed truth, docs, screenshots, contract tests, and 390px mobile no-page-overflow proof now align across the admin operator surface.
-- [v1.28 Admin UI Operator Experience Polish](milestones/v1.28-ROADMAP.md) - shipped 2026-06-03; phases 103-106; admin UI operator journeys, shared BEM/design-token primitives, client/support/operations/security/DCR/key workflow polish, demo seed truth, operator docs, screenshots, and design-system contract tests now align as one coherent operator product.
-- [v1.27 Phoenix Resource Server Token Acceptance](milestones/v1.27-ROADMAP.md) - shipped 2026-06-03; phases 97-102; `Lockspire.Plug.VerifyToken` narrowed to RFC 9068 `at+jwt`, default access-token issuance flipped to `:jwt`, sender-constraint proof delivered, adoption-demo re-wired, and generated-host scaffolding updated.
-- [v1.26 Host Integration & Operator Boundary Hardening](milestones/v1.26-ROADMAP.md) - shipped 2026-05-27; phases 94-96; generated host scaffolding now shows a host-guarded admin-only mount, account/claims integration stays narrow and host-owned, first-client bootstrap guidance is clearer, and adopter docs include a compact SaaS adoption recipe without adding protocol breadth.
-- [v1.25 Support-Burden Reduction](milestones/v1.25-ROADMAP.md) - shipped 2026-05-26; phases 91-93; remote `jwks_uri` diagnostics, advanced-setup support truth, and regression proof now align across runtime, doctor, admin, and docs without broadening Lockspire's embedded-library scope.
-- [v1.24 client_secret_jwt](milestones/v1.24-ROADMAP.md) - shipped 2026-05-25; phases 88-90; Lockspire supports a narrow `client_secret_jwt` direct-client slice on shipped Lockspire-owned endpoints with sealed verifier material, strict HS256/replay/audience posture, and truthful DCR/discovery/admin/docs support.
-- [v1.23 DCR Logout Metadata](milestones/v1.23-ROADMAP.md) - shipped 2026-05-24; phases 85-87; self-service clients can create, read, and replace Lockspire's existing logout propagation metadata through DCR and RFC 7592 without widening the logout truth model.
-- [v1.22 DPoP Nonce Support](milestones/v1.22-ROADMAP.md) - shipped 2026-05-24; phases 82-84; automatic `DPoP-Nonce` challenge and retry support covers Lockspire-owned `/token`, Lockspire-owned protected resources, and the shipped host Phoenix protected-route pipeline.
-
-## Archives
-
-Full shipped milestone details live in `.planning/milestones/`.
+Full prior milestone details live in `.planning/milestones/`, including [v1.35 CI/CD Efficiency And Release Hygiene](milestones/v1.35-ROADMAP.md), [v1.34 Prefix-Isolated Storage](milestones/v1.34-ROADMAP.md), and [v1.33 OSS Adoption Trust](milestones/v1.33-ROADMAP.md).
