@@ -29,6 +29,13 @@
 
 **Goal:** Quality and compatibility claims are measured in required CI lanes rather than held as conventions.
 **Requirements:** STATIC-01, COVER-01, COMPAT-01, COMPAT-02
+**Plans:** 3 plans
+
+Plans:
+- [ ] 127-01-PLAN.md — Make Credo parse coverage fail closed through the existing qa gate.
+- [ ] 127-02-PLAN.md — Exercise PostgreSQL 14 and compile an exact Phoenix/LiveView lower-bound fixture.
+- [ ] 127-03-PLAN.md — Ratchet the measured built-in ExUnit coverage floor in Fast Checks.
+
 **Success criteria:**
 
 1. Credo cannot silently skip source files.
