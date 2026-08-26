@@ -3,6 +3,8 @@
 **/node_modules/
 /examples/*/_build/
 /examples/*/deps/
+/test/fixtures/*/_build/
+/test/fixtures/*/deps/
 /.elixir_ls/
 /.DS_Store
 **/.DS_Store
