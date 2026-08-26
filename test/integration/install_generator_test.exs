@@ -134,9 +134,15 @@ defmodule Lockspire.InstallGeneratorTest do
              Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
            ) =~ "name=\"decision\" value=\"deny\""
 
-    assert File.read!(
-             Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
-           ) =~ "/interactions/\#{interaction_id}/complete"
+    consent_live =
+      File.read!(
+        Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
+      )
+
+    assert consent_live =~ "ConsentContext.load"
+    assert consent_live =~ "phx-trigger-action"
+    refute consent_live =~ "params[\"client_name\"]"
+    refute consent_live =~ "interaction_id}</code>"
 
     assert File.read!(
              Path.join(
@@ -272,6 +278,11 @@ defmodule Lockspire.InstallGeneratorTest do
     admin_route = Enum.at(routes, admin_index)
     assert admin_route.plug == Lockspire.Web.AdminRouter
 
+    consent_route = Enum.find(routes, &(&1.path == "/lockspire/consent/:interaction_id"))
+
+    assert consent_route.metadata[:phoenix_live_view] |> elem(0) ==
+             GeneratedHostAppWeb.LockspireConsentLive
+
     assert_raise CompileError, fn ->
       Code.compile_string("""
       defmodule GeneratedHostAppWeb.RouterWithoutOperator do
@@ -286,6 +297,26 @@ defmodule Lockspire.InstallGeneratorTest do
       end
       """)
     end
+  end
+
+  test "the installer-rendered consent LiveView matches and compiles as the executable fixture" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    rendered_path =
+      Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
+
+    rendered = File.read!(rendered_path)
+
+    assert rendered ==
+             File.read!(Path.join(@runtime_fixture_root, "live/lockspire_consent_live.ex"))
+
+    module = GeneratedHostAppWeb.LockspireConsentLive
+    :code.purge(module)
+    :code.delete(module)
+
+    assert [{^module, _binary}] = Code.compile_string(rendered, rendered_path)
   end
 
   test "rendered config and account resolver compile against the public host seam" do

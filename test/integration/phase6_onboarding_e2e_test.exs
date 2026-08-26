@@ -5,6 +5,7 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
   @endpoint GeneratedHostAppWeb.Endpoint
 
   import Phoenix.ConnTest
+  import Phoenix.LiveViewTest
   import Plug.Conn
 
   alias Lockspire.Domain.Client
@@ -14,7 +15,8 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
   setup_all do
     Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
       secret_key_base: String.duplicate("a", 64),
-      server: false
+      server: false,
+      live_view: [signing_salt: "generated_host_salt"]
     )
 
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -135,12 +137,23 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     assert resumed_consent_conn.status in [302, 303]
     assert redirected_to(resumed_consent_conn) == "/lockspire/consent/#{interaction_id}"
 
+    assert {:ok, consent_live, consent_html} =
+             live(
+               signed_in_conn("generated-host-user", 30),
+               "/lockspire/consent/#{interaction_id}"
+             )
+
+    assert consent_html =~ "Generated Host App"
+    assert consent_html =~ "Approve access"
+    refute consent_html =~ "<code>"
+
+    approve_form = form(consent_live, "#approve-consent", %{"remember" => "true"})
+    submission_html = render_submit(approve_form)
+    assert submission_html =~ "phx-trigger-action"
+    assert submission_html =~ "disabled"
+
     consent_complete_conn =
-      signed_in_conn("generated-host-user", 30)
-      |> post("/lockspire/interactions/#{interaction_id}/complete", %{
-        "decision" => "approve",
-        "remember" => "true"
-      })
+      follow_trigger_action(approve_form, signed_in_conn("generated-host-user", 30))
 
     assert consent_complete_conn.status in [302, 303]
 

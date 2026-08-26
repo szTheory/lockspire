@@ -59,6 +59,16 @@ defmodule GeneratedHostAppWeb.Router.Lockspire do
         forward("/", Lockspire.Web.AdminRouter)
       end
 
+      # This host-owned LiveView is intentionally defined before Lockspire's
+      # public forward. It inherits the host browser pipeline and presentation
+      # while obtaining all protocol facts from Lockspire.Web.ConsentContext.
+      import Phoenix.LiveView.Router
+
+      scope "/lockspire", GeneratedHostAppWeb do
+        pipe_through([:browser])
+        live("/consent/:interaction_id", LockspireConsentLive, :show)
+      end
+
       scope "/" do
         forward("/lockspire", Lockspire.Web.Router)
       end

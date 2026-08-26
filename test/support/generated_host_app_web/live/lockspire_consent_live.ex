@@ -1,4 +1,8 @@
-defmodule <%= @consent_live_module %> do
+# Host-owned Lockspire seam
+# Lockspire generates this file once, but your app owns the ongoing logic, UX, claims, and policy here.
+# If you customize this file, keep those edits and reconcile future changes manually.
+
+defmodule GeneratedHostAppWeb.LockspireConsentLive do
   @moduledoc """
   Host-owned presentation for a Lockspire consent interaction.
 
@@ -55,29 +59,29 @@ defmodule <%= @consent_live_module %> do
         </p>
       </header>
 
-      <%%= if @requested_scopes == [] do %>
+      <%= if @requested_scopes == [] do %>
         <p>This application did not request any additional permissions.</p>
-      <%% else %>
+      <% else %>
         <section>
           <h2>Requested permissions</h2>
           <ul>
-            <%%= for scope <- @requested_scopes do %>
+            <%= for scope <- @requested_scopes do %>
               <li>{scope}</li>
-            <%% end %>
+            <% end %>
           </ul>
         </section>
-      <%% end %>
+      <% end %>
 
-      <%%= if @authorization_detail_types != [] do %>
+      <%= if @authorization_detail_types != [] do %>
         <section>
           <h2>Requested access types</h2>
           <ul>
-            <%%= for type <- @authorization_detail_types do %>
+            <%= for type <- @authorization_detail_types do %>
               <li>{type}</li>
-            <%% end %>
+            <% end %>
           </ul>
         </section>
-      <%% end %>
+      <% end %>
 
       <form
         id="approve-consent"
