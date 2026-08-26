@@ -16,7 +16,6 @@ defmodule <%= @resolver_module %> do
   """
 <% end %>
 
-  alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
 
   @impl true
@@ -55,9 +54,13 @@ defmodule <%= @resolver_module %> do
     Typical shape:
 
         {:ok,
-         %Claims{
+         %Lockspire.Host.Claims{
            subject: "user:" <> to_string(account.id),
-           claims: %{
+           id_token: %{
+             "email" => account.email,
+             "name" => account.name
+           },
+           userinfo: %{
              "email" => account.email,
              "name" => account.name
            }
