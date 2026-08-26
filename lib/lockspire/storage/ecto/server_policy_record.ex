@@ -19,20 +19,20 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       default: :none
     )
 
-    # FORMAT-01: server-wide default token shape. Pitfall 6: this Ecto.Enum MUST pair
-    # with the :text column from the Plan 99-01 migration, or code pattern-matching on
+    # Server-wide default token shape. This Ecto.Enum MUST pair with the :text column,
+    # or code pattern-matching on
     # :jwt silently fails because the persisted value is the string "jwt". Default :jwt.
     field(:access_token_format, Ecto.Enum, values: [:jwt, :opaque], default: :jwt)
 
-    # D-05: tri-state Ecto.Enum cast against the text column from Plan 02 migration.
-    # Pitfall 4: every text-enum column MUST have a matching Ecto.Enum field, or code
+    # Tri-state Ecto.Enum cast against the text column. Every text-enum column MUST
+    # have a matching Ecto.Enum field, or code
     # pattern-matching on :disabled silently fails because the value is "disabled".
     field(:registration_policy, Ecto.Enum,
       values: [:disabled, :initial_access_token, :open],
       default: :disabled
     )
 
-    # D-06: 6 array allowlists. Ecto array of :string maps to {:array, :text} on disk.
+    # 6 array allowlists. Ecto array of :string maps to {:array, :text} on disk.
     field(:dcr_allowed_scopes, {:array, :string}, default: [])
     field(:dcr_allowed_grant_types, {:array, :string}, default: [])
     field(:dcr_allowed_response_types, {:array, :string}, default: [])
@@ -40,7 +40,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
     field(:dcr_allowed_redirect_uri_hosts, {:array, :string}, default: [])
     field(:dcr_allowed_token_endpoint_auth_methods, {:array, :string}, default: [])
 
-    # D-06: 3 nullable lifetime integers (Phase 26 falls back to global defaults when nil).
+    # Nullable values fall back to global lifetime defaults.
     field(:dcr_default_client_lifetime_seconds, :integer)
     field(:dcr_default_client_secret_lifetime_seconds, :integer)
     field(:dcr_default_registration_access_token_lifetime_seconds, :integer)

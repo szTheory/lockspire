@@ -3,20 +3,16 @@ defmodule Lockspire.Domain.InitialAccessToken do
   Durable initial access token used to gate `POST /register` when
   `Lockspire.Domain.ServerPolicy.registration_policy == :initial_access_token`.
 
-  Hash-at-rest reuses `Lockspire.Security.Policy.hash_token/1` (sha256 lowercase hex).
-  Plaintext is shown once at mint time only (Phase 28 admin LiveView; out of scope for Phase 25).
+  Hash-at-rest reuses `Lockspire.Security.Policy.hash_token/1` (SHA-256 lowercase hex).
+  Plaintext is shown once at mint time only. Redemption is atomic because the token hash
+  is unique and the storage adapter locks the row before updating its lifecycle state.
 
-  Phase 25 ships **schema + struct only** — `Lockspire.Protocol.InitialAccessToken.redeem/1`
-  is Phase 26 (DCR-11). Atomicity for redemption depends on the `unique_index([:token_hash])`
-  shipped in Plan 03's `lockspire_initial_access_tokens` migration.
-
-  ## `policy_overrides` boundary (T-25-05)
+  ## `policy_overrides` boundary
 
   This struct's `policy_overrides` field carries operator-controlled JSON narrowing the
-  effective DCR allowlists for any registration that uses this IAT. Phase 25 ships the
-  field as opaque storage — narrowing-at-mint validation (override ⊆ server allowlist)
-  is a Phase 28 admin-path concern. The `Lockspire.Protocol.DcrPolicy.resolve/3` resolver
-  (Plan 07) does NOT re-validate widening at resolve time per D-18: if a stale override
+  effective DCR allowlists for any registration that uses this IAT. The admin mint path
+  validates that overrides narrow the server allowlist. The
+  `Lockspire.Protocol.DcrPolicy.resolve/3` resolver also remains fail-closed: if a stale override
   carries an out-of-allowlist value (e.g., policy was tightened after IAT mint),
   `MapSet.intersection/2` naturally drops it — never widens.
   """
@@ -36,10 +32,10 @@ defmodule Lockspire.Domain.InitialAccessToken do
     - "allowed_redirect_uri_hosts"
     - "allowed_token_endpoint_auth_methods"
 
-  Pinning the shape here lets Dialyzer catch drift between admin-mint (Phase 28) and
-  resolve-time (Phase 25 `Lockspire.Protocol.DcrPolicy.resolve/3`). A malformed
+  Pinning the shape here lets Dialyzer catch drift between admin minting and
+  `Lockspire.Protocol.DcrPolicy.resolve/3`. A malformed
   `%{atom_key: "string"}` would silently bypass every override under the looser
-  `map() | nil` typespec — see DCR-09 and the WR-09 follow-up invariant test (Phase 28).
+  `map() | nil` typespec.
   """
   @type policy_overrides :: %{optional(String.t()) => [String.t()]}
 

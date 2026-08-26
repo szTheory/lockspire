@@ -1,6 +1,6 @@
 defmodule Lockspire.Clients do
   @moduledoc """
-  Durable client registration API for secure Phase 2 client onboarding.
+  Durable client registration API for secure client onboarding.
   """
 
   alias Lockspire.Clients.RegistrationResult

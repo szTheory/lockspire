@@ -313,7 +313,7 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
 
       custom_claims when is_map(custom_claims) ->
         # Delegate all at+jwt signing to the shared module. issue_exchange/4 keeps
-        # the exchange carve-out: a bare-STRING aud == client_id (AUD-03) and the
+        # the exchange carve-out: a bare-string aud == client_id and the
         # custom-claim merge with the iss/sub/aud/exp/iat/jti/client_id drop.
         token = %Token{
           token_type: :access_token,

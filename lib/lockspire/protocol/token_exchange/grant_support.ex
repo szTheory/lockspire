@@ -674,7 +674,7 @@ defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
   # Test-only public delegate for validate_grant_resources/2. The device/CIBA
   # invalid_target rejection branch is only reachable when a grant carries a
   # recorded authorized audience; device/CIBA grants carry none through the public
-  # flow today, so this seam lets the suite prove the rejection guard (T-99-11)
+  # flow today, so this seam lets the suite prove the rejection guard
   # against a grant token seeded with a recorded audience.
   @spec validate_grant_resources_for_test(map(), Token.t()) ::
           {:ok, [String.t()]} | {:error, Error.t()}
@@ -682,14 +682,14 @@ defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
     validate_grant_resources(params, grant)
   end
 
-  # AUD-01/AUD-02 for the device and CIBA grant paths. Mirrors the AC
+  # Resource validation for the device and CIBA grant paths mirrors the authorization-code
   # validate_requested_resources/2 shape (List.wrap, keep binaries, membership
   # against the grant's authorized audience) with one carve-out: device and CIBA
   # grants carry no recorded audience today (build_device_grant/build_ciba_grant),
   # so an empty authorized set accepts any binary resource — matching the AC
   # `requested == [] -> {:ok, authorized}` default semantics. When a grant DOES
   # carry a recorded audience, an out-of-set resource is rejected with
-  # invalid_target (:invalid_resource, 400) — the T-99-11 audience-confusion guard.
+  # invalid_target (:invalid_resource, 400), preventing audience confusion.
   defp validate_grant_resources(params, %Token{} = grant) do
     requested =
       params
@@ -1472,11 +1472,11 @@ defmodule Lockspire.Protocol.TokenExchange.GrantSupport do
       expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
     }
 
-    # SIGNER-01: mint through the shared signer. The signer resolves the effective
+    # Mint through the shared signer. The signer resolves the effective
     # format (per-client override -> server default -> :jwt) and returns the raw
-    # token plus its hash. We re-point %Token{}.token_hash to the signer's hash so
-    # introspection/revocation by hash resolves regardless of the issued format
-    # (Pitfall 1 / T-99-12), preserving the internal {%Token{}, raw} 2-tuple.
+    # token plus its hash. Re-point `%Token{}.token_hash` to the signer's hash so
+    # introspection and revocation work regardless of issued format while preserving
+    # the internal `{%Token{}, raw}` tuple.
     case AccessTokenSigner.issue(access_token, client, request) do
       {:ok, raw_access_token, token_hash} ->
         {%Token{access_token | token_hash: token_hash}, raw_access_token}

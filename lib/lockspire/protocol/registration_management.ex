@@ -11,7 +11,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   All three functions accept `(client_id_from_url, %Domain.Client{} ...)` where `client` is the
   row matched by `Repository.get_client_by_registration_access_token_hash/1`. URL/RAT mismatches
   ALWAYS collapse to `{:error, :invalid_token}` — the discriminator stays in telemetry only,
-  defending against client-id enumeration (D-19).
+  defending against client-ID enumeration.
   """
 
   alias Lockspire.Admin

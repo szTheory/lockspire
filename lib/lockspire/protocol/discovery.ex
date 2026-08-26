@@ -32,10 +32,10 @@ defmodule Lockspire.Protocol.Discovery do
   ]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
-  # DISCOVERY-01: the fixed, truthful algs the active access-token signing key uses
+  # The fixed, truthful algorithms used by the active access-token signing key
   # (RFC 9068 `at+jwt`). A bare literal — NOT derived from
   # `SecurityProfile.allowed_signing_algorithms/1`, which returns the `:none`/`EdDSA`
-  # superset and only `["ES256","PS256"]` under FAPI (D-11, Pitfall 4). Published
+  # superset and only `["ES256","PS256"]` under FAPI. Published
   # unconditionally, mirroring the always-present `id_token_signing_alg_values_supported`.
   @access_token_signing_alg_values_supported ["RS256", "ES256", "PS256"]
   @introspection_supported_auth_methods [
@@ -48,12 +48,12 @@ defmodule Lockspire.Protocol.Discovery do
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
   issuer can advertise — the maximum set, irrespective of mounted-route truthfulness.
 
-  This is what the DCR invariant test (Phase 25) pins against because it must remain a
+  DCR invariant tests pin this function because it must remain a
   pure 0-arity (no router lookup, no DB). It is the upper bound: the actually-published
   discovery document at `/.well-known/openid-configuration` may publish `[]` instead when
   the host app does not mount the `token_endpoint` route. Use
   `published_token_endpoint_auth_methods_supported/0` for the truth-based set; that is
-  what Phase 27's HTTP DCR surface MUST filter the resolver's accepted methods through.
+  the HTTP DCR surface MUST use to filter the resolver's accepted methods.
   """
   @spec token_endpoint_auth_methods_supported() :: [String.t()]
   def token_endpoint_auth_methods_supported, do: ClientAuth.supported_auth_method_names()

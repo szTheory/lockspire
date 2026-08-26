@@ -1247,7 +1247,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end)
   end
 
-  # Acceptance marker: def rotate_refresh_token(... expected_cnf
   @impl false
   def rotate_refresh_token(
         token_hash,

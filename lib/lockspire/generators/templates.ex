@@ -61,9 +61,7 @@ defmodule Lockspire.Generators.Templates do
         output: &"lib/#{&1.web_path}/controllers/lockspire_verification_html/index.html.heex",
         ownership: :host_owned
       },
-      # Plan 43-04: this brings Templates.all/0 to 12 entries (baseline 11 at the time
-      # this template was added). If a future plan adds another template, increment this
-      # comment and the corresponding length assertion in install_generator_test.exs.
+      # Keep the template inventory assertion in install_generator_test.exs synchronized.
       %{
         template: "fapi_smoke_e2e_test.exs",
         output: fn assigns ->

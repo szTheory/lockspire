@@ -3,9 +3,9 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
   Boundary fail-fast enforcer for FAPI 2.0 Security Profile.
 
   When the effective `security_profile` is `:fapi_2_0_security`, this Plug rejects:
-  - GET /authorize requests missing `request_uri` (FAPI-02 / PAR mandate)
-  - POST /token requests missing the `dpop` header (FAPI-03 / sender-constraining)
-  - GET-or-POST /userinfo requests missing the `dpop` header (FAPI-03 / resource access)
+  - GET /authorize requests missing `request_uri` (the PAR mandate)
+  - POST /token requests missing the `dpop` header (sender constraining)
+  - GET-or-POST /userinfo requests missing the `dpop` header (resource access)
 
   The Plug is exempt for `/par` (the PAR endpoint by definition has no `request_uri`)
   and bypasses any non-FAPI path. On unreachable ServerPolicy it fails CLOSED with 503.
@@ -15,9 +15,9 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlug do
   ## Implementation Notes
 
   - For /userinfo, enforcement is header-shape only (DPoP header presence + Authorization
-    scheme). No access token decode occurs in the Plug (see `<userinfo_strategy>` in plan).
-  - Per-client opt-in under global `:none` is supported (G1 scenario). Per-client `:none`
-    escape hatch under global `:fapi_2_0_security` is also supported (G2 / D-01).
+    scheme). No access token decode occurs in the Plug.
+  - Per-client opt-in under global `:none` is supported. A per-client `:none`
+    override under global `:fapi_2_0_security` is also supported.
   - The `policy_fn` opt in `init/1` is used in tests to simulate policy unavailability.
     In production, pass `[]` or `%{}` and the default `Repository.get_server_policy/0`
     function is used.

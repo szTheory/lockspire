@@ -7,7 +7,6 @@ defmodule Lockspire.Storage.ClientStore do
 
   @type store_error :: term()
 
-  # Acceptance marker: @callback register_client/1
   @callback register_client(Client.t()) :: {:ok, Client.t()} | {:error, store_error()}
   @callback list_clients(keyword()) :: {:ok, [Client.t()]} | {:error, store_error()}
   @callback fetch_client_by_id(String.t()) :: {:ok, Client.t() | nil} | {:error, store_error()}

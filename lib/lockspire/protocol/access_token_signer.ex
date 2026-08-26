@@ -120,7 +120,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   defp normalize_server_policy(_other), do: nil
 
   # --------------------------------------------------------------------------
-  # Audience derivation — D-08 + RFC 8693 carve-out
+  # Audience derivation, including the RFC 8693 carve-out
   # --------------------------------------------------------------------------
 
   @spec derive_aud([String.t()], String.t()) :: [String.t()]

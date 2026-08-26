@@ -88,7 +88,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
     rotated_at = now(request)
 
     # Build the rotated access token with the subject/scopes sourced from the
-    # presented refresh token (Pitfall 5: the rotated token's own account_id is
+    # presented refresh token (the rotated token's own account_id is
     # nil) so the signer derives a non-nil `sub` and a correct `scope` claim.
     access_token =
       build_rotated_access_token(
@@ -100,7 +100,7 @@ defmodule Lockspire.Protocol.RefreshExchange do
       )
 
     # Mint the at+jwt (or opaque, per format resolution) via the shared signer and
-    # re-point the persisted token_hash to the signer's hash (Pitfall 1).
+    # re-point the persisted token_hash to the signer's hash.
     with {:ok, raw_access_token, access_token_hash} <-
            AccessTokenSigner.issue(access_token, client, request) do
       access_token = %Token{access_token | token_hash: access_token_hash}
@@ -300,11 +300,11 @@ defmodule Lockspire.Protocol.RefreshExchange do
          requested_resources
        ) do
     %Token{
-      # token_hash is re-pointed to the signer's hash after minting (Pitfall 1).
+      # token_hash is re-pointed to the signer's hash after minting.
       token_hash: nil,
       token_type: :access_token,
       client_id: client.client_id,
-      # Pitfall 5: the rotated token's subject must come from the presented
+      # The rotated token's subject must come from the presented
       # refresh token, otherwise the minted JWT would carry `sub: nil`.
       account_id: source_token.account_id,
       consent_grant_id: source_token.consent_grant_id,

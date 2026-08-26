@@ -9,8 +9,8 @@ defmodule Lockspire.Protocol.DcrPolicy do
     3. Inbound RFC 7591 client metadata (what the registrant requested)
 
   Intersection-only: the resolver never widens any allowlist. IAT overrides are assumed
-  already-narrowed to ⊆ server allowlist at IAT-mint time (Phase 28 admin path enforces
-  this). If an out-of-allowlist override slips through (e.g. policy was tightened after
+  already narrowed to the server allowlist by the IAT mint path. If an out-of-allowlist
+  override remains (for example, policy was tightened after
   IAT mint), `MapSet.intersection/2` naturally drops it — never widens.
 
   Returns:
@@ -23,8 +23,8 @@ defmodule Lockspire.Protocol.DcrPolicy do
   Note on `redirect_uris` data carriage: the `Resolved` substruct exposes the deduplicated
   `allowed_redirect_uri_schemes` and `allowed_redirect_uri_hosts` axes (the resolver's
   job is bound-checking, not data carriage). The validated `redirect_uris` list itself is
-  NOT carried on `Resolved.t()`. Phase 26's intake validator and Phase 27's controller
-  take the original `inbound["redirect_uris"]` list directly once the resolver returns
+  NOT carried on `Resolved.t()`. The intake validator and controller take the original
+  `inbound["redirect_uris"]` list directly once the resolver returns
   `:ok`.
 
   Mirrors `Lockspire.Protocol.ParPolicy` shape (the only existing resolver precedent in
@@ -38,9 +38,9 @@ defmodule Lockspire.Protocol.DcrPolicy do
   %{reason: :not_in_allowlist, allowed: []}}`. The empty `allowed` list tells the
   registrant "no values are allowed" — not "the operator hasn't configured DCR yet."
 
-  This is intended secure-by-default behaviour (D-06: operator must explicitly populate)
-  but is operator-confusing if paired with `registration_policy != :disabled`. Phase 26's
-  intake validator should detect "registration_policy != :disabled AND every
+  This is intended secure-by-default behaviour: the operator must explicitly populate
+  allowlists. It can be confusing if paired with `registration_policy != :disabled`. The
+  intake validator detects "registration_policy != :disabled AND every
   dcr_allowed_* is `[]`" and emit a more informative error (`reason: :dcr_unconfigured`)
   to disambiguate from a legitimate per-axis allowlist rejection. Until then, operators
   diagnosing "every DCR request returns :not_in_allowlist with allowed: []" should check
@@ -83,8 +83,7 @@ defmodule Lockspire.Protocol.DcrPolicy do
   # `not is_struct(iat_overrides)` guard a caller could pass an `%InitialAccessToken{}`
   # struct directly (instead of `iat_struct.policy_overrides`) and the resolver would
   # silently treat the IAT as "no overrides" because `Map.get(struct, "allowed_scopes")`
-  # returns nil for atom-keyed struct fields. Phase 26's `redeem/1` integration would have
-  # this footgun if the guard were not tight here.
+  # returns nil for atom-keyed struct fields. The tight guard prevents that fail-open path.
   def resolve(%ServerPolicy{} = server_policy, iat_overrides, inbound_metadata)
       when (is_nil(iat_overrides) or
               (is_map(iat_overrides) and not is_struct(iat_overrides))) and

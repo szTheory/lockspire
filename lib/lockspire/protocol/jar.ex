@@ -93,10 +93,10 @@ defmodule Lockspire.Protocol.Jar do
     be parsed as a JWK or JWK Set by JOSE
   - `:invalid_typ` — the JWT protected header has a `typ` value other than
     `oauth-authz-req+jwt` or `jwt` (case-insensitive). RFC 9101 §10.8 cross-JWT-confusion
-    mitigation (T-22-01).
+    mitigation.
 
   Security: `alg=none` is never accepted. Only algorithms in the explicit allow-list are
-  permitted, mitigating T-21-03 (Spoofing) and T-21-04 (Tampering).
+  permitted, preventing unsigned spoofing and algorithm-confusion tampering.
   """
   @spec verify_signature(String.t(), Client.t(), [String.t()]) ::
           {:ok, t()}
@@ -163,7 +163,7 @@ defmodule Lockspire.Protocol.Jar do
   # Returns {:ok, %Jar{}} on the first successful verification.
   # Returns {:error, :invalid_signature} if all keys fail.
   # Returns {:error, :invalid_typ} immediately if the typ header is rejected — this is a
-  # definitive rejection, not a "try next key" situation (WR-01 / T-22-01).
+  # definitive rejection, not a "try next key" situation.
   defp verify_against_keys(jwt, public_keys, allowed_algorithms) do
     Enum.reduce_while(public_keys, {:error, :invalid_signature}, fn jwk, _acc ->
       case verify_with_single_jwk(jwt, jwk, allowed_algorithms) do
@@ -198,8 +198,8 @@ defmodule Lockspire.Protocol.Jar do
 
   # Permissive: absent typ allowed (RFC 9101 §10.8 SHOULD, not MUST).
   # Recognized values (case-insensitive): "oauth-authz-req+jwt" (canonical), "jwt" (legacy).
-  # Per CONTEXT.md D-11, anything else rejected as :invalid_typ — closes JWT-type confusion
-  # (RFC 9101 §10.8) the moment JAR is HTTP-reachable in Phase 22.
+  # Rejecting every other value as :invalid_typ closes JWT-type confusion at the
+  # HTTP boundary (RFC 9101 §10.8).
   defp check_typ(%{"typ" => typ}) when is_binary(typ) do
     if String.downcase(typ) in ["oauth-authz-req+jwt", "jwt"],
       do: :ok,
@@ -222,7 +222,7 @@ defmodule Lockspire.Protocol.Jar do
     time-based checks. Defaults to `0`.
   - `:max_age` (positive integer, seconds) — caps the time between `now` and `exp`.
     When set, returns `{:error, :expiration_too_far}` if `exp - now > max_age + leeway`.
-    When nil/absent, no ceiling is applied (preserves Phase 21 behavior).
+    When nil/absent, no ceiling is applied.
 
   Returns `:ok` on success, or `{:error, reason}` where `reason` is one of:
 
@@ -232,12 +232,12 @@ defmodule Lockspire.Protocol.Jar do
   - `:missing_expiration` / `:invalid_expiration` / `:expired_token` —
     `exp` claim missing, malformed, or in the past.
   - `:expiration_too_far` — `exp` is farther in the future than `:max_age + leeway`
-    permits (RFC 9101 replay-window mitigation, T-22-03).
+    permits (RFC 9101 replay-window mitigation).
   - `:invalid_not_before` — `nbf` is present but in the future.
   - `:invalid_issued_at` — `iat` is present but in the future.
 
-  Security: Mitigates T-21-05 (Repudiation) by binding requests to a specific
-  client via `iss`, and T-21-06 (Information Disclosure) by ensuring requests
+  Security: binds requests to a specific client via `iss` and prevents
+  cross-issuer disclosure by ensuring requests
   are intended for this AS via `aud`.
   """
   @spec validate_claims(t(), keyword()) :: :ok | {:error, validate_claims_reason()}

@@ -6,10 +6,10 @@ defmodule Lockspire.Protocol.RequestObject do
   Composes `Lockspire.Protocol.Jar.{decode/1, verify_signature/2, validate_claims/2}`
   into a single pipeline step that:
 
-  1. Rejects outer-param conflicts (D-04) and `request` / `request_uri` collisions (D-06).
-  2. Asserts the client has inline `jwks` registered (D-08).
+  1. Rejects outer-parameter conflicts and `request` / `request_uri` collisions.
+  2. Asserts the client has inline `jwks` registered.
   3. Decodes, verifies the signature, and validates the request JWT claims with the
-     configured `:max_age` ceiling (D-13).
+     configured `:max_age` ceiling.
   4. Projects JAR claims into the same flat-params shape `pushed_request_to_params/1`
      produces in `Lockspire.Protocol.AuthorizationRequest`, so `validate_with_client/3`
      runs unchanged.

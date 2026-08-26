@@ -41,7 +41,7 @@ defmodule Lockspire.Plug.VerifyToken do
       default: false,
       doc:
         "When true, init/1 raises if neither :audience nor :audiences is supplied. " <>
-          "Closes VERIFIER-06 cross-API token reuse on pipelines that declare audience enforcement (D-07)."
+          "Prevents cross-API token reuse on pipelines that declare audience enforcement."
     ]
   ]
 
@@ -57,7 +57,7 @@ defmodule Lockspire.Plug.VerifyToken do
          not Keyword.has_key?(opts, :audience) and
          not Keyword.has_key?(opts, :audiences) do
       raise ArgumentError,
-            "expected :audience or :audiences when :enforce_audience is true (D-07)"
+            "expected :audience or :audiences when :enforce_audience is true"
     end
 
     opts
@@ -84,7 +84,7 @@ defmodule Lockspire.Plug.VerifyToken do
     # RFC 7235 §2.1 requires `auth-scheme` to be compared case-insensitively
     # (RFC 6750 §2.1 confirms this for `Bearer`). Normalize the scheme to its
     # canonical casing so `challenge_from_scheme/1` keeps matching `"DPoP"`
-    # literally and the D-05 request-scheme tiebreaker honors `dpop`/`DPOP`.
+    # literally and the request-scheme tiebreaker honors `dpop`/`DPOP`.
     with [value | _] <- get_req_header(conn, "authorization"),
          [scheme, token] <- String.split(value, " ", parts: 2) do
       case String.downcase(scheme) do
@@ -98,23 +98,23 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp verify_token(token, authorization_scheme, opts) do
-    # Front-edge structural check (D-01): a token that does not split into exactly
+    # A token that does not split into exactly
     # three non-empty Base64URL segments by `.` short-circuits here with
     # reason_code: :opaque_token_not_accepted instead of falling through to JOSE
     # and being silently lumped under :malformed.
     if opaque_shape?(token) do
-      # D-05 row 3: opaque tokens have no parseable claims (and therefore no cnf
+      # Opaque tokens have no parseable claims (and therefore no cnf
       # binding), so the request's Authorization scheme is the only available
       # tiebreaker. A client presenting an opaque token with `Authorization: DPoP`
       # gets `challenge: :dpop`; with `Authorization: Bearer` (the default) gets
-      # `challenge: :bearer`. Plan 04 / VERIFIER-05.
+      # `challenge: :bearer`.
       error = opaque_token_error(challenge_for(nil, authorization_scheme))
       log_invalid_token(error, authorization_scheme)
 
-      # TELEMETRY-01 SITE B (opaque-rejection): emit at structural-format-decision
+      # Emit the opaque-rejection metric at structural-format-decision
       # time. Opaque tokens carry no parseable claims (and therefore no cnf
       # binding), so every metadata field except the literal hyphenated atom
-      # :"opaque-rejected" (D-07, external operator contract) is nil. Emitting
+      # :"opaque-rejected" (an external operator contract) is nil. Emitting
       # here keeps the :"opaque-rejected" count symmetric with the SITE A :jwt
       # count (both fire at format-decision time, before any restriction).
       emit_token_format(%{
@@ -138,10 +138,10 @@ defmodule Lockspire.Plug.VerifyToken do
     with {:ok, kid} <- extract_kid(token),
          {:ok, jwk} <- fetch_key(kid),
          {:ok, claims} <- verify_signature_and_claims(jwk, token, authorization_scheme) do
-      # TELEMETRY-01 SITE A (JWT-success): emit at format-confirmation time —
+      # Emit the JWT-success metric at format-confirmation time —
       # the `with` has verified the signature + RFC 9068 typ/claims, so the
       # token is a confirmed at+jwt. Emit BEFORE/independent of
-      # apply_restrictions/2 (Pitfall 4) so the :jwt count reflects "a JWT-format
+      # apply_restrictions/2 so the :jwt count reflects "a JWT-format
       # verification reached a format decision," not "fully authorized": a
       # structurally-valid at+jwt that fails the route's audience/scope check is
       # still a :jwt format and stays count-symmetric with SITE B. Audience is
@@ -164,7 +164,7 @@ defmodule Lockspire.Plug.VerifyToken do
       |> apply_restrictions(opts)
     else
       {:error, %{reason_code: _} = structured_error} ->
-        # D-04: structured-map error (e.g. the five RFC 9068 reason codes from
+        # structured-map error (e.g. the five RFC 9068 reason codes from
         # validate_rfc9068_compliance/2) propagates through to AccessToken.error
         # so RequireToken's WWW-Authenticate emission carries the distinct
         # error_description naming the violated rule.
@@ -190,7 +190,7 @@ defmodule Lockspire.Plug.VerifyToken do
   # Returns true when the token does NOT split into exactly three non-empty
   # Base64URL segments by `.`. Three-segment-but-bad inputs (e.g. "not.a.jwt")
   # return false so they continue to fall through to the existing JOSE path
-  # and classify as `:malformed`, preserving the contract documented in D-01.
+  # and classify as `:malformed`.
   defp opaque_shape?(token) when is_binary(token) do
     case String.split(token, ".", parts: 4) do
       [a, b, c] ->
@@ -216,10 +216,10 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp apply_restrictions(%AccessToken{} = access_token, opts) do
-    # D-05/D-06: read authorization_scheme from the in-flight access_token struct
+    # read authorization_scheme from the in-flight access_token struct
     # (set on line 118 of do_verify_token/3) rather than threading it through as
     # an extra arg. validate_audience/3 and validate_scopes/3 use it to derive
-    # the challenge: atom for any failure they emit per the four-row D-05 mapping.
+    # the challenge atom for any failure they emit according to the binding mapping below.
     authorization_scheme = access_token.authorization_scheme
 
     with :ok <- validate_audience(access_token.claims, opts, authorization_scheme),
@@ -328,12 +328,12 @@ defmodule Lockspire.Plug.VerifyToken do
     }
   end
 
-  # D-04: structured error map shape for the five RFC 9068 / RFC 8725 reason
+  # structured error map shape for the five RFC 9068 / RFC 8725 reason
   # codes that `validate_rfc9068_compliance/3` produces. Sibling of
   # `invalid_audience_error/3` so the structured-error taxonomy reads as one
   # unit. `challenge` is derived by `challenge_for/2` from the verified claims
-  # `cnf` binding (with the request Authorization scheme as tiebreaker per D-05
-  # row 3); see Plan 04 / VERIFIER-05.
+  # `cnf` binding, with the request Authorization scheme as a tiebreaker when
+  # the token has no binding claim.
   defp rfc9068_error(:invalid_typ, challenge) do
     %{
       category: :token_validation,
@@ -503,30 +503,30 @@ defmodule Lockspire.Plug.VerifyToken do
 
   defp binding_type(_claims), do: nil
 
-  # TELEMETRY-01 (D-03/D-04/D-05): emit the per-request RS verification
+  # Emit the per-request resource-server verification
   # token-format counter via a DIRECT :telemetry.execute/3 call. The measurement
-  # is the numeric map %{count: 1} (D-04); the categorical :jwt | :"opaque-rejected"
+  # is the numeric map %{count: 1}; the categorical :jwt | :"opaque-rejected"
   # value rides in metadata under token_format alongside client_id/audience/
   # binding_type.
   #
-  # This MUST NOT route through Lockspire.Observability.emit/4 (Pitfall 2):
+  # This MUST NOT route through Lockspire.Observability.emit/4:
   #   1. emit/4 double-emits a [:lockspire, :audit, ...] copy, flooding the audit
-  #      log on every protected request (T-102-05, DoS).
+  #      log on every protected request, creating a denial-of-service risk.
   #   2. emit/4 runs Redaction.for_telemetry, where Redaction.sanitize_value(nil, _)
   #      returns :drop — it would silently strip EVERY field of the all-nil
-  #      opaque-rejection metadata, hiding the reject signal (T-102-06).
+  #      opaque-rejection metadata, hiding the reject signal.
   #
-  # Security discipline (V7 / T-102-04): emit EXACTLY these four metadata keys —
+  # Emit exactly these four metadata keys —
   # never `token`, `claims`, `cnf`, or `jti`. The direct-execute path skips
   # redaction, so this call site IS the redaction discipline.
   defp emit_token_format(metadata) do
     :telemetry.execute([:lockspire, :rs, :token_format], %{count: 1}, metadata)
   end
 
-  # D-05 / D-06 (Plan 04 / VERIFIER-05): derive the `challenge:` atom used on
+  # derive the `challenge:` atom used on
   # every VerifyToken-produced structured error map from the verified claims'
   # `cnf` binding, with the request's Authorization scheme as a tiebreaker
-  # when the token has no `cnf` claim. The four-row D-05 mapping is:
+  # when the token has no `cnf` claim. The four-row mapping is:
   #
   #   1. Token has `cnf.jkt` (DPoP-bound, possibly also mTLS-bound)
   #      → `:dpop` — RFC 9449 §7.1 redefines the WWW-Authenticate scheme.
@@ -560,7 +560,7 @@ defmodule Lockspire.Plug.VerifyToken do
       has_dpop? -> :dpop
       has_mtls? -> :bearer
       # Empty cnf — no recognizable binding present; fall through to the
-      # request-scheme tiebreaker per D-05 row 3/4.
+      # request-scheme tiebreaker described above.
       true -> challenge_from_scheme(scheme)
     end
   end
@@ -594,7 +594,7 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp extract_kid(token) do
-    # WR-03: decode the protected header once via peek_protected_header/1 and
+    # Decode the protected header once via peek_protected_header/1 and
     # reuse the same map for both kid (here) and typ (check_at_jwt_typ/2), so a
     # malformed header is decoded and rescued once with one consistent
     # :malformed classification rather than two diverging code paths.
@@ -606,7 +606,7 @@ defmodule Lockspire.Plug.VerifyToken do
     end
   end
 
-  # WR-03: single source of truth for decoding the JWS protected header. Both
+  # Single source of truth for decoding the JWS protected header. Both
   # the kid extractor and the RFC 9068 typ check consume this, so a header that
   # fails to parse produces a uniform {:error, :malformed} regardless of which
   # consumer hits it first.
@@ -628,15 +628,15 @@ defmodule Lockspire.Plug.VerifyToken do
   defp verify_signature_and_claims(jwk, token, authorization_scheme) do
     case JOSE.JWT.verify_strict(jwk, @allowed_algs, token) do
       {true, %JOSE.JWT{fields: claims}, _jws} ->
-        # D-02: RFC 9068 / RFC 8725 compliance runs AFTER the signature is
+        # RFC 9068 / RFC 8725 compliance runs AFTER the signature is
         # verified (so we never inspect claims on an unverified token) and
         # BEFORE time_claims_valid?/1 + apply_restrictions/2 (so the named
         # RFC 9068 reason codes win over the legacy :invalid_time_claims and
         # over audience/scope restriction failures).
         #
-        # D-05/D-06 (Plan 04): authorization_scheme is threaded through so the
+        # authorization_scheme is threaded through so the
         # five RFC 9068 reason codes can derive `challenge:` from the cnf
-        # binding (with the request scheme as tiebreaker per D-05 row 3).
+        # binding, with the request scheme as tiebreaker when no binding is present.
         with {:ok, claims} <- validate_rfc9068_compliance(token, claims, authorization_scheme) do
           if time_claims_valid?(claims) do
             {:ok, claims}
@@ -649,7 +649,7 @@ defmodule Lockspire.Plug.VerifyToken do
         {:error, :invalid_signature}
     end
   rescue
-    # WR-02: a misconfigured issuer (e.g. operator clears :issuer config) makes
+    # A misconfigured issuer (for example, clearing :issuer) makes
     # Config.issuer!/0 raise ArgumentError inside validate_rfc9068_compliance/3.
     # Re-raise it so the request fails loudly with the real misconfiguration
     # signal instead of being silently coerced to :verification_crashed (which
@@ -678,7 +678,7 @@ defmodule Lockspire.Plug.VerifyToken do
     exp_valid? and nbf_valid?
   end
 
-  # D-02 / D-03 / D-04: enforce the five RFC 9068 / RFC 8725 compliance rules
+  # enforce the five RFC 9068 / RFC 8725 compliance rules
   # that JOSE.JWT.verify_strict/3 does not check by itself. Runs after the
   # signature has been verified (so `claims` are trustworthy in the
   # "signed by a configured JWKS key" sense) and before time_claims_valid?/1
@@ -688,13 +688,12 @@ defmodule Lockspire.Plug.VerifyToken do
   # Intentionally more permissive than the issuance-side `typ` check at
   # `Lockspire.Protocol.DPoP.check_typ/1` (which exact-matches `"dpop+jwt"`).
   # The verifier accepts `at+jwt`, `AT+JWT`, `At+Jwt`, and the
-  # `application/at+jwt` variant. This forward-compatibility margin lets
-  # Phase 99's `Protocol.AccessTokenSigner` extraction evolve issuance to
-  # emit `application/at+jwt` (stricter RFC 9068 §2.1 conformance) without
-  # breaking Phase 98's verifier.
+  # `application/at+jwt` variant. This forward-compatibility margin allows
+  # issuance to adopt the stricter `application/at+jwt` form without breaking
+  # existing verification.
   defp validate_rfc9068_compliance(token, claims, authorization_scheme) do
     expected_issuer = Config.issuer!()
-    # D-05/D-06 (Plan 04): derive the challenge atom from the verified claims'
+    # derive the challenge atom from the verified claims'
     # cnf binding (with the request scheme as tiebreaker when no cnf is
     # present). Computed once here so all five rfc9068_error/2 calls share the
     # same value.
@@ -710,7 +709,7 @@ defmodule Lockspire.Plug.VerifyToken do
   end
 
   defp check_at_jwt_typ(token, challenge) do
-    # WR-03: reuse peek_protected_header/1 (the same decode extract_kid/1 uses)
+    # Reuse peek_protected_header/1 (the same decode extract_kid/1 uses)
     # rather than re-decoding via a second peek_typ/1 helper. A header that
     # fails to parse here surfaces as :malformed (consistent with the kid path)
     # instead of being misclassified as :invalid_typ. In the live call chain
