@@ -168,7 +168,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       module: Lockspire.Web.Live.Admin.InteractionsLive.Index,
       title: "Authorization interaction queue",
       pane: "Review interactions",
-      read_path: "Repository.list_interactions"
+      read_path: "Admin.list_interactions"
     },
     "/device_authorizations" => %{
       module: Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index,
@@ -180,7 +180,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       module: Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index,
       title: "Logout propagation queue",
       pane: "Review logout deliveries",
-      read_path: "Repository.list_all_logout_deliveries"
+      read_path: "Admin.list_logout_deliveries"
     }
   }
   @phase_123_unsupported_command_labels [
@@ -1840,8 +1840,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemContractTest do
       end
 
       assert admin_source =~ "defdelegate list_device_authorizations"
-      refute admin_source =~ "defdelegate list_interactions"
-      refute admin_source =~ "defdelegate list_logout_deliveries"
+      assert admin_source =~ "defdelegate list_interactions"
+      assert admin_source =~ "defdelegate list_logout_deliveries"
     end
 
     test "operate LiveViews stay read-only non-table source surfaces with required primitives" do

@@ -4,13 +4,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Redaction
-  alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Admin
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, deliveries} = Repository.list_all_logout_deliveries()
+    {:ok, deliveries} = Admin.list_logout_deliveries()
 
     {:ok,
      assign(socket,

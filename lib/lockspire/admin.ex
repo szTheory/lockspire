@@ -7,6 +7,8 @@ defmodule Lockspire.Admin do
   alias Lockspire.Admin.Consents
   alias Lockspire.Admin.DeviceAuthorizations
   alias Lockspire.Admin.Keys
+  alias Lockspire.Admin.Interactions
+  alias Lockspire.Admin.Logouts
   alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Admin.Tokens
 
@@ -16,6 +18,20 @@ defmodule Lockspire.Admin do
   @spec list_device_authorizations(keyword()) ::
           {:ok, [Lockspire.Domain.DeviceAuthorization.t()]} | {:error, term()}
   defdelegate list_device_authorizations(opts \\ []), to: DeviceAuthorizations
+
+  @doc """
+  Lists authorization interactions for operator review.
+  """
+  @spec list_interactions(keyword()) ::
+          {:ok, [Lockspire.Domain.Interaction.t()]} | {:error, term()}
+  defdelegate list_interactions(opts \\ []), to: Interactions
+
+  @doc """
+  Lists durable logout deliveries for operator review.
+  """
+  @spec list_logout_deliveries() ::
+          {:ok, [Lockspire.Domain.LogoutDelivery.t()]} | {:error, term()}
+  defdelegate list_logout_deliveries(), to: Logouts
 
   @doc """
   Lists registered clients.

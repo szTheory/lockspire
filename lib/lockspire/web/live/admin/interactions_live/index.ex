@@ -4,13 +4,13 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Redaction
-  alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Admin
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, interactions} = Repository.list_interactions()
+    {:ok, interactions} = Admin.list_interactions()
 
     {:ok,
      assign(socket,
