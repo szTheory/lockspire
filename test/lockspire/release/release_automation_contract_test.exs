@@ -61,9 +61,18 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert publish_job =~ "git checkout --detach \"$VERIFIED_SHA\""
     assert publish_job =~ "mix release.preflight"
     assert publish_job =~ "mix hex.publish --yes"
+    assert release_please_job =~ "actions: write"
     assert release_please_job =~ "uses: ./.github/actions/release-please"
+    assert release_please_job =~ "Retry auto-merge when CI finished before Release Please"
+    assert release_please_job =~ "gh workflow run release-please-automerge.yml"
+    assert release_please_job =~ ~s(--field source_sha="$SOURCE_SHA")
+    assert release_please_job =~ ~s(--field source_ci_run_id="$ci_run_id")
     refute release_please_job =~ "mix hex.publish --yes"
     refute release_workflow =~ "googleapis/release-please-action"
+
+    {hex_offset, _} = :binary.match(publish_job, "- name: Publish package")
+    {github_offset, _} = :binary.match(publish_job, "- name: Create matching GitHub release")
+    assert hex_offset < github_offset
   end
 
   test "ci and release cache restore keys stay scoped to the active beam pair" do
@@ -106,6 +115,9 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert workflow =~ "workflows: [CI]"
     assert workflow =~ "types:"
     assert workflow =~ "types: [completed]"
+    assert workflow =~ "workflow_dispatch:"
+    assert workflow =~ "source_sha:"
+    assert workflow =~ "source_ci_run_id:"
     assert workflow =~ "github.event.workflow_run.conclusion == 'success'"
     assert workflow =~ "github.event.workflow_run.head_branch == 'main'"
     assert workflow =~ "contents: write"
@@ -118,6 +130,8 @@ defmodule Lockspire.Release.ReleaseAutomationContractTest do
     assert workflow =~ ".release-please-manifest.json,CHANGELOG.md,mix.exs"
     assert workflow =~ "gh pr merge \"$pr_number\" --squash --delete-branch"
     assert workflow =~ "mergeCommit"
+    assert workflow =~ "actions/runs/$DISPATCH_RUN_ID"
+    assert workflow =~ "No eligible or just-merged Release Please PR"
     assert workflow =~ "gh workflow run release.yml"
     assert workflow =~ "--field recovery_ref=\"$CI_HEAD_SHA\""
     assert workflow =~ "merge validated by CI run $CI_RUN_ID"

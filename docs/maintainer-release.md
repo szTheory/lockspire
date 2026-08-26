@@ -67,7 +67,7 @@ Contributors should have one canonical answer before merge: run `mix ci`.
 
 CI may keep those checks split into separate jobs for cacheability and diagnostics, but that workflow still needs to remain mechanically equivalent to `mix ci`.
 
-Dialyzer is currently an explicit maintainer check via `mix qa.dialyzer`, not a required contributor gate. Do not make it mandatory in PR CI until the baseline is clean; a known-noisy type gate wastes runner time and trains maintainers to ignore red checks.
+Dialyzer is a required, cached PR CI job with a zero-warning baseline and no warning suppression. It remains available locally as `mix qa.dialyzer` and stays separate from the faster `mix ci` contributor loop so the expensive type proof is explicit and independently diagnosable.
 
 Release Please generated PR checks are informative review context. They are not authoritative release proof, because trusted proof starts only after merge in the protected `hex-publish` lane.
 

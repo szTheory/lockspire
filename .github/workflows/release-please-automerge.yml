@@ -4,6 +4,16 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Main SHA whose successful CI may have preceded Release Please
+        required: true
+        type: string
+      source_ci_run_id:
+        description: Successful CI push run for source_sha
+        required: true
+        type: string
 
 concurrency:
   group: release-please-automerge-main
@@ -17,7 +27,7 @@ permissions:
 jobs:
   automerge:
     name: Merge then await exact post-merge CI evidence
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -25,18 +35,40 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          CI_EVENT: ${{ github.event.workflow_run.event }}
-          CI_RUN_ID: ${{ github.event.workflow_run.id }}
-          CI_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_RUN_EVENT: ${{ github.event.workflow_run.event }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_RUN_ID: ${{ inputs.source_ci_run_id }}
+          DISPATCH_SHA: ${{ inputs.source_sha }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            CI_EVENT="$WORKFLOW_RUN_EVENT"
+            CI_RUN_ID="$WORKFLOW_RUN_ID"
+            CI_HEAD_SHA="$WORKFLOW_RUN_SHA"
+          else
+            [[ "$DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            [[ "$DISPATCH_RUN_ID" =~ ^[0-9]+$ ]]
+            ci_run="$(gh api "repos/$GH_REPO/actions/runs/$DISPATCH_RUN_ID")"
+            test "$(jq -r '.name' <<< "$ci_run")" = "CI"
+            test "$(jq -r '.status' <<< "$ci_run")" = "completed"
+            test "$(jq -r '.conclusion' <<< "$ci_run")" = "success"
+            test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
+            test "$(jq -r '.head_sha' <<< "$ci_run")" = "$DISPATCH_SHA"
+            test "$(jq -r '.repository.full_name' <<< "$ci_run")" = "$GH_REPO"
+            CI_EVENT="$(jq -r '.event' <<< "$ci_run")"
+            CI_RUN_ID="$DISPATCH_RUN_ID"
+            CI_HEAD_SHA="$DISPATCH_SHA"
+          fi
+
           test "$CI_EVENT" = "push"
           test "$CI_HEAD_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
 
           prs_json="$(gh pr list --state open --base main --author app/github-actions --json number,title,headRefName,baseRefName,isDraft,mergeable,files,url)"
           eligible_json="$(jq '[.[] | select(.headRefName == "release-please--branches--main--components--lockspire") | select(.baseRefName == "main") | select(.isDraft == false) | select(.title | test("^chore\\(main\\): release lockspire [0-9]+\\.[0-9]+\\.[0-9]+$"))]' <<< "$prs_json")"
           count="$(jq 'length' <<< "$eligible_json")"
+          test "$count" -le 1
 
           if [[ "$count" == "1" ]]; then
             actual_files="$(jq -r '.[0].files[].path' <<< "$eligible_json" | sort | paste -sd ',' -)"
@@ -50,7 +82,14 @@ jobs:
           test "$count" = "0"
           merged_json="$(gh pr list --state merged --base main --author app/github-actions --limit 100 --json number,title,headRefName,baseRefName,isDraft,mergeCommit,files)"
           match_json="$(jq --arg sha "$CI_HEAD_SHA" '[.[] | select(.headRefName == "release-please--branches--main--components--lockspire") | select(.baseRefName == "main") | select(.title | test("^chore\\(main\\): release lockspire [0-9]+\\.[0-9]+\\.[0-9]+$")) | select(.mergeCommit.oid == $sha)]' <<< "$merged_json")"
-          test "$(jq 'length' <<< "$match_json")" = "1"
+          match_count="$(jq 'length' <<< "$match_json")"
+          test "$match_count" -le 1
+
+          if [[ "$match_count" == "0" ]]; then
+            echo "No eligible or just-merged Release Please PR for CI run $CI_RUN_ID; nothing to do."
+            exit 0
+          fi
+
           pr_number="$(jq -r '.[0].number' <<< "$match_json")"
 
           gh workflow run release.yml --ref main \

@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: write
       contents: write
       issues: write
       pull-requests: write
@@ -46,6 +47,25 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           skip-github-release: true
+      - name: Retry auto-merge when CI finished before Release Please
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          runs_json="$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?branch=main&event=push&status=success&per_page=100")"
+          ci_run_id="$(jq -r --arg sha "$SOURCE_SHA" '[.workflow_runs[] | select(.head_sha == $sha)] | sort_by(.run_number) | last | .id // empty' <<< "$runs_json")"
+
+          if [[ -z "$ci_run_id" ]]; then
+            echo "CI for $SOURCE_SHA has not completed successfully; its workflow_run event will retry auto-merge."
+            exit 0
+          fi
+
+          gh workflow run release-please-automerge.yml --ref main \
+            --field source_sha="$SOURCE_SHA" \
+            --field source_ci_run_id="$ci_run_id"
 
   recovery-validation:
     name: Validate exact main head and CI evidence
@@ -123,6 +143,10 @@ jobs:
           mix local.rebar --force
       - run: mix deps.get --check-locked
       - run: mix release.preflight
+      - name: Publish package
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --yes
       - name: Create matching GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -140,11 +164,6 @@ jobs:
           else
             gh release create "$tag_name" --target "$VERIFIED_SHA" --title "lockspire: v$version" --notes "$notes"
           fi
-      - name: Publish package
-        env:
-          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-        run: mix hex.publish --yes
-
   post-publish-install-truth:
     name: Verify public install truth
     needs: [recovery-validation, publish]

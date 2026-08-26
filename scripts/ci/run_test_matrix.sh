@@ -17,6 +17,7 @@ esac
 
 mkdir -p "$(dirname "$output")"
 records=()
+overall_status=0
 
 run_partition() {
   local name=$1
@@ -34,7 +35,11 @@ run_partition() {
   elapsed=$SECONDS
   records+=("{\"name\":\"${name}\",\"command\":\"${command}\",\"elapsed_seconds\":${elapsed},\"exit_status\":${status},\"started_at\":\"${started}\"}")
   printf '%s: %ss (exit %s)\n' "$name" "$elapsed" "$status"
-  [[ $status -eq 0 ]]
+  if [[ $status -ne 0 && $overall_status -eq 0 ]]; then
+    overall_status=$status
+  fi
+
+  return 0
 }
 
 case "$mode" in
@@ -63,3 +68,5 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     printf '%s\n' "${records[@]}"
   } >> "$GITHUB_STEP_SUMMARY"
 fi
+
+exit "$overall_status"

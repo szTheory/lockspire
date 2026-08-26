@@ -19,5 +19,13 @@ defmodule Lockspire.CiTestMatrixContractTest do
     assert runner =~ "mix test.phase3"
     assert runner =~ "exit_status"
     assert runner =~ "elapsed_seconds"
+    assert runner =~ "overall_status=0"
+    assert runner =~ "overall_status=$status"
+    assert runner =~ "return 0"
+    assert runner =~ ~s(exit "$overall_status")
+
+    {artifact_offset, _} = :binary.match(runner, ~s(> "$output"))
+    {exit_offset, _} = :binary.match(runner, ~s(exit "$overall_status"))
+    assert artifact_offset < exit_offset
   end
 end

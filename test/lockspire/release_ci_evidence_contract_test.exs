@@ -13,6 +13,10 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "source_ci_run_id=\"$CI_RUN_ID\""
     assert workflow =~ "recovery_ref=\"$CI_HEAD_SHA\""
     assert workflow =~ "mergeCommit.oid == $sha"
+    assert workflow =~ "workflow_dispatch:"
+    assert workflow =~ "actions/runs/$DISPATCH_RUN_ID"
+    assert workflow =~ "test \"$(jq -r '.head_sha' <<< \"$ci_run\")\" = \"$DISPATCH_SHA\""
+    assert workflow =~ "No eligible or just-merged Release Please PR"
   end
 
   test "publish validator accepts only an exact current main head with matching successful CI metadata" do
