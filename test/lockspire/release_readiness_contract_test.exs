@@ -333,9 +333,11 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     assert ci_workflow =~
              ~S/${{ runner.os }}-mix-adoption-demo-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
 
-    refute ci_workflow =~ "Restore Dialyzer PLT cache"
-    refute ci_workflow =~ "priv/plts"
-    refute ci_workflow =~ "dialyzer-v"
+    assert ci_workflow =~ "Restore Dialyzer cache"
+    assert ci_workflow =~ "priv/plts"
+
+    assert ci_workflow =~
+             ~S/${{ runner.os }}-dialyzer-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-/
 
     refute release_workflow =~ "mix-release-v2"
   end
