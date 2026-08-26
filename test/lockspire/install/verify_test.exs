@@ -57,7 +57,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     scope "/lockspire/admin" do
       pipe_through([:browser, :require_operator])
-      forward("/", Lockspire.Web.AdminRouter, [], metadata: %{lockspire_operator_guard: true})
+      forward("/", Lockspire.Web.AdminRouter)
     end
 
     scope "/" do
@@ -327,7 +327,7 @@ defmodule Lockspire.Install.VerifyTest do
     assert fix =~ "mix ecto.migrate"
   end
 
-  test "returns a failing result set for a missing guarded admin mount" do
+  test "returns a failing result set for a missing generated admin mount" do
     result =
       Verify.run(
         router: RouterMissingAdmin,
@@ -343,10 +343,10 @@ defmodule Lockspire.Install.VerifyTest do
              Enum.find(result.checks, &(&1.id == :router))
 
     assert details =~ "forward /lockspire/admin -> Lockspire.Web.AdminRouter"
-    assert fix =~ "host-owned operator pipeline"
+    assert fix =~ "host request tests"
   end
 
-  test "rejects an admin forward without the generated host operator proof" do
+  test "reports admin mount shape without claiming to verify host operator policy" do
     result =
       Verify.run(
         router: RouterUnguardedAdmin,
@@ -356,12 +356,7 @@ defmodule Lockspire.Install.VerifyTest do
         mount_path: "/lockspire"
       )
 
-    refute result.ok?
-
-    assert %{status: :error, details: details} =
-             Enum.find(result.checks, &(&1.id == :router))
-
-    assert details =~ "missing guarded admin forward"
+    assert result.ok?
   end
 
   test "returns a failing result when public forward shadows the admin mount" do
@@ -379,7 +374,7 @@ defmodule Lockspire.Install.VerifyTest do
     assert %{status: :error, details: details, fix: fix} =
              Enum.find(result.checks, &(&1.id == :router))
 
-    assert details =~ "guarded admin forward appears after the public Lockspire forward"
-    assert fix =~ "host-owned operator pipeline"
+    assert details =~ "generated admin forward appears after the public Lockspire forward"
+    assert fix =~ "host request tests"
   end
 end

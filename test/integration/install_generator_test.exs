@@ -120,14 +120,13 @@ defmodule Lockspire.InstallGeneratorTest do
     assert router =~ ~s(scope "/lockspire/admin")
     assert router =~ "pipe_through([:browser, :require_operator])"
 
-    assert router =~
-             "forward(\"/\", Lockspire.Web.AdminRouter, [], metadata: %{lockspire_operator_guard: true})"
+    assert router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
 
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
     assert router =~ "forward(\"/lockspire\", Lockspire.Web.Router)"
 
     assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through\(\[:browser, :require_operator\]\).+forward\("\/", Lockspire.Web.AdminRouter, \[\], metadata: %\{lockspire_operator_guard: true\}\)\s+end/s
+             ~r/scope "\/lockspire\/admin" do\s+pipe_through\(\[:browser, :require_operator\]\)\s+forward\("\/", Lockspire.Web.AdminRouter\)\s+end/
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))

@@ -185,7 +185,7 @@ defmodule Lockspire.Install.Verify do
         ) ++
         missing_route_error(
           admin_index,
-          "guarded admin forward #{admin_mount_path} -> Lockspire.Web.AdminRouter"
+          "generated admin forward #{admin_mount_path} -> Lockspire.Web.AdminRouter"
         ) ++
         missing_route_error(public_index, "public forward #{mount_path} -> Lockspire.Web.Router") ++
         ordering_errors(consent_index, admin_index, public_index)
@@ -196,7 +196,7 @@ defmodule Lockspire.Install.Verify do
           :router,
           "Host router wiring is present",
           "router=#{inspect(router)} public_mount=#{mount_path} admin_mount=#{admin_mount_path}",
-          "Keep generated host routes, guarded admin forwarding, and public forwarding together."
+          "Keep generated host routes, admin forwarding, and public forwarding together. Verify your host-owned operator policy with host request tests."
         )
 
       _ ->
@@ -204,7 +204,7 @@ defmodule Lockspire.Install.Verify do
           :router,
           "Host router wiring is incomplete",
           Enum.join(errors, "; "),
-          "Import the generated Lockspire router helper and call `lockspire_routes/0` after host browser routes; keep the host-owned operator pipeline on the admin forward before the public forward."
+          "Import the generated Lockspire router helper and call `lockspire_routes/0` after host browser routes. The generated macro requires :require_operator at compile time; verify host operator policy with host request tests."
         )
     end
   end
@@ -240,7 +240,7 @@ defmodule Lockspire.Install.Verify do
     )
     |> append_if(
       is_integer(admin_index) and admin_index > public_index,
-      "guarded admin forward appears after the public Lockspire forward"
+      "generated admin forward appears after the public Lockspire forward"
     )
   end
 
@@ -271,8 +271,7 @@ defmodule Lockspire.Install.Verify do
 
   defp admin_mount_route?(route, admin_mount_path) do
     route.verb == :* and route.path == admin_mount_path and
-      route.plug == Lockspire.Web.AdminRouter and
-      Map.get(route, :metadata, %{})[:lockspire_operator_guard] == true
+      route.plug == Lockspire.Web.AdminRouter
   end
 
   defp migrations_check(repo, project_root) do

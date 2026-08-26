@@ -75,7 +75,7 @@ end
 lockspire_routes()
 ```
 
-The generated route helper separates host-owned account routes, a host-guarded admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your operator pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not authenticate your staff; your host app owns operator sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin LiveViews.
+The generated route helper separates host-owned account routes, an admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your operator pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not authenticate your staff; your host app owns operator sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin LiveViews. `mix lockspire.verify` proves compiled mount shape and order only; add host request tests that prove unauthenticated users cannot reach the admin mount.
 
 The generated macro mounts the host-owned `/verify` and `/authorized-apps`
 routes, then the generated `lockspire_consent_live.ex` seam, then the guarded
