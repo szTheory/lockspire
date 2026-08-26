@@ -25,11 +25,12 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 3. Treat the Release Please PR as review-only evidence, not authenticated release proof.
 4. Review the release PR diff, `mix.exs`, `CHANGELOG.md`, and the workflow/config artifacts that define the release lane.
 5. Let `.github/workflows/release-please-automerge.yml` squash-merge an eligible bot Release Please PR after green `main` CI, or manually merge it if the guard does not apply.
-6. Let the Release workflow cross the `hex-publish` environment boundary automatically, without a reviewer gate.
-7. Treat the resulting protected workflow run as the only authoritative proof of authenticated `mix release.preflight` and `mix hex.publish --yes`.
+6. Wait for the merge commit's own successful `CI` push run on the current `main` head. That exact run dispatches the trusted release lane with its SHA and run ID; the pre-merge CI run is never publish evidence.
+7. Let the validator confirm the exact immutable main SHA, matching successful CI run, and repository identity before the `hex-publish` environment boundary.
+8. Treat the resulting protected GitHub release, Hex publish, and unprivileged install-truth artifact as the authoritative release record.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
-Normal releases should auto-publish once the Release Please PR is merged. Human merges use the normal `push` trigger; bot merges use exact-ref `workflow_dispatch` from `.github/workflows/release-please-automerge.yml` because GitHub suppresses most follow-on workflow triggers caused by `GITHUB_TOKEN`. Exact-ref dispatch is also the recovery path, and it must cross `hex-publish` without a manual approval step.
+Normal releases maintain the Release Please PR on `main` pushes. After a Release Please merge, a later successful CI push run for that exact current main SHA dispatches publish. Recovery needs the same full SHA, successful CI run ID, and auditable reason; it cannot publish a tag, a stale SHA, or a pre-merge run.
 
 ## Evidence boundaries
 

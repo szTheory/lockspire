@@ -2,16 +2,19 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
     inputs:
       recovery_reason:
-        description: "Exact-ref automation/recovery note for running the trusted release lane"
+        description: Exact-ref automation or recovery note
         required: true
         type: string
       recovery_ref:
-        description: "Commit SHA or tag for the exact revision being published or recovered"
+        description: Full immutable commit SHA to publish
+        required: true
+        type: string
+      source_ci_run_id:
+        description: Successful CI push run for recovery_ref
         required: true
         type: string
 
@@ -28,194 +31,138 @@ env:
 
 jobs:
   release-please:
-    name: Release Please
+    name: Maintain Release Please PR
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
       issues: write
       pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created || steps.manual_dispatch.outputs.release_created || 'false' }}
-      tag_name: ${{ steps.release.outputs.tag_name || '' }}
-      release_sha: ${{ steps.release.outputs.sha || '' }}
     steps:
-      - name: Check out repository for Release Please
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Confirm dispatch stays exact-ref only
-        id: manual_dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        shell: bash
-        run: |
-          echo "release_created=false" >> "$GITHUB_OUTPUT"
-          echo "workflow_dispatch bypasses Release Please and exists only to run the trusted publish lane for an exact immutable ref selected by release automation or recovery."
-
-      - name: Record review-only Release Please PR posture
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        run: |
-          echo "Release Please generated PRs are review-only. Checked-in version and changelog truth becomes authoritative only after the merged release commit crosses the protected hex-publish environment."
-          echo "Push-triggered Release Please manages release PRs only; the exact-ref dispatch publish lane owns GitHub release/tag creation and Hex publish for the root lockspire-v<version> contract."
-
-      - name: Run Release Please
-        id: release
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: ./.github/actions/release-please
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/release-please
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           skip-github-release: true
 
-      - name: Record root release tag target for the merged release commit
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' && steps.release.outputs.sha == github.sha }}
-        run: |
-          echo "Release Please selected root tag ${{ steps.release.outputs.tag_name }} for the merged release commit. Protected publish proof begins only when the publish job enters the hex-publish environment on main."
-
-      - name: Record stale Release Please release event
-        if: ${{ github.event_name != 'workflow_dispatch' && steps.release.outputs.release_created == 'true' && steps.release.outputs.sha != github.sha }}
-        run: |
-          echo "Release Please created or finalized ${{ steps.release.outputs.tag_name }} for ${{ steps.release.outputs.sha }}, but this workflow is running for ${{ github.sha }}."
-          echo "Skipping publish on this push prevents republishing an existing Hex package after a delayed Release Please tagging event."
-
   recovery-validation:
-    name: Validate Recovery Ref
+    name: Validate exact main head and CI evidence
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
     outputs:
-      checkout_ref: ${{ steps.validate.outputs.checkout_ref }}
+      verified_sha: ${{ steps.validate.outputs.verified_sha }}
+      source_ci_run_id: ${{ steps.validate.outputs.source_ci_run_id }}
     steps:
-      - name: Check out repository for recovery validation
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          fetch-tags: true
-
-      - name: Validate exact-ref dispatch inputs and lock to an immutable ref
+      - name: Validate immutable ref and matching CI run
         id: validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RECOVERY_REASON: ${{ inputs.recovery_reason }}
+          RECOVERY_REF: ${{ inputs.recovery_ref }}
+          SOURCE_CI_RUN_ID: ${{ inputs.source_ci_run_id }}
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${{ inputs.recovery_reason }}"
-          recovery_ref="${{ inputs.recovery_ref }}"
-          test -n "$recovery_ref"
-
-          if [[ "$recovery_ref" =~ ^[0-9a-f]{40}$ ]]; then
-            git cat-file -e "${recovery_ref}^{commit}"
-            echo "checkout_ref=$recovery_ref" >> "$GITHUB_OUTPUT"
-          elif git show-ref --verify --quiet "refs/tags/$recovery_ref"; then
-            echo "checkout_ref=$recovery_ref" >> "$GITHUB_OUTPUT"
-          else
-            echo "workflow_dispatch is exact-ref only and recovery_ref must be an exact 40-character commit SHA or an existing tag."
-            exit 1
-          fi
-
-          echo "workflow_dispatch is exact-ref only. It publishes the exact immutable ref selected in recovery_ref, and normal release intent still starts from a merged Release Please commit in the protected hex-publish environment."
+          test -n "$RECOVERY_REASON"
+          [[ "$RECOVERY_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_CI_RUN_ID" =~ ^[0-9]+$ ]]
+          git fetch --no-tags origin main
+          verified_sha="$(git rev-parse --verify "${RECOVERY_REF}^{commit}")"
+          test "$verified_sha" = "$RECOVERY_REF"
+          test "$verified_sha" = "$(git rev-parse origin/main)"
+          git merge-base --is-ancestor "$verified_sha" origin/main
+          ci_run="$(gh api "repos/$GH_REPO/actions/runs/$SOURCE_CI_RUN_ID")"
+          test "$(jq -r '.name' <<< "$ci_run")" = "CI"
+          test "$(jq -r '.event' <<< "$ci_run")" = "push"
+          test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
+          test "$(jq -r '.status' <<< "$ci_run")" = "completed"
+          test "$(jq -r '.conclusion' <<< "$ci_run")" = "success"
+          test "$(jq -r '.head_sha' <<< "$ci_run")" = "$verified_sha"
+          test "$(jq -r '.repository.full_name' <<< "$ci_run")" = "$GH_REPO"
+          echo "verified_sha=$verified_sha" >> "$GITHUB_OUTPUT"
+          echo "source_ci_run_id=$SOURCE_CI_RUN_ID" >> "$GITHUB_OUTPUT"
 
   publish:
-    name: Publish to Hex
+    name: Publish verified release to Hex
+    needs: recovery-validation
+    if: ${{ needs.recovery-validation.result == 'success' }}
     runs-on: ubuntu-latest
-    needs:
-      - release-please
-      - recovery-validation
-    if: ${{ always() && ((github.event_name == 'workflow_dispatch' && needs.recovery-validation.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.release_sha == github.sha)) }}
+    timeout-minutes: 30
     environment: hex-publish
     permissions:
       contents: write
     steps:
-      - name: Check out repository for the merged release commit
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Check out repository for recovery validation
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.recovery-validation.outputs.verified_sha }}
           fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ needs.recovery-validation.outputs.checkout_ref }}
-
-      - name: Confirm recovery checkout is detached to the validated immutable ref
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          git checkout --detach HEAD
-          echo "Recovered immutable ref: ${{ needs.recovery-validation.outputs.checkout_ref }}"
-
-      - name: Record protected-boundary entry point
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "Protected publish proof starts now for dispatch ref ${{ needs.recovery-validation.outputs.checkout_ref }} inside the single hex-publish environment boundary."
-          else
-            echo "Protected publish proof starts now for merged release tag ${{ needs.release-please.outputs.tag_name }} inside the single hex-publish environment boundary."
-          fi
-
-      - name: Ensure dispatch GitHub release exists
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Detach verified commit
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
         shell: bash
         run: |
           set -euo pipefail
-
-          version="$(grep -E '^[[:space:]]*version:' mix.exs | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
-          tag_name="lockspire-v${version}"
-          release_title="lockspire: v${version}"
-
-          if gh release view "$tag_name" >/dev/null 2>&1; then
-            echo "GitHub release $tag_name already exists."
-            exit 0
-          fi
-
-          notes="$(
-            awk -v version="$version" '
-              $0 ~ "^## \\[" version "\\]" { in_section = 1; next }
-              in_section && $0 ~ "^## \\[" { exit }
-              in_section { print }
-            ' CHANGELOG.md
-          )"
-
-          test -n "$notes"
-          gh release create "$tag_name" \
-            --target "$(git rev-parse HEAD)" \
-            --title "$release_title" \
-            --notes "$notes"
-
-      - name: Set up Elixir and Erlang
-        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+          git checkout --detach "$VERIFIED_SHA"
+          test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
-
-      - name: Install Hex and Rebar
-        run: |
+      - run: |
           mix local.hex --force
           mix local.rebar --force
-
-      - name: Restore Mix cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-release-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-release-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
-
-      - name: Install dependencies
-        run: mix deps.get
-
-      - name: Run trusted release preflight inside protected environment
+      - run: mix deps.get --check-locked
+      - run: mix release.preflight
+      - name: Create matching GitHub release
         env:
-          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-        run: mix release.preflight
-
-      - name: Publish package from the trusted lane
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^[[:space:]]*version:[[:space:]]*"([^"]+)".*/\1/p' mix.exs | head -1)"
+          tag_name="lockspire-v$version"
+          notes="$(awk -v version="$version" '$0 ~ "^## \\[" version "\\]" { found=1; next } found && $0 ~ "^## \\[" { exit } found { print }' CHANGELOG.md)"
+          test -n "$notes"
+          if gh release view "$tag_name" --json targetCommitish --jq '.targetCommitish' >/tmp/release-target 2>/dev/null; then
+            test "$(git rev-parse "$(cat /tmp/release-target)^{commit}")" = "$VERIFIED_SHA"
+          else
+            gh release create "$tag_name" --target "$VERIFIED_SHA" --title "lockspire: v$version" --notes "$notes"
+          fi
+      - name: Publish package
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --yes
+
+  post-publish-install-truth:
+    name: Verify public install truth
+    needs: [recovery-validation, publish]
+    if: ${{ needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.recovery-validation.outputs.verified_sha }}
+      - name: Verify published package and HexDocs
+        shell: bash
+        run: scripts/publish/verify_install_truth.sh 2>&1 | tee install-truth.log
+      - name: Upload install-truth log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: install-truth-${{ needs.recovery-validation.outputs.verified_sha }}
+          path: install-truth.log

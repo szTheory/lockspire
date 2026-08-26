@@ -20,10 +20,11 @@ jobs:
   repo-native-phase37:
     name: Repo-Native Phase 37 Lane
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -55,17 +56,17 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Run Phase 37 conformance lane
-        run: MIX_ENV=test mix conformance.phase37
+        run: env MIX_ENV=test mix conformance.phase37
 
       - name: Run Preparatory OIDF Conformance Lane
         run: mix lockspire.oidf_conformance --validate-env
 
       - name: Upload Phase 37 artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: phase37-conformance
           path: .artifacts/conformance/phase37
@@ -73,10 +74,11 @@ jobs:
   repo-native-fapi2:
     name: Repo-Native FAPI 2.0 Lane
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -108,14 +110,14 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Run FAPI 2.0 conformance lane
         run: bash scripts/conformance/run_fapi2_suite.sh
 
       - name: Upload FAPI 2.0 artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: fapi2-conformance
           path: .artifacts/conformance/fapi2
@@ -123,11 +125,12 @@ jobs:
   hosted-maintainer-lane:
     name: Hosted Maintainer Lane
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'schedule' || inputs.run_hosted_lane
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -162,14 +165,14 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Run hosted maintainer lane
         run: bash scripts/conformance/run_phase37_suite.sh
 
       - name: Upload hosted artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: phase37-conformance-hosted
           path: .artifacts/conformance/phase37

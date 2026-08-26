@@ -76,9 +76,7 @@ cd "$REPO_ROOT"
 docker compose --project-name "$project" -f examples/adoption_demo/docker-compose.yml down
 
 if [ "$reset_db" -eq 1 ]; then
-  for suffix in db_data; do
-    docker volume rm "${project}_${suffix}" >/dev/null 2>&1 || true
-  done
+  docker volume rm "${project}_db_data" >/dev/null 2>&1 || true
 fi
 
 if [ "$reset_cache" -eq 1 ]; then

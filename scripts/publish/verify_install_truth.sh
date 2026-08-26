@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "==> Setting up verification environment..."
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
+INSTALL_TRUTH_DIR=$(mktemp -d -t lockspire-install-truth.XXXXXX)
+trap 'rm -rf "$INSTALL_TRUTH_DIR"' EXIT
 
 # Check required commands
 for cmd in curl jq mix sed; do
@@ -14,8 +14,9 @@ for cmd in curl jq mix sed; do
 done
 
 # Extract expected version from mix.exs
-EXPECTED_VERSION=$(grep -oE 'version:\s+"[^"]+"' "$PWD/mix.exs" | cut -d'"' -f2)
-if [ -z "$EXPECTED_VERSION" ]; then
+DECLARED_VERSION=$(grep -oE 'version:\s+"[^"]+"' "$PWD/mix.exs" | cut -d'"' -f2)
+EXPECTED_VERSION="${EXPECTED_VERSION:-$DECLARED_VERSION}"
+if [ -z "$DECLARED_VERSION" ] || [ "$EXPECTED_VERSION" != "$DECLARED_VERSION" ]; then
   echo "Error: Could not extract expected version from mix.exs"
   exit 1
 fi
@@ -28,11 +29,13 @@ FOUND=false
 
 for i in $(seq 1 "$MAX_RETRIES"); do
   echo "  --> Attempt $i of $MAX_RETRIES..."
-  HTTP_STATUS=$(curl -s -o "$TMP_DIR/hex_metadata.json" -w "%{http_code}" https://hex.pm/api/packages/lockspire || true)
+  HTTP_STATUS=$(curl --silent --show-error --location --retry 3 --retry-all-errors \
+    -o "$INSTALL_TRUTH_DIR/hex_metadata.json" -w "%{http_code}" \
+    https://hex.pm/api/packages/lockspire || true)
 
   if [ "$HTTP_STATUS" -eq 200 ]; then
     # Check if the expected version is in the list of releases
-    if jq -e ".releases[] | select(.version == \"$EXPECTED_VERSION\")" "$TMP_DIR/hex_metadata.json" > /dev/null; then
+    if jq -e ".releases[] | select(.version == \"$EXPECTED_VERSION\")" "$INSTALL_TRUTH_DIR/hex_metadata.json" > /dev/null; then
       echo "==> Version $EXPECTED_VERSION found in Hex API."
       FOUND=true
       break
@@ -55,7 +58,7 @@ DOCS_URL="https://hexdocs.pm/lockspire/$EXPECTED_VERSION/supported-surface.html"
 # -L is required: hexdocs.pm/lockspire/... now 301-redirects to the
 # per-package host lockspire.hexdocs.pm/..., so a non-following curl reports 301
 # and fails the check even when the docs are published and reachable.
-DOCS_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" "$DOCS_URL" || true)
+DOCS_STATUS=$(curl --silent --show-error --location --retry 3 --retry-all-errors -o /dev/null -w "%{http_code}" "$DOCS_URL" || true)
 
 if [ "$DOCS_STATUS" -ne 200 ]; then
   echo "Error: Failed to fetch documentation at $DOCS_URL (HTTP $DOCS_STATUS)"
@@ -64,7 +67,7 @@ fi
 echo "==> Hexdocs successfully verified."
 
 echo "==> Generating clean-room Phoenix host app..."
-cd "$TMP_DIR"
+cd "$INSTALL_TRUTH_DIR"
 mix local.hex --force
 mix local.rebar --force
 # Accept 'Y' to any prompt if needed, though --force should suffice

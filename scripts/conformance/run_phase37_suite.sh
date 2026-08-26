@@ -96,7 +96,7 @@ start_local_fixture() {
   local discovery_url=$2
   local fixture_log="${LOG_DIR}/fixture.log"
 
-  MIX_ENV=test mix run --no-halt -e "
+  env MIX_ENV=test mix run --no-halt -e "
   Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
     secret_key_base: String.duplicate(\"a\", 64),
     server: true,
@@ -323,11 +323,12 @@ wait_for_url "${SUITE_BASE_URL}" true 120
 
 export CONFORMANCE_SERVER="${SUITE_BASE_URL}"
 export CONFORMANCE_SERVER_MTLS="${SUITE_MTLS_URL}"
+mapfile -t plan_strings < "${WORK_DIR}/plan-strings.txt"
 
 python3 "${WORK_DIR}/run-test-plan.py" \
   --no-parallel \
   --export-dir "${EXPORT_DIR}" \
-  $(tr '\n' ' ' < "${WORK_DIR}/plan-strings.txt") \
+  "${plan_strings[@]}" \
   2>&1 | tee "${LOG_DIR}/suite-run.log"
 
 python3 - <<'PY' "${PLAN_PATH}" "${ARTIFACT_DIR}" "${EXPORT_DIR}" "${MODE}" "${PROVIDER_DISCOVERY_URL}"

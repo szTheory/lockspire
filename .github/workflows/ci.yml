@@ -23,6 +23,7 @@ jobs:
   release-hygiene:
     name: Release Hygiene Drift
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -31,13 +32,20 @@ jobs:
       - name: Verify repo-owned release hygiene contract
         run: bash ./scripts/maintainer/repo_hygiene_check.sh --ci
 
+      - name: Lint workflows and maintained shell scripts
+        run: bash ./scripts/ci/lint_workflows.sh
+
+      - name: Verify dependency setup did not rewrite locks
+        run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock .github/actions/release-please/runtime/package-lock.json
+
   fast:
     name: Fast Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -79,7 +87,7 @@ jobs:
             ${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Wait for PostgreSQL
         run: |
@@ -113,10 +121,11 @@ jobs:
   compatibility:
     name: Minimum Supported Elixir/OTP
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -158,7 +167,7 @@ jobs:
             ${{ runner.os }}-mix-compat-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Wait for PostgreSQL
         run: |
@@ -178,10 +187,11 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -223,7 +233,7 @@ jobs:
             ${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Wait for PostgreSQL
         run: |
@@ -243,10 +253,11 @@ jobs:
   adoption-demo:
     name: Adoption Demo Smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_adoption_demo
           POSTGRES_USER: lockspire
@@ -290,7 +301,7 @@ jobs:
 
       - name: Install adoption demo dependencies
         working-directory: examples/adoption_demo
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Wait for PostgreSQL
         run: |
