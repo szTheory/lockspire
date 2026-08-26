@@ -5,16 +5,16 @@
 
 ## Runtime Dependency Truth
 
-- [ ] **RUNTIME-01**: Protocol store fallbacks use the Lockspire storage adapter; `Config.repo` is used only for raw Ecto operations that an ordinary host Repo supports.
-- [ ] **RUNTIME-02**: CIBA Push can issue JWT access and ID tokens when the host configures an ordinary Ecto Repo.
+- [x] **RUNTIME-01**: Protocol store fallbacks use the Lockspire storage adapter; `Config.repo` is used only for raw Ecto operations that an ordinary host Repo supports.
+- [x] **RUNTIME-02**: CIBA Push can issue JWT access and ID tokens when the host configures an ordinary Ecto Repo.
 - [ ] **RUNTIME-03**: One internal token-lifetime policy owns access, ID, and refresh defaults while preserving current values and behavior.
 - [ ] **RUNTIME-04**: Private signing-key decoding is centralized, fail-closed, and reused across all supported signing paths.
 
 ## Architecture
 
-- [ ] **ARCH-01**: Executable fitness tests enforce the boundary between Ecto/query code, Lockspire storage adapters, and ordinary host repos.
-- [ ] **ARCH-02**: Client, logout, initial-access-token, transaction, and audit operations use explicit narrow internal ports where required.
-- [ ] **ARCH-03**: DCR persistence and admin reads go through protocol/admin services and ports rather than direct schema queries in protocol or LiveView modules.
+- [x] **ARCH-01**: Executable fitness tests enforce the boundary between Ecto/query code, Lockspire storage adapters, and ordinary host repos.
+- [x] **ARCH-02**: Client, logout, initial-access-token, transaction, and audit operations use explicit narrow internal ports where required.
+- [x] **ARCH-03**: DCR persistence and admin reads go through protocol/admin services and ports rather than direct schema queries in protocol or LiveView modules.
 - [ ] **ARCH-04**: `Lockspire.Protocol.TokenExchange` remains the stable facade while grant-specific coordinators own authorization-code, device-code, and CIBA flows.
 
 ## Static Analysis and Tests

@@ -8,7 +8,7 @@
 
 - [ ] **Phase 126: Trusted Release Path** — Bind publication to exact successful CI evidence and harden the release supply chain.
 - [x] **Phase 127: Executable Quality Baselines** — Make lint, coverage, and minimum supported versions required and reproducible.
-- [ ] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
+- [x] **Phase 128: Runtime Dependency Truth** — Repair host-Repo/storage boundaries and route persistence through explicit ports.
 - [ ] **Phase 129: Token Endpoint Cohesion** — Decompose grant orchestration and centralize token/key policy with zero Dialyzer warnings.
 - [ ] **Phase 130: Readable Code & Sustainable Proof** — Consolidate test infrastructure, split oversized contracts, synchronize docs, and clean repository artifacts.
 
@@ -48,16 +48,16 @@ Plans:
 
 **Goal:** Ordinary host repos and Lockspire storage adapters are never confused, and persistence boundaries are executable.
 **Requirements:** RUNTIME-01, RUNTIME-02, ARCH-01, ARCH-02, ARCH-03
-**Plans:** 6 plans
+**Plans:** 6/6 plans executed
 
 Plans:
 
-- [ ] 128-01-PLAN.md — Prove CIBA Push JWT and ID-token issuance with an ordinary host Repo.
-- [ ] 128-02-PLAN.md — Correct authorization and token-lifecycle storage defaults.
-- [ ] 128-03-PLAN.md — Correct signing, JWT client-authentication, and DPoP storage defaults.
-- [ ] 128-04-PLAN.md — Move DCR and IAT persistence behind explicit ports.
-- [ ] 128-05-PLAN.md — Make transaction, audit, logout, and named-Oban boundaries explicit.
-- [ ] 128-06-PLAN.md — Route admin reads through services and enforce architecture fitness tests.
+- [x] 128-01-PLAN.md — Prove CIBA Push JWT and ID-token issuance with an ordinary host Repo.
+- [x] 128-02-PLAN.md — Correct authorization and token-lifecycle storage defaults.
+- [x] 128-03-PLAN.md — Correct signing, JWT client-authentication, and DPoP storage defaults.
+- [x] 128-04-PLAN.md — Move DCR and IAT persistence behind explicit ports.
+- [x] 128-05-PLAN.md — Make transaction, audit, logout, and named-Oban boundaries explicit.
+- [x] 128-06-PLAN.md — Route admin reads through services and enforce architecture fitness tests.
 
 **Success criteria:**
 

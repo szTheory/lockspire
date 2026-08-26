@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.36
 milestone_name: Structural Quality Ratchet
-current_phase_name: defining requirements
-status: planning
-stopped_at: Completed Phase 127 executable quality baselines
-last_updated: "2026-08-26T15:03:54.803Z"
+current_phase_name: token endpoint cohesion
+status: ready_for_planning
+stopped_at: Completed Phase 128 Runtime Dependency Truth
+last_updated: "2026-08-26T15:23:38.800Z"
 last_activity: 2026-08-26
 last_activity_desc: Milestone v1.36 started
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 40
+  completed_phases: 3
+  total_plans: 14
+  completed_plans: 14
+  percent: 60
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 129 of 130 (Token Endpoint Cohesion)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-08-26 — Milestone v1.36 started
+Status: Ready for planning
+Last activity: 2026-08-26 — Completed Phase 128 Runtime Dependency Truth
 
 ## Completed Ad Hoc Work
 
@@ -191,6 +191,8 @@ Last activity: 2026-08-26 — Milestone v1.36 started
 - [Phase 125]: Out-of-scope Phase 115 test.fast failures were deferred instead of fixed in Phase 125.
 - [Phase 125]: Plan 125-07 enforces empty/no-match browser evidence through parsed BrowserEvidence rows rather than raw markdown grep.
 - [Phase 125]: Plan 125-07 keeps empty/no-match proof maintainer-only with no browser tooling, runtime route, package, schema, or public support-surface expansion.
+- [Phase 128]: Protocol behavior stores default to Lockspire.Storage.Ecto.Repository; host Ecto repos remain raw persistence only.
+- [Phase 128]: DCR locks, audit writes, transaction rollback, and named Oban insertion live behind explicit Repository ports.
 
 ## Blockers/Concerns
 
@@ -205,11 +207,11 @@ Last activity: 2026-08-26 — Milestone v1.36 started
 
 ## Session Continuity
 
-**Last session:** 2026-08-26T15:03:54.797Z
+**Last session:** 2026-08-26T15:23:38.792Z
 
 **Next action:** Start the next scoped milestone only after the repo hygiene checklist passes cleanly, or continue sustaining release-train work as concrete support/release evidence appears.
 **Resume file:** None
-**Stopped at:** Completed Phase 127 executable quality baselines
+**Stopped at:** Completed Phase 128 Runtime Dependency Truth
 **Ecosystem:** .planning/ECOSYSTEM-SIGRA.md
 
 ## Performance Metrics
@@ -273,6 +275,7 @@ Last activity: 2026-08-26 — Milestone v1.36 started
 | Phase 127 P01 | 8 min | 1 tasks | 4 files |
 | Phase 127 P02 | 14 min | 2 tasks | 8 files |
 | Phase 127 P03 | 12 min | 1 tasks | 6 files |
+| Phase 128 P06 | 35 min | 11 tasks | 32 files |
 
 ## Operator Next Steps
 
