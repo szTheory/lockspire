@@ -358,6 +358,42 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
     refute exit_html =~ "task-exit-private-value"
   end
 
+  test "generated consent exposes safe host styling and long-text seams" do
+    long_scope = String.duplicate("unbroken-scope", 20)
+    long_detail_type = String.duplicate("unbroken-detail", 20)
+
+    socket =
+      %Phoenix.LiveView.Socket{}
+      |> Phoenix.Component.assign(%{
+        loading?: false,
+        submitting?: false,
+        decision: nil,
+        error: nil,
+        page_title: "Authorize Access",
+        client_name: nil,
+        requested_scopes: [long_scope],
+        authorization_detail_types: [long_detail_type],
+        remember?: true,
+        finalize_path: "/lockspire/interactions/safe-id/complete"
+      })
+
+    html =
+      Phoenix.LiveViewTest.rendered_to_string(
+        GeneratedHostAppWeb.LockspireConsentLive.render(socket.assigns)
+      )
+
+    assert html =~ "Application details are unavailable. You can deny this request."
+    refute html =~ "Application details are unavailable wants access"
+    assert html =~ "host-consent-action--primary"
+    assert html =~ "host-consent-action--destructive"
+    assert html =~ "host-consent-actions"
+    assert html =~ "host-consent-section"
+    assert html =~ "host-consent-wrap"
+    assert html =~ "overflow-wrap: anywhere"
+    assert html =~ long_scope
+    assert html =~ long_detail_type
+  end
+
   defp publish_signing_key(kid) do
     key = JOSE.JWK.generate_key({:rsa, 2048})
     {_fields, jwk} = JOSE.JWK.to_map(key)

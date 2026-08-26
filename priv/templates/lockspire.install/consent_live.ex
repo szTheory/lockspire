@@ -67,8 +67,8 @@ defmodule <%= @consent_live_module %> do
   @impl true
   def render(%{loading?: true} = assigns) do
     ~H"""
-    <section class="host-consent-shell">
-      <div role="status">
+    <section class="host-consent-shell host-consent-shell--loading">
+      <div class="host-consent-status" role="status">
         <h1>Authorize access</h1>
         <p>Loading authorization request…</p>
       </div>
@@ -78,8 +78,8 @@ defmodule <%= @consent_live_module %> do
 
   def render(%{error: error} = assigns) when not is_nil(error) do
     ~H"""
-    <section class="host-consent-shell">
-      <div role="alert">
+    <section class="host-consent-shell host-consent-shell--error">
+      <div class="host-consent-alert" role="alert">
         <h1>Authorize access</h1>
         <p>{@error}</p>
       </div>
@@ -90,69 +90,91 @@ defmodule <%= @consent_live_module %> do
   def render(assigns) do
     ~H"""
     <section class="host-consent-shell">
-      <header>
+      <header class="host-consent-header">
         <h1>{@page_title}</h1>
-        <p>
-          <strong>{@client_name || "Application details are unavailable"}</strong>
-          wants access to your account.
-        </p>
+        <%%= if @client_name do %>
+          <p class="host-consent-client-summary">
+            <strong class="host-consent-wrap" style="overflow-wrap: anywhere;">
+              {@client_name}
+            </strong>
+            wants access to your account.
+          </p>
+        <%% else %>
+          <p class="host-consent-client-summary host-consent-client-summary--unavailable">
+            Application details are unavailable. You can deny this request.
+          </p>
+        <%% end %>
       </header>
 
       <%%= if @requested_scopes == [] do %>
-        <p>This application did not request any additional permissions.</p>
+        <p class="host-consent-empty">This application did not request any additional permissions.</p>
       <%% else %>
-        <section>
+        <section class="host-consent-section">
           <h2>Requested permissions</h2>
-          <ul>
+          <ul class="host-consent-list">
             <%%= for scope <- @requested_scopes do %>
-              <li>{scope}</li>
+              <li class="host-consent-wrap" style="overflow-wrap: anywhere;">{scope}</li>
             <%% end %>
           </ul>
         </section>
       <%% end %>
 
       <%%= if @authorization_detail_types != [] do %>
-        <section>
+        <section class="host-consent-section">
           <h2>Requested access types</h2>
-          <ul>
+          <ul class="host-consent-list">
             <%%= for type <- @authorization_detail_types do %>
-              <li>{type}</li>
+              <li class="host-consent-wrap" style="overflow-wrap: anywhere;">{type}</li>
             <%% end %>
           </ul>
         </section>
       <%% end %>
 
-      <form
-        id="approve-consent"
-        action={@finalize_path}
-        method="post"
-        phx-submit="submit"
-        phx-trigger-action={@submitting? and @decision == "approve"}
-      >
-        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
-        <input type="hidden" name="decision" value="approve" />
-        <label>
-          <input type="checkbox" name="remember" value="true" checked={@remember?} />
-          Remember this consent for future matching requests
-        </label>
-        <button type="submit" disabled={@submitting?} phx-disable-with="Approving access…">
-          Approve access
-        </button>
-      </form>
+      <div class="host-consent-actions">
+        <form
+          id="approve-consent"
+          class="host-consent-action-form host-consent-action-form--approve"
+          action={@finalize_path}
+          method="post"
+          phx-submit="submit"
+          phx-trigger-action={@submitting? and @decision == "approve"}
+        >
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="decision" value="approve" />
+          <label class="host-consent-remember">
+            <input type="checkbox" name="remember" value="true" checked={@remember?} />
+            Remember this consent for future matching requests
+          </label>
+          <button
+            class="host-consent-action host-consent-action--primary"
+            type="submit"
+            disabled={@submitting?}
+            phx-disable-with="Approving access…"
+          >
+            Approve access
+          </button>
+        </form>
 
-      <form
-        id="deny-consent"
-        action={@finalize_path}
-        method="post"
-        phx-submit="submit"
-        phx-trigger-action={@submitting? and @decision == "deny"}
-      >
-        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
-        <input type="hidden" name="decision" value="deny" />
-        <button type="submit" disabled={@submitting?} phx-disable-with="Denying access…">
-          Deny access
-        </button>
-      </form>
+        <form
+          id="deny-consent"
+          class="host-consent-action-form host-consent-action-form--deny"
+          action={@finalize_path}
+          method="post"
+          phx-submit="submit"
+          phx-trigger-action={@submitting? and @decision == "deny"}
+        >
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <input type="hidden" name="decision" value="deny" />
+          <button
+            class="host-consent-action host-consent-action--destructive"
+            type="submit"
+            disabled={@submitting?}
+            phx-disable-with="Denying access…"
+          >
+            Deny access
+          </button>
+        </form>
+      </div>
     </section>
     """
   end
