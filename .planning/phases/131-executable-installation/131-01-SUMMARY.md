@@ -53,6 +53,7 @@ Generated Lockspire host integration now expands into actual Phoenix routes and 
 - `4eae42d` — `feat(131-01): generate executable host routes`
 - `a8c74ea` — `test(131-01): compile generated config seams`
 - `e70d521` — `fix(131-01): make generated config truthful`
+- `850524c` — `fix(131-01): preserve upgrade route proof`
 
 ## Deviations from Plan
 
@@ -67,6 +68,13 @@ Generated Lockspire host integration now expands into actual Phoenix routes and 
    - **Commit:** `4eae42d`
 
 **Total deviations:** 1 auto-fixed (Rule 2). **Impact:** The fixture now proves a real host-owned operator boundary without putting any operator authentication behavior into Lockspire's generated macro.
+
+### Follow-up Regression Repair
+
+The Wave 1 cumulative fast-suite gate found that `InstallUpgradeTest` still asserted the pre-formatter text form of the public forward. The assertion now parses rendered router source and proves the exact `/oauth` → `Lockspire.Web.Router` AST relationship, so valid formatting changes do not weaken or break upgrade evidence.
+
+- **Verification:** `mix test test/integration/install_upgrade_test.exs`, `mix test test/integration/install_generator_test.exs`, and `mix test.fast --max-failures 1` (1,301 tests, 0 failures).
+- **Commit:** `850524c`
 
 ## Self-Check: PASSED
 
