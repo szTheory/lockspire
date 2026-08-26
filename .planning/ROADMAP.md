@@ -97,13 +97,13 @@ Plans:
 **Plans:** 8 plans
 
 Plans:
-- [ ] 130-01-PLAN.md — Restore a green, warning-free test and compatibility baseline
-- [ ] 130-02-PLAN.md — Centralize database and configuration isolation helpers
-- [ ] 130-03-PLAN.md — Split token endpoint tests by grant capability
-- [ ] 130-04-PLAN.md — Split release proof by automation, hygiene, and support truth
-- [ ] 130-05-PLAN.md — Split admin design proof by CSS, routes, and evidence
-- [ ] 130-06-PLAN.md — Measure CI partitions and remove only proven duplicate work
-- [ ] 130-07-PLAN.md — Normalize runtime filenames and remove planning archaeology
+- [x] 130-01-PLAN.md — Restore a green, warning-free test and compatibility baseline
+- [x] 130-02-PLAN.md — Centralize database and configuration isolation helpers
+- [x] 130-03-PLAN.md — Split token endpoint tests by grant capability
+- [x] 130-04-PLAN.md — Split release proof by automation, hygiene, and support truth
+- [x] 130-05-PLAN.md — Split admin design proof by CSS, routes, and evidence
+- [x] 130-06-PLAN.md — Measure CI partitions and remove only proven duplicate work
+- [x] 130-07-PLAN.md — Normalize runtime filenames and remove planning archaeology
 - [ ] 130-08-PLAN.md — Synchronize docs, clean artifacts, and run final proof
 
 **Success criteria:**
