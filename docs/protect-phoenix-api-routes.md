@@ -46,6 +46,10 @@ On success, the verified token is available at `conn.assigns.access_token` as `%
 
 Use the semantic readers for normalized protocol facts:
 
+`Lockspire.AccessToken.subject/1`, `Lockspire.AccessToken.scopes/1`,
+`Lockspire.AccessToken.audiences/1`, `Lockspire.AccessToken.expires_at/1`, and
+`Lockspire.AccessToken.confirmation/1` are the supported readers.
+
 ```elixir
 subject = Lockspire.AccessToken.subject(access_token)
 scopes = Lockspire.AccessToken.scopes(access_token)

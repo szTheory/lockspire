@@ -31,6 +31,8 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       "security and release posture stay inside the supported GA surface",
       "advanced-setup support contract stays pinned semantically across canonical and derived docs",
       "canonical lockspire_protected_api pipeline is byte-identical across the four RECIPE-01 sites",
+      "canonical protected-route guidance uses the configured durable replay default",
+      "v1.37 resource-server and registration support contract stays additive and bounded",
       "mix lockspire.install never prompts for or branches on access-token format (SCAFFOLD-02, D-02 #1)",
       "install-template canonical lockspire_protected_api block stays fully commented (SCAFFOLD-01, D-02 #2)",
       "v1.27 migration guide pins the honest runtime opt-out and nil-inherit naming (MIGRATE-01, D-09/D-10)",
@@ -72,7 +74,7 @@ defmodule Lockspire.ReleaseReadinessContractTest do
         {relative_path, source}
       end)
 
-    assert @capability_inventory |> Map.values() |> List.flatten() |> length() == 45
+    assert @capability_inventory |> Map.values() |> List.flatten() |> length() == 47
 
     assertion_count =
       sources

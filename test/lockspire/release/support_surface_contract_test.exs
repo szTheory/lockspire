@@ -219,6 +219,35 @@ defmodule Lockspire.Release.SupportSurfaceContractTest do
     refute template =~ "dpop_replay_store: MyAppWeb.ProtectedApiReplayStore"
   end
 
+  test "v1.37 resource-server and registration support contract stays additive and bounded" do
+    supported_surface = File.read!(@supported_surface_path)
+    guide = File.read!(@protect_phoenix_api_routes_path)
+    upgrade = File.read!(Path.join(Path.dirname(@upgrading_v1_27_path), "v1.37.md"))
+
+    for reader <- ["subject/1", "scopes/1", "audiences/1", "expires_at/1", "confirmation/1"] do
+      assert guide =~ "Lockspire.AccessToken.#{reader}"
+      assert upgrade =~ "Lockspire.AccessToken.#{reader}"
+    end
+
+    assert guide =~ "configured Lockspire repository"
+    assert guide =~ "advanced override"
+    assert guide =~ "tenant, object, billing, product, response, and additional rate-limit policy"
+
+    assert supported_surface =~ "built-in `openid`"
+    assert supported_surface =~ "device-code-only clients without redirect URIs"
+    assert supported_surface =~ "exactly one inline `jwks` or HTTPS `jwks_uri`"
+
+    assert supported_surface =~
+             "authorization-code or `code` response shape requires non-empty redirect URIs"
+
+    refute supported_surface =~ "formal certification"
+
+    assert upgrade =~ "additive"
+    assert upgrade =~ "raw `claims` map remains available"
+    assert upgrade =~ "configured Lockspire repository"
+    assert upgrade =~ "custom replay stores remain supported"
+  end
+
   test "mix lockspire.install never prompts for or branches on access-token format (SCAFFOLD-02, D-02 #1)" do
     # The install task + generator SOURCE must never gain a token-format decision.
     # The install TEMPLATE is intentionally NOT a refute target: it legitimately carries
