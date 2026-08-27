@@ -38,4 +38,16 @@ defmodule Lockspire.Integration.Phase133HarnessTest do
     assert output =~ "client provenance verified"
     refute output =~ "/test/support"
   end
+
+  @tag :harness_security
+  test "redaction removes every OAuth secret sentinel before evidence is formatted" do
+    script = Path.expand("../../scripts/acceptance/clean_room/redaction.py", __DIR__)
+
+    assert {output, 0} = System.cmd("python3", [script, "--self-test"], stderr_to_stdout: true)
+
+    assert output =~ "redaction verified"
+    refute output =~ "phase133-access-token-sentinel"
+    refute output =~ "phase133-dpop-client-secret-sentinel"
+    refute output =~ "phase133-session-key-sentinel"
+  end
 end
