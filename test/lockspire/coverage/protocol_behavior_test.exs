@@ -4,6 +4,7 @@ defmodule Lockspire.Coverage.ProtocolBehaviorTest do
   test "a missing PKCE verifier is rejected without consuming the authorization code" do
     secret = "coverage-protocol-secret"
     {:ok, client} = create_client("coverage-protocol-client", :client_secret_basic, secret)
+    assert {:ok, _key} = publish_signing_key("coverage-protocol-signing-key")
 
     assert {:ok, _code} =
              create_authorization_code(client,
@@ -21,8 +22,8 @@ defmodule Lockspire.Coverage.ProtocolBehaviorTest do
                authorization: basic_auth(client.client_id, secret)
              )
 
-    assert error.error == "invalid_request"
-    assert error.error_description == "code_verifier is required"
+    assert error.error == "invalid_grant"
+    assert error.reason_code == :missing_code_verifier
 
     assert {:ok, success} =
              exchange(
