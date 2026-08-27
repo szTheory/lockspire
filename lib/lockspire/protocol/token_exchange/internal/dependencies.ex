@@ -43,7 +43,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
     secret_key_base: nil,
     signer: nil,
     config: Config,
-    telemetry: Observability
+    telemetry: Observability,
+    capabilities: %{}
   ]
 
   @type t :: %__MODULE__{}
@@ -121,13 +122,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
 
   defp required_capabilities(_grant), do: []
 
+  # Dependency capabilities are declared while adapting the legacy option bag,
+  # rather than discovered on a hot protocol path.  This keeps unsupported
+  # custom stores deterministic without making their exported functions part of
+  # token-exchange control flow.
   defp capability_available?(dependencies, {field, function, arity}) do
-    dependencies
-    |> Map.fetch!(field)
-    |> is_atom()
-    |> case do
-      true -> function_exported?(Map.fetch!(dependencies, field), function, arity)
-      false -> false
+    case Map.get(dependencies.capabilities, field, :all) do
+      :all -> true
+      capabilities when is_list(capabilities) -> {function, arity} in capabilities
+      _other -> false
     end
   end
 

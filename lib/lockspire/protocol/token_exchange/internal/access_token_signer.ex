@@ -12,7 +12,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
 
     1. a per-client `access_token_format` of `:jwt` or `:opaque` wins;
     2. otherwise (`nil`) the server-wide `ServerPolicy.access_token_format`
-       read via `request.opts[:server_policy_store]` is used;
+       supplied through the explicit dependency bundle is used;
     3. otherwise it falls back to `:jwt`.
 
   ## Audience derivation
@@ -145,13 +145,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
 
   defp resolve_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
 
-  defp server_policy(%Dependencies{server_policy_store: store}) do
-    cond do
-      is_nil(store) -> nil
-      not function_exported?(store, :get_server_policy, 0) -> nil
-      true -> normalize_server_policy(store.get_server_policy())
-    end
-  end
+  defp server_policy(%Dependencies{server_policy_store: nil}), do: nil
+
+  defp server_policy(%Dependencies{server_policy_store: store}),
+    do: normalize_server_policy(store.get_server_policy())
 
   defp normalize_server_policy({:ok, %ServerPolicy{} = policy}), do: policy
   defp normalize_server_policy(%ServerPolicy{} = policy), do: policy

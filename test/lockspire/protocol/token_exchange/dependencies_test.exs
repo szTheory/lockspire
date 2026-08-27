@@ -71,8 +71,12 @@ defmodule Lockspire.Protocol.TokenExchange.DependenciesTest do
     assert is_function(dependencies.now, 0)
   end
 
-  test "reports an invalid durable capability as a deterministic safe token error" do
-    assert {:ok, dependencies} = LegacyOptions.from_request(%{opts: [token_store: __MODULE__]})
+  test "reports a missing declared durable capability as a deterministic safe token error" do
+    assert {:ok, dependencies} =
+             LegacyOptions.from_request(%{
+               opts: [token_store: __MODULE__, capabilities: %{token_store: []}]
+             })
+
     assert {:error, error} = Dependencies.validate(dependencies, :refresh)
 
     assert error.error == "server_error"

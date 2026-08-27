@@ -45,7 +45,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.LegacyOptions do
       secret_key_base: Keyword.get(opts, :secret_key_base),
       signer: Keyword.get(opts, :signer),
       config: Keyword.get(opts, :config, Config),
-      telemetry: Keyword.get(opts, :telemetry, Observability)
+      telemetry: Keyword.get(opts, :telemetry, Observability),
+      capabilities: Keyword.get(opts, :capabilities, %{})
     }
   end
 

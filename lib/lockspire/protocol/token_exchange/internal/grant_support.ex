@@ -22,6 +22,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Host.Claims
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
@@ -1504,21 +1505,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0) do
-    if function_exported?(store, :transact_with_audit, 2) do
-      store.transact_with_audit(audit_event, fun)
-    else
-      transact_token_operation(store, audit_event, fun)
-    end
-  end
+  defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0),
+    do: GrantPersistence.transact_with_audit(store, store, audit_event, fun)
 
-  defp append_audit_event(store, audit_event) do
-    if function_exported?(store, :append_audit_event, 1) do
-      store.append_audit_event(audit_event)
-    else
-      {:error, :audit_append_unsupported}
-    end
-  end
+  defp append_audit_event(store, audit_event), do: store.append_audit_event(audit_event)
 
   defp maybe_append_failure_audit(
          %Error{reason_code: :authorization_code_replayed},
@@ -1576,28 +1566,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
            "Unable to load authorization code",
            :authorization_code_lookup_failed
          )}
-    end
-  end
-
-  defp transact_token_operation(store, audit_event, fun) do
-    if function_exported?(store, :transact, 1) do
-      store.transact(fn -> run_audited_token_operation(store, audit_event, fun) end)
-    else
-      run_audited_token_operation(store, audit_event, fun)
-    end
-  end
-
-  defp run_audited_token_operation(store, audit_event, fun) do
-    fun.()
-    |> maybe_append_audit_event(store, audit_event)
-  end
-
-  defp maybe_append_audit_event({:error, reason}, _store, _audit_event), do: {:error, reason}
-
-  defp maybe_append_audit_event(result, store, audit_event) do
-    case append_audit_event(store, audit_event) do
-      {:ok, _event} -> result
-      {:error, reason} -> {:error, reason}
     end
   end
 

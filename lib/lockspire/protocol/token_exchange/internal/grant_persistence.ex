@@ -15,6 +15,24 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     |> normalize_transaction()
   end
 
+  @doc false
+  @spec transact_with_audit(module(), module(), map(), (-> term())) :: term()
+  def transact_with_audit(transaction_store, audit_store, audit_event, operation)
+      when is_function(operation, 0) do
+    transaction_store.transact(fn ->
+      case operation.() do
+        {:error, _reason} = error ->
+          error
+
+        result ->
+          case audit_store.append_audit_event(audit_event) do
+            {:ok, _event} -> result
+            {:error, reason} -> {:error, reason}
+          end
+      end
+    end)
+  end
+
   defp append_audit_events({:error, reason}, _audit_store), do: {:error, reason}
 
   defp append_audit_events({tag, value, events}, audit_store) when tag in [:ok, :durable_error] do
