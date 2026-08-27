@@ -301,7 +301,8 @@ def decoded_secret_payload(body: object) -> dict[str, object]:
 
 def scan_evidence(run_root: Path, redactor: Redactor) -> None:
     for path in sorted(run_root.glob("*.log")):
-        evidence = path.read_text(errors="replace")
+        evidence = redactor.text(path.read_text(errors="replace"))
+        path.write_text(evidence, encoding="utf-8")
         redactor.assert_safe(evidence)
         if re.search(r"(?i)(authorization|cookie|set-cookie)\s*[:=]\s*(?!\[REDACTED\])\S", evidence):
             raise AssertionError(f"unsafe raw header value in {path.name}")
