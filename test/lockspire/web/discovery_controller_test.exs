@@ -59,7 +59,8 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
 
   setup do
     original_env =
-      for key <- [:issuer, :mount_path, :known_scopes, :discovery_router], into: %{} do
+      for key <- [:issuer, :mount_path, :known_scopes, :discovery_router, :discovery_route_paths],
+          into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
 
@@ -238,6 +239,21 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
     body = Jason.decode!(conn.resp_body)
 
     refute Map.has_key?(body, "dpop_signing_alg_values_supported")
+  end
+
+  test "GET /.well-known/openid-configuration uses the configured neutral route capability" do
+    Application.put_env(:lockspire, :discovery_route_paths, ["/token"])
+
+    conn =
+      build_conn(:get, "/.well-known/openid-configuration")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    body = Jason.decode!(conn.resp_body)
+
+    assert body["token_endpoint"] == "https://example.test/lockspire/token"
+    refute Map.has_key?(body, "authorization_endpoint")
+    refute Map.has_key?(body, "userinfo_endpoint")
   end
 
   test "GET /.well-known/openid-configuration omits revocation and introspection auth metadata when those routes are unmounted" do
