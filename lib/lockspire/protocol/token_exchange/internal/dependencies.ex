@@ -17,7 +17,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
     :audit_store,
     :transaction_store,
     :now,
-    :token_exchange_validator
+    :token_exchange_validator,
+    :issuer,
+    :account_resolver,
+    :observability_emitter
   ]
   defstruct [
     :client_store,
@@ -42,6 +45,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
     dpop_nonce_max_age: 300,
     secret_key_base: nil,
     signer: nil,
+    issuer: nil,
+    account_resolver: nil,
+    observability_emitter: nil,
     config: Config,
     telemetry: Observability,
     capabilities: %{}

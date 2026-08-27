@@ -44,6 +44,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.LegacyOptions do
       dpop_nonce_max_age: Keyword.get(opts, :dpop_nonce_max_age, 300),
       secret_key_base: Keyword.get(opts, :secret_key_base),
       signer: Keyword.get(opts, :signer),
+      issuer: Keyword.get(opts, :issuer, Config.issuer!()),
+      account_resolver: Keyword.get(opts, :account_resolver, Config.account_resolver!()),
+      observability_emitter: Keyword.get(opts, :observability_emitter, Observability),
       config: Keyword.get(opts, :config, Config),
       telemetry: Keyword.get(opts, :telemetry, Observability),
       capabilities: Keyword.get(opts, :capabilities, %{})
