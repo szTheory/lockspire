@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.DPoPTest do
 
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DPoPNonce
+  alias Lockspire.Protocol.DPoP.ProofParser
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.JarTestHelpers
 
@@ -48,6 +49,15 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert {:ok, %DPoP{claims: claims, header: header}} = DPoP.decode(proof)
       assert claims["htm"] == "POST"
       assert header["typ"] == "dpop+jwt"
+      assert header["jwk"] == keys.pub_jwk_map
+    end
+
+    test "parses the same protected proof material for the public coordinator", %{
+      proof: proof,
+      keys: keys
+    } do
+      assert {:ok, %{claims: claims, header: header}} = ProofParser.decode(proof)
+      assert claims["htm"] == "POST"
       assert header["jwk"] == keys.pub_jwk_map
     end
 
