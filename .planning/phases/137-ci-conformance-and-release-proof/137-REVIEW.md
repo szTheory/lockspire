@@ -1,6 +1,7 @@
 ---
 phase: 137-ci-conformance-and-release-proof
 reviewed: 2026-08-27T22:47:53Z
+resolved: 2026-08-27T23:08:00Z
 depth: standard
 files_reviewed: 44
 files_reviewed_list:
@@ -49,11 +50,11 @@ files_reviewed_list:
   - test/mix/tasks/lockspire/oidf_conformance_test.exs
   - test/support/lockspire/release_proof/workflow_assertions.ex
 findings:
-  critical: 2
+  critical: 0
   warning: 0
   info: 0
-  total: 2
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 137: Code Review Report
@@ -61,11 +62,11 @@ status: issues_found
 **Reviewed:** 2026-08-27T22:47:53Z
 **Depth:** standard
 **Files Reviewed:** 44
-**Status:** issues_found
+**Status:** clean after re-review
 
 ## Summary
 
-The coverage, router scanning, immutable-input validation, clean-room source selection, and bounded-receipt code were reviewed alongside their workflows and contract tests. Shell syntax, Python compilation, and the repository workflow linter complete successfully. Two release-readiness claims are nevertheless unsound: supplemental conformance never executes a test plan, and the protected release path does not actually publish the clean-room-proven tarball.
+The coverage, router scanning, immutable-input validation, clean-room source selection, and bounded-receipt code were reviewed alongside their workflows and contract tests. The initial review found two blockers. Both were fixed and independently re-reviewed: supplemental conformance now executes the pinned test-plan runner with fail-closed input provisioning, and the protected release path uploads the exact manifest-bound tar bytes without rebuilding them.
 
 ## Narrative Findings (AI reviewer)
 
@@ -73,7 +74,7 @@ The coverage, router scanning, immutable-input validation, clean-room source sel
 
 ### CR-01: Supplemental conformance jobs can report success without running any OIDF plan
 
-**Classification:** BLOCKER
+**Classification:** RESOLVED
 
 **File:** `scripts/conformance/run_oidf_profile.sh:44-48`
 
@@ -83,7 +84,7 @@ The coverage, router scanning, immutable-input validation, clean-room source sel
 
 ### CR-02: The Hex publish operation rebuilds instead of uploading the tar that passed clean-room proof
 
-**Classification:** BLOCKER
+**Classification:** RESOLVED
 
 **File:** `scripts/publish/publish_hex_idempotently.sh:53-60`
 
@@ -96,3 +97,12 @@ The coverage, router scanning, immutable-input validation, clean-room source sel
 _Reviewed: 2026-08-27T22:47:53Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
+
+## Resolution Re-review
+
+**Reviewed:** 2026-08-27T23:08:00Z
+**Verdict:** CLEAN
+
+- CR-01 was closed by `9cbecdfa` and `01695e1e`. The pinned OIDF runner is invoked after verified preparation and Compose readiness; setup failures and suite failures produce distinct redacted receipts, raw output is deleted, provider JSON is private and scrubbed from child environments, and workflow dependencies are checksum-locked.
+- CR-02 was closed by `4f73ec84`. The publisher re-verifies the manifest-bound tar immediately before upload and passes those exact bytes to `Hex.API.Release.publish/5`; a local endpoint captures the outgoing body and proves byte equality, and no package rebuild remains on the publication path.
+- Focused re-review command: `MIX_ENV=test mix test test/lockspire/conformance_profile_execution_test.exs test/lockspire/release_artifact_chain_contract_test.exs` — 10 tests, 0 failures.
