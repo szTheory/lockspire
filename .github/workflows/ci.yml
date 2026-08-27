@@ -138,6 +138,12 @@ jobs:
       - name: Run qa gate
         run: mix qa
 
+      - name: Scan both shipped routers with Sobelow
+        run: bash scripts/ci/check_sobelow_routers.sh
+
+      - name: Verify dependency truth and architecture topology
+        run: bash scripts/ci/check_dependency_truth.sh
+
       - name: Build docs
         run: mix docs.verify
 
@@ -148,7 +154,17 @@ jobs:
         run: mix package.build
 
       - name: Run fast tests with built-in coverage
-        run: bash scripts/ci/run_test_matrix.sh --fast .artifacts/ci/fast-timings.json
+        run: bash scripts/ci/run_test_matrix.sh --fast .artifacts/ci/fast-timings.json .artifacts/ci/coverage/fast "${{ github.sha }}"
+
+      - name: Upload SHA-bound fast coverage evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-coverage-fast-${{ github.sha }}
+          path: |
+            .artifacts/ci/coverage/fast/fast.coverdata
+            .artifacts/ci/coverage/fast/fast.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload fast test timing
         if: always()
@@ -311,7 +327,17 @@ jobs:
           exit 1
 
       - name: Run integration suite including onboarding and OIDC E2E proof
-        run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json
+        run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json .artifacts/ci/coverage/integration "${{ github.sha }}"
+
+      - name: Upload SHA-bound integration coverage evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-coverage-integration-${{ github.sha }}
+          path: |
+            .artifacts/ci/coverage/integration/integration.coverdata
+            .artifacts/ci/coverage/integration/integration.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload integration test timing
         if: always()
@@ -320,6 +346,40 @@ jobs:
           name: integration-test-timings
           path: .artifacts/ci/integration-timings.json
           retention-days: 14
+
+  coverage-aggregate:
+    name: Complete Coverage Evidence
+    needs: [fast, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get --check-locked
+
+      - name: Download SHA-bound fast coverage evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: lockspire-coverage-fast-${{ github.sha }}
+          path: .artifacts/ci/coverage/fast
+
+      - name: Download SHA-bound integration coverage evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: lockspire-coverage-integration-${{ github.sha }}
+          path: .artifacts/ci/coverage/integration
+
+      - name: Aggregate imported coverage without rerunning tests
+        run: bash scripts/ci/aggregate_coverage.sh --expected-sha "${{ github.sha }}" --input .artifacts/ci/coverage --output .artifacts/ci/coverage-aggregate
 
   adoption-demo:
     name: Adoption Demo Smoke
@@ -373,6 +433,9 @@ jobs:
       - name: Install adoption demo dependencies
         working-directory: examples/adoption_demo
         run: mix deps.get --check-locked
+
+      - name: Verify adoption demo lock stayed unchanged
+        run: git diff --exit-code -- examples/adoption_demo/mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock
 
       - name: Wait for PostgreSQL
         run: |
