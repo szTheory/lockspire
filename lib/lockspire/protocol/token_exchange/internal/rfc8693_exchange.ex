@@ -5,20 +5,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
 
   require Logger
 
-  alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Host.TokenExchangeContext
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
   alias Lockspire.Security.Policy
-  alias Lockspire.Storage.Ecto.Repository
 
-  @spec exchange(Client.t(), map()) :: {:ok, struct()} | {:error, struct()}
-  def exchange(%Client{} = client, request) do
+  @spec exchange(Client.t(), map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  def exchange(%Client{} = client, request, %Dependencies{} = dependencies) do
+    request = Dependencies.attach(request, dependencies)
     params = Map.get(request, :params, Map.get(request, "params", request))
     issued_at = now(request)
 
@@ -191,10 +191,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
   end
 
   defp server_policy(request) do
-    store =
-      request
-      |> Map.get(:opts, [])
-      |> Keyword.get(:server_policy_store, Repository)
+    store = Dependencies.fetch!(request).server_policy_store
 
     case store.get_server_policy() do
       {:ok, policy} -> policy
@@ -250,30 +247,14 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
 
   defp normalize_optional_string(_), do: nil
 
-  defp token_store(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.get(:token_store, Repository)
-  end
+  defp token_store(request), do: Dependencies.fetch!(request).token_store
 
-  defp token_format_options(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.get(:token_format_options, [])
-  end
+  defp token_format_options(request), do: Dependencies.fetch!(request).token_format_options
 
-  defp now(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
-    |> then(& &1.())
-  end
+  defp now(request), do: Dependencies.fetch!(request).now.()
 
-  defp token_exchange_validator(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.get_lazy(:token_exchange_validator, fn -> Config.token_exchange_validator() end)
-  end
+  defp token_exchange_validator(request),
+    do: Dependencies.fetch!(request).token_exchange_validator
 
   defp validate_exchange(context, request) do
     validator = token_exchange_validator(request)
@@ -325,7 +306,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
           expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
         }
 
-        AccessTokenSigner.issue_exchange(token, client, custom_claims, request)
+        AccessTokenSigner.issue_exchange(
+          token,
+          client,
+          custom_claims,
+          request,
+          Dependencies.fetch!(request)
+        )
     end
   end
 end

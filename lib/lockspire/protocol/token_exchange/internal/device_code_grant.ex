@@ -3,32 +3,40 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.DeviceCodeGrant do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange(map()) :: {:ok, struct()} | {:error, struct()}
-  def exchange(request) when is_map(request) do
+  @spec exchange(map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  def exchange(request, %Dependencies{} = dependencies) when is_map(request) do
+    request = Dependencies.attach(request, dependencies)
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <-
-           GrantSupport.authenticate_client(params, authorization, request),
+           GrantSupport.authenticate_client(params, authorization, request, dependencies),
          {:ok, %DeviceAuthorization{} = device_authorization} <-
-           GrantSupport.fetch_device_authorization_for_exchange(params, client, request),
-         {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request),
+           GrantSupport.fetch_device_authorization_for_exchange(
+             params,
+             client,
+             request,
+             dependencies
+           ),
+         {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request, dependencies),
          {:ok, %Success{} = success} <-
            GrantSupport.redeem_device_authorization(
              client,
              device_authorization,
              context,
-             request
+             request,
+             dependencies
            ) do
       {:ok, success}
     else
       {:error, %Error{} = error} ->
-        GrantSupport.emit_failure(error, params, request)
+        GrantSupport.emit_failure(error, params, request, dependencies)
         {:error, error}
     end
   end

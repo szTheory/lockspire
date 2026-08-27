@@ -7,14 +7,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   alias Lockspire.Domain.Token
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange_refresh_token(Client.t(), map()) :: {:ok, struct()} | {:error, struct()}
-  def exchange_refresh_token(%Client{} = client, request) when is_map(request) do
+  @spec exchange_refresh_token(Client.t(), map(), Dependencies.t()) ::
+          {:ok, struct()} | {:error, struct()}
+  def exchange_refresh_token(%Client{} = client, request, %Dependencies{} = dependencies)
+      when is_map(request) do
+    request = Dependencies.attach(request, dependencies)
     params = Map.get(request, :params, Map.get(request, "params", request))
 
     with {:ok, refresh_token_hash} <- fetch_refresh_token_hash(params),
@@ -62,7 +66,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          {:ok, requested_resources} <-
            validate_requested_resources(params, presented_refresh_token),
          {:ok, context} <-
-           TokenEndpointDPoP.resolve_refresh_context(client, presented_refresh_token, request) do
+           TokenEndpointDPoP.resolve_refresh_context(
+             client,
+             presented_refresh_token,
+             request,
+             Dependencies.fetch!(request)
+           ) do
       rotate_refresh_token_with_audit(
         client,
         refresh_token_hash,
@@ -102,7 +111,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     # Mint the at+jwt (or opaque, per format resolution) via the shared signer and
     # re-point the persisted token_hash to the signer's hash.
     with {:ok, raw_access_token, access_token_hash} <-
-           AccessTokenSigner.issue(access_token, client, request) do
+           AccessTokenSigner.issue(access_token, client, request, Dependencies.fetch!(request)) do
       access_token = %Token{access_token | token_hash: access_token_hash}
 
       refresh_token =
@@ -235,30 +244,25 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     }
   end
 
-  defp token_store(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.fetch!(:token_store)
-  end
+  defp token_store(request), do: Dependencies.fetch!(request).token_store
 
   defp token_format_options(request, token_type) do
-    case Keyword.get(
-           Map.get(request, :opts, []),
-           :"#{token_type}_generator",
-           Keyword.get(Map.get(request, :opts, []), :token_generator)
-         ) do
+    dependencies = Dependencies.fetch!(request)
+
+    generator =
+      case token_type do
+        :access_token -> dependencies.access_token_generator || dependencies.token_generator
+        :refresh_token -> dependencies.refresh_token_generator || dependencies.token_generator
+      end
+
+    case generator do
       nil -> []
       generator -> [token_generator: generator]
     end
   end
 
   @spec now(map()) :: DateTime.t()
-  defp now(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
-    |> then(& &1.())
-  end
+  defp now(request), do: Dependencies.fetch!(request).now.()
 
   defp transact_with_audit_outcome(store, fun) when is_function(fun, 0) do
     store.transact(fn ->

@@ -3,25 +3,35 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AuthorizationCodeGrant do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
 
-  @spec exchange(map()) :: {:ok, struct()} | {:error, struct()}
-  def exchange(request) when is_map(request) do
+  @spec exchange(map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  def exchange(request, %Dependencies{} = dependencies) when is_map(request) do
+    request = Dependencies.attach(request, dependencies)
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with :ok <- validate_grant_type(params),
          {:ok, %Client{} = client} <-
-           GrantSupport.authenticate_client(params, authorization, request),
-         {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request),
+           GrantSupport.authenticate_client(params, authorization, request, dependencies),
+         {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request, dependencies),
          {:ok, %Token{} = code, code_hash} <-
-           GrantSupport.fetch_authorization_code(params, request) do
-      GrantSupport.handle_code_exchange(client, code, code_hash, params, context, request)
+           GrantSupport.fetch_authorization_code(params, request, dependencies) do
+      GrantSupport.handle_code_exchange(
+        client,
+        code,
+        code_hash,
+        params,
+        context,
+        request,
+        dependencies
+      )
     else
       {:error, %Error{} = error} ->
-        GrantSupport.emit_failure(error, params, request)
+        GrantSupport.emit_failure(error, params, request, dependencies)
         {:error, error}
     end
   end

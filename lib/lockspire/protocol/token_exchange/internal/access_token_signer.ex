@@ -37,10 +37,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.PrivateJwk
   alias Lockspire.Security.Policy
-  alias Lockspire.Storage.Ecto.Repository
 
   # Tokens are signed before their final raw-value hash is known. Persisted
   # tokens tighten this field to String.t(), but signing deliberately accepts
@@ -58,7 +59,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   The `:jwt` branch emits a LIST `aud` derived from `token.audience`.
   """
   @spec issue(token_for_issuance(), Client.t(), map()) :: result()
+  @spec issue(token_for_issuance(), Client.t(), map(), Dependencies.t()) :: result()
+  def issue(%Token{} = token, %Client{} = client, request, %Dependencies{} = dependencies) do
+    request
+    |> Dependencies.attach(dependencies)
+    |> then(&issue_with_dependencies(token, client, &1))
+  end
+
   def issue(%Token{} = token, %Client{} = client, request) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      issue(token, client, request, dependencies)
+    end
+  end
+
+  defp issue_with_dependencies(%Token{} = token, %Client{} = client, request) do
     case resolve_format(client, server_policy(request)) do
       :opaque ->
         format_opaque(request)
@@ -78,8 +92,35 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   restricted claims `iss sub aud exp iat jti client_id`.
   """
   @spec issue_exchange(token_for_issuance(), Client.t(), map(), map()) :: result()
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map(), Dependencies.t()) ::
+          result()
+  def issue_exchange(
+        %Token{} = token,
+        %Client{} = client,
+        custom_claims,
+        request,
+        %Dependencies{} = dependencies
+      )
+      when is_map(custom_claims) do
+    request
+    |> Dependencies.attach(dependencies)
+    |> then(&issue_exchange_with_dependencies(token, client, custom_claims, &1))
+  end
+
   def issue_exchange(%Token{} = token, %Client{} = client, custom_claims, request)
       when is_map(custom_claims) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      issue_exchange(token, client, custom_claims, request, dependencies)
+    end
+  end
+
+  defp issue_exchange_with_dependencies(
+         %Token{} = token,
+         %Client{} = client,
+         custom_claims,
+         request
+       )
+       when is_map(custom_claims) do
     base = base_claims(token, client, client.client_id)
     safe_custom_claims = Map.drop(custom_claims, ~w(iss sub aud exp iat jti client_id))
     claims = Map.merge(base, safe_custom_claims)
@@ -103,10 +144,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   defp resolve_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
 
   defp server_policy(request) do
-    store =
-      request
-      |> Map.get(:opts, [])
-      |> Keyword.get(:server_policy_store)
+    store = Dependencies.fetch!(request).server_policy_store
 
     cond do
       is_nil(store) -> nil
@@ -199,10 +237,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # --------------------------------------------------------------------------
 
   defp fetch_signing_key(request) do
-    key_store =
-      request
-      |> Map.get(:opts, [])
-      |> Keyword.get(:key_store, Repository)
+    key_store = Dependencies.fetch!(request).key_store
 
     case key_store.fetch_active_signing_key([]) do
       {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}

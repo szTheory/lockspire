@@ -63,9 +63,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       "ciba_grant.ex"
     ]
 
-    assert facade =~ "Internal.AuthorizationCodeGrant.exchange(request)"
-    assert facade =~ "Internal.DeviceCodeGrant.exchange(request)"
-    assert facade =~ "Internal.CibaGrant.exchange(request)"
+    assert facade =~ "&Internal.AuthorizationCodeGrant.exchange/2"
+    assert facade =~ "&Internal.DeviceCodeGrant.exchange/2"
+    assert facade =~ "&Internal.CibaGrant.exchange/2"
     refute Regex.match?(~r/^\s*def exchange\(/m, grant_support)
     refute function_exported?(TokenExchange.GrantSupport, :exchange, 1)
 
@@ -108,14 +108,16 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   test "facade routing matrix names one owner for every supported grant" do
     facade = File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange.ex", __DIR__))
 
-    assert facade =~ "Internal.AuthorizationCodeGrant.exchange(request)"
-    assert facade =~ "exchange_refresh_token(request)"
-    assert facade =~ "Internal.DeviceCodeGrant.exchange(request)"
-    assert facade =~ "Internal.CibaGrant.exchange(request)"
-    assert facade =~ "exchange_rfc8693(request)"
+    assert facade =~ "&Internal.AuthorizationCodeGrant.exchange/2"
+    assert facade =~ "&exchange_refresh_token/2"
+    assert facade =~ "&Internal.DeviceCodeGrant.exchange/2"
+    assert facade =~ "&Internal.CibaGrant.exchange/2"
+    assert facade =~ "&exchange_rfc8693/2"
 
-    assert facade =~ "Internal.RefreshExchange.exchange_refresh_token(client, request)"
-    assert facade =~ "Internal.Rfc8693Exchange.exchange(client, request)"
+    assert facade =~
+             "Internal.RefreshExchange.exchange_refresh_token(client, request, dependencies)"
+
+    assert facade =~ "Internal.Rfc8693Exchange.exchange(client, request, dependencies)"
     refute facade =~ "TokenExchange.Compatibility"
   end
 

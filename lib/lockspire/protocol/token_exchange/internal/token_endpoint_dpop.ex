@@ -11,9 +11,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.MTLSTokenBinding
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenResult.Error
-  alias Lockspire.Storage.Ecto.Repository
 
   @type issuance_context :: %{
           mode: :bearer | :dpop,
@@ -26,7 +27,21 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
 
   @spec resolve_context(Client.t(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
+  @spec resolve_context(Client.t(), map(), Dependencies.t()) ::
+          {:ok, issuance_context()} | {:error, struct()}
+  def resolve_context(%Client{} = client, request, %Dependencies{} = dependencies),
+    do:
+      request
+      |> Dependencies.attach(dependencies)
+      |> then(&resolve_context_with_dependencies(client, &1))
+
   def resolve_context(%Client{} = client, request) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      resolve_context(client, request, dependencies)
+    end
+  end
+
+  defp resolve_context_with_dependencies(%Client{} = client, request) do
     with {:ok, resolved_dpop_policy} <- resolve_policy(client, request),
          {:ok, resolved_security_profile} <- resolve_security_profile(client, request) do
       effective_dpop_required =
@@ -50,7 +65,30 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
+  @spec resolve_refresh_context(Client.t(), Token.t(), map(), Dependencies.t()) ::
+          {:ok, issuance_context()} | {:error, struct()}
+  def resolve_refresh_context(
+        %Client{} = client,
+        %Token{} = token,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&resolve_refresh_context_with_dependencies(client, token, &1))
+
   def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      resolve_refresh_context(client, presented_refresh_token, request, dependencies)
+    end
+  end
+
+  defp resolve_refresh_context_with_dependencies(
+         %Client{} = client,
+         %Token{} = presented_refresh_token,
+         request
+       ) do
     with {:ok, resolved_security_profile} <- resolve_security_profile(client, request),
          {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
          {:ok, expected_cnf} <- validate_mtls_binding(expected_cnf, request),
@@ -113,7 +151,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   end
 
   defp validate_mtls_binding(expected_cnf, request) do
-    case {expected_cnf, Keyword.get(request_options(request), :mtls_cert)} do
+    case {expected_cnf, Dependencies.fetch!(request).mtls_cert} do
       {%{"x5t#S256" => expected_thumbprint}, cert} ->
         if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
           {:ok, expected_cnf}
@@ -138,11 +176,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
            method: request_method(request),
            target_uri: token_endpoint_uri(),
            now: now(request),
-           max_age: Keyword.get(request_options(request), :dpop_max_age, 300),
-           clock_skew: Keyword.get(request_options(request), :dpop_clock_skew, 30),
+           max_age: Dependencies.fetch!(request).dpop_max_age,
+           clock_skew: Dependencies.fetch!(request).dpop_clock_skew,
            nonce_purpose: :authorization_server,
-           secret_key_base: Keyword.get(request_options(request), :secret_key_base),
-           nonce_max_age: Keyword.get(request_options(request), :dpop_nonce_max_age, 300)
+           secret_key_base: Dependencies.fetch!(request).secret_key_base,
+           nonce_max_age: Dependencies.fetch!(request).dpop_nonce_max_age
          ) do
       {:ok, %DPoP{} = validated_proof} ->
         {:ok, validated_proof}
@@ -244,8 +282,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
 
   defp maybe_add_x5t_cnf(cnf, request) do
     request
-    |> request_options()
-    |> Keyword.get(:mtls_cert)
+    |> Dependencies.fetch!()
+    |> Map.fetch!(:mtls_cert)
     |> then(&MTLSTokenBinding.maybe_put_confirmation(cnf, &1))
   end
 
@@ -312,8 +350,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   end
 
   defp dpop_replay_expiration(iat, request) when is_integer(iat) do
-    max_age = Keyword.get(request_options(request), :dpop_max_age, 300)
-    clock_skew = Keyword.get(request_options(request), :dpop_clock_skew, 30)
+    max_age = Dependencies.fetch!(request).dpop_max_age
+    clock_skew = Dependencies.fetch!(request).dpop_clock_skew
 
     case DateTime.from_unix((iat + max_age + clock_skew) * 1_000_000, :microsecond) do
       {:ok, expires_at} -> {:ok, expires_at}
@@ -406,32 +444,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     }
   end
 
-  defp server_policy_store(request),
-    do:
-      Keyword.get_lazy(request_options(request), :server_policy_store, fn ->
-        Keyword.get(request_options(request), :client_store, Repository)
-      end)
+  defp server_policy_store(request), do: Dependencies.fetch!(request).server_policy_store
 
-  defp dpop_replay_store(request),
-    do:
-      Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
-        Keyword.get(request_options(request), :client_store, Repository)
-      end)
+  defp dpop_replay_store(request), do: Dependencies.fetch!(request).dpop_replay_store
 
-  defp now(request),
-    do:
-      request
-      |> request_options()
-      |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
-      |> then(& &1.())
+  defp now(request), do: Dependencies.fetch!(request).now.()
 
-  defp request_options(request) do
-    Map.get(request, :opts, Map.get(request, "opts", []))
-  end
-
-  defp secret_key_base(request) do
-    Keyword.get(request_options(request), :secret_key_base)
-  end
+  defp secret_key_base(request), do: Dependencies.fetch!(request).secret_key_base
 
   defp normalize_optional_string(value) when is_binary(value) do
     value

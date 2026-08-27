@@ -12,6 +12,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Host.Claims
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.TokenFormatter
@@ -19,9 +20,32 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
   alias Lockspire.Security.Policy
-  alias Lockspire.Storage.Ecto.Repository
 
   @type result :: {:ok, struct()} | {:error, struct()}
+
+  @doc false
+  def handle_code_exchange(
+        client,
+        authorization_code,
+        code_hash,
+        params,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(
+          &handle_code_exchange(
+            client,
+            authorization_code,
+            code_hash,
+            params,
+            issuance_context,
+            &1
+          )
+        )
 
   @doc false
   def handle_code_exchange(
@@ -55,6 +79,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   @doc false
+  def authenticate_client(params, authorization, request, %Dependencies{} = dependencies),
+    do:
+      request
+      |> Dependencies.attach(dependencies)
+      |> then(&authenticate_client(params, authorization, &1))
+
+  @doc false
   def authenticate_client(params, authorization, request) do
     case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
       {:ok, %Client{} = client} ->
@@ -72,6 +103,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   @doc false
+  def fetch_authorization_code(params, request, %Dependencies{} = dependencies),
+    do:
+      request |> Dependencies.attach(dependencies) |> then(&fetch_authorization_code(params, &1))
+
+  @doc false
   def fetch_authorization_code(params, request) do
     case normalize_optional_string(params["code"]) do
       code when is_binary(code) ->
@@ -82,6 +118,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         {:error, invalid_grant("Authorization code is required", :missing_authorization_code)}
     end
   end
+
+  @doc false
+  def fetch_device_authorization_for_exchange(
+        params,
+        client,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&fetch_device_authorization_for_exchange(params, client, &1))
 
   @doc false
   def fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
@@ -98,6 +146,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       end
     end
   end
+
+  @doc false
+  def fetch_ciba_authorization_for_exchange(
+        params,
+        client,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&fetch_ciba_authorization_for_exchange(params, client, &1))
 
   @doc false
   def fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
@@ -630,6 +690,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   @doc false
   def redeem_device_authorization(
+        client,
+        authorization,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&redeem_device_authorization(client, authorization, issuance_context, &1))
+
+  def redeem_device_authorization(
         %Client{} = client,
         %DeviceAuthorizationState{} = device_authorization,
         issuance_context,
@@ -654,6 +726,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   @doc false
+  def redeem_ciba_authorization(
+        client,
+        authorization,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&redeem_ciba_authorization(client, authorization, issuance_context, &1))
+
   def redeem_ciba_authorization(
         %Client{} = client,
         %CibaAuthorization{} = ciba_authorization,
@@ -1172,6 +1256,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   @doc false
+  def emit_failure(%Error{} = error, params, request, %Dependencies{} = dependencies),
+    do: request |> Dependencies.attach(dependencies) |> then(&emit_failure(error, params, &1))
+
   def emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
     Observability.emit(:authorization_code, :replay_detected, %{}, metadata)
@@ -1230,8 +1317,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     }
   end
 
-  defp client_store(request),
-    do: Keyword.get(request_options(request), :client_store, Repository)
+  defp client_store(request), do: Dependencies.fetch!(request).client_store
 
   defp client_auth_options(request) do
     [
@@ -1240,28 +1326,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     ]
   end
 
-  defp token_store(request),
-    do: Keyword.get(request_options(request), :token_store, Repository)
+  defp token_store(request), do: Dependencies.fetch!(request).token_store
 
   defp device_authorization_store(request),
-    do: Keyword.get(request_options(request), :device_authorization_store, Repository)
+    do: Dependencies.fetch!(request).device_authorization_store
 
   defp ciba_authorization_store(request),
-    do: Keyword.get(request_options(request), :ciba_authorization_store, Repository)
+    do: Dependencies.fetch!(request).ciba_authorization_store
 
-  defp interaction_store(request),
-    do: Keyword.get(request_options(request), :interaction_store, Repository)
+  defp interaction_store(request), do: Dependencies.fetch!(request).interaction_store
 
-  defp key_store(request),
-    do: Keyword.get(request_options(request), :key_store, Repository)
+  defp key_store(request), do: Dependencies.fetch!(request).key_store
 
   @spec now(map()) :: DateTime.t()
-  defp now(request),
-    do:
-      request
-      |> request_options()
-      |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
-      |> then(& &1.())
+  defp now(request), do: Dependencies.fetch!(request).now.()
 
   defp maybe_format_refresh_token(%Client{} = client, %Token{} = authorization_code, request) do
     if issue_refresh_token?(client, authorization_code) do
@@ -1716,15 +1794,19 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   defp token_format_options(request, token_type) do
-    opts = request_options(request)
+    dependencies = Dependencies.fetch!(request)
 
-    case Keyword.get(opts, :"#{token_type}_generator", Keyword.get(opts, :token_generator)) do
+    generator =
+      case token_type do
+        :access_token -> dependencies.access_token_generator || dependencies.token_generator
+        :refresh_token -> dependencies.refresh_token_generator || dependencies.token_generator
+      end
+
+    case generator do
       nil -> []
       generator -> [token_generator: generator]
     end
   end
-
-  defp request_options(request), do: Map.get(request, :opts, [])
 
   defp normalize_optional_string(value) when is_binary(value) do
     value

@@ -6,6 +6,8 @@ defmodule Lockspire.Protocol.TokenExchange do
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.TokenExchange.Internal
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenResult
 
   defmodule Success do
@@ -50,19 +52,23 @@ defmodule Lockspire.Protocol.TokenExchange do
 
     case normalize_optional_string(params["grant_type"]) do
       "authorization_code" ->
-        Internal.AuthorizationCodeGrant.exchange(request) |> to_public_result()
+        with_dependencies(
+          request,
+          :authorization_code,
+          &Internal.AuthorizationCodeGrant.exchange/2
+        )
 
       "refresh_token" ->
-        exchange_refresh_token(request)
+        with_dependencies(request, :refresh, &exchange_refresh_token/2)
 
       "urn:ietf:params:oauth:grant-type:device_code" ->
-        Internal.DeviceCodeGrant.exchange(request) |> to_public_result()
+        with_dependencies(request, :device_code, &Internal.DeviceCodeGrant.exchange/2)
 
       "urn:openid:params:grant-type:ciba" ->
-        Internal.CibaGrant.exchange(request) |> to_public_result()
+        with_dependencies(request, :ciba, &Internal.CibaGrant.exchange/2)
 
       "urn:ietf:params:oauth:grant-type:token-exchange" ->
-        exchange_rfc8693(request)
+        with_dependencies(request, :rfc8693, &exchange_rfc8693/2)
 
       _other ->
         {:error, unsupported_grant_type_error()}
@@ -78,47 +84,57 @@ defmodule Lockspire.Protocol.TokenExchange do
         request
       ),
       do:
-        Internal.CibaGrant.issue_tokens(client, authorization, context, request)
-        |> to_public_result()
+        with_dependencies(request, :ciba, fn normalized, dependencies ->
+          Internal.CibaGrant.issue_tokens(
+            client,
+            authorization,
+            context,
+            normalized,
+            dependencies
+          )
+        end)
 
   @spec exchange_authorization_code(map()) :: result()
   def exchange_authorization_code(request) when is_map(request),
-    do: Internal.AuthorizationCodeGrant.exchange(request) |> to_public_result()
+    do:
+      with_dependencies(request, :authorization_code, &Internal.AuthorizationCodeGrant.exchange/2)
 
   @doc false
   def validate_grant_resources_for_test(params, grant),
     do:
       Internal.GrantSupport.validate_grant_resources_for_test(params, grant) |> to_public_result()
 
-  defp exchange_refresh_token(request) do
+  defp exchange_refresh_token(request, dependencies) do
+    request = Dependencies.attach(request, dependencies)
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <-
-           Internal.GrantSupport.authenticate_client(params, authorization, request),
+           Internal.GrantSupport.authenticate_client(params, authorization, request, dependencies),
          {:ok, %TokenResult.Success{} = success} <-
-           Internal.RefreshExchange.exchange_refresh_token(client, request) do
+           Internal.RefreshExchange.exchange_refresh_token(client, request, dependencies) do
       {:ok, success}
     else
       {:error, %TokenResult.Error{} = error} ->
-        Internal.GrantSupport.emit_failure(error, params, request)
+        Internal.GrantSupport.emit_failure(error, params, request, dependencies)
         {:error, error}
     end
     |> to_public_result()
   end
 
-  defp exchange_rfc8693(request) do
+  defp exchange_rfc8693(request, dependencies) do
+    request = Dependencies.attach(request, dependencies)
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
 
     with {:ok, %Client{} = client} <-
-           Internal.GrantSupport.authenticate_client(params, authorization, request),
+           Internal.GrantSupport.authenticate_client(params, authorization, request, dependencies),
          {:ok, %TokenResult.Success{} = success} <-
-           Internal.Rfc8693Exchange.exchange(client, request) do
+           Internal.Rfc8693Exchange.exchange(client, request, dependencies) do
       {:ok, success}
     else
       {:error, %TokenResult.Error{} = error} ->
-        Internal.GrantSupport.emit_failure(error, params, request)
+        Internal.GrantSupport.emit_failure(error, params, request, dependencies)
         {:error, error}
     end
     |> to_public_result()
@@ -144,6 +160,22 @@ defmodule Lockspire.Protocol.TokenExchange do
       reason_code: :unsupported_grant_type
     }
   end
+
+  defp with_dependencies(request, grant, fun) when is_function(fun, 2) do
+    case LegacyOptions.from_request(request, grant) do
+      {:ok, dependencies} ->
+        request
+        |> Dependencies.attach(dependencies)
+        |> fun.(dependencies)
+        |> to_public_result()
+
+      {:error, %TokenResult.Error{} = error} ->
+        {:error, to_public_error(error)}
+    end
+  end
+
+  defp to_public_error(%TokenResult.Error{} = error),
+    do: struct(Error, Map.from_struct(error))
 
   defp to_public_result({:ok, %TokenResult.Success{} = success}) do
     {:ok, struct(Success, Map.from_struct(success))}
