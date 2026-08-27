@@ -115,10 +115,95 @@ jobs:
           echo "verified_sha=$verified_sha" >> "$GITHUB_OUTPUT"
           echo "source_ci_run_id=$SOURCE_CI_RUN_ID" >> "$GITHUB_OUTPUT"
 
-  publish:
-    name: Publish verified release to Hex
+  prepublish-proof:
+    name: Prove exact package before publication
     needs: recovery-validation
     if: ${{ needs.recovery-validation.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CLEAN_ROOM_DB_HOST: 127.0.0.1
+      CLEAN_ROOM_DB_PORT: "5432"
+      CLEAN_ROOM_DB_USER: lockspire
+      CLEAN_ROOM_DB_PASSWORD: lockspire
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.recovery-validation.outputs.verified_sha }}
+          fetch-depth: 0
+      - name: Detach verified commit
+        env:
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach "$VERIFIED_SHA"
+          test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      - name: Install locked dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --check-locked
+      - name: Build and bind release artifact
+        env:
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mix release.preflight
+          version="$(sed -nE 's/^[[:space:]]*version:[[:space:]]*"([^"]+)".*/\1/p' mix.exs | head -1)"
+          package_tar="lockspire-${version}.tar"
+          test -f "$package_tar"
+          mkdir -p release-input
+          mv "$package_tar" "release-input/$package_tar"
+          python3 scripts/publish/release_artifact.py create \
+            --tar "release-input/$package_tar" \
+            --source-sha "$VERIFIED_SHA" \
+            --output release-input/release-manifest.json
+          checksum="$(jq -er '.artifact.sha256' release-input/release-manifest.json)"
+          bash scripts/acceptance/run_clean_room_saas_journey.sh \
+            --package-tar "release-input/$package_tar" \
+            --package-sha256 "$checksum" \
+            --only happy_path
+          python3 scripts/publish/release_artifact.py receipt \
+            --manifest release-input/release-manifest.json \
+            --stage prepublish \
+            --output release-input/prepublish-receipt.json
+      - name: Upload exact proven package data
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}
+          path: |
+            release-input/lockspire-*.tar
+            release-input/release-manifest.json
+            release-input/prepublish-receipt.json
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish verified release to Hex
+    needs: [recovery-validation, prepublish-proof]
+    if: ${{ needs.recovery-validation.result == 'success' && needs.prepublish-proof.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: hex-publish
@@ -145,11 +230,37 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
       - run: mix deps.get --check-locked
-      - run: mix release.preflight
+      - name: Download clean-room-proven package data
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}
+          path: release-input
+      - name: Validate protected publish input
+        env:
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find release-input -type f | wc -l | tr -d ' ')" = "3"
+          test "$(find release-input -type l | wc -l | tr -d ' ')" = "0"
+          package_name="$(jq -er '.artifact.filename' release-input/release-manifest.json)"
+          [[ "$package_name" =~ ^lockspire-[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?\.tar$ ]]
+          python3 scripts/publish/release_artifact.py verify-local \
+            --tar "release-input/$package_name" \
+            --manifest release-input/release-manifest.json \
+            --source-sha "$VERIFIED_SHA"
       - name: Publish package
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-        run: bash scripts/publish/publish_hex_idempotently.sh
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_name="$(jq -er '.artifact.filename' release-input/release-manifest.json)"
+          bash scripts/publish/publish_hex_idempotently.sh \
+            "release-input/$package_name" \
+            release-input/release-manifest.json \
+            "$VERIFIED_SHA"
       - name: Create matching GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -175,16 +286,97 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
+        env:
+          POSTGRES_DB: lockspire_test
+          POSTGRES_USER: lockspire
+          POSTGRES_PASSWORD: lockspire
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lockspire -d lockspire_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CLEAN_ROOM_DB_HOST: 127.0.0.1
+      CLEAN_ROOM_DB_PORT: "5432"
+      CLEAN_ROOM_DB_USER: lockspire
+      CLEAN_ROOM_DB_PASSWORD: lockspire
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.recovery-validation.outputs.verified_sha }}
-      - name: Verify published package and HexDocs
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      - name: Install release verification tools
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Download exact release package data
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}
+          path: release-input
+      - name: Verify exact published checksum, docs, and HTTP journey
+        env:
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
         shell: bash
-        run: scripts/publish/verify_install_truth.sh 2>&1 | tee install-truth.log
-      - name: Upload install-truth log
+        run: |
+          set -euo pipefail
+          bash scripts/publish/verify_install_truth.sh \
+            release-input/release-manifest.json \
+            "$VERIFIED_SHA" \
+            release-input/postpublish-receipt.json
+      - name: Prepare bounded retained evidence
+        if: always()
+        env:
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_name="$(jq -er '.artifact.filename' release-input/release-manifest.json)"
+          python3 scripts/publish/release_artifact.py verify-local \
+            --tar "release-input/$package_name" \
+            --manifest release-input/release-manifest.json \
+            --source-sha "$VERIFIED_SHA"
+          jq -e --arg stage prepublish --slurpfile manifest release-input/release-manifest.json '
+            . == {
+              schema_version: 1,
+              stage: $stage,
+              source_sha: $manifest[0].source_sha,
+              package: $manifest[0].package,
+              version: $manifest[0].version,
+              sha256: $manifest[0].artifact.sha256,
+              status: "verified"
+            }
+          ' release-input/prepublish-receipt.json >/dev/null
+          mkdir -p retained-release-evidence
+          cp release-input/release-manifest.json retained-release-evidence/
+          cp release-input/prepublish-receipt.json retained-release-evidence/
+          if [[ -f release-input/postpublish-receipt.json ]]; then
+            jq -e --arg stage postpublish --slurpfile manifest release-input/release-manifest.json '
+              . == {
+                schema_version: 1,
+                stage: $stage,
+                source_sha: $manifest[0].source_sha,
+                package: $manifest[0].package,
+                version: $manifest[0].version,
+                sha256: $manifest[0].artifact.sha256,
+                status: "verified"
+              }
+            ' release-input/postpublish-receipt.json >/dev/null
+            cp release-input/postpublish-receipt.json retained-release-evidence/
+          fi
+      - name: Upload bounded release evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: install-truth-${{ needs.recovery-validation.outputs.verified_sha }}
-          path: install-truth.log
+          name: release-evidence-${{ needs.recovery-validation.outputs.verified_sha }}
+          path: retained-release-evidence
+          if-no-files-found: error
+          retention-days: 90

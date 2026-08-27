@@ -35,8 +35,10 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 4. Review the release PR diff, `mix.exs`, `CHANGELOG.md`, and the workflow/config artifacts that define the release lane.
 5. Let `.github/workflows/release-please-automerge.yml` squash-merge an eligible bot Release Please PR after green `main` CI, or manually merge it if the guard does not apply.
 6. Wait for the merge commit's own successful `CI` push run on the current `main` head. That exact run dispatches the trusted release lane with its SHA and run ID; the pre-merge CI run is never publish evidence.
-7. Let the validator confirm the exact immutable main SHA, matching successful CI run, and repository identity before the `hex-publish` environment boundary.
-8. Treat the resulting protected GitHub release, Hex publish, and unprivileged install-truth artifact as the authoritative release record.
+7. Let the validator confirm the exact immutable main SHA, matching successful CI run, and repository identity.
+8. Let the unprivileged prepublish job build one tar, bind it to a redacted manifest, and prove that local tar through the clean-room SaaS HTTP journey.
+9. Let the protected publisher validate and consume that same SHA-bound artifact; it must not rebuild release intent from a moving branch.
+10. Treat the resulting protected GitHub release, Hex checksum proof, exact-version public HTTP journey, and bounded evidence artifact as the authoritative release record.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
 Normal releases maintain the Release Please PR on `main` pushes. After a Release Please merge, a later successful CI push run for that exact current main SHA dispatches publish. Recovery needs the same full SHA, successful CI run ID, and auditable reason; it cannot publish a tag, a stale SHA, or a pre-merge run.
@@ -47,7 +49,7 @@ Keep release evidence in three separate buckets:
 
 - Repo-owned proof: `.github/workflows/release.yml`, `.github/workflows/release-please-automerge.yml`, `.github/actions/release-please/action.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
 - GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
-- Workflow-run proof: one successful `hex-publish` workflow run proves the trusted job actually crossed the protected secret boundary and executed `mix release.preflight` followed by `mix hex.publish --yes`.
+- Workflow-run proof: the single-artifact chain retains a schema-versioned manifest plus bounded prepublish/postpublish receipts. The manifest binds source SHA, package version, tar checksum and byte size, and pinned Elixir/OTP/Mix/Hex/Phoenix/LiveView/PostgreSQL versions. Raw OAuth journey logs, process configuration, and secrets are never uploaded.
 
 Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
@@ -75,9 +77,9 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 
 ## Maintainer-only release gate
 
-`mix release.preflight` stays additive to `mix ci`. It is not a second contributor command and it should remain limited to the trusted publish path.
+`mix release.preflight` stays additive to `mix ci`. It is not a second contributor command; release automation runs it at the exact verified SHA before the secret-bearing environment and binds its tar output to the retained manifest.
 
-`mix package.publish-dry-run` remains a required release gate, but it is enforced from the trusted release workflow where `HEX_API_KEY` is available. It is not a manual local verification requirement for contributor closure.
+`mix package.publish-dry-run` remains a required release gate through `mix release.preflight`. It does not require the publish secret and is not a manual local verification requirement for contributor closure.
 
 If `workflow_dispatch` is used, treat it as exact-ref only. It is not a new release-intent trigger, it does not replace the Release Please driven path, and it must target the exact commit SHA or tag being published by release automation or recovered by a maintainer.
 
@@ -115,7 +117,8 @@ Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `
 - Restrict the environment to deployments from `main`.
 - Do not require environment reviewers for `hex-publish`; protection comes from environment scoping, branch restriction, and the checked-in workflow contract rather than a manual approval click.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
-- Keep the authenticated dry-run inside the trusted workflow via `mix release.preflight`.
+- Keep `HEX_API_KEY` available only to the protected publish step. The prepublish clean-room proof and postpublish public verification stay unprivileged.
+- Configure the `hex-publish` environment to serialize and restrict publication from `main`; the workflow's release concurrency remains non-canceling.
 - If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with both a recovery reason and the exact recovery ref so the protected publish lane replays the intended revision rather than whatever `main` points to later.
 - Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
 
@@ -142,6 +145,8 @@ Before merging a release PR, confirm:
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
 - trusted publish lane still runs `mix hex.publish --yes`
+- prepublish, protected publish, and postpublish jobs all carry the same verified SHA, manifest version, and tar checksum
+- retained release evidence contains only the manifest and bounded JSON receipts, never raw journey logs
 - public docs and `SECURITY.md` still defer to `docs/supported-surface.md`
 
 ## Hold points
@@ -158,13 +163,30 @@ This file does not broaden the Lockspire product contract. For public support tr
 
 ## Post-Publish Verification
 
-After a successful publish to Hex, you must verify the published artifact to guarantee "Install Truth". Run the post-publish script:
+The release workflow automatically verifies the exact published artifact to guarantee "Install Truth". Its invocation is manifest-bound:
 
 ```bash
-./scripts/publish/verify_install_truth.sh
+./scripts/publish/verify_install_truth.sh release-manifest.json <same-verified-sha> postpublish-receipt.json
 ```
 
-This step verifies the published Hex artifact and docs against the canonical support contract and proves clean Phoenix installability.
+The verifier polls only the release-specific Hex endpoint with bounded retries,
+requires the public checksum to equal the reviewed tar, checks versioned
+HexDocs, and fetches that exact public version into the clean-room SaaS HTTP
+journey. A checksum mismatch is an immediate hard failure: stop, preserve the
+bounded evidence, and investigate registry/source identity. Do not republish or
+replace a public version opportunistically.
+
+Recovery must reuse the same verified SHA, successful source CI run ID,
+version, and manifest-bound artifact. Re-dispatch with an auditable recovery
+reason; never rebuild from the current branch or substitute a new tar. Runtime
+and tool versions in the manifest describe the prepublish builder used for the
+reviewed bytes. They are reproducibility evidence, not a claim that every host
+must run those exact versions.
+
+The final `release-evidence-<sha>` artifact has explicit retention and contains
+only `release-manifest.json`, `prepublish-receipt.json`, and, after public proof
+succeeds, `postpublish-receipt.json`. Workflow console output remains ephemeral
+and must already be redacted by the clean-room runner.
 
 After that verification passes, record the shipped version, publish proof, and install-truth proof in `.planning/RELEASE-TRAIN.md`.
 
