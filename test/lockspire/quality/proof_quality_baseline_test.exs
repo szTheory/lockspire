@@ -44,7 +44,7 @@ defmodule Lockspire.Quality.ProofQualityBaselineTest do
   end
 
   test "pins active proof cleanup identities for Plan 11" do
-    constructs = QualityBaseline.proof_constructs_in("test")
+    constructs = QualityBaseline.active_proof_constructs()
 
     assert QualityBaseline.proof_locations(constructs, :macro_injection) == [
              {"test/support/admin_contract_helpers.ex", 4},
@@ -52,6 +52,8 @@ defmodule Lockspire.Quality.ProofQualityBaselineTest do
            ]
 
     assert QualityBaseline.proof_locations(constructs, :phase_archaeology) == [
+             {"test/lockspire/web/live/admin/design_system/proof_artifact_contract_test.exs", 157},
+             {"test/lockspire/web/live/admin/design_system/proof_artifact_contract_test.exs", 222},
              {"test/support/admin_contract_helpers.ex", 953}
            ]
 
