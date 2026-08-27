@@ -133,7 +133,8 @@ def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> 
         if cache_realpath != allowed_root and allowed_root not in cache_realpath.parents:
             raise PackageInputError("external dependency cache escapes its declared root")
 
-        role_deps = cache_realpath / role / "deps"
+        cache_role = "provider" if role == "provider_host" else "client"
+        role_deps = cache_realpath / cache_role / "deps"
         role_deps.mkdir(mode=0o700, parents=True, exist_ok=True)
         environment["MIX_DEPS_PATH"] = str(role_deps)
 

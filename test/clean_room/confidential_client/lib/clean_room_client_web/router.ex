@@ -13,6 +13,21 @@ defmodule CleanRoomClientWeb.Router do
     post("/acceptance/replace-nonce", CleanRoomClientWeb.OAuthController, :replace_nonce)
     get("/oauth/dpop/start", CleanRoomClientWeb.OAuthController, :dpop_start)
     get("/oauth/dpop/callback", CleanRoomClientWeb.OAuthController, :dpop_callback)
+
+    post(
+      "/acceptance/dpop/resource/challenge",
+      CleanRoomClientWeb.JourneyController,
+      :resource_challenge
+    )
+
+    post("/acceptance/dpop/resource/retry", CleanRoomClientWeb.JourneyController, :resource_retry)
+
+    post(
+      "/acceptance/dpop/resource/replay",
+      CleanRoomClientWeb.JourneyController,
+      :resource_replay
+    )
+
     get("/journey", CleanRoomClientWeb.JourneyController, :status)
     get("/acceptance/callback-attempts", CleanRoomClientWeb.JourneyController, :callback_attempts)
     get("/health", CleanRoomClientWeb.JourneyController, :status)

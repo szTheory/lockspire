@@ -197,7 +197,14 @@ def patch_jose_record_extractors(child: Path, environment: dict[str, str]) -> No
         path.write_text(content.replace(before, after, 1))
 
 
-def prepare_provider(run_root: Path, database_url: str, *, install: bool = True, port: int = 4100) -> Path:
+def prepare_provider(
+    run_root: Path,
+    database_url: str,
+    *,
+    install: bool = True,
+    port: int = 4100,
+    cache_root: Path | None = None,
+) -> Path:
     probe_environment()
     package_root, _ = build_package(run_root)
     child = copy_child_template("provider_host", run_root, package_root)
@@ -206,8 +213,9 @@ def prepare_provider(run_root: Path, database_url: str, *, install: bool = True,
     # can create its managed and host-owned files without an overwrite refusal.
     shutil.rmtree(child / "lib")
     write_host_runtime(child, database_url)
-    verify_child("provider_host", child, run_root / "deps-cache")
-    environment = locked_environment(child, "provider_host", run_root / "deps-cache")
+    dependency_cache = cache_root or run_root / "deps-cache"
+    verify_child("provider_host", child, dependency_cache)
+    environment = locked_environment(child, "provider_host", dependency_cache)
     environment.update(
         {
             "DATABASE_URL": database_url,

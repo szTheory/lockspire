@@ -28,6 +28,10 @@ defmodule CleanRoomClient.OAuthHttp do
     request(:get, endpoint, [{"authorization", "DPoP " <> token}, {"dpop", proof}], "")
   end
 
+  def dpop_get(endpoint, token, proof) do
+    request(:get, endpoint, [{"authorization", "DPoP " <> token}, {"dpop", proof}], "")
+  end
+
   def bearer_get(endpoint, token),
     do: request(:get, endpoint, [{"authorization", "Bearer " <> token}], "")
 

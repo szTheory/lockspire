@@ -14,6 +14,7 @@ import base64
 import hashlib
 import http.client
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -146,23 +147,70 @@ def stop_process(process: subprocess.Popen[bytes] | None) -> None:
     process._clean_room_log_handle.close()  # type: ignore[attr-defined]
 
 
+def drop_child_database(child: Path, environment: dict[str, str], label: str) -> None:
+    completed = subprocess.run(
+        ("mix", "ecto.drop"),
+        cwd=child,
+        env=environment,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise AssertionError(f"{label} database teardown failed")
+
+
 def prepare_client(run_root: Path, database_url: str, handoff: Path) -> tuple[Path, dict[str, str]]:
     package, _ = build_package(run_root)
     child = copy_child_template("confidential_client", run_root, package)
-    environment = locked_environment(child, "confidential_client", run_root / "deps-cache")
+    environment = locked_environment(child, "confidential_client", dependency_cache_root(run_root))
     environment.update({
         "DATABASE_URL": database_url,
         "PORT": "4101",
         "CLEAN_ROOM_BEARER_SECRET_PATH": str(handoff / "bearer-client.secret"),
+        "CLEAN_ROOM_DPOP_SECRET_PATH": str(handoff / "dpop-client.secret"),
         "CLEAN_ROOM_CLIENT_CIPHER_SECRET": "clean-room-client-ephemeral-secret-0123456789",
         "SECRET_KEY_BASE": "clean-room-client-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789",
     })
-    verify_child("confidential_client", child, run_root / "deps-cache", {"DATABASE_URL": database_url})
+    verify_child("confidential_client", child, dependency_cache_root(run_root), {"DATABASE_URL": database_url})
     patch_jose_record_extractors(child, environment)
     run_child_command(child, environment, "ecto.create")
     run_child_command(child, environment, "ecto.migrate", "--migrations-path", "priv/repo/migrations")
     run_child_command(child, environment, "compile", "--warnings-as-errors")
     return child, environment
+
+
+def dependency_cache_root(run_root: Path) -> Path:
+    configured = Path(os.environ["CLEAN_ROOM_CACHE_ROOT"]).resolve() if "CLEAN_ROOM_CACHE_ROOT" in os.environ else run_root / "deps-cache"
+    configured.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return configured
+
+
+def assert_redaction_guard(redactor: Redactor) -> None:
+    raw = f"Authorization: Bearer {redactor.sentinels.access_token}\nCookie: {redactor.sentinels.cookie}"
+
+    try:
+        redactor.assert_safe(raw)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("redaction sentinel failure was not detected")
+
+    safe = redactor.text(raw)
+    redactor.assert_safe(safe)
+    if re.search(r"(?i)(authorization|cookie)\s*[:=]\s*(?!\[REDACTED\])\S", safe):
+        raise AssertionError("redaction left a raw sensitive header value")
+    print("redaction sentinel failure contained")
+
+
+def scan_evidence(run_root: Path, redactor: Redactor) -> None:
+    for path in sorted(run_root.glob("*.log")):
+        evidence = path.read_text(errors="replace")
+        redactor.assert_safe(evidence)
+        if re.search(r"(?i)(authorization|cookie|set-cookie)\s*[:=]\s*(?!\[REDACTED\])\S", evidence):
+            raise AssertionError(f"unsafe raw header value in {path.name}")
+    print("evidence scan complete")
 
 
 def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "clean-room-user", before_callback=None, callback_transform=None) -> tuple[dict[str, object], str]:
@@ -443,9 +491,89 @@ def run_boundary() -> None:
     print("host policy boundary complete")
 
 
+def safe_dpop_operation(client: Browser, path: str, label: str) -> dict[str, object]:
+    response = client.request("POST", path)
+    require_status(response, 200, label)
+    parsed = json.loads(str(response["body"]))
+    forbidden = {"access_token", "nonce", "proof", "private_key", "secret", "cookie"}
+    if forbidden & set(parsed):
+        raise AssertionError(f"{label}: client receipt exposed confidential material")
+    return parsed
+
+
+def run_dpop(provider_child: Path, provider_environment: dict[str, str], provider_process: subprocess.Popen[bytes] | None, run_root: Path) -> subprocess.Popen[bytes]:
+    client = Browser(CLIENT_ORIGIN)
+    provider = Browser(PROVIDER_ORIGIN)
+    start = client.request("GET", "/oauth/dpop/start")
+    require_status(start, 302, "dpop client start")
+    authorization_location = redirect(start, "dpop client start")
+    if parse_qs(urlparse(authorization_location).query).get("client_id") != ["clean-room-dpop"]:
+        raise AssertionError("dpop start did not select the fixed DPoP client")
+
+    callback_result, _callback = browser_authorize_dpop(client, provider, authorization_location)
+    require_status(callback_result, 200, "dpop client callback")
+    safe = receipt(client)
+    if not (
+        safe.get("profile") == "dpop"
+        and safe.get("complete") is True
+        and safe.get("token_nonce_retry") is True
+        and safe.get("userinfo_nonce_retry") is True
+        and isinstance(safe.get("dpop_session"), str)
+        and isinstance(safe.get("dpop_jkt"), str)
+    ):
+        raise AssertionError("dpop callback did not produce the expected safe session receipt")
+    print("dpop token nonce retry complete")
+    print("dpop userinfo nonce retry complete")
+
+    challenge = safe_dpop_operation(client, "/acceptance/dpop/resource/challenge", "dpop resource challenge")
+    if challenge != {"status": 401, "challenge": "use_dpop_nonce", "dpop_nonce_present": True}:
+        raise AssertionError("dpop resource challenge did not expose the documented safe receipt")
+    print("dpop resource nonce challenge received")
+
+    retry = safe_dpop_operation(client, "/acceptance/dpop/resource/retry", "dpop resource retry")
+    if retry != {"status": 200, "confirmation_jkt_matches": True}:
+        raise AssertionError("dpop resource retry did not prove semantic confirmation binding")
+    print("dpop resource nonce retry complete")
+
+    replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "dpop resource replay")
+    if replay.get("challenge") != "invalid_dpop_proof" or replay.get("status") not in (400, 401):
+        raise AssertionError("dpop exact proof replay was not rejected")
+    print("dpop exact proof replay rejected")
+
+    stop_process(provider_process)
+    provider_process = start_process(provider_child, provider_environment, run_root / "provider-restart.log")
+    wait_ready(PROVIDER_ORIGIN)
+
+    durable_replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "durable dpop resource replay")
+    if durable_replay.get("challenge") != "invalid_dpop_proof" or durable_replay.get("status") not in (400, 401):
+        raise AssertionError("dpop replay was accepted after provider restart")
+    print("dpop replay rejected after provider restart")
+    return provider_process
+
+
+def browser_authorize_dpop(client: Browser, provider: Browser, authorization_location: str) -> tuple[dict[str, object], str]:
+    authorize = provider.request("GET", authorization_location)
+    require_status(authorize, 302, "dpop provider authorize")
+    login = provider.request("GET", redirect(authorize, "dpop provider authorize"))
+    require_status(login, 200, "dpop provider login")
+    resumed = redirect(provider.request("POST", "/login", {
+        "_csrf_token": csrf(login["body"]),
+        "return_to": re.search(r'name="return_to" value="([^"]*)"', str(login["body"])).group(1),
+        "interaction_id": re.search(r'name="interaction_id" value="([^"]*)"', str(login["body"])).group(1),
+        "account_id": "clean-room-user",
+    }), "dpop provider login")
+    interaction_id = urlparse(resumed).path.rsplit("/", 1)[-1]
+    consent = provider.request("GET", redirect(provider.request("GET", resumed), "dpop provider interaction"))
+    require_status(consent, 200, "dpop provider consent")
+    approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {"decision": "approve", "remember": "true"})
+    require_status(approved, 302, "dpop provider consent approval")
+    callback = redirect(approved, "dpop provider consent approval")
+    return client.request("GET", callback), callback
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative"), required=True)
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop"), required=True)
     args = parser.parse_args(argv)
     redactor = Redactor(SentinelSet.for_run())
     provider_process = client_process = None
@@ -457,9 +585,12 @@ def main(argv: list[str]) -> int:
         client_database = f"postgres://postgres:postgres@127.0.0.1/lockspire_clean_room_client_{uuid.uuid4().hex}"
         try:
             probe_environment()
+            assert_redaction_guard(redactor)
             handoff = run_root / "handoff"
-            provider_child = prepare_provider(run_root, provider_database, port=4100)
-            provider_environment = locked_environment(provider_child, "provider_host", run_root / "deps-cache")
+            provider_child = prepare_provider(
+                run_root, provider_database, port=4100, cache_root=dependency_cache_root(run_root)
+            )
+            provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": "4100", "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             run_child_command(provider_child, provider_environment, "ecto.create")
             run_child_command(provider_child, provider_environment, "ecto.migrate")
@@ -480,6 +611,9 @@ def main(argv: list[str]) -> int:
                 run_lifecycle(handoff)
             if "negative" in args.only:
                 run_negative(handoff)
+            if "dpop" in args.only:
+                provider_process = run_dpop(provider_child, provider_environment, provider_process, run_root)
+            scan_evidence(run_root, redactor)
             return 0
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(redactor.text(error), file=sys.stderr)
@@ -488,9 +622,10 @@ def main(argv: list[str]) -> int:
             stop_process(client_process)
             stop_process(provider_process)
             if client_child is not None and client_environment is not None:
-                subprocess.run(("mix", "ecto.drop"), cwd=client_child, env=client_environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                drop_child_database(client_child, client_environment, "client")
             if provider_child is not None and provider_environment is not None:
-                subprocess.run(("mix", "ecto.drop"), cwd=provider_child, env=provider_environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                drop_child_database(provider_child, provider_environment, "provider")
+            print("cleanup complete")
 
 
 if __name__ == "__main__":

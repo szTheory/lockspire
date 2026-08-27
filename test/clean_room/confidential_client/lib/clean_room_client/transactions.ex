@@ -97,9 +97,48 @@ defmodule CleanRoomClient.Transactions do
         closed_at: DateTime.utc_now(),
         encrypted_key: nil,
         encrypted_access_token: nil,
+        encrypted_resource_nonce: nil,
         encrypted_accepted_resource_proof: nil
       ]
     )
+  end
+
+  def active_dpop_session(handle) when is_binary(handle) do
+    now = DateTime.utc_now()
+
+    Repo.one(
+      from(session in DPoPSession,
+        where:
+          session.handle == ^handle and is_nil(session.closed_at) and session.expires_at > ^now
+      )
+    )
+    |> case do
+      %DPoPSession{} = session -> {:ok, session}
+      nil -> {:error, :terminal}
+    end
+  end
+
+  def store_resource_nonce(handle, encrypted_nonce)
+      when is_binary(handle) and is_binary(encrypted_nonce) do
+    update_active_session(handle, encrypted_resource_nonce: encrypted_nonce)
+  end
+
+  def store_accepted_resource_proof(handle, encrypted_proof)
+      when is_binary(handle) and is_binary(encrypted_proof) do
+    update_active_session(handle, encrypted_accepted_resource_proof: encrypted_proof)
+  end
+
+  defp update_active_session(handle, updates) do
+    now = DateTime.utc_now()
+
+    {count, _} =
+      from(session in DPoPSession,
+        where:
+          session.handle == ^handle and is_nil(session.closed_at) and session.expires_at > ^now
+      )
+      |> Repo.update_all(set: [updated_at: now] ++ updates)
+
+    if count == 1, do: :ok, else: {:error, :terminal}
   end
 
   defp random_urlsafe, do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)

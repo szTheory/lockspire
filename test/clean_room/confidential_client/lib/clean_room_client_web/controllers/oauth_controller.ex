@@ -27,7 +27,8 @@ defmodule CleanRoomClientWeb.OAuthController do
           _ -> conn |> put_status(:bad_request) |> json(%{error: "terminal"})
         end
 
-      _ -> conn |> put_status(:bad_request) |> json(%{error: "missing_transaction"})
+      _ ->
+        conn |> put_status(:bad_request) |> json(%{error: "missing_transaction"})
     end
   end
 
@@ -67,11 +68,19 @@ defmodule CleanRoomClientWeb.OAuthController do
          {:ok, transaction} <- Transactions.consume(id, state),
          code when is_binary(code) <- params["code"],
          true <- is_nil(params["error"]),
-         conn = put_session(conn, :token_exchange_attempts, get_session(conn, :token_exchange_attempts, 0) + 1),
+         conn =
+           put_session(
+             conn,
+             :token_exchange_attempts,
+             get_session(conn, :token_exchange_attempts, 0) + 1
+           ),
          outcome <- complete_journey(transaction, code, mode) do
       case outcome do
         {:ok, receipt} ->
-          conn |> put_session(:journey_receipt, receipt) |> text("callback complete")
+          conn
+          |> maybe_put_dpop_session(receipt)
+          |> put_session(:journey_receipt, receipt)
+          |> text("callback complete")
 
         {:host_denied, receipt} ->
           conn
@@ -140,7 +149,134 @@ defmodule CleanRoomClientWeb.OAuthController do
     end
   end
 
+  defp complete_journey(transaction, code, :dpop) do
+    with {:ok, 200, _headers, discovery_body} <-
+           stage(:discovery, OAuthHttp.get_json(discovery_url(transaction.issuer))),
+         {:ok, discovery} <- decode(discovery_body),
+         {:ok, metadata} <-
+           stage(:discovery, OIDCVerifier.validate_metadata(discovery, transaction.issuer)),
+         {:ok, 200, _headers, jwks_body} <- stage(:jwks, OAuthHttp.get_json(metadata.jwks_uri)),
+         {:ok, jwks} <- decode(jwks_body),
+         {:ok, secret} <- File.read(dpop_secret_path()),
+         {:ok, token, token_nonce_retry?} <-
+           dpop_token_exchange(transaction, code, discovery, String.trim(secret)),
+         id_token when is_binary(id_token) <- token["id_token"],
+         access_token when is_binary(access_token) <- token["access_token"],
+         "DPoP" <- token["token_type"],
+         {:ok, claims} <-
+           stage(:oidc, OIDCVerifier.verify_id_token(id_token, jwks, transaction, metadata)),
+         {:ok, userinfo, userinfo_nonce_retry?} <-
+           dpop_userinfo(transaction, discovery["userinfo_endpoint"], access_token),
+         true <- OIDCVerifier.same_subject?(userinfo, claims),
+         session <-
+           Transactions.handoff_dpop_session(
+             transaction,
+             DPoP.encrypt(access_token),
+             claims["sub"]
+           ) do
+      {:ok,
+       %{
+         complete: true,
+         profile: "dpop",
+         stages: ["discovery", "authorization", "callback", "oidc", "userinfo"],
+         subject: claims["sub"],
+         dpop_session: session.handle,
+         dpop_jkt: session.jkt,
+         token_nonce_retry: token_nonce_retry?,
+         userinfo_nonce_retry: userinfo_nonce_retry?
+       }}
+    else
+      _ -> {:error, {:journey_failed, Process.get(:clean_room_stage, :unknown)}}
+    end
+  end
+
   defp complete_journey(_transaction, _code, _mode), do: {:error, :unsupported_profile}
+
+  defp dpop_token_exchange(transaction, code, discovery, secret) do
+    with {:ok, private_jwk} <- DPoP.decrypt(transaction.encrypted_dpop_key),
+         token_endpoint when is_binary(token_endpoint) <- discovery["token_endpoint"],
+         {:ok, proof} <- dpop_proof(private_jwk, :post, token_endpoint),
+         response <-
+           OAuthHttp.token_exchange(
+             token_endpoint,
+             transaction,
+             %{client_id: transaction.client_id, client_secret: secret, mode: :dpop},
+             %{code: code, resource: provider_origin() <> "/api/billing", proof: proof}
+           ) do
+      dpop_token_retry(transaction, code, token_endpoint, secret, private_jwk, response)
+    end
+  end
+
+  defp dpop_token_retry(_transaction, _code, _endpoint, _secret, _key, {:ok, 200, _headers, body}) do
+    with {:ok, token} <- decode(body), do: {:ok, token, false}
+  end
+
+  defp dpop_token_retry(
+         transaction,
+         code,
+         endpoint,
+         secret,
+         private_jwk,
+         {:ok, 400, headers, body}
+       ) do
+    with {:ok, %{"error" => "use_dpop_nonce"}} <- decode(body),
+         nonce when is_binary(nonce) <- headers["dpop-nonce"],
+         {:ok, proof} <- dpop_proof(private_jwk, :post, endpoint, nonce),
+         {:ok, 200, _headers, retry_body} <-
+           OAuthHttp.token_exchange(
+             endpoint,
+             transaction,
+             %{client_id: transaction.client_id, client_secret: secret, mode: :dpop},
+             %{code: code, resource: provider_origin() <> "/api/billing", proof: proof}
+           ),
+         {:ok, token} <- decode(retry_body) do
+      {:ok, token, true}
+    else
+      _ -> {:error, :token_nonce_retry}
+    end
+  end
+
+  defp dpop_token_retry(_transaction, _code, _endpoint, _secret, _key, _response),
+    do: {:error, :token_exchange}
+
+  defp dpop_userinfo(transaction, endpoint, token) do
+    with {:ok, private_jwk} <- DPoP.decrypt(transaction.encrypted_dpop_key),
+         {:ok, proof} <- dpop_proof(private_jwk, :get, endpoint, nil, token),
+         response <- OAuthHttp.userinfo(endpoint, token, proof) do
+      dpop_userinfo_retry(private_jwk, endpoint, token, response)
+    end
+  end
+
+  defp dpop_userinfo_retry(_key, _endpoint, _token, {:ok, 200, _headers, body}) do
+    with {:ok, userinfo} <- decode(body), do: {:ok, userinfo, false}
+  end
+
+  defp dpop_userinfo_retry(private_jwk, endpoint, token, {:ok, 401, headers, _body}) do
+    with nonce when is_binary(nonce) <- headers["dpop-nonce"],
+         {:ok, proof} <- dpop_proof(private_jwk, :get, endpoint, nonce, token),
+         {:ok, 200, _headers, retry_body} <- OAuthHttp.userinfo(endpoint, token, proof),
+         {:ok, userinfo} <- decode(retry_body) do
+      {:ok, userinfo, true}
+    else
+      _ -> {:error, :userinfo_nonce_retry}
+    end
+  end
+
+  defp dpop_userinfo_retry(_key, _endpoint, _token, _response), do: {:error, :userinfo}
+
+  defp dpop_proof(private_jwk, method, endpoint, nonce \\ nil, token \\ nil) do
+    options = %{}
+    options = if is_binary(nonce), do: Map.put(options, :nonce, nonce), else: options
+
+    options =
+      if is_binary(token),
+        do: Map.put(options, :ath, DPoP.access_token_hash(token)),
+        else: options
+
+    {:ok, DPoP.proof(Jason.decode!(private_jwk), method, endpoint, options)}
+  rescue
+    _ -> {:error, :proof}
+  end
 
   defp complete_resource({:ok, 200, _headers, body}, claims) do
     with {:ok, %{"access_token" => semantic}} <- decode(body),
@@ -206,6 +342,7 @@ defmodule CleanRoomClientWeb.OAuthController do
       )
 
   defp bearer_secret_path, do: System.fetch_env!("CLEAN_ROOM_BEARER_SECRET_PATH")
+  defp dpop_secret_path, do: System.fetch_env!("CLEAN_ROOM_DPOP_SECRET_PATH")
   defp decode(body), do: Jason.decode(body)
 
   defp semantic_response?(%{
@@ -227,4 +364,9 @@ defmodule CleanRoomClientWeb.OAuthController do
     Process.put(:clean_room_stage, label)
     value
   end
+
+  defp maybe_put_dpop_session(conn, %{dpop_session: handle}) when is_binary(handle),
+    do: put_session(conn, :dpop_session_handle, handle)
+
+  defp maybe_put_dpop_session(conn, _receipt), do: conn
 end
