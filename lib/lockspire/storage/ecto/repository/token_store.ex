@@ -51,7 +51,7 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   end
 
   def revoke_token_family(repo, family_id) when is_binary(family_id),
-    do: revoke_family(repo, family_id, DateTime.utc_now(), DateTime.utc_now())
+    do: revoke_active_family(repo, family_id, DateTime.utc_now(), DateTime.utc_now())
 
   def revoke_by_sid(_repo, nil), do: {:ok, 0}
 
@@ -340,6 +340,21 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   defp revoke_record(%TokenRecord{}, _repo, _client, _at), do: nil
 
   defp revoke_family(repo, family, at, updated) do
+    {count, _} =
+      TokenRecord
+      |> where([token], token.family_id == ^family)
+      |> then(
+        &Support.update_all(repo, &1, [set: [revoked_at: at, updated_at: updated]],
+          sensitive: true
+        )
+      )
+
+    {:ok, count}
+  rescue
+    error -> {:error, error}
+  end
+
+  defp revoke_active_family(repo, family, at, updated) do
     {count, _} =
       TokenRecord
       |> where([token], token.family_id == ^family and is_nil(token.revoked_at))
