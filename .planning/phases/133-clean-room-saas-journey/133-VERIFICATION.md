@@ -1,6 +1,6 @@
 ---
 phase: 133-clean-room-saas-journey
-verified: 2026-08-27T16:43:11Z
+verified: 2026-08-27T16:57:00Z
 status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 0
@@ -17,7 +17,7 @@ re_verification:
 # Phase 133: Clean-Room SaaS Journey Verification Report
 
 **Phase Goal:** A separate-origin SaaS client can safely consume an embedded Lockspire provider and protected API from the built package.
-**Verified:** 2026-08-27T16:43:11Z
+**Verified:** 2026-08-27T16:57:00Z
 **Status:** passed
 **Re-verification:** Yes — after gap closure
 
@@ -31,7 +31,7 @@ re_verification:
 | 2 | A separate-origin confidential client persists random state, nonce, and PKCE material, completes authorization, and rejects callback state mismatches. | ✓ VERIFIED | The run completed authorization/callback then emitted `callback state rejected before exchange`. `OAuthTransaction` persists random state/nonce/verifier/challenge and `Transactions.consume/2` is an atomic pending-to-consumed transition. |
 | 3 | The client validates discovery, JWKS, ID-token signature and claims, and userinfo subject before calling an audience-and-scope-protected API. | ✓ VERIFIED | The run emitted `discovery complete`, `oidc complete`, `userinfo complete`, and `resource complete` in order. `OIDCVerifier` validates discovery, signature, issuer, audience, expiry, nonce, and subject. |
 | 4 | Refresh rotation, reuse-triggered family revocation, authenticated introspection, and revocation work with truthful JWT lifetime semantics. | ✓ VERIFIED | `9368cde` resolves the lifecycle resource at dynamic-origin runtime. Fresh execution emitted rotation, reuse-containment, inactive-introspection, and idempotent-revocation receipts without claiming instant offline JWT invalidation. |
-| 5 | The journey rejects documented redirect, code, token, audience, scope, nonce, and DPoP replay failures without retaining or logging secrets or tokens. | ✓ VERIFIED | Fresh execution emitted every named negative and DPoP nonce/replay/post-restart receipt, followed by `evidence scan complete`. |
+| 5 | The journey rejects documented redirect, code, token, audience, scope, nonce, and DPoP replay failures without retaining or logging secrets or tokens. | ✓ VERIFIED | Fresh execution emitted every named negative, DPoP nonce/replay receipt, `dpop provider restart ready`, and exact-proof rejection after restart, followed by `evidence scan complete`. |
 
 **Score:** 5/5 truths verified (0 present, behavior-unverified)
 
@@ -50,7 +50,7 @@ re_verification:
 | Provider builder | packaged `lockspire.install` | fresh child public install/verify and provenance audit | ✓ WIRED | Runtime reached provenance and readiness. |
 | OAuth controller | durable transactions | atomic `consume/2` before token exchange | ✓ WIRED | State mismatch receipt proves the terminal pre-exchange path. |
 | OIDC verifier | discovery/JWKS | metadata/key fetch and strict claims | ✓ WIRED | Happy execution reached discovery/OIDC/userinfo/resource in order. |
-| Client DPoP session | provider protected API | opaque encrypted session and exact proof replay | ✓ WIRED | Full execution proved token/userinfo/resource nonce paths and durable post-restart rejection. |
+| Client DPoP session | provider protected API | opaque encrypted session and exact proof replay | ✓ WIRED | The focused run proved token/userinfo/resource nonce paths; after restart a newly signed proof established protected-resource readiness, then the original stored proof was rejected. |
 | CI integration lane | `mix test.clean-room.e2e` | one direct maintained command | ✓ WIRED | `mix.exs`, CI, and matrix script invoke the same passing alias. |
 
 ### Data-Flow Trace (Level 4)
@@ -61,6 +61,7 @@ No dynamic UI artifact is in scope. The executed server-side flow is browser red
 
 | Behavior | Command | Result | Status |
 | --- | --- | --- | --- |
+| Focused post-restart DPoP proof | `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` | Exit 0; DPoP token/userinfo/resource nonce flow, initial exact replay rejection, `dpop provider restart ready`, post-restart exact replay rejection, evidence scan, and cleanup emitted. | ✓ PASS |
 | Full package-clean SaaS journey | `mix test.clean-room.e2e` | Exit 0; all happy, boundary, lifecycle, negative, CSRF, DPoP nonce/replay/restart, evidence-scan, and cleanup markers emitted. | ✓ PASS |
 | Real-run origin isolation | `python3 scripts/acceptance/clean_room_saas_journey.py --verify-concurrent-origins` | Exit 0: `concurrent real journeys complete`. | ✓ PASS |
 | Signal-safe teardown | `python3 scripts/acceptance/clean_room_saas_journey.py --verify-signal-cleanup` | Exit 0: `signal cleanup complete`. | ✓ PASS |
@@ -88,7 +89,7 @@ No `probe-*.sh` artifact is declared. The maintained Mix alias is the executable
 
 ### Gaps Summary
 
-None. The previous blocker was a Python default argument binding the stale fixed-port resource URI before dynamic origins were allocated. It is now resolved at journey runtime, and current execution covers all six E2E requirements.
+None. The previous blocker was a Python default argument binding the stale fixed-port resource URI before dynamic origins were allocated. It is resolved at journey runtime. The post-restart readiness probe accepts only a new proof to establish the protected-resource pipeline is live; the runner then retains the original exact proof and separately requires its rejection. Current execution covers all six E2E requirements.
 
-_Verified: 2026-08-27T16:43:11Z_
+_Verified: 2026-08-27T16:57:00Z_
 _Verifier: the agent (gsd-verifier)_
