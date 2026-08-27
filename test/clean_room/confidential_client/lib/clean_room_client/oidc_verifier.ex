@@ -29,6 +29,24 @@ defmodule CleanRoomClient.OIDCVerifier do
     end
   end
 
+  def verify_id_token(id_token, jwks, transaction, metadata) do
+    with {_modules, %{"kid" => kid, "alg" => algorithm}} <-
+           JOSE.JWS.to_map(JOSE.JWT.peek_protected(id_token)),
+         true <- algorithm in metadata.algorithms and algorithm != "none",
+         %{"keys" => keys} when is_list(keys) <- jwks,
+         key when is_map(key) <- Enum.find(keys, &(&1["kid"] == kid)),
+         {true, %JOSE.JWT{fields: claims}, _jws} <-
+           JOSE.JWT.verify_strict(JOSE.JWK.from_map(key), metadata.algorithms, id_token),
+         {:ok, claims} <- validate_claims(claims, transaction, metadata) do
+      {:ok, claims}
+    else
+      %JOSE.JWS{} -> {:error, :id_token_missing_header}
+      false -> {:error, :id_token_algorithm_or_signature_invalid}
+      {:error, _} -> {:error, :id_token_claims_invalid}
+      _ -> {:error, :id_token_key_or_claims_invalid}
+    end
+  end
+
   def same_subject?(%{"sub" => subject}, %{"sub" => subject}) when is_binary(subject), do: true
   def same_subject?(_, _), do: false
 

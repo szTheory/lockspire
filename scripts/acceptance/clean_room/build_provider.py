@@ -57,16 +57,21 @@ config :clean_room_provider, CleanRoomProviderWeb.Endpoint,
   url: [host: \"127.0.0.1\"],
   adapter: Bandit.PhoenixAdapter,
   http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env(\"PORT\", \"4100\"))],
-  secret_key_base: System.get_env(\"SECRET_KEY_BASE\", \"clean-room-provider-secret-key-base-0123456789\"),
+  secret_key_base: System.get_env(\"SECRET_KEY_BASE\", \"clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789\"),
+  live_view: [signing_salt: \"clean-room-provider-live-view-salt\"],
   server: true
 config :lockspire,
   repo: CleanRoomProvider.Repo,
   account_resolver: CleanRoomProvider.Lockspire.AccountResolver,
+  interaction_handler: CleanRoomProvider.Lockspire.InteractionHandler,
   issuer: System.get_env(\"LOCKSPIRE_ISSUER\", \"http://127.0.0.1:4100/lockspire\"),
+  known_scopes: [\"openid\", \"profile\", \"read:billing\"],
   mount_path: \"/lockspire\",
   logout_path: \"/logout\",
   storage_prefix: \"lockspire\",
   oban_prefix: \"lockspire\"
+config :lockspire, Lockspire.Web.Endpoint,
+  secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
 """
     )
     (child / "lib" / "clean_room_provider" / "repo.ex").write_text(
@@ -90,8 +95,12 @@ end
         """defmodule CleanRoomProviderWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :clean_room_provider
   @session [store: :cookie, key: \"_clean_room_provider\", signing_salt: \"clean-room-salt\"]
+  plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], pass: ["*/*"], json_decoder: Jason
   plug Plug.Session, @session
+  plug :fetch_clean_room_session
   plug CleanRoomProviderWeb.Router
+
+  defp fetch_clean_room_session(conn, _opts), do: Plug.Conn.fetch_session(conn)
 end
 """
     )

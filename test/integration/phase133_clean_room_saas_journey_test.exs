@@ -8,7 +8,8 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
 
   @tag :happy_path
   test "E2E-02 and E2E-03 cross distinct origins through PKCE, OIDC, and billing" do
-    assert {output, 0} = System.cmd("python3", [@runner, "--only", "happy_path"], stderr_to_stdout: true)
+    assert {output, 0} =
+             System.cmd("python3", [@runner, "--only", "happy_path"], stderr_to_stdout: true)
 
     assert output =~ "readiness complete"
     assert output =~ "discovery complete"

@@ -16,7 +16,7 @@ defmodule CleanRoomProviderWeb.SessionController do
 
   def create(conn, params) do
     conn
-    |> put_session("account_id", "clean-room-user")
+    |> put_session("account_id", Map.get(params, "account_id", "clean-room-user"))
     |> redirect(to: resume(params))
   end
 

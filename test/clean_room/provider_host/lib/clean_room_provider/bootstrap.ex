@@ -3,6 +3,7 @@ defmodule CleanRoomProvider.Bootstrap do
 
   @bearer_redirect "http://127.0.0.1:4101/oauth/callback"
   @dpop_redirect "http://127.0.0.1:4101/oauth/dpop/callback"
+  @billing_resource "http://127.0.0.1:4100/api/billing"
 
   def provision!(handoff_dir) do
     {:ok, %{key: key}} = Lockspire.Admin.generate_key(:sig)
@@ -39,7 +40,7 @@ defmodule CleanRoomProvider.Bootstrap do
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
-      metadata: %{resource_indicators: ["billing-api"]}
+      metadata: %{resource_indicators: [@billing_resource]}
     }
   end
 
