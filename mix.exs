@@ -117,7 +117,7 @@ defmodule Lockspire.MixProject do
       qa: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "qa.architecture",
+        "cmd sh -lc 'MIX_ENV=test mix qa.architecture'",
         "cmd bash scripts/ci/run_credo.sh",
         "sobelow --config"
       ],

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-output=$(mix xref graph --format cycles 2>&1) || {
+output=$(MIX_ENV=dev mix xref graph --format cycles 2>&1) || {
   status=$?
   printf '%s\n' "$output"
   exit "$status"

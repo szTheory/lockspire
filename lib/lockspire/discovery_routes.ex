@@ -51,9 +51,7 @@ defmodule Lockspire.DiscoveryRoutes do
 
   defp normalize_paths(module) when is_atom(module) do
     if function_exported?(module, :paths, 0) do
-      module
-      |> apply(:paths, [])
-      |> normalize_paths()
+      module.paths() |> normalize_paths()
     else
       MapSet.new()
     end

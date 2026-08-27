@@ -143,7 +143,7 @@ defmodule Lockspire.Protocol.Discovery do
 
   defp resolve_route_paths(module) when is_atom(module) do
     if function_exported?(module, :paths, 0) do
-      module |> apply(:paths, []) |> resolve_route_paths()
+      module.paths() |> resolve_route_paths()
     else
       MapSet.new()
     end
