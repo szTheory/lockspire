@@ -51,7 +51,10 @@ reject_noise() {
 
 reject_noise "KeyCache startup failure" 'Failed to refresh KeyCache'
 reject_noise "Ecto query debug output" '\[[[:space:]]*debug\][[:space:]]+QUERY'
-reject_noise "telemetry local-function handler warning" 'telemetry.*local function|local function.*telemetry'
+# Telemetry emits this warning across multiple lines (the first identifies a handler,
+# then a following line says it is a local function), so a single-line
+# `telemetry.*local function` expression false-greens the fast suite.
+reject_noise "telemetry local-function handler warning" 'local function'
 
 if [ "$noise_found" -ne 0 ]; then
   exit 1

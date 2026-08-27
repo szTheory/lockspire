@@ -52,3 +52,28 @@ Same-wave plans have no `files_modified` overlap. Shared helper/facade files are
 | QUAL-04 | ownership-cluster tests and warning filters per plan | `mix compile --warnings-as-errors && mix qa && mix qa.dialyzer && mix docs.verify && HEX_API_KEY= mix package.build && MIX_ENV=test mix test.integration` |
 
 Every production-code task has focused behavioral proof before implementation, and the final plan replaces all temporary baseline allowances with zero-tolerance executable contracts.
+
+## Nyquist re-audit — 2026-08-27
+
+**Status: BLOCKED — QUAL-03 is not yet satisfied.**
+
+The original focused checker passed, but its telemetry pattern only matched a single
+line containing both `telemetry` and `local function`. Telemetry emits the handler
+warning across lines. The checker now rejects `local function`, which proves it
+catches the real diagnostic while keeping its output redacted.
+
+| Requirement | Command | Actual result | Verdict |
+|---|---|---|---|
+| QUAL-01 | `mix test test/lockspire/quality/source_quality_baseline_test.exs` and `bash scripts/ci/run_credo.sh` | 45 selected quality/admin/release/architecture tests green; Credo reported 554 sources and 0 issues. | FILLED |
+| QUAL-02 | Admin/release capability suites in the selected quality command | 45 tests green; synthetic fitness rejects macro, planning-history, and count-threshold constructs. | FILLED |
+| QUAL-03 | `bash scripts/ci/check_test_runtime_noise.sh --focused` | Passed. | PARTIAL |
+| QUAL-03 | `bash scripts/ci/check_test_runtime_noise.sh --fast` | Fails: `Routine runtime noise detected: telemetry local-function handler warning`. A direct `mix test` run also emitted the warning from token-exchange, clients, registration, device-verification, and client-auth tests. | BLOCKER |
+| QUAL-04 | `mix compile --warnings-as-errors && mix qa.dialyzer && mix docs.verify && HEX_API_KEY= mix package.build` | Compile passed; Dialyzer: 0 errors, 0 skipped, 0 unnecessary skips; ExDoc and package build passed. | FILLED |
+
+### Required remediation
+
+Replace the remaining anonymous/local telemetry callbacks in the fast test suite
+with `Lockspire.TestSupport.TelemetryCapture` (or an equivalent module-qualified
+callback with unique IDs and `on_exit` detachment), then rerun the fast checker.
+Do not weaken the new `local function` detector: its prior multiline blind spot is
+the reason the phase's claimed quiet-fast-run proof was false green.
