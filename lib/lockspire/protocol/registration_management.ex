@@ -21,7 +21,6 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationAccessToken
-  alias Lockspire.Storage.Ecto.Repository
 
   defmodule UpdateSuccess do
     @moduledoc false
@@ -135,7 +134,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     {new_rat_plaintext, new_rat_hash} = RegistrationAccessToken.generate()
 
     result =
-      Repository.rotate_registration_access_token(client, new_rat_hash, %{
+      ClientLifecycle.rotate_registration_access_token(client, new_rat_hash, %{
         action: :dcr_management_rat_rotated,
         outcome: :success,
         actor: %{type: :operator, id: "admin-ui"},

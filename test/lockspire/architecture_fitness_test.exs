@@ -80,8 +80,8 @@ defmodule Lockspire.ArchitectureFitnessTest do
       assert ast_contains?(ast, &lifecycle_call?/1),
              "#{path} must call Lockspire.ClientLifecycle rather than own writes"
 
-      refute ast_contains?(ast, &facade_audit_transaction?/1),
-             "#{path} must not duplicate lifecycle audit transaction ownership"
+      refute ast_contains?(ast, &facade_lifecycle_bypass?/1),
+             "#{path} must not bypass ClientLifecycle for persistence or audit ownership"
     end)
 
     for path <- Enum.take(facade_paths, 3) do
@@ -111,15 +111,27 @@ defmodule Lockspire.ArchitectureFitnessTest do
     assert metadata_call?(parse_snippet!("Lockspire.ClientMetadata.validate_direct(attrs)"))
     refute metadata_call?(parse_snippet!("Lockspire.ClientLifecycle.persist_direct(client)"))
 
-    assert facade_audit_transaction?(
+    assert facade_lifecycle_bypass?(
              parse_snippet!("Lockspire.Storage.Ecto.Repository.transact(fn -> :ok end)")
            )
 
-    assert facade_audit_transaction?(
+    assert facade_lifecycle_bypass?(
              parse_snippet!("Lockspire.Storage.Ecto.Repository.append_audit_event(event)")
            )
 
-    refute facade_audit_transaction?(
+    assert facade_lifecycle_bypass?(
+             parse_snippet!(
+               "Lockspire.Storage.Ecto.Repository.rotate_client_secret(client, hash, verifier, now)"
+             )
+           )
+
+    assert facade_lifecycle_bypass?(
+             parse_snippet!(
+               "Lockspire.Storage.Ecto.Repository.rotate_registration_access_token(client, hash, event)"
+             )
+           )
+
+    refute facade_lifecycle_bypass?(
              parse_snippet!("Lockspire.ClientLifecycle.transact_with_audit(fun, audit)")
            )
   end
@@ -156,10 +168,27 @@ defmodule Lockspire.ArchitectureFitnessTest do
       remote_call_to?(node, [:Lockspire, :ClientMetadata]) or
         remote_call_to?(node, [:ClientMetadata])
 
-  defp facade_audit_transaction?(node) do
-    remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], :transact) or
-      remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], :append_audit_event)
+  defp facade_lifecycle_bypass?(node) do
+    Enum.any?(
+      [
+        :register_client,
+        :update_client,
+        :set_client_active,
+        :rotate_client_secret,
+        :rotate_registration_access_token,
+        :replace_client_registration,
+        :transact,
+        :transact_with_audit,
+        :append_audit_event
+      ],
+      &repository_call?(node, &1)
+    )
   end
+
+  defp repository_call?(node, function),
+    do:
+      remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], function) or
+        remote_call_to?(node, [:Repository], function)
 
   defp remote_call_to?(
          {{:., _, [{:__aliases__, _, module}, function]}, _, _args},

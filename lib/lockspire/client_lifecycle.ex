@@ -37,6 +37,63 @@ defmodule Lockspire.ClientLifecycle do
   def persist_direct(%Client{} = client), do: Repository.register_client(client)
 
   @doc false
+  @spec update_operator(Client.t(), map()) :: {:ok, Client.t()} | {:error, term()}
+  def update_operator(%Client{} = client, attrs) when is_map(attrs),
+    do: Repository.update_client(client, attrs)
+
+  @doc false
+  @spec enable_operator(Client.t()) :: {:ok, Client.t()} | {:error, term()}
+  def enable_operator(%Client{} = client),
+    do: Repository.set_client_active(client, true, %{disabled_at: nil, disabled_by: nil})
+
+  @doc false
+  @spec rotate_operator_secret(Client.t(), map(), DateTime.t(), map()) ::
+          {:ok, Client.t()} | {:error, term()}
+  def rotate_operator_secret(
+        %Client{} = client,
+        secret_material,
+        %DateTime{} = rotated_at,
+        audit_event
+      )
+      when is_map(secret_material) and is_map(audit_event) do
+    transact_with_audit(
+      fn ->
+        Repository.rotate_client_secret(
+          client,
+          secret_material.client_secret_hash,
+          secret_material.client_secret_jwt_verifier_encrypted,
+          rotated_at
+        )
+      end,
+      fn _updated_client -> audit_event end
+    )
+  end
+
+  @doc false
+  @spec disable_operator(Client.t(), DateTime.t(), String.t() | nil, map()) ::
+          {:ok, Client.t()} | {:error, term()}
+  def disable_operator(%Client{} = client, %DateTime{} = disabled_at, disabled_by, audit_event)
+      when (is_binary(disabled_by) or is_nil(disabled_by)) and is_map(audit_event) do
+    transact_with_audit(
+      fn ->
+        Repository.set_client_active(client, false, %{
+          disabled_at: disabled_at,
+          disabled_by: disabled_by
+        })
+      end,
+      fn _updated_client -> audit_event end
+    )
+  end
+
+  @doc false
+  @spec rotate_registration_access_token(Client.t(), String.t(), map()) ::
+          {:ok, Client.t()} | {:error, term()}
+  def rotate_registration_access_token(%Client{} = client, new_rat_hash, audit_event)
+      when is_binary(new_rat_hash) and is_map(audit_event) do
+    Repository.rotate_registration_access_token(client, new_rat_hash, audit_event)
+  end
+
+  @doc false
   @spec transact_with_audit((-> {:ok, term()} | {:error, term()}), (term() -> map())) ::
           {:ok, term()} | {:error, term()}
   def transact_with_audit(fun, build_audit_event)

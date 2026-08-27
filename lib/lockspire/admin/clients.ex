@@ -146,7 +146,7 @@ defmodule Lockspire.Admin.Clients do
     with {:ok, %Client{} = client} <- get_client(client_id),
          :ok <- reject_immutable_changes(attrs),
          :ok <- validate_safe_update(client, attrs) do
-      Repository.update_client(client, normalize_update_attrs(attrs))
+      ClientLifecycle.update_operator(client, normalize_update_attrs(attrs))
     else
       {:error, :not_found} = error -> error
       {:error, [_ | _] = errors} -> {:error, errors}
@@ -172,7 +172,17 @@ defmodule Lockspire.Admin.Clients do
          :ok <- ensure_confidential_client(client) do
       secret_material = Clients.rotate_secret_material()
 
-      case rotate_client_secret_with_audit(client, secret_material, rotated_at, actor) do
+      audit_event =
+        client_audit_event(:client_secret_rotated, :succeeded, client, actor, %{
+          rotated_at: rotated_at
+        })
+
+      case ClientLifecycle.rotate_operator_secret(
+             client,
+             secret_material,
+             rotated_at,
+             audit_event
+           ) do
         {:ok, %Client{} = updated_client} ->
           emit(:client, :secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
           {:ok, %{client: updated_client, client_secret: secret_material.client_secret}}
@@ -200,7 +210,13 @@ defmodule Lockspire.Admin.Clients do
     disabled_at = Map.get(attrs, :disabled_at, DateTime.utc_now())
 
     with {:ok, %Client{} = client} <- get_client(client_id) do
-      case disable_client_with_audit(client, disabled_at, disabled_by, actor) do
+      audit_event =
+        client_audit_event(:client_disabled, :succeeded, client, actor, %{
+          disabled_at: disabled_at,
+          disabled_by: disabled_by
+        })
+
+      case ClientLifecycle.disable_operator(client, disabled_at, disabled_by, audit_event) do
         {:ok, %Client{} = updated_client} ->
           emit(:client, :disabled, updated_client, actor, %{disabled_at: disabled_at})
           {:ok, updated_client}
@@ -221,7 +237,7 @@ defmodule Lockspire.Admin.Clients do
 
   def enable_client(client_id, _attrs) when is_binary(client_id) do
     with {:ok, %Client{} = client} <- get_client(client_id) do
-      Repository.set_client_active(client, true, %{disabled_at: nil, disabled_by: nil})
+      ClientLifecycle.enable_operator(client)
     end
   end
 
@@ -786,41 +802,6 @@ defmodule Lockspire.Admin.Clients do
     do: Map.put(attrs, :frontchannel_logout_session_required, false)
 
   defp maybe_reset_logout_session_required(attrs, _field, _value), do: attrs
-
-  defp rotate_client_secret_with_audit(client, secret_material, rotated_at, actor) do
-    transact_with_audit(
-      fn ->
-        Repository.rotate_client_secret(
-          client,
-          secret_material.client_secret_hash,
-          secret_material.client_secret_jwt_verifier_encrypted,
-          rotated_at
-        )
-      end,
-      fn %Client{} = updated_client ->
-        client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
-          rotated_at: rotated_at
-        })
-      end
-    )
-  end
-
-  defp disable_client_with_audit(client, disabled_at, disabled_by, actor) do
-    transact_with_audit(
-      fn ->
-        Repository.set_client_active(client, false, %{
-          disabled_at: disabled_at,
-          disabled_by: disabled_by
-        })
-      end,
-      fn %Client{} = updated_client ->
-        client_audit_event(:client_disabled, :succeeded, updated_client, actor, %{
-          disabled_at: disabled_at,
-          disabled_by: disabled_by
-        })
-      end
-    )
-  end
 
   defp emit(entity, action, %Client{} = client, actor, metadata) do
     Observability.emit(
