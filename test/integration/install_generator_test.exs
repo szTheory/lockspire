@@ -528,7 +528,10 @@ defmodule Lockspire.InstallGeneratorTest do
     end)
 
     assert %Lockspire.Host.InteractionResult{login_path: "/sign-out", return_to: "/after-logout"} =
-             resolver_module.redirect_for_logout(nil, %{return_to: "/after-logout"})
+             :erlang.apply(resolver_module, :redirect_for_logout, [
+               nil,
+               %{return_to: "/after-logout"}
+             ])
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
