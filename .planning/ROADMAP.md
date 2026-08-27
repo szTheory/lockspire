@@ -69,7 +69,15 @@
   4. Refresh rotation, reuse-triggered family revocation, authenticated introspection, and revocation work with truthful JWT lifetime semantics.
   5. The journey rejects documented redirect, code, token, audience, scope, nonce, and DPoP replay failures without retaining or logging secrets or tokens.
 
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 133-01-PLAN.md — Establish package provenance, two-process supervision, redaction, and teardown foundations.
+- [ ] 133-02-PLAN.md — Install and boot the package-clean provider with public bootstrap and protected API.
+- [ ] 133-03-PLAN.md — Build durable bearer/DPoP client transactions, strict OIDC validation, and the server-owned DPoP session backend.
+- [ ] 133-04-PLAN.md — Complete the separate-origin code+PKCE, OIDC, userinfo, and protected-resource journey.
+- [ ] 133-05-PLAN.md — Prove lifecycle truth and the real-HTTP negative matrix.
+- [ ] 133-06-PLAN.md — Prove durable DPoP replay rejection and wire the full command into CI.
 
 ### Phase 134: Architecture Topology
 
