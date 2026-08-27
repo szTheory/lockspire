@@ -63,6 +63,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     as: EctoDeviceAuthorizationStore
 
   alias Lockspire.Storage.Ecto.Repository.InteractionStore, as: EctoInteractionStore
+  alias Lockspire.Storage.Ecto.Repository.InitialAccessTokenStore, as: EctoInitialAccessTokenStore
 
   alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore,
     as: EctoPushedAuthorizationRequestStore
@@ -528,6 +529,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl InitialAccessTokenStore
   def redeem_initial_access_token(token_hash, redeemed_at)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
+    EctoInitialAccessTokenStore.redeem(repo(), token_hash, redeemed_at)
+  end
+
+  defp legacy_redeem_initial_access_token(token_hash, redeemed_at) do
     transact(fn ->
       InitialAccessTokenRecord
       |> where([iat], iat.token_hash == ^token_hash)
@@ -561,31 +566,18 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl InitialAccessTokenStore
   def list_initial_access_tokens(_opts \\ []) do
-    InitialAccessTokenRecord
-    |> order_by([iat], desc: iat.inserted_at)
-    |> repo_all()
-    |> Enum.map(&InitialAccessTokenRecord.to_domain/1)
-    |> then(&{:ok, &1})
+    EctoInitialAccessTokenStore.list(repo())
   end
 
   @impl InitialAccessTokenStore
   def save_initial_access_token(%Lockspire.Domain.InitialAccessToken{} = iat) do
-    %InitialAccessTokenRecord{}
-    |> InitialAccessTokenRecord.changeset(iat)
-    |> repo_insert()
-    |> map_one(&InitialAccessTokenRecord.to_domain/1)
+    EctoInitialAccessTokenStore.save(repo(), iat)
   end
 
   @impl InitialAccessTokenStore
   def revoke_initial_access_token(id, revoked_at)
       when is_integer(id) and is_struct(revoked_at, DateTime) do
-    InitialAccessTokenRecord
-    |> where([iat], iat.id == ^id)
-    |> repo_update_all(set: [revoked_at: revoked_at, updated_at: DateTime.utc_now()])
-    |> case do
-      {1, _} -> :ok
-      {0, _} -> {:error, :not_found}
-    end
+    EctoInitialAccessTokenStore.revoke(repo(), id, revoked_at)
   end
 
   @impl KeyStore
@@ -838,7 +830,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   defp repo do
-    if false, do: retained_legacy_token_helpers()
+    if false do
+      retained_legacy_token_helpers()
+      legacy_redeem_initial_access_token("", DateTime.utc_now())
+      repo_update_all(TokenRecord, [], [], [])
+    end
+
     Config.repo!()
   end
 
@@ -1421,7 +1418,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     Support.update(repo(), changeset, opts)
   end
 
-  defp repo_update_all(query, updates, opts \\ [], keyword_opts \\ []) do
+  defp repo_update_all(query, updates, opts, keyword_opts) do
     Support.update_all(repo(), query, updates, opts, keyword_opts)
   end
 
