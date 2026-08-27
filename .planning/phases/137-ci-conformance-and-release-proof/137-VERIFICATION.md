@@ -1,6 +1,6 @@
 ---
 phase: 137-ci-conformance-and-release-proof
-verified: 2026-08-27T23:12:02Z
+verified: 2026-08-27T23:25:44Z
 status: human_needed
 score: 10/12 must-haves verified
 behavior_unverified: 2
@@ -26,9 +26,9 @@ human_verification:
 # Phase 137: CI, Conformance, and Release Proof Verification Report
 
 **Phase Goal:** A release carries reproducible security, coverage, conformance, and package-install evidence from immutable inputs.
-**Verified:** 2026-08-27T23:12:02Z
+**Verified:** 2026-08-27T23:25:44Z
 **Status:** human_needed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — refreshed after merging current `origin/main` (Lockspire 1.4.0)
 
 ## Goal Achievement
 
@@ -38,7 +38,7 @@ human_verification:
 | --- | --- | --- | --- |
 | 1 | Both shipped routers are low-severity, fail-closed Sobelow targets. | ✓ VERIFIED | `scripts/ci/check_sobelow_routers.sh` has two explicit `--router`, `--private`, `--threshold low`, `--exit` calls; `mix qa` invokes it; the script and its negative contracts passed. |
 | 2 | CI rejects unused locked dependencies and compile-connected cycles. | ✓ VERIFIED | `check_dependency_truth.sh` runs `mix deps.unlock --check-unused` then the `xref --format cycles --label compile-connected` gate; live execution passed and CI calls it. |
-| 3 | Fast and integration partitions run once, with a truthful complete-suite >=84% native aggregate. | ✓ VERIFIED | Current-HEAD fresh run: fast `1353/0`, integration `284/0`, clean-room `0` failures; each emitted one same-SHA export and `aggregate_coverage.sh` reported **84.77%** for `fc88d626d3fc1a4d60f12b0d6573847f48f90ac1`. |
+| 3 | Fast and integration partitions run once, with a truthful complete-suite >=84% native aggregate. | ✓ VERIFIED | Fresh merged-tree run: fast `1362/0` (6 skipped), integration `284/0`, clean-room `0` failures; each emitted one same-identity export and `aggregate_coverage.sh` reported **84.78%** for merge-candidate tree `cc447d051380ed947e29a0b83bd9aaa76c1680ff`, whose source and test contents were recorded in merge commit `654238d6`. |
 | 4 | OIDC/FAPI inputs are immutable and fail closed on mutable or altered source/image/input data. | ✓ VERIFIED | `oidf-suite-lock.json` pins commit/checksums/digests; `oidf_inputs.py --validate-only` passed; contracts cover mutable refs, checksum and compose-image drift. |
 | 5 | Conformance profiles use the immutable seam and retain bounded redacted evidence. | ✓ VERIFIED | Shared runner prepares first, waits for Compose, invokes the pinned `run-test-plan.py`, classifies runner/setup failures, and deletes raw work; 47 focused contracts passed, including execution-level failure/success tests. |
 | 6 | Supplemental conformance is default-branch scheduled, manually runnable, and uploads only receipts. | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Workflow has weekly cron/manual dispatch, least privilege, 30-day receipt-only artifacts, and static contracts; actual hosted GitHub/Docker/OIDF execution requires human-run external evidence. |
@@ -77,7 +77,7 @@ human_verification:
 
 | Artifact | Data | Source | Produces Real Data | Status |
 | --- | --- | --- | --- | --- |
-| Coverage aggregate | `fast` and `integration` `.coverdata` | Real test partitions, SHA/checksum receipts | Current HEAD 84.77% | ✓ FLOWING |
+| Coverage aggregate | `fast` and `integration` `.coverdata` | Real test partitions, SHA/checksum receipts | Merged tree 84.78% | ✓ FLOWING |
 | OIDF evidence | receipt identity/status | checked-in lock + actual runner result | Schema-bounded receipt only | ✓ FLOWING |
 | Release evidence | manifest/checksum/receipts | built tar + release API + clean-room verifier | Exact identity inputs are validated before each use | ✓ FLOWING |
 
@@ -88,7 +88,7 @@ human_verification:
 | CI security/dependency gates | `bash scripts/ci/check_sobelow_routers.sh && bash scripts/ci/check_dependency_truth.sh` | Both Sobelow scans completed; no cycles | ✓ PASS |
 | Immutable OIDF lock | `python3 scripts/conformance/oidf_inputs.py --lock scripts/conformance/oidf-suite-lock.json --validate-only` | Exit 0 | ✓ PASS |
 | Phase contracts, including post-review fixes | focused 14-file ExUnit invocation | 47 tests, 0 failures | ✓ PASS |
-| Current complete coverage | fresh matrix fast + integration + native aggregate in `/tmp/lockspire-phase137-coverage.32Qf8G` | fast 1353/0; integration 284/0; aggregate 84.77% | ✓ PASS |
+| Current complete coverage | fresh matrix fast + integration + native aggregate in `/tmp/lockspire-phase137-merge-coverage.K0EnZi` | fast 1362/0 (6 skipped); integration 284/0; aggregate 84.78% | ✓ PASS |
 | Workflow syntax/static supply chain | `bash scripts/ci/lint_workflows.sh` | Exit 0 | ✓ PASS |
 
 ### Requirements Coverage
@@ -96,7 +96,7 @@ human_verification:
 | Requirement | Status | Evidence |
 | --- | --- | --- |
 | CI-01 | ✓ SATISFIED | Explicit router wrapper, `mix qa`/CI wiring, live Sobelow run, bypass contracts. |
-| CI-02 | ✓ SATISFIED | Exactly two signed same-SHA exports, no test execution in aggregator, current 84.77% aggregate. |
+| CI-02 | ✓ SATISFIED | Exactly two signed same-identity exports, no test execution in aggregator, current 84.78% aggregate. |
 | CI-03 | ✓ SATISFIED | Read-only unused-lock and compile-connected cycle gate are live and CI-wired; fixture lock checks remain in workflow. |
 | CONF-01 | ✓ SATISFIED | Pinned commit/archive/helpers/OCI digests, verified preparation, and no mutable/source fallback. |
 | CONF-02 | ⚠️ NEEDS HUMAN | Schedule and receipt-only policy are implemented/tested; real external scheduled execution needs a GitHub run. |
@@ -133,5 +133,5 @@ No implementation gaps or failed roadmap truths were found. The phase is blocked
 
 ---
 
-_Verified: 2026-08-27T23:12:02Z_
+_Verified: 2026-08-27T23:25:44Z_
 _Verifier: the agent (gsd-verifier)_
