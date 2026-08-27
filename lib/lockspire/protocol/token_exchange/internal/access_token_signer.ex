@@ -61,9 +61,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   @spec issue(token_for_issuance(), Client.t(), map()) :: result()
   @spec issue(token_for_issuance(), Client.t(), map(), Dependencies.t()) :: result()
   def issue(%Token{} = token, %Client{} = client, request, %Dependencies{} = dependencies) do
-    request
-    |> Dependencies.attach(dependencies)
-    |> then(&issue_with_dependencies(token, client, &1))
+    _request = request
+    issue_with_dependencies(token, client, dependencies)
   end
 
   def issue(%Token{} = token, %Client{} = client, request) do
@@ -72,15 +71,19 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
     end
   end
 
-  defp issue_with_dependencies(%Token{} = token, %Client{} = client, request) do
-    case resolve_format(client, server_policy(request)) do
+  defp issue_with_dependencies(
+         %Token{} = token,
+         %Client{} = client,
+         %Dependencies{} = dependencies
+       ) do
+    case resolve_format(client, server_policy(dependencies)) do
       :opaque ->
-        format_opaque(request)
+        format_opaque()
 
       :jwt ->
         aud = derive_aud(token.audience, client.client_id)
         claims = base_claims(token, client, aud)
-        sign_jwt(claims, request)
+        sign_jwt(claims, dependencies.key_store)
     end
   end
 
@@ -102,9 +105,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
         %Dependencies{} = dependencies
       )
       when is_map(custom_claims) do
-    request
-    |> Dependencies.attach(dependencies)
-    |> then(&issue_exchange_with_dependencies(token, client, custom_claims, &1))
+    _request = request
+    issue_exchange_with_dependencies(token, client, custom_claims, dependencies)
   end
 
   def issue_exchange(%Token{} = token, %Client{} = client, custom_claims, request)
@@ -118,13 +120,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
          %Token{} = token,
          %Client{} = client,
          custom_claims,
-         request
+         %Dependencies{} = dependencies
        )
        when is_map(custom_claims) do
     base = base_claims(token, client, client.client_id)
     safe_custom_claims = Map.drop(custom_claims, ~w(iss sub aud exp iat jti client_id))
     claims = Map.merge(base, safe_custom_claims)
-    sign_jwt(claims, request)
+    sign_jwt(claims, dependencies.key_store)
   end
 
   # --------------------------------------------------------------------------
@@ -143,9 +145,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
 
   defp resolve_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
 
-  defp server_policy(request) do
-    store = Dependencies.fetch!(request).server_policy_store
-
+  defp server_policy(%Dependencies{server_policy_store: store}) do
     cond do
       is_nil(store) -> nil
       not function_exported?(store, :get_server_policy, 0) -> nil
@@ -196,7 +196,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # Opaque branch — delegate to TokenFormatter
   # --------------------------------------------------------------------------
 
-  defp format_opaque(_request) do
+  defp format_opaque do
     formatted = TokenFormatter.format_access_token([])
     {:ok, formatted.token, formatted.token_hash}
   end
@@ -205,9 +205,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # The single JOSE signing site — all :jwt callers funnel through here
   # --------------------------------------------------------------------------
 
-  defp sign_jwt(claims, request) do
+  defp sign_jwt(claims, key_store) do
     with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} <-
-           fetch_signing_key(request),
+           fetch_signing_key(key_store),
          {:ok, jwk_map} <- PrivateJwk.decode(private_jwk) do
       {_, compact} =
         JOSE.JWT.sign(
@@ -236,9 +236,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # Key fetch + JWK decode (moved from rfc8693_exchange.ex:363-399)
   # --------------------------------------------------------------------------
 
-  defp fetch_signing_key(request) do
-    key_store = Dependencies.fetch!(request).key_store
-
+  defp fetch_signing_key(key_store) do
     case key_store.fetch_active_signing_key([]) do
       {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
       when is_binary(private_jwk) and is_binary(alg) ->
