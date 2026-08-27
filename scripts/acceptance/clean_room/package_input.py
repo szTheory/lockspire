@@ -27,6 +27,21 @@ def require_command(command: str) -> None:
         raise PackageInputError(f"required command is unavailable: {command}")
 
 
+def probe_environment() -> None:
+    """Fail before child setup when a required clean-room boundary is unavailable."""
+    require_command("mix")
+    require_command("pg_isready")
+    run(("pg_isready", "-q"), cwd=PROJECT_ROOT)
+
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(("127.0.0.1", 0))
+    except OSError as error:
+        raise PackageInputError("loopback listener allocation is unavailable") from error
+
+
 def run(command: Sequence[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:
     completed = subprocess.run(
         command,
@@ -178,6 +193,7 @@ def verify_child(role: str, child_root: Path, cache_root: Path | None) -> None:
 
 
 def prepare_children(run_root: Path, cache_root: Path | None = None) -> None:
+    probe_environment()
     package_root, _package_inventory = build_package(run_root)
 
     for role in ROLES:
