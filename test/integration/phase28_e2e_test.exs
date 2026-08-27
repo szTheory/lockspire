@@ -9,6 +9,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
   alias Lockspire.Admin.InitialAccessTokens
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -23,13 +24,11 @@ defmodule Lockspire.Integration.Phase28E2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    %{events: start_telemetry_capture()}
+    start_telemetry_capture()
+    :ok
   end
 
   defp start_telemetry_capture do
-    test_pid = self()
-    handler_id = "phase28_test_handler_#{System.unique_integer()}"
-
     events = [
       [:lockspire, :iat, :mint],
       [:lockspire, :iat, :use],
@@ -42,18 +41,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
       [:lockspire, :dcr, :unauthorized]
     ]
 
-    :telemetry.attach_many(
-      handler_id,
-      events,
-      fn name, measurements, metadata, _config ->
-        send(test_pid, {:telemetry_event, name, measurements, metadata})
-      end,
-      nil
-    )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
-
-    events
+    TelemetryCapture.attach_many(events)
   end
 
   test "Full flow triggers every expected event: mint -> register -> read -> rotate -> update -> delete -> revoke -> unauthorized" do
