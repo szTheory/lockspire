@@ -27,4 +27,34 @@ defmodule Lockspire.ClientLifecycle do
 
   @spec persist_direct(Client.t()) :: {:ok, Client.t()} | {:error, term()}
   def persist_direct(%Client{} = client), do: Repository.register_client(client)
+
+  @spec replace_dcr(Client.t(), map(), String.t()) :: {:ok, Client.t()} | {:error, term()}
+  def replace_dcr(%Client{} = client, metadata, new_rat_hash)
+      when is_map(metadata) and is_binary(new_rat_hash) do
+    updated_client = Lockspire.ClientMetadata.apply_dcr_metadata(client, metadata)
+
+    Repository.replace_client_registration(client, updated_client, new_rat_hash, %{
+      action: :dcr_management_updated,
+      outcome: :success,
+      actor: %{type: :self_registered_client, id: client.client_id},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{}
+    })
+  end
+
+  @spec disable_dcr(Client.t()) :: {:ok, Client.t()} | {:error, term()}
+  def disable_dcr(%Client{} = client) do
+    audit_event = %{
+      action: :client_disabled,
+      outcome: :succeeded,
+      reason_code: :client_disabled,
+      actor: %{type: :self_registered_client, id: client.client_id},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{disabled_by: "dcr_self_delete"}
+    }
+
+    Repository.transact_with_audit(audit_event, fn ->
+      Repository.set_client_active(client, false, %{disabled_at: DateTime.utc_now(), disabled_by: "dcr_self_delete"})
+    end)
+  end
 end

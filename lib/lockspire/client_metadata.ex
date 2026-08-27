@@ -85,6 +85,30 @@ defmodule Lockspire.ClientMetadata do
     }
   end
 
+  @spec apply_dcr_metadata(Client.t(), map()) :: Client.t()
+  def apply_dcr_metadata(%Client{} = client, metadata) when is_map(metadata) do
+    candidate =
+      build_dcr_client(metadata, %{}, %{id: client.initial_access_token_id}, %{
+        client_id: client.client_id,
+        client_secret_hash: client.client_secret_hash,
+        client_secret_jwt_verifier_encrypted: client.client_secret_jwt_verifier_encrypted,
+        rat_hash: client.registration_access_token_hash
+      })
+
+    fields = [
+      :client_type, :name, :redirect_uris, :allowed_scopes, :allowed_grant_types,
+      :allowed_response_types, :token_endpoint_auth_method, :token_endpoint_auth_signing_alg,
+      :logo_uri, :tos_uri, :policy_uri, :contacts, :jwks, :jwks_uri,
+      :id_token_signed_response_alg, :authorization_signed_response_alg,
+      :authorization_encrypted_response_alg, :authorization_encrypted_response_enc,
+      :security_profile, :dpop_policy, :backchannel_logout_uri,
+      :backchannel_logout_session_required, :frontchannel_logout_uri,
+      :frontchannel_logout_session_required, :metadata
+    ]
+
+    struct(client, Map.take(Map.from_struct(candidate), fields))
+  end
+
   @spec check_fapi_signing_readiness(atom(), atom()) :: :ok | {:error, atom()}
   def check_fapi_signing_readiness(:fapi_2_0_security, :fapi_2_0_security), do: :ok
   def check_fapi_signing_readiness(:fapi_2_0_message_signing, :fapi_2_0_message_signing), do: :ok
