@@ -29,11 +29,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.CibaAuthorizationRecord
   alias Lockspire.Storage.Ecto.ClientRecord
-  alias Lockspire.Storage.Ecto.ConsentGrantRecord
   alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
   alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
-  alias Lockspire.Storage.Ecto.InteractionRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
@@ -42,6 +40,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.UsedJtiRecord
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
+  alias Lockspire.Storage.Ecto.Repository.ConsentStore, as: EctoConsentStore
+  alias Lockspire.Storage.Ecto.Repository.InteractionStore, as: EctoInteractionStore
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
   alias Lockspire.Storage.Ecto.Repository.TransactionStore, as: EctoTransactionStore
@@ -71,8 +71,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour InitialAccessTokenStore
   @behaviour TransactionStore
   @behaviour AuditStore
-
-  @active_interaction_statuses InteractionRecord.active_statuses()
 
   @impl ClientStore
   def register_client(%Client{} = client) do
@@ -163,58 +161,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl InteractionStore
   def put_interaction(%Interaction{} = interaction) do
-    %InteractionRecord{}
-    |> InteractionRecord.changeset(interaction)
-    |> repo_insert(
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:interaction_id]
-    )
-    |> map_one(&InteractionRecord.to_domain/1)
+    EctoInteractionStore.put_interaction(repo(), interaction)
   end
 
   @impl InteractionStore
   def fetch_interaction(interaction_id) when is_binary(interaction_id) do
-    InteractionRecord
-    |> where([interaction], interaction.interaction_id == ^interaction_id)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoInteractionStore.fetch_interaction(repo(), interaction_id)
   end
 
   @impl InteractionStore
   def fetch_active_interaction(interaction_id) when is_binary(interaction_id) do
-    now = DateTime.utc_now()
-
-    InteractionRecord
-    |> where([interaction], interaction.interaction_id == ^interaction_id)
-    |> where([interaction], interaction.status in ^@active_interaction_statuses)
-    |> where([interaction], interaction.expires_at > ^now)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &InteractionRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoInteractionStore.fetch_active_interaction(repo(), interaction_id)
   end
 
   @impl InteractionStore
   def list_interactions(_opts \\ []) do
-    InteractionRecord
-    |> order_by(desc: :inserted_at)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &InteractionRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoInteractionStore.list_interactions(repo())
   end
 
   @impl InteractionStore
   def transition_interaction(interaction_id, expected_statuses, attrs)
       when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
-    transact(fn ->
-      interaction_id
-      |> locked_interaction_query()
-      |> repo_one()
-      |> transition_interaction_record(expected_statuses, attrs)
-    end)
+    EctoInteractionStore.transition_interaction(repo(), interaction_id, expected_statuses, attrs)
   end
 
   @impl TransactionStore
@@ -505,81 +473,33 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl ConsentStore
   def grant_consent(%ConsentGrant{} = grant) do
-    %ConsentGrantRecord{}
-    |> ConsentGrantRecord.changeset(grant)
-    |> repo_insert()
-    |> map_one(&ConsentGrantRecord.to_domain/1)
+    EctoConsentStore.grant_consent(repo(), grant)
   end
 
   @impl ConsentStore
   def list_consents(opts \\ []) when is_list(opts) do
-    ConsentGrantRecord
-    |> maybe_filter_consent_account(Keyword.get(opts, :account_id))
-    |> maybe_filter_consent_client(Keyword.get(opts, :client_id))
-    |> maybe_filter_consent_status(Keyword.get(opts, :status))
-    |> order_by([grant], desc: grant.granted_at, desc: grant.id)
-    |> maybe_limit_consents(Keyword.get(opts, :limit))
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoConsentStore.list_consents(repo(), opts)
   end
 
   @impl ConsentStore
   def list_consents_for_account(account_id) when is_binary(account_id) do
-    list_consents(account_id: account_id)
+    EctoConsentStore.list_consents_for_account(repo(), account_id)
   end
 
   @impl ConsentStore
   def fetch_consent_grant(grant_id) when is_integer(grant_id) do
-    ConsentGrantRecord
-    |> where([grant], grant.id == ^grant_id)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &ConsentGrantRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoConsentStore.fetch_consent_grant(repo(), grant_id)
   end
 
   @impl ConsentStore
   def list_reusable_consents(account_id, client_id)
       when is_binary(account_id) and is_binary(client_id) do
-    ConsentGrantRecord
-    |> where([grant], grant.account_id == ^account_id and grant.client_id == ^client_id)
-    |> where([grant], grant.kind == :remembered and grant.status == :active)
-    |> where([grant], is_nil(grant.revoked_at))
-    |> order_by([grant], desc: grant.granted_at, desc: grant.id)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &ConsentGrantRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoConsentStore.list_reusable_consents(repo(), account_id, client_id)
   end
 
   @impl ConsentStore
   def revoke_consent_grant(grant_id, attrs) when is_integer(grant_id) and is_map(attrs) do
-    transact(fn ->
-      ConsentGrantRecord
-      |> where([grant], grant.id == ^grant_id)
-      |> lock("FOR UPDATE")
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %ConsentGrantRecord{revoked_at: %DateTime{}} = record ->
-          ConsentGrantRecord.to_domain(record)
-
-        %ConsentGrantRecord{} = record ->
-          record
-          |> ConsentGrantRecord.update_changeset(
-            attrs
-            |> Map.put_new(:status, :revoked)
-            |> Map.put(:updated_at, DateTime.utc_now())
-          )
-          |> repo_update()
-          |> map_one(&ConsentGrantRecord.to_domain/1)
-          |> unwrap_or_rollback()
-      end
-    end)
+    EctoConsentStore.revoke_consent_grant(repo(), grant_id, attrs)
   end
 
   @impl TokenStore
@@ -1161,26 +1081,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp maybe_map(nil, _mapper), do: nil
   defp maybe_map(record, mapper), do: mapper.(record)
 
-  defp maybe_filter_consent_account(query, nil), do: query
-  defp maybe_filter_consent_account(query, ""), do: query
-
-  defp maybe_filter_consent_account(query, account_id) when is_binary(account_id) do
-    where(query, [grant], grant.account_id == ^account_id)
-  end
-
-  defp maybe_filter_consent_client(query, nil), do: query
-  defp maybe_filter_consent_client(query, ""), do: query
-
-  defp maybe_filter_consent_client(query, client_id) when is_binary(client_id) do
-    where(query, [grant], grant.client_id == ^client_id)
-  end
-
-  defp maybe_filter_consent_status(query, nil), do: query
-
-  defp maybe_filter_consent_status(query, status) when status in [:active, :revoked] do
-    where(query, [grant], grant.status == ^status)
-  end
-
   defp maybe_filter_token_account(query, nil), do: query
   defp maybe_filter_token_account(query, ""), do: query
 
@@ -1258,25 +1158,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_filter_signing_key_status(query, _status), do: query
 
-  defp maybe_limit_consents(query, nil), do: query
-
-  defp maybe_limit_consents(query, limit) when is_integer(limit) and limit > 0,
-    do: limit(query, ^limit)
-
-  defp maybe_limit_consents(query, _limit), do: query
-
   defp maybe_limit_tokens(query, nil), do: query
 
   defp maybe_limit_tokens(query, limit) when is_integer(limit) and limit > 0,
     do: limit(query, ^limit)
 
   defp maybe_limit_tokens(query, _limit), do: query
-
-  defp locked_interaction_query(interaction_id) do
-    InteractionRecord
-    |> where([interaction], interaction.interaction_id == ^interaction_id)
-    |> lock("FOR UPDATE")
-  end
 
   defp locked_device_authorization_query(verification_handle) do
     DeviceAuthorizationRecord
@@ -1311,21 +1198,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp unwrap_or_rollback({:ok, result}), do: result
   defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
-
-  defp transition_interaction_record(nil, _expected_statuses, _attrs),
-    do: repo().rollback(:not_found)
-
-  defp transition_interaction_record(%InteractionRecord{} = record, expected_statuses, attrs) do
-    if record.status in expected_statuses do
-      record
-      |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-      |> repo_update()
-      |> map_one(&InteractionRecord.to_domain/1)
-      |> unwrap_or_rollback()
-    else
-      repo().rollback(:invalid_state)
-    end
-  end
 
   defp transition_device_authorization_record(nil, _expected_statuses, _attrs),
     do: repo().rollback(:not_found)
