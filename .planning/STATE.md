@@ -5,15 +5,15 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 135
 current_phase_name: Cohesive Internals
 status: planning
-stopped_at: Completed 133-01-PLAN.md
-last_updated: "2026-08-27T19:12:15.350Z"
+stopped_at: Completed 135-06-PLAN.md
+last_updated: "2026-08-27T19:17:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: Phase 134 complete, transitioned to Phase 135
+last_activity_desc: Completed Phase 135 Wave 2 storage and token dependency boundaries
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 39
-  completed_plans: 30
+  completed_plans: 31
   percent: 43
 ---
 
@@ -25,16 +25,16 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 133 — Clean-Room SaaS Journey
+**Current focus:** Phase 135 — Cohesive Internals
 
 ## Current Position
 
 Phase: 135 — Cohesive Internals
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-27 — Phase 134 complete, transitioned to Phase 135
+Plan: Wave 2 complete
+Status: Executing
+Last activity: 2026-08-27 — Completed storage delegate tracer and explicit token dependency bundle
 
-Progress: [████████░░] 77%
+Progress: [████████░░] 79%
 
 ## Accumulated Context
 
