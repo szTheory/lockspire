@@ -67,6 +67,7 @@ re_verification:
 | Final DCR scope-boundary and sender-confirmation integration fixes | `mix test test/lockspire/protocol/registration_test.exs test/lockspire/clients_test.exs test/integration/phase100_sender_constraint_e2e_test.exs` | 69 tests, 0 failures | PASS |
 | Durable default replay, generated resource route, docs/release contracts | `mix test --include integration test/integration/protected_resource_dpop_default_store_test.exs test/lockspire/storage/ecto/repository_dpop_replay_test.exs test/integration/install_generator_test.exs test/integration/phase81_generated_host_route_protection_e2e_test.exs test/lockspire/release/support_surface_contract_test.exs test/lockspire/release_readiness_contract_test.exs` | 57 tests, 0 failures | PASS |
 | Documentation and warning-free compilation | `mix docs.verify && mix compile --warnings-as-errors` | Both commands exited 0 | PASS |
+| Final phase release gate | `mix compile --warnings-as-errors`; `mix test.fast`; `mix test.integration`; `mix qa`; `mix docs.verify` | Warning-free compile; 1,351 fast tests and 258 integration tests with 0 failures; Credo found 0 issues; Sobelow scan completed; docs generated successfully | PASS |
 
 ### Requirements Coverage
 

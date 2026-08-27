@@ -25,7 +25,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has landed mainline work through v1.36 while the latest public Hex release remains `1.2.0`, and v1.37 is now underway. Phase 131 made packaged installation executable: real generated routes and consent, collision-safe migration delivery and upgrade transactions, complete install verification, truthful default/FAPI smoke proof, and generated host documentation are now verified, security-audited, and covered end to end.
+Lockspire has landed mainline work through v1.36 while the latest public Hex release remains `1.2.0`, and v1.37 is now underway. Phases 131-132 made packaged installation executable and aligned the supported client/resource-server surface with runtime truth: real generated routes and consent, collision-safe migration delivery, complete install verification, additive semantic access-token readers, coherent direct/DCR registration, durable DPoP replay defaults, and host-owned authorization boundaries are verified and security-audited. The current focus is the clean-room separate-origin SaaS journey in Phase 133.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
@@ -208,12 +208,12 @@ Execute v1.37 as an evidence-led readiness milestone. Fix the concrete generated
 ### Active
 
 - [ ] A separate-origin confidential client can complete authorization code + PKCE, validate OIDC responses, call an audience/scope-protected SaaS API, rotate refresh tokens, exercise revocation/introspection, and prove durable DPoP replay rejection.
-- [ ] Lockspire's public client and resource-server APIs match shipped behavior through additive accessors, coherent validation, accurate examples, and v1.x-compatible deprecations.
 - [ ] Protocol, admin, web, storage, and token internals have acyclic dependency direction, cohesive implementation modules, explicit dependencies, and preserved security-sensitive atomicity.
 - [ ] Static analysis, behavior-oriented tests, quiet test runtime, complete-suite coverage, Sobelow, dependency hygiene, reproducible OIDF evidence, and package checksum/install proof fail closed on real regressions.
 
 ### Validated
 
+- Phase 132 aligned the public client and resource-server contract with shipped behavior: semantic `AccessToken` readers, shared capability-aware registration, exact redirect enforcement, durable fail-closed DPoP replay storage, truthful generated examples, and 16/16 modeled threats are verified.
 - Phase 131 delivered the executable packaged-install path: generated host/router/consent seams compile and run, migrations and managed files install and upgrade transactionally, `mix lockspire.verify` reports all required seams, default and opt-in FAPI smoke proofs match their profiles, and the generated consent flow completes through token exchange with 31/31 modeled threats closed.
 - Delivered v1.36 Structural Quality Ratchet: exact-ref release proof, executable quality and compatibility baselines, repaired storage boundaries, cohesive token internals, zero-warning Dialyzer, readable tests/runtime code, synchronized docs, and artifact hygiene were completed across Phases 126-130.
 - Delivered v1.32 Admin Page IA & Interaction Model Polish: route scorecards, Support and Operate flow polish, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and final adversarial proof were completed across Phases 121-125.

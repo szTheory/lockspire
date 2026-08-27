@@ -7,7 +7,7 @@
 ## Phases
 
 - [x] **Phase 131: Executable Installation** — Make the generated Phoenix adoption path run intact from the packaged library. (completed 2026-08-26)
-- [ ] **Phase 132: Public API and Resource-Server Truth** — Align supported APIs, resource-server behavior, and documentation with what Lockspire actually ships.
+- [x] **Phase 132: Public API and Resource-Server Truth** — Align supported APIs, resource-server behavior, and documentation with what Lockspire actually ships. (completed 2026-08-26)
 - [ ] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP.
 - [ ] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services.
 - [ ] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift.
@@ -147,7 +147,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 131. Executable Installation | 7/7 | Complete    | 2026-08-26 |
-| 132. Public API and Resource-Server Truth | 0/TBD | Not started | - |
+| 132. Public API and Resource-Server Truth | 4/4 | Complete    | 2026-08-26 |
 | 133. Clean-Room SaaS Journey | 0/TBD | Not started | - |
 | 134. Architecture Topology | 0/TBD | Not started | - |
 | 135. Cohesive Internals | 0/TBD | Not started | - |

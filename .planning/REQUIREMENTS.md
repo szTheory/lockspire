@@ -16,10 +16,10 @@
 
 ### Public API and Resource Server Truth
 
-- [ ] **API-01**: A resource-server adopter can read normalized subject, scopes, audiences, expiration, and confirmation data through additive `Lockspire.AccessToken` accessors without depending on raw JWT claim shapes.
-- [ ] **API-02**: A Phoenix adopter can register the client shapes Lockspire advertises and supports, including OIDC `openid`, `private_key_jwt`, and device-only clients, while redirect-based clients retain exact URI validation.
-- [ ] **API-03**: A resource-server adopter can use durable DPoP replay protection through the configured Lockspire repository by default and can inject a compatible custom store when needed.
-- [ ] **API-04**: A Phoenix adopter can follow resource-server documentation whose code, access-token contract, authorization boundary, and deprecation guidance match shipped behavior.
+- [x] **API-01**: A resource-server adopter can read normalized subject, scopes, audiences, expiration, and confirmation data through additive `Lockspire.AccessToken` accessors without depending on raw JWT claim shapes.
+- [x] **API-02**: A Phoenix adopter can register the client shapes Lockspire advertises and supports, including OIDC `openid`, `private_key_jwt`, and device-only clients, while redirect-based clients retain exact URI validation.
+- [x] **API-03**: A resource-server adopter can use durable DPoP replay protection through the configured Lockspire repository by default and can inject a compatible custom store when needed.
+- [x] **API-04**: A Phoenix adopter can follow resource-server documentation whose code, access-token contract, authorization boundary, and deprecation guidance match shipped behavior.
 
 ### Clean-Room SaaS Journey
 
@@ -93,10 +93,10 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | INST-04 | 131 | Complete |
 | INST-05 | 131 | Complete |
 | INST-06 | 131 | Complete |
-| API-01 | 132 | Pending |
-| API-02 | 132 | Pending |
-| API-03 | 132 | Pending |
-| API-04 | 132 | Pending |
+| API-01 | 132 | Complete |
+| API-02 | 132 | Complete |
+| API-03 | 132 | Complete |
+| API-04 | 132 | Complete |
 | E2E-01 | 133 | Pending |
 | E2E-02 | 133 | Pending |
 | E2E-03 | 133 | Pending |
