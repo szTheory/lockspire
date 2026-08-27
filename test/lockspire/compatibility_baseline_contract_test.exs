@@ -1,6 +1,8 @@
 defmodule Lockspire.CompatibilityBaselineContractTest do
   use ExUnit.Case, async: true
 
+  alias Lockspire.Architecture.PublicCompatibilityManifest, as: Manifest
+
   @ci Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @fixture Path.expand("../../compatibility/phoenix_1_8_live_view_1_1", __DIR__)
 
@@ -44,6 +46,19 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
         assert image =~ "@sha256:", "#{path} has mutable PostgreSQL service image #{image}"
       end
     end
+  end
+
+  test "literal public module, arity, and struct baseline remains exported" do
+    Enum.each(Manifest.modules(), fn {module, function, arity} ->
+      assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
+      assert function_exported?(module, function, arity), "#{inspect(module)}.#{function}/#{arity} disappeared"
+    end)
+
+    Enum.each(Manifest.structs(), fn {module, keys} ->
+      assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
+      assert Map.keys(struct(module)) |> Enum.sort() == [:__struct__ | keys] |> Enum.sort(),
+             "#{inspect(module)} struct keys changed"
+    end)
   end
 
   defp ci_job!(workflow, name) do

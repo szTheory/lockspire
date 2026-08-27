@@ -59,6 +59,24 @@ defmodule Lockspire.ArchitectureFitnessTest do
     refute function_exported?(Lockspire.TestRepo, :record_dpop_proof, 1)
   end
 
+  test "protocol does not depend on delivery or operator facades" do
+    Enum.each(production_files(@protocol_root), fn path ->
+      refute ast_contains?(parse!(path), &protocol_outer_reference?/1),
+             "#{path} references Lockspire.Web or Lockspire.Admin"
+    end)
+  end
+
+  test "registration facades delegate through neutral lifecycle seams" do
+    for path <- [
+          Path.expand("../../lib/lockspire/clients.ex", __DIR__),
+          Path.expand("../../lib/lockspire/admin/clients.ex", __DIR__),
+          Path.expand("../../lib/lockspire/protocol/registration.ex", __DIR__),
+          Path.expand("../../lib/lockspire/protocol/registration_management.ex", __DIR__)
+        ] do
+      assert File.read!(path) =~ "ClientLifecycle", "#{path} must delegate lifecycle writes"
+    end
+  end
+
   defp production_files(root), do: Path.wildcard(Path.join(root, "**/*.ex"))
 
   defp parse!(path), do: path |> File.read!() |> Code.string_to_quoted!()
@@ -74,4 +92,8 @@ defmodule Lockspire.ArchitectureFitnessTest do
     do: true
 
   defp host_repo_call?(_node), do: false
+
+  defp protocol_outer_reference?({:__aliases__, _, [:Lockspire, :Web | _]}), do: true
+  defp protocol_outer_reference?({:__aliases__, _, [:Lockspire, :Admin | _]}), do: true
+  defp protocol_outer_reference?(_node), do: false
 end
