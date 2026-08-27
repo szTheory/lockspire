@@ -32,4 +32,17 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
     assert output =~ "callback reuse rejected"
     assert output =~ "host policy boundary complete"
   end
+
+  @tag :lifecycle
+  test "refresh family containment and revocation report authorization-server lifecycle truth" do
+    assert {output, 0} =
+             System.cmd("python3", [@runner, "--only", "lifecycle"], stderr_to_stdout: true)
+
+    assert output =~ "refresh rotation complete"
+    assert output =~ "refresh reuse contained"
+    assert output =~ "family introspection inactive"
+    assert output =~ "idempotent revocation complete"
+    refute output =~ "phase133-access-token-sentinel"
+    refute output =~ "phase133-bearer-client-secret-sentinel"
+  end
 end
