@@ -94,7 +94,7 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
     assert {:error, _changeset} =
              Repository.replace_client_registration(
                client,
-               %Lockspire.Domain.Client{client | name: "should-not-persist"},
+               %{client | name: "should-not-persist"},
                "replacement-rat-hash",
                %{action: :dcr_management_updated, outcome: :succeeded, resource: %{type: :client, id: nil}}
              )
