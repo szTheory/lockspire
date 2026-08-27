@@ -47,6 +47,7 @@ PROVIDER_ORIGIN = "http://127.0.0.1:4100"
 CLIENT_ORIGIN = "http://127.0.0.1:4101"
 MAX_REDIRECTS = 8
 ACTIVE_REDACTOR: Redactor | None = None
+RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
 
 
 class JourneyInterrupted(Exception):
@@ -102,6 +103,27 @@ class Browser:
                     register_secret(morsel.value)
 
         return {"status": response.status, "headers": {key.lower(): value for key, value in pairs}, "body": raw.decode("utf-8", "replace")}
+
+
+def claim_run_root(run_root: Path) -> str:
+    """Bind cleanup and subprocess state to this exact, freshly-created root."""
+
+    resolved = run_root.resolve(strict=True)
+    owner = uuid.uuid4().hex
+    marker = resolved / RUN_ROOT_MARKER
+    marker.write_text(owner, encoding="ascii")
+    return owner
+
+
+def assert_owned_run_root(run_root: Path, owner: str) -> None:
+    """Fail closed if this process no longer owns its unique temporary root."""
+
+    try:
+        marker = run_root.resolve(strict=True) / RUN_ROOT_MARKER
+        if marker.read_text(encoding="ascii") != owner:
+            raise AssertionError("clean-room run root ownership changed")
+    except FileNotFoundError as error:
+        raise AssertionError("clean-room run root disappeared before cleanup") from error
 
 
 def require_status(response: dict[str, object], status: int, label: str) -> None:
@@ -290,6 +312,26 @@ def verify_signal_cleanup() -> int:
     process.kill()
     process.communicate()
     raise AssertionError("signal cleanup probe never reached readiness")
+
+
+def verify_run_root_ownership() -> int:
+    """Prove ownership markers cannot be used across independent run roots."""
+
+    with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-owner-") as first, tempfile.TemporaryDirectory(
+        prefix="lockspire-clean-room-owner-"
+    ) as second:
+        first_root, second_root = Path(first), Path(second)
+        first_owner, second_owner = claim_run_root(first_root), claim_run_root(second_root)
+        assert_owned_run_root(first_root, first_owner)
+        assert_owned_run_root(second_root, second_owner)
+
+        try:
+            assert_owned_run_root(first_root, second_owner)
+        except AssertionError:
+            print("run-root ownership isolation complete")
+            return 0
+
+    raise AssertionError("run-root ownership accepted another runner marker")
 
 
 def assert_redaction_guard(redactor: Redactor, generated_secret: str | None = None) -> None:
@@ -760,11 +802,14 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
     parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--verify-run-root-ownership", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.verify_concurrent_origins:
         return verify_concurrent_real_journeys()
     if args.verify_signal_cleanup:
         return verify_signal_cleanup()
+    if args.verify_run_root_ownership:
+        return verify_run_root_ownership()
     if not args.only:
         parser.error("at least one --only journey group is required")
     signal.signal(signal.SIGINT, interruption_handler)
@@ -776,6 +821,14 @@ def main(argv: list[str]) -> int:
     provider_environment = client_environment = None
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
         run_root = Path(temporary)
+        run_root_owner = claim_run_root(run_root)
+        runner_tmpdir = run_root / "mix-tmp"
+        runner_tmpdir.mkdir(mode=0o700)
+        previous_tmpdir = os.environ.get("TMPDIR")
+        # Mix Sync lock files live below TMPDIR.  Every acceptance run gets an
+        # owned directory so a concurrent Mix process cannot race its lock-file
+        # replacement or cleanup against this run.
+        os.environ["TMPDIR"] = str(runner_tmpdir)
         provider_port, client_port = configure_origins()
         provider_database = clean_room_database_url("provider")
         client_database = clean_room_database_url("client")
@@ -785,6 +838,7 @@ def main(argv: list[str]) -> int:
             provider_process = process
 
         try:
+            assert_owned_run_root(run_root, run_root_owner)
             probe_environment()
             assert_redaction_guard(redactor)
             handoff = run_root / "handoff"
@@ -817,6 +871,7 @@ def main(argv: list[str]) -> int:
             if "negative" in args.only:
                 run_negative(handoff)
             if "dpop" in args.only:
+                assert_owned_run_root(run_root, run_root_owner)
                 provider_process = run_dpop(
                     provider_child,
                     provider_environment,
@@ -835,10 +890,19 @@ def main(argv: list[str]) -> int:
         finally:
             stop_process(client_process)
             stop_process(provider_process)
-            if client_child is not None and client_environment is not None:
-                drop_child_database(client_child, client_environment, "client")
-            if provider_child is not None and provider_environment is not None:
-                drop_child_database(provider_child, provider_environment, "provider")
+            try:
+                assert_owned_run_root(run_root, run_root_owner)
+            except AssertionError as error:
+                print(redactor.text(error), file=sys.stderr)
+            else:
+                if client_child is not None and client_environment is not None:
+                    drop_child_database(client_child, client_environment, "client")
+                if provider_child is not None and provider_environment is not None:
+                    drop_child_database(provider_child, provider_environment, "provider")
+            if previous_tmpdir is None:
+                os.environ.pop("TMPDIR", None)
+            else:
+                os.environ["TMPDIR"] = previous_tmpdir
             print("cleanup complete")
 
 

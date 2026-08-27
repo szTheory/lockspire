@@ -50,4 +50,16 @@ defmodule Lockspire.Integration.Phase133HarnessTest do
     refute output =~ "phase133-dpop-client-secret-sentinel"
     refute output =~ "phase133-session-key-sentinel"
   end
+
+  @tag :harness_processes
+  test "independent acceptance run roots reject each other's cleanup marker" do
+    journey = Path.expand("../../scripts/acceptance/clean_room_saas_journey.py", __DIR__)
+
+    assert {output, 0} =
+             System.cmd("python3", [journey, "--verify-run-root-ownership"],
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "run-root ownership isolation complete"
+  end
 end
