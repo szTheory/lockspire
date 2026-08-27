@@ -32,10 +32,10 @@
 
 ### Architecture Topology
 
-- [ ] **ARCH-01**: Maintainers can run an executable dependency check that reports zero Lockspire runtime/export dependency cycles while preserving existing public nested module names.
-- [ ] **ARCH-02**: Protocol modules depend only on neutral core/application and storage ports, never on Phoenix web delivery or operator-admin modules.
-- [ ] **ARCH-03**: DCR and operator workflows share one neutral client metadata and lifecycle service while preserving their existing public result shapes and security behavior.
-- [ ] **ARCH-04**: Architecture fitness tests fail when dependency direction, public/internal boundaries, or zero-cycle topology regress.
+- [x] **ARCH-01**: Maintainers can run an executable dependency check that reports zero Lockspire runtime/export dependency cycles while preserving existing public nested module names.
+- [x] **ARCH-02**: Protocol modules depend only on neutral core/application and storage ports, never on Phoenix web delivery or operator-admin modules.
+- [x] **ARCH-03**: DCR and operator workflows share one neutral client metadata and lifecycle service while preserving their existing public result shapes and security behavior.
+- [x] **ARCH-04**: Architecture fitness tests fail when dependency direction, public/internal boundaries, or zero-cycle topology regress.
 
 ### Cohesive Internals
 
@@ -103,10 +103,10 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | E2E-04 | 133 | Complete |
 | E2E-05 | 133 | Complete |
 | E2E-06 | 133 | Complete |
-| ARCH-01 | 134 | Pending |
-| ARCH-02 | 134 | Pending |
-| ARCH-03 | 134 | Pending |
-| ARCH-04 | 134 | Pending |
+| ARCH-01 | 134 | Complete |
+| ARCH-02 | 134 | Complete |
+| ARCH-03 | 134 | Complete |
+| ARCH-04 | 134 | Complete |
 | COH-01 | 135 | Pending |
 | COH-02 | 135 | Pending |
 | COH-03 | 135 | Pending |

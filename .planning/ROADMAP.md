@@ -9,7 +9,7 @@
 - [x] **Phase 131: Executable Installation** — Make the generated Phoenix adoption path run intact from the packaged library. (completed 2026-08-26)
 - [x] **Phase 132: Public API and Resource-Server Truth** — Align supported APIs, resource-server behavior, and documentation with what Lockspire actually ships. (completed 2026-08-26)
 - [x] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP. (completed 2026-08-27)
-- [ ] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services.
+- [x] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services. (completed 2026-08-27)
 - [ ] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift.
 - [ ] **Phase 136: Static Analysis and Sustainable Proof** — Make implementation and tests easier to read while retaining meaningful quality evidence.
 - [ ] **Phase 137: CI, Conformance, and Release Proof** — Make security, coverage, conformance, and artifact verification reproducible release evidence.
@@ -96,17 +96,17 @@ Plans:
 
 Plans:
 
-- [ ] 134-01-PLAN.md — Prove neutral direct/DCR metadata and atomic creation.
-- [ ] 134-02-PLAN.md — Unify RFC 7592 and operator client lifecycle operations.
-- [ ] 134-03-PLAN.md — Invert mounted discovery route capability out of protocol.
-- [ ] 134-04-PLAN.md — Break the config/security/prefix cycle with explicit inputs.
-- [ ] 134-05-PLAN.md — Break authorization-request/request-object coupling.
-- [ ] 134-06-PLAN.md — Make shared DPoP validation endpoint-neutral.
-- [ ] 134-07-PLAN.md — Introduce neutral token result primitives.
-- [ ] 134-08-PLAN.md — Move refresh and RFC 8693 onto neutral token results.
-- [ ] 134-09-PLAN.md — Convert token grant leaves and shared support.
-- [ ] 134-10-PLAN.md — Complete the compatible cycle-free token facade.
-- [ ] 134-11-PLAN.md — Enforce zero cycles, direction, ownership, and compatibility permanently.
+- [x] 134-01-PLAN.md — Prove neutral direct/DCR metadata and atomic creation.
+- [x] 134-02-PLAN.md — Unify RFC 7592 and operator client lifecycle operations.
+- [x] 134-03-PLAN.md — Invert mounted discovery route capability out of protocol.
+- [x] 134-04-PLAN.md — Break the config/security/prefix cycle with explicit inputs.
+- [x] 134-05-PLAN.md — Break authorization-request/request-object coupling.
+- [x] 134-06-PLAN.md — Make shared DPoP validation endpoint-neutral.
+- [x] 134-07-PLAN.md — Introduce neutral token result primitives.
+- [x] 134-08-PLAN.md — Move refresh and RFC 8693 onto neutral token results.
+- [x] 134-09-PLAN.md — Convert token grant leaves and shared support.
+- [x] 134-10-PLAN.md — Complete the compatible cycle-free token facade.
+- [x] 134-11-PLAN.md — Enforce zero cycles, direction, ownership, and compatibility permanently.
 
 ### Phase 135: Cohesive Internals
 
@@ -172,7 +172,7 @@ Plans:
 | 131. Executable Installation | 7/7 | Complete    | 2026-08-26 |
 | 132. Public API and Resource-Server Truth | 4/4 | Complete    | 2026-08-26 |
 | 133. Clean-Room SaaS Journey | 6/6 | Complete    | 2026-08-27 |
-| 134. Architecture Topology | 0/TBD | Not started | - |
+| 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
 | 135. Cohesive Internals | 0/TBD | Not started | - |
 | 136. Static Analysis and Sustainable Proof | 0/TBD | Not started | - |
 | 137. CI, Conformance, and Release Proof | 0/TBD | Not started | - |
