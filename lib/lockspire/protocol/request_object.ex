@@ -10,9 +10,8 @@ defmodule Lockspire.Protocol.RequestObject do
   2. Asserts the client has inline `jwks` registered.
   3. Decodes, verifies the signature, and validates the request JWT claims with the
      configured `:max_age` ceiling.
-  4. Projects JAR claims into the same flat-params shape `pushed_request_to_params/1`
-     produces in `Lockspire.Protocol.AuthorizationRequest`, so `validate_with_client/3`
-     runs unchanged.
+  4. Projects JAR claims into the flat authorization-parameter shape consumed by both
+     authorization entrypoints, so their existing validation runs unchanged.
 
   ## Out of scope
 
@@ -24,15 +23,15 @@ defmodule Lockspire.Protocol.RequestObject do
 
   alias Lockspire.Config
   alias Lockspire.Domain.Client
-  alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.Jar
+  alias Lockspire.Protocol.RequestObject.Result
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
 
   @type result ::
           {:ok, map()}
-          | {:browser_error, Error.t()}
-          | {:redirect_error, Error.t()}
+          | {:browser_error, Result.t()}
+          | {:redirect_error, Result.t()}
 
   @allowed_outer_keys ~w(client_id request)
 
@@ -309,13 +308,7 @@ defmodule Lockspire.Protocol.RequestObject do
   end
 
   defp browser_error(error, description, reason_code) do
-    %Error{
-      error: to_string(error),
-      error_description: description,
-      reason_code: reason_code,
-      state: nil,
-      redirect_uri: nil
-    }
+    Result.browser_error(error, description, reason_code)
   end
 
   defp present?(value) when value in [nil, ""], do: false
