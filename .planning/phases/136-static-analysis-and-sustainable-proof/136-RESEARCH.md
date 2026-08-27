@@ -222,16 +222,13 @@ This follows the existing project’s successful pattern; encapsulate it only wh
 |---|-------|---------|---------------|
 | A1 | The expected KeyCache error is caused by initial refresh racing test database migration rather than a separate persistent database fault. | Quiet startup | Medium — verify with a focused pre/post-migration startup test before changing error classification. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which KeyCache bootstrap condition is safely deferrable?**
-   - What we know: `list_active_keys/0` rescues every exception and KeyCache logs every returned error before alias migration. [VERIFIED: source]
-   - What's unclear: exact Postgrex/Ecto exception shape on a brand-new database versus an unavailable configured repo.
-   - Recommendation: write a narrow characterization test and match only that verified table-undefined/bootstrap condition; unexpected errors remain logged.
+   - **RESOLVED:** The test-only deferral is determined before the repository loader runs: the configured repository process is not registered (`Process.whereis(configured_repo) == nil`). It must not classify rescued Ecto/Postgrex exceptions by message or type. Once the repository is registered, every loader error remains a sanitized logged failure and retains the prior cache. The historical startup output specifically reports that `Lockspire.TestRepo` was not started. [VERIFIED: `Lockspire.KeyCache`, archived focused-run evidence]
 
 2. **Are any Dialyzer warnings caused by intentionally broad behavior contracts?**
-   - What we know: 66 warnings concentrate in recent collaborator seams. [VERIFIED: baseline]
-   - Recommendation: repair public contract types first, then only document an exception if a reduced reproducer proves an upstream analyzer limitation.
+   - **RESOLVED:** No project-warning exception is acceptable in this phase. QUAL-04 requires a zero-warning run, and the 66 warnings are assigned to owner/caller seams in Plans 07–09. A demonstrated upstream analyzer defect would be an escalation, not a new ignore baseline or `@dialyzer` suppression. [VERIFIED: fresh baseline and phase requirement]
 
 ## Environment Availability
 
