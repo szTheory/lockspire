@@ -16,4 +16,14 @@ defmodule Lockspire.Integration.Phase133ProviderInstallTest do
     refute output =~ "phase133-bearer-client-secret-sentinel"
     refute output =~ "phase133-dpop-client-secret-sentinel"
   end
+
+  test "provider bootstrap keeps bearer and DPoP enrollment independently bounded" do
+    assert {output, 0} = System.cmd("python3", [@builder, "--check-bootstrap"], stderr_to_stdout: true)
+
+    assert output =~ "provider bootstrap verified"
+    assert output =~ "separate secret handoffs verified"
+    assert output =~ "protected pipeline verified"
+    refute output =~ "phase133-bearer-client-secret-sentinel"
+    refute output =~ "phase133-dpop-client-secret-sentinel"
+  end
 end

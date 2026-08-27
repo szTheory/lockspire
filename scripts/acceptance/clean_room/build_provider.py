@@ -162,15 +162,55 @@ def self_test() -> None:
         print("provider boundary verified")
 
 
+def check_bootstrap() -> None:
+    bootstrap = (OVERLAY_ROOT / "clean_room_provider" / "bootstrap.ex").read_text()
+    router = (OVERLAY_ROOT / "clean_room_provider_web" / "router_patch.exs").read_text()
+    billing = (OVERLAY_ROOT / "clean_room_provider_web" / "controllers" / "billing_controller.ex").read_text()
+
+    required_bootstrap = (
+        "Lockspire.Admin.generate_key(:sig)",
+        "Lockspire.Admin.publish_key(key.id)",
+        "Lockspire.Admin.activate_key(key.id)",
+        "Lockspire.Clients.register_client",
+        "Lockspire.Admin.update_client(dpop.client.client_id, %{dpop_policy: :dpop})",
+        "bearer-client.secret",
+        "dpop-client.secret",
+        "File.chmod!(path, 0o600)",
+    )
+    if any(item not in bootstrap for item in required_bootstrap):
+        raise PackageInputError("provider bootstrap is missing a public enrollment or secret-boundary step")
+    if "dpop_replay_store" in router:
+        raise PackageInputError("provider route must use the configured durable DPoP store")
+
+    pipeline = [
+        "plug Lockspire.Plug.VerifyToken",
+        "plug Lockspire.Plug.EnforceSenderConstraints",
+        "plug Lockspire.Plug.RequireToken",
+    ]
+    positions = [router.index(item) for item in pipeline]
+    if positions != sorted(positions):
+        raise PackageInputError("provider protected pipeline is not in canonical order")
+    if any(f"AccessToken.{reader}" not in billing for reader in ("subject", "scopes", "audiences", "expires_at", "confirmation")):
+        raise PackageInputError("provider resource does not use all semantic access-token readers")
+
+    print("provider bootstrap verified")
+    print("separate secret handoffs verified")
+    print("protected pipeline verified")
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--check-bootstrap", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.self_test:
             self_test()
             return 0
-        raise PackageInputError("choose --self-test")
+        if args.check_bootstrap:
+            check_bootstrap()
+            return 0
+        raise PackageInputError("choose --self-test or --check-bootstrap")
     except PackageInputError as error:
         print(f"clean-room provider build failed: {error}", file=sys.stderr)
         return 1
