@@ -61,7 +61,9 @@ defmodule Lockspire.TestSupport.QualityBaseline do
     |> Enum.sort()
   end
 
-  @spec named_directives_without_adjacent_reason([credo_directive()]) :: [{String.t(), pos_integer()}]
+  @spec named_directives_without_adjacent_reason([credo_directive()]) :: [
+          {String.t(), pos_integer()}
+        ]
   def named_directives_without_adjacent_reason(directives) do
     directives
     |> Enum.filter(&(&1.kind == :next_line and is_binary(&1.check)))
@@ -176,22 +178,34 @@ defmodule Lockspire.TestSupport.QualityBaseline do
 
   defp proof_kind(line) do
     cond do
-      Regex.match?(~r/\bdefmacro\s+__using__\b/, line) -> :macro_injection
-      Regex.match?(~r/File\.read!\(@phase_/, line) -> :phase_archaeology
+      Regex.match?(~r/\bdefmacro\s+__using__\b/, line) ->
+        :macro_injection
+
+      Regex.match?(~r/File\.read!\(@phase_/, line) ->
+        :phase_archaeology
+
       Regex.match?(
         ~r/^\s*assert\s+(?:(?:assertion_count|Enum\.sum\(Map\.values\(test_counts\)\)|length\(Enum\.uniq\(test_names\)\)).*(?:==|>=)\s+\d+|test_counts\s*==)/,
         line
       ) ->
         :count_threshold
-      true -> nil
+
+      true ->
+        nil
     end
   end
 
   defp runtime_kind(line) do
     cond do
-      String.contains?(line, "Failed to refresh KeyCache") -> {:key_cache_startup_noise, true}
-      String.contains?(line, "QUERY") and String.contains?(line, "[debug]") -> {:ecto_query_noise, true}
-      String.contains?(String.downcase(line), "telemetry handler") -> {:telemetry_handler_noise, true}
+      String.contains?(line, "Failed to refresh KeyCache") ->
+        {:key_cache_startup_noise, true}
+
+      String.contains?(line, "QUERY") and String.contains?(line, "[debug]") ->
+        {:ecto_query_noise, true}
+
+      String.contains?(String.downcase(line), "telemetry handler") ->
+        {:telemetry_handler_noise, true}
+
       String.contains?(String.downcase(line), "redaction") and String.contains?(line, "plaintext") ->
         {:explicit_redaction_evidence, false}
 
