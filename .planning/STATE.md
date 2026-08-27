@@ -38,6 +38,26 @@ Progress: [█████████░] 86%
 
 ## Accumulated Context
 
+### Recent Sustaining Release: 1.4.0
+
+### 2026-07-28 sustaining pass (1.3.0 -> 1.4.0)
+
+- The adoption demo host app was rebranded Acme Ledger -> Billingo, gained a host-owned 404/500 error view, and its authorized-apps screen now reads real consent grants with a working Disconnect scoped to the signed-in customer (#75).
+- Building that screen surfaced a protocol-layer defect: re-approving a client the account already remembered created a duplicate active grant, so a host revoke UI would list an app twice and Disconnect only one of the pair. Fixed with `ConsentPolicy.duplicate_grant/2` (#77).
+- `phoenix_live_view` moved from a `~> 1.1.28` pin to a `>= 1.1.28 and < 2.0.0` range so adopters are not forced onto 1.2.x to upgrade Lockspire (#76).
+- Published architecture and code-walkthrough guides, with a documentation contract test pinning their ExDoc/README/package wiring (#73, #74).
+- **Release Please had been aborting on every run since 1.3.0** with "There are untagged, merged release PRs outstanding", while reporting success. No release PR had been proposed since. Cause: the repo runs Release Please with `skip-github-release: true`, so nothing advanced the merged release PR's `autorelease:` label. The publish job now advances it after a successful publish (#78).
+- Release ledger drift blocked `main` after both 1.3.0 and 1.4.0. `.planning/RELEASE-TRAIN.md` is now a Release Please `extra-files` target, so the release PR bumps the ledger alongside `mix.exs` (#80, #81).
+
+### Earlier
+
+- Docker/adoption demo DX hardening made hostname-first Traefik access the normal browser path and kept direct host ports as explicit fallback.
+- Operator/admin anonymous access now redirects to `/login?return_to=%2Flockspire%2Fadmin`; signed-in non-operators still receive operator-only 403 guidance.
+- Manual browser UAT passed at `http://lockspire-demo.localhost/lockspire/admin` after logging in as `ops`.
+- Cairnloop still owns `127.0.0.1:4100`; do not treat that direct port as Lockspire unless a launcher explicitly prints it.
+
+**Public release evidence:** `1.4.0`, release PR #79, protected workflow run `30386337705`, tag `lockspire-v1.4.0` at `ee32dbd`; `verify_install_truth.sh` passed for the public version. `1.3.0` shipped earlier the same day through exact-ref run `30323976705` and release PR #71.
+
 ### Decisions
 
 - v1.37 is an evidence-led readiness milestone: installation and the clean-room SaaS journey are the acceptance spine.

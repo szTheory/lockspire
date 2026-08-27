@@ -98,7 +98,10 @@ changelog_version() {
 }
 
 release_train_version() {
-  sed -nE 's/^- Latest released version: `([0-9]+\.[0-9]+\.[0-9]+)`/\1/p' .planning/RELEASE-TRAIN.md | head -n 1
+  # Trailing content is tolerated so the line can carry Release Please's
+  # `x-release-please-version` marker. Without `.*` the marker would be left in
+  # the captured value and every comparison against mix.exs would fail.
+  sed -nE 's/^- Latest released version: `([0-9]+\.[0-9]+\.[0-9]+)`.*/\1/p' .planning/RELEASE-TRAIN.md | head -n 1
 }
 
 release_train_has_required_lines() {

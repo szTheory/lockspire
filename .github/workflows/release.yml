@@ -209,6 +209,9 @@ jobs:
     environment: hex-publish
     permissions:
       contents: write
+      # Needed to advance the merged release PR's `autorelease:` label once the
+      # publish has actually happened. See the final step of this job.
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -278,6 +281,33 @@ jobs:
           else
             gh release create "$tag_name" --target "$VERIFIED_SHA" --title "lockspire: v$version" --notes "$notes"
           fi
+      # Release Please does not advance the merged release PR's `autorelease:`
+      # label when `skip-github-release: true`; this protected lane owns that
+      # state transition after publication and GitHub release creation succeed.
+      - name: Mark the merged release PR as tagged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^[[:space:]]*version:[[:space:]]*"([^"]+)".*/\1/p' mix.exs | head -1)"
+          pull_request="$(
+            gh pr list \
+              --state merged \
+              --label 'autorelease: pending' \
+              --search "release lockspire ${version} in:title" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+          if [[ -z "$pull_request" ]]; then
+            echo "No merged release PR is pending tagging for ${version}."
+            exit 0
+          fi
+          gh pr edit "$pull_request" \
+            --add-label 'autorelease: tagged' \
+            --remove-label 'autorelease: pending'
+          echo "Marked #${pull_request} as tagged for ${version}."
   post-publish-install-truth:
     name: Verify public install truth
     needs: [recovery-validation, publish]

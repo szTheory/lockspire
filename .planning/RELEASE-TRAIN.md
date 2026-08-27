@@ -6,11 +6,12 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.3.0`
-- Release date: `2026-07-28`
-- Protected publish proof: GitHub Actions run `30323976705` succeeded end to end on the trusted `hex-publish` environment, publishing from the exact-ref dispatch lane at `197608f`.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.3.0` on `2026-07-28`.
-- GitHub release truth: `lockspire-v1.3.0` was created on `2026-07-28` at `197608f` by the exact-ref dispatch publish lane, after Release Please auto-merged the `1.3.0` release PR (#71) on `main`. No backfill was needed.
+- Latest released version: `1.4.0` <!-- x-release-please-version -->
+- Release date: `2026-07-28` <!-- x-release-please-date -->
+- Protected publish proof: GitHub Actions run `30386337705` succeeded end to end on the trusted `hex-publish` environment, publishing the merged release commit `ee32dbd` from the push-triggered lane.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.4.0` on `2026-07-28`, resolving and compiling a clean-room Phoenix host app against the published package.
+- GitHub release truth: `lockspire-v1.4.0` was created on `2026-07-28` at `ee32dbd`, after Release Please auto-merged the `1.4.0` release PR (#79) on `main`. No backfill was needed.
+- Release Please bookkeeping: the publish job now advances the merged release PR's `autorelease:` label itself (#78). Before that fix the label stayed `pending`, and Release Please aborted every later run with "There are untagged, merged release PRs outstanding", silently proposing no further releases. #79 was labelled `autorelease: tagged` automatically, confirming the fix end to end.
 
 ## Normal Train Rules
 
@@ -47,4 +48,4 @@ Cut the next patch release when there is at least one merged patch-eligible chan
 
 ## Current Main Readiness
 
-As of 2026-07-01, `main` includes the v1.33-v1.35 readiness work from PR #58 at `9fb219b`. No new Hex release was published by this hygiene checkpoint; the latest public release remains `1.2.0`.
+As of 2026-07-28, `main` is at the `1.4.0` release commit `ee32dbd` and the latest public release is `1.4.0`. That release carried the host-owned demo 404 page and working Disconnect (#75), the remembered-consent duplication fix (#77), the `phoenix_live_view` range widening (#76), and the Release Please unblock (#78).

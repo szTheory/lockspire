@@ -8,7 +8,13 @@
       "component": "lockspire",
       "include-component-in-tag": true,
       "release-type": "elixir",
-      "package-name": "lockspire"
+      "package-name": "lockspire",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": ".planning/RELEASE-TRAIN.md"
+        }
+      ]
     }
   }
 }

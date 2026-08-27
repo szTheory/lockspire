@@ -25,6 +25,39 @@ defmodule Lockspire.Protocol.ConsentPolicy do
   def approval_kind(true), do: :remembered
   def approval_kind(false), do: :one_time
 
+  @doc """
+  Finds an existing active grant that a new approval would merely duplicate.
+
+  Distinct from `reusable_grant/3`, which decides whether consent can be
+  skipped. This runs *after* the subject has approved — `prompt=consent`
+  deliberately re-shows the consent screen, so an approval for a client the
+  account already remembers is an ordinary occurrence, not a skipped one.
+
+  Only exact duplicates match: same account and client, already-granted scopes
+  covering the requested set, and identical authorization details. A broader
+  scope set or different RAR details is a genuinely new grant.
+  """
+  @spec duplicate_grant([ConsentGrant.t()], ConsentGrant.t()) ::
+          {:reuse, ConsentGrant.t()} | :none
+  def duplicate_grant(grants, %ConsentGrant{} = candidate) when is_list(grants) do
+    case Enum.find(grants, &duplicate_grant?(&1, candidate)) do
+      nil -> :none
+      grant -> {:reuse, grant}
+    end
+  end
+
+  defp duplicate_grant?(
+         %ConsentGrant{status: :active, kind: :remembered, revoked_at: nil} = existing,
+         %ConsentGrant{kind: :remembered} = candidate
+       ) do
+    existing.account_id == candidate.account_id and
+      existing.client_id == candidate.client_id and
+      existing.authorization_details == candidate.authorization_details and
+      MapSet.subset?(MapSet.new(candidate.scopes), MapSet.new(existing.scopes))
+  end
+
+  defp duplicate_grant?(_existing, _candidate), do: false
+
   defp reusable_grant?(
          %ConsentGrant{
            status: :active,
