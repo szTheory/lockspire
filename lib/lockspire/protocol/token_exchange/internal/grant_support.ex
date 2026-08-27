@@ -13,7 +13,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
               {:map_device_poll_outcome, 2}
             ]}
 
-  alias Lockspire.Config
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
@@ -1004,7 +1003,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
            {:ok, token} <-
              IdToken.sign(%{
                client_id: client.client_id,
-               issuer: Config.issuer!(),
+               issuer: Dependencies.fetch!(request).issuer,
                host_claims: claims,
                interaction_nonce: interaction_nonce(interaction),
                auth_time: auth_time,
@@ -1069,8 +1068,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   defp resolve_interaction_auth_time(nil), do: {:ok, nil}
 
-  defp resolve_claims(%Token{} = authorization_code, %Client{} = client, _request) do
-    resolver = Config.account_resolver!()
+  defp resolve_claims(%Token{} = authorization_code, %Client{} = client, request) do
+    resolver = Dependencies.fetch!(request).account_resolver
 
     context = %{
       client_id: client.client_id,
