@@ -13,7 +13,8 @@ defmodule CleanRoomProvider.Lockspire.AccountResolver do
     end
   end
 
-  def resolve_current_account(_conn_or_socket, context), do: {:redirect, redirect_for_login(nil, context)}
+  def resolve_current_account(_conn_or_socket, context),
+    do: {:redirect, redirect_for_login(nil, context)}
 
   @impl true
   def resolve_account(id, _context), do: Accounts.fetch(id)
@@ -33,7 +34,10 @@ defmodule CleanRoomProvider.Lockspire.AccountResolver do
     %InteractionResult{
       login_path: "/login",
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
-      params: %{ "interaction_id" => Map.get(context, :interaction_id) || Map.get(context, "interaction_id") }
+      params: %{
+        "interaction_id" =>
+          Map.get(context, :interaction_id) || Map.get(context, "interaction_id")
+      }
     }
   end
 end
