@@ -16,7 +16,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
   alias Lockspire.Protocol.TokenResult.Success
   alias Lockspire.Security.Policy
 
-  @spec exchange(Client.t(), map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  @spec exchange(Client.t(), map(), map()) :: {:ok, struct()} | {:error, struct()}
   def exchange(%Client{} = client, request, %Dependencies{} = dependencies) do
     request = Dependencies.attach(request, dependencies)
     params = Map.get(request, :params, Map.get(request, "params", request))

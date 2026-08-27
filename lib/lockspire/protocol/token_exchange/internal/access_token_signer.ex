@@ -59,7 +59,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   The `:jwt` branch emits a LIST `aud` derived from `token.audience`.
   """
   @spec issue(token_for_issuance(), Client.t(), map()) :: result()
-  @spec issue(token_for_issuance(), Client.t(), map(), Dependencies.t()) :: result()
+  @spec issue(token_for_issuance(), Client.t(), map(), map()) :: result()
   def issue(%Token{} = token, %Client{} = client, request, %Dependencies{} = dependencies) do
     _request = request
     issue_with_dependencies(token, client, dependencies)
@@ -95,7 +95,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   restricted claims `iss sub aud exp iat jti client_id`.
   """
   @spec issue_exchange(token_for_issuance(), Client.t(), map(), map()) :: result()
-  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map(), Dependencies.t()) ::
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map(), map()) ::
           result()
   def issue_exchange(
         %Token{} = token,

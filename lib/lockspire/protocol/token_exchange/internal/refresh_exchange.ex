@@ -15,7 +15,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange_refresh_token(Client.t(), map(), Dependencies.t()) ::
+  @spec exchange_refresh_token(Client.t(), map(), map()) ::
           {:ok, struct()} | {:error, struct()}
   def exchange_refresh_token(%Client{} = client, request, %Dependencies{} = dependencies)
       when is_map(request) do

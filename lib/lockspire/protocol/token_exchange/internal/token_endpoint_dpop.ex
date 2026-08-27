@@ -27,7 +27,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
 
   @spec resolve_context(Client.t(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
-  @spec resolve_context(Client.t(), map(), Dependencies.t()) ::
+  @spec resolve_context(Client.t(), map(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
   def resolve_context(%Client{} = client, request, %Dependencies{} = dependencies),
     do: resolve_context_with_dependencies(client, request, dependencies)
@@ -63,7 +63,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
-  @spec resolve_refresh_context(Client.t(), Token.t(), map(), Dependencies.t()) ::
+  @spec resolve_refresh_context(Client.t(), Token.t(), map(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
   def resolve_refresh_context(
         %Client{} = client,
