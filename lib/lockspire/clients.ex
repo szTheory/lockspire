@@ -330,13 +330,9 @@ defmodule Lockspire.Clients do
 
   defp validate_scopes(errors, scopes) do
     Enum.reduce(scopes, errors, fn scope, acc ->
-      cond do
-        scope == "openid" or valid_scope_token?(scope) ->
-          acc
-
-        true ->
-          [%{field: :allowed_scopes, reason: :invalid_scope, detail: scope} | acc]
-      end
+      if scope == "openid" or valid_scope_token?(scope),
+        do: acc,
+        else: [%{field: :allowed_scopes, reason: :invalid_scope, detail: scope} | acc]
     end)
   end
 
