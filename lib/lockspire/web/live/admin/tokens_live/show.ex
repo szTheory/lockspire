@@ -351,10 +351,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   defp load_token(socket, nil), do: assign(socket, token_detail: nil)
 
   defp load_token(socket, token_id) do
-    case Admin.get_token(token_id) do
-      {:ok, token_detail} -> assign(socket, token_detail: token_detail)
-      {:error, _reason} -> assign(socket, token_detail: nil)
-    end
+    {:ok, token_detail} = Admin.get_token(token_id)
+    assign(socket, token_detail: token_detail)
   end
 
   defp parse_id(value) when is_integer(value), do: value

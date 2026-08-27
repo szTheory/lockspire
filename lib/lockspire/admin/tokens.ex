@@ -74,24 +74,28 @@ defmodule Lockspire.Admin.Tokens do
     attrs = normalize_revoke_attrs(attrs)
     revoked_reason = Map.get(attrs, :revoked_reason)
 
-    with {:ok, %Token{} = token} <- fetch_existing_token(token_id),
-         family_id when is_binary(family_id) <- token.family_id || {:error, :no_family},
-         {:ok, {count, detail}} <-
-           transact_with_audit(
-             fn -> revoke_token_family_detail(family_id, token_id) end,
-             fn {count, _detail} ->
-               revoke_family_audit_event(token, actor, count, revoked_reason)
-             end
-           ) do
-      emit(:token, :family_revoked, token, actor, %{
-        family_id: family_id,
-        revoked_count: count,
-        reason_code: revoked_reason || :token_family_revoked
-      })
+    with {:ok, %Token{} = token} <- fetch_existing_token(token_id) do
+      case token.family_id do
+        family_id when is_binary(family_id) ->
+          {:ok, {count, detail}} =
+            transact_with_audit(
+              fn -> revoke_token_family_detail(family_id, token_id) end,
+              fn {count, _detail} ->
+                revoke_family_audit_event(token, actor, count, revoked_reason)
+              end
+            )
 
-      {:ok, %{count: count, token: detail}}
-    else
-      {:error, _reason} = error -> error
+          emit(:token, :family_revoked, token, actor, %{
+            family_id: family_id,
+            revoked_count: count,
+            reason_code: revoked_reason || :token_family_revoked
+          })
+
+          {:ok, %{count: count, token: detail}}
+
+        nil ->
+          {:error, :no_family}
+      end
     end
   end
 
@@ -99,7 +103,6 @@ defmodule Lockspire.Admin.Tokens do
     case Repository.fetch_lifecycle_token_by_id(token_id) do
       {:ok, nil} -> {:error, :not_found}
       {:ok, %Token{} = token} -> {:ok, token}
-      {:error, reason} -> {:error, reason}
     end
   end
 

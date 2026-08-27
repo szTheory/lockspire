@@ -24,16 +24,12 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
       created_by: "operator"
     }
 
-    case InitialAccessTokens.mint_iat(attrs) do
-      {:ok, _iat, plaintext_secret} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "IAT minted successfully.")
-         |> assign(iat_secret: plaintext_secret)}
+    {:ok, _iat, plaintext_secret} = InitialAccessTokens.mint_iat(attrs)
 
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Failed to mint IAT.")}
-    end
+    {:noreply,
+     socket
+     |> put_flash(:info, "IAT minted successfully.")
+     |> assign(iat_secret: plaintext_secret)}
   end
 
   @impl true
