@@ -5,6 +5,7 @@ defmodule Lockspire.Admin.Clients do
 
   alias Lockspire.Clients
   alias Lockspire.Clients.RegistrationResult
+  alias Lockspire.ClientLifecycle
   alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
@@ -134,13 +135,7 @@ defmodule Lockspire.Admin.Clients do
   def create_dcr_client(%{client: %Client{} = client} = attrs) when is_map(attrs) do
     actor = actor_from_attrs(attrs)
 
-    audit_event =
-      client_audit_event(:dcr_client_created, :succeeded, client, actor, %{
-        client_id: client.client_id,
-        provenance: client.provenance
-      })
-
-    case Repository.transact_with_audit(audit_event, fn -> Repository.register_client(client) end) do
+    case ClientLifecycle.create_dcr(%{client: client, actor: actor}) do
       {:ok, %Client{} = persisted} ->
         Observability.emit(:dcr, :client_created, %{}, %{
           actor_type: actor[:type],
