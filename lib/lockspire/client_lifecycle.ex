@@ -19,9 +19,17 @@ defmodule Lockspire.ClientLifecycle do
 
     case Repository.transact_with_audit(audit_event, fn -> Repository.register_client(client) end) do
       {:ok, %Client{} = persisted} ->
-        Observability.emit(:dcr, :client_created, %{}, %{actor_type: actor[:type], actor_id: actor[:id], client_id: persisted.client_id, provenance: persisted.provenance})
+        Observability.emit(:dcr, :client_created, %{}, %{
+          actor_type: actor[:type],
+          actor_id: actor[:id],
+          client_id: persisted.client_id,
+          provenance: persisted.provenance
+        })
+
         {:ok, persisted}
-      {:error, reason} -> {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -54,7 +62,10 @@ defmodule Lockspire.ClientLifecycle do
     }
 
     Repository.transact_with_audit(audit_event, fn ->
-      Repository.set_client_active(client, false, %{disabled_at: DateTime.utc_now(), disabled_by: "dcr_self_delete"})
+      Repository.set_client_active(client, false, %{
+        disabled_at: DateTime.utc_now(),
+        disabled_by: "dcr_self_delete"
+      })
     end)
   end
 end

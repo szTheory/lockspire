@@ -179,7 +179,11 @@ defmodule Lockspire.Security.Policy do
 
   def seal_client_secret_jwt_verifier(secret, secret_key_base)
       when is_binary(secret) and is_binary(secret_key_base) do
-    Plug.Crypto.encrypt(required_secret_key_base!(secret_key_base), @client_secret_jwt_salt, secret)
+    Plug.Crypto.encrypt(
+      required_secret_key_base!(secret_key_base),
+      @client_secret_jwt_salt,
+      secret
+    )
   end
 
   def seal_client_secret_jwt_verifier(secret, opts)
@@ -258,7 +262,8 @@ defmodule Lockspire.Security.Policy do
           _other -> nil
         end)
 
-      value -> value
+      value ->
+        value
     end
     |> required_secret_key_base!()
   end

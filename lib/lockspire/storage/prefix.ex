@@ -11,7 +11,9 @@ defmodule Lockspire.Storage.Prefix do
 
   def normalize(prefix) when is_binary(prefix) do
     case String.trim(prefix) do
-      "" -> nil
+      "" ->
+        nil
+
       normalized ->
         if Regex.match?(@identifier, normalized) do
           normalized

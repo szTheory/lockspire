@@ -28,13 +28,22 @@ defmodule Lockspire.DiscoveryRoutesTest do
   end
 
   test "paths/0 resolves the legacy discovery_router override at the delivery edge" do
-    Application.put_env(:lockspire, :discovery_router, Lockspire.DiscoveryRoutesTest.AlternateRouter)
+    Application.put_env(
+      :lockspire,
+      :discovery_router,
+      Lockspire.DiscoveryRoutesTest.AlternateRouter
+    )
 
     assert DiscoveryRoutes.paths() == MapSet.new(["/token"])
   end
 
   test "paths/0 accepts a configured neutral path capability before legacy router compatibility" do
-    Application.put_env(:lockspire, :discovery_router, Lockspire.DiscoveryRoutesTest.AlternateRouter)
+    Application.put_env(
+      :lockspire,
+      :discovery_router,
+      Lockspire.DiscoveryRoutesTest.AlternateRouter
+    )
+
     Application.put_env(:lockspire, :discovery_route_paths, ["/authorize", "/token"])
 
     assert DiscoveryRoutes.paths() == MapSet.new(["/authorize", "/token"])

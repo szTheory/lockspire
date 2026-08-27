@@ -19,12 +19,25 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
 
   @structs [
     {Lockspire.Clients.RegistrationResult, [:client, :client_secret]},
-    {Lockspire.Protocol.Registration.Success, [:client, :client_secret_plaintext, :registration_access_token_plaintext]},
+    {Lockspire.Protocol.Registration.Success,
+     [:client, :client_secret_plaintext, :registration_access_token_plaintext]},
     {Lockspire.Protocol.Registration.Error, [:code, :field, :reason, :allowed]},
-    {Lockspire.Protocol.RegistrationManagement.UpdateSuccess, [:client, :registration_access_token_plaintext]},
-    {Lockspire.Protocol.Userinfo.Error, [:status, :error, :error_description, :reason_code, :dpop_nonce]},
-    {Lockspire.Protocol.TokenExchange.Error, [:status, :error, :error_description, :reason_code, :dpop_nonce]},
-    {Lockspire.Protocol.TokenExchange.Success, [:access_token, :refresh_token, :id_token, :token_type, :issued_token_type, :expires_in, :scope]}
+    {Lockspire.Protocol.RegistrationManagement.UpdateSuccess,
+     [:client, :registration_access_token_plaintext]},
+    {Lockspire.Protocol.Userinfo.Error,
+     [:status, :error, :error_description, :reason_code, :dpop_nonce]},
+    {Lockspire.Protocol.TokenExchange.Error,
+     [:status, :error, :error_description, :reason_code, :dpop_nonce]},
+    {Lockspire.Protocol.TokenExchange.Success,
+     [
+       :access_token,
+       :refresh_token,
+       :id_token,
+       :token_type,
+       :issued_token_type,
+       :expires_in,
+       :scope
+     ]}
   ]
 
   def modules, do: @modules

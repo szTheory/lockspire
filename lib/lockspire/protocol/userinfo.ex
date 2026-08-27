@@ -86,9 +86,14 @@ defmodule Lockspire.Protocol.Userinfo do
         cond do
           present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
             case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
-              {:ok, _proof} -> :ok
-              {:error, %ProtectedResourceError{} = error} -> {:error, protected_resource_error(error)}
-              {:error, %Error{} = error} -> {:error, error}
+              {:ok, _proof} ->
+                :ok
+
+              {:error, %ProtectedResourceError{} = error} ->
+                {:error, protected_resource_error(error)}
+
+              {:error, %Error{} = error} ->
+                {:error, error}
             end
 
           authorization_scheme == "Bearer" ->
