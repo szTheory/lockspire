@@ -42,6 +42,7 @@ defmodule Lockspire.JwksFetcher.TargetSafety do
     end)
   end
 
+  # Enumerating reserved and private ranges in one match preserves the target-safety invariant.
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp classify({a, b, c, d}) do
     case <<a, b, c, d>> do

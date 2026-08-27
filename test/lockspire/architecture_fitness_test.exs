@@ -54,6 +54,7 @@ defmodule Lockspire.ArchitectureFitnessTest do
 
   test "Repository is a behavior-complete pure facade over every aggregate", %{asts: asts} do
     repository = Map.fetch!(asts, @repository_path)
+    Code.ensure_loaded!(Lockspire.Storage.Ecto.Repository)
 
     for behavior <- repository_behaviors(),
         {function, arity} <- behavior.behaviour_info(:callbacks) do

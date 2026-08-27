@@ -52,6 +52,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     """
   end
 
+  # Upgrade ordering preserves managed-file refusal before any host-owned mutation can run.
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp do_run(opts) do
     base_assigns = Install.build_assigns(opts)

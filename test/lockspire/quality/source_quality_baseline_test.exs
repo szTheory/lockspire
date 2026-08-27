@@ -25,21 +25,11 @@ defmodule Lockspire.Quality.SourceQualityBaselineTest do
            ]
   end
 
-  test "pins the temporary Credo cleanup baseline scheduled for Plan 11" do
+  test "requires zero file-wide or unnamed library Credo directives and reasons for named exceptions" do
     directives = QualityBaseline.credo_directives_in("lib")
 
-    assert QualityBaseline.file_wide_files(directives) == [
-             "lib/lockspire/protocol/dpop.ex",
-             "lib/lockspire/protocol/jar.ex",
-             "lib/lockspire/protocol/request_object.ex"
-           ]
-
-    assert QualityBaseline.unnamed_next_line_locations(directives) == [
-             {"lib/lockspire/domain/client.ex", 89},
-             {"lib/lockspire/jwks_fetcher.ex", 190},
-             {"lib/lockspire/protocol/authorization_request.ex", 900},
-             {"lib/lockspire/protocol/token_exchange/internal/rfc8693_exchange.ex", 157},
-             {"lib/lockspire/security/policy.ex", 82}
-           ]
+    assert QualityBaseline.file_wide_files(directives) == []
+    assert QualityBaseline.unnamed_next_line_locations(directives) == []
+    assert QualityBaseline.named_directives_without_adjacent_reason(directives) == []
   end
 end

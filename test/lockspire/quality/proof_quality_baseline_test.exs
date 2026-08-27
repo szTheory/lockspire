@@ -43,27 +43,12 @@ defmodule Lockspire.Quality.ProofQualityBaselineTest do
            ]
   end
 
-  test "pins active proof cleanup identities for Plan 11" do
+  test "requires active proof to contain no macro injection, history reads, or count thresholds" do
     constructs = QualityBaseline.active_proof_constructs()
 
-    assert QualityBaseline.proof_locations(constructs, :macro_injection) == [
-             {"test/support/admin_contract_helpers.ex", 4},
-             {"test/support/release_contract_helpers.ex", 4}
-           ]
-
-    assert QualityBaseline.proof_locations(constructs, :phase_archaeology) == [
-             {"test/lockspire/web/live/admin/design_system/proof_artifact_contract_test.exs", 157},
-             {"test/lockspire/web/live/admin/design_system/proof_artifact_contract_test.exs", 222},
-             {"test/support/admin_contract_helpers.ex", 953}
-           ]
-
-    assert QualityBaseline.proof_locations(constructs, :count_threshold) == [
-             {"test/lockspire/release_readiness_contract_test.exs", 85},
-             {"test/lockspire/web/live/admin/design_system/inventory_contract_test.exs", 50},
-             {"test/lockspire/web/live/admin/design_system/inventory_contract_test.exs", 51},
-             {"test/lockspire/web/live/admin/design_system/inventory_contract_test.exs", 52},
-             {"test/lockspire/web/live/admin/design_system/inventory_contract_test.exs", 53}
-           ]
+    assert QualityBaseline.proof_locations(constructs, :macro_injection) == []
+    assert QualityBaseline.proof_locations(constructs, :phase_archaeology) == []
+    assert QualityBaseline.proof_locations(constructs, :count_threshold) == []
   end
 
   test "parses the zero-ignore Dialyzer baseline by exact owning source file" do

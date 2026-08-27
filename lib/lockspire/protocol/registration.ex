@@ -360,6 +360,7 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
+  # The ordered JARM encryption validation reports the first invalid registration field precisely.
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp validate_authorization_response_encryption_metadata(metadata) do
     signing_alg = Map.get(metadata, "authorization_signed_response_alg")

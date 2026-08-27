@@ -61,6 +61,15 @@ defmodule Lockspire.TestSupport.QualityBaseline do
     |> Enum.sort()
   end
 
+  @spec named_directives_without_adjacent_reason([credo_directive()]) :: [{String.t(), pos_integer()}]
+  def named_directives_without_adjacent_reason(directives) do
+    directives
+    |> Enum.filter(&(&1.kind == :next_line and is_binary(&1.check)))
+    |> Enum.reject(&adjacent_reason?/1)
+    |> Enum.map(&{&1.file, &1.line})
+    |> Enum.sort()
+  end
+
   @spec proof_constructs(String.t(), String.t()) :: [map()]
   def proof_constructs(file, source) when is_binary(file) and is_binary(source) do
     source
@@ -146,6 +155,18 @@ defmodule Lockspire.TestSupport.QualityBaseline do
   end
 
   defp absolute_path(relative_path), do: Path.join(@repo_root, relative_path)
+
+  defp adjacent_reason?(%{file: file, line: line}) do
+    file
+    |> absolute_path()
+    |> File.read!()
+    |> String.split("\n")
+    |> Enum.at(line - 2, "")
+    |> then(fn previous ->
+      String.match?(previous, ~r/^\s*#\s+\S/) and
+        not String.contains?(previous, "credo:disable")
+    end)
+  end
 
   defp credo_kind("disable-for-this-file"), do: :file_wide
   defp credo_kind("disable-for-next-line"), do: :next_line
