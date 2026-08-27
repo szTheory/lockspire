@@ -2,16 +2,31 @@
 set -euo pipefail
 
 package_name=lockspire
-version="$(sed -nE 's/^[[:space:]]*version:[[:space:]]*"([^"]+)".*/\1/p' mix.exs | head -1)"
-[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+package_tar=${1:?package tar is required}
+manifest=${2:?release manifest is required}
+source_sha=${3:?source SHA is required}
 
-package_tar="${package_name}-${version}.tar"
-test -f "$package_tar"
-local_checksum="$(sha256sum "$package_tar" | awk '{print $1}')"
+python3 scripts/publish/release_artifact.py verify-local \
+  --tar "$package_tar" \
+  --manifest "$manifest" \
+  --source-sha "$source_sha"
+
+version=$(jq -er '.version' "$manifest")
+local_checksum=$(jq -er '.artifact.sha256' "$manifest")
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
 [[ "$local_checksum" =~ ^[0-9a-f]{64}$ ]]
 
 release_response="$(mktemp)"
-trap 'rm -f "$release_response"' EXIT
+build_dir=""
+
+cleanup() {
+  rm -f "$release_response"
+  if [[ -n "$build_dir" && -d "$build_dir" ]]; then
+    rm -rf "$build_dir"
+  fi
+}
+
+trap cleanup EXIT
 
 release_url="https://hex.pm/api/packages/${package_name}/releases/${version}"
 http_status="$(
@@ -23,9 +38,9 @@ http_status="$(
 
 case "$http_status" in
   200)
-    published_checksum="$(jq -er '.checksum' "$release_response")"
-    [[ "$published_checksum" =~ ^[0-9a-f]{64}$ ]]
-    test "$published_checksum" = "$local_checksum"
+    python3 scripts/publish/release_artifact.py verify-hex \
+      --manifest "$manifest" \
+      --response "$release_response"
 
     if [[ "$(jq -r '.has_docs' "$release_response")" == "true" ]]; then
       echo "Hex package ${package_name} ${version} and its docs already match the verified artifact."
@@ -35,6 +50,13 @@ case "$http_status" in
     fi
     ;;
   404)
+    build_dir=$(mktemp -d)
+    rebuilt_tar="${build_dir}/$(basename "$package_tar")"
+    mix hex.build --output "$rebuilt_tar"
+    cmp -s "$package_tar" "$rebuilt_tar" || {
+      echo "Hex rebuild differs from the clean-room-proven artifact." >&2
+      exit 1
+    }
     mix hex.publish --yes
     ;;
   *)

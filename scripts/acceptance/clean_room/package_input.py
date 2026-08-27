@@ -360,11 +360,9 @@ def package_source(package_tar: Path | None, hex_version: str | None, expected_s
     if package_tar is not None:
         return PackageSource("tar", str(package_tar), expected_sha256)
     if hex_version is not None:
-        if expected_sha256 is not None:
-            raise PackageInputError("--package-sha256 applies only to a local package tar")
-        return PackageSource("hex", exact_version(hex_version))
+        return PackageSource("hex", exact_version(hex_version), expected_sha256)
     if expected_sha256 is not None:
-        raise PackageInputError("--package-sha256 requires --package-tar")
+        raise PackageInputError("--package-sha256 requires --package-tar or --hex-version")
     return PackageSource("checkout")
 
 
