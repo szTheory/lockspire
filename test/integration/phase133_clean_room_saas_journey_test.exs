@@ -78,7 +78,8 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
           "dpop resource nonce challenge received",
           "dpop resource nonce retry complete",
           "dpop exact proof replay rejected",
-          "dpop replay rejected after provider restart"
+          "dpop replay rejected after provider restart",
+          "client CSRF protection enforced"
         ] do
       assert output =~ receipt
     end

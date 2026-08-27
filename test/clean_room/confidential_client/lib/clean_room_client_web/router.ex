@@ -4,6 +4,7 @@ defmodule CleanRoomClientWeb.Router do
 
   pipeline :browser do
     plug(:fetch_session)
+    plug(:protect_from_forgery)
   end
 
   scope "/" do
@@ -30,6 +31,7 @@ defmodule CleanRoomClientWeb.Router do
 
     get("/journey", CleanRoomClientWeb.JourneyController, :status)
     get("/acceptance/callback-attempts", CleanRoomClientWeb.JourneyController, :callback_attempts)
+    get("/acceptance/csrf", CleanRoomClientWeb.JourneyController, :csrf)
     get("/health", CleanRoomClientWeb.JourneyController, :status)
   end
 end

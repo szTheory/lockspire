@@ -435,7 +435,13 @@ def run_negative(handoff: Path) -> None:
     print("callback state rejected before exchange")
 
     nonce_client = Browser(CLIENT_ORIGIN)
-    nonce_result, _ = browser_authorize(nonce_client, Browser(PROVIDER_ORIGIN), before_callback=lambda browser: browser.request("POST", "/acceptance/replace-nonce"))
+    nonce_result, _ = browser_authorize(
+        nonce_client,
+        Browser(PROVIDER_ORIGIN),
+        before_callback=lambda browser: browser.request(
+            "POST", "/acceptance/replace-nonce", {"_csrf_token": client_csrf(browser)}
+        ),
+    )
     require_status(nonce_result, 400, "nonce mismatch callback")
     nonce_receipt = receipt(nonce_client)
     if not str(nonce_receipt.get("failed_stage", "")).startswith("oidc"):
@@ -492,7 +498,7 @@ def run_boundary() -> None:
 
 
 def safe_dpop_operation(client: Browser, path: str, label: str) -> dict[str, object]:
-    response = client.request("POST", path)
+    response = client.request("POST", path, {"_csrf_token": client_csrf(client)})
     require_status(response, 200, label)
     parsed = json.loads(str(response["body"]))
     forbidden = {"access_token", "nonce", "proof", "private_key", "secret", "cookie"}
@@ -501,9 +507,25 @@ def safe_dpop_operation(client: Browser, path: str, label: str) -> dict[str, obj
     return parsed
 
 
+def client_csrf(client: Browser) -> str:
+    response = client.request("GET", "/acceptance/csrf")
+    require_status(response, 200, "client csrf")
+    token = json.loads(str(response["body"])).get("csrf_token")
+    if not isinstance(token, str) or not token:
+        raise AssertionError("client csrf endpoint omitted token")
+    return token
+
+
+def assert_client_csrf_protection(client: Browser) -> None:
+    rejected = client.request("POST", "/acceptance/dpop/resource/challenge")
+    require_status(rejected, 403, "client CSRF rejection")
+    print("client CSRF protection enforced")
+
+
 def run_dpop(provider_child: Path, provider_environment: dict[str, str], provider_process: subprocess.Popen[bytes] | None, run_root: Path) -> subprocess.Popen[bytes]:
     client = Browser(CLIENT_ORIGIN)
     provider = Browser(PROVIDER_ORIGIN)
+    assert_client_csrf_protection(client)
     start = client.request("GET", "/oauth/dpop/start")
     require_status(start, 302, "dpop client start")
     authorization_location = redirect(start, "dpop client start")

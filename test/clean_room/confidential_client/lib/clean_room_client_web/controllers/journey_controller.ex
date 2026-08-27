@@ -14,6 +14,8 @@ defmodule CleanRoomClientWeb.JourneyController do
     json(conn, %{token_exchange_attempts: get_session(conn, :token_exchange_attempts, 0)})
   end
 
+  def csrf(conn, _params), do: json(conn, %{csrf_token: Plug.CSRFProtection.get_csrf_token()})
+
   def resource_challenge(conn, _params) do
     with {:ok, session} <- session(conn),
          {:ok, access_token} <- encrypted_value(session.encrypted_access_token),
