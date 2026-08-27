@@ -98,6 +98,25 @@ defmodule Lockspire.TokenExchangeCharacterization do
     refute_observability_leaks(events, [journey.secret])
   end
 
+  def assert_remaining_grant_contracts(_events) do
+    journey = authorization_code_journey("characterization-refresh")
+    assert {:ok, initial} = TokenExchange.exchange(journey.request)
+
+    refresh_request = %{
+      params: %{"grant_type" => "refresh_token", "refresh_token" => initial.refresh_token},
+      authorization: journey.request.authorization,
+      method: "POST",
+      opts:
+        Keyword.put(
+          journey.request.opts,
+          :refresh_token_generator,
+          fn -> "characterization-refresh-rotated-token" end
+        )
+    }
+
+    assert {:ok, _rotated} = TokenExchange.exchange(refresh_request)
+  end
+
   defp assert_audit(journey, action, reason_code) do
     assert %AuditEventRecord{
              action: ^action,

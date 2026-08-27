@@ -28,4 +28,92 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
   test "the remaining stable facade grants retain their observable contracts", %{events: events} do
     TokenExchangeCharacterization.assert_remaining_grant_contracts(events)
   end
+
+  test "device and CIBA public facade grants retain success and pending classifications" do
+    secret = "characterization-polling-secret"
+
+    assert {:ok, client} =
+             create_client(
+               "characterization-polling-client",
+               :client_secret_basic,
+               secret,
+               [
+                 "urn:ietf:params:oauth:grant-type:device_code",
+                 "urn:openid:params:grant-type:ciba"
+               ],
+               %{access_token_format: :opaque}
+             )
+
+    assert {:ok, _device} =
+             create_device_authorization(client,
+               device_code: "characterization-device-code",
+               user_code: "CHAR-DEV1",
+               transition: %{status: :approved, approved_at: DateTime.utc_now(), subject_id: "subject-123"}
+             )
+
+    assert {:ok, %TokenExchange.Success{access_token: access_token}} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "characterization-device-code"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 device_authorization_store: Repository
+               ]
+             })
+
+    assert {:ok, _token} = Repository.fetch_active_access_token(TokenFormatter.hash_token(access_token))
+
+    assert {:ok, pending_device} =
+             create_device_authorization(client,
+               device_code: "characterization-device-pending",
+               user_code: "CHAR-DEV2"
+             )
+
+    assert {:error, %TokenExchange.Error{reason_code: :device_authorization_pending}} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:ietf:params:oauth:grant-type:device_code",
+                 "device_code" => "characterization-device-pending"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 device_authorization_store: Repository,
+                 now: fn -> pending_device.next_poll_allowed_at end
+               ]
+             })
+
+    assert {:ok, _ciba} =
+             create_ciba_authorization(client,
+               auth_req_id: "characterization-ciba-code",
+               scopes: ["email", "profile"],
+               transition: %{status: :approved, approved_at: DateTime.utc_now(), subject_id: "subject-123"}
+             )
+
+    assert {:ok, %TokenExchange.Success{access_token: ciba_access_token}} =
+             TokenExchange.exchange(%{
+               params: %{
+                 "grant_type" => "urn:openid:params:grant-type:ciba",
+                 "auth_req_id" => "characterization-ciba-code"
+               },
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Repository,
+                 token_store: Repository,
+                 interaction_store: Repository,
+                 key_store: Repository,
+                 ciba_authorization_store: Repository
+               ]
+             })
+
+    assert {:ok, _token} =
+             Repository.fetch_active_access_token(TokenFormatter.hash_token(ciba_access_token))
+  end
 end
