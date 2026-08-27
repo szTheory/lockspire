@@ -30,8 +30,8 @@ defmodule Lockspire.Protocol.RequestObject do
 
   @type result ::
           {:ok, map()}
-          | {:browser_error, Result.t()}
-          | {:redirect_error, Result.t()}
+          | {:browser_error, map()}
+          | {:redirect_error, map()}
 
   @allowed_outer_keys ~w(client_id request)
 

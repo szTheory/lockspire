@@ -21,7 +21,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
-  @type result :: {:ok, Success.t()} | {:error, Error.t()}
+  @type result :: {:ok, struct()} | {:error, struct()}
 
   @doc false
   def handle_code_exchange(

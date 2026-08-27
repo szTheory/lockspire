@@ -7,7 +7,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AuthorizationCodeGrant do
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
 
-  @spec exchange(map()) :: {:ok, Lockspire.Protocol.TokenResult.Success.t()} | {:error, Error.t()}
+  @spec exchange(map()) :: {:ok, struct()} | {:error, struct()}
   def exchange(request) when is_map(request) do
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))

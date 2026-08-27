@@ -131,7 +131,6 @@ defmodule Lockspire.DocumentationContractTest do
     )
 
     assert Code.ensure_loaded?(Lockspire.Protocol.TokenExchange)
-    assert Code.ensure_loaded?(Lockspire.Protocol.TokenExchange.GrantSupport)
     assert function_exported?(Lockspire.Protocol.TokenExchange, :exchange, 1)
     assert function_exported?(Lockspire.Protocol.TokenExchange, :issue_ciba_tokens, 4)
 
@@ -148,7 +147,7 @@ defmodule Lockspire.DocumentationContractTest do
              ]
 
     assert walkthrough =~ "Token endpoint: stable facade, focused coordinators"
-    assert walkthrough =~ "Lockspire.Protocol.TokenExchange.GrantSupport"
+    assert walkthrough =~ "internal grant-support coordinator"
 
     assert_anchor(
       walkthrough,

@@ -74,7 +74,7 @@ before forwarding a request to it.
 `Lockspire.Protocol.TokenExchange` is the stable token endpoint facade. It keeps
 the public request/result contract small and delegates authorization-code,
 device-code, and CIBA redemption to grant coordinators. Shared validation and
-issuance mechanics live in the internal `Lockspire.Protocol.TokenExchange.GrantSupport`
+issuance mechanics live in the internal grant-support coordinator
 module. Refresh and token-exchange grants remain delegated to their dedicated
 coordinators.
 

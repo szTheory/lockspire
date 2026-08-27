@@ -25,7 +25,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
         }
 
   @spec resolve_context(Client.t(), map()) ::
-          {:ok, issuance_context()} | {:error, Error.t()}
+          {:ok, issuance_context()} | {:error, struct()}
   def resolve_context(%Client{} = client, request) do
     with {:ok, resolved_dpop_policy} <- resolve_policy(client, request),
          {:ok, resolved_security_profile} <- resolve_security_profile(client, request) do
@@ -49,7 +49,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     do: validate_proof(%{dpop_required?: false}, request)
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
-          {:ok, issuance_context()} | {:error, Error.t()}
+          {:ok, issuance_context()} | {:error, struct()}
   def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
     with {:ok, resolved_security_profile} <- resolve_security_profile(client, request),
          {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),

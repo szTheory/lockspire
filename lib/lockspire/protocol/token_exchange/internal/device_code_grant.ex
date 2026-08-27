@@ -8,7 +8,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.DeviceCodeGrant do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange(map()) :: {:ok, Success.t()} | {:error, Error.t()}
+  @spec exchange(map()) :: {:ok, struct()} | {:error, struct()}
   def exchange(request) when is_map(request) do
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))

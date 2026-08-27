@@ -17,7 +17,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
-  @spec exchange(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
+  @spec exchange(Client.t(), map()) :: {:ok, struct()} | {:error, struct()}
   def exchange(%Client{} = client, request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
     issued_at = now(request)

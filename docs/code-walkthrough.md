@@ -26,7 +26,7 @@ remains the [supported surface](supported-surface.md).
 Start token-endpoint tracing at `Lockspire.Protocol.TokenExchange`. Its public
 `exchange/1` dispatch is intentionally thin: authorization-code, device-code,
 and CIBA work belongs to dedicated grant coordinators, while shared mechanics
-are kept private in `Lockspire.Protocol.TokenExchange.GrantSupport`. Refresh and
+are kept private in the internal grant-support coordinator. Refresh and
 RFC 8693 exchange keep their established coordinators. The internal TokenLifetime
 policy owns token duration defaults, and signing paths decode private JWK material
 only through the PrivateJwk decoder.

@@ -13,7 +13,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange_refresh_token(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
+  @spec exchange_refresh_token(Client.t(), map()) :: {:ok, struct()} | {:error, struct()}
   def exchange_refresh_token(%Client{} = client, request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", request))
 

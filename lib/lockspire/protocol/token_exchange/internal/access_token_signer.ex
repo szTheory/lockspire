@@ -46,7 +46,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # tokens tighten this field to String.t(), but signing deliberately accepts
   # the pre-persistence shape too.
   @type token_for_issuance :: %Token{token_hash: String.t() | nil}
-  @type result :: {:ok, String.t(), String.t()} | {:error, Error.t()}
+  @type result :: {:ok, String.t(), String.t()} | {:error, struct()}
 
   @doc """
   Issue an access token for a standard grant path.
