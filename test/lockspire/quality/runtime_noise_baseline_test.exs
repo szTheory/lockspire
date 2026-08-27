@@ -24,7 +24,7 @@ defmodule Lockspire.Quality.RuntimeNoiseBaselineTest do
     assert File.exists?("test/lockspire/protocol/dcr_telemetry_redaction_test.exs")
 
     dcr_source = File.read!("test/lockspire/protocol/dcr_telemetry_redaction_test.exs")
-    assert dcr_source =~ ":telemetry.attach_many"
+    assert dcr_source =~ "TelemetryCapture.attach_many"
     assert dcr_source =~ "plaintext"
   end
 end

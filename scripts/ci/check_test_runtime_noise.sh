@@ -10,6 +10,9 @@ case "$mode" in
     test_targets=(
       test/lockspire/key_cache_test.exs
       test/lockspire/storage/repository_test.exs
+      test/lockspire/protocol/jarm_test.exs
+      test/lockspire/protocol/device_authorization_test.exs
+      test/lockspire/protocol/dcr_telemetry_redaction_test.exs
     )
     ;;
   --fast)
