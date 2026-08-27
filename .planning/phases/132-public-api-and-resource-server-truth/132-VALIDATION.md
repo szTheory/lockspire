@@ -138,6 +138,13 @@ All independent targeted coverage passed:
 - Re-audit of AccessToken and VerifyToken semantics after the repair:
   `mix test test/lockspire/access_token_test.exs test/lockspire/plug/verify_token_test.exs`
   — 84 tests, 0 failures.
+- Final boundary re-audit after `3938a4a` and `2ac56ce`:
+  `mix test test/lockspire/protocol/registration_test.exs test/lockspire/clients_test.exs`
+  — 67 tests, 0 failures; omitted DCR `scope` persists `allowed_scopes: []`
+  while direct `allowed_scopes: []` remains rejected.
+  `mix test --include integration test/integration/phase100_sender_constraint_e2e_test.exs`
+  — 2 tests, 0 failures; both real DPoP (after nonce challenge) and mTLS
+  protected-route journeys return 200 and expose only semantic confirmation.
 
 Validation is now `validated`, `wave_0_complete: true`, and
 `nyquist_compliant: true`. The adversarial test remains as regression coverage.

@@ -1,18 +1,24 @@
 ---
 phase: 132-public-api-and-resource-server-truth
-verified: 2026-08-27T00:13:30Z
+verified: 2026-08-27T00:24:19Z
 status: passed
 score: 8/8
 behavior_unverified: 0
 overrides_applied: 0
+re_verification:
+  previous_status: passed
+  previous_score: 8/8
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 132: Public API and Resource-Server Truth Verification Report
 
 **Phase Goal:** Adopters can use documented client and resource-server APIs without relying on raw claims or unsupported implementation details.
-**Verified:** 2026-08-27T00:13:30Z
+**Verified:** 2026-08-27T00:24:19Z
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — final integration fixes `3938a4a` and `2ac56ce`
 
 ## Goal Achievement
 
@@ -23,7 +29,7 @@ overrides_applied: 0
 | 1 | Resource servers can read normalized subject, scopes, audiences, expiry, and confirmation through additive `Lockspire.AccessToken` readers. | VERIFIED | `AccessToken` exports five total readers and preserves the original struct and `claims`; direct malformed-value tests and signed-token tests passed. |
 | 2 | Route enforcement and public readers give scope, audience, and sender confirmation the same meaning. | VERIFIED | `VerifyToken` delegates to `AccessToken.scopes/1`, `normalize_audiences/1`, and `normalize_confirmation/1`; the focused signed-JWT parity suite passed. |
 | 3 | Raw claims remain a compatible, explicitly low-level path rather than a removed API. | VERIFIED | No struct field was removed; the guide and v1.37 upgrade notes retain `access_token.claims` for compatibility/extension use. |
-| 4 | Direct and dynamic registration accept advertised `openid`, `private_key_jwt`, and device-only shapes. | VERIFIED | Both facades call `Lockspire.ClientRegistration.Shape`; focused direct/DCR/discovery/controller tests passed, including persisted client checks. |
+| 4 | Direct and dynamic registration accept advertised `openid`, `private_key_jwt`, and device-only shapes. | VERIFIED | Both facades call `Lockspire.ClientRegistration.Shape`; DCR now intentionally permits omitted optional scope metadata while the direct facade still rejects an empty required scope list; focused direct/DCR/discovery/controller tests passed. |
 | 5 | Redirect-capable clients remain constrained to nonempty valid redirects and exact runtime membership. | VERIFIED | Shared shape validation requires redirects for `authorization_code` or `code`; `AuthorizationRequest` uses `redirect_uri in client.redirect_uris`; negative protocol tests passed. |
 | 6 | Private-key client registration remains confidential, key-constrained, and redaction-safe. | VERIFIED | Shared validator requires exactly one safe key source, validates inline public JWKS/algorithm compatibility, and accepts only HTTPS `jwks_uri`; focused registration tests passed. |
 | 7 | DPoP replay recording uses the configured durable repository by default and custom stores fail closed. | VERIFIED | `EnforceSenderConstraints` omits nil overrides, `ProtectedResourceDPoP` selects `Storage.Ecto.Repository`, and the integration test persisted once then rejected the identical proof. Custom-store failure coverage passed. |
@@ -58,6 +64,7 @@ overrides_applied: 0
 | Behavior | Command | Result | Status |
 | --- | --- | --- | --- |
 | Semantic-reader/verifier parity, registration safety, and custom-store failures | `mix test test/lockspire/access_token_test.exs test/lockspire/plug/verify_token_test.exs test/lockspire/clients_test.exs test/lockspire/protocol/registration_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/discovery_test.exs test/lockspire/web/controllers/registration_controller_test.exs test/lockspire/plug/enforce_sender_constraints_test.exs test/lockspire/protocol/protected_resource_dpop_test.exs` | 267 tests, 0 failures | PASS |
+| Final DCR scope-boundary and sender-confirmation integration fixes | `mix test test/lockspire/protocol/registration_test.exs test/lockspire/clients_test.exs test/integration/phase100_sender_constraint_e2e_test.exs` | 69 tests, 0 failures | PASS |
 | Durable default replay, generated resource route, docs/release contracts | `mix test --include integration test/integration/protected_resource_dpop_default_store_test.exs test/lockspire/storage/ecto/repository_dpop_replay_test.exs test/integration/install_generator_test.exs test/integration/phase81_generated_host_route_protection_e2e_test.exs test/lockspire/release/support_surface_contract_test.exs test/lockspire/release_readiness_contract_test.exs` | 57 tests, 0 failures | PASS |
 | Documentation and warning-free compilation | `mix docs.verify && mix compile --warnings-as-errors` | Both commands exited 0 | PASS |
 
@@ -80,5 +87,5 @@ Phase 132 did not add a separate-origin client journey, full lifecycle acceptanc
 
 ---
 
-_Verified: 2026-08-27T00:13:30Z_
+_Verified: 2026-08-27T00:24:19Z_
 _Verifier: the agent (gsd-verifier)_
