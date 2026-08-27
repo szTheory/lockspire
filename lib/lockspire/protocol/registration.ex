@@ -46,7 +46,7 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defmodule Error do
-    @moduledoc false
+    @moduledoc "Structured RFC 7591 registration error returned by registration operations."
     @type t :: %__MODULE__{
             code: atom(),
             field: atom() | nil,

@@ -1,7 +1,5 @@
 defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
-  @moduledoc """
-  Rotates refresh tokens and revokes the full family on reuse.
-  """
+  @moduledoc false
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token

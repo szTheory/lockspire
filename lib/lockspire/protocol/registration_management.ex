@@ -23,7 +23,11 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   alias Lockspire.Protocol.RegistrationAccessToken
 
   defmodule UpdateSuccess do
-    @moduledoc false
+    @moduledoc """
+    Successful dynamic-registration update result.
+
+    The rotated registration access token is returned as plaintext exactly once.
+    """
     @type t :: %__MODULE__{
             client: Client.t(),
             registration_access_token_plaintext: String.t()

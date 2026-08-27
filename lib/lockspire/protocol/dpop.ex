@@ -86,6 +86,7 @@ defmodule Lockspire.Protocol.DPoP do
 
   def validate_proof(_jwt, _opts), do: {:error, :invalid_jwt}
 
+  @doc "Computes the RFC 7638 thumbprint for a public JWK."
   @spec thumbprint(JOSE.JWK.t() | map()) :: {:ok, String.t()} | {:error, :invalid_jwk}
   defdelegate thumbprint(jwk), to: ProofParser
 end
