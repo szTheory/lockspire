@@ -54,7 +54,19 @@
   3. DPoP replay protection persists durably through the configured Lockspire repository by default and accepts a compatible custom store.
   4. Resource-server documentation, examples, authorization boundary, and deprecation guidance match shipped behavior.
 
-**Plans**: TBD
+**Plans**: 10 plans
+
+Plans:
+- [ ] 137-01-PLAN.md — Fail-closed dual-router Sobelow and dependency/topology truth
+- [ ] 137-02-PLAN.md — Once-per-partition native coverage export and strict aggregation
+- [ ] 137-03-PLAN.md — Behavioral coverage closure from 78.03% to at least 84%
+- [ ] 137-04-PLAN.md — Required CI evidence orchestration and immutable artifact transport
+- [ ] 137-05-PLAN.md — Immutable OIDF suite source, checksum, and OCI digest lock
+- [ ] 137-06-PLAN.md — Shared pinned conformance runners and redacted evidence boundary
+- [ ] 137-07-PLAN.md — Scheduled supplemental conformance workflow and maintainer truth
+- [ ] 137-08-PLAN.md — Clean-room journey from exact local tar or public Hex version
+- [ ] 137-09-PLAN.md — Checksum-bound release manifest, publisher, and post-publish proof
+- [ ] 137-10-PLAN.md — Single-artifact protected release workflow and retained receipts
 
 ### Phase 133: Clean-Room SaaS Journey
 
@@ -201,4 +213,4 @@ Plans:
 | 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
 | 135. Cohesive Internals | 9/9 | Complete    | 2026-08-27 |
 | 136. Static Analysis and Sustainable Proof | 11/11 | Complete    | 2026-08-27 |
-| 137. CI, Conformance, and Release Proof | 0/TBD | Not started | - |
+| 137. CI, Conformance, and Release Proof | 0/10 | Ready to execute | - |
