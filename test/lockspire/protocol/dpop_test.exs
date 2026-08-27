@@ -341,6 +341,27 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
     end
 
+    test "checks signature before exposing a later request-context failure", %{keys: keys} do
+      other_keys = JarTestHelpers.generate_ec_keys()
+
+      proof =
+        JarTestHelpers.sign_dpop_proof(other_keys.private_jwk, valid_claims(%{"htm" => "GET"}),
+          jwk: keys.pub_jwk_map
+        )
+
+      assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "checks typ before a missing embedded jwk", %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(),
+          typ: "JWT",
+          extra_header: %{"jwk" => nil}
+        )
+
+      assert {:error, :invalid_typ} = DPoP.validate_proof(proof, validation_opts())
+    end
+
     test "returns a typed reason when the proof header omits jwk", %{keys: keys} do
       proof =
         JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(),
