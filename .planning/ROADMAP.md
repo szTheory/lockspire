@@ -147,7 +147,21 @@ Plans:
   3. Successful routine test runs have no KeyCache startup errors, Ecto query flood, or local telemetry-handler warnings while failure and redaction assertions still work.
   4. Compilation, strict Credo, zero-warning Dialyzer, ExDoc, package build, and focused integration proof remain green during structural work.
 
-**Plans**: TBD
+**Plans**: 11 plans
+
+Plans:
+
+- [ ] 136-01-PLAN.md — Characterize source, proof, Dialyzer, and runtime-noise debt exactly.
+- [ ] 136-02-PLAN.md — Make DPoP fully Credo-visible without security-behavior drift.
+- [ ] 136-03-PLAN.md — Make JAR/request objects and all local directives fully legible.
+- [ ] 136-04-PLAN.md — Extract explicit admin CSS and route capability helpers.
+- [ ] 136-05-PLAN.md — Finish admin proof extraction and remove macro/count archaeology.
+- [ ] 136-06-PLAN.md — Replace release macro/count proof with current capability helpers.
+- [ ] 136-07-PLAN.md — Repair lifecycle and storage Dialyzer contracts.
+- [ ] 136-08-PLAN.md — Repair token-grant Dialyzer contracts and remove dead paths.
+- [ ] 136-09-PLAN.md — Resolve leaf caller/tooling warnings and prove zero-warning Dialyzer.
+- [ ] 136-10-PLAN.md — Make successful test runtime quiet while preserving negative evidence.
+- [ ] 136-11-PLAN.md — Ratchet permanent fitness and run the complete converged gate.
 
 ### Phase 137: CI, Conformance, and Release Proof
 
