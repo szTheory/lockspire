@@ -44,4 +44,43 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
                access_token
              )
   end
+
+  test "refresh reuse atomically revokes every active token in its family" do
+    now = DateTime.utc_now()
+    family_id = "atomic-refresh-family"
+
+    for {hash, type, redeemed_at} <- [
+          {"atomic-replayed-refresh", :refresh_token, DateTime.add(now, -1, :second)},
+          {"atomic-active-refresh", :refresh_token, nil},
+          {"atomic-active-access", :access_token, nil}
+        ] do
+      assert {:ok, _token} =
+               Repository.store_token(%Token{
+                 token_hash: hash,
+                 token_type: type,
+                 family_id: family_id,
+                 generation: 0,
+                 client_id: "atomic-refresh-client",
+                 account_id: "subject-123",
+                 scopes: ["email"],
+                 issued_at: DateTime.add(now, -30, :second),
+                 redeemed_at: redeemed_at,
+                 revoked_at: redeemed_at,
+                 expires_at: DateTime.add(now, 300, :second)
+               })
+    end
+
+    assert {:error, :reuse_detected} =
+             Repository.rotate_refresh_token(
+               "atomic-replayed-refresh",
+               "atomic-refresh-client",
+               now,
+               %Token{token_hash: "atomic-unused-refresh", token_type: :refresh_token, expires_at: DateTime.add(now, 300, :second)},
+               %Token{token_hash: "atomic-unused-access", token_type: :access_token, expires_at: DateTime.add(now, 300, :second)}
+             )
+
+    for hash <- ["atomic-replayed-refresh", "atomic-active-refresh", "atomic-active-access"] do
+      assert {:ok, %Token{revoked_at: ^now}} = Repository.fetch_lifecycle_token(hash)
+    end
+  end
 end
