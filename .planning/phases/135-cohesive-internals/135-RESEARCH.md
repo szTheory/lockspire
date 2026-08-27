@@ -266,13 +266,12 @@ The examples express the recommended shape; actual values must preserve current 
 |---|-------|---------|---------------|
 | A1 | Existing observability has a suitable ExUnit capture handler without a new dependency. | Don't Hand-Roll | Test implementation may need to use the project’s existing telemetry test helper instead. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which exact `request.opts` keys are public injection compatibility rather than test-only seams?**
-   - What we know: `TokenExchangeCase` injects stores, clock, generators, and signer-related values; internal modules read options directly. [VERIFIED: `test/support/token_exchange_case.ex`, token internals]
-   - Recommendation: inventory all `Keyword.get*`/`Map.get(:opts)` keys before deletion and make every observed key compatible in the adapter.
+   - **RESOLVED:** Preserve every option key observed anywhere under token-exchange internals in the v1.x `LegacyOptions` adapter, including test-only injection seams. This avoids making an unsafe public-vs-test distinction during a compatibility refactor. Plan 135-06 inventories the reads and table-tests each key against its established default. [VERIFIED: `135-06-PLAN.md`, Task 1]
 2. **Should an internal dependency bundle be a struct or validated map?**
-   - Recommendation: a private struct is clearer and validates construction; do not expose it as an advertised public API. [ASSUMED]
+   - **RESOLVED:** Use a non-advertised internal `Dependencies` struct constructed by `LegacyOptions.from_request/1`; construction validates required capability groups before durable work. Its fields are explicit for maintainers while legacy keyword options remain accepted at the compatibility boundary. [VERIFIED: `135-06-PLAN.md`, Tasks 1–2]
 
 ## Environment Availability
 
