@@ -50,6 +50,19 @@ python3 "$VALIDATOR" --lock "$LOCK_PATH" --verify-downloads "$download_dir"
 python3 "$VALIDATOR" --lock "$LOCK_PATH" --normalize-compose \
   "$download_dir/docker-compose-prebuilt.yml" "$output_dir/docker-compose.locked.yml"
 
+suite_commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["suite"]["commit"])' "$LOCK_PATH")
+python3 "${ROOT_DIR}/scripts/conformance/extract_oidf_suite.py" \
+  --archive "$download_dir/conformance-suite.tar.gz" \
+  --commit "$suite_commit" \
+  --output "$output_dir/suite"
+
+for helper in scripts/run-test-plan.py scripts/conformance.py scripts/test_plan_parser.py; do
+  cmp -s "$download_dir/$helper" "$output_dir/suite/$helper" || {
+    echo "OIDF archive helper does not match its independently pinned download: $helper" >&2
+    exit 1
+  }
+done
+
 python3 - "$LOCK_PATH" "$output_dir/images.env" <<'PY'
 import json
 import sys

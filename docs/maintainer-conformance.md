@@ -24,8 +24,11 @@ input contracts and both profiles.
 
 ## Local prerequisites and commands
 
-Install Docker with the Compose plugin, Python 3, curl, and jq. Check the local
-tooling and immutable lock without printing environment variables or secrets:
+Install Docker with the Compose plugin, Python 3 with the OIDF runner's
+`httpx` and `pyparsing` modules, curl, and jq. Missing Python modules are caught
+by the runner preflight and classified as infrastructure failure. Check the
+local tooling and immutable lock without printing environment variables or
+secrets:
 
 ```bash
 mix lockspire.oidf_conformance --check
@@ -39,8 +42,21 @@ bash scripts/conformance/run_phase37_suite.sh
 bash scripts/conformance/run_fapi2_suite.sh
 ```
 
-Raw downloaded helpers, normalized Compose configuration, and suite work stay
-in a private temporary directory and are deleted after the run. The retained
+Each real profile also requires `LOCKSPIRE_OIDF_PROVIDER_CONFIG` to name a
+private JSON configuration file in the format accepted by the pinned OIDF
+runner. The file supplies the provider discovery URL, client material, and any
+browser automation needed by that environment; it is read in place, never
+copied into retained evidence, and must not be committed. The checked-in
+profile JSON selects the suite plan, variants, and modules. After Compose has
+reported readiness, Lockspire translates that selection into the pinned
+`scripts/run-test-plan.py` CLI and makes its exit status authoritative.
+Lockspire first uses the runner's non-network `--list` mode to catch invalid
+plan syntax, missing Python dependencies, or an incomplete verified archive as
+an `infrastructure_failure`; a later nonzero suite result is `suite_failure`.
+
+Raw downloaded helpers, normalized Compose configuration, the runner's full
+stdout/stderr, exported suite results, and suite work stay in a private
+temporary directory and are deleted after the run. The retained
 profile directories are limited to:
 
 ```text

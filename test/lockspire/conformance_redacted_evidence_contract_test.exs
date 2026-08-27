@@ -20,8 +20,11 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
 
     profile = File.read!(@profile)
     assert profile =~ "prepare_oidf_suite.sh"
+    assert profile =~ "invoke_oidf_plan.py"
     assert profile =~ "build_redacted_evidence.py"
     assert profile =~ "integration_only"
+    assert profile =~ "suite_failure"
+    assert profile =~ "suite-output.log"
     refute profile =~ "cp -R"
   end
 
