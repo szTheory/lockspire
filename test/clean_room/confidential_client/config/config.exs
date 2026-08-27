@@ -30,4 +30,5 @@ config :clean_room_confidential_client, CleanRoomClientWeb.Endpoint,
       "SECRET_KEY_BASE",
       "clean-room-client-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"
     ),
+  render_errors: [formats: [html: CleanRoomClientWeb.ErrorHTML], layout: false],
   server: true

@@ -108,7 +108,31 @@ def require_status(response: dict[str, object], status: int, label: str) -> None
     if response["status"] != status:
         if label == "client callback":
             time.sleep(10)
-        raise AssertionError(f"{label}: expected HTTP {status}, got {response['status']}")
+        raise AssertionError(
+            f"{label}: expected HTTP {status}, got {response['status']}"
+            f"{safe_oauth_error_code(response)}"
+        )
+
+
+def safe_oauth_error_code(response: dict[str, object]) -> str:
+    """Return only the standardized OAuth error code for failed wire diagnostics.
+
+    The runner must never retain or render a raw response body: token endpoint
+    errors can be produced adjacent to credentials and other confidential
+    material.  OAuth error identifiers are a bounded protocol vocabulary, so
+    they are sufficient to locate a failed validation seam without widening the
+    evidence surface.
+    """
+
+    try:
+        error = json.loads(str(response["body"])).get("error")
+    except (AttributeError, TypeError, json.JSONDecodeError):
+        return ""
+
+    if isinstance(error, str) and re.fullmatch(r"[a-z_]{1,64}", error):
+        return f" ({error})"
+
+    return ""
 
 
 def redirect(response: dict[str, object], label: str) -> str:
@@ -393,7 +417,17 @@ def provider_path(endpoint: str) -> str:
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
 
 
-def lifecycle_code(provider: Browser, *, scopes: str = "openid profile read:billing offline_access", resource: str = PROVIDER_ORIGIN + "/api/billing") -> tuple[str, str]:
+def lifecycle_code(
+    provider: Browser,
+    *,
+    scopes: str = "openid profile read:billing offline_access",
+    resource: str | None = None,
+) -> tuple[str, str]:
+    # `configure_origins()` assigns a new loopback origin for every journey.
+    # Resolve this at invocation time; Python default arguments are evaluated
+    # once at module import and would bind an authorization code to the stale
+    # fixed-port resource while the token request uses the fresh origin.
+    resource = resource or PROVIDER_ORIGIN + "/api/billing"
     state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
     verifier = uuid.uuid4().hex + uuid.uuid4().hex
     register_secret(verifier)
