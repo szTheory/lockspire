@@ -24,10 +24,10 @@
 ### Clean-Room SaaS Journey
 
 - [x] **E2E-01**: A clean Phoenix/Ecto SaaS host can install packaged Lockspire, apply documented host-owned edits, migrate, verify, test, and boot without internal Lockspire modules or hand-written replacement routes.
-- [ ] **E2E-02**: A separate-origin confidential Phoenix client can persist random state, nonce, and PKCE material, complete authorization, exchange the code, and reject callback state mismatches.
-- [ ] **E2E-03**: The external client can validate discovery, JWKS, ID-token signature, issuer, audience, nonce, and userinfo subject before calling an audience-and-scope-protected SaaS API.
-- [ ] **E2E-04**: The external client can rotate refresh tokens, trigger old-token reuse detection and family-wide revocation, and exercise authenticated introspection and revocation with truthful JWT lifetime semantics.
-- [ ] **E2E-05**: The clean-room journey rejects redirect drift, authorization-code reuse, state and nonce mismatch, missing tokens, wrong audiences, and insufficient scopes with the documented outcomes.
+- [x] **E2E-02**: A separate-origin confidential Phoenix client can persist random state, nonce, and PKCE material, complete authorization, exchange the code, and reject callback state mismatches.
+- [x] **E2E-03**: The external client can validate discovery, JWKS, ID-token signature, issuer, audience, nonce, and userinfo subject before calling an audience-and-scope-protected SaaS API.
+- [x] **E2E-04**: The external client can rotate refresh tokens, trigger old-token reuse detection and family-wide revocation, and exercise authenticated introspection and revocation with truthful JWT lifetime semantics.
+- [x] **E2E-05**: The clean-room journey rejects redirect drift, authorization-code reuse, state and nonce mismatch, missing tokens, wrong audiences, and insufficient scopes with the documented outcomes.
 - [x] **E2E-06**: The clean-room journey completes a DPoP nonce challenge and retry, then rejects replay of the identical proof without exposing secrets or tokens in logs or retained artifacts.
 
 ### Architecture Topology
@@ -98,10 +98,10 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | API-03 | 132 | Complete |
 | API-04 | 132 | Complete |
 | E2E-01 | 133 | Complete |
-| E2E-02 | 133 | Pending |
-| E2E-03 | 133 | Pending |
-| E2E-04 | 133 | Pending |
-| E2E-05 | 133 | Pending |
+| E2E-02 | 133 | Complete |
+| E2E-03 | 133 | Complete |
+| E2E-04 | 133 | Complete |
+| E2E-05 | 133 | Complete |
 | E2E-06 | 133 | Complete |
 | ARCH-01 | 134 | Pending |
 | ARCH-02 | 134 | Pending |

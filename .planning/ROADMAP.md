@@ -8,7 +8,7 @@
 
 - [x] **Phase 131: Executable Installation** — Make the generated Phoenix adoption path run intact from the packaged library. (completed 2026-08-26)
 - [x] **Phase 132: Public API and Resource-Server Truth** — Align supported APIs, resource-server behavior, and documentation with what Lockspire actually ships. (completed 2026-08-26)
-- [ ] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP.
+- [x] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP. (completed 2026-08-27)
 - [ ] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services.
 - [ ] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift.
 - [ ] **Phase 136: Static Analysis and Sustainable Proof** — Make implementation and tests easier to read while retaining meaningful quality evidence.
@@ -74,11 +74,11 @@
 Plans:
 
 - [x] 133-01-PLAN.md — Establish package provenance, two-process supervision, redaction, and teardown foundations.
-- [ ] 133-02-PLAN.md — Install and boot the package-clean provider with public bootstrap and protected API.
-- [ ] 133-03-PLAN.md — Build durable bearer/DPoP client transactions, strict OIDC validation, and the server-owned DPoP session backend.
-- [ ] 133-04-PLAN.md — Complete the separate-origin code+PKCE, OIDC, userinfo, and protected-resource journey.
-- [ ] 133-05-PLAN.md — Prove lifecycle truth and the real-HTTP negative matrix.
-- [ ] 133-06-PLAN.md — Prove durable DPoP replay rejection and wire the full command into CI.
+- [x] 133-02-PLAN.md — Install and boot the package-clean provider with public bootstrap and protected API.
+- [x] 133-03-PLAN.md — Build durable bearer/DPoP client transactions, strict OIDC validation, and the server-owned DPoP session backend.
+- [x] 133-04-PLAN.md — Complete the separate-origin code+PKCE, OIDC, userinfo, and protected-resource journey.
+- [x] 133-05-PLAN.md — Prove lifecycle truth and the real-HTTP negative matrix.
+- [x] 133-06-PLAN.md — Prove durable DPoP replay rejection and wire the full command into CI.
 
 ### Phase 134: Architecture Topology
 
@@ -157,7 +157,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 131. Executable Installation | 7/7 | Complete    | 2026-08-26 |
 | 132. Public API and Resource-Server Truth | 4/4 | Complete    | 2026-08-26 |
-| 133. Clean-Room SaaS Journey | 1/6 | In Progress|  |
+| 133. Clean-Room SaaS Journey | 6/6 | Complete    | 2026-08-27 |
 | 134. Architecture Topology | 0/TBD | Not started | - |
 | 135. Cohesive Internals | 0/TBD | Not started | - |
 | 136. Static Analysis and Sustainable Proof | 0/TBD | Not started | - |
