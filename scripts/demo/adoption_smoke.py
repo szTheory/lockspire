@@ -316,7 +316,9 @@ def exercise_authorization_code():
     )
     assert_status(authed_api, 200, "protected API accepts issued at+jwt")
     authed_api_json = json_body(authed_api, "billing summary")
-    assert BILLING_RESOURCE in authed_api_json["access_token"]["audience"]
+    assert authed_api_json["access_token"]["subject"] == "user:acct-alice"
+    assert "read:billing" in authed_api_json["access_token"]["scopes"]
+    assert BILLING_RESOURCE in authed_api_json["access_token"]["audiences"]
 
 
 def exercise_device_flow():
