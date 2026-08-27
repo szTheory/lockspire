@@ -39,8 +39,8 @@
 
 ### Cohesive Internals
 
-- [ ] **COH-01**: Maintainers can navigate aggregate-specific Ecto implementations behind the existing `Lockspire.Storage.Ecto.Repository` facade instead of one monolithic adapter.
-- [ ] **COH-02**: Authorization-code redemption, refresh reuse handling, DCR-plus-audit writes, and key transitions remain atomic under rollback and concurrency proof after the storage split.
+- [x] **COH-01**: Maintainers can navigate aggregate-specific Ecto implementations behind the existing `Lockspire.Storage.Ecto.Repository` facade instead of one monolithic adapter.
+- [x] **COH-02**: Authorization-code redemption, refresh reuse handling, DCR-plus-audit writes, and key transitions remain atomic under rollback and concurrency proof after the storage split.
 - [ ] **COH-03**: Token grant internals separate authentication, resource selection, issuance, persistence, polling, and observability responsibilities behind the stable token facade.
 - [ ] **COH-04**: Internal collaborators receive explicit dependency bundles instead of capability sniffing or runtime `Mix.env()` behavior, while current injection compatibility remains supported.
 - [ ] **COH-05**: Characterization tests prove that refactoring preserves endpoint responses, errors, tokens, audit events, and telemetry across authorization-code, refresh, device, CIBA, and token-exchange paths.
@@ -107,8 +107,8 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | ARCH-02 | 134 | Complete |
 | ARCH-03 | 134 | Complete |
 | ARCH-04 | 134 | Complete |
-| COH-01 | 135 | Pending |
-| COH-02 | 135 | Pending |
+| COH-01 | 135 | Complete |
+| COH-02 | 135 | Complete |
 | COH-03 | 135 | Pending |
 | COH-04 | 135 | Pending |
 | COH-05 | 135 | Pending |
