@@ -13,7 +13,9 @@ defmodule Lockspire.Protocol.TokenExchange.ResourceSelectionTest do
   test "rejects a resource outside the recorded grant audience" do
     grant = %Token{audience: ["https://api.example.test"]}
 
-    assert {:error, error} = ResourceSelection.select(%{"resource" => "https://other.example.test"}, grant)
+    assert {:error, error} =
+             ResourceSelection.select(%{"resource" => "https://other.example.test"}, grant)
+
     assert error.error == "invalid_target"
     assert error.reason_code == :invalid_resource
   end
