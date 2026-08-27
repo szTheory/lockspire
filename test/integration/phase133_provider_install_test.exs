@@ -1,0 +1,19 @@
+defmodule Lockspire.Integration.Phase133ProviderInstallTest do
+  use ExUnit.Case, async: false
+
+  @moduletag :integration
+  @moduletag :phase133
+  @moduletag :package_clean
+
+  @builder Path.expand("../../scripts/acceptance/clean_room/build_provider.py", __DIR__)
+
+  test "a clean provider installs through public seams and proves its package boundary" do
+    assert {output, 0} = System.cmd("python3", [@builder, "--self-test"], stderr_to_stdout: true)
+
+    assert output =~ "provider installation verified"
+    assert output =~ "provider discovery verified"
+    assert output =~ "provider boundary verified"
+    refute output =~ "phase133-bearer-client-secret-sentinel"
+    refute output =~ "phase133-dpop-client-secret-sentinel"
+  end
+end
