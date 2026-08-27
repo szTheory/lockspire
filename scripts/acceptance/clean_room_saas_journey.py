@@ -10,6 +10,8 @@ receipts and redirects.
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import http.client
 import json
 from pathlib import Path
@@ -50,13 +52,13 @@ class Browser:
         self.origin = origin.rstrip("/")
         self.cookies: dict[str, str] = {}
 
-    def request(self, method: str, target: str, data: dict[str, str] | None = None) -> dict[str, object]:
+    def request(self, method: str, target: str, data: dict[str, str] | None = None, extra_headers: dict[str, str] | None = None) -> dict[str, object]:
         url = urljoin(self.origin + "/", target)
         parsed = urlparse(url)
         if f"{parsed.scheme}://{parsed.netloc}" != self.origin:
             raise AssertionError(f"cross-origin request expected {self.origin}, got {parsed.scheme}://{parsed.netloc}")
 
-        headers: dict[str, str] = {}
+        headers: dict[str, str] = dict(extra_headers or {})
         body = None
         if data is not None:
             body = urlencode(data).encode()
@@ -218,6 +220,95 @@ def receipt(client: Browser) -> dict[str, object]:
     return parsed
 
 
+def s256(value: str) -> str:
+    return base64.urlsafe_b64encode(hashlib.sha256(value.encode()).digest()).decode().rstrip("=")
+
+
+def basic(client_id: str, client_secret: str) -> str:
+    return "Basic " + base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+
+
+def provider_path(endpoint: str) -> str:
+    parsed = urlparse(endpoint)
+    if f"{parsed.scheme}://{parsed.netloc}" != PROVIDER_ORIGIN:
+        raise AssertionError("discovery endpoint left the provider origin")
+    return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+
+
+def lifecycle_code(provider: Browser) -> tuple[str, str]:
+    state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
+    verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
+    authorize = provider.request("GET", "/lockspire/authorize?" + urlencode({
+        "response_type": "code", "client_id": "clean-room-bearer", "redirect_uri": redirect_uri,
+        "scope": "openid profile read:billing offline_access", "state": state, "nonce": nonce,
+        "code_challenge": s256(verifier), "code_challenge_method": "S256", "resource": PROVIDER_ORIGIN + "/api/billing",
+    }))
+    require_status(authorize, 302, "lifecycle authorize")
+    login = provider.request("GET", redirect(authorize, "lifecycle authorize"))
+    require_status(login, 200, "lifecycle login")
+    resumed = redirect(provider.request("POST", "/login", {
+        "_csrf_token": csrf(login["body"]),
+        "return_to": re.search(r'name="return_to" value="([^"]*)"', str(login["body"])).group(1),
+        "interaction_id": re.search(r'name="interaction_id" value="([^"]*)"', str(login["body"])).group(1),
+        "account_id": "clean-room-user",
+    }), "lifecycle login")
+    interaction_id = urlparse(resumed).path.rsplit("/", 1)[-1]
+    interaction = provider.request("GET", resumed)
+    require_status(interaction, 302, "lifecycle interaction")
+    consent = provider.request("GET", redirect(interaction, "lifecycle interaction"))
+    require_status(consent, 200, "lifecycle consent")
+    approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {"decision": "approve", "remember": "true"})
+    require_status(approved, 302, "lifecycle consent approval")
+    callback = urlparse(redirect(approved, "lifecycle consent approval"))
+    values = parse_qs(callback.query)
+    if callback.scheme + "://" + callback.netloc != CLIENT_ORIGIN or values.get("state") != [state]:
+        raise AssertionError("lifecycle authorization response violated the callback contract")
+    code = values.get("code", [None])[0]
+    if not isinstance(code, str):
+        raise AssertionError("lifecycle authorization response omitted code")
+    return code, verifier
+
+
+def run_lifecycle(handoff: Path) -> None:
+    provider = Browser(PROVIDER_ORIGIN)
+    response = provider.request("GET", "/lockspire/.well-known/openid-configuration")
+    require_status(response, 200, "lifecycle discovery")
+    discovery = json.loads(str(response["body"]))
+    authorization = {"authorization": basic("clean-room-bearer", (handoff / "bearer-client.secret").read_text().strip())}
+    code, verifier = lifecycle_code(provider)
+    issued = provider.request("POST", provider_path(discovery["token_endpoint"]), {
+        "grant_type": "authorization_code", "code": code, "redirect_uri": CLIENT_ORIGIN + "/oauth/callback",
+        "code_verifier": verifier, "resource": PROVIDER_ORIGIN + "/api/billing",
+    }, authorization)
+    require_status(issued, 200, "lifecycle authorization code exchange")
+    original_refresh = json.loads(str(issued["body"])).get("refresh_token")
+    if not isinstance(original_refresh, str):
+        raise AssertionError("lifecycle authorization code exchange omitted refresh token")
+    rotated = provider.request("POST", provider_path(discovery["token_endpoint"]), {"grant_type": "refresh_token", "refresh_token": original_refresh}, authorization)
+    require_status(rotated, 200, "lifecycle refresh rotation")
+    rotated_refresh = json.loads(str(rotated["body"])).get("refresh_token")
+    if not isinstance(rotated_refresh, str) or rotated_refresh == original_refresh:
+        raise AssertionError("lifecycle refresh rotation did not return a distinct refresh token")
+    print("refresh rotation complete")
+    replay = provider.request("POST", provider_path(discovery["token_endpoint"]), {"grant_type": "refresh_token", "refresh_token": original_refresh}, authorization)
+    require_status(replay, 400, "lifecycle refresh reuse")
+    if json.loads(str(replay["body"])).get("error") != "invalid_grant":
+        raise AssertionError("lifecycle refresh reuse did not return invalid_grant")
+    print("refresh reuse contained")
+    introspection = provider.request("POST", provider_path(discovery["introspection_endpoint"]), {"token": rotated_refresh}, authorization)
+    require_status(introspection, 200, "lifecycle family introspection")
+    if json.loads(str(introspection["body"])) != {"active": False}:
+        raise AssertionError("lifecycle family introspection was not inactive")
+    print("family introspection inactive")
+    for attempt in range(2):
+        revocation = provider.request("POST", provider_path(discovery["revocation_endpoint"]), {"token": rotated_refresh}, authorization)
+        require_status(revocation, 200, f"lifecycle revocation {attempt + 1}")
+        if json.loads(str(revocation["body"])) != {}:
+            raise AssertionError("lifecycle revocation did not return its empty success response")
+    print("idempotent revocation complete")
+
+
 def run_happy() -> None:
     client = Browser(CLIENT_ORIGIN)
     provider = Browser(PROVIDER_ORIGIN)
@@ -259,7 +350,7 @@ def run_boundary() -> None:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary"), required=True)
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative"), required=True)
     args = parser.parse_args(argv)
     redactor = Redactor(SentinelSet.for_run())
     provider_process = client_process = None
@@ -290,6 +381,8 @@ def main(argv: list[str]) -> int:
                 run_happy()
             if "boundary" in args.only:
                 run_boundary()
+            if "lifecycle" in args.only:
+                run_lifecycle(handoff)
             return 0
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(redactor.text(error), file=sys.stderr)

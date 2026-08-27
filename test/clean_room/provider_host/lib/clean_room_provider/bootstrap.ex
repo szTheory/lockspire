@@ -36,7 +36,7 @@ defmodule CleanRoomProvider.Bootstrap do
       client_type: :confidential,
       name: client_id,
       redirect_uris: [redirect_uri],
-      allowed_scopes: ["openid", "profile", "read:billing"],
+      allowed_scopes: ["openid", "profile", "read:billing", "offline_access"],
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
