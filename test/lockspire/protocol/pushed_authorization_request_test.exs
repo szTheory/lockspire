@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -128,6 +129,42 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequestTest do
 
     assert {:ok, nil} =
              Repository.fetch_active_pushed_authorization_request(request.request_uri_hash)
+  end
+
+  test "the PAR aggregate consumes an explicit-repo request exactly once for its bound client" do
+    request =
+      PushedAuthorizationRequest.issue(
+        %{
+          client_id: "par-public",
+          redirect_uri: "https://client.example.com/callback",
+          scopes: ["profile"],
+          code_challenge: String.duplicate("p", 43),
+          code_challenge_method: :S256
+        },
+        request_uri_generator: fn -> "explicit-par-store" end
+      )
+
+    assert {:ok, %PushedAuthorizationRequest{request_uri: request_uri}} =
+             PushedAuthorizationRequestStore.put_pushed_authorization_request(
+               Lockspire.TestRepo,
+               request
+             )
+
+    assert request_uri == request.request_uri
+
+    assert {:ok, %PushedAuthorizationRequest{client_id: "par-public"}} =
+             PushedAuthorizationRequestStore.consume_pushed_authorization_request(
+               Lockspire.TestRepo,
+               request.request_uri_hash,
+               "par-public"
+             )
+
+    assert {:ok, nil} =
+             PushedAuthorizationRequestStore.consume_pushed_authorization_request(
+               Lockspire.TestRepo,
+               request.request_uri_hash,
+               "par-public"
+             )
   end
 
   test "push returns a PAR request_uri and expires_in for valid public clients", %{
