@@ -138,9 +138,6 @@ jobs:
       - name: Run qa gate
         run: mix qa
 
-      - name: Scan both shipped routers with Sobelow
-        run: bash scripts/ci/check_sobelow_routers.sh
-
       - name: Verify dependency truth and architecture topology
         run: bash scripts/ci/check_dependency_truth.sh
 

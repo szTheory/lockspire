@@ -2,6 +2,7 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
   use ExUnit.Case, async: true
 
   @workflow Path.expand("../../.github/workflows/ci.yml", __DIR__)
+  @mixfile Path.expand("../../mix.exs", __DIR__)
 
   test "coverage artifacts are SHA-bound and aggregate exactly the two producer jobs" do
     workflow = File.read!(@workflow)
@@ -24,8 +25,11 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
 
   test "required CI keeps explicit security and immutable fixture boundaries" do
     workflow = File.read!(@workflow)
+    mixfile = File.read!(@mixfile)
 
-    assert workflow =~ "bash scripts/ci/check_sobelow_routers.sh"
+    assert workflow =~ "run: mix qa"
+    assert mixfile =~ "cmd bash scripts/ci/check_sobelow_routers.sh"
+    refute mixfile =~ ~s("sobelow --config")
     assert workflow =~ "bash scripts/ci/check_dependency_truth.sh"
     assert workflow =~ "Verify compatibility fixture lock stayed unchanged"
     assert workflow =~ "Verify adoption demo lock stayed unchanged"

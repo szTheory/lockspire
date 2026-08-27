@@ -127,7 +127,7 @@ defmodule Lockspire.MixProject do
         "compile --warnings-as-errors",
         "cmd sh -lc 'MIX_ENV=test mix qa.architecture'",
         "cmd bash scripts/ci/run_credo.sh",
-        "sobelow --config"
+        "cmd bash scripts/ci/check_sobelow_routers.sh"
       ],
       "qa.architecture": [
         "cmd sh scripts/ci/check_architecture_topology.sh",
