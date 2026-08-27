@@ -1,4 +1,8 @@
 defmodule CleanRoomClient.Application do
+  @moduledoc """
+  Starts the independently booted confidential-client acceptance fixture.
+  """
+
   use Application
 
   def start(_type, _args) do
