@@ -13,7 +13,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
-  alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
+  alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
+  alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
@@ -58,7 +60,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       ) do
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
-         {:ok, requested_resources} <- validate_requested_resources(params, authorization_code),
+         {:ok, requested_resources} <- ResourceSelection.select(params, authorization_code),
          %Success{} = success <-
            redeem_code(
              client,
@@ -80,25 +82,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   @doc false
   def authenticate_client(params, authorization, request, %Dependencies{} = dependencies),
-    do:
-      request
-      |> Dependencies.attach(dependencies)
-      |> then(&authenticate_client(params, authorization, &1))
+    do: ClientAuthentication.authenticate(params, authorization, request, dependencies)
 
   @doc false
   def authenticate_client(params, authorization, request) do
-    case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
-      {:ok, %Client{} = client} ->
-        {:ok, client}
-
-      {:error, %ClientAuth.Error{} = error} ->
-        {:error,
-         %Error{
-           status: error.status,
-           error: error.error,
-           error_description: error.error_description,
-           reason_code: error.reason_code
-         }}
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      authenticate_client(params, authorization, request, dependencies)
     end
   end
 
@@ -534,36 +523,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp validate_requested_resources(params, %Token{} = authorization_code) do
-    requested =
-      params
-      |> Map.get("resource")
-      |> List.wrap()
-      |> Enum.flat_map(fn
-        r when is_binary(r) -> [r]
-        _ -> []
-      end)
-
-    authorized = authorization_code.audience
-
-    cond do
-      requested == [] ->
-        {:ok, authorized}
-
-      Enum.all?(requested, &(&1 in authorized)) ->
-        {:ok, requested}
-
-      true ->
-        {:error,
-         oauth_error(
-           400,
-           "invalid_target",
-           "The requested resource is invalid or was not authorized",
-           :invalid_resource
-         )}
-    end
-  end
-
   @doc false
   # Test-only public delegate for validate_grant_resources/2. The device/CIBA
   # invalid_target rejection branch is only reachable when a grant carries a
@@ -573,7 +532,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   @spec validate_grant_resources_for_test(map(), Token.t()) ::
           {:ok, [String.t()]} | {:error, Error.t()}
   def validate_grant_resources_for_test(params, %Token{} = grant) do
-    validate_grant_resources(params, grant)
+    ResourceSelection.select_grant(params, grant)
   end
 
   # Resource validation for the device and CIBA grant paths mirrors the authorization-code
@@ -584,38 +543,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   # `requested == [] -> {:ok, authorized}` default semantics. When a grant DOES
   # carry a recorded audience, an out-of-set resource is rejected with
   # invalid_target (:invalid_resource, 400), preventing audience confusion.
-  defp validate_grant_resources(params, %Token{} = grant) do
-    requested =
-      params
-      |> Map.get("resource")
-      |> List.wrap()
-      |> Enum.flat_map(fn
-        r when is_binary(r) -> [r]
-        _ -> []
-      end)
-
-    authorized = grant.audience
-
-    cond do
-      requested == [] ->
-        {:ok, authorized}
-
-      authorized == [] ->
-        {:ok, requested}
-
-      Enum.all?(requested, &(&1 in authorized)) ->
-        {:ok, requested}
-
-      true ->
-        {:error,
-         oauth_error(
-           400,
-           "invalid_target",
-           "The requested resource is invalid or was not authorized",
-           :invalid_resource
-         )}
-    end
-  end
+  defp validate_grant_resources(params, %Token{} = grant),
+    do: ResourceSelection.select_grant(params, grant)
 
   defp request_params(request) do
     Map.get(request, :params, Map.get(request, "params", request))
@@ -1315,15 +1244,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       error_description: description,
       reason_code: reason_code
     }
-  end
-
-  defp client_store(request), do: Dependencies.fetch!(request).client_store
-
-  defp client_auth_options(request) do
-    [
-      client_store: client_store(request),
-      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
-    ]
   end
 
   defp token_store(request), do: Dependencies.fetch!(request).token_store

@@ -30,10 +30,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   @spec resolve_context(Client.t(), map(), Dependencies.t()) ::
           {:ok, issuance_context()} | {:error, struct()}
   def resolve_context(%Client{} = client, request, %Dependencies{} = dependencies),
-    do:
-      request
-      |> Dependencies.attach(dependencies)
-      |> then(&resolve_context_with_dependencies(client, &1))
+    do: resolve_context_with_dependencies(client, request, dependencies)
 
   def resolve_context(%Client{} = client, request) do
     with {:ok, dependencies} <- LegacyOptions.from_request(request) do
@@ -41,27 +38,28 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp resolve_context_with_dependencies(%Client{} = client, request) do
-    with {:ok, resolved_dpop_policy} <- resolve_policy(client, request),
-         {:ok, resolved_security_profile} <- resolve_security_profile(client, request) do
+  defp resolve_context_with_dependencies(%Client{} = client, request, dependencies) do
+    with {:ok, resolved_dpop_policy} <- resolve_policy(client, dependencies),
+         {:ok, resolved_security_profile} <- resolve_security_profile(client, dependencies) do
       effective_dpop_required =
         resolved_dpop_policy.dpop_required? or resolved_security_profile.fapi_2_0_security?
 
       effective_mode =
         if effective_dpop_required, do: :dpop, else: resolved_dpop_policy.effective_policy
 
-      with {:ok, proof} <- validate_proof_with_flag(effective_dpop_required, request),
-           :ok <- record_dpop_proof_use(proof, request) do
-        {:ok, issuance_context(effective_mode, proof, resolved_security_profile, request)}
+      with {:ok, proof} <-
+             validate_proof_with_flag(effective_dpop_required, request, dependencies),
+           :ok <- record_dpop_proof_use(proof, request, dependencies) do
+        {:ok, issuance_context(effective_mode, proof, resolved_security_profile, dependencies)}
       end
     end
   end
 
-  defp validate_proof_with_flag(true, request),
-    do: validate_proof(%{dpop_required?: true}, request)
+  defp validate_proof_with_flag(true, request, dependencies),
+    do: validate_proof(%{dpop_required?: true}, request, dependencies)
 
-  defp validate_proof_with_flag(false, request),
-    do: validate_proof(%{dpop_required?: false}, request)
+  defp validate_proof_with_flag(false, request, dependencies),
+    do: validate_proof(%{dpop_required?: false}, request, dependencies)
 
   @spec resolve_refresh_context(Client.t(), Token.t(), map()) ::
           {:ok, issuance_context()} | {:error, struct()}
@@ -73,10 +71,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
         request,
         %Dependencies{} = dependencies
       ),
-      do:
-        request
-        |> Dependencies.attach(dependencies)
-        |> then(&resolve_refresh_context_with_dependencies(client, token, &1))
+      do: resolve_refresh_context_with_dependencies(client, token, request, dependencies)
 
   def resolve_refresh_context(%Client{} = client, %Token{} = presented_refresh_token, request) do
     with {:ok, dependencies} <- LegacyOptions.from_request(request) do
@@ -87,25 +82,27 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   defp resolve_refresh_context_with_dependencies(
          %Client{} = client,
          %Token{} = presented_refresh_token,
-         request
+         request,
+         dependencies
        ) do
-    with {:ok, resolved_security_profile} <- resolve_security_profile(client, request),
+    with {:ok, resolved_security_profile} <- resolve_security_profile(client, dependencies),
          {:ok, expected_cnf} <- refresh_binding_cnf(presented_refresh_token),
-         {:ok, expected_cnf} <- validate_mtls_binding(expected_cnf, request),
-         {:ok, proof} <- validate_refresh_proof(expected_cnf, resolved_security_profile, request),
-         :ok <- record_dpop_proof_use(proof, request) do
+         {:ok, expected_cnf} <- validate_mtls_binding(expected_cnf, dependencies),
+         {:ok, proof} <-
+           validate_refresh_proof(expected_cnf, resolved_security_profile, request, dependencies),
+         :ok <- record_dpop_proof_use(proof, request, dependencies) do
       effective_mode =
         if resolved_security_profile.fapi_2_0_security? or
              refresh_binding_mode(expected_cnf) == :dpop,
            do: :dpop,
            else: :bearer
 
-      {:ok, issuance_context(effective_mode, proof, resolved_security_profile, request)}
+      {:ok, issuance_context(effective_mode, proof, resolved_security_profile, dependencies)}
     end
   end
 
-  defp resolve_policy(%Client{} = client, request) do
-    with {:ok, server_policy} <- server_policy_store(request).get_server_policy(),
+  defp resolve_policy(%Client{} = client, %Dependencies{} = dependencies) do
+    with {:ok, server_policy} <- dependencies.server_policy_store.get_server_policy(),
          {:ok, resolved_policy} <- DpopPolicy.resolve_effective_policy(server_policy, client) do
       {:ok, resolved_policy}
     else
@@ -120,8 +117,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp resolve_security_profile(%Client{} = client, request) do
-    case server_policy_store(request).get_server_policy() do
+  defp resolve_security_profile(%Client{} = client, %Dependencies{} = dependencies) do
+    case dependencies.server_policy_store.get_server_policy() do
       {:ok, server_policy} ->
         {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
 
@@ -136,22 +133,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp validate_proof(%{dpop_required?: false}, request) do
+  defp validate_proof(%{dpop_required?: false}, request, dependencies) do
     case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
       nil -> {:ok, nil}
-      proof -> validate_proof_value(proof, request)
+      proof -> validate_proof_value(proof, request, dependencies)
     end
   end
 
-  defp validate_proof(%{dpop_required?: true}, request) do
+  defp validate_proof(%{dpop_required?: true}, request, dependencies) do
     case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
       nil -> {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
-      proof -> validate_proof_value(proof, request)
+      proof -> validate_proof_value(proof, request, dependencies)
     end
   end
 
-  defp validate_mtls_binding(expected_cnf, request) do
-    case {expected_cnf, Dependencies.fetch!(request).mtls_cert} do
+  defp validate_mtls_binding(expected_cnf, %Dependencies{} = dependencies) do
+    case {expected_cnf, dependencies.mtls_cert} do
       {%{"x5t#S256" => expected_thumbprint}, cert} ->
         if MTLSTokenBinding.confirmation_matches?(expected_thumbprint, cert) do
           {:ok, expected_cnf}
@@ -170,40 +167,40 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp validate_proof_value(proof, request) do
+  defp validate_proof_value(proof, request, %Dependencies{} = dependencies) do
     case DPoP.validate_proof(
            proof,
            method: request_method(request),
            target_uri: token_endpoint_uri(),
-           now: now(request),
-           max_age: Dependencies.fetch!(request).dpop_max_age,
-           clock_skew: Dependencies.fetch!(request).dpop_clock_skew,
+           now: dependencies.now.(),
+           max_age: dependencies.dpop_max_age,
+           clock_skew: dependencies.dpop_clock_skew,
            nonce_purpose: :authorization_server,
-           secret_key_base: Dependencies.fetch!(request).secret_key_base,
-           nonce_max_age: Dependencies.fetch!(request).dpop_nonce_max_age
+           secret_key_base: dependencies.secret_key_base,
+           nonce_max_age: dependencies.dpop_nonce_max_age
          ) do
       {:ok, %DPoP{} = validated_proof} ->
         {:ok, validated_proof}
 
       {:error, reason} when reason in [:missing_dpop_nonce, :invalid_dpop_nonce] ->
-        {:error, use_dpop_nonce_error(reason, request)}
+        {:error, use_dpop_nonce_error(reason, dependencies)}
 
       {:error, reason} when is_atom(reason) ->
         {:error, invalid_dpop_proof("The DPoP proof is invalid", reason)}
     end
   end
 
-  defp validate_refresh_proof(expected_cnf, resolved_security_profile, request) do
+  defp validate_refresh_proof(expected_cnf, resolved_security_profile, request, dependencies) do
     cond do
       resolved_security_profile.fapi_2_0_security? ->
         # FAPI 2.0 requires DPoP for all token requests, even if the refresh token was bearer.
-        require_and_validate_dpop(request)
+        require_and_validate_dpop(request, dependencies)
 
       is_nil(expected_cnf) or not Map.has_key?(expected_cnf, "jkt") ->
         {:ok, nil}
 
       Map.has_key?(expected_cnf, "jkt") and is_binary(Map.get(expected_cnf, "jkt")) ->
-        require_and_validate_dpop(request)
+        require_and_validate_dpop(request, dependencies)
 
       true ->
         {:error,
@@ -216,21 +213,21 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp require_and_validate_dpop(request) do
+  defp require_and_validate_dpop(request, dependencies) do
     case normalize_optional_string(Map.get(request, :dpop, Map.get(request, "dpop"))) do
       nil ->
         {:error, invalid_dpop_proof("A valid DPoP proof is required", :missing_dpop_proof)}
 
       proof ->
-        validate_proof_value(proof, request)
+        validate_proof_value(proof, request, dependencies)
     end
   end
 
-  defp record_dpop_proof_use(nil, _request), do: :ok
+  defp record_dpop_proof_use(nil, _request, _dependencies), do: :ok
 
-  defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
-    with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
-         {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
+  defp record_dpop_proof_use(%DPoP{} = validated_proof, _request, dependencies) do
+    with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, dependencies),
+         {:ok, result} <- dependencies.dpop_replay_store.record_dpop_proof(replay) do
       case result do
         :accepted ->
           :ok
@@ -254,8 +251,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp issuance_context(:dpop, %DPoP{} = proof, security_profile, request) do
-    cnf = %{"jkt" => proof.jkt} |> maybe_add_x5t_cnf(request)
+  defp issuance_context(:dpop, %DPoP{} = proof, security_profile, dependencies) do
+    cnf = %{"jkt" => proof.jkt} |> maybe_add_x5t_cnf(dependencies)
 
     %{
       mode: :dpop,
@@ -267,8 +264,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     }
   end
 
-  defp issuance_context(_mode, _proof, security_profile, request) do
-    cnf = maybe_add_x5t_cnf(nil, request)
+  defp issuance_context(_mode, _proof, security_profile, dependencies) do
+    cnf = maybe_add_x5t_cnf(nil, dependencies)
 
     %{
       mode: :bearer,
@@ -280,11 +277,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     }
   end
 
-  defp maybe_add_x5t_cnf(cnf, request) do
-    request
-    |> Dependencies.fetch!()
-    |> Map.fetch!(:mtls_cert)
-    |> then(&MTLSTokenBinding.maybe_put_confirmation(cnf, &1))
+  defp maybe_add_x5t_cnf(cnf, %Dependencies{} = dependencies) do
+    MTLSTokenBinding.maybe_put_confirmation(cnf, dependencies.mtls_cert)
   end
 
   defp token_endpoint_uri do
@@ -305,13 +299,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     |> String.upcase()
   end
 
-  defp build_dpop_replay(%DPoP{claims: claims, jkt: jkt}, request)
+  defp build_dpop_replay(%DPoP{claims: claims, jkt: jkt}, dependencies)
        when is_map(claims) and is_binary(jkt) do
     with {:ok, htm} <- fetch_dpop_claim(claims, "htm"),
          {:ok, htu} <- fetch_dpop_claim(claims, "htu"),
          {:ok, jti} <- fetch_dpop_claim(claims, "jti"),
          {:ok, iat} <- fetch_dpop_iat(claims),
-         {:ok, expires_at} <- dpop_replay_expiration(iat, request) do
+         {:ok, expires_at} <- dpop_replay_expiration(iat, dependencies) do
       normalized_htm = String.upcase(htm)
       normalized_htu = canonical_dpop_htu(htu)
 
@@ -322,7 +316,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
          htm: normalized_htm,
          htu: normalized_htu,
          jkt: jkt,
-         seen_at: now(request),
+         seen_at: dependencies.now.(),
          expires_at: expires_at
        }}
     else
@@ -349,9 +343,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     end
   end
 
-  defp dpop_replay_expiration(iat, request) when is_integer(iat) do
-    max_age = Dependencies.fetch!(request).dpop_max_age
-    clock_skew = Dependencies.fetch!(request).dpop_clock_skew
+  defp dpop_replay_expiration(iat, %Dependencies{} = dependencies) when is_integer(iat) do
+    max_age = dependencies.dpop_max_age
+    clock_skew = dependencies.dpop_clock_skew
 
     case DateTime.from_unix((iat + max_age + clock_skew) * 1_000_000, :microsecond) do
       {:ok, expires_at} -> {:ok, expires_at}
@@ -423,14 +417,14 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
     oauth_error(400, "invalid_dpop_proof", description, reason_code)
   end
 
-  defp use_dpop_nonce_error(reason_code, request) do
+  defp use_dpop_nonce_error(reason_code, %Dependencies{} = dependencies) do
     %Error{
       status: 400,
       error: "use_dpop_nonce",
       error_description: "Authorization server requires nonce in DPoP proof",
       reason_code: reason_code,
       dpop_nonce:
-        DPoPNonce.issue(:authorization_server, secret_key_base: secret_key_base(request))
+        DPoPNonce.issue(:authorization_server, secret_key_base: dependencies.secret_key_base)
     }
   end
 
@@ -443,14 +437,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
       dpop_nonce: nil
     }
   end
-
-  defp server_policy_store(request), do: Dependencies.fetch!(request).server_policy_store
-
-  defp dpop_replay_store(request), do: Dependencies.fetch!(request).dpop_replay_store
-
-  defp now(request), do: Dependencies.fetch!(request).now.()
-
-  defp secret_key_base(request), do: Dependencies.fetch!(request).secret_key_base
 
   defp normalize_optional_string(value) when is_binary(value) do
     value
