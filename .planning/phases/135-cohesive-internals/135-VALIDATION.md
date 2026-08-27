@@ -52,3 +52,21 @@ Same-wave plans have no `files_modified` overlap. Every shared facade file is se
 ## Nyquist coverage
 
 Every production-code task starts with behavior assertions and has a focused automated command. The final plan runs architecture fitness, literal public compatibility, DB atomicity, five-flow characterization, compilation, fast/integration tests, QA, and docs verification from the converged tree.
+
+## Nyquist Adversarial Validation — 2026-08-27
+
+**Result:** FILLED — 5/5 requirements have executable evidence.
+
+| Requirement | Behavioral evidence | Command | Result |
+|---|---|---|---|
+| COH-01 | Parse-once fitness verifies the configured Repository remains a behavior-complete facade without Ecto ownership, and aggregate delegates remain reachable. | `MIX_ENV=test mix qa.architecture` | 13 tests, 0 failures; no cycles |
+| COH-02 | Ten independently checked-out PostgreSQL connections race to redeem one authorization code; exactly one commits and the other nine observe `:already_redeemed`. Existing rollback/reuse/DCR/key tests cover the remaining lifecycle boundaries. | `mix test test/lockspire/storage/repository_concurrency_test.exs --trace` | 1 test, 0 failures |
+| COH-03 | Focused-owner fitness and five-grant contract tests exercise auth, resources, polling, issuance, persistence, and observability through the retained facade. | `mix test test/lockspire/architecture_fitness_test.exs test/lockspire/protocol/token_exchange/characterization_test.exs` | 15 tests, 0 failures |
+| COH-04 | Legacy option normalization and deterministic missing-capability behavior are exercised alongside the no-probe AST gate. | `mix test test/lockspire/protocol/token_exchange/dependencies_test.exs test/lockspire/architecture_fitness_test.exs` | 13 tests, 0 failures |
+| COH-05 | Public success/error, durable token state, audit/telemetry, and the five supported grants are characterized at the stable token facade. | `mix test test/lockspire/protocol/token_exchange/characterization_test.exs` | 5 tests, 0 failures |
+
+### Gap filled
+
+The prior authorization-code “one winner” check made two sequential calls, so it could not establish that the `FOR UPDATE` transaction remained correct under independent database connections. `test/lockspire/storage/repository_concurrency_test.exs` is intentionally outside the shared SQL sandbox: it persists isolated fixtures, synchronizes ten task contenders, runs each redemption with its own non-sandbox connection, asserts the one-success/nine-rejection contract, verifies durable redemption, then removes only those fixtures. This test fails if two contenders can redeem the same code.
+
+No implementation files were modified.
