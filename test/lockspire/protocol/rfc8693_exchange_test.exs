@@ -203,4 +203,9 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     assert payload["aud"] == client.client_id
     assert is_binary(payload["aud"])
   end
+
+  test "retains the public RFC 8693 exchange facade arity" do
+    Code.ensure_loaded!(Rfc8693Exchange)
+    assert function_exported?(Rfc8693Exchange, :exchange, 2)
+  end
 end
