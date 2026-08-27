@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.Userinfo do
   alias Lockspire.Host.Claims
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
+  alias Lockspire.Protocol.ProtectedResourceError
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
@@ -86,6 +87,7 @@ defmodule Lockspire.Protocol.Userinfo do
           present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
             case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
               {:ok, _proof} -> :ok
+              {:error, %ProtectedResourceError{} = error} -> {:error, protected_resource_error(error)}
               {:error, %Error{} = error} -> {:error, error}
             end
 
@@ -175,6 +177,16 @@ defmodule Lockspire.Protocol.Userinfo do
       error_description: description,
       reason_code: reason_code,
       dpop_nonce: nil
+    }
+  end
+
+  defp protected_resource_error(%ProtectedResourceError{} = error) do
+    %Error{
+      status: error.status,
+      error: error.error,
+      error_description: error.error_description,
+      reason_code: error.reason_code,
+      dpop_nonce: error.dpop_nonce
     }
   end
 
