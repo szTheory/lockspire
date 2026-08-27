@@ -46,10 +46,10 @@ created: 2026-08-27
 | 133-03-T3 | 133-03 | 3 | E2E-03, E2E-06 | T-133-10..12, T-133-24, T-133-26..28 | Bearer OIDC remains green; DPoP key ownership, token AS nonce retry/type, same-key userinfo nonce retry, subject gate, encrypted cleanup, and opaque session handoff are complete. | child unit + live provider HTTP | `python3 scripts/acceptance/clean_room/build_client.py --test oidc_verifier && python3 scripts/acceptance/clean_room/build_client.py --test dpop_client` | historical pass; not rerun in this audit |
 | 133-04-T1 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Cross-origin code+S256 journey validates OIDC/userinfo before protected resource. | full process HTTP | `mix test.clean-room.e2e` | observed pass before lifecycle failure |
 | 133-04-T2 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Callback remains one-time and host authorization is distinct from protocol enforcement. | full process HTTP | `mix test.clean-room.e2e` | observed pass before lifecycle failure |
-| 133-05-T1 | 133-05 | 5 | E2E-04 | T-133-16, T-133-19 | Rotation, reuse containment, inactive introspection, idempotent revocation, truthful JWT semantics. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle` | **BLOCKER:** current run returns HTTP 400 at authorization-code exchange |
-| 133-05-T2 | 133-05 | 5 | E2E-05 | T-133-17, T-133-18 | Redirect/code/state/nonce/token/audience/scope failures expose stable wire outcomes only. | full process negative matrix | `python3 scripts/acceptance/clean_room_saas_journey.py --only negative` | not run: blocked behind lifecycle regression in authoritative command |
-| 133-06-T1 | 133-06 | 6 | E2E-06 | T-133-20, T-133-21, T-133-24, T-133-26..28 | Completed opaque DPoP session drives resource nonce challenge, fresh proof success, same-byte replay, and post-provider-restart durable rejection without exposing client material. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` | not run: authoritative command stopped at lifecycle regression |
-| 133-06-T2 | 133-06 | 6 | E2E-01, E2E-05, E2E-06 | T-133-22, T-133-23, T-133-25 | One CI command proves all journeys, uses bounded lock-keyed dependency-only caches, scans evidence, and cleans all resources. | acceptance + repository gate | `mix test.clean-room.e2e && mix compile --warnings-as-errors && mix test.fast && mix test.integration && mix qa && mix docs.verify` | **BLOCKER:** first required command failed; downstream gate not run |
+| 133-05-T1 | 133-05 | 5 | E2E-04 | T-133-16, T-133-19 | Rotation, reuse containment, inactive introspection, idempotent revocation, truthful JWT semantics. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle` | observed green after 9368cde |
+| 133-05-T2 | 133-05 | 5 | E2E-05 | T-133-17, T-133-18 | Redirect/code/state/nonce/token/audience/scope failures expose stable wire outcomes only. | full process negative matrix | `python3 scripts/acceptance/clean_room_saas_journey.py --only negative` | observed green after 9368cde |
+| 133-06-T1 | 133-06 | 6 | E2E-06 | T-133-20, T-133-21, T-133-24, T-133-26..28 | Completed opaque DPoP session drives resource nonce challenge, fresh proof success, same-byte replay, and post-provider-restart durable rejection without exposing client material. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` | **BLOCKER:** nondeterministic post-restart replay operation: one fresh run failed, a second passed |
+| 133-06-T2 | 133-06 | 6 | E2E-01, E2E-05, E2E-06 | T-133-22, T-133-23, T-133-25 | One CI command proves all journeys, uses bounded lock-keyed dependency-only caches, scans evidence, and cleans all resources. | acceptance + repository gate | `mix test.clean-room.e2e && mix compile --warnings-as-errors && mix test.fast && mix test.integration && mix qa && mix docs.verify` | partial: reported aggregate green cannot overcome focused DPoP flake |
 
 ## Wave 0 Requirements
 
@@ -126,31 +126,41 @@ Excluded by source: publication-specific release proof (Phase 137); topology/sto
 
 None. Both applications, PostgreSQL setup, browser-like redirect flow, process lifecycle, HTTP assertions, evidence scans, and cleanup are automatable. Missing local PostgreSQL is an actionable environment failure, not a human verification checkpoint.
 
-## Post-Execution Nyquist Audit — 2026-08-27
+## Post-Execution Nyquist Re-Audit — 2026-08-27
 
-**Verdict: PARTIAL — implementation blocker.** The auditor ran the maintained
-full command, `mix test.clean-room.e2e`. It completed the package provenance,
-redaction, happy-path, callback-reuse, and host-policy receipts, then failed at
-the lifecycle authorization-code exchange: **expected HTTP 200, got 400**. A
-second, isolated execution of
-`python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle`
-failed at the identical assertion. This is an observable wire-contract failure,
-not a skipped test or a test-expectation issue.
+**Verdict: PARTIAL — E2E-06 is nondeterministic.** Commits `9368cde`,
+`6274959`, and `63a366b` repaired the prior lifecycle failure and run-root
+ownership handling. The parent execution also reported a green authoritative
+`mix test.clean-room.e2e` run with every group marker. This audit independently
+reran the formerly blocked and deferred focused paths from fresh package-clean
+run roots.
+
+| Command | Actual result |
+|---|---|
+| `python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle` | **PASS:** refresh rotation, reuse containment, inactive introspection, idempotent revocation, evidence scan, cleanup. |
+| `python3 scripts/acceptance/clean_room_saas_journey.py --only negative` | **PASS:** redirect, code, state, nonce, token, audience, and scope rejection matrix, evidence scan, cleanup. |
+| `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` (fresh run 1) | **FAIL:** after first exact replay rejection and provider restart, `durable dpop resource replay: expected HTTP 200, got 400 (dpop_operation_rejected) (stage: replay_status)`. |
+| `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` (fresh run 2) | **PASS:** token/userinfo nonce retries, resource nonce retry, exact replay rejection, post-restart replay rejection, evidence scan, cleanup. |
+
+The DPoP contract requires deterministic rejection of the exact proof after the
+provider restart. A passing retry does not fill a behavior that failed in a
+separate fresh run; this is a real behavioral flake at the public acceptance
+boundary, not a test assertion to weaken.
 
 | Requirement | Current evidence | Result |
 |---|---|---|
-| E2E-01 | Current alias reached provenance/redaction/readiness and cleaned up after failure; the full CI proof cannot pass while lifecycle fails. | PARTIAL |
-| E2E-02 | Current alias printed authorization and callback completion before the lifecycle leg. | FILLED for the observed happy path |
-| E2E-03 | Current alias printed discovery, OIDC, userinfo, and protected-resource completion before the lifecycle leg. | FILLED for the observed happy path |
-| E2E-04 | Direct lifecycle journey returned 400 at the initial confidential code exchange, where 200 is required. | **BLOCKER** |
-| E2E-05 | Not executed after the regression was established; previous summary evidence is not a replacement for a current run. | UNVERIFIED |
-| E2E-06 | Not executed after the regression was established; previous summary evidence is not a replacement for a current run. | UNVERIFIED |
+| E2E-01 | Parent-reported aggregate run was green; focused lifecycle/negative runs completed cleanup, and the run-root ownership probe was reported green. | FILLED, with aggregate evidence reported by parent |
+| E2E-02 | Aggregate happy-path evidence remains green; lifecycle and negative code exchanges now execute successfully. | FILLED |
+| E2E-03 | Aggregate happy-path discovery/JWKS/ID-token/userinfo/resource evidence remains green. | FILLED |
+| E2E-04 | Direct focused lifecycle journey is green after `9368cde`. | FILLED |
+| E2E-05 | Direct focused negative matrix is green after `9368cde`. | FILLED |
+| E2E-06 | One fresh direct DPoP run failed at the required post-restart replay operation; a second passed. | **BLOCKER — nondeterministic** |
 
-**Escalation:** Repair the lifecycle authorization-code exchange in the
-acceptance implementation (runner/fixture/provider boundary as appropriate),
-without weakening the HTTP-200 assertion. Then rerun the isolated lifecycle
-journey, the complete `mix test.clean-room.e2e` command, and the deferred
-negative/DPoP checks before changing this verdict.
+**Escalation:** Diagnose the post-restart client operation that sometimes
+returns its safe `dpop_operation_rejected` receipt before the replay request
+can reach the provider. Preserve the current wire assertion; after the repair,
+run the focused DPoP journey repeatedly from fresh roots, then rerun
+`mix test.clean-room.e2e` before changing this verdict to validated.
 
 ## Validation Sign-Off
 
@@ -160,6 +170,7 @@ negative/DPoP checks before changing this verdict.
 - [x] Child manifests are owned by Wave 1; Wave 2 completes provider bootstrap before Wave 3 exercises the client backend against live token/userinfo endpoints.
 - [x] The package proof is intentionally local/package-clean and leaves publication-specific proof to Phase 137.
 - [x] Nyquist auditor executed the maintained command and recorded the actual post-review outcome.
-- [ ] Lifecycle regression repaired and all six E2E requirements re-executed green; only then set `status: validated` and `nyquist_compliant: true`.
+- [x] Lifecycle regression repaired; focused lifecycle and negative evidence is green.
+- [ ] DPoP post-restart replay is stable across fresh runs and all six E2E requirements are re-executed green; only then set `status: validated` and `nyquist_compliant: true`.
 
-**Approval:** withheld — E2E-04 currently fails at a required live HTTP boundary.
+**Approval:** withheld — E2E-06 has a reproducible intermittent failure at a required live HTTP boundary.
