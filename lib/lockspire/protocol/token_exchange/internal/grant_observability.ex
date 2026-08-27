@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantObservability do
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
   alias Lockspire.Protocol.TokenResult.Error
 
   @doc false
@@ -170,6 +171,45 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantObservability do
     dependencies.observability_emitter.emit(:token_exchange, :failed, %{}, metadata)
     :ok
   end
+
+  @doc false
+  def emit_failure(%Error{} = error, params, request, %Dependencies{} = dependencies) do
+    metadata = failure_metadata(error, params, request)
+
+    if error.reason_code == :authorization_code_replayed do
+      dependencies.observability_emitter.emit(
+        :authorization_code,
+        :replay_detected,
+        %{},
+        metadata
+      )
+    end
+
+    dependencies.observability_emitter.emit(:token_exchange, :failed, %{}, metadata)
+    :ok
+  end
+
+  @doc false
+  def append_poll_failure_audit(
+        %Error{reason_code: reason_code} = error,
+        %Client{} = client,
+        authorization,
+        %Dependencies{} = dependencies
+      )
+      when reason_code in [
+             :device_authorization_client_mismatch,
+             :device_authorization_consumed,
+             :ciba_authorization_client_mismatch,
+             :ciba_authorization_consumed
+           ] do
+    error
+    |> poll_failure_audit_event(client, authorization)
+    |> GrantPersistence.append_poll_failure_audit(dependencies)
+
+    :ok
+  end
+
+  def append_poll_failure_audit(_error, _client, _authorization, _dependencies), do: :ok
 
   defp authorization_code_metadata(%Client{} = client, %Token{} = authorization_code) do
     %{

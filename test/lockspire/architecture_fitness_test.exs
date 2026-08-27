@@ -95,6 +95,14 @@ defmodule Lockspire.ArchitectureFitnessTest do
       :GrantObservability
     ])
 
+    grant_support =
+      asts
+      |> Enum.find(fn {path, _ast} -> String.ends_with?(path, "/internal/grant_support.ex") end)
+      |> elem(1)
+
+    refute ast_contains?(grant_support, &grant_support_ownership?/1),
+           "GrantSupport owns issuance, telemetry, or persistence; delegate through focused collaborators"
+
     for {path, ast} <- asts,
         String.contains?(path, "/token_exchange/internal/"),
         not String.ends_with?(path, "/authorization_code_grant.ex"),
@@ -166,6 +174,43 @@ defmodule Lockspire.ArchitectureFitnessTest do
                "Lockspire.Protocol.TokenExchange.Internal.TokenIssuer.issue(token, client, request)"
              ),
              [:TokenIssuer]
+           )
+
+    assert grant_support_ownership?(parse_snippet!("LegacyOptions.from_request(request)"))
+    assert grant_support_ownership?(parse_snippet!("Config.repo!()"))
+
+    assert grant_support_ownership?(
+             parse_snippet!("Observability.emit(:token, :issued, %{}, %{})")
+           )
+
+    assert grant_support_ownership?(
+             parse_snippet!("emitter(request).emit(:token, :issued, %{}, %{})")
+           )
+
+    assert grant_support_ownership?(
+             parse_snippet!("dependencies.transaction_store.transact(fn -> :ok end)")
+           )
+
+    assert grant_support_ownership?(
+             parse_snippet!("dependencies.audit_store.append_audit_event(%{})")
+           )
+
+    assert grant_support_ownership?(parse_snippet!("dependencies.token_store.store_token(token)"))
+    assert grant_support_ownership?(parse_snippet!("%Token{token_type: :access_token}"))
+    assert grant_support_ownership?(parse_snippet!("IdToken.sign(%{})"))
+
+    refute grant_support_ownership?(
+             parse_snippet!("TokenIssuer.issue_grant(client, grant, now, context, dependencies)")
+           )
+
+    refute grant_support_ownership?(
+             parse_snippet!(
+               "GrantObservability.emit_failure(error, params, request, dependencies)"
+             )
+           )
+
+    refute grant_support_ownership?(
+             parse_snippet!("GrantPersistence.redeem_authorization_code(intent, dependencies)")
            )
   end
 
@@ -241,6 +286,31 @@ defmodule Lockspire.ArchitectureFitnessTest do
     do: List.last(module) in expected
 
   defp remote_call_to?(_node, _expected), do: false
+
+  defp grant_support_ownership?({{:., _, [{:__aliases__, _, module}, _function]}, _, _args}),
+    do: List.last(module) in [:LegacyOptions, :Config, :Observability, :IdToken]
+
+  defp grant_support_ownership?({{:., _, [{:emitter, _, _}, :emit]}, _, _}), do: true
+
+  defp grant_support_ownership?(
+         {{:., _, [{{:., _, [{:dependencies, _, _}, field]}, _, []}, function]}, _, _}
+       )
+       when {field, function} in [
+              {:transaction_store, :transact},
+              {:audit_store, :append_audit_event},
+              {:token_store, :store_token},
+              {:token_store, :redeem_authorization_code}
+            ],
+       do: true
+
+  defp grant_support_ownership?({:%, _, [{:__aliases__, _, [:Token]}, {:%{}, _, fields}]}) do
+    Enum.any?(fields, fn
+      {:token_type, :access_token} -> true
+      _ -> false
+    end)
+  end
+
+  defp grant_support_ownership?(_node), do: false
 
   defp repository_behaviors do
     [

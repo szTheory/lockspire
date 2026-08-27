@@ -16,9 +16,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
-  alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
-  alias Lockspire.Host.Claims
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
@@ -26,9 +24,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
   alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
-  alias Lockspire.Protocol.IdToken
-  alias Lockspire.Protocol.TokenFormatter
-  alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
   alias Lockspire.Security.Policy
@@ -579,17 +574,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          requested_resources
        ) do
     issued_at = now(request)
-    formatted_refresh_token = maybe_format_refresh_token(client, authorization_code, request)
 
-    case build_access_token(
+    case TokenIssuer.issue_grant(
            client,
            %Token{authorization_code | audience: requested_resources},
            issued_at,
-           formatted_refresh_token,
            issuance_context,
-           request
+           Dependencies.fetch!(request)
          ) do
-      {%Token{} = access_token, raw_access_token} ->
+      {:ok,
+       %{
+         access_token: %Token{} = access_token,
+         raw_access_token: raw_access_token,
+         formatted_refresh_token: formatted_refresh_token
+       }} ->
         with :ok <- ensure_code_redemption_capabilities(request) do
           case persist_authorization_code_grant(
                  code_hash,
@@ -601,7 +599,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                  request
                ) do
             {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-              build_success_response(
+              TokenIssuer.build_success(
                 client,
                 authorization_code,
                 persisted_access_token,
@@ -609,7 +607,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                 issuance_context,
                 issued_at,
                 Map.get(persisted_grant, :refresh_token_raw),
-                request
+                Dependencies.fetch!(request)
               )
 
             {:error, :already_redeemed} ->
@@ -779,18 +777,21 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          request
        ) do
     issued_at = now(request)
-    formatted_refresh_token = maybe_format_refresh_token(client, ciba_grant, request)
 
     with {:ok, validated_audience} <-
            validate_grant_resources(request_params(request), ciba_grant),
-         {%Token{} = access_token, raw_access_token} <-
-           build_access_token(
+         {:ok,
+          %{
+            access_token: %Token{} = access_token,
+            raw_access_token: raw_access_token,
+            formatted_refresh_token: formatted_refresh_token
+          }} <-
+           TokenIssuer.issue_grant(
              client,
              %Token{ciba_grant | audience: validated_audience},
              issued_at,
-             formatted_refresh_token,
              issuance_context,
-             request
+             Dependencies.fetch!(request)
            ) do
       case persist_ciba_authorization_grant(
              ciba_authorization,
@@ -802,7 +803,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              request
            ) do
         {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-          build_success_response(
+          TokenIssuer.build_success(
             client,
             ciba_grant,
             persisted_access_token,
@@ -810,7 +811,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
             issuance_context,
             issued_at,
             Map.get(persisted_grant, :refresh_token_raw),
-            request
+            Dependencies.fetch!(request)
           )
 
         {:error, :invalid_state} ->
@@ -898,18 +899,21 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          request
        ) do
     issued_at = now(request)
-    formatted_refresh_token = maybe_format_refresh_token(client, device_grant, request)
 
     with {:ok, validated_audience} <-
            validate_grant_resources(request_params(request), device_grant),
-         {%Token{} = access_token, raw_access_token} <-
-           build_access_token(
+         {:ok,
+          %{
+            access_token: %Token{} = access_token,
+            raw_access_token: raw_access_token,
+            formatted_refresh_token: formatted_refresh_token
+          }} <-
+           TokenIssuer.issue_grant(
              client,
              %Token{device_grant | audience: validated_audience},
              issued_at,
-             formatted_refresh_token,
              issuance_context,
-             request
+             Dependencies.fetch!(request)
            ) do
       case persist_device_authorization_grant(
              device_authorization,
@@ -921,7 +925,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              request
            ) do
         {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-          build_success_response(
+          TokenIssuer.build_success(
             client,
             device_grant,
             persisted_access_token,
@@ -929,7 +933,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
             issuance_context,
             issued_at,
             Map.get(persisted_grant, :refresh_token_raw),
-            request
+            Dependencies.fetch!(request)
           )
 
         {:error, :invalid_state} ->
@@ -953,184 +957,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp build_success_response(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         %Token{} = persisted_access_token,
-         raw_access_token,
-         issuance_context,
-         issued_at,
-         raw_refresh_token,
-         request
-       ) do
-    with {:ok, id_token} <-
-           maybe_issue_id_token(
-             client,
-             authorization_code,
-             raw_access_token,
-             issued_at,
-             issuance_context,
-             request
-           ) do
-      %Success{
-        access_token: raw_access_token,
-        refresh_token: raw_refresh_token,
-        id_token: id_token,
-        token_type: issuance_context.token_type,
-        expires_in: TokenLifetime.access_token(),
-        scope: Enum.join(persisted_access_token.scopes, " ")
-      }
-    end
-  end
-
-  defp maybe_issue_id_token(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         raw_access_token,
-         issued_at,
-         issuance_context,
-         request
-       ) do
-    if "openid" in authorization_code.scopes do
-      with {:ok, interaction} <- fetch_optional_interaction(authorization_code, request),
-           {:ok, auth_time} <- resolve_interaction_auth_time(interaction),
-           {:ok, %Claims{} = claims} <- resolve_claims(authorization_code, client, request),
-           {:ok, signing_key} <- fetch_signing_key(request),
-           {:ok, token} <-
-             IdToken.sign(%{
-               client_id: client.client_id,
-               issuer: Dependencies.fetch!(request).issuer,
-               host_claims: claims,
-               interaction_nonce: interaction_nonce(interaction),
-               auth_time: auth_time,
-               sid: authorization_code.sid,
-               access_token: raw_access_token,
-               issued_at: issued_at,
-               signing_key: signing_key,
-               security_profile: issuance_context.security_profile.effective_profile
-             }) do
-        {:ok, token}
-      else
-        {:error, reason_code} ->
-          {:error, oauth_error(500, "server_error", "Unable to issue id_token", reason_code)}
-      end
-    else
-      {:ok, nil}
-    end
-  end
-
-  defp fetch_interaction(%Token{interaction_id: interaction_id}, request)
-       when is_binary(interaction_id) do
-    case interaction_store(request).fetch_interaction(interaction_id) do
-      {:ok, %Interaction{} = interaction} ->
-        {:ok, interaction}
-
-      {:ok, nil} ->
-        {:error, :interaction_not_found}
-
-      {:error, _reason} ->
-        {:error, :interaction_lookup_failed}
-    end
-  end
-
-  defp fetch_interaction(_authorization_code, _request), do: {:error, :interaction_not_found}
-
-  defp fetch_optional_interaction(
-         %Token{interaction_id: interaction_id} = authorization_code,
-         request
-       )
-       when is_binary(interaction_id),
-       do: fetch_interaction(authorization_code, request)
-
-  defp fetch_optional_interaction(%Token{}, _request), do: {:ok, nil}
-
-  defp interaction_nonce(%Interaction{} = interaction), do: interaction.nonce
-  defp interaction_nonce(nil), do: nil
-
-  defp resolve_interaction_auth_time(%Interaction{
-         max_age: max_age,
-         auth_time_requested: auth_time_requested,
-         auth_time: auth_time
-       }) do
-    if is_integer(max_age) or auth_time_requested do
-      case auth_time do
-        %DateTime{} = value -> {:ok, value}
-        _other -> {:error, :missing_interaction_auth_time}
-      end
-    else
-      {:ok, nil}
-    end
-  end
-
-  defp resolve_interaction_auth_time(nil), do: {:ok, nil}
-
-  defp resolve_claims(%Token{} = authorization_code, %Client{} = client, request) do
-    resolver = Dependencies.fetch!(request).account_resolver
-
-    context = %{
-      client_id: client.client_id,
-      scopes: authorization_code.scopes,
-      interaction_id: authorization_code.interaction_id
-    }
-
-    with {:ok, account} <- resolver.resolve_account(authorization_code.account_id, context),
-         {:ok, %Claims{} = claims} <- resolver.build_claims(account, context) do
-      {:ok, claims}
-    else
-      {:error, _reason} -> {:error, :claims_resolution_failed}
-    end
-  end
-
-  defp fetch_signing_key(request) do
-    case key_store(request).fetch_active_signing_key() do
-      {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
-      when is_binary(private_jwk) and is_binary(alg) ->
-        {:ok, key}
-
-      {:ok, nil} ->
-        {:error, :signing_key_not_found}
-
-      {:ok, _key} ->
-        {:error, :invalid_signing_key}
-
-      {:error, _reason} ->
-        {:error, :signing_key_lookup_failed}
-    end
-  end
-
   @doc false
   def emit_failure(%Error{} = error, params, request, %Dependencies{} = dependencies),
-    do: request |> Dependencies.attach(dependencies) |> then(&emit_failure(error, params, &1))
-
-  def emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
-    metadata = failure_metadata(error, params, request)
-    emitter(request).emit(:authorization_code, :replay_detected, %{}, metadata)
-    emitter(request).emit(:token_exchange, :failed, %{}, metadata)
-  end
-
-  def emit_failure(%Error{} = error, params, request) do
-    emitter(request).emit(:token_exchange, :failed, %{}, failure_metadata(error, params, request))
-  end
-
-  defp failure_metadata(%Error{} = error, params, request) do
-    request
-    |> request_client_id()
-    |> then(fn client_id ->
-      %{
-        client_id: client_id,
-        reason_code: error.reason_code,
-        error: error.error,
-        grant_type: params["grant_type"]
-      }
-    end)
-  end
-
-  defp request_client_id(request) do
-    params = Map.get(request, :params, Map.get(request, "params", request))
-    normalize_optional_string(params["client_id"])
-  end
-
-  defp emitter(request), do: Dependencies.fetch!(request).observability_emitter
+    do: GrantObservability.emit_failure(error, params, request, dependencies)
 
   defp pkce_verifier_matches?(verifier, challenge) when is_binary(challenge) do
     calculated_challenge =
@@ -1170,70 +999,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   defp ciba_authorization_store(request),
     do: Dependencies.fetch!(request).ciba_authorization_store
 
-  defp interaction_store(request), do: Dependencies.fetch!(request).interaction_store
-
-  defp key_store(request), do: Dependencies.fetch!(request).key_store
-
   @spec now(map()) :: DateTime.t()
   defp now(request), do: Dependencies.fetch!(request).now.()
-
-  defp maybe_format_refresh_token(%Client{} = client, %Token{} = authorization_code, request) do
-    if issue_refresh_token?(client, authorization_code) do
-      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
-    else
-      nil
-    end
-  end
-
-  defp issue_refresh_token?(%Client{} = client, %Token{} = authorization_code) do
-    "refresh_token" in client.allowed_grant_types and
-      refresh_scope_policy_allows?(authorization_code.scopes)
-  end
-
-  defp refresh_scope_policy_allows?(scopes) when is_list(scopes) do
-    "offline_access" in scopes
-  end
-
-  defp build_access_token(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         issued_at,
-         formatted_refresh_token,
-         issuance_context,
-         request
-       ) do
-    family_id = if formatted_refresh_token, do: formatted_refresh_token.token_hash
-
-    access_token = %Token{
-      token_type: :access_token,
-      family_id: family_id,
-      generation: 0,
-      client_id: client.client_id,
-      account_id: authorization_code.account_id,
-      interaction_id: authorization_code.interaction_id,
-      consent_grant_id: authorization_code.consent_grant_id,
-      sid: authorization_code.sid,
-      scopes: authorization_code.scopes,
-      audience: authorization_code.audience,
-      cnf: issuance_context.cnf,
-      issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
-    }
-
-    # The retained compatibility helper delegates issuance to the focused owner.
-    # TokenIssuer resolves the effective
-    # format (per-client override -> server default -> :jwt) and returns the raw
-    # token plus its hash. Re-point `%Token{}.token_hash` to the signer's hash so
-    # introspection and revocation work regardless of issued format while preserving
-    # the internal `{%Token{}, raw}` tuple.
-    case TokenIssuer.issue_access(access_token, client, Dependencies.fetch!(request)) do
-      {:ok, raw_access_token, token_hash} ->
-        {%Token{access_token | token_hash: token_hash}, raw_access_token}
-
-      {:error, %Error{} = error} ->
-        {:error, error}
-    end
-  end
 
   defp persist_device_authorization_grant(
          %DeviceAuthorizationState{} = device_authorization,
@@ -1319,40 +1086,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   defp maybe_append_failure_audit(
-         %Error{reason_code: reason_code},
+         error,
          %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization,
+         authorization,
          %Dependencies{} = dependencies
-       )
-       when reason_code in [:device_authorization_client_mismatch, :device_authorization_consumed] do
-    GrantObservability.poll_failure_audit_event(
-      %Error{reason_code: reason_code},
-      client,
-      device_authorization
-    )
-    |> GrantPersistence.append_poll_failure_audit(dependencies)
-
-    :ok
-  end
-
-  defp maybe_append_failure_audit(
-         %Error{reason_code: reason_code},
-         %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization,
-         %Dependencies{} = dependencies
-       )
-       when reason_code in [:ciba_authorization_client_mismatch, :ciba_authorization_consumed] do
-    GrantObservability.poll_failure_audit_event(
-      %Error{reason_code: reason_code},
-      client,
-      ciba_authorization
-    )
-    |> GrantPersistence.append_poll_failure_audit(dependencies)
-
-    :ok
-  end
-
-  defp maybe_append_failure_audit(_error, _client, _authorization_code, _request), do: :ok
+       ),
+       do:
+         GrantObservability.append_poll_failure_audit(error, client, authorization, dependencies)
 
   defp load_authorization_code(request, code_hash) do
     case token_store(request).fetch_authorization_code(code_hash) do
@@ -1370,21 +1110,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
            "Unable to load authorization code",
            :authorization_code_lookup_failed
          )}
-    end
-  end
-
-  defp token_format_options(request, token_type) do
-    dependencies = Dependencies.fetch!(request)
-
-    generator =
-      case token_type do
-        :access_token -> dependencies.access_token_generator || dependencies.token_generator
-        :refresh_token -> dependencies.refresh_token_generator || dependencies.token_generator
-      end
-
-    case generator do
-      nil -> []
-      generator -> [token_generator: generator]
     end
   end
 
