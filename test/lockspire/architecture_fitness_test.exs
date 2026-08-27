@@ -59,21 +59,26 @@ defmodule Lockspire.ArchitectureFitnessTest do
     refute function_exported?(Lockspire.TestRepo, :record_dpop_proof, 1)
   end
 
-  test "Repository delegates every signing-key storage behavior to its aggregate" do
+  test "Repository is a behavior-complete facade without aggregate Ecto ownership" do
     ast = parse!(Path.expand("../../lib/lockspire/storage/ecto/repository.ex", __DIR__))
 
-    for {function, arity} <- Lockspire.Storage.KeyStore.behaviour_info(:callbacks) do
-      assert function_exported?(Lockspire.Storage.Ecto.Repository, function, arity)
-
-      assert ast_contains?(ast, &signing_key_store_call?(&1, function)),
-             "Repository must delegate #{function}/#{arity} to SigningKeyStore"
+    for behavior <- repository_behaviors(),
+        {function, arity} <- behavior.behaviour_info(:callbacks) do
+      assert function_exported?(Lockspire.Storage.Ecto.Repository, function, arity),
+             "Repository must export #{inspect(behavior)} callback #{function}/#{arity}"
     end
 
     refute ast_contains?(ast, fn
-             {:__aliases__, _, [:Lockspire, :Storage, :Ecto, :SigningKeyRecord]} -> true
-             _ -> false
+             {:import, _, [{:__aliases__, _, [:Ecto, :Query]} | _]} ->
+               true
+
+             {:__aliases__, _, [:Lockspire, :Storage, :Ecto, module]} ->
+               String.ends_with?(Atom.to_string(module), "Record")
+
+             _ ->
+               false
            end),
-           "Repository must not own signing-key record queries or lifecycle transitions"
+           "Repository must not own aggregate Ecto queries, records, or lifecycle transitions"
   end
 
   test "protocol does not depend on delivery or operator facades" do
@@ -207,18 +212,25 @@ defmodule Lockspire.ArchitectureFitnessTest do
       remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], function) or
         remote_call_to?(node, [:Repository], function)
 
-  defp signing_key_store_call?(node, function),
-    do:
-      remote_call_to?(
-        node,
-        [:EctoSigningKeyStore],
-        function
-      ) or
-        remote_call_to?(
-          node,
-          [:Lockspire, :Storage, :Ecto, :Repository, :SigningKeyStore],
-          function
-        )
+  defp repository_behaviors do
+    [
+      Lockspire.Storage.ClientStore,
+      Lockspire.Storage.InteractionStore,
+      Lockspire.Storage.ConsentStore,
+      Lockspire.Storage.TokenStore,
+      Lockspire.Storage.KeyStore,
+      Lockspire.Storage.PushedAuthorizationRequestStore,
+      Lockspire.Storage.DeviceAuthorizationStore,
+      Lockspire.Storage.CibaAuthorizationStore,
+      Lockspire.Storage.DpopReplayStore,
+      Lockspire.Storage.ServerPolicyStore,
+      Lockspire.Storage.LogoutStore,
+      Lockspire.Storage.UsedJtiStore,
+      Lockspire.Storage.InitialAccessTokenStore,
+      Lockspire.Storage.TransactionStore,
+      Lockspire.Storage.AuditStore
+    ]
+  end
 
   defp remote_call_to?(
          {{:., _, [{:__aliases__, _, module}, function]}, _, _args},

@@ -30,7 +30,8 @@ Token, logout, initial-access-token, and signing-key lifecycles now have focused
 - Extracted token lifecycle and atomic refresh/code handling into `Repository.TokenStore`.
 - Extracted logout propagation and initial-access-token persistence into their respective aggregate stores.
 - Extracted all signing-key reads, FAPI readiness checks, filters, private-material stripping, and locked publish/activate/retire transitions into `Repository.SigningKeyStore`.
-- Added an architecture fitness assertion that every `KeyStore` callback remains exported by Repository, delegates to the signing-key aggregate, and does not reintroduce `SigningKeyRecord` ownership.
+- Removed the inherited dead token/logout/IAT helper block and moved generic expiry pruning into `Repository.PruningStore` so Repository is a forwarding facade only.
+- Added an architecture fitness assertion that every declared persistence callback remains exported while Repository imports no `Ecto.Query` and aliases no aggregate `*Record` schema.
 
 ## Security Properties Preserved
 
@@ -40,8 +41,7 @@ Token, logout, initial-access-token, and signing-key lifecycles now have focused
 
 ## Verification
 
-- `mix test test/lockspire/storage/repository_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/architecture_fitness_test.exs` — 38 tests, 0 failures.
-- `mix test test/lockspire/storage/repository_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/storage/ecto/repository_logout_propagation_test.exs test/lockspire/protocol/initial_access_token_test.exs test/lockspire/protocol/refresh_exchange_test.exs` — 62 tests, 0 failures.
+- `mix test test/lockspire/storage/repository_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/storage/ecto/repository_logout_propagation_test.exs test/lockspire/protocol/initial_access_token_test.exs test/lockspire/protocol/refresh_exchange_test.exs test/lockspire/architecture_fitness_test.exs` — 69 tests, 0 failures.
 - `mix compile --warnings-as-errors` — passed.
 
 ## Deviations from Plan
