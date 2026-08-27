@@ -13,6 +13,14 @@ config :clean_room_confidential_client,
          "clean-room-client-ephemeral-secret-0123456789"
        )
 
+config :clean_room_confidential_client,
+       :provider_issuer,
+       System.get_env("CLEAN_ROOM_PROVIDER_ISSUER", "http://127.0.0.1:4100/lockspire")
+
+config :clean_room_confidential_client,
+       :client_origin,
+       System.get_env("CLEAN_ROOM_CLIENT_ORIGIN", "http://127.0.0.1:4101")
+
 config :clean_room_confidential_client, CleanRoomClientWeb.Endpoint,
   url: [host: "127.0.0.1"],
   adapter: Bandit.PhoenixAdapter,

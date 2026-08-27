@@ -90,4 +90,19 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
     refute output =~ "phase133-dpop-private-key-sentinel"
     refute output =~ "phase133-dpop-proof-sentinel"
   end
+
+  @tag :clean_room_stress
+  test "two complete package-clean journeys allocate isolated origins and signal teardown is deterministic" do
+    assert {concurrent, 0} =
+             System.cmd("python3", [@runner, "--verify-concurrent-origins"],
+               stderr_to_stdout: true
+             )
+
+    assert concurrent =~ "concurrent real journeys complete"
+
+    assert {signal, 0} =
+             System.cmd("python3", [@runner, "--verify-signal-cleanup"], stderr_to_stdout: true)
+
+    assert signal =~ "signal cleanup complete"
+  end
 end

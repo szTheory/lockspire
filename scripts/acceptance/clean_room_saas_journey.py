@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -39,11 +40,26 @@ from package_input import (
     verify_child,
 )
 from redaction import Redactor, SentinelSet
+from processes import allocate_loopback_port
 
 
 PROVIDER_ORIGIN = "http://127.0.0.1:4100"
 CLIENT_ORIGIN = "http://127.0.0.1:4101"
 MAX_REDIRECTS = 8
+ACTIVE_REDACTOR: Redactor | None = None
+
+
+class JourneyInterrupted(Exception):
+    """Raised from SIGINT/SIGTERM so the runner reaches its teardown path."""
+
+
+def interruption_handler(signum: int, _frame: object) -> None:
+    raise JourneyInterrupted(f"clean-room journey interrupted by signal {signum}")
+
+
+def register_secret(value: object) -> None:
+    if ACTIVE_REDACTOR is not None:
+        ACTIVE_REDACTOR.register(value)
 
 
 class Browser:
@@ -82,6 +98,8 @@ class Browser:
                 parsed_cookie = SimpleCookie()
                 parsed_cookie.load(value)
                 self.cookies.update({key: morsel.value for key, morsel in parsed_cookie.items()})
+                for morsel in parsed_cookie.values():
+                    register_secret(morsel.value)
 
         return {"status": response.status, "headers": {key.lower(): value for key, value in pairs}, "body": raw.decode("utf-8", "replace")}
 
@@ -97,6 +115,10 @@ def redirect(response: dict[str, object], label: str) -> str:
     value = response["headers"].get("location")  # type: ignore[union-attr]
     if not isinstance(value, str):
         raise AssertionError(f"{label}: missing redirect location")
+    for key, values in parse_qs(urlparse(value).query).items():
+        if key in {"code", "id_token", "access_token", "refresh_token"}:
+            for item in values:
+                register_secret(item)
     return value
 
 
@@ -128,7 +150,7 @@ def start_process(child: Path, environment: dict[str, str], log_path: Path) -> s
     handle = log_path.open("wb")
     process = subprocess.Popen(
         ("mix", "run", "--no-halt"), cwd=child, env=environment, stdin=subprocess.DEVNULL,
-        stdout=handle, stderr=subprocess.STDOUT, close_fds=True,
+        stdout=handle, stderr=subprocess.STDOUT, close_fds=True, start_new_session=True,
     )
     process._clean_room_log_handle = handle  # type: ignore[attr-defined]
     return process
@@ -138,11 +160,11 @@ def stop_process(process: subprocess.Popen[bytes] | None) -> None:
     if process is None:
         return
     if process.poll() is None:
-        process.terminate()
+        os.killpg(process.pid, signal.SIGTERM)
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            process.kill()
+            os.killpg(process.pid, signal.SIGKILL)
             process.wait(timeout=5)
     process._clean_room_log_handle.close()  # type: ignore[attr-defined]
 
@@ -161,13 +183,15 @@ def drop_child_database(child: Path, environment: dict[str, str], label: str) ->
         raise AssertionError(f"{label} database teardown failed")
 
 
-def prepare_client(run_root: Path, database_url: str, handoff: Path) -> tuple[Path, dict[str, str]]:
+def prepare_client(run_root: Path, database_url: str, handoff: Path, client_port: int) -> tuple[Path, dict[str, str]]:
     package, _ = build_package(run_root)
     child = copy_child_template("confidential_client", run_root, package)
     environment = locked_environment(child, "confidential_client", dependency_cache_root(run_root))
     environment.update({
         "DATABASE_URL": database_url,
-        "PORT": "4101",
+        "PORT": str(client_port),
+        "CLEAN_ROOM_PROVIDER_ISSUER": PROVIDER_ORIGIN + "/lockspire",
+        "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
         "CLEAN_ROOM_BEARER_SECRET_PATH": str(handoff / "bearer-client.secret"),
         "CLEAN_ROOM_DPOP_SECRET_PATH": str(handoff / "dpop-client.secret"),
         "CLEAN_ROOM_CLIENT_CIPHER_SECRET": "clean-room-client-ephemeral-secret-0123456789",
@@ -187,8 +211,65 @@ def dependency_cache_root(run_root: Path) -> Path:
     return configured
 
 
-def assert_redaction_guard(redactor: Redactor) -> None:
-    raw = f"Authorization: Bearer {redactor.sentinels.access_token}\nCookie: {redactor.sentinels.cookie}"
+def configure_origins() -> tuple[int, int]:
+    """Allocate one distinct loopback origin pair for this real journey."""
+    global PROVIDER_ORIGIN, CLIENT_ORIGIN
+
+    provider_port = allocate_loopback_port(set())
+    client_port = allocate_loopback_port({provider_port})
+    PROVIDER_ORIGIN = f"http://127.0.0.1:{provider_port}"
+    CLIENT_ORIGIN = f"http://127.0.0.1:{client_port}"
+    return provider_port, client_port
+
+
+def clean_room_database_url(role: str) -> str:
+    user = os.environ.get("CLEAN_ROOM_DB_USER", "postgres")
+    password = os.environ.get("CLEAN_ROOM_DB_PASSWORD", "postgres")
+    host = os.environ.get("CLEAN_ROOM_DB_HOST", "127.0.0.1")
+    port = os.environ.get("CLEAN_ROOM_DB_PORT", "5432")
+    return f"postgres://{user}:{password}@{host}:{port}/lockspire_clean_room_{role}_{uuid.uuid4().hex}"
+
+
+def verify_concurrent_real_journeys() -> int:
+    commands = [[sys.executable, "-u", str(Path(__file__).resolve()), "--only", "happy_path"] for _ in range(2)]
+    processes = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True) for command in commands]
+
+    for process in processes:
+        output, _ = process.communicate(timeout=300)
+        if process.returncode != 0 or "cleanup complete" not in output:
+            raise AssertionError("concurrent clean-room journey did not complete its isolated teardown")
+
+    print("concurrent real journeys complete")
+    return 0
+
+
+def verify_signal_cleanup() -> int:
+    command = [sys.executable, "-u", str(Path(__file__).resolve()), "--only", "happy_path", "--hold-after-ready", "60"]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    deadline = time.monotonic() + 300
+    output = ""
+
+    while time.monotonic() < deadline:
+        line = process.stdout.readline() if process.stdout is not None else ""
+        output += line
+        if "readiness complete" in line:
+            process.terminate()
+            remaining, _ = process.communicate(timeout=30)
+            output += remaining
+            if process.returncode != 130 or "cleanup complete" not in output:
+                raise AssertionError("signal interruption did not complete clean-room teardown")
+            print("signal cleanup complete")
+            return 0
+        if process.poll() is not None:
+            break
+
+    process.kill()
+    process.communicate()
+    raise AssertionError("signal cleanup probe never reached readiness")
+
+
+def assert_redaction_guard(redactor: Redactor, generated_secret: str | None = None) -> None:
+    raw = f"Authorization: Bearer {generated_secret or redactor.sentinels.access_token}\nCookie: {redactor.sentinels.cookie}"
 
     try:
         redactor.assert_safe(raw)
@@ -202,6 +283,20 @@ def assert_redaction_guard(redactor: Redactor) -> None:
     if re.search(r"(?i)(authorization|cookie)\s*[:=]\s*(?!\[REDACTED\])\S", safe):
         raise AssertionError("redaction left a raw sensitive header value")
     print("redaction sentinel failure contained")
+
+
+def register_handoff_secrets(handoff: Path) -> None:
+    for filename in ("bearer-client.secret", "dpop-client.secret"):
+        register_secret((handoff / filename).read_text().strip())
+
+
+def decoded_secret_payload(body: object) -> dict[str, object]:
+    payload = json.loads(str(body))
+    if not isinstance(payload, dict):
+        raise AssertionError("expected JSON object payload")
+    for key in ("access_token", "refresh_token", "id_token", "token", "code"):
+        register_secret(payload.get(key))
+    return payload
 
 
 def scan_evidence(run_root: Path, redactor: Redactor) -> None:
@@ -300,6 +395,7 @@ def provider_path(endpoint: str) -> str:
 def lifecycle_code(provider: Browser, *, scopes: str = "openid profile read:billing offline_access", resource: str = PROVIDER_ORIGIN + "/api/billing") -> tuple[str, str]:
     state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
     verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    register_secret(verifier)
     redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
     authorize = provider.request("GET", "/lockspire/authorize?" + urlencode({
         "response_type": "code", "client_id": "clean-room-bearer", "redirect_uri": redirect_uri,
@@ -354,12 +450,12 @@ def run_lifecycle(handoff: Path) -> None:
         "code_verifier": verifier, "resource": PROVIDER_ORIGIN + "/api/billing",
     }, authorization)
     require_status(issued, 200, "lifecycle authorization code exchange")
-    original_refresh = json.loads(str(issued["body"])).get("refresh_token")
+    original_refresh = decoded_secret_payload(issued["body"]).get("refresh_token")
     if not isinstance(original_refresh, str):
         raise AssertionError("lifecycle authorization code exchange omitted refresh token")
     rotated = provider.request("POST", provider_path(discovery["token_endpoint"]), {"grant_type": "refresh_token", "refresh_token": original_refresh}, authorization)
     require_status(rotated, 200, "lifecycle refresh rotation")
-    rotated_refresh = json.loads(str(rotated["body"])).get("refresh_token")
+    rotated_refresh = decoded_secret_payload(rotated["body"]).get("refresh_token")
     if not isinstance(rotated_refresh, str) or rotated_refresh == original_refresh:
         raise AssertionError("lifecycle refresh rotation did not return a distinct refresh token")
     print("refresh rotation complete")
@@ -387,7 +483,7 @@ def token_exchange(provider: Browser, discovery: dict[str, object], authorizatio
         "code_verifier": verifier, "resource": resource,
     }, authorization)
     require_status(response, 200, "negative authorization code exchange")
-    return json.loads(str(response["body"]))
+    return decoded_secret_payload(response["body"])
 
 
 def assert_challenge(response: dict[str, object], status: int, error: str, label: str) -> None:
@@ -596,37 +692,55 @@ def browser_authorize_dpop(client: Browser, provider: Browser, authorization_loc
 
 
 def main(argv: list[str]) -> int:
+    global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop"), required=True)
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop"))
+    parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
+    parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.verify_concurrent_origins:
+        return verify_concurrent_real_journeys()
+    if args.verify_signal_cleanup:
+        return verify_signal_cleanup()
+    if not args.only:
+        parser.error("at least one --only journey group is required")
+    signal.signal(signal.SIGINT, interruption_handler)
+    signal.signal(signal.SIGTERM, interruption_handler)
     redactor = Redactor(SentinelSet.for_run())
+    ACTIVE_REDACTOR = redactor
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
         run_root = Path(temporary)
-        provider_database = f"postgres://postgres:postgres@127.0.0.1/lockspire_clean_room_provider_{uuid.uuid4().hex}"
-        client_database = f"postgres://postgres:postgres@127.0.0.1/lockspire_clean_room_client_{uuid.uuid4().hex}"
+        provider_port, client_port = configure_origins()
+        provider_database = clean_room_database_url("provider")
+        client_database = clean_room_database_url("client")
         try:
             probe_environment()
             assert_redaction_guard(redactor)
             handoff = run_root / "handoff"
             provider_child = prepare_provider(
-                run_root, provider_database, port=4100, cache_root=dependency_cache_root(run_root)
+                run_root, provider_database, port=provider_port, cache_root=dependency_cache_root(run_root)
             )
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
-            provider_environment.update({"DATABASE_URL": provider_database, "PORT": "4100", "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
+            provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             run_child_command(provider_child, provider_environment, "ecto.create")
             run_child_command(provider_child, provider_environment, "ecto.migrate")
             run_child_command(provider_child, provider_environment, "compile", "--warnings-as-errors")
             run_child_command(provider_child, provider_environment, "lockspire.verify")
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
-            client_child, client_environment = prepare_client(run_root, client_database, handoff)
+            register_handoff_secrets(handoff)
+            assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
+            client_child, client_environment = prepare_client(run_root, client_database, handoff, client_port)
             provider_process = start_process(provider_child, provider_environment, run_root / "provider.log")
             client_process = start_process(client_child, client_environment, run_root / "client.log")
             wait_ready(PROVIDER_ORIGIN)
             wait_ready(CLIENT_ORIGIN)
             print("readiness complete")
+            if args.hold_after_ready:
+                time.sleep(args.hold_after_ready)
             if "happy_path" in args.only:
                 run_happy()
             if "boundary" in args.only:
@@ -639,6 +753,9 @@ def main(argv: list[str]) -> int:
                 provider_process = run_dpop(provider_child, provider_environment, provider_process, run_root)
             scan_evidence(run_root, redactor)
             return 0
+        except JourneyInterrupted:
+            print("clean-room journey interrupted", file=sys.stderr)
+            return 130
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(redactor.text(error), file=sys.stderr)
             return 1

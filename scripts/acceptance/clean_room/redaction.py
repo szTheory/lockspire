@@ -57,6 +57,12 @@ class Redactor:
         self.sentinels = sentinels
         self._values = tuple(sorted(sentinels.values(), key=len, reverse=True))
 
+    def register(self, value: object) -> None:
+        """Register a real per-run credential before it can enter retained evidence."""
+        if not isinstance(value, str) or not value:
+            return
+        self._values = tuple(sorted(set((*self._values, value)), key=len, reverse=True))
+
     def text(self, value: object) -> str:
         scrubbed = str(value)
 
@@ -107,6 +113,13 @@ def self_test() -> None:
     }
     rendered = f"{redactor.text(raw_free_text)}\n{redactor.structured(raw_structured)}"
     redactor.assert_safe(rendered)
+
+    generated_secret = secrets.token_urlsafe(32)
+    redactor.register(generated_secret)
+    rendered_generated = redactor.text(f"Authorization: Bearer {generated_secret}")
+    redactor.assert_safe(rendered_generated)
+    if generated_secret in rendered_generated:
+        raise RuntimeError("registered generated credential remained in evidence")
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:

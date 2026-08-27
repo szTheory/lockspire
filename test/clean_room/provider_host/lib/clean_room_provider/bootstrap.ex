@@ -1,20 +1,20 @@
 defmodule CleanRoomProvider.Bootstrap do
   @moduledoc false
 
-  @bearer_redirect "http://127.0.0.1:4101/oauth/callback"
-  @dpop_redirect "http://127.0.0.1:4101/oauth/dpop/callback"
-  @billing_resource "http://127.0.0.1:4100/api/billing"
-
   def provision!(handoff_dir) do
     {:ok, %{key: key}} = Lockspire.Admin.generate_key(:sig)
     {:ok, _} = Lockspire.Admin.publish_key(key.id)
     {:ok, _} = Lockspire.Admin.activate_key(key.id)
 
     {:ok, bearer} =
-      Lockspire.Clients.register_client(client_attrs("clean-room-bearer", @bearer_redirect))
+      Lockspire.Clients.register_client(
+        client_attrs("clean-room-bearer", client_origin() <> "/oauth/callback")
+      )
 
     {:ok, dpop} =
-      Lockspire.Clients.register_client(client_attrs("clean-room-dpop", @dpop_redirect))
+      Lockspire.Clients.register_client(
+        client_attrs("clean-room-dpop", client_origin() <> "/oauth/dpop/callback")
+      )
 
     {:ok, _} = Lockspire.Admin.update_client(dpop.client.client_id, %{dpop_policy: :dpop})
     {:ok, %{dpop_policy: :dpop}} = Lockspire.Admin.get_client(dpop.client.client_id)
@@ -40,7 +40,12 @@ defmodule CleanRoomProvider.Bootstrap do
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
-      metadata: %{resource_indicators: [@billing_resource, "http://127.0.0.1:4100/api/other"]}
+      metadata: %{
+        resource_indicators: [
+          provider_origin() <> "/api/billing",
+          provider_origin() <> "/api/other"
+        ]
+      }
     }
   end
 
@@ -50,4 +55,7 @@ defmodule CleanRoomProvider.Bootstrap do
     File.write!(path, secret, [:binary])
     File.chmod!(path, 0o600)
   end
+
+  defp provider_origin, do: System.get_env("CLEAN_ROOM_PROVIDER_ORIGIN", "http://127.0.0.1:4100")
+  defp client_origin, do: System.get_env("CLEAN_ROOM_CLIENT_ORIGIN", "http://127.0.0.1:4101")
 end

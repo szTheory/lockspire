@@ -19,7 +19,8 @@ defmodule CleanRoomProviderWeb.Router do
   pipeline :lockspire_protected_api do
     plug(Lockspire.Plug.VerifyToken,
       scopes: ["read:billing"],
-      audience: "http://127.0.0.1:4100/api/billing"
+      audience:
+        System.get_env("CLEAN_ROOM_PROVIDER_ORIGIN", "http://127.0.0.1:4100") <> "/api/billing"
     )
 
     plug(Lockspire.Plug.EnforceSenderConstraints)
