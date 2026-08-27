@@ -8,8 +8,13 @@ defmodule CleanRoomProviderWeb.Router do
     plug(:protect_from_forgery)
   end
 
-  pipeline(:api, do: plug(:accepts, ["json"]))
-  pipeline(:require_operator, do: plug(:send_resp, :forbidden, "operator authorization required"))
+  pipeline :api do
+    plug(:accepts, ["json"])
+  end
+
+  pipeline :require_operator do
+    plug(CleanRoomProviderWeb.OperatorAuthorization)
+  end
 
   pipeline :lockspire_protected_api do
     plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api")

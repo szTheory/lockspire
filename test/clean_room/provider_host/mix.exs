@@ -10,11 +10,11 @@ defmodule CleanRoomProvider.MixProject do
     ]
   end
 
-  def application, do: [extra_applications: [:logger]]
+  def application, do: [mod: {CleanRoomProvider.Application, []}, extra_applications: [:logger]]
 
   defp deps do
     [
-      {:lockspire, path: "vendor/lockspire"},
+      {:lockspire, path: "vendor/lockspire", runtime: false},
       {:phoenix, "== 1.8.13"},
       {:phoenix_live_view, "== 1.2.10"},
       {:ecto_sql, "== 3.13.5"},

@@ -9,8 +9,8 @@ defmodule Lockspire.Install.Migrations do
 
   alias Lockspire.Install.Manifest
   alias Lockspire.Install.FileTransaction
+  alias Lockspire.Install.Assets
 
-  @default_source_root Application.app_dir(:lockspire, "priv/repo/migrations")
   @test_source_root_key {__MODULE__, :test_source_root}
   @migration_pattern ~r/^(?<version>\d+)_(?<name>[A-Za-z0-9_]+)\.exs$/
 
@@ -80,7 +80,7 @@ defmodule Lockspire.Install.Migrations do
   @doc false
   @spec source_root() :: String.t()
   def source_root do
-    Process.get(@test_source_root_key, @default_source_root)
+    Process.get(@test_source_root_key, Assets.path("priv/repo/migrations"))
   end
 
   @doc """

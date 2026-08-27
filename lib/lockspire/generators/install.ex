@@ -4,9 +4,8 @@ defmodule Lockspire.Generators.Install do
   """
 
   alias Lockspire.Generators.Templates
+  alias Lockspire.Install.Assets
   alias Lockspire.Install.OperationPlan
-
-  @template_root Application.app_dir(:lockspire, "priv/templates/lockspire.install")
 
   @spec run(keyword()) :: :ok
   def run(opts \\ []) do
@@ -85,7 +84,7 @@ defmodule Lockspire.Generators.Install do
     destination = destination || destination_path(template, assigns)
 
     rendered_body =
-      @template_root
+      Assets.path("priv/templates/lockspire.install")
       |> Path.join(template.template)
       |> EEx.eval_file(assigns: assigns)
 
