@@ -152,7 +152,7 @@ defmodule Lockspire.DocumentationContractTest do
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/protocol/refresh_exchange.ex",
+      "lib/lockspire/protocol/token_exchange/internal/refresh_exchange.ex",
       "{:error, :reuse_detected}"
     )
 

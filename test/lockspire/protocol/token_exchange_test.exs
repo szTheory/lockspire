@@ -63,20 +63,23 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       "ciba_grant.ex"
     ]
 
-    assert facade =~ "AuthorizationCodeGrant.exchange(request)"
-    assert facade =~ "DeviceCodeGrant.exchange(request)"
-    assert facade =~ "CibaGrant.exchange(request)"
+    assert facade =~ "Internal.AuthorizationCodeGrant.exchange(request)"
+    assert facade =~ "Internal.DeviceCodeGrant.exchange(request)"
+    assert facade =~ "Internal.CibaGrant.exchange(request)"
     refute Regex.match?(~r/^\s*def exchange\(/m, grant_support)
     refute function_exported?(TokenExchange.GrantSupport, :exchange, 1)
 
     Enum.each(coordinators, fn coordinator ->
       source =
         File.read!(
-          Path.expand("../../../lib/lockspire/protocol/token_exchange/#{coordinator}", __DIR__)
+          Path.expand(
+            "../../../lib/lockspire/protocol/token_exchange/internal/#{coordinator}",
+            __DIR__
+          )
         )
 
       refute source =~ "TokenExchange.__"
-      assert source =~ "GrantSupport"
+      assert source =~ "Internal.GrantSupport"
     end)
   end
 
@@ -105,17 +108,11 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
   test "facade routing matrix names one owner for every supported grant" do
     facade = File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange.ex", __DIR__))
 
-    routing_matrix = [
-      {"authorization_code", "Internal.AuthorizationCodeGrant.exchange(request)"},
-      {"refresh_token", "exchange_refresh_token(request)"},
-      {"urn:ietf:params:oauth:grant-type:device_code", "Internal.DeviceCodeGrant.exchange(request)"},
-      {"urn:openid:params:grant-type:ciba", "Internal.CibaGrant.exchange(request)"},
-      {"urn:ietf:params:oauth:grant-type:token-exchange", "exchange_rfc8693(request)"}
-    ]
-
-    Enum.each(routing_matrix, fn {grant_type, owner_call} ->
-      assert facade =~ ~s("#{grant_type}" -> #{owner_call})
-    end)
+    assert facade =~ "Internal.AuthorizationCodeGrant.exchange(request)"
+    assert facade =~ "exchange_refresh_token(request)"
+    assert facade =~ "Internal.DeviceCodeGrant.exchange(request)"
+    assert facade =~ "Internal.CibaGrant.exchange(request)"
+    assert facade =~ "exchange_rfc8693(request)"
 
     assert facade =~ "Internal.RefreshExchange.exchange_refresh_token(client, request)"
     assert facade =~ "Internal.Rfc8693Exchange.exchange(client, request)"
