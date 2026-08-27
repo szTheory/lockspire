@@ -10,7 +10,8 @@ defmodule CleanRoomConfidentialClient.MixProject do
     ]
   end
 
-  def application, do: [mod: {CleanRoomClient.Application, []}, extra_applications: [:logger, :crypto, :inets]]
+  def application,
+    do: [mod: {CleanRoomClient.Application, []}, extra_applications: [:logger, :crypto, :inets]]
 
   defp deps do
     [
