@@ -6,6 +6,14 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
 
   @moduletag :integration
 
+  defmodule AllowTokenExchange do
+    def validate(_context), do: :ok
+  end
+
+  defmodule DenyTokenExchange do
+    def validate(_context), do: {:error, :policy_denied}
+  end
+
   test "authorization-code facade preserves token, audit, telemetry, and replay contracts", %{
     events: events
   } do
@@ -115,5 +123,55 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
 
     assert {:ok, _token} =
              Repository.fetch_active_access_token(TokenFormatter.hash_token(ciba_access_token))
+  end
+
+  test "RFC 8693 facade retains allowed issuance and policy denial" do
+    secret = "characterization-rfc-secret"
+
+    assert {:ok, client} =
+             create_client(
+               "characterization-rfc-client",
+               :client_secret_basic,
+               secret,
+               ["urn:ietf:params:oauth:grant-type:token-exchange"],
+               %{access_token_format: :opaque}
+             )
+
+    now = DateTime.utc_now()
+
+    assert {:ok, _subject_token} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token("characterization-rfc-subject"),
+               token_type: :access_token,
+               client_id: client.client_id,
+               account_id: "subject-123",
+               scopes: ["email"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 300, :second)
+             })
+
+    request = %{
+      params: %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange",
+        "subject_token" => "characterization-rfc-subject",
+        "scope" => "email"
+      },
+      authorization: basic_auth(client.client_id, secret),
+      opts: [
+        client_store: Repository,
+        token_store: Repository,
+        key_store: Repository,
+        token_exchange_validator: AllowTokenExchange
+      ]
+    }
+
+    assert {:ok, %TokenExchange.Success{access_token: exchanged_token}} =
+             TokenExchange.exchange(request)
+
+    assert {:ok, _persisted} =
+             Repository.fetch_active_access_token(TokenFormatter.hash_token(exchanged_token))
+
+    assert {:error, %TokenExchange.Error{error: "access_denied", reason_code: :access_denied}} =
+             TokenExchange.exchange(put_in(request, [:opts, :token_exchange_validator], DenyTokenExchange))
   end
 end
