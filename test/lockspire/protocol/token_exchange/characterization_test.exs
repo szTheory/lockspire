@@ -24,4 +24,8 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
 
     TokenExchangeCharacterization.assert_authorization_code_replay(journey, replay, events)
   end
+
+  test "the remaining stable facade grants retain their observable contracts", %{events: events} do
+    TokenExchangeCharacterization.assert_remaining_grant_contracts(events)
+  end
 end
