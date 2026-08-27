@@ -1,13 +1,14 @@
-defmodule Lockspire.Protocol.TokenExchange.DeviceCodeGrant do
+defmodule Lockspire.Protocol.TokenExchange.Internal.DeviceCodeGrant do
   @moduledoc false
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
-  alias Lockspire.Protocol.TokenEndpointDPoP
-  alias Lockspire.Protocol.TokenExchange
-  alias Lockspire.Protocol.TokenExchange.GrantSupport
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
+  alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange(map()) :: TokenExchange.result()
+  @spec exchange(map()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(request) when is_map(request) do
     params = params(request)
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
@@ -17,7 +18,7 @@ defmodule Lockspire.Protocol.TokenExchange.DeviceCodeGrant do
          {:ok, %DeviceAuthorization{} = device_authorization} <-
            GrantSupport.fetch_device_authorization_for_exchange(params, client, request),
          {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request),
-         {:ok, %TokenExchange.Success{} = success} <-
+         {:ok, %Success{} = success} <-
            GrantSupport.redeem_device_authorization(
              client,
              device_authorization,
@@ -26,7 +27,7 @@ defmodule Lockspire.Protocol.TokenExchange.DeviceCodeGrant do
            ) do
       {:ok, success}
     else
-      {:error, %TokenExchange.Error{} = error} ->
+      {:error, %Error{} = error} ->
         GrantSupport.emit_failure(error, params, request)
         {:error, error}
     end
