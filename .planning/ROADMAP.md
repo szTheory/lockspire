@@ -121,17 +121,17 @@ Plans:
   4. Internal collaborators use explicit dependency bundles without capability sniffing or runtime environment branching, while existing injection remains compatible.
   5. Characterization proof preserves endpoint responses, errors, tokens, audit events, and telemetry for authorization-code, refresh, device, CIBA, and token-exchange flows.
 
-**Plans**: 3/9 plans executed
+**Plans**: 5/9 plans executed
 
 Plans:
 
 - [x] 135-01-PLAN.md — Characterize five token flows and critical storage atomicity before movement.
 - [x] 135-02-PLAN.md — Establish Ecto support and extract audited client/policy aggregates.
-- [ ] 135-03-PLAN.md — Extract interaction, consent, and atomic PAR aggregates.
+- [x] 135-03-PLAN.md — Extract interaction, consent, and atomic PAR aggregates.
 - [ ] 135-04-PLAN.md — Extract device, CIBA, and durable replay-security aggregates.
 - [ ] 135-05-PLAN.md — Complete token, logout, IAT, and signing-key aggregate ownership.
 - [x] 135-06-PLAN.md — Normalize legacy token injection into an explicit dependency bundle.
-- [ ] 135-07-PLAN.md — Extract client authentication, resource selection, and polling collaborators.
+- [x] 135-07-PLAN.md — Extract client authentication, resource selection, and polling collaborators.
 - [ ] 135-08-PLAN.md — Extract issuance, persistence, and observability and compose all five grants.
 - [ ] 135-09-PLAN.md — Enforce cohesion/compatibility fitness and run the complete project gate.
 
@@ -185,6 +185,6 @@ Plans:
 | 132. Public API and Resource-Server Truth | 4/4 | Complete    | 2026-08-26 |
 | 133. Clean-Room SaaS Journey | 6/6 | Complete    | 2026-08-27 |
 | 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
-| 135. Cohesive Internals | 3/9 | In Progress|  |
+| 135. Cohesive Internals | 5/9 | In Progress|  |
 | 136. Static Analysis and Sustainable Proof | 0/TBD | Not started | - |
 | 137. CI, Conformance, and Release Proof | 0/TBD | Not started | - |

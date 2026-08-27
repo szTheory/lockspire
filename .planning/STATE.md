@@ -5,15 +5,15 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 135
 current_phase_name: Cohesive Internals
 status: planning
-stopped_at: Completed 135-06-PLAN.md
-last_updated: "2026-08-27T19:17:00.000Z"
+stopped_at: Completed 135-03 and 135-07 plans
+last_updated: "2026-08-27T19:26:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: Completed Phase 135 Wave 2 storage and token dependency boundaries
+last_activity_desc: Completed Phase 135 Wave 3 authorization-session and token decision collaborators
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 39
-  completed_plans: 31
+  completed_plans: 33
   percent: 43
 ---
 
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 135 — Cohesive Internals
-Plan: Wave 2 complete
+Plan: Wave 3 complete
 Status: Executing
-Last activity: 2026-08-27 — Completed storage delegate tracer and explicit token dependency bundle
+Last activity: 2026-08-27 — Completed interaction/consent/PAR and auth/resource/polling collaborators
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 85%
 
 ## Accumulated Context
 
