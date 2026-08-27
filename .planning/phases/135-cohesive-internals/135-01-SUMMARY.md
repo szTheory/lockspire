@@ -21,7 +21,7 @@ key-files:
 
 # Phase 135 Plan 01: Token and Storage Characterization Summary
 
-The public token facade now has a focused contract spine for authorization-code-to-refresh rotation, device/CIBA polling outcomes, RFC 8693 allow/deny outcomes, durable token state, replay audit/telemetry, and the mounted authorization-code replay response.
+The public token facade now has a focused contract spine for all five grants: stable-facade outcomes, durable state, authorization-code replay audit/telemetry, and mounted OAuth success/error wire responses.
 
 ## Completed Tasks
 
@@ -32,13 +32,14 @@ The public token facade now has a focused contract spine for authorization-code-
 
 `mix test test/lockspire/protocol/token_exchange/characterization_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/web/token_controller_test.exs --trace`
 
-Result: 24 tests, 0 failures.
+Result: 26 tests, 0 failures.
 
 ## Decisions Made
 
 - Kept characterization helpers observability-focused; they reuse `TokenExchangeCase` rather than reproducing grant implementation.
 - Refresh rotation uses a distinct deterministic generator from initial issuance, matching the production uniqueness contract for token hashes.
 - Storage characterizations assert state after a failed DCR audit append and guided key transitions rather than private repository call order.
+- Mounted endpoint coverage retains status, cache headers, and JSON contracts for authorization-code, refresh, device, CIBA, and RFC 8693 flows.
 
 ## Deviations from Plan
 
