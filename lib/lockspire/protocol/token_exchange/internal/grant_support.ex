@@ -3,6 +3,16 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   Shared implementation for secure token endpoint grant redemption.
   """
 
+  @compile {:nowarn_unused_function,
+            [
+              {:fetch_presented_auth_req_id, 1},
+              {:record_ciba_poll, 3},
+              {:map_ciba_poll_outcome, 2},
+              {:fetch_presented_device_code, 1},
+              {:record_device_poll, 3},
+              {:map_device_poll_outcome, 2}
+            ]}
+
   alias Lockspire.Config
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
@@ -14,6 +24,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
   alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.IdToken
@@ -115,24 +126,29 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         request,
         %Dependencies{} = dependencies
       ),
-      do:
-        request
-        |> Dependencies.attach(dependencies)
-        |> then(&fetch_device_authorization_for_exchange(params, client, &1))
+      do: fetch_device_poll_result(params, client, request, dependencies)
 
   @doc false
   def fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
-    with {:ok, device_code} <- fetch_presented_device_code(params),
-         {:ok, poll_outcome} <- record_device_poll(device_code, client, request) do
-      case map_device_poll_outcome(poll_outcome, client) do
-        {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization,
-         %Client{} = audit_client} ->
-          maybe_append_failure_audit(error, audit_client, device_authorization, request)
-          {:error, error}
+    with {:ok, dependencies} <- LegacyOptions.from_request(request, :device_code) do
+      fetch_device_authorization_for_exchange(params, client, request, dependencies)
+    end
+  end
 
-        other ->
-          other
-      end
+  defp fetch_device_poll_result(
+         params,
+         %Client{} = client,
+         request,
+         %Dependencies{} = dependencies
+       ) do
+    case GrantPolling.fetch_device(params, client, dependencies) do
+      {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization,
+       %Client{} = audit_client} ->
+        maybe_append_failure_audit(error, audit_client, device_authorization, request)
+        {:error, error}
+
+      other ->
+        other
     end
   end
 
@@ -143,28 +159,28 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         request,
         %Dependencies{} = dependencies
       ),
-      do:
-        request
-        |> Dependencies.attach(dependencies)
-        |> then(&fetch_ciba_authorization_for_exchange(params, client, &1))
+      do: fetch_ciba_poll_result(params, client, request, dependencies)
 
   @doc false
   def fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
-    with {:ok, auth_req_id} <- fetch_presented_auth_req_id(params),
-         {:ok, poll_outcome} <- record_ciba_poll(auth_req_id, client, request) do
-      case map_ciba_poll_outcome(poll_outcome, client) do
-        {:error, %Error{} = error, %CibaAuthorization{} = ciba_authorization,
-         %Client{} = audit_client} ->
-          maybe_append_failure_audit(error, audit_client, ciba_authorization, request)
-          {:error, error}
-
-        other ->
-          other
-      end
+    with {:ok, dependencies} <- LegacyOptions.from_request(request, :ciba) do
+      fetch_ciba_authorization_for_exchange(params, client, request, dependencies)
     end
   end
 
-  defp fetch_presented_auth_req_id(params) do
+  defp fetch_ciba_poll_result(params, %Client{} = client, request, %Dependencies{} = dependencies) do
+    case GrantPolling.fetch_ciba(params, client, dependencies) do
+      {:error, %Error{} = error, %CibaAuthorization{} = ciba_authorization,
+       %Client{} = audit_client} ->
+        maybe_append_failure_audit(error, audit_client, ciba_authorization, request)
+        {:error, error}
+
+      other ->
+        other
+    end
+  end
+
+  def fetch_presented_auth_req_id(params) do
     case normalize_optional_string(params["auth_req_id"]) do
       auth_req_id when is_binary(auth_req_id) ->
         {:ok, auth_req_id}
@@ -174,7 +190,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp record_ciba_poll(auth_req_id, %Client{} = client, request) do
+  def record_ciba_poll(auth_req_id, %Client{} = client, request) do
     auth_req_id_hash = Policy.hash_token(auth_req_id)
 
     case ciba_authorization_store(request).record_ciba_poll(
@@ -196,22 +212,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :approved_ready,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         _client
-       ),
-       do: {:ok, ciba_authorization}
+  def map_ciba_poll_outcome(
+        %{
+          result: :approved_ready,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        _client
+      ),
+      do: {:ok, ciba_authorization}
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :pending,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :pending,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -221,13 +237,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :slow_down,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :slow_down,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -237,13 +253,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :denied,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :denied,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -253,13 +269,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :expired,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :expired,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -269,13 +285,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :client_mismatch,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :client_mismatch,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      invalid_grant(
        "The CIBA authorization is invalid for this client",
@@ -283,7 +299,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(%{result: :client_mismatch}, _client) do
+  def map_ciba_poll_outcome(%{result: :client_mismatch}, _client) do
     {:error,
      invalid_grant(
        "The CIBA authorization is invalid for this client",
@@ -291,13 +307,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      )}
   end
 
-  defp map_ciba_poll_outcome(
-         %{
-           result: :consumed,
-           ciba_authorization: %CibaAuthorization{} = ciba_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_ciba_poll_outcome(
+        %{
+          result: :consumed,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      invalid_grant(
        "The CIBA authorization has already been redeemed",
@@ -305,11 +321,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), ciba_authorization, client}
   end
 
-  defp map_ciba_poll_outcome(%{result: :invalid_grant}, _client) do
+  def map_ciba_poll_outcome(%{result: :invalid_grant}, _client) do
     {:error, invalid_grant("The CIBA authorization is invalid", :ciba_authorization_not_found)}
   end
 
-  defp fetch_presented_device_code(params) do
+  def fetch_presented_device_code(params) do
     case normalize_optional_string(params["device_code"]) do
       device_code when is_binary(device_code) ->
         {:ok, device_code}
@@ -319,7 +335,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp record_device_poll(device_code, %Client{} = client, request) do
+  def record_device_poll(device_code, %Client{} = client, request) do
     device_code_hash = Policy.hash_token(device_code)
 
     case device_authorization_store(request).record_device_poll(
@@ -341,22 +357,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :approved_ready,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         _client
-       ),
-       do: {:ok, device_authorization}
+  def map_device_poll_outcome(
+        %{
+          result: :approved_ready,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        _client
+      ),
+      do: {:ok, device_authorization}
 
-  defp map_device_poll_outcome(
-         %{
-           result: :pending,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :pending,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -366,13 +382,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :slow_down,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :slow_down,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -382,13 +398,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :denied,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :denied,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -398,13 +414,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :expired,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :expired,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      oauth_error(
        400,
@@ -414,13 +430,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :client_mismatch,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :client_mismatch,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      invalid_grant(
        "The device authorization is invalid for this client",
@@ -428,7 +444,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :client_mismatch}, _client) do
+  def map_device_poll_outcome(%{result: :client_mismatch}, _client) do
     {:error,
      invalid_grant(
        "The device authorization is invalid for this client",
@@ -436,13 +452,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      )}
   end
 
-  defp map_device_poll_outcome(
-         %{
-           result: :consumed,
-           device_authorization: %DeviceAuthorizationState{} = device_authorization
-         },
-         %Client{} = client
-       ) do
+  def map_device_poll_outcome(
+        %{
+          result: :consumed,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
     {:error,
      invalid_grant(
        "The device authorization has already been redeemed",
@@ -450,7 +466,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
      ), device_authorization, client}
   end
 
-  defp map_device_poll_outcome(%{result: :invalid_grant}, _client) do
+  def map_device_poll_outcome(%{result: :invalid_grant}, _client) do
     {:error,
      invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
   end
