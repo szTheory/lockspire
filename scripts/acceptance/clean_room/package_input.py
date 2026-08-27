@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
+import hashlib
+import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -20,6 +24,29 @@ ROLES = ("provider_host", "confidential_client")
 
 class PackageInputError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class PackageSource:
+    kind: str
+    value: str | None = None
+    expected_sha256: str | None = None
+
+
+@dataclass(frozen=True)
+class PackageIdentity:
+    kind: str
+    version: str
+    sha256: str
+
+    def safe_receipt(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "source": self.kind,
+            "package": "lockspire",
+            "version": self.version,
+            "sha256": self.sha256,
+        }
 
 
 def require_command(command: str) -> None:
@@ -102,6 +129,97 @@ def build_package(run_root: Path) -> tuple[Path, tuple[str, ...]]:
     )
 
     return package_root.resolve(strict=True), inventory(package_root)
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def exact_version(value: str) -> str:
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?", value):
+        raise PackageInputError("Lockspire package version must be exact")
+    return value
+
+
+def package_version(package_root: Path) -> str:
+    match = re.search(r'^\s*version:\s*"([^"]+)"', (package_root / "mix.exs").read_text(), re.MULTILINE)
+    if match is None:
+        raise PackageInputError("unpacked Lockspire package has no exact version")
+    return exact_version(match.group(1))
+
+
+def unpack_hex_tarball(tarball: Path, package_root: Path) -> None:
+    """Ask the installed Hex archive to validate and unpack its own package format."""
+    require_command("elixir")
+    package_root.mkdir(mode=0o700, parents=True, exist_ok=False)
+    expression = """
+Mix.start()
+Mix.Local.append_archives()
+tarball = File.read!(Enum.at(System.argv(), 0))
+destination = Enum.at(System.argv(), 1) |> String.to_charlist()
+case :mix_hex_tarball.unpack(tarball, destination) do
+  {:ok, _metadata} -> :ok
+  {:error, reason} -> raise "Hex package validation failed: #{inspect(reason)}"
+end
+"""
+    run(("elixir", "-e", expression, str(tarball), str(package_root)), cwd=PROJECT_ROOT)
+
+
+def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str | None) -> tuple[Path, str, str]:
+    resolved = path.resolve(strict=True)
+    allowed = allowed_root.resolve(strict=True)
+    if not resolved.is_file() or resolved.is_symlink():
+        raise PackageInputError("Lockspire package tar must be a regular file")
+    if resolved.parent != allowed and allowed not in resolved.parents:
+        raise PackageInputError("Lockspire package tar escapes its declared root")
+    match = re.fullmatch(r"lockspire-([0-9A-Za-z.-]+)\.tar", resolved.name)
+    if match is None:
+        raise PackageInputError("Lockspire package tar has an unexpected name")
+    version = exact_version(match.group(1))
+    checksum = sha256(resolved)
+    if expected_sha256 is not None:
+        if not re.fullmatch(r"[0-9a-f]{64}", expected_sha256) or checksum != expected_sha256:
+            raise PackageInputError("Lockspire package tar checksum mismatch")
+    return resolved, version, checksum
+
+
+def prepare_package(run_root: Path, source: PackageSource | None = None) -> tuple[Path, tuple[str, ...], PackageIdentity]:
+    source = source or PackageSource("checkout")
+    package_root = run_root / "package" / "lockspire"
+
+    if source.kind == "checkout":
+        package_root, entries = build_package(run_root)
+        version = package_version(package_root)
+        tarball = PROJECT_ROOT / f"lockspire-{version}.tar"
+        checksum = sha256(tarball) if tarball.is_file() else "unavailable"
+        return package_root, entries, PackageIdentity("checkout", version, checksum)
+
+    if source.kind == "hex":
+        version = exact_version(source.value or "")
+        downloads = run_root / "package" / "downloads"
+        downloads.mkdir(mode=0o700, parents=True, exist_ok=True)
+        tarball = downloads / f"lockspire-{version}.tar"
+        run(("mix", "hex.package", "fetch", "lockspire", version, "--output", str(downloads)), cwd=run_root)
+        allowed_root = downloads
+    elif source.kind == "tar":
+        tarball = Path(source.value or "")
+        configured_root = os.environ.get("LOCKSPIRE_PACKAGE_ROOT")
+        allowed_root = Path(configured_root) if configured_root else PROJECT_ROOT
+    else:
+        raise PackageInputError("unknown Lockspire package source")
+
+    tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
+    unpack_hex_tarball(tarball, package_root)
+    unpacked_version = package_version(package_root)
+    if unpacked_version != version:
+        raise PackageInputError("Lockspire package filename and metadata versions differ")
+
+    entries = inventory(package_root)
+    return package_root.resolve(strict=True), entries, PackageIdentity(source.kind, version, checksum)
 
 
 def assert_below(path: Path, root: Path, label: str) -> Path:
@@ -236,11 +354,29 @@ def update_locks() -> None:
             shutil.copy2(child_root / "mix.lock", template / "mix.lock")
 
 
+def package_source(package_tar: Path | None, hex_version: str | None, expected_sha256: str | None = None) -> PackageSource:
+    if package_tar is not None and hex_version is not None:
+        raise PackageInputError("choose either a local package tar or exact Hex version")
+    if package_tar is not None:
+        return PackageSource("tar", str(package_tar), expected_sha256)
+    if hex_version is not None:
+        if expected_sha256 is not None:
+            raise PackageInputError("--package-sha256 applies only to a local package tar")
+        return PackageSource("hex", exact_version(hex_version))
+    if expected_sha256 is not None:
+        raise PackageInputError("--package-sha256 requires --package-tar")
+    return PackageSource("checkout")
+
+
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--update-locks", action="store_true")
     parser.add_argument("--cache-root", type=Path)
+    parser.add_argument("--package-tar", type=Path)
+    parser.add_argument("--package-sha256")
+    parser.add_argument("--hex-version")
+    parser.add_argument("--inspect", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -248,6 +384,16 @@ def main(argv: Sequence[str]) -> int:
     args = parse_args(argv)
 
     try:
+        if args.package_tar and args.hex_version:
+            raise PackageInputError("choose either --package-tar or --hex-version")
+
+        if args.inspect:
+            source = package_source(args.package_tar, args.hex_version, args.package_sha256)
+            with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-inspect-") as temporary:
+                _root, _entries, identity = prepare_package(Path(temporary), source)
+            print(json.dumps(identity.safe_receipt(), sort_keys=True, separators=(",", ":")))
+            return 0
+
         if args.update_locks:
             update_locks()
             return 0

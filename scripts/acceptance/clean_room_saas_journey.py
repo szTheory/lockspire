@@ -33,9 +33,10 @@ from build_client import patch_jose_record_extractors
 from build_provider import prepare_provider, run_child_command
 from package_input import (
     PackageInputError,
-    build_package,
     copy_child_template,
     locked_environment,
+    package_source,
+    prepare_package,
     probe_environment,
     verify_child,
 )
@@ -229,9 +230,14 @@ def drop_child_database(child: Path, environment: dict[str, str], label: str) ->
         raise AssertionError(f"{label} database teardown failed")
 
 
-def prepare_client(run_root: Path, database_url: str, handoff: Path, client_port: int) -> tuple[Path, dict[str, str]]:
-    package, _ = build_package(run_root)
-    child = copy_child_template("confidential_client", run_root, package)
+def prepare_client(
+    run_root: Path,
+    database_url: str,
+    handoff: Path,
+    client_port: int,
+    package_root: Path,
+) -> tuple[Path, dict[str, str]]:
+    child = copy_child_template("confidential_client", run_root, package_root)
     environment = locked_environment(child, "confidential_client", dependency_cache_root(run_root))
     environment.update({
         "DATABASE_URL": database_url,
@@ -848,6 +854,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-run-root-ownership", action="store_true", help=argparse.SUPPRESS)
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument("--package-tar", type=Path)
+    sources.add_argument("--hex-version")
+    parser.add_argument("--package-sha256")
     args = parser.parse_args(argv)
     if args.verify_concurrent_origins:
         return verify_concurrent_real_journeys()
@@ -886,9 +896,19 @@ def main(argv: list[str]) -> int:
             assert_owned_run_root(run_root, run_root_owner)
             probe_environment()
             assert_redaction_guard(redactor)
+            selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
+            package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
+            print(
+                "package provenance verified "
+                f"({package_identity.kind} lockspire-{package_identity.version} sha256:{package_identity.sha256})"
+            )
             handoff = run_root / "handoff"
             provider_child = prepare_provider(
-                run_root, provider_database, port=provider_port, cache_root=dependency_cache_root(run_root)
+                run_root,
+                provider_database,
+                package_root=package_root,
+                port=provider_port,
+                cache_root=dependency_cache_root(run_root),
             )
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
@@ -899,7 +919,9 @@ def main(argv: list[str]) -> int:
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
-            client_child, client_environment = prepare_client(run_root, client_database, handoff, client_port)
+            client_child, client_environment = prepare_client(
+                run_root, client_database, handoff, client_port, package_root
+            )
             provider_process = start_process(provider_child, provider_environment, run_root / "provider.log")
             client_process = start_process(client_child, client_environment, run_root / "client.log")
             wait_ready(PROVIDER_ORIGIN)

@@ -201,12 +201,14 @@ def prepare_provider(
     run_root: Path,
     database_url: str,
     *,
+    package_root: Path | None = None,
     install: bool = True,
     port: int = 4100,
     cache_root: Path | None = None,
 ) -> Path:
     probe_environment()
-    package_root, _ = build_package(run_root)
+    if package_root is None:
+        package_root, _ = build_package(run_root)
     child = copy_child_template("provider_host", run_root, package_root)
     # The checked-in lib tree is an overlay source, not pre-existing host code:
     # retain only the manifest/lock in the fresh child so the public installer
