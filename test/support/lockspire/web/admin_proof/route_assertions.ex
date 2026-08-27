@@ -7,7 +7,8 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
 
   @operate_sources %{
     "/interactions" => "lib/lockspire/web/live/admin/interactions_live/index.ex",
-    "/device_authorizations" => "lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
+    "/device_authorizations" =>
+      "lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
     "/logouts" => "lib/lockspire/web/live/admin/logout_deliveries_live/index.ex"
   }
 
@@ -43,7 +44,8 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
   def assert_operator_boundary! do
     guide = File.read!(Paths.operator_admin_doc())
 
-    assert guide =~ "Lockspire owns protocol and operator state after the request reaches its LiveViews"
+    assert guide =~
+             "Lockspire owns protocol and operator state after the request reaches its LiveViews"
 
     assert guide =~
              "the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
@@ -63,7 +65,15 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
       refute source =~ ~r/phx-(click|submit)=/
       refute source =~ "<table"
 
-      for command <- ["Retry now", "Discard", "Approve", "Deny", "Logout now", "Run worker", "Pause worker"] do
+      for command <- [
+            "Retry now",
+            "Discard",
+            "Approve",
+            "Deny",
+            "Logout now",
+            "Run worker",
+            "Pause worker"
+          ] do
         refute Regex.match?(~r/\b#{Regex.escape(command)}\b/i, source)
       end
     end
