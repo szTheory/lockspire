@@ -486,28 +486,64 @@ defmodule Lockspire.Web.TokenControllerTest do
 
   test "POST /token preserves CIBA success and pending OAuth response contracts" do
     secret = "controller-ciba-secret"
-    {:ok, client} = register_device_client("controller-ciba", secret, grant_types: ["urn:openid:params:grant-type:ciba"])
+
+    {:ok, client} =
+      register_device_client("controller-ciba", secret,
+        grant_types: ["urn:openid:params:grant-type:ciba"]
+      )
+
     now = DateTime.utc_now()
 
     {:ok, approved} =
-      Repository.put_ciba_authorization(CibaAuthorization.issue(%{client_id: client.client_id, auth_req_id: "controller-ciba-approved", scopes: ["email", "profile"]}, now: now))
+      Repository.put_ciba_authorization(
+        CibaAuthorization.issue(
+          %{
+            client_id: client.client_id,
+            auth_req_id: "controller-ciba-approved",
+            scopes: ["email", "profile"]
+          },
+          now: now
+        )
+      )
 
-    assert {:ok, _} = Repository.transition_ciba_authorization(approved.auth_req_id_hash, [:pending], %{status: :approved, approved_at: now, subject_id: "subject-public"})
+    assert {:ok, _} =
+             Repository.transition_ciba_authorization(approved.auth_req_id_hash, [:pending], %{
+               status: :approved,
+               approved_at: now,
+               subject_id: "subject-public"
+             })
 
     success_conn =
-      build_conn(:post, "/token", %{"grant_type" => "urn:openid:params:grant-type:ciba", "auth_req_id" => "controller-ciba-approved"})
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:openid:params:grant-type:ciba",
+        "auth_req_id" => "controller-ciba-approved"
+      })
       |> put_req_header("authorization", basic_auth(client.client_id, secret))
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert success_conn.status == 200
     assert get_resp_header(success_conn, "cache-control") == ["no-store"]
-    assert %{"access_token" => _, "token_type" => "Bearer"} = Jason.decode!(success_conn.resp_body)
+
+    assert %{"access_token" => _, "token_type" => "Bearer"} =
+             Jason.decode!(success_conn.resp_body)
 
     {:ok, _pending} =
-      Repository.put_ciba_authorization(CibaAuthorization.issue(%{client_id: client.client_id, auth_req_id: "controller-ciba-pending", scopes: ["email"]}, now: now))
+      Repository.put_ciba_authorization(
+        CibaAuthorization.issue(
+          %{
+            client_id: client.client_id,
+            auth_req_id: "controller-ciba-pending",
+            scopes: ["email"]
+          },
+          now: now
+        )
+      )
 
     pending_conn =
-      build_conn(:post, "/token", %{"grant_type" => "urn:openid:params:grant-type:ciba", "auth_req_id" => "controller-ciba-pending"})
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:openid:params:grant-type:ciba",
+        "auth_req_id" => "controller-ciba-pending"
+      })
       |> put_req_header("authorization", basic_auth(client.client_id, secret))
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
@@ -518,23 +554,48 @@ defmodule Lockspire.Web.TokenControllerTest do
 
   test "POST /token preserves RFC 8693 success and invalid-subject response contracts" do
     secret = "controller-rfc-secret"
-    {:ok, client} = register_device_client("controller-rfc", secret, grant_types: ["urn:ietf:params:oauth:grant-type:token-exchange"])
+
+    {:ok, client} =
+      register_device_client("controller-rfc", secret,
+        grant_types: ["urn:ietf:params:oauth:grant-type:token-exchange"]
+      )
+
     now = DateTime.utc_now()
     subject = "controller-rfc-subject"
 
-    assert {:ok, _} = Repository.store_token(%Token{token_hash: TokenFormatter.hash_token(subject), token_type: :access_token, client_id: client.client_id, account_id: "subject-public", scopes: ["email"], issued_at: now, expires_at: DateTime.add(now, 300, :second)})
+    assert {:ok, _} =
+             Repository.store_token(%Token{
+               token_hash: TokenFormatter.hash_token(subject),
+               token_type: :access_token,
+               client_id: client.client_id,
+               account_id: "subject-public",
+               scopes: ["email"],
+               issued_at: now,
+               expires_at: DateTime.add(now, 300, :second)
+             })
 
     success_conn =
-      build_conn(:post, "/token", %{"grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange", "subject_token" => subject, "scope" => "email"})
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange",
+        "subject_token" => subject,
+        "scope" => "email"
+      })
       |> put_req_header("authorization", basic_auth(client.client_id, secret))
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert success_conn.status == 200
     assert get_resp_header(success_conn, "cache-control") == ["no-store"]
-    assert %{"access_token" => _, "issued_token_type" => "urn:ietf:params:oauth:token-type:access_token"} = Jason.decode!(success_conn.resp_body)
+
+    assert %{
+             "access_token" => _,
+             "issued_token_type" => "urn:ietf:params:oauth:token-type:access_token"
+           } = Jason.decode!(success_conn.resp_body)
 
     error_conn =
-      build_conn(:post, "/token", %{"grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange", "subject_token" => "missing"})
+      build_conn(:post, "/token", %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange",
+        "subject_token" => "missing"
+      })
       |> put_req_header("authorization", basic_auth(client.client_id, secret))
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
@@ -1000,7 +1061,10 @@ defmodule Lockspire.Web.TokenControllerTest do
       redirect_uris: [],
       allowed_scopes: ["openid", "email", "profile", "offline_access"],
       allowed_grant_types:
-        Keyword.get(opts, :grant_types, ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"]),
+        Keyword.get(opts, :grant_types, [
+          "urn:ietf:params:oauth:grant-type:device_code",
+          "refresh_token"
+        ]),
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
       pkce_required: true,

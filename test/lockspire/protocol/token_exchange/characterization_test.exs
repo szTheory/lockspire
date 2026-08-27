@@ -56,7 +56,11 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
              create_device_authorization(client,
                device_code: "characterization-device-code",
                user_code: "CHAR-DEV1",
-               transition: %{status: :approved, approved_at: DateTime.utc_now(), subject_id: "subject-123"}
+               transition: %{
+                 status: :approved,
+                 approved_at: DateTime.utc_now(),
+                 subject_id: "subject-123"
+               }
              )
 
     assert {:ok, %TokenExchange.Success{access_token: access_token}} =
@@ -75,7 +79,8 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
                ]
              })
 
-    assert {:ok, _token} = Repository.fetch_active_access_token(TokenFormatter.hash_token(access_token))
+    assert {:ok, _token} =
+             Repository.fetch_active_access_token(TokenFormatter.hash_token(access_token))
 
     assert {:ok, pending_device} =
              create_device_authorization(client,
@@ -102,7 +107,11 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
              create_ciba_authorization(client,
                auth_req_id: "characterization-ciba-code",
                scopes: ["email", "profile"],
-               transition: %{status: :approved, approved_at: DateTime.utc_now(), subject_id: "subject-123"}
+               transition: %{
+                 status: :approved,
+                 approved_at: DateTime.utc_now(),
+                 subject_id: "subject-123"
+               }
              )
 
     assert {:ok, %TokenExchange.Success{access_token: ciba_access_token}} =
@@ -172,6 +181,8 @@ defmodule Lockspire.Protocol.TokenExchange.CharacterizationTest do
              Repository.fetch_active_access_token(TokenFormatter.hash_token(exchanged_token))
 
     assert {:error, %TokenExchange.Error{error: "access_denied", reason_code: :access_denied}} =
-             TokenExchange.exchange(put_in(request, [:opts, :token_exchange_validator], DenyTokenExchange))
+             TokenExchange.exchange(
+               put_in(request, [:opts, :token_exchange_validator], DenyTokenExchange)
+             )
   end
 end

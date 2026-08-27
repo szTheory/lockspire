@@ -92,14 +92,16 @@ defmodule Lockspire.Storage.Ecto.Repository.CibaAuthorizationStore do
          _repo,
          _client_id,
          _now
-       ), do: outcome(:expired, record)
+       ),
+       do: outcome(:expired, record)
 
   defp evaluate_poll(
          %CibaAuthorizationRecord{status: :consumed} = record,
          _repo,
          _client_id,
          _now
-       ), do: outcome(:consumed, record)
+       ),
+       do: outcome(:consumed, record)
 
   defp evaluate_poll(%CibaAuthorizationRecord{status: :approved} = record, repo, _client_id, now) do
     if DateTime.compare(record.expires_at, now) != :gt,

@@ -76,8 +76,16 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
                "atomic-replayed-refresh",
                "atomic-refresh-client",
                now,
-               %Token{token_hash: "atomic-unused-refresh", token_type: :refresh_token, expires_at: DateTime.add(now, 300, :second)},
-               %Token{token_hash: "atomic-unused-access", token_type: :access_token, expires_at: DateTime.add(now, 300, :second)}
+               %Token{
+                 token_hash: "atomic-unused-refresh",
+                 token_type: :refresh_token,
+                 expires_at: DateTime.add(now, 300, :second)
+               },
+               %Token{
+                 token_hash: "atomic-unused-access",
+                 token_type: :access_token,
+                 expires_at: DateTime.add(now, 300, :second)
+               }
              )
 
     for hash <- ["atomic-replayed-refresh", "atomic-active-refresh", "atomic-active-access"] do
@@ -88,15 +96,26 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
   test "DCR replacement rolls back metadata and RAT when its audit event is invalid" do
     {:ok, %Lockspire.Domain.Client{} = client} =
       create_client("atomic-dcr-client", :client_secret_basic, "atomic-dcr-secret")
+
     original_rat = "original-rat-hash"
-    assert {:ok, client} = Repository.rotate_registration_access_token(client, original_rat, valid_audit(client))
+
+    assert {:ok, client} =
+             Repository.rotate_registration_access_token(
+               client,
+               original_rat,
+               valid_audit(client)
+             )
 
     assert {:error, _changeset} =
              Repository.replace_client_registration(
                client,
                %{client | name: "should-not-persist"},
                "replacement-rat-hash",
-               %{action: :dcr_management_updated, outcome: :succeeded, resource: %{type: :client, id: nil}}
+               %{
+                 action: :dcr_management_updated,
+                 outcome: :succeeded,
+                 resource: %{type: :client, id: nil}
+               }
              )
 
     assert {:ok, persisted} = Repository.fetch_client_by_id(client.client_id)
@@ -110,21 +129,31 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
 
     assert {:ok, upcoming} =
              Repository.publish_key(%SigningKey{
-               kid: "atomic-upcoming-key", kty: :RSA, alg: "RS256", use: :sig,
+               kid: "atomic-upcoming-key",
+               kty: :RSA,
+               alg: "RS256",
+               use: :sig,
                public_jwk: %{"kty" => "RSA", "kid" => "atomic-upcoming-key", "alg" => "RS256"},
-               private_jwk_encrypted: <<1>>, status: :upcoming
+               private_jwk_encrypted: <<1>>,
+               status: :upcoming
              })
 
     assert {:error, :not_published} = Repository.activate_signing_key(upcoming.id, now)
     assert {:ok, _published} = Repository.publish_signing_key(upcoming.id, now)
+
     assert {:ok, %{activated_key: %{status: :active}, retiring_key: %{status: :retiring}}} =
              Repository.activate_signing_key(upcoming.id, now)
+
     assert {:ok, %{status: :retired}} = Repository.retire_signing_key(active.id, now)
   end
 
   defp valid_audit(client) do
-    %{action: :dcr_management_updated, outcome: :succeeded,
+    %{
+      action: :dcr_management_updated,
+      outcome: :succeeded,
       actor: %{type: :self_registered_client, id: client.client_id},
-      resource: %{type: :client, id: client.client_id}, metadata: %{}}
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{}
+    }
   end
 end

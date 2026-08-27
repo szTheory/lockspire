@@ -145,21 +145,24 @@ defmodule Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore do
          _repo,
          _client_id,
          _now
-       ), do: outcome(:denied, record)
+       ),
+       do: outcome(:denied, record)
 
   defp evaluate_poll(
          %DeviceAuthorizationRecord{status: :expired} = record,
          _repo,
          _client_id,
          _now
-       ), do: outcome(:expired, record)
+       ),
+       do: outcome(:expired, record)
 
   defp evaluate_poll(
          %DeviceAuthorizationRecord{status: :consumed} = record,
          _repo,
          _client_id,
          _now
-       ), do: outcome(:consumed, record)
+       ),
+       do: outcome(:consumed, record)
 
   defp evaluate_poll(
          %DeviceAuthorizationRecord{status: :approved} = record,
