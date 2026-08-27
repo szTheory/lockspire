@@ -3,6 +3,8 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
 
   @tool Path.expand("../../scripts/publish/release_artifact.py", __DIR__)
   @publisher Path.expand("../../scripts/publish/publish_hex_idempotently.sh", __DIR__)
+  @uploader Path.expand("../../scripts/publish/upload_hex_artifact.exs", __DIR__)
+  @upload_fixture Path.expand("../support/hex_release_upload_fixture.py", __DIR__)
   @verifier Path.expand("../../scripts/publish/verify_install_truth.sh", __DIR__)
 
   setup do
@@ -18,7 +20,7 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     version = Mix.Project.config()[:version]
     tarball = Path.join(root, "lockspire-#{version}.tar")
     manifest = Path.join(root, "manifest.json")
-    File.write!(tarball, "deterministic-package-bytes")
+    create_valid_tarball!(tarball, version)
     source_sha = String.duplicate("a", 40)
 
     assert {_output, 0} =
@@ -65,7 +67,8 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert {message, 1} = verify_local(context)
     assert message =~ "release artifact"
 
-    File.write!(context.tarball, "deterministic-package-bytes")
+    original = Jason.decode!(File.read!(context.manifest))
+    File.write!(context.tarball, String.duplicate("x", original["artifact"]["bytes"]))
 
     assert {message, 1} =
              System.cmd(
@@ -128,16 +131,45 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
 
   test "publisher and verifier carry manifest identity into exact public HTTP proof" do
     publisher = File.read!(@publisher)
+    uploader = File.read!(@uploader)
     verifier = File.read!(@verifier)
 
     assert publisher =~ "release_artifact.py verify-local"
-    assert publisher =~ "cmp -s"
+    assert publisher =~ "upload_hex_artifact.exs \"$package_tar\""
     assert publisher =~ "release_artifact.py verify-hex"
+    assert uploader =~ "bytes = File.read!(tarball)"
+    assert uploader =~ ~s(Hex.API.Release.publish("hexpm", bytes)
+    refute publisher =~ "mix hex.publish --yes"
     assert verifier =~ "packages/lockspire/releases/$EXPECTED_VERSION"
     assert verifier =~ "--hex-version \"$EXPECTED_VERSION\""
     assert verifier =~ "--package-sha256 \"$EXPECTED_CHECKSUM\""
     assert verifier =~ "--only happy_path"
     refute verifier =~ "mix phx.new"
+  end
+
+  test "exact-artifact uploader sends the supplied tar bytes without rebuilding", context do
+    captured = Path.join(context.root, "captured-release.tar")
+
+    port =
+      Port.open(
+        {:spawn_executable, System.find_executable("python3")},
+        [:binary, :exit_status, args: [@upload_fixture, captured], line: 1024]
+      )
+
+    assert_receive {^port, {:data, {:eol, port_line}}}, 2_000
+    api_url = "http://127.0.0.1:#{String.trim(port_line)}"
+
+    assert {output, 0} =
+             System.cmd(
+               "elixir",
+               [@uploader, context.tarball],
+               env: [{"HEX_API_URL", api_url}, {"HEX_API_KEY", "fixture-key"}],
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "Exact release artifact accepted by Hex"
+    assert_receive {^port, {:exit_status, 0}}, 2_000
+    assert File.read!(captured) == File.read!(context.tarball)
   end
 
   defp verify_local(context) do
@@ -159,5 +191,18 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
 
   defp sha256(path) do
     :crypto.hash(:sha256, File.read!(path)) |> Base.encode16(case: :lower)
+  end
+
+  defp create_valid_tarball!(path, version) do
+    expression = """
+    Mix.start()
+    Mix.Local.append_archives()
+    metadata = %{name: "lockspire", version: Enum.at(System.argv(), 1)}
+    {:ok, %{tarball: tarball}} = :mix_hex_tarball.create(metadata, [{~c"mix.exs", "fixture"}])
+    File.write!(Enum.at(System.argv(), 0), tarball)
+    """
+
+    assert {_output, 0} =
+             System.cmd("elixir", ["-e", expression, path, version], stderr_to_stdout: true)
   end
 end

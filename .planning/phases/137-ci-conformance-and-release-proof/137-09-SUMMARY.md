@@ -12,9 +12,10 @@ manifest. Validation rejects unknown fields, malformed identities, substituted
 source revisions, and changed bytes before the protected publish boundary.
 
 The idempotent publisher verifies the reviewed tar and manifest before its Hex
-lookup. A first publication must reproduce byte-identical output from
-`mix hex.build`; a retry succeeds only when the exact release-specific Hex API
-checksum matches. Post-publish verification polls that same exact release,
+lookup. A first publication passes those already-verified bytes directly to the
+same `Hex.API.Release.publish/5` path used by the official Hex client, while
+documentation publication remains separate; a retry succeeds only when the
+exact release-specific Hex API checksum matches. Post-publish verification polls that same exact release,
 checks versioned HexDocs, and installs the public version with its expected
 checksum through the real clean-room SaaS happy-path journey.
 

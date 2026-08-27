@@ -17,13 +17,9 @@ local_checksum=$(jq -er '.artifact.sha256' "$manifest")
 [[ "$local_checksum" =~ ^[0-9a-f]{64}$ ]]
 
 release_response="$(mktemp)"
-build_dir=""
 
 cleanup() {
   rm -f "$release_response"
-  if [[ -n "$build_dir" && -d "$build_dir" ]]; then
-    rm -rf "$build_dir"
-  fi
 }
 
 trap cleanup EXIT
@@ -50,14 +46,8 @@ case "$http_status" in
     fi
     ;;
   404)
-    build_dir=$(mktemp -d)
-    rebuilt_tar="${build_dir}/$(basename "$package_tar")"
-    mix hex.build --output "$rebuilt_tar"
-    cmp -s "$package_tar" "$rebuilt_tar" || {
-      echo "Hex rebuild differs from the clean-room-proven artifact." >&2
-      exit 1
-    }
-    mix hex.publish --yes
+    elixir scripts/publish/upload_hex_artifact.exs "$package_tar"
+    mix hex.publish docs --yes
     ;;
   *)
     echo "Hex release lookup failed closed with HTTP ${http_status}." >&2

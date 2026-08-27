@@ -108,7 +108,7 @@ Before merging a Release Please PR for the root package, confirm this checked-in
 9. Confirm `docs/supported-surface.md` remains the canonical support contract and that this maintainer guide, `README`, and `SECURITY.md` only defer to it rather than creating a second support matrix.
 10. Let the guarded auto-merge workflow merge the reviewed Release Please PR, or merge it manually if the guard does not apply, and let the protected workflow run become the first authenticated evidence bucket.
 
-Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `mix release.preflight` and `mix hex.publish --yes` are trusted-workflow commands only; they belong to the protected `hex-publish` boundary, not to local maintainer folklore.
+Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `mix release.preflight` and the exact-tar Hex upload are release-workflow commands only; publication belongs to the protected `hex-publish` boundary, not to local maintainer folklore.
 
 ## Secrets and environment
 
@@ -144,7 +144,7 @@ Before merging a release PR, confirm:
 - `release-please-config.json` and `.release-please-manifest.json` still match the intended release policy
 - publish job still targets the protected `hex-publish` environment
 - trusted release workflow still runs `mix release.preflight`
-- trusted publish lane still runs `mix hex.publish --yes`
+- trusted publish lane passes the manifest-verified tar bytes directly to `Hex.API.Release.publish/5` and uses `mix hex.publish docs --yes` only for documentation
 - prepublish, protected publish, and postpublish jobs all carry the same verified SHA, manifest version, and tar checksum
 - retained release evidence contains only the manifest and bounded JSON receipts, never raw journey logs
 - public docs and `SECURITY.md` still defer to `docs/supported-surface.md`
