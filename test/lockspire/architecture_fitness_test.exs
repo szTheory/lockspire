@@ -59,6 +59,23 @@ defmodule Lockspire.ArchitectureFitnessTest do
     refute function_exported?(Lockspire.TestRepo, :record_dpop_proof, 1)
   end
 
+  test "Repository delegates every signing-key storage behavior to its aggregate" do
+    ast = parse!(Path.expand("../../lib/lockspire/storage/ecto/repository.ex", __DIR__))
+
+    for {function, arity} <- Lockspire.Storage.KeyStore.behaviour_info(:callbacks) do
+      assert function_exported?(Lockspire.Storage.Ecto.Repository, function, arity)
+
+      assert ast_contains?(ast, &signing_key_store_call?(&1, function)),
+             "Repository must delegate #{function}/#{arity} to SigningKeyStore"
+    end
+
+    refute ast_contains?(ast, fn
+             {:__aliases__, _, [:Lockspire, :Storage, :Ecto, :SigningKeyRecord]} -> true
+             _ -> false
+           end),
+           "Repository must not own signing-key record queries or lifecycle transitions"
+  end
+
   test "protocol does not depend on delivery or operator facades" do
     Enum.each(production_files(@protocol_root), fn path ->
       refute ast_contains?(parse!(path), &protocol_outer_reference?/1),
@@ -189,6 +206,19 @@ defmodule Lockspire.ArchitectureFitnessTest do
     do:
       remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], function) or
         remote_call_to?(node, [:Repository], function)
+
+  defp signing_key_store_call?(node, function),
+    do:
+      remote_call_to?(
+        node,
+        [:EctoSigningKeyStore],
+        function
+      ) or
+        remote_call_to?(
+          node,
+          [:Lockspire, :Storage, :Ecto, :Repository, :SigningKeyStore],
+          function
+        )
 
   defp remote_call_to?(
          {{:., _, [{:__aliases__, _, module}, function]}, _, _args},
