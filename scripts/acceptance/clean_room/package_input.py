@@ -31,7 +31,21 @@ def probe_environment() -> None:
     """Fail before child setup when a required clean-room boundary is unavailable."""
     require_command("mix")
     require_command("pg_isready")
-    run(("pg_isready", "-q"), cwd=PROJECT_ROOT)
+    run(
+        (
+            "pg_isready",
+            "-q",
+            "-h",
+            os.environ.get("CLEAN_ROOM_DB_HOST", "127.0.0.1"),
+            "-p",
+            os.environ.get("CLEAN_ROOM_DB_PORT", "5432"),
+            "-U",
+            os.environ.get("CLEAN_ROOM_DB_USER", "postgres"),
+            "-d",
+            os.environ.get("CLEAN_ROOM_DB_NAME", "postgres"),
+        ),
+        cwd=PROJECT_ROOT,
+    )
 
     import socket
 

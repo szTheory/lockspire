@@ -97,6 +97,11 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      CLEAN_ROOM_DB_HOST: 127.0.0.1
+      CLEAN_ROOM_DB_PORT: "5432"
+      CLEAN_ROOM_DB_USER: lockspire
+      CLEAN_ROOM_DB_PASSWORD: lockspire
+      CLEAN_ROOM_DB_NAME: lockspire_test
 
     steps:
       - name: Check out repository
