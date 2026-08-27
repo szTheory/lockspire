@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.JarmTest do
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.Jarm
   alias Lockspire.Protocol.Jarm.ClientKeyResolver
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.SigningKey
 
@@ -167,17 +168,10 @@ defmodule Lockspire.Protocol.JarmTest do
       {:ok, JOSE.JWK.from_map(%{"keys" => [refreshed_jwk]})}
     )
 
-    parent = self()
-    handler_id = "jarm-remote-key-unavailable-#{System.unique_integer([:positive])}"
-
-    :telemetry.attach(
-      handler_id,
+    TelemetryCapture.attach(
       [:lockspire, :jarm, :failed],
-      fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-      parent
+      self()
     )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
 
     client = %Client{
       client_id: "client-remote",
@@ -192,7 +186,7 @@ defmodule Lockspire.Protocol.JarmTest do
                client_store: RemoteClientStore
              )
 
-    assert_receive {[:lockspire, :jarm, :failed],
+    assert_receive {:telemetry_event, [:lockspire, :jarm, :failed], _measurements,
                     %{
                       reason_code: :jarm_encryption_key_unavailable,
                       remote_jwks_incident_class: :remote_jwks_key_unavailable,
@@ -214,17 +208,10 @@ defmodule Lockspire.Protocol.JarmTest do
       {:error, {:jwks_fetch_failed, {:http_status, 503}}}
     )
 
-    parent = self()
-    handler_id = "jarm-remote-fetch-failure-#{System.unique_integer([:positive])}"
-
-    :telemetry.attach(
-      handler_id,
+    TelemetryCapture.attach(
       [:lockspire, :jarm, :failed],
-      fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-      parent
+      self()
     )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
 
     client = %Client{
       client_id: "client-remote",
@@ -239,7 +226,7 @@ defmodule Lockspire.Protocol.JarmTest do
                client_store: RemoteClientStore
              )
 
-    assert_receive {[:lockspire, :jarm, :failed],
+    assert_receive {:telemetry_event, [:lockspire, :jarm, :failed], _measurements,
                     %{
                       reason_code: :jarm_encryption_key_fetch_failed,
                       remote_jwks_incident_class: :remote_jwks_fetch_failed,

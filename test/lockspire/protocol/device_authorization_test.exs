@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
   alias Lockspire.Protocol.DeviceAuthorization
+  alias Lockspire.TestSupport.TelemetryCapture
 
   defmodule FakeClientStore do
     def fetch_client_by_id("valid_client"),
@@ -20,15 +21,9 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
 
   describe "authorize/1" do
     test "authenticates client, persists device authorization, and returns success" do
-      test_pid = self()
-
-      :telemetry.attach(
-        "device_auth_telemetry_test",
+      TelemetryCapture.attach(
         [:lockspire, :device_authorization, :created],
-        fn _name, _measurements, metadata, _config ->
-          send(test_pid, {:telemetry_event, metadata})
-        end,
-        nil
+        self()
       )
 
       request = %{
@@ -44,11 +39,11 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
       assert {:ok, %DeviceAuthorization.Success{} = success} =
                DeviceAuthorization.authorize(request)
 
-      assert_received {:telemetry_event, metadata}
+      assert_received {:telemetry_event, [:lockspire, :device_authorization, :created],
+                       _measurements, metadata}
+
       assert metadata.client_id == "valid_client"
       assert Map.has_key?(metadata, :verification_handle)
-
-      :telemetry.detach("device_auth_telemetry_test")
 
       assert is_binary(success.device_code)
       assert is_binary(success.user_code)
