@@ -92,7 +92,21 @@ Plans:
   3. DCR and operator workflows use one neutral client metadata and lifecycle service without changing public result shapes or security behavior.
   4. Fitness tests reject dependency-direction, public/internal-boundary, and topology regressions.
 
-**Plans**: TBD
+**Plans**: 11 plans
+
+Plans:
+
+- [ ] 134-01-PLAN.md — Prove neutral direct/DCR metadata and atomic creation.
+- [ ] 134-02-PLAN.md — Unify RFC 7592 and operator client lifecycle operations.
+- [ ] 134-03-PLAN.md — Invert mounted discovery route capability out of protocol.
+- [ ] 134-04-PLAN.md — Break the config/security/prefix cycle with explicit inputs.
+- [ ] 134-05-PLAN.md — Break authorization-request/request-object coupling.
+- [ ] 134-06-PLAN.md — Make shared DPoP validation endpoint-neutral.
+- [ ] 134-07-PLAN.md — Introduce neutral token result primitives.
+- [ ] 134-08-PLAN.md — Move refresh and RFC 8693 onto neutral token results.
+- [ ] 134-09-PLAN.md — Convert token grant leaves and shared support.
+- [ ] 134-10-PLAN.md — Complete the compatible cycle-free token facade.
+- [ ] 134-11-PLAN.md — Enforce zero cycles, direction, ownership, and compatibility permanently.
 
 ### Phase 135: Cohesive Internals
 
