@@ -106,10 +106,10 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
     facade = File.read!(Path.expand("../../../lib/lockspire/protocol/token_exchange.ex", __DIR__))
 
     routing_matrix = [
-      {"authorization_code", "AuthorizationCodeGrant.exchange(request)"},
+      {"authorization_code", "Internal.AuthorizationCodeGrant.exchange(request)"},
       {"refresh_token", "exchange_refresh_token(request)"},
-      {"urn:ietf:params:oauth:grant-type:device_code", "DeviceCodeGrant.exchange(request)"},
-      {"urn:openid:params:grant-type:ciba", "CibaGrant.exchange(request)"},
+      {"urn:ietf:params:oauth:grant-type:device_code", "Internal.DeviceCodeGrant.exchange(request)"},
+      {"urn:openid:params:grant-type:ciba", "Internal.CibaGrant.exchange(request)"},
       {"urn:ietf:params:oauth:grant-type:token-exchange", "exchange_rfc8693(request)"}
     ]
 
@@ -117,8 +117,9 @@ defmodule Lockspire.Protocol.TokenExchangeTest do
       assert facade =~ ~s("#{grant_type}" -> #{owner_call})
     end)
 
-    assert facade =~ "RefreshExchange.exchange_refresh_token(client, request)"
-    assert facade =~ "Rfc8693Exchange.exchange(client, request)"
+    assert facade =~ "Internal.RefreshExchange.exchange_refresh_token(client, request)"
+    assert facade =~ "Internal.Rfc8693Exchange.exchange(client, request)"
+    refute facade =~ "TokenExchange.Compatibility"
   end
 
   test "capability suite inventory remains complete, unique, and wrapper-free" do
