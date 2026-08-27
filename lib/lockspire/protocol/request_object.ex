@@ -1,4 +1,3 @@
-# credo:disable-for-this-file
 defmodule Lockspire.Protocol.RequestObject do
   @moduledoc """
   Orchestrates JAR (RFC 9101) request-object consumption for `/authorize` and `/par`.
@@ -24,6 +23,8 @@ defmodule Lockspire.Protocol.RequestObject do
   alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.Jar
+  alias Lockspire.Protocol.RequestObject.Claims
+  alias Lockspire.Protocol.RequestObject.Retrieval
   alias Lockspire.Protocol.RequestObject.Result
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.Repository
@@ -32,8 +33,6 @@ defmodule Lockspire.Protocol.RequestObject do
           {:ok, map()}
           | {:browser_error, Lockspire.Protocol.AuthorizationRequest.Error.t()}
           | {:redirect_error, Lockspire.Protocol.AuthorizationRequest.Error.t()}
-
-  @allowed_outer_keys ~w(client_id request)
 
   @spec consume(map(), Client.t(), keyword()) :: result()
   def consume(params, %Client{} = client, opts \\ []) when is_map(params) and is_list(opts) do
@@ -50,15 +49,39 @@ defmodule Lockspire.Protocol.RequestObject do
   defp consume_result(params, %Client{} = client, opts) do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
-    with :ok <- reject_request_uri_collision(params),
-         :ok <- reject_outer_param_conflicts(params),
-         {:ok, jwt} <- fetch_request(params),
+    with {:ok, jwt} <- fetch_request(params),
          {:ok, jws_string} <- decrypt_request(jwt),
          :ok <- require_client_jwks(client),
          {:ok, %Jar{} = jar} <- decode_and_verify(jws_string, client, security_profile),
-         :ok <- validate(jar, client, opts),
-         {:ok, projected} <- project_to_params(jar, client) do
-      {:ok, projected}
+         :ok <- validate(jar, client, opts) do
+      project_to_params(jar, client)
+    end
+  end
+
+  defp fetch_request(params) do
+    case Retrieval.fetch(params) do
+      {:ok, jwt} ->
+        {:ok, jwt}
+
+      {:error, :request_object_and_request_uri_conflict} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "request and request_uri cannot both be supplied",
+           :request_object_and_request_uri_conflict
+         )}
+
+      {:error, :request_object_conflict} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "request cannot be combined with raw authorization parameters",
+           :request_object_conflict
+         )}
+
+      {:error, :missing_request} ->
+        {:browser_error,
+         browser_error(:invalid_request, "request parameter is required", :missing_request)}
     end
   end
 
@@ -75,49 +98,6 @@ defmodule Lockspire.Protocol.RequestObject do
            :invalid_request_object_decryption
          )}
     end
-  end
-
-  defp reject_request_uri_collision(%{"request_uri" => request_uri}) do
-    if present?(request_uri) do
-      {:browser_error,
-       browser_error(
-         :invalid_request,
-         "request and request_uri cannot both be supplied",
-         :request_object_and_request_uri_conflict
-       )}
-    else
-      :ok
-    end
-  end
-
-  defp reject_request_uri_collision(_params), do: :ok
-
-  defp reject_outer_param_conflicts(params) do
-    conflict_keys =
-      params
-      |> Enum.reject(fn {key, _value} -> key in @allowed_outer_keys end)
-      |> Enum.filter(fn {_key, value} -> present?(value) end)
-
-    case conflict_keys do
-      [] ->
-        :ok
-
-      _ ->
-        {:browser_error,
-         browser_error(
-           :invalid_request,
-           "request cannot be combined with raw authorization parameters",
-           :request_object_conflict
-         )}
-    end
-  end
-
-  defp fetch_request(%{"request" => request}) when is_binary(request) and request != "",
-    do: {:ok, request}
-
-  defp fetch_request(_params) do
-    {:browser_error,
-     browser_error(:invalid_request, "request parameter is required", :missing_request)}
   end
 
   defp require_client_jwks(%Client{jwks: jwks}) when is_map(jwks) and map_size(jwks) > 0, do: :ok
@@ -196,114 +176,34 @@ defmodule Lockspire.Protocol.RequestObject do
 
   defp validate(%Jar{} = jar, %Client{} = client, opts) do
     case Jar.validate_claims(jar, jar_opts(client, opts)) do
-      :ok ->
-        :ok
-
-      {:error, :invalid_issuer} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object issuer does not match the client",
-           :invalid_request_object_iss
-         )}
-
-      {:error, :missing_issuer} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object issuer is missing",
-           :invalid_request_object_iss
-         )}
-
-      {:error, :invalid_audience} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object audience is invalid",
-           :invalid_request_object_aud
-         )}
-
-      {:error, :missing_audience} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object audience is missing",
-           :invalid_request_object_aud
-         )}
-
-      {:error, :missing_expiration} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object expiration is missing",
-           :invalid_request_object_expired
-         )}
-
-      {:error, :invalid_expiration} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object expiration is invalid",
-           :invalid_request_object_expired
-         )}
-
-      {:error, :expired_token} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object has expired",
-           :invalid_request_object_expired
-         )}
-
-      {:error, :expiration_too_far} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object exceeds the configured maximum age",
-           :invalid_request_object_max_age
-         )}
-
-      {:error, :invalid_not_before} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object claims are invalid",
-           :invalid_request_object_claims
-         )}
-
-      {:error, :invalid_issued_at} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object claims are invalid",
-           :invalid_request_object_claims
-         )}
-
-      {:error, :invalid_claims_options} ->
-        {:browser_error,
-         browser_error(
-           :invalid_request_object,
-           "Request object claims are invalid",
-           :invalid_request_object_claims
-         )}
+      :ok -> :ok
+      {:error, reason} -> {:browser_error, validation_error(reason)}
     end
   end
 
-  defp project_to_params(%Jar{claims: claims}, %Client{client_id: client_id}) do
-    {:ok,
-     %{
-       "client_id" => client_id,
-       "redirect_uri" => claims["redirect_uri"],
-       "response_type" => claims["response_type"],
-       "scope" => claims["scope"],
-       "prompt" => claims["prompt"],
-       "nonce" => claims["nonce"],
-       "state" => claims["state"],
-       "code_challenge" => claims["code_challenge"],
-       "code_challenge_method" => claims["code_challenge_method"]
-     }
-     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-     |> Map.new()}
+  @validation_errors %{
+    invalid_issuer:
+      {"Request object issuer does not match the client", :invalid_request_object_iss},
+    missing_issuer: {"Request object issuer is missing", :invalid_request_object_iss},
+    invalid_audience: {"Request object audience is invalid", :invalid_request_object_aud},
+    missing_audience: {"Request object audience is missing", :invalid_request_object_aud},
+    missing_expiration: {"Request object expiration is missing", :invalid_request_object_expired},
+    invalid_expiration: {"Request object expiration is invalid", :invalid_request_object_expired},
+    expired_token: {"Request object has expired", :invalid_request_object_expired},
+    expiration_too_far:
+      {"Request object exceeds the configured maximum age", :invalid_request_object_max_age},
+    invalid_not_before: {"Request object claims are invalid", :invalid_request_object_claims},
+    invalid_issued_at: {"Request object claims are invalid", :invalid_request_object_claims},
+    invalid_claims_options: {"Request object claims are invalid", :invalid_request_object_claims}
+  }
+
+  defp validation_error(reason) do
+    {description, reason_code} = Map.fetch!(@validation_errors, reason)
+    browser_error(:invalid_request_object, description, reason_code)
+  end
+
+  defp project_to_params(%Jar{claims: claims}, %Client{} = client) do
+    Claims.project(claims, client)
   end
 
   defp jar_opts(%Client{} = client, opts) do
@@ -337,7 +237,4 @@ defmodule Lockspire.Protocol.RequestObject do
       redirect_uri: issue.redirect_uri
     )
   end
-
-  defp present?(value) when value in [nil, ""], do: false
-  defp present?(_value), do: true
 end

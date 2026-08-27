@@ -1,4 +1,3 @@
-# credo:disable-for-this-file
 defmodule Lockspire.Protocol.Jar do
   @moduledoc """
   JWT Secured Authorization Request (JAR) foundation.
@@ -9,6 +8,7 @@ defmodule Lockspire.Protocol.Jar do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.PrivateJwk
+  alias Lockspire.Protocol.RequestObject.Claims
 
   defstruct [:claims, :header]
 
@@ -63,19 +63,17 @@ defmodule Lockspire.Protocol.Jar do
   """
   @spec decode(String.t()) :: {:ok, t()} | {:error, :invalid_jwt}
   def decode(jwt) when is_binary(jwt) do
-    try do
-      # JOSE.JWT.peek_payload and peek_protected raise ArgumentError if malformed
-      payload_struct = JOSE.JWT.peek_payload(jwt)
-      protected_struct = JOSE.JWT.peek_protected(jwt)
+    # JOSE.JWT.peek_payload and peek_protected raise ArgumentError if malformed.
+    payload_struct = JOSE.JWT.peek_payload(jwt)
+    protected_struct = JOSE.JWT.peek_protected(jwt)
 
-      # to_map returns {modules_map, fields_map}
-      {_modules, claims} = JOSE.JWT.to_map(payload_struct)
-      {_modules, header} = JOSE.JWS.to_map(protected_struct)
+    # to_map returns {modules_map, fields_map}.
+    {_modules, claims} = JOSE.JWT.to_map(payload_struct)
+    {_modules, header} = JOSE.JWS.to_map(protected_struct)
 
-      {:ok, %__MODULE__{claims: claims, header: header}}
-    rescue
-      _ -> {:error, :invalid_jwt}
-    end
+    {:ok, %__MODULE__{claims: claims, header: header}}
+  rescue
+    _ -> {:error, :invalid_jwt}
   end
 
   def decode(_), do: {:error, :invalid_jwt}
@@ -147,14 +145,11 @@ defmodule Lockspire.Protocol.Jar do
   end
 
   defp parse_single_jwk(key_map) when is_map(key_map) do
-    try do
-      jwk = JOSE.JWK.from_map(key_map)
-      {:ok, jwk}
-    rescue
-      _ -> {:error, :invalid_client_keys}
-    catch
-      _, _ -> {:error, :invalid_client_keys}
-    end
+    {:ok, JOSE.JWK.from_map(key_map)}
+  rescue
+    _ -> {:error, :invalid_client_keys}
+  catch
+    _, _ -> {:error, :invalid_client_keys}
   end
 
   defp parse_single_jwk(_), do: {:error, :invalid_client_keys}
@@ -175,25 +170,23 @@ defmodule Lockspire.Protocol.Jar do
   end
 
   defp verify_with_single_jwk(jwt, public_jwk, allowed_algorithms) do
-    try do
-      case JOSE.JWT.verify_strict(public_jwk, allowed_algorithms, jwt) do
-        {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
-          {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
-          {_modules, header} = JOSE.JWS.to_map(jws_struct)
+    case JOSE.JWT.verify_strict(public_jwk, allowed_algorithms, jwt) do
+      {true, %JOSE.JWT{} = jwt_struct, %JOSE.JWS{} = jws_struct} ->
+        {_modules, claims} = JOSE.JWT.to_map(jwt_struct)
+        {_modules, header} = JOSE.JWS.to_map(jws_struct)
 
-          case check_typ(header) do
-            :ok -> {:ok, %__MODULE__{claims: claims, header: header}}
-            {:error, _} = err -> err
-          end
+        case check_typ(header) do
+          :ok -> {:ok, %__MODULE__{claims: claims, header: header}}
+          {:error, _} = err -> err
+        end
 
-        {false, _jwt_struct, _jws_struct} ->
-          {:error, :invalid_signature}
-      end
-    rescue
-      _ -> {:error, :invalid_signature}
-    catch
-      _, _ -> {:error, :invalid_signature}
+      {false, _jwt_struct, _jws_struct} ->
+        {:error, :invalid_signature}
     end
+  rescue
+    _ -> {:error, :invalid_signature}
+  catch
+    _, _ -> {:error, :invalid_signature}
   end
 
   # Permissive: absent typ allowed (RFC 9101 §10.8 SHOULD, not MUST).
@@ -242,147 +235,8 @@ defmodule Lockspire.Protocol.Jar do
   """
   @spec validate_claims(t(), keyword()) :: :ok | {:error, validate_claims_reason()}
   def validate_claims(%__MODULE__{claims: claims}, opts) when is_map(claims) and is_list(opts) do
-    with {:ok, expected_client_id, expected_audience, now, leeway, max_age} <- parse_opts(opts),
-         :ok <- check_issuer(claims, expected_client_id),
-         :ok <- check_audience(claims, expected_audience),
-         :ok <- check_expiration(claims, now, leeway, max_age),
-         :ok <- check_not_before(claims, now, leeway),
-         :ok <- check_issued_at(claims, now, leeway) do
-      :ok
-    end
+    Claims.validate(claims, opts)
   end
 
   def validate_claims(%__MODULE__{}, _opts), do: {:error, :invalid_claims_options}
-
-  # ---------------------------------------------------------------------------
-  # validate_claims helpers
-  # ---------------------------------------------------------------------------
-
-  defp parse_opts(opts) do
-    expected_client_id = Keyword.get(opts, :expected_client_id)
-    expected_audience = Keyword.get(opts, :expected_audience)
-    now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
-    leeway = Keyword.get(opts, :leeway, 0)
-    max_age = Keyword.get(opts, :max_age)
-
-    cond do
-      not is_binary(expected_client_id) or expected_client_id == "" ->
-        {:error, :invalid_claims_options}
-
-      not is_binary(expected_audience) or expected_audience == "" ->
-        {:error, :invalid_claims_options}
-
-      not match?(%DateTime{}, now) ->
-        {:error, :invalid_claims_options}
-
-      not (is_integer(leeway) and leeway >= 0) ->
-        {:error, :invalid_claims_options}
-
-      not (is_nil(max_age) or (is_integer(max_age) and max_age > 0)) ->
-        {:error, :invalid_claims_options}
-
-      true ->
-        {:ok, expected_client_id, expected_audience, now, leeway, max_age}
-    end
-  end
-
-  defp check_issuer(claims, expected_client_id) do
-    case Map.get(claims, "iss") do
-      nil ->
-        {:error, :missing_issuer}
-
-      iss when is_binary(iss) ->
-        if iss == expected_client_id, do: :ok, else: {:error, :invalid_issuer}
-
-      _ ->
-        {:error, :invalid_issuer}
-    end
-  end
-
-  defp check_audience(claims, expected_audience) do
-    case Map.get(claims, "aud") do
-      nil ->
-        {:error, :missing_audience}
-
-      aud when is_binary(aud) ->
-        if aud == expected_audience, do: :ok, else: {:error, :invalid_audience}
-
-      aud when is_list(aud) ->
-        cond do
-          aud == [] -> {:error, :invalid_audience}
-          not Enum.all?(aud, &is_binary/1) -> {:error, :invalid_audience}
-          Enum.member?(aud, expected_audience) -> :ok
-          true -> {:error, :invalid_audience}
-        end
-
-      _ ->
-        {:error, :invalid_audience}
-    end
-  end
-
-  defp check_expiration(claims, now, leeway, max_age) do
-    case Map.get(claims, "exp") do
-      nil ->
-        {:error, :missing_expiration}
-
-      exp when is_integer(exp) ->
-        now_unix = DateTime.to_unix(now)
-
-        with :ok <- check_not_expired(exp, now_unix, leeway),
-             :ok <- check_max_age(exp, now_unix, leeway, max_age) do
-          :ok
-        end
-
-      _ ->
-        {:error, :invalid_expiration}
-    end
-  end
-
-  defp check_not_expired(exp, now_unix, leeway) do
-    if exp + leeway > now_unix, do: :ok, else: {:error, :expired_token}
-  end
-
-  defp check_max_age(_exp, _now_unix, _leeway, nil), do: :ok
-
-  defp check_max_age(exp, now_unix, leeway, max_age) do
-    if exp - now_unix <= max_age + leeway, do: :ok, else: {:error, :expiration_too_far}
-  end
-
-  defp check_not_before(claims, now, leeway) do
-    case Map.get(claims, "nbf") do
-      nil ->
-        :ok
-
-      nbf when is_integer(nbf) ->
-        now_unix = DateTime.to_unix(now)
-
-        if nbf - leeway <= now_unix do
-          :ok
-        else
-          {:error, :invalid_not_before}
-        end
-
-      _ ->
-        {:error, :invalid_not_before}
-    end
-  end
-
-  defp check_issued_at(claims, now, leeway) do
-    case Map.get(claims, "iat") do
-      nil ->
-        :ok
-
-      iat when is_integer(iat) ->
-        now_unix = DateTime.to_unix(now)
-
-        if iat - leeway <= now_unix do
-          :ok
-        else
-          {:error, :invalid_issued_at}
-        end
-
-      _ ->
-        {:error, :invalid_issued_at}
-    end
-  end
 end
