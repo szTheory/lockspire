@@ -71,6 +71,13 @@ defmodule Lockspire.AccessTokenTest do
       end
     end
 
+    test "rejects a mixed audience list containing a blank identifier" do
+      token = %AccessToken{claims: %{"aud" => ["billing-api", "   "]}}
+
+      assert AccessToken.audiences(token) == []
+      assert {:error, :invalid_audience} = AccessToken.normalize_audiences(token.claims)
+    end
+
     test "normalizes integer NumericDate expiration and allowlisted confirmation values" do
       token = %AccessToken{
         claims: %{

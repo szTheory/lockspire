@@ -161,15 +161,15 @@ defmodule Lockspire.AccessToken do
   defp claim(_token, _key), do: nil
 
   defp normalize_audience_list(audiences) do
-    if Enum.all?(audiences, &is_binary/1) do
-      audiences
-      |> Enum.map(&nonblank_audience/1)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.uniq()
+    if Enum.all?(audiences, &valid_audience?/1) do
+      Enum.uniq(audiences)
     else
       []
     end
   end
+
+  defp valid_audience?(value) when is_binary(value), do: not is_nil(nonblank_audience(value))
+  defp valid_audience?(_value), do: false
 
   defp put_confirmation(confirmation, _key, value) when not is_binary(value), do: confirmation
 
