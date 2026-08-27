@@ -176,6 +176,7 @@ defmodule Lockspire.Protocol.Registration do
     }
 
     case RegistrationShape.validate(attrs,
+           require_scopes: false,
            allow_jwks_uri_for_encryption: encrypted_jarm_requested?(metadata),
            private_key_jwt_algs:
              SecurityProfile.allowed_signing_algorithms(resolved_profile.effective_profile)

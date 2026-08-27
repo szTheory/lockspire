@@ -26,7 +26,7 @@ defmodule Lockspire.ClientRegistration.Shape do
         attrs.allowed_response_types
       )
       |> validate_redirect_uris(attrs.redirect_uris, redirect_required?(attrs))
-      |> validate_scopes(attrs.allowed_scopes)
+      |> validate_scopes(attrs.allowed_scopes, Keyword.get(opts, :require_scopes, true))
       |> validate_key_source_exclusivity(attrs)
       |> validate_private_key_jwt(attrs, opts)
 
@@ -122,9 +122,10 @@ defmodule Lockspire.ClientRegistration.Shape do
     end)
   end
 
-  defp validate_scopes(errors, []), do: [issue(:allowed_scopes, :invalid_scope, :empty) | errors]
+  defp validate_scopes(errors, [], true),
+    do: [issue(:allowed_scopes, :invalid_scope, :empty) | errors]
 
-  defp validate_scopes(errors, scopes) do
+  defp validate_scopes(errors, scopes, _required?) do
     Enum.reduce(scopes, errors, fn scope, acc ->
       if scope == "openid" or valid_scope_token?(scope),
         do: acc,

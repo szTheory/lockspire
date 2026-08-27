@@ -217,6 +217,25 @@ defmodule Lockspire.Protocol.RegistrationTest do
   end
 
   describe "shared registration capability matrix" do
+    test "accepts omitted optional scope metadata without weakening direct registration" do
+      metadata = Map.delete(DcrFixtures.valid_metadata(), "scope")
+
+      assert {:ok, %Success{client: %Client{allowed_scopes: []}}} =
+               Registration.register(DcrFixtures.register_request(metadata: metadata))
+
+      assert {:error, errors} =
+               Lockspire.Clients.register_client(%{
+                 client_type: :public,
+                 redirect_uris: ["https://client.example.test/callback"],
+                 allowed_scopes: [],
+                 allowed_grant_types: ["authorization_code"],
+                 allowed_response_types: ["code"],
+                 token_endpoint_auth_method: :none
+               })
+
+      assert Enum.any?(errors, &(&1.field == :allowed_scopes and &1.detail == :empty))
+    end
+
     test "accepts built-in openid and a redirectless device-only client after policy resolution" do
       metadata = %{
         "client_name" => "Device-only DCR client",
