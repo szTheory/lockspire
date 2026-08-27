@@ -10,7 +10,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.CibaGrant do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange(map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  @spec exchange(map(), Dependencies.t()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(request, %Dependencies{} = dependencies) when is_map(request) do
     request = Dependencies.attach(request, dependencies)
     params = params(request)

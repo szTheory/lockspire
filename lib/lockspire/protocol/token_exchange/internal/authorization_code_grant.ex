@@ -7,8 +7,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AuthorizationCodeGrant do
   alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange(map(), Dependencies.t()) :: {:ok, struct()} | {:error, struct()}
+  @spec exchange(map(), Dependencies.t()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(request, %Dependencies{} = dependencies) when is_map(request) do
     request = Dependencies.attach(request, dependencies)
     params = params(request)
