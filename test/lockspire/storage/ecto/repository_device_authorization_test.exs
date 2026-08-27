@@ -53,13 +53,23 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
   describe "put_device_authorization/1" do
     test "the device aggregate owns durable issuance behind the repository facade" do
-      authorization = DeviceAuthorization.issue(%{device_code: "aggregate-device", user_code: "AGGR-DEV1", client_id: "aggregate-client"})
+      authorization =
+        DeviceAuthorization.issue(%{
+          device_code: "aggregate-device",
+          user_code: "AGGR-DEV1",
+          client_id: "aggregate-client"
+        })
 
       assert {:ok, %DeviceAuthorization{} = stored} =
-               DeviceAuthorizationStore.put_device_authorization(Lockspire.TestRepo, authorization)
+               DeviceAuthorizationStore.put_device_authorization(
+                 Lockspire.TestRepo,
+                 authorization
+               )
 
       assert {:ok, %DeviceAuthorization{id: id}} =
-               Repository.fetch_device_authorization_by_device_code_hash(authorization.device_code_hash)
+               Repository.fetch_device_authorization_by_device_code_hash(
+                 authorization.device_code_hash
+               )
 
       assert stored.id == id
     end

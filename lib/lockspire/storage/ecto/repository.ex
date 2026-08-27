@@ -27,9 +27,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.DeviceAuthorizationStore
   alias Lockspire.Storage.DpopReplayStore
-  alias Lockspire.Storage.Ecto.CibaAuthorizationRecord
   alias Lockspire.Storage.Ecto.ClientRecord
-  alias Lockspire.Storage.Ecto.DeviceAuthorizationRecord
   alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
@@ -40,6 +38,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
   alias Lockspire.Storage.Ecto.Repository.ConsentStore, as: EctoConsentStore
+  alias Lockspire.Storage.Ecto.Repository.CibaAuthorizationStore, as: EctoCibaAuthorizationStore
+
+  alias Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore,
+    as: EctoDeviceAuthorizationStore
+
   alias Lockspire.Storage.Ecto.Repository.InteractionStore, as: EctoInteractionStore
 
   alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore,
@@ -221,75 +224,56 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   def list_device_authorizations(opts \\ []) when is_list(opts) do
-    DeviceAuthorizationRecord
-    |> order_by([auth], desc: auth.inserted_at)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &DeviceAuthorizationRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoDeviceAuthorizationStore.list_device_authorizations(repo(), opts)
   end
 
   @impl DeviceAuthorizationStore
   def put_device_authorization(%DeviceAuthorization{} = auth) do
-    %DeviceAuthorizationRecord{}
-    |> DeviceAuthorizationRecord.changeset(auth)
-    |> repo_insert()
-    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+    EctoDeviceAuthorizationStore.put_device_authorization(repo(), auth)
   end
 
   @impl DeviceAuthorizationStore
   def fetch_device_authorization_by_user_code_hash(user_code_hash)
       when is_binary(user_code_hash) do
-    DeviceAuthorizationRecord
-    |> where([authorization], authorization.user_code_hash == ^user_code_hash)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoDeviceAuthorizationStore.fetch_device_authorization_by_user_code_hash(
+      repo(),
+      user_code_hash
+    )
   end
 
   @impl DeviceAuthorizationStore
   def fetch_device_authorization_by_device_code_hash(device_code_hash)
       when is_binary(device_code_hash) do
-    DeviceAuthorizationRecord
-    |> where([authorization], authorization.device_code_hash == ^device_code_hash)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoDeviceAuthorizationStore.fetch_device_authorization_by_device_code_hash(
+      repo(),
+      device_code_hash
+    )
   end
 
   @impl DeviceAuthorizationStore
   def fetch_device_authorization_by_verification_handle(verification_handle)
       when is_binary(verification_handle) do
-    DeviceAuthorizationRecord
-    |> where([authorization], authorization.verification_handle == ^verification_handle)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &DeviceAuthorizationRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoDeviceAuthorizationStore.fetch_device_authorization_by_verification_handle(
+      repo(),
+      verification_handle
+    )
   end
 
   @impl DeviceAuthorizationStore
   def record_device_poll(device_code_hash, client_id, now)
       when is_binary(device_code_hash) and is_binary(client_id) and is_struct(now, DateTime) do
-    transact(fn ->
-      device_code_hash
-      |> locked_device_authorization_by_device_code_query()
-      |> repo_one(sensitive: true)
-      |> evaluate_device_poll(client_id, now)
-    end)
+    EctoDeviceAuthorizationStore.record_device_poll(repo(), device_code_hash, client_id, now)
   end
 
   @impl DeviceAuthorizationStore
   def consume_device_authorization(verification_handle, client_id, now)
       when is_binary(verification_handle) and is_binary(client_id) and is_struct(now, DateTime) do
-    transact(fn ->
-      verification_handle
-      |> locked_device_authorization_query()
-      |> repo_one()
-      |> consume_device_authorization_record(client_id, now)
-    end)
+    EctoDeviceAuthorizationStore.consume_device_authorization(
+      repo(),
+      verification_handle,
+      client_id,
+      now
+    )
   end
 
   @impl DpopReplayStore
@@ -387,53 +371,43 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl DeviceAuthorizationStore
   def transition_device_authorization(verification_handle, expected_statuses, attrs)
       when is_binary(verification_handle) and is_list(expected_statuses) and is_map(attrs) do
-    transact(fn ->
-      verification_handle
-      |> locked_device_authorization_query()
-      |> repo_one()
-      |> transition_device_authorization_record(expected_statuses, attrs)
-    end)
+    EctoDeviceAuthorizationStore.transition_device_authorization(
+      repo(),
+      verification_handle,
+      expected_statuses,
+      attrs
+    )
   end
 
   @impl CibaAuthorizationStore
   def put_ciba_authorization(%CibaAuthorization{} = auth) do
-    %CibaAuthorizationRecord{}
-    |> CibaAuthorizationRecord.changeset(auth)
-    |> repo_insert()
-    |> map_one(&CibaAuthorizationRecord.to_domain/1)
+    EctoCibaAuthorizationStore.put_ciba_authorization(repo(), auth)
   end
 
   @impl CibaAuthorizationStore
   def fetch_ciba_authorization_by_auth_req_id_hash(auth_req_id_hash)
       when is_binary(auth_req_id_hash) do
-    CibaAuthorizationRecord
-    |> where([authorization], authorization.auth_req_id_hash == ^auth_req_id_hash)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &CibaAuthorizationRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoCibaAuthorizationStore.fetch_ciba_authorization_by_auth_req_id_hash(
+      repo(),
+      auth_req_id_hash
+    )
   end
 
   @impl CibaAuthorizationStore
   def record_ciba_poll(auth_req_id_hash, client_id, now)
       when is_binary(auth_req_id_hash) and is_binary(client_id) and is_struct(now, DateTime) do
-    transact(fn ->
-      auth_req_id_hash
-      |> locked_ciba_authorization_query()
-      |> repo_one(sensitive: true)
-      |> evaluate_ciba_poll(client_id, now)
-    end)
+    EctoCibaAuthorizationStore.record_ciba_poll(repo(), auth_req_id_hash, client_id, now)
   end
 
   @impl CibaAuthorizationStore
   def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs)
       when is_binary(auth_req_id_hash) and is_list(expected_statuses) and is_map(attrs) do
-    transact(fn ->
-      auth_req_id_hash
-      |> locked_ciba_authorization_query()
-      |> repo_one()
-      |> transition_ciba_authorization_record(expected_statuses, attrs)
-    end)
+    EctoCibaAuthorizationStore.transition_ciba_authorization(
+      repo(),
+      auth_req_id_hash,
+      expected_statuses,
+      attrs
+    )
   end
 
   @impl AuditStore
@@ -1110,24 +1084,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_limit_tokens(query, _limit), do: query
 
-  defp locked_device_authorization_query(verification_handle) do
-    DeviceAuthorizationRecord
-    |> where([authorization], authorization.verification_handle == ^verification_handle)
-    |> lock("FOR UPDATE")
-  end
-
-  defp locked_device_authorization_by_device_code_query(device_code_hash) do
-    DeviceAuthorizationRecord
-    |> where([authorization], authorization.device_code_hash == ^device_code_hash)
-    |> lock("FOR UPDATE")
-  end
-
-  defp locked_ciba_authorization_query(auth_req_id_hash) do
-    CibaAuthorizationRecord
-    |> where([authorization], authorization.auth_req_id_hash == ^auth_req_id_hash)
-    |> lock("FOR UPDATE")
-  end
-
   defp locked_refresh_token_query(token_hash) do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
@@ -1143,280 +1099,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp unwrap_or_rollback({:ok, result}), do: result
   defp unwrap_or_rollback({:error, reason}), do: repo().rollback(reason)
-
-  defp transition_device_authorization_record(nil, _expected_statuses, _attrs),
-    do: repo().rollback(:not_found)
-
-  defp transition_device_authorization_record(
-         %DeviceAuthorizationRecord{} = record,
-         expected_statuses,
-         attrs
-       ) do
-    if record.status in expected_statuses do
-      record
-      |> DeviceAuthorizationRecord.update_changeset(
-        Map.put(attrs, :updated_at, DateTime.utc_now())
-      )
-      |> repo_update()
-      |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-      |> unwrap_or_rollback()
-    else
-      repo().rollback(:invalid_state)
-    end
-  end
-
-  defp transition_ciba_authorization_record(nil, _expected_statuses, _attrs),
-    do: repo().rollback(:not_found)
-
-  defp transition_ciba_authorization_record(
-         %CibaAuthorizationRecord{} = record,
-         expected_statuses,
-         attrs
-       ) do
-    if record.status in expected_statuses do
-      record
-      |> CibaAuthorizationRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-      |> repo_update()
-      |> map_one(&CibaAuthorizationRecord.to_domain/1)
-      |> unwrap_or_rollback()
-    else
-      repo().rollback(:invalid_state)
-    end
-  end
-
-  defp evaluate_device_poll(nil, _client_id, _now) do
-    %{result: :invalid_grant}
-  end
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{client_id: stored_client_id},
-         client_id,
-         _now
-       )
-       when stored_client_id != client_id do
-    %{result: :client_mismatch}
-  end
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{status: :denied} = record,
-         _client_id,
-         _now
-       ),
-       do: device_poll_outcome(:denied, record)
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{status: :expired} = record,
-         _client_id,
-         _now
-       ),
-       do: device_poll_outcome(:expired, record)
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{status: :consumed} = record,
-         _client_id,
-         _now
-       ),
-       do: device_poll_outcome(:consumed, record)
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{status: :approved} = record,
-         _client_id,
-         now
-       ) do
-    if DateTime.compare(record.expires_at, now) != :gt do
-      expire_device_authorization(record, now)
-    else
-      device_poll_outcome(:approved_ready, record)
-    end
-  end
-
-  defp evaluate_device_poll(
-         %DeviceAuthorizationRecord{status: :pending} = record,
-         _client_id,
-         now
-       ) do
-    cond do
-      DateTime.compare(record.expires_at, now) != :gt ->
-        expire_device_authorization(record, now)
-
-      DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
-        slow_down_device_authorization(record, now)
-
-      true ->
-        continue_pending_device_authorization(record, now)
-    end
-  end
-
-  defp evaluate_device_poll(%DeviceAuthorizationRecord{status: status}, client_id, _now) do
-    %{result: :invalid_grant, reason: {:unexpected_status, status, client_id}}
-  end
-
-  defp expire_device_authorization(record, now) do
-    record
-    |> DeviceAuthorizationRecord.update_changeset(%{
-      status: :expired,
-      expired_at: now,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&device_poll_outcome(:expired, &1))
-  end
-
-  defp slow_down_device_authorization(record, _now) do
-    next_interval = record.effective_poll_interval_seconds + 5
-    next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
-
-    record
-    |> DeviceAuthorizationRecord.update_changeset(%{
-      effective_poll_interval_seconds: next_interval,
-      next_poll_allowed_at: next_poll_allowed_at,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&device_poll_outcome(:slow_down, &1))
-  end
-
-  defp continue_pending_device_authorization(record, now) do
-    next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
-
-    record
-    |> DeviceAuthorizationRecord.update_changeset(%{
-      next_poll_allowed_at: next_poll_allowed_at,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&device_poll_outcome(:pending, &1))
-  end
-
-  defp evaluate_ciba_poll(nil, _client_id, _now) do
-    %{result: :invalid_grant}
-  end
-
-  defp evaluate_ciba_poll(
-         %CibaAuthorizationRecord{client_id: stored_client_id},
-         client_id,
-         _now
-       )
-       when stored_client_id != client_id do
-    %{result: :client_mismatch}
-  end
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :denied} = record, _client_id, _now),
-    do: ciba_poll_outcome(:denied, record)
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :expired} = record, _client_id, _now),
-    do: ciba_poll_outcome(:expired, record)
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :consumed} = record, _client_id, _now),
-    do: ciba_poll_outcome(:consumed, record)
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :approved} = record, _client_id, now) do
-    if DateTime.compare(record.expires_at, now) != :gt do
-      expire_ciba_authorization(record, now)
-    else
-      ciba_poll_outcome(:approved_ready, record)
-    end
-  end
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: :pending} = record, _client_id, now) do
-    cond do
-      DateTime.compare(record.expires_at, now) != :gt ->
-        expire_ciba_authorization(record, now)
-
-      DateTime.compare(now, record.next_poll_allowed_at) == :lt ->
-        slow_down_ciba_authorization(record, now)
-
-      true ->
-        continue_pending_ciba_authorization(record, now)
-    end
-  end
-
-  defp evaluate_ciba_poll(%CibaAuthorizationRecord{status: status}, client_id, _now) do
-    %{result: :invalid_grant, reason: {:unexpected_status, status, client_id}}
-  end
-
-  defp expire_ciba_authorization(record, now) do
-    record
-    |> CibaAuthorizationRecord.update_changeset(%{
-      status: :expired,
-      expired_at: now,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&CibaAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&ciba_poll_outcome(:expired, &1))
-  end
-
-  defp slow_down_ciba_authorization(record, _now) do
-    next_interval = record.effective_poll_interval_seconds + 5
-    next_poll_allowed_at = DateTime.add(record.next_poll_allowed_at, next_interval, :second)
-
-    record
-    |> CibaAuthorizationRecord.update_changeset(%{
-      effective_poll_interval_seconds: next_interval,
-      next_poll_allowed_at: next_poll_allowed_at,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&CibaAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&ciba_poll_outcome(:slow_down, &1))
-  end
-
-  defp continue_pending_ciba_authorization(record, now) do
-    next_poll_allowed_at = DateTime.add(now, record.effective_poll_interval_seconds, :second)
-
-    record
-    |> CibaAuthorizationRecord.update_changeset(%{
-      next_poll_allowed_at: next_poll_allowed_at,
-      updated_at: DateTime.utc_now()
-    })
-    |> repo_update(sensitive: true)
-    |> map_one(&CibaAuthorizationRecord.to_domain/1)
-    |> unwrap_or_rollback()
-    |> then(&ciba_poll_outcome(:pending, &1))
-  end
-
-  defp consume_device_authorization_record(nil, _client_id, _now),
-    do: repo().rollback(:invalid_state)
-
-  defp consume_device_authorization_record(
-         %DeviceAuthorizationRecord{client_id: stored_client_id},
-         client_id,
-         _now
-       )
-       when stored_client_id != client_id,
-       do: repo().rollback(:invalid_state)
-
-  defp consume_device_authorization_record(
-         %DeviceAuthorizationRecord{status: :approved} = record,
-         _client_id,
-         now
-       ) do
-    if DateTime.compare(record.expires_at, now) == :gt do
-      record
-      |> DeviceAuthorizationRecord.update_changeset(%{
-        status: :consumed,
-        consumed_at: now,
-        updated_at: DateTime.utc_now()
-      })
-      |> repo_update(sensitive: true)
-      |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-      |> unwrap_or_rollback()
-    else
-      repo().rollback(:invalid_state)
-    end
-  end
-
-  defp consume_device_authorization_record(%DeviceAuthorizationRecord{}, _client_id, _now),
-    do: repo().rollback(:invalid_state)
 
   @doc """
   Deletes expired records in chunks of 1000 to prevent table locking.
@@ -1448,34 +1130,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
     |> repo_delete_all(log: false)
 
     :ok
-  end
-
-  defp device_poll_outcome(result, %DeviceAuthorizationRecord{} = record) do
-    result
-    |> device_poll_outcome(DeviceAuthorizationRecord.to_domain(record))
-  end
-
-  defp device_poll_outcome(result, %DeviceAuthorization{} = device_authorization) do
-    %{
-      result: result,
-      device_authorization: device_authorization,
-      effective_poll_interval_seconds: device_authorization.effective_poll_interval_seconds,
-      next_poll_allowed_at: device_authorization.next_poll_allowed_at
-    }
-  end
-
-  defp ciba_poll_outcome(result, %CibaAuthorizationRecord{} = record) do
-    result
-    |> ciba_poll_outcome(CibaAuthorizationRecord.to_domain(record))
-  end
-
-  defp ciba_poll_outcome(result, %CibaAuthorization{} = ciba_authorization) do
-    %{
-      result: result,
-      ciba_authorization: ciba_authorization,
-      effective_poll_interval_seconds: ciba_authorization.effective_poll_interval_seconds,
-      next_poll_allowed_at: ciba_authorization.next_poll_allowed_at
-    }
   end
 
   defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
