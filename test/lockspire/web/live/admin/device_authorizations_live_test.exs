@@ -186,7 +186,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
-  test "phase 125 device authorization proof keeps queue review redaction-safe and read-only", %{
+  test "device authorization review keeps queue evidence redaction-safe and read-only", %{
     authorizations: authorizations
   } do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))

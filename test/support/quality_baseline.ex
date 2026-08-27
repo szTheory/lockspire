@@ -4,6 +4,22 @@ defmodule Lockspire.TestSupport.QualityBaseline do
   @repo_root Path.expand("../..", __DIR__)
   @credo_directive ~r/^\s*#\s*credo:(?<kind>disable-for-this-file|disable-for-next-line)(?:\s+(?<check>Credo\.Check\.[A-Za-z0-9_.]+))?\s*$/
   @dialyzer_warning ~r/^(?<file>lib\/.+?\.ex):(?<line>\d+)(?::\d+)?:?(?<kind>[a-z_]+)$/
+  @phase_numbered_proof ~r/\bphase(?:[_ -]?\d+)\b/i
+  @capability_proof_directories [
+    "test/lockspire/web/live/admin",
+    "test/lockspire/release",
+    "test/support/lockspire/web/admin_lab",
+    "test/support/lockspire/release_proof"
+  ]
+  @capability_proof_files [
+    "test/lockspire/web/admin_router_test.exs",
+    "test/lockspire/release_ci_evidence_contract_test.exs",
+    "test/lockspire/release_please_runtime_contract_test.exs",
+    "test/lockspire/release_readiness_contract_test.exs"
+  ]
+  @capability_proof_exclusions [
+    "test/lockspire/web/live/admin/design_system/inventory_contract_test.exs"
+  ]
 
   @type credo_directive :: %{
           file: String.t(),
@@ -108,6 +124,24 @@ defmodule Lockspire.TestSupport.QualityBaseline do
     |> Enum.map(&{&1.file, &1.line})
   end
 
+  @spec phase_numbered_proof_locations(String.t(), String.t()) :: [{String.t(), pos_integer()}]
+  def phase_numbered_proof_locations(file, source) when is_binary(file) and is_binary(source) do
+    source
+    |> String.split("\n")
+    |> Enum.with_index(1)
+    |> Enum.filter(fn {line, _line_number} -> Regex.match?(@phase_numbered_proof, line) end)
+    |> Enum.map(fn {_line, line_number} -> {file, line_number} end)
+  end
+
+  @spec active_phase_numbered_proof_locations() :: [{String.t(), pos_integer()}]
+  def active_phase_numbered_proof_locations do
+    capability_proof_files()
+    |> Enum.flat_map(fn relative_path ->
+      phase_numbered_proof_locations(relative_path, File.read!(absolute_path(relative_path)))
+    end)
+    |> Enum.sort()
+  end
+
   @spec dialyzer_error_count(String.t()) :: non_neg_integer()
   def dialyzer_error_count(output) do
     case Regex.run(~r/Total errors:\s*(\d+)/, output, capture: :all_but_first) do
@@ -153,6 +187,15 @@ defmodule Lockspire.TestSupport.QualityBaseline do
     [Path.join(root, "**/*.ex"), Path.join(root, "**/*.exs")]
     |> Enum.flat_map(&Path.wildcard/1)
     |> Enum.map(&Path.relative_to(&1, @repo_root))
+    |> Enum.sort()
+  end
+
+  defp capability_proof_files do
+    directory_files = Enum.flat_map(@capability_proof_directories, &source_files/1)
+
+    (directory_files ++ @capability_proof_files)
+    |> Enum.uniq()
+    |> Enum.reject(&(&1 in @capability_proof_exclusions))
     |> Enum.sort()
   end
 

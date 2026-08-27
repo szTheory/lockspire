@@ -51,6 +51,16 @@ defmodule Lockspire.Quality.ProofQualityBaselineTest do
     assert QualityBaseline.proof_locations(constructs, :count_threshold) == []
   end
 
+  test "finds phase-numbered labels only inside the explicitly scoped current-proof inventory" do
+    source = ~s(test "phase 125 boundary" do\n  assert :ok\nend)
+
+    assert QualityBaseline.phase_numbered_proof_locations("test/example_test.exs", source) == [
+             {"test/example_test.exs", 1}
+           ]
+
+    assert QualityBaseline.active_phase_numbered_proof_locations() == []
+  end
+
   test "parses the zero-ignore Dialyzer baseline by exact owning source file" do
     output = """
     Total errors: 66, Skipped: 0, Unnecessary Skips: 0

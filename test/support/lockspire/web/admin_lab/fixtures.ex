@@ -253,9 +253,9 @@ defmodule Lockspire.Web.AdminLab.Fixtures do
           label: "Long safe values",
           long_name:
             "Partner Configuration With Long Legal Entity Name For Responsive Wrapping Proof",
-          long_id: "redacted_handle_phase_125_long_identifier_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ",
+          long_id: "redacted_handle_admin_lab_long_identifier_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ",
           long_url:
-            "https://phase-125-long-fixture.example.invalid/oauth/callbacks/configure/support/operate/internal-lab-proof"
+            "https://admin-lab-long-fixture.example.invalid/oauth/callbacks/configure/support/operate/internal-lab-proof"
         },
         %{
           class: :optionality,
@@ -305,7 +305,7 @@ defmodule Lockspire.Web.AdminLab.Fixtures do
           class: :lifecycle_security,
           state: :copy_once,
           label: "Copy-once credential handoff",
-          value: "redacted_handle_copy_once_phase_125"
+          value: "redacted_handle_copy_once_admin_lab"
         },
         %{
           class: :lifecycle_security,

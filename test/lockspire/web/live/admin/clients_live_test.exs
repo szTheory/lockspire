@@ -175,10 +175,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     view
     |> form("form[phx-submit=save_client]", %{
       client: %{
-        name: "Phase 124 Client",
+        name: "Capability Proof Client",
         client_type: "confidential",
         token_endpoint_auth_method: "client_secret_basic",
-        redirect_uris: "https://phase124.example.com/callback",
+        redirect_uris: "https://capability-proof.example.com/callback",
         allowed_scopes: "email"
       }
     })

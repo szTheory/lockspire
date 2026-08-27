@@ -13,7 +13,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @mix_path Path.expand("../../../../../mix.exs", __DIR__)
   @supported_surface_path Path.expand("../../../../../docs/supported-surface.md", __DIR__)
-  @phase_125_required_states [
+  @required_admin_states [
     :empty,
     :one_item,
     :many_items,
@@ -42,7 +42,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     :operate,
     :internal_lab
   ]
-  @phase_125_required_classes [
+  @required_admin_classes [
     :cardinality_layout,
     :string_pressure,
     :optionality,
@@ -50,7 +50,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     :visual_accessibility,
     :journey_boundary
   ]
-  @phase_124_configure_source_paths [
+  @configure_source_paths [
     Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/index.ex", __DIR__),
     Path.expand("../../../../../lib/lockspire/web/live/admin/clients_live/show.ex", __DIR__),
     Path.expand(
@@ -146,21 +146,21 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     fixtures = Fixtures.all()
     proof_matrix = Map.fetch!(fixtures, :proof_matrix)
 
-    for state <- @phase_125_required_states do
+    for state <- @required_admin_states do
       assert MapSet.member?(scenario_states, state),
              "D-05 PROOF-01 missing scenario state #{inspect(state)} in Fixtures.scenario_states/0"
     end
 
     matrix_states = proof_matrix |> Enum.map(& &1.state) |> MapSet.new()
 
-    for state <- @phase_125_required_states do
+    for state <- @required_admin_states do
       assert MapSet.member?(matrix_states, state),
              "D-04/D-05 shared fixture matrix must expose #{inspect(state)} without public lab surface"
     end
 
     matrix_classes = proof_matrix |> Enum.map(& &1.class) |> MapSet.new()
 
-    for class <- @phase_125_required_classes do
+    for class <- @required_admin_classes do
       assert MapSet.member?(matrix_classes, class),
              "D-05 fixture matrix must include #{inspect(class)} coverage"
     end
@@ -329,20 +329,20 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     HtmlAssertions.assert_label_targets_exist(html)
     HtmlAssertions.assert_no_text(html, Fixtures.forbidden_substrings())
 
-    assert html =~ ~s(data-phase="125-proof-matrix")
+    assert html =~ ~s(data-proof-surface="admin-capability-matrix")
     assert html =~ "PROOF-01 shared fixture matrix"
     assert html =~ "Not recorded"
     assert html =~ "Internal lab boundary"
     assert html =~ "Mobile width"
     assert html =~ "Keyboard focus"
-    assert html =~ "phase-125-long-fixture.example.invalid"
+    assert html =~ "admin-lab-long-fixture.example.invalid"
 
-    for class <- @phase_125_required_classes do
+    for class <- @required_admin_classes do
       assert html =~ ~s(data-fixture-class="#{class}"),
              "rendered D-05 proof matrix must expose #{inspect(class)} class markers"
     end
 
-    for state <- @phase_125_required_states do
+    for state <- @required_admin_states do
       assert html =~ ~s(data-fixture-state="#{state}"),
              "rendered D-05 proof matrix must expose #{inspect(state)} state markers"
     end
@@ -368,15 +368,15 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     refute html =~ "tenant-with-a-long-name.example.invalid"
   end
 
-  test "Phase 124 CONFIG-01 CONFIG-02 CONFIG-03 Configure primitive stress proof covers copy-once confirmation grouping and long values" do
-    html = phase_124_configure_stress_html()
+  test "configure primitives cover copy-once confirmation grouping and long values" do
+    html = configure_stress_html()
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_label_targets_exist(html)
 
     assert html =~ "Initial access token minted"
-    assert html =~ "phase-124-copy-once-value"
+    assert html =~ "configure-copy-once-value"
     assert html =~ "I have copied this secret"
     assert html =~ "name=\"revoke[confirm]\""
     assert html =~ "Revoke initial access token"
@@ -392,10 +392,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     HtmlAssertions.assert_no_text(html, Fixtures.forbidden_substrings())
   end
 
-  test "Phase 124 UI-SPEC stress proof keeps semantic palette typography and visible Configure action labels" do
+  test "configure primitives keep semantic palette typography and visible action labels" do
     css = File.read!(@admin_css_path)
-    html = phase_124_configure_stress_html()
-    source_blob = phase_124_configure_source_blob() <> "\n" <> html
+    html = configure_stress_html()
+    source_blob = configure_source_blob() <> "\n" <> html
 
     for token <- [
           "--ls-surface-page",
@@ -429,7 +429,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     assert raw_color_offenders == []
     refute source_blob =~ ~r/style=/
 
-    assert_phase_124_visible_action_labels!(html)
+    assert_visible_action_labels!(html)
   end
 
   test "HTML proof helper fails blank ARIA references" do
@@ -481,25 +481,25 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     refute File.exists?(Path.expand("../../../../../package.json", __DIR__))
   end
 
-  defp phase_124_configure_stress_html do
+  defp configure_stress_html do
     assigns = %{
       copy_once_value:
-        "phase-124-copy-once-value-redacted_handle_iat_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ_wraps_anywhere",
+        "configure-copy-once-value-redacted_handle_iat_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ_wraps_anywhere",
       long_iat: "redacted_handle_iat_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ_wraps_anywhere",
       long_url:
         "https://configure-long.example.invalid/oauth/callbacks/configure/self-registration/partner-handoff/with-long-path"
     }
 
     rendered_to_string(~H"""
-    <section data-phase="124-configure-stress" aria-label="Phase 124 Configure stress proof">
+    <section data-proof-surface="configure-primitives" aria-label="Configure primitive stress proof">
       <AdminComponents.copy_once_secret_panel
         title="Initial access token minted"
         body="Plaintext is shown once. Copy before acknowledging; Lockspire stores only the hash and redacted durable state after this response."
         label="Initial access token"
         value={@copy_once_value}
-        class="phase-124-copy-once-value"
+        class="configure-copy-once-value"
       />
-      <p id="phase-124-copy-ack">I have copied this secret</p>
+      <p id="configure-copy-ack">I have copied this secret</p>
 
       <AdminComponents.decision_summary>
         <:item
@@ -546,16 +546,16 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
             <input type="hidden" name="revoke[id]" value={@long_iat} />
             <div class="lockspire-admin-field">
               <input
-                id="phase-124-revoke-confirm"
+                id="configure-revoke-confirm"
                 type="checkbox"
                 name="revoke[confirm]"
                 value="true"
-                aria-describedby="phase-124-revoke-consequence"
+                aria-describedby="configure-revoke-consequence"
               />
-              <label for="phase-124-revoke-confirm">
+              <label for="configure-revoke-confirm">
                 Partners using this intake token can no longer dynamically register clients with it.
               </label>
-              <p id="phase-124-revoke-consequence">
+              <p id="configure-revoke-consequence">
                 Visible consequence copy stays adjacent to the confirmation checkbox.
               </p>
             </div>
@@ -579,12 +579,12 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     """)
   end
 
-  defp phase_124_configure_source_blob do
-    @phase_124_configure_source_paths
+  defp configure_source_blob do
+    @configure_source_paths
     |> Enum.map_join("\n", &File.read!/1)
   end
 
-  defp assert_phase_124_visible_action_labels!(html) do
+  defp assert_visible_action_labels!(html) do
     action_blocks =
       Regex.scan(
         ~r/<(?:button|a|span)[^>]*(?:class="[^"]*lockspire-admin-btn[^"]*"|role="link")[^>]*>(.*?)<\/(?:button|a|span)>/s,

@@ -161,7 +161,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
   end
 
-  test "phase 125 interactions proof keeps queue review redaction-safe and read-only" do
+  test "interaction review keeps queue evidence redaction-safe and read-only" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
