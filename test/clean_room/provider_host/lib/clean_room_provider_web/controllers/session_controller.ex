@@ -7,7 +7,11 @@ defmodule CleanRoomProviderWeb.SessionController do
     interaction_id = Map.get(params, "interaction_id", "")
     csrf = Plug.CSRFProtection.get_csrf_token()
 
-    send_resp(conn, 200, "<form method=\"post\" action=\"/login\"><input name=\"_csrf_token\" value=\"#{csrf}\"><input name=\"return_to\" value=\"#{return_to}\"><input name=\"interaction_id\" value=\"#{interaction_id}\"><button>Sign in</button></form>")
+    send_resp(
+      conn,
+      200,
+      "<form method=\"post\" action=\"/login\"><input name=\"_csrf_token\" value=\"#{csrf}\"><input name=\"return_to\" value=\"#{return_to}\"><input name=\"interaction_id\" value=\"#{interaction_id}\"><button>Sign in</button></form>"
+    )
   end
 
   def create(conn, params) do
@@ -16,7 +20,9 @@ defmodule CleanRoomProviderWeb.SessionController do
     |> redirect(to: resume(params))
   end
 
-  defp resume(%{"interaction_id" => id}) when is_binary(id) and id != "", do: "/lockspire/interactions/#{id}"
+  defp resume(%{"interaction_id" => id}) when is_binary(id) and id != "",
+    do: "/lockspire/interactions/#{id}"
+
   defp resume(%{"return_to" => "/" <> _ = path}), do: path
   defp resume(_params), do: "/lockspire/authorize"
 end

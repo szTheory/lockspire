@@ -3,30 +3,30 @@ defmodule CleanRoomProviderWeb.Router do
   import CleanRoomProviderWeb.Router.Lockspire
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :protect_from_forgery
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
   end
 
-  pipeline :api, do: plug(:accepts, ["json"])
-  pipeline :require_operator, do: plug(:send_resp, :forbidden, "operator authorization required")
+  pipeline(:api, do: plug(:accepts, ["json"]))
+  pipeline(:require_operator, do: plug(:send_resp, :forbidden, "operator authorization required"))
 
   pipeline :lockspire_protected_api do
-    plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api"
-    plug Lockspire.Plug.EnforceSenderConstraints
-    plug Lockspire.Plug.RequireToken
+    plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api")
+    plug(Lockspire.Plug.EnforceSenderConstraints)
+    plug(Lockspire.Plug.RequireToken)
   end
 
   scope "/", CleanRoomProviderWeb do
-    pipe_through :browser
-    get "/login", SessionController, :new
-    post "/login", SessionController, :create
+    pipe_through(:browser)
+    get("/login", SessionController, :new)
+    post("/login", SessionController, :create)
   end
 
   lockspire_routes()
 
   scope "/api", CleanRoomProviderWeb do
-    pipe_through [:api, :lockspire_protected_api]
-    get "/billing/summary", BillingController, :show
+    pipe_through([:api, :lockspire_protected_api])
+    get("/billing/summary", BillingController, :show)
   end
 end

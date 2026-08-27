@@ -10,7 +10,15 @@ defmodule CleanRoomProvider.Lockspire.InteractionHandler do
     path = consent_path(interaction_id)
 
     {:ok,
-     %{interaction_id: interaction_id, consent_path: path, finalize_path: finalize_path(interaction_id),
-       next: %InteractionResult{login_path: path, return_to: path, params: Map.put(Map.take(params, ["source"]), "interaction_id", interaction_id)}}
+     %{
+       interaction_id: interaction_id,
+       consent_path: path,
+       finalize_path: finalize_path(interaction_id),
+       next: %InteractionResult{
+         login_path: path,
+         return_to: path,
+         params: Map.put(Map.take(params, ["source"]), "interaction_id", interaction_id)
+       }
+     }}
   end
 end

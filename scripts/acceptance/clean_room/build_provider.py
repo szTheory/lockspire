@@ -183,9 +183,9 @@ def check_bootstrap() -> None:
         raise PackageInputError("provider route must use the configured durable DPoP store")
 
     pipeline = [
-        "plug Lockspire.Plug.VerifyToken",
-        "plug Lockspire.Plug.EnforceSenderConstraints",
-        "plug Lockspire.Plug.RequireToken",
+        "plug(Lockspire.Plug.VerifyToken",
+        "plug(Lockspire.Plug.EnforceSenderConstraints)",
+        "plug(Lockspire.Plug.RequireToken)",
     ]
     positions = [router.index(item) for item in pipeline]
     if positions != sorted(positions):

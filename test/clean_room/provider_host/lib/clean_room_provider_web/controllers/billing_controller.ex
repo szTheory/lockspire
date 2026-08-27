@@ -7,7 +7,15 @@ defmodule CleanRoomProviderWeb.BillingController do
     subject = AccessToken.subject(token)
 
     if host_authorized_for_billing?(subject) do
-      json(conn, %{access_token: %{subject: subject, scopes: AccessToken.scopes(token), audiences: AccessToken.audiences(token), expires_at: format_expiry(AccessToken.expires_at(token)), confirmation: AccessToken.confirmation(token)}})
+      json(conn, %{
+        access_token: %{
+          subject: subject,
+          scopes: AccessToken.scopes(token),
+          audiences: AccessToken.audiences(token),
+          expires_at: format_expiry(AccessToken.expires_at(token)),
+          confirmation: AccessToken.confirmation(token)
+        }
+      })
     else
       conn |> put_status(:forbidden) |> json(%{error: "host_forbidden"})
     end
