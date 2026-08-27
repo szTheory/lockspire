@@ -109,16 +109,21 @@ Deferred Phase 135 repository/grant decomposition, Phase 136 static-analysis cle
 | Escalated | 0 |
 
 The previous lifecycle test only asserted the expected error from an unavailable
-test repository. It is now a database-backed behavior test proving
-`ClientLifecycle.create_dcr/1` persists a client and the matching DCR audit row
-with its actor and resource attribution. The existing repository integration
-tests remain the failure-injection proof that the shared
+test repository. It is now database-backed behavior coverage proving both
+`ClientLifecycle.create_dcr/1` and the central operator/RAT lifecycle writes
+persist their client state with matching audit attribution. This covers direct
+creation, DCR creation, update, secret rotation, disable, enable, and
+registration-access-token rotation through the neutral owner. The architecture
+fitness test synthetically rejects any registration facade that bypasses that
+owner for a repository write or audit transaction. The existing repository
+integration tests remain the failure-injection proof that the shared
 `Repository.transact_with_audit/2` primitive rolls back both the durable write
 and audit row.
 
 Current evidence was run after the Phase 134 review fixes:
 
 - `mix qa.architecture` — 12 tests, zero Mix xref cycles.
+- `mix test test/lockspire/client_lifecycle_test.exs test/lockspire/architecture_fitness_test.exs test/lockspire/compatibility_baseline_contract_test.exs` — 14 tests.
 - Client lifecycle, RFC 7592, DCR attribution, and repository atomicity suite — 57 tests.
 - Direct/DCR public registration plus JAR/DPoP boundary suites — 97 tests.
 - Discovery/config/prefix and all token-result/internal-dispatch suites — 103 tests.
