@@ -44,6 +44,22 @@ defmodule CleanRoomClientWeb.JourneyController do
     end
   end
 
+  # After a provider process restart, prove the full protected-resource
+  # pipeline is ready with a newly minted proof before checking the original
+  # proof's durable replay rejection. This never substitutes for that exact
+  # byte-for-byte replay assertion.
+  def resource_restart_ready(conn, _params) do
+    with {:ok, session} <- session(conn),
+         {:ok, access_token} <- encrypted_value(session.encrypted_access_token),
+         {:ok, nonce} <- encrypted_value(session.encrypted_resource_nonce),
+         {:ok, proof} <- DPoP.resource_proof(session, :get, resource(), nonce),
+         {:ok, 200, _headers, _body} <- OAuthHttp.dpop_get(resource(), access_token, proof) do
+      json(conn, %{status: 200, restart_ready: true})
+    else
+      _ -> reject(conn, :restart_ready)
+    end
+  end
+
   def resource_replay(conn, _params) do
     with {:session, {:ok, session}} <- {:session, session(conn)},
          {:access_token, {:ok, access_token}} <-
@@ -51,7 +67,7 @@ defmodule CleanRoomClientWeb.JourneyController do
          {:proof, {:ok, proof}} <- {:proof, encrypted_value(session.encrypted_accepted_resource_proof)},
          {:resource_response, {:ok, status, headers, _body}} <-
            {:resource_response, OAuthHttp.dpop_get(resource(), access_token, proof)},
-         {:replay_status, true} <- {:replay_status, status in [400, 401]},
+         {:replay_status, true, status} <- {:replay_status, status in [400, 401], status},
          {:replay_challenge, true} <-
            {:replay_challenge, challenge?(headers, "invalid_token")} do
       json(conn, %{status: status, challenge: "invalid_token"})
@@ -59,8 +75,8 @@ defmodule CleanRoomClientWeb.JourneyController do
       {stage, _reason} when stage in [:session, :access_token, :proof, :resource_response] ->
         reject(conn, stage)
 
-      {:replay_status, _reason} ->
-        reject(conn, :replay_status)
+      {:replay_status, _reason, provider_status} ->
+        reject(conn, :replay_status, %{provider_status: provider_status})
 
       {:replay_challenge, _reason} ->
         reject(conn, :replay_challenge)
@@ -81,11 +97,11 @@ defmodule CleanRoomClientWeb.JourneyController do
     String.contains?(Map.get(headers, "www-authenticate", ""), "error=\"#{error}\"")
   end
 
-  defp reject(conn, stage \\ :operation),
+  defp reject(conn, stage \\ :operation, details \\ %{}),
     do:
       conn
       |> put_status(:bad_request)
-      |> json(%{error: "dpop_operation_rejected", stage: Atom.to_string(stage)})
+      |> json(Map.merge(%{error: "dpop_operation_rejected", stage: Atom.to_string(stage)}, details))
 
   defp resource do
     Application.fetch_env!(:clean_room_confidential_client, :provider_issuer)

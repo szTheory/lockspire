@@ -24,6 +24,12 @@ defmodule CleanRoomClientWeb.Router do
     post("/acceptance/dpop/resource/retry", CleanRoomClientWeb.JourneyController, :resource_retry)
 
     post(
+      "/acceptance/dpop/resource/restart-ready",
+      CleanRoomClientWeb.JourneyController,
+      :resource_restart_ready
+    )
+
+    post(
       "/acceptance/dpop/resource/replay",
       CleanRoomClientWeb.JourneyController,
       :resource_replay

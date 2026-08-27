@@ -677,7 +677,7 @@ def safe_dpop_operation(client: Browser, path: str, label: str) -> dict[str, obj
         raise AssertionError(
             f"{label}: expected HTTP 200, got {response['status']}"
             f"{safe_oauth_error_code(response)}"
-            f" (stage: {safe_dpop_failure_stage(parsed)})"
+            f" (stage: {safe_dpop_failure_stage(parsed)}, provider_status: {safe_dpop_provider_status(parsed)})"
         )
     forbidden = {"access_token", "nonce", "proof", "private_key", "secret", "cookie"}
     if forbidden & set(parsed):
@@ -694,6 +694,13 @@ def safe_dpop_failure_stage(receipt: dict[str, object]) -> str:
     return "unknown"
 
 
+def safe_dpop_provider_status(receipt: dict[str, object]) -> str:
+    """Render an HTTP status code only when a client operation rejects it."""
+
+    status = receipt.get("provider_status")
+    return str(status) if isinstance(status, int) and 100 <= status <= 599 else "unknown"
+
+
 def client_csrf(client: Browser) -> str:
     response = client.request("GET", "/acceptance/csrf")
     require_status(response, 200, "client csrf")
@@ -707,6 +714,43 @@ def assert_client_csrf_protection(client: Browser) -> None:
     rejected = client.request("POST", "/acceptance/dpop/resource/challenge")
     require_status(rejected, 403, "client CSRF rejection")
     print("client CSRF protection enforced")
+
+
+def wait_dpop_resource_restart_ready(client: Browser) -> None:
+    deadline = time.monotonic() + 10
+
+    while time.monotonic() < deadline:
+        response = client.request(
+            "POST", "/acceptance/dpop/resource/restart-ready", {"_csrf_token": client_csrf(client)}
+        )
+
+        try:
+            receipt = json.loads(str(response["body"]))
+        except json.JSONDecodeError:
+            receipt = {}
+
+        if response["status"] == 200 and receipt == {"status": 200, "restart_ready": True}:
+            print("dpop provider restart ready")
+            return
+
+        # A just-spawned provider can publish discovery before its protected
+        # resource pipeline has accepted its first request. Retry only that
+        # fixed, safe startup condition; all other contracts remain strict.
+        if (
+            response["status"] == 400
+            and isinstance(receipt, dict)
+            and safe_dpop_failure_stage(receipt) == "restart_ready"
+        ):
+            time.sleep(0.1)
+            continue
+
+        raise AssertionError(
+            "dpop provider restart readiness failed"
+            f" (stage: {safe_dpop_failure_stage(receipt if isinstance(receipt, dict) else {})},"
+            f" provider_status: {safe_dpop_provider_status(receipt if isinstance(receipt, dict) else {})})"
+        )
+
+    raise AssertionError("dpop provider restart readiness timed out")
 
 
 def run_dpop(
@@ -764,6 +808,7 @@ def run_dpop(
     # database deterministically.
     track_provider_process(provider_process)
     wait_ready(PROVIDER_ORIGIN)
+    wait_dpop_resource_restart_ready(client)
 
     durable_replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "durable dpop resource replay")
     if durable_replay.get("challenge") != "invalid_token" or durable_replay.get("status") not in (400, 401):
