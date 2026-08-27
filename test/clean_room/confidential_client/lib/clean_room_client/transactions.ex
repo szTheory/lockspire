@@ -2,7 +2,7 @@ defmodule CleanRoomClient.Transactions do
   @moduledoc false
   import Ecto.Query
 
-  alias CleanRoomClient.{OAuthTransaction, Repo}
+  alias CleanRoomClient.{DPoPSession, OAuthTransaction, Repo}
 
   @transaction_ttl_seconds 300
 
@@ -45,6 +45,51 @@ defmodule CleanRoomClient.Transactions do
 
   def s256(verifier) when is_binary(verifier) do
     :crypto.hash(:sha256, verifier) |> Base.url_encode64(padding: false)
+  end
+
+  def attach_dpop_key(transaction, encrypted_key, jkt) do
+    {1, _} =
+      from(item in OAuthTransaction,
+        where: item.id == ^transaction.id and item.status == :pending
+      )
+      |> Repo.update_all(set: [encrypted_dpop_key: encrypted_key, dpop_jkt: jkt])
+
+    Repo.get!(OAuthTransaction, transaction.id)
+  end
+
+  def handoff_dpop_session(transaction, encrypted_access_token, subject) do
+    Repo.transaction(fn ->
+      handle = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+
+      session =
+        %DPoPSession{}
+        |> DPoPSession.changeset(%{
+          handle: handle,
+          encrypted_key: transaction.encrypted_dpop_key,
+          encrypted_access_token: encrypted_access_token,
+          subject: subject,
+          jkt: transaction.dpop_jkt,
+          expires_at: DateTime.add(DateTime.utc_now(), @transaction_ttl_seconds, :second)
+        })
+        |> Repo.insert!()
+
+      from(item in OAuthTransaction, where: item.id == ^transaction.id)
+      |> Repo.update_all(set: [encrypted_dpop_key: nil, dpop_jkt: nil])
+
+      session
+    end)
+  end
+
+  def close_dpop_session(handle) do
+    from(session in DPoPSession, where: session.handle == ^handle and is_nil(session.closed_at))
+    |> Repo.update_all(
+      set: [
+        closed_at: DateTime.utc_now(),
+        encrypted_key: nil,
+        encrypted_access_token: nil,
+        encrypted_accepted_resource_proof: nil
+      ]
+    )
   end
 
   defp random_urlsafe, do: :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)

@@ -43,7 +43,8 @@ def exercise(test_name: str) -> None:
         try:
             run_child(child, environment, "ecto.create")
             run_child(child, environment, "ecto.migrate", "--migrations-path", "priv/repo/migrations")
-            run_child(child, environment, "test", f"test/{test_name}_test.exs")
+            test_file = "oauth_transaction" if test_name == "oauth_callback" else "dpop_client" if test_name in {"oidc_verifier", "dpop_client"} else test_name
+            run_child(child, environment, "test", f"test/{test_file}_test.exs")
         finally:
             # Do not hide a test/build failure behind cleanup compilation.
             subprocess.run(("mix", "ecto.drop"), cwd=child, env=environment, stdin=subprocess.DEVNULL,
