@@ -18,7 +18,7 @@ created: 2026-08-27
 | **Framework** | ExUnit with repository-native AST parsing plus Mix xref graph output |
 | **Config** | `test/test_helper.exs`, root `mix.exs`, existing PostgreSQL-backed repository test setup |
 | **Quick run** | `mix test test/lockspire/architecture_fitness_test.exs` |
-| **Focused topology** | `mix qa.architecture` (created by Plan 09) |
+| **Focused topology** | `mix qa.architecture` (created by Plan 11) |
 | **Full gate** | `mix compile --warnings-as-errors && mix test.fast && mix test.integration && mix qa && mix docs.verify` |
 | **Feedback target** | Every task has a focused behavioral command; xref output is inspected after each cycle slice |
 
@@ -48,7 +48,7 @@ created: 2026-08-27
 | 134-06-T1 | 134-06 | 1 | ARCH-01, ARCH-02 | T-134-14..15 | sender-constraint protocol | `mix test test/lockspire/protocol/protected_resource_dpop_test.exs` |
 | 134-06-T2 | 134-06 | 1 | ARCH-01, ARCH-02 | T-134-14..16 | protocol/plug/controller + xref | `mix test test/lockspire/protocol/protected_resource_dpop_test.exs test/lockspire/protocol/userinfo_test.exs test/lockspire/plug/enforce_sender_constraints_test.exs test/lockspire/web/userinfo_controller_test.exs && mix xref graph --format cycles` |
 | 134-07-T1 | 134-07 | 1 | ARCH-01 | T-134-17, T-134-19 | value/compatibility | `mix test test/lockspire/protocol/token_result_test.exs test/lockspire/protocol/token_exchange_test.exs` |
-| 134-07-T2 | 134-07 | 1 | ARCH-01 | T-134-17..19 | token collaborator characterization | `mix test test/lockspire/protocol/token_result_test.exs test/lockspire/protocol/access_token_signer_test.exs test/lockspire/protocol/refresh_exchange_test.exs test/lockspire/protocol/rfc8693_exchange_test.exs test/lockspire/protocol/token_endpoint_dpop_test.exs test/lockspire/protocol/token_exchange_test.exs` |
+| 134-07-T2 | 134-07 | 1 | ARCH-01 | T-134-17..19 | token collaborator characterization | `mix test test/lockspire/protocol/token_result_test.exs test/lockspire/protocol/access_token_signer_test.exs test/lockspire/protocol/token_endpoint_dpop_test.exs test/lockspire/protocol/token_exchange_test.exs` |
 | 134-02-T1 | 134-02 | 2 | ARCH-02, ARCH-03 | T-134-04..05 | RFC 7592 + transaction integration | `mix test test/lockspire/client_lifecycle_test.exs test/lockspire/protocol/registration_management_test.exs test/lockspire/protocol/dcr_audit_attribution_test.exs` |
 | 134-02-T2 | 134-02 | 2 | ARCH-02, ARCH-03 | T-134-04..05 | DCR delete + transaction integration | `mix test test/lockspire/client_lifecycle_test.exs test/lockspire/protocol/registration_management_test.exs test/lockspire/protocol/dcr_audit_attribution_test.exs` |
 | 134-02-T3 | 134-02 | 2 | ARCH-03 | T-134-06..07 | admin facade + transaction integration | `mix test test/lockspire/admin/clients_test.exs test/lockspire/client_lifecycle_test.exs test/lockspire/protocol/registration_management_test.exs` |
@@ -68,14 +68,14 @@ Plan 01 and each independent cycle plan start with RED characterization before p
 - [ ] `test/lockspire/discovery_routes_test.exs` — mounted-route input and legacy override compatibility (Plan 03).
 - [ ] `test/lockspire/storage/prefix_test.exs` and `test/lockspire/security/policy_test.exs` — explicit configuration input contracts (Plan 04).
 - [ ] `test/lockspire/protocol/userinfo_test.exs` — protocol-level userinfo adapter contract (Plan 06).
-- [ ] `test/lockspire/protocol/token_result_test.exs` — lossless neutral/public token conversion (Plan 07).
-- [ ] `scripts/ci/check_architecture_topology.sh` plus expanded architecture/compatibility fitness — authoritative zero-cycle and direction gate (Plan 09).
+- [ ] `test/lockspire/protocol/token_result_test.exs` — pure neutral result plus one-way helper-facade compatibility conversion (Plan 07).
+- [ ] `scripts/ci/check_architecture_topology.sh` plus expanded architecture/compatibility fitness and literal public manifest — authoritative zero-cycle and direction gate (Plan 11).
 
 ## Source Coverage Audit
 
 | SOURCE | ID | Feature/Requirement | Plan | Status | Notes |
 |---|---|---|---|---|---|
-| GOAL | — | Compatible public module structure with explicit enforceable dependency direction | 01-09 | COVERED | Neutral services, five cycle slices, permanent fitness |
+| GOAL | — | Compatible public module structure with explicit enforceable dependency direction | 01-11 | COVERED | Neutral services, five cycle slices, permanent fitness |
 | REQ | ARCH-01 | Executable zero runtime/export cycles with retained public names | 03-11 | COVERED | All five cycles plus final xref/export gate |
 | REQ | ARCH-02 | Protocol depends only inward, never Web/Admin | 01-06, 11 | COVERED | DCR/discovery inversions and AST enforcement |
 | REQ | ARCH-03 | One neutral client metadata/lifecycle service | 01-02, 11 | COVERED | Direct, DCR, RFC 7592, admin, atomicity, ownership fitness |

@@ -96,7 +96,7 @@ The safe approach is not a broad reorganization. Preserve public facade modules 
 | Library/tool | Purpose | When to Use |
 |-------------|---------|-------------|
 | `function_exported?/3` | Verify retained facade functions/nested public structs remain callable | Public compatibility fitness tests. [VERIFIED: existing fitness test] |
-| `System.cmd/3` | Invoke `mix xref graph --format cycles` from an ExUnit test or Mix task | Topology proof with exact failure output; use an explicit timeout/error diagnostic. [ASSUMED] |
+| checked shell + Mix alias | Invoke `mix xref graph --format cycles` directly outside ExUnit | Non-recursive topology proof with complete failure output/status. [DECIDED: resolved question 1] |
 
 **Installation:** none. This phase must add no external package or architectural-analysis dependency. [VERIFIED: D-04]
 
@@ -152,11 +152,11 @@ Names are discretionary; the invariant is inward ownership and retained public f
 
 ### Pattern 1: Retain public module, move shared result structs below it
 
-**What:** define token exchange `Success` and `Error` in a neutral child/sibling module, then have `Lockspire.Protocol.TokenExchange` alias or delegate to the retained public type/function surface. Grant implementations and access-token/DPoP helpers reference the neutral module, never the orchestration facade. [VERIFIED: xref cycle shows `AccessTokenSigner`, `TokenEndpointDPoP`, grants, and `GrantSupport` depend on exported `TokenExchange.Success`/`Error`]
+**What:** keep public `TokenExchange.Success` and `Error` exactly where they are, define separate neutral TokenResult values, and move behavior into `TokenExchange.Internal.*`. TokenExchange converts privately at its own entries; retained lower helper modules delegate to internals and use the one-way Compatibility adapter. Neutral implementations never reference either public conversion boundary. [DECIDED: binding resolution; xref cycle shows `AccessTokenSigner`, `TokenEndpointDPoP`, grants, and `GrantSupport` currently depend on exported `TokenExchange.Success`/`Error`]
 
 **When to use:** when a facade's nested struct is used by internal collaborators and creates an export edge back into that facade. [VERIFIED: local xref DOT graph]
 
-**Compatibility rule:** if `%Lockspire.Protocol.TokenExchange.Success{}` is public or used in downstream test/client code, do not replace it with a differently named struct. Put the canonical struct in a module which preserves that fully-qualified name, or preserve the struct at the facade and move only dispatch into a neutral `Dispatcher`/`Result` collaborator that does not refer back to the facade. [ASSUMED]
+**Compatibility rule:** `%Lockspire.Protocol.TokenExchange.Success{}` and `.Error{}` remain canonical public structs. TokenResult is internal and never leaks through any retained public arity listed in the resolved manifest. [DECIDED]
 
 ### Pattern 2: Boundary translators over one neutral client service
 
@@ -312,22 +312,40 @@ This is a prescriptive shape, not an existing API. The neutral service must not 
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | `System.cmd/3` can be used reliably from the selected ExUnit topology contract with the stated `MIX_ENV` behavior. | Standard Stack / code example | Use a dedicated checked script or Mix alias if recursive Mix invocation is unsuitable. |
-| A2 | Existing v1.x consumers pattern-match the named nested public structs, so moving their module name is breaking. | Pattern 1 | Conservative retained-module strategy may preserve more than strictly necessary, but avoids compatibility risk. |
+| A1 (resolved) | Recursive Mix invocation from ExUnit is excluded; the checked shell/Mix alias path owns xref execution. | Standard Stack / resolved question 1 | No runtime uncertainty remains in the plan. |
+| A2 (resolved) | Every affected exported module/arity and nested public struct is compatibility-sensitive. | Pattern 1 / resolved question 2 | Conservative retention is now the binding requirement. |
 | A3 | A temporary `:discovery_router` compatibility fallback is required for host configuration beyond tests. | Pattern 3 / Pitfall 4 | If config is explicitly private, migration can be stricter after verifying docs/support surface. |
 | A4 | The proposed service names and precise result shapes are appropriate. | Project structure / code sketch | Names are discretionary; implementation must retain only current advertised APIs. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where should the executable Mix cycle assertion live?**
    - What we know: `mix xref graph --format cycles` produces the needed definitive baseline and normal test code already parses AST. [VERIFIED: local command; existing fitness test]
-   - What's unclear: whether invoking Mix from the ExUnit process is accepted by this project's test execution topology.
-   - Recommendation: first add a direct script/alias that exits nonzero and call it from CI/`mix qa`; only embed `System.cmd` in ExUnit after a focused test proves no recursive-Mix issue. [ASSUMED]
+   - **Binding resolution:** Plan 11 owns `scripts/ci/check_architecture_topology.sh` and `mix qa.architecture`. The checked shell path invokes `mix xref graph --format cycles` directly, preserves complete output/status, and fails on any reported cycle. ExUnit does not spawn Mix; it owns only deterministic AST/export/ownership rules. `mix qa` invokes `qa.architecture` once. This avoids recursive Mix execution by construction. [DECIDED: checker resolution, D-03/D-04/D-12]
 
 2. **Which public nested structs are documented APIs versus implementation-visible structs?**
    - What we know: D-02 requires all existing nested public module names/result shapes to work, and current tests use `TokenExchange.Success/Error`, `Registration.Success/Error`, `RegistrationManagement.UpdateSuccess`, and `AuthorizationRequest.Error`. [VERIFIED: D-02; test/source references]
-   - What's unclear: the exact supported-surface documentation scope for `TokenExchange` internals.
-   - Recommendation: treat every currently exported nested module in the five cycles as compatibility-sensitive; add exports/result characterization before moving it. [ASSUMED]
+   - **Binding resolution:** conservatively treat every currently exported module, public function arity, nested module, and result struct touched by the five cycles or client extraction as compatibility-sensitive, regardless of `@moduledoc false` or current documentation prominence. Plan 11 records the concrete baseline manifest and asserts module loadability, arities, tuple tags, struct module names/keys, and representative results. No touched exported helper is silently reclassified as internal during this phase. [DECIDED: checker resolution, D-02/D-12]
+
+### Binding token conversion ownership
+
+All token implementations consume and return `Lockspire.Protocol.TokenResult`; that neutral module never constructs or aliases `Lockspire.Protocol.TokenExchange.Success/Error`. `Lockspire.Protocol.TokenExchange` converts neutral values only for its retained public `exchange/1`, `exchange_authorization_code/1`, `issue_ciba_tokens/4`, and `validate_grant_resources_for_test/2` entry points. Separately callable lower modules remain compatibility facades outside the dispatch graph: each delegates to a new neutral implementation module and converts via one `Lockspire.Protocol.TokenExchange.Compatibility` adapter. The main TokenExchange facade never calls those compatibility facades or the adapter; it calls neutral implementations directly. Therefore the retained helper result shapes do not recreate an edge back from the neutral graph into TokenExchange. [DECIDED: checker resolution, D-02/D-03/D-11]
+
+Compatibility-sensitive token facade manifest:
+
+| Retained module | Public arities | Retained result contract | Neutral implementation owner |
+|---|---|---|---|
+| `TokenExchange` | `exchange/1`, `exchange_authorization_code/1`, `issue_ciba_tokens/4`, `validate_grant_resources_for_test/2` | `{:ok, %TokenExchange.Success{}} | {:error, %TokenExchange.Error{}}` (resource test helper retains list/error shape) | TokenExchange calls `TokenExchange.Internal.*`, converts locally |
+| `AccessTokenSigner` | `issue/3`, `issue_exchange/4` | `{:ok, raw, hash} | {:error, %TokenExchange.Error{}}` | `TokenExchange.Internal.AccessTokenSigner` |
+| `TokenEndpointDPoP` | `resolve_context/2`, `resolve_refresh_context/3` | context success or `%TokenExchange.Error{}` | `TokenExchange.Internal.TokenEndpointDPoP` |
+| `RefreshExchange` | `exchange_refresh_token/2` | public TokenExchange success/error | `TokenExchange.Internal.RefreshExchange` |
+| `Rfc8693Exchange` | `exchange/2` | public TokenExchange success/error | `TokenExchange.Internal.Rfc8693Exchange` |
+| `TokenExchange.AuthorizationCodeGrant` | `exchange/1` | public TokenExchange success/error | `TokenExchange.Internal.AuthorizationCodeGrant` |
+| `TokenExchange.CibaGrant` | `exchange/1`, `issue_tokens/4` | public TokenExchange success/error | `TokenExchange.Internal.CibaGrant` |
+| `TokenExchange.DeviceCodeGrant` | `exchange/1` | public TokenExchange success/error | `TokenExchange.Internal.DeviceCodeGrant` |
+| `TokenExchange.GrantSupport` | `handle_code_exchange/6`, `authenticate_client/3`, `fetch_authorization_code/2`, `fetch_device_authorization_for_exchange/3`, `fetch_ciba_authorization_for_exchange/3`, `validate_grant_resources_for_test/2`, `redeem_device_authorization/4`, `redeem_ciba_authorization/4`, `emit_failure/3` | exact existing success/domain/error tuples; every error remains `%TokenExchange.Error{}` | `TokenExchange.Internal.GrantSupport` |
+
+The compatibility adapter is one-way: retained helper facade → neutral implementation + compatibility adapter → public nested struct. No neutral implementation and no `TokenExchange` dispatcher imports or calls the compatibility adapter. [DECIDED]
 
 ## Environment Availability
 
