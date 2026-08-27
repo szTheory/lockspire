@@ -69,7 +69,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
   defp required_capabilities(:authorization_code) do
     [
       {:client_store, :fetch_client_by_id, 1},
-      {:token_store, :fetch_authorization_code, 1},
+      {:token_store, :fetch_authorization_code, 1}
+    ]
+  end
+
+  # Request and grant validation must retain their OAuth error precedence. The
+  # mutation-only capabilities are checked immediately before redemption, after
+  # PKCE/client/redirect validation and before any durable write.
+  defp required_capabilities(:authorization_code_mutation) do
+    [
       {:token_store, :redeem_authorization_code, 3},
       {:transaction_store, :transact, 1},
       {:audit_store, :append_audit_event, 1}

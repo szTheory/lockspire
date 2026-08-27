@@ -586,50 +586,59 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
            request
          ) do
       {%Token{} = access_token, raw_access_token} ->
-        case persist_authorization_code_grant(
-               code_hash,
-               issued_at,
-               access_token,
-               authorization_code,
-               formatted_refresh_token,
-               issuance_context,
-               request
-             ) do
-          {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-            build_success_response(
-              client,
-              authorization_code,
-              persisted_access_token,
-              raw_access_token,
-              issuance_context,
-              issued_at,
-              Map.get(persisted_grant, :refresh_token_raw),
-              request
-            )
+        with :ok <- ensure_code_redemption_capabilities(request) do
+          case persist_authorization_code_grant(
+                 code_hash,
+                 issued_at,
+                 access_token,
+                 authorization_code,
+                 formatted_refresh_token,
+                 issuance_context,
+                 request
+               ) do
+            {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+              build_success_response(
+                client,
+                authorization_code,
+                persisted_access_token,
+                raw_access_token,
+                issuance_context,
+                issued_at,
+                Map.get(persisted_grant, :refresh_token_raw),
+                request
+              )
 
-          {:error, :already_redeemed} ->
-            {:error,
-             invalid_grant(
-               "Authorization code has already been used",
-               :authorization_code_replayed
-             )}
+            {:error, :already_redeemed} ->
+              {:error,
+               invalid_grant(
+                 "Authorization code has already been used",
+                 :authorization_code_replayed
+               )}
 
-          {:error, :not_found} ->
-            {:error,
-             invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
+            {:error, :not_found} ->
+              {:error,
+               invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
 
-          {:error, _reason} ->
-            {:error,
-             oauth_error(
-               500,
-               "server_error",
-               "Unable to redeem authorization code",
-               :token_redemption_failed
-             )}
+            {:error, _reason} ->
+              {:error,
+               oauth_error(
+                 500,
+                 "server_error",
+                 "Unable to redeem authorization code",
+                 :token_redemption_failed
+               )}
+          end
         end
 
       {:error, %Error{} = error} ->
         {:error, error}
+    end
+  end
+
+  defp ensure_code_redemption_capabilities(request) do
+    case Dependencies.validate(Dependencies.fetch!(request), :authorization_code_mutation) do
+      {:ok, _dependencies} -> :ok
+      {:error, %Error{} = error} -> {:error, error}
     end
   end
 
