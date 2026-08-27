@@ -20,7 +20,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
-  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
   alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
@@ -94,13 +93,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     do: ClientAuthentication.authenticate(params, authorization, request, dependencies)
 
   @doc false
-  def authenticate_client(params, authorization, request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
-      authenticate_client(params, authorization, request, dependencies)
-    end
-  end
-
-  @doc false
   def fetch_authorization_code(params, request, %Dependencies{} = dependencies),
     do:
       request |> Dependencies.attach(dependencies) |> then(&fetch_authorization_code(params, &1))
@@ -125,13 +117,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         %Dependencies{} = dependencies
       ),
       do: fetch_device_poll_result(params, client, request, dependencies)
-
-  @doc false
-  def fetch_device_authorization_for_exchange(params, %Client{} = client, request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :device_code) do
-      fetch_device_authorization_for_exchange(params, client, request, dependencies)
-    end
-  end
 
   defp fetch_device_poll_result(
          params,
@@ -158,13 +143,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         %Dependencies{} = dependencies
       ),
       do: fetch_ciba_poll_result(params, client, request, dependencies)
-
-  @doc false
-  def fetch_ciba_authorization_for_exchange(params, %Client{} = client, request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :ciba) do
-      fetch_ciba_authorization_for_exchange(params, client, request, dependencies)
-    end
-  end
 
   defp fetch_ciba_poll_result(params, %Client{} = client, request, %Dependencies{} = dependencies) do
     case GrantPolling.fetch_ciba(params, client, dependencies) do
