@@ -41,8 +41,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.Token
   alias Lockspire.Domain.UsedJti
-  alias Lockspire.Security.Policy
-  alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.CibaAuthorizationStore
   alias Lockspire.Storage.ClientStore
   alias Lockspire.Storage.ConsentStore
@@ -52,7 +50,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
-  alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
@@ -71,6 +68,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   alias Lockspire.Storage.Ecto.Repository.ReplayStore, as: EctoReplayStore
   alias Lockspire.Storage.Ecto.Repository.TokenStore, as: EctoTokenStore
+  alias Lockspire.Storage.Ecto.Repository.SigningKeyStore, as: EctoSigningKeyStore
 
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
@@ -543,207 +541,56 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl KeyStore
-  def publish_key(%SigningKey{} = key) do
-    %SigningKeyRecord{}
-    |> SigningKeyRecord.changeset(key)
-    |> repo_insert(
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:kid]
-    )
-    |> map_one(&SigningKeyRecord.to_domain/1)
-  end
+  def publish_key(%SigningKey{} = key), do: EctoSigningKeyStore.publish_key(repo(), key)
 
   @impl KeyStore
-  def list_active_keys do
-    SigningKeyRecord
-    |> where([key], key.status in [:active, :retiring])
-    |> order_by([key], asc: key.inserted_at)
-    |> repo_all()
-    |> then(fn records ->
-      {:ok, Enum.map(records, &(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))}
-    end)
-  rescue
-    error -> {:error, error}
-  end
+  def list_active_keys, do: EctoSigningKeyStore.list_active_keys(repo())
 
   @impl KeyStore
-  def list_signing_keys(opts \\ []) when is_list(opts) do
-    SigningKeyRecord
-    |> maybe_filter_signing_key_status(Keyword.get(opts, :status))
-    |> order_by([key], desc: key.inserted_at, desc: key.id)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
-  end
+  def list_signing_keys(opts \\ []) when is_list(opts),
+    do: EctoSigningKeyStore.list_signing_keys(repo(), opts)
 
   @impl KeyStore
-  def list_publishable_keys(opts \\ []) when is_list(opts) do
-    SigningKeyRecord
-    |> where(
-      [key],
-      key.status in [:active, :retiring] or
-        (key.status == :upcoming and not is_nil(key.published_at))
-    )
-    |> order_by([key], asc: key.inserted_at)
-    |> repo_all()
-    |> then(fn records ->
-      records
-      |> Enum.map(&(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))
-      |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
-      |> then(&{:ok, &1})
-    end)
-  rescue
-    error -> {:error, error}
-  end
+  def list_publishable_keys(opts \\ []) when is_list(opts),
+    do: EctoSigningKeyStore.list_publishable_keys(repo(), opts)
 
   @impl KeyStore
-  def list_decryption_keys do
-    SigningKeyRecord
-    |> where([key], key.use == :enc)
-    |> where([key], key.status in [:active, :retiring])
-    |> order_by([key], asc: key.inserted_at)
-    |> repo_all()
-    |> then(fn records ->
-      {:ok, Enum.map(records, &SigningKeyRecord.to_domain/1)}
-    end)
-  rescue
-    error -> {:error, error}
-  end
+  def list_decryption_keys, do: EctoSigningKeyStore.list_decryption_keys(repo())
 
   @spec validate_fapi_signing_readiness() ::
           :ok
           | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
-  def validate_fapi_signing_readiness do
-    validate_message_signing_readiness()
-  end
+  def validate_fapi_signing_readiness,
+    do: EctoSigningKeyStore.validate_fapi_signing_readiness(repo())
 
   @spec validate_message_signing_readiness() ::
           :ok
           | {:error, :missing_compliant_active_key | :missing_compliant_publishable_key | term()}
-  def validate_message_signing_readiness do
-    with {:publishable, {:ok, [_ | _]}} <-
-           {:publishable, list_publishable_keys(security_profile: :fapi_2_0_security)},
-         {:active, {:ok, %SigningKey{}}} <-
-           {:active, fetch_active_signing_key(security_profile: :fapi_2_0_security)} do
-      :ok
-    else
-      {:publishable, {:ok, []}} -> {:error, :missing_compliant_publishable_key}
-      {:active, {:ok, nil}} -> {:error, :missing_compliant_active_key}
-      {_, {:error, reason}} -> {:error, reason}
-    end
-  end
+  def validate_message_signing_readiness,
+    do: EctoSigningKeyStore.validate_message_signing_readiness(repo())
 
   @impl KeyStore
-  def fetch_active_signing_key(opts \\ []) when is_list(opts) do
-    SigningKeyRecord
-    |> where([key], key.status == :active)
-    |> where([key], key.use == :sig)
-    |> order_by([key], asc: key.inserted_at)
-    |> repo_all()
-    |> Enum.map(&SigningKeyRecord.to_domain/1)
-    |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
-    |> filter_keys_for_alg(Keyword.get(opts, :alg))
-    |> List.first()
-    |> then(&{:ok, &1})
-  rescue
-    error -> {:error, error}
-  end
-
-  defp filter_keys_for_alg(keys, nil), do: keys
-
-  defp filter_keys_for_alg(keys, alg) when is_binary(alg) do
-    Enum.filter(keys, &(&1.alg == alg))
-  end
-
-  defp filter_keys_for_security_profile(keys, :fapi_2_0_security) do
-    allowed_algs = SecurityProfile.allowed_signing_algorithms(:fapi_2_0_security)
-
-    Enum.filter(keys, fn %SigningKey{alg: alg, use: use} = key ->
-      use == :sig and alg in allowed_algs and
-        Policy.validate_key_compliance(key, :fapi_2_0_security) == :ok
-    end)
-  end
-
-  defp filter_keys_for_security_profile(keys, _profile), do: keys
+  def fetch_active_signing_key(opts \\ []) when is_list(opts),
+    do: EctoSigningKeyStore.fetch_active_signing_key(repo(), opts)
 
   @impl KeyStore
-  def fetch_signing_key_by_id(id) when is_integer(id) do
-    SigningKeyRecord
-    |> where([key], key.id == ^id)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &SigningKeyRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
-  end
+  def fetch_signing_key_by_id(id) when is_integer(id),
+    do: EctoSigningKeyStore.fetch_signing_key_by_id(repo(), id)
 
   @impl KeyStore
   def publish_signing_key(id, published_at)
-      when is_integer(id) and is_struct(published_at, DateTime) do
-    transact(fn ->
-      id
-      |> locked_signing_key_query()
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %SigningKeyRecord{status: :upcoming, published_at: nil} = record ->
-          record
-          |> SigningKeyRecord.update_changeset(%{published_at: published_at})
-          |> repo_update()
-          |> map_one(&SigningKeyRecord.to_domain/1)
-          |> unwrap_or_rollback()
-
-        %SigningKeyRecord{status: :upcoming} ->
-          repo().rollback(:already_published)
-
-        %SigningKeyRecord{} ->
-          repo().rollback(:invalid_state)
-      end
-    end)
-  end
+      when is_integer(id) and is_struct(published_at, DateTime),
+      do: EctoSigningKeyStore.publish_signing_key(repo(), id, published_at)
 
   @impl KeyStore
   def activate_signing_key(id, activated_at)
-      when is_integer(id) and is_struct(activated_at, DateTime) do
-    transact(fn ->
-      id
-      |> locked_signing_key_query()
-      |> repo_one()
-      |> activate_signing_key_record(activated_at)
-    end)
-  end
+      when is_integer(id) and is_struct(activated_at, DateTime),
+      do: EctoSigningKeyStore.activate_signing_key(repo(), id, activated_at)
 
   @impl KeyStore
   def retire_signing_key(id, retired_at)
-      when is_integer(id) and is_struct(retired_at, DateTime) do
-    transact(fn ->
-      id
-      |> locked_signing_key_query()
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %SigningKeyRecord{status: :retiring} = record ->
-          record
-          |> SigningKeyRecord.update_changeset(%{
-            status: :retired,
-            retired_at: retired_at
-          })
-          |> repo_update()
-          |> map_one(&SigningKeyRecord.to_domain/1)
-          |> unwrap_or_rollback()
-
-        %SigningKeyRecord{status: :retired} ->
-          repo().rollback(:already_retired)
-
-        %SigningKeyRecord{} ->
-          repo().rollback(:invalid_state)
-      end
-    end)
-  end
+      when is_integer(id) and is_struct(retired_at, DateTime),
+      do: EctoSigningKeyStore.retire_signing_key(repo(), id, retired_at)
 
   @impl TokenStore
   def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
@@ -840,9 +687,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
   defp map_one({:error, error}, _mapper), do: {:error, error}
 
-  defp maybe_map(nil, _mapper), do: nil
-  defp maybe_map(record, mapper), do: mapper.(record)
-
   defp maybe_filter_token_account(query, nil), do: query
   defp maybe_filter_token_account(query, ""), do: query
 
@@ -877,15 +721,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_filter_token_status(query, _status, _now), do: query
 
-  defp maybe_filter_signing_key_status(query, nil), do: query
-
-  defp maybe_filter_signing_key_status(query, status)
-       when status in [:upcoming, :active, :retiring, :retired] do
-    where(query, [key], key.status == ^status)
-  end
-
-  defp maybe_filter_signing_key_status(query, _status), do: query
-
   defp maybe_limit_tokens(query, nil), do: query
 
   defp maybe_limit_tokens(query, limit) when is_integer(limit) and limit > 0,
@@ -897,12 +732,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
     TokenRecord
     |> where([token], token.token_hash == ^token_hash)
     |> where([token], token.token_type == :refresh_token)
-    |> lock("FOR UPDATE")
-  end
-
-  defp locked_signing_key_query(id) do
-    SigningKeyRecord
-    |> where([key], key.id == ^id)
     |> lock("FOR UPDATE")
   end
 
@@ -1014,67 +843,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   defp revoke_lifecycle_token_record(%TokenRecord{}, _client_id, _revoked_at), do: nil
-
-  defp activate_signing_key_record(nil, _activated_at), do: repo().rollback(:not_found)
-
-  defp activate_signing_key_record(%SigningKeyRecord{status: status}, _activated_at)
-       when status != :upcoming,
-       do: repo().rollback(:invalid_state)
-
-  defp activate_signing_key_record(%SigningKeyRecord{published_at: nil}, _activated_at),
-    do: repo().rollback(:not_published)
-
-  defp activate_signing_key_record(%SigningKeyRecord{} = selected_record, activated_at) do
-    case fetch_active_signing_key_records(selected_record.use) do
-      [] ->
-        %{
-          activated_key: activate_selected_signing_key(selected_record, activated_at),
-          retiring_key: nil
-        }
-
-      [%SigningKeyRecord{} = active_record] ->
-        %{
-          activated_key: activate_selected_signing_key(selected_record, activated_at),
-          retiring_key: retire_active_signing_key(active_record, activated_at)
-        }
-
-      _multiple ->
-        repo().rollback(:multiple_active_keys)
-    end
-  end
-
-  defp fetch_active_signing_key_records(use) do
-    SigningKeyRecord
-    |> where([key], key.status == :active)
-    |> where([key], key.use == ^use)
-    |> lock("FOR UPDATE")
-    |> repo_all()
-  end
-
-  defp activate_selected_signing_key(%SigningKeyRecord{} = record, activated_at) do
-    record
-    |> SigningKeyRecord.update_changeset(%{
-      status: :active,
-      activated_at: activated_at,
-      retiring_at: nil,
-      retired_at: nil
-    })
-    |> repo_update()
-    |> map_one(&SigningKeyRecord.to_domain/1)
-    |> unwrap_or_rollback()
-  end
-
-  defp retire_active_signing_key(%SigningKeyRecord{} = record, activated_at) do
-    record
-    |> SigningKeyRecord.update_changeset(%{
-      status: :retiring,
-      retiring_at: activated_at,
-      retired_at: nil
-    })
-    |> repo_update()
-    |> map_one(&SigningKeyRecord.to_domain/1)
-    |> unwrap_or_rollback()
-  end
 
   defp redeem_authorization_code_record(nil, _redeemed_at, _access_token),
     do: repo().rollback(:not_found)
@@ -1387,7 +1155,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     Support.insert(repo(), changeset, opts)
   end
 
-  defp repo_update(changeset, opts \\ []) do
+  defp repo_update(changeset, opts) do
     Support.update(repo(), changeset, opts)
   end
 
@@ -1397,9 +1165,5 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp repo_delete_all(query, opts) do
     Support.delete_all(repo(), query, opts)
-  end
-
-  defp strip_private_key_material(%SigningKey{} = key) do
-    %SigningKey{key | private_jwk_encrypted: nil}
   end
 end
