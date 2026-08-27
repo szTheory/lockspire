@@ -93,7 +93,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl ClientStore
   def replace_client_registration(
-        %Client{id: id},
+        %Client{id: id} = client,
         %Client{} = replacement,
         new_rat_hash,
         audit_attrs
@@ -101,7 +101,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
       when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
     EctoClientStore.replace_client_registration(
       repo(),
-      %Client{id: id},
+      client,
       replacement,
       new_rat_hash,
       audit_attrs
@@ -109,19 +109,19 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ClientStore
-  def rotate_registration_access_token(%Client{id: id}, new_rat_hash, audit_attrs)
+  def rotate_registration_access_token(%Client{id: id} = client, new_rat_hash, audit_attrs)
       when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
     EctoClientStore.rotate_registration_access_token(
       repo(),
-      %Client{id: id},
+      client,
       new_rat_hash,
       audit_attrs
     )
   end
 
   @impl ClientStore
-  def update_client(%Client{id: id}, attrs) when is_integer(id) and is_map(attrs) do
-    EctoClientStore.update_client(repo(), %Client{id: id}, attrs)
+  def update_client(%Client{id: id} = client, attrs) when is_integer(id) and is_map(attrs) do
+    EctoClientStore.update_client(repo(), client, attrs)
   end
 
   @impl ServerPolicyStore
@@ -140,12 +140,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ClientStore
-  def rotate_client_secret(%Client{id: id}, secret_hash, verifier_encrypted, rotated_at)
+  def rotate_client_secret(%Client{id: id} = client, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
              is_struct(rotated_at, DateTime) do
     EctoClientStore.rotate_client_secret(
       repo(),
-      %Client{id: id},
+      client,
       secret_hash,
       verifier_encrypted,
       rotated_at
@@ -153,9 +153,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl ClientStore
-  def set_client_active(%Client{id: id}, active, attrs)
+  def set_client_active(%Client{id: id} = client, active, attrs)
       when is_integer(id) and is_boolean(active) and is_map(attrs) do
-    EctoClientStore.set_client_active(repo(), %Client{id: id}, active, attrs)
+    EctoClientStore.set_client_active(repo(), client, active, attrs)
   end
 
   @impl InteractionStore

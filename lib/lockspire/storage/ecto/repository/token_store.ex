@@ -216,9 +216,6 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
     end
   end
 
-  defp rotate_record(_repo, %TokenRecord{client_id: id}, id, _at, _r, _a, _cnf) when false,
-    do: nil
-
   defp rotate_record(_repo, %TokenRecord{client_id: stored}, client, _at, _r, _a, _cnf)
        when stored != client, do: {:error, :client_mismatch}
 
