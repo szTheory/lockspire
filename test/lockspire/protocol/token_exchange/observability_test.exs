@@ -10,5 +10,7 @@ defmodule Lockspire.Protocol.TokenExchange.ObservabilityTest do
     assert function_exported?(GrantObservability, :emit_authorization_code_success, 4)
     assert function_exported?(GrantObservability, :record_authorization_code_failure, 4)
     assert function_exported?(GrantObservability, :emit_authorization_code_failure, 4)
+    assert function_exported?(GrantObservability, :emit_failure, 4)
+    assert function_exported?(GrantObservability, :append_poll_failure_audit, 4)
   end
 end
