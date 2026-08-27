@@ -37,11 +37,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
-  alias Lockspire.Storage.Ecto.ServerPolicyRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.Ecto.UsedJtiRecord
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
+  alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
+  alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
   alias Lockspire.Storage.Ecto.Repository.TransactionStore, as: EctoTransactionStore
   alias Lockspire.Storage.InteractionStore
@@ -75,44 +76,22 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl ClientStore
   def register_client(%Client{} = client) do
-    %ClientRecord{}
-    |> ClientRecord.changeset(client)
-    |> repo_insert()
-    |> map_one(&ClientRecord.to_domain/1)
+    EctoClientStore.register_client(repo(), client)
   end
 
   @impl ClientStore
   def list_clients(opts \\ []) when is_list(opts) do
-    ClientRecord
-    |> maybe_filter_client_search(Keyword.get(opts, :search))
-    |> maybe_filter_client_status(Keyword.get(opts, :active))
-    |> maybe_filter_client_provenance(Keyword.get(opts, :provenance))
-    |> order_by([client], asc: client.name, asc: client.client_id)
-    |> maybe_limit_clients(Keyword.get(opts, :limit))
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoClientStore.list_clients(repo(), opts)
   end
 
   @impl ClientStore
   def fetch_client_by_id(client_id) when is_binary(client_id) do
-    ClientRecord
-    |> where([client], client.client_id == ^client_id)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoClientStore.fetch_client_by_id(repo(), client_id)
   end
 
   @impl ClientStore
   def get_client_by_registration_access_token_hash(rat_hash) when is_binary(rat_hash) do
-    ClientRecord
-    |> where([client], client.registration_access_token_hash == ^rat_hash)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoClientStore.get_client_by_registration_access_token_hash(repo(), rat_hash)
   end
 
   @impl ClientStore
@@ -123,156 +102,63 @@ defmodule Lockspire.Storage.Ecto.Repository do
         audit_attrs
       )
       when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
-    transact(fn ->
-      ClientRecord
-      |> where([client], client.id == ^id)
-      |> lock("FOR UPDATE")
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %ClientRecord{} = record ->
-          record
-          |> ClientRecord.changeset(replacement)
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> repo_update()
-          |> map_one(&ClientRecord.to_domain/1)
-          |> append_client_audit_or_rollback(audit_attrs)
-      end
-    end)
+    EctoClientStore.replace_client_registration(
+      repo(),
+      %Client{id: id},
+      replacement,
+      new_rat_hash,
+      audit_attrs
+    )
   end
 
   @impl ClientStore
   def rotate_registration_access_token(%Client{id: id}, new_rat_hash, audit_attrs)
       when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
-    transact(fn ->
-      ClientRecord
-      |> where([client], client.id == ^id)
-      |> lock("FOR UPDATE")
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %ClientRecord{} = record ->
-          record
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> repo_update()
-          |> map_one(&ClientRecord.to_domain/1)
-          |> append_client_audit_or_rollback(audit_attrs)
-      end
-    end)
+    EctoClientStore.rotate_registration_access_token(
+      repo(),
+      %Client{id: id},
+      new_rat_hash,
+      audit_attrs
+    )
   end
 
   @impl ClientStore
   def update_client(%Client{id: id}, attrs) when is_integer(id) and is_map(attrs) do
-    transact(fn ->
-      ClientRecord
-      |> where([client], client.id == ^id)
-      |> lock("FOR UPDATE")
-      |> repo_one()
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %ClientRecord{} = record ->
-          record
-          |> ClientRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-          |> repo_update()
-          |> map_one(&ClientRecord.to_domain/1)
-          |> unwrap_or_rollback()
-      end
-    end)
+    EctoClientStore.update_client(repo(), %Client{id: id}, attrs)
   end
 
   @impl ServerPolicyStore
   def get_server_policy do
-    ServerPolicyRecord
-    |> where([policy], policy.id == ^ServerPolicyRecord.singleton_id())
-    |> repo_one()
-    |> then(fn
-      nil -> {:ok, %ServerPolicy{}}
-      %ServerPolicyRecord{} = record -> {:ok, ServerPolicyRecord.to_domain(record)}
-    end)
-  rescue
-    error -> {:error, error}
+    EctoServerPolicyStore.get_server_policy(repo())
   end
 
   @impl ServerPolicyStore
   def put_server_policy(%ServerPolicy{} = policy) do
-    update_server_policy(fn _current -> policy end)
+    EctoServerPolicyStore.put_server_policy(repo(), policy)
   end
 
   @impl ServerPolicyStore
   def update_server_policy(mutator) when is_function(mutator, 1) do
-    transact(fn ->
-      singleton_id = ServerPolicyRecord.singleton_id()
-
-      current_record =
-        ServerPolicyRecord
-        |> where([stored_policy], stored_policy.id == ^singleton_id)
-        |> lock("FOR UPDATE")
-        |> repo_one()
-
-      current =
-        case current_record do
-          nil -> %ServerPolicy{id: singleton_id}
-          %ServerPolicyRecord{} = record -> ServerPolicyRecord.to_domain(record)
-        end
-
-      %ServerPolicy{} = new_policy = mutator.(current)
-
-      case current_record do
-        nil ->
-          %ServerPolicyRecord{}
-          |> ServerPolicyRecord.changeset(%ServerPolicy{new_policy | id: singleton_id})
-          |> repo_insert()
-          |> map_one(&ServerPolicyRecord.to_domain/1)
-          |> unwrap_or_rollback()
-
-        %ServerPolicyRecord{} = record ->
-          record
-          |> ServerPolicyRecord.changeset(%ServerPolicy{new_policy | id: singleton_id})
-          |> repo_update([])
-          |> map_one(&ServerPolicyRecord.to_domain/1)
-          |> unwrap_or_rollback()
-      end
-    end)
+    EctoServerPolicyStore.update_server_policy(repo(), mutator)
   end
 
   @impl ClientStore
   def rotate_client_secret(%Client{id: id}, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
              is_struct(rotated_at, DateTime) do
-    update_client_record(
-      id,
-      %{
-        client_secret_hash: secret_hash,
-        client_secret_jwt_verifier_encrypted: verifier_encrypted,
-        last_secret_rotated_at: rotated_at,
-        updated_at: DateTime.utc_now()
-      },
-      sensitive: true
+    EctoClientStore.rotate_client_secret(
+      repo(),
+      %Client{id: id},
+      secret_hash,
+      verifier_encrypted,
+      rotated_at
     )
   end
 
   @impl ClientStore
   def set_client_active(%Client{id: id}, active, attrs)
       when is_integer(id) and is_boolean(active) and is_map(attrs) do
-    lifecycle_attrs =
-      attrs
-      |> Map.take([:disabled_at, :disabled_by])
-      |> Map.put(:active, active)
-      |> Map.put(:updated_at, DateTime.utc_now())
-
-    update_client_record(id, lifecycle_attrs)
+    EctoClientStore.set_client_active(repo(), %Client{id: id}, active, attrs)
   end
 
   @impl InteractionStore
@@ -1269,57 +1155,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
     Config.repo!()
   end
 
-  defp update_client_record(id, attrs, opts \\ []) do
-    transact(fn ->
-      ClientRecord
-      |> where([client], client.id == ^id)
-      |> lock("FOR UPDATE")
-      |> repo_one(opts)
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %ClientRecord{} = record ->
-          record
-          |> ClientRecord.update_changeset(attrs)
-          |> repo_update(opts)
-          |> map_one(&ClientRecord.to_domain/1)
-          |> unwrap_or_rollback()
-      end
-    end)
-  end
-
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
   defp map_one({:error, error}, _mapper), do: {:error, error}
 
   defp maybe_map(nil, _mapper), do: nil
   defp maybe_map(record, mapper), do: mapper.(record)
-
-  defp maybe_filter_client_search(query, nil), do: query
-  defp maybe_filter_client_search(query, ""), do: query
-
-  defp maybe_filter_client_search(query, search) when is_binary(search) do
-    pattern = "%#{search}%"
-
-    where(
-      query,
-      [client],
-      ilike(client.client_id, ^pattern) or ilike(client.name, ^pattern)
-    )
-  end
-
-  defp maybe_filter_client_status(query, nil), do: query
-
-  defp maybe_filter_client_status(query, active) when is_boolean(active) do
-    where(query, [client], client.active == ^active)
-  end
-
-  defp maybe_filter_client_provenance(query, nil), do: query
-
-  defp maybe_filter_client_provenance(query, provenance)
-       when provenance in [:operator, :self_registered] do
-    where(query, [client], client.provenance == ^provenance)
-  end
 
   defp maybe_filter_consent_account(query, nil), do: query
   defp maybe_filter_consent_account(query, ""), do: query
@@ -1417,13 +1257,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   defp maybe_filter_signing_key_status(query, _status), do: query
-
-  defp maybe_limit_clients(query, nil), do: query
-
-  defp maybe_limit_clients(query, limit) when is_integer(limit) and limit > 0,
-    do: limit(query, ^limit)
-
-  defp maybe_limit_clients(query, _limit), do: query
 
   defp maybe_limit_consents(query, nil), do: query
 
@@ -2271,17 +2104,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
       _other -> false
     end)
   end
-
-  defp append_client_audit_or_rollback({:ok, %Client{} = client}, audit_attrs)
-       when is_map(audit_attrs) do
-    case append_audit_event(audit_attrs) do
-      {:ok, _event} -> client
-      {:error, reason} -> repo().rollback(reason)
-    end
-  end
-
-  defp append_client_audit_or_rollback({:error, reason}, _audit_attrs),
-    do: repo().rollback(reason)
 
   defp repo_all(query, opts \\ []) do
     Support.all(repo(), query, opts)
