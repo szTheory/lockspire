@@ -184,7 +184,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     assert %{
              "error" => "invalid_grant",
-             "error_description" => "The authorization code has already been redeemed"
+             "error_description" => "Authorization code has already been used"
            } = Jason.decode!(replay_conn.resp_body)
   end
 
