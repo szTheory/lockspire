@@ -8,9 +8,11 @@ defmodule Lockspire.CoverageBaselineContractTest do
     config = Mix.Project.config()
     mixfile = File.read!(@mixfile)
 
-    assert config[:test_coverage] == [summary: [threshold: 73]]
+    assert config[:test_coverage] == [summary: [threshold: 73], output: "cover"]
     assert mixfile =~ "73.11%"
     assert mixfile =~ "\"test.coverage\": [\"test.setup\", \"test --cover\"]"
+    assert mixfile =~ "LOCKSPIRE_COMPLETE_COVERAGE"
+    assert mixfile =~ "do: 84, else: 73"
 
     assert Mix.Project.config()[:deps]
            |> Enum.all?(fn dependency ->
@@ -26,8 +28,9 @@ defmodule Lockspire.CoverageBaselineContractTest do
     assert fast_job =~ "scripts/ci/run_test_matrix.sh --fast"
     refute fast_job =~ "run: mix test.fast"
 
-    assert File.read!(Path.expand("../../scripts/ci/run_test_matrix.sh", __DIR__)) =~
-             "mix test.coverage"
+    runner = File.read!(Path.expand("../../scripts/ci/run_test_matrix.sh", __DIR__))
+    assert runner =~ "--cover --export-coverage ${partition}"
+    refute runner =~ "mix test.coverage"
   end
 
   defp ci_job!(workflow, name) do

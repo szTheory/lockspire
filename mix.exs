@@ -24,7 +24,7 @@ defmodule Lockspire.MixProject do
       aliases: aliases(),
       # The non-integration suite measured 73.11% on 2026-08-26. Keep the
       # rounded-down floor stable so ordinary feature work can only ratchet it up.
-      test_coverage: [summary: [threshold: 73]],
+      test_coverage: test_coverage(),
       docs: docs(),
       dialyzer: dialyzer(),
       hex: hex(),
@@ -80,8 +80,16 @@ defmodule Lockspire.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
+  defp test_coverage do
+    threshold =
+      if System.get_env("LOCKSPIRE_COMPLETE_COVERAGE") == "true", do: 84, else: 73
+
+    output = System.get_env("LOCKSPIRE_COVERAGE_OUTPUT", "cover")
+    [summary: [threshold: threshold], output: output]
+  end
+
   defp aliases do
-    [
+    aliases = [
       "test.setup": ["lockspire.test.setup"],
       "test.fast": ["test.setup", "test"],
       "test.coverage": ["test.setup", "test --cover"],
@@ -143,6 +151,12 @@ defmodule Lockspire.MixProject do
         "cmd sh -lc 'MIX_ENV=test mix test.integration'"
       ]
     ]
+
+    if System.get_env("LOCKSPIRE_COVERAGE_AGGREGATE") == "true" do
+      Keyword.delete(aliases, :"test.coverage")
+    else
+      aliases
+    end
   end
 
   defp preferred_envs do
