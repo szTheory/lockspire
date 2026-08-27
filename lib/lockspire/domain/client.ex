@@ -86,7 +86,8 @@ defmodule Lockspire.Domain.Client do
           updated_at: DateTime.t() | nil
         }
 
-  # credo:disable-for-next-line
+  # A client registration is one durable protocol boundary; splitting it risks divergent defaults.
+  # credo:disable-for-next-line Credo.Check.Warning.StructFieldAmount
   defstruct [
     :id,
     :client_id,

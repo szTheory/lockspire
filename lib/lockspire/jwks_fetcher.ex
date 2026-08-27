@@ -122,6 +122,7 @@ defmodule Lockspire.JwksFetcher do
     end
   end
 
+  # Each HTTP outcome maps to a distinct safe JWKS failure reason; collapsing branches loses diagnostics.
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_network(uri, opts) do
     req_opts = strict_req_opts(opts)
@@ -187,12 +188,9 @@ defmodule Lockspire.JwksFetcher do
   end
 
   defp build_jwk_set(body_map) do
-    # credo:disable-for-next-line
-    try do
-      {:ok, JOSE.JWK.from_map(body_map)}
-    rescue
-      _ -> {:error, :invalid_format}
-    end
+    {:ok, JOSE.JWK.from_map(body_map)}
+  rescue
+    _ -> {:error, :invalid_format}
   end
 
   defp validate_https_uri(uri) do

@@ -897,7 +897,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     })
   end
 
-  # credo:disable-for-next-line
+  # The validation result mirrors independently validated OAuth inputs without a lossy intermediary tuple.
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp build_validated(
          params,
          %Client{} = client,

@@ -154,16 +154,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
   end
 
   defp decode_jwt_claims(jwt) do
-    # credo:disable-for-next-line
-    try do
-      payload_struct = JOSE.JWT.peek_payload(jwt)
-      {_modules, claims} = JOSE.JWT.to_map(payload_struct)
-      {:ok, claims}
-    rescue
-      _ -> :error
-    catch
-      _, _ -> :error
-    end
+    payload_struct = JOSE.JWT.peek_payload(jwt)
+    {_modules, claims} = JOSE.JWT.to_map(payload_struct)
+    {:ok, claims}
+  rescue
+    _ -> :error
+  catch
+    _, _ -> :error
   end
 
   defp check_delegation_depth(nil, _client, _request), do: :ok

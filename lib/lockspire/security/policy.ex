@@ -79,7 +79,8 @@ defmodule Lockspire.Security.Policy do
   end
 
   @spec validate_issuer_and_mount_path!(String.t(), String.t()) :: String.t()
-  # credo:disable-for-next-line
+  # Exact validation order keeps the first issuer configuration failure actionable for operators.
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def validate_issuer_and_mount_path!(issuer, mount_path)
       when is_binary(issuer) and is_binary(mount_path) do
     uri = URI.parse(issuer)
