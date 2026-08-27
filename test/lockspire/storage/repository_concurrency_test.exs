@@ -11,6 +11,8 @@ defmodule Lockspire.Storage.RepositoryConcurrencyTest do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
+  @moduletag :integration
+
   setup_all do
     unless Process.whereis(Lockspire.TestRepo) do
       start_supervised!(Lockspire.TestRepo)
@@ -21,9 +23,11 @@ defmodule Lockspire.Storage.RepositoryConcurrencyTest do
   end
 
   test "concurrent authorization-code redemption has exactly one committed winner" do
-    suffix = System.unique_integer([:positive])
+    suffix = Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
     raw_code = "atomic-concurrent-code-#{suffix}"
     client_id = "atomic-concurrent-client-#{suffix}"
+
+    on_exit(fn -> cleanup(client_id) end)
 
     {client, authorization_code} =
       unboxed(fn ->
@@ -75,7 +79,9 @@ defmodule Lockspire.Storage.RepositoryConcurrencyTest do
              unboxed(fn ->
                Repository.fetch_authorization_code(TokenFormatter.hash_token(raw_code))
              end)
+  end
 
+  defp cleanup(client_id) do
     unboxed(fn ->
       Lockspire.TestRepo.delete_all(
         from(token in TokenRecord,
