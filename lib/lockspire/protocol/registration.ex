@@ -10,9 +10,9 @@ defmodule Lockspire.Protocol.Registration do
     3. DCR policy resolution via `Lockspire.Protocol.DcrPolicy.resolve/3`.
     4. Intake validation for JWKS coherence, redirect URIs, and the PKCE floor.
     5. Credential generation (`client_id`, `client_secret`, `registration_access_token`).
-    6. Persistence via `Lockspire.Admin.Clients.create_dcr_client/1` (DCR-aware persistence
+    6. Persistence via `Lockspire.ClientLifecycle.create_dcr/1` (DCR-aware persistence
        helper — preserves provenance/RAT-hash/IAT-FK/issued_at/expires_at
-       verbatim, unlike the legacy `Lockspire.Clients.register_client/1` which strips them).
+       verbatim while keeping protocol orchestration independent of operator delivery).
     7. Post-commit audit + telemetry emission (`:dcr_registration_succeeded` /
        `:dcr_registration_rejected`).
 
