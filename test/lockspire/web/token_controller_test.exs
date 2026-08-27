@@ -155,6 +155,39 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert persisted_token.token_hash == TokenFormatter.hash_token(body["access_token"])
   end
 
+  test "POST /token preserves the authorization-code replay OAuth wire contract", %{
+    public_client: public_client
+  } do
+    request = %{
+      "grant_type" => "authorization_code",
+      "client_id" => public_client.client_id,
+      "code" => "public-code",
+      "redirect_uri" => "https://client.example.com/callback",
+      "code_verifier" => "public-verifier"
+    }
+
+    first_conn =
+      build_conn(:post, "/token", request)
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert first_conn.status == 200
+
+    replay_conn =
+      build_conn(:post, "/token", request)
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert replay_conn.status == 400
+    assert get_resp_header(replay_conn, "cache-control") == ["no-store"]
+    assert get_resp_header(replay_conn, "pragma") == ["no-cache"]
+
+    assert %{
+             "error" => "invalid_grant",
+             "error_description" => "The authorization code has already been redeemed"
+           } = Jason.decode!(replay_conn.resp_body)
+  end
+
   test "POST /token includes an id_token for openid code flow", %{public_client: public_client} do
     publish_signing_key("kid-token-controller")
     create_openid_authorization_code(public_client, "openid-code", "openid-verifier", "nonce-123")
