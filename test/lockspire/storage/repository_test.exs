@@ -15,6 +15,8 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.Repository.ClientStore
+  alias Lockspire.Storage.Ecto.Repository.ConsentStore
+  alias Lockspire.Storage.Ecto.Repository.InteractionStore
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
 
@@ -53,6 +55,52 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, %Client{client_id: "explicit-client-store"}} =
              ClientStore.register_client(Lockspire.TestRepo, client)
+  end
+
+  test "interaction and consent aggregate collaborators return domain values through an explicit repo" do
+    now = DateTime.utc_now()
+
+    interaction = %Interaction{
+      interaction_id: "explicit-interaction-store",
+      client_id: "client_123",
+      scopes_requested: ["openid"],
+      redirect_uri: "https://client.example.com/callback",
+      return_to: "/lockspire/authorize/continue",
+      status: :pending_login,
+      expires_at: DateTime.add(now, 300, :second)
+    }
+
+    assert {:ok, %Interaction{interaction_id: "explicit-interaction-store"}} =
+             InteractionStore.put_interaction(Lockspire.TestRepo, interaction)
+
+    assert {:ok, %Interaction{status: :pending_consent}} =
+             InteractionStore.transition_interaction(
+               Lockspire.TestRepo,
+               interaction.interaction_id,
+               [:pending_login],
+               %{status: :pending_consent, consent_requested_at: now}
+             )
+
+    grant = %ConsentGrant{
+      account_id: "explicit-consent-account",
+      client_id: "client_123",
+      scopes: ["openid"],
+      granted_at: now,
+      status: :active,
+      kind: :remembered
+    }
+
+    assert {:ok, %ConsentGrant{} = stored_grant} =
+             ConsentStore.grant_consent(Lockspire.TestRepo, grant)
+
+    assert {:ok, [%ConsentGrant{id: grant_id}]} =
+             ConsentStore.list_reusable_consents(
+               Lockspire.TestRepo,
+               "explicit-consent-account",
+               "client_123"
+             )
+
+    assert grant_id == stored_grant.id
   end
 
   test "registers and fetches a client through the repository contract" do
