@@ -6,9 +6,8 @@ defmodule Lockspire.Protocol.TokenExchange.AuthorizationCodeGrant do
   alias Lockspire.Protocol.TokenResult
 
   def exchange(request) when is_map(request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :authorization_code) do
-      request |> Internal.exchange(dependencies) |> to_public_result()
-    else
+    case LegacyOptions.from_request(request, :authorization_code) do
+      {:ok, dependencies} -> request |> Internal.exchange(dependencies) |> to_public_result()
       {:error, error} -> {:error, Compatibility.to_public(error)}
     end
   end

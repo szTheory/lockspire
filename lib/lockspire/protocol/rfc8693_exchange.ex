@@ -13,13 +13,15 @@ defmodule Lockspire.Protocol.Rfc8693Exchange do
 
   @spec exchange(Client.t(), map()) :: {:ok, Success.t()} | {:error, Error.t()}
   def exchange(%Client{} = client, request) when is_map(request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :rfc8693) do
-      case Internal.exchange(client, request, dependencies) do
-        {:ok, %TokenResult.Success{} = success} -> {:ok, Compatibility.to_public(success)}
-        {:error, %TokenResult.Error{} = error} -> {:error, Compatibility.to_public(error)}
-      end
-    else
-      {:error, %TokenResult.Error{} = error} -> {:error, Compatibility.to_public(error)}
+    case LegacyOptions.from_request(request, :rfc8693) do
+      {:ok, dependencies} ->
+        case Internal.exchange(client, request, dependencies) do
+          {:ok, %TokenResult.Success{} = success} -> {:ok, Compatibility.to_public(success)}
+          {:error, %TokenResult.Error{} = error} -> {:error, Compatibility.to_public(error)}
+        end
+
+      {:error, %TokenResult.Error{} = error} ->
+        {:error, Compatibility.to_public(error)}
     end
   end
 end

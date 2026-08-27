@@ -8,19 +8,20 @@ defmodule Lockspire.Protocol.TokenExchange.CibaGrant do
   alias Lockspire.Protocol.TokenResult
 
   def exchange(request) when is_map(request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :ciba) do
-      request |> Internal.exchange(dependencies) |> to_public_result()
-    else
+    case LegacyOptions.from_request(request, :ciba) do
+      {:ok, dependencies} -> request |> Internal.exchange(dependencies) |> to_public_result()
       {:error, error} -> {:error, Compatibility.to_public(error)}
     end
   end
 
   def issue_tokens(%Client{} = client, %CibaAuthorization{} = authorization, context, request) do
-    with {:ok, dependencies} <- LegacyOptions.from_request(request, :ciba) do
-      Internal.issue_tokens(client, authorization, context, request, dependencies)
-      |> to_public_result()
-    else
-      {:error, error} -> {:error, Compatibility.to_public(error)}
+    case LegacyOptions.from_request(request, :ciba) do
+      {:ok, dependencies} ->
+        Internal.issue_tokens(client, authorization, context, request, dependencies)
+        |> to_public_result()
+
+      {:error, error} ->
+        {:error, Compatibility.to_public(error)}
     end
   end
 
