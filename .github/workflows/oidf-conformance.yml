@@ -21,6 +21,8 @@ concurrency:
 env:
   ELIXIR_VERSION: "1.19.5"
   OTP_VERSION: "28"
+  PYTHON_VERSION: "3.13.15"
+  PIP_VERSION: "26.2.1"
 
 jobs:
   repo-native-phase37:
@@ -61,6 +63,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
       - name: Install dependencies
         run: mix deps.get --check-locked
 
@@ -74,6 +85,8 @@ jobs:
 
       - name: Run immutable supplemental Phase 37 profile
         run: bash scripts/conformance/run_phase37_suite.sh
+        env:
+          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_PHASE37_PROVIDER_CONFIG_JSON }}
 
       - name: Upload redacted Phase 37 receipt
         if: always()
@@ -122,6 +135,15 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
       - name: Install dependencies
         run: mix deps.get --check-locked
 
@@ -130,6 +152,8 @@ jobs:
 
       - name: Run immutable supplemental FAPI 2.0 profile
         run: bash scripts/conformance/run_fapi2_suite.sh
+        env:
+          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_FAPI2_PROVIDER_CONFIG_JSON }}
 
       - name: Upload redacted FAPI 2.0 receipt
         if: always()
@@ -168,9 +192,6 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
-      LOCKSPIRE_PHASE37_MODE: hosted
-      LOCKSPIRE_PHASE37_PROVIDER_DISCOVERY_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_DISCOVERY_URL }}
-      LOCKSPIRE_PHASE37_PROVIDER_BASE_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_BASE_URL }}
 
     steps:
       - name: Check out repository
@@ -182,11 +203,22 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
       - name: Install dependencies
         run: mix deps.get --check-locked
 
       - name: Run hosted maintainer lane
         run: bash scripts/conformance/run_phase37_suite.sh
+        env:
+          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON }}
 
       - name: Upload redacted hosted receipt
         if: always()

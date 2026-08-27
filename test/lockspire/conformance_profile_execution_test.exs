@@ -65,6 +65,35 @@ defmodule Lockspire.ConformanceProfileExecutionTest do
     assert receipt["result"]["classification"] == "infrastructure_failure"
   end
 
+  test "a JSON secret is materialized privately and never retained", %{root: root} do
+    fixture = fixture!(root, 0, 0)
+    secret = Jason.encode!(%{"description" => "never-retain-me", "server" => %{}})
+
+    assert {output, 0} = run_profile(fixture, secret)
+
+    calls = File.read!(fixture.calls)
+    receipt = fixture.artifact |> Path.join("receipt.json") |> File.read!()
+    refute calls =~ "never-retain-me"
+    refute receipt =~ "never-retain-me"
+    refute output =~ "never-retain-me"
+    refute calls =~ fixture.config
+  end
+
+  test "a missing JSON secret fails with infrastructure evidence before preparation", %{
+    root: root
+  } do
+    fixture = fixture!(root, 0, 0)
+
+    assert {output, 65} = run_profile(fixture, "")
+    assert output =~ "LOCKSPIRE_OIDF_PROVIDER_CONFIG must name a regular JSON file"
+    refute File.exists?(fixture.calls)
+
+    receipt = fixture.artifact |> Path.join("receipt.json") |> File.read!() |> Jason.decode!()
+    assert receipt["result"]["status"] == "failed"
+    assert receipt["result"]["classification"] == "infrastructure_failure"
+    assert File.ls!(fixture.artifact) == ["receipt.json"]
+  end
+
   defp fixture!(root, preflight_exit, runner_exit) do
     calls = Path.join(root, "calls.txt")
     artifact = Path.join(root, "evidence")
@@ -115,6 +144,21 @@ defmodule Lockspire.ConformanceProfileExecutionTest do
     )
   end
 
+  defp run_profile(fixture, config_json) do
+    System.cmd("bash", [@runner],
+      stderr_to_stdout: true,
+      env: [
+        {"LOCKSPIRE_PHASE37_ARTIFACT_DIR", fixture.artifact},
+        {"LOCKSPIRE_OIDF_PROVIDER_CONFIG", ""},
+        {"LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON", config_json},
+        {"LOCKSPIRE_OIDF_ALLOW_TEST_DOUBLES", "true"},
+        {"LOCKSPIRE_OIDF_TEST_PREPARE", fixture.prepare},
+        {"LOCKSPIRE_OIDF_TEST_COMPOSE", fixture.compose},
+        {"LOCKSPIRE_OIDF_TEST_RUNNER", fixture.suite_runner}
+      ]
+    )
+  end
+
   defp executable!(root, name, body) do
     path = Path.join(root, name)
     File.write!(path, "#!/usr/bin/env bash\nset -euo pipefail\n" <> body)
@@ -145,9 +189,12 @@ defmodule Lockspire.ConformanceProfileExecutionTest do
 
   defp suite_runner_script(calls, preflight_exit, runner_exit) do
     """
+    import os
     import pathlib
     import sys
 
+    if "LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON" in os.environ:
+        sys.exit(77)
     with pathlib.Path(#{inspect(calls)}).open("a", encoding="utf-8") as log:
         log.write("runner " + " ".join(sys.argv[1:]) + "\\n")
     print("raw suite output that must be deleted")

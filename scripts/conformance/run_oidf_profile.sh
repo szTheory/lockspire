@@ -20,6 +20,7 @@ status="failed"
 classification="infrastructure_failure"
 compose_file=""
 provider_config="${LOCKSPIRE_OIDF_PROVIDER_CONFIG:-}"
+provider_config_json="${LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON:-}"
 prepare_command="$PREPARE"
 compose_command="docker"
 runner_path=""
@@ -56,10 +57,33 @@ if [[ "$skip_suite" == "true" ]]; then
   exit 0
 fi
 
+if [[ -n "$provider_config" && -n "$provider_config_json" ]]; then
+  echo "set only one OIDF provider configuration input" >&2
+  exit 65
+fi
+
+if [[ -z "$provider_config" && -n "$provider_config_json" ]]; then
+  provider_config="$work_dir/provider.json"
+  printf '%s' "$provider_config_json" >"$provider_config"
+  chmod 600 "$provider_config"
+  unset LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON
+  provider_config_json=""
+fi
+
 [[ -n "$provider_config" && -f "$provider_config" ]] || {
   echo "LOCKSPIRE_OIDF_PROVIDER_CONFIG must name a regular JSON file" >&2
   exit 65
 }
+
+python3 - "$provider_config" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    config = json.load(source)
+if not isinstance(config, dict):
+    raise SystemExit("OIDF provider configuration must be a JSON object")
+PY
 
 "$prepare_command" --output-dir "$work_dir/prepared"
 compose_file="$work_dir/prepared/docker-compose.locked.yml"

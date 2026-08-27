@@ -54,6 +54,13 @@ Lockspire first uses the runner's non-network `--list` mode to catch invalid
 plan syntax, missing Python dependencies, or an incomplete verified archive as
 an `infrastructure_failure`; a later nonzero suite result is `suite_failure`.
 
+CI pins CPython `3.13.15`, pip `26.2.1`, and the `actions/setup-python` commit.
+The runner's complete Python dependency closure is exact-version and
+wheel-SHA-256 locked in `scripts/conformance/runner-requirements.lock`; pip runs
+with dependency resolution disabled and verifies the installed versions. This
+is deliberately stricter than the upstream suite's unversioned local install
+instructions.
+
 Raw downloaded helpers, normalized Compose configuration, the runner's full
 stdout/stderr, exported suite results, and suite work stay in a private
 temporary directory and are deleted after the run. The retained
@@ -72,16 +79,32 @@ logs, or provider configuration.
 
 ## Scheduled and manual runs
 
-`.github/workflows/oidf-conformance.yml` runs both repo-native profiles weekly
-from the default branch and remains manually dispatchable. The schedule is a
-supplemental reliability history and does not block CI or publication. Workflow
-permissions are read-only, overlapping runs are canceled, jobs have timeouts,
-and only validated `receipt.json` files are retained for a bounded period.
+`.github/workflows/oidf-conformance.yml` runs the repo-native Phase 37 proof and
+both external profiles weekly from the default branch, and remains manually
+dispatchable. A meaningful external profile cannot be manufactured as a
+standalone repo fixture without violating Lockspire's embedded-library shape:
+the host owns accounts, login UX, branding, and product policy. The scheduled
+external steps therefore require complete private provider JSON in two
+repository secrets:
+
+- `LOCKSPIRE_OIDF_PHASE37_PROVIDER_CONFIG_JSON`
+- `LOCKSPIRE_OIDF_FAPI2_PROVIDER_CONFIG_JSON`
+
+GitHub exposes each secret only to its matching runner step. Lockspire writes
+the value to a mode-600 file in the private temporary run directory, removes
+the secret from the child-process environment, and deletes the file at exit.
+The secret is never passed on a command line, copied to evidence, or included
+in a job summary. A missing secret is exposed by GitHub as an empty string; the
+runner then fails before download or Compose startup and emits an explicit
+`infrastructure_failure` receipt. Malformed JSON fails the same way.
 
 The hosted maintainer lane is manual-only. Select `run_hosted_lane` during a
-dispatch when the repository's optional hosted secrets are configured. Those
-URLs remain isolated to that job and are never retained in artifacts or job
-summaries. Scheduled runs do not request hosted credentials.
+dispatch after configuring the separate optional
+`LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON` secret. The schedule remains a
+supplemental reliability history and does not block CI or publication.
+Workflow permissions are read-only, overlapping runs are canceled, jobs have
+timeouts, and only validated `receipt.json` files are retained for a bounded
+period.
 
 ## Reading failures
 
