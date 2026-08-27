@@ -28,13 +28,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.DeviceAuthorizationStore
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.ClientRecord
-  alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
-  alias Lockspire.Storage.Ecto.UsedJtiRecord
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
   alias Lockspire.Storage.Ecto.Repository.ConsentStore, as: EctoConsentStore
@@ -47,6 +45,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore,
     as: EctoPushedAuthorizationRequestStore
+
+  alias Lockspire.Storage.Ecto.Repository.ReplayStore, as: EctoReplayStore
 
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
@@ -278,94 +278,12 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl DpopReplayStore
   def record_dpop_proof(%DpopReplay{} = replay) do
-    transact(fn ->
-      prune_expired_dpop_replay_records(replay.seen_at)
-
-      changeset = DpopReplayRecord.changeset(%DpopReplayRecord{}, replay)
-
-      if changeset.valid? do
-        case insert_dpop_replay_record(replay) do
-          1 ->
-            :accepted
-
-          0 ->
-            :replay
-
-          _other ->
-            repo().rollback(:dpop_replay_insert_failed)
-        end
-      else
-        repo().rollback(changeset)
-      end
-    end)
-  end
-
-  defp insert_dpop_replay_record(%DpopReplay{} = replay) do
-    now = DateTime.utc_now()
-    seen_at = DateTime.truncate(replay.seen_at, :microsecond)
-    expires_at = DateTime.truncate(replay.expires_at, :microsecond)
-
-    {count, _rows} =
-      repo_insert_all(
-        DpopReplayRecord,
-        [
-          %{
-            replay_key: replay.replay_key,
-            jti: replay.jti,
-            htm: replay.htm,
-            htu: replay.htu,
-            jkt: replay.jkt,
-            seen_at: seen_at,
-            expires_at: expires_at,
-            inserted_at: now,
-            updated_at: now
-          }
-        ],
-        on_conflict: :nothing,
-        conflict_target: [:replay_key],
-        log: false
-      )
-
-    count
+    EctoReplayStore.record_dpop_proof(repo(), replay)
   end
 
   @impl UsedJtiStore
   def record_used_jti(%UsedJti{} = used_jti) do
-    now = DateTime.utc_now()
-    expires_at = DateTime.truncate(used_jti.expires_at, :microsecond)
-
-    changeset =
-      UsedJtiRecord.changeset(%UsedJtiRecord{}, %{
-        client_id: used_jti.client_id,
-        jti: used_jti.jti,
-        expires_at: expires_at
-      })
-
-    if changeset.valid? do
-      {count, _rows} =
-        repo_insert_all(
-          UsedJtiRecord,
-          [
-            %{
-              client_id: used_jti.client_id,
-              jti: used_jti.jti,
-              expires_at: expires_at,
-              inserted_at: now,
-              updated_at: now
-            }
-          ],
-          on_conflict: :nothing,
-          conflict_target: [:client_id, :jti],
-          log: false
-        )
-
-      case count do
-        1 -> {:ok, :accepted}
-        0 -> {:ok, :replay}
-      end
-    else
-      {:error, changeset}
-    end
+    EctoReplayStore.record_used_jti(repo(), used_jti)
   end
 
   @impl DeviceAuthorizationStore
@@ -1124,14 +1042,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
     end
   end
 
-  defp prune_expired_dpop_replay_records(%DateTime{} = seen_at) do
-    DpopReplayRecord
-    |> where([replay], replay.expires_at <= ^seen_at)
-    |> repo_delete_all(log: false)
-
-    :ok
-  end
-
   defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
     record
     |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
@@ -1586,10 +1496,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp repo_insert(changeset, opts \\ []) do
     Support.insert(repo(), changeset, opts)
-  end
-
-  defp repo_insert_all(schema_or_source, entries, opts) do
-    Support.insert_all(repo(), schema_or_source, entries, opts)
   end
 
   defp repo_update(changeset, opts \\ []) do
