@@ -45,4 +45,25 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
     refute output =~ "phase133-access-token-sentinel"
     refute output =~ "phase133-bearer-client-secret-sentinel"
   end
+
+  @tag :negative
+  test "real HTTP negatives reject redirect, callback, code, nonce, token, audience, and scope drift" do
+    assert {output, 0} =
+             System.cmd("python3", [@runner, "--only", "negative"], stderr_to_stdout: true)
+
+    for receipt <- [
+          "redirect drift rejected",
+          "code reuse rejected",
+          "callback state rejected before exchange",
+          "nonce mismatch rejected by client validation",
+          "missing token rejected",
+          "wrong audience rejected",
+          "insufficient scope rejected"
+        ] do
+      assert output =~ receipt
+    end
+
+    refute output =~ "phase133-access-token-sentinel"
+    refute output =~ "phase133-bearer-client-secret-sentinel"
+  end
 end
