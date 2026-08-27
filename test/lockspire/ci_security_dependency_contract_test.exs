@@ -15,7 +15,10 @@ defmodule Lockspire.CiSecurityDependencyContractTest do
     assert router_scan_violations(script) == []
 
     assert :missing_admin_router in router_scan_violations(scan_command(@routers |> List.first()))
-    assert :missing_private in router_scan_violations(scan_command(@routers))
+
+    assert :missing_private in router_scan_violations(
+             scan_command(@routers, ["--config", "--threshold low", "--exit"])
+           )
 
     assert :missing_exit in router_scan_violations(
              scan_command(@routers, ["--private", "--threshold low"])

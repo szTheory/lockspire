@@ -1,1 +1,24 @@
-[exit: false, format: "txt", ignore_files: [], ignore: ["DOS.StringToAtom", "DOS.BinToAtom", "Traversal.FileModule", "RCE.EEx", "XSS.SendResp"], out: nil, private: false, router: nil, skip: false, threshold: :low, verbose: false, version: false]
+[
+  exit: false,
+  format: "txt",
+  ignore_files: [],
+  ignore: [
+    # Reason: Lockspire parses configured atom-backed protocol values through validated boundaries.
+    "DOS.StringToAtom",
+    # Reason: Lockspire does not deserialize untrusted Erlang terms at any HTTP boundary.
+    "DOS.BinToAtom",
+    # Reason: Generator paths are constrained to the caller-selected host project root.
+    "Traversal.FileModule",
+    # Reason: Template rendering uses compile-time HEEx rather than runtime user templates.
+    "RCE.EEx",
+    # Reason: Controller response bodies are protocol JSON produced by trusted encoders.
+    "XSS.SendResp"
+  ],
+  out: nil,
+  private: false,
+  router: nil,
+  skip: false,
+  threshold: :low,
+  verbose: false,
+  version: false
+]
