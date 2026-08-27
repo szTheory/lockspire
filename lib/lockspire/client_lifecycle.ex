@@ -5,8 +5,10 @@ defmodule Lockspire.ClientLifecycle do
   alias Lockspire.Observability
   alias Lockspire.Storage.Ecto.Repository
 
+  @type result :: {:ok, Client.t()} | {:error, term()}
+
   @spec create_dcr(%{required(:client) => Client.t(), required(:actor) => map()}) ::
-          {:ok, Client.t()} | {:error, term()}
+          result()
   def create_dcr(%{client: %Client{} = client, actor: actor}) when is_map(actor) do
     audit_event = %{
       action: :dcr_client_created,
@@ -33,22 +35,22 @@ defmodule Lockspire.ClientLifecycle do
     end
   end
 
-  @spec persist_direct(Client.t()) :: {:ok, Client.t()} | {:error, term()}
+  @spec persist_direct(Client.t()) :: result()
   def persist_direct(%Client{} = client), do: Repository.register_client(client)
 
   @doc false
-  @spec update_operator(Client.t(), map()) :: {:ok, Client.t()} | {:error, term()}
+  @spec update_operator(Client.t(), map()) :: result()
   def update_operator(%Client{} = client, attrs) when is_map(attrs),
     do: Repository.update_client(client, attrs)
 
   @doc false
-  @spec enable_operator(Client.t()) :: {:ok, Client.t()} | {:error, term()}
+  @spec enable_operator(Client.t()) :: result()
   def enable_operator(%Client{} = client),
     do: Repository.set_client_active(client, true, %{disabled_at: nil, disabled_by: nil})
 
   @doc false
   @spec rotate_operator_secret(Client.t(), map(), DateTime.t(), map()) ::
-          {:ok, Client.t()} | {:error, term()}
+          result()
   def rotate_operator_secret(
         %Client{} = client,
         secret_material,
@@ -71,7 +73,7 @@ defmodule Lockspire.ClientLifecycle do
 
   @doc false
   @spec disable_operator(Client.t(), DateTime.t(), String.t() | nil, map()) ::
-          {:ok, Client.t()} | {:error, term()}
+          result()
   def disable_operator(%Client{} = client, %DateTime{} = disabled_at, disabled_by, audit_event)
       when (is_binary(disabled_by) or is_nil(disabled_by)) and is_map(audit_event) do
     transact_with_audit(
@@ -87,7 +89,7 @@ defmodule Lockspire.ClientLifecycle do
 
   @doc false
   @spec rotate_registration_access_token(Client.t(), String.t(), map()) ::
-          {:ok, Client.t()} | {:error, term()}
+          result()
   def rotate_registration_access_token(%Client{} = client, new_rat_hash, audit_event)
       when is_binary(new_rat_hash) and is_map(audit_event) do
     Repository.rotate_registration_access_token(client, new_rat_hash, audit_event)
@@ -106,7 +108,7 @@ defmodule Lockspire.ClientLifecycle do
     end)
   end
 
-  @spec replace_dcr(Client.t(), map(), String.t()) :: {:ok, Client.t()} | {:error, term()}
+  @spec replace_dcr(Client.t(), map(), String.t()) :: result()
   def replace_dcr(%Client{} = client, metadata, new_rat_hash)
       when is_map(metadata) and is_binary(new_rat_hash) do
     updated_client = Lockspire.ClientMetadata.apply_dcr_metadata(client, metadata)
@@ -120,7 +122,7 @@ defmodule Lockspire.ClientLifecycle do
     })
   end
 
-  @spec disable_dcr(Client.t()) :: {:ok, Client.t()} | {:error, term()}
+  @spec disable_dcr(Client.t()) :: result()
   def disable_dcr(%Client{} = client) do
     audit_event = %{
       action: :client_disabled,

@@ -37,6 +37,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
           required(:client) => Client.t()
         }
 
+  @type update_result ::
+          {:ok, UpdateSuccess.t()} | {:error, Registration.Error.t() | :invalid_token}
+
   @spec read(String.t(), Client.t()) :: {:ok, Client.t()} | {:error, :invalid_token}
   def read(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
     if client_id_from_url == client.client_id and client.active do
@@ -54,8 +57,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     end
   end
 
-  @spec update(String.t(), update_request()) ::
-          {:ok, struct()} | {:error, struct()} | {:error, :invalid_token}
+  @spec update(String.t(), update_request()) :: update_result()
   def update(
         client_id_from_url,
         %{
