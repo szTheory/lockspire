@@ -92,7 +92,7 @@ defmodule CleanRoomClientWeb.OAuthController do
           conn
           |> put_session(:journey_receipt, %{complete: false, failed_stage: stage})
           |> put_status(:bad_request)
-          |> text("oauth callback rejected")
+          |> text("oauth callback rejected: #{stage}")
 
         _ ->
           conn |> put_status(:bad_request) |> text("oauth callback rejected")
@@ -157,22 +157,31 @@ defmodule CleanRoomClientWeb.OAuthController do
            stage(:discovery, OIDCVerifier.validate_metadata(discovery, transaction.issuer)),
          {:ok, 200, _headers, jwks_body} <- stage(:jwks, OAuthHttp.get_json(metadata.jwks_uri)),
          {:ok, jwks} <- decode(jwks_body),
-         {:ok, secret} <- File.read(dpop_secret_path()),
+         {:ok, secret} <- stage(:dpop_secret, File.read(dpop_secret_path())),
          {:ok, token, token_nonce_retry?} <-
-           dpop_token_exchange(transaction, code, discovery, String.trim(secret)),
+           stage(
+             :dpop_token,
+             dpop_token_exchange(transaction, code, discovery, String.trim(secret))
+           ),
          id_token when is_binary(id_token) <- token["id_token"],
          access_token when is_binary(access_token) <- token["access_token"],
          "DPoP" <- token["token_type"],
          {:ok, claims} <-
            stage(:oidc, OIDCVerifier.verify_id_token(id_token, jwks, transaction, metadata)),
          {:ok, userinfo, userinfo_nonce_retry?} <-
-           dpop_userinfo(transaction, discovery["userinfo_endpoint"], access_token),
+           stage(
+             :dpop_userinfo,
+             dpop_userinfo(transaction, discovery["userinfo_endpoint"], access_token)
+           ),
          true <- OIDCVerifier.same_subject?(userinfo, claims),
-         session <-
-           Transactions.handoff_dpop_session(
-             transaction,
-             DPoP.encrypt(access_token),
-             claims["sub"]
+         {:ok, session} <-
+           stage(
+             :dpop_session,
+             Transactions.handoff_dpop_session(
+               transaction,
+               DPoP.encrypt(access_token),
+               claims["sub"]
+             )
            ) do
       {:ok,
        %{
@@ -186,7 +195,7 @@ defmodule CleanRoomClientWeb.OAuthController do
          userinfo_nonce_retry: userinfo_nonce_retry?
        }}
     else
-      _ -> {:error, {:journey_failed, Process.get(:clean_room_stage, :unknown)}}
+      _ -> {:error, {:journey_failed, Process.get(:clean_room_stage) || :unknown}}
     end
   end
 
@@ -360,8 +369,7 @@ defmodule CleanRoomClientWeb.OAuthController do
   defp semantic_response?(_), do: false
 
   defp stage(name, value) do
-    label = if match?({:error, _}, value), do: "#{name}:#{elem(value, 1)}", else: name
-    Process.put(:clean_room_stage, label)
+    Process.put(:clean_room_stage, name)
     value
   end
 

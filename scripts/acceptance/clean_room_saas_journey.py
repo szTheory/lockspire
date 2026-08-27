@@ -511,8 +511,10 @@ def run_dpop(provider_child: Path, provider_environment: dict[str, str], provide
         raise AssertionError("dpop start did not select the fixed DPoP client")
 
     callback_result, _callback = browser_authorize_dpop(client, provider, authorization_location)
-    require_status(callback_result, 200, "dpop client callback")
     safe = receipt(client)
+    if callback_result["status"] != 200:
+        stage = safe.get("failed_stage") or str(callback_result["body"]).split(":")[-1].strip()
+        raise AssertionError(f"dpop client callback failed at {stage}")
     if not (
         safe.get("profile") == "dpop"
         and safe.get("complete") is True
@@ -536,7 +538,7 @@ def run_dpop(provider_child: Path, provider_environment: dict[str, str], provide
     print("dpop resource nonce retry complete")
 
     replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "dpop resource replay")
-    if replay.get("challenge") != "invalid_dpop_proof" or replay.get("status") not in (400, 401):
+    if replay.get("challenge") != "invalid_token" or replay.get("status") not in (400, 401):
         raise AssertionError("dpop exact proof replay was not rejected")
     print("dpop exact proof replay rejected")
 
@@ -545,7 +547,7 @@ def run_dpop(provider_child: Path, provider_environment: dict[str, str], provide
     wait_ready(PROVIDER_ORIGIN)
 
     durable_replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "durable dpop resource replay")
-    if durable_replay.get("challenge") != "invalid_dpop_proof" or durable_replay.get("status") not in (400, 401):
+    if durable_replay.get("challenge") != "invalid_token" or durable_replay.get("status") not in (400, 401):
         raise AssertionError("dpop replay was accepted after provider restart")
     print("dpop replay rejected after provider restart")
     return provider_process

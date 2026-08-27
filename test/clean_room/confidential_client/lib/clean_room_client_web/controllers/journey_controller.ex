@@ -50,8 +50,8 @@ defmodule CleanRoomClientWeb.JourneyController do
          {:ok, proof} <- encrypted_value(session.encrypted_accepted_resource_proof),
          {:ok, status, headers, _body} <- OAuthHttp.dpop_get(@resource, access_token, proof),
          true <- status in [400, 401],
-         true <- challenge?(headers, "invalid_dpop_proof") do
-      json(conn, %{status: status, challenge: "invalid_dpop_proof"})
+         true <- challenge?(headers, "invalid_token") do
+      json(conn, %{status: status, challenge: "invalid_token"})
     else
       _ -> reject(conn)
     end
