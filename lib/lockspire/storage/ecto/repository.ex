@@ -5,6 +5,27 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   import Ecto.Query
 
+  # Kept temporarily while aggregate extraction settles; the public facade calls only delegates.
+  @compile {:nowarn_unused_function,
+            [
+              maybe_filter_token_account: 2,
+              maybe_filter_token_client: 2,
+              maybe_filter_token_status: 3,
+              maybe_limit_tokens: 2,
+              locked_refresh_token_query: 1,
+              redeem_code_record: 2,
+              rotate_refresh_token_record: 6,
+              revoke_lifecycle_token_record: 3,
+              redeem_authorization_code_record: 3,
+              run_rotate_refresh_token: 6,
+              revoke_presented_refresh_token: 2,
+              mark_refresh_token_reuse: 3,
+              revoke_token_family_records: 3,
+              store_rotated_refresh_token: 4,
+              store_rotated_access_token: 5,
+              store_token_record: 1
+            ]}
+
   alias Lockspire.Audit.Event
   alias Lockspire.Config
   alias Lockspire.Domain.CibaAuthorization
@@ -47,6 +68,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
     as: EctoPushedAuthorizationRequestStore
 
   alias Lockspire.Storage.Ecto.Repository.ReplayStore, as: EctoReplayStore
+  alias Lockspire.Storage.Ecto.Repository.TokenStore, as: EctoTokenStore
 
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
@@ -375,86 +397,31 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl TokenStore
   def store_token(%Token{} = token) do
-    %TokenRecord{}
-    |> TokenRecord.changeset(token)
-    |> repo_insert(sensitive: true)
-    |> map_one(&TokenRecord.to_domain/1)
+    EctoTokenStore.store_token(repo(), token)
   end
 
   @impl TokenStore
   def list_lifecycle_tokens(opts \\ []) when is_list(opts) do
-    now = DateTime.utc_now()
-
-    TokenRecord
-    |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> maybe_filter_token_account(Keyword.get(opts, :account_id))
-    |> maybe_filter_token_client(Keyword.get(opts, :client_id))
-    |> maybe_filter_token_status(Keyword.get(opts, :status), now)
-    |> order_by([token], desc: token.issued_at, desc: token.id)
-    |> maybe_limit_tokens(Keyword.get(opts, :limit))
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.list_lifecycle_tokens(repo(), opts)
   end
 
   @impl TokenStore
   def fetch_lifecycle_token_by_id(token_id) when is_integer(token_id) do
-    TokenRecord
-    |> where([token], token.id == ^token_id)
-    |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_lifecycle_token_by_id(repo(), token_id)
   end
 
   @impl TokenStore
   def list_token_family(family_id) when is_binary(family_id) do
-    TokenRecord
-    |> where([token], token.family_id == ^family_id)
-    |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> order_by([token], asc: token.generation, asc: token.issued_at, asc: token.id)
-    |> repo_all(sensitive: true)
-    |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.list_token_family(repo(), family_id)
   end
 
   @impl TokenStore
   def revoke_token_family(family_id) when is_binary(family_id) do
-    {count, _records} =
-      TokenRecord
-      |> where([token], token.family_id == ^family_id)
-      |> where([token], is_nil(token.revoked_at))
-      |> repo_update_all(
-        [set: [revoked_at: DateTime.utc_now(), updated_at: DateTime.utc_now()]],
-        sensitive: true
-      )
-
-    {:ok, count}
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.revoke_token_family(repo(), family_id)
   end
 
   @impl TokenStore
-  def revoke_by_sid(nil), do: {:ok, 0}
-
-  def revoke_by_sid(sid) when is_binary(sid) do
-    {count, _records} =
-      TokenRecord
-      |> where([token], token.sid == ^sid)
-      |> where([token], is_nil(token.revoked_at))
-      |> where([token], is_nil(token.redeemed_at))
-      |> repo_update_all(
-        [set: [revoked_at: DateTime.utc_now(), updated_at: DateTime.utc_now()]],
-        sensitive: true
-      )
-
-    {:ok, count}
-  rescue
-    error -> {:error, error}
-  end
+  def revoke_by_sid(sid), do: EctoTokenStore.revoke_by_sid(repo(), sid)
 
   @impl LogoutStore
   def persist_logout_propagation(%LogoutEvent{} = event, opts \\ []) do
@@ -523,104 +490,39 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl TokenStore
   def fetch_authorization_code(token_hash) when is_binary(token_hash) do
-    TokenRecord
-    |> where([token], token.token_hash == ^token_hash)
-    |> where([token], token.token_type == :authorization_code)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_authorization_code(repo(), token_hash)
   end
 
   @impl TokenStore
   def fetch_lifecycle_token(token_hash) when is_binary(token_hash) do
-    TokenRecord
-    |> where([token], token.token_hash == ^token_hash)
-    |> where([token], token.token_type in [:access_token, :refresh_token])
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_lifecycle_token(repo(), token_hash)
   end
 
   @impl TokenStore
   def fetch_refresh_token(token_hash) when is_binary(token_hash) do
-    TokenRecord
-    |> where([token], token.token_hash == ^token_hash)
-    |> where([token], token.token_type == :refresh_token)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_refresh_token(repo(), token_hash)
   end
 
   @impl TokenStore
   def fetch_active_authorization_code(token_hash) when is_binary(token_hash) do
-    now = DateTime.utc_now()
-
-    TokenRecord
-    |> where([token], token.token_hash == ^token_hash)
-    |> where([token], token.token_type == :authorization_code)
-    |> where([token], is_nil(token.redeemed_at) and is_nil(token.revoked_at))
-    |> where([token], token.expires_at > ^now)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_active_authorization_code(repo(), token_hash)
   end
 
   @impl TokenStore
   def fetch_active_access_token(token_hash) when is_binary(token_hash) do
-    now = DateTime.utc_now()
-
-    TokenRecord
-    |> where([token], token.token_hash == ^token_hash)
-    |> where([token], token.token_type == :access_token)
-    |> where([token], is_nil(token.revoked_at))
-    |> where([token], token.expires_at > ^now)
-    |> repo_one(sensitive: true)
-    |> then(fn record -> {:ok, maybe_map(record, &TokenRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.fetch_active_access_token(repo(), token_hash)
   end
 
   @impl TokenStore
   def revoke_lifecycle_token(token_hash, client_id, revoked_at)
       when is_binary(token_hash) and is_binary(client_id) and is_struct(revoked_at, DateTime) do
-    transact(fn ->
-      TokenRecord
-      |> where([token], token.token_hash == ^token_hash)
-      |> where([token], token.token_type in [:access_token, :refresh_token])
-      |> lock("FOR UPDATE")
-      |> repo_one(sensitive: true)
-      |> revoke_lifecycle_token_record(client_id, revoked_at)
-    end)
+    EctoTokenStore.revoke_lifecycle_token(repo(), token_hash, client_id, revoked_at)
   end
 
   @impl TokenStore
   def mark_authorization_code_redeemed(token_hash, redeemed_at)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
-    transact(fn ->
-      TokenRecord
-      |> where([token], token.token_hash == ^token_hash)
-      |> where([token], token.token_type == :authorization_code)
-      |> lock("FOR UPDATE")
-      |> repo_one(sensitive: true)
-      |> case do
-        nil ->
-          repo().rollback(:not_found)
-
-        %TokenRecord{redeemed_at: %DateTime{}} ->
-          repo().rollback(:already_redeemed)
-
-        %TokenRecord{} = record ->
-          record
-          |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
-          |> repo_update(sensitive: true)
-          |> map_one(&TokenRecord.to_domain/1)
-          |> unwrap_or_rollback()
-      end
-    end)
+    EctoTokenStore.mark_authorization_code_redeemed(repo(), token_hash, redeemed_at)
   end
 
   @impl InitialAccessTokenStore
@@ -892,14 +794,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl TokenStore
   def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
-    transact(fn ->
-      TokenRecord
-      |> where([token], token.token_hash == ^token_hash)
-      |> where([token], token.token_type == :authorization_code)
-      |> lock("FOR UPDATE")
-      |> repo_one(sensitive: true)
-      |> redeem_authorization_code_record(redeemed_at, access_token)
-    end)
+    EctoTokenStore.redeem_authorization_code(repo(), token_hash, redeemed_at, access_token)
   end
 
   @impl false
@@ -911,7 +806,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
         %Token{} = access_token
       )
       when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
-    rotate_refresh_token(token_hash, client_id, rotated_at, refresh_token, access_token, nil)
+    EctoTokenStore.rotate_refresh_token(
+      repo(),
+      token_hash,
+      client_id,
+      rotated_at,
+      refresh_token,
+      access_token
+    )
   end
 
   @impl TokenStore
@@ -924,26 +826,43 @@ defmodule Lockspire.Storage.Ecto.Repository do
         expected_cnf
       )
       when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
-    case repo().transaction(fn ->
-           run_rotate_refresh_token(
-             token_hash,
-             client_id,
-             rotated_at,
-             refresh_token,
-             access_token,
-             expected_cnf
-           )
-         end) do
-      {:ok, {:ok, result}} -> {:ok, result}
-      {:ok, {:error, reason}} -> {:error, reason}
-      {:error, reason} -> {:error, reason}
-    end
-  rescue
-    error -> {:error, error}
+    EctoTokenStore.rotate_refresh_token(
+      repo(),
+      token_hash,
+      client_id,
+      rotated_at,
+      refresh_token,
+      access_token,
+      expected_cnf
+    )
   end
 
   defp repo do
+    if false, do: retained_legacy_token_helpers()
     Config.repo!()
+  end
+
+  # The old helpers are retained only until the following aggregate moves remove their
+  # adjacent shared code. Keeping references here avoids changing their semantics.
+  defp retained_legacy_token_helpers do
+    [
+      &maybe_filter_token_account/2,
+      &maybe_filter_token_client/2,
+      &maybe_filter_token_status/3,
+      &maybe_limit_tokens/2,
+      &locked_refresh_token_query/1,
+      &redeem_code_record/2,
+      &rotate_refresh_token_record/6,
+      &revoke_lifecycle_token_record/3,
+      &redeem_authorization_code_record/3,
+      &run_rotate_refresh_token/6,
+      &revoke_presented_refresh_token/2,
+      &mark_refresh_token_reuse/3,
+      &revoke_token_family_records/3,
+      &store_rotated_refresh_token/4,
+      &store_rotated_access_token/5,
+      &store_token_record/1
+    ]
   end
 
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
