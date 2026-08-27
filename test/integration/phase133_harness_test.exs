@@ -27,4 +27,15 @@ defmodule Lockspire.Integration.Phase133HarnessTest do
     assert output =~ "log:"
     refute output =~ "phase133-client-secret-sentinel"
   end
+
+  @tag :dependency_lock
+  test "the two child manifests resolve Lockspire only from copied package contents" do
+    script = Path.expand("../../scripts/acceptance/clean_room/package_input.py", __DIR__)
+
+    assert {output, 0} = System.cmd("python3", [script, "--self-test"], stderr_to_stdout: true)
+
+    assert output =~ "provider provenance verified"
+    assert output =~ "client provenance verified"
+    refute output =~ "/test/support"
+  end
 end
