@@ -1,45 +1,27 @@
 ---
 phase: 135-cohesive-internals
-verified: 2026-08-27T20:14:16Z
-status: gaps_found
-score: 2/5 must-haves verified
+verified: 2026-08-27T20:37:05Z
+status: passed
+score: 5/5 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "Authorization-code redemption, refresh reuse, DCR-plus-audit writes, and key transitions retain their atomic rollback and concurrency behavior."
-    status: failed
-    reason: "The required DB-backed concurrent authorization-code redemption characterization crashes before exercising a contender, so it proves neither concurrency nor exactly-one-winner semantics."
-    artifacts:
-      - path: test/lockspire/storage/repository_atomicity_test.exs
-        issue: "Each Task calls SQL Sandbox.allow/3 with itself as the owner instead of the checked-out test process; allow/3 returns :not_found at line 67."
-    missing:
-      - "Repair the Sandbox sharing arrangement and make the concurrent test execute ten contenders, asserting one durable winner and nine already-redeemed outcomes."
-  - truth: "The stable token facade delegates authentication, resource selection, issuance, persistence, polling, and observability to focused collaborators."
-    status: failed
-    reason: "GrantSupport remains a 1,736-line implementation owner for authorization-code/device/CIBA redemption, durable persistence, audit construction, and telemetry emission rather than a compatibility-only seam."
-    artifacts:
-      - path: lib/lockspire/protocol/token_exchange/internal/grant_support.ex
-        issue: "It defines persist_authorization_code_grant, persist_device_authorization_grant, persist_ciba_authorization_grant, transact_with_audit_event, emit_success, and failure-audit functions instead of delegating these responsibilities to GrantPersistence and GrantObservability."
-    missing:
-      - "Move the remaining redemption/persistence/observability orchestration into focused collaborators and have grant coordinators compose them directly or through thin compatibility delegates."
-  - truth: "Internal collaborators use explicit dependency bundles without capability sniffing or runtime environment branching, while existing injection remains compatible."
-    status: failed
-    reason: "The internal GrantSupport collaborator still adapts request option bags itself and reads global Config/Observability directly; the architecture fitness test exempts that file, leaving the stated invariant unenforced."
-    artifacts:
-      - path: lib/lockspire/protocol/token_exchange/internal/grant_support.ex
-        issue: "LegacyOptions.from_request occurs at lines 100, 133, and 166; Config.issuer!/0 and Config.account_resolver!/0 occur at lines 1007 and 1073; direct Observability.emit calls occur throughout lines 1117-1223."
-      - path: test/lockspire/architecture_fitness_test.exs
-        issue: "The token-option rule scans all token internals except LegacyOptions, but its allowed GrantSupport compatibility assertion does not prohibit the remaining option/global-dependency ownership."
-    missing:
-      - "Restrict LegacyOptions adaptation to the one adapter, thread Dependencies through the remaining GrantSupport compatibility calls, inject config/telemetry, and extend fitness so this regression fails."
+re_verification:
+  previous_status: gaps_found
+  previous_score: 2/5
+  gaps_closed:
+    - "DB-backed concurrent authorization-code redemption proof"
+    - "Focused issuance, persistence, and observability ownership"
+    - "GrantSupport legacy-option/global dependency bypass"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 135: Cohesive Internals Verification Report
 
 **Phase Goal:** Storage and grant internals are navigable, explicit, and behaviorally stable behind their existing public facades.
-**Verified:** 2026-08-27T20:14:16Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-27T20:37:05Z
+**Status:** passed
+**Re-verification:** Yes — after gap closure
 
 ## Goal Achievement
 
@@ -47,71 +29,59 @@ gaps:
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Aggregate-specific Ecto behavior is navigable behind the existing Repository facade. | VERIFIED | `Repository` delegates its declared storage behavior families to sixteen aggregate modules; it has no Ecto query/schema/changeset/lock constructs. `mix qa.architecture` passed its facade and synthetic-regression checks. |
-| 2 | Code redemption, refresh reuse, DCR-plus-audit, and key transitions retain atomic rollback and concurrency behavior. | FAILED | Direct one-winner, refresh-reuse, DCR rollback, and key-transition tests exist, but the actual concurrent redemption test fails at `repository_atomicity_test.exs:67` with `:not_found` from `Sandbox.allow/3`; its claimed concurrency proof is not executable. |
-| 3 | Stable token exchange delegates focused authentication, resource selection, issuance, persistence, polling, and observability responsibilities. | FAILED | `ClientAuthentication`, `ResourceSelection`, `GrantPolling`, `TokenIssuer`, `GrantPersistence`, and `GrantObservability` exist, but the authorization-code/device/CIBA paths still call a 1,736-line `GrantSupport` that owns redemption, persistence, audit, and telemetry logic. |
-| 4 | Explicit dependencies replace capability sniffing/runtime environment behavior while legacy injection remains compatible. | FAILED | `Dependencies` and `LegacyOptions` compatibility tests pass, and no `function_exported?/3`/`Mix.env/0` occurs. But GrantSupport itself reads legacy request options and global Config/Observability, contrary to the one-adapter explicit-dependency requirement. |
-| 5 | Five grants preserve endpoint responses/errors, tokens, audit events, and telemetry. | VERIFIED | Characterization test (4/0) covers authorization-code, refresh, device, CIBA, and RFC 8693 public flows; controller test (18/0) verifies their mounted OAuth wire contracts; helper asserts durable tokens/audit/telemetry for the five-flow spine. |
+| 1 | Maintainers can locate aggregate-specific Ecto behavior behind the Repository facade instead of one monolithic adapter. | VERIFIED | `Repository` is a behavior-complete delegate facade; sixteen substantive `repository/*_store.ex` aggregate owners contain Ecto query, lock, changeset, and lifecycle work. Architecture fitness rejects their return to the facade and passed. |
+| 2 | Code redemption, refresh reuse, DCR-plus-audit writes, and key transitions retain atomic rollback and concurrency behavior. | VERIFIED | New `RepositoryConcurrencyTest` opens ten independent unboxed DB connections and asserts exactly one committed code redemption plus nine `:already_redeemed` results. Atomicity test additionally covers refresh-family reuse revocation, DCR/RAT audit rollback, and signing-key state transitions. All passed together. |
+| 3 | The stable token facade delegates authentication, resource selection, issuance, persistence, polling, and observability to focused collaborators. | VERIFIED | GrantSupport now delegates to `ClientAuthentication`, `ResourceSelection`, `GrantPolling`, `TokenIssuer`, `GrantPersistence`, and `GrantObservability`; it no longer owns token construction, direct durable writes/transactions, audit construction, or telemetry emission. Semantic AST fitness rejects each of those regressions and passed. |
+| 4 | Internal collaborators use explicit dependency bundles without capability sniffing or runtime environment branching, while current injection remains compatible. | VERIFIED | `Dependencies` carries stores, issuer, account resolver, clocks, emitters, and policy inputs; `LegacyOptions` remains the sole direct request-option adapter. Production grant paths use typed dependency arities; source fitness rejects `function_exported?/3`, `Mix.env/0`, and request option reads outside that adapter. Compatibility/dependency contracts passed. |
+| 5 | Characterization proof preserves endpoint responses, errors, tokens, audit events, and telemetry for authorization-code, refresh, device, CIBA, and token-exchange flows. | VERIFIED | The stable-facade characterization suite covers all five flows' results/durable tokens/audit/telemetry; mounted TokenController tests assert retained OAuth statuses, headers, and JSON success/error contracts. Both passed from the final tree. |
 
-**Score:** 2/5 truths verified (0 present, behavior-unverified)
+**Score:** 5/5 truths verified (0 present, behavior-unverified)
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 | --- | --- | --- | --- |
-| `lib/lockspire/storage/ecto/repository.ex` | Public facade over aggregate owners | VERIFIED | Behavior-complete, aggregate delegates wired, with configuration kept at `repo/0`. |
-| `lib/lockspire/storage/ecto/repository/*_store.ex` | Aggregate-specific Ecto ownership | VERIFIED | Sixteen substantive aggregate modules own query/lock/transaction work. |
-| `test/lockspire/storage/repository_atomicity_test.exs` | DB rollback and concurrency characterization | STUB FOR CONCURRENCY | Four single-process atomicity cases execute; its essential Task/Sandbox concurrency case crashes before redemption. |
-| `lib/lockspire/protocol/token_exchange/internal/{dependencies,legacy_options}.ex` | Explicit bundle and compatibility adapter | PARTIAL | The bundle/adapter are substantive and tested, but GrantSupport bypasses the intended boundary. |
-| `lib/lockspire/protocol/token_exchange/internal/{client_authentication,resource_selection,grant_polling,token_issuer,grant_persistence,grant_observability}.ex` | Focused token collaborators | PARTIAL | Modules exist and are used, but not by the complete authorization-code/device/CIBA orchestration. |
-| `test/lockspire/protocol/token_exchange/characterization_test.exs` | Five-flow behavioral spine | VERIFIED | 4 tests passed independently. |
-| `test/lockspire/web/token_controller_test.exs` | Mounted endpoint response contracts | VERIFIED | 18 tests passed independently. |
+| `lib/lockspire/storage/ecto/repository.ex` | Compatible pure facade | VERIFIED | Declares current behaviors/arities and delegates to aggregate owners; no Ecto record/query/lock ownership. |
+| `lib/lockspire/storage/ecto/repository/*_store.ex` | Cohesive aggregate implementations | VERIFIED | Aggregate modules provide client, interaction, consent, PAR, device, CIBA, replay, token, key, and supporting ownership. |
+| `test/lockspire/storage/repository_concurrency_test.exs` | Real concurrent redemption proof | VERIFIED | Ten unboxed connections execute an actual shared-row race and verify durable postcondition. |
+| `lib/lockspire/protocol/token_exchange/internal/{dependencies,legacy_options}.ex` | Explicit bundle plus legacy adapter | VERIFIED | Legacy compatibility normalizes at one direct option-read boundary into the typed bundle. |
+| `lib/lockspire/protocol/token_exchange/internal/{client_authentication,resource_selection,grant_polling,token_issuer,grant_persistence,grant_observability}.ex` | Focused grant responsibility owners | VERIFIED | Each owner is substantive and wired by grant composition; GrantSupport's semantic ownership predicate guards the separation. |
+| `test/lockspire/architecture_fitness_test.exs` | Permanent anti-regression fitness | VERIFIED | Tests synthetic forbidden and allowed AST examples plus production tree, zero cycles, facade ownership, focused collaborator calls, and dependency rules. |
+| `test/lockspire/protocol/token_exchange/characterization_test.exs` | Five-flow observable contract | VERIFIED | Final focused run passed. |
+| `test/lockspire/web/token_controller_test.exs` | Mounted OAuth wire contract | VERIFIED | Final focused run passed. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| `Repository` | aggregate Ecto stores | facade delegation | WIRED | `mix qa.architecture` passes and AST test requires all aggregate aliases. |
-| public `TokenExchange` | typed `Dependencies` | `LegacyOptions.from_request` at stable facade boundary | WIRED | All five grant dispatches call `with_dependencies/3`; dependency compatibility test passed. |
-| authorization/device/CIBA grants | focused persistence/observability | coordinator composition | NOT_WIRED | They delegate broad work to `GrantSupport`; that module contains the persistence/audit/telemetry implementation instead of calling the corresponding focused owners. |
-| standard QA | architecture fitness | `mix.exs` `qa.architecture` alias | WIRED | Alias invokes zero-cycle script and architecture/compatibility tests; independently passed. |
+| `Repository` | aggregate Ecto stores | behavior-compatible delegation | WIRED | AST gate requires each aggregate delegate and rejects facade-side persistence constructs. |
+| stable `TokenExchange` | `Dependencies` | `LegacyOptions` compatibility normalization | WIRED | Public facade retains legacy injection while all final grant invocation paths receive `%Dependencies{}`. |
+| authorization-code/device/CIBA coordination | issuance/persistence/observability owners | `TokenIssuer`, `GrantPersistence`, `GrantObservability` calls | WIRED | GrantSupport delegates intent maps and events; semantic fitness rejects direct token/write/telemetry ownership. |
+| standard QA | architecture and compatibility fitness | `mix.exs` `qa.architecture` alias | WIRED | Alias runs zero-cycle script plus architecture and literal compatibility contract tests. |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 | --- | --- | --- | --- |
-| Architecture ownership/explicit-dependency gate | `mix qa.architecture` | 13 tests, 0 failures; no cycles | PASS, but incomplete against GrantSupport scope |
-| Public compatibility and dependency injection | `mix test ...dependencies_test.exs ...compatibility_baseline_contract_test.exs --trace` | 9 tests, 0 failures | PASS |
-| Five stable-facade grant characterizations | `mix test ...characterization_test.exs --trace` | 4 tests, 0 failures | PASS |
-| Mounted token endpoint response contracts | `mix test ...token_controller_test.exs --trace` | 18 tests, 0 failures | PASS |
-| Concurrent authorization-code redemption | `mix test ...repository_atomicity_test.exs:49 --trace` | 1 test, 1 failure: `Sandbox.allow/3` returned `:not_found` | FAIL |
-| Zero dependency cycles | `mix xref graph --format cycles` | `No cycles found` | PASS |
+| Architecture, cycles, facade, semantic ownership, dependencies | `mix qa.architecture` | No cycles; 13 tests, 0 failures | PASS |
+| Ten-connection code-redemption race, atomicity, five flows, controller, injection, compatibility | `mix test test/lockspire/storage/repository_concurrency_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/protocol/token_exchange/characterization_test.exs test/lockspire/web/token_controller_test.exs test/lockspire/protocol/token_exchange/dependencies_test.exs test/lockspire/compatibility_baseline_contract_test.exs` | 36 tests, 0 failures | PASS |
+| Zero dependency cycles | `mix xref graph --format cycles` (via architecture gate) | `No cycles found` | PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| COH-01 | 02–05, 09 | Aggregate-specific Ecto implementation behind Repository | SATISFIED | Pure delegate facade plus aggregate-store modules and passing AST facade gate. |
-| COH-02 | 01, 02, 05, 08, 09 | Atomic code/refresh/DCR/key behavior under rollback and concurrency proof | BLOCKED | The required concurrent code-redemption proof crashes. |
-| COH-03 | 06–09 | Focused token grant responsibilities behind stable facade | BLOCKED | GrantSupport still owns substantial redemption/persistence/observability behavior. |
-| COH-04 | 06–09 | Explicit bundles without capability sniffing/runtime environment behavior; compatible injection | BLOCKED | GrantSupport reads legacy options and Config/Observability directly, outside LegacyOptions/bundle construction. |
-| COH-05 | 01, 06–09 | Five-flow response/error/token/audit/telemetry characterization | SATISFIED | Five-flow facade and controller characterizations pass independently. |
+| COH-01 | 02–05, 09 | Aggregate-specific Ecto implementations behind Repository | SATISFIED | Pure facade plus aggregate modules; architecture fitness and compatibility pass. |
+| COH-02 | 01, 02, 05, 08, 09 | Atomic code/refresh/DCR/key behavior under rollback and concurrency proof | SATISFIED | New ten-connection characterization and existing rollback/lifecycle cases pass. |
+| COH-03 | 06–09 | Focused token grant responsibilities behind stable facade | SATISFIED | Extracted issuance/persistence/observability owners are wired and protected by semantic AST checks. |
+| COH-04 | 06–09 | Explicit bundles/no dynamic discovery with compatible injection | SATISFIED | Typed bundle, single direct option adapter, compatibility tests, and AST prohibition checks pass. |
+| COH-05 | 01, 06–09 | Five-flow response/error/token/audit/telemetry characterization | SATISFIED | Facade and mounted endpoint tests pass together with durable-state/telemetry assertions. |
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-| --- | --- | --- | --- |
-| `test/lockspire/storage/repository_atomicity_test.exs` | 67 | Broken SQL Sandbox ownership in concurrency test | BLOCKER | Leaves exactly-one-winner behavior unproven and makes the planned combined gate fail. |
-| `lib/lockspire/protocol/token_exchange/internal/grant_support.ex` | 1–1736 | Broad compatibility module retains core protocol responsibilities | BLOCKER | COH-03's intended responsibility split is incomplete. |
-| `lib/lockspire/protocol/token_exchange/internal/grant_support.ex` | 100, 133, 166, 1007, 1073, 1117–1223 | Legacy option/global configuration/telemetry access outside explicit dependencies | BLOCKER | COH-04's explicit dependency boundary is incomplete; current fitness gives a false-green result. |
-
-### Gaps Summary
-
-Three blocking gaps remain. First, fix the SQL Sandbox setup so the DB-backed concurrency proof actually runs. Second, complete the authorization-code/device/CIBA extraction out of `GrantSupport` into `GrantPersistence` and `GrantObservability` (and focused grant coordinators) instead of only extracting refresh-path collaborators. Third, make `LegacyOptions` the sole option-bag adapter and inject configuration/telemetry into the remaining compatibility calls; extend architecture fitness to scan those paths.
-
-The full Phase 135 focused command also fails because of the concurrency-test failure, even though the individual five-flow/controller and compatibility checks pass.
+None in the phase-critical artifacts. No implementation, requirement, or configuration changes were made by this verification.
 
 ---
 
-_Verified: 2026-08-27T20:14:16Z_
+_Verified: 2026-08-27T20:37:05Z_
 _Verifier: the agent (gsd-verifier)_
