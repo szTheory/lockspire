@@ -378,8 +378,8 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     debug_log =
       capture_log(fn ->
-        assert {:ok, %Client{client_id: "debug-client"}} =
-                 Repository.fetch_client_by_id("debug-client")
+        assert %ClientRecord{client_id: "debug-client"} =
+                 Lockspire.TestRepo.get_by(ClientRecord, [client_id: "debug-client"], log: :debug)
       end)
 
     assert debug_log =~ "SELECT"

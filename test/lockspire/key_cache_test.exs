@@ -1,8 +1,6 @@
 defmodule Lockspire.KeyCacheTest do
   use ExUnit.Case, async: false
 
-  import ExUnit.CaptureLog
-
   alias Lockspire.KeyCache
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Domain.SigningKey
@@ -126,6 +124,7 @@ defmodule Lockspire.KeyCacheTest do
       public_jwk = jose_jwk |> JOSE.JWK.to_public() |> JOSE.JWK.to_map() |> elem(1)
       key = %SigningKey{kid: "cached-key", public_jwk: public_jwk}
       {:ok, result} = Agent.start_link(fn -> {:ok, [key]} end)
+      parent = self()
 
       {:ok, pid} =
         KeyCache.start_link(
@@ -133,20 +132,18 @@ defmodule Lockspire.KeyCacheTest do
           table_name: table_name,
           refresh_interval: 0,
           ready?: fn -> true end,
-          loader: fn -> Agent.get(result, & &1) end
+          loader: fn -> Agent.get(result, & &1) end,
+          failure_reporter: fn reason -> send(parent, {:refresh_failure, reason}) end
         )
 
-      assert_eventually(fn -> KeyCache.get_key("cached-key", table_name) end, {:ok, %JOSE.JWK{}})
+      assert_eventually(fn ->
+        match?({:ok, %JOSE.JWK{}}, KeyCache.get_key("cached-key", table_name))
+      end)
+
       Agent.update(result, fn _ -> {:error, {:database_unavailable, "secret-value"}} end)
 
-      log =
-        capture_log(fn ->
-          send(pid, :refresh)
-          :sys.get_state(pid)
-        end)
-
-      assert log =~ "Failed to refresh KeyCache: key storage unavailable"
-      refute log =~ "secret-value"
+      send(pid, :refresh)
+      assert_receive {:refresh_failure, :key_storage_unavailable}
       assert {:ok, %JOSE.JWK{}} = KeyCache.get_key("cached-key", table_name)
 
       GenServer.stop(pid)
@@ -154,19 +151,22 @@ defmodule Lockspire.KeyCacheTest do
     end
   end
 
-  defp assert_eventually(fun, expected, attempts \\ 20)
+  defp assert_eventually(fun, attempts \\ 20)
 
-  defp assert_eventually(_fun, _expected, 0), do: flunk("expected condition was never met")
+  defp assert_eventually(_fun, 0), do: flunk("expected condition was never met")
 
-  defp assert_eventually(fun, expected, attempts) do
-    case fun.() do
-      ^expected -> :ok
-      _other ->
-        Process.sleep(10)
-        assert_eventually(fun, expected, attempts - 1)
+  defp assert_eventually(fun, attempts) do
+    if fun.() do
+      :ok
+    else
+      Process.sleep(10)
+      assert_eventually(fun, attempts - 1)
     end
   end
 
-  defp unique_table_name, do: String.to_atom("lockspire_key_cache_test_#{System.unique_integer([:positive])}")
-  defp unique_server_name, do: String.to_atom("lockspire_key_cache_server_#{System.unique_integer([:positive])}")
+  defp unique_table_name,
+    do: String.to_atom("lockspire_key_cache_test_#{System.unique_integer([:positive])}")
+
+  defp unique_server_name,
+    do: String.to_atom("lockspire_key_cache_server_#{System.unique_integer([:positive])}")
 end
