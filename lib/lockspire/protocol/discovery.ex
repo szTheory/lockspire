@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.Discovery do
   """
 
   alias Lockspire.Config
+  alias Lockspire.DiscoveryRoutes
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
@@ -66,13 +67,20 @@ defmodule Lockspire.Protocol.Discovery do
   """
   @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
   def published_token_endpoint_auth_methods_supported do
-    token_endpoint_auth_methods_supported(mounted_endpoint_metadata())
+    published_token_endpoint_auth_methods_supported(DiscoveryRoutes.paths())
   end
 
-  defp mounted_endpoint_metadata do
+  @doc false
+  @spec published_token_endpoint_auth_methods_supported(Enumerable.t()) :: [String.t()]
+  def published_token_endpoint_auth_methods_supported(route_paths) do
+    token_endpoint_auth_methods_supported(mounted_endpoint_metadata(route_paths))
+  end
+
+  defp mounted_endpoint_metadata(route_paths) do
     issuer = Config.issuer!()
 
-    mounted_route_paths()
+    route_paths
+    |> MapSet.new()
     |> Enum.reduce(%{}, fn path, acc ->
       case endpoint_metadata_entry(issuer, path) do
         nil -> acc
@@ -82,9 +90,15 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   @spec openid_configuration() :: map()
-  def openid_configuration do
+  def openid_configuration, do: openid_configuration(DiscoveryRoutes.paths())
+
+  @doc """
+  Builds discovery metadata from a neutral collection of mounted route paths.
+  """
+  @spec openid_configuration(Enumerable.t()) :: map()
+  def openid_configuration(route_paths) do
     issuer = Config.issuer!()
-    endpoint_metadata = mounted_endpoint_metadata()
+    endpoint_metadata = mounted_endpoint_metadata(route_paths)
 
     authorization_response_capabilities =
       AuthorizationResponseCapabilities.metadata(endpoint_metadata, global_security_profile())
@@ -167,17 +181,6 @@ defmodule Lockspire.Protocol.Discovery do
       {:ok, policy} -> policy.security_profile
       _ -> :none
     end
-  end
-
-  defp mounted_route_paths do
-    discovery_router()
-    |> Phoenix.Router.routes()
-    |> Enum.map(& &1.path)
-    |> MapSet.new()
-  end
-
-  defp discovery_router do
-    Application.get_env(:lockspire, :discovery_router, Lockspire.Web.Router)
   end
 
   defp endpoint_metadata_entry(issuer, path) do

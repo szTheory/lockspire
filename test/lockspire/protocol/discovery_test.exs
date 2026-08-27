@@ -123,7 +123,14 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert config["token_endpoint"] == "https://example.test/lockspire/token"
     refute Map.has_key?(config, "authorization_endpoint")
     refute Map.has_key?(config, "userinfo_endpoint")
-    assert config["grant_types_supported"] == @grant_types_supported
+
+    assert config["grant_types_supported"] == [
+             "authorization_code",
+             "refresh_token",
+             "urn:ietf:params:oauth:grant-type:device_code",
+             "urn:openid:params:grant-type:ciba"
+           ]
+
     assert config["code_challenge_methods_supported"] == []
   end
 
