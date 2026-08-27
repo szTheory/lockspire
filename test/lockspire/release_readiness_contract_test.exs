@@ -12,19 +12,22 @@ defmodule Lockspire.ReleaseReadinessContractTest do
       source = File.read!(suite)
 
       assert source =~ "Lockspire.TestSupport.ReleaseProof"
-      refute source =~ "ReleaseContractHelpers"
-      refute source =~ "use Lockspire.TestSupport"
+      assert_no_legacy_patterns!(source)
     end
   end
 
   test "release proof rejects historical inventory patterns" do
-    assert_rejects_legacy_pattern!("use Lockspire.TestSupport.ReleaseContractHelpers")
-    assert_rejects_legacy_pattern!("@capability_inventory %{\"phase 115\" => []}")
-    assert_rejects_legacy_pattern!("assert assertion_count >= 588")
-    assert_rejects_legacy_pattern!("File.read!(\".planning/PROJECT.md\")")
+    for violating_source <- [
+          "use Lockspire.TestSupport.ReleaseContractHelpers",
+          "@capability_inventory %{\"legacy capability\" => []}",
+          "assert assertion_count >= 1",
+          "File.read!(\".planning/PROJECT.md\")"
+        ] do
+      assert_raise ExUnit.AssertionError, fn -> assert_no_legacy_patterns!(violating_source) end
+    end
   end
 
-  defp assert_rejects_legacy_pattern!(source) do
+  defp assert_no_legacy_patterns!(source) do
     refute source =~ "ReleaseContractHelpers"
     refute source =~ "@capability_inventory"
     refute source =~ ~r/assertion_count\s*>=\s*\d+/
