@@ -45,15 +45,25 @@ defmodule CleanRoomClientWeb.JourneyController do
   end
 
   def resource_replay(conn, _params) do
-    with {:ok, session} <- session(conn),
-         {:ok, access_token} <- encrypted_value(session.encrypted_access_token),
-         {:ok, proof} <- encrypted_value(session.encrypted_accepted_resource_proof),
-         {:ok, status, headers, _body} <- OAuthHttp.dpop_get(resource(), access_token, proof),
-         true <- status in [400, 401],
-         true <- challenge?(headers, "invalid_token") do
+    with {:session, {:ok, session}} <- {:session, session(conn)},
+         {:access_token, {:ok, access_token}} <-
+           {:access_token, encrypted_value(session.encrypted_access_token)},
+         {:proof, {:ok, proof}} <- {:proof, encrypted_value(session.encrypted_accepted_resource_proof)},
+         {:resource_response, {:ok, status, headers, _body}} <-
+           {:resource_response, OAuthHttp.dpop_get(resource(), access_token, proof)},
+         {:replay_status, true} <- {:replay_status, status in [400, 401]},
+         {:replay_challenge, true} <-
+           {:replay_challenge, challenge?(headers, "invalid_token")} do
       json(conn, %{status: status, challenge: "invalid_token"})
     else
-      _ -> reject(conn)
+      {stage, _reason} when stage in [:session, :access_token, :proof, :resource_response] ->
+        reject(conn, stage)
+
+      {:replay_status, _reason} ->
+        reject(conn, :replay_status)
+
+      {:replay_challenge, _reason} ->
+        reject(conn, :replay_challenge)
     end
   end
 
@@ -71,8 +81,11 @@ defmodule CleanRoomClientWeb.JourneyController do
     String.contains?(Map.get(headers, "www-authenticate", ""), "error=\"#{error}\"")
   end
 
-  defp reject(conn),
-    do: conn |> put_status(:bad_request) |> json(%{error: "dpop_operation_rejected"})
+  defp reject(conn, stage \\ :operation),
+    do:
+      conn
+      |> put_status(:bad_request)
+      |> json(%{error: "dpop_operation_rejected", stage: Atom.to_string(stage)})
 
   defp resource do
     Application.fetch_env!(:clean_room_confidential_client, :provider_issuer)

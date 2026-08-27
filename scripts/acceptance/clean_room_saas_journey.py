@@ -630,12 +630,26 @@ def run_boundary() -> None:
 
 def safe_dpop_operation(client: Browser, path: str, label: str) -> dict[str, object]:
     response = client.request("POST", path, {"_csrf_token": client_csrf(client)})
-    require_status(response, 200, label)
     parsed = json.loads(str(response["body"]))
+    if response["status"] != 200:
+        raise AssertionError(
+            f"{label}: expected HTTP 200, got {response['status']}"
+            f"{safe_oauth_error_code(response)}"
+            f" (stage: {safe_dpop_failure_stage(parsed)})"
+        )
     forbidden = {"access_token", "nonce", "proof", "private_key", "secret", "cookie"}
     if forbidden & set(parsed):
         raise AssertionError(f"{label}: client receipt exposed confidential material")
     return parsed
+
+
+def safe_dpop_failure_stage(receipt: dict[str, object]) -> str:
+    """Return a fixed client-side stage label without rendering HTTP payloads."""
+
+    stage = receipt.get("stage")
+    if isinstance(stage, str) and re.fullmatch(r"[a-z_]{1,64}", stage):
+        return stage
+    return "unknown"
 
 
 def client_csrf(client: Browser) -> str:
@@ -653,7 +667,13 @@ def assert_client_csrf_protection(client: Browser) -> None:
     print("client CSRF protection enforced")
 
 
-def run_dpop(provider_child: Path, provider_environment: dict[str, str], provider_process: subprocess.Popen[bytes] | None, run_root: Path) -> subprocess.Popen[bytes]:
+def run_dpop(
+    provider_child: Path,
+    provider_environment: dict[str, str],
+    provider_process: subprocess.Popen[bytes] | None,
+    run_root: Path,
+    track_provider_process,
+) -> subprocess.Popen[bytes]:
     client = Browser(CLIENT_ORIGIN)
     provider = Browser(PROVIDER_ORIGIN)
     assert_client_csrf_protection(client)
@@ -697,11 +717,18 @@ def run_dpop(provider_child: Path, provider_environment: dict[str, str], provide
 
     stop_process(provider_process)
     provider_process = start_process(provider_child, provider_environment, run_root / "provider-restart.log")
+    # Publish the replacement before readiness or replay assertions.  If either
+    # fails, the outer teardown still owns this live process and can release the
+    # database deterministically.
+    track_provider_process(provider_process)
     wait_ready(PROVIDER_ORIGIN)
 
     durable_replay = safe_dpop_operation(client, "/acceptance/dpop/resource/replay", "durable dpop resource replay")
     if durable_replay.get("challenge") != "invalid_token" or durable_replay.get("status") not in (400, 401):
-        raise AssertionError("dpop replay was accepted after provider restart")
+        raise AssertionError(
+            "dpop replay was accepted after provider restart "
+            f"(stage: {safe_dpop_failure_stage(durable_replay)})"
+        )
     print("dpop replay rejected after provider restart")
     return provider_process
 
@@ -752,6 +779,11 @@ def main(argv: list[str]) -> int:
         provider_port, client_port = configure_origins()
         provider_database = clean_room_database_url("provider")
         client_database = clean_room_database_url("client")
+
+        def track_provider_process(process: subprocess.Popen[bytes]) -> None:
+            nonlocal provider_process
+            provider_process = process
+
         try:
             probe_environment()
             assert_redaction_guard(redactor)
@@ -785,7 +817,13 @@ def main(argv: list[str]) -> int:
             if "negative" in args.only:
                 run_negative(handoff)
             if "dpop" in args.only:
-                provider_process = run_dpop(provider_child, provider_environment, provider_process, run_root)
+                provider_process = run_dpop(
+                    provider_child,
+                    provider_environment,
+                    provider_process,
+                    run_root,
+                    track_provider_process,
+                )
             scan_evidence(run_root, redactor)
             return 0
         except JourneyInterrupted:
