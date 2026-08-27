@@ -23,7 +23,7 @@ decisions:
   - "Bearer and DPoP credentials use distinct mode-0600 handoff files and distinct fixed callbacks."
 metrics:
   completed: 2026-08-27
-status: partial
+status: complete
 ---
 
 # Phase 133 Plan 02: Clean Provider Bootstrap Summary
@@ -36,6 +36,7 @@ status: partial
 - Added host-owned account resolution, interaction/login handling, and a protected billing API using the canonical `VerifyToken -> EnforceSenderConstraints -> RequireToken` order and every public semantic token reader.
 - Added public signing-key lifecycle and separate bearer/DPoP confidential registrations. The DPoP policy is set and re-read via `Lockspire.Admin`; each plaintext secret is written only to its own mode-0600 handoff file.
 - Added package-clean integration coverage and static acceptance checks for boundary, enrollment, secret separation, semantic readers, and no replay-store override.
+- The provider proof now executes the full fresh-child path: locked dependency resolution, public installation, migrations, warnings-as-errors compilation, `mix lockspire.verify`, Bandit boot, and mounted live discovery.
 
 ## Task Commits
 
@@ -62,9 +63,13 @@ status: partial
 - **Fix:** expanded and closed the returned interaction map, then formatted the overlays.
 - **Commit:** `1b2f744`
 
-## Deferred Verification
+## Fresh-Child Verification
 
-The full child `mix lockspire.install`/compile step cannot complete on this workstation: a fresh dependency compile of the package-pinned `jose 1.11.12` fails under the installed Elixir 1.19.5 because `jose_jwt.hrl` is absent while Elixir extracts its record. Root dependencies were already compiled under the project’s supported toolchain, but a copied clean child necessarily recompiles them. The builder retains the real installer path for a compatible CI/runtime; the local self-test performs only the package/provenance/boundary half and does not claim a live listener.
+The full provider proof now passes on Elixir 1.19.5. Its child-local, locked JOSE compatibility adapter changes only the known 1.11.12 record-extractor paths and fails closed if that pinned source changes. The proof also caught and fixed package asset lookup, installer bootstrap ordering, generated HEEx, host router, Bandit endpoint, and mounted-issuer fixture defects.
+
+- Passed: `python3 scripts/acceptance/clean_room/build_provider.py --self-test`
+- Passed: `mix test --include integration test/integration/phase133_provider_install_test.exs --only package_clean`
+- Passed from a separately-created fresh child: installer, `mix ecto.create`, `mix ecto.migrate`, warnings-as-errors compilation, `mix lockspire.verify`, and live `/.well-known/openid-configuration` with the configured mounted issuer.
 
 ## Self-Check: PASSED
 
