@@ -11,4 +11,8 @@ defmodule Lockspire.Protocol.TokenExchange.Compatibility do
 
   def to_public(%TokenResult.Error{} = result),
     do: struct(TokenExchange.Error, Map.from_struct(result))
+
+  @spec to_neutral(TokenExchange.Error.t()) :: TokenResult.Error.t()
+  def to_neutral(%TokenExchange.Error{} = result),
+    do: struct(TokenResult.Error, Map.from_struct(result))
 end
