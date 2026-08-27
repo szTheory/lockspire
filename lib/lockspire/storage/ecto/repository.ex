@@ -34,7 +34,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
-  alias Lockspire.Storage.Ecto.PushedAuthorizationRequestRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.Ecto.UsedJtiRecord
@@ -42,6 +41,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
   alias Lockspire.Storage.Ecto.Repository.ConsentStore, as: EctoConsentStore
   alias Lockspire.Storage.Ecto.Repository.InteractionStore, as: EctoInteractionStore
+
+  alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore,
+    as: EctoPushedAuthorizationRequestStore
+
   alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore, as: EctoServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
   alias Lockspire.Storage.Ecto.Repository.TransactionStore, as: EctoTransactionStore
@@ -195,50 +198,26 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl PushedAuthorizationRequestStore
   def put_pushed_authorization_request(%PushedAuthorizationRequest{} = request) do
-    %PushedAuthorizationRequestRecord{}
-    |> PushedAuthorizationRequestRecord.changeset(request)
-    |> repo_insert(
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:request_uri_hash]
-    )
-    |> map_one(&PushedAuthorizationRequestRecord.to_domain(&1, request_uri: request.request_uri))
+    EctoPushedAuthorizationRequestStore.put_pushed_authorization_request(repo(), request)
   end
 
   @impl PushedAuthorizationRequestStore
   def fetch_active_pushed_authorization_request(request_uri_hash)
       when is_binary(request_uri_hash) do
-    now = DateTime.utc_now()
-
-    PushedAuthorizationRequestRecord
-    |> where([request], request.request_uri_hash == ^request_uri_hash)
-    |> where([request], request.expires_at > ^now)
-    |> repo_one(sensitive: true)
-    |> then(fn record ->
-      {:ok, maybe_map(record, &PushedAuthorizationRequestRecord.to_domain/1)}
-    end)
-  rescue
-    error -> {:error, error}
+    EctoPushedAuthorizationRequestStore.fetch_active_pushed_authorization_request(
+      repo(),
+      request_uri_hash
+    )
   end
 
   @impl PushedAuthorizationRequestStore
   def consume_pushed_authorization_request(request_uri_hash, client_id)
       when is_binary(request_uri_hash) and is_binary(client_id) do
-    transact(fn ->
-      now = DateTime.utc_now()
-
-      PushedAuthorizationRequestRecord
-      |> where([request], request.request_uri_hash == ^request_uri_hash)
-      |> lock("FOR UPDATE")
-      |> repo_one(sensitive: true)
-      |> consume_pushed_authorization_request_record(client_id, now)
-    end)
-    |> case do
-      {:ok, %PushedAuthorizationRequest{} = request} -> {:ok, request}
-      {:ok, nil} -> {:ok, nil}
-      {:error, :not_found} -> {:ok, nil}
-      {:error, :invalid_client_binding} -> {:ok, nil}
-      {:error, reason} -> {:error, reason}
-    end
+    EctoPushedAuthorizationRequestStore.consume_pushed_authorization_request(
+      repo(),
+      request_uri_hash,
+      client_id
+    )
   end
 
   def list_device_authorizations(opts \\ []) when is_list(opts) do
@@ -1115,40 +1094,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp maybe_filter_token_status(query, _status, _now), do: query
 
-  defp consume_pushed_authorization_request_record(nil, _client_id, _now) do
-    repo().rollback(:not_found)
-  end
-
-  defp consume_pushed_authorization_request_record(
-         %PushedAuthorizationRequestRecord{} = record,
-         client_id,
-         now
-       ) do
-    case repo_delete(record, sensitive: true)
-         |> map_one(&PushedAuthorizationRequestRecord.to_domain(&1)) do
-      {:ok, %PushedAuthorizationRequest{} = consumed} ->
-        cond do
-          not active_pushed_authorization_request?(consumed, now) ->
-            nil
-
-          consumed.client_id != client_id ->
-            nil
-
-          true ->
-            consumed
-        end
-
-      {:error, reason} ->
-        repo().rollback(reason)
-    end
-  end
-
-  defp active_pushed_authorization_request?(
-         %PushedAuthorizationRequest{expires_at: %DateTime{} = expires_at},
-         now
-       ),
-       do: DateTime.compare(expires_at, now) == :gt
-
   defp maybe_filter_signing_key_status(query, nil), do: query
 
   defp maybe_filter_signing_key_status(query, status)
@@ -1999,10 +1944,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   defp repo_update_all(query, updates, opts \\ [], keyword_opts \\ []) do
     Support.update_all(repo(), query, updates, opts, keyword_opts)
-  end
-
-  defp repo_delete(record, opts) do
-    Support.delete(repo(), record, opts)
   end
 
   defp repo_delete_all(query, opts) do
