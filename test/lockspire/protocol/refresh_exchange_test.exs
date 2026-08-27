@@ -731,4 +731,9 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
     %{jwt: proof, validated: validated}
   end
+
+  test "retains the public refresh exchange facade arity" do
+    Code.ensure_loaded!(RefreshExchange)
+    assert function_exported?(RefreshExchange, :exchange_refresh_token, 2)
+  end
 end
