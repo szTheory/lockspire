@@ -6,7 +6,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.ProtectedResourceDPoP
-  alias Lockspire.Protocol.Userinfo.Error
+  alias Lockspire.Protocol.ProtectedResourceError
 
   @now ~U[2026-04-28 18:00:00Z]
   @raw_access_token "userinfo-dpop-access-token"
@@ -142,7 +142,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   test "returns use_dpop_nonce with a new resource nonce when the proof omits nonce" do
     %{request: request, token: token} = dpop_request_fixture(nonce: nil)
 
-    assert {:error, %Error{} = error} =
+    assert {:error, %ProtectedResourceError{} = error} =
              ProtectedResourceDPoP.validate_userinfo_access(token, request)
 
     assert error.error == "use_dpop_nonce"
@@ -154,7 +154,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     %{request: request, token: token} =
       dpop_request_fixture(nonce: DPoPNonce.issue(:authorization_server))
 
-    assert {:error, %Error{} = error} =
+    assert {:error, %ProtectedResourceError{} = error} =
              ProtectedResourceDPoP.validate_userinfo_access(token, request)
 
     assert error.error == "use_dpop_nonce"
@@ -165,7 +165,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
   test "succeeds after retrying with the supplied resource-server nonce" do
     %{request: request, token: token, private_jwk: private_jwk} = dpop_request_fixture(nonce: nil)
 
-    assert {:error, %Error{} = error} =
+    assert {:error, %ProtectedResourceError{} = error} =
              ProtectedResourceDPoP.validate_userinfo_access(token, request)
 
     assert error.error == "use_dpop_nonce"
@@ -247,7 +247,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoPTest do
     %{jwt: jwt, validated: validated, private_jwk: keys.private_jwk}
   end
 
-  defp assert_invalid_token({:error, %Error{} = error}, reason_code) do
+  defp assert_invalid_token({:error, %ProtectedResourceError{} = error}, reason_code) do
     assert error.status == 401
     assert error.error == "invalid_token"
     assert error.reason_code == reason_code
