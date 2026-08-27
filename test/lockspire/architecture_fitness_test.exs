@@ -74,6 +74,7 @@ defmodule Lockspire.ArchitectureFitnessTest do
     asts: asts
   } do
     assert_calls(asts, "internal/authorization_code_grant.ex", [:Dependencies, :GrantSupport])
+
     assert_calls(asts, "internal/device_code_grant.ex", [:Dependencies, :GrantSupport])
     assert_calls(asts, "internal/ciba_grant.ex", [:Dependencies, :GrantSupport])
 
@@ -89,7 +90,9 @@ defmodule Lockspire.ArchitectureFitnessTest do
       :ClientAuthentication,
       :GrantPolling,
       :ResourceSelection,
-      :TokenIssuer
+      :TokenIssuer,
+      :GrantPersistence,
+      :GrantObservability
     ])
 
     for {path, ast} <- asts,
