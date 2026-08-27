@@ -1,4 +1,4 @@
-defmodule Lockspire.Protocol.TokenEndpointDPoP do
+defmodule Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP do
   @moduledoc """
   Resolves shared DPoP issuance context for token-endpoint exchanges.
   """
@@ -12,7 +12,7 @@ defmodule Lockspire.Protocol.TokenEndpointDPoP do
   alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.SecurityProfile
-  alias Lockspire.Protocol.TokenExchange.Error
+  alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Storage.Ecto.Repository
 
   @type issuance_context :: %{

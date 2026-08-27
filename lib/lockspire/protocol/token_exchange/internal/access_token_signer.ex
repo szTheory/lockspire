@@ -1,4 +1,4 @@
-defmodule Lockspire.Protocol.AccessTokenSigner do
+defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   @moduledoc """
   Shared access-token issuance for all Lockspire grant paths.
 
@@ -35,7 +35,7 @@ defmodule Lockspire.Protocol.AccessTokenSigner do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.Token
-  alias Lockspire.Protocol.TokenExchange.Error
+  alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.PrivateJwk

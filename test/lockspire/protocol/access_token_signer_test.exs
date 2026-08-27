@@ -97,6 +97,12 @@ defmodule Lockspire.Protocol.AccessTokenSignerTest do
     header_b64 |> Base.url_decode64!(padding: false) |> Jason.decode!()
   end
 
+  test "retains the public signing facade arities" do
+    Code.ensure_loaded!(AccessTokenSigner)
+    assert function_exported?(AccessTokenSigner, :issue, 3)
+    assert function_exported?(AccessTokenSigner, :issue_exchange, 4)
+  end
+
   # ---------------------------------------------------------------------------
   # (a) :jwt effective format — claims + hash equality.
   # ---------------------------------------------------------------------------
