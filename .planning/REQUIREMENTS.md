@@ -54,10 +54,10 @@
 
 ### CI, Conformance, and Release Proof
 
-- [ ] **CI-01**: CI scans both public and admin routers with fail-closed Sobelow at low severity and rejects missing-router scans or unexplained broad ignores.
-- [ ] **CI-02**: CI executes fast and integration tests once each, aggregates exported coverage, and enforces a truthful complete-suite floor of at least 84%.
-- [ ] **CI-03**: CI fails on unused locked dependencies and new compile-connected cycles, and the adoption demo receives controlled dependency updates without changing minimum-version fixtures.
-- [ ] **CONF-01**: Maintainers can run OIDC/FAPI conformance evidence from immutable suite images, source revisions, downloads, and checksums rather than mutable `latest` or `master` inputs.
+- [x] **CI-01**: CI scans both public and admin routers with fail-closed Sobelow at low severity and rejects missing-router scans or unexplained broad ignores.
+- [x] **CI-02**: CI executes fast and integration tests once each, aggregates exported coverage, and enforces a truthful complete-suite floor of at least 84%.
+- [x] **CI-03**: CI fails on unused locked dependencies and new compile-connected cycles, and the adoption demo receives controlled dependency updates without changing minimum-version fixtures.
+- [x] **CONF-01**: Maintainers can run OIDC/FAPI conformance evidence from immutable suite images, source revisions, downloads, and checksums rather than mutable `latest` or `master` inputs.
 - [ ] **CONF-02**: A scheduled repo-native conformance lane retains redacted evidence and remains supplemental until measured reliability justifies any stronger gate or certification claim.
 - [ ] **REL-01**: Release automation proves a clean-room install, migration, verification, boot, and minimal HTTP journey against the built artifact before publish and the exact public version after publish.
 - [ ] **REL-02**: Maintainers can verify that the published Hex checksum matches the produced artifact and can inspect a retained redacted release manifest with pinned runtime/tooling versions.
@@ -116,13 +116,13 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | QUAL-02 | 136 | Complete |
 | QUAL-03 | 136 | Complete |
 | QUAL-04 | 136 | Complete |
-| CI-01 | 137 | Pending |
-| CI-02 | 137 | Pending |
-| CI-03 | 137 | Pending |
-| CONF-01 | 137 | Pending |
-| CONF-02 | 137 | Pending |
-| REL-01 | 137 | Pending |
-| REL-02 | 137 | Pending |
+| CI-01 | 137 | Complete |
+| CI-02 | 137 | Complete |
+| CI-03 | 137 | Complete |
+| CONF-01 | 137 | Complete |
+| CONF-02 | 137 | Human verification required |
+| REL-01 | 137 | Human verification required |
+| REL-02 | 137 | Human verification required |
 
 **Coverage:**
 

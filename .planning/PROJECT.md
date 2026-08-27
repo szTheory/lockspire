@@ -25,7 +25,9 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has landed mainline work through v1.36 while the latest public Hex release remains `1.2.0`, and v1.37 is now underway. Phases 131-132 made packaged installation executable and aligned the supported client/resource-server surface with runtime truth: real generated routes and consent, collision-safe migration delivery, complete install verification, additive semantic access-token readers, coherent direct/DCR registration, durable DPoP replay defaults, and host-owned authorization boundaries are verified and security-audited. The current focus is the clean-room separate-origin SaaS journey in Phase 133.
+Lockspire has implemented all seven v1.37 phases, and Hex currently reports `1.4.0` as the latest public release. The milestone is not marked shipped: Phase 137 is reviewed, Nyquist-compliant, and threat-secure, but final verification still requires a default-branch OIDC/FAPI workflow run with protected provider configuration and an approved protected release or staging-equivalent that proves the exact tar checksum through Hex, HexDocs, and the public clean-room journey. No package was published during autonomous implementation.
+
+The implemented milestone makes packaged installation executable, aligns the supported client/resource-server surface with runtime truth, proves the separate-origin SaaS journey, enforces acyclic/cohesive internals, restores high-signal static analysis, aggregates truthful complete-suite coverage above 84%, pins external conformance inputs, and binds release proof to one manifest-verified tar. Generated routes and consent, collision-safe migrations, semantic access-token readers, capability-aware registration, durable DPoP replay defaults, and host-owned authorization boundaries remain verified and security-audited.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
@@ -67,7 +69,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-Execute v1.37 as an evidence-led readiness milestone. Fix the concrete generated-install and resource-server contract gaps first, use the clean-room SaaS journey as the acceptance spine, and make internal architecture and CI improvements serve that observable adoption path. Do not widen Lockspire into hosted auth, host-owned product policy, a standalone service, or additional protocol grants.
+Complete v1.37's two protected acceptance checks without widening scope: run the scheduled OIDC/FAPI profiles with the three configured provider secrets, then run an approved protected release or staging-equivalent and verify the exact manifest checksum through upload, Hex, HexDocs, and the public clean-room journey. Archive/tag the milestone only after `137-VERIFICATION.md` can move from `human_needed` to `passed`.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -372,4 +374,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 at v1.37 milestone start*
+*Last updated: 2026-08-27 at the v1.37 external verification boundary*

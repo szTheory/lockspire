@@ -54,19 +54,14 @@
   3. DPoP replay protection persists durably through the configured Lockspire repository by default and accepts a compatible custom store.
   4. Resource-server documentation, examples, authorization boundary, and deprecation guidance match shipped behavior.
 
-**Plans**: 10 plans
+**Plans**: 4/4 plans executed
 
 Plans:
-- [ ] 137-01-PLAN.md — Fail-closed dual-router Sobelow and dependency/topology truth
-- [ ] 137-02-PLAN.md — Once-per-partition native coverage export and strict aggregation
-- [ ] 137-03-PLAN.md — Behavioral coverage closure from 78.03% to at least 84%
-- [ ] 137-04-PLAN.md — Required CI evidence orchestration and immutable artifact transport
-- [ ] 137-05-PLAN.md — Immutable OIDF suite source, checksum, and OCI digest lock
-- [ ] 137-06-PLAN.md — Shared pinned conformance runners and redacted evidence boundary
-- [ ] 137-07-PLAN.md — Scheduled supplemental conformance workflow and maintainer truth
-- [ ] 137-08-PLAN.md — Clean-room journey from exact local tar or public Hex version
-- [ ] 137-09-PLAN.md — Checksum-bound release manifest, publisher, and post-publish proof
-- [ ] 137-10-PLAN.md — Single-artifact protected release workflow and retained receipts
+
+- [x] 132-01-PLAN.md — Semantic access-token readers and verified resource-server consumption.
+- [x] 132-02-PLAN.md — Capability-aware OIDC, private-key JWT, and device client registration.
+- [x] 132-03-PLAN.md — Durable fail-closed DPoP replay storage through the configured repository.
+- [x] 132-04-PLAN.md — Canonical protected-route guidance, examples, and deprecation truth.
 
 ### Phase 133: Clean-Room SaaS Journey
 
@@ -81,7 +76,7 @@ Plans:
   4. Refresh rotation, reuse-triggered family revocation, authenticated introspection, and revocation work with truthful JWT lifetime semantics.
   5. The journey rejects documented redirect, code, token, audience, scope, nonce, and DPoP replay failures without retaining or logging secrets or tokens.
 
-**Plans**: 1/6 plans executed
+**Plans**: 6/6 plans executed
 
 Plans:
 
@@ -187,7 +182,22 @@ Plans:
   3. Before publish, release automation proves clean-room installation through a minimal HTTP journey against the built artifact; after publish, it repeats against the exact public version.
   4. A published package's Hex checksum matches the produced artifact and a redacted manifest records pinned runtime and tooling versions.
 
-**Plans**: TBD
+**Plans**: 10/10 plans implemented; external verification pending
+
+Plans:
+
+- [x] 137-01-PLAN.md — Fail-closed dual-router Sobelow and dependency/topology truth.
+- [x] 137-02-PLAN.md — Once-per-partition native coverage export and strict aggregation.
+- [x] 137-03-PLAN.md — Behavioral coverage closure above the 84% floor.
+- [x] 137-04-PLAN.md — Required CI evidence orchestration and immutable artifact transport.
+- [x] 137-05-PLAN.md — Immutable OIDF suite source, checksum, and OCI digest lock.
+- [x] 137-06-PLAN.md — Shared pinned conformance runners and redacted evidence boundary.
+- [x] 137-07-PLAN.md — Scheduled supplemental conformance workflow and maintainer truth.
+- [x] 137-08-PLAN.md — Clean-room journey from an exact local tar or public Hex version.
+- [x] 137-09-PLAN.md — Checksum-bound release manifest, exact-byte publisher, and post-publish proof.
+- [x] 137-10-PLAN.md — Single-artifact protected release workflow and retained receipts.
+
+**Verification:** 10/12 observable truths verified. Awaiting one hosted OIDC/FAPI workflow run and one approved protected release or staging-equivalent run; see `137-VERIFICATION.md`.
 
 ## Requirement Coverage
 
@@ -213,4 +223,4 @@ Plans:
 | 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
 | 135. Cohesive Internals | 9/9 | Complete    | 2026-08-27 |
 | 136. Static Analysis and Sustainable Proof | 11/11 | Complete    | 2026-08-27 |
-| 137. CI, Conformance, and Release Proof | 0/10 | Ready to execute | - |
+| 137. CI, Conformance, and Release Proof | 10/10 | External verification required | - |

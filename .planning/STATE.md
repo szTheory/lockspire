@@ -4,16 +4,16 @@ milestone: v1.37
 milestone_name: Prime-Time Readiness Ratchet
 current_phase: 137
 current_phase_name: CI, Conformance, and Release Proof
-status: ready_to_execute
-stopped_at: Phase 137 planned; ready to execute Plan 137-01
-last_updated: "2026-08-27T22:17:10Z"
+status: blocked
+stopped_at: Phase 137 implemented; hosted conformance and protected release verification required
+last_updated: "2026-08-27T23:18:00Z"
 last_activity: 2026-08-27
-last_activity_desc: Phase 137 planned in 10 executable plans across 3 waves
+last_activity_desc: Phase 137 implemented, reviewed, Nyquist-compliant, and threat-secure; external acceptance pending
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 58
-  completed_plans: 48
+  completed_plans: 58
   percent: 86
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 137 — CI, Conformance, and Release Proof
-Plan: 137-01 of 10
-Status: Ready to execute
-Last activity: 2026-08-27 — Phase 137 planned in 10 executable plans across 3 waves
+Plan: 10 of 10 implemented
+Status: External verification required
+Last activity: 2026-08-27 — Phase 137 implementation and internal verification complete; hosted acceptance pending
 
 Progress: [█████████░] 86%
 
@@ -64,13 +64,15 @@ None yet.
 
 ### Blockers/Concerns
 
-None active.
+- The scheduled OIDC/FAPI workflow must run on the default branch with the three provider-configuration secrets and retain only classified redacted receipts.
+- An approved protected release or staging-equivalent must prove the same tar checksum through outbound Hex bytes, the release-specific Hex API, versioned HexDocs, and the exact-version clean-room journey.
+- These checks require protected credentials and external state; no package was published during autonomous implementation.
 
 ## Session Continuity
 
-Last session: 2026-08-27T01:23:09.449Z
-Stopped at: Completed 133-01-PLAN.md
-Resume file: .planning/phases/133-clean-room-saas-journey/133-02-PLAN.md
+Last session: 2026-08-27T23:18:00Z
+Stopped at: Phase 137 external verification boundary
+Resume file: .planning/phases/137-ci-conformance-and-release-proof/137-VERIFICATION.md
 
 ## Performance Metrics
 
