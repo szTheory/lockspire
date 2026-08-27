@@ -87,7 +87,7 @@ defmodule Lockspire.TokenExchangeCharacterization do
     refute_observability_leaks(events, [journey.secret, success.access_token, success.refresh_token])
   end
 
-  def assert_authorization_code_replay(journey, %TokenExchange.Error{} = replay, events) do
+  def assert_authorization_code_replay(journey, %TokenExchange.Error{}, events) do
     assert_audit(journey, "authorization_code_replay_detected", "authorization_code_replayed")
     assert_event(
       events,
