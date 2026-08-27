@@ -8,7 +8,14 @@ defmodule Lockspire.CoverageBaselineContractTest do
     config = Mix.Project.config()
     mixfile = File.read!(@mixfile)
 
-    assert config[:test_coverage] == [summary: [threshold: 73], output: "cover"]
+    expected_threshold =
+      if System.get_env("LOCKSPIRE_COMPLETE_COVERAGE") == "true", do: 84, else: 73
+
+    expected_output = System.get_env("LOCKSPIRE_COVERAGE_OUTPUT", "cover")
+
+    assert config[:test_coverage] ==
+             [summary: [threshold: expected_threshold], output: expected_output]
+
     assert mixfile =~ "73.11%"
     assert mixfile =~ "\"test.coverage\": [\"test.setup\", \"test --cover\"]"
     assert mixfile =~ "LOCKSPIRE_COMPLETE_COVERAGE"
