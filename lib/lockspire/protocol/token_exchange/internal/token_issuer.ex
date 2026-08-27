@@ -13,9 +13,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
+  @type token_for_issuance :: %Token{token_hash: String.t() | nil}
+
   @doc false
-  @spec issue_access(Token.t(), Client.t(), Dependencies.t()) ::
-          {:ok, String.t(), String.t()} | {:error, struct()}
+  @spec issue_access(token_for_issuance(), Client.t(), Dependencies.t()) ::
+          {:ok, String.t(), String.t()} | {:error, Error.t()}
   def issue_access(%Token{} = token, %Client{} = client, %Dependencies{} = dependencies) do
     # This is intentionally a construction/signing boundary. It does not receive a
     # store, transaction, audit sink, or telemetry dependency, so issuance cannot
@@ -24,8 +26,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
-  @spec issue_exchange(Token.t(), Client.t(), map(), Dependencies.t()) ::
-          {:ok, String.t(), String.t()} | {:error, struct()}
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), Dependencies.t()) ::
+          {:ok, String.t(), String.t()} | {:error, Error.t()}
   def issue_exchange(%Token{} = token, %Client{} = client, claims, %Dependencies{} = dependencies)
       when is_map(claims) do
     AccessTokenSigner.issue_exchange(token, client, claims, %{}, dependencies)
@@ -124,16 +126,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
          %Dependencies{} = dependencies
        ) do
     if "refresh_token" in client.allowed_grant_types and "offline_access" in grant.scopes do
-      TokenFormatter.format_refresh_token(token_format_options(dependencies, :refresh_token))
+      TokenFormatter.format_refresh_token(refresh_token_format_options(dependencies))
     end
   end
 
-  defp token_format_options(%Dependencies{} = dependencies, token_type) do
-    generator =
-      case token_type do
-        :access_token -> dependencies.access_token_generator || dependencies.token_generator
-        :refresh_token -> dependencies.refresh_token_generator || dependencies.token_generator
-      end
+  defp refresh_token_format_options(%Dependencies{} = dependencies) do
+    generator = dependencies.refresh_token_generator || dependencies.token_generator
 
     if generator, do: [token_generator: generator], else: []
   end

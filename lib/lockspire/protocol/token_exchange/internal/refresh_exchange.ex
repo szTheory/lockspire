@@ -15,8 +15,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenResult.Success
 
-  @spec exchange_refresh_token(Client.t(), map(), map()) ::
-          {:ok, struct()} | {:error, struct()}
+  @spec exchange_refresh_token(Client.t(), map(), Dependencies.t()) ::
+          {:ok, Success.t()} | {:error, Error.t()}
   def exchange_refresh_token(%Client{} = client, request, %Dependencies{} = dependencies)
       when is_map(request) do
     request = Dependencies.attach(request, dependencies)
@@ -98,7 +98,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          request
        ) do
     formatted_refresh_token =
-      TokenFormatter.format_refresh_token(token_format_options(request, :refresh_token))
+      TokenFormatter.format_refresh_token(refresh_token_format_options(request))
 
     rotated_at = now(request)
 
@@ -220,14 +220,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
 
   defp token_store(request), do: Dependencies.fetch!(request).token_store
 
-  defp token_format_options(request, token_type) do
+  defp refresh_token_format_options(request) do
     dependencies = Dependencies.fetch!(request)
 
-    generator =
-      case token_type do
-        :access_token -> dependencies.access_token_generator || dependencies.token_generator
-        :refresh_token -> dependencies.refresh_token_generator || dependencies.token_generator
-      end
+    generator = dependencies.refresh_token_generator || dependencies.token_generator
 
     case generator do
       nil -> []
