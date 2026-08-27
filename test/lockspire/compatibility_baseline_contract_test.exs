@@ -48,12 +48,16 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     end
   end
 
-  test "literal public module, arity, and struct baseline remains exported" do
-    Enum.each(Manifest.modules(), fn {module, function, arity} ->
+  test "literal pre-refactor exported module and arity baseline remains exact" do
+    Enum.each(Manifest.modules(), fn {module, expected_functions} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
 
-      assert function_exported?(module, function, arity),
-             "#{inspect(module)}.#{function}/#{arity} disappeared"
+      actual_functions =
+        module.__info__(:functions)
+        |> Enum.reject(fn {name, _arity} -> String.starts_with?(Atom.to_string(name), "__") end)
+
+      assert actual_functions == expected_functions,
+             "#{inspect(module)} public functions drifted from the literal 76cf872 baseline"
     end)
 
     Enum.each(Manifest.structs(), fn {module, keys} ->
@@ -62,6 +66,41 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
       assert Map.keys(struct(module)) |> Enum.sort() == [:__struct__ | keys] |> Enum.sort(),
              "#{inspect(module)} struct keys changed"
     end)
+  end
+
+  test "representative public result tuples retain their public struct owners" do
+    Enum.each(Manifest.result_contracts(), fn {_surface, tags, modules} ->
+      Enum.each(modules, fn module ->
+        assert Code.ensure_loaded?(module)
+        assert is_map(struct(module))
+      end)
+
+      assert Enum.all?(tags, &is_atom/1)
+    end)
+  end
+
+  test "request-object and protected-resource failure boundaries preserve v1.x structs" do
+    client = %Lockspire.Domain.Client{client_id: "compatibility-client"}
+
+    assert {:browser_error,
+            %Lockspire.Protocol.AuthorizationRequest.Error{reason_code: :missing_request}} =
+             Lockspire.Protocol.RequestObject.consume(
+               %{"client_id" => "compatibility-client"},
+               client
+             )
+
+    assert {:error,
+            %Lockspire.Protocol.Userinfo.Error{
+              reason_code: :invalid_dpop_authorization_scheme
+            }} =
+             Lockspire.Protocol.ProtectedResourceDPoP.validate_access(
+               %{binding_requirements: %{dpop_jkt: "expected"}},
+               %{
+                 authorization_scheme: "Bearer",
+                 access_token: "token",
+                 target_uri: "https://resource.test"
+               }
+             )
   end
 
   defp ci_job!(workflow, name) do

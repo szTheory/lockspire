@@ -10,7 +10,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   alias Lockspire.AccessToken
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
-  alias Lockspire.Protocol.ProtectedResourceError
+  alias Lockspire.Protocol.Userinfo.Error
 
   @options_schema [
     dpop_replay_store: [
@@ -165,7 +165,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
     end
   end
 
-  defp sender_error(challenge, %ProtectedResourceError{} = error) do
+  defp sender_error(challenge, %Error{} = error) do
     %{
       category: :sender_constraint,
       challenge: challenge,

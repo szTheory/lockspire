@@ -30,13 +30,24 @@ defmodule Lockspire.Protocol.RequestObject do
 
   @type result ::
           {:ok, map()}
-          | {:browser_error, map()}
-          | {:redirect_error, map()}
+          | {:browser_error, Lockspire.Protocol.AuthorizationRequest.Error.t()}
+          | {:redirect_error, Lockspire.Protocol.AuthorizationRequest.Error.t()}
 
   @allowed_outer_keys ~w(client_id request)
 
   @spec consume(map(), Client.t(), keyword()) :: result()
   def consume(params, %Client{} = client, opts \\ []) when is_map(params) and is_list(opts) do
+    case consume_result(params, client, opts) do
+      {:ok, projected} ->
+        {:ok, projected}
+
+      {disposition, %Result{} = issue}
+      when disposition in [:browser_error, :redirect_error] ->
+        {disposition, public_error(issue)}
+    end
+  end
+
+  defp consume_result(params, %Client{} = client, opts) do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
     with :ok <- reject_request_uri_collision(params),
@@ -309,6 +320,22 @@ defmodule Lockspire.Protocol.RequestObject do
 
   defp browser_error(error, description, reason_code) do
     Result.browser_error(error, description, reason_code)
+  end
+
+  # Keep the neutral construction value below this public facade, but retain the
+  # v1.x AuthorizationRequest.Error struct at the externally callable boundary.
+  # Module.concat prevents the internal JAR pipeline from becoming a compile-time
+  # dependency of AuthorizationRequest, which itself consumes this facade.
+  defp public_error(%Result{} = issue) do
+    error_module = Module.concat(["Lockspire", "Protocol", "AuthorizationRequest", "Error"])
+
+    struct(error_module,
+      error: issue.error,
+      error_description: issue.error_description,
+      reason_code: issue.reason_code,
+      state: issue.state,
+      redirect_uri: issue.redirect_uri
+    )
   end
 
   defp present?(value) when value in [nil, ""], do: false

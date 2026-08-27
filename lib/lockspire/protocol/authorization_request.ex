@@ -9,7 +9,6 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Observability
   alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Protocol.RequestObject
-  alias Lockspire.Protocol.RequestObject.Result, as: RequestObjectResult
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
@@ -337,9 +336,9 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       {:ok, projected_params} ->
         {:ok, projected_params}
 
-      {disposition, %RequestObjectResult{} = issue}
+      {disposition, %Error{} = issue}
       when disposition in [:browser_error, :redirect_error] ->
-        {disposition, request_object_error(issue)}
+        {disposition, issue}
     end
   end
 
@@ -877,16 +876,6 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
       reason_code: reason_code,
       redirect_uri: nil,
       state: nil
-    }
-  end
-
-  defp request_object_error(%RequestObjectResult{} = issue) do
-    %Error{
-      error: issue.error,
-      error_description: issue.error_description,
-      reason_code: issue.reason_code,
-      redirect_uri: issue.redirect_uri,
-      state: issue.state
     }
   end
 

@@ -13,7 +13,8 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Protocol.ProtectedResourceError
   alias Lockspire.Storage.Ecto.Repository
 
-  @spec validate_access(map(), map()) :: {:ok, DPoP.t()} | {:error, map()}
+  @spec validate_access(map(), map()) ::
+          {:ok, DPoP.t()} | {:error, Lockspire.Protocol.Userinfo.Error.t()}
   def validate_access(binding_source, request) when is_map(binding_source) and is_map(request) do
     security_profile =
       Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
@@ -29,12 +30,12 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     else
       {:error, %ProtectedResourceError{} = error} ->
         emit_failure(binding_source, error)
-        {:error, error}
+        {:error, public_error(error)}
     end
   end
 
   @spec validate_userinfo_access(Token.t(), map()) ::
-          {:ok, DPoP.t()} | {:error, map()}
+          {:ok, DPoP.t()} | {:error, Lockspire.Protocol.Userinfo.Error.t()}
   def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
     request
     |> Map.put_new(:target_uri, userinfo_endpoint_uri())
@@ -347,5 +348,17 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp secret_key_base(request) do
     Keyword.get(request_options(request), :secret_key_base)
+  end
+
+  defp public_error(%ProtectedResourceError{} = error) do
+    error_module = Module.concat(["Lockspire", "Protocol", "Userinfo", "Error"])
+
+    struct(error_module,
+      status: error.status,
+      error: error.error,
+      error_description: error.error_description,
+      reason_code: error.reason_code,
+      dpop_nonce: error.dpop_nonce
+    )
   end
 end

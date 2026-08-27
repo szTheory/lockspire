@@ -10,9 +10,21 @@ defmodule Lockspire.DiscoveryRoutes do
   @spec paths() :: MapSet.t(String.t())
   def paths do
     case Application.get_env(:lockspire, :discovery_route_paths) do
-      nil -> router_paths(discovery_router())
+      nil -> legacy_paths()
       capability -> normalize_paths(capability)
     end
+  end
+
+  @doc false
+  @spec install_default_capability() :: :ok
+  def install_default_capability do
+    if is_nil(Application.get_env(:lockspire, :discovery_route_paths)) do
+      # Store the Phoenix-aware compatibility resolver at the configuration edge.
+      # Protocol code consumes only this zero-arity route-path capability.
+      Application.put_env(:lockspire, :discovery_route_paths, fn -> legacy_paths() end)
+    end
+
+    :ok
   end
 
   defp router_paths(router) do
@@ -21,6 +33,8 @@ defmodule Lockspire.DiscoveryRoutes do
     |> Enum.map(& &1.path)
     |> MapSet.new()
   end
+
+  defp legacy_paths, do: router_paths(discovery_router())
 
   defp discovery_router do
     Application.get_env(:lockspire, :discovery_router, default_router())

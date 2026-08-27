@@ -36,6 +36,19 @@ defmodule Lockspire.ClientLifecycle do
   @spec persist_direct(Client.t()) :: {:ok, Client.t()} | {:error, term()}
   def persist_direct(%Client{} = client), do: Repository.register_client(client)
 
+  @doc false
+  @spec transact_with_audit((-> {:ok, term()} | {:error, term()}), (term() -> map())) ::
+          {:ok, term()} | {:error, term()}
+  def transact_with_audit(fun, build_audit_event)
+      when is_function(fun, 0) and is_function(build_audit_event, 1) do
+    Repository.transact(fn ->
+      case fun.() do
+        {:ok, result} -> append_audit_event(build_audit_event, result)
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
   @spec replace_dcr(Client.t(), map(), String.t()) :: {:ok, Client.t()} | {:error, term()}
   def replace_dcr(%Client{} = client, metadata, new_rat_hash)
       when is_map(metadata) and is_binary(new_rat_hash) do
@@ -67,5 +80,12 @@ defmodule Lockspire.ClientLifecycle do
         disabled_by: "dcr_self_delete"
       })
     end)
+  end
+
+  defp append_audit_event(build_audit_event, result) do
+    case Repository.append_audit_event(build_audit_event.(result)) do
+      {:ok, _event} -> result
+      {:error, reason} -> {:error, reason}
+    end
   end
 end

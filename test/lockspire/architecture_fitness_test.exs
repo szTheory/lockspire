@@ -62,24 +62,72 @@ defmodule Lockspire.ArchitectureFitnessTest do
   test "protocol does not depend on delivery or operator facades" do
     Enum.each(production_files(@protocol_root), fn path ->
       refute ast_contains?(parse!(path), &protocol_outer_reference?/1),
-             "#{path} references Lockspire.Web or Lockspire.Admin"
+             "#{path} references a delivery or operator facade"
     end)
   end
 
-  test "registration facades delegate through neutral lifecycle seams" do
-    for path <- [
-          Path.expand("../../lib/lockspire/clients.ex", __DIR__),
-          Path.expand("../../lib/lockspire/admin/clients.ex", __DIR__),
-          Path.expand("../../lib/lockspire/protocol/registration.ex", __DIR__),
-          Path.expand("../../lib/lockspire/protocol/registration_management.ex", __DIR__)
-        ] do
-      assert File.read!(path) =~ "ClientLifecycle", "#{path} must delegate lifecycle writes"
+  test "registration facades delegate writes inward and do not own audit transactions" do
+    facade_paths = [
+      Path.expand("../../lib/lockspire/clients.ex", __DIR__),
+      Path.expand("../../lib/lockspire/admin/clients.ex", __DIR__),
+      Path.expand("../../lib/lockspire/protocol/registration.ex", __DIR__),
+      Path.expand("../../lib/lockspire/protocol/registration_management.ex", __DIR__)
+    ]
+
+    Enum.each(facade_paths, fn path ->
+      ast = parse!(path)
+
+      assert ast_contains?(ast, &lifecycle_call?/1),
+             "#{path} must call Lockspire.ClientLifecycle rather than own writes"
+
+      refute ast_contains?(ast, &facade_audit_transaction?/1),
+             "#{path} must not duplicate lifecycle audit transaction ownership"
+    end)
+
+    for path <- Enum.take(facade_paths, 3) do
+      assert ast_contains?(parse!(path), &metadata_call?/1),
+             "#{path} must delegate shared metadata operations to Lockspire.ClientMetadata"
     end
+  end
+
+  test "AST predicates reject indirect delivery and ownership violations" do
+    assert ast_contains?(
+             parse_snippet!("Lockspire.DiscoveryRoutes.paths()"),
+             &protocol_outer_reference?/1
+           )
+
+    assert ast_contains?(
+             parse_snippet!("Lockspire.Web.Router.__info__(:functions)"),
+             &protocol_outer_reference?/1
+           )
+
+    refute ast_contains?(
+             parse_snippet!("Lockspire.Protocol.Discovery.openid_configuration([])"),
+             &protocol_outer_reference?/1
+           )
+
+    assert lifecycle_call?(parse_snippet!("Lockspire.ClientLifecycle.persist_direct(client)"))
+    refute lifecycle_call?(parse_snippet!("Lockspire.ClientMetadata.validate_direct(attrs)"))
+    assert metadata_call?(parse_snippet!("Lockspire.ClientMetadata.validate_direct(attrs)"))
+    refute metadata_call?(parse_snippet!("Lockspire.ClientLifecycle.persist_direct(client)"))
+
+    assert facade_audit_transaction?(
+             parse_snippet!("Lockspire.Storage.Ecto.Repository.transact(fn -> :ok end)")
+           )
+
+    assert facade_audit_transaction?(
+             parse_snippet!("Lockspire.Storage.Ecto.Repository.append_audit_event(event)")
+           )
+
+    refute facade_audit_transaction?(
+             parse_snippet!("Lockspire.ClientLifecycle.transact_with_audit(fun, audit)")
+           )
   end
 
   defp production_files(root), do: Path.wildcard(Path.join(root, "**/*.ex"))
 
   defp parse!(path), do: path |> File.read!() |> Code.string_to_quoted!()
+  defp parse_snippet!(source), do: Code.string_to_quoted!(source)
 
   defp ast_contains?(ast, predicate) do
     {_ast, found?} =
@@ -95,5 +143,36 @@ defmodule Lockspire.ArchitectureFitnessTest do
 
   defp protocol_outer_reference?({:__aliases__, _, [:Lockspire, :Web | _]}), do: true
   defp protocol_outer_reference?({:__aliases__, _, [:Lockspire, :Admin | _]}), do: true
+  defp protocol_outer_reference?({:__aliases__, _, [:Lockspire, :DiscoveryRoutes]}), do: true
   defp protocol_outer_reference?(_node), do: false
+
+  defp lifecycle_call?(node),
+    do:
+      remote_call_to?(node, [:Lockspire, :ClientLifecycle]) or
+        remote_call_to?(node, [:ClientLifecycle])
+
+  defp metadata_call?(node),
+    do:
+      remote_call_to?(node, [:Lockspire, :ClientMetadata]) or
+        remote_call_to?(node, [:ClientMetadata])
+
+  defp facade_audit_transaction?(node) do
+    remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], :transact) or
+      remote_call_to?(node, [:Lockspire, :Storage, :Ecto, :Repository], :append_audit_event)
+  end
+
+  defp remote_call_to?(
+         {{:., _, [{:__aliases__, _, module}, function]}, _, _args},
+         module,
+         expected
+       )
+       when function == expected,
+       do: true
+
+  defp remote_call_to?(_node, _module, _function), do: false
+
+  defp remote_call_to?({{:., _, [{:__aliases__, _, module}, _function]}, _, _args}, module),
+    do: true
+
+  defp remote_call_to?(_node, _module), do: false
 end

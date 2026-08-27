@@ -4,7 +4,6 @@ defmodule Lockspire.Protocol.Discovery do
   """
 
   alias Lockspire.Config
-  alias Lockspire.DiscoveryRoutes
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
@@ -67,7 +66,7 @@ defmodule Lockspire.Protocol.Discovery do
   """
   @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
   def published_token_endpoint_auth_methods_supported do
-    published_token_endpoint_auth_methods_supported(DiscoveryRoutes.paths())
+    published_token_endpoint_auth_methods_supported(configured_route_paths())
   end
 
   @doc false
@@ -90,7 +89,7 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   @spec openid_configuration() :: map()
-  def openid_configuration, do: openid_configuration(DiscoveryRoutes.paths())
+  def openid_configuration, do: openid_configuration(configured_route_paths())
 
   @doc """
   Builds discovery metadata from a neutral collection of mounted route paths.
@@ -127,6 +126,30 @@ defmodule Lockspire.Protocol.Discovery do
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
   end
+
+  # The public zero-arity APIs retain mount truth through a host-provided neutral
+  # path collection/callback. Phoenix router reflection is deliberately owned by
+  # Lockspire.DiscoveryRoutes at the configuration or web-delivery edge.
+  defp configured_route_paths do
+    Application.get_env(:lockspire, :discovery_route_paths, [])
+    |> resolve_route_paths()
+  end
+
+  defp resolve_route_paths(paths) when is_struct(paths, MapSet), do: paths
+  defp resolve_route_paths(paths) when is_list(paths), do: MapSet.new(paths)
+
+  defp resolve_route_paths(paths) when is_function(paths, 0),
+    do: paths.() |> resolve_route_paths()
+
+  defp resolve_route_paths(module) when is_atom(module) do
+    if function_exported?(module, :paths, 0) do
+      module |> apply(:paths, []) |> resolve_route_paths()
+    else
+      MapSet.new()
+    end
+  end
+
+  defp resolve_route_paths(_unsupported), do: MapSet.new()
 
   defp maybe_put_mtls_endpoint_aliases(metadata, endpoint_metadata) do
     case Config.mtls_issuer() do
