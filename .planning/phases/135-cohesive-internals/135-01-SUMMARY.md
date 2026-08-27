@@ -21,23 +21,24 @@ key-files:
 
 # Phase 135 Plan 01: Token and Storage Characterization Summary
 
-The public token facade now has a focused contract spine for real authorization-code-to-refresh rotation, device/CIBA polling outcomes, durable token state, replay audit/telemetry, and the mounted replay response.
+The public token facade now has a focused contract spine for authorization-code-to-refresh rotation, device/CIBA polling outcomes, RFC 8693 allow/deny outcomes, durable token state, replay audit/telemetry, and the mounted authorization-code replay response.
 
 ## Completed Tasks
 
 1. Characterized the authorization-code S256 PKCE journey at the stable facade and mounted endpoint.
-2. Expanded focused facade coverage to refresh, device, and CIBA paths and added DB-backed one-winner redemption coverage.
+2. Expanded focused facade coverage to refresh, device, CIBA, and RFC 8693 paths and added DB-backed one-winner redemption, refresh-family revocation, DCR audit rollback, and guided key-transition coverage.
 
 ## Verification
 
 `mix test test/lockspire/protocol/token_exchange/characterization_test.exs test/lockspire/storage/repository_atomicity_test.exs test/lockspire/web/token_controller_test.exs --trace`
 
-Result: 20 tests, 0 failures.
+Result: 24 tests, 0 failures.
 
 ## Decisions Made
 
 - Kept characterization helpers observability-focused; they reuse `TokenExchangeCase` rather than reproducing grant implementation.
 - Refresh rotation uses a distinct deterministic generator from initial issuance, matching the production uniqueness contract for token hashes.
+- Storage characterizations assert state after a failed DCR audit append and guided key transitions rather than private repository call order.
 
 ## Deviations from Plan
 
