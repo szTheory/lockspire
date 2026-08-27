@@ -1,35 +1,10 @@
 defmodule Lockspire.Storage.Ecto.Prefix do
   @moduledoc false
 
-  @identifier ~r/^[A-Za-z_][A-Za-z0-9_]*$/
+  alias Lockspire.Storage.Prefix, as: StoragePrefix
 
   @spec normalize(String.t() | atom() | nil) :: String.t() | nil
-  def normalize(nil), do: nil
-  def normalize(false), do: nil
-  def normalize(:public), do: "public"
-  def normalize(prefix) when is_atom(prefix), do: prefix |> Atom.to_string() |> normalize()
-
-  def normalize(prefix) when is_binary(prefix) do
-    prefix
-    |> String.trim()
-    |> case do
-      "" ->
-        nil
-
-      prefix ->
-        if Regex.match?(@identifier, prefix) do
-          prefix
-        else
-          raise ArgumentError,
-                "invalid :storage_prefix for :lockspire. Use a PostgreSQL identifier such as \"lockspire\" or \"public\"."
-        end
-    end
-  end
-
-  def normalize(prefix) do
-    raise ArgumentError,
-          "invalid :storage_prefix for :lockspire. Expected a string, atom, nil, or false; got #{inspect(prefix)}."
-  end
+  defdelegate normalize(prefix), to: StoragePrefix
 
   @spec repo_opts(keyword()) :: keyword()
   def repo_opts(opts \\ []) do
@@ -40,19 +15,19 @@ defmodule Lockspire.Storage.Ecto.Prefix do
 
   @spec prefix_opts() :: keyword()
   def prefix_opts do
-    case Lockspire.Config.storage_prefix() do
-      nil -> []
-      prefix -> [prefix: prefix]
-    end
+    Lockspire.Config.storage_prefix() |> prefix_opts()
   end
+
+  @spec prefix_opts(String.t() | atom() | false | nil) :: keyword()
+  defdelegate prefix_opts(prefix), to: StoragePrefix
 
   @spec oban_opts() :: keyword()
   def oban_opts do
-    case Lockspire.Config.oban_prefix() do
-      nil -> []
-      prefix -> [prefix: prefix]
-    end
+    Lockspire.Config.oban_prefix() |> oban_opts()
   end
+
+  @spec oban_opts(String.t() | atom() | false | nil) :: keyword()
+  defdelegate oban_opts(prefix), to: StoragePrefix
 
   @spec quoted_identifier(String.t() | atom() | nil) :: String.t() | nil
   def quoted_identifier(prefix) do
