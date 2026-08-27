@@ -117,8 +117,13 @@ defmodule Lockspire.MixProject do
       qa: [
         "format --check-formatted",
         "compile --warnings-as-errors",
+        "qa.architecture",
         "cmd bash scripts/ci/run_credo.sh",
         "sobelow --config"
+      ],
+      "qa.architecture": [
+        "cmd sh scripts/ci/check_architecture_topology.sh",
+        "test test/lockspire/architecture_fitness_test.exs test/lockspire/compatibility_baseline_contract_test.exs"
       ],
       "qa.dialyzer": [
         "dialyzer"
@@ -155,6 +160,7 @@ defmodule Lockspire.MixProject do
       "conformance.phase37": :test,
       "test.phase3": :test,
       qa: :dev,
+      "qa.architecture": :test,
       "qa.dialyzer": :dev,
       "docs.verify": :dev,
       "deps.audit": :dev,
