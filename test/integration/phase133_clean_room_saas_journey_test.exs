@@ -66,4 +66,26 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
     refute output =~ "phase133-access-token-sentinel"
     refute output =~ "phase133-bearer-client-secret-sentinel"
   end
+
+  @tag :dpop
+  test "DPoP client session retries token, userinfo, and resource nonces then rejects exact replay durably" do
+    assert {output, 0} =
+             System.cmd("python3", [@runner, "--only", "dpop"], stderr_to_stdout: true)
+
+    for receipt <- [
+          "dpop token nonce retry complete",
+          "dpop userinfo nonce retry complete",
+          "dpop resource nonce challenge received",
+          "dpop resource nonce retry complete",
+          "dpop exact proof replay rejected",
+          "dpop replay rejected after provider restart"
+        ] do
+      assert output =~ receipt
+    end
+
+    refute output =~ "phase133-access-token-sentinel"
+    refute output =~ "phase133-dpop-client-secret-sentinel"
+    refute output =~ "phase133-dpop-private-key-sentinel"
+    refute output =~ "phase133-dpop-proof-sentinel"
+  end
 end
