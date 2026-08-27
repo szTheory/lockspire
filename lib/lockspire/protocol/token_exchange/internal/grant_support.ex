@@ -19,7 +19,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
-  alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
@@ -80,7 +79,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              request,
              requested_resources
            ) do
-      emit_success(client, authorization_code, success)
+      emit_success(client, authorization_code, success, request)
       {:ok, success}
     else
       {:error, %Error{} = error} ->
@@ -669,7 +668,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              issuance_context,
              request
            ) do
-      emit_success(client, device_authorization, success)
+      emit_success(client, device_authorization, success, request)
       {:ok, success}
     else
       {:error, %Error{} = error} ->
@@ -706,7 +705,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              issuance_context,
              request
            ) do
-      emit_success(client, ciba_authorization, success)
+      emit_success(client, ciba_authorization, success, request)
       {:ok, success}
     else
       {:error, %Error{} = error} ->
@@ -1102,8 +1101,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  @spec emit_success(Client.t(), Token.t()) :: :ok
-  defp emit_success(%Client{} = client, %Token{} = authorization_code) do
+  @spec emit_success(Client.t(), Token.t(), map()) :: :ok
+  defp emit_success(%Client{} = client, %Token{} = authorization_code, request) do
     metadata = %{
       client_id: client.client_id,
       interaction_id: authorization_code.interaction_id,
@@ -1113,36 +1112,47 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       token_type: :access_token
     }
 
-    Observability.emit(:authorization_code, :redeemed, %{}, metadata)
-    Observability.emit(:token, :issued, %{}, metadata)
+    emitter(request).emit(:authorization_code, :redeemed, %{}, metadata)
+    emitter(request).emit(:token, :issued, %{}, metadata)
   end
 
-  defp emit_success(%Client{} = client, %Token{} = authorization_code, %Success{
-         refresh_token: refresh_token
-       })
+  defp emit_success(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         %Success{
+           refresh_token: refresh_token
+         },
+         request
+       )
        when is_binary(refresh_token) do
-    emit_success(client, authorization_code)
+    emit_success(client, authorization_code, request)
 
-    Observability.emit(:refresh_token, :issued, %{}, %{
+    emitter(request).emit(:refresh_token, :issued, %{}, %{
       client_id: client.client_id,
       interaction_id: authorization_code.interaction_id,
       subject_id: authorization_code.account_id
     })
   end
 
-  defp emit_success(%Client{} = client, %Token{} = authorization_code, %Success{} = _success) do
-    emit_success(client, authorization_code)
+  defp emit_success(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         %Success{} = _success,
+         request
+       ) do
+    emit_success(client, authorization_code, request)
   end
 
   defp emit_success(
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization,
-         %Success{refresh_token: refresh_token}
+         %Success{refresh_token: refresh_token},
+         request
        )
        when is_binary(refresh_token) do
-    emit_device_authorization_success(client, device_authorization)
+    emit_device_authorization_success(client, device_authorization, request)
 
-    Observability.emit(:refresh_token, :issued, %{}, %{
+    emitter(request).emit(:refresh_token, :issued, %{}, %{
       client_id: client.client_id,
       subject_id: device_authorization.subject_id
     })
@@ -1151,20 +1161,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   defp emit_success(
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization,
-         %Success{}
+         %Success{},
+         request
        ) do
-    emit_device_authorization_success(client, device_authorization)
+    emit_device_authorization_success(client, device_authorization, request)
   end
 
   defp emit_success(
          %Client{} = client,
          %CibaAuthorization{} = ciba_authorization,
-         %Success{refresh_token: refresh_token}
+         %Success{refresh_token: refresh_token},
+         request
        )
        when is_binary(refresh_token) do
-    emit_ciba_authorization_success(client, ciba_authorization)
+    emit_ciba_authorization_success(client, ciba_authorization, request)
 
-    Observability.emit(:refresh_token, :issued, %{}, %{
+    emitter(request).emit(:refresh_token, :issued, %{}, %{
       client_id: client.client_id,
       subject_id: ciba_authorization.subject_id
     })
@@ -1173,14 +1185,16 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   defp emit_success(
          %Client{} = client,
          %CibaAuthorization{} = ciba_authorization,
-         %Success{}
+         %Success{},
+         request
        ) do
-    emit_ciba_authorization_success(client, ciba_authorization)
+    emit_ciba_authorization_success(client, ciba_authorization, request)
   end
 
   defp emit_ciba_authorization_success(
          %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization
+         %CibaAuthorization{} = ciba_authorization,
+         request
        ) do
     metadata = %{
       client_id: client.client_id,
@@ -1190,12 +1204,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       token_type: :access_token
     }
 
-    Observability.emit(:token, :issued, %{}, metadata)
+    emitter(request).emit(:token, :issued, %{}, metadata)
   end
 
   defp emit_device_authorization_success(
          %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization
+         %DeviceAuthorizationState{} = device_authorization,
+         request
        ) do
     metadata = %{
       client_id: client.client_id,
@@ -1205,7 +1220,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       token_type: :access_token
     }
 
-    Observability.emit(:token, :issued, %{}, metadata)
+    emitter(request).emit(:token, :issued, %{}, metadata)
   end
 
   @doc false
@@ -1214,12 +1229,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   def emit_failure(%Error{reason_code: :authorization_code_replayed} = error, params, request) do
     metadata = failure_metadata(error, params, request)
-    Observability.emit(:authorization_code, :replay_detected, %{}, metadata)
-    Observability.emit(:token_exchange, :failed, %{}, metadata)
+    emitter(request).emit(:authorization_code, :replay_detected, %{}, metadata)
+    emitter(request).emit(:token_exchange, :failed, %{}, metadata)
   end
 
   def emit_failure(%Error{} = error, params, request) do
-    Observability.emit(:token_exchange, :failed, %{}, failure_metadata(error, params, request))
+    emitter(request).emit(:token_exchange, :failed, %{}, failure_metadata(error, params, request))
   end
 
   defp failure_metadata(%Error{} = error, params, request) do
@@ -1239,6 +1254,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     params = Map.get(request, :params, Map.get(request, "params", request))
     normalize_optional_string(params["client_id"])
   end
+
+  defp emitter(request), do: Dependencies.fetch!(request).observability_emitter
 
   defp pkce_verifier_matches?(verifier, challenge) when is_binary(challenge) do
     calculated_challenge =
