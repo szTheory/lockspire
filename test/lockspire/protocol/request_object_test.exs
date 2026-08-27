@@ -1,6 +1,7 @@
 defmodule Lockspire.Protocol.RequestObjectTest do
   use ExUnit.Case, async: false
   alias Lockspire.Protocol.RequestObject
+  alias Lockspire.Protocol.RequestObject.Result
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
 
@@ -62,5 +63,16 @@ defmodule Lockspire.Protocol.RequestObjectTest do
 
     assert projected["response_type"] == "code"
     assert projected["client_id"] == "client-123"
+  end
+
+  test "consume/3 returns a neutral browser-safe issue when the request parameter is missing" do
+    assert {:browser_error, %Result{} = issue} =
+             RequestObject.consume(%{"client_id" => "client-123"}, %Client{client_id: "client-123"})
+
+    assert issue.error == "invalid_request"
+    assert issue.error_description == "request parameter is required"
+    assert issue.reason_code == :missing_request
+    assert issue.state == nil
+    assert issue.redirect_uri == nil
   end
 end
