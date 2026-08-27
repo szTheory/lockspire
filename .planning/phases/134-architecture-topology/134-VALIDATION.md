@@ -1,9 +1,9 @@
 ---
 phase: 134
 slug: architecture-topology
-status: planned
+status: validated
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-08-27
 ---
 
@@ -64,12 +64,12 @@ created: 2026-08-27
 
 Plan 01 and each independent cycle plan start with RED characterization before production movement. The following missing proof artifacts are created by the listed plans:
 
-- [ ] `test/lockspire/client_lifecycle_test.exs` — neutral service direct/DCR/admin and transaction rollback contracts (Plans 01-02).
-- [ ] `test/lockspire/discovery_routes_test.exs` — mounted-route input and legacy override compatibility (Plan 03).
-- [ ] `test/lockspire/storage/prefix_test.exs` and `test/lockspire/security/policy_test.exs` — explicit configuration input contracts (Plan 04).
-- [ ] `test/lockspire/protocol/userinfo_test.exs` — protocol-level userinfo adapter contract (Plan 06).
-- [ ] `test/lockspire/protocol/token_result_test.exs` — pure neutral result plus one-way helper-facade compatibility conversion (Plan 07).
-- [ ] `scripts/ci/check_architecture_topology.sh` plus expanded architecture/compatibility fitness and literal public manifest — authoritative zero-cycle and direction gate (Plan 11).
+- [x] `test/lockspire/client_lifecycle_test.exs` — neutral service direct/DCR/admin and transaction rollback contracts (Plans 01-02).
+- [x] `test/lockspire/discovery_routes_test.exs` — mounted-route input and legacy override compatibility (Plan 03).
+- [x] `test/lockspire/storage/prefix_test.exs` and `test/lockspire/security/policy_test.exs` — explicit configuration input contracts (Plan 04).
+- [x] `test/lockspire/protocol/userinfo_test.exs` — protocol-level userinfo adapter contract (Plan 06).
+- [x] `test/lockspire/protocol/token_result_test.exs` — pure neutral result plus one-way helper-facade compatibility conversion (Plan 07).
+- [x] `scripts/ci/check_architecture_topology.sh` plus expanded architecture/compatibility fitness and literal public manifest — authoritative zero-cycle and direction gate (Plan 11).
 
 ## Source Coverage Audit
 
@@ -99,6 +99,33 @@ Plan 01 and each independent cycle plan start with RED characterization before p
 | RESEARCH | — | Exact cycle/edge diagnostics | 11 | COVERED | Full xref output retained on failure |
 
 Deferred Phase 135 repository/grant decomposition, Phase 136 static-analysis cleanup, Phase 137 CI/release/conformance work, new grants, hosted auth, host policy, and UI redesign are excluded and are not coverage gaps.
+
+## Validation Audit 2026-08-27
+
+| Metric | Count |
+|--------|------:|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
+
+The previous lifecycle test only asserted the expected error from an unavailable
+test repository. It is now a database-backed behavior test proving
+`ClientLifecycle.create_dcr/1` persists a client and the matching DCR audit row
+with its actor and resource attribution. The existing repository integration
+tests remain the failure-injection proof that the shared
+`Repository.transact_with_audit/2` primitive rolls back both the durable write
+and audit row.
+
+Current evidence was run after the Phase 134 review fixes:
+
+- `mix qa.architecture` — 12 tests, zero Mix xref cycles.
+- Client lifecycle, RFC 7592, DCR attribution, and repository atomicity suite — 57 tests.
+- Direct/DCR public registration plus JAR/DPoP boundary suites — 97 tests.
+- Discovery/config/prefix and all token-result/internal-dispatch suites — 103 tests.
+- `sh scripts/ci/check_architecture_topology.sh` — no cycles found.
+
+All commands exited successfully. The transient KeyCache startup log appears
+before the test repository starts and did not produce a test failure.
 
 ## ASVS L1 Blocking Gate
 
