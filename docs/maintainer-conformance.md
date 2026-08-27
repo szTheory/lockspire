@@ -1,120 +1,96 @@
 # Maintainer Conformance Workflow
 
-This guide is a maintainer workflow doc. It does not define the product contract. For public support truth, start with `docs/supported-surface.md`.
+This is supplemental maintainer evidence. It is not OpenID certification, it is
+not a release gate or milestone-closing proof, and it is not a broader
+product-support claim. The
+canonical Lockspire support contract remains `docs/supported-surface.md`; the
+repo-native tests remain the primary executable proof.
 
-Use the repo-native proof first:
+## What is pinned
 
-1. Run `mix test test/integration/phase37_protocol_strictness_e2e_test.exs`.
-2. Run `mix test test/lockspire/release_readiness_contract_test.exs`.
-3. Use the external OIDF or FAPI suite only as optional supplemental corroboration.
+The external inputs are locked in
+`scripts/conformance/oidf-suite-lock.json` and validated before use:
 
-This guide covers the Phase 41/42 FAPI 2.0 verification workflow for Lockspire. This is a repo-native-first, preparatory OIDF lane. Phase 42 wires the lane for Phase 43 consumption, does not claim pass-ready certification, does not imply support for mTLS or broader protocol surface beyond the repo-proven embedded-library wedge, and does not turn the external suite into a required release gate or milestone-closing proof.
+- OpenID Foundation conformance suite `release-v5.1.43` at commit
+  `16ad152b1b2c0baacd3d2519128340d95deb2b8c`
+- the suite archive and four required helper files by SHA-256
+- server, nginx, and MongoDB images by immutable `sha256:` digest
+- the Phase 37 and FAPI 2.0 plan files by the checksum recorded in each receipt
 
-1. Run the fast local boundary probe script.
-2. Run the OpenID Foundation (OIDF) Conformance Suite only if you need optional supplemental maintainer evidence beyond the repo-native proof.
+Mutable tags such as `latest`, branch heads, checksum fallback, and unpinned
+container images fail closed. Updating the suite is a reviewed lock update: pin
+the new commit, downloads, checksums, and image digests together, then rerun the
+input contracts and both profiles.
 
-## Prerequisites
+## Local prerequisites and commands
 
-- A local host app mounting Lockspire and serving it over HTTP
-- A registered Lockspire client you can target during verification
-- Docker and Docker Compose for the OIDF suite
-
-## Step 1: Enable the FAPI 2.0 security profile
-
-The probe script assumes the effective `security_profile` is `:fapi_2_0_security` for the client under test.
-
-Enable it either:
-
-- Globally in the admin UI at `/admin/policies/security-profile`
-- Or from `iex` in the host app:
-
-```elixir
-Lockspire.Admin.put_security_profile(:fapi_2_0_security)
-```
-
-If you are testing a per-client opt-in, leave the global profile at `:none` and set the client override to `:fapi_2_0_security` instead.
-
-## Step 2: Run the local boundary probe script
-
-The script sends three live probes:
-
-- Direct `/authorize` without `request_uri`
-- `/token` without a `DPoP` header
-- `/userinfo` with `Authorization: Bearer ...` and no `DPoP` header
-
-Example:
+Install Docker with the Compose plugin, Python 3, curl, and jq. Check the local
+tooling and immutable lock without printing environment variables or secrets:
 
 ```bash
-LOCKSPIRE_BASE_URL=http://127.0.0.1:4000/lockspire \
-LOCKSPIRE_CLIENT_ID=my-fapi-client \
-./scripts/conformance/fapi2-check.sh
+mix lockspire.oidf_conformance --check
 ```
 
-Expected result:
+The check reports missing tools or inputs before downloads and points to the
+two exact profile commands:
 
-- `/authorize` returns `302` with `error=invalid_request`
-- `/token` returns `400` with `invalid_dpop_proof`
-- `/userinfo` returns `401` with `invalid_token`
-
-This script is a fast smoke check for the boundary Plug and resource enforcement. It is not a substitute for full standards conformance.
-
-You can also run `mix lockspire.oidf_conformance --validate-env` to validate the prerequisites for this check. It expects `LOCKSPIRE_TEST_DB_HOST` and `OIDF_CONFORMANCE_SERVER` to be set, but it does NOT execute `scripts/conformance/fapi2-check.sh` or send live HTTP probes.
-
-## Local Testing Lane
-
-You can execute the OIDF conformance suites locally using the automated scripts:
-
-- **FAPI 2.0 Suite:** Run `./scripts/conformance/run_fapi2_suite.sh`
-- **Phase 37 Suite:** Run `./scripts/conformance/run_phase37_suite.sh`
-
-These scripts will:
-- Start a local Phoenix fixture application with Lockspire configured (and FAPI 2.0 enforced for the FAPI 2 script).
-- Automatically download and start the OpenID Foundation (OIDF) Docker containers.
-- Register a local test client and run the associated test plan (`fapi2-plan.json` or `phase37-plan.json`).
-- Export artifacts, run logs, and summaries to `.artifacts/conformance/fapi2` (or `phase37`).
-
-## Reaching the local Lockspire instance from Docker
-
-If the suite cannot reach your host app, add an `extra_hosts` entry to `docker-compose-prebuilt.yml`:
-
-```yaml
-services:
-  server:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+```bash
+bash scripts/conformance/run_phase37_suite.sh
+bash scripts/conformance/run_fapi2_suite.sh
 ```
 
-Then use these values in the OIDF UI:
+Raw downloaded helpers, normalized Compose configuration, and suite work stay
+in a private temporary directory and are deleted after the run. The retained
+profile directories are limited to:
 
-- Server URL: `http://host.docker.internal:4000/lockspire`
-- Discovery URL: `http://host.docker.internal:4000/lockspire/.well-known/openid-configuration`
+```text
+.artifacts/conformance/phase37/receipt.json
+.artifacts/conformance/fapi2/receipt.json
+```
 
-## Phase 37 Protocol Strictness
+Each schema-versioned receipt contains only the profile, pinned suite
+tag/commit, input hashes and image digests, plan name/checksum, Python version,
+bounded result names, timestamps, and a status/classification. It cannot
+contain URLs, authorization material, cookies, tokens, secrets, passwords, raw
+logs, or provider configuration.
 
-The current shipped strictness claim is backed first by `phase37_protocol_strictness_e2e_test.exs` and `test/lockspire/release_readiness_contract_test.exs`.
-Results from `mix conformance.phase37` and this lane are saved to `.artifacts/conformance/phase37` as optional maintainer-only corroboration.
-browser cookie and third-party cookie configuration is handled per the environment.
+## Scheduled and manual runs
 
-## FAPI 2.0 notes
+`.github/workflows/oidf-conformance.yml` runs both repo-native profiles weekly
+from the default branch and remains manually dispatchable. The schedule is a
+supplemental reliability history and does not block CI or publication. Workflow
+permissions are read-only, overlapping runs are canceled, jobs have timeouts,
+and only validated `receipt.json` files are retained for a bounded period.
 
-- Select an appropriate `FAPI2` plan in the OIDF UI.
-- Use clients and keys that match the phase’s supported FAPI posture.
-- Treat `scripts/conformance/fapi2-check.sh` as the quick preflight and the OIDF suite as optional supplemental evidence, not as a required release gate.
+The hosted maintainer lane is manual-only. Select `run_hosted_lane` during a
+dispatch when the repository's optional hosted secrets are configured. Those
+URLs remain isolated to that job and are never retained in artifacts or job
+summaries. Scheduled runs do not request hosted credentials.
 
-## FAPI 2.0 OIDF plan (Phase 43)
+## Reading failures
 
-Use the `fapi2-security-profile-final-test-plan` plan in the OIDF UI, with these variants:
+Classify a failed run before treating it as a protocol defect:
 
-- `fapi_profile`: `plain_fapi`
-- `client_auth_type`: `private_key_jwt`
-- `sender_constrain`: `dpop`
-- `fapi_request_method`: `unsigned`
-- `fapi_response_mode`: `plain_response`
+- `infrastructure_failure`: immutable download, checksum, Docker, Compose,
+  network, startup, or evidence-production failure. Repair the environment or
+  reviewed input lock, then rerun the same commit.
+- `suite_failure`: the external suite ran and reported a profile result that
+  Lockspire did not satisfy. Reproduce against the same suite commit, plan, and
+  image digests; correlate with repo-native tests before changing protocol code.
+- `integration_only`: the explicit safe skip mode exercised integration and
+  receipt plumbing but did not run the external suite. It is never a conformance
+  pass.
+- `success`: the pinned runner completed and emitted a validated receipt. This
+  is still supplemental evidence, not certification.
 
-The same plan and variants are pinned in `scripts/conformance/fapi2-plan.json` as the canonical upstream OIDF reference.
-Lockspire's shipped runtime now supports the repo-proven `private_key_jwt` slice described in `docs/supported-surface.md` and `docs/private-key-jwt-host-guide.md`.
-This conformance guide is still a maintainer workflow doc, not the product contract: the pinned variant documents the upstream OIDF plan shape while the repo's runtime truth remains defined by the supported-surface docs plus executable proof.
-The live Docker run remains a manual maintainer step; CI does not gate on it, it is not part of the public support contract, it is not a required release gate, and it is not milestone-closing proof.
+Never upload a temporary work directory to diagnose a failure. Inspect raw
+output only inside the ephemeral job/local run, redact it before sharing, and
+retain the bounded receipt as the durable identity of the run.
 
-Run `mix lockspire.oidf_conformance --validate-env` to verify your environment, dependencies,
-and pinned artifacts before launching the suite.
+## Repo-native proof remains first
+
+Before drawing conclusions from the supplemental lane, run the applicable
+Lockspire integration and release-readiness tests. The FAPI boundary probe at
+`scripts/conformance/fapi2-check.sh` remains a useful targeted HTTP smoke test
+against a configured host, but it is not a substitute for either repo-native
+behavior proof or formal external certification.
