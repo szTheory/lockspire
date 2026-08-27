@@ -8,6 +8,7 @@ defmodule Lockspire.ClientsTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -24,7 +25,7 @@ defmodule Lockspire.ClientsTest do
   end
 
   test "register_client/1 persists hashed secrets and returns the plaintext once for confidential clients" do
-    events = attach_events(self())
+    attach_events()
 
     assert {:ok, %RegistrationResult{client: %Client{} = client, client_secret: secret}} =
              Clients.register_client(%{
@@ -55,17 +56,15 @@ defmodule Lockspire.ClientsTest do
 
     client_id = client.client_id
 
-    assert_received {:telemetry_event, [:lockspire, :client, :registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_succeeded], _,
                      %{client_id: ^client_id}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :client, :registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :audit, :client, :registration_succeeded], _,
                      %{client_id: ^client_id}}
-
-    detach_events(events)
   end
 
   test "register_client/1 rejects wildcard redirect uris while accepting the built-in openid scope" do
-    events = attach_events(self())
+    attach_events()
 
     assert {:error, errors} =
              Clients.register_client(%{
@@ -79,13 +78,11 @@ defmodule Lockspire.ClientsTest do
     assert Enum.any?(errors, &(&1.reason == :invalid_redirect_uri))
     refute Enum.any?(errors, &(&1.reason == :invalid_scope and &1.detail == "openid"))
 
-    assert_received {:telemetry_event, [:lockspire, :client, :registration_rejected],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_rejected], _,
                      %{reason_codes: reason_codes}}
 
     assert :invalid_redirect_uri in reason_codes
     refute :invalid_scope in reason_codes
-
-    detach_events(events)
   end
 
   test "register_client/1 persists OIDC authorization-code and redirectless device-only shapes" do
@@ -343,30 +340,12 @@ defmodule Lockspire.ClientsTest do
     assert %{field: :allowed_scopes, reason: :invalid_scope, detail: :empty} in errors
   end
 
-  defp attach_events(pid) do
-    handler_id = "clients-test-#{System.unique_integer([:positive])}"
-
-    events = [
+  defp attach_events do
+    TelemetryCapture.attach_many([
       [:lockspire, :client, :registration_succeeded],
       [:lockspire, :audit, :client, :registration_succeeded],
       [:lockspire, :client, :registration_rejected]
-    ]
-
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        events,
-        fn event, _measurements, metadata, test_pid ->
-          send(test_pid, {:telemetry_event, event, metadata})
-        end,
-        pid
-      )
-
-    {handler_id, events}
-  end
-
-  defp detach_events({handler_id, _events}) do
-    :telemetry.detach(handler_id)
+    ])
   end
 
   defp public_rsa_jwk do

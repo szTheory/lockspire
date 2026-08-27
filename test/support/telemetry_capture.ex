@@ -18,8 +18,21 @@ defmodule Lockspire.TestSupport.TelemetryCapture do
   end
 
   @doc false
+  def attach_many_to_agent(events, agent) when is_list(events) and is_pid(agent) do
+    handler_id = handler_id()
+    :ok = :telemetry.attach_many(handler_id, events, &__MODULE__.handle_agent_event/4, agent)
+    register_detach(handler_id)
+    handler_id
+  end
+
+  @doc false
   def handle_event(event, measurements, metadata, test_pid) do
     send(test_pid, {:telemetry_event, event, measurements, metadata})
+  end
+
+  @doc false
+  def handle_agent_event(event, _measurements, metadata, agent) do
+    Agent.update(agent, fn current -> [{event, metadata} | current] end)
   end
 
   defp handler_id do

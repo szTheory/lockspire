@@ -3,6 +3,8 @@ defmodule Lockspire.TokenExchangeCase do
 
   use ExUnit.CaseTemplate
 
+  alias Lockspire.TestSupport.TelemetryCapture
+
   import Ecto.Query
   import ExUnit.Assertions
 
@@ -51,24 +53,17 @@ defmodule Lockspire.TokenExchangeCase do
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
     Application.put_env(:lockspire, :mount_path, "/lockspire")
 
-    handler_id = "token-exchange-test-handler-#{System.unique_integer([:positive])}"
     events = start_supervised!({Agent, fn -> [] end})
 
-    :telemetry.attach_many(
-      handler_id,
+    TelemetryCapture.attach_many_to_agent(
       [
         [:lockspire, :authorization_code, :redeemed],
         [:lockspire, :token, :issued],
         [:lockspire, :authorization_code, :replay_detected],
         [:lockspire, :token_exchange, :failed]
       ],
-      fn event, _measurements, metadata, pid ->
-        Agent.update(pid, fn current -> [{event, metadata} | current] end)
-      end,
       events
     )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
 
     %{events: events}
   end

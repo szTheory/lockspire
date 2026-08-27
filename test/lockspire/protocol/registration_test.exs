@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
 
@@ -21,22 +22,12 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    handler_id = "registration-test-#{System.unique_integer([:positive])}"
 
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        [
-          [:lockspire, :dcr, :register],
-          [:lockspire, :audit, :dcr, :register]
-        ],
-        fn event, measurements, metadata, pid ->
-          send(pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        self()
-      )
+    TelemetryCapture.attach_many([
+      [:lockspire, :dcr, :register],
+      [:lockspire, :audit, :dcr, :register]
+    ])
 
-    on_exit(fn -> :telemetry.detach(handler_id) end)
     %{}
   end
 

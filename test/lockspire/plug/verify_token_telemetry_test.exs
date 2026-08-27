@@ -6,6 +6,7 @@ defmodule Lockspire.Plug.VerifyTokenTelemetryTest do
   alias Lockspire.KeyCache
   alias Lockspire.Plug.VerifyToken
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Domain.SigningKey
 
   setup_all do
@@ -21,29 +22,13 @@ defmodule Lockspire.Plug.VerifyTokenTelemetryTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
 
-    {handler_id, _events} = attach_events(self())
-    on_exit(fn -> :telemetry.detach(handler_id) end)
+    attach_events()
 
     :ok
   end
 
-  # Mirrors test/lockspire/clients_test.exs:158-182 (the repo's telemetry idiom),
-  # but uses the 4-arg handler so measurements (%{count: 1}, D-04) are assertable.
-  defp attach_events(pid) do
-    handler_id = "rs-token-format-test-#{System.unique_integer([:positive])}"
-    events = [[:lockspire, :rs, :token_format]]
-
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        events,
-        fn event, measurements, metadata, test_pid ->
-          send(test_pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        pid
-      )
-
-    {handler_id, events}
+  defp attach_events do
+    TelemetryCapture.attach([:lockspire, :rs, :token_format])
   end
 
   # Mints a real signed at+jwt against an active SigningKey + refreshed KeyCache,

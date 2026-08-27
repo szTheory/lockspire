@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Protocol.DeviceVerification
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
@@ -221,16 +222,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
   describe "approve_device_authorization/3" do
     test "requires subject_id and mutates by opaque verification handle" do
       now = ~U[2026-04-28 11:05:00Z]
-      test_pid = self()
-
-      :telemetry.attach(
-        "device_verification_approved",
-        [:lockspire, :device_authorization, :approved],
-        fn _name, _measurements, metadata, _config ->
-          send(test_pid, {:telemetry_approved, metadata})
-        end,
-        nil
-      )
+      TelemetryCapture.attach([:lockspire, :device_authorization, :approved])
 
       assert {:ok, %DeviceAuthorization{} = approved} =
                DeviceVerification.approve_device_authorization(
@@ -239,12 +231,12 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
                  Keyword.put(@opts, :now, now)
                )
 
-      assert_received {:telemetry_approved, metadata}
+      assert_received {:telemetry_event, [:lockspire, :device_authorization, :approved], _,
+                       metadata}
+
       assert metadata.verification_handle == "pending-handle"
       assert metadata.client_id == "client-123"
       assert metadata.subject_id == "subject-456"
-
-      :telemetry.detach("device_verification_approved")
 
       assert approved.status == :approved
       assert approved.subject_id == "subject-456"
@@ -269,16 +261,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
   describe "deny_device_authorization/3" do
     test "requires actor context and marks the authorization denied" do
       now = ~U[2026-04-28 11:10:00Z]
-      test_pid = self()
-
-      :telemetry.attach(
-        "device_verification_denied",
-        [:lockspire, :device_authorization, :denied],
-        fn _name, _measurements, metadata, _config ->
-          send(test_pid, {:telemetry_denied, metadata})
-        end,
-        nil
-      )
+      TelemetryCapture.attach([:lockspire, :device_authorization, :denied])
 
       assert {:ok, %DeviceAuthorization{} = denied} =
                DeviceVerification.deny_device_authorization(
@@ -287,11 +270,11 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
                  Keyword.put(@opts, :now, now)
                )
 
-      assert_received {:telemetry_denied, metadata}
+      assert_received {:telemetry_event, [:lockspire, :device_authorization, :denied], _,
+                       metadata}
+
       assert metadata.verification_handle == "pending-handle"
       assert metadata.client_id == "client-123"
-
-      :telemetry.detach("device_verification_denied")
 
       assert denied.status == :denied
       assert denied.denied_at == now
