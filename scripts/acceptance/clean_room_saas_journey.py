@@ -165,7 +165,7 @@ def prepare_client(run_root: Path, database_url: str, handoff: Path) -> tuple[Pa
     return child, environment
 
 
-def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "clean-room-user") -> tuple[dict[str, object], str]:
+def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "clean-room-user", before_callback=None, callback_transform=None) -> tuple[dict[str, object], str]:
     start = client.request("GET", "/oauth/start")
     require_status(start, 302, "client start")
     authorization_location = redirect(start, "client start")
@@ -176,8 +176,11 @@ def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "
 
     login_location = redirect(authorize, "provider authorize")
     if urlparse(login_location).netloc == urlparse(CLIENT_ORIGIN).netloc:
-        error = parse_qs(urlparse(login_location).query).get("error", ["unknown"])[0]
-        raise AssertionError(f"provider authorization redirected with {error}")
+        if before_callback:
+            before_callback(client)
+        if callback_transform:
+            login_location = callback_transform(login_location)
+        return client.request("GET", login_location), login_location
     login = provider.request("GET", login_location)
     require_status(login, 200, "provider login")
     resumed = redirect(provider.request("POST", "/login", {
@@ -191,7 +194,14 @@ def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "
         raise AssertionError("login did not retain interaction")
     interaction = provider.request("GET", resumed)
     require_status(interaction, 302, "provider interaction")
-    consent = provider.request("GET", redirect(interaction, "provider interaction"))
+    consent_location = redirect(interaction, "provider interaction")
+    if urlparse(consent_location).netloc == urlparse(CLIENT_ORIGIN).netloc:
+        if before_callback:
+            before_callback(client)
+        if callback_transform:
+            consent_location = callback_transform(consent_location)
+        return client.request("GET", consent_location), consent_location
+    consent = provider.request("GET", consent_location)
     require_status(consent, 200, "provider consent")
     approval = {"decision": "approve", "remember": "true"}
     try:
@@ -206,6 +216,10 @@ def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "
     callback_error = parse_qs(urlparse(callback).query).get("error", [None])[0]
     if callback_error:
         raise AssertionError(f"provider consent completed with {callback_error}")
+    if before_callback:
+        before_callback(client)
+    if callback_transform:
+        callback = callback_transform(callback)
     callback_response = client.request("GET", callback)
     return callback_response, callback
 
@@ -235,14 +249,14 @@ def provider_path(endpoint: str) -> str:
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
 
 
-def lifecycle_code(provider: Browser) -> tuple[str, str]:
+def lifecycle_code(provider: Browser, *, scopes: str = "openid profile read:billing offline_access", resource: str = PROVIDER_ORIGIN + "/api/billing") -> tuple[str, str]:
     state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
     verifier = uuid.uuid4().hex + uuid.uuid4().hex
     redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
     authorize = provider.request("GET", "/lockspire/authorize?" + urlencode({
         "response_type": "code", "client_id": "clean-room-bearer", "redirect_uri": redirect_uri,
-        "scope": "openid profile read:billing offline_access", "state": state, "nonce": nonce,
-        "code_challenge": s256(verifier), "code_challenge_method": "S256", "resource": PROVIDER_ORIGIN + "/api/billing",
+        "scope": scopes, "state": state, "nonce": nonce,
+        "code_challenge": s256(verifier), "code_challenge_method": "S256", "resource": resource,
     }))
     require_status(authorize, 302, "lifecycle authorize")
     login = provider.request("GET", redirect(authorize, "lifecycle authorize"))
@@ -256,9 +270,19 @@ def lifecycle_code(provider: Browser) -> tuple[str, str]:
     interaction_id = urlparse(resumed).path.rsplit("/", 1)[-1]
     interaction = provider.request("GET", resumed)
     require_status(interaction, 302, "lifecycle interaction")
-    consent = provider.request("GET", redirect(interaction, "lifecycle interaction"))
+    consent_location = redirect(interaction, "lifecycle interaction")
+    if urlparse(consent_location).netloc == urlparse(CLIENT_ORIGIN).netloc:
+        callback = urlparse(consent_location)
+        values = parse_qs(callback.query)
+        if values.get("state") != [state]:
+            raise AssertionError("lifecycle authorization response violated the callback contract")
+        code = values.get("code", [None])[0]
+        if not isinstance(code, str):
+            raise AssertionError("lifecycle authorization response omitted code")
+        return code, verifier
+    consent = provider.request("GET", consent_location)
     require_status(consent, 200, "lifecycle consent")
-    approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {"decision": "approve", "remember": "true"})
+    approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {"decision": "approve", "remember": "false"})
     require_status(approved, 302, "lifecycle consent approval")
     callback = urlparse(redirect(approved, "lifecycle consent approval"))
     values = parse_qs(callback.query)
@@ -307,6 +331,77 @@ def run_lifecycle(handoff: Path) -> None:
         if json.loads(str(revocation["body"])) != {}:
             raise AssertionError("lifecycle revocation did not return its empty success response")
     print("idempotent revocation complete")
+
+
+def token_exchange(provider: Browser, discovery: dict[str, object], authorization: dict[str, str], code: str, verifier: str, resource: str) -> dict[str, object]:
+    response = provider.request("POST", provider_path(str(discovery["token_endpoint"])), {
+        "grant_type": "authorization_code", "code": code, "redirect_uri": CLIENT_ORIGIN + "/oauth/callback",
+        "code_verifier": verifier, "resource": resource,
+    }, authorization)
+    require_status(response, 200, "negative authorization code exchange")
+    return json.loads(str(response["body"]))
+
+
+def assert_challenge(response: dict[str, object], status: int, error: str, label: str) -> None:
+    require_status(response, status, label)
+    challenge = response["headers"].get("www-authenticate", "")  # type: ignore[union-attr]
+    if not challenge.startswith("Bearer realm=\"Lockspire\""):
+        raise AssertionError(f"{label}: missing Bearer challenge")
+    if error and f'error="{error}"' not in challenge:
+        raise AssertionError(f"{label}: missing {error} challenge")
+
+
+def run_negative(handoff: Path) -> None:
+    provider, client = Browser(PROVIDER_ORIGIN), Browser(CLIENT_ORIGIN)
+    discovery_response = provider.request("GET", "/lockspire/.well-known/openid-configuration")
+    require_status(discovery_response, 200, "negative discovery")
+    discovery = json.loads(str(discovery_response["body"]))
+    authorization = {"authorization": basic("clean-room-bearer", (handoff / "bearer-client.secret").read_text().strip())}
+    billing = PROVIDER_ORIGIN + "/api/billing"
+
+    drift = provider.request("GET", "/lockspire/authorize?" + urlencode({
+        "response_type": "code", "client_id": "clean-room-bearer", "redirect_uri": CLIENT_ORIGIN + "/unexpected",
+        "scope": "openid", "state": uuid.uuid4().hex, "nonce": uuid.uuid4().hex,
+        "code_challenge": s256(uuid.uuid4().hex + uuid.uuid4().hex), "code_challenge_method": "S256",
+    }))
+    require_status(drift, 400, "redirect drift")
+    print("redirect drift rejected")
+
+    code, verifier = lifecycle_code(provider)
+    token_exchange(provider, discovery, authorization, code, verifier, billing)
+    replay = provider.request("POST", provider_path(str(discovery["token_endpoint"])), {
+        "grant_type": "authorization_code", "code": code, "redirect_uri": CLIENT_ORIGIN + "/oauth/callback",
+        "code_verifier": verifier, "resource": billing,
+    }, authorization)
+    require_status(replay, 400, "authorization code reuse")
+    if json.loads(str(replay["body"])).get("error") != "invalid_grant":
+        raise AssertionError("authorization code reuse did not return invalid_grant")
+    print("code reuse rejected")
+
+    _, callback = browser_authorize(client, Browser(PROVIDER_ORIGIN), callback_transform=lambda value: value.replace("state=", "state=wrong-", 1))
+    attempts = client.request("GET", "/acceptance/callback-attempts")
+    require_status(attempts, 200, "callback attempt receipt")
+    if json.loads(str(attempts["body"])).get("token_exchange_attempts") != 0:
+        raise AssertionError("callback state mismatch reached token exchange")
+    client.request("GET", callback)
+    print("callback state rejected before exchange")
+
+    nonce_client = Browser(CLIENT_ORIGIN)
+    nonce_result, _ = browser_authorize(nonce_client, Browser(PROVIDER_ORIGIN), before_callback=lambda browser: browser.request("POST", "/acceptance/replace-nonce"))
+    require_status(nonce_result, 400, "nonce mismatch callback")
+    nonce_receipt = receipt(nonce_client)
+    if not str(nonce_receipt.get("failed_stage", "")).startswith("oidc"):
+        raise AssertionError("nonce mismatch did not fail in client OIDC validation")
+    print("nonce mismatch rejected by client validation")
+
+    assert_challenge(provider.request("GET", "/api/billing/summary"), 401, "", "missing token")
+    print("missing token rejected")
+    wrong_audience = token_exchange(provider, discovery, authorization, *lifecycle_code(Browser(PROVIDER_ORIGIN), resource=PROVIDER_ORIGIN + "/api/other"), PROVIDER_ORIGIN + "/api/other")
+    assert_challenge(provider.request("GET", "/api/billing/summary", extra_headers={"authorization": "Bearer " + str(wrong_audience["access_token"])}), 401, "invalid_token", "wrong audience")
+    print("wrong audience rejected")
+    under_scoped = token_exchange(provider, discovery, authorization, *lifecycle_code(Browser(PROVIDER_ORIGIN), scopes="openid profile", resource=billing), billing)
+    assert_challenge(provider.request("GET", "/api/billing/summary", extra_headers={"authorization": "Bearer " + str(under_scoped["access_token"])}), 403, "insufficient_scope", "insufficient scope")
+    print("insufficient scope rejected")
 
 
 def run_happy() -> None:
@@ -383,6 +478,8 @@ def main(argv: list[str]) -> int:
                 run_boundary()
             if "lifecycle" in args.only:
                 run_lifecycle(handoff)
+            if "negative" in args.only:
+                run_negative(handoff)
             return 0
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(redactor.text(error), file=sys.stderr)

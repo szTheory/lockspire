@@ -19,6 +19,18 @@ defmodule CleanRoomClientWeb.OAuthController do
   def callback(conn, params), do: terminal(conn, params, :bearer)
   def dpop_callback(conn, params), do: terminal(conn, params, :dpop)
 
+  def replace_nonce(conn, _params) do
+    case get_session(conn, :oauth_transaction_id) do
+      id when is_integer(id) ->
+        case Transactions.replace_nonce(id) do
+          :ok -> json(conn, %{nonce: "replaced"})
+          _ -> conn |> put_status(:bad_request) |> json(%{error: "terminal"})
+        end
+
+      _ -> conn |> put_status(:bad_request) |> json(%{error: "missing_transaction"})
+    end
+  end
+
   defp begin(conn, mode) do
     profile = Map.fetch!(@profiles, mode)
 
@@ -55,6 +67,7 @@ defmodule CleanRoomClientWeb.OAuthController do
          {:ok, transaction} <- Transactions.consume(id, state),
          code when is_binary(code) <- params["code"],
          true <- is_nil(params["error"]),
+         conn = put_session(conn, :token_exchange_attempts, get_session(conn, :token_exchange_attempts, 0) + 1),
          outcome <- complete_journey(transaction, code, mode) do
       case outcome do
         {:ok, receipt} ->

@@ -43,6 +43,16 @@ defmodule CleanRoomClient.Transactions do
     if count == 1, do: {:ok, Repo.get!(OAuthTransaction, id)}, else: {:error, :terminal}
   end
 
+  def replace_nonce(id) when is_integer(id) do
+    {count, _} =
+      from(transaction in OAuthTransaction,
+        where: transaction.id == ^id and transaction.status == :pending
+      )
+      |> Repo.update_all(set: [nonce: random_urlsafe(), updated_at: DateTime.utc_now()])
+
+    if count == 1, do: :ok, else: {:error, :terminal}
+  end
+
   def s256(verifier) when is_binary(verifier) do
     :crypto.hash(:sha256, verifier) |> Base.url_encode64(padding: false)
   end

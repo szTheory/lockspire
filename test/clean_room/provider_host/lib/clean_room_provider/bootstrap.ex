@@ -40,7 +40,7 @@ defmodule CleanRoomProvider.Bootstrap do
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
-      metadata: %{resource_indicators: [@billing_resource]}
+      metadata: %{resource_indicators: [@billing_resource, "http://127.0.0.1:4100/api/other"]}
     }
   end
 
