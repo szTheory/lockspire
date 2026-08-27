@@ -3,7 +3,7 @@
 set -u -o pipefail
 umask 077
 
-mode=${1:---fast}
+mode=${1:---focused}
 
 case "$mode" in
   --focused)
