@@ -67,7 +67,9 @@ defmodule Lockspire.Protocol.RequestObjectTest do
 
   test "consume/3 returns a neutral browser-safe issue when the request parameter is missing" do
     assert {:browser_error, %Result{} = issue} =
-             RequestObject.consume(%{"client_id" => "client-123"}, %Client{client_id: "client-123"})
+             RequestObject.consume(%{"client_id" => "client-123"}, %Client{
+               client_id: "client-123"
+             })
 
     assert issue.error == "invalid_request"
     assert issue.error_description == "request parameter is required"
