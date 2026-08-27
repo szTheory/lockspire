@@ -14,6 +14,8 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.ClientStore
+  alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
 
   require Logger
@@ -30,6 +32,27 @@ defmodule Lockspire.Storage.RepositoryTest do
   test "keeps sensitive Ecto options at the repository support boundary" do
     assert Support.repo_options(sensitive: true)[:log] == false
     assert Support.repo_options([]) == Lockspire.Storage.Ecto.Prefix.prefix_opts()
+  end
+
+  test "aggregate collaborators receive the configured Ecto repo explicitly" do
+    assert {:ok, %Lockspire.Domain.ServerPolicy{}} =
+             ServerPolicyStore.get_server_policy(Lockspire.TestRepo)
+
+    client = %Client{
+      client_id: "explicit-client-store",
+      client_type: :public,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :none,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now()
+    }
+
+    assert {:ok, %Client{client_id: "explicit-client-store"}} =
+             ClientStore.register_client(Lockspire.TestRepo, client)
   end
 
   test "registers and fetches a client through the repository contract" do
