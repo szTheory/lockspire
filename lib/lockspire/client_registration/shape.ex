@@ -236,12 +236,10 @@ defmodule Lockspire.ClientRegistration.Shape do
   defp public_jwk?(_jwk), do: false
 
   defp parseable_jwk?(jwk) do
-    try do
-      _ = JOSE.JWK.from_map(jwk)
-      true
-    rescue
-      _exception -> false
-    end
+    _ = JOSE.JWK.from_map(jwk)
+    true
+  rescue
+    _exception -> false
   end
 
   defp effective_private_key_jwt_algs(nil, allowed_algs), do: MapSet.to_list(allowed_algs)
