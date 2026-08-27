@@ -14,6 +14,7 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.Support
 
   require Logger
 
@@ -24,6 +25,11 @@ defmodule Lockspire.Storage.RepositoryTest do
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
     :ok
+  end
+
+  test "keeps sensitive Ecto options at the repository support boundary" do
+    assert Support.repo_options(sensitive: true)[:log] == false
+    assert Support.repo_options([]) == Lockspire.Storage.Ecto.Prefix.prefix_opts()
   end
 
   test "registers and fetches a client through the repository contract" do
