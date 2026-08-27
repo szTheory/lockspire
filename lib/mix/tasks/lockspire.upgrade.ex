@@ -100,6 +100,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     end
   end
 
+  @spec refuse!([map()]) :: no_return()
   defp refuse!(errors) do
     Enum.each(errors, fn error ->
       Mix.shell().info("REFUSE #{error.message}")

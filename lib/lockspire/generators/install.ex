@@ -105,6 +105,7 @@ defmodule Lockspire.Generators.Install do
     end
   end
 
+  @spec refuse!(String.t(), [map()]) :: no_return()
   defp refuse!(operation, errors) do
     Enum.each(errors, fn error ->
       Mix.shell().info("REFUSE #{error.message}")

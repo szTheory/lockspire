@@ -107,7 +107,6 @@ defmodule Lockspire.Install.Migrations do
        }}
     else
       {:error, errors} when is_list(errors) -> {:error, errors}
-      {:error, reason} -> {:error, [apply_error(destination_root, reason)]}
     end
   end
 
