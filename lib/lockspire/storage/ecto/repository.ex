@@ -64,6 +64,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   alias Lockspire.Storage.Ecto.Repository.InteractionStore, as: EctoInteractionStore
   alias Lockspire.Storage.Ecto.Repository.InitialAccessTokenStore, as: EctoInitialAccessTokenStore
+  alias Lockspire.Storage.Ecto.Repository.LogoutStore, as: EctoLogoutStore
 
   alias Lockspire.Storage.Ecto.Repository.PushedAuthorizationRequestStore,
     as: EctoPushedAuthorizationRequestStore
@@ -426,67 +427,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl LogoutStore
   def persist_logout_propagation(%LogoutEvent{} = event, opts \\ []) do
-    if Keyword.get(opts, :transact?, true) do
-      transact(fn -> persist_logout_propagation!(event) end)
-    else
-      {:ok, persist_logout_propagation!(event)}
-    end
-  rescue
-    error -> {:error, error}
+    EctoLogoutStore.persist(repo(), event, opts)
   end
 
   @impl LogoutStore
   def fetch_logout_event_by_event_id(event_id) when is_binary(event_id) do
-    LogoutEventRecord
-    |> where([event], event.event_id == ^event_id)
-    |> repo_one()
-    |> then(fn record -> {:ok, maybe_map(record, &LogoutEventRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoLogoutStore.fetch_event(repo(), event_id)
   end
 
   @impl LogoutStore
   def list_all_logout_deliveries do
-    LogoutDeliveryRecord
-    |> order_by(desc: :inserted_at)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &LogoutDeliveryRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoLogoutStore.list_all(repo())
   end
 
   @impl LogoutStore
   def list_logout_deliveries(logout_event_id) when is_integer(logout_event_id) do
-    LogoutDeliveryRecord
-    |> where([delivery], delivery.logout_event_id == ^logout_event_id)
-    |> order_by([delivery], asc: delivery.id)
-    |> repo_all()
-    |> then(fn records -> {:ok, Enum.map(records, &LogoutDeliveryRecord.to_domain/1)} end)
-  rescue
-    error -> {:error, error}
+    EctoLogoutStore.list(repo(), logout_event_id)
   end
 
   @impl LogoutStore
   def mark_logout_delivery_enqueued(logout_delivery_id, oban_job_id)
       when is_integer(logout_delivery_id) and is_integer(oban_job_id) do
-    LogoutDeliveryRecord
-    |> where([delivery], delivery.id == ^logout_delivery_id)
-    |> lock("FOR UPDATE")
-    |> repo_one()
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      %LogoutDeliveryRecord{} = record ->
-        record
-        |> Ecto.Changeset.change(
-          status: :enqueued,
-          oban_job_id: oban_job_id,
-          updated_at: DateTime.utc_now()
-        )
-        |> repo_update()
-        |> map_one(&LogoutDeliveryRecord.to_domain/1)
-    end
+    EctoLogoutStore.enqueue(repo(), logout_delivery_id, oban_job_id)
   end
 
   @impl TokenStore
@@ -858,7 +820,20 @@ defmodule Lockspire.Storage.Ecto.Repository do
       &revoke_token_family_records/3,
       &store_rotated_refresh_token/4,
       &store_rotated_access_token/5,
-      &store_token_record/1
+      &store_token_record/1,
+      &legacy_redeem_initial_access_token/2,
+      &store_logout_event_record/1,
+      &store_logout_delivery_record/1,
+      &persist_logout_propagation!/1,
+      &fetch_existing_logout_event/1,
+      &list_logout_deliveries!/1,
+      &unwrap_or_fetch_existing_logout_event/2,
+      &normalize_logout_event/1,
+      &snapshot_logout_clients/1,
+      &build_logout_deliveries/2,
+      &maybe_append_logout_delivery/6,
+      &unique_constraint_error?/2,
+      &repo_insert/2
     ]
   end
 
@@ -1291,10 +1266,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   defp list_logout_deliveries!(logout_event_id) do
-    case list_logout_deliveries(logout_event_id) do
-      {:ok, deliveries} -> deliveries
-      {:error, reason} -> repo().rollback(reason)
-    end
+    {:ok, deliveries} = list_logout_deliveries(logout_event_id)
+    deliveries
   end
 
   defp unwrap_or_fetch_existing_logout_event({:ok, event}, _event_id), do: event
