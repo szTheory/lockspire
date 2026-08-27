@@ -193,7 +193,7 @@ defmodule Lockspire.Config do
   def storage_prefix do
     @app
     |> Application.get_env(:storage_prefix)
-    |> Lockspire.Storage.Ecto.Prefix.normalize()
+    |> Lockspire.Storage.Prefix.normalize()
   end
 
   @doc """
@@ -203,7 +203,7 @@ defmodule Lockspire.Config do
   def oban_prefix do
     @app
     |> Application.get_env(:oban_prefix, storage_prefix())
-    |> Lockspire.Storage.Ecto.Prefix.normalize()
+    |> Lockspire.Storage.Prefix.normalize()
   end
 
   @doc """

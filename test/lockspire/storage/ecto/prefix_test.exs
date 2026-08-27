@@ -43,6 +43,16 @@ defmodule Lockspire.Storage.Ecto.PrefixTest do
     end
   end
 
+  test "explicit option builders do not read application configuration" do
+    Application.put_env(:lockspire, :storage_prefix, "configured_elsewhere")
+    Application.put_env(:lockspire, :oban_prefix, "configured_jobs")
+
+    assert Lockspire.Storage.Ecto.Prefix.prefix_opts("explicit_schema") ==
+             [prefix: "explicit_schema"]
+
+    assert Lockspire.Storage.Ecto.Prefix.oban_opts(:public) == [prefix: "public"]
+  end
+
   defp restore_env(key, nil), do: Application.delete_env(:lockspire, key)
   defp restore_env(key, value), do: Application.put_env(:lockspire, key, value)
 end
