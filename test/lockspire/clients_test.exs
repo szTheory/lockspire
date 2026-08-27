@@ -331,6 +331,18 @@ defmodule Lockspire.ClientsTest do
     refute output =~ client.client_secret_hash
   end
 
+  test "direct registration retains required scopes while DCR owns optional scope semantics" do
+    assert {:error, errors} =
+             Clients.register_client(%{
+               client_type: :public,
+               redirect_uris: ["https://client.example.test/callback"],
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :none
+             })
+
+    assert %{field: :allowed_scopes, reason: :invalid_scope, detail: :empty} in errors
+  end
+
   defp attach_events(pid) do
     handler_id = "clients-test-#{System.unique_integer([:positive])}"
 
