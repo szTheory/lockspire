@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.CibaGrant do
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
   alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
@@ -36,7 +37,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.CibaGrant do
       {:ok, success}
     else
       {:error, %Error{} = error} ->
-        GrantSupport.emit_failure(error, params, request, dependencies)
+        GrantObservability.emit_poll_failure(error, params, request, dependencies)
         {:error, error}
     end
   end
