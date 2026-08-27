@@ -51,11 +51,14 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
   test "literal public module, arity, and struct baseline remains exported" do
     Enum.each(Manifest.modules(), fn {module, function, arity} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
-      assert function_exported?(module, function, arity), "#{inspect(module)}.#{function}/#{arity} disappeared"
+
+      assert function_exported?(module, function, arity),
+             "#{inspect(module)}.#{function}/#{arity} disappeared"
     end)
 
     Enum.each(Manifest.structs(), fn {module, keys} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
+
       assert Map.keys(struct(module)) |> Enum.sort() == [:__struct__ | keys] |> Enum.sort(),
              "#{inspect(module)} struct keys changed"
     end)
