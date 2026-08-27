@@ -27,7 +27,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.ConsentStore
   alias Lockspire.Storage.DeviceAuthorizationStore
   alias Lockspire.Storage.DpopReplayStore
-  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.CibaAuthorizationRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.ConsentGrantRecord
@@ -42,6 +41,9 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Storage.Ecto.UsedJtiRecord
+  alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
+  alias Lockspire.Storage.Ecto.Repository.Support
+  alias Lockspire.Storage.Ecto.Repository.TransactionStore, as: EctoTransactionStore
   alias Lockspire.Storage.InteractionStore
   alias Lockspire.Storage.InitialAccessTokenStore
   alias Lockspire.Storage.KeyStore
@@ -331,16 +333,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl TransactionStore
   def transact(fun) when is_function(fun, 0) do
-    case repo().transaction(fn -> run_transaction_fun(fun) end) do
-      {:ok, result} -> {:ok, result}
-      {:error, reason} -> {:error, reason}
-    end
-  rescue
-    error -> {:error, error}
+    EctoTransactionStore.transact(repo(), fun)
   end
 
   @impl TransactionStore
-  def rollback(reason), do: repo().rollback(reason)
+  def rollback(reason), do: EctoTransactionStore.rollback(repo(), reason)
 
   @impl PushedAuthorizationRequestStore
   def put_pushed_authorization_request(%PushedAuthorizationRequest{} = request) do
@@ -608,35 +605,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl AuditStore
   def append_audit_event(%Event{} = event) do
-    %AuditEventRecord{}
-    |> AuditEventRecord.changeset(event)
-    |> repo_insert(sensitive: true)
-    |> map_one(&AuditEventRecord.to_domain/1)
+    EctoAuditStore.append_audit_event(repo(), event)
   end
 
   def append_audit_event(attrs) when is_map(attrs) do
-    attrs
-    |> Event.normalize()
-    |> append_audit_event()
-  rescue
-    error -> {:error, error}
+    EctoAuditStore.append_audit_event(repo(), attrs)
   end
 
   @impl AuditStore
   def transact_with_audit(audit_event, fun) when is_function(fun, 0) do
-    transact(fn ->
-      result =
-        case fun.() do
-          {:ok, value} -> value
-          {:error, reason} -> repo().rollback(reason)
-          value -> value
-        end
-
-      case append_audit_event(audit_event) do
-        {:ok, _event} -> result
-        {:error, reason} -> repo().rollback(reason)
-      end
-    end)
+    EctoAuditStore.transact_with_audit(repo(), audit_event, fun)
   end
 
   @impl ConsentStore
@@ -1850,14 +1828,6 @@ defmodule Lockspire.Storage.Ecto.Repository do
     }
   end
 
-  defp run_transaction_fun(fun) do
-    case fun.() do
-      {:ok, result} -> result
-      {:error, reason} -> repo().rollback(reason)
-      result -> result
-    end
-  end
-
   defp redeem_code_record(%TokenRecord{} = record, redeemed_at) do
     record
     |> Ecto.Changeset.change(redeemed_at: redeemed_at, updated_at: DateTime.utc_now())
@@ -2314,46 +2284,35 @@ defmodule Lockspire.Storage.Ecto.Repository do
     do: repo().rollback(reason)
 
   defp repo_all(query, opts \\ []) do
-    repo().all(query, repo_options(opts))
+    Support.all(repo(), query, opts)
   end
 
   defp repo_one(query, opts \\ []) do
-    repo().one(query, repo_options(opts))
+    Support.one(repo(), query, opts)
   end
 
   defp repo_insert(changeset, opts \\ []) do
-    repo().insert(changeset, repo_options(opts))
+    Support.insert(repo(), changeset, opts)
   end
 
   defp repo_insert_all(schema_or_source, entries, opts) do
-    repo().insert_all(schema_or_source, entries, repo_options(opts))
+    Support.insert_all(repo(), schema_or_source, entries, opts)
   end
 
   defp repo_update(changeset, opts \\ []) do
-    repo().update(changeset, repo_options(opts))
+    Support.update(repo(), changeset, opts)
   end
 
   defp repo_update_all(query, updates, opts \\ [], keyword_opts \\ []) do
-    repo().update_all(query, Keyword.merge(updates, keyword_opts), repo_options(opts))
+    Support.update_all(repo(), query, updates, opts, keyword_opts)
   end
 
   defp repo_delete(record, opts) do
-    repo().delete(record, repo_options(opts))
+    Support.delete(repo(), record, opts)
   end
 
   defp repo_delete_all(query, opts) do
-    repo().delete_all(query, repo_options(opts))
-  end
-
-  defp repo_options(opts) do
-    opts
-    |> Keyword.drop([:sensitive])
-    |> maybe_disable_sensitive_logging(opts)
-    |> Keyword.merge(Lockspire.Storage.Ecto.Prefix.prefix_opts())
-  end
-
-  defp maybe_disable_sensitive_logging(options, opts) do
-    if Keyword.get(opts, :sensitive, false), do: Keyword.put(options, :log, false), else: options
+    Support.delete_all(repo(), query, opts)
   end
 
   defp strip_private_key_material(%SigningKey{} = key) do
