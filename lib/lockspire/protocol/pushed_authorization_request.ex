@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
   alias Lockspire.Protocol.AuthorizationRequest
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.RequestObject
+  alias Lockspire.Protocol.RequestObject.Result, as: RequestObjectResult
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
@@ -79,8 +80,8 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
       {:ok, projected_params} ->
         {:ok, projected_params}
 
-      {:browser_error, %AuthorizationRequest.Error{} = error} ->
-        {:error, wrap_jar_error(error)}
+      {:browser_error, %RequestObjectResult{} = issue} ->
+        {:error, wrap_jar_error(issue)}
     end
   end
 
@@ -174,7 +175,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
     }
   end
 
-  defp wrap_jar_error(%AuthorizationRequest.Error{} = error) do
-    oauth_error(400, error.error, error.error_description, error.reason_code)
+  defp wrap_jar_error(%RequestObjectResult{} = issue) do
+    oauth_error(400, issue.error, issue.error_description, issue.reason_code)
   end
 end
