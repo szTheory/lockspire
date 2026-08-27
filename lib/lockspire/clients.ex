@@ -4,7 +4,8 @@ defmodule Lockspire.Clients do
   """
 
   alias Lockspire.Clients.RegistrationResult
-  alias Lockspire.ClientRegistration.Shape, as: RegistrationShape
+  alias Lockspire.ClientLifecycle
+  alias Lockspire.ClientMetadata
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
   alias Lockspire.Security.Policy
@@ -173,7 +174,7 @@ defmodule Lockspire.Clients do
   end
 
   defp persist_client(%Client{} = client) do
-    case Repository.register_client(client) do
+    case ClientLifecycle.persist_direct(client) do
       {:ok, persisted_client} ->
         {:ok, persisted_client}
 
@@ -225,7 +226,7 @@ defmodule Lockspire.Clients do
 
   defp validation_errors(normalized) do
     shape_errors =
-      case RegistrationShape.validate(normalized) do
+      case ClientMetadata.validate_direct(normalized) do
         :ok -> []
         {:error, errors} -> errors
       end
