@@ -140,10 +140,14 @@ def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> 
     return environment
 
 
-def verify_child(role: str, child_root: Path, cache_root: Path | None) -> None:
+def verify_child(
+    role: str, child_root: Path, cache_root: Path | None, extra_environment: dict[str, str] | None = None
+) -> None:
     before_manifest = (child_root / "mix.exs").read_bytes()
     before_lock = (child_root / "mix.lock").read_bytes()
     environment = locked_environment(child_root, role, cache_root)
+    if extra_environment:
+        environment.update(extra_environment)
 
     run(("mix", "deps.get", "--check-locked"), cwd=child_root, env=environment)
     run(("mix", "deps"), cwd=child_root, env=environment)

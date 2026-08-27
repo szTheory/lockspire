@@ -10,11 +10,11 @@ defmodule CleanRoomConfidentialClient.MixProject do
     ]
   end
 
-  def application, do: [extra_applications: [:logger]]
+  def application, do: [mod: {CleanRoomClient.Application, []}, extra_applications: [:logger, :crypto, :inets]]
 
   defp deps do
     [
-      {:lockspire, path: "vendor/lockspire"},
+      {:lockspire, path: "vendor/lockspire", runtime: false},
       {:phoenix, "== 1.8.13"},
       {:ecto_sql, "== 3.13.5"},
       {:postgrex, "== 0.22.4"},
