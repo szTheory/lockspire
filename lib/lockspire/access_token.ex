@@ -68,7 +68,7 @@ defmodule Lockspire.AccessToken do
   def scopes(_token), do: []
 
   @doc """
-  Returns normalized, first-seen-deduplicated access-token audiences.
+  Returns validated, first-seen-deduplicated access-token audiences.
 
   A single nonblank audience or a nonempty list of nonblank audiences is
   accepted. Missing and malformed claims return an empty list.
@@ -125,7 +125,7 @@ defmodule Lockspire.AccessToken do
         {:error, :missing_audience}
 
       audience when is_binary(audience) ->
-        case nonblank(audience) do
+        case nonblank_audience(audience) do
           nil -> {:error, :invalid_audience}
           normalized -> {:ok, [normalized]}
         end
@@ -163,7 +163,7 @@ defmodule Lockspire.AccessToken do
   defp normalize_audience_list(audiences) do
     if Enum.all?(audiences, &is_binary/1) do
       audiences
-      |> Enum.map(&nonblank/1)
+      |> Enum.map(&nonblank_audience/1)
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
     else
@@ -185,5 +185,12 @@ defmodule Lockspire.AccessToken do
       "" -> nil
       normalized -> normalized
     end
+  end
+
+  # `aud` is an identifier authorization boundary, not presentation text.
+  # Reject whitespace-only values, but preserve every accepted byte so route
+  # audience checks remain exact-match comparisons.
+  defp nonblank_audience(value) do
+    if String.trim(value) == "", do: nil, else: value
   end
 end

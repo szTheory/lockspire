@@ -39,7 +39,7 @@ defmodule Lockspire.AccessTokenTest do
   end
 
   describe "semantic readers" do
-    test "normalizes subject, scopes, and audiences without changing raw claims" do
+    test "normalizes subject and scopes while preserving exact audience identifiers" do
       claims = %{
         "sub" => "  user-123  ",
         "scope" => " read:invoices  write:invoices read:invoices ",
@@ -50,7 +50,7 @@ defmodule Lockspire.AccessTokenTest do
 
       assert AccessToken.subject(token) == "user-123"
       assert AccessToken.scopes(token) == ["read:invoices", "write:invoices"]
-      assert AccessToken.audiences(token) == ["billing-api", "ledger-api"]
+      assert AccessToken.audiences(token) == [" billing-api ", "ledger-api", "billing-api"]
       assert token.claims == claims
     end
 

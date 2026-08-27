@@ -487,10 +487,10 @@ defmodule Lockspire.Plug.VerifyTokenTest do
              } = denied_conn.assigns.access_token.error
     end
 
-    test "uses the semantic readers' normalized audience and scope values for signed-token restrictions" do
+    test "keeps audience matching exact while normalizing scope values for signed-token restrictions" do
       {token, _claims} =
         generate_key_and_token(%{
-          "aud" => [" billing-api ", "billing-api", "ledger-api"],
+          "aud" => ["billing-api", "ledger-api"],
           "scope" => " read:billing  write:reports read:billing "
         })
 
@@ -504,6 +504,19 @@ defmodule Lockspire.Plug.VerifyTokenTest do
       assert access_token.error == nil
       assert AccessToken.audiences(access_token) == ["billing-api", "ledger-api"]
       assert AccessToken.scopes(access_token) == ["read:billing", "write:reports"]
+    end
+
+    test "rejects signed audiences whose bytes only match after trimming" do
+      for audience <- [" billing-api ", "billing-api "] do
+        {token, _claims} = generate_key_and_token(%{"aud" => audience})
+
+        conn =
+          build_conn()
+          |> put_req_header("authorization", "Bearer #{token}")
+          |> verify_conn(audience: "billing-api")
+
+        assert %{reason_code: :invalid_audience} = conn.assigns.access_token.error
+      end
     end
 
     test "emits redaction-safe logs for JWT failures and route restriction failures" do
