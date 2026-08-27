@@ -36,7 +36,7 @@ continue to pass. Focused semantic-reader/verifier suite: 83 tests, 0 failures.
 ### WR-01: `private_key_jwt` accepts and persists arbitrary maps as “validated” inline JWKS
 
 **Files modified:** `lib/lockspire/client_registration/shape.ex`, `test/lockspire/clients_test.exs`, `test/lockspire/protocol/registration_test.exs`  
-**Commits:** `574061b`, `563ea28`
+**Commits:** `574061b`, `563ea28`, `390b714`
 
 The shared shape validator now requires a nonempty JWKS `keys` array whose
 members are public, parseable JWKs and which includes a key usable by the
@@ -45,7 +45,9 @@ members, malformed entries, empty sets, and algorithm-incompatible keys using
 only `%{field: :jwks, reason: :invalid_public_jwks, detail: nil}`. Direct
 registration and DCR each cover valid public JWKS plus empty/private/unparseable/
 incompatible rejection and assert that submitted private material is absent from
-errors. Focused registration suite: 66 tests, 0 failures.
+errors. A behavior-preserving `cond` → `if` readability simplification in the
+Phase 132-touched scope validator also clears the final strict Credo finding.
+Focused registration suite: 66 tests, 0 failures.
 
 ### WR-02: The new resource-server truth fences do not cover the executable demo or behavior
 
@@ -64,9 +66,9 @@ also passed.
 ## Verification Notes
 
 - `mix compile --warnings-as-errors` passed.
-- `mix qa` found no new issue, but remains nonzero for a pre-existing Credo
-  refactoring suggestion in `lib/lockspire/clients.ex:333` outside this review
-  scope.
+- `mix credo --strict` passed with no findings after the scope-validator
+  simplification.
+- `mix compile --warnings-as-errors` passed again after the final change.
 
 ---
 
