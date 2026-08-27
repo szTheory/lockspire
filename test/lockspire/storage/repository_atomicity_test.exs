@@ -86,7 +86,8 @@ defmodule Lockspire.Storage.RepositoryAtomicityTest do
   end
 
   test "DCR replacement rolls back metadata and RAT when its audit event is invalid" do
-    {:ok, client} = create_client("atomic-dcr-client", :client_secret_basic, "atomic-dcr-secret")
+    {:ok, %Lockspire.Domain.Client{} = client} =
+      create_client("atomic-dcr-client", :client_secret_basic, "atomic-dcr-secret")
     original_rat = "original-rat-hash"
     assert {:ok, client} = Repository.rotate_registration_access_token(client, original_rat, valid_audit(client))
 
