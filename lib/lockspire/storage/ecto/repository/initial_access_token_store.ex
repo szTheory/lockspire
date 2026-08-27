@@ -17,17 +17,18 @@ defmodule Lockspire.Storage.Ecto.Repository.InitialAccessTokenStore do
         %{revoked_at: value} when not is_nil(value) ->
           TransactionStore.rollback(repo, :revoked)
 
-        %{expires_at: expires} when not is_nil(expires) and expires <= at ->
-          TransactionStore.rollback(repo, :expired)
-
         %{used_at: value} when not is_nil(value) ->
           TransactionStore.rollback(repo, :already_used)
 
         record ->
-          record
-          |> Ecto.Changeset.change(used_at: at, updated_at: DateTime.utc_now())
-          |> then(&Support.update(repo, &1, sensitive: true))
-          |> map_one(repo)
+          if expired?(record.expires_at, at) do
+            TransactionStore.rollback(repo, :expired)
+          else
+            record
+            |> Ecto.Changeset.change(used_at: at, updated_at: DateTime.utc_now())
+            |> then(&Support.update(repo, &1, sensitive: true))
+            |> map_one(repo)
+          end
       end
     end)
   end
@@ -59,4 +60,6 @@ defmodule Lockspire.Storage.Ecto.Repository.InitialAccessTokenStore do
 
   defp map_one({:ok, record}, _repo), do: {:ok, InitialAccessTokenRecord.to_domain(record)}
   defp map_one({:error, reason}, repo), do: TransactionStore.rollback(repo, reason)
+  defp expired?(nil, _at), do: false
+  defp expired?(expires_at, at), do: DateTime.compare(expires_at, at) != :gt
 end

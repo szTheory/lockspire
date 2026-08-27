@@ -225,10 +225,23 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   defp rotate_record(_repo, %TokenRecord{family_id: nil}, _client, _at, _r, _a, _cnf),
     do: {:error, :missing_family_id}
 
-  defp rotate_record(_repo, %TokenRecord{expires_at: expires}, _client, at, _r, _a, _cnf)
-       when not (expires > at), do: {:error, :expired}
-
   defp rotate_record(
+         repo,
+         %TokenRecord{expires_at: expires} = record,
+         client,
+         at,
+         refresh,
+         access,
+         cnf
+       ) do
+    if DateTime.compare(expires, at) == :gt do
+      rotate_unexpired_record(repo, record, client, at, refresh, access, cnf)
+    else
+      {:error, :expired}
+    end
+  end
+
+  defp rotate_unexpired_record(
          repo,
          %TokenRecord{redeemed_at: redeemed, revoked_at: revoked} = record,
          _client,
@@ -254,10 +267,10 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
     end
   end
 
-  defp rotate_record(_repo, %TokenRecord{cnf: actual}, _client, _at, _r, _a, expected)
+  defp rotate_unexpired_record(_repo, %TokenRecord{cnf: actual}, _client, _at, _r, _a, expected)
        when actual != expected, do: {:error, :dpop_binding_mismatch}
 
-  defp rotate_record(repo, record, _client, at, refresh, access, cnf) do
+  defp rotate_unexpired_record(repo, record, _client, at, refresh, access, cnf) do
     with {:ok, presented} <-
            record
            |> Ecto.Changeset.change(
@@ -329,7 +342,7 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   defp revoke_family(repo, family, at, updated) do
     {count, _} =
       TokenRecord
-      |> where([token], token.family_id == ^family)
+      |> where([token], token.family_id == ^family and is_nil(token.revoked_at))
       |> then(
         &Support.update_all(repo, &1, [set: [revoked_at: at, updated_at: updated]],
           sensitive: true

@@ -12,6 +12,11 @@ defmodule Lockspire.TokenExchangeCharacterization do
   alias Lockspire.TokenExchangeCase
 
   def authorization_code_journey(name) do
+    # Characterization flows persist their artifacts.  Make each invocation
+    # independent so a previous run cannot turn a fixed raw refresh token into
+    # an apparently expired/replayed input on a later run.
+    name = "#{name}-#{System.unique_integer([:positive])}"
+    now = DateTime.utc_now()
     secret = "#{name}-secret"
     client_id = "#{name}-client"
     code = "#{name}-raw-code"
@@ -54,7 +59,7 @@ defmodule Lockspire.TokenExchangeCharacterization do
           interaction_store: Repository,
           key_store: Repository,
           server_policy_store: Repository,
-          now: fn -> DateTime.utc_now() end,
+          now: fn -> now end,
           access_token_generator: fn -> "#{name}-access-token" end,
           refresh_token_generator: fn -> "#{name}-refresh-token" end
         ]
@@ -65,7 +70,9 @@ defmodule Lockspire.TokenExchangeCharacterization do
   def assert_authorization_code_success(journey, %TokenExchange.Success{} = success, events) do
     assert is_binary(success.access_token)
     assert success.access_token != ""
-    assert success.refresh_token == "#{String.replace_suffix(journey.code, "-raw-code", "")}-refresh-token"
+
+    assert success.refresh_token ==
+             "#{String.replace_suffix(journey.code, "-raw-code", "")}-refresh-token"
 
     assert %TokenRecord{} =
              Lockspire.TestRepo.one!(
@@ -83,12 +90,23 @@ defmodule Lockspire.TokenExchangeCharacterization do
     assert refresh_token.client_id == journey.client.client_id
 
     assert_audit(journey, "authorization_code_redeemed", "authorization_code_redeemed")
-    assert_event(events, [:lockspire, :authorization_code, :redeemed], :authorization_code_redeemed)
-    refute_observability_leaks(events, [journey.secret, success.access_token, success.refresh_token])
+
+    assert_event(
+      events,
+      [:lockspire, :authorization_code, :redeemed],
+      :authorization_code_redeemed
+    )
+
+    refute_observability_leaks(events, [
+      journey.secret,
+      success.access_token,
+      success.refresh_token
+    ])
   end
 
   def assert_authorization_code_replay(journey, %TokenExchange.Error{}, events) do
     assert_audit(journey, "authorization_code_replay_detected", "authorization_code_replayed")
+
     assert_event(
       events,
       [:lockspire, :authorization_code, :replay_detected],
@@ -102,6 +120,11 @@ defmodule Lockspire.TokenExchangeCharacterization do
     journey = authorization_code_journey("characterization-refresh")
     assert {:ok, initial} = TokenExchange.exchange(journey.request)
 
+    assert {:ok, persisted_refresh} =
+             Repository.fetch_refresh_token(TokenFormatter.hash_token(initial.refresh_token))
+
+    assert DateTime.compare(persisted_refresh.expires_at, DateTime.utc_now()) == :gt
+
     refresh_request = %{
       params: %{"grant_type" => "refresh_token", "refresh_token" => initial.refresh_token},
       authorization: journey.request.authorization,
@@ -113,6 +136,11 @@ defmodule Lockspire.TokenExchangeCharacterization do
           fn -> "characterization-refresh-rotated-token" end
         )
     }
+
+    {:ok, dependencies} =
+      Lockspire.Protocol.TokenExchange.Internal.LegacyOptions.from_request(refresh_request)
+
+    assert DateTime.compare(dependencies.now.(), persisted_refresh.expires_at) == :lt
 
     assert {:ok, _rotated} = TokenExchange.exchange(refresh_request)
   end

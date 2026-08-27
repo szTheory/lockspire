@@ -157,8 +157,8 @@ defmodule Lockspire.DocumentationContractTest do
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/storage/ecto/repository.ex",
-      "defp locked_refresh_token_query(token_hash)"
+      "lib/lockspire/storage/ecto/repository/token_store.ex",
+      "|> lock(\"FOR UPDATE\")"
     )
   end
 

@@ -89,8 +89,7 @@ defmodule Lockspire.ArchitectureFitnessTest do
       :ClientAuthentication,
       :GrantPolling,
       :ResourceSelection,
-      :TokenIssuer,
-      :GrantPersistence
+      :TokenIssuer
     ])
 
     for {path, ast} <- asts,

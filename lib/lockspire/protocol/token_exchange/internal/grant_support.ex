@@ -22,7 +22,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Host.Claims
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
-  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
@@ -1506,7 +1505,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   end
 
   defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0),
-    do: GrantPersistence.transact_with_audit(store, store, audit_event, fun)
+    do: store.transact_with_audit(audit_event, fun)
 
   defp append_audit_event(store, audit_event), do: store.append_audit_event(audit_event)
 
