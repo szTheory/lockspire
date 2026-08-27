@@ -5,10 +5,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
-  alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
@@ -117,7 +117,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     # Mint the at+jwt (or opaque, per format resolution) via the shared signer and
     # re-point the persisted token_hash to the signer's hash.
     with {:ok, raw_access_token, access_token_hash} <-
-           AccessTokenSigner.issue(access_token, client, request, Dependencies.fetch!(request)) do
+           TokenIssuer.issue_access(access_token, client, Dependencies.fetch!(request)) do
       access_token = %Token{access_token | token_hash: access_token_hash}
 
       refresh_token =

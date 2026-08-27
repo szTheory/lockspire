@@ -8,8 +8,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Host.TokenExchangeContext
-  alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.TokenResult.Error
@@ -306,11 +306,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Rfc8693Exchange do
           expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
         }
 
-        AccessTokenSigner.issue_exchange(
+        TokenIssuer.issue_exchange(
           token,
           client,
           custom_claims,
-          request,
           Dependencies.fetch!(request)
         )
     end

@@ -21,11 +21,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
   alias Lockspire.Observability
-  alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.IdToken
   alias Lockspire.Protocol.TokenFormatter
@@ -1320,12 +1320,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       expires_at: DateTime.add(issued_at, TokenLifetime.access_token(), :second)
     }
 
-    # Mint through the shared signer. The signer resolves the effective
+    # The retained compatibility helper delegates issuance to the focused owner.
+    # TokenIssuer resolves the effective
     # format (per-client override -> server default -> :jwt) and returns the raw
     # token plus its hash. Re-point `%Token{}.token_hash` to the signer's hash so
     # introspection and revocation work regardless of issued format while preserving
     # the internal `{%Token{}, raw}` tuple.
-    case AccessTokenSigner.issue(access_token, client, request) do
+    case TokenIssuer.issue_access(access_token, client, Dependencies.fetch!(request)) do
       {:ok, raw_access_token, token_hash} ->
         {%Token{access_token | token_hash: token_hash}, raw_access_token}
 
