@@ -20,7 +20,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
   alias Lockspire.Domain.Token
   alias Lockspire.Host.Claims
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
   alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
   alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
@@ -66,6 +68,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         issuance_context,
         request
       ) do
+    dependencies = Dependencies.fetch!(request)
+
     with :ok <- validate_code_active(authorization_code, code_hash),
          :ok <- validate_code_binding(client, authorization_code, params),
          {:ok, requested_resources} <- ResourceSelection.select(params, authorization_code),
@@ -78,12 +82,24 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              request,
              requested_resources
            ) do
-      emit_success(client, authorization_code, success, request)
+      GrantObservability.emit_authorization_code_success(
+        client,
+        authorization_code,
+        success,
+        dependencies
+      )
+
       {:ok, success}
     else
       {:error, %Error{} = error} ->
-        maybe_append_failure_audit(error, client, authorization_code, request)
-        emit_failure(error, params, request)
+        GrantObservability.record_authorization_code_failure(
+          error,
+          client,
+          authorization_code,
+          dependencies
+        )
+
+        GrantObservability.emit_authorization_code_failure(error, params, request, dependencies)
         {:error, error}
     end
   end
@@ -1079,48 +1095,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  @spec emit_success(Client.t(), Token.t(), map()) :: :ok
-  defp emit_success(%Client{} = client, %Token{} = authorization_code, request) do
-    metadata = %{
-      client_id: client.client_id,
-      interaction_id: authorization_code.interaction_id,
-      subject_id: authorization_code.account_id,
-      authorization_code_id: authorization_code.id,
-      reason_code: :authorization_code_redeemed,
-      token_type: :access_token
-    }
-
-    emitter(request).emit(:authorization_code, :redeemed, %{}, metadata)
-    emitter(request).emit(:token, :issued, %{}, metadata)
-  end
-
-  defp emit_success(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         %Success{
-           refresh_token: refresh_token
-         },
-         request
-       )
-       when is_binary(refresh_token) do
-    emit_success(client, authorization_code, request)
-
-    emitter(request).emit(:refresh_token, :issued, %{}, %{
-      client_id: client.client_id,
-      interaction_id: authorization_code.interaction_id,
-      subject_id: authorization_code.account_id
-    })
-  end
-
-  defp emit_success(
-         %Client{} = client,
-         %Token{} = authorization_code,
-         %Success{} = _success,
-         request
-       ) do
-    emit_success(client, authorization_code, request)
-  end
-
   defp emit_success(
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization,
@@ -1430,90 +1404,34 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          issued_at,
          %Token{} = access_token,
          %Token{} = authorization_code,
-         nil,
-         _issuance_context,
-         request
-       ) do
-    audit_event =
-      redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
-
-    case transact_with_audit_event(token_store(request), audit_event, fn ->
-           token_store(request).redeem_authorization_code(code_hash, issued_at, access_token)
-         end) do
-      {:ok, %{access_token: %Token{} = persisted_access_token}} ->
-        {:ok, %{access_token: persisted_access_token}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp persist_authorization_code_grant(
-         code_hash,
-         issued_at,
-         %Token{} = access_token,
-         %Token{} = authorization_code,
          formatted_refresh_token,
          issuance_context,
          request
        ) do
-    refresh_token = %Token{
-      token_hash: formatted_refresh_token.token_hash,
-      token_type: :refresh_token,
-      family_id: formatted_refresh_token.token_hash,
-      generation: 0,
-      client_id: authorization_code.client_id,
-      account_id: authorization_code.account_id,
-      interaction_id: authorization_code.interaction_id,
-      consent_grant_id: authorization_code.consent_grant_id,
-      sid: authorization_code.sid,
-      scopes: authorization_code.scopes,
-      audience: authorization_code.audience,
-      cnf: issuance_context.cnf,
-      issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
-    }
+    dependencies = Dependencies.fetch!(request)
 
-    audit_event =
-      redemption_audit_event(client_actor(authorization_code.client_id), authorization_code)
-
-    transact_with_audit_event(token_store(request), audit_event, fn ->
-      with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
-             token_store(request).redeem_authorization_code(code_hash, issued_at, access_token),
-           {:ok, %Token{} = persisted_refresh_token} <-
-             token_store(request).store_token(refresh_token) do
-        %{
-          access_token: persisted_access_token,
-          refresh_token: persisted_refresh_token,
-          refresh_token_raw: formatted_refresh_token.token
-        }
-      else
-        {:error, reason} -> {:error, reason}
-      end
-    end)
-    |> case do
-      {:ok, %{} = result} -> {:ok, result}
-      {:error, _reason} = error -> error
-      %{} = result -> {:ok, result}
-    end
+    GrantPersistence.redeem_authorization_code(
+      %{
+        code_hash: code_hash,
+        issued_at: issued_at,
+        access_token: access_token,
+        authorization_code: authorization_code,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.authorization_code_redemption_audit_event(
+            %Client{client_id: authorization_code.client_id},
+            authorization_code
+          )
+      },
+      dependencies
+    )
   end
 
   defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0),
     do: store.transact_with_audit(audit_event, fun)
 
   defp append_audit_event(store, audit_event), do: store.append_audit_event(audit_event)
-
-  defp maybe_append_failure_audit(
-         %Error{reason_code: :authorization_code_replayed},
-         %Client{} = client,
-         %Token{} = authorization_code,
-         request
-       ) do
-    replay_audit_event(client_actor(client.client_id), authorization_code)
-    |> then(&append_audit_event(token_store(request), &1))
-
-    :ok
-  end
 
   defp maybe_append_failure_audit(
          %Error{reason_code: reason_code},
@@ -1562,26 +1480,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp redemption_audit_event(actor, %Token{} = authorization_code) do
-    audit_event(
-      :authorization_code_redeemed,
-      :succeeded,
-      :authorization_code_redeemed,
-      actor,
-      authorization_code
-    )
-  end
-
-  defp replay_audit_event(actor, %Token{} = authorization_code) do
-    audit_event(
-      :authorization_code_replay_detected,
-      :denied,
-      :authorization_code_replayed,
-      actor,
-      authorization_code
-    )
-  end
-
   defp device_redemption_audit_event(actor, %DeviceAuthorizationState{} = device_authorization) do
     device_audit_event(
       :device_authorization_redeemed,
@@ -1628,24 +1526,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
       actor,
       ciba_authorization
     )
-  end
-
-  defp audit_event(action, outcome, reason_code, actor, %Token{} = authorization_code) do
-    %{
-      action: action,
-      outcome: outcome,
-      reason_code: reason_code,
-      actor: actor,
-      resource: %{
-        type: :authorization_code,
-        id: to_string(authorization_code.id || authorization_code.interaction_id)
-      },
-      metadata: %{
-        client_id: authorization_code.client_id,
-        interaction_id: authorization_code.interaction_id,
-        subject_id: authorization_code.account_id
-      }
-    }
   end
 
   defp device_audit_event(

@@ -1,8 +1,10 @@
 defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   @moduledoc false
 
+  alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Protocol.TokenLifetime
 
   @doc false
   @spec transact_with_audit(Dependencies.t(), (-> term())) :: {:ok, term()} | {:error, term()}
@@ -33,6 +35,39 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     end)
   end
 
+  @doc false
+  @spec redeem_authorization_code(map(), Dependencies.t()) ::
+          {:ok, map()} | {:error, term()}
+  def redeem_authorization_code(
+        %{
+          code_hash: code_hash,
+          issued_at: issued_at,
+          access_token: %Token{} = access_token,
+          audit_event: audit_event
+        } = intent,
+        %Dependencies{} = dependencies
+      ) do
+    transact_with_audit(dependencies, fn ->
+      with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
+             dependencies.token_store.redeem_authorization_code(
+               code_hash,
+               issued_at,
+               access_token
+             ),
+           {:ok, persisted_refresh_token} <-
+             maybe_store_token(dependencies.token_store, build_refresh_token(intent)) do
+        {:ok,
+         %{
+           access_token: persisted_access_token,
+           refresh_token: persisted_refresh_token,
+           refresh_token_raw: refresh_token_raw(intent)
+         }, [audit_event]}
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
   defp append_audit_events({:error, reason}, _audit_store), do: {:error, reason}
 
   defp append_audit_events({tag, value, events}, audit_store) when tag in [:ok, :durable_error] do
@@ -49,6 +84,40 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       append_all(audit_store, rest)
     end
   end
+
+  defp maybe_store_token(_store, nil), do: {:ok, nil}
+  defp maybe_store_token(store, %Token{} = token), do: store.store_token(token)
+
+  defp build_refresh_token(%{formatted_refresh_token: nil}), do: nil
+
+  defp build_refresh_token(%{
+         formatted_refresh_token: formatted_refresh_token,
+         authorization_code: %Token{} = authorization_code,
+         issued_at: issued_at,
+         issuance_context: issuance_context
+       }) do
+    %Token{
+      token_hash: formatted_refresh_token.token_hash,
+      token_type: :refresh_token,
+      family_id: formatted_refresh_token.token_hash,
+      generation: 0,
+      client_id: authorization_code.client_id,
+      account_id: authorization_code.account_id,
+      interaction_id: authorization_code.interaction_id,
+      consent_grant_id: authorization_code.consent_grant_id,
+      sid: authorization_code.sid,
+      scopes: authorization_code.scopes,
+      audience: authorization_code.audience,
+      cnf: issuance_context.cnf,
+      issued_at: issued_at,
+      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
+    }
+  end
+
+  defp refresh_token_raw(%{formatted_refresh_token: nil}), do: nil
+
+  defp refresh_token_raw(%{formatted_refresh_token: formatted_refresh_token}),
+    do: formatted_refresh_token.token
 
   defp normalize_transaction({:ok, {:durable_error, %Error{} = error}}), do: {:error, error}
   defp normalize_transaction({:ok, result}), do: {:ok, result}
