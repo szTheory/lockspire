@@ -13,6 +13,13 @@ defmodule Lockspire.MixProject do
       description: "Embedded OAuth/OIDC authorization server library for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
+      test_load_filters: [
+        fn path ->
+          String.ends_with?(path, "_test.exs") and
+            not String.starts_with?(path, "test/clean_room/")
+        end
+      ],
+      test_ignore_filters: [fn path -> String.starts_with?(path, "test/clean_room/") end],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       # The non-integration suite measured 73.11% on 2026-08-26. Keep the
