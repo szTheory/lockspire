@@ -10,7 +10,7 @@
 - [x] **Phase 132: Public API and Resource-Server Truth** — Align supported APIs, resource-server behavior, and documentation with what Lockspire actually ships. (completed 2026-08-26)
 - [x] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP. (completed 2026-08-27)
 - [x] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services. (completed 2026-08-27)
-- [ ] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift.
+- [x] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift. (completed 2026-08-27)
 - [ ] **Phase 136: Static Analysis and Sustainable Proof** — Make implementation and tests easier to read while retaining meaningful quality evidence.
 - [ ] **Phase 137: CI, Conformance, and Release Proof** — Make security, coverage, conformance, and artifact verification reproducible release evidence.
 
@@ -185,6 +185,6 @@ Plans:
 | 132. Public API and Resource-Server Truth | 4/4 | Complete    | 2026-08-26 |
 | 133. Clean-Room SaaS Journey | 6/6 | Complete    | 2026-08-27 |
 | 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
-| 135. Cohesive Internals | 9/9 | Awaiting verification |  |
+| 135. Cohesive Internals | 9/9 | Complete    | 2026-08-27 |
 | 136. Static Analysis and Sustainable Proof | 0/TBD | Not started | - |
 | 137. CI, Conformance, and Release Proof | 0/TBD | Not started | - |
