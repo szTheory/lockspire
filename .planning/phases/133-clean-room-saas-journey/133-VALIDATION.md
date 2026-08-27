@@ -1,9 +1,9 @@
 ---
 phase: 133
 slug: clean-room-saas-journey
-status: draft
+status: partial
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-08-27
 ---
 
@@ -36,20 +36,20 @@ created: 2026-08-27
 
 | Task ID | Plan | Wave | Requirements | Threats | Secure behavior | Test type | Automated command | Status |
 |---|---|---:|---|---|---|---|---|---|
-| 133-01-T1 | 133-01 | 1 | E2E-01, E2E-06 | T-133-03, T-133-04 | Two real origins, bounded readiness, unique resources, exit/signal cleanup. | process integration | `mix test --include integration test/integration/phase133_harness_test.exs --only harness_processes` | ⬜ pending |
-| 133-01-T2 | 133-01 | 1 | E2E-01 | T-133-01, T-133-25 | Stable child-local vendor paths, copied package inventory, no symlinks/checkouts, unchanged manifests/locks, `--check-locked`, exact provenance, and role-scoped cache boundaries. | dependency/process integration | `mix test --include integration test/integration/phase133_harness_test.exs --only dependency_lock` | ⬜ pending |
-| 133-01-T3 | 133-01 | 1 | E2E-01, E2E-06 | T-133-02 | Pre-format/retention redaction covers both client secrets and every other secret class. | process/security integration | `mix test --include integration test/integration/phase133_harness_test.exs --only harness_security` | ⬜ pending |
-| 133-02-T1 | 133-02 | 2 | E2E-01 | T-133-05 | Fresh host installs, migrates, verifies, tests, boots; no forbidden boundary use. | package/process integration | `mix test --include integration test/integration/phase133_provider_install_test.exs --only package_clean` | ⬜ pending |
-| 133-02-T2 | 133-02 | 2 | E2E-01, E2E-05, E2E-06 | T-133-06..08, T-133-24 | Separate bearer/DPoP public bootstrap, explicit client-level DPoP update, distinct secret channels, exact redirects, and canonical protected pipeline. | live HTTP integration | `mix test --include integration test/integration/phase133_provider_install_test.exs` | ⬜ pending |
-| 133-03-T1 | 133-03 | 3 | E2E-02 | T-133-09, T-133-12 | Random durable state/nonce/verifier, pre-exchange atomic terminal consumption under concurrency/restart. | child unit + process | `python3 scripts/acceptance/clean_room/build_client.py --test oauth_transaction` | ⬜ pending |
-| 133-03-T2 | 133-03 | 3 | E2E-02, E2E-06 | T-133-09, T-133-12, T-133-24, T-133-26, T-133-27 | Fixed bearer/DPoP routes persist server-selected profiles; DPoP callback owns an encrypted key and completes confidential token AS nonce retry with documented DPoP token type after terminal state consumption. | child HTTP integration | `python3 scripts/acceptance/clean_room/build_client.py --test oauth_callback` | ⬜ pending |
-| 133-03-T3 | 133-03 | 3 | E2E-03, E2E-06 | T-133-10..12, T-133-24, T-133-26..28 | Bearer OIDC remains green; DPoP key ownership, token AS nonce retry/type, same-key userinfo nonce retry, subject gate, encrypted cleanup, and opaque session handoff are complete. | child unit + live provider HTTP | `python3 scripts/acceptance/clean_room/build_client.py --test oidc_verifier && python3 scripts/acceptance/clean_room/build_client.py --test dpop_client` | ⬜ pending |
-| 133-04-T1 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Cross-origin code+S256 journey validates OIDC/userinfo before protected resource. | full process HTTP | `mix test --include integration test/integration/phase133_clean_room_saas_journey_test.exs --only happy_path` | ⬜ pending |
-| 133-04-T2 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Callback remains one-time and host authorization is distinct from protocol enforcement. | full process HTTP | `mix test --include integration test/integration/phase133_clean_room_saas_journey_test.exs --only happy_path --only boundary` | ⬜ pending |
-| 133-05-T1 | 133-05 | 5 | E2E-04 | T-133-16, T-133-19 | Rotation, reuse containment, inactive introspection, idempotent revocation, truthful JWT semantics. | full process HTTP | `mix test --include integration test/integration/phase133_clean_room_saas_journey_test.exs --only lifecycle` | ⬜ pending |
-| 133-05-T2 | 133-05 | 5 | E2E-05 | T-133-17, T-133-18 | Redirect/code/state/nonce/token/audience/scope failures expose stable wire outcomes only. | full process negative matrix | `mix test --include integration test/integration/phase133_clean_room_saas_journey_test.exs --only negative` | ⬜ pending |
-| 133-06-T1 | 133-06 | 6 | E2E-06 | T-133-20, T-133-21, T-133-24, T-133-26..28 | Completed opaque DPoP session drives resource nonce challenge, fresh proof success, same-byte replay, and post-provider-restart durable rejection without exposing client material. | full process HTTP | `mix test test/integration/phase133_clean_room_saas_journey_test.exs --only dpop` | ⬜ pending |
-| 133-06-T2 | 133-06 | 6 | E2E-01, E2E-05, E2E-06 | T-133-22, T-133-23, T-133-25 | One CI command proves all journeys, uses bounded lock-keyed dependency-only caches, scans evidence, and cleans all resources. | acceptance + repository gate | `mix test.clean-room.e2e && mix compile --warnings-as-errors && mix test.fast && mix test.integration && mix qa && mix docs.verify` | ⬜ pending |
+| 133-01-T1 | 133-01 | 1 | E2E-01, E2E-06 | T-133-03, T-133-04 | Two real origins, bounded readiness, unique resources, exit/signal cleanup. | process integration | `mix test --include integration test/integration/phase133_harness_test.exs --only harness_processes` | historical pass; not rerun in this audit |
+| 133-01-T2 | 133-01 | 1 | E2E-01 | T-133-01, T-133-25 | Stable child-local vendor paths, copied package inventory, no symlinks/checkouts, unchanged manifests/locks, `--check-locked`, exact provenance, and role-scoped cache boundaries. | dependency/process integration | `mix test --include integration test/integration/phase133_harness_test.exs --only dependency_lock` | observed through current CI alias before lifecycle failure |
+| 133-01-T3 | 133-01 | 1 | E2E-01, E2E-06 | T-133-02 | Pre-format/retention redaction covers both client secrets and every other secret class. | process/security integration | `mix test --include integration test/integration/phase133_harness_test.exs --only harness_security` | observed through current CI alias before lifecycle failure |
+| 133-02-T1 | 133-02 | 2 | E2E-01 | T-133-05 | Fresh host installs, migrates, verifies, tests, boots; no forbidden boundary use. | package/process integration | `mix test --include integration test/integration/phase133_provider_install_test.exs --only package_clean` | historical pass; not rerun in this audit |
+| 133-02-T2 | 133-02 | 2 | E2E-01, E2E-05, E2E-06 | T-133-06..08, T-133-24 | Separate bearer/DPoP public bootstrap, explicit client-level DPoP update, distinct secret channels, exact redirects, and canonical protected pipeline. | live HTTP integration | `mix test --include integration test/integration/phase133_provider_install_test.exs` | historical pass; not rerun in this audit |
+| 133-03-T1 | 133-03 | 3 | E2E-02 | T-133-09, T-133-12 | Random durable state/nonce/verifier, pre-exchange atomic terminal consumption under concurrency/restart. | child unit + process | `python3 scripts/acceptance/clean_room/build_client.py --test oauth_transaction` | historical pass; not rerun in this audit |
+| 133-03-T2 | 133-03 | 3 | E2E-02, E2E-06 | T-133-09, T-133-12, T-133-24, T-133-26, T-133-27 | Fixed bearer/DPoP routes persist server-selected profiles; DPoP callback owns an encrypted key and completes confidential token AS nonce retry with documented DPoP token type after terminal state consumption. | child HTTP integration | `python3 scripts/acceptance/clean_room/build_client.py --test oauth_callback` | historical pass; not rerun in this audit |
+| 133-03-T3 | 133-03 | 3 | E2E-03, E2E-06 | T-133-10..12, T-133-24, T-133-26..28 | Bearer OIDC remains green; DPoP key ownership, token AS nonce retry/type, same-key userinfo nonce retry, subject gate, encrypted cleanup, and opaque session handoff are complete. | child unit + live provider HTTP | `python3 scripts/acceptance/clean_room/build_client.py --test oidc_verifier && python3 scripts/acceptance/clean_room/build_client.py --test dpop_client` | historical pass; not rerun in this audit |
+| 133-04-T1 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Cross-origin code+S256 journey validates OIDC/userinfo before protected resource. | full process HTTP | `mix test.clean-room.e2e` | observed pass before lifecycle failure |
+| 133-04-T2 | 133-04 | 4 | E2E-02, E2E-03 | T-133-13..15 | Callback remains one-time and host authorization is distinct from protocol enforcement. | full process HTTP | `mix test.clean-room.e2e` | observed pass before lifecycle failure |
+| 133-05-T1 | 133-05 | 5 | E2E-04 | T-133-16, T-133-19 | Rotation, reuse containment, inactive introspection, idempotent revocation, truthful JWT semantics. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle` | **BLOCKER:** current run returns HTTP 400 at authorization-code exchange |
+| 133-05-T2 | 133-05 | 5 | E2E-05 | T-133-17, T-133-18 | Redirect/code/state/nonce/token/audience/scope failures expose stable wire outcomes only. | full process negative matrix | `python3 scripts/acceptance/clean_room_saas_journey.py --only negative` | not run: blocked behind lifecycle regression in authoritative command |
+| 133-06-T1 | 133-06 | 6 | E2E-06 | T-133-20, T-133-21, T-133-24, T-133-26..28 | Completed opaque DPoP session drives resource nonce challenge, fresh proof success, same-byte replay, and post-provider-restart durable rejection without exposing client material. | full process HTTP | `python3 scripts/acceptance/clean_room_saas_journey.py --only dpop` | not run: authoritative command stopped at lifecycle regression |
+| 133-06-T2 | 133-06 | 6 | E2E-01, E2E-05, E2E-06 | T-133-22, T-133-23, T-133-25 | One CI command proves all journeys, uses bounded lock-keyed dependency-only caches, scans evidence, and cleans all resources. | acceptance + repository gate | `mix test.clean-room.e2e && mix compile --warnings-as-errors && mix test.fast && mix test.integration && mix qa && mix docs.verify` | **BLOCKER:** first required command failed; downstream gate not run |
 
 ## Wave 0 Requirements
 
@@ -126,6 +126,32 @@ Excluded by source: publication-specific release proof (Phase 137); topology/sto
 
 None. Both applications, PostgreSQL setup, browser-like redirect flow, process lifecycle, HTTP assertions, evidence scans, and cleanup are automatable. Missing local PostgreSQL is an actionable environment failure, not a human verification checkpoint.
 
+## Post-Execution Nyquist Audit — 2026-08-27
+
+**Verdict: PARTIAL — implementation blocker.** The auditor ran the maintained
+full command, `mix test.clean-room.e2e`. It completed the package provenance,
+redaction, happy-path, callback-reuse, and host-policy receipts, then failed at
+the lifecycle authorization-code exchange: **expected HTTP 200, got 400**. A
+second, isolated execution of
+`python3 scripts/acceptance/clean_room_saas_journey.py --only lifecycle`
+failed at the identical assertion. This is an observable wire-contract failure,
+not a skipped test or a test-expectation issue.
+
+| Requirement | Current evidence | Result |
+|---|---|---|
+| E2E-01 | Current alias reached provenance/redaction/readiness and cleaned up after failure; the full CI proof cannot pass while lifecycle fails. | PARTIAL |
+| E2E-02 | Current alias printed authorization and callback completion before the lifecycle leg. | FILLED for the observed happy path |
+| E2E-03 | Current alias printed discovery, OIDC, userinfo, and protected-resource completion before the lifecycle leg. | FILLED for the observed happy path |
+| E2E-04 | Direct lifecycle journey returned 400 at the initial confidential code exchange, where 200 is required. | **BLOCKER** |
+| E2E-05 | Not executed after the regression was established; previous summary evidence is not a replacement for a current run. | UNVERIFIED |
+| E2E-06 | Not executed after the regression was established; previous summary evidence is not a replacement for a current run. | UNVERIFIED |
+
+**Escalation:** Repair the lifecycle authorization-code exchange in the
+acceptance implementation (runner/fixture/provider boundary as appropriate),
+without weakening the HTTP-200 assertion. Then rerun the isolated lifecycle
+journey, the complete `mix test.clean-room.e2e` command, and the deferred
+negative/DPoP checks before changing this verdict.
+
 ## Validation Sign-Off
 
 - [x] Every task has a runnable automated command.
@@ -133,6 +159,7 @@ None. Both applications, PostgreSQL setup, browser-like redirect flow, process l
 - [x] Critical/high threats block summaries through named ASVS L1 tests.
 - [x] Child manifests are owned by Wave 1; Wave 2 completes provider bootstrap before Wave 3 exercises the client backend against live token/userinfo endpoints.
 - [x] The package proof is intentionally local/package-clean and leaves publication-specific proof to Phase 137.
-- [ ] Nyquist auditor confirms implemented coverage after execution and sets `status: validated`, `wave_0_complete: true`, and `nyquist_compliant: true`.
+- [x] Nyquist auditor executed the maintained command and recorded the actual post-review outcome.
+- [ ] Lifecycle regression repaired and all six E2E requirements re-executed green; only then set `status: validated` and `nyquist_compliant: true`.
 
-**Approval:** pending post-execution Nyquist audit.
+**Approval:** withheld — E2E-04 currently fails at a required live HTTP boundary.
