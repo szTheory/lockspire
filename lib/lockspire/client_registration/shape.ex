@@ -149,6 +149,11 @@ defmodule Lockspire.ClientRegistration.Shape do
           current
       end
     end)
+    |> validate_inline_jwks(
+      attrs.jwks,
+      attrs.token_endpoint_auth_signing_alg,
+      Keyword.get(opts, :private_key_jwt_algs, @private_key_jwt_algs)
+    )
     |> validate_private_key_jwt_alg(attrs.token_endpoint_auth_signing_alg, opts)
   end
 
@@ -191,6 +196,73 @@ defmodule Lockspire.ClientRegistration.Shape do
         issue(:token_endpoint_auth_signing_alg, :invalid_token_endpoint_auth_signing_alg, alg)
         | errors
       ]
+    end
+  end
+
+  defp validate_inline_jwks(errors, nil, _signing_alg, _allowed_algs), do: errors
+
+  defp validate_inline_jwks(errors, jwks, signing_alg, allowed_algs) when is_map(jwks) do
+    allowed_algs = MapSet.new(allowed_algs)
+
+    if usable_public_jwk_set?(jwks, signing_alg, allowed_algs) do
+      errors
+    else
+      [issue(:jwks, :invalid_public_jwks, nil) | errors]
+    end
+  end
+
+  defp validate_inline_jwks(errors, _jwks, _signing_alg, _allowed_algs), do: errors
+
+  defp usable_public_jwk_set?(%{"keys" => keys}, signing_alg, allowed_algs)
+       when is_list(keys) and keys != [] do
+    Enum.all?(keys, &(public_jwk?(&1) and parseable_jwk?(&1))) and
+      Enum.any?(keys, &usable_public_jwk?(&1, signing_alg, allowed_algs))
+  end
+
+  defp usable_public_jwk_set?(_jwks, _signing_alg, _allowed_algs), do: false
+
+  defp usable_public_jwk?(jwk, signing_alg, allowed_algs) do
+    public_jwk?(jwk) and parseable_jwk?(jwk) and
+      Enum.any?(
+        effective_private_key_jwt_algs(signing_alg, allowed_algs),
+        &key_supports_alg?(jwk, &1)
+      )
+  end
+
+  defp public_jwk?(jwk) when is_map(jwk) do
+    Enum.all?(~w(d k p q dp dq qi oth), &(not Map.has_key?(jwk, &1)))
+  end
+
+  defp public_jwk?(_jwk), do: false
+
+  defp parseable_jwk?(jwk) do
+    try do
+      _ = JOSE.JWK.from_map(jwk)
+      true
+    rescue
+      _exception -> false
+    end
+  end
+
+  defp effective_private_key_jwt_algs(nil, allowed_algs), do: MapSet.to_list(allowed_algs)
+  defp effective_private_key_jwt_algs(signing_alg, _allowed_algs), do: [signing_alg]
+
+  defp key_supports_alg?(%{"kty" => "RSA"} = jwk, alg) when alg in [:RS256, :PS256],
+    do: declared_alg_compatible?(jwk, alg)
+
+  defp key_supports_alg?(%{"kty" => "EC", "crv" => "P-256"} = jwk, :ES256),
+    do: declared_alg_compatible?(jwk, :ES256)
+
+  defp key_supports_alg?(%{"kty" => "OKP", "crv" => "Ed25519"} = jwk, :EdDSA),
+    do: declared_alg_compatible?(jwk, :EdDSA)
+
+  defp key_supports_alg?(_jwk, _alg), do: false
+
+  defp declared_alg_compatible?(jwk, alg) do
+    case Map.get(jwk, "alg") do
+      nil -> true
+      declared when is_binary(declared) -> declared == Atom.to_string(alg)
+      _other -> false
     end
   end
 

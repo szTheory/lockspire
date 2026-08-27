@@ -168,7 +168,7 @@ defmodule Lockspire.ClientsTest do
   end
 
   test "register_client/1 persists exactly one safe private_key_jwt key source" do
-    jwks = %{"keys" => [%{"kty" => "RSA", "kid" => "direct-client-key", "alg" => "RS256"}]}
+    jwks = %{"keys" => [public_rsa_jwk()]}
 
     assert {:ok, %{client: inline_client}} =
              Clients.register_client(%{
@@ -233,6 +233,33 @@ defmodule Lockspire.ClientsTest do
                  )
                )
 
+      refute inspect(errors) =~ sentinel
+    end
+  end
+
+  test "register_client/1 rejects empty, private, unparseable, and incompatible inline JWKS" do
+    sentinel = "raw-private-key-material-must-not-leak"
+
+    for jwks <- [
+          %{},
+          %{"keys" => []},
+          %{"keys" => [%{"kty" => "RSA", "n" => 42, "e" => "AQAB"}]},
+          %{"keys" => [Map.put(public_rsa_jwk(), "d", sentinel)]},
+          %{"keys" => [Map.put(public_rsa_jwk(), "alg", "ES256")]}
+        ] do
+      assert {:error, errors} =
+               Clients.register_client(%{
+                 client_type: :confidential,
+                 redirect_uris: ["https://client.example.test/callback"],
+                 allowed_scopes: ["openid"],
+                 allowed_grant_types: ["authorization_code"],
+                 allowed_response_types: ["code"],
+                 token_endpoint_auth_method: :private_key_jwt,
+                 token_endpoint_auth_signing_alg: :RS256,
+                 jwks: jwks
+               })
+
+      assert %{field: :jwks, reason: :invalid_public_jwks, detail: nil} in errors
       refute inspect(errors) =~ sentinel
     end
   end
@@ -328,5 +355,16 @@ defmodule Lockspire.ClientsTest do
 
   defp detach_events({handler_id, _events}) do
     :telemetry.detach(handler_id)
+  end
+
+  defp public_rsa_jwk do
+    %{
+      "kty" => "RSA",
+      "kid" => "direct-client-key",
+      "alg" => "RS256",
+      "n" =>
+        "o5kk0WZKYEqTo3bDmAE1BhqnbJGU46PXD1FVR8ZSudlHmU0PcK7Cv-rzvpgges6bva8lnKobC0bdNjmHQJmPjLBKeO-S8uNtwRTDgUpbqhZDj_FXLvXT-h5bEJCQ-de73hskDAZkBk21CTUYZT-ScplszElSDQ11Akrceui2LmkGPx_PhlTzMezFMup5qJ56xG2B5J7V4YengN1BgHywnGQzY9LWQAH6On_aAEzc1S016NDplKFi3r8WFzbfVwMQGDBozH-9emID8KGv40axczaAVkhVCnW4892zgYO3hJfJPKbiqO5ylTnpgdDxcrPWv8V8Ut-SeUil2Pp48ojdgQ",
+      "e" => "AQAB"
+    }
   end
 end

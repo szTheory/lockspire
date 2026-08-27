@@ -553,6 +553,50 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert is_nil(client.jwks)
     end
 
+    test "accepts a parseable public inline JWKS for private_key_jwt" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+        |> Map.put("token_endpoint_auth_signing_alg", "RS256")
+        |> Map.put("jwks", %{"keys" => [public_rsa_jwk()]})
+
+      request =
+        DcrFixtures.register_request(
+          metadata: metadata,
+          server_policy: DcrFixtures.private_key_jwt_server_policy()
+        )
+
+      assert {:ok, %Success{client: %{jwks: %{"keys" => [_]}}}} = Registration.register(request)
+    end
+
+    test "rejects empty, private, unparseable, and incompatible private_key_jwt JWKS" do
+      sentinel = "raw-private-key-material-must-not-leak"
+
+      for jwks <- [
+            %{},
+            %{"keys" => []},
+            %{"keys" => [%{"kty" => "RSA", "n" => 42, "e" => "AQAB"}]},
+            %{"keys" => [Map.put(public_rsa_jwk(), "d", sentinel)]},
+            %{"keys" => [Map.put(public_rsa_jwk(), "alg", "ES256")]}
+          ] do
+        metadata =
+          DcrFixtures.valid_metadata()
+          |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+          |> Map.put("token_endpoint_auth_signing_alg", "RS256")
+          |> Map.put("jwks", jwks)
+
+        assert {:error, %Error{field: :jwks, reason: :invalid_public_jwks} = error} =
+                 Registration.register(
+                   DcrFixtures.register_request(
+                     metadata: metadata,
+                     server_policy: DcrFixtures.private_key_jwt_server_policy()
+                   )
+                 )
+
+        refute inspect(error) =~ sentinel
+      end
+    end
+
     test "rejects encrypted JARM metadata without signing metadata" do
       metadata =
         encrypted_jarm_metadata()
@@ -790,5 +834,16 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
       refute Enum.any?(rows, &(&1.actor_type == "operator"))
     end
+  end
+
+  defp public_rsa_jwk do
+    %{
+      "kty" => "RSA",
+      "kid" => "dcr-client-key",
+      "alg" => "RS256",
+      "n" =>
+        "o5kk0WZKYEqTo3bDmAE1BhqnbJGU46PXD1FVR8ZSudlHmU0PcK7Cv-rzvpgges6bva8lnKobC0bdNjmHQJmPjLBKeO-S8uNtwRTDgUpbqhZDj_FXLvXT-h5bEJCQ-de73hskDAZkBk21CTUYZT-ScplszElSDQ11Akrceui2LmkGPx_PhlTzMezFMup5qJ56xG2B5J7V4YengN1BgHywnGQzY9LWQAH6On_aAEzc1S016NDplKFi3r8WFzbfVwMQGDBozH-9emID8KGv40axczaAVkhVCnW4892zgYO3hJfJPKbiqO5ylTnpgdDxcrPWv8V8Ut-SeUil2Pp48ojdgQ",
+      "e" => "AQAB"
+    }
   end
 end
