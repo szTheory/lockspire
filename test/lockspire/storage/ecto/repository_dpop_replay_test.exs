@@ -7,6 +7,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.DpopReplayRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.ReplayStore
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -111,6 +112,13 @@ defmodule Lockspire.Storage.Ecto.RepositoryDpopReplayTest do
   end
 
   describe "record_dpop_proof/1" do
+    test "the replay-security aggregate retains the durable DPoP uniqueness boundary" do
+      replay = replay_fixture(%{replay_key: "aggregate-dpop", jti: "aggregate-dpop-jti"})
+
+      assert {:ok, :accepted} = ReplayStore.record_dpop_proof(Lockspire.TestRepo, replay)
+      assert {:ok, :replay} = Repository.record_dpop_proof(replay)
+    end
+
     test "accepts the first proof presentation and rejects an immediate replay" do
       replay = replay_fixture()
 
