@@ -2,8 +2,8 @@
 phase: 132
 slug: public-api-and-resource-server-truth
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase)
-status: draft
-nyquist_compliant: false
+status: validated
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-08-26
 ---
@@ -109,6 +109,35 @@ None. Phase 132 has no visual redesign or external-service setup; all acceptance
 - [x] Tests exercise actual Plug, Repository, registration, authorization-request, generated-template, and docs behavior rather than string-only substitutes.
 - [x] Wave 1 plans have no file overlap and may execute in parallel; Wave 2 consumes their final public names and behavior.
 - [x] All four requirements and all sixteen locked decisions are covered.
-- [ ] Nyquist auditor confirms implemented coverage and sets `status: validated`, `nyquist_compliant: true`.
+- [x] Nyquist auditor confirmed implemented coverage and set `status: validated`, `nyquist_compliant: true` on 2026-08-27.
 
-**Approval:** pending post-execution Nyquist audit.
+**Approval:** validated by post-execution Nyquist audit.
+
+## Nyquist Audit — 2026-08-27
+
+**Status:** CLOSED — 10/10 validation checks green.
+
+The auditor added `test/lockspire/access_token_test.exs` coverage for an `aud`
+claim containing both a valid identifier and a blank member:
+
+```elixir
+%{"aud" => ["billing-api", "   "]}
+```
+
+Required behavior is `[]` from `AccessToken.audiences/1` and
+`{:error, :invalid_audience}` from `AccessToken.normalize_audiences/1`, because
+the documented contract accepts only a nonempty list of nonblank strings.
+Commit `e48bcb8` makes list validation atomic: every member must be a nonblank
+binary before the list is deduplicated. The adversarial test is now green.
+
+All independent targeted coverage passed:
+
+- Core API/registration/DPoP suites: 267 tests, 0 failures.
+- Durable default replay, generated-host behavior, release contracts: 57 tests,
+  0 failures.
+- Re-audit of AccessToken and VerifyToken semantics after the repair:
+  `mix test test/lockspire/access_token_test.exs test/lockspire/plug/verify_token_test.exs`
+  — 84 tests, 0 failures.
+
+Validation is now `validated`, `wave_0_complete: true`, and
+`nyquist_compliant: true`. The adversarial test remains as regression coverage.
