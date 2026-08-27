@@ -1,8 +1,8 @@
 defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
   @moduletag :phase133
+  @moduletag :clean_room_e2e
 
   @runner Path.expand("../../scripts/acceptance/clean_room_saas_journey.py", __DIR__)
 
