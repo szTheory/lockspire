@@ -56,6 +56,7 @@ case "$mode" in
     ;;
   --integration)
     run_partition integration "MIX_ENV=test mix test.integration"
+    run_partition clean_room "MIX_ENV=test mix test.clean-room.e2e"
     ;;
 esac
 

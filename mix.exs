@@ -79,6 +79,9 @@ defmodule Lockspire.MixProject do
       "test.fast": ["test.setup", "test"],
       "test.coverage": ["test.setup", "test --cover"],
       "test.integration": ["test.setup", "test --only integration"],
+      "test.clean-room.e2e": [
+        "cmd python3 scripts/acceptance/clean_room_saas_journey.py --only happy_path --only boundary --only lifecycle --only negative --only dpop"
+      ],
       "test.phase6.e2e": [
         "test.setup",
         "test --include integration test/integration/phase6_onboarding_e2e_test.exs"
@@ -137,6 +140,7 @@ defmodule Lockspire.MixProject do
       "test.fast": :test,
       "test.coverage": :test,
       "test.integration": :test,
+      "test.clean-room.e2e": :test,
       "test.phase6.e2e": :test,
       "test.phase3.e2e": :test,
       "test.phase100.e2e": :test,

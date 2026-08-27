@@ -285,6 +285,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-integration-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
 
+      - name: Restore clean-room child dependency cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            tmp/clean-room-cache/provider/deps
+            tmp/clean-room-cache/client/deps
+          key: ${{ runner.os }}-clean-room-deps-v1-provider-client-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock', 'test/clean_room/confidential_client/mix.lock') }}
+
       - name: Install dependencies
         run: mix deps.get --check-locked
 
@@ -298,7 +306,7 @@ jobs:
           exit 1
 
       - name: Run integration suite including onboarding and OIDC E2E proof
-        run: bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json
+        run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json
 
       - name: Upload integration test timing
         if: always()
