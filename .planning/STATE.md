@@ -5,15 +5,15 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 135
 current_phase_name: Cohesive Internals
 status: planning
-stopped_at: Completed 135-05-PLAN.md
-last_updated: "2026-08-27T19:50:00.000Z"
+stopped_at: Completed 135-09-PLAN.md; awaiting phase audits
+last_updated: "2026-08-27T20:12:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: Completed Phase 135 storage aggregate split and pure Repository facade
+last_activity_desc: Completed all Phase 135 plans and full repository gate
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 39
-  completed_plans: 36
+  completed_plans: 37
   percent: 43
 ---
 
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md
 ## Current Position
 
 Phase: 135 — Cohesive Internals
-Plan: Wave 5 complete
-Status: Executing
-Last activity: 2026-08-27 — Completed storage aggregate ownership and pure Repository facade
+Plan: 9/9 executed
+Status: Verifying
+Last activity: 2026-08-27 — Completed cohesive internals implementation and full repository gate
 
-Progress: [█████████░] 92%
+Progress: [██████████] 95%
 
 ## Accumulated Context
 
