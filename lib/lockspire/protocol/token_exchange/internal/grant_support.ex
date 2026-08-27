@@ -143,7 +143,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     case GrantPolling.fetch_device(params, client, dependencies) do
       {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization,
        %Client{} = audit_client} ->
-        maybe_append_failure_audit(error, audit_client, device_authorization, request)
+        maybe_append_failure_audit(
+          error,
+          audit_client,
+          device_authorization,
+          Dependencies.fetch!(request)
+        )
+
         {:error, error}
 
       other ->
@@ -164,7 +170,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     case GrantPolling.fetch_ciba(params, client, dependencies) do
       {:error, %Error{} = error, %CibaAuthorization{} = ciba_authorization,
        %Client{} = audit_client} ->
-        maybe_append_failure_audit(error, audit_client, ciba_authorization, request)
+        maybe_append_failure_audit(
+          error,
+          audit_client,
+          ciba_authorization,
+          Dependencies.fetch!(request)
+        )
+
         {:error, error}
 
       other ->
@@ -662,11 +674,23 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              issuance_context,
              request
            ) do
-      emit_success(client, device_authorization, success, request)
+      GrantObservability.emit_poll_success(
+        client,
+        device_authorization,
+        success,
+        Dependencies.fetch!(request)
+      )
+
       {:ok, success}
     else
       {:error, %Error{} = error} ->
-        maybe_append_failure_audit(error, client, device_authorization, request)
+        maybe_append_failure_audit(
+          error,
+          client,
+          device_authorization,
+          Dependencies.fetch!(request)
+        )
+
         {:error, error}
     end
   end
@@ -699,11 +723,23 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
              issuance_context,
              request
            ) do
-      emit_success(client, ciba_authorization, success, request)
+      GrantObservability.emit_poll_success(
+        client,
+        ciba_authorization,
+        success,
+        Dependencies.fetch!(request)
+      )
+
       {:ok, success}
     else
       {:error, %Error{} = error} ->
-        maybe_append_failure_audit(error, client, ciba_authorization, request)
+        maybe_append_failure_audit(
+          error,
+          client,
+          ciba_authorization,
+          Dependencies.fetch!(request)
+        )
+
         {:error, error}
     end
   end
@@ -807,58 +843,25 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          issuance_context,
          request
        ) do
-    refresh_token =
-      if formatted_refresh_token do
-        %Token{
-          token_hash: formatted_refresh_token.token_hash,
-          token_type: :refresh_token,
-          family_id: formatted_refresh_token.token_hash,
-          generation: 0,
-          client_id: ciba_grant.client_id,
-          account_id: ciba_grant.account_id,
-          interaction_id: ciba_grant.interaction_id,
-          scopes: ciba_grant.scopes,
-          audience: ciba_grant.audience,
-          cnf: issuance_context.cnf,
-          issued_at: issued_at,
-          expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
-        }
-      else
-        nil
-      end
+    dependencies = Dependencies.fetch!(request)
 
-    audit_event =
-      ciba_redemption_audit_event(client_actor(ciba_grant.client_id), ciba_authorization)
-
-    transact_with_audit_event(token_store(request), audit_event, fn ->
-      with {:ok, %CibaAuthorization{}} <-
-             ciba_authorization_store(request).transition_ciba_authorization(
-               ciba_authorization.auth_req_id_hash,
-               [:approved],
-               %{status: :consumed, consumed_at: issued_at}
-             ),
-           {:ok, %Token{} = persisted_access_token} <-
-             token_store(request).store_token(access_token),
-           {:ok, persisted_refresh_token} <-
-             maybe_store_token(token_store(request), refresh_token) do
-        %{
-          access_token: persisted_access_token,
-          refresh_token: persisted_refresh_token,
-          refresh_token_raw: if(formatted_refresh_token, do: formatted_refresh_token.token)
-        }
-      else
-        {:error, reason} -> {:error, reason}
-      end
-    end)
-    |> case do
-      {:ok, %{} = result} -> {:ok, result}
-      {:error, _reason} = error -> error
-      %{} = result -> {:ok, result}
-    end
+    GrantPersistence.redeem_ciba_authorization(
+      %{
+        authorization: ciba_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: ciba_grant,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: ciba_grant.client_id},
+            ciba_authorization
+          )
+      },
+      dependencies
+    )
   end
-
-  defp maybe_store_token(_store, nil), do: {:ok, nil}
-  defp maybe_store_token(store, token), do: store.store_token(token)
 
   defp build_device_grant(%DeviceAuthorizationState{} = device_authorization) do
     if is_binary(device_authorization.subject_id) do
@@ -1095,86 +1098,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     end
   end
 
-  defp emit_success(
-         %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization,
-         %Success{refresh_token: refresh_token},
-         request
-       )
-       when is_binary(refresh_token) do
-    emit_device_authorization_success(client, device_authorization, request)
-
-    emitter(request).emit(:refresh_token, :issued, %{}, %{
-      client_id: client.client_id,
-      subject_id: device_authorization.subject_id
-    })
-  end
-
-  defp emit_success(
-         %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization,
-         %Success{},
-         request
-       ) do
-    emit_device_authorization_success(client, device_authorization, request)
-  end
-
-  defp emit_success(
-         %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization,
-         %Success{refresh_token: refresh_token},
-         request
-       )
-       when is_binary(refresh_token) do
-    emit_ciba_authorization_success(client, ciba_authorization, request)
-
-    emitter(request).emit(:refresh_token, :issued, %{}, %{
-      client_id: client.client_id,
-      subject_id: ciba_authorization.subject_id
-    })
-  end
-
-  defp emit_success(
-         %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization,
-         %Success{},
-         request
-       ) do
-    emit_ciba_authorization_success(client, ciba_authorization, request)
-  end
-
-  defp emit_ciba_authorization_success(
-         %Client{} = client,
-         %CibaAuthorization{} = ciba_authorization,
-         request
-       ) do
-    metadata = %{
-      client_id: client.client_id,
-      subject_id: ciba_authorization.subject_id,
-      ciba_authorization_id: ciba_authorization.id,
-      reason_code: :ciba_authorization_redeemed,
-      token_type: :access_token
-    }
-
-    emitter(request).emit(:token, :issued, %{}, metadata)
-  end
-
-  defp emit_device_authorization_success(
-         %Client{} = client,
-         %DeviceAuthorizationState{} = device_authorization,
-         request
-       ) do
-    metadata = %{
-      client_id: client.client_id,
-      subject_id: device_authorization.subject_id,
-      device_authorization_id: device_authorization.id,
-      reason_code: :device_authorization_redeemed,
-      token_type: :access_token
-    }
-
-    emitter(request).emit(:token, :issued, %{}, metadata)
-  end
-
   @doc false
   def emit_failure(%Error{} = error, params, request, %Dependencies{} = dependencies),
     do: request |> Dependencies.attach(dependencies) |> then(&emit_failure(error, params, &1))
@@ -1318,31 +1241,25 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          %Token{} = access_token,
          %Token{} = device_grant,
          nil,
-         _issuance_context,
+         issuance_context,
          request
        ) do
-    audit_event =
-      device_redemption_audit_event(client_actor(device_grant.client_id), device_authorization)
-
-    transact_with_audit_event(token_store(request), audit_event, fn ->
-      with {:ok, %DeviceAuthorizationState{}} <-
-             device_authorization_store(request).consume_device_authorization(
-               device_authorization.verification_handle,
-               device_grant.client_id,
-               issued_at
-             ),
-           {:ok, %Token{} = persisted_access_token} <-
-             token_store(request).store_token(access_token) do
-        %{access_token: persisted_access_token}
-      else
-        {:error, reason} -> {:error, reason}
-      end
-    end)
-    |> case do
-      {:ok, %{} = result} -> {:ok, result}
-      {:error, _reason} = error -> error
-      %{} = result -> {:ok, result}
-    end
+    GrantPersistence.redeem_device_authorization(
+      %{
+        authorization: device_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: device_grant,
+        formatted_refresh_token: nil,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: device_grant.client_id},
+            device_authorization
+          )
+      },
+      Dependencies.fetch!(request)
+    )
   end
 
   defp persist_device_authorization_grant(
@@ -1354,49 +1271,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          issuance_context,
          request
        ) do
-    refresh_token = %Token{
-      token_hash: formatted_refresh_token.token_hash,
-      token_type: :refresh_token,
-      family_id: formatted_refresh_token.token_hash,
-      generation: 0,
-      client_id: device_grant.client_id,
-      account_id: device_grant.account_id,
-      interaction_id: device_grant.interaction_id,
-      scopes: device_grant.scopes,
-      audience: device_grant.audience,
-      cnf: issuance_context.cnf,
-      issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
-    }
-
-    audit_event =
-      device_redemption_audit_event(client_actor(device_grant.client_id), device_authorization)
-
-    transact_with_audit_event(token_store(request), audit_event, fn ->
-      with {:ok, %DeviceAuthorizationState{}} <-
-             device_authorization_store(request).consume_device_authorization(
-               device_authorization.verification_handle,
-               device_grant.client_id,
-               issued_at
-             ),
-           {:ok, %Token{} = persisted_access_token} <-
-             token_store(request).store_token(access_token),
-           {:ok, %Token{} = persisted_refresh_token} <-
-             token_store(request).store_token(refresh_token) do
-        %{
-          access_token: persisted_access_token,
-          refresh_token: persisted_refresh_token,
-          refresh_token_raw: formatted_refresh_token.token
-        }
-      else
-        {:error, reason} -> {:error, reason}
-      end
-    end)
-    |> case do
-      {:ok, %{} = result} -> {:ok, result}
-      {:error, _reason} = error -> error
-      %{} = result -> {:ok, result}
-    end
+    GrantPersistence.redeem_device_authorization(
+      %{
+        authorization: device_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: device_grant,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: device_grant.client_id},
+            device_authorization
+          )
+      },
+      Dependencies.fetch!(request)
+    )
   end
 
   defp persist_authorization_code_grant(
@@ -1428,20 +1318,19 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     )
   end
 
-  defp transact_with_audit_event(store, audit_event, fun) when is_function(fun, 0),
-    do: store.transact_with_audit(audit_event, fun)
-
-  defp append_audit_event(store, audit_event), do: store.append_audit_event(audit_event)
-
   defp maybe_append_failure_audit(
          %Error{reason_code: reason_code},
          %Client{} = client,
          %DeviceAuthorizationState{} = device_authorization,
-         request
+         %Dependencies{} = dependencies
        )
        when reason_code in [:device_authorization_client_mismatch, :device_authorization_consumed] do
-    device_replay_audit_event(client_actor(client.client_id), device_authorization, reason_code)
-    |> then(&append_audit_event(token_store(request), &1))
+    GrantObservability.poll_failure_audit_event(
+      %Error{reason_code: reason_code},
+      client,
+      device_authorization
+    )
+    |> GrantPersistence.append_poll_failure_audit(dependencies)
 
     :ok
   end
@@ -1450,11 +1339,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          %Error{reason_code: reason_code},
          %Client{} = client,
          %CibaAuthorization{} = ciba_authorization,
-         request
+         %Dependencies{} = dependencies
        )
        when reason_code in [:ciba_authorization_client_mismatch, :ciba_authorization_consumed] do
-    ciba_replay_audit_event(client_actor(client.client_id), ciba_authorization, reason_code)
-    |> then(&append_audit_event(token_store(request), &1))
+    GrantObservability.poll_failure_audit_event(
+      %Error{reason_code: reason_code},
+      client,
+      ciba_authorization
+    )
+    |> GrantPersistence.append_poll_failure_audit(dependencies)
 
     :ok
   end
@@ -1478,106 +1371,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
            :authorization_code_lookup_failed
          )}
     end
-  end
-
-  defp device_redemption_audit_event(actor, %DeviceAuthorizationState{} = device_authorization) do
-    device_audit_event(
-      :device_authorization_redeemed,
-      :succeeded,
-      :device_authorization_redeemed,
-      actor,
-      device_authorization
-    )
-  end
-
-  defp device_replay_audit_event(
-         actor,
-         %DeviceAuthorizationState{} = device_authorization,
-         reason_code
-       ) do
-    device_audit_event(
-      :device_authorization_replay_detected,
-      :denied,
-      reason_code,
-      actor,
-      device_authorization
-    )
-  end
-
-  defp ciba_redemption_audit_event(actor, %CibaAuthorization{} = ciba_authorization) do
-    ciba_audit_event(
-      :ciba_authorization_redeemed,
-      :succeeded,
-      :ciba_authorization_redeemed,
-      actor,
-      ciba_authorization
-    )
-  end
-
-  defp ciba_replay_audit_event(
-         actor,
-         %CibaAuthorization{} = ciba_authorization,
-         reason_code
-       ) do
-    ciba_audit_event(
-      :ciba_authorization_replay_detected,
-      :denied,
-      reason_code,
-      actor,
-      ciba_authorization
-    )
-  end
-
-  defp device_audit_event(
-         action,
-         outcome,
-         reason_code,
-         actor,
-         %DeviceAuthorizationState{} = device_authorization
-       ) do
-    %{
-      action: action,
-      outcome: outcome,
-      reason_code: reason_code,
-      actor: actor,
-      resource: %{
-        type: :device_authorization,
-        id: to_string(device_authorization.id || device_authorization.verification_handle)
-      },
-      metadata: %{
-        client_id: device_authorization.client_id,
-        subject_id: device_authorization.subject_id,
-        verification_handle: device_authorization.verification_handle
-      }
-    }
-  end
-
-  defp ciba_audit_event(
-         action,
-         outcome,
-         reason_code,
-         actor,
-         %CibaAuthorization{} = ciba_authorization
-       ) do
-    %{
-      action: action,
-      outcome: outcome,
-      reason_code: reason_code,
-      actor: actor,
-      resource: %{
-        type: :ciba_authorization,
-        id: to_string(ciba_authorization.id || ciba_authorization.auth_req_id_hash)
-      },
-      metadata: %{
-        client_id: ciba_authorization.client_id,
-        subject_id: ciba_authorization.subject_id,
-        auth_req_id_hash: ciba_authorization.auth_req_id_hash
-      }
-    }
-  end
-
-  defp client_actor(client_id) when is_binary(client_id) do
-    %{type: :client, id: client_id, display: client_id}
   end
 
   defp token_format_options(request, token_type) do

@@ -1,6 +1,8 @@
 defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   @moduledoc false
 
+  alias Lockspire.Domain.CibaAuthorization
+  alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenResult.Error
@@ -68,6 +70,69 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     end)
   end
 
+  @doc false
+  def redeem_device_authorization(intent, %Dependencies{} = dependencies) do
+    redeem_poll_authorization(intent, dependencies, :device)
+  end
+
+  @doc false
+  def redeem_ciba_authorization(intent, %Dependencies{} = dependencies) do
+    redeem_poll_authorization(intent, dependencies, :ciba)
+  end
+
+  @doc false
+  def append_poll_failure_audit(event, %Dependencies{} = dependencies) when is_map(event) do
+    _ = dependencies.audit_store.append_audit_event(event)
+    :ok
+  end
+
+  defp redeem_poll_authorization(
+         %{access_token: %Token{} = access_token, audit_event: audit_event} = intent,
+         %Dependencies{} = dependencies,
+         kind
+       ) do
+    transact_with_audit(dependencies, fn ->
+      with {:ok, _authorization} <- consume_poll_authorization(intent, dependencies, kind),
+           {:ok, %Token{} = persisted_access_token} <-
+             dependencies.token_store.store_token(access_token),
+           {:ok, persisted_refresh_token} <-
+             maybe_store_token(dependencies.token_store, build_poll_refresh_token(intent)) do
+        {:ok,
+         %{
+           access_token: persisted_access_token,
+           refresh_token: persisted_refresh_token,
+           refresh_token_raw: refresh_token_raw(intent)
+         }, [audit_event]}
+      else
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
+  defp consume_poll_authorization(
+         %{authorization: %DeviceAuthorization{} = authorization, issued_at: issued_at},
+         %Dependencies{} = dependencies,
+         :device
+       ) do
+    dependencies.device_authorization_store.consume_device_authorization(
+      authorization.verification_handle,
+      authorization.client_id,
+      issued_at
+    )
+  end
+
+  defp consume_poll_authorization(
+         %{authorization: %CibaAuthorization{} = authorization, issued_at: issued_at},
+         %Dependencies{} = dependencies,
+         :ciba
+       ) do
+    dependencies.ciba_authorization_store.transition_ciba_authorization(
+      authorization.auth_req_id_hash,
+      [:approved],
+      %{status: :consumed, consumed_at: issued_at}
+    )
+  end
+
   defp append_audit_events({:error, reason}, _audit_store), do: {:error, reason}
 
   defp append_audit_events({tag, value, events}, audit_store) when tag in [:ok, :durable_error] do
@@ -108,6 +173,30 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       sid: authorization_code.sid,
       scopes: authorization_code.scopes,
       audience: authorization_code.audience,
+      cnf: issuance_context.cnf,
+      issued_at: issued_at,
+      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
+    }
+  end
+
+  defp build_poll_refresh_token(%{formatted_refresh_token: nil}), do: nil
+
+  defp build_poll_refresh_token(%{
+         formatted_refresh_token: formatted_refresh_token,
+         grant: %Token{} = grant,
+         issued_at: issued_at,
+         issuance_context: issuance_context
+       }) do
+    %Token{
+      token_hash: formatted_refresh_token.token_hash,
+      token_type: :refresh_token,
+      family_id: formatted_refresh_token.token_hash,
+      generation: 0,
+      client_id: grant.client_id,
+      account_id: grant.account_id,
+      interaction_id: grant.interaction_id,
+      scopes: grant.scopes,
+      audience: grant.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
       expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
