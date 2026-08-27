@@ -11,7 +11,7 @@
 - [x] **Phase 133: Clean-Room SaaS Journey** — Prove the complete provider, external client, and protected-resource flow over HTTP. (completed 2026-08-27)
 - [x] **Phase 134: Architecture Topology** — Enforce a one-directional, cycle-free dependency graph with neutral shared services. (completed 2026-08-27)
 - [x] **Phase 135: Cohesive Internals** — Split storage and grant orchestration into maintainable collaborators without behavioral drift. (completed 2026-08-27)
-- [ ] **Phase 136: Static Analysis and Sustainable Proof** — Make implementation and tests easier to read while retaining meaningful quality evidence.
+- [x] **Phase 136: Static Analysis and Sustainable Proof** — Make implementation and tests easier to read while retaining meaningful quality evidence. (completed 2026-08-27)
 - [ ] **Phase 137: CI, Conformance, and Release Proof** — Make security, coverage, conformance, and artifact verification reproducible release evidence.
 
 ## Phase Details
@@ -151,17 +151,17 @@ Plans:
 
 Plans:
 
-- [ ] 136-01-PLAN.md — Characterize source, proof, Dialyzer, and runtime-noise debt exactly.
-- [ ] 136-02-PLAN.md — Make DPoP fully Credo-visible without security-behavior drift.
-- [ ] 136-03-PLAN.md — Make JAR/request objects and all local directives fully legible.
-- [ ] 136-04-PLAN.md — Extract explicit admin CSS and route capability helpers.
-- [ ] 136-05-PLAN.md — Finish admin proof extraction and remove macro/count archaeology.
-- [ ] 136-06-PLAN.md — Replace release macro/count proof with current capability helpers.
-- [ ] 136-07-PLAN.md — Repair lifecycle and storage Dialyzer contracts.
-- [ ] 136-08-PLAN.md — Repair token-grant Dialyzer contracts and remove dead paths.
-- [ ] 136-09-PLAN.md — Resolve leaf caller/tooling warnings and prove zero-warning Dialyzer.
-- [ ] 136-10-PLAN.md — Make successful test runtime quiet while preserving negative evidence.
-- [ ] 136-11-PLAN.md — Ratchet permanent fitness and run the complete converged gate.
+- [x] 136-01-PLAN.md — Characterize source, proof, Dialyzer, and runtime-noise debt exactly.
+- [x] 136-02-PLAN.md — Make DPoP fully Credo-visible without security-behavior drift.
+- [x] 136-03-PLAN.md — Make JAR/request objects and all local directives fully legible.
+- [x] 136-04-PLAN.md — Extract explicit admin CSS and route capability helpers.
+- [x] 136-05-PLAN.md — Finish admin proof extraction and remove macro/count archaeology.
+- [x] 136-06-PLAN.md — Replace release macro/count proof with current capability helpers.
+- [x] 136-07-PLAN.md — Repair lifecycle and storage Dialyzer contracts.
+- [x] 136-08-PLAN.md — Repair token-grant Dialyzer contracts and remove dead paths.
+- [x] 136-09-PLAN.md — Resolve leaf caller/tooling warnings and prove zero-warning Dialyzer.
+- [x] 136-10-PLAN.md — Make successful test runtime quiet while preserving negative evidence.
+- [x] 136-11-PLAN.md — Ratchet permanent fitness and run the complete converged gate.
 
 ### Phase 137: CI, Conformance, and Release Proof
 
@@ -200,5 +200,5 @@ Plans:
 | 133. Clean-Room SaaS Journey | 6/6 | Complete    | 2026-08-27 |
 | 134. Architecture Topology | 11/11 | Complete    | 2026-08-27 |
 | 135. Cohesive Internals | 9/9 | Complete    | 2026-08-27 |
-| 136. Static Analysis and Sustainable Proof | 0/TBD | Not started | - |
+| 136. Static Analysis and Sustainable Proof | 11/11 | Complete    | 2026-08-27 |
 | 137. CI, Conformance, and Release Proof | 0/TBD | Not started | - |

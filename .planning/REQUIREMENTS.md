@@ -47,10 +47,10 @@
 
 ### Static Analysis and Sustainable Proof
 
-- [ ] **QUAL-01**: Credo evaluates every library source file without file-wide suppression; any local suppression is named, narrow, and justified.
-- [ ] **QUAL-02**: Admin and release proof uses small capability-oriented helpers and behavioral assertions instead of giant injected test macros, assertion-count contracts, or obsolete phase archaeology.
-- [ ] **QUAL-03**: Happy-path test runs emit no KeyCache startup errors, routine Ecto query flood, or local telemetry-handler warnings while failure and redaction log assertions remain effective.
-- [ ] **QUAL-04**: Compilation, strict Credo, zero-warning Dialyzer, ExDoc, package build, and focused integration proof remain green through all structural changes.
+- [x] **QUAL-01**: Credo evaluates every library source file without file-wide suppression; any local suppression is named, narrow, and justified.
+- [x] **QUAL-02**: Admin and release proof uses small capability-oriented helpers and behavioral assertions instead of giant injected test macros, assertion-count contracts, or obsolete phase archaeology.
+- [x] **QUAL-03**: Happy-path test runs emit no KeyCache startup errors, routine Ecto query flood, or local telemetry-handler warnings while failure and redaction log assertions remain effective.
+- [x] **QUAL-04**: Compilation, strict Credo, zero-warning Dialyzer, ExDoc, package build, and focused integration proof remain green through all structural changes.
 
 ### CI, Conformance, and Release Proof
 
@@ -112,10 +112,10 @@ Roadmap phase mapping is populated during milestone roadmapping.
 | COH-03 | 135 | Complete |
 | COH-04 | 135 | Complete |
 | COH-05 | 135 | Complete |
-| QUAL-01 | 136 | Pending |
-| QUAL-02 | 136 | Pending |
-| QUAL-03 | 136 | Pending |
-| QUAL-04 | 136 | Pending |
+| QUAL-01 | 136 | Complete |
+| QUAL-02 | 136 | Complete |
+| QUAL-03 | 136 | Complete |
+| QUAL-04 | 136 | Complete |
 | CI-01 | 137 | Pending |
 | CI-02 | 137 | Pending |
 | CI-03 | 137 | Pending |
