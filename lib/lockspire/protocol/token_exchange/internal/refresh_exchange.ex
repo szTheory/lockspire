@@ -5,9 +5,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
-  alias Lockspire.Observability
   alias Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenLifetime
@@ -23,7 +24,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
 
     with {:ok, refresh_token_hash} <- fetch_refresh_token_hash(params),
          {:ok, result} <- rotate_refresh_token(client, refresh_token_hash, request) do
-      emit_success(client, result.presented_refresh_token, result.refresh_token)
+      GrantObservability.emit_refresh_success(
+        client,
+        result.presented_refresh_token,
+        result.refresh_token,
+        dependencies
+      )
 
       {:ok,
        %Success{
@@ -36,7 +42,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
        }}
     else
       {:error, %Error{} = error} ->
-        emit_failure(client, error)
+        GrantObservability.emit_refresh_failure(client, error, dependencies)
         {:error, error}
     end
   end
@@ -123,7 +129,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
           presented_refresh_token
         )
 
-      case transact_with_audit_outcome(token_store(request), fn ->
+      case transact_with_audit_outcome(request, fn ->
              handle_refresh_rotation(
                token_store(request),
                client,
@@ -199,38 +205,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     end
   end
 
-  defp emit_success(
-         %Client{} = client,
-         %Token{} = presented_refresh_token,
-         %Token{} = refresh_token
-       ) do
-    metadata = %{
-      client_id: client.client_id,
-      subject_id: refresh_token.account_id,
-      family_id: refresh_token.family_id,
-      refresh_token_id: refresh_token.id,
-      previous_refresh_token_id: presented_refresh_token.id
-    }
-
-    Observability.emit(:token, :issued, %{}, metadata)
-    Observability.emit(:refresh_token, :issued, %{}, metadata)
-  end
-
-  defp emit_failure(%Client{} = client, %Error{} = error) do
-    metadata = %{
-      client_id: client.client_id,
-      reason_code: error.reason_code,
-      error: error.error,
-      grant_type: "refresh_token"
-    }
-
-    if error.reason_code == :refresh_token_reuse_detected do
-      Observability.emit(:refresh_token, :reuse_detected, %{}, metadata)
-    end
-
-    Observability.emit(:token_exchange, :failed, %{}, metadata)
-  end
-
   defp invalid_grant(description, reason_code) do
     oauth_error(400, "invalid_grant", description, reason_code)
   end
@@ -264,35 +238,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   @spec now(map()) :: DateTime.t()
   defp now(request), do: Dependencies.fetch!(request).now.()
 
-  defp transact_with_audit_outcome(store, fun) when is_function(fun, 0) do
-    store.transact(fn ->
-      fun.()
-      |> maybe_append_audit_events(store)
-    end)
-    |> case do
-      {:ok, {:durable_error, %Error{} = error}} ->
-        {:error, error}
-
-      {:ok, result} ->
-        {:ok, result}
-
-      {:error, %Error{} = error} ->
-        {:error, error}
-
+  defp transact_with_audit_outcome(request, fun) when is_map(request) and is_function(fun, 0) do
+    case GrantPersistence.transact_with_audit(Dependencies.fetch!(request), fun) do
       {:error, reason} when is_atom(reason) ->
         {:error, oauth_error(500, "server_error", "Unable to rotate refresh token", reason)}
 
-      {:error, other} ->
-        {:error, other}
-    end
-  end
-
-  defp append_audit_events(_store, []), do: :ok
-
-  defp append_audit_events(store, [event | rest]) do
-    case store.append_audit_event(event) do
-      {:ok, _event} -> append_audit_events(store, rest)
-      {:error, reason} -> {:error, reason}
+      result ->
+        result
     end
   end
 
@@ -403,16 +355,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
         "Unable to rotate refresh token",
         :refresh_rotation_failed
       )
-
-  defp maybe_append_audit_events({:error, reason}, _store), do: {:error, reason}
-
-  defp maybe_append_audit_events({tag, error, audit_events}, store)
-       when tag in [:ok, :durable_error] do
-    case append_audit_events(store, audit_events) do
-      :ok -> {tag, error}
-      {:error, reason} -> {:error, reason}
-    end
-  end
 
   defp refresh_rotation_audit_event(%Client{} = client, %Token{} = presented, %Token{} = rotated) do
     %{
