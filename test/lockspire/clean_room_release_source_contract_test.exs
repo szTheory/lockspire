@@ -42,7 +42,9 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
                  "1.2.3",
                  "--only",
                  "happy_path"
-               ], stderr_to_stdout: true)
+               ],
+               stderr_to_stdout: true
+             )
 
     assert message =~ "not allowed with argument"
 
