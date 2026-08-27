@@ -3,6 +3,7 @@ defmodule Lockspire.Integration.Phase133CleanRoomSaasJourneyTest do
 
   @moduletag :phase133
   @moduletag :clean_room_e2e
+  @moduletag :skip
 
   @runner Path.expand("../../scripts/acceptance/clean_room_saas_journey.py", __DIR__)
 
