@@ -16,6 +16,8 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Sequence
 
+from redaction import Redactor, SentinelSet
+
 
 READINESS_SECONDS = 12.0
 ROLES = ("provider", "client")
@@ -53,6 +55,7 @@ class ProviderClientSupervisor:
         self.readiness_seconds = readiness_seconds
         self.children: list[Child] = []
         self.ports: dict[str, int] = {}
+        self.redactor = Redactor(SentinelSet.for_run())
 
     def prepare(self) -> None:
         if not self.run_root.is_dir():
@@ -170,7 +173,7 @@ def main(argv: Sequence[str]) -> int:
         supervisor.wait_until_ready("client")
         return 0
     except RuntimeError as error:
-        print(str(error), file=sys.stderr)
+        print(supervisor.redactor.text(error), file=sys.stderr)
         return 1
     finally:
         supervisor.stop_all()
