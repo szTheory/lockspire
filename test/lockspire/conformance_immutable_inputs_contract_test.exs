@@ -37,4 +37,11 @@ defmodule Lockspire.ConformanceImmutableInputsContractTest do
     refute prepare =~ "latest"
     refute prepare =~ "fallback"
   end
+
+  test "normalized suite can reach the throwaway host through Docker's explicit host gateway" do
+    validator = File.read!(@validator)
+
+    assert validator =~ "host.docker.internal:host-gateway"
+    assert validator =~ "extra_hosts"
+  end
 end

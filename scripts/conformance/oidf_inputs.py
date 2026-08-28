@@ -127,6 +127,15 @@ def normalize_compose(lock, source, destination):
         locked = f"{lock['images'][name]['repository']}@{lock['images'][name]['digest']}"
         content = content.replace(f"image: {upstream}", f"image: {locked}")
 
+    server_image = f"  server:\n    image: {lock['images']['server']['repository']}@{lock['images']['server']['digest']}"
+    if content.count(server_image) != 1:
+        fail("unexpected server service")
+    content = content.replace(
+        server_image,
+        server_image
+        + '\n    extra_hosts:\n     - "host.docker.internal:host-gateway"',
+    )
+
     if "latest" in content or "master" in content or "${IMAGE_TAG" in content:
         fail("mutable reference")
     destination_path.parent.mkdir(parents=True, exist_ok=True)

@@ -67,7 +67,7 @@ Existing ExUnit, shell, Python, PostgreSQL, coverage, and workflow-lint infrastr
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Default-branch OIDC/FAPI workflow executes against configured providers and retains only receipts | CONF-02 | Requires repository secrets, GitHub-hosted Docker, and the pinned external OIDF suite | Dispatch `Supplemental OIDF Conformance` with all profile secrets configured; inspect job classification and artifact inventories. |
+| Default-branch OIDC/FAPI workflow executes against configured providers and retains only receipts | CONF-02 | Requires GitHub-hosted Docker and the pinned external OIDF suite; scheduled provider material is generated ephemerally | Dispatch `Supplemental OIDF Conformance` without provider secrets; inspect the throwaway-host jobs, classifications, and artifact inventories. |
 | Protected release realizes one checksum through Hex, HexDocs, and exact-version clean-room proof | REL-01, REL-02 | Requires protected publication credentials and immutable external registry state | Run an approved release or staging-equivalent through prepublish, protected publish, and post-publish; compare every retained checksum and artifact inventory. |
 
 These checks are external acceptance evidence. Their implementation paths have automated topology, negative, byte-capture, redaction, and command-level tests.

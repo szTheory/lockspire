@@ -11,6 +11,7 @@
 /.bg-shell/
 /doc/
 /cover/
+/.artifacts/
 /tmp/
 /.gsd/
 /priv/plts/

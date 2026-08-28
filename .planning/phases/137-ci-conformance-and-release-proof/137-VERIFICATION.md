@@ -7,8 +7,8 @@ behavior_unverified: 2
 overrides_applied: 0
 behavior_unverified_items:
   - truth: "The scheduled OIDC/FAPI workflow executes the pinned external profiles and retains only their redacted receipts."
-    test: "Dispatch `Supplemental OIDF Conformance` on the default branch with the repo-native secrets provisioned, then inspect the resulting artifacts."
-    expected: "Both profiles invoke their pinned plan runners, succeed or fail with a classified redacted receipt, and upload only `receipt.json`; no raw configuration, logs, OAuth material, or hosted URL is retained."
+    test: "Dispatch `Supplemental OIDF Conformance` on the default branch, then inspect the resulting artifacts."
+    expected: "Both secretless jobs boot throwaway Billingo hosts, mint ephemeral provider/client material, invoke their pinned plan runners, succeed or fail with a classified redacted receipt, and upload only `receipt.json`; no raw configuration, keys, logs, OAuth material, or hosted URL is retained."
     why_human: "The repository tests exercise the runner and workflow topology with doubles, but this verifier cannot invoke GitHub-hosted jobs, protected secrets, Docker images, and the external OIDF suite."
   - truth: "The protected release workflow publishes the clean-room-proven tar and repeats the journey against that exact public version."
     test: "Use a disposable release candidate through the protected `hex-publish` environment (or an approved staging-equivalent) and follow prepublish, publish, and post-publish jobs."
@@ -17,7 +17,7 @@ behavior_unverified_items:
 human_verification:
   - test: "Run the default-branch supplemental OIDC/FAPI workflow and inspect its artifacts."
     expected: "Only validated `receipt.json` artifacts are retained, with correct success/infrastructure/suite-failure classification."
-    why_human: "Requires GitHub secrets, Docker, and the pinned external suite."
+    why_human: "Requires GitHub-hosted Docker and the pinned external suite; the repo-native profiles no longer require secrets."
   - test: "Execute a protected release or approved staging rehearsal."
     expected: "The artifact/manifest/Hex checksum/public clean-room chain remains one identity end to end."
     why_human: "Requires protected publication credentials and external Hex/HexDocs state."
@@ -113,11 +113,11 @@ human_verification:
 
 ### 1. Scheduled external conformance lane
 
-**Test:** Dispatch the default-branch supplemental workflow with valid repo-native secrets.
+**Test:** Dispatch the default-branch supplemental workflow; no provider secrets are needed for the two scheduled jobs.
 
 **Expected:** Pinned OIDC and FAPI plans run after validated input preparation; only redacted receipt artifacts remain, and any failure is honestly classified.
 
-**Why human:** Requires GitHub Actions, secrets, Docker, and the external suite.
+**Why human:** Requires GitHub Actions, Docker, and the external suite. Only the optional hosted-maintainer comparison requires a provider secret.
 
 ### 2. Protected exact-artifact release lane
 

@@ -52,6 +52,7 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      LOCKSPIRE_OIDF_EPHEMERAL_DB: "true"
 
     steps:
       - name: Check out repository
@@ -83,10 +84,8 @@ jobs:
           mix test.setup
           mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs
 
-      - name: Run immutable supplemental Phase 37 profile
-        run: bash scripts/conformance/run_phase37_suite.sh
-        env:
-          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_PHASE37_PROVIDER_CONFIG_JSON }}
+      - name: Run immutable supplemental Phase 37 profile against a throwaway host
+        run: bash scripts/conformance/run_ephemeral_oidf_profile.sh phase37
 
       - name: Upload redacted Phase 37 receipt
         if: always()
@@ -100,7 +99,7 @@ jobs:
   repo-native-fapi2:
     name: Repo-Native FAPI 2.0 Lane
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     services:
       postgres:
@@ -124,6 +123,7 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      LOCKSPIRE_OIDF_EPHEMERAL_DB: "true"
 
     steps:
       - name: Check out repository
@@ -150,10 +150,8 @@ jobs:
       - name: Check immutable conformance inputs
         run: mix lockspire.oidf_conformance --check
 
-      - name: Run immutable supplemental FAPI 2.0 profile
-        run: bash scripts/conformance/run_fapi2_suite.sh
-        env:
-          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_FAPI2_PROVIDER_CONFIG_JSON }}
+      - name: Run immutable supplemental FAPI 2.0 profile against a throwaway host
+        run: bash scripts/conformance/run_ephemeral_oidf_profile.sh fapi2
 
       - name: Upload redacted FAPI 2.0 receipt
         if: always()

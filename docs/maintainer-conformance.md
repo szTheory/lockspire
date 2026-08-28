@@ -42,14 +42,33 @@ bash scripts/conformance/run_phase37_suite.sh
 bash scripts/conformance/run_fapi2_suite.sh
 ```
 
-Each real profile also requires `LOCKSPIRE_OIDF_PROVIDER_CONFIG` to name a
+Those low-level commands require `LOCKSPIRE_OIDF_PROVIDER_CONFIG` to name a
 private JSON configuration file in the format accepted by the pinned OIDF
-runner. The file supplies the provider discovery URL, client material, and any
-browser automation needed by that environment; it is read in place, never
-copied into retained evidence, and must not be committed. The checked-in
-profile JSON selects the suite plan, variants, and modules. After Compose has
-reported readiness, Lockspire translates that selection into the pinned
-`scripts/run-test-plan.py` CLI and makes its exit status authoritative.
+runner. For the normal repository proof, use the throwaway wrapper instead:
+
+```bash
+LOCKSPIRE_OIDF_EPHEMERAL_DB=true \
+  bash scripts/conformance/run_ephemeral_oidf_profile.sh phase37
+LOCKSPIRE_OIDF_EPHEMERAL_DB=true \
+  bash scripts/conformance/run_ephemeral_oidf_profile.sh fapi2
+```
+
+The explicit database acknowledgement prevents the wrapper from resetting or
+seeding a normal developer database by accident. The wrapper boots the Billingo
+adoption app on a disposable database, binds it only for the duration of the
+run, generates client keys and provider JSON inside a mode-700 temporary
+directory, and deletes the directory and private host log on exit. The suite's
+server container reaches the host through Docker's explicit
+`host.docker.internal:host-gateway` mapping. No generated key or provider JSON
+is a repository or Actions secret.
+
+For a hosted provider, the private JSON file supplies the provider discovery
+URL, client material, and any browser automation needed by that environment;
+it is read in place, never copied into retained evidence, and must not be
+committed. The checked-in profile JSON selects the suite plan, variants, and
+modules. After Compose has reported readiness, Lockspire translates that
+selection into the pinned `scripts/run-test-plan.py` CLI and makes its exit
+status authoritative.
 Lockspire first uses the runner's non-network `--list` mode to catch invalid
 plan syntax, missing Python dependencies, or an incomplete verified archive as
 an `infrastructure_failure`; a later nonzero suite result is `suite_failure`.
@@ -81,27 +100,22 @@ logs, or provider configuration.
 
 `.github/workflows/oidf-conformance.yml` runs the repo-native Phase 37 proof and
 both external profiles weekly from the default branch, and remains manually
-dispatchable. A meaningful external profile cannot be manufactured as a
-standalone repo fixture without violating Lockspire's embedded-library shape:
-the host owns accounts, login UX, branding, and product policy. The scheduled
-external steps therefore require complete private provider JSON in two
-repository secrets:
-
-- `LOCKSPIRE_OIDF_PHASE37_PROVIDER_CONFIG_JSON`
-- `LOCKSPIRE_OIDF_FAPI2_PROVIDER_CONFIG_JSON`
-
-GitHub exposes each secret only to its matching runner step. Lockspire writes
-the value to a mode-600 file in the private temporary run directory, removes
-the secret from the child-process environment, and deletes the file at exit.
-The secret is never passed on a command line, copied to evidence, or included
-in a job summary. A missing secret is exposed by GitHub as an empty string; the
-runner then fails before download or Compose startup and emits an explicit
-`infrastructure_failure` receipt. Malformed JSON fails the same way.
+dispatchable. The two scheduled jobs are self-contained: each gets a fresh
+PostgreSQL service, runs the real embedded Billingo host, mints throwaway
+provider/client material, and destroys that material after the pinned suite
+returns. This preserves the embedded-library boundary because Billingo still
+owns accounts, login, consent presentation, branding, and product policy; CI
+merely provisions that host automatically.
 
 The hosted maintainer lane is manual-only. Select `run_hosted_lane` during a
 dispatch after configuring the separate optional
-`LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON` secret. The schedule remains a
-supplemental reliability history and does not block CI or publication.
+`LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON` secret. That is the only provider
+configuration secret this workflow needs. GitHub exposes it only to the hosted
+runner step; Lockspire writes it to a mode-600 file in the private temporary
+run directory, removes it from the child-process environment, and deletes it at
+exit. A missing or malformed hosted secret fails before suite startup with an
+`infrastructure_failure` receipt. The schedule remains a supplemental
+reliability history and does not block CI or publication.
 Workflow permissions are read-only, overlapping runs are canceled, jobs have
 timeouts, and only validated `receipt.json` files are retained for a bounded
 period.

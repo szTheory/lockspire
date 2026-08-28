@@ -23,7 +23,7 @@ audited: 2026-08-27
 | CI checkout → security/dependency tools | Repository-controlled scripts invoke Sobelow, Mix, and xref | Source paths and diagnostics |
 | Test partitions → coverage aggregator | Separate jobs transport native coverdata as inert artifacts | Source SHA, checksums, coverdata, bounded receipts |
 | OIDF lock → external network/containers | Pinned source, helpers, archive, and OCI images are fetched before execution | Public immutable inputs |
-| GitHub secrets → conformance runner | Provider JSON is materialized privately for one profile step | OAuth/OIDC provider configuration and client material |
+| GitHub secret → optional hosted runner | Hosted provider JSON is materialized privately for one manual profile step; scheduled jobs mint throwaway material instead | Hosted OAuth/OIDC provider configuration and client material |
 | Package archive → clean-room hosts | One verified package is unpacked and executed by separate provider/client roles | Release code and provenance |
 | Prepublish → protected publish → postpublish | SHA-bound tar and manifest cross job/environment boundaries as data | Package bytes, checksum, tool/runtime identity |
 | Protected job → Hex/HexDocs | Exact verified tar is uploaded and release-specific public state is checked | `HEX_API_KEY`, package bytes, public checksum/docs |

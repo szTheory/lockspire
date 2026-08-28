@@ -69,7 +69,7 @@ config :lockspire,
   oban_prefix: "lockspire",
   known_scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
   account_resolver: AdoptionDemo.Lockspire.AccountResolver,
-  signing_alg: "RS256",
+  signing_alg: System.get_env("LOCKSPIRE_DEMO_SIGNING_ALG", "RS256"),
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") ||
       "a3e20c7a13116f2415ef29e0714cc5901d0d0ed48390b78781625d0ef4dbfd328ed05f017f89cc3c0eb579d9fb3af16b",
