@@ -23,6 +23,7 @@ work_dir="$(mktemp -d "${TMPDIR:-/tmp}/lockspire-ephemeral-${profile}.XXXXXX")"
 provider_config="${work_dir}/provider.json"
 host_log="${work_dir}/host.log"
 host_pid=""
+demo_db_name="${LOCKSPIRE_TEST_DB_NAME:-lockspire_test}_${profile}_oidf"
 
 case "$profile" in
   phase37)
@@ -53,6 +54,11 @@ cleanup() {
     wait "$host_pid" >/dev/null 2>&1 || true
   fi
 
+  (
+    cd "$DEMO_DIR"
+    MIX_ENV=dev mix ecto.drop
+  ) >/dev/null 2>&1 || true
+
   if [[ ! -f "${artifact_dir}/receipt.json" ]]; then
     python3 "$EVIDENCE" \
       --lock "$LOCK" \
@@ -77,7 +83,7 @@ export LOCKSPIRE_DEMO_DB_HOST="${LOCKSPIRE_TEST_DB_HOST:-127.0.0.1}"
 export LOCKSPIRE_DEMO_DB_PORT="${LOCKSPIRE_TEST_DB_PORT:-5432}"
 export LOCKSPIRE_DEMO_DB_USER="${LOCKSPIRE_TEST_DB_USER:-lockspire}"
 export LOCKSPIRE_DEMO_DB_PASSWORD="${LOCKSPIRE_TEST_DB_PASSWORD:-lockspire}"
-export LOCKSPIRE_DEMO_DB_NAME="${LOCKSPIRE_TEST_DB_NAME:-lockspire_test}"
+export LOCKSPIRE_DEMO_DB_NAME="$demo_db_name"
 export LOCKSPIRE_OIDF_PROFILE="$profile"
 export LOCKSPIRE_OIDF_CONFIG_PATH="$provider_config"
 export LOCKSPIRE_OIDF_PROVIDER_CONFIG="$provider_config"

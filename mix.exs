@@ -91,9 +91,12 @@ defmodule Lockspire.MixProject do
   defp aliases do
     aliases = [
       "test.setup": ["lockspire.test.setup"],
-      "test.fast": ["test.setup", "test"],
-      "test.coverage": ["test.setup", "test --cover"],
-      "test.integration": ["test.setup", "test --only integration"],
+      "test.fast": ["test.setup", "test test/lockspire test/mix test/integration"],
+      "test.coverage": [
+        "test.setup",
+        "test --cover test/lockspire test/mix test/integration"
+      ],
+      "test.integration": ["test.setup", "test --only integration test/integration"],
       "test.clean-room.e2e": [
         "cmd python3 scripts/acceptance/clean_room_saas_journey.py --only happy_path --only boundary --only lifecycle --only negative --only dpop"
       ],

@@ -10,8 +10,16 @@ defmodule Lockspire.CiTestMatrixContractTest do
     ci = File.read!(@ci)
     runner = File.read!(@runner)
 
-    assert mix =~ ~s("test.fast": ["test.setup", "test"])
-    assert mix =~ ~s("test.integration": ["test.setup", "test --only integration"])
+    assert mix =~
+             ~s("test.fast": ["test.setup", "test test/lockspire test/mix test/integration"])
+
+    assert mix =~
+             ~s("test --cover test/lockspire test/mix test/integration")
+
+    assert mix =~
+             ~s("test.integration": ["test.setup", "test --only integration test/integration"])
+
+    refute mix =~ ~s("test.fast": ["test.setup", "test"])
     assert mix =~ ~s("test.phase3": [)
     refute ci =~ "Run Phase 3 protocol gate"
     assert ci =~ "scripts/ci/run_test_matrix.sh --fast"

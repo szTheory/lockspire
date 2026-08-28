@@ -98,6 +98,8 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     assert runner =~ "LOCKSPIRE_DEMO_BIND_IP=0.0.0.0"
     assert runner =~ "LOCKSPIRE_DEMO_BASE_URL=http://host.docker.internal:4100"
     assert runner =~ "ephemeral conformance output must not already exist"
+    assert runner =~ ~s(demo_db_name="${LOCKSPIRE_TEST_DB_NAME:-lockspire_test}_${profile}_oidf")
+    assert runner =~ "MIX_ENV=dev mix ecto.drop"
     assert runner =~ "exec env MIX_ENV=dev mix phx.server"
     assert runner =~ "rm -rf \"$work_dir\""
     refute runner =~ "cat \"$host_log\""

@@ -17,7 +17,7 @@ defmodule Lockspire.CoverageBaselineContractTest do
              [summary: [threshold: expected_threshold], output: expected_output]
 
     assert mixfile =~ "73.11%"
-    assert mixfile =~ "\"test.coverage\": [\"test.setup\", \"test --cover\"]"
+    assert mixfile =~ "test --cover test/lockspire test/mix test/integration"
     assert mixfile =~ "LOCKSPIRE_COMPLETE_COVERAGE"
     assert mixfile =~ "do: 84, else: 73"
 

@@ -17,6 +17,7 @@ Usage:
   node scripts/ci_monitor.cjs watch <run-id> [--interval <seconds>]
   node scripts/ci_monitor.cjs fail-fast <run-id> [--interval <seconds>]
   node scripts/ci_monitor.cjs log-failed <run-id> [--lines <count>]
+  node scripts/ci_monitor.cjs job-log <run-id> <job-name> [--lines <count>]
   node scripts/ci_monitor.cjs test-summary <run-id>
   node scripts/ci_monitor.cjs grep <run-id> --pattern <regex> [--context <lines>]
   node scripts/ci_monitor.cjs wait-for <run-id> <job> --keyword <text> [--timeout <seconds>]
@@ -176,6 +177,24 @@ function failedLogs(runId, options) {
     String(runId),
     ...repoArgs(options),
     "--log-failed",
+  ]);
+  const lines = result.stdout.split(/\r?\n/);
+  console.log(lines.slice(-Number(options.lines || 250)).join("\n"));
+}
+
+function jobLog(runId, jobName, options) {
+  if (!runId || !jobName) throw new Error("job-log requires a run id and job name");
+  const run = runView(runId, options);
+  const job = (run.jobs || []).find((candidate) => candidate.name === jobName);
+  if (!job) throw new Error(`Job not found: ${jobName}`);
+  const result = runGh([
+    "run",
+    "view",
+    String(runId),
+    ...repoArgs(options),
+    "--log",
+    "--job",
+    String(job.databaseId),
   ]);
   const lines = result.stdout.split(/\r?\n/);
   console.log(lines.slice(-Number(options.lines || 250)).join("\n"));
@@ -347,6 +366,7 @@ async function main() {
     else if (command === "watch") await watch(positional[0], options, false);
     else if (command === "fail-fast") await watch(positional[0], options, true);
     else if (command === "log-failed") failedLogs(positional[0], options);
+    else if (command === "job-log") jobLog(positional[0], positional[1], options);
     else if (command === "test-summary") testSummary(positional[0], options);
     else if (command === "grep") grepLogs(positional[0], options);
     else if (command === "wait-for") await waitFor(positional[0], positional[1], options);
