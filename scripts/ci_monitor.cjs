@@ -23,6 +23,7 @@ Usage:
   node scripts/ci_monitor.cjs wait-for <run-id> <job> --keyword <text> [--timeout <seconds>]
   node scripts/ci_monitor.cjs download <run-id> --name <artifact> --dir <directory>
   node scripts/ci_monitor.cjs check-actions [workflow-file]
+  node scripts/ci_monitor.cjs dependency-graph <status|enable>
   node scripts/ci_monitor.cjs pr-create --head <branch> --title <title> --body <body> [--base <branch>]
   node scripts/ci_monitor.cjs pr-view [number]
   node scripts/ci_monitor.cjs pr-checks <number>
@@ -282,6 +283,32 @@ function checkActions(workflowFile) {
   console.log(`PASS action pins ${file}`);
 }
 
+function repositoryName(options) {
+  if (options.repo) return options.repo;
+  return runGh(["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]).stdout.trim();
+}
+
+function dependencyGraph(operation, options) {
+  if (!["status", "enable"].includes(operation)) {
+    throw new Error("dependency-graph requires status or enable");
+  }
+
+  const repository = repositoryName(options);
+  if (operation === "enable") {
+    runGh([
+      "api",
+      "--method",
+      "PUT",
+      `repos/${repository}/vulnerability-alerts`,
+    ]);
+  }
+
+  const probe = runGh(["api", `repos/${repository}/vulnerability-alerts`], {
+    allowFailure: true,
+  });
+  console.log(`DEPENDENCY_GRAPH ${probe.status === 0 ? "enabled" : "unavailable"} ${repository}`);
+}
+
 function createPullRequest(options) {
   if (!options.head || !options.title || !options.body) {
     throw new Error("pr-create requires --head, --title, and --body");
@@ -372,6 +399,7 @@ async function main() {
     else if (command === "wait-for") await waitFor(positional[0], positional[1], options);
     else if (command === "download") download(positional[0], options);
     else if (command === "check-actions") checkActions(positional[0]);
+    else if (command === "dependency-graph") dependencyGraph(positional[0], options);
     else if (command === "pr-create") createPullRequest(options);
     else if (command === "pr-view") viewPullRequest(positional[0], options);
     else if (command === "pr-checks") pullRequestChecks(positional[0], options);
