@@ -6,8 +6,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.4.0` <!-- x-release-please-version -->
-- Release date: `2026-07-28` <!-- x-release-please-date -->
+- Latest released version: `1.5.0` <!-- x-release-please-version -->
+- Release date: `2026-08-28` <!-- x-release-please-date -->
 - Protected publish proof: GitHub Actions run `30386337705` succeeded end to end on the trusted `hex-publish` environment, publishing the merged release commit `ee32dbd` from the push-triggered lane.
 - Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.4.0` on `2026-07-28`, resolving and compiling a clean-room Phoenix host app against the published package.
 - GitHub release truth: `lockspire-v1.4.0` was created on `2026-07-28` at `ee32dbd`, after Release Please auto-merged the `1.4.0` release PR (#79) on `main`. No backfill was needed.
