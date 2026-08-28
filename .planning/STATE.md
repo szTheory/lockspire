@@ -5,8 +5,8 @@ milestone_name: Prime-Time Readiness Ratchet
 current_phase: 137
 current_phase_name: CI, Conformance, and Release Proof
 status: blocked
-stopped_at: Phase 137 implemented; hosted conformance and protected release verification required
-last_updated: "2026-08-27T23:18:00Z"
+stopped_at: Phase 137 implemented; GitHub-hosted conformance and protected release verification required
+last_updated: "2026-08-28T02:08:00Z"
 last_activity: 2026-08-27
 last_activity_desc: Phase 137 implemented, reviewed, Nyquist-compliant, and threat-secure; external acceptance pending
 progress:
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md
 Phase: 137 — CI, Conformance, and Release Proof
 Plan: 10 of 10 implemented
 Status: External verification required
-Last activity: 2026-08-27 — Phase 137 implementation and internal verification complete; hosted acceptance pending
+Last activity: 2026-08-27 — Phase 137 implementation and internal verification complete; GitHub-hosted acceptance pending
 
 Progress: [█████████░] 86%
 
@@ -84,13 +84,14 @@ None yet.
 
 ### Blockers/Concerns
 
-- The scheduled OIDC/FAPI workflow must run on the default branch with the three provider-configuration secrets and retain only classified redacted receipts.
+- The scheduled OIDC/FAPI workflow must run on the default branch against its disposable Billingo provider and retain only classified redacted receipts. These scheduled Phase37 and FAPI jobs require no provider secrets.
+- The manual hosted-provider comparison lane remains optional and is the only conformance lane that accepts `LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON`.
 - An approved protected release or staging-equivalent must prove the same tar checksum through outbound Hex bytes, the release-specific Hex API, versioned HexDocs, and the exact-version clean-room journey.
-- These checks require protected credentials and external state; no package was published during autonomous implementation.
+- The release check requires protected credentials and external state; no package was published during autonomous implementation.
 
 ## Session Continuity
 
-Last session: 2026-08-27T23:18:00Z
+Last session: 2026-08-28T02:08:00Z
 Stopped at: Phase 137 external verification boundary
 Resume file: .planning/phases/137-ci-conformance-and-release-proof/137-VERIFICATION.md
 
