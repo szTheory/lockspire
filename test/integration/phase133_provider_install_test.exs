@@ -28,7 +28,7 @@ defmodule Lockspire.Integration.Phase133ProviderInstallTest do
     refute output =~ "phase133-dpop-client-secret-sentinel"
   end
 
-  test "fresh provider migration does not depend on a compiled priv directory" do
+  test "fresh provider migrations use the explicit generated path" do
     builder = File.read!(@builder)
 
     assert builder =~

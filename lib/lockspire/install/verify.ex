@@ -333,7 +333,7 @@ defmodule Lockspire.Install.Verify do
   defp migration_status(repo, migration_path) do
     {:ok, statuses, _apps} =
       Ecto.Migrator.with_repo(repo, fn started_repo ->
-        Ecto.Migrator.migrations(started_repo, migration_path)
+        Ecto.Migrator.migrations(started_repo, migration_path, skip_table_creation: true)
       end)
 
     statuses

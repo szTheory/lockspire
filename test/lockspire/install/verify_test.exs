@@ -327,6 +327,12 @@ defmodule Lockspire.Install.VerifyTest do
     assert fix =~ "mix ecto.migrate"
   end
 
+  test "migration verification never creates a shadow schema migrations table" do
+    source = File.read!(Path.expand("../../../lib/lockspire/install/verify.ex", __DIR__))
+
+    assert source =~ "skip_table_creation: true"
+  end
+
   test "returns a failing result set for a missing generated admin mount" do
     result =
       Verify.run(
