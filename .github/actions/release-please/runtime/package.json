@@ -1,6 +1,7 @@
 {
   "name": "lockspire-release-please-runtime",
   "private": true,
+  "type": "module",
   "version": "1.0.0",
   "description": "Checked-in runtime for the Lockspire Release Please composite action",
   "license": "UNLICENSED",

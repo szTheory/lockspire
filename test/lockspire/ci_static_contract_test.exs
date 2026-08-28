@@ -30,6 +30,9 @@ defmodule Lockspire.CiStaticContractTest do
 
     assert ci =~
              "npm audit --omit=dev --audit-level=moderate --prefix .github/actions/release-please/runtime"
+
+    assert ci =~ "npm ci --prefix .github/actions/release-please/runtime --ignore-scripts"
+    assert ci =~ ~s|await import("./.github/actions/release-please/runtime/index.js")|
   end
 
   test "Dialyzer is a bounded cached CI gate with no warning suppression" do
