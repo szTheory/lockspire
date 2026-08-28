@@ -97,12 +97,7 @@ defmodule Lockspire.ClientMetadata do
       security_profile:
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
-      client_secret_expires_at:
-        DateTime.add(
-          now,
-          Map.get(resolved, :default_client_secret_lifetime_seconds, 0) || 0,
-          :second
-        ),
+      client_secret_expires_at: client_secret_expires_at(now, resolved, credentials),
       metadata:
         metadata |> Map.take(["client_uri"]) |> Map.reject(fn {_key, value} -> is_nil(value) end)
     }
@@ -278,6 +273,17 @@ defmodule Lockspire.ClientMetadata do
     do: scope |> String.split(" ", trim: true) |> Enum.uniq()
 
   defp parse_scope(_), do: []
+
+  defp client_secret_expires_at(_now, _resolved, %{client_secret_hash: nil}), do: nil
+
+  defp client_secret_expires_at(now, resolved, _credentials) do
+    DateTime.add(
+      now,
+      Map.get(resolved, :default_client_secret_lifetime_seconds, 0) || 0,
+      :second
+    )
+  end
+
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
   defp atomize_auth_method("client_secret_jwt"), do: :client_secret_jwt
   defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt

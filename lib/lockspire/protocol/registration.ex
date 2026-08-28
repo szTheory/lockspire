@@ -9,7 +9,8 @@ defmodule Lockspire.Protocol.Registration do
     2. IAT redemption via `Lockspire.Protocol.InitialAccessToken.redeem/1` (skipped if `iat` is nil).
     3. DCR policy resolution via `Lockspire.Protocol.DcrPolicy.resolve/3`.
     4. Intake validation for JWKS coherence, redirect URIs, and the PKCE floor.
-    5. Credential generation (`client_id`, `client_secret`, `registration_access_token`).
+    5. Credential generation (`client_id`, an auth-method-appropriate optional
+       `client_secret`, and `registration_access_token`).
     6. Persistence via the internal DCR-aware lifecycle helper (DCR-aware persistence
        helper — preserves provenance/RAT-hash/IAT-FK/issued_at/expires_at
        verbatim while keeping protocol orchestration independent of operator delivery).
@@ -68,7 +69,7 @@ defmodule Lockspire.Protocol.Registration do
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
-         credentials <- generate_credentials(),
+         credentials <- generate_credentials(metadata, Map.get(request, :secret_key_base)),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
       emit_succeeded(client, iat_record, source)
@@ -442,8 +443,8 @@ defmodule Lockspire.Protocol.Registration do
     end
   end
 
-  defp generate_credentials do
-    secret_material = Clients.rotate_secret_material()
+  defp generate_credentials(metadata, secret_key_base) do
+    secret_material = maybe_generate_shared_secret(metadata, secret_key_base)
     {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
     client_id = Clients.generate_client_id()
 
@@ -455,6 +456,21 @@ defmodule Lockspire.Protocol.Registration do
       rat: rat_plaintext,
       rat_hash: rat_hash
     }
+  end
+
+  defp maybe_generate_shared_secret(metadata, secret_key_base) do
+    case Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic") do
+      method when method in ["client_secret_basic", "client_secret_post", "client_secret_jwt"] ->
+        opts = if is_binary(secret_key_base), do: [secret_key_base: secret_key_base], else: []
+        Clients.rotate_secret_material(opts)
+
+      _method_without_shared_secret ->
+        %{
+          client_secret: nil,
+          client_secret_hash: nil,
+          client_secret_jwt_verifier_encrypted: nil
+        }
+    end
   end
 
   defp persist_client(metadata, %Resolved{} = resolved, iat_record, credentials, source) do

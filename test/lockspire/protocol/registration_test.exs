@@ -75,6 +75,23 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert "sha256:" <> _ = client.client_secret_hash
     end
 
+    test "public clients receive no shared secret or secret lifetime" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("token_endpoint_auth_method", "none")
+
+      assert {:ok,
+              %Success{
+                client: client,
+                client_secret_plaintext: nil
+              }} = Registration.register(DcrFixtures.register_request(metadata: metadata))
+
+      assert client.client_type == :public
+      assert is_nil(client.client_secret_hash)
+      assert is_nil(client.client_secret_jwt_verifier_encrypted)
+      assert is_nil(client.client_secret_expires_at)
+    end
+
     test "round-trip proof: Policy.verify_client_secret returns true" do
       request = DcrFixtures.register_request()
 
@@ -559,6 +576,9 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert {:ok, %Success{client: client}} = Registration.register(request)
       assert client.token_endpoint_auth_method == :private_key_jwt
       assert client.client_type == :confidential
+      assert is_nil(client.client_secret_hash)
+      assert is_nil(client.client_secret_jwt_verifier_encrypted)
+      assert is_nil(client.client_secret_expires_at)
       assert client.jwks_uri == "https://keys.example.test/client.jwks.json"
       assert is_nil(client.jwks)
     end

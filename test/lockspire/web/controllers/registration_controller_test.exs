@@ -66,6 +66,23 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     assert Jason.decode!(conn.resp_body)["client_id"] != nil
   end
 
+  test "public DCR clients receive no shared secret" do
+    Repository.put_server_policy(DcrFixtures.server_policy(%{registration_policy: :open}))
+
+    metadata =
+      DcrFixtures.valid_metadata()
+      |> Map.put("token_endpoint_auth_method", "none")
+
+    conn =
+      build_conn(:post, "/register", metadata)
+      |> dispatch()
+
+    assert conn.status == 201
+    body = Jason.decode!(conn.resp_body)
+    refute Map.has_key?(body, "client_secret")
+    assert is_binary(body["registration_access_token"])
+  end
+
   test "create and subsequent show expose persisted logout metadata" do
     Repository.put_server_policy(
       Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{registration_policy: :open})

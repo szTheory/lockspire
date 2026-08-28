@@ -8,6 +8,11 @@ defmodule Lockspire.Web.RegistrationJSONTest do
   @now DateTime.utc_now() |> DateTime.truncate(:second)
   @client %Client{
     client_id: "test-client-123",
+    name: "Test App",
+    redirect_uris: ["https://example.com/callback"],
+    allowed_scopes: ["openid", "profile"],
+    allowed_grant_types: ["authorization_code", "refresh_token"],
+    allowed_response_types: ["code"],
     inserted_at: @now,
     client_secret_expires_at: nil,
     dpop_policy: :dpop,
@@ -33,6 +38,14 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result.client_secret_expires_at == 0
     assert result["client_name"] == "Test App"
     assert result["client_uri"] == "https://example.com"
+    assert result.redirect_uris == ["https://example.com/callback"]
+    assert result.scope == "openid profile"
+    assert result.grant_types == ["authorization_code", "refresh_token"]
+    assert result.response_types == ["code"]
+    refute Map.has_key?(result, :id_token_signed_response_alg)
+    refute Map.has_key?(result, :authorization_signed_response_alg)
+    refute Map.has_key?(result, :authorization_encrypted_response_alg)
+    refute Map.has_key?(result, :authorization_encrypted_response_enc)
     assert result.dpop_bound_access_tokens == true
     assert result.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
     assert result.backchannel_logout_session_required == true
@@ -54,6 +67,18 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     assert result.backchannel_logout_session_required == true
     assert result.frontchannel_logout_uri == "https://example.com/frontchannel-logout"
     assert result.frontchannel_logout_session_required == false
+  end
+
+  test "success_response/1 omits a client secret when none was issued" do
+    result =
+      RegistrationJSON.success_response(%Registration.Success{
+        client: @client,
+        client_secret_plaintext: nil,
+        registration_access_token_plaintext: "rat-123"
+      })
+
+    refute Map.has_key?(result, :client_secret)
+    assert result.registration_access_token == "rat-123"
   end
 
   test "update_response/1 includes RAT but omits client_secret" do
