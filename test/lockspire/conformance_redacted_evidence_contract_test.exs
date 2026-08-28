@@ -29,6 +29,9 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
     assert profile =~ "summarize_oidf_failure.py"
     assert profile =~ "chown -R"
     refute profile =~ "cp -R"
+
+    preparation = File.read!(Path.expand("../../scripts/conformance/prepare_oidf_suite.sh", __DIR__))
+    assert preparation =~ ~s(mkdir -m 700 -p "$output_dir/mongo/data")
   end
 
   test "failure diagnostics retain only module outcomes and condition identifiers" do

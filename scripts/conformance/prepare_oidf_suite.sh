@@ -49,6 +49,7 @@ PY
 python3 "$VALIDATOR" --lock "$LOCK_PATH" --verify-downloads "$download_dir"
 python3 "$VALIDATOR" --lock "$LOCK_PATH" --normalize-compose \
   "$download_dir/docker-compose-prebuilt.yml" "$output_dir/docker-compose.locked.yml"
+mkdir -m 700 -p "$output_dir/mongo/data"
 
 suite_commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["suite"]["commit"])' "$LOCK_PATH")
 python3 "${ROOT_DIR}/scripts/conformance/extract_oidf_suite.py" \
