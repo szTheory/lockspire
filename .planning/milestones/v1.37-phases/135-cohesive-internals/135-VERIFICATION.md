@@ -1,6 +1,7 @@
 ---
 phase: 135-cohesive-internals
-verified: 2026-08-27T20:37:05Z
+verified: 2026-08-28T04:41:30Z
+milestone_reverified: 2026-08-28T04:41:30Z
 status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 0
@@ -19,7 +20,7 @@ re_verification:
 # Phase 135: Cohesive Internals Verification Report
 
 **Phase Goal:** Storage and grant internals are navigable, explicit, and behaviorally stable behind their existing public facades.
-**Verified:** 2026-08-27T20:37:05Z
+**Verified:** 2026-08-28T04:41:30Z
 **Status:** passed
 **Re-verification:** Yes — after gap closure
 
@@ -83,5 +84,5 @@ None in the phase-critical artifacts. No implementation, requirement, or configu
 
 ---
 
-_Verified: 2026-08-27T20:37:05Z_
+_Verified: 2026-08-28T04:41:30Z after canonical CI and milestone integration audit_
 _Verifier: the agent (gsd-verifier)_

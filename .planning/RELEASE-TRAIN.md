@@ -8,9 +8,10 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 - Latest released version: `1.5.0` <!-- x-release-please-version -->
 - Release date: `2026-08-28` <!-- x-release-please-date -->
-- Protected publish proof: GitHub Actions run `30386337705` succeeded end to end on the trusted `hex-publish` environment, publishing the merged release commit `ee32dbd` from the push-triggered lane.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for `1.4.0` on `2026-07-28`, resolving and compiling a clean-room Phoenix host app against the published package.
-- GitHub release truth: `lockspire-v1.4.0` was created on `2026-07-28` at `ee32dbd`, after Release Please auto-merged the `1.4.0` release PR (#79) on `main`. No backfill was needed.
+- Protected publish proof: GitHub Actions recovery run `33141484467` succeeded end to end on the trusted `hex-publish` environment, publishing source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8` after canonical exact-SHA CI run `33141161205` passed.
+- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for public `1.5.0` on `2026-08-28`, completing the clean-room install, migration, verification, boot, and HTTP journey against the exact published version.
+- Artifact truth: `lockspire-1.5.0.tar` was 415744 bytes with SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`; prepublish and postpublish receipts both reported `verified`.
+- GitHub release truth: `lockspire-v1.5.0` was created on `2026-08-28` for the exact source used by release run `33141484467`, after Release Please auto-merged release PR #93.
 - Release Please bookkeeping: the publish job now advances the merged release PR's `autorelease:` label itself (#78). Before that fix the label stayed `pending`, and Release Please aborted every later run with "There are untagged, merged release PRs outstanding", silently proposing no further releases. #79 was labelled `autorelease: tagged` automatically, confirming the fix end to end.
 
 ## Normal Train Rules
@@ -48,4 +49,4 @@ Cut the next patch release when there is at least one merged patch-eligible chan
 
 ## Current Main Readiness
 
-As of 2026-07-28, `main` is at the `1.4.0` release commit `ee32dbd` and the latest public release is `1.4.0`. That release carried the host-owned demo 404 page and working Disconnect (#75), the remembered-consent duplication fix (#77), the `phoenix_live_view` range widening (#76), and the Release Please unblock (#78).
+As of 2026-08-28, the released source is `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, canonical CI run `33141161205` is green, and the latest public release is `1.5.0`. Release run `33141484467` retained the exact manifest plus bounded prepublish/postpublish receipts and verified the public package journey.

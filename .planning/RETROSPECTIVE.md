@@ -187,6 +187,43 @@
 
 ---
 
+## Milestone: v1.37 — Prime-Time Readiness Ratchet
+
+**Shipped:** 2026-08-28
+**Phases:** 7 | **Plans:** 58 | **Tasks:** 127
+
+### What Was Built
+- An executable packaged Phoenix installation path covering generated routes, host consent, migrations, configuration verification, claims examples, and secure default smoke proof.
+- Additive semantic token/client/resource-server APIs plus a real separate-origin provider/client/protected-resource journey over HTTP.
+- Cycle-free dependency direction, cohesive Ecto/token collaborators, atomic behavior proof, strict static analysis, quiet runtime evidence, and complete-suite coverage above 84%.
+- Immutable supplemental OIDF evidence and a manifest-bound release chain that published and publicly re-verified Lockspire 1.5.0 from one exact tar.
+
+### What Worked
+- Using installation and the clean-room SaaS journey as the acceptance spine forced public APIs, architecture, CI, and release automation to meet at real host boundaries.
+- Characterization before structural refactors preserved protocol responses, persistence, audit, telemetry, and compatibility while large modules were decomposed.
+- Exact-SHA CI and checksum-bound release receipts converted release trust from workflow convention into retained evidence.
+
+### What Was Inefficient
+- The first hosted conformance run exposed a real public-DCR credential-method defect late in closure; fixing DCR before rerunning the suite advanced Phase37 to deeper authorization semantics.
+- Release automation required two closure fixes: ESM compatibility for the checked runtime and an explicit canonical-CI dispatch after token-authored release merges.
+- GSD's loose plan-file scanner counted `PLAN-CHECK`/`PLAN-AUDIT` artifacts as unfinished plans, and summary edits then correctly staled older verifier timestamps; closeout needed metadata normalization before archival.
+
+### Patterns Established
+- Treat the host seam as a compile-and-run contract, not prose: generated artifacts must boot and complete the supported protocol flow in a clean app.
+- Carry one immutable artifact identity through prepublish proof, protected upload, registry checksum, docs, and postpublish install truth.
+- Keep external conformance reproducible and safely retained even when it fails; a classified supplemental failure is better evidence than a false certification signal.
+
+### Key Lessons
+1. A mature OAuth library needs cross-origin and resource-server proof, not only endpoint-level protocol tests.
+2. Release automation must explicitly account for GitHub token event-suppression semantics; successful auto-merge does not imply a recursive push workflow.
+3. Machine-readable planning metadata is part of durable verification and should be normalized before the final audit, not during archive.
+
+### Cost Observations
+- Model mix: not recorded.
+- Notable: The milestone completed autonomously with 36/36 requirements and a real public release; no new user-provisioned secret was required because protected repository credentials were already configured.
+
+---
+
 ## Milestone: v1.36 — Structural Quality Ratchet
 
 **Shipped:** 2026-08-26
@@ -231,6 +268,7 @@
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.37 | N/A | 7 | Packaged adoption, real SaaS integration, architecture quality, conformance evidence, and exact-artifact release proof converged into one acceptance spine. |
 | v1.36 | N/A | 5 | Structural quality moved release, CI, architecture, token policy, and repository proof from convention to executable contracts. |
 | v1.32 | N/A | 5 | Admin UI quality moved from component stress to page-first IA and interaction proof. |
 | v1.31 | N/A | 5 | Admin UI quality moved from page polish to source-derived design-system stress contracts. |
@@ -242,6 +280,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.37 | Canonical CI, clean-room provider/client/resource journey, dual-router Sobelow, architecture/quality gates, OIDF receipts, and protected public release proof | 84%+ complete suite | Semantic token readers, neutral client lifecycle, aggregate stores, typed token collaborators, immutable evidence scripts |
 | v1.36 | Exact-ref release contracts, quality gates, architecture fitness tests, Dialyzer, split proof suites, and final integration flows | 73% floor | Storage ports/services, lifetime policy, private JWK decoder, shared isolation helpers |
 | v1.32 | ExUnit/LiveView/LazyHTML rendered route proof, source contracts, parsed browser evidence, docs, and adversarial artifacts | High | Route scorecards, BrowserEvidence parser, redaction-safe proof matrix extensions |
 | v1.31 | ExUnit/LiveView/LazyHTML source, rendered component, mounted route, docs, and package-boundary guardrails | High | Test-only admin lab fixtures, stress surface, and HTML assertion helpers |

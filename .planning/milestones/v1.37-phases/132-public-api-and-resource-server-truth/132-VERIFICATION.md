@@ -1,6 +1,7 @@
 ---
 phase: 132-public-api-and-resource-server-truth
-verified: 2026-08-27T00:24:19Z
+verified: 2026-08-28T04:41:30Z
+milestone_reverified: 2026-08-28T04:41:30Z
 status: passed
 score: 8/8
 behavior_unverified: 0
@@ -16,7 +17,7 @@ re_verification:
 # Phase 132: Public API and Resource-Server Truth Verification Report
 
 **Phase Goal:** Adopters can use documented client and resource-server APIs without relying on raw claims or unsupported implementation details.
-**Verified:** 2026-08-27T00:24:19Z
+**Verified:** 2026-08-28T04:41:30Z
 **Status:** passed
 **Re-verification:** Yes — final integration fixes `3938a4a` and `2ac56ce`
 
@@ -88,5 +89,5 @@ Phase 132 did not add a separate-origin client journey, full lifecycle acceptanc
 
 ---
 
-_Verified: 2026-08-27T00:24:19Z_
+_Verified: 2026-08-28T04:41:30Z after canonical CI and milestone integration audit_
 _Verifier: the agent (gsd-verifier)_

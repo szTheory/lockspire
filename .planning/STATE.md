@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.37
 milestone_name: Prime-Time Readiness Ratchet
-current_phase: 137
-current_phase_name: CI, Conformance, and Release Proof
-status: blocked
-stopped_at: Phase 137 implemented; GitHub-hosted conformance and protected release verification required
-last_updated: "2026-08-28T02:08:00Z"
-last_activity: 2026-08-27
-last_activity_desc: Phase 137 implemented, reviewed, Nyquist-compliant, and threat-secure; external acceptance pending
+status: Awaiting next milestone
+stopped_at: v1.37 archived; sustaining GA release train active
+last_updated: "2026-08-28T04:43:03.593Z"
+last_activity: 2026-08-28
+last_activity_desc: Milestone v1.37 completed and archived
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 58
   completed_plans: 58
-  percent: 86
+  percent: 100
+current_phase: 137
+current_phase_name: CI, Conformance, and Release Proof
 ---
 
 # Project State
@@ -25,20 +25,23 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 137 — CI, Conformance, and Release Proof
+**Current focus:** Sustaining GA release train; no active feature milestone
 
 ## Current Position
 
-Phase: 137 — CI, Conformance, and Release Proof
-Plan: 10 of 10 implemented
-Status: External verification required
-Last activity: 2026-08-27 — Phase 137 implementation and internal verification complete; GitHub-hosted acceptance pending
-
-Progress: [█████████░] 86%
+Phase: Milestone v1.37 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-28 — Milestone v1.37 completed and archived
 
 ## Accumulated Context
 
-### Recent Sustaining Release: 1.4.0
+### Recent Sustaining Release: 1.5.0
+
+- Release PR #93 merged the 1.5.0 bookkeeping at `02e74366`; release automation hardening #94 produced current source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`.
+- Canonical `main` CI run `33141161205` passed at that exact source SHA.
+- Protected recovery release run `33141484467` built, published, and publicly re-verified one `lockspire-1.5.0.tar` (415744 bytes, SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`).
+- Default-branch supplemental OIDF run `33139876101` retained allowlisted Phase37 and FAPI2 receipts with immutable suite identity. Both honestly classified suite failures; the lane remains supplemental and makes no certification claim.
 
 ### 2026-07-28 sustaining pass (1.3.0 -> 1.4.0)
 
@@ -56,7 +59,7 @@ Progress: [█████████░] 86%
 - Manual browser UAT passed at `http://lockspire-demo.localhost/lockspire/admin` after logging in as `ops`.
 - Cairnloop still owns `127.0.0.1:4100`; do not treat that direct port as Lockspire unless a launcher explicitly prints it.
 
-**Public release evidence:** `1.4.0`, release PR #79, protected workflow run `30386337705`, tag `lockspire-v1.4.0` at `ee32dbd`; `verify_install_truth.sh` passed for the public version. `1.3.0` shipped earlier the same day through exact-ref run `30323976705` and release PR #71.
+**Public release evidence:** `1.5.0`, release PR #93, canonical CI run `33141161205`, protected release run `33141484467`, tag `lockspire-v1.5.0`, source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; the exact public-version clean-room journey passed.
 
 ### Decisions
 
@@ -84,16 +87,15 @@ None yet.
 
 ### Blockers/Concerns
 
-- The scheduled OIDC/FAPI workflow must run on the default branch against its disposable Billingo provider and retain only classified redacted receipts. These scheduled Phase37 and FAPI jobs require no provider secrets.
-- The manual hosted-provider comparison lane remains optional and is the only conformance lane that accepts `LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON`.
-- An approved protected release or staging-equivalent must prove the same tar checksum through outbound Hex bytes, the release-specific Hex API, versioned HexDocs, and the exact-version clean-room journey.
-- The release check requires protected credentials and external state; no package was published during autonomous implementation.
+- No milestone blockers remain.
+- Supplemental OIDF receipts identify authorization-endpoint semantics and broader FAPI/PAR/TLS interoperability as follow-up conformance work. These are retained findings, not a certification claim or release gate.
+- The optional hosted-provider comparison remains the only conformance lane that accepts `LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON`.
 
 ## Session Continuity
 
-Last session: 2026-08-28T02:08:00Z
-Stopped at: Phase 137 external verification boundary
-Resume file: .planning/phases/137-ci-conformance-and-release-proof/137-VERIFICATION.md
+Last session: 2026-08-28T04:41:30Z
+Stopped at: v1.37 archived; sustaining GA release train active
+Resume file: .planning/RELEASE-TRAIN.md
 
 ## Performance Metrics
 
@@ -111,3 +113,7 @@ Resume file: .planning/phases/137-ci-conformance-and-release-proof/137-VERIFICAT
 | Phase 132 P03 | 12m | 2 tasks | 5 files |
 | Phase 132 P04 | - | 2 tasks | 12 files |
 | Phase 133 P01 | 8m | 3 tasks | 8 files |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

@@ -25,7 +25,7 @@ key-decisions:
   - "The client owns encrypted DPoP key, token, nonce, and exact proof state; the runner observes only allowlisted receipts."
   - "Protected-resource replay uses the documented DPoP invalid_token challenge, while the token endpoint retains its own error contract."
   - "Root ExUnit ignores nested child-app tests; the child builder remains their sole test owner."
-requirements-completed: [E2E-01, E2E-05, E2E-06]
+requirements-completed: [E2E-01, E2E-02, E2E-03, E2E-04, E2E-05, E2E-06]
 coverage:
   - id: D1
     description: DPoP token and userinfo nonce retries, resource nonce retry, exact replay rejection, and restart durability over real HTTP.

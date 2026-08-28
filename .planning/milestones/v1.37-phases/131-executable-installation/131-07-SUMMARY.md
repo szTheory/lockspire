@@ -26,7 +26,7 @@ key-files:
 key-decisions:
   - "The static consent render is always a host-styled status and never queries or exposes protocol context."
   - "Deferred resolver work receives only mount-time server-owned assigns and connect info, avoiding a copied LiveView socket while preserving host account resolution."
-requirements-completed: [INST-02]
+requirements-completed: [INST-01, INST-02, INST-03, INST-04, INST-05, INST-06]
 completed: 2026-08-26
 status: complete
 ---

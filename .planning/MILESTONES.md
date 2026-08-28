@@ -1,5 +1,30 @@
 # Milestones
 
+## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)
+
+**Delivered:** A packaged Phoenix app can embed Lockspire through the generated host seam, prove the full provider/client/resource-server journey, and carry reproducible architecture, quality, conformance, and exact-artifact release evidence without widening the supported protocol surface.
+
+**Phases completed:** **7** (**131-137**), **58** plans, **127** tasks, **36** requirements closed.
+
+**Key accomplishments:**
+
+- Made generated routes, consent, collision-safe migrations, configuration verification, claims examples, and default secure smoke proof executable from the packaged library.
+- Added semantic access-token readers, capability-aware registration, durable fail-closed DPoP replay storage, and truthful resource-server guidance behind additive public APIs.
+- Proved a separate-origin confidential client against a clean Phoenix provider and protected resource over real HTTP, including OIDC validation, refresh reuse containment, negative cases, and durable DPoP replay rejection.
+- Enforced cycle-free dependency direction, neutral shared client lifecycle ownership, aggregate-specific Ecto stores, typed token collaborators, and atomic/compatible behavior behind stable facades.
+- Replaced low-signal quality archaeology with strict Credo, zero-warning Dialyzer, quiet runtime proof, dual-router Sobelow, dependency/cycle gates, and truthful 84%+ complete-suite coverage.
+- Published Lockspire 1.5.0 from one manifest-bound tar and verified the same checksum through Hex, HexDocs, and the exact public clean-room journey; scheduled OIDF evidence remains redacted, supplemental, and non-certifying.
+
+**Stats:** 524 files changed, +46,057/-14,709 lines from milestone start through released source; 103,153 current Elixir source/test LOC.
+
+**Production proof:** canonical CI run `33141161205`; protected release run `33141484467`; released source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; public package `1.5.0`; tar SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`.
+
+**Pre-close audit:** [v1.37 milestone audit](milestones/v1.37-MILESTONE-AUDIT.md) (`passed`: requirements 36/36, phases 7/7, integrations 14/14, flows 4/4, Nyquist 7/7).
+
+**Archives:** `milestones/v1.37-ROADMAP.md`, `milestones/v1.37-REQUIREMENTS.md`, `milestones/v1.37-MILESTONE-AUDIT.md`, `milestones/v1.37-phases/` · **Release tag:** `lockspire-v1.5.0`
+
+---
+
 ## v1.36 Structural Quality Ratchet (Shipped: 2026-08-26)
 
 **Delivered:** Lockspire's release path, executable quality gates, storage boundaries, token internals, and repository proof were structurally tightened without adding protocol surface or changing public behavior.
