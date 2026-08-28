@@ -30,6 +30,9 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
     assert profile =~ "chown -R"
     refute profile =~ "cp -R"
 
+    invocation = File.read!(Path.expand("../../scripts/conformance/invoke_oidf_plan.py", __DIR__))
+    assert invocation =~ ~s|str(runner_path), "--verbose", "--export-dir"|
+
     preparation =
       File.read!(Path.expand("../../scripts/conformance/prepare_oidf_suite.sh", __DIR__))
 

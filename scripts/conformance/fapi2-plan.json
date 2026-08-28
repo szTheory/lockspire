@@ -7,10 +7,9 @@
       "suite_plan": "fapi2-security-profile-final-test-plan",
       "variants": {
         "fapi_profile": "plain_fapi",
+        "openid": "openid_connect",
         "client_auth_type": "private_key_jwt",
-        "sender_constrain": "dpop",
-        "fapi_request_method": "unsigned",
-        "fapi_response_mode": "plain_response"
+        "sender_constrain": "dpop"
       },
       "modules": []
     }

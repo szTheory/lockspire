@@ -69,7 +69,7 @@ def command(runner, plan_path, config_path, export_dir):
 
     destination = Path(export_dir).resolve()
     destination.mkdir(mode=0o700, parents=True, exist_ok=False)
-    args = [sys.executable, str(runner_path), "--export-dir", str(destination)]
+    args = [sys.executable, str(runner_path), "--verbose", "--export-dir", str(destination)]
     for entry in entries:
         args.extend([render_plan(entry), str(config_source)])
     return args, runner_path.parent.parent, plan_source

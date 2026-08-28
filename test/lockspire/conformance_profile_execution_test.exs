@@ -27,9 +27,11 @@ defmodule Lockspire.ConformanceProfileExecutionTest do
     compose_index =
       Enum.find_index(calls, &String.contains?(&1, "up -d --wait --wait-timeout 120"))
 
-    runner_index = Enum.find_index(calls, &String.starts_with?(&1, "runner --export-dir "))
+    runner_index =
+      Enum.find_index(calls, &String.starts_with?(&1, "runner --verbose --export-dir "))
+
     assert is_integer(compose_index) and is_integer(runner_index) and compose_index < runner_index
-    assert Enum.any?(calls, &String.contains?(&1, "runner --list --export-dir "))
+    assert Enum.any?(calls, &String.contains?(&1, "runner --list --verbose --export-dir "))
     assert Enum.any?(calls, &String.contains?(&1, "oidcc-test-plan[client_auth_type=none]"))
     assert Enum.any?(calls, &String.contains?(&1, ":oidcc-prompt-none-not-logged-in"))
     assert Enum.any?(calls, &String.contains?(&1, fixture.config))
@@ -45,7 +47,7 @@ defmodule Lockspire.ConformanceProfileExecutionTest do
 
     assert {output, 9} = run_profile(fixture)
     assert output =~ "OIDF suite reported a profile failure"
-    assert File.read!(fixture.calls) =~ "runner --export-dir "
+    assert File.read!(fixture.calls) =~ "runner --verbose --export-dir "
 
     receipt = fixture.artifact |> Path.join("receipt.json") |> File.read!() |> Jason.decode!()
     assert receipt["result"]["status"] == "failed"

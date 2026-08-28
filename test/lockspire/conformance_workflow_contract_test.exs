@@ -14,6 +14,7 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
                     __DIR__
                   )
   @demo_seed Path.expand("../../examples/adoption_demo/priv/repo/seeds.exs", __DIR__)
+  @fapi_plan Path.expand("../../scripts/conformance/fapi2-plan.json", __DIR__)
 
   test "default-branch schedule and dispatch run both immutable supplemental profiles" do
     workflow = File.read!(@workflow)
@@ -90,6 +91,7 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     runner = File.read!(@ephemeral_runner)
     seed = File.read!(@ephemeral_seed)
     demo_seed = File.read!(@demo_seed)
+    fapi_plan = File.read!(@fapi_plan)
 
     assert runner =~ "umask 077"
     assert runner =~ "mktemp -d"
@@ -111,6 +113,7 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     assert seed =~ "security_profile: :fapi_2_0_security"
     assert seed =~ "token_endpoint_auth_method: :private_key_jwt"
     assert seed =~ "https://nginx:8443/test/a/lockspire-fapi2/callback"
+    assert fapi_plan =~ ~s("openid": "openid_connect")
 
     assert length(
              Regex.scan(

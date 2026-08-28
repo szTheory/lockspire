@@ -9,7 +9,8 @@ from pathlib import Path
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 MODULE_PREFIX = re.compile(r"Test \[\d+:\d+\] (?P<name>\S{1,180})")
 MODULE_RESULT = re.compile(r"(?P<status>[A-Z_]{2,30}) - result (?P<result>[A-Z_]{2,30})\.")
-CONDITION = re.compile(r"Block name: '(?P<block>[^']{1,240})' - Condition: '(?P<condition>[^']{1,240})'")
+BLOCK = re.compile(r"Block name: '(?P<block>[^']{1,240})'")
+CONDITION = re.compile(r"Condition: '(?P<condition>[^']{1,240})'")
 TOTALS = re.compile(
     r"Overall totals: ran (?P<modules>\d{1,4}) test modules\. Conditions: "
     r"(?P<successes>\d{1,6}) successes, (?P<failures>\d{1,6}) failures, "
@@ -32,8 +33,10 @@ def summarize(path: Path) -> dict[str, object]:
             modules.append({"name": prefix.group("name"), **result.groupdict()})
 
         condition = CONDITION.search(line)
-        if condition and all(SAFE_LABEL.fullmatch(value) for value in condition.groupdict().values()):
-            conditions.append(condition.groupdict())
+        if condition and SAFE_LABEL.fullmatch(condition.group("condition")):
+            block = BLOCK.search(line)
+            safe_block = block.group("block") if block and SAFE_LABEL.fullmatch(block.group("block")) else ""
+            conditions.append({"block": safe_block, "condition": condition.group("condition")})
 
     totals = [
         {key: int(value) for key, value in match.groupdict().items()}
@@ -41,11 +44,22 @@ def summarize(path: Path) -> dict[str, object]:
     ][:20]
     exceptions = sorted({match.group("name") for match in EXCEPTION.finditer(source)})[:30]
     http_statuses = sorted({int(value) for value in re.findall(r"HTTP(?: Error)? (\d{3})", source)})
+    signals = [
+        label
+        for label, marker in {
+            "argument_error": "run-test-plan.py: error:",
+            "no_modules": "No modules to test",
+            "queue_exception": "Exception caught in queue_worker",
+            "unrecoverable_http": "UnrecoverableHTTPError",
+        }.items()
+        if marker in source
+    ]
     return {
         "conditions": conditions[:200],
         "exceptions": exceptions,
         "http_statuses": http_statuses,
         "modules": modules[:200],
+        "signals": signals,
         "totals": totals,
     }
 
