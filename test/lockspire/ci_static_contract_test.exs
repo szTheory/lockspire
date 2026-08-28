@@ -16,6 +16,7 @@ defmodule Lockspire.CiStaticContractTest do
     assert script =~ "actionlint -no-color"
     assert script =~ "shellcheck --severity=warning"
     assert ci =~ "bash ./scripts/ci/lint_workflows.sh"
+    assert ci =~ "workflow_dispatch:"
   end
 
   test "authoritative dependency lanes are check-locked and protect every lockfile" do

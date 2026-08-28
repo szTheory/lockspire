@@ -41,7 +41,7 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 10. Treat the resulting protected GitHub release, Hex checksum proof, exact-version public HTTP journey, and bounded evidence artifact as the authoritative release record.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
-Normal releases maintain the Release Please PR on `main` pushes. After a Release Please merge, a later successful CI push run for that exact current main SHA dispatches publish. Recovery needs the same full SHA, successful CI run ID, and auditable reason; it cannot publish a tag, a stale SHA, or a pre-merge run.
+Normal releases maintain the Release Please PR on `main` pushes. After the repository token merges a Release Please PR, automation explicitly dispatches canonical CI for that exact current main SHA because token-authored merges do not recursively emit push workflows. A successful canonical CI run—either a normal `push` or that bounded `workflow_dispatch`—then dispatches publish. Recovery needs the same full SHA, successful CI run ID, and auditable reason; it cannot publish a tag, a stale SHA, or a pre-merge run.
 
 ## Evidence boundaries
 

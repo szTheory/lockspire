@@ -64,10 +64,11 @@ jobs:
           test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
           test "$(jq -r '.head_sha' <<< "$ci_run")" = "$CI_HEAD_SHA"
           test "$(jq -r '.repository.full_name' <<< "$ci_run")" = "$GH_REPO"
-          test "$(jq -r '.event' <<< "$ci_run")" = "push"
+          ci_event="$(jq -r '.event' <<< "$ci_run")"
+          [[ "$ci_event" == "push" || "$ci_event" == "workflow_dispatch" ]]
 
           if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
-            test "$CI_EVENT" = "push"
+            test "$CI_EVENT" = "$ci_event"
           fi
 
           test "$CI_HEAD_SHA" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
@@ -82,7 +83,10 @@ jobs:
             test "$actual_files" = ".planning/RELEASE-TRAIN.md,.release-please-manifest.json,CHANGELOG.md,mix.exs"
             pr_number="$(jq -r '.[0].number' <<< "$eligible_json")"
             gh pr merge "$pr_number" --squash --delete-branch
-            echo "Merged Release Please PR #$pr_number. Publication deliberately waits for that merge commit's own CI push run."
+            merged_sha="$(gh pr view "$pr_number" --json mergeCommit --jq '.mergeCommit.oid')"
+            test "$merged_sha" = "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
+            gh workflow run ci.yml --ref main
+            echo "Merged Release Please PR #$pr_number and dispatched canonical CI for exact commit $merged_sha."
             exit 0
           fi
 
