@@ -1,34 +1,21 @@
 ---
 phase: 137-ci-conformance-and-release-proof
-verified: 2026-08-27T23:25:44Z
-status: human_needed
-score: 10/12 must-haves verified
-behavior_unverified: 2
+verified: 2026-08-28T04:41:30Z
+milestone_reverified: 2026-08-28T04:41:30Z
+status: passed
+score: 12/12 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
-behavior_unverified_items:
-  - truth: "The scheduled OIDC/FAPI workflow executes the pinned external profiles and retains only their redacted receipts."
-    test: "Dispatch `Supplemental OIDF Conformance` on the default branch, then inspect the resulting artifacts."
-    expected: "Both secretless jobs boot throwaway Billingo hosts, mint ephemeral provider/client material, invoke their pinned plan runners, succeed or fail with a classified redacted receipt, and upload only `receipt.json`; no raw configuration, keys, logs, OAuth material, or hosted URL is retained."
-    why_human: "The repository tests exercise the runner and workflow topology with doubles, but this verifier cannot invoke GitHub-hosted jobs, protected secrets, Docker images, and the external OIDF suite."
-  - truth: "The protected release workflow publishes the clean-room-proven tar and repeats the journey against that exact public version."
-    test: "Use a disposable release candidate through the protected `hex-publish` environment (or an approved staging-equivalent) and follow prepublish, publish, and post-publish jobs."
-    expected: "The prepublish tar checksum is the manifest checksum, the uploader sends those exact bytes, Hex reports the same checksum, versioned HexDocs is available, and the exact-version clean-room HTTP journey passes; retained evidence contains only the manifest and bounded receipts."
-    why_human: "The exact-byte upload path and workflow wiring have focused automated evidence, but publication, GitHub environment protection, registry propagation, and public install cannot be safely exercised from this checkout."
-human_verification:
-  - test: "Run the default-branch supplemental OIDC/FAPI workflow and inspect its artifacts."
-    expected: "Only validated `receipt.json` artifacts are retained, with correct success/infrastructure/suite-failure classification."
-    why_human: "Requires GitHub-hosted Docker and the pinned external suite; the repo-native profiles no longer require secrets."
-  - test: "Execute a protected release or approved staging rehearsal."
-    expected: "The artifact/manifest/Hex checksum/public clean-room chain remains one identity end to end."
-    why_human: "Requires protected publication credentials and external Hex/HexDocs state."
+behavior_unverified_items: []
+human_verification: []
 ---
 
 # Phase 137: CI, Conformance, and Release Proof Verification Report
 
 **Phase Goal:** A release carries reproducible security, coverage, conformance, and package-install evidence from immutable inputs.
-**Verified:** 2026-08-27T23:25:44Z
-**Status:** human_needed
-**Re-verification:** Yes — refreshed after merging current `origin/main` (Lockspire 1.4.0)
+**Verified:** 2026-08-28T04:41:30Z
+**Status:** passed
+**Re-verification:** Yes — refreshed after default-branch CI/conformance and the public Lockspire 1.5.0 release
 
 ## Goal Achievement
 
@@ -41,15 +28,15 @@ human_verification:
 | 3 | Fast and integration partitions run once, with a truthful complete-suite >=84% native aggregate. | ✓ VERIFIED | Fresh merged-tree run: fast `1362/0` (6 skipped), integration `284/0`, clean-room `0` failures; each emitted one same-identity export and `aggregate_coverage.sh` reported **84.78%** for merge-candidate tree `cc447d051380ed947e29a0b83bd9aaa76c1680ff`, whose source and test contents were recorded in merge commit `654238d6`. |
 | 4 | OIDC/FAPI inputs are immutable and fail closed on mutable or altered source/image/input data. | ✓ VERIFIED | `oidf-suite-lock.json` pins commit/checksums/digests; `oidf_inputs.py --validate-only` passed; contracts cover mutable refs, checksum and compose-image drift. |
 | 5 | Conformance profiles use the immutable seam and retain bounded redacted evidence. | ✓ VERIFIED | Shared runner prepares first, waits for Compose, invokes the pinned `run-test-plan.py`, classifies runner/setup failures, and deletes raw work; 47 focused contracts passed, including execution-level failure/success tests. |
-| 6 | Supplemental conformance is default-branch scheduled, manually runnable, and uploads only receipts. | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Workflow has weekly cron/manual dispatch, least privilege, 30-day receipt-only artifacts, and static contracts; actual hosted GitHub/Docker/OIDF execution requires human-run external evidence. |
+| 6 | Supplemental conformance is default-branch scheduled, manually runnable, and uploads only receipts. | ✓ VERIFIED | Default-branch run `33139876101` executed both pinned profiles. Downloaded Phase37 and FAPI2 `receipt.json` artifacts were allowlisted, bound to suite tag `release-v5.1.43`, suite commit `16ad152…`, pinned image digests/helper hashes, and classified `suite_failure`; no raw configuration, keys, tokens, or suite logs were retained. The failures are honest supplemental findings, not a certification claim. |
 | 7 | A local tar or exact Hex version drives one package input through both clean-room roles and the real HTTP journey. | ✓ VERIFIED | Package-source contracts pass; the integration partition executed `test.clean-room.e2e` successfully; code validates exact source/checksum, inventories/unpacks it, and verifies both child provenance. |
 | 8 | The release manifest binds source SHA, tar identity, and allowlisted runtime/tool versions. | ✓ VERIFIED | `release_artifact.py` has strict schema/regular-file/checksum/source checks; focused manifest substitution and redaction contracts passed. |
 | 9 | First publish sends the already-proven tar bytes, rather than rebuilding a package. | ✓ VERIFIED | `publish_hex_idempotently.sh` verifies local manifest/tar then calls `upload_hex_artifact.exs`; focused local-endpoint test captured bytes and proved equality to the supplied tar. |
 | 10 | Post-publish verification requires exact Hex checksum, versioned docs, and exact-version clean-room HTTP proof. | ✓ VERIFIED | `verify_install_truth.sh` calls the release-specific API through manifest validation, checks HexDocs, and invokes the exact-version journey; mismatch and topology contracts passed. |
 | 11 | Protected release orchestration carries the same checked artifact across prepublish, publish, and post-publish. | ✓ VERIFIED | `.github/workflows/release.yml` uses verified SHA, manifest-bound artifact names, fresh detached publish checkout, protected `hex-publish`, and receipt-only retention; workflow contracts passed. |
-| 12 | A production GitHub/Hex release realizes the exact-artifact chain. | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Implemented and locally contract-tested, but not safely executable here without protected credentials and external registry state. |
+| 12 | A production GitHub/Hex release realizes the exact-artifact chain. | ✓ VERIFIED | Protected recovery run `33141484467` passed validation, prepublish proof, exact-byte Hex publication, and public install truth for Lockspire 1.5.0 from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`. Its manifest and verified receipts identify `lockspire-1.5.0.tar`, 415744 bytes, SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. |
 
-**Score:** 10/12 truths verified (2 present, behavior-unverified)
+**Score:** 12/12 truths verified
 
 ### Required Artifacts
 
@@ -59,7 +46,7 @@ human_verification:
 | `scripts/ci/{run_test_matrix,aggregate_coverage}.sh` | Once-only exports and strict native merge | ✓ VERIFIED | Exact inventory/SHA/checksum validation; fresh current-HEAD aggregate passed. |
 | `.github/workflows/ci.yml` | Required CI evidence topology | ✓ VERIFIED | Fast/integration uploads and `needs`-bound non-test aggregate job are wired. |
 | `scripts/conformance/{oidf_inputs.py,prepare_oidf_suite.sh,run_oidf_profile.sh,build_redacted_evidence.py}` | Immutable suite execution and safe evidence | ✓ VERIFIED | Validator, private preparation, pinned runner invocation, and allowlisted receipt flow are linked. |
-| `.github/workflows/oidf-conformance.yml` | Scheduled supplemental lane | ✓ VERIFIED | Cron/manual topology, pinned setup/actions, receipt-only uploads; external execution remains human verification. |
+| `.github/workflows/oidf-conformance.yml` | Scheduled supplemental lane | ✓ VERIFIED | Cron/manual topology, pinned setup/actions, and receipt-only uploads were exercised by default-branch run `33139876101`. |
 | `scripts/acceptance/clean_room/package_input.py` | Exact package provenance for both child roles | ✓ VERIFIED | Source selection, Hex unpack/inventory, copy, and per-role dependency-path checks are substantive and invoked by journey code. |
 | `scripts/publish/{release_artifact.py,publish_hex_idempotently.sh,upload_hex_artifact.exs,verify_install_truth.sh}` | Single-byte release proof | ✓ VERIFIED | Manifest validation, byte upload, release API checksum, docs and public journey paths are linked and tested. |
 | `.github/workflows/release.yml` | Prepublish → protected publish → postpublish chain | ✓ VERIFIED | Verified-SHA handoff, environment-scoped key, validated data transfer, and bounded receipt retention are wired. |
@@ -78,8 +65,8 @@ human_verification:
 | Artifact | Data | Source | Produces Real Data | Status |
 | --- | --- | --- | --- | --- |
 | Coverage aggregate | `fast` and `integration` `.coverdata` | Real test partitions, SHA/checksum receipts | Merged tree 84.78% | ✓ FLOWING |
-| OIDF evidence | receipt identity/status | checked-in lock + actual runner result | Schema-bounded receipt only | ✓ FLOWING |
-| Release evidence | manifest/checksum/receipts | built tar + release API + clean-room verifier | Exact identity inputs are validated before each use | ✓ FLOWING |
+| OIDF evidence | receipt identity/status | checked-in lock + hosted runner result `33139876101` | Two allowlisted, classified receipts only | ✓ FLOWING |
+| Release evidence | manifest/checksum/receipts | built tar + release API + clean-room verifier in `33141484467` | One exact SHA-256 identity through publish and public install | ✓ FLOWING |
 
 ### Behavioral Spot-Checks
 
@@ -90,6 +77,9 @@ human_verification:
 | Phase contracts, including post-review fixes | focused 14-file ExUnit invocation | 47 tests, 0 failures | ✓ PASS |
 | Current complete coverage | fresh matrix fast + integration + native aggregate in `/tmp/lockspire-phase137-merge-coverage.K0EnZi` | fast 1362/0 (6 skipped); integration 284/0; aggregate 84.78% | ✓ PASS |
 | Workflow syntax/static supply chain | `bash scripts/ci/lint_workflows.sh` | Exit 0 | ✓ PASS |
+| Canonical default-branch CI | GitHub Actions run `33141161205` at `5d10ce2219c2e687cf9573c8b280abfb118a47d8` | All jobs passed; fast 1657/0, integration 286/0, minimum-version 1371/0 (6 skipped), release contracts 13/0 | ✓ PASS |
+| Supplemental conformance | GitHub Actions run `33139876101` and downloaded receipt artifacts | Both immutable profiles ran and emitted validated, allowlisted `suite_failure` receipts without raw evidence | ✓ PASS |
+| Protected release and public install | GitHub Actions run `33141484467` | Exact-main validation, prepublish, Hex publish, Hex/HexDocs checksum verification, and exact-version clean-room journey all passed | ✓ PASS |
 
 ### Requirements Coverage
 
@@ -99,9 +89,9 @@ human_verification:
 | CI-02 | ✓ SATISFIED | Exactly two signed same-identity exports, no test execution in aggregator, current 84.78% aggregate. |
 | CI-03 | ✓ SATISFIED | Read-only unused-lock and compile-connected cycle gate are live and CI-wired; fixture lock checks remain in workflow. |
 | CONF-01 | ✓ SATISFIED | Pinned commit/archive/helpers/OCI digests, verified preparation, and no mutable/source fallback. |
-| CONF-02 | ⚠️ NEEDS HUMAN | Schedule and receipt-only policy are implemented/tested; real external scheduled execution needs a GitHub run. |
-| REL-01 | ⚠️ NEEDS HUMAN | Built-tar/exact-version clean-room paths and protected workflow are implemented/tested; public publication journey needs protected external execution. |
-| REL-02 | ⚠️ NEEDS HUMAN | Manifest, exact-byte upload, checksum comparison, and workflow retention are implemented/tested; a real Hex release is still an external acceptance check. |
+| CONF-02 | ✓ SATISFIED | Default-branch run `33139876101` exercised both pinned profiles and retained only validated classified receipts; suite failures remain supplemental and non-certifying. |
+| REL-01 | ✓ SATISFIED | Protected run `33141484467` passed prepublish built-tar proof and postpublish exact-1.5.0 clean-room install/HTTP proof. |
+| REL-02 | ✓ SATISFIED | Run `33141484467` retained the allowlisted manifest and verified pre/post receipts for the same 415744-byte tar and SHA-256 checksum reported by public Hex. |
 
 ### Anti-Patterns Found
 
@@ -109,29 +99,21 @@ human_verification:
 | --- | --- | --- | --- |
 | — | — | No `TBD`, `FIXME`, `XXX`, placeholder, raw-copy, or broad-ignore debt markers in 46 Phase-137 implementation/test files | ℹ️ Info | No blocker found. The only `latest` strings are expected upstream-compose templates that the validator rejects before use. |
 
-## Human Verification Required
+## External Acceptance Evidence
 
 ### 1. Scheduled external conformance lane
 
-**Test:** Dispatch the default-branch supplemental workflow; no provider secrets are needed for the two scheduled jobs.
-
-**Expected:** Pinned OIDC and FAPI plans run after validated input preparation; only redacted receipt artifacts remain, and any failure is honestly classified.
-
-**Why human:** Requires GitHub Actions, Docker, and the external suite. Only the optional hosted-maintainer comparison requires a provider secret.
+Default-branch run `33139876101` executed the secretless Phase37 and FAPI2 jobs against disposable Billingo providers. Both receipts passed the allowlist/redaction validator and retained immutable suite identity plus `suite_failure` classification only. Phase37 now reaches authorization semantics after the DCR credential-method fix; remaining findings concern authorization error behavior. The FAPI2 receipt preserves broader PAR/TLS/WebRunner interoperability findings. This satisfies reproducible supplemental evidence while explicitly not asserting conformance certification.
 
 ### 2. Protected exact-artifact release lane
 
-**Test:** Run an approved protected release/staging rehearsal through prepublish, Hex upload, and public verification.
-
-**Expected:** One tar checksum persists through manifest, outbound bytes, Hex API, versioned docs, and the exact-version clean-room HTTP journey; only bounded receipts are retained.
-
-**Why human:** Requires protected `HEX_API_KEY` access and public Hex/HexDocs propagation.
+Release run `33141484467` used canonical green CI run `33141161205` for exact source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`. The release manifest and both verified receipts carry version `1.5.0`, tar size 415744, and SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. The protected job published those bytes, verified the release-specific Hex checksum and versioned HexDocs, and passed the exact public-version clean-room journey.
 
 ## Gaps Summary
 
-No implementation gaps or failed roadmap truths were found. The phase is blocked only on the two normal external acceptance checks above; automated evidence is complete.
+No blocking implementation or acceptance gaps remain. The supplemental OIDF `suite_failure` receipts are retained follow-up evidence and deliberately do not become a release gate or certification claim.
 
 ---
 
-_Verified: 2026-08-27T23:25:44Z_
+_Verified: 2026-08-28T04:41:30Z after protected release acceptance and milestone integration audit_
 _Verifier: the agent (gsd-verifier)_

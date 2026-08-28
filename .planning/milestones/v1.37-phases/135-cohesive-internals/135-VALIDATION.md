@@ -1,3 +1,13 @@
+---
+phase: 135
+slug: cohesive-internals
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
+created: 2026-08-27
+audited: 2026-08-28
+---
+
 # Phase 135 — Plan Validation and Source Audit
 
 ## Dependency graph
@@ -70,3 +80,13 @@ Every production-code task starts with behavior assertions and has a focused aut
 The prior authorization-code “one winner” check made two sequential calls, so it could not establish that the `FOR UPDATE` transaction remained correct under independent database connections. `test/lockspire/storage/repository_concurrency_test.exs` is intentionally outside the shared SQL sandbox: it persists isolated fixtures, synchronizes ten task contenders, runs each redemption with its own non-sandbox connection, asserts the one-success/nine-rejection contract, verifies durable redemption, then removes only those fixtures. This test fails if two contenders can redeem the same code.
 
 No implementation files were modified.
+
+## Validation Audit 2026-08-28
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All five requirements remain covered by executable behavioral evidence and the passed phase verification. This audit normalized the validation metadata; it did not require new tests.

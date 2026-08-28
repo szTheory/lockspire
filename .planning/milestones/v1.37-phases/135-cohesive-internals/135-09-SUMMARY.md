@@ -3,6 +3,7 @@ phase: 135-cohesive-internals
 plan: 09
 subsystem: architecture-quality
 tags: [fitness, compatibility, atomicity, oauth, qa]
+requirements-completed: [COH-01, COH-02, COH-03, COH-04, COH-05]
 status: complete
 requires: [135-05, 135-08]
 provides:

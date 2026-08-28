@@ -8,7 +8,7 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## Current Milestone: v1.37 Prime-Time Readiness Ratchet
+## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
 **Goal:** Make Lockspire's documented embedded-provider path genuinely installable, prove it through a separate SaaS client and resource-server journey, and tighten the architecture and executable quality gates around that truth.
 
@@ -16,6 +16,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - Make generated routes, host consent, migrations, required configuration, claims examples, and default generated tests executable from a packaged Lockspire artifact.
 - Prove a clean-room Phoenix SaaS provider plus separate-origin confidential client and protected resource API across OIDC validation, token lifecycle, negative cases, and durable DPoP replay protection.
 - Improve public API truth, dependency topology, storage and token cohesion, static-analysis depth, test readability, CI signal, conformance reproducibility, and release artifact proof without breaking v1.x behavior.
+
+**Delivered:** Phases 131-137 are complete, verified, audited, archived, and published as Lockspire 1.5.0. The milestone shipped executable packaged installation, semantic public resource-server APIs, a real separate-origin SaaS journey, cycle-free and cohesive internals, high-signal quality gates, immutable supplemental conformance evidence, and exact-artifact public release proof while preserving the embedded-library boundary and secure defaults.
 
 ## Completed Milestone: v1.36 Structural Quality Ratchet
 
@@ -25,7 +27,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current State
 
-Lockspire has implemented all seven v1.37 phases, and Hex currently reports `1.4.0` as the latest public release. The milestone is not marked shipped: Phase 137 is reviewed, Nyquist-compliant, and threat-secure, but final verification still requires a default-branch OIDC/FAPI workflow run against its disposable Billingo provider and an approved protected release or staging-equivalent that proves the exact tar checksum through Hex, HexDocs, and the public clean-room journey. The scheduled Phase37 and FAPI conformance jobs require no provider secrets; only the optional hosted-provider comparison lane accepts provider configuration. No package was published during autonomous implementation.
+Lockspire has implemented and verified all seven v1.37 phases, and Hex reports `1.5.0` as the latest public release. Default-branch supplemental OIDC/FAPI run `33139876101` retained only allowlisted classified receipts from immutable suite inputs; its honest suite-failure findings remain non-certifying follow-up evidence. Protected release run `33141484467` published the exact pre-proven tar from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, matched its public Hex checksum, verified versioned docs, and repeated the clean-room public-package journey. The repo-native conformance jobs require no provider secrets; only the optional hosted-provider comparison accepts provider configuration.
 
 The implemented milestone makes packaged installation executable, aligns the supported client/resource-server surface with runtime truth, proves the separate-origin SaaS journey, enforces acyclic/cohesive internals, restores high-signal static analysis, aggregates truthful complete-suite coverage above 84%, pins external conformance inputs, and binds release proof to one manifest-verified tar. Generated routes and consent, collision-safe migrations, semantic access-token readers, capability-aware registration, durable DPoP replay defaults, and host-owned authorization boundaries remain verified and security-audited.
 
@@ -33,7 +35,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently landed mainline work, `v1.33-v1.36`, tightened OSS adoption trust, moved new installs toward prefix-isolated storage by default, made CI/release hygiene executable, and repaired high-leverage architectural and readability gaps without publishing a new Hex package in this checkpoint.
+The most recently shipped work, v1.37 / Lockspire 1.5.0, turned those foundations into an executable packaged-provider journey and a checksum-bound public release with canonical CI, conformance receipts, HexDocs, and clean-room install proof.
 
 Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
 
@@ -69,7 +71,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-Complete v1.37's two protected acceptance checks without widening scope: run the scheduled OIDC/FAPI profiles with the three configured provider secrets, then run an approved protected release or staging-equivalent and verify the exact manifest checksum through upload, Hex, HexDocs, and the public clean-room journey. Archive/tag the milestone only after `137-VERIFICATION.md` can move from `human_needed` to `passed`.
+Return to the sustaining GA release train after archiving v1.37. Treat the retained supplemental OIDF suite failures as evidence for a future bounded conformance-hardening milestone; do not claim certification or widen supported protocol surface without stable measured proof.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -374,4 +376,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-27 at the v1.37 external verification boundary*
+*Last updated: 2026-08-28 after the v1.37 milestone*

@@ -1,6 +1,7 @@
 ---
 phase: 133-clean-room-saas-journey
-verified: 2026-08-27T16:57:00Z
+verified: 2026-08-28T04:41:30Z
+milestone_reverified: 2026-08-28T04:41:30Z
 status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 0
@@ -17,7 +18,7 @@ re_verification:
 # Phase 133: Clean-Room SaaS Journey Verification Report
 
 **Phase Goal:** A separate-origin SaaS client can safely consume an embedded Lockspire provider and protected API from the built package.
-**Verified:** 2026-08-27T16:57:00Z
+**Verified:** 2026-08-28T04:41:30Z
 **Status:** passed
 **Re-verification:** Yes — after gap closure
 
@@ -91,5 +92,5 @@ No `probe-*.sh` artifact is declared. The maintained Mix alias is the executable
 
 None. The previous blocker was a Python default argument binding the stale fixed-port resource URI before dynamic origins were allocated. It is resolved at journey runtime. The post-restart readiness probe accepts only a new proof to establish the protected-resource pipeline is live; the runner then retains the original exact proof and separately requires its rejection. Current execution covers all six E2E requirements.
 
-_Verified: 2026-08-27T16:57:00Z_
+_Verified: 2026-08-28T04:41:30Z after canonical CI and milestone integration audit_
 _Verifier: the agent (gsd-verifier)_

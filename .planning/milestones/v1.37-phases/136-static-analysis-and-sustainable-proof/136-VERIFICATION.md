@@ -1,6 +1,7 @@
 ---
 phase: 136-static-analysis-and-sustainable-proof
-verified: 2026-08-27T21:53:30Z
+verified: 2026-08-28T04:41:30Z
+milestone_reverified: 2026-08-28T04:41:30Z
 status: passed
 score: 4/4 must-haves verified
 behavior_unverified: 0
@@ -18,7 +19,7 @@ re_verification:
 # Phase 136: Static Analysis and Sustainable Proof Verification Report
 
 **Phase Goal:** Maintainers can trust concise, behavior-focused quality evidence and read the codebase without avoidable noise or archaeology.
-**Verified:** 2026-08-27T21:53:30Z
+**Verified:** 2026-08-28T04:41:30Z
 **Status:** passed
 **Re-verification:** Yes — after gap closure
 
@@ -90,5 +91,5 @@ None. The earlier archaeology gap is closed and its permanent detector now cover
 
 ---
 
-_Verified: 2026-08-27T21:53:30Z_
+_Verified: 2026-08-28T04:41:30Z after canonical CI and milestone integration audit_
 _Verifier: the agent (gsd-verifier)_

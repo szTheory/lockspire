@@ -3,6 +3,7 @@ phase: 136-static-analysis-and-sustainable-proof
 plan: 11
 subsystem: quality-baseline
 tags: [credo, dialyzer, exdoc, package, integration, runtime-noise]
+requirements-completed: [QUAL-01, QUAL-02, QUAL-03, QUAL-04]
 requires:
   - phase: 136-02
     provides: source quality characterization
