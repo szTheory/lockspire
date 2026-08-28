@@ -906,7 +906,13 @@ def main(argv: list[str]) -> int:
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             run_child_command(provider_child, provider_environment, "ecto.create")
-            run_child_command(provider_child, provider_environment, "ecto.migrate")
+            run_child_command(
+                provider_child,
+                provider_environment,
+                "ecto.migrate",
+                "--migrations-path",
+                "priv/repo/migrations",
+            )
             run_child_command(provider_child, provider_environment, "compile", "--warnings-as-errors")
             run_child_command(provider_child, provider_environment, "lockspire.verify")
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')

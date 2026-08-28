@@ -318,7 +318,13 @@ def self_test() -> None:
 
         try:
             run_child_command(child, environment, "ecto.create")
-            run_child_command(child, environment, "ecto.migrate")
+            run_child_command(
+                child,
+                environment,
+                "ecto.migrate",
+                "--migrations-path",
+                "priv/repo/migrations",
+            )
             run_child_command(child, environment, "compile", "--warnings-as-errors")
             run_child_command(child, environment, "lockspire.verify")
             assert_live_discovery(child, environment, issuer)

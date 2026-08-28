@@ -27,4 +27,11 @@ defmodule Lockspire.Integration.Phase133ProviderInstallTest do
     refute output =~ "phase133-bearer-client-secret-sentinel"
     refute output =~ "phase133-dpop-client-secret-sentinel"
   end
+
+  test "fresh provider migration does not depend on a compiled priv directory" do
+    builder = File.read!(@builder)
+
+    assert builder =~
+             ~s("ecto.migrate",\n                "--migrations-path",\n                "priv/repo/migrations")
+  end
 end
