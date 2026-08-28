@@ -19,6 +19,9 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "test \"$(jq -r '.path' <<< \"$ci_run\")\" = \".github/workflows/ci.yml\""
 
     assert workflow =~
+             "test \"$actual_files\" = \".planning/RELEASE-TRAIN.md,.release-please-manifest.json,CHANGELOG.md,mix.exs\""
+
+    assert workflow =~
              "test \"$(jq -r '.workflow_id' <<< \"$ci_run\")\" = \"$canonical_ci_workflow_id\""
 
     assert workflow =~ "No eligible or just-merged Release Please PR"

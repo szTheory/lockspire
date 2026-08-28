@@ -79,7 +79,7 @@ jobs:
 
           if [[ "$count" == "1" ]]; then
             actual_files="$(jq -r '.[0].files[].path' <<< "$eligible_json" | sort | paste -sd ',' -)"
-            test "$actual_files" = ".release-please-manifest.json,CHANGELOG.md,mix.exs"
+            test "$actual_files" = ".planning/RELEASE-TRAIN.md,.release-please-manifest.json,CHANGELOG.md,mix.exs"
             pr_number="$(jq -r '.[0].number' <<< "$eligible_json")"
             gh pr merge "$pr_number" --squash --delete-branch
             echo "Merged Release Please PR #$pr_number. Publication deliberately waits for that merge commit's own CI push run."
