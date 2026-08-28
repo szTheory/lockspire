@@ -4,12 +4,15 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
   @automerge Path.expand("../../.github/workflows/release-please-automerge.yml", __DIR__)
   @release Path.expand("../../.github/workflows/release.yml", __DIR__)
 
-  test "release automation waits for a post-merge CI push run and carries its exact evidence" do
+  test "release automation dispatches post-merge CI and carries its exact evidence" do
     workflow = File.read!(@automerge)
 
     assert workflow =~ "CI_EVENT"
-    assert workflow =~ "test \"$CI_EVENT\" = \"push\""
-    assert workflow =~ "Publication deliberately waits for that merge commit's own CI push run"
+    assert workflow =~ ~S([[ "$ci_event" == "push" || "$ci_event" == "workflow_dispatch" ]])
+    assert workflow =~ "test \"$CI_EVENT\" = \"$ci_event\""
+    assert workflow =~ "gh workflow run ci.yml --ref main"
+    assert workflow =~ "dispatched canonical CI for exact commit $merged_sha"
+    assert workflow =~ ~s|gh pr view "$pr_number" --json mergeCommit --jq '.mergeCommit.oid'|
     assert workflow =~ "source_ci_run_id=\"$CI_RUN_ID\""
     assert workflow =~ "recovery_ref=\"$CI_HEAD_SHA\""
     assert workflow =~ "mergeCommit.oid == $sha"
@@ -45,6 +48,7 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "'.head_branch'"
     assert workflow =~ "'.conclusion'"
     assert workflow =~ "'.repository.full_name'"
+    assert workflow =~ ~S([[ "$ci_event" == "push" || "$ci_event" == "workflow_dispatch" ]])
     assert workflow =~ "verified_sha=$verified_sha"
     refute workflow =~ "recovery_ref: ${{ inputs.recovery_ref }}"
   end

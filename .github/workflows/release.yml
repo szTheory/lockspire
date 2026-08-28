@@ -106,7 +106,8 @@ jobs:
           test "$(jq -r '.name' <<< "$ci_run")" = "CI"
           test "$(jq -r '.path' <<< "$ci_run")" = ".github/workflows/ci.yml"
           test "$(jq -r '.workflow_id' <<< "$ci_run")" = "$canonical_ci_workflow_id"
-          test "$(jq -r '.event' <<< "$ci_run")" = "push"
+          ci_event="$(jq -r '.event' <<< "$ci_run")"
+          [[ "$ci_event" == "push" || "$ci_event" == "workflow_dispatch" ]]
           test "$(jq -r '.head_branch' <<< "$ci_run")" = "main"
           test "$(jq -r '.status' <<< "$ci_run")" = "completed"
           test "$(jq -r '.conclusion' <<< "$ci_run")" = "success"
