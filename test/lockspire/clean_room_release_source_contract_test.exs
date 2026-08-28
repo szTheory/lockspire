@@ -62,4 +62,54 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
     assert wrapper =~ "clean_room_saas_journey.py"
     assert wrapper =~ "processes.py"
   end
+
+  test "JOSE compatibility patch is idempotent and rejects unknown source shapes" do
+    script = """
+    import importlib.util
+    import os
+    from pathlib import Path
+    import sys
+    import tempfile
+
+    provider_path = Path(os.environ["LOCKSPIRE_PROVIDER_BUILDER"])
+    sys.path.insert(0, str(provider_path.parent))
+    spec = importlib.util.spec_from_file_location("build_provider", provider_path)
+    provider = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(provider)
+
+    with tempfile.TemporaryDirectory() as temporary:
+        deps = Path(temporary)
+        jose = deps / "jose"
+        (jose / "include").mkdir(parents=True)
+        (jose / "lib" / "jose").mkdir(parents=True)
+
+        for module in ("jwe", "jwk", "jws", "jwt"):
+            header = f"jose_{module}.hrl"
+            (jose / "include" / header).write_text("record")
+            (jose / "lib" / "jose" / f"{module}.ex").write_text(
+                f'from_lib: "jose/include/{header}"'
+            )
+
+        environment = {"MIX_DEPS_PATH": str(deps)}
+        provider.patch_jose_record_extractors(Path(temporary), environment)
+        provider.patch_jose_record_extractors(Path(temporary), environment)
+
+        jwt = jose / "lib" / "jose" / "jwt.ex"
+        assert 'from: Path.expand("../../include/jose_jwt.hrl", __DIR__)' in jwt.read_text()
+        jwt.write_text("unexpected extractor")
+
+        try:
+            provider.patch_jose_record_extractors(Path(temporary), environment)
+        except provider.PackageInputError as error:
+            assert "locked JOSE extractor shape changed: lib/jose/jwt.ex" in str(error)
+        else:
+            raise AssertionError("unknown JOSE source shape was accepted")
+    """
+
+    assert {_, 0} =
+             System.cmd("python3", ["-c", script],
+               env: [{"LOCKSPIRE_PROVIDER_BUILDER", @provider}],
+               stderr_to_stdout: true
+             )
+  end
 end

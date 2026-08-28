@@ -168,9 +168,10 @@ def patch_jose_record_extractors(child: Path, environment: dict[str, str]) -> No
     1.19 resolves ``from_lib`` through the partially-built app directory,
     before Mix copies the package's headers there. Its immutable package source
     does contain those headers, so the child-local dependency cache is patched
-    to resolve them relative to the source file instead. The exact replacements
-    make unexpected upstream lock changes fail closed rather than silently
-    altering another JOSE release.
+    to resolve them relative to the source file instead. Dependency caches may
+    preserve the patched source between CI runs, so the transformation accepts
+    its own exact output. Any third shape still fails closed rather than
+    silently altering another JOSE release.
     """
     deps_root = Path(environment["MIX_DEPS_PATH"])
     source = deps_root / "jose"
@@ -191,10 +192,15 @@ def patch_jose_record_extractors(child: Path, environment: dict[str, str]) -> No
         after = f'from: Path.expand("../../include/{header}", __DIR__)'
         content = path.read_text()
 
-        if before not in content:
-            raise PackageInputError(f"locked JOSE extractor shape changed: {relative}")
+        before_count = content.count(before)
+        after_count = content.count(after)
 
-        path.write_text(content.replace(before, after, 1))
+        if before_count == 1 and after_count == 0:
+            path.write_text(content.replace(before, after, 1))
+        elif before_count == 0 and after_count == 1:
+            continue
+        else:
+            raise PackageInputError(f"locked JOSE extractor shape changed: {relative}")
 
 
 def prepare_provider(
