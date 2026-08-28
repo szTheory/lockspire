@@ -21,6 +21,20 @@ cut is marked with `# ...`. Internal modules and private functions are shown to
 explain the design; they are not promises of public API. The public ceiling
 remains the [supported surface](supported-surface.md).
 
+## Token endpoint: stable facade, focused coordinators
+
+Start token-endpoint tracing at `Lockspire.Protocol.TokenExchange`. Its public
+`exchange/1` dispatch is intentionally thin: authorization-code, device-code,
+and CIBA work belongs to dedicated grant coordinators, while shared mechanics
+are kept private in the internal grant-support coordinator. Refresh and
+RFC 8693 exchange keep their established coordinators. The internal TokenLifetime
+policy owns token duration defaults, and signing paths decode private JWK material
+only through the PrivateJwk decoder.
+
+This organization keeps the host seam narrow: `Lockspire.Storage.Ecto.Repository`
+implements the storage ports, but host account resolution, claims, login UX, and
+product policy remain outside the library.
+
 ## Boot: host configuration becomes runtime mechanics
 
 Lockspire is a library application, but it is not passive. The host supplies the
@@ -62,47 +76,45 @@ state.
 
 ## Install: generated files get owners
 
-`Lockspire.Generators.Install` renders both ownership classes, but the manifest
-receives only managed templates. Rerunning the task leaves identical files alone
-and refuses to overwrite drift.
+`Lockspire.Generators.Install` renders both ownership classes in memory, then
+hands the complete rendered set to `Lockspire.Install.OperationPlan`. The plan
+preflights managed and host-owned destinations alongside the complete packaged
+migration inventory before it may create a directory, copy a migration, write a
+generated file, or refresh the manifest.
 
 ```elixir
-defp write_manifest!(assigns, rendered_templates) do
-  managed_templates =
-    rendered_templates
-    |> Enum.filter(&(&1.template.ownership == :managed))
-
-  assigns
-  |> Manifest.build(managed_templates)
-  |> then(&Manifest.write(assigns.project_root, &1))
+defp build(assigns, mode, rendered_templates, manifest) do
+  with {:ok, migration_plan} <- Migrations.plan(project_root: assigns.project_root),
+       {:ok, file_operations} <- file_operations(mode, rendered_templates, manifest),
+       {:ok, final_manifest} <- final_manifest(assigns, rendered_templates, migration_plan) do
+    {:ok,
+     %__MODULE__{
+       assigns: assigns,
+       mode: mode,
+       migration_plan: migration_plan,
+       file_operations: file_operations,
+       manifest: final_manifest
+     }}
+  end
 end
 
-defp ensure_file!(destination, rendered) do
-  File.mkdir_p!(Path.dirname(destination))
-
-  case File.read(destination) do
-    {:ok, ^rendered} ->
-      Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
-
-    {:ok, _existing} ->
-      Mix.raise("""
-      Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
-
-      Keep the host-owned edits and reconcile this file manually before rerunning
-      `mix lockspire.install`.
-      """)
-
-    {:error, :enoent} ->
-      File.write!(destination, rendered)
-      Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-    {:error, reason} ->
-      Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+def apply(%__MODULE__{} = plan) do
+  with :ok <- validate_file_operations(plan.file_operations),
+       {:ok, _migration_result} <- Migrations.apply(plan.migration_plan),
+       :ok <- apply_file_operations(plan.file_operations),
+       :ok <- Manifest.write(plan.assigns.project_root, plan.manifest) do
+    {:ok, plan}
   end
 end
 ```
 
-That filter is the upgrade boundary. The generated account, interaction,
+This is the all-artifact mutation boundary. A legacy manifest may omit its new
+migration audit inventory, but it never authorizes an overwrite: package and
+host filesystem state are rechecked for every operation. The manifest is
+written last. Repeat installs report unchanged artifacts, and upgrade dry-runs
+report this same approved plan without applying it.
+
+Managed templates remain the upgrade boundary; host-owned account, interaction,
 consent, device, and product UX modules remain host-owned even though Lockspire
 created their first version.
 
@@ -169,6 +181,23 @@ end
 
 The router tells you where a value enters. The protocol coordinator tells you
 what it means.
+
+## Resource-server routes: protocol facts stop before product policy
+
+For a host Phoenix API route, the canonical pipeline is `VerifyToken`,
+`EnforceSenderConstraints`, then `RequireToken`. The ordinary sender-constraint
+path persists DPoP replay records through the configured Lockspire repository;
+a compatible custom replay store is an advanced override, not an installation
+requirement. Controllers receive `%Lockspire.AccessToken{}` and should use
+`AccessToken.subject/1`, `scopes/1`, `audiences/1`, `expires_at/1`, and
+`confirmation/1` instead of reparsing raw claims. Raw `claims` remain available
+for compatibility and extension data.
+
+This is intentionally not a product authorization engine. Lockspire proves
+token validity, scope, audience, and sender constraints; the host still decides
+tenant, object, billing, product, response, and rate-limit policy. See
+[Protect Phoenix API Routes](protect-phoenix-api-routes.md) for the executable
+host-route contract.
 
 ## Cross the host seam
 

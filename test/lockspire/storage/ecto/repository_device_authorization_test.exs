@@ -5,6 +5,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
 
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -51,6 +52,28 @@ defmodule Lockspire.Storage.Ecto.RepositoryDeviceAuthorizationTest do
   end
 
   describe "put_device_authorization/1" do
+    test "the device aggregate owns durable issuance behind the repository facade" do
+      authorization =
+        DeviceAuthorization.issue(%{
+          device_code: "aggregate-device",
+          user_code: "AGGR-DEV1",
+          client_id: "aggregate-client"
+        })
+
+      assert {:ok, %DeviceAuthorization{} = stored} =
+               DeviceAuthorizationStore.put_device_authorization(
+                 Lockspire.TestRepo,
+                 authorization
+               )
+
+      assert {:ok, %DeviceAuthorization{id: id}} =
+               Repository.fetch_device_authorization_by_device_code_hash(
+                 authorization.device_code_hash
+               )
+
+      assert stored.id == id
+    end
+
     test "inserts the record and returns it given a valid DeviceAuthorization struct" do
       now = DateTime.utc_now()
 

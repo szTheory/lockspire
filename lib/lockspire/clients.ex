@@ -1,21 +1,16 @@
 defmodule Lockspire.Clients do
   @moduledoc """
-  Durable client registration API for secure Phase 2 client onboarding.
+  Durable client registration API for secure client onboarding.
   """
 
   alias Lockspire.Clients.RegistrationResult
+  alias Lockspire.ClientLifecycle
+  alias Lockspire.ClientMetadata
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
-  @allowed_grant_types MapSet.new([
-                         "authorization_code",
-                         "refresh_token",
-                         "urn:ietf:params:oauth:grant-type:device_code",
-                         "urn:ietf:params:oauth:grant-type:token-exchange"
-                       ])
-  @allowed_response_types MapSet.new(["code"])
   @secret_bytes 32
   @client_id_bytes 24
 
@@ -28,6 +23,10 @@ defmodule Lockspire.Clients do
           | :invalid_scope
           | :invalid_grant_type
           | :invalid_response_type
+          | :incoherent_pair
+          | :missing_cryptographic_material
+          | :mutually_exclusive_with_jwks_uri
+          | :invalid_uri_scheme
           | :pkce_required
           | :client_secret_not_allowed
           | :persistence_failed
@@ -157,6 +156,8 @@ defmodule Lockspire.Clients do
           allowed_response_types: normalized.allowed_response_types,
           token_endpoint_auth_method: normalized.auth_method,
           token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
+          jwks: normalized.jwks,
+          jwks_uri: normalized.jwks_uri,
           pkce_required: true,
           subject_type: :public,
           created_by:
@@ -173,7 +174,7 @@ defmodule Lockspire.Clients do
   end
 
   defp persist_client(%Client{} = client) do
-    case Repository.register_client(client) do
+    case ClientLifecycle.persist_direct(client) do
       {:ok, persisted_client} ->
         {:ok, persisted_client}
 
@@ -192,6 +193,9 @@ defmodule Lockspire.Clients do
     auth_method = normalize_auth_method(fetch_auth_method(attrs))
     secret_material = secret_values(client_type)
 
+    allowed_grant_types =
+      attrs |> fetch_required_list(:allowed_grant_types) |> normalize_string_list()
+
     %{
       client_type: client_type,
       auth_method: auth_method,
@@ -202,12 +206,17 @@ defmodule Lockspire.Clients do
         ),
       redirect_uris: attrs |> fetch_required_list(:redirect_uris) |> normalize_string_list(),
       allowed_scopes: attrs |> fetch_required_list(:allowed_scopes) |> normalize_string_list(),
-      allowed_grant_types:
-        attrs |> fetch_required_list(:allowed_grant_types) |> normalize_string_list(),
+      allowed_grant_types: allowed_grant_types,
       allowed_response_types:
         attrs
-        |> Map.get(:allowed_response_types, Map.get(attrs, "allowed_response_types", ["code"]))
+        |> Map.get(
+          :allowed_response_types,
+          Map.get(attrs, "allowed_response_types", default_response_types(allowed_grant_types))
+        )
         |> normalize_string_list(),
+      jwks: normalize_jwks(Map.get(attrs, :jwks) || Map.get(attrs, "jwks")),
+      jwks_uri:
+        normalize_optional_string(Map.get(attrs, :jwks_uri) || Map.get(attrs, "jwks_uri")),
       pkce_required: Map.get(attrs, :pkce_required, Map.get(attrs, "pkce_required", true)),
       client_secret_hash: secret_material.client_secret_hash,
       client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
@@ -216,14 +225,14 @@ defmodule Lockspire.Clients do
   end
 
   defp validation_errors(normalized) do
-    []
-    |> validate_client_type(normalized.client_type)
-    |> validate_auth_method(normalized.client_type, normalized.auth_method)
+    shape_errors =
+      case ClientMetadata.validate_direct(normalized) do
+        :ok -> []
+        {:error, errors} -> errors
+      end
+
+    shape_errors
     |> validate_auth_signing_alg(normalized)
-    |> validate_redirect_uris(normalized.redirect_uris)
-    |> validate_scopes(normalized.allowed_scopes)
-    |> validate_grant_types(normalized.allowed_grant_types)
-    |> validate_response_types(normalized.allowed_response_types)
     |> validate_pkce_required(normalized.pkce_required)
   end
 
@@ -240,45 +249,6 @@ defmodule Lockspire.Clients do
   defp secret_values(_other) do
     %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}
   end
-
-  defp validate_client_type(errors, type) when type in [:public, :confidential], do: errors
-
-  defp validate_client_type(errors, nil) do
-    [%{field: :client_type, reason: :invalid_client_type, detail: nil} | errors]
-  end
-
-  defp validate_client_type(errors, type) do
-    [%{field: :client_type, reason: :invalid_client_type, detail: type} | errors]
-  end
-
-  defp validate_auth_method(errors, :public, :none), do: errors
-
-  defp validate_auth_method(errors, :public, method) do
-    [
-      %{
-        field: :token_endpoint_auth_method,
-        reason: :invalid_token_endpoint_auth_method,
-        detail: method
-      }
-      | errors
-    ]
-  end
-
-  defp validate_auth_method(errors, :confidential, method)
-       when method in [:client_secret_basic, :client_secret_post, :client_secret_jwt], do: errors
-
-  defp validate_auth_method(errors, :confidential, method) do
-    [
-      %{
-        field: :token_endpoint_auth_method,
-        reason: :invalid_token_endpoint_auth_method,
-        detail: method
-      }
-      | errors
-    ]
-  end
-
-  defp validate_auth_method(errors, _client_type, _method), do: errors
 
   defp validate_auth_signing_alg(errors, %{auth_method: :client_secret_jwt} = normalized) do
     errors
@@ -361,39 +331,9 @@ defmodule Lockspire.Clients do
 
   defp validate_scopes(errors, scopes) do
     Enum.reduce(scopes, errors, fn scope, acc ->
-      cond do
-        scope == "openid" ->
-          [%{field: :allowed_scopes, reason: :invalid_scope, detail: scope} | acc]
-
-        valid_scope_token?(scope) ->
-          acc
-
-        true ->
-          [%{field: :allowed_scopes, reason: :invalid_scope, detail: scope} | acc]
-      end
-    end)
-  end
-
-  defp validate_grant_types(errors, grant_types) do
-    Enum.reduce(grant_types, errors, fn grant_type, acc ->
-      if MapSet.member?(@allowed_grant_types, grant_type) do
-        acc
-      else
-        [%{field: :allowed_grant_types, reason: :invalid_grant_type, detail: grant_type} | acc]
-      end
-    end)
-  end
-
-  defp validate_response_types(errors, response_types) do
-    Enum.reduce(response_types, errors, fn response_type, acc ->
-      if MapSet.member?(@allowed_response_types, response_type) do
-        acc
-      else
-        [
-          %{field: :allowed_response_types, reason: :invalid_response_type, detail: response_type}
-          | acc
-        ]
-      end
+      if scope == "openid" or valid_scope_token?(scope),
+        do: acc,
+        else: [%{field: :allowed_scopes, reason: :invalid_scope, detail: scope} | acc]
     end)
   end
 
@@ -449,7 +389,7 @@ defmodule Lockspire.Clients do
     case value do
       "public" -> :public
       "confidential" -> :confidential
-      _other -> nil
+      _other -> :invalid
     end
   end
 
@@ -491,7 +431,7 @@ defmodule Lockspire.Clients do
       "PS256" -> :PS256
       "EdDSA" -> :EdDSA
       "" -> nil
-      _other -> nil
+      _other -> :invalid
     end
   end
 
@@ -515,6 +455,12 @@ defmodule Lockspire.Clients do
   end
 
   defp normalize_string_list(_other), do: []
+
+  defp default_response_types(["urn:ietf:params:oauth:grant-type:device_code"]), do: []
+  defp default_response_types(_grant_types), do: ["code"]
+
+  defp normalize_jwks(value) when is_map(value), do: value
+  defp normalize_jwks(_value), do: nil
 
   defp normalize_optional_string(value) when is_binary(value) do
     value

@@ -32,10 +32,10 @@ defmodule Lockspire.Protocol.Discovery do
   ]
   @code_challenge_methods_supported ["S256"]
   @subject_types_supported ["public"]
-  # DISCOVERY-01: the fixed, truthful algs the active access-token signing key uses
+  # The fixed, truthful algorithms used by the active access-token signing key
   # (RFC 9068 `at+jwt`). A bare literal — NOT derived from
   # `SecurityProfile.allowed_signing_algorithms/1`, which returns the `:none`/`EdDSA`
-  # superset and only `["ES256","PS256"]` under FAPI (D-11, Pitfall 4). Published
+  # superset and only `["ES256","PS256"]` under FAPI. Published
   # unconditionally, mirroring the always-present `id_token_signing_alg_values_supported`.
   @access_token_signing_alg_values_supported ["RS256", "ES256", "PS256"]
   @introspection_supported_auth_methods [
@@ -48,12 +48,12 @@ defmodule Lockspire.Protocol.Discovery do
   Returns the **static** module attribute list of `token_endpoint_auth_method` values this
   issuer can advertise — the maximum set, irrespective of mounted-route truthfulness.
 
-  This is what the DCR invariant test (Phase 25) pins against because it must remain a
+  DCR invariant tests pin this function because it must remain a
   pure 0-arity (no router lookup, no DB). It is the upper bound: the actually-published
   discovery document at `/.well-known/openid-configuration` may publish `[]` instead when
   the host app does not mount the `token_endpoint` route. Use
   `published_token_endpoint_auth_methods_supported/0` for the truth-based set; that is
-  what Phase 27's HTTP DCR surface MUST filter the resolver's accepted methods through.
+  the HTTP DCR surface MUST use to filter the resolver's accepted methods.
   """
   @spec token_endpoint_auth_methods_supported() :: [String.t()]
   def token_endpoint_auth_methods_supported, do: ClientAuth.supported_auth_method_names()
@@ -66,13 +66,20 @@ defmodule Lockspire.Protocol.Discovery do
   """
   @spec published_token_endpoint_auth_methods_supported() :: [String.t()]
   def published_token_endpoint_auth_methods_supported do
-    token_endpoint_auth_methods_supported(mounted_endpoint_metadata())
+    published_token_endpoint_auth_methods_supported(configured_route_paths())
   end
 
-  defp mounted_endpoint_metadata do
+  @doc false
+  @spec published_token_endpoint_auth_methods_supported(Enumerable.t()) :: [String.t()]
+  def published_token_endpoint_auth_methods_supported(route_paths) do
+    token_endpoint_auth_methods_supported(mounted_endpoint_metadata(route_paths))
+  end
+
+  defp mounted_endpoint_metadata(route_paths) do
     issuer = Config.issuer!()
 
-    mounted_route_paths()
+    route_paths
+    |> MapSet.new()
     |> Enum.reduce(%{}, fn path, acc ->
       case endpoint_metadata_entry(issuer, path) do
         nil -> acc
@@ -82,9 +89,15 @@ defmodule Lockspire.Protocol.Discovery do
   end
 
   @spec openid_configuration() :: map()
-  def openid_configuration do
+  def openid_configuration, do: openid_configuration(configured_route_paths())
+
+  @doc """
+  Builds discovery metadata from a neutral collection of mounted route paths.
+  """
+  @spec openid_configuration(Enumerable.t()) :: map()
+  def openid_configuration(route_paths) do
     issuer = Config.issuer!()
-    endpoint_metadata = mounted_endpoint_metadata()
+    endpoint_metadata = mounted_endpoint_metadata(route_paths)
 
     authorization_response_capabilities =
       AuthorizationResponseCapabilities.metadata(endpoint_metadata, global_security_profile())
@@ -113,6 +126,30 @@ defmodule Lockspire.Protocol.Discovery do
     |> put_iss_parameter_metadata()
     |> maybe_put_par_required_metadata()
   end
+
+  # The public zero-arity APIs retain mount truth through a host-provided neutral
+  # path collection/callback. Phoenix router reflection is deliberately owned by
+  # Lockspire.DiscoveryRoutes at the configuration or web-delivery edge.
+  defp configured_route_paths do
+    Application.get_env(:lockspire, :discovery_route_paths, [])
+    |> resolve_route_paths()
+  end
+
+  defp resolve_route_paths(paths) when is_struct(paths, MapSet), do: paths
+  defp resolve_route_paths(paths) when is_list(paths), do: MapSet.new(paths)
+
+  defp resolve_route_paths(paths) when is_function(paths, 0),
+    do: paths.() |> resolve_route_paths()
+
+  defp resolve_route_paths(module) when is_atom(module) do
+    if function_exported?(module, :paths, 0) do
+      module.paths() |> resolve_route_paths()
+    else
+      MapSet.new()
+    end
+  end
+
+  defp resolve_route_paths(_unsupported), do: MapSet.new()
 
   defp maybe_put_mtls_endpoint_aliases(metadata, endpoint_metadata) do
     case Config.mtls_issuer() do
@@ -167,17 +204,6 @@ defmodule Lockspire.Protocol.Discovery do
       {:ok, policy} -> policy.security_profile
       _ -> :none
     end
-  end
-
-  defp mounted_route_paths do
-    discovery_router()
-    |> Phoenix.Router.routes()
-    |> Enum.map(& &1.path)
-    |> MapSet.new()
-  end
-
-  defp discovery_router do
-    Application.get_env(:lockspire, :discovery_router, Lockspire.Web.Router)
   end
 
   defp endpoint_metadata_entry(issuer, path) do

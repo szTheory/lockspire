@@ -85,8 +85,11 @@ defmodule Lockspire.Protocol.Userinfo do
         cond do
           present?(access_token.cnf["jkt"]) or resolved_security_profile.fapi_2_0_security? ->
             case ProtectedResourceDPoP.validate_userinfo_access(access_token, request) do
-              {:ok, _proof} -> :ok
-              {:error, %Error{} = error} -> {:error, error}
+              {:ok, _proof} ->
+                :ok
+
+              {:error, %Error{} = error} ->
+                {:error, error}
             end
 
           authorization_scheme == "Bearer" ->
@@ -198,11 +201,11 @@ defmodule Lockspire.Protocol.Userinfo do
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:server_policy_store, Config.repo!())
+      |> Keyword.get(:server_policy_store, Repository)
 
   defp token_store(request),
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:token_store, Config.repo!())
+      |> Keyword.get(:token_store, Repository)
 end

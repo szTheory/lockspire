@@ -8,6 +8,7 @@ defmodule Lockspire.ClientsTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -24,7 +25,7 @@ defmodule Lockspire.ClientsTest do
   end
 
   test "register_client/1 persists hashed secrets and returns the plaintext once for confidential clients" do
-    events = attach_events(self())
+    attach_events()
 
     assert {:ok, %RegistrationResult{client: %Client{} = client, client_secret: secret}} =
              Clients.register_client(%{
@@ -55,17 +56,15 @@ defmodule Lockspire.ClientsTest do
 
     client_id = client.client_id
 
-    assert_received {:telemetry_event, [:lockspire, :client, :registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_succeeded], _,
                      %{client_id: ^client_id}}
 
-    assert_received {:telemetry_event, [:lockspire, :audit, :client, :registration_succeeded],
+    assert_received {:telemetry_event, [:lockspire, :audit, :client, :registration_succeeded], _,
                      %{client_id: ^client_id}}
-
-    detach_events(events)
   end
 
-  test "register_client/1 rejects wildcard redirect uris and rejects openid scopes" do
-    events = attach_events(self())
+  test "register_client/1 rejects wildcard redirect uris while accepting the built-in openid scope" do
+    attach_events()
 
     assert {:error, errors} =
              Clients.register_client(%{
@@ -77,15 +76,189 @@ defmodule Lockspire.ClientsTest do
              })
 
     assert Enum.any?(errors, &(&1.reason == :invalid_redirect_uri))
-    assert Enum.any?(errors, &(&1.reason == :invalid_scope))
+    refute Enum.any?(errors, &(&1.reason == :invalid_scope and &1.detail == "openid"))
 
-    assert_received {:telemetry_event, [:lockspire, :client, :registration_rejected],
+    assert_received {:telemetry_event, [:lockspire, :client, :registration_rejected], _,
                      %{reason_codes: reason_codes}}
 
     assert :invalid_redirect_uri in reason_codes
-    assert :invalid_scope in reason_codes
+    refute :invalid_scope in reason_codes
+  end
 
-    detach_events(events)
+  test "register_client/1 persists OIDC authorization-code and redirectless device-only shapes" do
+    assert {:ok, %{client: oidc_client}} =
+             Clients.register_client(%{
+               client_type: "public",
+               redirect_uris: ["https://client.example.test/callback"],
+               allowed_scopes: ["openid", "profile"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: "none"
+             })
+
+    assert {:ok, %Client{allowed_scopes: ["openid", "profile"]}} =
+             Repository.fetch_client_by_id(oidc_client.client_id)
+
+    assert {:ok, %{client: device_client}} =
+             Clients.register_client(%{
+               client_type: :public,
+               redirect_uris: [],
+               allowed_scopes: ["openid"],
+               allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+               allowed_response_types: [],
+               token_endpoint_auth_method: :none
+             })
+
+    assert {:ok, %Client{redirect_uris: [], allowed_response_types: []}} =
+             Repository.fetch_client_by_id(device_client.client_id)
+  end
+
+  test "register_client/1 requires redirects for every code-capable shape" do
+    for attrs <- [
+          %{allowed_grant_types: ["authorization_code"], allowed_response_types: ["code"]},
+          %{
+            allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+            allowed_response_types: ["code"]
+          },
+          %{
+            allowed_grant_types: [
+              "authorization_code",
+              "urn:ietf:params:oauth:grant-type:device_code"
+            ],
+            allowed_response_types: ["code"]
+          }
+        ] do
+      assert {:error, errors} =
+               Clients.register_client(
+                 Map.merge(attrs, %{
+                   client_type: :public,
+                   redirect_uris: [],
+                   allowed_scopes: ["openid"],
+                   token_endpoint_auth_method: :none
+                 })
+               )
+
+      assert %{field: :redirect_uris, reason: :invalid_redirect_uri, detail: :empty} in errors
+    end
+  end
+
+  test "register_client/1 retains incoherent grant and response rejection" do
+    for attrs <- [
+          %{allowed_grant_types: ["refresh_token"], allowed_response_types: []},
+          %{
+            allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+            allowed_response_types: ["code"]
+          }
+        ] do
+      assert {:error, errors} =
+               Clients.register_client(
+                 Map.merge(attrs, %{
+                   client_type: :public,
+                   redirect_uris: ["https://client.example.test/callback"],
+                   allowed_scopes: ["openid"],
+                   token_endpoint_auth_method: :none
+                 })
+               )
+
+      assert Enum.any?(errors, &(&1.reason == :incoherent_pair))
+    end
+  end
+
+  test "register_client/1 persists exactly one safe private_key_jwt key source" do
+    jwks = %{"keys" => [public_rsa_jwk()]}
+
+    assert {:ok, %{client: inline_client}} =
+             Clients.register_client(%{
+               client_type: :confidential,
+               redirect_uris: ["https://client.example.test/callback"],
+               allowed_scopes: ["openid"],
+               allowed_grant_types: ["authorization_code"],
+               allowed_response_types: ["code"],
+               token_endpoint_auth_method: :private_key_jwt,
+               token_endpoint_auth_signing_alg: :RS256,
+               jwks: jwks
+             })
+
+    assert {:ok, %Client{jwks: ^jwks, jwks_uri: nil}} =
+             Repository.fetch_client_by_id(inline_client.client_id)
+
+    assert {:ok, %{client: remote_client}} =
+             Clients.register_client(%{
+               "client_type" => "confidential",
+               "redirect_uris" => ["https://client.example.test/callback"],
+               "allowed_scopes" => ["openid"],
+               "allowed_grant_types" => ["authorization_code"],
+               "allowed_response_types" => ["code"],
+               "token_endpoint_auth_method" => "private_key_jwt",
+               "token_endpoint_auth_signing_alg" => "ES256",
+               "jwks_uri" => "https://keys.example.test/client.jwks.json"
+             })
+
+    assert {:ok, %Client{jwks: nil, jwks_uri: "https://keys.example.test/client.jwks.json"}} =
+             Repository.fetch_client_by_id(remote_client.client_id)
+  end
+
+  test "register_client/1 rejects unsafe private_key_jwt shapes without leaking key material" do
+    sentinel = "raw-private-key-material-must-not-leak"
+
+    for attrs <- [
+          %{},
+          %{
+            jwks: %{"keys" => [%{"kty" => "RSA", "kid" => sentinel}]},
+            jwks_uri: "https://keys.example.test/client.jwks.json"
+          },
+          %{jwks_uri: "http://keys.example.test/client.jwks.json"},
+          %{jwks: %{"keys" => [%{"kty" => "RSA", "kid" => sentinel}]}, client_type: :public},
+          %{
+            jwks: %{"keys" => [%{"kty" => "RSA", "kid" => sentinel}]},
+            token_endpoint_auth_signing_alg: "none"
+          }
+        ] do
+      assert {:error, errors} =
+               Clients.register_client(
+                 Map.merge(
+                   %{
+                     client_type: :confidential,
+                     redirect_uris: ["https://client.example.test/callback"],
+                     allowed_scopes: ["openid"],
+                     allowed_grant_types: ["authorization_code"],
+                     allowed_response_types: ["code"],
+                     token_endpoint_auth_method: :private_key_jwt,
+                     token_endpoint_auth_signing_alg: :RS256
+                   },
+                   attrs
+                 )
+               )
+
+      refute inspect(errors) =~ sentinel
+    end
+  end
+
+  test "register_client/1 rejects empty, private, unparseable, and incompatible inline JWKS" do
+    sentinel = "raw-private-key-material-must-not-leak"
+
+    for jwks <- [
+          %{},
+          %{"keys" => []},
+          %{"keys" => [%{"kty" => "RSA", "n" => 42, "e" => "AQAB"}]},
+          %{"keys" => [Map.put(public_rsa_jwk(), "d", sentinel)]},
+          %{"keys" => [Map.put(public_rsa_jwk(), "alg", "ES256")]}
+        ] do
+      assert {:error, errors} =
+               Clients.register_client(%{
+                 client_type: :confidential,
+                 redirect_uris: ["https://client.example.test/callback"],
+                 allowed_scopes: ["openid"],
+                 allowed_grant_types: ["authorization_code"],
+                 allowed_response_types: ["code"],
+                 token_endpoint_auth_method: :private_key_jwt,
+                 token_endpoint_auth_signing_alg: :RS256,
+                 jwks: jwks
+               })
+
+      assert %{field: :jwks, reason: :invalid_public_jwks, detail: nil} in errors
+      refute inspect(errors) =~ sentinel
+    end
   end
 
   test "register_client/1 returns a validation error for unknown client_type input" do
@@ -155,29 +328,34 @@ defmodule Lockspire.ClientsTest do
     refute output =~ client.client_secret_hash
   end
 
-  defp attach_events(pid) do
-    handler_id = "clients-test-#{System.unique_integer([:positive])}"
+  test "direct registration retains required scopes while DCR owns optional scope semantics" do
+    assert {:error, errors} =
+             Clients.register_client(%{
+               client_type: :public,
+               redirect_uris: ["https://client.example.test/callback"],
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :none
+             })
 
-    events = [
+    assert %{field: :allowed_scopes, reason: :invalid_scope, detail: :empty} in errors
+  end
+
+  defp attach_events do
+    TelemetryCapture.attach_many([
       [:lockspire, :client, :registration_succeeded],
       [:lockspire, :audit, :client, :registration_succeeded],
       [:lockspire, :client, :registration_rejected]
-    ]
-
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        events,
-        fn event, _measurements, metadata, test_pid ->
-          send(test_pid, {:telemetry_event, event, metadata})
-        end,
-        pid
-      )
-
-    {handler_id, events}
+    ])
   end
 
-  defp detach_events({handler_id, _events}) do
-    :telemetry.detach(handler_id)
+  defp public_rsa_jwk do
+    %{
+      "kty" => "RSA",
+      "kid" => "direct-client-key",
+      "alg" => "RS256",
+      "n" =>
+        "o5kk0WZKYEqTo3bDmAE1BhqnbJGU46PXD1FVR8ZSudlHmU0PcK7Cv-rzvpgges6bva8lnKobC0bdNjmHQJmPjLBKeO-S8uNtwRTDgUpbqhZDj_FXLvXT-h5bEJCQ-de73hskDAZkBk21CTUYZT-ScplszElSDQ11Akrceui2LmkGPx_PhlTzMezFMup5qJ56xG2B5J7V4YengN1BgHywnGQzY9LWQAH6On_aAEzc1S016NDplKFi3r8WFzbfVwMQGDBozH-9emID8KGv40axczaAVkhVCnW4892zgYO3hJfJPKbiqO5ylTnpgdDxcrPWv8V8Ut-SeUil2Pp48ojdgQ",
+      "e" => "AQAB"
+    }
   end
 end

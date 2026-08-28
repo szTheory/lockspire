@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
   alias Lockspire.Protocol.AuthorizationFlow
   alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.AuthorizationRequest.Validated
+  alias Lockspire.TestSupport.TelemetryCapture
   alias __MODULE__.Store
 
   setup do
@@ -27,12 +28,9 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     Store.use_agent(pid)
 
-    :telemetry.detach("authorization-flow-test-handler")
-
     events = start_supervised!({Agent, fn -> [] end})
 
-    :telemetry.attach_many(
-      "authorization-flow-test-handler",
+    TelemetryCapture.attach_many_to_agent(
       [
         [:lockspire, :consent, :approved],
         [:lockspire, :consent, :denied],
@@ -41,13 +39,8 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
         [:lockspire, :audit, :consent, :denied],
         [:lockspire, :audit, :authorization, :completed]
       ],
-      fn event, _measurements, metadata, agent ->
-        Agent.update(agent, fn current -> [{event, metadata} | current] end)
-      end,
       events
     )
-
-    on_exit(fn -> :telemetry.detach("authorization-flow-test-handler") end)
 
     %{events: events}
   end

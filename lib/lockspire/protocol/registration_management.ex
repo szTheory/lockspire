@@ -6,28 +6,28 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     - `read/2`       — return current RFC 7591 metadata for the RAT-bound client.
     - `update/2`     — full-replace via the same validator pipeline as `Registration.register/1`;
                        on success rotates the RAT and returns the new plaintext exactly once.
-    - `delete/2`     — soft-disable via the public `Lockspire.Admin.Clients.disable_client/2`.
+    - `delete/2`     — soft-disable through the neutral client lifecycle.
 
   All three functions accept `(client_id_from_url, %Domain.Client{} ...)` where `client` is the
   row matched by `Repository.get_client_by_registration_access_token_hash/1`. URL/RAT mismatches
   ALWAYS collapse to `{:error, :invalid_token}` — the discriminator stays in telemetry only,
-  defending against client-id enumeration (D-19).
+  defending against client-ID enumeration.
   """
 
-  alias Lockspire.Admin
-  alias Lockspire.Config
+  alias Lockspire.ClientLifecycle
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Observability
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationAccessToken
-  alias Lockspire.Storage.Ecto.ClientRecord
-  alias Lockspire.Storage.Ecto.Repository
-  import Ecto.Query, only: [where: 3, lock: 2]
 
   defmodule UpdateSuccess do
-    @moduledoc false
+    @moduledoc """
+    Successful dynamic-registration update result.
+
+    The rotated registration access token is returned as plaintext exactly once.
+    """
     @type t :: %__MODULE__{
             client: Client.t(),
             registration_access_token_plaintext: String.t()
@@ -40,6 +40,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
           required(:server_policy) => ServerPolicy.t(),
           required(:client) => Client.t()
         }
+
+  @type update_result ::
+          {:ok, UpdateSuccess.t()} | {:error, Registration.Error.t() | :invalid_token}
 
   @spec read(String.t(), Client.t()) :: {:ok, Client.t()} | {:error, :invalid_token}
   def read(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
@@ -58,8 +61,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     end
   end
 
-  @spec update(String.t(), update_request()) ::
-          {:ok, struct()} | {:error, struct()} | {:error, :invalid_token}
+  @spec update(String.t(), update_request()) :: update_result()
   def update(
         client_id_from_url,
         %{
@@ -115,13 +117,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       emit_unauthorized(client_id_from_url, client)
       {:error, :invalid_token}
     else
-      attrs = %{
-        disabled_by: "dcr_self_delete",
-        disabled_at: DateTime.utc_now(),
-        actor: %{type: :self_registered_client, id: client.client_id}
-      }
-
-      case Admin.Clients.disable_client(client.client_id, attrs) do
+      case ClientLifecycle.disable_dcr(client) do
         {:ok, %Client{}} ->
           Observability.emit(:dcr, :delete, %{count: 1}, %{
             status: :success,
@@ -144,45 +140,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     {new_rat_plaintext, new_rat_hash} = RegistrationAccessToken.generate()
 
     result =
-      Repository.transact(fn ->
-        repo = Config.repo!()
-        repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
-
-        ClientRecord
-        |> where([c], c.id == ^client.id)
-        |> lock("FOR UPDATE")
-        |> repo.one(repo_opts)
-        |> case do
-          nil ->
-            repo.rollback(:not_found)
-
-          record ->
-            record
-            |> Ecto.Changeset.change(
-              registration_access_token_hash: new_rat_hash,
-              updated_at: DateTime.utc_now()
-            )
-            |> repo.update(repo_opts)
-            |> case do
-              {:ok, updated_record} ->
-                audit_attrs = %{
-                  action: :dcr_management_rat_rotated,
-                  outcome: :success,
-                  actor: %{type: :operator, id: "admin-ui"},
-                  resource: %{type: :client, id: client.client_id},
-                  metadata: %{}
-                }
-
-                case Repository.append_audit_event(audit_attrs) do
-                  {:ok, _} -> ClientRecord.to_domain(updated_record)
-                  {:error, reason} -> repo.rollback(reason)
-                end
-
-              {:error, reason} ->
-                repo.rollback(reason)
-            end
-        end
-      end)
+      ClientLifecycle.rotate_registration_access_token(client, new_rat_hash, %{
+        action: :dcr_management_rat_rotated,
+        outcome: :success,
+        actor: %{type: :operator, id: "admin-ui"},
+        resource: %{type: :client, id: client.client_id},
+        metadata: %{}
+      })
 
     case result do
       {:ok, updated_client} ->
@@ -197,145 +161,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   # Private Helpers
 
   defp persist_update(%Client{} = client, metadata, new_rat_hash) do
-    updated_client = apply_metadata_to_client(client, metadata)
-
-    Repository.transact(fn ->
-      repo = Config.repo!()
-      repo_opts = Lockspire.Storage.Ecto.Prefix.prefix_opts()
-
-      ClientRecord
-      |> where([c], c.id == ^client.id)
-      |> lock("FOR UPDATE")
-      |> repo.one(repo_opts)
-      |> case do
-        nil ->
-          repo.rollback(:not_found)
-
-        record ->
-          record
-          |> ClientRecord.changeset(updated_client)
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> repo.update(repo_opts)
-          |> case do
-            {:ok, updated_record} ->
-              audit_attrs = %{
-                action: :dcr_management_updated,
-                outcome: :success,
-                actor: %{type: :self_registered_client, id: client.client_id},
-                resource: %{type: :client, id: client.client_id},
-                metadata: %{}
-              }
-
-              case Repository.append_audit_event(audit_attrs) do
-                {:ok, _} -> ClientRecord.to_domain(updated_record)
-                {:error, reason} -> repo.rollback(reason)
-              end
-
-            {:error, reason} ->
-              repo.rollback(reason)
-          end
-      end
-    end)
-  end
-
-  defp apply_metadata_to_client(%Client{} = client, metadata) do
-    logout_metadata = Admin.Clients.normalize_logout_metadata(metadata)
-
-    auth_method =
-      case Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic") do
-        "client_secret_post" -> :client_secret_post
-        "client_secret_jwt" -> :client_secret_jwt
-        "private_key_jwt" -> :private_key_jwt
-        "none" -> :none
-        _ -> :client_secret_basic
-      end
-
-    client_type = if auth_method == :none, do: :public, else: :confidential
-
-    allowed_scopes =
-      case Map.get(metadata, "scope", "") do
-        scope when is_binary(scope) -> String.split(scope, " ", trim: true)
-        _ -> []
-      end
-
-    extension_metadata =
-      metadata
-      |> Map.take(["client_uri"])
-      |> Map.reject(fn {_k, v} -> is_nil(v) end)
-
-    %Client{
-      client
-      | client_type: client_type,
-        name: Map.get(metadata, "client_name"),
-        redirect_uris: Map.get(metadata, "redirect_uris", []),
-        allowed_scopes: allowed_scopes,
-        allowed_grant_types: Map.get(metadata, "grant_types", ["authorization_code"]),
-        allowed_response_types: Map.get(metadata, "response_types", ["code"]),
-        token_endpoint_auth_method: auth_method,
-        token_endpoint_auth_signing_alg:
-          atomize_token_endpoint_auth_signing_alg(
-            Map.get(metadata, "token_endpoint_auth_signing_alg")
-          ),
-        logo_uri: Map.get(metadata, "logo_uri"),
-        tos_uri: Map.get(metadata, "tos_uri"),
-        policy_uri: Map.get(metadata, "policy_uri"),
-        contacts: Map.get(metadata, "contacts", []),
-        jwks: Map.get(metadata, "jwks"),
-        jwks_uri: Map.get(metadata, "jwks_uri"),
-        id_token_signed_response_alg:
-          atomize_alg(Map.get(metadata, "id_token_signed_response_alg")),
-        authorization_signed_response_alg:
-          atomize_alg(Map.get(metadata, "authorization_signed_response_alg")),
-        authorization_encrypted_response_alg:
-          atomize_authorization_encryption_alg(
-            Map.get(metadata, "authorization_encrypted_response_alg")
-          ),
-        authorization_encrypted_response_enc:
-          atomize_authorization_encryption_enc(
-            Map.get(metadata, "authorization_encrypted_response_enc")
-          ),
-        security_profile:
-          atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
-        dpop_policy: dpop_policy_from_metadata(metadata),
-        backchannel_logout_uri: logout_metadata.backchannel_logout_uri,
-        backchannel_logout_session_required: logout_metadata.backchannel_logout_session_required,
-        frontchannel_logout_uri: logout_metadata.frontchannel_logout_uri,
-        frontchannel_logout_session_required:
-          logout_metadata.frontchannel_logout_session_required,
-        metadata: extension_metadata
-    }
-  end
-
-  defp atomize_alg("RS256"), do: :RS256
-  defp atomize_alg("ES256"), do: :ES256
-  defp atomize_alg("PS256"), do: :PS256
-  defp atomize_alg("EdDSA"), do: :EdDSA
-  defp atomize_alg(_), do: nil
-
-  defp atomize_token_endpoint_auth_signing_alg("HS256"), do: :HS256
-  defp atomize_token_endpoint_auth_signing_alg(value), do: atomize_alg(value)
-
-  defp atomize_authorization_encryption_alg("RSA-OAEP-256"), do: :RSA_OAEP_256
-  defp atomize_authorization_encryption_alg("ECDH-ES"), do: :ECDH_ES
-  defp atomize_authorization_encryption_alg(_), do: nil
-
-  defp atomize_authorization_encryption_enc("A256GCM"), do: :A256GCM
-  defp atomize_authorization_encryption_enc("A128GCM"), do: :A128GCM
-  defp atomize_authorization_encryption_enc(_), do: nil
-
-  defp atomize_security_profile("fapi_2_0_security"), do: :fapi_2_0_security
-  defp atomize_security_profile("fapi_2_0_message_signing"), do: :fapi_2_0_message_signing
-  defp atomize_security_profile("none"), do: :none
-  defp atomize_security_profile(_), do: :inherit
-
-  defp dpop_policy_from_metadata(metadata) when is_map(metadata) do
-    case Map.get(metadata, "dpop_bound_access_tokens", false) do
-      true -> :dpop
-      _other -> :bearer
-    end
+    ClientLifecycle.replace_dcr(client, metadata, new_rat_hash)
   end
 
   defp emit_updated(%Client{} = client) do

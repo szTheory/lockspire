@@ -56,9 +56,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:sector_identifier_uri, :string)
     field(:id_token_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
 
-    # FORMAT-02: per-client override. No default => nil = inherit the server-wide
-    # ServerPolicy.access_token_format. Pitfall 6: this Ecto.Enum pairs with the :text
-    # column from the Plan 99-01 migration so :jwt/:opaque persist as "jwt"/"opaque".
+    # Per-client override. No default means inherit the server-wide
+    # ServerPolicy.access_token_format. This Ecto.Enum pairs with the :text column so
+    # :jwt/:opaque persist as "jwt"/"opaque".
     field(:access_token_format, Ecto.Enum, values: [:jwt, :opaque])
 
     field(:authorization_signed_response_alg, Ecto.Enum, values: [:RS256, :ES256, :PS256, :EdDSA])
@@ -84,9 +84,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:last_secret_rotated_at, :utc_datetime_usec)
     field(:metadata, :map, default: %{})
 
-    # D-08 + D-09: provenance Ecto.Enum cast against the text column from Plan 05 migration.
+    # Provenance is an Ecto.Enum cast against a text column.
     # Two-value form (:operator | :self_registered); the 3-value form is deferred.
-    # Pitfall 4: text column + Ecto.Enum cast pairing is mandatory.
+    # The text-column and Ecto.Enum pairing is mandatory.
     field(:provenance, Ecto.Enum, values: [:operator, :self_registered], default: :operator)
     field(:registration_access_token_hash, :string)
     field(:registration_client_uri, :string)
@@ -187,17 +187,17 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> unique_constraint(:client_id)
   end
 
-  # Phase 25 note: DCR-related fields are deliberately excluded from update_changeset/2.
+  # DCR-related fields are deliberately excluded from update_changeset/2.
   #
-  #   :provenance — D-09: create-time-only; covered by client_record_test.exs:87-124.
+  #   :provenance — create-time only.
   #   :registration_access_token_hash
   #   :registration_client_uri
   #   :initial_access_token_id
   #   :client_id_issued_at
   #   :client_secret_expires_at
   #
-  # Phase 26 will introduce a separate `dcr_management_changeset/2` for RAT rotation and
-  # client_secret rotation under the `:self_registered` provenance (RFC 7592 management).
+  # `dcr_management_changeset/2` owns RAT and client-secret rotation for
+  # `:self_registered` clients (RFC 7592 management).
   # Do NOT add these fields to update_changeset/2 — that would expose them to the
   # operator-admin path (set_client_active, list_clients update flows), which must remain
   # unable to mutate RFC 7592 management state.

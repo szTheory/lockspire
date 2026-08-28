@@ -22,7 +22,8 @@ defmodule Lockspire.Web.RegistrationController do
            metadata: params,
            server_policy: server_policy,
            source: source,
-           iat: iat
+           iat: iat,
+           secret_key_base: conn.secret_key_base
          }) do
       {:ok, success} ->
         conn

@@ -5,8 +5,8 @@ defmodule Lockspire.Protocol.IdToken do
 
   alias Lockspire.Host.Claims
   alias Lockspire.Protocol.SecurityProfile
-
-  @id_token_ttl 3600
+  alias Lockspire.Protocol.PrivateJwk
+  alias Lockspire.Protocol.TokenLifetime
 
   @type signing_key :: %{
           kid: String.t(),
@@ -33,7 +33,7 @@ defmodule Lockspire.Protocol.IdToken do
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
          {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
          sid <- Map.get(params, :sid),
-         {:ok, jwk_map} <- decode_private_jwk(private_jwk),
+         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk),
          claims <-
            build_claims(
              host_claims,
@@ -82,7 +82,7 @@ defmodule Lockspire.Protocol.IdToken do
       "iss" => issuer,
       "aud" => client_id,
       "iat" => DateTime.to_unix(issued_at),
-      "exp" => DateTime.add(issued_at, @id_token_ttl, :second) |> DateTime.to_unix(),
+      "exp" => DateTime.add(issued_at, TokenLifetime.id_token(), :second) |> DateTime.to_unix(),
       "nonce" => nonce,
       "at_hash" => at_hash(access_token),
       "auth_time" => encode_auth_time(auth_time),
@@ -102,30 +102,5 @@ defmodule Lockspire.Protocol.IdToken do
   defp at_hash(access_token) do
     <<left::binary-size(16), _rest::binary>> = :crypto.hash(:sha256, access_token)
     Base.url_encode64(left, padding: false)
-  end
-
-  defp decode_private_jwk(binary) when is_binary(binary) do
-    case decode_json_jwk(binary) do
-      %{} = jwk -> {:ok, jwk}
-      nil -> decode_erlang_jwk(binary)
-    end
-  end
-
-  defp decode_private_jwk(_binary), do: {:error, :invalid_signing_key}
-
-  defp decode_json_jwk(binary) do
-    case Jason.decode(binary) do
-      {:ok, %{} = jwk} -> jwk
-      _other -> nil
-    end
-  end
-
-  defp decode_erlang_jwk(binary) do
-    case Plug.Crypto.non_executable_binary_to_term(binary, [:safe]) do
-      %{} = jwk -> {:ok, jwk}
-      _other -> {:error, :invalid_signing_key}
-    end
-  rescue
-    _ -> {:error, :invalid_signing_key}
   end
 end

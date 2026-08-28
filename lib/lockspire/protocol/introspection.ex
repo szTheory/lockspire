@@ -3,7 +3,6 @@ defmodule Lockspire.Protocol.Introspection do
   Returns caller-authorized opaque token state while collapsing inactive outcomes to `active: false`.
   """
 
-  alias Lockspire.Config
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.ServerPolicy
@@ -12,6 +11,7 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
     @moduledoc """
@@ -244,7 +244,7 @@ defmodule Lockspire.Protocol.Introspection do
   defp client_auth_options(request) do
     request
     |> Map.get(:opts, [])
-    |> Keyword.put_new(:client_store, Config.repo!())
+    |> Keyword.put_new(:client_store, Repository)
     |> Keyword.put_new(:supported_jwt_auth_methods, [:private_key_jwt, :client_secret_jwt])
   end
 
@@ -266,7 +266,7 @@ defmodule Lockspire.Protocol.Introspection do
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:token_store, Config.repo!())
+      |> Keyword.get(:token_store, Repository)
 
   defp server_policy_store(request),
     do:
@@ -278,7 +278,7 @@ defmodule Lockspire.Protocol.Introspection do
     do:
       request
       |> Map.get(:opts, [])
-      |> Keyword.get(:client_store, Config.repo!())
+      |> Keyword.get(:client_store, Repository)
 
   defp consent_store(request),
     do:

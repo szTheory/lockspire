@@ -16,7 +16,6 @@ defmodule <%= @resolver_module %> do
   """
 <% end %>
 
-  alias Lockspire.Host.Claims
   alias Lockspire.Host.InteractionResult
 
   @impl true
@@ -55,9 +54,13 @@ defmodule <%= @resolver_module %> do
     Typical shape:
 
         {:ok,
-         %Claims{
+         %Lockspire.Host.Claims{
            subject: "user:" <> to_string(account.id),
-           claims: %{
+           id_token: %{
+             "email" => account.email,
+             "name" => account.name
+           },
+           userinfo: %{
              "email" => account.email,
              "name" => account.name
            }
@@ -83,7 +86,7 @@ defmodule <%= @resolver_module %> do
   @impl true
   def redirect_for_logout(_conn_or_socket, context) do
     %InteractionResult{
-      login_path: "/logout",
+      login_path: Lockspire.logout_path(),
       return_to: Map.get(context, :return_to) || Map.get(context, "return_to"),
       params: %{
         "account_id" => Map.get(context, :account_id) || Map.get(context, "account_id")

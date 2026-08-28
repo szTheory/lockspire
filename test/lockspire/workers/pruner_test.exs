@@ -2,6 +2,7 @@ defmodule Lockspire.Workers.PrunerTest do
   use ExUnit.Case, async: false
 
   alias Lockspire.Workers.Pruner
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -42,13 +43,7 @@ defmodule Lockspire.Workers.PrunerTest do
       }
     ])
 
-    test_pid = self()
-
-    telemetry_handler = fn [:lockspire, :pruner, :completed], measurements, metadata, _config ->
-      send(test_pid, {:telemetry, metadata.model, measurements.count})
-    end
-
-    :telemetry.attach("pruner-test", [:lockspire, :pruner, :completed], telemetry_handler, nil)
+    TelemetryCapture.attach([:lockspire, :pruner, :completed])
 
     assert :ok = Pruner.perform(%Oban.Job{})
 
@@ -63,7 +58,9 @@ defmodule Lockspire.Workers.PrunerTest do
     ]
 
     for model <- models do
-      assert_receive {:telemetry, ^model, count}, 500
+      assert_receive {:telemetry_event, [:lockspire, :pruner, :completed], %{count: count},
+                      %{model: ^model}},
+                     500
 
       if model in ["TokenRecord", "UsedJtiRecord"] do
         assert count >= 1
@@ -71,7 +68,5 @@ defmodule Lockspire.Workers.PrunerTest do
         assert is_integer(count)
       end
     end
-
-    :telemetry.detach("pruner-test")
   end
 end

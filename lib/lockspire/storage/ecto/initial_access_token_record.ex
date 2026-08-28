@@ -10,23 +10,24 @@ defmodule Lockspire.Storage.Ecto.InitialAccessTokenRecord do
   @timestamps_opts [type: :utc_datetime_usec]
 
   schema "lockspire_initial_access_tokens" do
-    # D-11 / D-14: hash-at-rest only; plaintext is never stored. Hash is sha256-lowercase-hex
+    # Hash at rest only; plaintext is never stored. Hash is SHA-256 lowercase hex
     # via Lockspire.Security.Policy.hash_token/1 (the only sanctioned IAT hash primitive).
     field(:token_hash, :string)
 
     field(:expires_at, :utc_datetime_usec)
 
-    # D-13: boolean (NOT uses_remaining int); v1.5 mints single-use IATs only.
+    # A boolean, not a uses-remaining counter: IATs are single-use.
     field(:single_use, :boolean, default: true)
 
-    # D-11: nullable lifecycle timestamps. used_at = registrant consumed; revoked_at = operator soft-deleted.
+    # Nullable lifecycle timestamps: used_at means consumed; revoked_at means operator-revoked.
     field(:used_at, :utc_datetime_usec)
     field(:revoked_at, :utc_datetime_usec)
 
-    # D-11: jsonb on disk, decoded as map. Untyped — Phase 28 mint-time enforces ⊆ server allowlist.
+    # JSONB on disk, decoded as a map. The mint path enforces that overrides narrow
+    # the server allowlist.
     field(:policy_overrides, :map)
 
-    # D-11: nullable operator id (audit attribution).
+    # Nullable operator ID for audit attribution.
     field(:created_by, :string)
 
     timestamps()

@@ -165,9 +165,9 @@ defmodule Lockspire.Config do
   Hosts can override via `config :lockspire, jar_max_age_seconds: 300`.
   Lower values reduce replay risk but may break clients with clock drift.
 
-  Consumed by `Lockspire.Protocol.RequestObject.consume/3` (Phase 22) and threaded
-  into `Lockspire.Protocol.Jar.validate_claims/2`'s `:max_age` opt to enforce the
-  ceiling at the protocol seam (D-13, WR-03).
+  `Lockspire.Protocol.RequestObject.consume/3` threads this value into
+  `Lockspire.Protocol.Jar.validate_claims/2` so the ceiling is enforced at the
+  protocol seam.
   """
   @spec jar_max_age_seconds() :: pos_integer()
   def jar_max_age_seconds do
@@ -193,7 +193,7 @@ defmodule Lockspire.Config do
   def storage_prefix do
     @app
     |> Application.get_env(:storage_prefix)
-    |> Lockspire.Storage.Ecto.Prefix.normalize()
+    |> Lockspire.Storage.Prefix.normalize()
   end
 
   @doc """
@@ -203,7 +203,7 @@ defmodule Lockspire.Config do
   def oban_prefix do
     @app
     |> Application.get_env(:oban_prefix, storage_prefix())
-    |> Lockspire.Storage.Ecto.Prefix.normalize()
+    |> Lockspire.Storage.Prefix.normalize()
   end
 
   @doc """

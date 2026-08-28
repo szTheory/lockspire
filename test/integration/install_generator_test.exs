@@ -1,10 +1,38 @@
 defmodule Lockspire.InstallGeneratorTest do
-  use ExUnit.Case, async: false
+  use Lockspire.DataCase, async: false
 
   import ExUnit.CaptureIO
 
+  alias Lockspire.Storage.Ecto.Repository
+
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
   @runtime_fixture_root Path.expand("../support/generated_host_app_web", __DIR__)
+
+  setup_all do
+    Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
+      secret_key_base: String.duplicate("a", 64),
+      server: false,
+      live_view: [signing_salt: "generated_host_salt"]
+    )
+
+    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
+    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    Application.put_env(:lockspire, :known_scopes, ["openid", "profile"])
+
+    Application.put_env(
+      :lockspire,
+      :account_resolver,
+      GeneratedHostApp.Lockspire.TestAccountResolver
+    )
+
+    unless Process.whereis(Lockspire.TestRepo), do: start_supervised!(Lockspire.TestRepo)
+
+    unless Process.whereis(GeneratedHostAppWeb.Endpoint),
+      do: start_supervised!(GeneratedHostAppWeb.Endpoint)
+
+    :ok
+  end
 
   setup do
     reset_fixture!()
@@ -31,8 +59,8 @@ defmodule Lockspire.InstallGeneratorTest do
       end)
 
     # Sanity check: total templates rendered. Update this constant if a future plan
-    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the FAPI
-    # smoke template makes it 12.
+    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the default
+    # smoke template makes it 12 while the FAPI proof remains opt-in.
     assert length(Lockspire.Generators.Templates.all()) == 12
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
@@ -55,7 +83,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
     assert "config/lockspire.exs" in managed_paths
     assert "lib/generated_host_app_web/router/lockspire.ex" in managed_paths
-    assert "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs" in managed_paths
+    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in managed_paths
+    refute Enum.any?(managed_paths, &String.contains?(&1, "fapi_smoke"))
     refute Enum.any?(managed_paths, &String.contains?(&1, "account_resolver.ex"))
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
@@ -71,28 +100,33 @@ defmodule Lockspire.InstallGeneratorTest do
              ~s(oban_prefix: "lockspire")
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(forward "/lockspire", Lockspire.Web.Router)
+             "forward(\"/lockspire\", Lockspire.Web.Router)"
 
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) =~
-             ~s(get "/authorized-apps", AuthorizedAppsController, :index)
+             "get(\"/authorized-apps\", AuthorizedAppsController, :index)"
 
     router =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
 
-    assert router =~ ~s(get "/verify", LockspireVerificationController, :show)
-    assert router =~ ~s(post "/verify", LockspireVerificationController, :lookup)
-    assert router =~ ~s(post "/verify/:handle/approve", LockspireVerificationController, :approve)
-    assert router =~ ~s(post "/verify/:handle/deny", LockspireVerificationController, :deny)
+    assert router =~ "get(\"/verify\", LockspireVerificationController, :show)"
+    assert router =~ "post(\"/verify\", LockspireVerificationController, :lookup)"
+
+    assert router =~
+             "post(\"/verify/:handle/approve\", LockspireVerificationController, :approve)"
+
+    assert router =~ "post(\"/verify/:handle/deny\", LockspireVerificationController, :deny)"
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
     assert router =~ ~s(scope "/lockspire/admin")
-    assert router =~ "pipe_through [:browser, :require_operator]"
-    assert router =~ ~s(forward "/", Lockspire.Web.AdminRouter)
+    assert router =~ "pipe_through([:browser, :require_operator])"
+
+    assert router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
+
     assert router =~ "Do not rely on Lockspire to authenticate your operators"
-    assert router =~ ~s(forward "/lockspire", Lockspire.Web.Router)
+    assert router =~ "forward(\"/lockspire\", Lockspire.Web.Router)"
 
     assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through \[:browser, :require_operator\]\s+forward "\/", Lockspire.Web.AdminRouter\s+end/
+             ~r/scope "\/lockspire\/admin" do\s+pipe_through\(\[:browser, :require_operator\]\)\s+forward\("\/", Lockspire.Web.AdminRouter\)\s+end/
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
@@ -131,9 +165,18 @@ defmodule Lockspire.InstallGeneratorTest do
              Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
            ) =~ "name=\"decision\" value=\"deny\""
 
-    assert File.read!(
-             Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
-           ) =~ "/interactions/\#{interaction_id}/complete"
+    consent_live =
+      File.read!(
+        Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
+      )
+
+    assert consent_live =~ "ConsentContext.load"
+    assert consent_live =~ "start_async(socket, :load_consent_context"
+    assert consent_live =~ "handle_async(:load_consent_context"
+    assert consent_live =~ "role=\"status\""
+    assert consent_live =~ "phx-trigger-action"
+    refute consent_live =~ "params[\"client_name\"]"
+    refute consent_live =~ "interaction_id}</code>"
 
     assert File.read!(
              Path.join(
@@ -209,40 +252,286 @@ defmodule Lockspire.InstallGeneratorTest do
     assert File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")) ==
              File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
 
-    fapi_smoke_path =
-      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e_test.exs")
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
 
-    assert File.exists?(fapi_smoke_path),
-           "Expected FAPI smoke E2E test to be rendered to host fixture"
+    assert File.exists?(default_smoke_path),
+           "Expected default-profile smoke E2E test to be rendered to host fixture"
 
-    fapi_smoke = File.read!(fapi_smoke_path)
+    default_smoke = File.read!(default_smoke_path)
 
-    assert fapi_smoke =~ "defmodule GeneratedHostApp.Lockspire.FapiSmokeE2ETest"
-    assert fapi_smoke =~ "Lockspire-managed scaffolding"
-    assert fapi_smoke =~ "@endpoint GeneratedHostAppWeb.Endpoint"
-    assert fapi_smoke =~ ~s(get("/lockspire/authorize")
-    assert fapi_smoke =~ "Lockspire.Clients.register_client"
-    assert fapi_smoke =~ "Lockspire.issuer()"
-    assert fapi_smoke =~ "FAPI 2.0"
-    assert fapi_smoke =~ "redirect_uri must match a registered URI"
+    assert default_smoke =~ "defmodule GeneratedHostApp.Lockspire.SmokeE2ETest"
+    assert default_smoke =~ "Lockspire-managed scaffolding"
+    assert default_smoke =~ "@endpoint GeneratedHostAppWeb.Endpoint"
+    assert default_smoke =~ ~s(get("/lockspire/authorize")
+    assert default_smoke =~ "Lockspire.Clients.register_client"
+    assert default_smoke =~ ~s(allowed_scopes: ["profile"])
+    assert default_smoke =~ ~s("scope" => "openid profile")
+    assert default_smoke =~ "code_challenge_method\" => \"S256"
+    assert default_smoke =~ "redirect_uri must match a registered URI"
+    assert default_smoke =~ ":crypto.strong_rand_bytes(32)"
 
-    refute fapi_smoke =~ "Lockspire.TestRepo"
-    refute fapi_smoke =~ "Lockspire.Storage"
-    refute fapi_smoke =~ "Lockspire.Domain"
-    refute fapi_smoke =~ "Lockspire.Security"
-    refute fapi_smoke =~ "Application.compile_env"
-    refute fapi_smoke =~ "@endpoint Lockspire.Web.Router"
+    refute default_smoke =~ ~s(verifier = "lockspire-smoke-)
+    refute default_smoke =~ ~s("nonce" => "nonce-)
+    refute default_smoke =~ ~s("state" => "state-)
 
-    :code.purge(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
-    :code.delete(GeneratedHostApp.Lockspire.FapiSmokeE2ETest)
+    refute default_smoke =~ "Lockspire.TestRepo"
+    refute default_smoke =~ "Lockspire.Storage"
+    refute default_smoke =~ "Lockspire.Domain"
+    refute default_smoke =~ "Lockspire.Security"
+    refute default_smoke =~ "Application.compile_env"
+    refute default_smoke =~ "@endpoint Lockspire.Web.Router"
+    refute default_smoke =~ "fapi_2_0"
 
-    assert [{GeneratedHostApp.Lockspire.FapiSmokeE2ETest, _binary} | _rest] =
-             Code.compile_string(fapi_smoke, fapi_smoke_path)
+    :code.purge(GeneratedHostApp.Lockspire.SmokeE2ETest)
+    :code.delete(GeneratedHostApp.Lockspire.SmokeE2ETest)
+
+    assert [{GeneratedHostApp.Lockspire.SmokeE2ETest, _binary} | _rest] =
+             Code.compile_string(default_smoke, default_smoke_path)
 
     assert output =~ "Lockspire canonical onboarding next steps"
     assert output =~ "Import `config/lockspire.exs`"
     assert output =~ "auth-code + PKCE flow"
     assert output =~ "docs/device-flow-host-guide.md"
+    assert output =~ "lockspire_smoke_e2e_test.exs"
+    assert output =~ "--with-fapi-smoke"
+  end
+
+  test "the default install emits only the default-profile smoke while FAPI proof is explicit" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
+
+    fapi_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e.exs")
+
+    assert File.exists?(default_smoke_path)
+    refute File.exists?(fapi_smoke_path)
+
+    default_manifest = load_manifest!()
+
+    assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in Enum.map(
+             default_manifest["managed_files"],
+             & &1["path"]
+           )
+
+    refute "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
+             default_manifest["managed_files"],
+             & &1["path"]
+           )
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!(["--with-fapi-smoke"])
+    end)
+
+    assert File.exists?(default_smoke_path)
+    assert File.exists?(fapi_smoke_path)
+
+    fapi_smoke = File.read!(fapi_smoke_path)
+    assert fapi_smoke =~ ":crypto.strong_rand_bytes(32)"
+    assert fapi_smoke =~ "\"code_challenge\" => code_challenge(verifier)"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-nonce"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-state"
+    refute fapi_smoke =~ "lockspire-fapi-smoke-verifier"
+
+    fapi_manifest = load_manifest!()
+
+    assert "test/generated_host_app/lockspire_fapi_smoke_e2e.exs" in Enum.map(
+             fapi_manifest["managed_files"],
+             & &1["path"]
+           )
+  end
+
+  test "the FAPI smoke flag is documented and rejects a positional value" do
+    assert Mix.Tasks.Lockspire.Install.help() =~ "--with-fapi-smoke"
+    assert Mix.Tasks.Lockspire.Install.help() =~ "--include fapi"
+
+    assert_raise Mix.Error, ~r/Unknown arguments: not-a-boolean/, fn ->
+      File.cd!(@fixture_root, fn ->
+        Mix.Tasks.Lockspire.Install.run(["--with-fapi-smoke", "not-a-boolean"])
+      end)
+    end
+  end
+
+  test "rendered default and opted-in FAPI smokes execute against the generated host" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    default_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_smoke_e2e_test.exs")
+
+    run_rendered_test!(
+      default_smoke_path,
+      GeneratedHostApp.Lockspire.SmokeE2ETest,
+      "discovery and JWKS are published"
+    )
+
+    run_rendered_test!(
+      default_smoke_path,
+      GeneratedHostApp.Lockspire.SmokeE2ETest,
+      "authorization-code requests require S256 and exact redirect matching"
+    )
+
+    reset_fixture!()
+
+    capture_io(fn ->
+      install_fixture!(["--with-fapi-smoke"])
+    end)
+
+    {:ok, policy} = Repository.get_server_policy()
+
+    {:ok, _policy} =
+      Repository.put_server_policy(%{policy | security_profile: :fapi_2_0_security})
+
+    fapi_smoke_path =
+      Path.join(@fixture_root, "test/generated_host_app/lockspire_fapi_smoke_e2e.exs")
+
+    run_rendered_test!(
+      fapi_smoke_path,
+      GeneratedHostApp.Lockspire.FapiSmokeE2ETest,
+      "FAPI 2.0 rejects direct authorize requests without PAR"
+    )
+  end
+
+  test "the rendered router macro compiles through the generated host router" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    rendered_router =
+      File.read!(Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex"))
+
+    assert rendered_router ==
+             File.read!(Path.join(@runtime_fixture_root, "router/lockspire.ex"))
+
+    refute rendered_router =~ "dpop_replay_store:"
+    assert rendered_router =~ "docs/protect-phoenix-api-routes.md"
+
+    protected_controller =
+      File.read!(
+        Path.join(
+          @runtime_fixture_root,
+          "controllers/protected_api_controller.ex"
+        )
+      )
+
+    for reader <- ["subject", "scopes", "audiences", "expires_at", "confirmation"] do
+      assert protected_controller =~ "AccessToken.#{reader}(access_token)"
+    end
+
+    assert protected_controller =~ "host_authorized_for_billing?"
+
+    routes = Phoenix.Router.routes(GeneratedHostAppWeb.Router)
+
+    assert Enum.any?(routes, &(&1.path == "/verify" and &1.verb == :get))
+    assert Enum.any?(routes, &(&1.path == "/authorized-apps" and &1.verb == :get))
+
+    admin_index = route_index!(routes, "/lockspire/admin")
+    public_index = route_index!(routes, "/lockspire")
+
+    assert admin_index < public_index
+
+    admin_route = Enum.at(routes, admin_index)
+    assert admin_route.plug == Lockspire.Web.AdminRouter
+
+    consent_route = Enum.find(routes, &(&1.path == "/lockspire/consent/:interaction_id"))
+
+    assert consent_route.metadata[:phoenix_live_view] |> elem(0) ==
+             GeneratedHostAppWeb.LockspireConsentLive
+
+    assert_raise CompileError, fn ->
+      Code.compile_string("""
+      defmodule GeneratedHostAppWeb.RouterWithoutOperator do
+        use Phoenix.Router
+        import GeneratedHostAppWeb.Router.Lockspire
+
+        pipeline :browser do
+          plug :accepts, [\"html\"]
+        end
+
+        lockspire_routes()
+      end
+      """)
+    end
+  end
+
+  test "the installer-rendered consent LiveView matches and compiles as the executable fixture" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    rendered_path =
+      Path.join(@fixture_root, "lib/generated_host_app_web/live/lockspire_consent_live.ex")
+
+    rendered = File.read!(rendered_path)
+
+    assert rendered ==
+             File.read!(Path.join(@runtime_fixture_root, "live/lockspire_consent_live.ex"))
+
+    assert rendered =~ "start_async(socket, :load_consent_context"
+    assert rendered =~ "handle_async(:load_consent_context"
+    assert rendered =~ "role=\"status\""
+
+    module = GeneratedHostAppWeb.LockspireConsentLive
+    :code.purge(module)
+    :code.delete(module)
+
+    assert [{^module, _binary}] = Code.compile_string(rendered, rendered_path)
+  end
+
+  test "rendered config and account resolver compile against the public host seam" do
+    capture_io(fn ->
+      install_fixture!()
+    end)
+
+    config_path = Path.join(@fixture_root, "config/lockspire.exs")
+    {config, _imports} = Config.Reader.read_imports!(config_path)
+    lockspire_config = Keyword.fetch!(config, :lockspire)
+
+    assert Keyword.fetch!(lockspire_config, :logout_path) == "/logout"
+
+    assert Keyword.fetch!(lockspire_config, :account_resolver) ==
+             GeneratedHostApp.Lockspire.AccountResolver
+
+    resolver_module = GeneratedHostApp.Lockspire.AccountResolver
+
+    resolver_path =
+      Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
+
+    resolver = File.read!(resolver_path)
+
+    assert resolver =~ "id_token: %{"
+    assert resolver =~ "userinfo: %{"
+    refute resolver =~ "claims: %{"
+
+    :code.purge(resolver_module)
+    :code.delete(resolver_module)
+
+    assert [{^resolver_module, _binary}] =
+             Code.compile_string(resolver, resolver_path)
+
+    previous_logout_path = Application.get_env(:lockspire, :logout_path)
+    Application.put_env(:lockspire, :logout_path, "/sign-out")
+
+    on_exit(fn ->
+      if is_nil(previous_logout_path) do
+        Application.delete_env(:lockspire, :logout_path)
+      else
+        Application.put_env(:lockspire, :logout_path, previous_logout_path)
+      end
+    end)
+
+    assert %Lockspire.Host.InteractionResult{login_path: "/sign-out", return_to: "/after-logout"} =
+             :erlang.apply(resolver_module, :redirect_for_logout, [
+               nil,
+               %{return_to: "/after-logout"}
+             ])
   end
 
   test "mix lockspire.install --sigra-host emits Sigra-oriented resolver stub" do
@@ -381,6 +670,7 @@ defmodule Lockspire.InstallGeneratorTest do
     File.rm_rf!(Path.join(@fixture_root, "config"))
     File.rm_rf!(Path.join(@fixture_root, "lib"))
     File.rm_rf!(Path.join(@fixture_root, "test"))
+    File.rm_rf!(Path.join(@fixture_root, "priv"))
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
   end
@@ -398,5 +688,25 @@ defmodule Lockspire.InstallGeneratorTest do
     |> Path.join(".lockspire/install_manifest.json")
     |> File.read!()
     |> Jason.decode!()
+  end
+
+  defp route_index!(routes, path) do
+    Enum.find_index(routes, &(&1.path == path)) ||
+      flunk(
+        "expected a compiled route at #{inspect(path)}, got: #{inspect(Enum.map(routes, & &1.path))}"
+      )
+  end
+
+  defp run_rendered_test!(path, module, test_name) do
+    source = File.read!(path)
+
+    :code.purge(module)
+    :code.delete(module)
+
+    assert [{^module, _binary} | _rest] = Code.compile_string(source, path)
+
+    test_name = String.to_atom("test " <> test_name)
+    assert Enum.member?(module.__info__(:functions), {test_name, 1})
+    assert :ok = apply(module, test_name, [%{}])
   end
 end

@@ -1,0 +1,1128 @@
+defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
+  @moduledoc """
+  Shared implementation for secure token endpoint grant redemption.
+  """
+
+  @compile {:nowarn_unused_function,
+            [
+              {:fetch_presented_auth_req_id, 1},
+              {:record_ciba_poll, 3},
+              {:map_ciba_poll_outcome, 2},
+              {:fetch_presented_device_code, 1},
+              {:record_device_poll, 3},
+              {:map_device_poll_outcome, 2}
+            ]}
+
+  alias Lockspire.Domain.CibaAuthorization
+  alias Lockspire.Domain.Client
+  alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
+  alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPolling
+  alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
+  alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
+  alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
+  alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Protocol.TokenResult.Success
+  alias Lockspire.Security.Policy
+
+  @type result :: {:ok, struct()} | {:error, struct()}
+
+  @doc false
+  def handle_code_exchange(
+        client,
+        authorization_code,
+        code_hash,
+        params,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(
+          &handle_code_exchange(
+            client,
+            authorization_code,
+            code_hash,
+            params,
+            issuance_context,
+            &1
+          )
+        )
+
+  @doc false
+  def handle_code_exchange(
+        %Client{} = client,
+        %Token{} = authorization_code,
+        code_hash,
+        params,
+        issuance_context,
+        request
+      ) do
+    dependencies = Dependencies.fetch!(request)
+
+    with :ok <- validate_code_active(authorization_code, code_hash),
+         :ok <- validate_code_binding(client, authorization_code, params),
+         {:ok, requested_resources} <- ResourceSelection.select(params, authorization_code),
+         %Success{} = success <-
+           redeem_code(
+             client,
+             authorization_code,
+             code_hash,
+             issuance_context,
+             request,
+             requested_resources
+           ) do
+      GrantObservability.emit_authorization_code_success(
+        client,
+        authorization_code,
+        success,
+        dependencies
+      )
+
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        GrantObservability.record_authorization_code_failure(
+          error,
+          client,
+          authorization_code,
+          dependencies
+        )
+
+        GrantObservability.emit_authorization_code_failure(error, params, request, dependencies)
+        {:error, error}
+    end
+  end
+
+  @doc false
+  def authenticate_client(params, authorization, request, %Dependencies{} = dependencies),
+    do: ClientAuthentication.authenticate(params, authorization, request, dependencies)
+
+  @doc false
+  def fetch_authorization_code(params, request, %Dependencies{} = dependencies),
+    do:
+      request |> Dependencies.attach(dependencies) |> then(&fetch_authorization_code(params, &1))
+
+  @doc false
+  def fetch_authorization_code(params, request) do
+    case normalize_optional_string(params["code"]) do
+      code when is_binary(code) ->
+        code_hash = Policy.hash_token(code)
+        load_authorization_code(request, code_hash)
+
+      _other ->
+        {:error, invalid_grant("Authorization code is required", :missing_authorization_code)}
+    end
+  end
+
+  @doc false
+  def fetch_device_authorization_for_exchange(
+        params,
+        client,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do: fetch_device_poll_result(params, client, request, dependencies)
+
+  defp fetch_device_poll_result(
+         params,
+         %Client{} = client,
+         request,
+         %Dependencies{} = dependencies
+       ) do
+    case GrantPolling.fetch_device(params, client, dependencies) do
+      {:error, %Error{} = error, %DeviceAuthorizationState{} = device_authorization,
+       %Client{} = audit_client} ->
+        maybe_append_failure_audit(
+          error,
+          audit_client,
+          device_authorization,
+          Dependencies.fetch!(request)
+        )
+
+        {:error, error}
+
+      other ->
+        other
+    end
+  end
+
+  @doc false
+  def fetch_ciba_authorization_for_exchange(
+        params,
+        client,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do: fetch_ciba_poll_result(params, client, request, dependencies)
+
+  defp fetch_ciba_poll_result(params, %Client{} = client, request, %Dependencies{} = dependencies) do
+    case GrantPolling.fetch_ciba(params, client, dependencies) do
+      {:error, %Error{} = error, %CibaAuthorization{} = ciba_authorization,
+       %Client{} = audit_client} ->
+        maybe_append_failure_audit(
+          error,
+          audit_client,
+          ciba_authorization,
+          Dependencies.fetch!(request)
+        )
+
+        {:error, error}
+
+      other ->
+        other
+    end
+  end
+
+  def fetch_presented_auth_req_id(params) do
+    case normalize_optional_string(params["auth_req_id"]) do
+      auth_req_id when is_binary(auth_req_id) ->
+        {:ok, auth_req_id}
+
+      _other ->
+        {:error, invalid_grant("auth_req_id is required", :missing_auth_req_id)}
+    end
+  end
+
+  def record_ciba_poll(auth_req_id, %Client{} = client, request) do
+    auth_req_id_hash = Policy.hash_token(auth_req_id)
+
+    case ciba_authorization_store(request).record_ciba_poll(
+           auth_req_id_hash,
+           client.client_id,
+           now(request)
+         ) do
+      {:ok, %{} = outcome} ->
+        {:ok, outcome}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to evaluate CIBA polling state",
+           :ciba_authorization_lookup_failed
+         )}
+    end
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :approved_ready,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        _client
+      ),
+      do: {:ok, ciba_authorization}
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :pending,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "authorization_pending",
+       "The CIBA authorization is still pending approval",
+       :ciba_authorization_pending
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :slow_down,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "slow_down",
+       "The client is polling too quickly",
+       :ciba_authorization_slow_down
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :denied,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "access_denied",
+       "The CIBA authorization was denied",
+       :ciba_authorization_denied
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :expired,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "expired_token",
+       "The CIBA authorization has expired",
+       :ciba_authorization_expired
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :client_mismatch,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization is invalid for this client",
+       :ciba_authorization_client_mismatch
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(%{result: :client_mismatch}, _client) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization is invalid for this client",
+       :ciba_authorization_client_mismatch
+     )}
+  end
+
+  def map_ciba_poll_outcome(
+        %{
+          result: :consumed,
+          ciba_authorization: %CibaAuthorization{} = ciba_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     invalid_grant(
+       "The CIBA authorization has already been redeemed",
+       :ciba_authorization_consumed
+     ), ciba_authorization, client}
+  end
+
+  def map_ciba_poll_outcome(%{result: :invalid_grant}, _client) do
+    {:error, invalid_grant("The CIBA authorization is invalid", :ciba_authorization_not_found)}
+  end
+
+  def fetch_presented_device_code(params) do
+    case normalize_optional_string(params["device_code"]) do
+      device_code when is_binary(device_code) ->
+        {:ok, device_code}
+
+      _other ->
+        {:error, invalid_grant("device_code is required", :missing_device_code)}
+    end
+  end
+
+  def record_device_poll(device_code, %Client{} = client, request) do
+    device_code_hash = Policy.hash_token(device_code)
+
+    case device_authorization_store(request).record_device_poll(
+           device_code_hash,
+           client.client_id,
+           now(request)
+         ) do
+      {:ok, %{} = outcome} ->
+        {:ok, outcome}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to evaluate device authorization polling state",
+           :device_authorization_lookup_failed
+         )}
+    end
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :approved_ready,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        _client
+      ),
+      do: {:ok, device_authorization}
+
+  def map_device_poll_outcome(
+        %{
+          result: :pending,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "authorization_pending",
+       "The device authorization is still pending approval",
+       :device_authorization_pending
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :slow_down,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "slow_down",
+       "The client is polling too quickly",
+       :device_authorization_slow_down
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :denied,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "access_denied",
+       "The device authorization was denied",
+       :device_authorization_denied
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :expired,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     oauth_error(
+       400,
+       "expired_token",
+       "The device authorization has expired",
+       :device_authorization_expired
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :client_mismatch,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     invalid_grant(
+       "The device authorization is invalid for this client",
+       :device_authorization_client_mismatch
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(%{result: :client_mismatch}, _client) do
+    {:error,
+     invalid_grant(
+       "The device authorization is invalid for this client",
+       :device_authorization_client_mismatch
+     )}
+  end
+
+  def map_device_poll_outcome(
+        %{
+          result: :consumed,
+          device_authorization: %DeviceAuthorizationState{} = device_authorization
+        },
+        %Client{} = client
+      ) do
+    {:error,
+     invalid_grant(
+       "The device authorization has already been redeemed",
+       :device_authorization_consumed
+     ), device_authorization, client}
+  end
+
+  def map_device_poll_outcome(%{result: :invalid_grant}, _client) do
+    {:error,
+     invalid_grant("The device authorization is invalid", :device_authorization_not_found)}
+  end
+
+  defp validate_code_active(%Token{} = authorization_code, _code_hash) do
+    now = DateTime.utc_now()
+
+    cond do
+      not is_nil(authorization_code.redeemed_at) ->
+        {:error,
+         invalid_grant("Authorization code has already been used", :authorization_code_replayed)}
+
+      not is_nil(authorization_code.revoked_at) ->
+        {:error, invalid_grant("Authorization code is invalid", :authorization_code_revoked)}
+
+      DateTime.compare(authorization_code.expires_at, now) != :gt ->
+        {:error, invalid_grant("Authorization code has expired", :authorization_code_expired)}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_code_binding(%Client{} = client, %Token{} = authorization_code, params) do
+    with :ok <- validate_client_binding(client, authorization_code),
+         :ok <- validate_redirect_uri_binding(authorization_code, params) do
+      validate_pkce_binding(authorization_code, params)
+    end
+  end
+
+  defp validate_client_binding(%Client{} = client, %Token{} = authorization_code) do
+    if client.client_id == authorization_code.client_id do
+      :ok
+    else
+      {:error,
+       invalid_grant("Authorization code was not issued to this client", :client_mismatch)}
+    end
+  end
+
+  defp validate_redirect_uri_binding(%Token{} = authorization_code, params) do
+    redirect_uri = normalize_optional_string(params["redirect_uri"])
+
+    if redirect_uri == authorization_code.redirect_uri do
+      :ok
+    else
+      {:error,
+       invalid_grant(
+         "redirect_uri does not match the issued authorization code",
+         :redirect_uri_mismatch
+       )}
+    end
+  end
+
+  defp validate_pkce_binding(%Token{} = authorization_code, params) do
+    verifier = normalize_optional_string(params["code_verifier"])
+
+    cond do
+      not present?(verifier) ->
+        {:error, invalid_grant("code_verifier is required", :missing_code_verifier)}
+
+      authorization_code.code_challenge_method != :S256 ->
+        {:error,
+         invalid_grant("Unsupported PKCE challenge method", :unsupported_code_challenge_method)}
+
+      not pkce_verifier_matches?(verifier, authorization_code.code_challenge) ->
+        {:error, invalid_grant("code_verifier is invalid", :code_verifier_mismatch)}
+
+      true ->
+        :ok
+    end
+  end
+
+  @doc false
+  # Test-only public delegate for validate_grant_resources/2. The device/CIBA
+  # invalid_target rejection branch is only reachable when a grant carries a
+  # recorded authorized audience; device/CIBA grants carry none through the public
+  # flow today, so this seam lets the suite prove the rejection guard
+  # against a grant token seeded with a recorded audience.
+  @spec validate_grant_resources_for_test(map(), Token.t()) ::
+          {:ok, [String.t()]} | {:error, Error.t()}
+  def validate_grant_resources_for_test(params, %Token{} = grant) do
+    ResourceSelection.select_grant(params, grant)
+  end
+
+  # Resource validation for the device and CIBA grant paths mirrors the authorization-code
+  # validate_requested_resources/2 shape (List.wrap, keep binaries, membership
+  # against the grant's authorized audience) with one carve-out: device and CIBA
+  # grants carry no recorded audience today (build_device_grant/build_ciba_grant),
+  # so an empty authorized set accepts any binary resource — matching the AC
+  # `requested == [] -> {:ok, authorized}` default semantics. When a grant DOES
+  # carry a recorded audience, an out-of-set resource is rejected with
+  # invalid_target (:invalid_resource, 400), preventing audience confusion.
+  defp validate_grant_resources(params, %Token{} = grant),
+    do: ResourceSelection.select_grant(params, grant)
+
+  defp request_params(request) do
+    Map.get(request, :params, Map.get(request, "params", request))
+  end
+
+  defp redeem_code(
+         %Client{} = client,
+         %Token{} = authorization_code,
+         code_hash,
+         issuance_context,
+         request,
+         requested_resources
+       ) do
+    issued_at = now(request)
+
+    case TokenIssuer.issue_grant(
+           client,
+           %Token{authorization_code | audience: requested_resources},
+           issued_at,
+           issuance_context,
+           Dependencies.fetch!(request)
+         ) do
+      {:ok,
+       %{
+         access_token: %Token{} = access_token,
+         raw_access_token: raw_access_token,
+         formatted_refresh_token: formatted_refresh_token
+       }} ->
+        with :ok <- ensure_code_redemption_capabilities(request) do
+          case persist_authorization_code_grant(
+                 code_hash,
+                 issued_at,
+                 access_token,
+                 authorization_code,
+                 formatted_refresh_token,
+                 issuance_context,
+                 request
+               ) do
+            {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+              TokenIssuer.build_success(
+                client,
+                authorization_code,
+                persisted_access_token,
+                raw_access_token,
+                issuance_context,
+                issued_at,
+                Map.get(persisted_grant, :refresh_token_raw),
+                Dependencies.fetch!(request)
+              )
+
+            {:error, :already_redeemed} ->
+              {:error,
+               invalid_grant(
+                 "Authorization code has already been used",
+                 :authorization_code_replayed
+               )}
+
+            {:error, :not_found} ->
+              {:error,
+               invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
+
+            {:error, _reason} ->
+              {:error,
+               oauth_error(
+                 500,
+                 "server_error",
+                 "Unable to redeem authorization code",
+                 :token_redemption_failed
+               )}
+          end
+        end
+
+      {:error, %Error{} = error} ->
+        {:error, error}
+    end
+  end
+
+  defp ensure_code_redemption_capabilities(request) do
+    case Dependencies.validate(Dependencies.fetch!(request), :authorization_code_mutation) do
+      {:ok, _dependencies} -> :ok
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
+
+  @doc false
+  def redeem_device_authorization(
+        client,
+        authorization,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&redeem_device_authorization(client, authorization, issuance_context, &1))
+
+  def redeem_device_authorization(
+        %Client{} = client,
+        %DeviceAuthorizationState{} = device_authorization,
+        issuance_context,
+        request
+      ) do
+    with {:ok, %Token{} = device_grant} <- build_device_grant(device_authorization),
+         %Success{} = success <-
+           redeem_device_grant(
+             client,
+             device_grant,
+             device_authorization,
+             issuance_context,
+             request
+           ) do
+      GrantObservability.emit_poll_success(
+        client,
+        device_authorization,
+        success,
+        Dependencies.fetch!(request)
+      )
+
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        maybe_append_failure_audit(
+          error,
+          client,
+          device_authorization,
+          Dependencies.fetch!(request)
+        )
+
+        {:error, error}
+    end
+  end
+
+  @doc false
+  def redeem_ciba_authorization(
+        client,
+        authorization,
+        issuance_context,
+        request,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        request
+        |> Dependencies.attach(dependencies)
+        |> then(&redeem_ciba_authorization(client, authorization, issuance_context, &1))
+
+  def redeem_ciba_authorization(
+        %Client{} = client,
+        %CibaAuthorization{} = ciba_authorization,
+        issuance_context,
+        request
+      ) do
+    with {:ok, %Token{} = ciba_grant} <- build_ciba_grant(ciba_authorization),
+         %Success{} = success <-
+           redeem_ciba_grant(
+             client,
+             ciba_grant,
+             ciba_authorization,
+             issuance_context,
+             request
+           ) do
+      GrantObservability.emit_poll_success(
+        client,
+        ciba_authorization,
+        success,
+        Dependencies.fetch!(request)
+      )
+
+      {:ok, success}
+    else
+      {:error, %Error{} = error} ->
+        maybe_append_failure_audit(
+          error,
+          client,
+          ciba_authorization,
+          Dependencies.fetch!(request)
+        )
+
+        {:error, error}
+    end
+  end
+
+  defp build_ciba_grant(%CibaAuthorization{} = ciba_authorization) do
+    if is_binary(ciba_authorization.subject_id) do
+      {:ok,
+       %Token{
+         token_hash: ciba_authorization.auth_req_id_hash,
+         token_type: :authorization_code,
+         client_id: ciba_authorization.client_id,
+         account_id: ciba_authorization.subject_id,
+         interaction_id: nil,
+         scopes: ciba_authorization.scopes,
+         # audience is the grant's authorized set for validate_grant_resources/2;
+         # CIBA records none today, so it stays the %Token{} default ([]) and the
+         # validated resource is threaded in redeem_ciba_grant before minting.
+         issued_at: ciba_authorization.approved_at,
+         expires_at: ciba_authorization.expires_at
+       }}
+    else
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Approved CIBA authorization is missing a bound subject",
+         :ciba_authorization_subject_missing
+       )}
+    end
+  end
+
+  defp redeem_ciba_grant(
+         %Client{} = client,
+         %Token{} = ciba_grant,
+         %CibaAuthorization{} = ciba_authorization,
+         issuance_context,
+         request
+       ) do
+    issued_at = now(request)
+
+    with {:ok, validated_audience} <-
+           validate_grant_resources(request_params(request), ciba_grant),
+         {:ok,
+          %{
+            access_token: %Token{} = access_token,
+            raw_access_token: raw_access_token,
+            formatted_refresh_token: formatted_refresh_token
+          }} <-
+           TokenIssuer.issue_grant(
+             client,
+             %Token{ciba_grant | audience: validated_audience},
+             issued_at,
+             issuance_context,
+             Dependencies.fetch!(request)
+           ) do
+      case persist_ciba_authorization_grant(
+             ciba_authorization,
+             issued_at,
+             access_token,
+             ciba_grant,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+          TokenIssuer.build_success(
+            client,
+            ciba_grant,
+            persisted_access_token,
+            raw_access_token,
+            issuance_context,
+            issued_at,
+            Map.get(persisted_grant, :refresh_token_raw),
+            Dependencies.fetch!(request)
+          )
+
+        {:error, :invalid_state} ->
+          {:error,
+           invalid_grant(
+             "The CIBA authorization has already been redeemed",
+             :ciba_authorization_consumed
+           )}
+
+        {:error, _reason} ->
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Unable to redeem CIBA authorization",
+             :ciba_authorization_redemption_failed
+           )}
+      end
+    else
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
+
+  defp persist_ciba_authorization_grant(
+         %CibaAuthorization{} = ciba_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = ciba_grant,
+         formatted_refresh_token,
+         issuance_context,
+         request
+       ) do
+    dependencies = Dependencies.fetch!(request)
+
+    GrantPersistence.redeem_ciba_authorization(
+      %{
+        authorization: ciba_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: ciba_grant,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: ciba_grant.client_id},
+            ciba_authorization
+          )
+      },
+      dependencies
+    )
+  end
+
+  defp build_device_grant(%DeviceAuthorizationState{} = device_authorization) do
+    if is_binary(device_authorization.subject_id) do
+      {:ok,
+       %Token{
+         token_hash: device_authorization.device_code_hash,
+         token_type: :authorization_code,
+         client_id: device_authorization.client_id,
+         account_id: device_authorization.subject_id,
+         interaction_id: nil,
+         scopes: device_authorization.scopes,
+         # audience is the grant's authorized set for validate_grant_resources/2;
+         # device records none today, so it stays the %Token{} default ([]) and the
+         # validated resource is threaded in redeem_device_grant before minting.
+         issued_at: device_authorization.approved_at,
+         expires_at: device_authorization.expires_at
+       }}
+    else
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Approved device authorization is missing a bound subject",
+         :device_authorization_subject_missing
+       )}
+    end
+  end
+
+  defp redeem_device_grant(
+         %Client{} = client,
+         %Token{} = device_grant,
+         %DeviceAuthorizationState{} = device_authorization,
+         issuance_context,
+         request
+       ) do
+    issued_at = now(request)
+
+    with {:ok, validated_audience} <-
+           validate_grant_resources(request_params(request), device_grant),
+         {:ok,
+          %{
+            access_token: %Token{} = access_token,
+            raw_access_token: raw_access_token,
+            formatted_refresh_token: formatted_refresh_token
+          }} <-
+           TokenIssuer.issue_grant(
+             client,
+             %Token{device_grant | audience: validated_audience},
+             issued_at,
+             issuance_context,
+             Dependencies.fetch!(request)
+           ) do
+      case persist_device_authorization_grant(
+             device_authorization,
+             issued_at,
+             access_token,
+             device_grant,
+             formatted_refresh_token,
+             issuance_context,
+             request
+           ) do
+        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
+          TokenIssuer.build_success(
+            client,
+            device_grant,
+            persisted_access_token,
+            raw_access_token,
+            issuance_context,
+            issued_at,
+            Map.get(persisted_grant, :refresh_token_raw),
+            Dependencies.fetch!(request)
+          )
+
+        {:error, :invalid_state} ->
+          {:error,
+           invalid_grant(
+             "The device authorization has already been redeemed",
+             :device_authorization_consumed
+           )}
+
+        {:error, _reason} ->
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Unable to redeem device authorization",
+             :device_authorization_redemption_failed
+           )}
+      end
+    else
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
+
+  @doc false
+  def emit_failure(%Error{} = error, params, request, %Dependencies{} = dependencies),
+    do: GrantObservability.emit_failure(error, params, request, dependencies)
+
+  defp pkce_verifier_matches?(verifier, challenge) when is_binary(challenge) do
+    calculated_challenge =
+      :crypto.hash(:sha256, verifier)
+      |> Base.url_encode64(padding: false)
+
+    secure_compare(challenge, calculated_challenge)
+  end
+
+  defp pkce_verifier_matches?(_verifier, _challenge), do: false
+
+  defp secure_compare(left, right)
+       when is_binary(left) and is_binary(right) and byte_size(left) == byte_size(right) do
+    Plug.Crypto.secure_compare(left, right)
+  end
+
+  defp secure_compare(_left, _right), do: false
+
+  defp invalid_grant(description, reason_code) do
+    oauth_error(400, "invalid_grant", description, reason_code)
+  end
+
+  defp oauth_error(status, error, description, reason_code) do
+    %Error{
+      status: status,
+      error: error,
+      error_description: description,
+      reason_code: reason_code
+    }
+  end
+
+  defp token_store(request), do: Dependencies.fetch!(request).token_store
+
+  defp device_authorization_store(request),
+    do: Dependencies.fetch!(request).device_authorization_store
+
+  defp ciba_authorization_store(request),
+    do: Dependencies.fetch!(request).ciba_authorization_store
+
+  @spec now(map()) :: DateTime.t()
+  defp now(request), do: Dependencies.fetch!(request).now.()
+
+  defp persist_device_authorization_grant(
+         %DeviceAuthorizationState{} = device_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = device_grant,
+         nil,
+         issuance_context,
+         request
+       ) do
+    GrantPersistence.redeem_device_authorization(
+      %{
+        authorization: device_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: device_grant,
+        formatted_refresh_token: nil,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: device_grant.client_id},
+            device_authorization
+          )
+      },
+      Dependencies.fetch!(request)
+    )
+  end
+
+  defp persist_device_authorization_grant(
+         %DeviceAuthorizationState{} = device_authorization,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = device_grant,
+         formatted_refresh_token,
+         issuance_context,
+         request
+       ) do
+    GrantPersistence.redeem_device_authorization(
+      %{
+        authorization: device_authorization,
+        issued_at: issued_at,
+        access_token: access_token,
+        grant: device_grant,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.poll_redemption_audit_event(
+            %Client{client_id: device_grant.client_id},
+            device_authorization
+          )
+      },
+      Dependencies.fetch!(request)
+    )
+  end
+
+  defp persist_authorization_code_grant(
+         code_hash,
+         issued_at,
+         %Token{} = access_token,
+         %Token{} = authorization_code,
+         formatted_refresh_token,
+         issuance_context,
+         request
+       ) do
+    dependencies = Dependencies.fetch!(request)
+
+    GrantPersistence.redeem_authorization_code(
+      %{
+        code_hash: code_hash,
+        issued_at: issued_at,
+        access_token: access_token,
+        authorization_code: authorization_code,
+        formatted_refresh_token: formatted_refresh_token,
+        issuance_context: issuance_context,
+        audit_event:
+          GrantObservability.authorization_code_redemption_audit_event(
+            %Client{client_id: authorization_code.client_id},
+            authorization_code
+          )
+      },
+      dependencies
+    )
+  end
+
+  defp maybe_append_failure_audit(
+         error,
+         %Client{} = client,
+         authorization,
+         %Dependencies{} = dependencies
+       ),
+       do:
+         GrantObservability.append_poll_failure_audit(error, client, authorization, dependencies)
+
+  defp load_authorization_code(request, code_hash) do
+    case token_store(request).fetch_authorization_code(code_hash) do
+      {:ok, %Token{} = authorization_code} ->
+        {:ok, authorization_code, code_hash}
+
+      {:ok, nil} ->
+        {:error, invalid_grant("Authorization code is invalid", :authorization_code_not_found)}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to load authorization code",
+           :authorization_code_lookup_failed
+         )}
+    end
+  end
+
+  defp normalize_optional_string(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_optional_string(_value), do: nil
+
+  defp present?(value), do: is_binary(value) and value != ""
+end

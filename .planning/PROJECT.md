@@ -8,15 +8,32 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.37 Prime-Time Readiness Ratchet
+
+**Goal:** Make Lockspire's documented embedded-provider path genuinely installable, prove it through a separate SaaS client and resource-server journey, and tighten the architecture and executable quality gates around that truth.
+
+**Target features:**
+- Make generated routes, host consent, migrations, required configuration, claims examples, and default generated tests executable from a packaged Lockspire artifact.
+- Prove a clean-room Phoenix SaaS provider plus separate-origin confidential client and protected resource API across OIDC validation, token lifecycle, negative cases, and durable DPoP replay protection.
+- Improve public API truth, dependency topology, storage and token cohesion, static-analysis depth, test readability, CI signal, conformance reproducibility, and release artifact proof without breaking v1.x behavior.
+
+## Completed Milestone: v1.36 Structural Quality Ratchet
+
+**Goal:** Raise Lockspire's correctness, release safety, architectural clarity, static-analysis signal, compatibility proof, and code readability through high-yield structural improvements without adding protocol surface or changing public behavior.
+
+**Delivered:** Phases 126-130 are complete, verified, audited, and archived. The milestone bound publication to exact successful-CI evidence, made static-analysis/coverage/minimum-version claims executable, repaired host-Repo/storage boundaries, decomposed token orchestration behind stable facades, centralized lifetime and private-key policy, and made repository proof easier to maintain without adding protocol surface or changing public behavior.
+
 ## Current State
 
-Lockspire has landed mainline work through v1.35 while the latest public Hex release remains `1.2.0`. Beyond the earlier embedded-provider, release-hardening, and protected-route work, the most recent sequence delivered FAPI 2.0 Message Signing in v1.19, Mutual TLS client authentication and certificate-bound tokens in v1.20, first-class Phoenix API route protection in v1.21, automatic DPoP nonce challenge/retry support in v1.22, DCR-managed logout propagation metadata in v1.23, a narrow `client_secret_jwt` direct-client authentication slice in v1.24, advanced-setup support-burden reduction in v1.25, host integration/operator boundary hardening in v1.26, Phoenix resource-server token acceptance in v1.27, admin UI operator experience polish in v1.28, admin journey/design-system deep polish in v1.29, adoption-demo Docker DX plus repo hygiene in v1.30, the admin design-system stress test in v1.31, admin page IA and interaction-model polish in v1.32, OSS adoption-trust hardening in v1.33, prefix-isolated storage in v1.34, and CI/CD efficiency plus release hygiene in v1.35.
+Lockspire has implemented all seven v1.37 phases, and Hex currently reports `1.4.0` as the latest public release. The milestone is not marked shipped: Phase 137 is reviewed, Nyquist-compliant, and threat-secure, but final verification still requires a default-branch OIDC/FAPI workflow run against its disposable Billingo provider and an approved protected release or staging-equivalent that proves the exact tar checksum through Hex, HexDocs, and the public clean-room journey. The scheduled Phase37 and FAPI conformance jobs require no provider secrets; only the optional hosted-provider comparison lane accepts provider configuration. No package was published during autonomous implementation.
+
+The implemented milestone makes packaged installation executable, aligns the supported client/resource-server surface with runtime truth, proves the separate-origin SaaS journey, enforces acyclic/cohesive internals, restores high-signal static analysis, aggregates truthful complete-suite coverage above 84%, pins external conformance inputs, and binds release proof to one manifest-verified tar. Generated routes and consent, collision-safe migrations, semantic access-token readers, capability-aware registration, durable DPoP replay defaults, and host-owned authorization boundaries remain verified and security-audited.
 
 Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently landed mainline work, `v1.33-v1.35`, tightened OSS adoption trust, moved new installs toward prefix-isolated storage by default, and made CI/release hygiene more explicit without publishing a new Hex package in this checkpoint. The latest shipped feature milestone, `v1.32 Admin Page IA & Interaction Model Polish`, made the admin/operator UI more deliberately composed page by page across route scorecards, Support and Operate flows, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, and bounded operator docs.
+The most recently landed mainline work, `v1.33-v1.36`, tightened OSS adoption trust, moved new installs toward prefix-isolated storage by default, made CI/release hygiene executable, and repaired high-leverage architectural and readability gaps without publishing a new Hex package in this checkpoint.
 
 Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
 
@@ -52,7 +69,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-Return to the sustaining GA release train unless concrete adopter, support, or release evidence justifies another scoped feature milestone. The next feature milestone should start through `/gsd-new-milestone` with fresh requirements rather than reusing the archived v1.32 requirements file.
+Complete v1.37's two protected acceptance checks without widening scope: run the scheduled OIDC/FAPI profiles with the three configured provider secrets, then run an approved protected release or staging-equivalent and verify the exact manifest checksum through upload, Hex, HexDocs, and the public clean-room journey. Archive/tag the milestone only after `137-VERIFICATION.md` can move from `human_needed` to `passed`.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -192,10 +209,15 @@ Return to the sustaining GA release train unless concrete adopter, support, or r
 
 ### Active
 
-No active feature milestone requirement is selected. Lockspire is back on the sustaining GA release train until fresh evidence justifies a new scoped milestone.
+- [ ] A separate-origin confidential client can complete authorization code + PKCE, validate OIDC responses, call an audience/scope-protected SaaS API, rotate refresh tokens, exercise revocation/introspection, and prove durable DPoP replay rejection.
+- [ ] Protocol, admin, web, storage, and token internals have acyclic dependency direction, cohesive implementation modules, explicit dependencies, and preserved security-sensitive atomicity.
+- [ ] Static analysis, behavior-oriented tests, quiet test runtime, complete-suite coverage, Sobelow, dependency hygiene, reproducible OIDF evidence, and package checksum/install proof fail closed on real regressions.
 
 ### Validated
 
+- Phase 132 aligned the public client and resource-server contract with shipped behavior: semantic `AccessToken` readers, shared capability-aware registration, exact redirect enforcement, durable fail-closed DPoP replay storage, truthful generated examples, and 16/16 modeled threats are verified.
+- Phase 131 delivered the executable packaged-install path: generated host/router/consent seams compile and run, migrations and managed files install and upgrade transactionally, `mix lockspire.verify` reports all required seams, default and opt-in FAPI smoke proofs match their profiles, and the generated consent flow completes through token exchange with 31/31 modeled threats closed.
+- Delivered v1.36 Structural Quality Ratchet: exact-ref release proof, executable quality and compatibility baselines, repaired storage boundaries, cohesive token internals, zero-warning Dialyzer, readable tests/runtime code, synchronized docs, and artifact hygiene were completed across Phases 126-130.
 - Delivered v1.32 Admin Page IA & Interaction Model Polish: route scorecards, Support and Operate flow polish, Configure propagation, ugly fixtures, browser/manual evidence, deterministic guardrails, bounded operator docs, and final adversarial proof were completed across Phases 121-125.
 - Embedded-library install and host-owned integration seams were delivered in the archived v1.0 milestone.
 - Authorization code + PKCE, OIDC discovery/JWKS/userinfo, revocation, introspection, and refresh rotation were delivered in the archived v1.0 milestone.
@@ -294,6 +316,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
+| Start v1.36 as a structural quality ratchet | Audit evidence found high-leverage release-integrity, storage-boundary, static-analysis, compatibility, and readability gaps that can be fixed without adding product surface | Adopted and delivered across Phases 126-130; archived 2026-08-26 |
 | Ship Lockspire as a separate companion library, not a Sigra module | Keeps provider-side OAuth/OIDC concerns isolated from end-user authentication concerns | Adopted in archived v1.0 milestone |
 | Build as an embedded library rather than a standalone auth service | Matches Phoenix team deployment reality and preserves host control over UI, accounts, and app policy | Adopted in archived v1.0 milestone |
 | Use Phoenix LiveView for admin and consent UX | Gives operators and host apps first-class Phoenix-native surfaces instead of a foreign console | Adopted in archived v1.0 milestone |
@@ -350,4 +374,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-01 after repo hygiene checkpoint*
+*Last updated: 2026-08-27 at the v1.37 external verification boundary*

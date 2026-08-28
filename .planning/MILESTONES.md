@@ -1,5 +1,27 @@
 # Milestones
 
+## v1.36 Structural Quality Ratchet (Shipped: 2026-08-26)
+
+**Delivered:** Lockspire's release path, executable quality gates, storage boundaries, token internals, and repository proof were structurally tightened without adding protocol surface or changing public behavior.
+
+**Phases completed:** **5** (**126-130**), **30** plans, **63** tasks, **25** requirements closed.
+
+**Key accomplishments:**
+
+- Bound publication to immutable successful-CI evidence for the exact release ref, hardened recovery and supply-chain inputs, and added post-publish install-truth proof.
+- Made Credo parse coverage, a measured ExUnit coverage floor, PostgreSQL 14, Phoenix 1.8.5, LiveView 1.1.28, and zero-warning Dialyzer executable CI baselines.
+- Repaired the host-Repo versus Lockspire-storage boundary through narrow persistence, transaction, audit, logout, Oban, and admin-query services with architectural fitness tests.
+- Decomposed token grant orchestration behind the stable `TokenExchange` facade and centralized token lifetime policy and fail-closed private JWK decoding.
+- Consolidated test isolation, split oversized token/release/admin contracts, synchronized docs with current source truth, and removed obsolete planning and scratch artifacts.
+
+**Stats:** 212 files changed, +17,162/-14,357 lines; 60 commits from `4fb1d41` through `d4f86ce`; 95,555 current Elixir source/test LOC.
+
+**Pre-close audit:** [v1.36 milestone audit](milestones/v1.36-MILESTONE-AUDIT.md) (`tech_debt` accepted: behavior 25/25, phases 5/5, integrations 21/21, flows 6/6; remaining gaps are proof metadata and Nyquist reconciliation files).
+
+**Archives:** `milestones/v1.36-ROADMAP.md`, `milestones/v1.36-REQUIREMENTS.md`, `milestones/v1.36-MILESTONE-AUDIT.md`, `milestones/v1.36-phases/` · **Git tag:** `v1.36`
+
+---
+
 ## v1.35 CI/CD Efficiency And Release Hygiene (Shipped: 2026-07-01)
 
 **Delivered:** Duplicate low-value CI work was removed, minimum supported Elixir/OTP compatibility proof was added, Release workflow cache keys were tightened, Dialyzer stayed opt-in until the baseline is clean, and package hygiene guards now catch broad globs that would include local artifacts.

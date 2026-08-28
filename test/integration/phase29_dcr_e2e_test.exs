@@ -15,6 +15,7 @@ defmodule Lockspire.Integration.Phase29DcrE2ETest do
   alias Lockspire.Host.InteractionResult
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
 
   defmodule Resolver do
     @behaviour Lockspire.Host.AccountResolver
@@ -68,13 +69,11 @@ defmodule Lockspire.Integration.Phase29DcrE2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    %{events: start_telemetry_capture()}
+    start_telemetry_capture()
+    :ok
   end
 
   defp start_telemetry_capture do
-    test_pid = self()
-    handler_id = "phase29_test_handler_#{System.unique_integer()}"
-
     events = [
       [:lockspire, :iat, :mint],
       [:lockspire, :dcr, :register],
@@ -84,18 +83,7 @@ defmodule Lockspire.Integration.Phase29DcrE2ETest do
       [:lockspire, :dcr, :rotate]
     ]
 
-    :telemetry.attach_many(
-      handler_id,
-      events,
-      fn name, measurements, metadata, _config ->
-        send(test_pid, {:telemetry_event, name, measurements, metadata})
-      end,
-      nil
-    )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
-
-    events
+    TelemetryCapture.attach_many(events)
   end
 
   test "DCR End-to-End Scenario Test: Registration, Token Issuance, and Lifecycle Management" do

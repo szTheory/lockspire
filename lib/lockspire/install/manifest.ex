@@ -47,8 +47,22 @@ defmodule Lockspire.Install.Manifest do
     :ok
   end
 
+  @doc "Returns the exact bytes written for a manifest transaction."
+  @spec encode(map()) :: String.t()
+  def encode(manifest), do: Jason.encode!(manifest, pretty: true)
+
   @spec build(map(), [map()]) :: map()
-  def build(assigns, rendered_templates) do
+  def build(assigns, rendered_templates), do: build(assigns, rendered_templates, [])
+
+  @doc """
+  Builds a v1-compatible install manifest with an optional migration audit inventory.
+
+  Migration entries document the packaged artifacts approved for delivery. They never
+  grant overwrite authority: install and upgrade always preflight the package and host
+  filesystem again before copying a migration.
+  """
+  @spec build(map(), [map()], [map()]) :: map()
+  def build(assigns, rendered_templates, migrations) when is_list(migrations) do
     %{
       "generator" => "lockspire.install",
       "version" => to_string(Mix.Project.config()[:version]),
@@ -57,7 +71,8 @@ defmodule Lockspire.Install.Manifest do
         "storage_prefix" => assigns.storage_prefix,
         "oban_prefix" => assigns.oban_prefix,
         "web_module" => assigns.web_module,
-        "scope_module" => assigns.scope_module
+        "scope_module" => assigns.scope_module,
+        "with_fapi_smoke" => Map.get(assigns, :with_fapi_smoke, false)
       },
       "managed_files" =>
         Enum.map(rendered_templates, fn rendered ->
@@ -65,7 +80,11 @@ defmodule Lockspire.Install.Manifest do
             "path" => rendered.relative_path,
             "checksum" => checksum(rendered.rendered)
           }
-        end)
+        end),
+      "migrations" =>
+        migrations
+        |> Enum.map(&migration_entry/1)
+        |> Enum.sort_by(&{&1["version"], &1["name"], &1["path"]})
     }
   end
 
@@ -74,5 +93,14 @@ defmodule Lockspire.Install.Manifest do
     :sha256
     |> :crypto.hash(contents)
     |> Base.encode16(case: :lower)
+  end
+
+  defp migration_entry(migration) do
+    %{
+      "version" => Map.fetch!(migration, :version),
+      "name" => Map.fetch!(migration, :name),
+      "path" => Map.fetch!(migration, :relative_path),
+      "checksum" => Map.fetch!(migration, :checksum)
+    }
   end
 end

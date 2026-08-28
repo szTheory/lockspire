@@ -1,45 +1,15 @@
 defmodule Lockspire.ConfigTest do
-  use ExUnit.Case, async: false
-
-  setup do
-    original_env =
-      for key <- [
-            :repo,
-            :account_resolver,
-            :issuer,
-            :mount_path,
-            :logout_path,
-            :oban,
-            :storage_prefix,
-            :oban_prefix,
-            :signing_alg
-          ],
-          into: %{} do
-        {key, Application.get_env(:lockspire, key)}
-      end
-
-    on_exit(fn ->
-      Enum.each(original_env, fn {key, value} ->
-        if is_nil(value) do
-          Application.delete_env(:lockspire, key)
-        else
-          Application.put_env(:lockspire, key, value)
-        end
-      end)
-    end)
-
-    :ok
-  end
+  use Lockspire.ConfigCase, async: false
 
   test "reads configured runtime values through the public api" do
-    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
-    Application.put_env(:lockspire, :account_resolver, Lockspire.TestAccountResolver)
-    Application.put_env(:lockspire, :issuer, "https://example.test/oauth")
-    Application.put_env(:lockspire, :mount_path, "/oauth")
-    Application.put_env(:lockspire, :logout_path, "/sign-out")
-    Application.put_env(:lockspire, :oban, repo: Lockspire.TestRepo, queues: false)
-    Application.put_env(:lockspire, :storage_prefix, "lockspire")
-    Application.put_env(:lockspire, :oban_prefix, "lockspire_jobs")
+    put_lockspire_env(:repo, Lockspire.TestRepo)
+    put_lockspire_env(:account_resolver, Lockspire.TestAccountResolver)
+    put_lockspire_env(:issuer, "https://example.test/oauth")
+    put_lockspire_env(:mount_path, "/oauth")
+    put_lockspire_env(:logout_path, "/sign-out")
+    put_lockspire_env(:oban, repo: Lockspire.TestRepo, queues: false)
+    put_lockspire_env(:storage_prefix, "lockspire")
+    put_lockspire_env(:oban_prefix, "lockspire_jobs")
 
     assert Lockspire.Config.repo!() == Lockspire.TestRepo
     assert Lockspire.Config.account_resolver!() == Lockspire.TestAccountResolver
@@ -68,22 +38,22 @@ defmodule Lockspire.ConfigTest do
   end
 
   test "storage_prefix/0 keeps missing config legacy-compatible and validates explicit values" do
-    Application.delete_env(:lockspire, :storage_prefix)
-    Application.delete_env(:lockspire, :oban_prefix)
+    delete_lockspire_env(:storage_prefix)
+    delete_lockspire_env(:oban_prefix)
 
     assert Lockspire.Config.storage_prefix() == nil
     assert Lockspire.Config.oban_prefix() == nil
 
-    Application.put_env(:lockspire, :storage_prefix, "lockspire")
+    put_lockspire_env(:storage_prefix, "lockspire")
     assert Lockspire.Config.storage_prefix() == "lockspire"
     assert Lockspire.Config.oban_prefix() == "lockspire"
 
-    Application.put_env(:lockspire, :storage_prefix, "public")
-    Application.put_env(:lockspire, :oban_prefix, "oban_lockspire")
+    put_lockspire_env(:storage_prefix, "public")
+    put_lockspire_env(:oban_prefix, "oban_lockspire")
     assert Lockspire.Config.storage_prefix() == "public"
     assert Lockspire.Config.oban_prefix() == "oban_lockspire"
 
-    Application.put_env(:lockspire, :storage_prefix, "bad-prefix")
+    put_lockspire_env(:storage_prefix, "bad-prefix")
 
     assert_raise ArgumentError, ~r/invalid :storage_prefix/, fn ->
       Lockspire.Config.storage_prefix()

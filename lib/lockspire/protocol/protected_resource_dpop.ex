@@ -10,9 +10,11 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DPoPNonce
   alias Lockspire.Protocol.SecurityProfile
-  alias Lockspire.Protocol.Userinfo.Error
+  alias Lockspire.Protocol.ProtectedResourceError
+  alias Lockspire.Storage.Ecto.Repository
 
-  @spec validate_access(map(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
+  @spec validate_access(map(), map()) ::
+          {:ok, DPoP.t()} | {:error, Lockspire.Protocol.Userinfo.Error.t()}
   def validate_access(binding_source, request) when is_map(binding_source) and is_map(request) do
     security_profile =
       Keyword.get(request_options(request), :security_profile, %SecurityProfile.Resolved{})
@@ -26,13 +28,14 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
          :ok <- record_dpop_proof_use(proof, request) do
       {:ok, proof}
     else
-      {:error, %Error{} = error} ->
+      {:error, %ProtectedResourceError{} = error} ->
         emit_failure(binding_source, error)
-        {:error, error}
+        {:error, public_error(error)}
     end
   end
 
-  @spec validate_userinfo_access(Token.t(), map()) :: {:ok, DPoP.t()} | {:error, Error.t()}
+  @spec validate_userinfo_access(Token.t(), map()) ::
+          {:ok, DPoP.t()} | {:error, Lockspire.Protocol.Userinfo.Error.t()}
   def validate_userinfo_access(%Token{} = token, request) when is_map(request) do
     request
     |> Map.put_new(:target_uri, userinfo_endpoint_uri())
@@ -137,7 +140,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp record_dpop_proof_use(%DPoP{} = validated_proof, request) do
     with {:ok, %DpopReplay{} = replay} <- build_dpop_replay(validated_proof, request),
-         {:ok, result} <- dpop_replay_store(request).record_dpop_proof(replay) do
+         {:ok, result} <- record_dpop_proof(dpop_replay_store(request), replay) do
       case result do
         :accepted ->
           :ok
@@ -146,13 +149,27 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
           {:error, invalid_token("The DPoP proof has already been used", :dpop_proof_replayed)}
       end
     else
-      {:error, %Error{} = error} ->
+      {:error, %ProtectedResourceError{} = error} ->
         {:error, error}
 
       {:error, _reason} ->
         {:error, invalid_token("The DPoP proof is invalid", :invalid_dpop_proof)}
     end
   end
+
+  defp record_dpop_proof(store, %DpopReplay{} = replay) when is_atom(store) do
+    if Code.ensure_loaded?(store) and function_exported?(store, :record_dpop_proof, 1) do
+      store.record_dpop_proof(replay)
+    else
+      {:error, :invalid_dpop_replay_store}
+    end
+  rescue
+    _error -> {:error, :dpop_replay_store_unavailable}
+  catch
+    _kind, _reason -> {:error, :dpop_replay_store_unavailable}
+  end
+
+  defp record_dpop_proof(_store, _replay), do: {:error, :invalid_dpop_replay_store}
 
   defp build_dpop_replay(%DPoP{claims: claims, jkt: jkt}, request)
        when is_map(claims) and is_binary(jkt) do
@@ -264,7 +281,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   defp expected_jkt(%{"jkt" => jkt}) when is_binary(jkt) and jkt != "", do: {:ok, jkt}
   defp expected_jkt(_binding_source), do: :error
 
-  defp emit_failure(binding_source, %Error{reason_code: reason}) do
+  defp emit_failure(binding_source, %ProtectedResourceError{reason_code: reason}) do
     metadata =
       %{
         client_id: Map.get(binding_source, :client_id),
@@ -275,11 +292,12 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
     Observability.emit(:dpop, :failed, %{}, metadata)
   end
 
-  defp dpop_replay_store(request),
-    do:
-      Keyword.get_lazy(request_options(request), :dpop_replay_store, fn ->
-        Keyword.get(request_options(request), :token_store, Config.repo!())
-      end)
+  defp dpop_replay_store(request) do
+    case Keyword.get(request_options(request), :dpop_replay_store) do
+      nil -> Repository
+      store -> store
+    end
+  end
 
   defp request_method(request) do
     request
@@ -309,7 +327,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   defp normalize_optional_string(_value), do: nil
 
   defp invalid_token(description, reason_code) do
-    %Error{
+    %ProtectedResourceError{
       status: 401,
       error: "invalid_token",
       error_description: description,
@@ -319,7 +337,7 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
   end
 
   defp use_dpop_nonce_error(reason_code, request) do
-    %Error{
+    %ProtectedResourceError{
       status: 401,
       error: "use_dpop_nonce",
       error_description: "Resource server requires nonce in DPoP proof",
@@ -330,5 +348,17 @@ defmodule Lockspire.Protocol.ProtectedResourceDPoP do
 
   defp secret_key_base(request) do
     Keyword.get(request_options(request), :secret_key_base)
+  end
+
+  defp public_error(%ProtectedResourceError{} = error) do
+    error_module = Module.concat(["Lockspire", "Protocol", "Userinfo", "Error"])
+
+    struct(error_module,
+      status: error.status,
+      error: error.error,
+      error_description: error.error_description,
+      reason_code: error.reason_code,
+      dpop_nonce: error.dpop_nonce
+    )
   end
 end

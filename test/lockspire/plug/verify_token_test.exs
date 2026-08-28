@@ -324,6 +324,50 @@ defmodule Lockspire.Plug.VerifyTokenTest do
              } = conn.assigns[:access_token]
     end
 
+    test "derives sender-binding requirements from the same allowlisted confirmation reader" do
+      claims = %{
+        "cnf" => %{
+          "jkt" => " proof-thumbprint ",
+          "x5t#S256" => " certificate-thumbprint ",
+          "unrelated" => "must-not-become-a-requirement"
+        }
+      }
+
+      {token, _merged_claims} = generate_key_and_token(claims)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      access_token = conn.assigns.access_token
+
+      assert access_token.error == nil
+
+      assert access_token.binding_requirements == %{
+               dpop_jkt: "proof-thumbprint",
+               mtls_x5t_s256: "certificate-thumbprint"
+             }
+
+      assert AccessToken.confirmation(access_token) == access_token.binding_requirements
+    end
+
+    test "does not turn unknown or malformed cnf members into sender-binding requirements" do
+      {token, _merged_claims} =
+        generate_key_and_token(%{"cnf" => %{"unrelated" => "value", "jkt" => "  "}})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn()
+
+      access_token = conn.assigns.access_token
+
+      assert access_token.error == nil
+      assert access_token.binding_requirements == nil
+      assert AccessToken.confirmation(access_token) == nil
+    end
+
     test "accepts a matching audience from a string aud claim" do
       {token, claims} = generate_key_and_token(%{"aud" => "billing-api"})
 
@@ -441,6 +485,38 @@ defmodule Lockspire.Plug.VerifyTokenTest do
                error_description: "The access token is missing a required scope",
                required_scopes: ["read:billing"]
              } = denied_conn.assigns.access_token.error
+    end
+
+    test "keeps audience matching exact while normalizing scope values for signed-token restrictions" do
+      {token, _claims} =
+        generate_key_and_token(%{
+          "aud" => ["billing-api", "ledger-api"],
+          "scope" => " read:billing  write:reports read:billing "
+        })
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> verify_conn(audience: "billing-api", scopes: ["read:billing", "write:reports"])
+
+      access_token = conn.assigns.access_token
+
+      assert access_token.error == nil
+      assert AccessToken.audiences(access_token) == ["billing-api", "ledger-api"]
+      assert AccessToken.scopes(access_token) == ["read:billing", "write:reports"]
+    end
+
+    test "rejects signed audiences whose bytes only match after trimming" do
+      for audience <- [" billing-api ", "billing-api "] do
+        {token, _claims} = generate_key_and_token(%{"aud" => audience})
+
+        conn =
+          build_conn()
+          |> put_req_header("authorization", "Bearer #{token}")
+          |> verify_conn(audience: "billing-api")
+
+        assert %{reason_code: :invalid_audience} = conn.assigns.access_token.error
+      end
     end
 
     test "emits redaction-safe logs for JWT failures and route restriction failures" do

@@ -4,7 +4,6 @@ defmodule Lockspire.Security.Policy do
   """
 
   alias Lockspire.Domain.SigningKey
-  alias Lockspire.Config
   alias Lockspire.Protocol.SecurityProfile
 
   @supported_token_endpoint_auth_methods [
@@ -80,7 +79,8 @@ defmodule Lockspire.Security.Policy do
   end
 
   @spec validate_issuer_and_mount_path!(String.t(), String.t()) :: String.t()
-  # credo:disable-for-next-line
+  # Exact validation order keeps the first issuer configuration failure actionable for operators.
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def validate_issuer_and_mount_path!(issuer, mount_path)
       when is_binary(issuer) and is_binary(mount_path) do
     uri = URI.parse(issuer)
@@ -175,15 +175,33 @@ defmodule Lockspire.Security.Policy do
 
   def verify_client_secret(_client_secret_hash, _client_secret), do: false
 
-  @spec seal_client_secret_jwt_verifier(String.t(), keyword()) :: String.t()
+  @spec seal_client_secret_jwt_verifier(String.t(), keyword() | String.t()) :: String.t()
   def seal_client_secret_jwt_verifier(secret, opts \\ [])
+
+  def seal_client_secret_jwt_verifier(secret, secret_key_base)
+      when is_binary(secret) and is_binary(secret_key_base) do
+    Plug.Crypto.encrypt(
+      required_secret_key_base!(secret_key_base),
+      @client_secret_jwt_salt,
+      secret
+    )
+  end
+
+  def seal_client_secret_jwt_verifier(secret, opts)
       when is_binary(secret) and is_list(opts) do
     Plug.Crypto.encrypt(secret_key_base!(opts), @client_secret_jwt_salt, secret)
   end
 
-  @spec unseal_client_secret_jwt_verifier(String.t(), keyword()) ::
+  @spec unseal_client_secret_jwt_verifier(String.t(), keyword() | String.t()) ::
           {:ok, String.t()} | {:error, :invalid_client_secret_jwt_verifier}
   def unseal_client_secret_jwt_verifier(encrypted, opts \\ [])
+
+  def unseal_client_secret_jwt_verifier(encrypted, secret_key_base)
+      when is_binary(encrypted) and is_binary(secret_key_base) do
+    unseal_client_secret_jwt_verifier(encrypted, secret_key_base: secret_key_base)
+  end
+
+  def unseal_client_secret_jwt_verifier(encrypted, opts)
       when is_binary(encrypted) and is_list(opts) do
     case Plug.Crypto.decrypt(secret_key_base!(opts), @client_secret_jwt_salt, encrypted) do
       {:ok, secret} when is_binary(secret) and secret != "" ->
@@ -217,13 +235,37 @@ defmodule Lockspire.Security.Policy do
   defp present?(_value), do: true
 
   defp secret_key_base!(opts) do
-    case Keyword.get(opts, :secret_key_base) || Config.secret_key_base() do
-      value when is_binary(value) and value != "" ->
-        value
-
-      _other ->
-        raise ArgumentError,
-              "missing Lockspire endpoint secret_key_base required for client_secret_jwt verifier material"
+    opts
+    |> Keyword.get(:secret_key_base)
+    |> case do
+      nil -> configured_secret_key_base()
+      value -> required_secret_key_base!(value)
     end
+  end
+
+  defp required_secret_key_base!(value) when is_binary(value) and value != "", do: value
+
+  defp required_secret_key_base!(_value) do
+    raise ArgumentError,
+          "missing Lockspire endpoint secret_key_base required for client_secret_jwt verifier material"
+  end
+
+  # Compatibility resolution remains local to Policy so this inner security module
+  # never depends on the outer Config facade. New callers should pass the key explicitly.
+  defp configured_secret_key_base do
+    Application.get_env(:lockspire, Lockspire.Web.Endpoint, [])
+    |> Keyword.get(:secret_key_base)
+    |> case do
+      nil ->
+        Application.get_all_env(:lockspire)
+        |> Enum.find_value(fn
+          {_key, value} when is_list(value) -> Keyword.get(value, :secret_key_base)
+          _other -> nil
+        end)
+
+      value ->
+        value
+    end
+    |> required_secret_key_base!()
   end
 end

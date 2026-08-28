@@ -9,24 +9,25 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
   Template baseline note: this file is generated from the library install task,
   where `@app_module` was `<%= @app_module %>` at render time.
 
-  Expectation for the PAR-required smoke:
-  - Configure `security_profile: :fapi_2_0_security` in the host before running
-    this file if you want the direct `/authorize` rejection to assert the FAPI
-    2.0 PAR mandate.
+  This file is intentionally excluded from ordinary test discovery. Generate it
+  with `mix lockspire.install --with-fapi-smoke`, activate the host's
+  `:fapi_2_0_security` profile, then run:
+
+      mix test test/<app>/lockspire_fapi_smoke_e2e.exs --include fapi
   """
   use ExUnit.Case, async: false
 
+  @moduletag :fapi
   @moduletag :integration
   @endpoint <%= @web_module %>.Endpoint
 
   import Phoenix.ConnTest
   import Plug.Conn
 
-  setup do
-    %{client: register_client!()}
-  end
+  test "FAPI 2.0 rejects direct authorize requests without PAR" do
+    ensure_fapi_security_profile!()
+    client = register_client!()
 
-  test "FAPI 2.0 rejects direct authorize requests without PAR and emits iss", %{client: client} do
     conn =
       build_conn()
       |> get("<%= @mount_path %>/authorize", authorize_params(client))
@@ -46,10 +47,12 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
            Set `security_profile: :fapi_2_0_security` in the host Lockspire config before running this smoke.
            """
 
-    assert params["iss"] == Lockspire.issuer()
   end
 
-  test "authorize rejects trailing-slash redirect_uri drift with exact matching", %{client: client} do
+  test "authorize rejects trailing-slash redirect_uri drift with exact matching" do
+    ensure_fapi_security_profile!()
+    client = register_client!()
+
     conn =
       build_conn()
       |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
@@ -60,7 +63,10 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
     assert conn.resp_body =~ "redirect_uri must match a registered URI"
   end
 
-  test "authorize rejects extra-query redirect_uri drift with exact matching", %{client: client} do
+  test "authorize rejects extra-query redirect_uri drift with exact matching" do
+    ensure_fapi_security_profile!()
+    client = register_client!()
+
     conn =
       build_conn()
       |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
@@ -71,7 +77,10 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
     assert conn.resp_body =~ "redirect_uri must match a registered URI"
   end
 
-  test "authorization error redirects always include iss", %{client: client} do
+  test "authorization error redirects always include iss" do
+    ensure_fapi_security_profile!()
+    client = register_client!()
+
     conn =
       build_conn()
       |> get("<%= @mount_path %>/authorize", authorize_params(client, %{
@@ -98,7 +107,7 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
                client_id: "lockspire-fapi-smoke-#{unique}",
                client_type: :public,
                redirect_uris: [redirect_uri],
-               allowed_scopes: ["openid"],
+               allowed_scopes: ["profile"],
                allowed_grant_types: ["authorization_code"],
                allowed_response_types: ["code"],
                token_endpoint_auth_method: :none,
@@ -109,15 +118,17 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
   end
 
   defp authorize_params(client, overrides \\ %{}) do
+    verifier = random_request_value()
+
     Map.merge(
       %{
         "client_id" => client.client_id,
         "response_type" => "code",
         "redirect_uri" => client.redirect_uri,
-        "scope" => "openid",
-        "nonce" => "lockspire-fapi-smoke-nonce",
-        "state" => "lockspire-fapi-smoke-state",
-        "code_challenge" => code_challenge("lockspire-fapi-smoke-verifier"),
+        "scope" => "openid profile",
+        "nonce" => random_request_value(),
+        "state" => random_request_value(),
+        "code_challenge" => code_challenge(verifier),
         "code_challenge_method" => "S256"
       },
       overrides
@@ -133,6 +144,11 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
     )
   end
 
+  defp ensure_fapi_security_profile! do
+    assert {:ok, %{security_profile: :fapi_2_0_security}} =
+             Lockspire.Admin.ServerPolicy.get_server_policy()
+  end
+
   defp query_params(location) do
     location
     |> URI.parse()
@@ -143,6 +159,11 @@ defmodule <%= host_app_module %>.Lockspire.FapiSmokeE2ETest do
   defp code_challenge(verifier) do
     :sha256
     |> :crypto.hash(verifier)
+    |> Base.url_encode64(padding: false)
+  end
+
+  defp random_request_value do
+    :crypto.strong_rand_bytes(32)
     |> Base.url_encode64(padding: false)
   end
 end

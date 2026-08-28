@@ -50,7 +50,7 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
     %{signing_key: signing_key, signing_kid: kid}
   end
 
-  test "protected route returns 200 with the assigns contract for a valid bearer token", %{
+  test "generated fixture controller returns semantic readers for a host-authorized token", %{
     signing_key: signing_key,
     signing_kid: signing_kid
   } do
@@ -72,13 +72,33 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
              "access_token" => %{
                "client_id" => "generated-host-api-client",
                "subject" => "generated-host-user",
-               "authorization_scheme" => "Bearer",
-               "binding_type" => nil,
-               "binding_requirements" => nil,
-               "audience" => "billing-api",
-               "scope" => "read:billing write:reports"
+               "scopes" => ["read:billing", "write:reports"],
+               "audiences" => ["billing-api"],
+               "expires_at" => _,
+               "confirmation" => nil
              }
            } = Jason.decode!(conn.resp_body)
+  end
+
+  test "generated fixture controller denies a valid token when host policy rejects its subject",
+       %{
+         signing_key: signing_key,
+         signing_kid: signing_kid
+       } do
+    token =
+      issue_access_token(signing_key, signing_kid, %{
+        "sub" => "other-tenant-user",
+        "scope" => "read:billing",
+        "aud" => "billing-api"
+      })
+
+    conn =
+      protected_conn()
+      |> put_req_header("authorization", "Bearer #{token}")
+      |> get(@protected_route)
+
+    assert conn.status == 403
+    assert %{"error" => "host_forbidden"} = Jason.decode!(conn.resp_body)
   end
 
   test "protected route returns 401 invalid_token when the token is missing" do
@@ -207,9 +227,7 @@ defmodule Lockspire.Integration.Phase81GeneratedHostRouteProtectionE2ETest do
 
     assert %{
              "access_token" => %{
-               "authorization_scheme" => "DPoP",
-               "binding_type" => "dpop",
-               "binding_requirements" => %{"dpop_jkt" => ^jkt}
+               "confirmation" => %{"dpop_jkt" => ^jkt}
              }
            } = Jason.decode!(success_conn.resp_body)
   end

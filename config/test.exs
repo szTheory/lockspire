@@ -18,7 +18,13 @@ config :lockspire, Lockspire.TestRepo,
   database: System.get_env("LOCKSPIRE_TEST_DB_NAME") || "lockspire_test",
   priv: "priv/repo",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 10,
+  log: false
+
+config :lockspire, Lockspire.KeyCache,
+  # Test modules own the sandboxed repo lifecycle and refresh explicitly after checkout.
+  initial_refresh?: false,
+  initial_retry_interval: 10
 
 config :lockspire,
   ecto_repos: [Lockspire.TestRepo],

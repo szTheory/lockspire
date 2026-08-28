@@ -1,5 +1,5 @@
 defmodule Lockspire.Storage.RepositoryTest do
-  use ExUnit.Case, async: false
+  use Lockspire.DataCase, async: false
 
   import ExUnit.CaptureLog
 
@@ -14,6 +14,11 @@ defmodule Lockspire.Storage.RepositoryTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.ClientStore
+  alias Lockspire.Storage.Ecto.Repository.ConsentStore
+  alias Lockspire.Storage.Ecto.Repository.InteractionStore
+  alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore
+  alias Lockspire.Storage.Ecto.Repository.Support
 
   require Logger
 
@@ -26,8 +31,76 @@ defmodule Lockspire.Storage.RepositoryTest do
     :ok
   end
 
-  setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+  test "keeps sensitive Ecto options at the repository support boundary" do
+    assert Support.repo_options(sensitive: true)[:log] == false
+    assert Support.repo_options([]) == Lockspire.Storage.Ecto.Prefix.prefix_opts()
+  end
+
+  test "aggregate collaborators receive the configured Ecto repo explicitly" do
+    assert {:ok, %Lockspire.Domain.ServerPolicy{}} =
+             ServerPolicyStore.get_server_policy(Lockspire.TestRepo)
+
+    client = %Client{
+      client_id: "explicit-client-store",
+      client_type: :public,
+      redirect_uris: ["https://client.example.com/callback"],
+      allowed_scopes: ["openid"],
+      allowed_grant_types: ["authorization_code"],
+      allowed_response_types: ["code"],
+      token_endpoint_auth_method: :none,
+      pkce_required: true,
+      subject_type: :public,
+      created_at: DateTime.utc_now()
+    }
+
+    assert {:ok, %Client{client_id: "explicit-client-store"}} =
+             ClientStore.register_client(Lockspire.TestRepo, client)
+  end
+
+  test "interaction and consent aggregate collaborators return domain values through an explicit repo" do
+    now = DateTime.utc_now()
+
+    interaction = %Interaction{
+      interaction_id: "explicit-interaction-store",
+      client_id: "client_123",
+      scopes_requested: ["openid"],
+      redirect_uri: "https://client.example.com/callback",
+      return_to: "/lockspire/authorize/continue",
+      status: :pending_login,
+      expires_at: DateTime.add(now, 300, :second)
+    }
+
+    assert {:ok, %Interaction{interaction_id: "explicit-interaction-store"}} =
+             InteractionStore.put_interaction(Lockspire.TestRepo, interaction)
+
+    assert {:ok, %Interaction{status: :pending_consent}} =
+             InteractionStore.transition_interaction(
+               Lockspire.TestRepo,
+               interaction.interaction_id,
+               [:pending_login],
+               %{status: :pending_consent, consent_requested_at: now}
+             )
+
+    grant = %ConsentGrant{
+      account_id: "explicit-consent-account",
+      client_id: "client_123",
+      scopes: ["openid"],
+      granted_at: now,
+      status: :active,
+      kind: :remembered
+    }
+
+    assert {:ok, %ConsentGrant{} = stored_grant} =
+             ConsentStore.grant_consent(Lockspire.TestRepo, grant)
+
+    assert {:ok, [%ConsentGrant{id: grant_id}]} =
+             ConsentStore.list_reusable_consents(
+               Lockspire.TestRepo,
+               "explicit-consent-account",
+               "client_123"
+             )
+
+    assert grant_id == stored_grant.id
   end
 
   test "registers and fetches a client through the repository contract" do
@@ -305,8 +378,8 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     debug_log =
       capture_log(fn ->
-        assert {:ok, %Client{client_id: "debug-client"}} =
-                 Repository.fetch_client_by_id("debug-client")
+        assert %ClientRecord{client_id: "debug-client"} =
+                 Lockspire.TestRepo.get_by(ClientRecord, [client_id: "debug-client"], log: :debug)
       end)
 
     assert debug_log =~ "SELECT"

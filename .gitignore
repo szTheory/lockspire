@@ -1,12 +1,17 @@
 /_build/
 /deps/
+**/node_modules/
 /examples/*/_build/
 /examples/*/deps/
+/test/fixtures/*/_build/
+/test/fixtures/*/deps/
 /.elixir_ls/
 /.DS_Store
 **/.DS_Store
 /.bg-shell/
 /doc/
+/cover/
+/.artifacts/
 /tmp/
 /.gsd/
 /priv/plts/

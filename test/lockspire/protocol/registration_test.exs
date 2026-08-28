@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.RegistrationTest do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
 
@@ -21,22 +22,12 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    handler_id = "registration-test-#{System.unique_integer([:positive])}"
 
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        [
-          [:lockspire, :dcr, :register],
-          [:lockspire, :audit, :dcr, :register]
-        ],
-        fn event, measurements, metadata, pid ->
-          send(pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        self()
-      )
+    TelemetryCapture.attach_many([
+      [:lockspire, :dcr, :register],
+      [:lockspire, :audit, :dcr, :register]
+    ])
 
-    on_exit(fn -> :telemetry.detach(handler_id) end)
     %{}
   end
 
@@ -82,6 +73,23 @@ defmodule Lockspire.Protocol.RegistrationTest do
       request = DcrFixtures.register_request()
       assert {:ok, %Success{client: client}} = Registration.register(request)
       assert "sha256:" <> _ = client.client_secret_hash
+    end
+
+    test "public clients receive no shared secret or secret lifetime" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("token_endpoint_auth_method", "none")
+
+      assert {:ok,
+              %Success{
+                client: client,
+                client_secret_plaintext: nil
+              }} = Registration.register(DcrFixtures.register_request(metadata: metadata))
+
+      assert client.client_type == :public
+      assert is_nil(client.client_secret_hash)
+      assert is_nil(client.client_secret_jwt_verifier_encrypted)
+      assert is_nil(client.client_secret_expires_at)
     end
 
     test "round-trip proof: Policy.verify_client_secret returns true" do
@@ -213,6 +221,68 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert rows != []
       refute Enum.any?(rows, &(&1.actor_type == "operator"))
       assert Enum.all?(rows, &(&1.actor_type == "dcr"))
+    end
+  end
+
+  describe "shared registration capability matrix" do
+    test "accepts omitted optional scope metadata without weakening direct registration" do
+      metadata = Map.delete(DcrFixtures.valid_metadata(), "scope")
+
+      assert {:ok, %Success{client: %Client{allowed_scopes: []}}} =
+               Registration.register(DcrFixtures.register_request(metadata: metadata))
+
+      assert {:error, errors} =
+               Lockspire.Clients.register_client(%{
+                 client_type: :public,
+                 redirect_uris: ["https://client.example.test/callback"],
+                 allowed_scopes: [],
+                 allowed_grant_types: ["authorization_code"],
+                 allowed_response_types: ["code"],
+                 token_endpoint_auth_method: :none
+               })
+
+      assert Enum.any?(errors, &(&1.field == :allowed_scopes and &1.detail == :empty))
+    end
+
+    test "accepts built-in openid and a redirectless device-only client after policy resolution" do
+      metadata = %{
+        "client_name" => "Device-only DCR client",
+        "redirect_uris" => [],
+        "grant_types" => ["urn:ietf:params:oauth:grant-type:device_code"],
+        "response_types" => [],
+        "token_endpoint_auth_method" => "none",
+        "scope" => "openid profile"
+      }
+
+      server_policy =
+        DcrFixtures.server_policy(%{
+          dcr_allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+          dcr_allowed_response_types: [],
+          dcr_allowed_token_endpoint_auth_methods: ["none"],
+          dcr_allowed_scopes: ["profile"]
+        })
+
+      assert {:ok, %Success{client: %Client{redirect_uris: [], allowed_scopes: scopes}}} =
+               Registration.register(
+                 DcrFixtures.register_request(metadata: metadata, server_policy: server_policy)
+               )
+
+      assert "openid" in scopes
+    end
+
+    test "rejects redirectless code-capable DCR metadata with a stable error" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("redirect_uris", [])
+        |> Map.put("grant_types", ["authorization_code"])
+        |> Map.put("response_types", ["code"])
+
+      assert {:error,
+              %Error{
+                code: :invalid_client_metadata,
+                field: :redirect_uris,
+                reason: :invalid_uri
+              }} = Registration.register(DcrFixtures.register_request(metadata: metadata))
     end
   end
 
@@ -506,8 +576,55 @@ defmodule Lockspire.Protocol.RegistrationTest do
       assert {:ok, %Success{client: client}} = Registration.register(request)
       assert client.token_endpoint_auth_method == :private_key_jwt
       assert client.client_type == :confidential
+      assert is_nil(client.client_secret_hash)
+      assert is_nil(client.client_secret_jwt_verifier_encrypted)
+      assert is_nil(client.client_secret_expires_at)
       assert client.jwks_uri == "https://keys.example.test/client.jwks.json"
       assert is_nil(client.jwks)
+    end
+
+    test "accepts a parseable public inline JWKS for private_key_jwt" do
+      metadata =
+        DcrFixtures.valid_metadata()
+        |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+        |> Map.put("token_endpoint_auth_signing_alg", "RS256")
+        |> Map.put("jwks", %{"keys" => [public_rsa_jwk()]})
+
+      request =
+        DcrFixtures.register_request(
+          metadata: metadata,
+          server_policy: DcrFixtures.private_key_jwt_server_policy()
+        )
+
+      assert {:ok, %Success{client: %{jwks: %{"keys" => [_]}}}} = Registration.register(request)
+    end
+
+    test "rejects empty, private, unparseable, and incompatible private_key_jwt JWKS" do
+      sentinel = "raw-private-key-material-must-not-leak"
+
+      for jwks <- [
+            %{},
+            %{"keys" => []},
+            %{"keys" => [%{"kty" => "RSA", "n" => 42, "e" => "AQAB"}]},
+            %{"keys" => [Map.put(public_rsa_jwk(), "d", sentinel)]},
+            %{"keys" => [Map.put(public_rsa_jwk(), "alg", "ES256")]}
+          ] do
+        metadata =
+          DcrFixtures.valid_metadata()
+          |> Map.put("token_endpoint_auth_method", "private_key_jwt")
+          |> Map.put("token_endpoint_auth_signing_alg", "RS256")
+          |> Map.put("jwks", jwks)
+
+        assert {:error, %Error{field: :jwks, reason: :invalid_public_jwks} = error} =
+                 Registration.register(
+                   DcrFixtures.register_request(
+                     metadata: metadata,
+                     server_policy: DcrFixtures.private_key_jwt_server_policy()
+                   )
+                 )
+
+        refute inspect(error) =~ sentinel
+      end
     end
 
     test "rejects encrypted JARM metadata without signing metadata" do
@@ -747,5 +864,16 @@ defmodule Lockspire.Protocol.RegistrationTest do
 
       refute Enum.any?(rows, &(&1.actor_type == "operator"))
     end
+  end
+
+  defp public_rsa_jwk do
+    %{
+      "kty" => "RSA",
+      "kid" => "dcr-client-key",
+      "alg" => "RS256",
+      "n" =>
+        "o5kk0WZKYEqTo3bDmAE1BhqnbJGU46PXD1FVR8ZSudlHmU0PcK7Cv-rzvpgges6bva8lnKobC0bdNjmHQJmPjLBKeO-S8uNtwRTDgUpbqhZDj_FXLvXT-h5bEJCQ-de73hskDAZkBk21CTUYZT-ScplszElSDQ11Akrceui2LmkGPx_PhlTzMezFMup5qJ56xG2B5J7V4YengN1BgHywnGQzY9LWQAH6On_aAEzc1S016NDplKFi3r8WFzbfVwMQGDBozH-9emID8KGv40axczaAVkhVCnW4892zgYO3hJfJPKbiqO5ylTnpgdDxcrPWv8V8Ut-SeUil2Pp48ojdgQ",
+      "e" => "AQAB"
+    }
   end
 end

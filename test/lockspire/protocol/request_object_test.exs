@@ -1,6 +1,9 @@
 defmodule Lockspire.Protocol.RequestObjectTest do
   use ExUnit.Case, async: false
+  alias Lockspire.Protocol.AuthorizationRequest.Error
   alias Lockspire.Protocol.RequestObject
+  alias Lockspire.Protocol.RequestObject.Claims
+  alias Lockspire.Protocol.RequestObject.Retrieval
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
 
@@ -62,5 +65,50 @@ defmodule Lockspire.Protocol.RequestObjectTest do
 
     assert projected["response_type"] == "code"
     assert projected["client_id"] == "client-123"
+  end
+
+  test "consume/3 retains the public browser-safe authorization error when request is missing" do
+    assert {:browser_error, %Error{} = issue} =
+             RequestObject.consume(%{"client_id" => "client-123"}, %Client{
+               client_id: "client-123"
+             })
+
+    assert issue.error == "invalid_request"
+    assert issue.error_description == "request parameter is required"
+    assert issue.reason_code == :missing_request
+    assert issue.state == nil
+    assert issue.redirect_uri == nil
+  end
+
+  test "retrieval preserves sealed-envelope precedence before considering a request value" do
+    assert {:error, :request_object_and_request_uri_conflict} =
+             Retrieval.fetch(%{"request" => "signed", "request_uri" => "urn:lockspire:par"})
+
+    assert {:error, :request_object_conflict} =
+             Retrieval.fetch(%{"request" => "signed", "scope" => "openid"})
+
+    assert {:error, :missing_request} = Retrieval.fetch(%{"client_id" => "client-123"})
+  end
+
+  test "claims projection keeps only signed authorization parameters and authoritative client identity" do
+    client = %Client{client_id: "client-123"}
+
+    assert {:ok, projected} =
+             Claims.project(
+               %{
+                 "client_id" => "attacker-client",
+                 "response_type" => "code",
+                 "scope" => "openid",
+                 "unrecognized" => "ignored",
+                 "nonce" => nil
+               },
+               client
+             )
+
+    assert projected == %{
+             "client_id" => "client-123",
+             "response_type" => "code",
+             "scope" => "openid"
+           }
   end
 end

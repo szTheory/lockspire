@@ -529,7 +529,7 @@ Enum.each(
     completed_at: now,
     post_logout_redirect_uri: demo_base_url <> "/"
   })
-  |> repo.insert()
+  |> repo.insert(prefix: Lockspire.Config.storage_prefix())
   |> case do
     {:ok, record} -> {:ok, LogoutEventRecord.to_domain(record)}
     other -> other
@@ -545,7 +545,7 @@ Enum.each(
     completed_at: now,
     post_logout_redirect_uri: demo_base_url <> "/"
   })
-  |> repo.insert()
+  |> repo.insert(prefix: Lockspire.Config.storage_prefix())
   |> case do
     {:ok, record} -> {:ok, LogoutEventRecord.to_domain(record)}
     other -> other
@@ -561,7 +561,7 @@ Enum.each(
     completed_at: now,
     post_logout_redirect_uri: demo_base_url <> "/"
   })
-  |> repo.insert()
+  |> repo.insert(prefix: Lockspire.Config.storage_prefix())
   |> case do
     {:ok, record} -> {:ok, LogoutEventRecord.to_domain(record)}
     other -> other
@@ -635,7 +635,7 @@ Enum.each(
   fn delivery ->
     %LogoutDeliveryRecord{}
     |> LogoutDeliveryRecord.changeset(delivery)
-    |> repo.insert!()
+    |> repo.insert!(prefix: Lockspire.Config.storage_prefix())
   end
 )
 

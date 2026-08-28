@@ -114,8 +114,8 @@ defmodule Lockspire.DocumentationContractTest do
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/generators/install.ex",
-      "Enum.filter(&(&1.template.ownership == :managed))"
+      "lib/lockspire/install/operation_plan.ex",
+      "with {:ok, migration_plan} <- Migrations.plan(project_root: assigns.project_root)"
     )
 
     assert_anchor(
@@ -130,22 +130,35 @@ defmodule Lockspire.DocumentationContractTest do
       "token_hash = Policy.hash_token(raw_code)"
     )
 
-    assert_anchor(
-      walkthrough,
-      "lib/lockspire/protocol/token_exchange.ex",
-      "token_store(request).redeem_authorization_code(code_hash, issued_at, access_token)"
-    )
+    assert Code.ensure_loaded?(Lockspire.Protocol.TokenExchange)
+    assert function_exported?(Lockspire.Protocol.TokenExchange, :exchange, 1)
+    assert function_exported?(Lockspire.Protocol.TokenExchange, :issue_ciba_tokens, 4)
+
+    assert Map.keys(struct(Lockspire.Protocol.TokenExchange.Success)) |> Enum.sort() ==
+             [
+               :__struct__,
+               :access_token,
+               :expires_in,
+               :id_token,
+               :issued_token_type,
+               :refresh_token,
+               :scope,
+               :token_type
+             ]
+
+    assert walkthrough =~ "Token endpoint: stable facade, focused coordinators"
+    assert walkthrough =~ "internal grant-support coordinator"
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/protocol/refresh_exchange.ex",
+      "lib/lockspire/protocol/token_exchange/internal/refresh_exchange.ex",
       "{:error, :reuse_detected}"
     )
 
     assert_anchor(
       walkthrough,
-      "lib/lockspire/storage/ecto/repository.ex",
-      "defp locked_refresh_token_query(token_hash)"
+      "lib/lockspire/storage/ecto/repository/token_store.ex",
+      "|> lock(\"FOR UPDATE\")"
     )
   end
 

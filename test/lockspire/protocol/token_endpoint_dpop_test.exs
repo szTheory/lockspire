@@ -27,6 +27,12 @@ defmodule Lockspire.Protocol.TokenEndpointDPoPTest do
     :ok
   end
 
+  test "retains the public DPoP context facade arities" do
+    Code.ensure_loaded!(TokenEndpointDPoP)
+    assert function_exported?(TokenEndpointDPoP, :resolve_context, 2)
+    assert function_exported?(TokenEndpointDPoP, :resolve_refresh_context, 3)
+  end
+
   test "resolves bearer issuance context when effective policy stays bearer" do
     client = %Client{client_id: "client-bearer", dpop_policy: :inherit}
 

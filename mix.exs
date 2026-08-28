@@ -13,8 +13,18 @@ defmodule Lockspire.MixProject do
       description: "Embedded OAuth/OIDC authorization server library for Phoenix applications",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
+      test_load_filters: [
+        fn path ->
+          String.ends_with?(path, "_test.exs") and
+            not String.starts_with?(path, "test/clean_room/")
+        end
+      ],
+      test_ignore_filters: [fn path -> String.starts_with?(path, "test/clean_room/") end],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      # The non-integration suite measured 73.11% on 2026-08-26. Keep the
+      # rounded-down floor stable so ordinary feature work can only ratchet it up.
+      test_coverage: test_coverage(),
       docs: docs(),
       dialyzer: dialyzer(),
       hex: hex(),
@@ -70,11 +80,26 @@ defmodule Lockspire.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
+  defp test_coverage do
+    threshold =
+      if System.get_env("LOCKSPIRE_COMPLETE_COVERAGE") == "true", do: 84, else: 73
+
+    output = System.get_env("LOCKSPIRE_COVERAGE_OUTPUT", "cover")
+    [summary: [threshold: threshold], output: output]
+  end
+
   defp aliases do
-    [
+    aliases = [
       "test.setup": ["lockspire.test.setup"],
-      "test.fast": ["test.setup", "test"],
-      "test.integration": ["test.setup", "test --only integration"],
+      "test.fast": ["test.setup", "test test/lockspire test/mix test/integration"],
+      "test.coverage": [
+        "test.setup",
+        "test --cover test/lockspire test/mix test/integration"
+      ],
+      "test.integration": ["test.setup", "test --only integration test/integration"],
+      "test.clean-room.e2e": [
+        "cmd python3 scripts/acceptance/clean_room_saas_journey.py --only happy_path --only boundary --only lifecycle --only negative --only dpop"
+      ],
       "test.phase6.e2e": [
         "test.setup",
         "test --include integration test/integration/phase6_onboarding_e2e_test.exs"
@@ -103,8 +128,13 @@ defmodule Lockspire.MixProject do
       qa: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "credo --strict",
-        "sobelow --config"
+        "cmd sh -lc 'MIX_ENV=test mix qa.architecture'",
+        "cmd bash scripts/ci/run_credo.sh",
+        "cmd bash scripts/ci/check_sobelow_routers.sh"
+      ],
+      "qa.architecture": [
+        "cmd sh scripts/ci/check_architecture_topology.sh",
+        "test test/lockspire/architecture_fitness_test.exs test/lockspire/compatibility_baseline_contract_test.exs"
       ],
       "qa.dialyzer": [
         "dialyzer"
@@ -121,10 +151,15 @@ defmodule Lockspire.MixProject do
         "cmd sh -lc 'HEX_API_KEY= mix deps.audit'",
         "cmd sh -lc 'HEX_API_KEY= mix package.build'",
         "cmd sh -lc 'MIX_ENV=test mix test.fast'",
-        "cmd sh -lc 'MIX_ENV=test mix test.integration'",
-        "cmd sh -lc 'MIX_ENV=test mix test.phase3'"
+        "cmd sh -lc 'MIX_ENV=test mix test.integration'"
       ]
     ]
+
+    if System.get_env("LOCKSPIRE_COVERAGE_AGGREGATE") == "true" do
+      Keyword.delete(aliases, :"test.coverage")
+    else
+      aliases
+    end
   end
 
   defp preferred_envs do
@@ -132,7 +167,9 @@ defmodule Lockspire.MixProject do
       "lockspire.test.setup": :test,
       "test.setup": :test,
       "test.fast": :test,
+      "test.coverage": :test,
       "test.integration": :test,
+      "test.clean-room.e2e": :test,
       "test.phase6.e2e": :test,
       "test.phase3.e2e": :test,
       "test.phase100.e2e": :test,
@@ -140,6 +177,7 @@ defmodule Lockspire.MixProject do
       "conformance.phase37": :test,
       "test.phase3": :test,
       qa: :dev,
+      "qa.architecture": :test,
       "qa.dialyzer": :dev,
       "docs.verify": :dev,
       "deps.audit": :dev,

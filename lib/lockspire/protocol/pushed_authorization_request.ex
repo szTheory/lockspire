@@ -79,8 +79,8 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
       {:ok, projected_params} ->
         {:ok, projected_params}
 
-      {:browser_error, %AuthorizationRequest.Error{} = error} ->
-        {:error, wrap_jar_error(error)}
+      {:browser_error, %AuthorizationRequest.Error{} = issue} ->
+        {:error, wrap_jar_error(issue)}
     end
   end
 
@@ -174,7 +174,7 @@ defmodule Lockspire.Protocol.PushedAuthorizationRequest do
     }
   end
 
-  defp wrap_jar_error(%AuthorizationRequest.Error{} = error) do
-    oauth_error(400, error.error, error.error_description, error.reason_code)
+  defp wrap_jar_error(%AuthorizationRequest.Error{} = issue) do
+    oauth_error(400, issue.error, issue.error_description, issue.reason_code)
   end
 end

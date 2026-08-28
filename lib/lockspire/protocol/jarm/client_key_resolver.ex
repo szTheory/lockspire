@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
   alias Lockspire.Diagnostics.RemoteJwks
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Storage.Ecto.Repository
 
   @type encryption_params :: %{
           required(:alg) => String.t(),
@@ -197,7 +198,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
   defp client_from_opts_or_nil(opts), do: Keyword.get(opts, :client)
 
   defp persist_remote_jwks_diagnostic(%Client{} = client, %RemoteJwks{} = incident, opts) do
-    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Config.repo!()),
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Repository),
          true <- function_exported?(store, :update_client, 2) do
       metadata =
         client.metadata
@@ -212,7 +213,7 @@ defmodule Lockspire.Protocol.Jarm.ClientKeyResolver do
   end
 
   defp clear_remote_jwks_diagnostic(%Client{} = client, opts) do
-    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Config.repo!()),
+    with store when not is_nil(store) <- Keyword.get(opts, :client_store, Repository),
          true <- function_exported?(store, :update_client, 2),
          metadata when is_map(metadata) <- client.metadata,
          true <- Map.has_key?(metadata, "remote_jwks_diagnostic") do

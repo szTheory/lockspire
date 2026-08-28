@@ -3,6 +3,7 @@ defmodule Lockspire.Storage.CibaAuthorizationRepositoryTest do
 
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.CibaAuthorizationStore
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -16,6 +17,21 @@ defmodule Lockspire.Storage.CibaAuthorizationRepositoryTest do
   end
 
   describe "CIBA Authorization Storage" do
+    test "the CIBA aggregate owns durable issuance behind the repository facade" do
+      authorization =
+        CibaAuthorization.issue(%{auth_req_id: "aggregate-ciba", client_id: "aggregate-client"})
+
+      assert {:ok, %CibaAuthorization{} = stored} =
+               CibaAuthorizationStore.put_ciba_authorization(Lockspire.TestRepo, authorization)
+
+      assert {:ok, %CibaAuthorization{id: id}} =
+               Repository.fetch_ciba_authorization_by_auth_req_id_hash(
+                 authorization.auth_req_id_hash
+               )
+
+      assert stored.id == id
+    end
+
     test "can put and fetch CIBA authorization" do
       auth =
         CibaAuthorization.issue(%{

@@ -10,10 +10,11 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   alias Lockspire.AccessToken
   alias Lockspire.Protocol.MTLSTokenBinding
   alias Lockspire.Protocol.ProtectedResourceDPoP
+  alias Lockspire.Protocol.Userinfo.Error
 
   @options_schema [
     dpop_replay_store: [
-      type: {:or, [:atom, :map]},
+      type: :any,
       required: false,
       doc: "Replay store implementing record_dpop_proof/1."
     ],
@@ -38,6 +39,8 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   @impl Plug
   def init(opts) do
     opts = NimbleOptions.validate!(opts, @options_schema)
+
+    validate_dpop_replay_store!(Keyword.get(opts, :dpop_replay_store))
 
     case Keyword.get(opts, :mtls_extractor) do
       nil ->
@@ -82,19 +85,22 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
          conn,
          opts
        ) do
+    dpop_opts =
+      [
+        dpop_max_age: Keyword.get(opts, :dpop_max_age, 300),
+        dpop_clock_skew: Keyword.get(opts, :dpop_clock_skew, 30),
+        secret_key_base: conn.secret_key_base,
+        now: Keyword.get(opts, :now, &DateTime.utc_now/0)
+      ]
+      |> maybe_put_dpop_replay_store(Keyword.get(opts, :dpop_replay_store))
+
     request = %{
       authorization_scheme: access_token.authorization_scheme,
       access_token: access_token.token,
       dpop: header_value(conn, "dpop"),
       method: conn.method,
       target_uri: request_target_uri(conn),
-      opts: [
-        dpop_replay_store: Keyword.get(opts, :dpop_replay_store),
-        dpop_max_age: Keyword.get(opts, :dpop_max_age, 300),
-        dpop_clock_skew: Keyword.get(opts, :dpop_clock_skew, 30),
-        secret_key_base: conn.secret_key_base,
-        now: Keyword.get(opts, :now, &DateTime.utc_now/0)
-      ]
+      opts: dpop_opts
     }
 
     case ProtectedResourceDPoP.validate_access(access_token, request) do
@@ -107,6 +113,28 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
   end
 
   defp maybe_validate_dpop(_access_token, _conn, _opts), do: :skip
+
+  defp maybe_put_dpop_replay_store(opts, nil), do: opts
+
+  defp maybe_put_dpop_replay_store(opts, store),
+    do: Keyword.put(opts, :dpop_replay_store, store)
+
+  defp validate_dpop_replay_store!(nil), do: :ok
+
+  defp validate_dpop_replay_store!(store) when is_atom(store) do
+    if Code.ensure_loaded?(store) and function_exported?(store, :record_dpop_proof, 1) do
+      :ok
+    else
+      invalid_dpop_replay_store!(store)
+    end
+  end
+
+  defp validate_dpop_replay_store!(store), do: invalid_dpop_replay_store!(store)
+
+  defp invalid_dpop_replay_store!(store) do
+    raise ArgumentError,
+          "expected :dpop_replay_store to be a module exporting record_dpop_proof/1, got: #{inspect(store)}"
+  end
 
   defp maybe_validate_mtls(
          conn,
@@ -137,7 +165,7 @@ defmodule Lockspire.Plug.EnforceSenderConstraints do
     end
   end
 
-  defp sender_error(challenge, error) do
+  defp sender_error(challenge, %Error{} = error) do
     %{
       category: :sender_constraint,
       challenge: challenge,

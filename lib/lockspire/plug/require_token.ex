@@ -18,7 +18,7 @@ defmodule Lockspire.Plug.RequireToken do
   @impl Plug
   def call(conn, _opts) do
     case conn.assigns[:access_token] do
-      # D-03: fail-closed guard — a bound token (binding_requirements != nil) that
+      # fail-closed guard — a bound token (binding_requirements != nil) that
       # reached RequireToken without EnforceSenderConstraints marking it verified
       # halts with 403 and the binding-derived challenge. The error: nil gate is
       # non-negotiable: it ensures tokens that already failed VerifyToken (error != nil)
@@ -70,7 +70,7 @@ defmodule Lockspire.Plug.RequireToken do
   end
 
   defp handle_insufficient_scope(conn, error) do
-    # D-05/D-06 (Plan 04 / VERIFIER-05): mirror handle_invalid_token/2's
+    # mirror handle_invalid_token/2's
     # challenge-aware routing. When VerifyToken's insufficient_scope_error/2
     # derives `challenge: :dpop` (e.g. DPoP-bound token failing the scope
     # check on a 403 path), use the DPoP-aware emission path so the response
@@ -92,7 +92,7 @@ defmodule Lockspire.Plug.RequireToken do
     |> halt()
   end
 
-  # D-03: 403 handler for bound-but-unverified tokens. Modeled verbatim on
+  # 403 handler for bound-but-unverified tokens. Modeled verbatim on
   # handle_insufficient_scope/2 — challenge-aware routing, 403 status. Does NOT
   # affect the existing sender_constraint 401 path used by EnforceSenderConstraints
   # failures (those carry error != nil and reach handle_structured_error/2 below).
@@ -111,9 +111,9 @@ defmodule Lockspire.Plug.RequireToken do
     |> halt()
   end
 
-  # D-03: build the bypass error map mirroring EnforceSenderConstraints.sender_error/2
+  # build the bypass error map mirroring EnforceSenderConstraints.sender_error/2
   # and mtls_error/0. Derive challenge from binding_requirements: DPoP-bound -> :dpop,
-  # mTLS-bound -> :bearer. This keeps WWW-Authenticate coherent with Phase 98 taxonomy.
+  # mTLS-bound -> :bearer. This keeps WWW-Authenticate coherent with token binding.
   defp sender_constraint_bypass_error(binding_requirements) do
     challenge =
       case binding_requirements do
@@ -174,17 +174,17 @@ defmodule Lockspire.Plug.RequireToken do
       |> Enum.filter(&is_binary/1)
 
     %{
-      # D-05/D-06 (Plan 04 / VERIFIER-05): pass through any explicitly-set
+      # pass through any explicitly-set
       # `:challenge` from the upstream structured map so DPoP-bound tokens
       # failing the scope check route through the DPoP emission path in
       # handle_insufficient_scope/2 below. The :bearer fallthrough preserves
-      # existing behavior for tokens with no binding (D-05 row 4).
+      # existing behavior for tokens with no binding.
       challenge: Map.get(error, :challenge, :bearer),
       error: Map.get(error, :error, "insufficient_scope"),
       error_description:
         Map.get(error, :error_description, "The access token is missing a required scope"),
       scope: Enum.join(required_scopes, " ")
-      # WR-04: no :dpop_nonce wire-up here. No upstream path sets dpop_nonce on
+      # No :dpop_nonce wire-up belongs here. No upstream path sets dpop_nonce on
       # an insufficient_scope error, and ProtectedResourceChallenge.put_dpop_challenge/2
       # already calls maybe_put_dpop_nonce/2, which threads any nonce present on
       # the structured error. Passing nil through here was dead-code-for-symmetry

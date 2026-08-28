@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "suite": {
+    "tag": "release-v5.1.43",
+    "commit": "16ad152b1b2c0baacd3d2519128340d95deb2b8c",
+    "archive": {
+      "url": "https://gitlab.com/openid/conformance-suite/-/archive/16ad152b1b2c0baacd3d2519128340d95deb2b8c/conformance-suite-16ad152b1b2c0baacd3d2519128340d95deb2b8c.tar.gz",
+      "sha256": "c11be330b5a731bf3bca312f7b44d6bfe3981b448d5f58ec3dc2e48f3f509c8e"
+    }
+  },
+  "helpers": {
+    "docker-compose-prebuilt.yml": {
+      "url": "https://gitlab.com/openid/conformance-suite/-/raw/16ad152b1b2c0baacd3d2519128340d95deb2b8c/docker-compose-prebuilt.yml",
+      "sha256": "9ca2b63066e6d545edca39c59830c5afb5d569d19e14815a0f53a4682f717f2b"
+    },
+    "scripts/run-test-plan.py": {
+      "url": "https://gitlab.com/openid/conformance-suite/-/raw/16ad152b1b2c0baacd3d2519128340d95deb2b8c/scripts/run-test-plan.py",
+      "sha256": "abf7b2637accfbf06a1b7f370bc16516b5ba303e7784eea387e59c74877827e1"
+    },
+    "scripts/conformance.py": {
+      "url": "https://gitlab.com/openid/conformance-suite/-/raw/16ad152b1b2c0baacd3d2519128340d95deb2b8c/scripts/conformance.py",
+      "sha256": "927709c76c4be48d52abaa36b5e52804803c72155695991df5a9645a9303a49f"
+    },
+    "scripts/test_plan_parser.py": {
+      "url": "https://gitlab.com/openid/conformance-suite/-/raw/16ad152b1b2c0baacd3d2519128340d95deb2b8c/scripts/test_plan_parser.py",
+      "sha256": "2b00870b2dc46f1d44d047c715c0ef6978f24ece97a4a9d3b48ceeea8d01830f"
+    }
+  },
+  "images": {
+    "server": {
+      "repository": "registry.gitlab.com/openid/conformance-suite",
+      "digest": "sha256:f6b1bb02bc746dd216506f773bc19997b113072fd22dec515f7e3357e218d950"
+    },
+    "nginx": {
+      "repository": "registry.gitlab.com/openid/conformance-suite/nginx",
+      "digest": "sha256:6a13e1c9ae2d19f2d0fea0a371905d580d61b960e0da84c01d5006729a5f1426"
+    },
+    "mongodb": {
+      "repository": "mongo",
+      "digest": "sha256:b415b12f638e2685d06c58ab7fb5943577c50fadec6d9340ef67d21aeac72070"
+    }
+  }
+}

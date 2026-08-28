@@ -5,7 +5,6 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
 
   alias Lockspire.Admin
   alias Lockspire.Domain.ServerPolicy
-  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -156,9 +155,9 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
     consents = ok_list(Admin.list_consents())
     keys = ok_list(Admin.list_keys())
     iats = ok_list(Lockspire.Admin.InitialAccessTokens.list_iats())
-    interactions = ok_list(Repository.list_interactions())
+    interactions = ok_list(Admin.list_interactions())
     device_authorizations = ok_list(Admin.list_device_authorizations())
-    logouts = ok_list(Repository.list_all_logout_deliveries())
+    logouts = ok_list(Admin.list_logout_deliveries())
     policy = ok_policy(Admin.get_server_policy())
 
     %{

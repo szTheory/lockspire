@@ -56,7 +56,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
   end
 
   # BIND-01: DPoP-bound at+jwt minted via AccessTokenSigner.issue/3 through the full pipeline
-  test "BIND-01: DPoP-bound at+jwt minted by AccessTokenSigner traverses the full pipeline to 200 with cnf binding_requirements" do
+  test "BIND-01: DPoP-bound at+jwt traverses the full pipeline with semantic confirmation" do
     dpop_keys = JarTestHelpers.generate_ec_keys()
     {:ok, jkt} = DPoP.thumbprint(dpop_keys.pub_jwk_map)
 
@@ -77,7 +77,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
 
     client = %Client{client_id: "generated-host-api-client", access_token_format: :jwt}
     # server_policy_store omitted -> :jwt fallback per resolve_format/98 (A2)
-    request = %{opts: [key_store: Lockspire.Config.repo!()]}
+    request = %{opts: [key_store: Lockspire.Storage.Ecto.Repository]}
 
     {:ok, raw_at_jwt, _hash} = AccessTokenSigner.issue(token, client, request)
 
@@ -109,14 +109,16 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
 
     assert %{
              "access_token" => %{
-               "binding_type" => "dpop",
-               "binding_requirements" => %{"dpop_jkt" => ^jkt}
+               "subject" => "generated-host-user",
+               "scopes" => ["read:billing"],
+               "audiences" => ["billing-api"],
+               "confirmation" => %{"dpop_jkt" => ^jkt}
              }
            } = Jason.decode!(success_conn.resp_body)
   end
 
   # BIND-02: mTLS-bound at+jwt minted via AccessTokenSigner.issue/3 through the full pipeline
-  test "BIND-02: mTLS-bound at+jwt minted by AccessTokenSigner traverses the full pipeline to 200 with binding_type mtls" do
+  test "BIND-02: mTLS-bound at+jwt traverses the full pipeline with semantic confirmation" do
     # D-08: synthetic string cert — confirmed sufficient; real DER-cert/:mtls_extractor deferred
     cert = "phase100-mtls-client-cert"
 
@@ -139,7 +141,7 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
     }
 
     client = %Client{client_id: "generated-host-api-client", access_token_format: :jwt}
-    request = %{opts: [key_store: Lockspire.Config.repo!()]}
+    request = %{opts: [key_store: Lockspire.Storage.Ecto.Repository]}
 
     {:ok, raw_at_jwt, _hash} = AccessTokenSigner.issue(token, client, request)
 
@@ -154,7 +156,10 @@ defmodule Lockspire.Integration.Phase100SenderConstraintE2ETest do
 
     assert %{
              "access_token" => %{
-               "binding_type" => "mtls"
+               "subject" => "generated-host-user",
+               "scopes" => ["read:billing"],
+               "audiences" => ["billing-api"],
+               "confirmation" => %{"mtls_x5t_s256" => ^x5t}
              }
            } = Jason.decode!(conn.resp_body)
   end

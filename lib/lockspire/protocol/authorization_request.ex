@@ -328,11 +328,18 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
        when is_binary(request) and request != "" do
     security_profile = Keyword.get(opts, :security_profile, %SecurityProfile.Resolved{})
 
-    RequestObject.consume(
-      params,
-      client,
-      Keyword.put(jar_opts(), :security_profile, security_profile)
-    )
+    case RequestObject.consume(
+           params,
+           client,
+           Keyword.put(jar_opts(), :security_profile, security_profile)
+         ) do
+      {:ok, projected_params} ->
+        {:ok, projected_params}
+
+      {disposition, %Error{} = issue}
+      when disposition in [:browser_error, :redirect_error] ->
+        {disposition, issue}
+    end
   end
 
   defp maybe_consume_request_object(params, _client, _opts), do: {:ok, params}
@@ -890,7 +897,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     })
   end
 
-  # credo:disable-for-next-line
+  # The validation result mirrors independently validated OAuth inputs without a lossy intermediary tuple.
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp build_validated(
          params,
          %Client{} = client,

@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
+  alias Lockspire.TestSupport.TelemetryCapture
 
   # The 18 event paths the sweep attaches to.
   # 7 DCR family events × 2 paths (telemetry + audit-mirror) = 14
@@ -44,19 +45,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    handler_id = "dcr-redaction-#{System.unique_integer([:positive])}"
-
-    :ok =
-      :telemetry.attach_many(
-        handler_id,
-        @attached_events,
-        fn event, measurements, metadata, pid ->
-          send(pid, {:telemetry_event, event, measurements, metadata})
-        end,
-        self()
-      )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
+    TelemetryCapture.attach_many(@attached_events, self())
     %{}
   end
 

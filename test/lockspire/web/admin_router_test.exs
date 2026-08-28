@@ -59,9 +59,9 @@ defmodule Lockspire.Web.AdminRouterTest do
     assert :error = Phoenix.Router.route_info(Lockspire.Web.Router, "GET", "/admin/keys", "")
   end
 
-  test "phase 120 browser route truth keeps logout propagation as query workflow evidence" do
+  test "browser route truth keeps logout propagation as query workflow evidence" do
     source_routes = source_derived_admin_routes()
-    browser_matrix_routes = phase_120_browser_matrix_routes()
+    browser_matrix_routes = browser_matrix_routes()
 
     assert "/admin/logouts" in source_routes
     refute "/admin/logout-deliveries" in source_routes
@@ -76,7 +76,7 @@ defmodule Lockspire.Web.AdminRouterTest do
            ]
   end
 
-  defp phase_120_browser_matrix_routes do
+  defp browser_matrix_routes do
     source_derived_admin_routes() ++
       ["/admin/clients/:client_id/edit?workflow=logout-propagation"]
   end

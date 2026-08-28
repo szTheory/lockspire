@@ -23,8 +23,7 @@ defmodule AdoptionDemoWeb.Router do
   # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
   pipeline :lockspire_protected_api do
     plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://api.billingo.test/billing", enforce_audience: true
-    plug Lockspire.Plug.EnforceSenderConstraints,
-      dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
+    plug Lockspire.Plug.EnforceSenderConstraints
     plug Lockspire.Plug.RequireToken
   end
   # END LOCKSPIRE_PROTECTED_PIPELINE

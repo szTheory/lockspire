@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.DPoPTest do
 
   alias Lockspire.Protocol.DPoP
   alias Lockspire.Protocol.DPoPNonce
+  alias Lockspire.Protocol.DPoP.ProofParser
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.JarTestHelpers
 
@@ -48,6 +49,15 @@ defmodule Lockspire.Protocol.DPoPTest do
       assert {:ok, %DPoP{claims: claims, header: header}} = DPoP.decode(proof)
       assert claims["htm"] == "POST"
       assert header["typ"] == "dpop+jwt"
+      assert header["jwk"] == keys.pub_jwk_map
+    end
+
+    test "parses the same protected proof material for the public coordinator", %{
+      proof: proof,
+      keys: keys
+    } do
+      assert {:ok, %{claims: claims, header: header}} = ProofParser.decode(proof)
+      assert claims["htm"] == "POST"
       assert header["jwk"] == keys.pub_jwk_map
     end
 
@@ -329,6 +339,27 @@ defmodule Lockspire.Protocol.DPoPTest do
         )
 
       assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "checks signature before exposing a later request-context failure", %{keys: keys} do
+      other_keys = JarTestHelpers.generate_ec_keys()
+
+      proof =
+        JarTestHelpers.sign_dpop_proof(other_keys.private_jwk, valid_claims(%{"htm" => "GET"}),
+          jwk: keys.pub_jwk_map
+        )
+
+      assert {:error, :invalid_signature} = DPoP.validate_proof(proof, validation_opts())
+    end
+
+    test "checks typ before a missing embedded jwk", %{keys: keys} do
+      proof =
+        JarTestHelpers.sign_dpop_proof(keys.private_jwk, valid_claims(),
+          typ: "JWT",
+          extra_header: %{"jwk" => nil}
+        )
+
+      assert {:error, :invalid_typ} = DPoP.validate_proof(proof, validation_opts())
     end
 
     test "returns a typed reason when the proof header omits jwk", %{keys: keys} do

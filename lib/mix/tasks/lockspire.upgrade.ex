@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
 
   alias Lockspire.Generators.Install
   alias Lockspire.Install.Manifest
+  alias Lockspire.Install.OperationPlan
 
   @switches [
     web: :string,
@@ -19,6 +20,7 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
     mount_path: :string,
     storage_prefix: :string,
     oban_prefix: :string,
+    with_fapi_smoke: :boolean,
     dry_run: :boolean,
     help: :boolean
   ]
@@ -40,21 +42,24 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
 
   def help do
     """
-    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--dry-run]
+    mix lockspire.upgrade [--web MyAppWeb] [--scope MyApp.Lockspire] [--path PATH] [--mount-path /lockspire] [--storage-prefix lockspire] [--oban-prefix lockspire] [--with-fapi-smoke] [--dry-run]
 
     Upgrades only manifest-tracked Lockspire-managed scaffolding.
     Host-owned seams stay untouched and drifted managed files are refused with manual guidance.
     Pass --storage-prefix public --oban-prefix public only for an intentional public-schema install.
+    An existing install manifest retains its opted-in FAPI smoke by default; use
+    --with-fapi-smoke to add it to a legacy install explicitly.
     """
   end
 
+  # Upgrade ordering preserves managed-file refusal before any host-owned mutation can run.
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp do_run(opts) do
-    assigns = Install.build_assigns(opts)
+    base_assigns = Install.build_assigns(opts)
     dry_run? = Keyword.get(opts, :dry_run, false)
 
     manifest =
-      case Manifest.load(assigns.project_root) do
+      case Manifest.load(base_assigns.project_root) do
         {:ok, manifest} ->
           manifest
 
@@ -65,77 +70,47 @@ defmodule Mix.Tasks.Lockspire.Upgrade do
           Mix.raise("Could not load install manifest: #{inspect(reason)}")
       end
 
-    rendered_by_path =
-      assigns
-      |> Install.rendered_templates()
-      |> Enum.filter(&(&1.template.ownership == :managed))
-      |> Map.new(&{&1.relative_path, &1})
+    assigns =
+      Install.build_assigns(Keyword.put(opts, :with_fapi_smoke, fapi_smoke?(opts, manifest)))
 
-    {updates, drifts} =
-      manifest["managed_files"]
-      |> List.wrap()
-      |> Enum.reduce({[], []}, fn entry, {updates, drifts} ->
-        path = entry["path"]
-        expected_checksum = entry["checksum"]
-        rendered = Map.fetch!(rendered_by_path, path)
+    rendered_templates = Install.rendered_templates(assigns)
 
-        case File.read(rendered.destination) do
-          {:ok, contents} ->
-            current_checksum = Manifest.checksum(contents)
-            next_checksum = Manifest.checksum(rendered.rendered)
+    case OperationPlan.upgrade(assigns, rendered_templates, manifest) do
+      {:ok, plan} ->
+        OperationPlan.report(plan, if(dry_run?, do: :dry_run, else: :apply))
 
-            cond do
-              current_checksum != expected_checksum ->
-                {updates, [{path, "checksum drift detected"} | drifts]}
-
-              current_checksum == next_checksum ->
-                {updates, drifts}
-
-              true ->
-                {[rendered | updates], drifts}
-            end
-
-          {:error, :enoent} ->
-            {updates, [{path, "managed file is missing"} | drifts]}
-
-          {:error, reason} ->
-            {updates, [{path, inspect(reason)} | drifts]}
+        if dry_run? do
+          :ok
+        else
+          apply_plan!(plan)
         end
-      end)
 
-    if drifts != [] do
-      Enum.each(Enum.reverse(drifts), fn {path, reason} ->
-        Mix.shell().info("REFUSE #{path} (#{reason})")
-
-        Mix.shell().info(
-          "  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`."
-        )
-      end)
-
-      Mix.raise("Lockspire upgrade refused because managed scaffolding drifted.")
+      {:error, errors} ->
+        refuse!(errors)
     end
+  end
 
-    if updates == [] do
-      Mix.shell().info("No managed scaffolding updates were needed.")
-      :ok
-    else
-      Enum.each(Enum.reverse(updates), fn rendered ->
-        Mix.shell().info(
-          "#{if(dry_run?, do: "DRY-RUN", else: "UPDATE")} #{rendered.relative_path}"
-        )
+  defp fapi_smoke?(opts, manifest) do
+    Keyword.get(opts, :with_fapi_smoke, get_in(manifest, ["inputs", "with_fapi_smoke"]) == true)
+  end
 
-        unless dry_run? do
-          File.write!(rendered.destination, rendered.rendered)
-        end
-      end)
-
-      unless dry_run? do
-        assigns
-        |> Manifest.build(Map.values(rendered_by_path))
-        |> then(&Manifest.write(assigns.project_root, &1))
-      end
-
-      :ok
+  defp apply_plan!(plan) do
+    case OperationPlan.apply(plan) do
+      {:ok, _plan} -> :ok
+      {:error, errors} -> refuse!(errors)
     end
+  end
+
+  @spec refuse!([map()]) :: no_return()
+  defp refuse!(errors) do
+    Enum.each(errors, fn error ->
+      Mix.shell().info("REFUSE #{error.message}")
+
+      Mix.shell().info(
+        "  fix: reconcile the managed file manually, then rerun `mix lockspire.upgrade`."
+      )
+    end)
+
+    Mix.raise("Lockspire upgrade refused because managed scaffolding drifted.")
   end
 end

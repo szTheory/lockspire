@@ -1,6 +1,8 @@
-name: OIDF Conformance
+name: Supplemental OIDF Conformance
 
 on:
+  schedule:
+    - cron: "17 5 * * 2"
   workflow_dispatch:
     inputs:
       run_hosted_lane:
@@ -12,18 +14,25 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: supplemental-oidf-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   ELIXIR_VERSION: "1.19.5"
   OTP_VERSION: "28"
+  PYTHON_VERSION: "3.13.15"
+  PIP_VERSION: "26.2.1"
 
 jobs:
   repo-native-phase37:
     name: Repo-Native Phase 37 Lane
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -43,6 +52,7 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      LOCKSPIRE_OIDF_EPHEMERAL_DB: "true"
 
     steps:
       - name: Check out repository
@@ -54,29 +64,46 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
-      - name: Install dependencies
-        run: mix deps.get
-
-      - name: Run Phase 37 conformance lane
-        run: MIX_ENV=test mix conformance.phase37
-
-      - name: Run Preparatory OIDF Conformance Lane
-        run: mix lockspire.oidf_conformance --validate-env
-
-      - name: Upload Phase 37 artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
-          name: phase37-conformance
-          path: .artifacts/conformance/phase37
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
+      - name: Install dependencies
+        run: mix deps.get --check-locked
+
+      - name: Check immutable conformance inputs
+        run: mix lockspire.oidf_conformance --check
+
+      - name: Run repo-native Phase 37 proof
+        run: |
+          mix test.setup
+          mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs
+
+      - name: Run immutable supplemental Phase 37 profile against a throwaway host
+        run: bash scripts/conformance/run_ephemeral_oidf_profile.sh phase37
+
+      - name: Upload redacted Phase 37 receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: supplemental-phase37-${{ github.run_id }}
+          path: .artifacts/conformance/phase37/receipt.json
+          if-no-files-found: error
+          retention-days: 30
 
   repo-native-fapi2:
     name: Repo-Native FAPI 2.0 Lane
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -96,6 +123,7 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
+      LOCKSPIRE_OIDF_EPHEMERAL_DB: "true"
 
     steps:
       - name: Check out repository
@@ -107,27 +135,42 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
-      - name: Install dependencies
-        run: mix deps.get
-
-      - name: Run FAPI 2.0 conformance lane
-        run: bash scripts/conformance/run_fapi2_suite.sh
-
-      - name: Upload FAPI 2.0 artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
-          name: fapi2-conformance
-          path: .artifacts/conformance/fapi2
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
+      - name: Install dependencies
+        run: mix deps.get --check-locked
+
+      - name: Check immutable conformance inputs
+        run: mix lockspire.oidf_conformance --check
+
+      - name: Run immutable supplemental FAPI 2.0 profile against a throwaway host
+        run: bash scripts/conformance/run_ephemeral_oidf_profile.sh fapi2
+
+      - name: Upload redacted FAPI 2.0 receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: supplemental-fapi2-${{ github.run_id }}
+          path: .artifacts/conformance/fapi2/receipt.json
+          if-no-files-found: error
+          retention-days: 30
 
   hosted-maintainer-lane:
     name: Hosted Maintainer Lane
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || inputs.run_hosted_lane
+    timeout-minutes: 30
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_lane }}
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:485935f94cc7165afa896978809c37b592dc07f0a37d2c8f645f12412d0212c8 # postgres:16 verified 2026-08-26
         env:
           POSTGRES_DB: lockspire_test
           POSTGRES_USER: lockspire
@@ -147,9 +190,6 @@ jobs:
       LOCKSPIRE_TEST_DB_USER: lockspire
       LOCKSPIRE_TEST_DB_PASSWORD: lockspire
       LOCKSPIRE_TEST_DB_NAME: lockspire_test
-      LOCKSPIRE_PHASE37_MODE: hosted
-      LOCKSPIRE_PHASE37_PROVIDER_DISCOVERY_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_DISCOVERY_URL }}
-      LOCKSPIRE_PHASE37_PROVIDER_BASE_URL: ${{ secrets.LOCKSPIRE_PHASE37_HOSTED_BASE_URL }}
 
     steps:
       - name: Check out repository
@@ -161,15 +201,28 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
+      - name: Set up pinned Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-version: ${{ env.PIP_VERSION }}
+
+      - name: Install checksum-locked OIDF runner dependencies
+        run: bash scripts/conformance/install_runner_dependencies.sh
+
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --check-locked
 
       - name: Run hosted maintainer lane
         run: bash scripts/conformance/run_phase37_suite.sh
+        env:
+          LOCKSPIRE_OIDF_PROVIDER_CONFIG_JSON: ${{ secrets.LOCKSPIRE_OIDF_HOSTED_PROVIDER_CONFIG_JSON }}
 
-      - name: Upload hosted artifacts
+      - name: Upload redacted hosted receipt
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: phase37-conformance-hosted
-          path: .artifacts/conformance/phase37
+          name: supplemental-phase37-hosted-${{ github.run_id }}
+          path: .artifacts/conformance/phase37/receipt.json
+          if-no-files-found: error
+          retention-days: 14

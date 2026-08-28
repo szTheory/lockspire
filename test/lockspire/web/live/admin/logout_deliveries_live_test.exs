@@ -293,7 +293,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     refute_unsupported_worker_controls(html)
   end
 
-  test "phase 125 logout delivery proof keeps incident review sanitized and read-only", %{
+  test "logout delivery review keeps incident evidence sanitized and read-only", %{
     long_endpoint: long_endpoint
   } do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))

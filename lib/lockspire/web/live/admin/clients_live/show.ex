@@ -370,7 +370,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </p>
             <p class="lockspire-admin-help">
               This client uses <code>private_key_jwt</code>. Key material stays read-only in
-              Phase 59; later verification and remote-fetch behavior are owned by Lockspire,
+              this read-only view; verification and remote-fetch behavior are owned by Lockspire,
               not by ad hoc admin actions.
             </p>
           </div>

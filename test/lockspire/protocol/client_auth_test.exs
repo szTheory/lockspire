@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.ClientAuth
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Protocol.ClientAuth.Error
   alias Lockspire.JarTestHelpers
 
@@ -234,20 +235,11 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       keys = JarTestHelpers.generate_keys()
       Process.put(:inline_pub_jwk_map, keys.pub_jwk_map)
       now = DateTime.utc_now() |> DateTime.truncate(:second)
-      parent = self()
-      handler_id = "client-auth-test-#{System.unique_integer([:positive])}"
 
-      :telemetry.attach_many(
-        handler_id,
-        [
-          [:lockspire, :client_auth, :failed],
-          [:lockspire, :client_auth, :replay_detected]
-        ],
-        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-        parent
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
+      TelemetryCapture.attach_many([
+        [:lockspire, :client_auth, :failed],
+        [:lockspire, :client_auth, :replay_detected]
+      ])
 
       attacker_assertion =
         signed_assertion(JOSE.JWK.generate_key({:rsa, 2048}), "test_client", now: now)
@@ -285,10 +277,10 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                  now: now
                )
 
-      assert_receive {[:lockspire, :client_auth, :failed],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :failed], _,
                       %{reason_code: :client_assertion_signature_invalid}}
 
-      assert_receive {[:lockspire, :client_auth, :replay_detected],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :replay_detected], _,
                       %{reason_code: :client_assertion_replayed}}
 
       audits = Process.get(:recorded_audit_events, [])
@@ -309,17 +301,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       Process.put(:refreshed_remote_jwks, JOSE.JWK.from_map(%{"keys" => [wrong_pub]}))
 
       now = DateTime.utc_now() |> DateTime.truncate(:second)
-      parent = self()
-      handler_id = "client-auth-remote-jwks-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:lockspire, :client_auth, :failed],
-        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-        parent
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
+      TelemetryCapture.attach([:lockspire, :client_auth, :failed])
 
       assertion =
         signed_assertion(missing_keys.private_jwk, "remote_client",
@@ -339,7 +321,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                  now: now
                )
 
-      assert_receive {[:lockspire, :client_auth, :failed],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :failed], _,
                       %{
                         remote_jwks_incident_class: :remote_jwks_key_unavailable,
                         remote_jwks_consumer: :private_key_jwt,
@@ -357,17 +339,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
     test "emits shared remote jwks incident metadata for guarded fetch failures" do
       Process.put(:remote_jwks_get_error, {:jwks_fetch_failed, {:http_status, 503}})
       now = DateTime.utc_now() |> DateTime.truncate(:second)
-      parent = self()
-      handler_id = "client-auth-remote-fetch-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:lockspire, :client_auth, :failed],
-        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-        parent
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
+      TelemetryCapture.attach([:lockspire, :client_auth, :failed])
 
       assertion =
         signed_assertion(JOSE.JWK.generate_key({:rsa, 2048}), "remote_client",
@@ -386,7 +358,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                  now: now
                )
 
-      assert_receive {[:lockspire, :client_auth, :failed],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :failed], _,
                       %{
                         remote_jwks_incident_class: :remote_jwks_fetch_failed,
                         remote_jwks_consumer: :private_key_jwt,
@@ -411,17 +383,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       Process.put(:refreshed_remote_jwks, JOSE.JWK.from_map(%{"keys" => [wrong_pub]}))
 
       now = DateTime.utc_now() |> DateTime.truncate(:second)
-      parent = self()
-      handler_id = "client-auth-remote-signature-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:lockspire, :client_auth, :failed],
-        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-        parent
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
+      TelemetryCapture.attach([:lockspire, :client_auth, :failed])
 
       assertion =
         signed_assertion(missing_keys.private_jwk, "remote_client",
@@ -441,7 +403,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                  now: now
                )
 
-      assert_receive {[:lockspire, :client_auth, :failed],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :failed], _,
                       %{
                         remote_jwks_incident_class: :remote_jwks_signature_invalid,
                         remote_jwks_consumer: :private_key_jwt,
@@ -597,20 +559,11 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       secret = "phase88-client-secret"
       Process.put(:client_secret_jwt_secret, secret)
       now = DateTime.utc_now() |> DateTime.truncate(:second)
-      parent = self()
-      handler_id = "client-secret-jwt-test-#{System.unique_integer([:positive])}"
 
-      :telemetry.attach_many(
-        handler_id,
-        [
-          [:lockspire, :client_auth, :failed],
-          [:lockspire, :client_auth, :replay_detected]
-        ],
-        fn event, _measurements, metadata, pid -> send(pid, {event, metadata}) end,
-        parent
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
+      TelemetryCapture.attach_many([
+        [:lockspire, :client_auth, :failed],
+        [:lockspire, :client_auth, :replay_detected]
+      ])
 
       invalid_signature_assertion =
         client_secret_signed_assertion("wrong-secret", "secret_client", now: now)
@@ -651,13 +604,13 @@ defmodule Lockspire.Protocol.ClientAuthTest do
                  now: now
                )
 
-      assert_receive {[:lockspire, :client_auth, :failed],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :failed], _,
                       %{
                         reason_code: :client_assertion_signature_invalid,
                         auth_method: :client_secret_jwt
                       }}
 
-      assert_receive {[:lockspire, :client_auth, :replay_detected],
+      assert_receive {:telemetry_event, [:lockspire, :client_auth, :replay_detected], _,
                       %{reason_code: :client_assertion_replayed, auth_method: :client_secret_jwt}}
 
       audits = Process.get(:recorded_audit_events, [])

@@ -128,6 +128,10 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
   end
 
   test "CIBA Push Mode delivery", %{conn: conn} do
+    refute function_exported?(Lockspire.TestRepo, :fetch_active_signing_key, 1)
+    refute function_exported?(Lockspire.TestRepo, :get_server_policy, 0)
+    refute function_exported?(Lockspire.TestRepo, :record_dpop_proof, 1)
+
     client_id = "push-client"
     notification_endpoint = "https://rp.example.test/push"
     notification_token = "push-token-456"
@@ -176,6 +180,8 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
       assert body["auth_req_id"] == auth_req_id
       assert is_binary(body["access_token"])
       assert is_binary(body["id_token"])
+      assert length(String.split(body["access_token"], ".")) == 3
+      assert length(String.split(body["id_token"], ".")) == 3
       assert body["token_type"] == "Bearer"
 
       Req.Test.json(req, %{status: "ok"})

@@ -3,6 +3,9 @@
     %{
       name: "default",
       strict: true,
+      # Security-sensitive protocol modules must never disappear from analysis
+      # merely because a slower runner exceeds Credo's default 5s parse budget.
+      parse_timeout: 30_000,
       files: %{
         included: ["lib/", "test/"],
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]

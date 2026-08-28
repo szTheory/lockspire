@@ -7,10 +7,12 @@ defmodule Lockspire.Application do
 
   @impl true
   def start(_type, _args) do
+    Lockspire.DiscoveryRoutes.install_default_capability()
+
     children = [
       {Lockspire.Oban, Lockspire.Oban.runtime_config!()},
       Cachex.child_spec(name: :lockspire_jwks_cache),
-      Lockspire.KeyCache
+      {Lockspire.KeyCache, Application.get_env(:lockspire, Lockspire.KeyCache, [])}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Lockspire.Supervisor)

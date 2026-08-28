@@ -4,20 +4,17 @@ defmodule Lockspire.Generators.Install do
   """
 
   alias Lockspire.Generators.Templates
-  alias Lockspire.Install.Manifest
-
-  @template_root Application.app_dir(:lockspire, "priv/templates/lockspire.install")
+  alias Lockspire.Install.Assets
+  alias Lockspire.Install.OperationPlan
 
   @spec run(keyword()) :: :ok
   def run(opts \\ []) do
     assigns = build_assigns(opts)
     rendered_templates = rendered_templates(assigns)
 
-    Enum.each(rendered_templates, fn rendered ->
-      ensure_file!(rendered.destination, rendered.rendered)
-    end)
-
-    write_manifest!(assigns, rendered_templates)
+    plan = build_plan!(assigns, rendered_templates)
+    OperationPlan.report(plan, :apply)
+    apply_plan!(plan)
     Mix.shell().info(instructions(assigns))
 
     :ok
@@ -56,13 +53,14 @@ defmodule Lockspire.Generators.Install do
       authorized_apps_html_module: "#{web_module}.AuthorizedAppsHTML",
       verification_controller_module: "#{web_module}.LockspireVerificationController",
       verification_html_module: "#{web_module}.LockspireVerificationHTML",
-      sigra_host: Keyword.get(opts, :sigra_host, false)
+      sigra_host: Keyword.get(opts, :sigra_host, false),
+      with_fapi_smoke: Keyword.get(opts, :with_fapi_smoke, false)
     }
   end
 
   @spec rendered_templates(map()) :: [map()]
   def rendered_templates(assigns) do
-    Enum.map(Templates.all(), fn template ->
+    Enum.map(Templates.all(assigns), fn template ->
       destination = destination_path(template, assigns)
 
       %{
@@ -86,45 +84,41 @@ defmodule Lockspire.Generators.Install do
     destination = destination || destination_path(template, assigns)
 
     rendered_body =
-      @template_root
+      Assets.path("priv/templates/lockspire.install")
       |> Path.join(template.template)
       |> EEx.eval_file(assigns: assigns)
 
     ownership_header(template, destination) <> rendered_body
   end
 
-  defp write_manifest!(assigns, rendered_templates) do
-    managed_templates =
-      rendered_templates
-      |> Enum.filter(&(&1.template.ownership == :managed))
-
-    assigns
-    |> Manifest.build(managed_templates)
-    |> then(&Manifest.write(assigns.project_root, &1))
+  defp build_plan!(assigns, rendered_templates) do
+    case OperationPlan.install(assigns, rendered_templates) do
+      {:ok, plan} -> plan
+      {:error, errors} -> refuse!("install", errors)
+    end
   end
 
-  defp ensure_file!(destination, rendered) do
-    File.mkdir_p!(Path.dirname(destination))
-
-    case File.read(destination) do
-      {:ok, ^rendered} ->
-        Mix.shell().info("* unchanged #{Path.relative_to_cwd(destination)}")
-
-      {:ok, _existing} ->
-        Mix.raise("""
-        Refusing to overwrite modified file: #{Path.relative_to_cwd(destination)}
-
-        Keep the host-owned edits and reconcile this file manually before rerunning
-        `mix lockspire.install`.
-        """)
-
-      {:error, :enoent} ->
-        File.write!(destination, rendered)
-        Mix.shell().info("* created #{Path.relative_to_cwd(destination)}")
-
-      {:error, reason} ->
-        Mix.raise("Could not read #{Path.relative_to_cwd(destination)}: #{inspect(reason)}")
+  defp apply_plan!(plan) do
+    case OperationPlan.apply(plan) do
+      {:ok, _plan} -> :ok
+      {:error, errors} -> refuse!("install", errors)
     end
+  end
+
+  @spec refuse!(String.t(), [map()]) :: no_return()
+  defp refuse!(operation, errors) do
+    Enum.each(errors, fn error ->
+      Mix.shell().info("REFUSE #{error.message}")
+
+      Mix.shell().info(
+        "  fix: reconcile the host file manually, then rerun `mix lockspire.#{operation}`."
+      )
+    end)
+
+    Mix.raise(
+      "Lockspire #{operation} refused because planned host changes are unsafe: " <>
+        Enum.map_join(errors, "; ", & &1.message)
+    )
   end
 
   defp instructions(assigns) do
@@ -137,7 +131,8 @@ defmodule Lockspire.Generators.Install do
       4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
       5. Point your login flow back through `#{assigns.interaction_handler_module}`.
       6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
-      7. Run `mix ecto.migrate`, create a client, and verify discovery, JWKS, and an auth-code + PKCE flow.
+      7. Run `mix ecto.migrate`, create a client, and run `mix test test/#{assigns.app_path}/lockspire_smoke_e2e_test.exs` to verify discovery, JWKS, and an auth-code + PKCE flow.
+      8. If you explicitly operate a FAPI 2.0 security profile, generate its isolated proof with `mix lockspire.install --with-fapi-smoke`, then run `mix test test/#{assigns.app_path}/lockspire_fapi_smoke_e2e.exs --include fapi`.
     """
   end
 

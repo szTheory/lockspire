@@ -142,11 +142,9 @@ defmodule Lockspire.Admin.ServerPolicy do
   defp validate_fapi_signing_readiness(_old_profile, _profile), do: :ok
 
   @doc """
-  Returns the current DCR policy view as a `%Domain.ServerPolicy{}` (the same struct
-  used by `get_server_policy/0` — DCR fields land on the singleton row per D-04).
-
-  Phase 28 admin LiveView consumes this; Phase 26 intake validator and
-  `Lockspire.Protocol.DcrPolicy.resolve/3` consume the same struct.
+  Returns the current DCR policy view as the same `%Domain.ServerPolicy{}` used by
+  `get_server_policy/0`. The admin UI, registration intake, and
+  `Lockspire.Protocol.DcrPolicy.resolve/3` therefore share one policy representation.
   """
   @spec get_dcr_policy() :: {:ok, ServerPolicy.t()} | {:error, term()}
   def get_dcr_policy do
@@ -300,8 +298,8 @@ defmodule Lockspire.Admin.ServerPolicy do
       end)
 
     if unknown_keys != [] do
-      # Phase 28 admin LiveView: silent drops of typo'd field names is a known operator-UX
-      # hazard. Logging here gives operators a breadcrumb when an admin form sends an
+      # Silent drops of mistyped field names are an operator hazard. Logging here gives
+      # operators a breadcrumb when an admin form sends an
       # unexpected key (e.g., :dcr_allowed_scope vs :dcr_allowed_scopes); a future iteration
       # may upgrade this to a structured `{:error, [%{field: :unknown, ...}]}` return once
       # the LiveView surface lands and can render the validation error.

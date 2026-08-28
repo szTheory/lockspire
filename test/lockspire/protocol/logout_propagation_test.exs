@@ -14,6 +14,7 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Storage.Ecto.TokenRecord
   alias Lockspire.Workers.BackchannelLogoutDeliveryWorker
   alias Oban.Job
@@ -32,21 +33,12 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, {:shared, self()})
 
-    handler_id = "logout-propagation-test-#{System.unique_integer([:positive])}"
-
-    :telemetry.attach_many(
-      handler_id,
+    TelemetryCapture.attach_many(
       Enum.flat_map([:requested, :delivery_enqueued], fn stage ->
         event_name = Observability.logout_event_name!(stage)
         [[:lockspire, event_name], [:lockspire, :audit, event_name]]
-      end),
-      fn event, measurements, metadata, pid ->
-        send(pid, {:telemetry_event, event, measurements, metadata})
-      end,
-      self()
+      end)
     )
-
-    on_exit(fn -> :telemetry.detach(handler_id) end)
 
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual) end)
 

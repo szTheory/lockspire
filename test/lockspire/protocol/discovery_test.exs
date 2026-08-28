@@ -117,6 +117,23 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     assert Discovery.published_token_endpoint_auth_methods_supported() == @published_methods
   end
 
+  test "openid_configuration/1 advertises only supplied mounted endpoint paths" do
+    config = Discovery.openid_configuration(MapSet.new(["/token"]))
+
+    assert config["token_endpoint"] == "https://example.test/lockspire/token"
+    refute Map.has_key?(config, "authorization_endpoint")
+    refute Map.has_key?(config, "userinfo_endpoint")
+
+    assert config["grant_types_supported"] == [
+             "authorization_code",
+             "refresh_token",
+             "urn:ietf:params:oauth:grant-type:device_code",
+             "urn:openid:params:grant-type:ciba"
+           ]
+
+    assert config["code_challenge_methods_supported"] == []
+  end
+
   describe "openid_configuration/0 — endpoint auth metadata truth" do
     test "publishes shared token and revocation auth metadata including private_key_jwt" do
       config = Discovery.openid_configuration()

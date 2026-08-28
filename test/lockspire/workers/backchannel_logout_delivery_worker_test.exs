@@ -1,7 +1,8 @@
 defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
-  use ExUnit.Case, async: false
+  use Lockspire.DataCase, async: false
 
   import Ecto.Query
+  import Lockspire.ConfigCase, only: [put_lockspire_env: 2]
 
   @moduletag :integration
 
@@ -16,6 +17,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Workers.BackchannelLogoutDeliveryWorker
 
   setup_all do
@@ -30,49 +32,32 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   end
 
   setup context do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     Req.Test.verify_on_exit!(context)
     Req.Test.set_req_test_from_context(context)
 
-    original_repo = Application.get_env(:lockspire, :repo)
-    original_issuer = Application.get_env(:lockspire, :issuer)
-    original_mount_path = Application.get_env(:lockspire, :mount_path)
     original_req_opts = Application.get_env(:lockspire, :backchannel_logout_req)
-    handler_id = "logout-delivery-worker-test-#{System.unique_integer([:positive])}"
-
-    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
-    Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
-    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    put_lockspire_env(:repo, Lockspire.TestRepo)
+    put_lockspire_env(:issuer, "https://example.test/lockspire")
+    put_lockspire_env(:mount_path, "/lockspire")
 
     on_exit(fn ->
-      restore_env(:repo, original_repo)
-      restore_env(:issuer, original_issuer)
-      restore_env(:mount_path, original_mount_path)
-
       if is_nil(original_req_opts) do
         Application.delete_env(:lockspire, :backchannel_logout_req)
       else
         Application.put_env(:lockspire, :backchannel_logout_req, original_req_opts)
       end
-
-      :telemetry.detach(handler_id)
     end)
 
-    :telemetry.attach_many(
-      handler_id,
+    TelemetryCapture.attach_many(
       Enum.flat_map(Observability.logout_lifecycle_events(), fn event_name ->
         [
           [:lockspire, event_name],
           [:lockspire, :audit, event_name]
         ]
-      end),
-      fn event, measurements, metadata, pid ->
-        send(pid, {:telemetry_event, event, measurements, metadata})
-      end,
-      self()
+      end)
     )
 
-    {:ok, handler_id: handler_id}
+    :ok
   end
 
   describe "perform/1" do
@@ -387,7 +372,4 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
     |> limit(1)
     |> Lockspire.TestRepo.one!()
   end
-
-  defp restore_env(key, nil), do: Application.delete_env(:lockspire, key)
-  defp restore_env(key, value), do: Application.put_env(:lockspire, key, value)
 end

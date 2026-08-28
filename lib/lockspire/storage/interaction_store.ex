@@ -7,7 +7,6 @@ defmodule Lockspire.Storage.InteractionStore do
 
   @type store_error :: term()
 
-  # Acceptance marker: @callback put_interaction/1
   @callback put_interaction(Interaction.t()) :: {:ok, Interaction.t()} | {:error, store_error()}
   @callback fetch_interaction(String.t()) ::
               {:ok, Interaction.t() | nil} | {:error, store_error()}
@@ -15,6 +14,5 @@ defmodule Lockspire.Storage.InteractionStore do
               {:ok, Interaction.t() | nil} | {:error, store_error()}
   @callback transition_interaction(String.t(), [Interaction.status()], map()) ::
               {:ok, Interaction.t()} | {:error, store_error()}
-  @callback transact((-> term())) :: {:ok, term()} | {:error, store_error()}
   @callback list_interactions(keyword()) :: {:ok, [Interaction.t()]} | {:error, store_error()}
 end

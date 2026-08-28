@@ -5,6 +5,7 @@ defmodule Lockspire.Web.DiscoveryController do
 
   use Phoenix.Controller, formats: [:json]
 
+  alias Lockspire.DiscoveryRoutes
   alias Lockspire.Protocol.Discovery
   alias Lockspire.Web.DiscoveryJSON
 
@@ -12,6 +13,8 @@ defmodule Lockspire.Web.DiscoveryController do
     conn
     |> put_resp_header("cache-control", "public, max-age=300")
     |> put_status(:ok)
-    |> json(DiscoveryJSON.openid_configuration(Discovery.openid_configuration()))
+    |> json(
+      DiscoveryJSON.openid_configuration(Discovery.openid_configuration(DiscoveryRoutes.paths()))
+    )
   end
 end

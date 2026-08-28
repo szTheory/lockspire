@@ -1,3 +1,0 @@
-/Users/jon/projects/lockspire/.claude/worktrees/agent-ad79da2beca404d24/.artifacts/conformance/phase37/artifact-files.txt
-/Users/jon/projects/lockspire/.claude/worktrees/agent-ad79da2beca404d24/.artifacts/conformance/phase37/phase37-plan.json
-/Users/jon/projects/lockspire/.claude/worktrees/agent-ad79da2beca404d24/.artifacts/conformance/phase37/run-summary.json

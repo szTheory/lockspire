@@ -64,7 +64,7 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
       <AdminComponents.pane
         title="PROOF-01 shared fixture matrix"
         subtitle="D-04/D-05/D-06/D-16 internal test-support coverage."
-        data-phase="125-proof-matrix"
+        data-proof-surface="admin-capability-matrix"
       >
         <:status>
           <AdminComponents.status_badge status={:provenance} domain={:configure} />

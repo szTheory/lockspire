@@ -14,8 +14,7 @@ Lockspire enforces the token contract via `Lockspire.Plug.VerifyToken`, `Lockspi
 # BEGIN LOCKSPIRE_PROTECTED_PIPELINE
 pipeline :lockspire_protected_api do
   plug Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "https://api.billingo.test/billing", enforce_audience: true
-  plug Lockspire.Plug.EnforceSenderConstraints,
-    dpop_replay_store: MyAppWeb.ProtectedApiReplayStore
+  plug Lockspire.Plug.EnforceSenderConstraints
   plug Lockspire.Plug.RequireToken
 end
 # END LOCKSPIRE_PROTECTED_PIPELINE
@@ -23,7 +22,9 @@ end
 
 `Lockspire.Plug.VerifyToken` authenticates the access token and enforces route-level `scopes:` / `audience:` restrictions.
 
-`Lockspire.Plug.EnforceSenderConstraints` is part of the canonical shipped path even when bearer tokens are currently the common case. It is a no-op for unconstrained bearer tokens, and it preserves correctness automatically when the same route later receives DPoP-bound or mTLS-bound access tokens. When a DPoP proof is present but missing a valid resource-server nonce, the shipped plug pipeline returns `401` with `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus a `DPoP-Nonce` response header so the client can retry with a fresh proof. Lockspire verifies the token protocol facts; your host app still owns business authorization, tenant policy, domain lookups, and whether a protected route should exist at all.
+`Lockspire.Plug.EnforceSenderConstraints` is part of the canonical shipped path even when bearer tokens are currently the common case. It is a no-op for unconstrained bearer tokens, and it preserves correctness automatically when the same route later receives DPoP-bound or mTLS-bound access tokens. With no option, DPoP replay protection uses the configured Lockspire repository, which is the durable installed default. When a DPoP proof is present but missing a valid resource-server nonce, the shipped plug pipeline returns `401` with `WWW-Authenticate: DPoP ... error="use_dpop_nonce"` plus a `DPoP-Nonce` response header so the client can retry with a fresh proof.
+
+An application with its own compatible durable store can provide `dpop_replay_store: MyApp.DpopReplayStore` as an advanced override. That override is optional, not a prerequisite for the canonical pipeline; an unavailable, incompatible, or failing override rejects the proof rather than falling back to acceptance.
 
 `Lockspire.Plug.RequireToken` turns structured verification failures into the correct OAuth-style HTTP response, including `403 insufficient_scope` when the token is valid but under-scoped.
 
@@ -43,16 +44,23 @@ See the canonical pipeline above; this example pins `audience:` (e.g., `audience
 
 On success, the verified token is available at `conn.assigns.access_token` as `%Lockspire.AccessToken{}`.
 
-Representative fields available to the host:
+Use the semantic readers for normalized protocol facts:
 
-- `subject` for the Lockspire subject reference
-- `client_id` for the OAuth client
-- `scope` for the granted scope string
-- `audience` for the granted audience list
-- `expires_at` for expiry-aware policy decisions
-- `cnf` for sender-constrained token confirmation data when present
+`Lockspire.AccessToken.subject/1`, `Lockspire.AccessToken.scopes/1`,
+`Lockspire.AccessToken.audiences/1`, `Lockspire.AccessToken.expires_at/1`, and
+`Lockspire.AccessToken.confirmation/1` are the supported readers.
 
-Treat these as protocol facts. Your host app still decides whether the subject can view this tenant, whether the client is allowed for this product area, and whether additional internal policy checks apply.
+```elixir
+subject = Lockspire.AccessToken.subject(access_token)
+scopes = Lockspire.AccessToken.scopes(access_token)
+audiences = Lockspire.AccessToken.audiences(access_token)
+expires_at = Lockspire.AccessToken.expires_at(access_token)
+confirmation = Lockspire.AccessToken.confirmation(access_token)
+```
+
+The readers return `String.t() | nil`, `[String.t()]`, `[String.t()]`, `DateTime.t() | nil`, and an allowlisted confirmation map or `nil`, respectively. `access_token.claims` remains available as raw compatibility and extension data, but route and controller examples should not reimplement claim parsing from it.
+
+Lockspire enforces protocol validity, route scope, audience, and sender constraints. Your host application enforces tenant, object, billing, product, response, and additional rate-limit policy. Those are separate decisions: a valid, correctly scoped token never by itself authorizes a tenant resource.
 
 ## Failure behavior
 

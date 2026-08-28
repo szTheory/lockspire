@@ -1,0 +1,252 @@
+defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
+  @moduledoc """
+  Shared access-token issuance for all Lockspire grant paths.
+
+  Owns the single RFC 9068 `at+jwt` signing site, the opaque-token delegate, and
+  the one-place format decision (per-client override -> server default -> `:jwt`).
+
+  ## Format resolution
+
+  The effective access-token format is resolved in exactly one place
+  (`resolve_format/2`):
+
+    1. a per-client `access_token_format` of `:jwt` or `:opaque` wins;
+    2. otherwise (`nil`) the server-wide `ServerPolicy.access_token_format`
+       supplied through the explicit dependency bundle is used;
+    3. otherwise it falls back to `:jwt`.
+
+  ## Audience derivation
+
+  The four grant paths (authorization-code, refresh, device-code, CIBA) emit a
+  LIST `aud`: the requested resource(s) when present, otherwise `[client_id]`.
+  The RFC 8693 token-exchange path keeps a BARE-STRING `aud == client_id` via
+  `issue_exchange/4`, preserving the historical exchange wire shape.
+
+  ## Security
+
+  The signing `alg`/`kid` are taken ONLY from the active signing key — never from
+  client-controlled input — and `none` is never emitted. On a missing or invalid
+  key the error path logs `inspect(reason)` only: no key material reaches logs.
+  """
+
+  require Logger
+
+  alias Lockspire.Config
+  alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
+  alias Lockspire.Protocol.TokenLifetime
+  alias Lockspire.Protocol.PrivateJwk
+  alias Lockspire.Security.Policy
+
+  # Tokens are signed before their final raw-value hash is known. Persisted
+  # tokens tighten this field to String.t(), but signing deliberately accepts
+  # the pre-persistence shape too.
+  @type token_for_issuance :: %Token{token_hash: String.t() | nil}
+  @type result :: {:ok, String.t(), String.t()} | {:error, struct()}
+
+  @doc """
+  Issue an access token for a standard grant path.
+
+  Resolves the effective format and returns `{:ok, raw, hash}` where
+  `hash == Lockspire.Security.Policy.hash_token(raw)`, or a 500
+  `:token_signing_failed` error when the `:jwt` branch cannot sign.
+
+  The `:jwt` branch emits a LIST `aud` derived from `token.audience`.
+  """
+  @spec issue(token_for_issuance(), Client.t(), map()) :: result()
+  @spec issue(token_for_issuance(), Client.t(), map(), map()) :: result()
+  def issue(%Token{} = token, %Client{} = client, request, %Dependencies{} = dependencies) do
+    _request = request
+    issue_with_dependencies(token, client, dependencies)
+  end
+
+  def issue(%Token{} = token, %Client{} = client, request) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      issue(token, client, request, dependencies)
+    end
+  end
+
+  defp issue_with_dependencies(
+         %Token{} = token,
+         %Client{} = client,
+         %Dependencies{} = dependencies
+       ) do
+    case resolve_format(client, server_policy(dependencies)) do
+      :opaque ->
+        format_opaque()
+
+      :jwt ->
+        aud = derive_aud(token.audience, client.client_id)
+        claims = base_claims(token, client, aud)
+        sign_jwt(claims, dependencies.key_store)
+    end
+  end
+
+  @doc """
+  Issue a signed `at+jwt` access token for the RFC 8693 token-exchange path.
+
+  Always `:jwt`. Emits a BARE-STRING `aud == client.client_id` (the exchange
+  carve-out) and merges `custom_claims` over the base claims after dropping the
+  restricted claims `iss sub aud exp iat jti client_id`.
+  """
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map()) :: result()
+  @spec issue_exchange(token_for_issuance(), Client.t(), map(), map(), map()) ::
+          result()
+  def issue_exchange(
+        %Token{} = token,
+        %Client{} = client,
+        custom_claims,
+        request,
+        %Dependencies{} = dependencies
+      )
+      when is_map(custom_claims) do
+    _request = request
+    issue_exchange_with_dependencies(token, client, custom_claims, dependencies)
+  end
+
+  def issue_exchange(%Token{} = token, %Client{} = client, custom_claims, request)
+      when is_map(custom_claims) do
+    with {:ok, dependencies} <- LegacyOptions.from_request(request) do
+      issue_exchange(token, client, custom_claims, request, dependencies)
+    end
+  end
+
+  defp issue_exchange_with_dependencies(
+         %Token{} = token,
+         %Client{} = client,
+         custom_claims,
+         %Dependencies{} = dependencies
+       )
+       when is_map(custom_claims) do
+    base = base_claims(token, client, client.client_id)
+    safe_custom_claims = Map.drop(custom_claims, ~w(iss sub aud exp iat jti client_id))
+    claims = Map.merge(base, safe_custom_claims)
+    sign_jwt(claims, dependencies.key_store)
+  end
+
+  # --------------------------------------------------------------------------
+  # Format resolution — one place (per-client override -> server default -> :jwt)
+  # --------------------------------------------------------------------------
+
+  @spec resolve_format(Client.t(), ServerPolicy.t() | nil) :: :jwt | :opaque
+  defp resolve_format(%Client{access_token_format: fmt}, _server_policy)
+       when fmt in [:jwt, :opaque],
+       do: fmt
+
+  defp resolve_format(%Client{access_token_format: nil}, %ServerPolicy{
+         access_token_format: server_fmt
+       }),
+       do: server_fmt
+
+  defp resolve_format(%Client{access_token_format: nil}, _server_policy), do: :jwt
+
+  defp server_policy(%Dependencies{server_policy_store: nil}), do: nil
+
+  defp server_policy(%Dependencies{server_policy_store: store}),
+    do: normalize_server_policy(store.get_server_policy())
+
+  defp normalize_server_policy({:ok, %ServerPolicy{} = policy}), do: policy
+  defp normalize_server_policy(%ServerPolicy{} = policy), do: policy
+  defp normalize_server_policy(_other), do: nil
+
+  # --------------------------------------------------------------------------
+  # Audience derivation, including the RFC 8693 carve-out
+  # --------------------------------------------------------------------------
+
+  @spec derive_aud([String.t()], String.t()) :: [String.t()]
+  defp derive_aud([], client_id), do: [client_id]
+  defp derive_aud(audience, _client_id) when is_list(audience), do: audience
+
+  # --------------------------------------------------------------------------
+  # Claim assembly (shared by both callers; aud passed in by the caller so the
+  # list-vs-string carve-out lives at the boundary, not in the signing core)
+  # --------------------------------------------------------------------------
+
+  defp base_claims(%Token{} = token, %Client{} = client, aud) do
+    issued_at = token.issued_at || DateTime.utc_now()
+    iat = DateTime.to_unix(issued_at)
+
+    %{
+      "iss" => Config.issuer!(),
+      "sub" => token.account_id,
+      "aud" => aud,
+      "exp" => iat + TokenLifetime.access_token(),
+      "iat" => iat,
+      "client_id" => client.client_id,
+      "jti" => generate_jti(),
+      "scope" => Enum.join(token.scopes, " ")
+    }
+    |> maybe_put_cnf(token.cnf)
+  end
+
+  defp maybe_put_cnf(claims, nil), do: claims
+  defp maybe_put_cnf(claims, cnf) when is_map(cnf), do: Map.put(claims, "cnf", cnf)
+
+  defp generate_jti, do: TokenFormatter.format_access_token([]).token
+
+  # --------------------------------------------------------------------------
+  # Opaque branch — delegate to TokenFormatter
+  # --------------------------------------------------------------------------
+
+  defp format_opaque do
+    formatted = TokenFormatter.format_access_token([])
+    {:ok, formatted.token, formatted.token_hash}
+  end
+
+  # --------------------------------------------------------------------------
+  # The single JOSE signing site — all :jwt callers funnel through here
+  # --------------------------------------------------------------------------
+
+  defp sign_jwt(claims, key_store) do
+    with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} <-
+           fetch_signing_key(key_store),
+         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk) do
+      {_, compact} =
+        JOSE.JWT.sign(
+          JOSE.JWK.from_map(jwk_map),
+          %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
+          claims
+        )
+        |> JOSE.JWS.compact()
+
+      {:ok, compact, Policy.hash_token(compact)}
+    else
+      {:error, reason} ->
+        Logger.error("Failed to sign access token: #{inspect(reason)}")
+
+        {:error,
+         %Error{
+           status: 500,
+           error: "server_error",
+           error_description: "Unable to sign access token.",
+           reason_code: :token_signing_failed
+         }}
+    end
+  end
+
+  # --------------------------------------------------------------------------
+  # Key fetch + JWK decode (moved from rfc8693_exchange.ex:363-399)
+  # --------------------------------------------------------------------------
+
+  defp fetch_signing_key(key_store) do
+    case key_store.fetch_active_signing_key([]) do
+      {:ok, %{alg: alg, private_jwk_encrypted: private_jwk} = key}
+      when is_binary(private_jwk) and is_binary(alg) ->
+        {:ok, key}
+
+      {:ok, nil} ->
+        {:error, :signing_key_not_found}
+
+      {:ok, _key} ->
+        {:error, :invalid_signing_key}
+
+      {:error, _reason} ->
+        {:error, :signing_key_lookup_failed}
+    end
+  end
+end

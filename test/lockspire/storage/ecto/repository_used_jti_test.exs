@@ -4,6 +4,7 @@ defmodule Lockspire.Storage.Ecto.RepositoryUsedJtiTest do
   @moduletag :integration
 
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.Repository.ReplayStore
   alias Lockspire.Domain.UsedJti
 
   setup_all do
@@ -20,6 +21,17 @@ defmodule Lockspire.Storage.Ecto.RepositoryUsedJtiTest do
   end
 
   describe "record_used_jti/1" do
+    test "the replay-security aggregate retains JTI unique conflict classification" do
+      used_jti = %UsedJti{
+        client_id: "aggregate-client",
+        jti: "aggregate-jti",
+        expires_at: DateTime.add(DateTime.utc_now(), 3600, :second)
+      }
+
+      assert {:ok, :accepted} = ReplayStore.record_used_jti(Lockspire.TestRepo, used_jti)
+      assert {:ok, :replay} = Repository.record_used_jti(used_jti)
+    end
+
     test "records a new JTI successfully" do
       jti = %UsedJti{
         client_id: "client-123",
