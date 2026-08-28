@@ -64,8 +64,11 @@ jobs:
       - name: Lint workflows and maintained shell scripts
         run: bash ./scripts/ci/lint_workflows.sh
 
-      - name: Audit Release Please runtime dependencies
-        run: npm audit --omit=dev --audit-level=moderate --prefix .github/actions/release-please/runtime
+      - name: Verify and audit Release Please runtime dependencies
+        run: |
+          npm ci --prefix .github/actions/release-please/runtime --ignore-scripts
+          npm audit --omit=dev --audit-level=moderate --prefix .github/actions/release-please/runtime
+          node --input-type=module --eval 'await import("./.github/actions/release-please/runtime/index.js")'
 
       - name: Verify dependency setup did not rewrite locks
         run: git diff --exit-code -- mix.lock examples/adoption_demo/mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock .github/actions/release-please/runtime/package-lock.json

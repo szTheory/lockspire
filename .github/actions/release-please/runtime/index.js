@@ -1,7 +1,6 @@
-"use strict";
-
-const core = require("@actions/core");
-const {GitHub, Manifest, VERSION} = require("release-please");
+import * as core from "@actions/core";
+import {pathToFileURL} from "node:url";
+import {GitHub, Manifest, VERSION} from "release-please";
 
 const DEFAULT_GITHUB_API_URL = "https://api.github.com";
 const DEFAULT_GITHUB_GRAPHQL_URL = "https://api.github.com";
@@ -163,6 +162,10 @@ async function main() {
   }
 }
 
-main().catch(error => {
-  core.setFailed(`release-please failed: ${error.message}`);
-});
+const invokedPath = process.argv[1];
+
+if (invokedPath && import.meta.url === pathToFileURL(invokedPath).href) {
+  main().catch(error => {
+    core.setFailed(`release-please failed: ${error.message}`);
+  });
+}
