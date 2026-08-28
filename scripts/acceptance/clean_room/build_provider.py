@@ -16,13 +16,13 @@ import sys
 import tempfile
 import time
 import urllib.request
-import uuid
 
 from package_input import (
     PROJECT_ROOT,
     PackageInputError,
     assert_below,
     build_package,
+    clean_room_database_url,
     copy_child_template,
     inventory,
     locked_environment,
@@ -304,8 +304,7 @@ def assert_live_discovery(child: Path, environment: dict[str, str], issuer: str)
 
 def self_test() -> None:
     port = allocate_port()
-    database_name = f"lockspire_clean_room_provider_{uuid.uuid4().hex}"
-    database_url = f"postgres://postgres:postgres@127.0.0.1/{database_name}"
+    database_url = clean_room_database_url("provider")
     issuer = f"http://127.0.0.1:{port}/lockspire"
 
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-provider-") as temporary:

@@ -33,6 +33,7 @@ from build_client import patch_jose_record_extractors
 from build_provider import prepare_provider, run_child_command
 from package_input import (
     PackageInputError,
+    clean_room_database_url,
     copy_child_template,
     locked_environment,
     package_source,
@@ -272,14 +273,6 @@ def configure_origins() -> tuple[int, int]:
     PROVIDER_ORIGIN = f"http://127.0.0.1:{provider_port}"
     CLIENT_ORIGIN = f"http://127.0.0.1:{client_port}"
     return provider_port, client_port
-
-
-def clean_room_database_url(role: str) -> str:
-    user = os.environ.get("CLEAN_ROOM_DB_USER", "postgres")
-    password = os.environ.get("CLEAN_ROOM_DB_PASSWORD", "postgres")
-    host = os.environ.get("CLEAN_ROOM_DB_HOST", "127.0.0.1")
-    port = os.environ.get("CLEAN_ROOM_DB_PORT", "5432")
-    return f"postgres://{user}:{password}@{host}:{port}/lockspire_clean_room_{role}_{uuid.uuid4().hex}"
 
 
 def verify_concurrent_real_journeys() -> int:

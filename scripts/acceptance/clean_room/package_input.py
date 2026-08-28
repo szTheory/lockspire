@@ -15,6 +15,8 @@ import subprocess
 import sys
 import tempfile
 from typing import Iterable, Sequence
+from urllib.parse import quote
+import uuid
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -81,6 +83,19 @@ def probe_environment() -> None:
             listener.bind(("127.0.0.1", 0))
     except OSError as error:
         raise PackageInputError("loopback listener allocation is unavailable") from error
+
+
+def clean_room_database_url(role: str) -> str:
+    """Return an isolated database URL using the same explicit CI/local seam as the probe."""
+    if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", role):
+        raise PackageInputError("invalid clean-room database role")
+
+    user = quote(os.environ.get("CLEAN_ROOM_DB_USER", "postgres"), safe="")
+    password = quote(os.environ.get("CLEAN_ROOM_DB_PASSWORD", "postgres"), safe="")
+    host = os.environ.get("CLEAN_ROOM_DB_HOST", "127.0.0.1")
+    port = os.environ.get("CLEAN_ROOM_DB_PORT", "5432")
+    database = f"lockspire_clean_room_{role}_{uuid.uuid4().hex}"
+    return f"postgres://{user}:{password}@{host}:{port}/{database}"
 
 
 def run(command: Sequence[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:

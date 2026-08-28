@@ -23,6 +23,9 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
     assert journey =~ "package_root=package_root"
     assert journey =~ "client_port, package_root"
     assert provider =~ "package_root: Path | None = None"
+    assert input =~ "def clean_room_database_url(role: str)"
+    assert provider =~ ~s|database_url = clean_room_database_url("provider")|
+    refute provider =~ "postgres://postgres:postgres@127.0.0.1"
   end
 
   test "tar and Hex version arguments are exact, exclusive, and available through the real journey" do

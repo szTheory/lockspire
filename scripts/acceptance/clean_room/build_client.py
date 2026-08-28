@@ -12,9 +12,8 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import uuid
 
-from package_input import PackageInputError, build_package, copy_child_template, locked_environment, probe_environment, verify_child
+from package_input import PackageInputError, build_package, clean_room_database_url, copy_child_template, locked_environment, probe_environment, verify_child
 from build_provider import patch_jose_record_extractors
 
 
@@ -32,9 +31,8 @@ def exercise(test_name: str) -> None:
         root = Path(temporary)
         package, _ = build_package(root)
         child = copy_child_template("confidential_client", root, package)
-        database = f"lockspire_clean_room_client_{uuid.uuid4().hex}"
         environment = locked_environment(child, "confidential_client", root / "deps-cache")
-        environment.update({"DATABASE_URL": f"postgres://postgres:postgres@127.0.0.1/{database}"})
+        environment.update({"DATABASE_URL": clean_room_database_url("client")})
         verify_child("confidential_client", child, root / "deps-cache", {"DATABASE_URL": environment["DATABASE_URL"]})
         # The pinned clean-room graph uses JOSE 1.11.12.  Apply the same
         # fail-closed child-local Elixir 1.19 compatibility patch proven for

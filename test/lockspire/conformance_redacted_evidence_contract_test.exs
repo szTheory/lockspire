@@ -5,6 +5,7 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
   @fapi2 Path.expand("../../scripts/conformance/run_fapi2_suite.sh", __DIR__)
   @profile Path.expand("../../scripts/conformance/run_oidf_profile.sh", __DIR__)
   @evidence Path.expand("../../scripts/conformance/build_redacted_evidence.py", __DIR__)
+  @diagnostics Path.expand("../../scripts/conformance/summarize_oidf_failure.py", __DIR__)
 
   test "both profiles use the verified preparation and allowlisted evidence boundary" do
     for runner <- [@phase37, @fapi2] do
@@ -25,7 +26,31 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
     assert profile =~ "integration_only"
     assert profile =~ "suite_failure"
     assert profile =~ "suite-output.log"
+    assert profile =~ "summarize_oidf_failure.py"
+    assert profile =~ "chown -R"
     refute profile =~ "cp -R"
+  end
+
+  test "failure diagnostics retain only module outcomes and condition identifiers" do
+    fixture =
+      Path.join(System.tmp_dir!(), "lockspire-oidf-diagnostics-#{System.unique_integer()}")
+
+    File.write!(fixture, """
+    Test [0:1] oidcc-prompt-none-not-logged-in abcdef12-abcd FINISHED - result FAILED. 20 log entries
+    Block name: 'Authorization endpoint response' - Condition: 'OIDCCEnsureErrorResponse'
+    Overall totals: ran 1 test modules. Conditions: 19 successes, 1 failures, 0 warnings.
+    authorization: Bearer must-never-appear
+    https://provider.example.invalid/private
+    """)
+
+    on_exit(fn -> File.rm(fixture) end)
+
+    assert {output, 0} = System.cmd("python3", [@diagnostics, fixture])
+    assert output =~ "OIDF_SAFE_DIAGNOSTICS"
+    assert output =~ "oidcc-prompt-none-not-logged-in"
+    assert output =~ "OIDCCEnsureErrorResponse"
+    refute output =~ "must-never-appear"
+    refute output =~ "provider.example.invalid"
   end
 
   test "evidence builder records only bounded receipt fields and refuses secrets or raw paths" do

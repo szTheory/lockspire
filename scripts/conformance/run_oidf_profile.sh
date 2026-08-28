@@ -8,6 +8,7 @@ PREPARE="${ROOT_DIR}/scripts/conformance/prepare_oidf_suite.sh"
 EVIDENCE="${ROOT_DIR}/scripts/conformance/build_redacted_evidence.py"
 LOCK="${ROOT_DIR}/scripts/conformance/oidf-suite-lock.json"
 INVOKE="${ROOT_DIR}/scripts/conformance/invoke_oidf_plan.py"
+DIAGNOSTICS="${ROOT_DIR}/scripts/conformance/summarize_oidf_failure.py"
 
 [[ $# -eq 8 ]] || { echo "invalid profile invocation" >&2; exit 64; }
 [[ "$1" == "--profile" && "$3" == "--plan" && "$5" == "--artifact-dir" && "$7" == "--skip-suite" ]] || exit 64
@@ -41,6 +42,8 @@ finish() {
     classification="success"
   fi
   if [[ -n "$compose_file" ]]; then
+    "$compose_command" compose -f "$compose_file" exec -T --user root mongodb \
+      sh -c "chown -R $(id -u):$(id -g) /data/db" >/dev/null 2>&1 || true
     "$compose_command" compose -f "$compose_file" down -v >/dev/null 2>&1 || true
   fi
   evidence_exit=0
@@ -104,6 +107,7 @@ python3 "$INVOKE" \
 suite_exit=$?
 set -e
 if [[ $suite_exit -ne 0 ]]; then
+  python3 "$DIAGNOSTICS" "$work_dir/raw/suite-output.log" >&2 || true
   if [[ $suite_exit -eq 70 ]]; then
     classification="infrastructure_failure"
     echo "OIDF suite runner setup failed; raw output remains ephemeral" >&2
