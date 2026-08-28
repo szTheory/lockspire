@@ -100,6 +100,7 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     assert runner =~ "ephemeral conformance output must not already exist"
     assert runner =~ ~s(demo_db_name="${LOCKSPIRE_TEST_DB_NAME:-lockspire_test}_${profile}_oidf")
     assert runner =~ "MIX_ENV=dev mix ecto.drop"
+    assert runner =~ ~s([[ -s "$provider_config" ]] && curl --fail)
     assert runner =~ "exec env MIX_ENV=dev mix phx.server"
     assert runner =~ "rm -rf \"$work_dir\""
     refute runner =~ "cat \"$host_log\""

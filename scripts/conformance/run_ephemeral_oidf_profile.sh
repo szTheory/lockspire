@@ -99,7 +99,7 @@ export BASE_URL=https://nginx:8443
 host_pid=$!
 
 for _attempt in $(seq 1 60); do
-  if curl --fail --silent --show-error \
+  if [[ -s "$provider_config" ]] && curl --fail --silent --show-error \
     http://127.0.0.1:4100/lockspire/.well-known/openid-configuration \
     >/dev/null 2>&1; then
     "$profile_runner"
