@@ -77,7 +77,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 export LOCKSPIRE_DEMO_BIND_IP=0.0.0.0
-export LOCKSPIRE_DEMO_BASE_URL=http://host.docker.internal:4100
+export LOCKSPIRE_DEMO_BASE_URL=https://nginx:8443
 export LOCKSPIRE_DEMO_SIGNING_ALG="$signing_alg"
 export LOCKSPIRE_DEMO_DB_HOST="${LOCKSPIRE_TEST_DB_HOST:-127.0.0.1}"
 export LOCKSPIRE_DEMO_DB_PORT="${LOCKSPIRE_TEST_DB_PORT:-5432}"

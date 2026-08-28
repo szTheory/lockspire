@@ -136,6 +136,16 @@ def normalize_compose(lock, source, destination):
         + '\n    extra_hosts:\n     - "host.docker.internal:host-gateway"',
     )
 
+    nginx_image = f"  nginx:\n    image: {lock['images']['nginx']['repository']}@{lock['images']['nginx']['digest']}"
+    if content.count(nginx_image) != 1:
+        fail("unexpected nginx service")
+    content = content.replace(
+        nginx_image,
+        nginx_image
+        + '\n    extra_hosts:\n     - "host.docker.internal:host-gateway"'
+        + '\n    volumes:\n     - ./nginx/lockspire.conf:/etc/nginx/nginx.conf:ro',
+    )
+
     if "latest" in content or "master" in content or "${IMAGE_TAG" in content:
         fail("mutable reference")
     destination_path.parent.mkdir(parents=True, exist_ok=True)

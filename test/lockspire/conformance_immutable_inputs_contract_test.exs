@@ -4,6 +4,10 @@ defmodule Lockspire.ConformanceImmutableInputsContractTest do
   @lock Path.expand("../../scripts/conformance/oidf-suite-lock.json", __DIR__)
   @validator Path.expand("../../scripts/conformance/oidf_inputs.py", __DIR__)
   @prepare Path.expand("../../scripts/conformance/prepare_oidf_suite.sh", __DIR__)
+  @proxy_builder Path.expand(
+                   "../../scripts/conformance/build_oidf_proxy_config.py",
+                   __DIR__
+                 )
 
   test "immutable OIDF lock has the exact suite identity, checksums, and image digests" do
     lock = File.read!(@lock)
@@ -43,5 +47,16 @@ defmodule Lockspire.ConformanceImmutableInputsContractTest do
 
     assert validator =~ "host.docker.internal:host-gateway"
     assert validator =~ "extra_hosts"
+    assert validator =~ "./nginx/lockspire.conf:/etc/nginx/nginx.conf:ro"
+  end
+
+  test "derived TLS proxy preserves suite routes and forwards only provider paths" do
+    builder = File.read!(@proxy_builder)
+
+    assert builder =~ "proxy_pass http://host.docker.internal:4100"
+    assert builder =~ "lockspire"
+    assert builder =~ "api/billing/summary"
+    assert builder =~ "proxy_pass http://server:8080"
+    assert builder =~ "content.count(DEFAULT_LOCATION) != 3"
   end
 end

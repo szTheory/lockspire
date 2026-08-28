@@ -49,13 +49,17 @@ PY
 python3 "$VALIDATOR" --lock "$LOCK_PATH" --verify-downloads "$download_dir"
 python3 "$VALIDATOR" --lock "$LOCK_PATH" --normalize-compose \
   "$download_dir/docker-compose-prebuilt.yml" "$output_dir/docker-compose.locked.yml"
-mkdir -m 700 -p "$output_dir/mongo/data"
+mkdir -m 700 "$output_dir/mongo"
+mkdir -m 700 "$output_dir/mongo/data"
 
 suite_commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["suite"]["commit"])' "$LOCK_PATH")
 python3 "${ROOT_DIR}/scripts/conformance/extract_oidf_suite.py" \
   --archive "$download_dir/conformance-suite.tar.gz" \
   --commit "$suite_commit" \
   --output "$output_dir/suite"
+python3 "${ROOT_DIR}/scripts/conformance/build_oidf_proxy_config.py" \
+  --source "$output_dir/suite/nginx/nginx.conf" \
+  --output "$output_dir/nginx/lockspire.conf"
 
 for helper in scripts/run-test-plan.py scripts/conformance.py scripts/test_plan_parser.py; do
   cmp -s "$download_dir/$helper" "$output_dir/suite/$helper" || {

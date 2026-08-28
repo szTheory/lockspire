@@ -36,7 +36,9 @@ defmodule Lockspire.ConformanceRedactedEvidenceContractTest do
     preparation =
       File.read!(Path.expand("../../scripts/conformance/prepare_oidf_suite.sh", __DIR__))
 
-    assert preparation =~ ~s(mkdir -m 700 -p "$output_dir/mongo/data")
+    assert preparation =~ ~s(mkdir -m 700 "$output_dir/mongo")
+    assert preparation =~ ~s(mkdir -m 700 "$output_dir/mongo/data")
+    assert preparation =~ "build_oidf_proxy_config.py"
   end
 
   test "failure diagnostics retain only module outcomes and condition identifiers" do

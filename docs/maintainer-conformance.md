@@ -57,10 +57,12 @@ The explicit database acknowledgement prevents the wrapper from resetting or
 seeding a normal developer database by accident. The wrapper boots the Billingo
 adoption app on a disposable database, binds it only for the duration of the
 run, generates client keys and provider JSON inside a mode-700 temporary
-directory, and deletes the directory and private host log on exit. The suite's
-server container reaches the host through Docker's explicit
-`host.docker.internal:host-gateway` mapping. No generated key or provider JSON
-is a repository or Actions secret.
+directory, and deletes the directory and private host log on exit. The pinned
+suite nginx container terminates disposable TLS for the provider and forwards
+only the demo's OAuth, login, and protected-resource paths through Docker's
+explicit `host.docker.internal:host-gateway` mapping. The suite keeps ownership
+of its `/test` routes. No generated key, certificate, or provider JSON is a
+repository or Actions secret.
 
 For a hosted provider, the private JSON file supplies the provider discovery
 URL, client material, and any browser automation needed by that environment;

@@ -98,7 +98,7 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     assert runner =~ "conformance_seeds.exs"
     assert runner =~ "LOCKSPIRE_OIDF_PROVIDER_CONFIG"
     assert runner =~ "LOCKSPIRE_DEMO_BIND_IP=0.0.0.0"
-    assert runner =~ "LOCKSPIRE_DEMO_BASE_URL=http://host.docker.internal:4100"
+    assert runner =~ "LOCKSPIRE_DEMO_BASE_URL=https://nginx:8443"
     assert runner =~ "ephemeral conformance output must not already exist"
     assert runner =~ ~s(demo_db_name="${LOCKSPIRE_TEST_DB_NAME:-lockspire_test}_${profile}_oidf")
     assert runner =~ "MIX_ENV=dev mix ecto.drop"
@@ -112,6 +112,8 @@ defmodule Lockspire.ConformanceWorkflowContractTest do
     assert seed =~ "registration_policy: :open"
     assert seed =~ "security_profile: :fapi_2_0_security"
     assert seed =~ "token_endpoint_auth_method: :private_key_jwt"
+    assert seed =~ ~s("alg" => "PS256")
+    assert seed =~ ~s("use" => "sig")
     assert seed =~ "https://nginx:8443/test/a/lockspire-fapi2/callback"
     assert fapi_plan =~ ~s("openid": "openid_connect")
 

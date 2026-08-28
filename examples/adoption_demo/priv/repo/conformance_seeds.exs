@@ -96,7 +96,14 @@ register_fapi_client = fn client_id ->
       metadata: %{"ephemeral" => true}
     })
 
-  %{client_id: client.client_id, private_jwk: Map.put(private_jwk, "kid", client_id)}
+  private_jwk =
+    Map.merge(private_jwk, %{
+      "alg" => "PS256",
+      "kid" => client_id,
+      "use" => "sig"
+    })
+
+  %{client_id: client.client_id, private_jwk: private_jwk}
 end
 
 provider_client = fn %{client_id: client_id, private_jwk: private_jwk} ->
