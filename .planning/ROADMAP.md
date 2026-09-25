@@ -9,7 +9,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Phases
 
-- [ ] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies.
+- [x] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies. (completed 2026-09-25)
 - [x] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls. (completed 2026-09-25)
 - [ ] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work.
 - [ ] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train.
@@ -28,7 +28,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue.
   4. A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory.
 
-**Plans**: 37/38 plans executed; phase verification remains open (G-138-98)
+**Plans**: 38/38 plans executed; Phase 138 verification passed (G-138-98 closed)
 
 Plans:
 
@@ -38,7 +38,7 @@ Plans:
 
 **Wave 38** *(gap closure; blocked on 138-37; includes maintainer review checkpoint)*
 
-- [ ] 138-38-PLAN.md — Resolve every remaining claim and enforce a zero-pending closure gate.
+- [x] 138-38-PLAN.md — Resolve every remaining claim and enforce a zero-pending closure gate.
 
 **Wave 35** *(gap closure)*
 
@@ -72,7 +72,7 @@ Required Phase 138 gap handoff:
 
 `$gsd-execute-phase 138 --gaps-only --interactive`
 
-This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific evidence and a separate resolution state for the 108 prohibition claims; Plan 38 pauses for explicit maintainer outcomes and then enforces a zero-pending closure gate. Any unresolved claim keeps G-138-98 open. The earlier Waves 30–36 are complete and are not rerun by `--gaps-only`.
+This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific evidence and a separate resolution state for the 108 prohibition claims; Plan 38 records explicit delegated maintainer outcomes and enforces a zero-pending closure gate. All 108 outcomes are complete and the phase verification passed. The earlier Waves 30–36 were not rerun by `--gaps-only`.
 
 - [x] 138-26-PLAN.md
 - [x] 138-27-PLAN.md
@@ -218,7 +218,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 138. Baseline Inventory & Evidence Taxonomy | 37/38 | In Progress|  |
+| 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 9/9 | In Progress|  |
 | 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |

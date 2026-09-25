@@ -1,12 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 \u2014 Repository Baseline & Reconciliation",
+  "milestone": "v1.38 — Repository Baseline & Reconciliation",
   "phases": [
     {
       "number": "138",
       "name": "Baseline Inventory & Evidence Taxonomy",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "139",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:execute-phase 138 --gaps-only --interactive",
-    "label": "Resolve the remaining prohibition claim reviews",
-    "reason": "Plan 138-38 requires explicit maintainer outcomes for 98 pending claims before G-138-98 can close"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 139)",
+    "reason": "Phase 139 of 4 — needs a plan"
   },
-  "updated_at": "2026-09-25T21:11:48.947Z"
+  "updated_at": "2026-09-25T21:45:26.805Z"
 }

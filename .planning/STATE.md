@@ -2,20 +2,21 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
-current_phase: 138
-current_phase_name: Baseline Inventory & Evidence Taxonomy
-current_plan: 38
-status: Verification gaps remain (G-138-98)
-stopped_at: Phase 138 Plan 138-37 complete; Plan 138-38 awaits maintainer review at its blocking checkpoint
-last_updated: "2026-09-25T21:11:55.751Z"
+current_phase: 139
+current_phase_name: Required Truth Reconciliation
+current_plan: Not started
+status: planning
+stopped_at: Phase 138 complete, ready to plan Phase 139
+last_updated: "2026-09-25T21:45:26.788Z"
 last_activity: 2026-09-25
-state_head: 6d754f8322fec84ef4955257ebf6d59f29ce88a7
+last_activity_desc: Phase 138 complete, transitioned to Phase 139
+state_head: fe056b740a60c8a4e49ce8faf1bfdc943a3e9126
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 2
   total_plans: 47
-  completed_plans: 46
-last_activity_desc: Executed Phase 138 Plan 138-37; 98 claim reviews remain
+  completed_plans: 47
+  percent: 25
 ---
 
 # Project State
@@ -26,18 +27,18 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 138 — Baseline Inventory & Evidence Taxonomy
+**Current focus:** Phase 140 — Bounded Operational Loose-End Triage
 
 ## Current Position
 
-Phase: 138 (Baseline Inventory & Evidence Taxonomy) — READY TO EXECUTE
-Current Plan: 38
-Total Plans in Phase: 38
-Plan: Gap closure plan 138-37 complete; plan 138-38 awaits maintainer review
-Status: Verification gaps remain (G-138-98)
-Last activity: 2026-09-25
+Phase: 139 — Required Truth Reconciliation
+Current Plan: Not started
+Total Plans in Phase: not planned; exact-SHA receipt required before planning
+Plan: Phase 138 verified; Phase 140 must refresh and validate exact-SHA acceptance before planning or action
+Status: Ready to plan
+Last activity: 2026-09-25 — Phase 138 complete, transitioned to Phase 139
 
-Progress: [█████░░░░░] 50%
+Progress: [███░░░░░░░] 25%
 
 ## Accumulated Context
 
@@ -172,7 +173,7 @@ Progress: [█████░░░░░] 50%
 ## Session Continuity
 
 Last session: 2026-09-25T21:11:55.718Z
-Stopped at: Phase 138 Plan 138-37 complete; Plan 138-38 awaits maintainer review
+Stopped at: Phase 138 complete, ready to plan Phase 139
 Resume file: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-38-PLAN.md
 Resume instruction: User prefers automatically following recommended GSD options; pause for destructive, one-way, or explicitly approval-gated choices.
 
@@ -225,3 +226,4 @@ The original 36 Phase 138 plans and all nine Phase 139 plans have summaries. Pha
 | Phase 138 P34 | 53 min | 3 tasks | 12 files |
 | Phase 139 P08 | 32min | 2 tasks | 6 files |
 | Phase 138 P37 | 17 min | 3 tasks | 5 files |
+| Phase 138 P38 | 8 min | 2 tasks | 3 files |
