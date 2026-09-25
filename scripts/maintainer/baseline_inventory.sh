@@ -2786,28 +2786,34 @@ validate_phase_139_completion_roadmap() {
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   [[ "$(git show "$parent:$path" | grep -Ec '^- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$')" -eq 1 ]] || return 1
-  [[ "$(git show "$parent:$path" | grep -Ec '^\| 139\. Required Truth Reconciliation \| 7/7 \| In Progress\|[[:space:]]*\|$')" -eq 1 ]] || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^\| 139\. Required Truth Reconciliation \| 7/7 \| Complete[[:space:]]+\| [0-9]{4}-[0-9]{2}-[0-9]{2} \|$')" -eq 1 ]] || return 1
+  [[ "$(git show "$parent:$path" | grep -Ec '^[|] 139\. Required Truth Reconciliation [|] 9/9 [|] In Progress[|][[:space:]]*[|]$')" -eq 1 ]] || return 1
+  [[ "$(git show "$commit:$path" | grep -Ec '^[|] 139\. Required Truth Reconciliation [|] 9/9 [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]$')" -eq 1 ]] || return 1
   [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq 2 && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq 2 ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
-    '^-\- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*|^-\| 139\. Required Truth Reconciliation \| [0-9]+/[0-9]+ \| In Progress\|' \
-    '^\+\- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$|^\+\| 139\. Required Truth Reconciliation \| [0-9]+/[0-9]+ \| Complete[[:space:]]+\| [0-9]{4}-[0-9]{2}-[0-9]{2} \|'
+    '^-\- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*|^-[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] In Progress[|]' \
+    '^\+- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$|^\+[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]'
 }
 
 validate_phase_139_completion_requirements() {
   local commit="$1" path="$2" parent ids id
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
-  ids='CI-06 CI-07 CI-08 QUAL-05 HYGIENE-05 HYGIENE-06 TRUTH-03 TRUTH-04 TRUTH-05'
+  ids='CI-08 QUAL-05 HYGIENE-05 HYGIENE-06 TRUTH-03 TRUTH-04 TRUTH-05'
   for id in $ids; do
     [[ "$(git show "$parent:$path" | grep -Ec "^- \\[ \\] \\*\\*${id}\\*\\*:")" -eq 1 ]] || return 1
     [[ "$(git show "$commit:$path" | grep -Ec "^- \\[x\\] \\*\\*${id}\\*\\*:")" -eq 1 ]] || return 1
-    [[ "$(git show "$parent:$path" | grep -Ec "^\\| ${id} \\| Phase 139 \\| Pending \\|$")" -eq 1 ]] || return 1
-    [[ "$(git show "$commit:$path" | grep -Ec "^\\| ${id} \\| Phase 139 \\| Complete \\|$")" -eq 1 ]] || return 1
+    [[ "$(git show "$parent:$path" | grep -Ec "^[|] ${id} [|] Phase 139 [|] Pending [|]$")" -eq 1 ]] || return 1
+    [[ "$(git show "$commit:$path" | grep -Ec "^[|] ${id} [|] Phase 139 [|] Complete [|]$")" -eq 1 ]] || return 1
   done
-  [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq 18 && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq 18 ]] || return 1
+  for id in CI-06 CI-07; do
+    [[ "$(git show "$parent:$path" | grep -Ec "^- \\[ \\] \\*\\*${id}\\*\\*:")" -eq 1 ]] || return 1
+    [[ "$(git show "$commit:$path" | grep -Ec "^- \\[ \\] \\*\\*${id}\\*\\*:")" -eq 1 ]] || return 1
+    [[ "$(git show "$parent:$path" | grep -Ec "^[|] ${id} [|] Phase 140 [|] Pending [|]$")" -eq 1 ]] || return 1
+    [[ "$(git show "$commit:$path" | grep -Ec "^[|] ${id} [|] Phase 140 [|] Pending [|]$")" -eq 1 ]] || return 1
+  done
+  [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq 14 && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq 14 ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
-    '^-\- \[ \] \*\*(CI-06|CI-07|CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05)\*\*:|^-\| (CI-06|CI-07|CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05) \| Phase 139 \| Pending \|' \
-    '^\+\- \[x\] \*\*(CI-06|CI-07|CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05)\*\*:|^\+\| (CI-06|CI-07|CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05) \| Phase 139 \| Complete \|'
+    '^-- \[ \] \*\*(CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05)\*\*:|^-[|] (CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05) [|] Phase 139 [|] Pending [|]' \
+    '^\+- \[x\] \*\*(CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05)\*\*:|^\+[|] (CI-08|QUAL-05|HYGIENE-05|HYGIENE-06|TRUTH-03|TRUTH-04|TRUTH-05) [|] Phase 139 [|] Complete [|]'
 }
 
 worktree_path_diff_lines_match() {

@@ -2832,7 +2832,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         {"completion-roadmap-forged-count",
          fn repository ->
            path = Path.join(repository, ".planning/ROADMAP.md")
-           File.write!(path, File.read!(path) |> String.replace("7/7", "99/99"))
+           File.write!(path, File.read!(path) |> String.replace("9/9", "99/99"))
          end, fn _repository -> :ok end},
         {"completion-forged-state-count",
          fn repository ->
@@ -2840,7 +2840,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
            File.write!(
              path,
-             File.read!(path) |> String.replace("completed_plans: 40", "completed_plans: 99")
+             File.read!(path) |> String.replace("completed_plans: 43", "completed_plans: 99")
            )
          end, fn _repository -> :ok end},
         {"completion-duplicate-valid-progress-row",
@@ -3938,13 +3938,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     write_repo_file!(
       repository,
       ".planning/STATE.md",
-      "---\ncurrent_phase: #{@next_phase_number}\ncurrent_phase_name: Required Truth Reconciliation\nstatus: verifying\nstopped_at: Completed #{@next_phase_number}-07-PLAN.md\nlast_updated: \"2026-09-12T00:40:28.686Z\"\nlast_activity_desc: #{@next_phase_label} execution started\nstate_head: prior\nprogress:\n  total_phases: 4\n  completed_phases: 1\n  total_plans: 40\n  completed_plans: 40\n  percent: 25\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@next_phase_number}\nPlan: 7 of 7\nStatus: Phase complete — ready for verification\nLast activity: 2026-09-11 — #{@next_phase_label} execution started\nProgress: [███░░░░░░░] 25%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: Completed #{@next_phase_number}-07-PLAN.md\n"
+      "---\ncurrent_phase: #{@next_phase_number}\ncurrent_phase_name: Required Truth Reconciliation\nstatus: verifying\nstopped_at: Completed #{@next_phase_number}-09-PLAN.md\nlast_updated: \"2026-09-12T00:40:28.686Z\"\nlast_activity_desc: #{@next_phase_label} execution started\nstate_head: prior\nprogress:\n  total_phases: 4\n  completed_phases: 1\n  total_plans: 43\n  completed_plans: 43\n  percent: 25\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@next_phase_number}\nPlan: 9 of 9\nStatus: Phase complete — ready for verification\nLast activity: 2026-09-11 — #{@next_phase_label} execution started\nProgress: [███░░░░░░░] 25%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: Completed #{@next_phase_number}-09-PLAN.md\n"
     )
 
     write_repo_file!(
       repository,
       ".planning/ROADMAP.md",
-      "# Lockspire Roadmap\n## Phases\n- [ ] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth.\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 7/7 | In Progress|  |\n"
+      "# Lockspire Roadmap\n## Phases\n- [ ] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth.\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 9/9 | In Progress|  |\n"
     )
 
     write_repo_file!(
@@ -4332,13 +4332,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     write_repo_file!(
       repository,
       ".planning/STATE.md",
-      "---\ncurrent_phase: #{@action_phase_number}\ncurrent_phase_name: Bounded Operational Loose-End Triage\nstatus: planning\nstopped_at: #{@next_phase_label} complete, ready to plan #{@action_phase_label}\nlast_updated: \"2026-09-12T01:00:00.000Z\"\nlast_activity_desc: #{@next_phase_label} complete, transitioned to #{@action_phase_label}\nstate_head: #{parent}\nprogress:\n  total_phases: 4\n  completed_phases: 2\n  total_plans: 40\n  completed_plans: 40\n  percent: 50\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@action_phase_number}\nPlan: Not started\nStatus: Ready to plan\nLast activity: 2026-09-12 — #{@next_phase_label} complete, transitioned to #{@action_phase_label}\nProgress: [█████░░░░░] 50%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: #{@next_phase_label} complete, ready to plan #{@action_phase_label}\n"
+      "---\ncurrent_phase: #{@action_phase_number}\ncurrent_phase_name: Bounded Operational Loose-End Triage\nstatus: planning\nstopped_at: #{@next_phase_label} complete, ready to plan #{@action_phase_label}\nlast_updated: \"2026-09-12T01:00:00.000Z\"\nlast_activity_desc: #{@next_phase_label} complete, transitioned to #{@action_phase_label}\nstate_head: #{parent}\nprogress:\n  total_phases: 4\n  completed_phases: 2\n  total_plans: 43\n  completed_plans: 43\n  percent: 50\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@action_phase_number}\nPlan: Not started\nStatus: Ready to plan\nLast activity: 2026-09-12 — #{@next_phase_label} complete, transitioned to #{@action_phase_label}\nProgress: [█████░░░░░] 50%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: #{@next_phase_label} complete, ready to plan #{@action_phase_label}\n"
     )
 
     write_repo_file!(
       repository,
       ".planning/ROADMAP.md",
-      "# Lockspire Roadmap\n## Phases\n- [x] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth. (completed 2026-09-12)\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 7/7 | Complete    | 2026-09-12 |\n"
+      "# Lockspire Roadmap\n## Phases\n- [x] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth. (completed 2026-09-12)\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 9/9 | Complete    | 2026-09-12 |\n"
     )
 
     write_repo_file!(
@@ -4376,13 +4376,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   end
 
   defp phase_139_requirements_fixture(status) do
+    phase_139_ids = ~w(CI-08 QUAL-05 HYGIENE-05 HYGIENE-06 TRUTH-03 TRUTH-04 TRUTH-05)
+    phase_140_ids = ~w(CI-06 CI-07)
     checked = if status == "Complete", do: "x", else: " "
-    ids = ~w(CI-06 CI-07 CI-08 QUAL-05 HYGIENE-05 HYGIENE-06 TRUTH-03 TRUTH-04 TRUTH-05)
 
     "# Requirements\n" <>
-      Enum.map_join(ids, "", &"- [#{checked}] **#{&1}**: #{@next_phase_label} requirement.\n") <>
+      Enum.map_join(phase_140_ids, "", &"- [ ] **#{&1}**: Phase 140 requirement.\n") <>
+      Enum.map_join(phase_139_ids, "", &"- [#{checked}] **#{&1}**: Phase 139 requirement.\n") <>
       "\n| Requirement | Phase | Status |\n|-------------|-------|--------|\n" <>
-      Enum.map_join(ids, "", &"| #{&1} | #{@next_phase_label} | #{status} |\n")
+      Enum.map_join(phase_140_ids, "", &"| #{&1} | Phase 140 | Pending |\n") <>
+      Enum.map_join(phase_139_ids, "", &"| #{&1} | Phase 139 | #{status} |\n")
   end
 
   defp build_live_source_snapshot_repository!(repository, ledger, scope) do
