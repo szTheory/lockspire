@@ -10,7 +10,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 ## Phases
 
 - [x] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies. (completed 2026-09-11)
-- [ ] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls.
+- [x] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls. (completed 2026-09-25)
 - [ ] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work.
 - [ ] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train.
 

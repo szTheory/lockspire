@@ -24,19 +24,19 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 - [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA.
 - [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files.
-- [ ] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
+- [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
 
-- [ ] **QUAL-05**: Maintainer can run `mix ci` from the reconciled baseline with all checks passing.
-- [ ] **HYGIENE-05**: Maintainer can run the repository hygiene check with no unresolved `BLOCK` result and an explicit disposition for every `WARN`.
-- [ ] **HYGIENE-06**: Maintainer can add or tighten a deterministic repository-health check only when execution demonstrates a repeatable repository-owned gap.
+- [x] **QUAL-05**: Maintainer can run `mix ci` from the reconciled baseline with all checks passing.
+- [x] **HYGIENE-05**: Maintainer can run the repository hygiene check with no unresolved `BLOCK` result and an explicit disposition for every `WARN`.
+- [x] **HYGIENE-06**: Maintainer can add or tighten a deterministic repository-health check only when execution demonstrates a repeatable repository-owned gap.
 
 ### Planning and Release Truth
 
-- [ ] **TRUTH-03**: Maintainer can verify that `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `MILESTONES.md`, requirements, and maintained planning records describe one coherent current milestone and release posture.
-- [ ] **TRUTH-04**: Maintainer can trace the current public release through its source SHA, CI run, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
-- [ ] **TRUTH-05**: Maintainer can verify that Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
+- [x] **TRUTH-03**: Maintainer can verify that `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `MILESTONES.md`, requirements, and maintained planning records describe one coherent current milestone and release posture.
+- [x] **TRUTH-04**: Maintainer can trace the current public release through its source SHA, CI run, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
+- [x] **TRUTH-05**: Maintainer can verify that Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
 
 ### Evidence-Led Loose Ends
 
@@ -85,13 +85,13 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-03 | Phase 140 | Pending |
 | CI-06 | Phase 140 | Pending |
 | CI-07 | Phase 140 | Pending |
-| CI-08 | Phase 139 | Pending |
-| QUAL-05 | Phase 139 | Pending |
-| HYGIENE-05 | Phase 139 | Pending |
-| HYGIENE-06 | Phase 139 | Pending |
-| TRUTH-03 | Phase 139 | Pending |
-| TRUTH-04 | Phase 139 | Pending |
-| TRUTH-05 | Phase 139 | Pending |
+| CI-08 | Phase 139 | Complete |
+| QUAL-05 | Phase 139 | Complete |
+| HYGIENE-05 | Phase 139 | Complete |
+| HYGIENE-06 | Phase 139 | Complete |
+| TRUTH-03 | Phase 139 | Complete |
+| TRUTH-04 | Phase 139 | Complete |
+| TRUTH-05 | Phase 139 | Complete |
 | LOOSE-01 | Phase 138 | Complete |
 | LOOSE-02 | Phase 140 | Pending |
 | LOOSE-03 | Phase 140 | Pending |
@@ -106,4 +106,4 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 
 ---
 *Requirements defined: 2026-08-28*
-*Last updated: 2026-08-28 after roadmap creation*
+*Last updated: 2026-09-25 after Phase 139 verification*
