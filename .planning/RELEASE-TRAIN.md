@@ -21,9 +21,9 @@ The default operating mode is not "find the next milestone." The default is: kee
 - The train is ready to move only when `main` is green and `./scripts/maintainer/repo_hygiene_check.sh` passes without `BLOCK`.
 - `workflow_dispatch` is exact-ref only for release automation or recovery and must replay an exact immutable ref; it does not create a new release intent.
 - Push-triggered Release Please manages release PRs only; it must not create GitHub releases directly because the exact-ref dispatch publish lane owns GitHub release/tag creation and Hex publish.
-- Push-triggered Hex publish remains guarded by Release Please release-SHA equality with the current `main` push SHA as a stale-event defense, but normal automated publishing should happen through the auto-merge workflow's exact-ref dispatch.
+- `workflow_dispatch` validates and publishes one exact lowercase 40-hex commit equal to current `origin/main`, backed by its matching successful canonical CI run; a push never enters the protected publication jobs.
 - Eligible Release Please PRs should auto-merge only after green `main` CI and only through the guarded Release Please branch/title/file allowlist.
-- Exact-ref dispatch publish must ensure the matching `lockspire-v<version>` GitHub release exists before Hex publish so GitHub release truth, changelog links, tags, Hex, and HexDocs stay coherent.
+- Exact-ref dispatch publishes the manifest-verified package to Hex before creating or validating the matching `lockspire-v<version>` GitHub release, then verifies public install truth from the same SHA-bound artifact.
 - Before starting a new milestone or cutting a release, run the reusable hygiene checklist in `.planning/REPO-HYGIENE-CHECKLIST.md`.
 
 ## Patch-Eligible Change Classes
@@ -45,7 +45,7 @@ Feature milestones should run on `milestone/vNEXT-short-slug` branches and merge
 
 ## Next Cut Condition
 
-Cut the next patch release when there is at least one merged patch-eligible change on `main`, the latest `main` CI is green, the repo hygiene gate reports no `BLOCK`, and release truth still points to `docs/supported-surface.md` as the canonical contract.
+Cut the next patch release when there is at least one merged patch-eligible change on `main`, canonical CI is green for the exact current `origin/main` commit, the repo hygiene gate reports no `BLOCK`, and release truth still points to `docs/supported-surface.md` as the canonical contract.
 
 ## Current Main Readiness
 

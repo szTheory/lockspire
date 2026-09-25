@@ -51,6 +51,7 @@ defmodule Lockspire.Quality.ProofQualityBaselineTest do
     assert QualityBaseline.proof_locations(constructs, :count_threshold) == []
   end
 
+  @tag :phase139_gap_closure
   test "finds phase-numbered labels only inside the explicitly scoped current-proof inventory" do
     source = ~s(test "phase 125 boundary" do\n  assert :ok\nend)
 

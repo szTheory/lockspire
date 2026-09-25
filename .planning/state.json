@@ -1,0 +1,33 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "phases": [
+    {
+      "number": "138",
+      "name": "Baseline Inventory & Evidence Taxonomy",
+      "status": "complete"
+    },
+    {
+      "number": "139",
+      "name": "Required Truth Reconciliation",
+      "status": "complete"
+    },
+    {
+      "number": "140",
+      "name": "Bounded Operational Loose-End Triage",
+      "status": "pending"
+    },
+    {
+      "number": "141",
+      "name": "Maintenance-Baseline Closure",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 140)",
+    "reason": "Phase 140 of 4 — needs a plan"
+  },
+  "updated_at": "2026-09-24T21:16:46.582Z"
+}

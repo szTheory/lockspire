@@ -3,6 +3,12 @@
 **Created:** 2026-05-23  
 **Purpose:** Current milestone-selection source of truth for post-v1.21 planning. Use this file to choose what to build next without rediscovering the repo's adopter story from scratch.
 
+For the durable Lockspire-specific intent, user/operator lenses, milestone
+selection loop, provisional near/mid/long-horizon candidates, and delivery
+bar, also consult `.planning/MILESTONE-GUIDE.txt`. Refresh those candidates
+against current evidence; this guide does not override current GSD state,
+`docs/supported-surface.md`, or the release/development train.
+
 ## Current Product Judgment
 
 Lockspire is **strong-to-near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.

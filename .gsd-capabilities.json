@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "updatedAt": "2026-09-13T15:18:05.621Z",
+  "entries": {
+    "lockspire-phase-finalizer": {
+      "id": "lockspire-phase-finalizer",
+      "version": "1.2.0",
+      "source": "./tools/gsd-capabilities/lockspire-phase-finalizer",
+      "integrity": "",
+      "files": [
+        ".gsd/capabilities/lockspire-phase-finalizer"
+      ],
+      "sharedEdits": []
+    }
+  }
+}

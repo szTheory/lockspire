@@ -8,6 +8,19 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Verification and Automation Default
+
+Treat executable verification as the default. For each feature or maintenance change, identify the highest-value unit, integration, end-to-end, smoke, and seam checks; automate them and run them as early as practical. Put checks in CI when they provide recurring value and can run reliably there. Aim for zero human UAT or verification handoffs: reserve maintainer attention for the judgment, access, or real-world observation that cannot be established safely and reliably by automation. Prefer deterministic evidence that fails visibly and explains what remains unverified.
+
+## Current Milestone: v1.38 Repository Baseline & Reconciliation
+
+**Goal:** Bring Lockspire to a clean, green, internally consistent maintenance baseline, then close only concrete loose ends supported by repository evidence.
+
+**Target features:**
+- Verify that local Git state, branches, tags, worktrees, GitHub pull requests and issues, required CI and release workflows, local quality gates, and repository hygiene all have an intentional disposition.
+- Reconcile GSD planning state, roadmap and requirements truth, release records, maintained documentation, and other repository-owned evidence so they describe one coherent baseline.
+- Audit existing plans, findings, todos, and archived evidence, fixing only blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps while deferring speculative or feature-sized work.
+
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
 **Goal:** Make Lockspire's documented embedded-provider path genuinely installable, prove it through a separate SaaS client and resource-server journey, and tighten the architecture and executable quality gates around that truth.
@@ -26,6 +39,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 **Delivered:** Phases 126-130 are complete, verified, audited, and archived. The milestone bound publication to exact successful-CI evidence, made static-analysis/coverage/minimum-version claims executable, repaired host-Repo/storage boundaries, decomposed token orchestration behind stable facades, centralized lifetime and private-key policy, and made repository proof easier to maintain without adding protocol surface or changing public behavior.
 
 ## Current State
+
+Phase 138 completed the v1.38 evidence foundation. The canonical proposal-only inventory at `b8b9ad75` is an immutable ledger-only child of the fully reviewed evidence base; it records current Git, GitHub, and maintained-record receipts and permits later movement only through exact lifecycle classification and revalidation. Phase 139 completed the repository-owned CI, release, hygiene, and planning acceptance contracts. Exact synchronized-main CI and Release evidence (CI-06/CI-07) remains pending and is enforced by the blocking Phase 140 pre-planning gate; no live acceptance receipt is claimed until that gate succeeds.
 
 Lockspire has implemented and verified all seven v1.37 phases, and Hex reports `1.5.0` as the latest public release. Default-branch supplemental OIDC/FAPI run `33139876101` retained only allowlisted classified receipts from immutable suite inputs; its honest suite-failure findings remain non-certifying follow-up evidence. Protected release run `33141484467` published the exact pre-proven tar from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, matched its public Hex checksum, verified versioned docs, and repeated the clean-room public-package journey. The repo-native conformance jobs require no provider secrets; only the optional hosted-provider comparison accepts provider configuration.
 
@@ -71,7 +86,7 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ## Next Milestone Goals
 
-Return to the sustaining GA release train after archiving v1.37. Treat the retained supplemental OIDF suite failures as evidence for a future bounded conformance-hardening milestone; do not claim certification or widen supported protocol surface without stable measured proof.
+Finish the active v1.38 Repository Baseline & Reconciliation milestone before returning to the sustaining GA release train. Preserve v1.37 / Lockspire 1.5.0 as the latest shipped state until the normal release train changes that fact. Treat the retained supplemental OIDF suite failures as evidence for a future bounded conformance-hardening milestone; do not claim certification or widen supported protocol surface without stable measured proof.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -211,9 +226,10 @@ Return to the sustaining GA release train after archiving v1.37. Treat the retai
 
 ### Active
 
-- [ ] A separate-origin confidential client can complete authorization code + PKCE, validate OIDC responses, call an audience/scope-protected SaaS API, rotate refresh tokens, exercise revocation/introspection, and prove durable DPoP replay rejection.
-- [ ] Protocol, admin, web, storage, and token internals have acyclic dependency direction, cohesive implementation modules, explicit dependencies, and preserved security-sensitive atomicity.
-- [ ] Static analysis, behavior-oriented tests, quiet test runtime, complete-suite coverage, Sobelow, dependency hygiene, reproducible OIDF evidence, and package checksum/install proof fail closed on real regressions.
+- [ ] Required repo-owned CI and release workflows, `mix ci`, and the repository hygiene check pass from a clean and synchronized `main` baseline.
+- [ ] Local refs, branches, tags, and worktrees plus open GitHub pull requests and issues have an explicit, intentional disposition.
+- [ ] GSD planning state, release records, maintained documentation, and other repository-owned evidence describe one coherent current baseline.
+- [ ] Evidence-backed blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are fixed or explicitly deferred without forcing speculative work.
 
 ### Validated
 
@@ -312,12 +328,14 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 - **Architecture**: Strong internal boundaries between protocol core, storage, generators, Plug/Phoenix integration, and operator UI — this keeps the public API small and the library maintainable.
 - **Host seam**: Host apps own accounts, login UX, layouts, branding, and policy — Lockspire must not take over the host's authentication model.
 - **Release quality**: Executable docs, warnings-as-errors, CI/CD, changelog hygiene, and publish-from-release discipline are part of the product — release trust is a core feature for an auth library.
-- **Verification posture**: Default phase closure to executable proof in tests and CI — human UAT is only valid when automation is blocked by a real external boundary such as protected release credentials, third-party trust, or physical hardware.
+- **Verification posture**: Default phase closure to executable proof in tests and CI. Start from observable acceptance paths, shift checks left into the earliest reliable layer, and add recurring integration, end-to-end, smoke, or seam coverage to required CI when its repeat value justifies the cost. Prefer deterministic, hermetic checks; avoid duplicative or flaky automation without recurring value. Passing automated evidence satisfies UAT without a human confirmation round. Hand off only a genuinely subjective judgment or a boundary automation cannot reach, and name the exact reason and machine-owned follow-up gate. Never ask the user to confirm a fact that repository checks, CI, or an available supported lifecycle can establish.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |
+| Keep the v1.38 baseline immutable and proposal-only, with lifecycle movement authorized by exact receipts and semantic classifiers | Reconciliation needs a stable evidence boundary without mistaking publication for cleanup authority or treating ordinary GSD bookkeeping as evidence drift | Adopted and verified in Phase 138; Phase 139 consumes ledger `b8b9ad75` |
 | Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
 | Start v1.36 as a structural quality ratchet | Audit evidence found high-leverage release-integrity, storage-boundary, static-analysis, compatibility, and readability gaps that can be fixed without adding product surface | Adopted and delivered across Phases 126-130; archived 2026-08-26 |
 | Ship Lockspire as a separate companion library, not a Sigra module | Keeps provider-side OAuth/OIDC concerns isolated from end-user authentication concerns | Adopted in archived v1.0 milestone |
@@ -368,6 +386,7 @@ This document evolves at phase transitions and milestone boundaries.
 3. New requirements emerged? → Add to Active
 4. Decisions to log? → Add to Key Decisions
 5. "What This Is" still accurate? → Update if drifted
+6. Check that acceptance criteria have automated owners; add durable CI coverage when a stable seam has recurring regression value, and state the exact machine gate for any unavoidable external boundary.
 
 **After each milestone** (via `$gsd-complete-milestone`):
 1. Full review of all sections
@@ -376,4 +395,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-28 after the v1.37 milestone*
+*Last updated: 2026-09-12 after Phase 138*

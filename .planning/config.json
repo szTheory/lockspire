@@ -1,4 +1,5 @@
 {
+  "runtime": "codex",
   "model_profile": "balanced",
   "commit_docs": true,
   "parallelization": true,
@@ -29,7 +30,7 @@
     "code_review": true,
     "code_review_depth": "standard",
     "_auto_chain_active": false,
-    "use_worktrees": false,
+    "use_worktrees": true,
     "ai_integration_phase": true
   },
   "hooks": {
@@ -41,5 +42,12 @@
   "features": {},
   "resolve_model_ids": "omit",
   "mode": "yolo",
-  "granularity": "standard"
+  "granularity": "standard",
+  "model_profile_overrides": {
+    "codex": {
+      "opus": "gpt-6-sol",
+      "sonnet": "gpt-6-luna",
+      "haiku": "gpt-6-luna"
+    }
+  }
 }

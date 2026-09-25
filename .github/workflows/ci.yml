@@ -65,6 +65,12 @@ jobs:
       - name: Lint workflows and maintained shell scripts
         run: bash ./scripts/ci/lint_workflows.sh
 
+      - name: Verify phase finalizer command router
+        run: node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
+
+      - name: Verify portable phase-finalizer lifecycle
+        run: LOCKSPIRE_SKIP_BEAM_INTEGRATION=1 LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+
       - name: Verify and audit Release Please runtime dependencies
         run: |
           npm ci --prefix .github/actions/release-please/runtime --ignore-scripts
@@ -96,6 +102,7 @@ jobs:
 
     env:
       MIX_ENV: test
+      GSD_TOOLS: ${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs
       LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
       LOCKSPIRE_TEST_DB_PORT: "5432"
       LOCKSPIRE_TEST_DB_USER: lockspire
@@ -202,6 +209,7 @@ jobs:
 
     env:
       MIX_ENV: test
+      GSD_TOOLS: ${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs
       LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
       LOCKSPIRE_TEST_DB_PORT: "5432"
       LOCKSPIRE_TEST_DB_USER: lockspire

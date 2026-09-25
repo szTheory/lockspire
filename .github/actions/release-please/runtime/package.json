@@ -8,5 +8,9 @@
   "dependencies": {
     "@actions/core": "3.0.1",
     "release-please": "17.11.2"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.8.15",
+    "js-yaml": "4.3.2"
   }
 }

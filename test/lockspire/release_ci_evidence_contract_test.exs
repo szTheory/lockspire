@@ -52,4 +52,64 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert workflow =~ "verified_sha=$verified_sha"
     refute workflow =~ "recovery_ref: ${{ inputs.recovery_ref }}"
   end
+
+  test "release push is no-publish while protected dispatch retains the publication graph" do
+    graph = @release |> File.read!() |> release_job_graph()
+
+    assert graph |> Map.keys() |> Enum.sort() == [
+             "post-publish-install-truth",
+             "prepublish-proof",
+             "publish",
+             "recovery-validation",
+             "release-please"
+           ]
+
+    release_please = graph["release-please"]
+    recovery_validation = graph["recovery-validation"]
+    prepublish_proof = graph["prepublish-proof"]
+    publish = graph["publish"]
+    post_publish_install_truth = graph["post-publish-install-truth"]
+
+    assert release_please =~ "name: Maintain Release Please PR"
+    assert release_please =~ ~S(if: ${{ github.event_name == 'push' }})
+    refute release_please =~ "workflow_dispatch"
+    refute release_please =~ ~r/^    needs:/m
+    refute release_please =~ "publish_hex_idempotently.sh"
+    refute release_please =~ "gh release create"
+    refute release_please =~ "release-package-"
+
+    assert recovery_validation =~ "name: Validate exact main head and CI evidence"
+    assert recovery_validation =~ ~S(if: ${{ github.event_name == 'workflow_dispatch' }})
+    refute recovery_validation =~ ~S(github.event_name == 'push')
+
+    assert prepublish_proof =~ "name: Prove exact package before publication"
+    assert prepublish_proof =~ "needs: recovery-validation"
+    assert prepublish_proof =~ ~S(if: ${{ needs.recovery-validation.result == 'success' }})
+
+    assert publish =~ "name: Publish verified release to Hex"
+    assert publish =~ "needs: [recovery-validation, prepublish-proof]"
+
+    assert publish =~
+             ~S(if: ${{ needs.recovery-validation.result == 'success' && needs.prepublish-proof.result == 'success' }})
+
+    assert publish =~ "name: Download clean-room-proven package data"
+
+    assert publish =~
+             "name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}"
+
+    assert :binary.match(publish, "- name: Publish package") <
+             :binary.match(publish, "- name: Create matching GitHub release")
+
+    assert post_publish_install_truth =~ "name: Verify public install truth"
+    assert post_publish_install_truth =~ "needs: [recovery-validation, publish]"
+    assert post_publish_install_truth =~ ~S(if: ${{ needs.publish.result == 'success' }})
+  end
+
+  defp release_job_graph(workflow) do
+    [_, jobs] = String.split(workflow, "\njobs:\n", parts: 2)
+
+    ~r/^  ([a-z0-9-]+):\n(.*?)(?=^  [a-z0-9-]+:\n|\z)/ms
+    |> Regex.scan(jobs, capture: :all_but_first)
+    |> Map.new(fn [id, region] -> {id, region} end)
+  end
 end

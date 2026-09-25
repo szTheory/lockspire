@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "supportedPoints": ["execute:post", "plan:pre"],
+  "gates": {
+    "execute:post": {
+      "phase": "139",
+      "command": "test \"${PHASE_NUMBER}\" != 139 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139",
+      "timeout": 900
+    },
+    "plan:pre": {
+      "phase": "140",
+      "command": "test \"${PHASE_NUMBER}\" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139",
+      "timeout": 2400
+    }
+  },
+  "stateHelperProtocol": "gsd-transition-v1",
+  "trackedRuntimeFiles": [
+    "capability.json",
+    "lockspire-finalize-command-router.cjs",
+    "lockspire-finalizer-process-supervisor.cjs",
+    "post-completion-finalizer-state.cjs"
+  ]
+}

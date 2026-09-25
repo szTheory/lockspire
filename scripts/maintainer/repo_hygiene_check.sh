@@ -4,11 +4,21 @@ set -euo pipefail
 MODE="local"
 RUN_MIX_CI=1
 REMOTE="${LOCKSPIRE_HYGIENE_REMOTE:-origin}"
+REPOSITORY="${LOCKSPIRE_HYGIENE_REPOSITORY:-}"
 project="${COMPOSE_PROJECT_NAME:-lockspire-adoption-demo}"
+PROJECT_EXPLICIT=0
+ACCEPT_SHA=""
+WAIT_SECONDS=300
+OUTPUT_FORMAT="text"
+
+declare -a WARN_DISPOSITION_INPUTS=()
+WARN_DISPOSITION_INPUT_COUNT=0
 
 usage() {
   cat <<'EOF'
 Usage: repo_hygiene_check.sh [--ci] [--project NAME] [--skip-mix-ci]
+       repo_hygiene_check.sh --accept-sha SHA [--wait-seconds SECONDS]
+                             [--warn-disposition LABEL=DISPOSITION] [--format json]
 
 Checks whether the repo is in a disciplined release-prep state.
 
@@ -16,6 +26,13 @@ Modes:
   --ci           Run only repo-owned drift checks that GitHub can prove.
   --project NAME Scope local adoption-demo Docker hygiene to a Compose project.
   --skip-mix-ci  Skip the local mix ci contributor gate rerun.
+  --accept-sha SHA
+                 Prove local and GitHub acceptance for one synchronized main SHA.
+  --wait-seconds SECONDS
+                 Bound polling for exact workflow runs (default: 300).
+  --warn-disposition LABEL=DISPOSITION
+                 Record one bounded disposition for an exact-mode WARN label.
+  --format json  Emit the allowlisted exact-acceptance JSON receipt.
 
 Examples:
   bash ./scripts/maintainer/repo_hygiene_check.sh --ci
@@ -36,11 +53,49 @@ while [[ "$#" -gt 0 ]]; do
         exit 1
       fi
       project="$2"
+      PROJECT_EXPLICIT=1
       shift 2
       ;;
     --skip-mix-ci)
       RUN_MIX_CI=0
       shift
+      ;;
+    --accept-sha)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --accept-sha" >&2
+        usage >&2
+        exit 1
+      fi
+      ACCEPT_SHA="$2"
+      shift 2
+      ;;
+    --wait-seconds)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --wait-seconds" >&2
+        usage >&2
+        exit 1
+      fi
+      WAIT_SECONDS="$2"
+      shift 2
+      ;;
+    --warn-disposition)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --warn-disposition" >&2
+        usage >&2
+        exit 1
+      fi
+      WARN_DISPOSITION_INPUTS+=("$2")
+      WARN_DISPOSITION_INPUT_COUNT=$((WARN_DISPOSITION_INPUT_COUNT + 1))
+      shift 2
+      ;;
+    --format)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --format" >&2
+        usage >&2
+        exit 1
+      fi
+      OUTPUT_FORMAT="$2"
+      shift 2
       ;;
     -h | --help)
       usage
@@ -63,6 +118,7 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
 
 declare -a RESULTS=()
+declare -a WARN_LABELS=()
 PASS_COUNT=0
 WARN_COUNT=0
 BLOCK_COUNT=0
@@ -76,9 +132,484 @@ record_result() {
 
   case "$level" in
     PASS) PASS_COUNT=$((PASS_COUNT + 1)) ;;
-    WARN) WARN_COUNT=$((WARN_COUNT + 1)) ;;
+    WARN)
+      WARN_COUNT=$((WARN_COUNT + 1))
+      WARN_LABELS+=("$label")
+      ;;
     BLOCK) BLOCK_COUNT=$((BLOCK_COUNT + 1)) ;;
   esac
+}
+
+acceptance_block() {
+  record_result "BLOCK" "$1" "$2"
+  return 1
+}
+
+validate_acceptance_sha() {
+  if [[ ! "$ACCEPT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+    acceptance_block "acceptance SHA" "must be one lowercase full 40-hex commit identity"
+    return
+  fi
+
+  if [[ "$MODE" != "local" || "$RUN_MIX_CI" != "1" || "$OUTPUT_FORMAT" != "json" || "$PROJECT_EXPLICIT" != "0" ]]; then
+    acceptance_block "acceptance invocation" "exact acceptance requires local mode, mix ci, and --format json"
+    return
+  fi
+
+  if [[ ! "$WAIT_SECONDS" =~ ^[0-9]+$ ]] || ((10#$WAIT_SECONDS > 3600)); then
+    acceptance_block "acceptance wait" "wait seconds must be an integer between 0 and 3600"
+    return
+  fi
+
+  if [[ -z "$REPOSITORY" ]]; then
+    if ! REPOSITORY="$(gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>/dev/null)"; then
+      acceptance_block "acceptance repository" "repository identity could not be resolved"
+      return
+    fi
+  fi
+
+  if [[ ! "$REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+    acceptance_block "acceptance repository" "repository identity is malformed"
+    return
+  fi
+}
+
+validate_acceptance_identity() {
+  local head main remote_main
+
+  if ! git fetch "$REMOTE" --prune >/dev/null 2>&1; then
+    acceptance_block "acceptance identity" "remote main refresh failed"
+    return
+  fi
+
+  if ! head="$(git rev-parse HEAD 2>/dev/null)" ||
+     ! main="$(git rev-parse main 2>/dev/null)" ||
+     ! remote_main="$(git rev-parse "$REMOTE/main" 2>/dev/null)"; then
+    acceptance_block "acceptance identity" "HEAD, local main, and remote main must all resolve"
+    return
+  fi
+
+  if [[ "$head" != "$ACCEPT_SHA" || "$main" != "$ACCEPT_SHA" || "$remote_main" != "$ACCEPT_SHA" ]]; then
+    acceptance_block "acceptance identity" "HEAD, local main, and remote main must equal the acceptance SHA"
+    return
+  fi
+}
+
+run_exact_local_gate() {
+  local before_sha after_sha checkout_status test_count
+
+  if ! checkout_status="$(git status --porcelain 2>/dev/null)"; then
+    acceptance_block "acceptance checkout" "working tree status could not be observed"
+    return
+  fi
+
+  if [[ -n "$checkout_status" ]]; then
+    acceptance_block "acceptance checkout" "working tree must be clean"
+    return
+  fi
+
+  before_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+  if ! test_count="$(
+    output_file="$(mktemp "${TMPDIR:-/tmp}/lockspire-mix-ci.XXXXXX")" || exit 1
+    trap 'rm -f -- "$output_file"' EXIT
+    trap 'exit 129' HUP
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    mix ci >"$output_file" 2>&1 || exit 1
+    sed -nE 's/.*(^|[^0-9])([0-9]+) tests?, [0-9]+ failures?.*/\2/p' "$output_file" | tail -n 1
+  )"; then
+    acceptance_block "local gate" "mix ci returned nonzero"
+    return
+  fi
+
+  if [[ -z "$test_count" || "$test_count" == "0" ]]; then
+    acceptance_block "local gate" "mix ci did not prove that ExUnit executed tests"
+    return
+  fi
+
+  after_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+  if [[ "$before_sha" != "$ACCEPT_SHA" || "$after_sha" != "$ACCEPT_SHA" ]]; then
+    acceptance_block "local gate" "HEAD changed while mix ci ran"
+    return
+  fi
+
+  LOCAL_TEST_COUNT="$test_count"
+  record_result "PASS" "local gate" "mix ci passed with executed ExUnit tests at the acceptance SHA"
+}
+
+exact_demo_docker_hygiene_checks() {
+  local running_containers stopped_containers project_volumes
+
+  if ! command -v docker >/dev/null 2>&1 || ! docker version >/dev/null 2>&1; then
+    record_result "WARN" "adoption demo Docker" "Docker state could not be observed"
+    return
+  fi
+
+  if ! running_containers="$(docker container ls --filter "label=com.docker.compose.project=$project" --format '{{.Names}}' 2>/dev/null)" ||
+     ! stopped_containers="$(docker container ls --all --filter "label=com.docker.compose.project=$project" --filter "status=exited" --format '{{.Names}}' 2>/dev/null)" ||
+     ! project_volumes="$(docker volume list --filter "name=^${project}_(db_data|deps_volume|build_volume)$" --format '{{.Name}}' 2>/dev/null)"; then
+    acceptance_block "adoption demo Docker" "Docker state observation failed"
+    return
+  fi
+
+  if [[ -n "$running_containers" ]]; then
+    record_result "BLOCK" "adoption demo containers" "active-project containers are running"
+  else
+    record_result "PASS" "adoption demo containers" "no active-project containers are running"
+  fi
+
+  if [[ -n "$stopped_containers" ]]; then
+    record_result "WARN" "adoption demo stopped containers" "stopped active-project containers remain"
+  else
+    record_result "PASS" "adoption demo stopped containers" "no stopped active-project containers remain"
+  fi
+
+  if [[ -n "$project_volumes" ]]; then
+    record_result "WARN" "adoption demo volumes" "active-project volumes remain"
+  else
+    record_result "PASS" "adoption demo volumes" "no active-project volumes remain"
+  fi
+}
+
+collect_exact_workflow_run() {
+  local workflow="$1" selected_id="" response candidate_count candidate_id candidate_status endpoint deadline
+  endpoint="repos/$REPOSITORY/actions/workflows/$workflow/runs?branch=main&event=push&head_sha=$ACCEPT_SHA&per_page=100"
+  deadline=$((SECONDS + 10#$WAIT_SECONDS))
+
+  while :; do
+    if ! response="$(gh api "$endpoint" 2>/dev/null)" ||
+       ! jq -e '.workflow_runs | type == "array"' >/dev/null 2>&1 <<<"$response"; then
+      acceptance_block "workflow evidence" "workflow run response was unavailable or malformed"
+      return
+    fi
+
+    candidate_count="$(jq -r '.workflow_runs | length' <<<"$response")"
+    if [[ "$candidate_count" != "1" ]]; then
+      acceptance_block "workflow evidence" "exact workflow candidate set must contain exactly one run"
+      return
+    fi
+
+    candidate_id="$(jq -r '.workflow_runs[0].id // empty' <<<"$response")"
+    if [[ ! "$candidate_id" =~ ^[0-9]+$ ]]; then
+      acceptance_block "workflow evidence" "workflow run identity was missing or malformed"
+      return
+    fi
+
+    if [[ -n "$selected_id" && "$candidate_id" != "$selected_id" ]]; then
+      acceptance_block "workflow evidence" "workflow run identity changed during polling"
+      return
+    fi
+    selected_id="$candidate_id"
+    candidate_status="$(jq -r '.workflow_runs[0].status // empty' <<<"$response")"
+
+    if [[ "$candidate_status" == "completed" ]]; then
+      COLLECTED_RUN="$(jq -c '.workflow_runs[0]' <<<"$response")"
+      return 0
+    fi
+
+    case "$candidate_status" in
+      queued | in_progress | waiting | pending | requested) ;;
+      *)
+        acceptance_block "workflow evidence" "workflow run status was missing or invalid"
+        return
+        ;;
+    esac
+
+    if ((SECONDS >= deadline)); then
+      acceptance_block "workflow evidence" "bounded workflow polling expired before completion"
+      return
+    fi
+    sleep 1
+  done
+}
+
+validate_workflow_run() {
+  local run="$1" expected_id="$2" expected_name="$3" expected_path="$4"
+
+  if ! jq -e \
+    --argjson workflow_id "$expected_id" \
+    --arg name "$expected_name" \
+    --arg path "$expected_path" \
+    --arg repository "$REPOSITORY" \
+    --arg sha "$ACCEPT_SHA" '
+      (.id | type) == "number" and .id > 0 and
+      .name == $name and .path == $path and .workflow_id == $workflow_id and
+      .repository.full_name == $repository and .event == "push" and
+      .head_branch == "main" and .status == "completed" and
+      .conclusion == "success" and .head_sha == $sha and
+      (.html_url | type == "string" and startswith("https://"))
+    ' >/dev/null 2>&1 <<<"$run"; then
+    acceptance_block "workflow identity" "workflow metadata did not match the exact acceptance contract"
+    return
+  fi
+}
+
+collect_run_jobs() {
+  local run_id="$1" page=1 response response_total page_count collected_count=0
+  local expected_total="" jobs='[]'
+
+  while :; do
+    if ! response="$(gh api "repos/$REPOSITORY/actions/runs/$run_id/jobs?per_page=100&page=$page" 2>/dev/null)" ||
+       ! jq -e '
+         (.total_count | type) == "number" and .total_count >= 0 and
+         (.jobs | type) == "array" and
+         all(.jobs[]; (.name | type) == "string" and (.status | type) == "string" and (.conclusion | type) == "string")
+       ' >/dev/null 2>&1 <<<"$response"; then
+      acceptance_block "workflow jobs" "workflow job page was unavailable, malformed, or incomplete"
+      return
+    fi
+
+    response_total="$(jq -r '.total_count' <<<"$response")"
+    if [[ -z "$expected_total" ]]; then
+      expected_total="$response_total"
+    elif [[ "$response_total" != "$expected_total" ]]; then
+      acceptance_block "workflow jobs" "workflow job total changed during pagination"
+      return
+    fi
+
+    page_count="$(jq -r '.jobs | length' <<<"$response")"
+    jobs="$(jq -cn --argjson current "$jobs" --argjson page "$(jq -c '.jobs' <<<"$response")" '$current + $page')"
+    collected_count=$((collected_count + page_count))
+
+    if ((collected_count == expected_total)); then
+      COLLECTED_JOBS="$jobs"
+      return 0
+    fi
+    if ((collected_count > expected_total || page_count == 0)); then
+      acceptance_block "workflow jobs" "workflow job pagination did not match its declared total"
+      return
+    fi
+    page=$((page + 1))
+  done
+}
+
+validate_required_ci_run() {
+  local workflow_meta workflow_id
+
+  if ! workflow_meta="$(gh api "repos/$REPOSITORY/actions/workflows/ci.yml" 2>/dev/null)" ||
+     ! workflow_id="$(jq -er '.id | select(type == "number" and . > 0)' <<<"$workflow_meta" 2>/dev/null)"; then
+    acceptance_block "required CI" "canonical CI workflow identity was unavailable or malformed"
+    return
+  fi
+
+  if ! collect_exact_workflow_run "ci.yml" ||
+     ! validate_workflow_run "$COLLECTED_RUN" "$workflow_id" "CI" ".github/workflows/ci.yml"; then
+    return 1
+  fi
+
+  REQUIRED_CI_RUN="$COLLECTED_RUN"
+}
+
+validate_required_ci_jobs() {
+  local run_id required count
+  run_id="$(jq -r '.id' <<<"$REQUIRED_CI_RUN")"
+  if ! collect_run_jobs "$run_id"; then
+    return 1
+  fi
+
+  for required in \
+    "Dialyzer" \
+    "Release Hygiene Drift" \
+    "Fast Checks" \
+    "Minimum Supported Elixir/OTP" \
+    "Integration Checks" \
+    "Complete Coverage Evidence" \
+    "Adoption Demo Smoke"; do
+    count="$(jq -r --arg name "$required" '[.[] | select(.name == $name and .status == "completed" and .conclusion == "success")] | length' <<<"$COLLECTED_JOBS")"
+    if [[ "$count" != "1" ]]; then
+      acceptance_block "required CI jobs" "required CI job graph was missing, duplicated, or unsuccessful"
+      return
+    fi
+  done
+
+  if [[ "$(jq -r 'length' <<<"$COLLECTED_JOBS")" != "7" ]]; then
+    acceptance_block "required CI jobs" "required CI job graph contained unexpected jobs"
+    return
+  fi
+
+  REQUIRED_CI_JOBS="$(jq -c 'map({name, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+  record_result "PASS" "required CI" "canonical CI and every required job passed at the acceptance SHA"
+}
+
+validate_no_publish_release_run() {
+  local workflow_meta workflow_id run_id name expected count
+
+  if ! workflow_meta="$(gh api "repos/$REPOSITORY/actions/workflows/release.yml" 2>/dev/null)" ||
+     ! workflow_id="$(jq -er '.id | select(type == "number" and . > 0)' <<<"$workflow_meta" 2>/dev/null)"; then
+    acceptance_block "release no-publish" "Release workflow identity was unavailable or malformed"
+    return
+  fi
+
+  if ! collect_exact_workflow_run "release.yml" ||
+     ! validate_workflow_run "$COLLECTED_RUN" "$workflow_id" "Release" ".github/workflows/release.yml"; then
+    return 1
+  fi
+  RELEASE_RUN="$COLLECTED_RUN"
+  run_id="$(jq -r '.id' <<<"$RELEASE_RUN")"
+  if ! collect_run_jobs "$run_id"; then
+    return 1
+  fi
+  RELEASE_JOBS="$(jq -c 'map({name, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+
+  while IFS='|' read -r name expected; do
+    count="$(jq -r --arg name "$name" --arg conclusion "$expected" '[.[] | select(.name == $name and .status == "completed" and .conclusion == $conclusion)] | length' <<<"$RELEASE_JOBS")"
+    if [[ "$count" != "1" ]]; then
+      acceptance_block "release no-publish" "Release job graph did not prove the intentional no-publish shape"
+      return
+    fi
+  done <<'EOF'
+Maintain Release Please PR|success
+Validate exact main head and CI evidence|skipped
+Prove exact package before publication|skipped
+Publish verified release to Hex|skipped
+Verify public install truth|skipped
+EOF
+
+  if [[ "$(jq -r 'length' <<<"$RELEASE_JOBS")" != "5" ]]; then
+    acceptance_block "release no-publish" "Release job graph contained unexpected jobs"
+    return
+  fi
+
+  record_result "PASS" "release no-publish" "push Release succeeded with every protected publication job skipped"
+}
+
+require_warn_dispositions() {
+  local input label disposition known warn_label seen_label seen_index
+  local seen_count=0
+  local dispositions='[]'
+  local -a seen_labels=()
+  local -a seen_dispositions=()
+
+  if [[ "$WARN_DISPOSITION_INPUT_COUNT" -gt 0 ]]; then
+    for input in "${WARN_DISPOSITION_INPUTS[@]}"; do
+      if [[ "$input" != *=* ]]; then
+        acceptance_block "WARN dispositions" "every disposition must use LABEL=DISPOSITION"
+        return
+      fi
+      label="${input%%=*}"
+      disposition="${input#*=}"
+      if [[ -z "$label" || ! "$disposition" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]]; then
+        acceptance_block "WARN dispositions" "labels and dispositions must be nonempty and disposition values must use the bounded token format"
+        return
+      fi
+      known=0
+      for warn_label in "${WARN_LABELS[@]+"${WARN_LABELS[@]}"}"; do
+        [[ "$label" == "$warn_label" ]] && known=1
+      done
+      if [[ "$known" != "1" ]]; then
+        acceptance_block "WARN dispositions" "unknown WARN disposition label was supplied"
+        return
+      fi
+
+      if [[ "$seen_count" -gt 0 ]]; then
+        for seen_label in "${seen_labels[@]}"; do
+          if [[ "$label" == "$seen_label" ]]; then
+            acceptance_block "WARN dispositions" "duplicate WARN disposition labels are not accepted"
+            return
+          fi
+        done
+      fi
+
+      seen_labels+=("$label")
+      seen_dispositions+=("$disposition")
+      seen_count=$((seen_count + 1))
+    done
+  fi
+
+  for warn_label in "${WARN_LABELS[@]+"${WARN_LABELS[@]}"}"; do
+    known=0
+    if [[ "$seen_count" -gt 0 ]]; then
+      for seen_label in "${seen_labels[@]}"; do
+        [[ "$warn_label" == "$seen_label" ]] && known=1
+      done
+    fi
+    if [[ "$known" != "1" ]]; then
+      acceptance_block "WARN dispositions" "every WARN requires exactly one disposition"
+      return
+    fi
+  done
+
+  if [[ "$seen_count" -gt 0 ]]; then
+    while IFS=$'\t' read -r label seen_index; do
+      [[ -z "$label" ]] && continue
+      dispositions="$(jq -cn --argjson current "$dispositions" --arg label "$label" --arg disposition "${seen_dispositions[$seen_index]}" '$current + [{label:$label, disposition:$disposition}]')"
+    done < <(
+      for seen_index in "${!seen_labels[@]}"; do
+        printf '%s\t%s\n' "${seen_labels[$seen_index]}" "$seen_index"
+      done | LC_ALL=C sort
+    )
+  fi
+
+  WARN_DISPOSITIONS_JSON="$dispositions"
+}
+
+emit_acceptance_receipt() {
+  local ci_id ci_url release_id release_url
+  ci_id="$(jq -r '.id' <<<"$REQUIRED_CI_RUN")"
+  ci_url="$(jq -r '.html_url' <<<"$REQUIRED_CI_RUN")"
+  release_id="$(jq -r '.id' <<<"$RELEASE_RUN")"
+  release_url="$(jq -r '.html_url' <<<"$RELEASE_RUN")"
+
+  jq -cn \
+    --arg schema "lockspire-phase-139-acceptance-v1" \
+    --arg baseline_sha "$ACCEPT_SHA" \
+    --argjson tests "$LOCAL_TEST_COUNT" \
+    --argjson pass "$PASS_COUNT" \
+    --argjson warn "$WARN_COUNT" \
+    --argjson block "$BLOCK_COUNT" \
+    --argjson ci_id "$ci_id" \
+    --arg ci_url "$ci_url" \
+    --argjson ci_jobs "$REQUIRED_CI_JOBS" \
+    --argjson release_id "$release_id" \
+    --arg release_url "$release_url" \
+    --argjson release_jobs "$RELEASE_JOBS" \
+    --argjson dispositions "$WARN_DISPOSITIONS_JSON" '
+      {
+        schema: $schema,
+        baseline_sha: $baseline_sha,
+        local_gate: {status: "pass", exunit_tests: $tests},
+        hygiene: {status: "pass", pass: $pass, warn: $warn, block: $block},
+        required_ci: {status: "pass", run_id: $ci_id, event: "push", conclusion: "success", url: $ci_url, jobs: $ci_jobs},
+        release_no_publish: {status: "pass", outcome: "no_publish", run_id: $release_id, event: "push", conclusion: "success", url: $release_url, jobs: $release_jobs},
+        warn_dispositions: $dispositions,
+        supplemental_oidf: {classification: "supplemental_non_certifying", required_gate: false}
+      }
+    '
+}
+
+run_exact_acceptance() {
+  local command
+  for command in gh jq mix; do
+    if ! command -v "$command" >/dev/null 2>&1; then
+      acceptance_block "acceptance tools" "a required exact-acceptance command is unavailable"
+      return
+    fi
+  done
+
+  if ! validate_acceptance_sha ||
+     ! validate_acceptance_identity ||
+     ! run_exact_local_gate ||
+     ! validate_acceptance_identity ||
+     ! validate_required_ci_run ||
+     ! validate_required_ci_jobs ||
+     ! validate_acceptance_identity ||
+     ! validate_no_publish_release_run ||
+     ! validate_acceptance_identity; then
+    return 1
+  fi
+
+  exact_demo_docker_hygiene_checks
+
+  if [[ "$BLOCK_COUNT" -gt 0 ]]; then
+    return 1
+  fi
+
+  if ! require_warn_dispositions; then
+    return 1
+  fi
+
+  validate_acceptance_identity || return 1
+  emit_acceptance_receipt
 }
 
 have_gh() {
@@ -504,6 +1035,23 @@ local_checks() {
 }
 
 repo_owned_checks
+
+if [[ -n "$ACCEPT_SHA" ]]; then
+  if [[ "$BLOCK_COUNT" -eq 0 ]] && run_exact_acceptance; then
+    exit 0
+  fi
+
+  printf 'Lockspire repo hygiene report (exact acceptance)\n'
+  printf '%s\n' "${RESULTS[@]}"
+  printf 'Summary: %s PASS, %s WARN, %s BLOCK\n' "$PASS_COUNT" "$WARN_COUNT" "$BLOCK_COUNT"
+  echo "Result: not ready"
+  exit 1
+fi
+
+if [[ "$OUTPUT_FORMAT" != "text" || "$WAIT_SECONDS" != "300" || "$WARN_DISPOSITION_INPUT_COUNT" -gt 0 ]]; then
+  echo "Exact-acceptance options require --accept-sha" >&2
+  exit 1
+fi
 
 if [[ "$MODE" != "ci" ]]; then
   local_checks
