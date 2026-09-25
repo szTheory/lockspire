@@ -4441,13 +4441,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     phase_139_ids = ~w(CI-08 QUAL-05 HYGIENE-05 HYGIENE-06 TRUTH-03 TRUTH-04 TRUTH-05)
     phase_140_ids = ~w(CI-06 CI-07)
     checked = if status == "Complete", do: "x", else: " "
+    phase_label = fn number -> "Phase " <> Integer.to_string(number) end
 
     "# Requirements\n" <>
-      Enum.map_join(phase_140_ids, "", &"- [ ] **#{&1}**: Phase 140 requirement.\n") <>
-      Enum.map_join(phase_139_ids, "", &"- [#{checked}] **#{&1}**: Phase 139 requirement.\n") <>
+      Enum.map_join(phase_140_ids, "", &"- [ ] **#{&1}**: #{phase_label.(140)} requirement.\n") <>
+      Enum.map_join(phase_139_ids, "", &"- [#{checked}] **#{&1}**: #{phase_label.(139)} requirement.\n") <>
       "\n| Requirement | Phase | Status |\n|-------------|-------|--------|\n" <>
-      Enum.map_join(phase_140_ids, "", &"| #{&1} | Phase 140 | Pending |\n") <>
-      Enum.map_join(phase_139_ids, "", &"| #{&1} | Phase 139 | #{status} |\n")
+      Enum.map_join(phase_140_ids, "", &"| #{&1} | #{phase_label.(140)} | Pending |\n") <>
+      Enum.map_join(phase_139_ids, "", &"| #{&1} | #{phase_label.(139)} | #{status} |\n")
   end
 
   defp build_live_source_snapshot_repository!(repository, ledger, scope) do
