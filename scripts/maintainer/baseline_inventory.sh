@@ -2944,14 +2944,29 @@ verification_gap_report_is_superseded() {
 }
 
 normalize_relation_git_domain() {
-  local file="$1" subject="$2" observed_sha="$3" evidence_base="$4" normalized
-  [[ -n "$observed_sha" && "$observed_sha" != "$evidence_base" ]] || return 0
+  local file="$1" subject="$2" observed_sha="$3" expected_sha="$4" normalized
+  [[ -n "$observed_sha" && -n "$expected_sha" ]] || return 1
+  [[ "$observed_sha" != "$expected_sha" ]] || return 0
   normalized="$(mktemp "${TMPDIR:-/tmp}/lockspire-relation-normalized.XXXXXX")" || return 1
-  awk -v subject="\`$subject\`" -v observed="$observed_sha" -v base="$evidence_base" '
-    index($0, subject) { gsub(observed, base) }
+  awk -F'`' -v subject="$subject" -v observed="$observed_sha" -v expected="$expected_sha" '
+    $2 == subject {
+      if ($4 != observed) exit 1
+      $4 = expected
+      rebuilt = $1
+      for (field = 2; field <= NF; field++) rebuilt = rebuilt "`" $field
+      print rebuilt
+      matched++
+      next
+    }
     { print }
-  ' "$file" > "$normalized"
+    END { if (matched != 1) exit 1 }
+  ' "$file" > "$normalized" || { rm -f "$normalized"; return 1; }
   mv -f "$normalized" "$file"
+}
+
+ledger_git_domain_sha() {
+  local section="$1" subject="$2"
+  awk -F'`' -v subject="$subject" '$2 == subject { print $4; found++; exit } END { if (found != 1) exit 1 }' <<< "$section"
 }
 
 relation_sha_is_normalizable() {
@@ -2980,6 +2995,7 @@ emit_git_relation_row() {
 verify_git_snapshot_receipt() {
   local ledger_commit="$1" ledger="$2" evidence_base="$3" head="$4"
   local expected_fingerprint current_fingerprint receipt_dir branch_file tag_file worktree_file aggregate_file
+  local expected_branches expected_worktrees expected_sha
   local current_main="" current_remote_main="" current_head="" current_branch="" current_branch_sha="" repo_root="" expected current domain failed=0
   expected_fingerprint="$(front_matter_value_from_blob "$ledger_commit" "$ledger" git_receipt_fingerprint 2>/dev/null || printf not_applicable)"
   [[ "$expected_fingerprint" != not_applicable ]] || return 0
@@ -2996,28 +3012,35 @@ verify_git_snapshot_receipt() {
   collect_git_refs > "$branch_file"
   collect_git_tags > "$tag_file"
   collect_git_worktrees > "$worktree_file"
+  expected_branches="$(ledger_git_domain_section "$ledger_commit" "$ledger" branches)"
+  expected_worktrees="$(ledger_git_domain_section "$ledger_commit" "$ledger" worktrees)"
 
   current_main="$(git rev-parse main 2>/dev/null || true)"
   if [[ -n "$current_main" ]] && relation_sha_is_normalizable "$ledger_commit" "$current_main" "$head"; then
-    normalize_relation_git_domain "$branch_file" refs/heads/main "$current_main" "$evidence_base" || failed=1
+    expected_sha="$(ledger_git_domain_sha "$expected_branches" refs/heads/main 2>/dev/null || true)"
+    normalize_relation_git_domain "$branch_file" refs/heads/main "$current_main" "$expected_sha" || failed=1
   fi
   current_remote_main="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
   if [[ -n "$current_remote_main" ]] && relation_sha_is_normalizable "$ledger_commit" "$current_remote_main" "$head"; then
-    normalize_relation_git_domain "$branch_file" "refs/remotes/$REMOTE/main" "$current_remote_main" "$evidence_base" || failed=1
+    expected_sha="$(ledger_git_domain_sha "$expected_branches" "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
+    normalize_relation_git_domain "$branch_file" "refs/remotes/$REMOTE/main" "$current_remote_main" "$expected_sha" || failed=1
     if [[ "$(git symbolic-ref --quiet "refs/remotes/$REMOTE/HEAD" 2>/dev/null || true)" == "refs/remotes/$REMOTE/main" ]]; then
-      normalize_relation_git_domain "$branch_file" "refs/remotes/$REMOTE/HEAD" "$current_remote_main" "$evidence_base" || failed=1
+      expected_sha="$(ledger_git_domain_sha "$expected_branches" "refs/remotes/$REMOTE/HEAD" 2>/dev/null || true)"
+      normalize_relation_git_domain "$branch_file" "refs/remotes/$REMOTE/HEAD" "$current_remote_main" "$expected_sha" || failed=1
     fi
   fi
   current_branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
   current_branch_sha="$(git rev-parse HEAD 2>/dev/null || true)"
   if [[ -n "$current_branch" && -n "$current_branch_sha" && "$current_branch" != main ]] &&
     relation_sha_is_normalizable "$ledger_commit" "$current_branch_sha" "$head"; then
-    normalize_relation_git_domain "$branch_file" "refs/heads/$current_branch" "$current_branch_sha" "$evidence_base" || failed=1
+    expected_sha="$(ledger_git_domain_sha "$expected_branches" "refs/heads/$current_branch" 2>/dev/null || true)"
+    normalize_relation_git_domain "$branch_file" "refs/heads/$current_branch" "$current_branch_sha" "$expected_sha" || failed=1
   fi
   current_head="$(git rev-parse HEAD 2>/dev/null || true)"
   repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [[ -n "$current_head" && -n "$repo_root" ]] && relation_sha_is_normalizable "$ledger_commit" "$current_head" "$head"; then
-    normalize_relation_git_domain "$worktree_file" "$repo_root" "$current_head" "$evidence_base" || failed=1
+    expected_sha="$(ledger_git_domain_sha "$expected_worktrees" "$repo_root" 2>/dev/null || true)"
+    normalize_relation_git_domain "$worktree_file" "$repo_root" "$current_head" "$expected_sha" || failed=1
   fi
 
   for domain in branches tags worktrees; do

@@ -40,7 +40,7 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 ## Current State
 
-Phase 138 completed the v1.38 evidence foundation. The canonical proposal-only inventory at `b8b9ad75` is an immutable ledger-only child of the fully reviewed evidence base; it records current Git, GitHub, and maintained-record receipts and permits later movement only through exact lifecycle classification and revalidation. Phase 139 completed the repository-owned CI, release, hygiene, and planning acceptance contracts. Exact synchronized-main CI and Release evidence (CI-06/CI-07) remains pending and is enforced by the blocking Phase 140 pre-planning gate; no live acceptance receipt is claimed until that gate succeeds.
+Phase 139 is revalidating its exact-SHA acceptance after the post-transition snapshot check found a branch-baseline mismatch. Phase 140 remains gated until synchronized same-SHA acceptance evidence is validated and the durable receipt is written.
 
 Lockspire has implemented and verified all seven v1.37 phases, and Hex reports `1.5.0` as the latest public release. Default-branch supplemental OIDC/FAPI run `33139876101` retained only allowlisted classified receipts from immutable suite inputs; its honest suite-failure findings remain non-certifying follow-up evidence. Protected release run `33141484467` published the exact pre-proven tar from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, matched its public Hex checksum, verified versioned docs, and repeated the clean-room public-package journey. The repo-native conformance jobs require no provider secrets; only the optional hosted-provider comparison accepts provider configuration.
 
@@ -395,4 +395,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-12 after Phase 138*
+*Last updated: 2026-09-25 after Phase 139*

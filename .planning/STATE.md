@@ -2,27 +2,27 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
-current_phase: 140
-current_phase_name: Bounded Operational Loose-End Triage
-status: planning
-stopped_at: Phase 139 complete, ready to plan Phase 140
-last_updated: "2026-09-25T14:51:15Z"
+current_phase: 139
+current_phase_name: Required Truth Reconciliation
+status: verifying
+stopped_at: Phase 139 exact-SHA acceptance re-verification
+last_updated: "2026-09-25T15:12:24Z"
 last_activity: 2026-09-25
-last_activity_desc: Phase 139 complete, transitioned to Phase 140
-state_head: d48084162fd1f02018e311534b68814c6e96710f
+last_activity_desc: Resumed Phase 139 exact-SHA acceptance after snapshot relation fix
+state_head: 3764ad5aa049ebd4185b532734086e68343762fa
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 1
   total_plans: 43
   completed_plans: 43
-  percent: 50
+  percent: 25
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-12)
+See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-09-12)
 
 ## Current Position
 
-Phase: 140
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-25 — Phase 139 complete, transitioned to Phase 140
+Phase: 139 — Required Truth Reconciliation
+Plan: 9 of 9
+Status: Verifying Phase 139 exact-SHA acceptance
+Last activity: 2026-09-25 — Resumed Phase 139 exact-SHA acceptance after snapshot relation fix
 
-Progress: [█████░░░░░] 50%
+Progress: [███░░░░░░░] 25%
 
 ## Accumulated Context
 
@@ -169,8 +169,8 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-09-25T13:45:52Z
-Stopped at: Phase 139 complete, ready to plan Phase 140
+Last session: 2026-09-25T15:12:24Z
+Stopped at: Phase 139 exact-SHA acceptance re-verification
 Resume file: .planning/phases/139-required-truth-reconciliation/139-UAT.md
 
 ## Performance Metrics

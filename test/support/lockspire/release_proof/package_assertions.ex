@@ -3984,11 +3984,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     commit_all!(repository, @next_phase_commit_prefix <> "record clean code review")
     evidence_base = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+    main_baseline = run_git!(repository, ["rev-parse", "HEAD^"]) |> String.trim()
+    run_git!(repository, ["switch", "-q", "-c", @next_phase_slug])
+    run_git!(repository, ["branch", "-f", "main", main_baseline])
     remote = Path.join(fixture, "origin.git")
     {_, 0} = System.cmd("git", ["clone", "-q", "--bare", repository, remote])
     run_git!(repository, ["remote", "add", "origin", remote])
     run_git!(repository, ["fetch", "-q", "origin", "main"])
-    run_git!(repository, ["switch", "-q", "-c", @next_phase_slug])
     candidate = Path.join(fixture, @next_phase_slug <> "-ledger.md")
 
     {output, 0} =
