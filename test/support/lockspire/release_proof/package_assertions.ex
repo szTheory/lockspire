@@ -2558,6 +2558,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {begin_output, 0} =
         System.cmd("node", [state_helper, "begin", "138"],
           cd: repository,
+          env: [{"GSD_TOOLS", gsd_tools}],
           stderr_to_stdout: true
         )
 
@@ -2570,7 +2571,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {seal_output, 0} =
         System.cmd("bash", ["-c", ~S(exec node "$STATE_HELPER" seal 138 < "$HOOKS_PATH")],
           cd: repository,
-          env: [{"STATE_HELPER", state_helper}, {"HOOKS_PATH", hooks_path}],
+          env: [
+            {"STATE_HELPER", state_helper},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ],
           stderr_to_stdout: true
         )
 
@@ -2578,6 +2583,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       original_receipt = File.read!(receipt_path)
       before_head = Jason.decode!(original_receipt)["before"]["head"]
       local_writer = install_receipt_writer_fixture!(repository, gsd_tools)
+      writer_sha256 = file_sha256(local_writer)
+      source_core = gsd_tools |> Path.dirname() |> Path.dirname()
+      assert writer_sha256 == file_sha256(Path.join(source_core, "workflows/transition.md"))
+      original_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       {output, 0} =
         run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
@@ -2594,7 +2603,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       assert writer_drift_status != 0
       assert writer_drift =~ "snapshot_relation: refresh_required"
+      assert File.read!(receipt_path) == original_receipt
+      assert run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim() ==
+               original_head
       install_receipt_writer_fixture!(repository, gsd_tools)
+      assert file_sha256(local_writer) == writer_sha256
 
       adversaries = [
         {"writer-descriptor",
@@ -2629,6 +2642,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
         assert status != 0, "#{name} receipt was authorized:\n#{rejected}"
         assert rejected =~ "snapshot_relation: refresh_required"
+        assert File.read!(receipt_path) == forged <> "\n"
+        assert run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim() == before_head
       end)
 
       File.write!(receipt_path, original_receipt)
@@ -3531,7 +3546,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       build_snapshot_repository!(repository, ledger)
       append_pretransition_lifecycle!(repository, ledger)
-      {_, 0} = System.cmd("node", [state_helper, "begin", "138"], cd: repository)
+      {_, 0} =
+        System.cmd("node", [state_helper, "begin", "138"],
+          cd: repository,
+          env: [{"GSD_TOOLS", gsd_tools}]
+        )
       write_valid_transition!(repository)
       hooks_path = Path.join(fixture, "hooks.json")
       File.write!(hooks_path, Jason.encode!(hooks))
@@ -3539,7 +3558,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {_, 0} =
         System.cmd("bash", ["-c", ~S(exec node "$STATE_HELPER" seal 138 < "$HOOKS_PATH")],
           cd: repository,
-          env: [{"STATE_HELPER", state_helper}, {"HOOKS_PATH", hooks_path}]
+          env: [
+            {"STATE_HELPER", state_helper},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ]
         )
 
       receipt = File.read!(receipt_path)
@@ -3549,6 +3572,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
 
       assert preflight_status == 0, preflight
+      writer = install_receipt_writer_fixture!(repository, gsd_tools)
+      original_writer = File.read!(writer)
+      original_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      File.write!(writer, original_writer <> "\nwriter drift\n")
+
+      {writer_drift, writer_drift_status} =
+        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", gsd_tools}])
+
+      assert writer_drift_status != 0
+      assert writer_drift =~ "snapshot_relation: refresh_required"
+      assert File.read!(receipt_path) == receipt
+      assert run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim() == original_head
+
+      File.write!(writer, original_writer)
+      assert File.read!(writer) == original_writer
 
       forged =
         receipt
