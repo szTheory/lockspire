@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
-current_phase: 140
-current_phase_name: Bounded Operational Loose-End Triage
-status: planning
-stopped_at: Phase 139 complete, ready to plan Phase 140
-last_updated: "2026-09-24T21:16:46.564Z"
-last_activity: 2026-09-24
-last_activity_desc: Phase 139 complete, transitioned to Phase 140
-state_head: 94f40718b79626348129ef795e71e46f0dd3883c
+current_phase: 139
+current_phase_name: Required Truth Reconciliation
+status: verifying
+stopped_at: Phase 139 exact-SHA acceptance recovery
+last_updated: "2026-09-25T13:45:52Z"
+last_activity: 2026-09-25
+last_activity_desc: Resumed Phase 139 to complete exact-SHA acceptance provenance
+state_head: 3f799b4ffb2818f03b3ac7c01e0ba36050a7a4f4
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 1
   total_plans: 43
   completed_plans: 43
-  percent: 50
+  percent: 25
 ---
 
 # Project State
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-09-12)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 140 — Bounded Operational Loose-End Triage
+**Current focus:** Phase 139 — Required Truth Reconciliation
 
 ## Current Position
 
-Phase: 140 — Bounded Operational Loose-End Triage
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-24 — Phase 139 complete, transitioned to Phase 140
+Phase: 139 — Required Truth Reconciliation
+Plan: 9 of 9
+Status: Verifying Phase 139 exact-SHA acceptance
+Last activity: 2026-09-25 — Resumed final acceptance provenance
 
-Progress: [█████░░░░░] 50%
+Progress: [███░░░░░░░] 25%
 
 ## Accumulated Context
 
@@ -169,13 +169,13 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-09-24T21:20:00Z
-Stopped at: Phase 139 complete; Phase 140 pre-planning acceptance gate is next
+Last session: 2026-09-25T13:45:52Z
+Stopped at: Refreshing Phase 139 baseline provenance before final verification
 Resume file: .planning/phases/139-required-truth-reconciliation/139-UAT.md
 
 ## Performance Metrics
 
-Phase 138 and all nine Phase 139 plans are complete and verified; Phase 140 planning remains gated on exact-SHA acceptance.
+Phase 138 and all nine Phase 139 plans are complete; Phase 139 verification is being refreshed before exact-SHA acceptance and Phase 140 planning.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
