@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 139)",
-    "reason": "Phase 139 of 4 — needs a plan"
+    "command": "/gsd:verify-work 139",
+    "label": "Refresh Phase 139 verification after Phase 138 closeout",
+    "reason": "All nine Phase 139 plans and its UAT are complete; the verification fingerprint is stale because Phase 138's final verification report changed"
   },
-  "updated_at": "2026-09-25T21:45:26.805Z"
+  "updated_at": "2026-09-25T21:57:06Z"
 }
