@@ -6,12 +6,12 @@
     {
       "number": "138",
       "name": "Baseline Inventory & Evidence Taxonomy",
-      "status": "complete"
+      "status": "in_progress"
     },
     {
       "number": "139",
       "name": "Required Truth Reconciliation",
-      "status": "complete"
+      "status": "in_progress"
     },
     {
       "number": "140",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 140)",
-    "reason": "Phase 140 of 4 — needs a plan"
+    "command": "/gsd:plan-phase 138 --gaps",
+    "label": "Plan closure for Phase 138 gap G-138-98",
+    "reason": "All existing gap plans are executed; verification still has G-138-98 open"
   },
-  "updated_at": "2026-09-24T21:16:46.582Z"
+  "updated_at": "2026-09-25T19:35:19Z"
 }

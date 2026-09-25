@@ -2,20 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
-current_phase: 140
-current_phase_name: Bounded Operational Loose-End Triage
-status: planning
-stopped_at: Phase 139 complete
-last_updated: "2026-09-25T15:28:04Z"
+current_phase: 138
+current_phase_name: Baseline Inventory & Evidence Taxonomy
+status: Verification gaps remain (G-138-98)
+stopped_at: "Phase 138 verification found G-138-98; next: $gsd-plan-phase 138 --gaps"
+last_updated: "2026-09-25T19:35:19Z"
 last_activity: 2026-09-25
-last_activity_desc: Completed Phase 139 verification and prepared Phase 140 entry gate
-state_head: b4963b5638958d61e26c6a04ac89b7230fca90f4
+last_activity_desc: Executed Phase 138 gap plans; verification still has G-138-98 open
+state_head: 8752de18b071c6e4555f31671c24281e8808996c
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 43
-  completed_plans: 43
-  percent: 50
+  completed_phases: 1
+  total_plans: 45
+  completed_plans: 45
 ---
 
 # Project State
@@ -26,14 +25,14 @@ See: .planning/PROJECT.md
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 139 — Required Truth Reconciliation
+**Current focus:** Phase 138 — Baseline Inventory & Evidence Taxonomy
 
 ## Current Position
 
-Phase: 140 — Bounded Operational Loose-End Triage
-Plan: Not started
-Status: Ready to plan after the exact-SHA Phase 139 acceptance gate
-Last activity: 2026-09-25 — Completed Phase 139 verification and prepared Phase 140 entry gate
+Phase: 138 (Baseline Inventory & Evidence Taxonomy) — READY TO EXECUTE
+Plan: Gap closure plan needed
+Status: Verification gaps remain (G-138-98)
+Last activity: 2026-09-25 — Executed Phase 138 gap plans; verification still has G-138-98 open
 
 Progress: [█████░░░░░] 50%
 
@@ -169,13 +168,13 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-09-25T15:12:24Z
-Stopped at: Phase 139 exact-SHA acceptance re-verification
-Resume file: .planning/phases/139-required-truth-reconciliation/139-UAT.md
+Last session: 2026-09-25T19:35:19Z
+Stopped at: Phase 138 verification found G-138-98; next: $gsd-plan-phase 138 --gaps
+Resume file: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md
 
 ## Performance Metrics
 
-Phase 138 and all nine Phase 139 plans are complete; Phase 139 verification passed; Phase 140 planning is gated on exact-SHA acceptance.
+All 36 Phase 138 and nine Phase 139 plans have summaries. Phase 138 verification has G-138-98 open; Phase 139 verification is stale. Phase 140 planning remains gated on the exact-SHA acceptance receipt.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |

@@ -9,7 +9,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Phases
 
-- [x] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies. (completed 2026-09-11)
+- [ ] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies.
 - [x] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls. (completed 2026-09-25)
 - [ ] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work.
 - [ ] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train.
@@ -28,9 +28,17 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue.
   4. A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory.
 
-**Plans**: 34/34 plans executed
+**Plans**: 36/36 plans executed; phase verification remains open (G-138-98)
 
 Plans:
+
+**Wave 35** *(gap closure)*
+
+- [x] 138-35-PLAN.md — Repair the two Phase 138 lifecycle receipt fixtures and retain fail-closed recovery proof.
+
+**Wave 36** *(gap closure)*
+
+- [x] 138-36-PLAN.md — Record evidence tiers and truthful dispositions for every Phase 138 prohibition; claim-level resolution remains open.
 
 **Wave 34** *(zero-human UAT gap closure; blocked on 138-33)*
 
@@ -202,7 +210,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 138. Baseline Inventory & Evidence Taxonomy | 34/34 | Complete    | 2026-09-12 |
+| 138. Baseline Inventory & Evidence Taxonomy | 36/36 | In Progress | |
 | 139. Required Truth Reconciliation | 9/9 | In Progress|  |
 | 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
