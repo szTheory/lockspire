@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "milestone": "v1.38 \u2014 Repository Baseline & Reconciliation",
   "phases": [
     {
       "number": "138",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:plan-phase 138 --gaps",
-    "label": "Plan closure for Phase 138 gap G-138-98",
-    "reason": "All existing gap plans are executed; verification still has G-138-98 open"
+    "command": "/gsd:execute-phase 138 --gaps-only --interactive",
+    "label": "Resolve the remaining prohibition claim reviews",
+    "reason": "Plan 138-38 requires explicit maintainer outcomes for 98 pending claims before G-138-98 can close"
   },
-  "updated_at": "2026-09-25T19:35:19Z"
+  "updated_at": "2026-09-25T21:11:48.947Z"
 }

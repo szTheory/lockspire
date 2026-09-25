@@ -28,9 +28,17 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue.
   4. A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory.
 
-**Plans**: 36/36 plans executed; phase verification remains open (G-138-98)
+**Plans**: 37/38 plans executed; phase verification remains open (G-138-98)
 
 Plans:
+
+**Wave 37** *(gap closure)*
+
+- [x] 138-37-PLAN.md — Add claim-specific negative evidence and explicit review states for the prohibition ledger.
+
+**Wave 38** *(gap closure; blocked on 138-37; includes maintainer review checkpoint)*
+
+- [ ] 138-38-PLAN.md — Resolve every remaining claim and enforce a zero-pending closure gate.
 
 **Wave 35** *(gap closure)*
 
@@ -64,7 +72,7 @@ Required Phase 138 gap handoff:
 
 `$gsd-execute-phase 138 --gaps-only --interactive`
 
-The command runs Waves 30–33 sequentially in the primary checkout because `workflow.use_worktrees=false`. Plan 32 gives the finalizer two strict modes: `pre-verify` runs after code review at `execute:post`, performs two agreeing collections, publishes the only ledger commit, and proves genuine currentness before the stock verifier; `post-transition` runs at `execute:complete:post`, validates that existing ledger against GSD's sealed Git-common-dir transaction—including its host-emitted `gsd-transition-v1` writer and transformation attestations—and performs no publication. Plan 33 installs both halt-capable steps from tracked project source. Installed execute-phase freshly re-renders `execute:post` after Plan 33 installation in this same invocation, so the new pre-verify hook is discovered rather than lost behind a stale pre-wave envelope. Any post-transition failure leaves durable pending state, blocks `$gsd-progress` and later-phase execution, and is retried by this same Phase 138 command without rerunning plans, verification, phase.complete, transition evolution, or ledger publication. **No pause/resume or second top-level finalizer command is part of the handoff.**
+This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific evidence and a separate resolution state for the 108 prohibition claims; Plan 38 pauses for explicit maintainer outcomes and then enforces a zero-pending closure gate. Any unresolved claim keeps G-138-98 open. The earlier Waves 30–36 are complete and are not rerun by `--gaps-only`.
 
 - [x] 138-26-PLAN.md
 - [x] 138-27-PLAN.md
@@ -210,7 +218,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 138. Baseline Inventory & Evidence Taxonomy | 36/36 | In Progress | |
+| 138. Baseline Inventory & Evidence Taxonomy | 37/38 | In Progress|  |
 | 139. Required Truth Reconciliation | 9/9 | In Progress|  |
 | 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
