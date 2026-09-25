@@ -20,21 +20,66 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
              "object:flagged-unverified" => 96
            }
 
+    assert published_source_counts() == Enum.frequencies_by(source, & &1.original_form)
+
     assert Enum.all?(rows, &owner_is_tracked?(&1.owner))
 
-    assert Enum.frequencies_by(rows, &{&1.tier, &1.disposition, &1.resolution}) == %{
-             {"judgment", "UNVERIFIED", "pending"} => 98,
-             {"test", "ENFORCED", "evidence-backed"} => 10
+    assert Enum.frequencies_by(rows, &{&1.tier, &1.disposition}) == %{
+             {"judgment", "UNVERIFIED"} => 98,
+             {"test", "ENFORCED"} => 10
            }
 
-    assert ledger_text() =~ "| judgment | 98 | UNVERIFIED | 98 |"
-    assert ledger_text() =~ "| test | 10 | ENFORCED | 10 |"
-    assert ledger_text() =~ "| pending | 98 |"
-    assert ledger_text() =~ "| evidence-backed | 10 |"
+    technical_totals = published_technical_totals()
+
+    assert Map.new(technical_totals, fn {key, {tier_count, _disposition_count}} ->
+             {key, tier_count}
+           end) == Enum.frequencies_by(rows, &{&1.tier, &1.disposition})
+
+    assert Enum.all?(technical_totals, fn {_key, {tier_count, disposition_count}} ->
+             tier_count == disposition_count
+           end)
+
+    assert Enum.frequencies_by(rows, & &1.resolution) == %{
+             "maintainer-affirmed" => 98,
+             "evidence-backed" => 10
+           }
+
+    assert closure_valid?(rows)
+    refute Enum.any?(rows, &(&1.resolution == "pending"))
+  end
+
+  test "closure fails while any row is pending and published totals must match the ledger" do
+    rows = ledger_rows()
+    assert row_resolution_counts(rows) == published_resolution_counts()
+
+    first = hd(rows)
+
+    pending = %{
+      first
+      | resolution: "pending",
+        reviewer: "",
+        reviewed_at: "",
+        judgment_rationale: "",
+        judgment_reference: ""
+    }
+
+    refute closure_valid?([pending | tl(rows)])
+
+    refute closure_valid?([
+             %{first | resolution: "maintainer-superseded", judgment_reference: ""} | tl(rows)
+           ])
   end
 
   test "pending judgment is distinct from resolution and evidence-backed rows require focused proof" do
-    pending = hd(ledger_rows())
+    pending = %{
+      hd(ledger_rows())
+      | resolution: "pending",
+        reviewer: "",
+        reviewed_at: "",
+        judgment_rationale: "",
+        judgment_reference: ""
+    }
+
     assert valid_row?(pending)
     assert pending.resolution == "pending"
     assert pending.tier == "judgment" and pending.disposition == "UNVERIFIED"
@@ -60,22 +105,32 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
   end
 
   test "maintainer outcomes require attributable review fields and retain judgment disposition" do
-    pending = hd(ledger_rows())
+    pending = %{
+      hd(ledger_rows())
+      | resolution: "pending",
+        reviewer: "",
+        reviewed_at: "",
+        judgment_rationale: "",
+        judgment_reference: ""
+    }
 
     resolved = %{
       pending
       | resolution: "maintainer-affirmed",
         reviewer: "maintainer@example.test",
         reviewed_at: "2026-09-25T12:00:00Z",
-        judgment_reference: "138-CONTEXT.md#D-01",
+        judgment_reference: "138-01-PLAN.md#prohibitions[1]; 138-CONTEXT.md#d-01",
         judgment_rationale: "The claim remains applicable repository policy."
     }
 
     assert valid_row?(resolved)
+    assert valid_row?(%{resolved | resolution: "maintainer-superseded"})
+    assert valid_row?(%{resolved | resolution: "maintainer-not-applicable"})
     refute valid_row?(%{resolved | reviewer: ""})
     refute valid_row?(%{resolved | reviewed_at: "not-a-date"})
     refute valid_row?(%{resolved | reviewed_at: "2026-99-99T12:00:00Z"})
     refute valid_row?(%{resolved | judgment_reference: ""})
+    refute valid_row?(%{resolved | judgment_reference: "138-CONTEXT.md#d-01"})
     refute valid_row?(%{resolved | tier: "test"})
     refute valid_row?(%{resolved | disposition: "ENFORCED"})
     refute valid_row?(%{pending | resolution: "maintainer-superseded"})
@@ -310,8 +365,14 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
               "maintainer-superseded",
               "maintainer-not-applicable"
             ] do
+    {plan, position} = row.identity
+
+    source_ref =
+      "138-#{String.pad_leading(Integer.to_string(plan), 2, "0")}-PLAN.md#prohibitions[#{position}]"
+
     row.reviewer =~ ~r/\S/ and valid_utc_timestamp?(row.reviewed_at) and
-      row.judgment_rationale =~ ~r/\S/ and row.judgment_reference =~ ~r/\S/
+      row.judgment_rationale =~ ~r/\S/ and row.judgment_reference =~ ~r/\Q#{source_ref}\E/ and
+      row.judgment_reference =~ ~r/138-CONTEXT\.md#d-\d\d/
   end
 
   defp valid_disposition?(
@@ -340,6 +401,47 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
       {:ok, _datetime, 0} -> String.ends_with?(value, "Z")
       _ -> false
     end
+  end
+
+  defp closure_valid?(rows) do
+    Enum.all?(rows, &valid_row?/1) and
+      Enum.all?(rows, &(&1.resolution != "pending")) and
+      row_resolution_counts(rows) == published_resolution_counts()
+  end
+
+  defp row_resolution_counts(rows) do
+    counts = Enum.frequencies_by(rows, & &1.resolution)
+
+    Map.new(
+      [
+        "pending",
+        "evidence-backed",
+        "maintainer-affirmed",
+        "maintainer-superseded",
+        "maintainer-not-applicable"
+      ],
+      &{&1, Map.get(counts, &1, 0)}
+    )
+  end
+
+  defp published_resolution_counts do
+    ~r/^\| (pending|evidence-backed|maintainer-affirmed|maintainer-superseded|maintainer-not-applicable) \| (\d+) \|/m
+    |> Regex.scan(ledger_text(), capture: :all_but_first)
+    |> Map.new(fn [state, count] -> {state, String.to_integer(count)} end)
+  end
+
+  defp published_technical_totals do
+    ~r/^\| (judgment|test) \| (\d+) \| (UNVERIFIED|ENFORCED) \| (\d+) \|/m
+    |> Regex.scan(ledger_text(), capture: :all_but_first)
+    |> Map.new(fn [tier, tier_count, disposition, disposition_count] ->
+      {{tier, disposition}, {String.to_integer(tier_count), String.to_integer(disposition_count)}}
+    end)
+  end
+
+  defp published_source_counts do
+    ~r/^\| (string|object:flagged-unverified|object:automated) \| (\d+) \|/m
+    |> Regex.scan(ledger_text(), capture: :all_but_first)
+    |> Map.new(fn [form, count] -> {form, String.to_integer(count)} end)
   end
 
   defp owner_is_tracked?(path) do
