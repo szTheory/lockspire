@@ -171,6 +171,7 @@ Progress: [█████░░░░░] 50%
 Last session: 2026-09-25T19:35:19Z
 Stopped at: Phase 138 verification found G-138-98; next: $gsd-plan-phase 138 --gaps
 Resume file: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md
+Resume instruction: User prefers automatically following recommended GSD options; pause for destructive, one-way, or explicitly approval-gated choices.
 
 ## Performance Metrics
 
