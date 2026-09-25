@@ -1,6 +1,6 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-25T14:51:15Z
+verified: 2026-09-25T15:28:04Z
 status: passed
 score: 5/5 roadmap success criteria verified
 covered_files:
@@ -66,7 +66,7 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:66f1b6bf589777534b018d87a90a2be33664a2417135582511fe73d06713f1b0"
+covered_digest: "v1:sha256:f79e1d9b1e5bd7e75af7eb8228ea7c07934fc038809383022ed31083ec45e333"
 behavior_unverified: 0
 overrides_applied: 0
 human_needed: false
@@ -90,7 +90,7 @@ advisory: []
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-25T14:51:15Z
+**Verified:** 2026-09-25T15:28:04Z
 **Status:** passed
 **Re-verification:** Yes — current working tree, after prior verification and Phase 139 closeout.
 
@@ -98,7 +98,7 @@ advisory: []
 
 The five ROADMAP success criteria are met by repository-owned code and records. Exact acceptance validates one full SHA against repository refs and canonical CI/Release identities, executes the local gate, rejects unresolved hygiene blocks and undispositioned warnings, and emits an allowlisted receipt. Workflow and lifecycle tests connect this implementation to the supported blocking Phase 140 `plan:pre` boundary.
 
-The exact-SHA receipt is not present and is not claimed as Phase 139 evidence. Main and origin/main remain at the verified PR #99 snapshot `bca00c13c5e7f38ce2e88908ddd66029e2269708`; this recovery branch refreshed the Phase 139 pre-verification ledger at `b2a8c1d3` after correcting its bookkeeping checks and scratch-file isolation. The mandatory Phase 140 plan-pre gate must still run exact acceptance on the final synchronized SHA and write the durable receipt before Phase 140 planning.
+The exact-SHA receipt is not present and is not claimed as Phase 139 evidence. Main and origin/main are synchronized at `3764ad5aa049ebd4185b532734086e68343762fa`; this recovery branch refreshed the Phase 139 pre-verification ledger at `ac361446` after correcting its bookkeeping checks, scratch-file isolation, per-ref branch normalization, and corroboration for authenticated empty GitHub check rollups. The mandatory Phase 140 plan-pre gate must still run exact acceptance on the final synchronized SHA and write the durable receipt before Phase 140 planning.
 
 ### Observable Truths — Roadmap Contract
 
@@ -208,5 +208,5 @@ No Phase 139 roadmap criterion failed. Phase 139 provides the repository-owned a
 
 ---
 
-_Verified: 2026-09-25T14:51:15Z_
+_Verified: 2026-09-25T15:28:04Z_
 _Verifier: the agent (gsd-verifier)_
