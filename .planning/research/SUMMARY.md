@@ -1,165 +1,190 @@
 # Project Research Summary
 
-**Project:** Lockspire
-**Domain:** Repo-local Phoenix adoption demo Docker DX and repo hygiene
-**Researched:** 2026-06-04
+**Project:** Lockspire v1.38 Repository Baseline & Reconciliation
+**Domain:** Maintenance-baseline reconciliation for an embedded Phoenix/Elixir OAuth/OIDC library
+**Researched:** 2026-08-28
 **Confidence:** HIGH
 
 ## Executive Summary
 
-v1.30 is a demo-operations milestone for an embedded Phoenix OAuth/OIDC authorization-server library. The product work is not new protocol surface or admin UI expansion; it is making the representative host app in `examples/adoption_demo` boring to start, easy to prove, hard to collide with other local projects, and clean enough to serve as the base for the next admin UI pass.
+Lockspire v1.38 is a bounded maintenance milestone for a mature embedded OAuth/OIDC library, not a product, protocol, or platform expansion. The repository already has the right enforcement surfaces: Mix quality aliases, a repository-owned hygiene script, SHA-pinned GitHub Actions, a protected exact-SHA release path, GitHub-native triage, and GSD planning artifacts. The desired outcome is a reproducible evidence chain showing whether every relevant item is clean, current, deliberately deferred, or a concrete correction—not an empty GitHub queue or a cosmetically quiet worktree.
 
-The recommended approach is one default Docker path: app plus PostgreSQL through Docker Compose, direct host-port access on `127.0.0.1:${LOCKSPIRE_DEMO_PORT:-4100}`, and Traefik hostname routing only behind an explicit opt-in profile or override. One canonical `LOCKSPIRE_DEMO_BASE_URL` must drive Phoenix endpoint URL, Lockspire issuer, seeded redirect/callback truth, startup output, docs, and the smoke command.
+The recommended approach is evidence first, disposition second: inventory local Git/worktrees, remote PRs/issues, workflow runs, release records, and planning truth before mutating anything. Bind every health or release statement to an exact source SHA and corresponding required workflow run; use `mix ci` and `repo_hygiene_check.sh --ci` as the repository-owned proof. Retain Release Please and the protected exact-ref publisher, preserve full-SHA action pins, and keep OIDF receipts redacted, supplemental, and explicitly non-certifying.
 
-The highest risks are environment drift and cleanup damage: hard-coded issuer/callback URLs, container loopback binding, accidental host Postgres dependency, global Docker resource collisions, and over-broad hygiene that deletes useful UI evidence. Mitigate these by landing the URL/config contract first, adding a Compose-managed database with explicit env wiring, parameterizing project names/ports/hostnames, keeping cleanup allowlisted and non-destructive by default, and proving the active URL with the existing black-box smoke.
+The greatest risks are false readiness claims from a green run at the wrong SHA, destructive cleanup without owner/disposition evidence, and release or planning prose drifting from executable contracts. Mitigate them with a dated evidence matrix, one terminal classification per loose end, smallest-authoritative-layer corrections, focused proof followed by full gates, and explicit deferral where the evidence does not authorize a change.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Use the existing Phoenix/Elixir stack and add only local demo infrastructure. Do not add production Docker packaging, Kubernetes, conformance lanes, new OAuth/OIDC behavior, Redis, pgAdmin, or a required standalone auth-service shape.
+Do not add tooling in v1.38. Existing repository controls are both sufficient and intentionally integrated; another CI system, bot, scanner, test runner, dashboard, or dependency-refresh campaign would duplicate policy and expand risk. The normal contributor proof is `mix ci`, followed by the existing hygiene check; narrow aliases are diagnostic tools, not replacements for the full closeout gate.
 
 **Core technologies:**
-- Docker Compose v2: local app/database topology, project isolation, env interpolation, profiles, healthchecks, named volumes.
-- `postgres:14` or `postgres:14-alpine`: Compose-managed demo database with named volume and `pg_isready` healthcheck.
-- Phoenix/Bandit: app binds `0.0.0.0` in Docker while preserving loopback host-local defaults.
-- Traefik v2.10: optional local hostname routing through `tools/traefik`, never required for default startup.
-- Bash/Mix demo helpers: thin repo-root wrappers or Mix task for start/stop/info/reset/smoke output; keep `scripts/demo/adoption_smoke.py` as proof, not orchestration.
-- `scripts/maintainer/repo_hygiene_check.sh`: extend the existing PASS/WARN/BLOCK gate for demo leftovers without making CI depend on Docker daemon state.
+
+- **Elixir/Mix (CI 1.19.5; supported floor 1.18.4) and OTP (28; floor 27):** preserve the existing compatibility lanes and `mix ci` contributor contract.
+- **GitHub Actions with full-SHA-pinned actions:** retain required CI, release, dependency review, and supplemental conformance boundaries without introducing a second hosted system.
+- **Git and Git worktrees:** inventory and classify exact local state; never use baseline work to justify broad deletion.
+- **GitHub CLI:** use read-only, complete PR/issue/run inventories for maintainer decisions; do not automate closure or merging.
+- **Credo, Dialyxir, Sobelow, MixAudit, ExDoc, actionlint/ShellCheck:** retain existing QA, audit, docs, and workflow contracts.
+- **Release Please plus protected exact-SHA release workflow:** retain bookkeeping/publisher separation; never manually bump, tag, or publish to repair apparent drift.
 
 ### Expected Features
 
+For this maintenance milestone, the table stakes are operational evidence rather than user-facing functionality.
+
 **Must have (table stakes):**
-- One documented repo-root Docker command starts the adoption demo app and database without host Postgres.
-- Compose includes `web` and `db`, DB healthcheck, named Postgres/deps/_build volumes, explicit DB env, and direct `127.0.0.1` port publishing.
-- Startup performs idempotent create/migrate/seed, waits for HTTP readiness, then prints active base URL, issuer, discovery, JWKS, admin, verify, developer apps, callback/protected API URLs, seeded accounts, seeded clients, and the exact smoke command.
-- Ports, base URL, Compose project name, and optional Traefik hostname are configurable.
-- `scripts/demo/adoption_smoke.py` passes against the active `LOCKSPIRE_DEMO_BASE_URL`.
-- Stop/reset/cleanup commands are scoped to the active Compose project.
-- Hygiene reports demo containers/volumes, generated demo artifacts, stale logs/screenshots, and dirty tracked state with clear remediation.
-- `docs/adoption-demo.md` makes Docker the default path and keeps the host-local Mix/Postgres path as a fallback.
 
-**Should have (differentiators):**
-- `info` or `--print` command to reprint URLs/accounts/clients/smoke command for a running demo.
-- `doctor` preflight for Docker daemon, Compose plugin, chosen ports, Traefik network, and expected files.
-- Optional smoke wrapper that preserves the existing Python smoke output.
-- Log-tail helper scoped to the active Compose project.
-- Structured `--json` readiness output only after the plain text contract is stable.
+- Clean, synchronized `main` proof plus intentional ref, tag, branch, and worktree inventory.
+- Complete open PR/issue disposition and current-SHA required CI/release evidence.
+- Local proof from `mix ci` and the repository hygiene contract after applicable corrections.
+- Reconciled planning/release truth and an evidence-backed loose-end disposition record.
+- Supplemental OIDF findings preserved with redacted, non-certifying wording.
 
-**Defer:**
-- Browser screenshot automation for startup; leave screenshots to the next admin UI polish milestone.
-- Cross-repo local development platform conventions.
-- Required Traefik, TLS/certificate automation, production release image, Kubernetes/Helm/Terraform.
-- New protocol flows, admin workflows, hosted auth, SAML, LDAP, or CIAM breadth.
+**Should have (only when evidence supports it):**
+
+- One dated baseline report mapping checks, SHA, evidence source, and disposition.
+- A deterministic drift fence or narrow hygiene-script improvement only if reconciliation proves a repeatable, repository-owned gap.
+- A safe-defer record with evidence, scope boundary, owner/revisit trigger, and no false completion claim.
+
+**Defer (separate milestone):**
+
+- Protocol, host-seam, admin, or CI-platform expansion; broad dependency refreshes; merge-process redesign; and OIDF/FAPI conformance hardening.
 
 ### Architecture Approach
 
-Keep v1.30 outside Lockspire runtime modules. The local Docker path is a first-class maintainer path, but CI should continue using the existing host-run adoption smoke unless a later phase intentionally adds a Docker smoke job. The architectural center is a single external URL contract flowing through Compose env, Phoenix endpoint config, Lockspire issuer, seeds, docs, startup output, and smoke.
+v1.38 should use a maintenance evidence flow, not create runtime structure: read-only inventory feeds an evidence matrix; each item receives one classification and disposition; only approved narrow corrections enter required repository proof; standard GSD verification then records closure. Authority is ordered as reproducible live repository/GitHub evidence, required repository-owned gate output, current checked-in contracts/runbooks, and archived milestone records. Prose can explain proof but cannot substitute for it.
 
 **Major components:**
-1. `examples/adoption_demo/docker-compose.yml` - local `web` + `db` topology, direct port default, project-scoped volumes, optional Traefik profile/override.
-2. `examples/adoption_demo/config/config.exs` - env precedence for bind IP/port, public base URL, endpoint `url`, issuer, and DB settings.
-3. Demo startup/info scripts or Mix task - idempotent setup, readiness wait, and generated URL/account/client/smoke output.
-4. `scripts/demo/adoption_smoke.py` - black-box proof against the printed base URL; no Docker orchestration.
-5. `docs/adoption-demo.md` - canonical human contract for Docker, Traefik, smoke, reset, cleanup, env overrides, and host-local fallback.
-6. `scripts/maintainer/repo_hygiene_check.sh` - non-destructive repo hygiene classification and cleanup guidance.
+
+1. **Local and GitHub inventory** — captures exact Git/worktree state, open work, runs, and source SHA without mutation.
+2. **Classification/disposition matrix** — records source, observed fact, category, owner/authority, action or no-action, and terminal proof.
+3. **Repository quality contract** — `mix ci`, hygiene CI mode, and targeted existing checks establish source and lifecycle evidence.
+4. **Protected release authority** — Release Please owns release intent; exact-ref workflow owns publishing and artifact provenance.
+5. **GSD planning truth** — phase verification, requirements, roadmap, and state carry current milestone evidence without rewriting history.
+6. **Supplemental OIDF lane** — preserves immutable/redacted comparison findings outside required baseline acceptance.
 
 ### Critical Pitfalls
 
-1. **Hard-coded issuer/callback drift** - derive endpoint URL, Lockspire issuer, seeded redirect URIs, docs, banner, and smoke from `LOCKSPIRE_DEMO_BASE_URL`.
-2. **Docker still assumes host Postgres** - add a Compose `db` service, explicit `LOCKSPIRE_DEMO_DB_*` env, healthcheck, and setup command.
-3. **Phoenix binds loopback inside container** - set `LOCKSPIRE_DEMO_BIND_IP=0.0.0.0` in Compose while defaulting host-local runs to `127.0.0.1`.
-4. **Docker project/volume/Traefik collisions** - parameterize Compose project name, ports, hostname, router/service labels; avoid `container_name`; keep DB host port unexposed by default.
-5. **Over-broad cleanup destroys evidence** - hygiene should report by category and cleanup only allowlisted demo-owned paths/resources with explicit reset flags.
-6. **Startup banner lies or leaks** - generate output from config truth and seeds; print client IDs and demo logins, not client secrets, tokens, private keys, auth codes, or cookies.
+1. **Using a green run for another SHA** — require `HEAD`, `origin/main`, run ID, trigger, conclusion, and `head_sha` to agree before any readiness claim.
+2. **Destructive cleanup without authority** — inventory first; close, defer, or retain unless exact ownership, target, and passing policy justify a bounded action.
+3. **Drift between prose, executable gates, and release records** — treat scripts/workflows as authority, correct the smallest proven layer, and preserve historical evidence.
+4. **Treating OIDF output as a required gate or certification** — retain redacted receipts and route only independently reproduced regressions to future bounded work.
+5. **Breaking the protected release chain** — preserve action pins, exact-SHA CI binding, detached/package proof, manifest/checksum linkage, and Release Please ownership.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Demo URL Contract and Config Unification
-**Rationale:** URL truth is the root dependency. Compose, Traefik, seeds, docs, and smoke all fail noisily if issuer/callback/base URL drift remains.
-**Delivers:** `LOCKSPIRE_DEMO_BASE_URL` parsing, Docker bind IP support, endpoint `url` and Lockspire issuer derived from one base URL, seed/smoke/doc alignment checks.
-**Addresses:** configurable base URL/port/hostname, smoke URL compatibility.
-**Avoids:** hard-coded issuer drift, callback mismatch, loopback container binding.
+### Phase 1: Baseline Inventory and Evidence Taxonomy
 
-### Phase 2: Default Docker Compose App + DB
-**Rationale:** The milestone's default path must remove host Postgres dependency before polishing scripts or docs.
-**Delivers:** `db` service, healthcheck-gated `web`, explicit DB env, named Postgres/deps/_build volumes, direct `127.0.0.1:${LOCKSPIRE_DEMO_PORT:-4100}:4000` publishing, idempotent setup command.
-**Uses:** Docker Compose v2, PostgreSQL 14, Phoenix/Bandit dev image.
-**Implements:** local app/database topology for the adoption demo only.
+**Rationale:** All later claims depend on an exact, read-only view of the local/remote state. The local branch being ahead of `origin/main` makes prior green CI insufficient by itself.
 
-### Phase 3: Conflict Controls and Optional Traefik
-**Rationale:** Multiple local Elixir admin demos are the concrete adopter friction. Project/port/hostname controls should land before final docs so commands are truthful.
-**Delivers:** configurable Compose project name, app port, optional DB debug port if needed, cache reset, Traefik profile/override, parameterized Traefik labels/network/hostname, preflight/doctor if included.
-**Addresses:** port conflicts, Compose resource collisions, optional hostname routing.
-**Avoids:** required Traefik, static router label collisions, stale `_build`/`deps` volume confusion.
+**Delivers:** A dated evidence matrix covering Git state, worktrees/refs/tags, PRs/issues, required and supplemental workflow runs, release records, planning records, and current gate outputs.
 
-### Phase 4: Startup Output, Smoke Wrapper, and Docs
-**Rationale:** The demo is useful only if maintainers can immediately see what is running and how to prove it.
-**Delivers:** repo-root launcher/info output, readiness wait, seeded account/client display, exact smoke command, optional smoke wrapper, updated `docs/adoption-demo.md` with Docker default, host-local fallback, Traefik, env overrides, stop/reset/cleanup.
-**Addresses:** printed URLs/accounts/clients/routes, smoke proof, executable handoff.
-**Avoids:** source-diving, stale banner values, secret leakage, smoke proving only the wrong origin.
+**Addresses:** Synchronized-main proof, intentional Git inventory, and complete operational work inventory.
 
-### Phase 5: Repo Hygiene Gate and Scoped Cleanup
-**Rationale:** Hygiene should be last because it depends on knowing which artifacts and Docker resources the new demo path creates.
-**Delivers:** local PASS/WARN/BLOCK checks for generated demo artifacts and Docker leftovers, cleanup/reset lane scoped by Compose project, Docker-free `--ci` behavior, documented remediation commands.
-**Addresses:** clean repo before next admin UI pass.
-**Avoids:** destructive broad cleanup, CI flakes from local Docker checks, conflating Docker state with git state.
+**Avoids:** Wrong-SHA readiness claims and irreversible cleanup without ownership or terminal evidence.
+
+### Phase 2: Required Truth Reconciliation
+
+**Rationale:** Reconcile the acceptance spine before triaging peripheral artifacts; executable contracts must agree with current planning and release statements.
+
+**Delivers:** Only evidence-backed corrections to required workflows, runbooks, planning/release truth, or repository contracts, with focused proof and the full existing gates where applicable.
+
+**Uses:** `mix ci`, `repo_hygiene_check.sh --ci`, existing QA/audit/docs aliases, CI workflow linting, and the protected release-chain contract.
+
+**Implements:** Executable-contract authority, exact-SHA evidence binding, and explicit supplemental/non-certifying OIDF classification.
+
+**Avoids:** Prose/gate drift, OIDF shadow gating, manual release repair, and weakened action/release provenance.
+
+### Phase 3: Bounded Operational Loose-End Triage
+
+**Rationale:** PRs, Dependabot updates, draft work, branches, worktrees, TODOs, and historical artifacts can be safely decided only after their evidence and governing rules are known.
+
+**Delivers:** An evidence-backed disposition for every candidate—fix now, defer, retain historical evidence, close, or merge only when separately authorized and fully proven.
+
+**Addresses:** PR/issue disposition and loose-end closure; any dependency update remains an independent compatibility and gate decision.
+
+**Avoids:** Bulk closure/deletion, speculative refactoring, a baseline-wide dependency campaign, and loss of recovery/provenance evidence.
+
+### Phase 4: Maintenance-Baseline Closure
+
+**Rationale:** Closure is a claim about the final post-triage repository, so it must follow all corrections and dispositions.
+
+**Delivers:** Reconciled requirements/roadmap/state and standard phase verification that point to final matrix rows, gate results, exact SHAs/runs, explicit deferrals, and OIDF’s supplemental status.
+
+**Addresses:** Durable handoff, coherent release/milestone truth, and honest supplemental-conformance retention.
+
+**Avoids:** “Looks done” documentation, historical rewrites, artifact-only claims, and certification overstatement.
 
 ### Phase Ordering Rationale
 
-- URL/config contract comes first because every later phase consumes the public base URL.
-- Compose app+DB comes before wrappers because scripts should wrap a working topology, not compensate for missing database/config behavior.
-- Conflict controls and optional Traefik come before docs so the documented commands are final.
-- Startup output and smoke alignment come before hygiene because they define what proof artifacts exist.
-- Hygiene is last because it should classify actual generated outputs and Docker resources, not guessed ones.
+- Inventory precedes all edits so stale history and local/remote SHA divergence cannot create false work or false success.
+- Required truth reconciliation precedes operational triage, establishing the authoritative rules against which each loose end is judged.
+- Triage is deliberately separate from release/protocol changes: GitHub-state disposition is not permission for destructive or product-affecting action.
+- Closure comes last because planning records must describe verified final state, not forecast it.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3:** Traefik label naming and Compose profile/override details need targeted validation with `docker compose config`, especially for multiple simultaneous checkouts.
-- **Phase 5:** Cleanup ownership needs repo-specific path validation so useful `tmp/admin-ui-polish` evidence is preserved while demo-owned debris is reported.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** Phoenix endpoint URL config, URI parsing, and smoke equality checks are straightforward repo-local work.
-- **Phase 2:** Docker Compose app+Postgres with healthcheck/named volumes is well-documented.
-- **Phase 4:** Existing smoke script, seeds, docs, and route inventory provide enough repo truth for implementation.
+- **Phase 1:** Fresh GitHub inventory and branch-protection/run data are time-sensitive; validate live facts and exact SHAs at execution time.
+- **Phase 2:** Research only if a concrete CI/release/OIDF contract defect is discovered; changes to release authority or workflow triggers require focused primary-source validation.
+- **Phase 3:** Research each proposed dependency update or remote disposition individually; no aggregate upgrade or cleanup authorization follows from the inventory.
+
+Phases with standard patterns (skip research-phase unless evidence changes):
+
+- **Phase 4:** Standard GSD reconciliation and existing repository gates; it needs fresh verification evidence, not design research.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Grounded in repo reads plus official Docker Compose, Traefik, and Phoenix docs. Exact script names can be finalized during planning. |
-| Features | HIGH | Table stakes map directly to `.planning/PROJECT.md`, current demo files, and the milestone's stated defaults. |
-| Architecture | HIGH | Integration points are repo-local and avoid Lockspire runtime boundary changes. |
-| Pitfalls | HIGH | Critical pitfalls are directly visible in current config, compose, docs, smoke, and hygiene behavior. |
+| Stack | MEDIUM | Versions and existing contracts are repository-verified; remote state and operational guidance are time-sensitive. |
+| Features | HIGH | Scope and acceptance needs are directly derived from repository planning and maintenance boundary. |
+| Architecture | HIGH | The recommended flow maps to existing scripts, workflows, release controls, and GSD artifacts. |
+| Pitfalls | HIGH | Core risks are demonstrated by repository state and reinforced by official GitHub operational guidance. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- Script shape: choose exact names and flags for start/stop/reset/info/smoke wrappers during requirements.
-- Readiness implementation: decide whether URL printing is a Mix task, shell helper, or minimal Compose command output; prefer Mix task if it can read the same config truth.
-- Seed URL derivation: verify whether seeded redirect/callback/client URLs can be made base-URL-driven cleanly or need an explicit reset requirement when `LOCKSPIRE_DEMO_BASE_URL` changes.
-- CI Docker proof: decide whether v1.30 only validates `docker compose config` in CI or adds a full Docker smoke job after local proof stabilizes.
-- Cleanup allowlist: define exact repo-owned generated paths; preserve admin UI screenshot/evidence directories unless explicitly requested.
+- **Live state freshness:** Re-fetch and re-inventory branches, PRs/issues, workflow runs, and protection requirements before recording final claims; research observations from 2026-08-28 are not evergreen.
+- **Current-head CI:** The local v1.38 planning-start commit was ahead of `origin/main` during research; obtain required CI for the exact final source SHA rather than reusing prior-release evidence.
+- **Remote authority:** Decide PR closure, merge, branch/worktree removal, and dependency updates only with owner/policy authorization and item-specific proof.
+- **OIDF findings:** Preserve redacted receipts and classify them; only a reproducible repository regression warrants a scoped corrective task in this milestone.
+- **Potential drift fences:** Add an automated assertion only after a concrete, deterministic drift mechanism is observed; do not create a speculative dashboard or new maintenance subsystem.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `.planning/PROJECT.md` - v1.30 goal, target features, boundaries, and milestone context.
-- `.planning/research/STACK.md` - Docker Compose/Phoenix/Traefik stack recommendations and current repo-state findings.
-- `.planning/research/FEATURES.md` - table-stakes capabilities, differentiators, anti-features, and acceptance criteria.
-- `.planning/research/ARCHITECTURE.md` - repo integration points, config/data flow, env precedence, script/docs/CI responsibilities.
-- `.planning/research/PITFALLS.md` - critical/moderate/minor pitfalls and phase-specific warnings.
-- Repo files cited by researchers: `docs/adoption-demo.md`, `examples/adoption_demo/docker-compose.yml`, `examples/adoption_demo/Dockerfile.dev`, `examples/adoption_demo/config/config.exs`, `examples/adoption_demo/priv/repo/seeds.exs`, `scripts/demo/adoption_smoke.py`, `scripts/maintainer/repo_hygiene_check.sh`, `tools/traefik/docker-compose.yml`.
 
-### Secondary (MEDIUM/HIGH confidence)
-- Docker Compose documentation - project model, CLI/env vars, services, profiles, healthchecks, port publishing, volume behavior.
-- Traefik Docker provider v2.10 documentation - Docker labels, `exposedByDefault=false`, network selection, router/service configuration.
-- Phoenix Endpoint documentation - endpoint `:url`, server binding, generated URL behavior behind local/proxy access.
+- Lockspire repository evidence: `mix.exs`, `mix.lock`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/oidf-conformance.yml`, `scripts/maintainer/repo_hygiene_check.sh`, `REPO-HYGIENE-CHECKLIST.md`, `RELEASE-TRAIN.md`, and current GSD planning records.
+- Research inputs: [STACK.md](STACK.md), [FEATURES.md](FEATURES.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [PITFALLS.md](PITFALLS.md).
+
+### Secondary (MEDIUM confidence)
+
+- GitHub documentation on protected/required status checks, merge queues, workflow-artifact retention, and secure full-SHA action pinning.
+- GitHub CLI documentation for complete read-only PR, issue, and workflow-run inventories.
+
+## Files Created/Modified
+
+- `.planning/research/SUMMARY.md` — canonical v1.38 research synthesis and roadmap guidance.
+- `.planning/research/STACK.md` — source research retained and committed with the synthesis.
+- `.planning/research/FEATURES.md` — source research retained and committed with the synthesis.
+- `.planning/research/ARCHITECTURE.md` — source research retained and committed with the synthesis.
+- `.planning/research/PITFALLS.md` — source research retained and committed with the synthesis.
+
+## Task Commits
+
+1. **Synthesize v1.38 research** — `83b6b4cc` (`docs: complete project research`)
+
+## Self-Check: PASSED
+
+- Confirmed the four research inputs were synthesized and all cited workflow filenames exist in `.github/workflows/`.
+- `git diff --check` passed during this validation repair.
+- This summary preserves the bounded maintenance scope: evidence-led reconciliation, existing gates, and no protocol or tooling expansion.
 
 ---
-*Research completed: 2026-06-04*
+*Research completed: 2026-08-28*
 *Ready for roadmap: yes*

@@ -1,0 +1,226 @@
+---
+phase: 138
+scope: ""
+status: "complete"
+collection_started_at: "2026-09-24T20:38:04Z"
+collection_finished_at: "2026-09-24T20:38:24Z"
+repository: "/Users/jon/projects/lockspire"
+repository_identity: "/Users/jon/projects/lockspire"
+declared_source_scopes: "git-baseline,git,github,maintained"
+local_head_sha: "8227e894567f737807fdde4645b68c1ef35f2dce"
+evidence_base_sha: "8227e894567f737807fdde4645b68c1ef35f2dce"
+local_main_sha: "c8525a894e2d4da606cd18040e9301b8eb4311d7"
+origin_main_sha: "d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92"
+git_receipt_fingerprint: "7b5440c31e4a3ae601de27493548935146093b44"
+github_receipt_fingerprint: "e4a0d93da8dfded613c99066c2ee3b0af081be38"
+maintained_receipt_fingerprint: "270402e6f83eb9ee99a400e597c8b0fcdd2f5eb3"
+phase_review_status: "consumed"
+phase_review_sha256: "3d99f18c0ed95fc73b144931dd859c613ccc036d326d109e2b0221393fa1f525"
+executed: "no — inventory proposal only"
+---
+
+# Git baseline evidence receipt
+
+Observed. Revalidation required before action. This receipt proposes no cleanup.
+
+## Collection provenance
+
+- Collection window: `2026-09-24T20:38:04Z` to `2026-09-24T20:38:24Z`
+- Snapshot boundary: bounded as of `2026-09-24T20:38:04Z`; immutable refs and normalized source receipts are rechecked immediately before atomic publication.
+- Git version: `git version 2.41.0`
+- Working-tree porcelain v2: `# branch.head gsd/phase-138-baseline-inventory-evidence-taxonomy%0A# branch.oid 8227e894567f737807fdde4645b68c1ef35f2dce`
+- Divergence command: `git rev-list --left-right --count main...origin/main`
+- Ahead of origin/main (local `main` only): `255`; behind origin/main (remote only): `0`
+- Completeness: `complete`
+- Limitation: None. Source receipt is complete.
+
+## Git branches
+
+| ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GIT-BR-b13d0487af08 | local_branch | `refs/heads/chore/release-train-1.3.0` | observed SHA `238154ca3315bc9105584b983c70e6749b7fd0b5` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-40c0a4d3450a | local_branch | `refs/heads/chore/sync-gsd-state` | observed SHA `afed5a2645b57be1709d9fc8cd66d5c29f95f4e6` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-ae901ad9fcd8 | local_branch | `refs/heads/docs/oauth-oidc-adopter-guide` | observed SHA `e56b107cbf1c2748edec6cb0c014e988b3829342` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-0361aa355ad5 | local_branch | `refs/heads/docs/v1.37-milestone-closure` | observed SHA `9336f2852d1ff5cbad2b965169a042eb5981a891` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-1523ab72ae58 | local_branch | `refs/heads/fix/release-please-esm` | observed SHA `1022e8a4f059daab7baa7e5e70685140885d9f37` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-30811299cec8 | local_branch | `refs/heads/fix/release-post-merge-ci` | observed SHA `06d3ab3da064b9e957130a4669e76fa9f03c4564` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-52a1354c61d8 | local_branch | `refs/heads/gsd/phase-138-baseline-inventory-evidence-taxonomy` | observed SHA `8227e894567f737807fdde4645b68c1ef35f2dce` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-345e85f1bd3a | local_branch | `refs/heads/main` | observed SHA `c8525a894e2d4da606cd18040e9301b8eb4311d7` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-22018da5cdb4 | local_branch | `refs/heads/milestone/v1.36-adopter-path-proof` | observed SHA `5a4d05c019f0cbe25b6380832893fa3756b9c8a4` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-18a772f91be5 | local_branch | `refs/heads/milestone/v1.37-prime-time-readiness-ratchet` | observed SHA `5686853226794e9e84c58a7da8531c42997d0890` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-66ddc40b0fe7 | local_branch | `refs/heads/post-v1.14-rar-followup` | observed SHA `3baad35a4a2c1205ca05ccd86d11c952dabf9500` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-784dc0e6ff92 | local_branch | `refs/heads/snapshot/pre-hygiene-2026-05-25` | observed SHA `effa2847396b4e9c0c10e81356dfc5a412c92acc` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-48077c7e31f8 | local_branch | `refs/heads/snapshot/release-prep-hygiene-2026-05-26` | observed SHA `f113b51c2b0b9347f989464da1028b3b41f77d80` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-c4bd87f875b6 | local_branch | `refs/heads/verify/final` | observed SHA `3cae9f9599dc4743b2e609be18180e84edfb0f48` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-78b8819325e8 | local_branch | `refs/heads/verify/final2` | observed SHA `2a383bd39eba327e31a947fc04b9b3215e8d84fa` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-a7d0aa5a210d | local_branch | `refs/heads/wip/jar-policy` | observed SHA `09d47be9452b46f7b9bd933f3261c1e14b1c3bcc` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-9f5f57311bcc | remote_branch | `refs/remotes/origin/dependabot/github_actions/actions/setup-python-7.0.0` | observed SHA `3c7049a55c4aa2d0f6e3558a2aeb8d7162591c48` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-517b3112d34f | remote_branch | `refs/remotes/origin/dependabot/hex/oban-2.24.0` | observed SHA `e222c4a8ef53e130f3816fbc0de04bb5d744da87` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-99a9113c3da7 | remote_branch | `refs/remotes/origin/dependabot/hex/phoenix_live_view-1.2.11` | observed SHA `fda85ec9e0bde759e7f6272cbbb0c3f2aa1bb91d` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-daad3f4bf5eb | remote_branch | `refs/remotes/origin/dependabot/hex/postgrex-0.22.4` | observed SHA `4161579c3ceed38d44f864102fc4decb07467438` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-481cf3b0511d | remote_branch | `refs/remotes/origin/dependabot/hex/req-0.7.4` | observed SHA `0e163d6bca876406daec00869b14de5fd635e2ec` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-f774d745cdbf | remote_branch | `refs/remotes/origin/dependabot/hex/sobelow-0.15.0` | observed SHA `3e3cac4cbf300a49e011020f6247a97dd81f8ccb` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-abad5be35125 | remote_branch | `refs/remotes/origin/docs/v1.37-milestone-closure` | observed SHA `9336f2852d1ff5cbad2b965169a042eb5981a891` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-608d95b00538 | remote_branch | `refs/remotes/origin/fix/release-please-esm` | observed SHA `1022e8a4f059daab7baa7e5e70685140885d9f37` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-95ce7f132395 | remote_branch | `refs/remotes/origin/fix/release-post-merge-ci` | observed SHA `06d3ab3da064b9e957130a4669e76fa9f03c4564` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-94589d9996ce | remote_branch | `refs/remotes/origin/main` | observed SHA `d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-69c0ed15b64d | remote_branch | `refs/remotes/origin/milestone/v1.36-adopter-path-proof` | observed SHA `5a4d05c019f0cbe25b6380832893fa3756b9c8a4` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-58cc153cc057 | remote_branch | `refs/remotes/origin/milestone/v1.37-prime-time-readiness-ratchet` | observed SHA `5686853226794e9e84c58a7da8531c42997d0890` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-65c8f6395441 | remote_branch | `refs/remotes/origin/post-v1.14-rar-followup` | observed SHA `3baad35a4a2c1205ca05ccd86d11c952dabf9500` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-35110cd5609d | remote_branch | `refs/remotes/origin/snapshot/pre-hygiene-2026-05-25` | observed SHA `effa2847396b4e9c0c10e81356dfc5a412c92acc` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+
+## Git tags
+
+| ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GIT-TAG-d2f040e672be | tag | `refs/tags/lockspire-v0.1.1` | observed SHA `079959ce0a0e261764f945b4a1ac02c88638e491` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-32e03f4b6b75 | tag | `refs/tags/lockspire-v0.1.2` | observed SHA `159050a673489b6e7ad6c00908114e8b2d499489` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-c0a8b7b62bbe | tag | `refs/tags/lockspire-v0.2.0` | observed SHA `e42055f7f1ff17bd69733119862e251588e56b3f` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-0534e2c23214 | tag | `refs/tags/lockspire-v1.0.0` | observed SHA `b35752a1d504346ab9258b8a4d361d26e0faec6f` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-4e0a60c004d2 | tag | `refs/tags/lockspire-v1.1.0` | observed SHA `a89ec7e5968c6be7accb4509d658ef0378cf845f` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-bcf162c55b8b | tag | `refs/tags/lockspire-v1.1.1` | observed SHA `8ff1d6c7f453ab9eda12af98ae3811bf8bfdb5a5` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-1b0ac2166061 | tag | `refs/tags/lockspire-v1.1.2` | observed SHA `61e9fb91d0c6c705506e4c5e1df720d4a9452b81` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-6ba52074c2f1 | tag | `refs/tags/lockspire-v1.2.0` | observed SHA `16981b40309a6aa059487f45e77c8522b4a4e727` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-5c102b7ea33f | tag | `refs/tags/lockspire-v1.3.0` | observed SHA `197608f8b45dbd6dc7e4a34ae7e0771cebfbf95a` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-b0b1aa87a1dc | tag | `refs/tags/lockspire-v1.4.0` | observed SHA `ee32dbde2f85d0fbb14cb4e4a625351df637f0c8` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-76dfe7ed441c | tag | `refs/tags/lockspire-v1.5.0` | observed SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-f3f273ebc6eb | tag | `refs/tags/milestone/v1.0` | observed SHA `2be622314035a50e3e7b37a25342a417318f9e97` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-c3aaad098366 | tag | `refs/tags/milestone/v1.13` | observed SHA `9ae08495fc9092e896b72d1f061034087c356200` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-4e5aa6b2feab | tag | `refs/tags/milestone/v1.13-archived` | observed SHA `1a8e20c1bb891a30cad16855360133af9547f821` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-7d45eba5c11f | tag | `refs/tags/v1.1` | observed SHA `12dac3653e4ab139c3d66988a8643667b5bf5350` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-af6554217aff | tag | `refs/tags/v1.10` | observed SHA `bc5223e3661c5c929ac0b3daca7150ca43252fa7` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-ccd5f71dde7d | tag | `refs/tags/v1.11` | observed SHA `00cb4254acf38b7dbaeaf09de36aa664ba3fc1b8` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-ee545808fb25 | tag | `refs/tags/v1.14` | observed SHA `1053d593e0b9eb4c0bd13f4f4d558faad1b02dd1` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-e4f756412a0e | tag | `refs/tags/v1.15` | observed SHA `94629e38e3058798ade3118506e299a326fd08d6` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-916d6aaa672e | tag | `refs/tags/v1.16` | observed SHA `fefa7523a2117b53c8b27e57f79de8cd3c947f00` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-36f2ce664aac | tag | `refs/tags/v1.2` | observed SHA `9d0faeeafb558684f2e9642f712dbce52f751f23` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-46707909a2f9 | tag | `refs/tags/v1.21` | observed SHA `3bff819135bb33c361d1f2fa2e33c6353658c087` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-ae66f855f927 | tag | `refs/tags/v1.22` | observed SHA `3ff163d74c641b257dc7d7b4dc62954dd64e1e59` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-28071bebdc17 | tag | `refs/tags/v1.23` | observed SHA `5a4263aeffa9e6155094fb54c62daea73fe5155d` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-1cf96d9287ab | tag | `refs/tags/v1.24` | observed SHA `50b95ecf9b20b353010407efe8088826bb9c3239` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-89da872ffa17 | tag | `refs/tags/v1.25` | observed SHA `528e87073a4d9d0bca553ed56d45e6a0d49026f6` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-e419654d0de7 | tag | `refs/tags/v1.27` | observed SHA `31f6b896ba25b1d2093a5976163537895ed83b30` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-bde6c9b26a92 | tag | `refs/tags/v1.28` | observed SHA `885f4e58d01de0761da7409b42a0797ba1e49293` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-19e626a32583 | tag | `refs/tags/v1.29` | observed SHA `6d1b0de90b1f3c55fb99cdded427dc6f5135153b` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-64de0bf9c28a | tag | `refs/tags/v1.30` | observed SHA `cc13bd1cdc21ad7cf5fa9a2155670754cf3fea91` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-1628a757b420 | tag | `refs/tags/v1.31` | observed SHA `142293168aa71512433bf1f1a118b81639b09b2d` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-beae597b70c7 | tag | `refs/tags/v1.32` | observed SHA `ceadb95f7f8fe0f8510af1eee107574cf6ae9d98` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-0f7e897b429a | tag | `refs/tags/v1.36` | observed SHA `82288ad4403288ae60653d09564f5c769691da31` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-ba8b7d9684c9 | tag | `refs/tags/v1.37` | observed SHA `522dc387fce3553e85fae395735e98c5ae2280bd` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-737d7d581d0d | tag | `refs/tags/v1.4` | observed SHA `49243c54919ef37324ae473176f36b2ff87adf2d` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-f39aaaec1330 | tag | `refs/tags/v1.5` | observed SHA `bff9817a5b69959d6821d348033f75b415437179` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-6f9fd577ca47 | tag | `refs/tags/v1.6` | observed SHA `79c68877d4dd59398bb0410481415ad13bead94a` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-TAG-0219a8e36989 | tag | `refs/tags/wip-original-2026-07-27` | observed SHA `a64788a00b6b9baaa90890129def0263313167b2` | active | defer | `git for-each-ref refs/tags` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+
+## Git worktrees
+
+| ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GIT-WT-4135abb150c8 | worktree | `/Users/jon/projects/lockspire` | observed SHA `8227e894567f737807fdde4645b68c1ef35f2dce` | active | defer | `git worktree list --porcelain -z` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+
+## GitHub open pull requests
+
+- Repository: `szTheory/lockspire`; query scope: `pullRequests(first: 100, states: OPEN, after: $endCursor)`
+- Auth status: `authenticated`; page count: `1`; item count: `7`; duplicate nodes corroborated: `0`; contradictory identities: `0`; terminal pageInfo: `hasNextPage=false`
+
+| ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GH-PR-83 | pr | [docs: start milestone v1.36 Adopter Path Proof](https://github.com/szTheory/lockspire/pull/83) | updated `2026-07-29T23:41:04Z`; state `OPEN`; head `milestone/v1.36-adopter-path-proof` @ `5a4d05c019f0cbe25b6380832893fa3756b9c8a4`; base `main` @ `2a383bd39eba327e31a947fc04b9b3215e8d84fa`; draft `true`; merge `DIRTY`; review ``; checks `passed (7 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-87 | pr | [chore\(deps\): bump postgrex from 0.22.3 to 0.22.4](https://github.com/szTheory/lockspire/pull/87) | updated `2026-08-13T10:54:18Z`; state `OPEN`; head `dependabot/hex/postgrex-0.22.4` @ `4161579c3ceed38d44f864102fc4decb07467438`; base `main` @ `2a383bd39eba327e31a947fc04b9b3215e8d84fa`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (6 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-88 | pr | [chore\(deps-dev\): bump sobelow from 0.14.1 to 0.15.0](https://github.com/szTheory/lockspire/pull/88) | updated `2026-08-13T10:54:29Z`; state `OPEN`; head `dependabot/hex/sobelow-0.15.0` @ `3e3cac4cbf300a49e011020f6247a97dd81f8ccb`; base `main` @ `2a383bd39eba327e31a947fc04b9b3215e8d84fa`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (6 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-91 | pr | [build\(deps\): bump actions/setup-python from 6.0.0 to 7.0.0](https://github.com/szTheory/lockspire/pull/91) | updated `2026-08-28T03:47:09Z`; state `OPEN`; head `dependabot/github_actions/actions/setup-python-7.0.0` @ `3c7049a55c4aa2d0f6e3558a2aeb8d7162591c48`; base `main` @ `75743cfc49d2b0340d4479cafedc17f528e1d2c5`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (8 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-96 | pr | [build\(deps\): bump req from 0.7.1 to 0.7.4](https://github.com/szTheory/lockspire/pull/96) | updated `2026-09-03T10:54:48Z`; state `OPEN`; head `dependabot/hex/req-0.7.4` @ `0e163d6bca876406daec00869b14de5fd635e2ec`; base `main` @ `d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (8 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-97 | pr | [build\(deps\): bump phoenix_live_view from 1.2.10 to 1.2.11](https://github.com/szTheory/lockspire/pull/97) | updated `2026-09-03T10:54:57Z`; state `OPEN`; head `dependabot/hex/phoenix_live_view-1.2.11` @ `fda85ec9e0bde759e7f6272cbbb0c3f2aa1bb91d`; base `main` @ `d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (8 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+| GH-PR-98 | pr | [build\(deps\): bump oban from 2.21.1 to 2.24.0](https://github.com/szTheory/lockspire/pull/98) | updated `2026-09-03T10:55:08Z`; state `OPEN`; head `dependabot/hex/oban-2.24.0` @ `e222c4a8ef53e130f3816fbc0de04bb5d744da87`; base `main` @ `d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92`; draft `false`; merge `UNSTABLE`; review ``; checks `failed (8 observed; complete)` | active | needs-work | `szTheory/lockspire` | Current authenticated GitHub evidence; revalidate before any action | direct_current | Revalidate current target, authority, and terminal proof | repository maintainer | no — inventory proposal only |
+
+## GitHub open issues
+
+- Repository: `szTheory/lockspire`; query scope: `issues(first: 100, states: OPEN, after: $endCursor)`
+- Auth status: `authenticated`; page count: `1`; item count: `0`; duplicate nodes corroborated: `0`; contradictory identities: `0`; terminal pageInfo: `hasNextPage=false`
+
+No open issues observed; query succeeded with 0 results.
+
+## Maintained source-family receipts
+
+| Family | Status | Selector | Outcome |
+| --- | --- | --- | --- |
+| todos | complete-zero | `.planning/todos/**` | selector succeeded with zero tracked matches |
+| debug | archive-summary | `.planning/debug/**` | 4 retained records summarized |
+| quick | archive-summary | `.planning/quick/**` | 7 retained records summarized |
+| threads | complete | `.planning/threads/**` | 2 bounded tracked matches |
+| seeds | complete | `.planning/seeds/**` | 3 bounded tracked matches |
+| active-records | complete | `.planning/phases/*/*-{REVIEW,AUDIT,VERIFICATION,UAT,HANDOFF,CHECKPOINT}*.md` | 9 bounded tracked matches |
+| milestones | archive-summary | `.planning/milestones/**` | 835 retained records summarized |
+| continue | complete-zero | `.continue-here.md` | selector succeeded with zero tracked matches |
+| roadmap | complete | `.planning/ROADMAP.md` | 1 bounded tracked matches |
+| state | complete | `.planning/STATE.md` | 1 bounded tracked matches |
+| project | complete | `.planning/PROJECT.md` | 1 bounded tracked matches |
+| release-train | complete | `.planning/RELEASE-TRAIN.md` | 1 bounded tracked matches |
+| development-train | complete | `.planning/DEVELOPMENT-TRAIN.md` | 1 bounded tracked matches |
+| conformance | complete-zero | `prompts/lockspire-release-readiness-and-conformance.md` | selector succeeded with zero tracked matches |
+| tracked-markers | complete | `lib test scripts docs` | bounded marker scan completed with 9 matched record\(s\) |
+
+## Maintained Records
+
+Observed maintained follow-up evidence. Revalidation required before action; every disposition is proposal-only.
+
+| ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| REC-1b51f3b880a6 | maintained_record | `.planning/development-train.md` | observed allowlisted source | active | defer-with-trigger | `development-train:.planning/DEVELOPMENT-TRAIN.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-5a72b9b4611b | maintained_record | `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-review-fix.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW-FIX.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-a7789e39f8bd | maintained_record | `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-review.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-2782bd4a5716 | maintained_record | `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-uat.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-3e139e2230e6 | maintained_record | `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-ui-review.md` | observed allowlisted source | active | defer-with-trigger | `active-records:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UI-REVIEW.md` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-1847b56fd04b | maintained_record | `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-verification.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-c6265f1a5f04 | maintained_record | `.planning/phases/139-required-truth-reconciliation/139-review-fix.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/139-required-truth-reconciliation/139-REVIEW-FIX.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-960651f140cd | maintained_record | `.planning/phases/139-required-truth-reconciliation/139-review.md` | observed allowlisted source | resolved | already-resolved | `active-records:.planning/phases/139-required-truth-reconciliation/139-REVIEW.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-fd4f9ac03328 | maintained_record | `.planning/phases/139-required-truth-reconciliation/139-uat.md` | observed allowlisted source | active | defer-with-trigger | `active-records:.planning/phases/139-required-truth-reconciliation/139-UAT.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-031ac4384a5c | maintained_record | `.planning/phases/139-required-truth-reconciliation/139-verification.md` | observed allowlisted source | active | fix-now | `active-records:.planning/phases/139-required-truth-reconciliation/139-VERIFICATION.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-162c233ffa01 | maintained_record | `.planning/project.md` | observed allowlisted source | active | defer-with-trigger | `project:.planning/PROJECT.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-7eeb44206e8e | maintained_record | `.planning/release-train.md` | observed allowlisted source | active | defer-with-trigger | `release-train:.planning/RELEASE-TRAIN.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-ec0732041b6a | maintained_record | `.planning/roadmap.md` | observed allowlisted source | active | defer-with-trigger | `roadmap:.planning/ROADMAP.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-cd226dcec651 | maintained_record | `.planning/seeds/seed-001-cut-next-real-release.md` | observed allowlisted source | active | defer-with-trigger | `seeds:.planning/seeds/SEED-001-cut-next-real-release.md` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-81f8120dc45e | maintained_record | `.planning/seeds/seed-002-phase-91-repo-hygiene-check.md` | observed allowlisted source | active | defer-with-trigger | `[REDACTED]` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-ea833148bc7a | maintained_record | `.planning/seeds/seed-003-reassess-release-before-phase-91.md` | observed allowlisted source | active | defer-with-trigger | `[REDACTED]` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-f218db76c7c2 | maintained_record | `.planning/state.md` | observed allowlisted source | active | defer-with-trigger | `state:.planning/STATE.md` | Allowlisted maintained record; source preserved | direct_current | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-007009aedd18 | maintained_record | `.planning/threads/next-roadmap-assessment.md` | observed allowlisted source | active | defer-with-trigger | `threads:.planning/threads/next-roadmap-assessment.md` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-958b4a3e2aaa | maintained_record | `[REDACTED]` | observed allowlisted source | active | defer-with-trigger | `[REDACTED]` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
+| REC-7c205a386481 | archive_summary | `debug archive container \(4 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/debug/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
+| REC-34798a9689ee | archive_summary | `milestones archive container \(835 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/milestones/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
+| REC-bf7b160b41e1 | archive_summary | `quick archive container \(7 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/quick/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
+| REC-9f94a0075364 | tracked_marker | `scripts/maintainer/baseline_inventory.sh` | observed allowlisted source | active | defer-with-trigger | `scripts/maintainer/baseline_inventory.sh` | Credible tracked marker; content intentionally not copied | corroborated | Revalidate marker context and owner before action | repository maintainer | no |
+| REC-d2f172b87929 | tracked_marker | `test/support/lockspire/release_proof/package_assertions.ex` | observed allowlisted source | active | defer-with-trigger | `test/support/lockspire/release_proof/package_assertions.ex` | Credible tracked marker; content intentionally not copied | corroborated | Revalidate marker context and owner before action | repository maintainer | no |
+
+## Source receipts
+
+| Source | Status | Command | Exit status | Limitations |
+| --- | --- | --- | --- | --- |
+| origin metadata refresh | complete | `git fetch --prune --tags origin` | 0 | None. Origin metadata refresh completed. |
+| Git branches | complete | `git for-each-ref refs/heads refs/remotes` | 0 | Branch query completed; an empty result is successful-zero evidence. |
+| Git tags | complete | `git for-each-ref refs/tags` | 0 | Tag query completed; an empty result is successful-zero evidence. |
+| Git worktrees | complete | `git worktree list --porcelain -z` | 0 | Worktree query completed; an empty result is successful-zero evidence. |
+| GitHub open queues | complete | `gh api graphql --paginate \(separate pullRequests and issues queries\)` | 0 | Authenticated cursor pagination completed with terminal pageInfo for each namespace. |
+| Maintained follow-up families | complete | `allowlisted git ls-files and tracked TODO/FIXME scan` | 0 | Every D-17 family was checked through the allowlisted manifest; archives are summarized unless an actionable marker requires expansion. |
+
+## Post-snapshot currentness relation
+
+This ledger is an immutable snapshot bounded as of `2026-09-24T20:38:04Z` at `evidence_base_sha` `8227e894567f737807fdde4645b68c1ef35f2dce`; it does not claim to represent a later HEAD or pre-authorize later lifecycle writes.
+
+After publishing this candidate in a ledger-only commit whose direct parent is its `evidence_base_sha`, rerun the production classifier from the repository root:
+
+```console
+bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md
+```
+
+The command is read-only. It revalidates the immutable direct-parent relation, ledger-only diff, unchanged ledger blob, requested-HEAD and local-main ancestry, current source receipts, every later first-parent commit, and the working-tree projection. It discloses each observed post-snapshot row instead of assuming that HEAD stopped changing.
+
+`authorized_bookkeeping` means every observed row matched the exact ancestry, identity, subject, path, semantic-content, blob, and receipt rules. Any nonzero exit or `refresh_required` means the snapshot must be recollected from a new clean evidence base and published in a new ledger-only replacement commit; uncertainty must not be reinterpreted as authorized bookkeeping.
+
+Rerun this classifier at the start of Phases 139 and 140, immediately before any Phase 140 mutation, during Phase 141 exact-SHA closure, and after any lifecycle write not present in the last disclosed table. All inventory dispositions remain proposal-only and require their named revalidation and maintainer authority before action.
+
+## Limitations and revalidation
+
+- Observed evidence is proposal-only. Phase 139 must revalidate exact repository and release truth before reconciliation.
+- Phase 140 must revalidate target, authority, recovery path, uncommitted-work safety, historical-evidence safety, and required gates before any action.
+- Phase 141 must revalidate final receipts against the closing baseline SHA before declaring sustained readiness.
+

@@ -1,5 +1,11 @@
 # Milestones
 
+## v1.3 Roadmap: Lockspire (Backfilled: 2026-09-24)
+
+**Note:** Synthesized from archive snapshot by `$gsd-health --backfill`. Original completion date unknown.
+
+---
+
 ## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)
 
 **Delivered:** A packaged Phoenix app can embed Lockspire through the generated host seam, prove the full provider/client/resource-server journey, and carry reproducible architecture, quality, conformance, and exact-artifact release evidence without widening the supported protocol surface.

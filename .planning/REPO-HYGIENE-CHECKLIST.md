@@ -15,7 +15,10 @@ Use this before starting a new milestone, before merging a milestone PR, and bef
 - Check open PRs: `gh pr list -R szTheory/lockspire --state open`.
 - Check open issues: `gh issue list -R szTheory/lockspire --state open`.
 - Close, merge, or explicitly defer open PRs before new milestone work starts.
-- Confirm latest `main` CI and Release workflow runs are successful or intentionally skipped/no-op.
+- For exact acceptance of synchronized `main`, run `bash ./scripts/maintainer/repo_hygiene_check.sh --accept-sha <40-lowercase-hex-current-main-sha> --format json`; the supplied commit must equal `HEAD`, local `main`, and refreshed `origin/main` before and after the local gates.
+- Confirm canonical CI and the push-triggered Release no-publish outcome both belong to that exact SHA. Recency alone is not acceptance evidence.
+- Every `WARN` requires one explicit `--warn-disposition CODE=DISPOSITION`. When there are no warnings, the acceptance receipt must retain the explicit empty list `"warn_dispositions": []` rather than omit the field.
+- OIDF/FAPI evidence remains redacted, supplemental, non-certifying, and not a release gate; a retained supplemental result neither satisfies nor blocks required acceptance.
 
 ## Local Gates
 
@@ -27,7 +30,8 @@ Use this before starting a new milestone, before merging a milestone PR, and bef
 
 - Run `/gsd-progress`.
 - Confirm there is no active phase unless intentionally mid-milestone.
-- Confirm `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/STATE.md`, and `.planning/MILESTONES.md` agree on the current milestone posture.
+- Confirm `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` say v1.38 and Phase 140 are the current planning truth, with Phase 140 planning gated on the Phase 139 exact-SHA receipt.
+- Confirm `.planning/MILESTONES.md` and `.planning/RELEASE-TRAIN.md` say v1.37 and Lockspire 1.5.0 remain the latest shipped truth. Active planning and latest-shipped history are coherent precisely because they describe different states.
 - Confirm pending todos, debug sessions, and handoff/checkpoint files are either clear or explicitly documented.
 
 ## Release Readiness

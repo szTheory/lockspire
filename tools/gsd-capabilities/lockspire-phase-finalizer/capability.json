@@ -1,0 +1,55 @@
+{
+  "id": "lockspire-phase-finalizer",
+  "role": "feature",
+  "version": "1.2.0",
+  "title": "Lockspire Phase Finalizer",
+  "description": "Preserves Phase 138 inventory currentness and blocks later planning until Phase 139 exact acceptance is complete.",
+  "tier": "standard",
+  "requires": [],
+  "engines": {
+    "gsd": ">=1.13.0"
+  },
+  "runtimeCompat": {
+    "supported": ["*"],
+    "unsupported": []
+  },
+  "skills": [],
+  "agents": [],
+  "hooks": [],
+  "config": {},
+  "commands": [
+    {
+      "family": "lockspire-finalize",
+      "module": "lockspire-finalize-command-router.cjs",
+      "router": "routeLockspireFinalizeCommand"
+    }
+  ],
+  "steps": [],
+  "contributions": [],
+  "gates": [
+    {
+      "point": "execute:post",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "test \"${PHASE_NUMBER}\" != 139 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139",
+          "timeout": 900
+        }
+      },
+      "blocking": true,
+      "onError": "halt"
+    },
+    {
+      "point": "plan:pre",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "test \"${PHASE_NUMBER}\" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139",
+          "timeout": 2400
+        }
+      },
+      "blocking": true,
+      "onError": "halt"
+    }
+  ]
+}

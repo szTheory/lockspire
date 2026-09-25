@@ -65,6 +65,12 @@ jobs:
       - name: Lint workflows and maintained shell scripts
         run: bash ./scripts/ci/lint_workflows.sh
 
+      - name: Verify phase finalizer command router
+        run: node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
+
+      - name: Verify portable phase-finalizer lifecycle
+        run: LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+
       - name: Verify and audit Release Please runtime dependencies
         run: |
           npm ci --prefix .github/actions/release-please/runtime --ignore-scripts
