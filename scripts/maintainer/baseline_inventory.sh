@@ -3642,17 +3642,18 @@ collect_maintained_family_paths() {
 }
 
 collect_maintained_records() {
-  local family_spec family path file count receipts="" lifecycle disposition confidence subject id fragment supersession selector_exit line_number marker_count marker_parse_failed archive_read_failed
+  local family_spec family path file count receipts="" lifecycle disposition confidence subject id fragment supersession selector_exit line_number marker_count marker_parse_failed archive_read_failed maintained_temp_base
   # Any future candidate outside this explicit manifest is an unclassified backstop:
   # it must be added as an ambiguous receipt, never silently guessed or dropped.
   MAINTAINED_STATUS="complete"
   MAINTAINED_EXIT=0
   MAINTAINED_LIMITATION="Every D-17 family was checked through the allowlisted manifest; archives are summarized unless an actionable marker requires expansion."
-  MAINTAINED_SELECTOR_OUTPUT="$(mktemp "${MAINTAINED_OUTPUT}.selector.XXXXXX")"
-  MAINTAINED_INCLUDED_OUTPUT="$(mktemp "${MAINTAINED_OUTPUT}.included.XXXXXX")"
-  MAINTAINED_RECORD_OUTPUT="$(mktemp "${MAINTAINED_OUTPUT}.record.XXXXXX")"
-  MAINTAINED_ROWS_OUTPUT="$(mktemp "${MAINTAINED_OUTPUT}.rows.XXXXXX")"
-  MAINTAINED_AGGREGATED_OUTPUT="$(mktemp "${MAINTAINED_OUTPUT}.aggregated.XXXXXX")"
+  maintained_temp_base="${MAINTAINED_OUTPUT:-${OUTPUT:-${TMPDIR:-/tmp}/lockspire-maintained}}"
+  MAINTAINED_SELECTOR_OUTPUT="$(mktemp "${maintained_temp_base}.selector.XXXXXX")"
+  MAINTAINED_INCLUDED_OUTPUT="$(mktemp "${maintained_temp_base}.included.XXXXXX")"
+  MAINTAINED_RECORD_OUTPUT="$(mktemp "${maintained_temp_base}.record.XXXXXX")"
+  MAINTAINED_ROWS_OUTPUT="$(mktemp "${maintained_temp_base}.rows.XXXXXX")"
+  MAINTAINED_AGGREGATED_OUTPUT="$(mktemp "${maintained_temp_base}.aggregated.XXXXXX")"
 
   for family_spec in "${MAINTAINED_SOURCE_FAMILIES[@]}"; do
     family="${family_spec%%:*}"; path="${family_spec#*:}"

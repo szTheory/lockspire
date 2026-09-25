@@ -3074,9 +3074,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert File.read!(Path.join(repository, ledger)) =~
                "executed: \"no — inventory proposal only\""
 
+      scratch_patterns = [".selector.*", ".included.*", ".record.*", ".rows.*", ".aggregated.*"]
+
+      assert Enum.all?(scratch_patterns, fn pattern ->
+               Path.wildcard(Path.join(repository, pattern), match_dot: true) == []
+             end)
+
       {second, 0} = run_phase_139_finalizer!(repository, "pre-verify", env)
       assert second =~ "snapshot_relation: authorized_bookkeeping"
       assert run_git!(repository, ["rev-list", "--count", "HEAD"]) |> String.trim() == after_first
+
+      assert Enum.all?(scratch_patterns, fn pattern ->
+               Path.wildcard(Path.join(repository, pattern), match_dot: true) == []
+             end)
 
       lock = Path.join(repository, ".git/" <> @next_phase_slug <> "-finalizer.lock")
       File.mkdir!(lock)

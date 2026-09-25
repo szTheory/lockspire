@@ -1,6 +1,6 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-25T13:50:49Z
+verified: 2026-09-25T14:21:43Z
 status: passed
 score: 5/5 roadmap success criteria verified
 covered_files:
@@ -66,7 +66,7 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:81b75857fbe2b07cc630ec0d6167cf11d952b8739c83253c8122b2bd210090d5"
+covered_digest: "v1:sha256:60bea18945d796146cf0681fb2834244cf71a7b592aef85c4e1b0ea99f6212a2"
 behavior_unverified: 0
 overrides_applied: 0
 human_needed: false
@@ -90,7 +90,7 @@ advisory: []
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-25T13:50:49Z
+**Verified:** 2026-09-25T14:21:43Z
 **Status:** passed
 **Re-verification:** Yes — current working tree, after prior verification and Phase 139 closeout.
 
@@ -161,6 +161,8 @@ The exact-SHA receipt is not present and is not claimed as Phase 139 evidence. M
 | Workflow source contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 mix test test/lockspire/workflow_supply_chain_contract_test.exs` | 4 tests, 0 failures | PASS |
 | OIDF retained-evidence redaction | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 mix test test/lockspire/conformance_redacted_evidence_contract_test.exs` | 3 tests, 0 failures | PASS |
 | Semantic-label/gate repair contracts | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_gate_repair` | 2 tests, 0 failures | PASS |
+| Exact acceptance lifecycle relation | `GSD_TOOLS=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_final_acceptance --only phase139_acceptance_receipt` | 2 tests, 0 failures | PASS |
+| Pre-verify currentness and scratch cleanup | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_preverify_refresh` | 1 test, 0 failures | PASS |
 | Host receipt recovery and router cancellation | Named Node lifecycle tests | 2 tests, 0 failures | PASS |
 | Portable router/lifecycle suite | Node tests with tracked host fixture | 16 tests, 0 failures | PASS |
 | Workflow lint | `bash scripts/ci/lint_workflows.sh` | Exit 0 | PASS |
@@ -206,5 +208,5 @@ No Phase 139 roadmap criterion failed. Phase 139 provides the repository-owned a
 
 ---
 
-_Verified: 2026-09-25T13:50:49Z_
+_Verified: 2026-09-25T14:21:43Z_
 _Verifier: the agent (gsd-verifier)_
