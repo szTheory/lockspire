@@ -1894,7 +1894,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         signal_collector!(owner, signal)
         File.write!(release, "release\n")
         {owner_output, owner_status} = await_port_exit!(owner)
-        assert owner_status != 0, owner_output
+        assert owner_status != 0, "#{signal} exit #{owner_status}: #{owner_output}"
         assert File.read!(output) == prior
 
         assert_collector_artifacts_clean!(
@@ -5329,6 +5329,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       Paths.path("gsd-core/bin/gsd-tools.cjs"),
       Paths.path(".codex/gsd-core/bin/gsd-tools.cjs"),
       Paths.path(".claude/gsd-core/bin/gsd-tools.cjs"),
+      Paths.path(
+        "tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs"
+      ),
       Path.join([home, ".codex", "gsd-core", "bin", "gsd-tools.cjs"]),
       Path.join([home, ".claude", "gsd-core", "bin", "gsd-tools.cjs"]),
       Path.join([home, ".hermes", "gsd-core", "bin", "gsd-tools.cjs"]),
@@ -5361,7 +5364,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        ), "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"},
       {Path.join(source_core, "workflows/execute-phase.md"), "workflows/execute-phase.md"},
       {Path.join(source_core, "workflows/plan-phase.md"), "workflows/plan-phase.md"},
-      {Path.join(source_core, "workflows/transition.md"), "workflows/transition.md"}
+      {Path.join(source_core, "workflows/transition.md"), "workflows/transition.md"},
+      {Path.join(Path.dirname(source_core), "gsd-host-contract.json"),
+       "fixtures/gsd-host-contract.json"}
     ]
 
     for {source, relative} <- sources do
@@ -5637,7 +5642,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     os_pid = pid_file |> File.read!() |> String.trim()
 
     {_, 0} =
-      System.cmd("kill", ["-#{signal}", "-#{os_pid}"], stderr_to_stdout: true)
+      System.cmd("kill", ["-#{signal}", os_pid], stderr_to_stdout: true)
   end
 
   defp await_port_exit!(%{port: port} = owner, output \\ "") do

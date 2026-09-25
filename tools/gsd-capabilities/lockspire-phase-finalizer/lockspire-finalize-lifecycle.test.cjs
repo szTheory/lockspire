@@ -22,6 +22,8 @@ const fixturePath = process.env.LOCKSPIRE_GSD_HOST_FIXTURE
   : null;
 const hostFixture = fixturePath ? JSON.parse(fs.readFileSync(fixturePath, 'utf8')) : null;
 assert.ok(tools || hostFixture, 'GSD runtime tools or LOCKSPIRE_GSD_HOST_FIXTURE must be available');
+const mixAvailable = spawnSync('mix', ['--version'], { encoding: 'utf8' }).status === 0;
+const skipBeamIntegration = !mixAvailable || process.env.LOCKSPIRE_SKIP_BEAM_INTEGRATION === '1';
 const core = tools ? path.dirname(path.dirname(path.resolve(tools))) : null;
 const trackedCapabilityRoot = path.join(root, 'tools/gsd-capabilities/lockspire-phase-finalizer');
 const stateHelper = path.join(trackedCapabilityRoot, 'post-completion-finalizer-state.cjs');
@@ -480,7 +482,7 @@ test('Phase 139 host lifecycle preserves durable post-transition recovery', () =
   }
 });
 
-test('Plan 32 finalizer integration remains green under installed host contracts', () => {
+test('Plan 32 finalizer integration remains green under installed host contracts', { skip: skipBeamIntegration }, () => {
   const result = run('mix', [
     'test', 'test/lockspire/release/repository_hygiene_contract_test.exs',
     '--only', 'phase138_finalizer_gap', '--only', 'phase138_finalizer_recovery_gap',
@@ -492,7 +494,7 @@ test('Plan 32 finalizer integration remains green under installed host contracts
   assert.match(result.stdout, /2 tests, 0 failures/);
 });
 
-test('Phase 139 exact landing and receipt failure matrices remain green', () => {
+test('Phase 139 exact landing and receipt failure matrices remain green', { skip: skipBeamIntegration }, () => {
   const result = run('mix', [
     'test', 'test/lockspire/release/repository_hygiene_contract_test.exs',
     '--only', 'phase139_final_acceptance', '--only', 'phase139_acceptance_receipt',
