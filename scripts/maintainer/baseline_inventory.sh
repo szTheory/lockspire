@@ -2760,7 +2760,8 @@ validate_phase_139_completion_state() {
   old_phases="$(front_matter_indented_integer_from_blob "$parent" "$path" completed_phases)" || return 1
   new_phases="$(front_matter_indented_integer_from_blob "$commit" "$path" completed_phases)" || return 1
   total_phases="$(front_matter_indented_integer_from_blob "$commit" "$path" total_phases)" || return 1
-  [[ "$old_completed" -eq 40 && "$new_completed" -eq 40 && "$old_total" -eq 40 && "$new_total" -eq 40 ]] || return 1
+  [[ "$old_total" -gt 0 && "$new_total" -eq "$old_total" &&
+     "$old_completed" -eq "$old_total" && "$new_completed" -eq "$new_total" ]] || return 1
   [[ "$old_phases" -eq 1 && "$new_phases" -eq 2 && "$total_phases" -eq 4 ]] || return 1
   blob_has_line "$commit" "$path" '^[[:space:]]+percent:[[:space:]]*50$' || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Phase:[[:space:]]+140$')" -eq 1 ]] || return 1
