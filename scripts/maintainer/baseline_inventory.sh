@@ -584,13 +584,41 @@ combine_pr_check_pages() {
   rm -f "$errors"
 }
 
+confirm_empty_pr_check_evidence() {
+  local repository="$1" commit_oid="$2" check_runs statuses
+  check_runs="$(gh api "repos/$repository/commits/$commit_oid/check-runs" 2>/dev/null)" || return 1
+  statuses="$(gh api "repos/$repository/commits/$commit_oid/status" 2>/dev/null)" || return 1
+  jq -e '
+    (.total_count | type) == "number" and .total_count == 0 and
+    (.check_runs | type) == "array" and (.check_runs | length) == 0
+  ' <<< "$check_runs" >/dev/null 2>&1 || return 1
+  jq -e '
+    (.total_count | type) == "number" and .total_count == 0 and
+    (.statuses | type) == "array" and (.statuses | length) == 0
+  ' <<< "$statuses" >/dev/null 2>&1
+}
+
+nested_empty_rollup_matches_head() {
+  local pages="$1" expected_head="$2"
+  jq -se --arg expected "$expected_head" '
+    length > 0 and all(.[];
+      (.data.node.commits.nodes | type) == "array" and
+      (.data.node.commits.nodes | length) == 1 and
+      (.data.node.commits.nodes[0].commit.oid | type) == "string" and
+      ((.data.node.commits.nodes[0].commit.oid | ascii_downcase) == ($expected | ascii_downcase)) and
+      .data.node.commits.nodes[0].commit.statusCheckRollup == null
+    )
+  ' "$pages" >/dev/null 2>&1
+}
+
 collect_pr_check_evidence() {
-  local combined="$1" temp_dir="$2" query id number outer_head pages checks next failure failures="" row
+  local combined="$1" temp_dir="$2" repository="$3" query id number outer_head outer_rollup pages checks next failure failures="" row
   query='query($pullRequestId: ID!, $endCursor: String) { node(id: $pullRequestId) { ... on PullRequest { commits(last: 1) { nodes { commit { oid statusCheckRollup { contexts(first: 100, after: $endCursor) { totalCount nodes { __typename ... on CheckRun { name status conclusion } ... on StatusContext { context state } } pageInfo { hasNextPage endCursor } } } } } } } } }'
   while IFS= read -r row; do
     id="$(jq -r '.id' <<< "$row")"
     number="$(jq -r '.number' <<< "$row")"
     outer_head="$(jq -r '.headRefOid' <<< "$row")"
+    outer_rollup="$(jq -r 'if .checkRollupState == null then "null" else "present" end' <<< "$row")"
     pages="$temp_dir/pr-check-${number}-pages.json"
     checks="$temp_dir/pr-check-${number}.json"
     failure=""
@@ -598,6 +626,12 @@ collect_pr_check_evidence() {
       failure="nested_api_failed"
     elif ! combine_pr_check_pages "$pages" "$checks"; then
       failure="${GRAPHQL_FAILURE:-nested_malformed_json}"
+      if [[ "$failure" == nested_missing_connection && "$outer_rollup" == null ]] &&
+        nested_empty_rollup_matches_head "$pages" "$outer_head" &&
+        confirm_empty_pr_check_evidence "$repository" "$outer_head"; then
+        jq -n --arg commit_oid "$outer_head" '{complete:true,commit_oid:$commit_oid,total_count:0,page_count:0,contexts:[],limitation:"empty_check_rollup_corroborated_by_rest"}' > "$checks"
+        failure=""
+      fi
     elif ! jq -e --arg expected "$outer_head" '(.commit_oid | ascii_downcase) == ($expected | ascii_downcase)' "$checks" >/dev/null; then
       failure="nested_head_mismatch"
     fi
@@ -815,7 +849,7 @@ collect_github_collection() {
     status="partial"
     exit_status="pull_requests_row_validation_failed"
     limitation="GitHub ${collection} ${exit_status}; every normalized row must validate before nested collection."
-  elif [[ "$collection" == pullRequests ]] && ! collect_pr_check_evidence "$combined" "${combined%/*}"; then
+  elif [[ "$collection" == pullRequests ]] && ! collect_pr_check_evidence "$combined" "${combined%/*}" "$repository"; then
     status="partial"
     exit_status="nested_check_collection_failed"
     limitation="GitHub ${collection} ${exit_status}; nested check evidence is unavailable."

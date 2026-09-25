@@ -474,6 +474,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert nested_complete =~ "checks `passed (101 observed; complete)`"
     assert nested_complete =~ "| merge-ready |"
 
+    assert {:ok, corroborated_empty} = run_github_fixture!("empty-checks-rest")
+    assert corroborated_empty =~ ~r/^status: "complete"$/m
+    assert corroborated_empty =~ "checks `unknown (0 observed; complete)`"
+    refute corroborated_empty =~ "| merge-ready |"
+
+    assert {:ok, uncorroborated_empty} = run_github_fixture!("nonempty-checks-rest")
+    assert uncorroborated_empty =~ ~r/^status: "partial"$/m
+    assert uncorroborated_empty =~ "nested_missing_connection"
+    assert uncorroborated_empty =~ "| active | defer |"
+    refute uncorroborated_empty =~ "| merge-ready |"
+
     for {scenario, receipt} <- [
           {"nested-count-mismatch", "nested_count_mismatch"},
           {"nested-malformed-page-info", "nested_malformed_page_info"},
@@ -6677,6 +6688,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     case "$1 $2" in
       "auth status") [[ "$scenario" == auth-failed ]] && exit 1 || exit 0 ;;
       "repo view") printf 'lockspire/fixture\\n' ;;
+      "api repos/lockspire/fixture/commits/1111111111111111111111111111111111111111/check-runs")
+        if [[ "$scenario" == empty-checks-rest ]]; then
+          printf '%s\\n' '{"total_count":0,"check_runs":[]}'
+        elif [[ "$scenario" == nonempty-checks-rest ]]; then
+          printf '%s\\n' '{"total_count":1,"check_runs":[{"name":"ci"}]}'
+        else
+          exit 17
+        fi ;;
+      "api repos/lockspire/fixture/commits/1111111111111111111111111111111111111111/status")
+        if [[ "$scenario" == empty-checks-rest ]]; then
+          printf '%s\\n' '{"state":"pending","total_count":0,"statuses":[]}'
+        elif [[ "$scenario" == nonempty-checks-rest ]]; then
+          printf '%s\\n' '{"state":"pending","total_count":1,"statuses":[{"context":"ci"}]}'
+        else
+          exit 17
+        fi ;;
       "api graphql")
         if [[ "$scenario" == hold-pagination && "$*" == *pullRequests* ]]; then
           : > "$FAKE_HOLD_READY"
@@ -6685,6 +6712,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         [[ "$scenario" == api-failed ]] && exit 19
         if [[ "$*" == *pullRequestId=* ]]; then
           [[ "$scenario" == nested-api-failed ]] && exit 19
+          if [[ "$scenario" == empty-checks-rest || "$scenario" == nonempty-checks-rest ]]; then
+            printf '%s\\n' '{"data":{"node":{"commits":{"nodes":[{"commit":{"oid":"1111111111111111111111111111111111111111","statusCheckRollup":null}}]}}}}'
+            exit 0
+          fi
           nested_oid="1111111111111111111111111111111111111111"
           [[ "$scenario" == github-object-64 ]] && nested_oid="1111111111111111111111111111111111111111111111111111111111111111"
           [[ "$scenario" == identical-duplicate-reversed && "$*" == *pullRequestId=PR-2* ]] && nested_oid="4444444444444444444444444444444444444444"
@@ -6764,6 +6795,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             isDraft:false,mergeStateStatus:"CLEAN",reviewDecision:"APPROVED",headRefName:"feature",headRefOid:$head,
             baseRefName:"main",baseRefOid:$base,commits:{nodes:[{commit:{statusCheckRollup:{state:"SUCCESS"}}}]}
           }],pageInfo:{hasNextPage:false,endCursor:null}}}}}'
+          exit 0
+        fi
+        if [[ "$*" == *pullRequests* ]] && [[ "$scenario" == empty-checks-rest || "$scenario" == nonempty-checks-rest ]]; then
+          printf '%s\\n' '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"PR-1","number":1,"title":"no checks yet","url":"https://example.test/pr/1","updatedAt":"2026-08-28T00:00:00Z","state":"OPEN","isDraft":false,"mergeStateStatus":"CLEAN","reviewDecision":"APPROVED","headRefName":"feature","headRefOid":"1111111111111111111111111111111111111111","baseRefName":"main","baseRefOid":"2222222222222222222222222222222222222222","commits":{"nodes":[{"commit":{"statusCheckRollup":{"state":null}}}]}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
           exit 0
         fi
         if [[ "$*" == *pullRequests* ]] && [[ "$scenario" == pending-check || "$scenario" == outer-errors-pending || "$scenario" == nested-errors-pending || "$scenario" == legacy-failure || "$scenario" == action-required || "$scenario" == startup-failure || "$scenario" == unknown-conclusion || "$scenario" == mixed-nonterminal || "$scenario" == nested-many || "$scenario" == nested-count-mismatch || "$scenario" == nested-malformed-page-info || "$scenario" == nested-api-failed ]]; then
