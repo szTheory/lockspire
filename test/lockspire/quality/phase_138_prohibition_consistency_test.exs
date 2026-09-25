@@ -22,8 +22,54 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
 
     assert Enum.all?(rows, &owner_is_tracked?(&1.owner))
     assert Enum.all?(rows, &(&1.tier == "judgment" and &1.disposition == "UNVERIFIED"))
+    assert Enum.all?(rows, &(&1.resolution == "pending" and &1.reviewer == ""))
     assert ledger_text() =~ "| judgment | 108 | UNVERIFIED | 108 |"
     assert ledger_text() =~ "| test | 0 | ENFORCED | 0 |"
+  end
+
+  test "pending judgment is distinct from resolution and evidence-backed rows require focused proof" do
+    pending = hd(ledger_rows())
+    assert valid_row?(pending)
+    assert pending.resolution == "pending"
+    assert pending.tier == "judgment" and pending.disposition == "UNVERIFIED"
+
+    evidence_backed = %{
+      pending
+      | tier: "test",
+        resolution: "evidence-backed",
+        test_name: "test: rejects violating input [phase138_prohibition]",
+        command: "mix test test/example_test.exs --only phase138_prohibition",
+        execution: "tests=1 failures=0 exit=0",
+        violation: "asserts rejection of violating input",
+        disposition: "ENFORCED"
+    }
+
+    assert valid_row?(evidence_backed)
+    refute valid_row?(%{evidence_backed | execution: "tests=0 failures=0 exit=0"})
+    refute valid_row?(%{evidence_backed | violation: "no violating case"})
+    refute valid_row?(%{pending | resolution: "evidence-backed"})
+    refute valid_row?(%{pending | disposition: "ENFORCED"})
+  end
+
+  test "maintainer outcomes require attributable review fields and retain judgment disposition" do
+    pending = hd(ledger_rows())
+
+    resolved = %{
+      pending
+      | resolution: "maintainer-affirmed",
+        reviewer: "maintainer@example.test",
+        reviewed_at: "2026-09-25T12:00:00Z",
+        judgment_reference: "138-CONTEXT.md#D-01",
+        judgment_rationale: "The claim remains applicable repository policy."
+    }
+
+    assert valid_row?(resolved)
+    refute valid_row?(%{resolved | reviewer: ""})
+    refute valid_row?(%{resolved | reviewed_at: "not-a-date"})
+    refute valid_row?(%{resolved | judgment_reference: ""})
+    refute valid_row?(%{resolved | tier: "test"})
+    refute valid_row?(%{resolved | disposition: "ENFORCED"})
+    refute valid_row?(%{pending | resolution: "maintainer-superseded"})
   end
 
   test "ledger validation rejects omissions, altered claims, unsupported tiers, and false enforcement" do
@@ -145,7 +191,12 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
         command,
         execution,
         violation,
-        disposition
+        disposition,
+        resolution,
+        reviewer,
+        reviewed_at,
+        judgment_rationale,
+        judgment_reference
       ] = cells
 
       [_, number] = Regex.run(~r/^138-(\d+)-PLAN\.md$/, plan)
@@ -161,7 +212,12 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
         command: command,
         execution: execution,
         violation: violation,
-        disposition: disposition
+        disposition: disposition,
+        resolution: resolution,
+        reviewer: reviewer,
+        reviewed_at: reviewed_at,
+        judgment_rationale: judgment_rationale,
+        judgment_reference: judgment_reference
       }
     end)
   end
@@ -173,6 +229,14 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
          true <- owner_is_tracked?(row.owner),
          true <- String.trim(row.test_name) != "",
          true <- row.statement |> String.contains?("\n") |> Kernel.not(),
+         true <-
+           row.resolution in [
+             "pending",
+             "evidence-backed",
+             "maintainer-affirmed",
+             "maintainer-superseded",
+             "maintainer-not-applicable"
+           ],
          true <- valid_disposition?(row) do
       true
     else
@@ -218,12 +282,30 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     row_errors ++ duplicate_errors ++ missing_errors
   end
 
-  defp valid_disposition?(%{disposition: "UNVERIFIED", violation: violation}),
-    do: String.trim(violation) != ""
+  defp valid_disposition?(%{
+         disposition: "UNVERIFIED",
+         tier: "judgment",
+         resolution: "pending",
+         reviewer: reviewer
+       }),
+       do: reviewer == ""
+
+  defp valid_disposition?(
+         %{disposition: "UNVERIFIED", tier: "judgment", resolution: resolution} = row
+       )
+       when resolution in [
+              "maintainer-affirmed",
+              "maintainer-superseded",
+              "maintainer-not-applicable"
+            ] do
+    row.reviewer =~ ~r/\S/ and row.reviewed_at =~ ~r/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/ and
+      row.judgment_rationale =~ ~r/\S/ and row.judgment_reference =~ ~r/\S/
+  end
 
   defp valid_disposition?(%{
          disposition: "ENFORCED",
          tier: "test",
+         resolution: "evidence-backed",
          command: command,
          execution: execution,
          violation: violation
