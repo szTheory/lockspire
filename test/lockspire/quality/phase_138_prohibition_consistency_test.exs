@@ -4,6 +4,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
   @phase_dir ".planning/phases/138-baseline-inventory-evidence-taxonomy"
   @ledger Path.join(@phase_dir, "138-PROHIBITION-VALIDATION.md")
   @owner "test/lockspire/release/repository_hygiene_contract_test.exs"
+  @historical_bytes_sha256 "1c95ce2813cdd6701f5e008f95ca95e8bf26194e28a89dc00266e1719dbb8ae2"
 
   test "prohibition ledger exactly covers the original 108 source claims" do
     source = source_claims()
@@ -11,9 +12,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
 
     assert length(source) == 108
     assert length(rows) == 108
-    assert Enum.map(rows, & &1.identity) == Enum.map(source, & &1.identity)
-    assert Enum.map(rows, & &1.statement) == Enum.map(source, & &1.statement)
-    assert Enum.map(rows, & &1.original_form) == Enum.map(source, & &1.original_form)
+    assert ledger_errors(rows, source) == []
 
     assert Enum.frequencies_by(source, & &1.original_form) == %{
              "string" => 8,
@@ -21,7 +20,6 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
              "object:flagged-unverified" => 96
            }
 
-    assert Enum.all?(rows, &valid_row?(&1))
     assert Enum.all?(rows, &owner_is_tracked?(&1.owner))
     assert Enum.all?(rows, &(&1.tier == "judgment" and &1.disposition == "UNVERIFIED"))
     assert ledger_text() =~ "| judgment | 108 | UNVERIFIED | 108 |"
@@ -36,7 +34,14 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     refute valid_row?(%{first | tier: "source-symbol"})
     refute valid_row?(%{first | owner: "missing/owner.ex"})
 
-    assert Enum.map(tl(rows), & &1.identity) != Enum.map(source_claims(), & &1.identity)
+    source = source_claims()
+    refute ledger_errors(tl(rows), source) == []
+
+    altered = [%{first | statement: first.statement <> " altered"} | tl(rows)]
+    refute ledger_errors(altered, source) == []
+
+    duplicated = rows ++ [first]
+    refute ledger_errors(duplicated, source) == []
 
     forged_receipt = %{
       first
@@ -50,7 +55,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     refute valid_row?(forged_receipt)
   end
 
-  test "historical plans, summaries, and canonical inventory remain byte-identical to HEAD" do
+  test "historical plans, summaries, and canonical inventory match the pinned byte manifest" do
     paths =
       Enum.flat_map(1..34, fn number ->
         number = String.pad_leading(Integer.to_string(number), 2, "0")
@@ -61,9 +66,15 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
         ]
       end) ++ [Path.join(@phase_dir, "baseline-inventory-2026-08-28.md")]
 
-    Enum.each(paths, fn path ->
-      assert File.read!(path) == git_show!(path), "historical bytes changed: #{path}"
-    end)
+    current_digest =
+      paths
+      |> Enum.map(fn path -> [path, <<0>>, File.read!(path), <<0>>] end)
+      |> IO.iodata_to_binary()
+      |> then(&:crypto.hash(:sha256, &1))
+      |> Base.encode16(case: :lower)
+
+    assert current_digest == @historical_bytes_sha256,
+           "historical plan, summary, or canonical inventory bytes changed"
   end
 
   defp source_claims do
@@ -169,6 +180,44 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     end
   end
 
+  defp ledger_errors(rows, source) do
+    identities = Enum.map(rows, & &1.identity)
+    source_identities = Enum.map(source, & &1.identity)
+    source_by_identity = Map.new(source, &{&1.identity, &1})
+
+    row_errors =
+      Enum.flat_map(rows, fn row ->
+        source_claim = Map.get(source_by_identity, row.identity)
+
+        cond do
+          is_nil(source_claim) ->
+            ["extra source identity #{inspect(row.identity)}"]
+
+          row.statement != source_claim.statement ->
+            ["altered statement at #{inspect(row.identity)}"]
+
+          row.original_form != source_claim.original_form ->
+            ["altered source form at #{inspect(row.identity)}"]
+
+          not valid_row?(row) ->
+            ["invalid evidence row at #{inspect(row.identity)}"]
+
+          true ->
+            []
+        end
+      end)
+
+    duplicate_errors =
+      if length(identities) == length(Enum.uniq(identities)),
+        do: [],
+        else: ["duplicate source identity"]
+
+    missing_errors =
+      if identities == source_identities, do: [], else: ["source identity set or order differs"]
+
+    row_errors ++ duplicate_errors ++ missing_errors
+  end
+
   defp valid_disposition?(%{disposition: "UNVERIFIED", violation: violation}),
     do: String.trim(violation) != ""
 
@@ -194,11 +243,4 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
   end
 
   defp ledger_text, do: File.read!(@ledger)
-
-  defp git_show!(path) do
-    case System.cmd("git", ["show", "HEAD:" <> path], stderr_to_stdout: true) do
-      {contents, 0} -> contents
-      {error, status} -> flunk("git show failed for #{path} (#{status}): #{error}")
-    end
-  end
 end
