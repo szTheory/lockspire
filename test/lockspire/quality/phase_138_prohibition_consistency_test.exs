@@ -21,10 +21,16 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
            }
 
     assert Enum.all?(rows, &owner_is_tracked?(&1.owner))
-    assert Enum.all?(rows, &(&1.tier == "judgment" and &1.disposition == "UNVERIFIED"))
-    assert Enum.all?(rows, &(&1.resolution == "pending" and &1.reviewer == ""))
-    assert ledger_text() =~ "| judgment | 108 | UNVERIFIED | 108 |"
-    assert ledger_text() =~ "| test | 0 | ENFORCED | 0 |"
+
+    assert Enum.frequencies_by(rows, &{&1.tier, &1.disposition, &1.resolution}) == %{
+             {"judgment", "UNVERIFIED", "pending"} => 98,
+             {"test", "ENFORCED", "evidence-backed"} => 10
+           }
+
+    assert ledger_text() =~ "| judgment | 98 | UNVERIFIED | 98 |"
+    assert ledger_text() =~ "| test | 10 | ENFORCED | 10 |"
+    assert ledger_text() =~ "| pending | 98 |"
+    assert ledger_text() =~ "| evidence-backed | 10 |"
   end
 
   test "pending judgment is distinct from resolution and evidence-backed rows require focused proof" do
@@ -37,7 +43,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
       pending
       | tier: "test",
         resolution: "evidence-backed",
-        test_name: "test: rejects violating input [phase138_prohibition]",
+        test_name: "138-01-1 rejects violating input [phase138_prohibition]",
         command: "mix test test/example_test.exs --only phase138_prohibition",
         execution: "tests=1 failures=0 exit=0",
         violation: "asserts rejection of violating input",
@@ -47,6 +53,8 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     assert valid_row?(evidence_backed)
     refute valid_row?(%{evidence_backed | execution: "tests=0 failures=0 exit=0"})
     refute valid_row?(%{evidence_backed | violation: "no violating case"})
+    refute valid_row?(%{evidence_backed | test_name: "missing selector"})
+    refute valid_row?(%{evidence_backed | command: "mix test test/example_test.exs"})
     refute valid_row?(%{pending | resolution: "evidence-backed"})
     refute valid_row?(%{pending | disposition: "ENFORCED"})
   end
@@ -66,6 +74,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     assert valid_row?(resolved)
     refute valid_row?(%{resolved | reviewer: ""})
     refute valid_row?(%{resolved | reviewed_at: "not-a-date"})
+    refute valid_row?(%{resolved | reviewed_at: "2026-99-99T12:00:00Z"})
     refute valid_row?(%{resolved | judgment_reference: ""})
     refute valid_row?(%{resolved | tier: "test"})
     refute valid_row?(%{resolved | disposition: "ENFORCED"})
@@ -282,13 +291,16 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     row_errors ++ duplicate_errors ++ missing_errors
   end
 
-  defp valid_disposition?(%{
-         disposition: "UNVERIFIED",
-         tier: "judgment",
-         resolution: "pending",
-         reviewer: reviewer
-       }),
-       do: reviewer == ""
+  defp valid_disposition?(
+         %{
+           disposition: "UNVERIFIED",
+           tier: "judgment",
+           resolution: "pending"
+         } = row
+       ),
+       do:
+         row.reviewer == "" and row.reviewed_at == "" and row.judgment_rationale == "" and
+           row.judgment_reference == ""
 
   defp valid_disposition?(
          %{disposition: "UNVERIFIED", tier: "judgment", resolution: resolution} = row
@@ -298,26 +310,46 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
               "maintainer-superseded",
               "maintainer-not-applicable"
             ] do
-    row.reviewer =~ ~r/\S/ and row.reviewed_at =~ ~r/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/ and
+    row.reviewer =~ ~r/\S/ and valid_utc_timestamp?(row.reviewed_at) and
       row.judgment_rationale =~ ~r/\S/ and row.judgment_reference =~ ~r/\S/
   end
 
-  defp valid_disposition?(%{
-         disposition: "ENFORCED",
-         tier: "test",
-         resolution: "evidence-backed",
-         command: command,
-         execution: execution,
-         violation: violation
-       }) do
-    command != "" and execution =~ ~r/tests=([1-9]\d*) failures=0 exit=0/ and
+  defp valid_disposition?(
+         %{
+           disposition: "ENFORCED",
+           tier: "test",
+           resolution: "evidence-backed",
+           execution: execution,
+           violation: violation
+         } = row
+       ) do
+    {plan, position} = row.identity
+    identity = "138-#{String.pad_leading(Integer.to_string(plan), 2, "0")}-#{position}"
+
+    (row.command =~ ~r/--only phase138_prohibition/ or
+       row.command =~ ~r/--test-name-pattern=138-\d+-\d+/) and row.test_name =~ identity and
+      row.test_name =~ "[phase138_prohibition]" and
+      execution =~ ~r/tests=([1-9]\d*) failures=0 exit=0/ and
       violation =~ "asserts rejection"
   end
 
   defp valid_disposition?(_), do: false
 
+  defp valid_utc_timestamp?(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, _datetime, 0} -> String.ends_with?(value, "Z")
+      _ -> false
+    end
+  end
+
   defp owner_is_tracked?(path) do
-    path == @owner and File.regular?(path) and
+    path in [
+      @owner,
+      "test/support/lockspire/release_proof/package_assertions.ex",
+      "test/lockspire/workflow_supply_chain_contract_test.exs",
+      "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs",
+      "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs"
+    ] and File.regular?(path) and
       case System.cmd("git", ["ls-files", "--error-unmatch", path], stderr_to_stdout: true) do
         {_, 0} -> true
         _ -> false

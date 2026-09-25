@@ -277,6 +277,45 @@ test('host workflows expose only supported fresh lifecycle boundaries', () => {
   }
 });
 
+test('138-32-2 rejects a mismatched host receipt while preserving pending recovery state [phase138_prohibition]', () => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-phase138-receipt-'));
+  try {
+    mustRun('git', ['init', '-q', '-b', 'main'], { cwd: fixture });
+    mustRun('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixture });
+    mustRun('git', ['config', 'user.email', 'lifecycle@example.com'], { cwd: fixture });
+    for (const [relative, bytes] of [
+      ['.planning/PROJECT.md', '# Lockspire\n**Current focus:** Phase 138\n'],
+      ['.planning/STATE.md', '---\ncurrent_phase: 138\nstatus: executing\n---\n'],
+      ['.planning/ROADMAP.md', '# Roadmap\nPhase 138 in progress\n'],
+      ['.planning/REQUIREMENTS.md', '# Requirements\nBASE-01 pending\n'],
+    ]) {
+      const target = path.join(fixture, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, bytes);
+    }
+    mustRun('git', ['add', '--all'], { cwd: fixture });
+    mustRun('git', ['commit', '-qm', 'feat: receipt base'], { cwd: fixture });
+
+    mustRun('node', [stateHelper, 'begin', '138'], { cwd: fixture });
+    fs.writeFileSync(path.join(fixture, '.planning/PROJECT.md'), '# Lockspire\n**Current focus:** Phase 139\n');
+    fs.writeFileSync(path.join(fixture, '.planning/STATE.md'), '---\ncurrent_phase: 139\nstatus: ready_to_plan\n---\n');
+    const hooks = JSON.stringify({ activeHooks: [{
+      kind: 'step', capId: 'lockspire-phase-finalizer',
+      ref: { command: 'lockspire-finalize post-transition' }, onError: 'halt',
+    }] });
+    mustRun('node', [stateHelper, 'seal', '138'], { cwd: fixture, input: hooks });
+
+    const mismatch = run('node', [stateHelper, 'verify-hooks', '138'], {
+      cwd: fixture,
+      input: JSON.stringify({ activeHooks: [] }),
+    });
+    assert.notEqual(mismatch.status, 0);
+    assert.equal(JSON.parse(mustRun('node', [stateHelper, 'status'], { cwd: fixture })).status, 'pending');
+  } finally {
+    fs.rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
 test('real host receipt preserves pending state across hook mismatch and completes only on success', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-finalizer-host-'));
   try {

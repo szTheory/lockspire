@@ -111,6 +111,43 @@ test('manifest declares supported refresh and blocking final-acceptance boundari
   }]);
 });
 
+test('138-33-1 rejects undeclared capability surfaces [phase138_prohibition]', () => {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.deepEqual(manifest.hooks, []);
+  assert.deepEqual(manifest.skills, []);
+  assert.deepEqual(manifest.agents, []);
+  assert.deepEqual(manifest.contributions, []);
+  assert.deepEqual(manifest.steps, []);
+  assert.deepEqual(manifest.gates.map(({ point }) => point), ['execute:post', 'plan:pre']);
+  assert.deepEqual(manifest.commands.map(({ family }) => family), ['lockspire-finalize']);
+});
+
+test('138-33-2 rejects invalid routing input without constructing a child process [phase138_prohibition]', () => {
+  const router = loadRouter();
+  for (const args of [['lockspire-finalize', 'unknown', '--phase', '138']]) {
+    const rejected = invoke(router, args);
+    assert.equal(rejected.calls.length, 0);
+    assert.equal(rejected.exitCode, 2);
+    assert.equal(rejected.errors.length, 1);
+  }
+
+  for (const [mode, phase] of [['pre-verify', '137'], ['post-transition', '140']]) {
+    const inert = invoke(router, ['lockspire-finalize', mode, '--phase', phase]);
+    assert.equal(inert.calls.length, 0);
+    assert.equal(inert.exitCode, undefined);
+    assert.match(inert.errors[0], /not applicable/);
+  }
+
+  const accepted = invoke(router, ['lockspire-finalize', 'pre-verify', '--phase', '138']);
+  assert.equal(accepted.calls.length, 1);
+  assert.equal(accepted.calls[0].binary, process.execPath);
+  assert.equal(accepted.calls[0].options.shell, false);
+  assert.equal(accepted.calls[0].argv[1], fs.realpathSync(root));
+  assert.equal(accepted.calls[0].argv[5], '900000');
+  assert.equal(accepted.calls[0].argv[0], supervisorPath);
+  assert.deepEqual(accepted.errors, []);
+});
+
 test('both exact modes spawn one no-shell process-group supervisor', () => {
   const router = loadRouter();
   for (const mode of ['pre-verify', 'post-transition']) {

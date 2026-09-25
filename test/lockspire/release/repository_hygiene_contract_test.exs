@@ -246,4 +246,44 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   test "complete baseline inventory renders executable currentness instructions" do
     PackageAssertions.assert_baseline_inventory_currentness_instructions!()
   end
+
+  @tag :phase138_prohibition
+  test "138-06-1 rejects partial publication after interruption" do
+    PackageAssertions.assert_baseline_inventory_output_lifecycle!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-08-1 rejects unidentified Git records without successful-zero evidence" do
+    PackageAssertions.assert_baseline_inventory_stable_id_failures!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-12-1 rejects affirmative GitHub disposition from partial namespaces" do
+    PackageAssertions.assert_baseline_inventory_github_aggregate_fail_closed!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-02-1 rejects credential-like material at display boundaries" do
+    PackageAssertions.assert_baseline_inventory_credential_redaction!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-09-2 rejects hostile maintained paths from escaping the collector" do
+    PackageAssertions.assert_baseline_inventory_maintained_fail_closed!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-15-2 rejects semantically unrelated post-snapshot bookkeeping" do
+    PackageAssertions.assert_baseline_inventory_post_snapshot_drift!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-18-1 rejects failed Git receipts as complete evidence" do
+    PackageAssertions.assert_baseline_inventory_git_domain_receipts!()
+  end
+
+  @tag :phase138_prohibition
+  test "138-13-1 rejects output replacement outside the target-lock transaction" do
+    PackageAssertions.assert_baseline_inventory_publication_transaction!()
+  end
 end
