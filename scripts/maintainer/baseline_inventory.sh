@@ -3235,6 +3235,7 @@ PY
     "$repository_root/gsd-core/bin/gsd-tools.cjs" \
     "$repository_root/.codex/gsd-core/bin/gsd-tools.cjs" \
     "$repository_root/.claude/gsd-core/bin/gsd-tools.cjs" \
+    "$repository_root/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs" \
     "$user_home/.codex/gsd-core/bin/gsd-tools.cjs" \
     "$user_home/.claude/gsd-core/bin/gsd-tools.cjs" \
     "$user_home/.hermes/gsd-core/bin/gsd-tools.cjs" \
@@ -3295,7 +3296,7 @@ for field, rel in writer_paths:
     mode = stat.S_IMODE(candidate.lstat().st_mode)
     expected = {'path': rel, 'mode': mode, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
     if descriptor != expected:
-        raise ValueError('writer descriptor')
+        raise ValueError(f'writer descriptor: {field}')
 
 if expected_phase == '139':
     hooks = [{

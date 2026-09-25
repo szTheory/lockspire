@@ -149,6 +149,7 @@ function resolveCore(root) {
     path.join(root, 'gsd-core/bin/gsd-tools.cjs'),
     path.join(root, '.codex/gsd-core/bin/gsd-tools.cjs'),
     path.join(root, '.claude/gsd-core/bin/gsd-tools.cjs'),
+    path.join(root, 'tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs'),
     path.join(os.homedir(), '.codex/gsd-core/bin/gsd-tools.cjs'),
     path.join(os.homedir(), '.claude/gsd-core/bin/gsd-tools.cjs'),
     path.join(os.homedir(), '.hermes/gsd-core/bin/gsd-tools.cjs'),

@@ -23,6 +23,7 @@ for candidate in \
   "$ROOT/gsd-core/bin/gsd-tools.cjs" \
   "$ROOT/.codex/gsd-core/bin/gsd-tools.cjs" \
   "$ROOT/.claude/gsd-core/bin/gsd-tools.cjs" \
+  "$ROOT/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs" \
   "$HOME/.codex/gsd-core/bin/gsd-tools.cjs" \
   "$HOME/.claude/gsd-core/bin/gsd-tools.cjs" \
   "$HOME/.hermes/gsd-core/bin/gsd-tools.cjs" \
