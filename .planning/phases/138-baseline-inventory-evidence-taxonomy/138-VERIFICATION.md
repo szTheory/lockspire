@@ -1,6 +1,6 @@
 ---
 phase: 138-baseline-inventory-evidence-taxonomy
-verified: 2026-09-25T19:16:16Z
+verified: 2026-09-25T19:30:14Z
 status: gaps_found
 score: 208/209 must-haves verified
 covered_files:
@@ -86,7 +86,7 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
-covered_digest: "v1:sha256:bd9053c6646820789eb532f70320c4f4332a4600e232660decf1f953ac088b06"
+covered_digest: "v1:sha256:b13757a5fc42b034938aed92f419d4799f5993fec3cea5b6dccb05ca24cded64"
 behavior_unverified: 0
 overrides_applied: 0
 decision_coverage:
@@ -129,7 +129,7 @@ human_verification:
 # Phase 138: Baseline Inventory & Evidence Taxonomy Verification Report
 
 **Phase Goal:** Maintainers have one current, non-destructive evidence inventory for local/remote Git state and every maintained operational follow-up.
-**Verified:** 2026-09-25T19:16:16Z
+**Verified:** 2026-09-25T19:30:14Z
 **Status:** gaps_found
 **Re-verification:** Yes — after gap closure plans 138-35 and 138-36
 
@@ -144,8 +144,8 @@ human_verification:
 | 3 | Every open pull request and issue has a current evidence-backed disposition, without treating an empty queue as success. | VERIFIED | Prior direct check of the ledger recorded a terminal authenticated PR page with seven open PRs and a separately completed zero-issue receipt. The existing snapshot is bounded by its collection time and requires refresh before later authority decisions. |
 | 4 | Maintained todos, audit/verification findings, debug or handoff artifacts, roadmap notes, and other follow-ups are discoverable in one inventory. | VERIFIED | Collector retains the explicit maintained-source family allowlist and complete family receipts. The previous contract run exercised production collector fixtures; the new prohibition ledger separately preserves the historical source set. |
 | 5 | Both named Phase 138 lifecycle contracts pass with a genuine host-sealed pending receipt and exact writer descriptors. | VERIFIED | Ran `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase138_posttransition_relation_gap --only phase138_finalizer_recovery_gap`: 2 tests, 0 failures (44 excluded). The fixtures pin the same `GSD_TOOLS` path for receipt begin/seal, writer installation, and validation. |
-| 6 | Workflow drift or forged descriptors fail closed, preserve pending receipt bytes/HEAD, and exact retry succeeds. | VERIFIED | The same two named tests passed. Their fixture mutates the workflow after sealing and forges writer/transformation/allowed-path evidence; assertions require `refresh_required`, unchanged receipt and HEAD, then success after restoring exact state. |
-| 7 | The finalizer remains a pre-verify publisher and post-transition read-only validator; the immutable ledger and Phase 139 acceptance failures are untouched. | VERIFIED | Plan 138-35 changed the receipt fixture helper only; `baseline_inventory.sh` retained its exact descriptor comparison. The canonical inventory was unchanged by the Plan 138-36 contract's byte comparison. |
+| 6 | Workflow drift or forged descriptors fail closed, preserve pending receipt bytes/HEAD, and exact retry succeeds. | VERIFIED | After the latest fixture change (`04efa92f`), the two named tests passed: 2 tests, 0 failures (44 excluded). Their fixture mutates the workflow after sealing and forges writer/transformation/allowed-path evidence; assertions require `refresh_required`, unchanged receipt and HEAD, then success after restoring exact state. |
+| 7 | The finalizer remains a pre-verify publisher and post-transition read-only validator; the immutable ledger and Phase 139 acceptance failures are untouched. | VERIFIED | Plan 138-35 changed the receipt fixture helper only; `baseline_inventory.sh` retained its exact descriptor comparison. The canonical inventory was unchanged by the Plan 138-36 contract's pinned byte manifest. The current fast-suite failures are reported under Behavioral Spot-Checks and do not name these Phase 138 lifecycle selectors. |
 | 8 | All 108 original prohibition claims have exactly one traceable source identity, tier, and recorded evidence disposition. | VERIFIED | Ran `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs`: 3 tests, 0 failures. Contract compares claim identity, decoded exact statement, and original metadata form against plans 138-01 through 138-34. Totals: 8 strings, 96 flagged-unverified objects, 4 automated objects; 108 judgment/UNVERIFIED. |
 | 9 | A row is labeled ENFORCED only with a tracked test-tier owner, non-vacuous passing execution receipt, and a violation assertion. | VERIFIED | The ledger has zero test-tier/ENFORCED rows. The contract's `valid_disposition?/1` requires `tests > 0`, zero failures, exit 0, and `asserts rejection` before accepting ENFORCED; a forged zero-test receipt is rejected. |
 | 10 | Unsupported or judgment-tier claims remain explicitly UNVERIFIED; collection/category runs cannot silently turn them green. | VERIFIED | All 108 rows remain judgment/UNVERIFIED. Ledger entries state no claim-specific violating-case receipt was audited; owner-area runs are explicitly supporting evidence only. The contract enforces this all-row disposition. |
@@ -197,7 +197,9 @@ human_verification:
 | Behavior | Command | Result | Status |
 |---|---|---|---|
 | Receipt relation and recovery invariants | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase138_posttransition_relation_gap --only phase138_finalizer_recovery_gap` | 2 tests, 0 failures (44 excluded) | PASS |
+| Phase-label proof fixture construction | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs:32` | 1 test, 0 failures (45 excluded), after fixture change `04efa92f` | PASS |
 | Exact 108-row source/tier/disposition contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 3 tests, 0 failures | PASS |
+| Workspace fast regression suite | `mix test.fast` | 1,424 tests, 10 failures, 6 skipped, 286 excluded. Reported failures concern the Phase 140 pre-planning gate expectation, Phase 139 planning-state expectations, Phase 139 acceptance/receipt writer descriptors, and a Phase 139 inventory relation ref-update race. Exact names for all ten are not retained here. | FAIL — unrelated/out-of-scope for Phase 138; no named Phase 138 acceptance selector failed |
 | Current relation of canonical inventory | `bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md` | `snapshot_relation: refresh_required`; later commits/current planning edits are not authorized by this immutable snapshot | DEFERRED TO PHASE 140/141 |
 
 ### Probe Execution
@@ -240,11 +242,13 @@ All trackable CONTEXT.md decisions are honored by shipped artifacts (24/24; non-
 
 ### Gaps Summary
 
-G-138-97 is closed: both requested lifecycle contracts pass with a coherent pinned runtime and retain writer-drift, forged-receipt, pending-state, and retry assertions. The new ledger also closes the source-coverage and metadata ambiguity for G-138-98, and the contract proves all 108 exact statements are represented once. However, all 108 remain `judgment / UNVERIFIED`; the ledger records no claim-specific violating-case receipt and says maintainer review is pending. This is still an open phase gap under Plan 138-36's phase-passed condition. Resolve those judgments or gather claim-specific proof before marking Phase 138 passed.
+G-138-97 is closed: both requested lifecycle contracts pass after the latest fixture change with a coherent pinned runtime and retain writer-drift, forged-receipt, pending-state, and retry assertions. The focused phase-label proof test and prohibition ledger contract also pass. The broad `mix test.fast` run remains red (1,424 tests, 10 failures, 6 skipped, 286 excluded); the reported failures concern Phase 140/139 planning and Phase 139 acceptance/receipt relation contracts, outside Phase 138 acceptance. The exact names for all ten failures are not retained, so this report does not claim a complete failure-by-failure attribution.
+
+The new ledger closes the source-coverage and metadata ambiguity for G-138-98, and the contract proves all 108 exact statements are represented once. However, all 108 remain `judgment / UNVERIFIED`; the ledger records no claim-specific violating-case receipt and says maintainer review is pending. This remains the sole Phase 138 acceptance gap under Plan 138-36's phase-passed condition. Resolve those judgments or gather claim-specific proof before marking Phase 138 passed.
 
 The immutable baseline relation separately returns `refresh_required` after later bookkeeping. That authority boundary is explicitly carried to Phase 140/141, where revalidation and final-baseline publication are required; it is not permission to act on the stale snapshot.
 
 ---
 
-_Verified: 2026-09-25T19:16:16Z_  
+_Verified: 2026-09-25T19:30:14Z_  
 _Verifier: gsd-verifier_
