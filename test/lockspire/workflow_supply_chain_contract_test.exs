@@ -26,6 +26,23 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
     refute workflow =~ "skipping dependency review"
   end
 
+  test "fast and minimum-version suites use the tracked GSD lifecycle fixture" do
+    workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
+
+    fixture =
+      "${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs"
+
+    for job <- ["fast", "compatibility"] do
+      [[source]] =
+        Regex.scan(~r/^  #{job}:\n(.*?)(?=^  [a-z0-9-]+:|\z)/ms, workflow,
+          capture: :all_but_first
+        )
+
+      assert source =~ "GSD_TOOLS: #{fixture}",
+             "#{job} must not depend on a user-installed GSD runtime"
+    end
+  end
+
   test "release hygiene runs the portable phase-finalizer lifecycle exactly once in protected order" do
     workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
     assert length(Regex.scan(~r/^permissions:\s*\n  contents: read\s*$/m, workflow)) == 1

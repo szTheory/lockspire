@@ -102,6 +102,7 @@ jobs:
 
     env:
       MIX_ENV: test
+      GSD_TOOLS: ${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs
       LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
       LOCKSPIRE_TEST_DB_PORT: "5432"
       LOCKSPIRE_TEST_DB_USER: lockspire
@@ -208,6 +209,7 @@ jobs:
 
     env:
       MIX_ENV: test
+      GSD_TOOLS: ${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs
       LOCKSPIRE_TEST_DB_HOST: 127.0.0.1
       LOCKSPIRE_TEST_DB_PORT: "5432"
       LOCKSPIRE_TEST_DB_USER: lockspire
