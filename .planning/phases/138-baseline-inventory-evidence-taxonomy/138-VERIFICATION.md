@@ -1,17 +1,11 @@
 ---
 phase: 138-baseline-inventory-evidence-taxonomy
-verified: 2026-09-25T01:36:38Z
-status: human_needed
-score: 201/201 must-haves verified
+verified: 2026-09-25T19:16:16Z
+status: gaps_found
+score: 208/209 must-haves verified
 covered_files:
-
-  - .github/workflows/ci.yml
-  - .gsd-capabilities.json
-  - .planning/MILESTONES.md
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
-  - .planning/STATE.md
-  - .planning/WINDOWS.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-01-PLAN.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-01-SUMMARY.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-02-PLAN.md
@@ -80,185 +74,177 @@ covered_files:
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-33-SUMMARY.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-34-PLAN.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-34-SUMMARY.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-CONTEXT.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-DISCUSSION-LOG.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-PATTERNS.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-RESEARCH.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW-FIX.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-SECURITY.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-UI-REVIEW.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-VALIDATION.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/COVERAGE.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md
-  - AGENTS.md
-  - mix.lock
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-35-PLAN.md
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-35-SUMMARY.md
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-36-PLAN.md
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-36-SUMMARY.md
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-PROHIBITION-VALIDATION.md
   - scripts/maintainer/baseline_inventory.sh
-  - scripts/maintainer/finalize_phase_138_inventory.sh
+  - test/lockspire/quality/phase_138_prohibition_consistency_test.exs
   - test/lockspire/release/repository_hygiene_contract_test.exs
   - test/support/lockspire/release_proof/package_assertions.ex
-  - tools/gsd-capabilities/lockspire-phase-finalizer/capability.json
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
-  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
-
-covered_digest: "v1:sha256:9de48671730b855d875eaa6c0bd9e2ce2df56afac6fe13bc7060ddec96953874"
+  - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
+covered_digest: "v1:sha256:bd9053c6646820789eb532f70320c4f4332a4600e232660decf1f953ac088b06"
 behavior_unverified: 0
 overrides_applied: 0
+decision_coverage:
+  honored: 24
+  total: 24
+  not_honored: []
 re_verification:
-  previous_status: passed
-  previous_score: 4/4
-  gaps_closed: []
-  gaps_remaining: []
+  previous_status: gaps_found
+  previous_score: 201/201
+  gaps_closed:
+    - "G-138-97: both lifecycle receipt contracts now pass with a pinned runtime and adversarial writer-drift/recovery assertions."
+  gaps_remaining:
+    - "G-138-98: exact claim coverage and metadata are recorded, but none of the 108 claim-specific enforcement or judgment outcomes has been resolved."
   regressions: []
+gaps:
+  - gap_id: G-138-98
+    truth: "Every Phase 138 prohibition has claim-level evidence or a resolved maintainer judgment, rather than only a taxonomy row marked UNVERIFIED."
+    status: partial
+    reason: "The additive ledger maps all 108 exact claims to judgment tier, but explicitly records 108 UNVERIFIED and zero ENFORCED. It has no claim-specific negative assertion receipts, and every row says maintainer review is pending. Plan 138-36 states phase-passed requires judgment-tier items to be explicitly resolved."
+    artifacts:
+      - path: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-PROHIBITION-VALIDATION.md
+        issue: "Exact source coverage is proven, but all claim-level dispositions remain open."
+      - path: test/lockspire/quality/phase_138_prohibition_consistency_test.exs
+        issue: "The contract intentionally confirms all rows remain judgment/UNVERIFIED; it does not provide the missing per-claim decisions or negative-case evidence."
+    missing:
+      - "For each claim, record a tracked negative assertion and passing focused receipt before marking it ENFORCED, or obtain and record maintainer judgment that resolves it while preserving unsupported claims as UNVERIFIED."
 deferred:
-
-  - truth: "Currentness of the 2026-09-24 immutable inventory after later lifecycle commits."
-    addressed_in: "Phase 141"
-    evidence: "Phase 141 success criterion 1 requires a dated baseline connecting final Git state and loose-end dispositions to exact SHAs and sources; Phase 140 also requires revalidation before action. The read-only snapshot-relation command currently returns refresh_required for later bookkeeping."
+  - truth: "Currentness of the immutable 2026-09-24 inventory after later Phase 138/139 bookkeeping commits."
+    addressed_in: "Phase 141 (with Phase 140 entry-time revalidation)"
+    evidence: "A read-only --verify-snapshot-relation run returned snapshot_relation: refresh_required for later Phase 138/139 commits and current planning edits. Phase 140's entry gate requires a fresh Phase 139 exact-SHA receipt before planning/action; Phase 141 success criterion 1 requires a dated final baseline tied to exact SHAs and sources."
 human_verification:
-
-  - test: "Plan 138-03 live source comparison"
-    expected: "Compare full Git SHAs/counts, authenticated GraphQL results, all partial/unavailable/not_applicable receipts, and each actionable proposal against the collected ledger."
-    why_human: "The planner-deferred human-check remains in the auto task; current fixtures use fake GitHub responses and the production relation returned refresh_required."
-  - test: "Plan 138-06 live source and publication comparison"
-    expected: "Compare regenerated receipt SHAs/counts to fresh read-only Git and authenticated GraphQL results, and verify the final ledger-only commit relation."
-    why_human: "The planner-deferred check requires an independent source comparison; the current relation does not authorize the post-snapshot commits."
-  - test: "Plan 138-11 live source and publication comparison"
-    expected: "Compare regenerated full SHAs/counts and source receipts to fresh read-only Git and authenticated GraphQL output before the ledger-only commit."
-    why_human: "The planner explicitly deferred this comparison to end-of-phase; repository presence checks and fixture tests cannot independently confirm live source equality."
-  - test: "Plan 138-16 live source and publication comparison"
-    expected: "Compare canonical full SHAs/counts, nested check evidence, and maintained rows to fresh read-only Git and authenticated GraphQL results before the ledger-only commit."
-    why_human: "The planner explicitly deferred this comparison to end-of-phase; fixture tests cannot independently confirm current external evidence."
-  - test: "Resolve the Phase 138 prohibition evidence tiers"
-    expected: "For all 108 plan prohibitions, identify an accepted test or judgment verification tier and resolve each against explicit enforcement evidence or human review."
-    why_human: "The plans contain 96 entries marked flagged-unverified, 8 bare string entries without a verification tier, and 4 entries using automated rather than the supported test/judgment tier; none may be counted as a silent green prohibition."
+  - test: "Recompare the canonical baseline's Git and GitHub receipts before using it as an action authority."
+    expected: "Fresh read-only Git and authenticated GraphQL comparisons match the relevant full SHAs/counts, queue rows, and proposal evidence; otherwise the snapshot is refreshed through the authorized later-phase workflow."
+    why_human: "The original plans explicitly defer live GitHub/source comparison, and later Phase 138/139 bookkeeping now makes the snapshot relation return refresh_required."
+  - test: "Review the 108 rows in 138-PROHIBITION-VALIDATION.md and resolve each claim's test-versus-judgment status."
+    expected: "Each claim receives claim-specific negative evidence with a passing focused receipt, or an explicit maintainer judgment/resolution. Unsupported claims remain visibly UNVERIFIED; none is silently promoted."
+    why_human: "The ledger proves exact source coverage and truthful current status, but whether a negative assertion fully represents each historical prohibition requires claim-level semantic review."
 ---
 
 # Phase 138: Baseline Inventory & Evidence Taxonomy Verification Report
 
 **Phase Goal:** Maintainers have one current, non-destructive evidence inventory for local/remote Git state and every maintained operational follow-up.
-**Verified:** 2026-09-25T01:36:38Z
-**Status:** human_needed
-**Re-verification:** Initial verification mode. The previous report existed but had no `gaps:` section, so Step 0 requires establishing must-haves again.
+**Verified:** 2026-09-25T19:16:16Z
+**Status:** gaps_found
+**Re-verification:** Yes — after gap closure plans 138-35 and 138-36
 
 ## Goal Achievement
 
 ### Observable Truths
 
 | # | Truth | Status | Evidence |
-| --- | --- | --- | --- |
-| 1 | A maintainer can refresh origin references and show whether local `main` is clean and synchronized with `origin/main`, including exact divergence when it is not. | VERIFIED | `scripts/maintainer/baseline_inventory.sh` implements fetch, porcelain-v2 status, full SHA capture, and left/right divergence. The current dated ledger records complete evidence: local `main` `c8525a894e2d4da606cd18040e9301b8eb4311d7`, `origin/main` `d82eaa1c74f396c5eb5dcfa393ddd5dd952acb92`, 255 ahead / 0 behind. Read-only live `git rev-parse`, `git rev-list --left-right --count`, and `git status --porcelain=v2 --branch` corroborated the values and clean worktree at verification time. |
-| 2 | A maintainer can inspect every relevant branch, tag, and worktree in a dated inventory with an explicit proposed keep, remove, or defer disposition. | VERIFIED | The current ledger has complete Git-domain receipts, separate branch/tag/worktree inventories, stable IDs, full observed SHAs, explicit proposed dispositions, and `executed: no`. Collector source uses `for-each-ref` and `git worktree list --porcelain -z`; the contract suite's Phase 138 tests passed. |
-| 3 | A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue. | VERIFIED | The 2026-09-24 collection records one terminal authenticated PR page with seven open PRs, safe head/base/check fields and dispositions; the distinct issue query terminated successfully with zero rows and explicit complete-zero wording. No queue size is presented as a health goal. The snapshot is bounded by its collection time and requires revalidation before a later authority decision. |
-| 4 | A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory. | VERIFIED | `MAINTAINED_SOURCE_FAMILIES` bounds discovery; the delivered ledger records complete family receipts and maintained rows/limitations. Production selection, archive summaries, stable record identity, ambiguity, and hostile-path handling are wired through the CLI fixtures and Phase 138 contract tests. |
-| 5 | Plan-specific truths from all 34 plans (197 truths) add detail to the roadmap contract. | VERIFIED | All 34 summaries freshly classify as `mode=coverage`, with no classifier errors or uncovered deliverables. The current focused contract file ran 46 tests: 45 passed; all Phase 138 inventory tests passed. Its sole failure is an explicitly Phase 139-tagged unrelated quality test described below. Backstop-tagged plan truths have matching direct CLI fixture behavior tests; they are not credited from symbol presence alone. |
+|---|---|---|---|
+| 1 | A maintainer can refresh origin references and show local `main` cleanliness/synchronization or exact divergence. | VERIFIED | The existing collector still implements refresh, porcelain-v2 status, SHA capture, and left/right divergence. The prior verified live ledger was collected at `2026-09-24T20:38:24Z`; its recorded 255-ahead/0-behind relation matched direct Git checks in the previous verification. Quick regression: collector remains present and substantive. |
+| 2 | A maintainer can inspect relevant branches, tags, and worktrees with proposed dispositions in a dated inventory. | VERIFIED | The immutable dated inventory and collector remain present; the Plan 138-35 and 138-36 tests confirm historical inventory bytes remain unchanged. Existing collectors use Git ref/worktree enumeration; no execution authority is granted by proposal rows. |
+| 3 | Every open pull request and issue has a current evidence-backed disposition, without treating an empty queue as success. | VERIFIED | Prior direct check of the ledger recorded a terminal authenticated PR page with seven open PRs and a separately completed zero-issue receipt. The existing snapshot is bounded by its collection time and requires refresh before later authority decisions. |
+| 4 | Maintained todos, audit/verification findings, debug or handoff artifacts, roadmap notes, and other follow-ups are discoverable in one inventory. | VERIFIED | Collector retains the explicit maintained-source family allowlist and complete family receipts. The previous contract run exercised production collector fixtures; the new prohibition ledger separately preserves the historical source set. |
+| 5 | Both named Phase 138 lifecycle contracts pass with a genuine host-sealed pending receipt and exact writer descriptors. | VERIFIED | Ran `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase138_posttransition_relation_gap --only phase138_finalizer_recovery_gap`: 2 tests, 0 failures (44 excluded). The fixtures pin the same `GSD_TOOLS` path for receipt begin/seal, writer installation, and validation. |
+| 6 | Workflow drift or forged descriptors fail closed, preserve pending receipt bytes/HEAD, and exact retry succeeds. | VERIFIED | The same two named tests passed. Their fixture mutates the workflow after sealing and forges writer/transformation/allowed-path evidence; assertions require `refresh_required`, unchanged receipt and HEAD, then success after restoring exact state. |
+| 7 | The finalizer remains a pre-verify publisher and post-transition read-only validator; the immutable ledger and Phase 139 acceptance failures are untouched. | VERIFIED | Plan 138-35 changed the receipt fixture helper only; `baseline_inventory.sh` retained its exact descriptor comparison. The canonical inventory was unchanged by the Plan 138-36 contract's byte comparison. |
+| 8 | All 108 original prohibition claims have exactly one traceable source identity, tier, and recorded evidence disposition. | VERIFIED | Ran `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs`: 3 tests, 0 failures. Contract compares claim identity, decoded exact statement, and original metadata form against plans 138-01 through 138-34. Totals: 8 strings, 96 flagged-unverified objects, 4 automated objects; 108 judgment/UNVERIFIED. |
+| 9 | A row is labeled ENFORCED only with a tracked test-tier owner, non-vacuous passing execution receipt, and a violation assertion. | VERIFIED | The ledger has zero test-tier/ENFORCED rows. The contract's `valid_disposition?/1` requires `tests > 0`, zero failures, exit 0, and `asserts rejection` before accepting ENFORCED; a forged zero-test receipt is rejected. |
+| 10 | Unsupported or judgment-tier claims remain explicitly UNVERIFIED; collection/category runs cannot silently turn them green. | VERIFIED | All 108 rows remain judgment/UNVERIFIED. Ledger entries state no claim-specific violating-case receipt was audited; owner-area runs are explicitly supporting evidence only. The contract enforces this all-row disposition. |
+| 11 | Historical plans, summaries, and canonical inventory retain their original bytes. | VERIFIED | After commit `d759a750`, the Plan 138-36 contract compares all 34 PLAN/SUMMARY pairs plus `baseline-inventory-2026-08-28.md` against a pinned SHA-256 byte manifest (`1c95ce2813cdd6701f5e008f95ca95e8bf26194e28a89dc00266e1719dbb8ae2`); the focused contract passed 3/3. |
+| 12 | Every prohibition has claim-level evidence or resolved maintainer judgment, rather than only a taxonomy row marked UNVERIFIED. | FAILED | The ledger explicitly reports 108 UNVERIFIED, zero ENFORCED, no per-claim violating-case receipt, and pending maintainer review on every claim. The phase-passed condition in Plan 138-36 requires judgment-tier items to be resolved. See G-138-98. |
 
-**Score:** 201/201 truths verified (4 roadmap criteria + 197 plan-level truths; 0 present-but-behavior-unverified).
+**Score:** 208/209 must-haves verified (0 present-but-behavior-unverified).
 
 ### Deferred Items
 
 | # | Item | Addressed In | Evidence |
 |---|---|---|---|
-| 1 | Re-establish snapshot currentness after post-publication lifecycle commits before relying on the ledger for later action. | Phase 141 | Phase 141 success criterion 1 requires a dated final baseline tied to exact Git and source evidence. The current `--verify-snapshot-relation` call returned `refresh_required` for later bookkeeping commits; Phase 140 also requires revalidation before any action. This is an explicit later-authority boundary, not permission to act on stale evidence. |
+| 1 | Re-establish immutable snapshot currentness after later bookkeeping before relying on it for operational action. | Phase 140 entry gate and Phase 141 | The read-only relation command returned `snapshot_relation: refresh_required` for later Phase 138/139 commits and current planning edits. Phase 140 requires a fresh exact-SHA acceptance receipt before planning/action; Phase 141 success criterion 1 requires a dated final baseline tied to exact SHAs and sources. |
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
-| --- | --- | --- | --- |
-| `scripts/maintainer/baseline_inventory.sh` | Non-destructive collector for Git, GitHub, and maintained records | VERIFIED | Substantive ~3,900-line Bash implementation. `bash -n` passes. Source collection flows into receipts, proposal rows, and a lock/temporary-render/atomic-rename publication path. |
-| `scripts/maintainer/finalize_phase_138_inventory.sh` | Pre-verifier publication and post-transition validation | VERIFIED | Tracked capability routes supported Phase 138 modes to this finalizer; router contract passed 9/9 Node tests. |
-| `baseline-inventory-2026-08-28.md` | Dated, immutable, proposal-only live inventory | VERIFIED AT SNAPSHOT BOUNDARY | Collection finished `2026-09-24T20:38:24Z`; complete Git/GitHub/maintained receipts and `executed: no`. The currentness relation now requests refresh after subsequent lifecycle writes (see Deferred Items). |
-| `repository_hygiene_contract_test.exs` and `package_assertions.ex` | Focused production-CLI contract evidence | VERIFIED WITH ONE OUT-OF-SCOPE TEST FAILURE | The helper definitions and shell fixtures exist and invoke the production CLI. 45/46 tests passed; the failing test is Phase 139-tagged and checks a separate source-quality inventory. |
-| Finalizer capability, router, supervisor, lifecycle contracts | Tracked and wired lifecycle boundaries | VERIFIED | `.gsd-capabilities.json`, `capability.json`, router, and supervisor connect the fixed-argv hook to the finalizer. Router tests pass 9/9. |
-| `.github/workflows/ci.yml` | One portable router contract at release-hygiene boundary | VERIFIED | The workflow invokes the router test once; no GSD runtime or live-source dependency was added. |
+|---|---|---|---|
+| `scripts/maintainer/baseline_inventory.sh` | Non-destructive collector for Git, GitHub, and maintained records | VERIFIED | Substantive collector remains present; prior verification checked Bash syntax, real Git/source data flow, and production CLI fixtures. |
+| `baseline-inventory-2026-08-28.md` | Dated proposal-only inventory | VERIFIED AT COLLECTION; REFRESH REQUIRED FOR LATER USE | Immutable canonical evidence remains byte-identical. Relation probe currently reports `refresh_required` after later commits; operational use must wait for Phase 140 revalidation. |
+| `test/support/lockspire/release_proof/package_assertions.ex` | Same-runtime host receipt fixtures and fail-closed recovery proof | VERIFIED | Both Plan 138-35 focused selectors passed. |
+| `test/lockspire/release/repository_hygiene_contract_test.exs` | Focused named lifecycle contracts | VERIFIED | 2 tests, 0 failures; the only excluded tests were not part of this command. |
+| `138-PROHIBITION-VALIDATION.md` | Exact claim-to-tier/disposition ledger for original prohibitions | VERIFIED WITH OPEN CLAIM REVIEW | 108 exact rows; all 108 remain judgment/UNVERIFIED by design. |
+| `test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | Exact-source and disposition-integrity contract | VERIFIED | 3 tests, 0 failures; validates exact-set, false-enforcement rejection, and historical-byte integrity. |
+| Finalizer capability/router and portable contracts | Tracked and wired lifecycle boundary | VERIFIED (regression) | Previous check passed router tests 9/9; Plan 138-35 focused lifecycle tests cover finalizer recovery. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
-| --- | --- | --- | --- | --- |
-| Collector | Local Git refs and worktrees | `for-each-ref`, porcelain-v2, worktree porcelain | WIRED | Current ledger values independently match read-only Git SHA/divergence observations. |
-| Collector | GitHub PR/issue evidence | Separate terminal paginated GraphQL queries | WIRED | Current ledger carries authenticated status, terminal page receipts, seven PR rows, and a separate complete-zero issue receipt. |
-| Collector | Maintained source families | Explicit family manifest and tracked selectors | WIRED | Receipts, bounded rows, archive summaries, and ambiguity are consumed by the render path. |
-| Capability manifest | Router → finalizer | Exact modes, phase arguments, supervised process | WIRED | Router command contract passes 9/9. A generic key-link matcher missed the exact phrase ordering in `capability.json`; direct source trace proves the fixed command and dispatcher. |
-| CI workflow | Router contract | One `node --test` invocation | WIRED | Verified in workflow source and executed locally: 9 tests pass. |
-| Plan 138-03 test helper | Production collector | Shared `run_baseline_fixture!` fake-command harness | WIRED | Generic link matcher expected the former `run_maintained_fixture` name; `assert_baseline_inventory_maintained_records!` invokes the current fixture harness and exercises `--scope maintained`. |
-| Summary coverage | Existing behavior contracts | Structured `coverage.verification` refs | WIRED | Classifier accepted all 34 summaries. Its generic link matcher cannot resolve a wildcard `*-SUMMARY.md` as a literal source file; this is a matcher limitation, not missing coverage. |
+|---|---|---|---|---|
+| Collector | Local Git refs/worktrees | Git `for-each-ref`, porcelain-v2, worktree porcelain | WIRED | Prior live ledger values were independently compared against read-only Git commands. |
+| Collector | GitHub pull requests/issues | Separate terminal paginated queries | WIRED | Prior ledger carries distinct completed PR and issue receipts and evidence-backed rows. |
+| Collector | Maintained source families | Explicit allowlist and tracked selectors | WIRED | Existing fixture tests exercise maintained discovery and receipts. |
+| Lifecycle fixture | Host state helper and workflow bytes | One pinned `GSD_TOOLS` path for begin, seal, fixture writer, validation | WIRED | The two Plan 138-35 selectors pass with genuine helper-generated receipts. |
+| Prohibition ledger | Original plans 138-01 through 138-34 | Plan number + position + decoded exact statement | WIRED | Contract reconciles all 108 rows and original metadata forms. |
+| Consistency contract | Historical plans/summaries/inventory | Pinned SHA-256 manifest over all 69 historical artifacts | WIRED | The passing contract recomputes the path-and-content digest and compares it with the committed pinned value. |
 
 ### Data-Flow Trace (Level 4)
 
-| Artifact | Data Variable | Source | Produces Real Data | Status |
-| --- | --- | --- | --- | --- |
-| Git inventory | refs, worktrees, SHAs, divergence | Live local Git and origin tracking refs | Yes | FLOWING |
-| GitHub inventory | PR and issue rows | Authenticated paginated GraphQL | Yes | FLOWING; snapshot-bound, revalidate before later action |
-| Maintained records | candidates, family receipts, REC rows | Allowlisted tracked records and markers | Yes | FLOWING |
-| Canonical ledger | rows and completeness receipts | Collected source observations and fingerprints | Yes | FLOWING; currentness relation requires another snapshot after later bookkeeping |
+| Artifact | Data variable | Source | Produces real data | Status |
+|---|---|---|---|---|
+| Git inventory | refs, worktrees, SHAs, divergence | Local Git and origin tracking refs | Yes | FLOWING at collection; relation now requests refresh for later state |
+| GitHub inventory | PR and issue rows | Authenticated paginated GraphQL | Yes | FLOWING at collection; snapshot-bound |
+| Maintained-record inventory | candidate rows and family receipts | Allowlisted tracked repository records | Yes | FLOWING |
+| Prohibition ledger | exact statements, metadata, tier, disposition | Original plan frontmatter, joined by executable consistency test | Yes | FLOWING for classification; claim-level enforcement/judgment remains unresolved |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
-| --- | --- | --- | --- |
-| Collector syntax | `bash -n scripts/maintainer/baseline_inventory.sh` | Exit 0 | PASS |
-| Current Git refs and divergence | `git rev-parse main origin/main`; `git rev-list --left-right --count main...origin/main`; `git status --porcelain=v2 --branch` | Matches ledger: 255 ahead / 0 behind; clean worktree | PASS |
-| Production collector contract suite | `PATH=<installed Elixir 1.20.2 and OTP 29.0.5 bins> mix test test/lockspire/release/repository_hygiene_contract_test.exs` | 45/46 passed. One failure: `active release proof composes phase labels from semantic attributes` (`:phase139_gate_repair`, test line 32); scanner reports the intentionally generated Phase 139 fixture at `package_assertions.ex:6555`. The test is outside Phase 138's inventory behaviors. | PASS FOR PHASE 138 CONTRACTS; OUT-OF-SCOPE FAILURE RECORDED |
-| Finalizer router behavior | `node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs` | 9/9 passed, including process-group timeout and cancellation checks | PASS |
-| Summary coverage completeness | `gsd-tools query uat classify-coverage --summary <each of 34 summaries>` | 34/34 all-auto-covered, no malformed or human-presented deliverables | PASS |
-| Current ledger relation | `bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md` | Exit 1, `refresh_required`; later commits after the `8227e894` evidence base are not authorized bookkeeping. | DEFERRED TO LATER AUTHORITY BOUNDARY |
-| Decision coverage | `gsd-tools query check.decision-coverage-verify <phase-dir> <138-CONTEXT.md>` | 24/24 honored | PASS |
+|---|---|---|---|
+| Receipt relation and recovery invariants | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase138_posttransition_relation_gap --only phase138_finalizer_recovery_gap` | 2 tests, 0 failures (44 excluded) | PASS |
+| Exact 108-row source/tier/disposition contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 3 tests, 0 failures | PASS |
+| Current relation of canonical inventory | `bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md` | `snapshot_relation: refresh_required`; later commits/current planning edits are not authorized by this immutable snapshot | DEFERRED TO PHASE 140/141 |
 
 ### Probe Execution
 
-No Phase 138-declared or conventional `probe-*.sh` files were found.
+No Phase 138-declared or conventional `scripts/*/tests/probe-*.sh` files were found.
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
-| --- | --- | --- | --- | --- |
-| BASE-01 | 138-01 through 138-34 | Refresh and report Git baseline, exact divergence, and completeness | SATISFIED | Collector implementation; current complete snapshot; direct Git SHA, cleanliness, and divergence comparison. |
-| BASE-02 | 138-01 through 138-34 | Enumerate branches, tags, and worktrees with proposal-only dispositions | SATISFIED | Current ledger domains and `executed: no`; production collector contracts. |
-| TRIAGE-01 | 138-02 through 138-34 | Inspect open PRs with evidence-backed dispositions | SATISFIED AT SNAPSHOT BOUNDARY | Seven authenticated PR observations with terminal pagination, safe fields, and dispositions. |
-| TRIAGE-02 | 138-02 through 138-34 | Inspect open issues without treating zero as repository health | SATISFIED AT SNAPSHOT BOUNDARY | Separate terminal issue query; explicit successful-zero wording. |
-| LOOSE-01 | 138-03 through 138-34 | Inventory maintained follow-ups and archive summaries | SATISFIED | Allowlisted family receipts, records, archive summaries, and ambiguity reporting. |
-
-All five Phase 138 requirement IDs appear in plan frontmatter and in `.planning/REQUIREMENTS.md`; no Phase 138-mapped requirement is orphaned.
+|---|---|---|---|---|
+| BASE-01 | 138-01 through 138-36 | Refresh origin refs and prove synchronization or exact divergence | SATISFIED AT BASELINE COLLECTION | Collector implementation, dated snapshot, direct Git comparison, lifecycle receipt contract. |
+| BASE-02 | 138-01 through 138-36 | Enumerate branches/tags/worktrees with proposed dispositions | SATISFIED | Dated inventory and non-destructive proposal-only collector; historical inventory bytes remain unchanged. |
+| TRIAGE-01 | 138-01 through 138-36 | Inspect open PRs with current evidence-backed dispositions | SATISFIED AT BASELINE COLLECTION | Prior ledger records complete PR pagination and evidence per row. |
+| TRIAGE-02 | 138-01 through 138-36 | Inspect open issues without making zero the success metric | SATISFIED AT BASELINE COLLECTION | Distinct terminal issue receipt and explicit complete-zero statement. |
+| LOOSE-01 | 138-01 through 138-36 | Inventory maintained follow-ups | SATISFIED | Explicit maintained-source families, row receipts, and collector contract. |
 
 ### Decision Coverage
 
-The live decision-coverage query reported 24/24 honored and no missing decisions.
-
-### Test Quality Audit
-
-The focused contract run exercised the behavior file once. It reported 46 tests, 45 passing, and one unrelated Phase 139-tagged quality test failure described above. The requirement-linked files have no disabled/skipped test markers. Fixture writers create independent temporary repositories and fake command outputs; the production collector is invoked as a subprocess, so expected outputs are not generated by the system under test. The summary classifier accepted all 34 summaries and the UAT ledger records 99/99 automated passes, 0 issues, and 0 pending/skipped/blocked results.
+All trackable CONTEXT.md decisions are honored by shipped artifacts (24/24; non-blocking).
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
-| --- | --- | --- | --- | --- |
-| `scripts/maintainer/baseline_inventory.sh` | multiple | `XXXXXX` in `mktemp` templates | INFO | Required randomized temporary-file templates; not debt markers or placeholders. |
-| `test/support/lockspire/release_proof/package_assertions.ex` | multiple | `TODO`/`FIXME` strings | INFO | Hostile and maintained-record fixture data used to prove inventory detection; not incomplete implementation. |
-
-No unreferenced `TBD`, `FIXME`, or `XXX` debt marker was found in the collector/finalizer implementation.
-
-### Prohibition Review
-
-Static source review and the production CLI assertions support the non-destructive, fail-closed, redaction, no-product-surface, and proposal-only claims. However, the 34 plans declare 108 prohibitions using three incompatible forms: 96 `verification: flagged-unverified`, 8 bare strings with no verification tier, and 4 `verification: automated`. The verifier contract accepts only `test` or `judgment`; those declarations cannot be silently counted as green even though the current automated UAT classifier reports zero uncovered deliverables. They are routed to human review below.
+|---|---|---|---|---|
+| — | — | No unreferenced TODO/FIXME/XXX/HACK/placeholder marker or empty implementation was found in the focused modified artifacts. Grep hits are collector patterns and explicit hostile/test fixtures. | — | None |
 
 ### Human Verification Required
 
-The four `<verify><human-check>` blocks on auto tasks in Plans 138-03, 138-06, 138-11, and 138-16 are explicitly end-of-phase items. The UAT summary classifier does not erase those planner-deferred checks. Review them against the current snapshot and resolve the prohibition tiers before advancing on a green verification.
+1. **Recompare live baseline evidence before action**
 
-1. **Plan 138-03 live source comparison** — Compare full Git SHAs/counts, authenticated GraphQL results, all incomplete receipts, and actionable proposals against the ledger.
-2. **Plan 138-06 live source and publication comparison** — Compare regenerated Git/GitHub receipts and confirm the ledger-only publication relation.
-3. **Plan 138-11 live source and publication comparison** — Compare full SHAs/counts and source receipts to independent live Git and GraphQL output.
-4. **Plan 138-16 live source and publication comparison** — Compare canonical SHAs/counts, nested check evidence, and maintained rows to independent live results.
-5. **Prohibition evidence tiers** — Resolve the 108 prohibition declarations to an accepted test or judgment tier with enforcement evidence or explicit human review.
+   **Test:** Compare the canonical inventory's Git and GitHub receipts with fresh read-only Git and authenticated GraphQL observations before using any proposed disposition as action authority.
+   **Expected:** Relevant full SHAs, counts, queue rows, and proposal evidence match; if they do not, refresh through the authorized later-phase workflow.
+   **Why human:** The phase plans explicitly defer independent live-source comparison, and the current relation check reports `refresh_required` after later bookkeeping.
+
+2. **Resolve the 108 prohibition rows**
+
+   **Test:** Review each claim in `138-PROHIBITION-VALIDATION.md`; identify claim-specific negative evidence where an executable owner exists, or record maintainer judgment for claims that cannot be reduced to a test.
+   **Expected:** No claim is marked ENFORCED without a passing non-vacuous violation receipt; every unresolved claim stays UNVERIFIED.
+   **Why human:** Exact statement identity is machine-checked, but deciding whether a negative owner fully captures each claim requires semantic judgment.
 
 ### Gaps Summary
 
-No roadmap or plan truth is failed, and the phase's four observable outcomes are supported by the current dated inventory and direct code/test evidence. The verification is `human_needed` because the planner-deferred live comparisons remain in four auto tasks and the prohibition metadata does not supply valid verification tiers. The snapshot-relation command also returns `refresh_required` after later lifecycle writes; the project explicitly places revalidation before future action and the final dated baseline in Phases 140/141.
+G-138-97 is closed: both requested lifecycle contracts pass with a coherent pinned runtime and retain writer-drift, forged-receipt, pending-state, and retry assertions. The new ledger also closes the source-coverage and metadata ambiguity for G-138-98, and the contract proves all 108 exact statements are represented once. However, all 108 remain `judgment / UNVERIFIED`; the ledger records no claim-specific violating-case receipt and says maintainer review is pending. This is still an open phase gap under Plan 138-36's phase-passed condition. Resolve those judgments or gather claim-specific proof before marking Phase 138 passed.
+
+The immutable baseline relation separately returns `refresh_required` after later bookkeeping. That authority boundary is explicitly carried to Phase 140/141, where revalidation and final-baseline publication are required; it is not permission to act on the stale snapshot.
 
 ---
 
-_Verified: 2026-09-25T01:36:38Z_
-_Verifier: the agent (gsd-verifier)_
+_Verified: 2026-09-25T19:16:16Z_  
+_Verifier: gsd-verifier_

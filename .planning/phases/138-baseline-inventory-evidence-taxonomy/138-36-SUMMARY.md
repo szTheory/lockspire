@@ -14,7 +14,7 @@ affects: [phase-138-verification]
 actuals:
   tokens: 15343
   tasks: 3
-  commits: 1
+  commits: 2
 tech-stack:
   added: []
   patterns: [JSON-encoded exact claims in Markdown, enforcement requires violating-case receipts]
@@ -64,6 +64,8 @@ status: complete
 ## Task Commits
 
 1. **Tasks 1–3: Build and validate the exact prohibition evidence ledger** — `45e7673c` (test)
+2. **Review fix: Pin historical bytes without requiring Git history in CI** — `d759a750` (test)
+3. **Plan metadata and validation report** — `f3647b9f` (docs)
 
 ## Files Created/Modified
 
@@ -82,19 +84,23 @@ None. Unsupported rows remain explicitly open as required by the evidence policy
 ## Verification
 
 - `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` — 3 tests, 0 failures.
+- Code review: clean; 0 critical, 0 warning, 0 info findings.
+- Fresh phase verification: 208/209 must-haves verified; G-138-97 closed and G-138-98 remains open because claim-level evidence or maintainer judgment is pending for 108 rows.
 - Focused owner groups passed: Git 5/5, GitHub 7/7, maintained records 5/5, redaction 1/1, publication 3/3, relation/finalizer 11/11, release surface 3/3.
 - Portable router contract — 9 tests, 0 failures.
 - Portable lifecycle contract with isolated HOME — 14 passed, 0 failed, 2 skipped.
 - The normal local-install lifecycle invocation had 13 passed, 1 failed, 2 skipped because the installed `.gsd/capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs` differs from the tracked source. The installed copy was not changed; the isolated portable fixture passed.
+- Regression gate `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 mix test.fast` — 1,424 tests, 12 failures, 6 skipped (286 excluded). Failures include the already-dirty Phase 138/139 planning snapshot, literal phase-label checks, and local installed-runtime writer descriptors; this broad result is not attributed to the focused Phase 138 selectors.
 - `git diff --check` — passed.
 
 ## Issues Encountered
 
 - This machine’s installed capability copy is stale relative to the tracked lifecycle helper. The discrepancy is retained as an environment finding; portable fixture coverage passes without modifying the installed copy.
+- The prior-phase regression gate is not green. Its 12 failures span planning truth and Phase 139 runtime/fixture contracts; no unrelated Phase 139 or preexisting planning changes were made as part of this gap closure.
 
 ## Next Phase Readiness
 
-- G-138-98’s source-coverage and metadata ambiguity is recorded in an executable contract. All 108 claims remain explicitly UNVERIFIED, so this summary does not claim full prohibition enforcement or phase completion. The verifier should retain any remaining judgment/evidence gaps.
+- G-138-98’s source-coverage and metadata ambiguity is recorded in an executable contract. All 108 claims remain explicitly UNVERIFIED, so this summary does not claim full prohibition enforcement or phase completion. Fresh verification reports 208/209 and keeps the phase pending; the next planning cycle should address claim-level review and the regression findings through their owning scope.
 
 ---
 *Phase: 138-baseline-inventory-evidence-taxonomy*
