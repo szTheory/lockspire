@@ -3279,6 +3279,133 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     output
   end
 
+  def assert_phase_139_release_please_main_advance! do
+    fixture = unique_tmp_fixture("lockspire-phase-139-release-please-advance")
+    repository = Path.join(fixture, "repository")
+
+    ledger =
+      ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
+
+    try do
+      {_ledger_commit, _evidence_base, remote} =
+        build_phase_139_relation_repository!(
+          fixture,
+          repository,
+          ledger,
+          fn _ -> :ok end,
+          "github"
+        )
+
+      write_phase_139_verification!(repository)
+      commit_all!(repository, @next_phase_commit_prefix <> "record passed verification")
+      complete_phase_139_canonically!(repository)
+      commit_all!(repository, @next_phase_commit_prefix <> "complete phase execution")
+
+      completion = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      for path <- [
+            "scripts/maintainer/baseline_inventory.sh",
+            "test/lockspire/release/repository_hygiene_contract_test.exs",
+            "test/support/lockspire/release_proof/package_assertions.ex"
+          ] do
+        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+      end
+
+      commit_all!(repository, "fix(139): authenticate Release Please base advance")
+      candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      state_helper =
+        Paths.path(
+          "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
+        )
+
+      gsd_tools = gsd_tools_path!()
+      write_phase_139_transition!(repository)
+
+      hooks = %{
+        "activeHooks" => [
+          %{
+            "kind" => "gate",
+            "capId" => "lockspire-phase-finalizer",
+            "check" => %{
+              "predicate" => %{
+                "kind" => "command-exit-zero",
+                "command" =>
+                  ~S(test "${PHASE_NUMBER}" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139),
+                "timeout" => 2400
+              }
+            },
+            "blocking" => true,
+            "onError" => "halt"
+          }
+        ]
+      }
+
+      hooks_path = Path.join(fixture, "hooks.json")
+      File.write!(hooks_path, Jason.encode!(hooks))
+
+      {_, 0} =
+        System.cmd("bash", ["-c", ~S(exec node "$STATE_HELPER" prepare 139 < "$HOOKS_PATH")],
+          cd: repository,
+          env: [
+            {"STATE_HELPER", state_helper},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ],
+          stderr_to_stdout: true
+        )
+
+      install_receipt_writer_fixture!(repository, gsd_tools)
+      bin = Path.join(fixture, "bin")
+
+      previous_main =
+        run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", completion, previous_main])
+      run_git!(repository, ["push", "origin", "#{completion}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+
+      current_main =
+        run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim()
+
+      env = [
+        {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+        {"FAKE_GH_SCENARIO", "phase139-release-please-valid"},
+        {"FAKE_PR_BASE_OID", current_main}
+      ]
+
+      {sealed, 0} = run_phase_139_sealed_relation!(repository, ledger, env)
+      assert sealed =~ "snapshot_relation: authorized_bookkeeping"
+
+      expected_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", candidate, expected_main])
+      run_git!(repository, ["push", "origin", "#{candidate}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+      advanced_env = List.keystore(env, "FAKE_PR_BASE_OID", 0, {"FAKE_PR_BASE_OID", candidate})
+
+      {accepted, 0} = run_phase_139_posttransition_relation!(repository, ledger, advanced_env)
+      assert accepted =~ "snapshot_relation: authorized_bookkeeping"
+
+      drift_env =
+        List.keystore(
+          advanced_env,
+          "FAKE_GH_SCENARIO",
+          0,
+          {"FAKE_GH_SCENARIO", "phase139-release-please-unrelated-drift"}
+        )
+
+      {drift, drift_status} =
+        run_phase_139_posttransition_relation!(repository, ledger, drift_env)
+
+      assert drift_status != 0
+      assert drift =~ "snapshot_relation: refresh_required"
+
+      assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
+             |> String.starts_with?(candidate)
+    after
+      File.rm_rf(fixture)
+    end
+  end
+
   def assert_phase_139_preverify_refresh! do
     fixture = unique_tmp_fixture("lockspire-" <> @next_phase_slug <> "-preverify-refresh")
     repository = Path.join(fixture, "repository")
@@ -4356,7 +4483,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          fixture,
          repository,
          ledger,
-         parent_mutate \\ fn _repository -> :ok end
+         parent_mutate \\ fn _repository -> :ok end,
+         source_scope \\ "git"
        ) do
     initialize_snapshot_repository!(repository)
     copy_planning_fixture!(Paths.path(".planning"), Path.join(repository, ".planning"))
@@ -4387,6 +4515,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       )
 
     File.write!(project_path, project)
+
     summary13 = Path.join(repository, ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md")
 
     unless File.exists?(summary13) do
@@ -4416,18 +4545,37 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     run_git!(repository, ["fetch", "-q", "origin", "main"])
     candidate = Path.join(fixture, @next_phase_slug <> "-ledger.md")
 
+    collector_env = [{"LOCKSPIRE_INVENTORY_REVIEW_PHASE", "139"}]
+
+    collector_env =
+      if source_scope == "github" do
+        bin = Path.join(fixture, "bin")
+        File.mkdir_p!(bin)
+        File.write!(Path.join(bin, "gh"), fake_gh_script())
+        File.chmod!(Path.join(bin, "gh"), 0o755)
+
+        [
+          {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+          {"FAKE_GH_SCENARIO", "phase139-release-please-baseline"},
+          {"FAKE_PR_BASE_OID", main_baseline}
+          | collector_env
+        ]
+      else
+        collector_env
+      end
+
     {output, 0} =
       System.cmd(
         "bash",
         [
           Paths.path("scripts/maintainer/baseline_inventory.sh"),
           "--scope",
-          "git",
+          source_scope,
           "--output",
           candidate
         ],
         cd: repository,
-        env: [{"LOCKSPIRE_INVENTORY_REVIEW_PHASE", "139"}],
+        env: collector_env,
         stderr_to_stdout: true
       )
 
@@ -4462,7 +4610,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     parent = run_git!(source, ["rev-parse", "#{completion}^"]) |> String.trim()
 
-    for path <- [".planning/STATE.md", ".planning/ROADMAP.md", ".planning/state.json"] do
+    for path <- [
+          ".planning/PROJECT.md",
+          ".planning/STATE.md",
+          ".planning/ROADMAP.md",
+          ".planning/state.json"
+        ] do
       write_repo_file!(repository, path, run_git!(source, ["show", "#{parent}:#{path}"]))
     end
   end
@@ -5845,6 +5998,23 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       [
         Paths.path("scripts/maintainer/baseline_inventory.sh"),
         "--verify-" <> @next_phase_slug <> "-posttransition-relation",
+        ledger
+      ],
+      cd: repository,
+      env: env,
+      stderr_to_stdout: true
+    )
+  end
+
+  defp run_phase_139_sealed_relation!(repository, ledger, env) do
+    env = Enum.reject(env, fn {key, _value} -> key == "GSD_TOOLS" end)
+    env = [{"GSD_TOOLS", gsd_tools_path!()} | env]
+
+    System.cmd(
+      "bash",
+      [
+        Paths.path("scripts/maintainer/baseline_inventory.sh"),
+        "--verify-phase-139-sealed-candidate-relation",
         ledger
       ],
       cd: repository,
@@ -7276,6 +7446,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     case "$1 $2" in
       "auth status") [[ "$scenario" == auth-failed ]] && exit 1 || exit 0 ;;
       "repo view") printf 'lockspire/fixture\\n' ;;
+      "pr view")
+        [[ "$scenario" == phase139-release-please-valid || "$scenario" == phase139-release-please-unrelated-drift ]] || exit 17
+        jq -nc --arg base "${FAKE_PR_BASE_OID:-2222222222222222222222222222222222222222}" '
+          {number:100,title:"chore(main): release lockspire 1.5.1",
+           author:{is_bot:true,login:"app/github-actions"},
+           headRefName:"release-please--branches--main--components--lockspire",
+           headRefOid:"9999999999999999999999999999999999999999",
+           baseRefName:"main",baseRefOid:$base,isDraft:false,state:"OPEN",
+           updatedAt:"2026-09-26T16:22:41Z",
+           files:[{path:".planning/RELEASE-TRAIN.md"},{path:".release-please-manifest.json"},
+                  {path:"CHANGELOG.md"},{path:"mix.exs"}]}' ;;
       "api repos/lockspire/fixture/commits/1111111111111111111111111111111111111111/check-runs")
         if [[ "$scenario" == empty-checks-rest ]]; then
           printf '%s\\n' '{"total_count":0,"check_runs":[]}'
@@ -7298,6 +7479,32 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           while [[ ! -e "$FAKE_HOLD_RELEASE" ]]; do sleep 0.01; done
         fi
         [[ "$scenario" == api-failed ]] && exit 19
+        if [[ "$scenario" == phase139-release-please-baseline ||
+              "$scenario" == phase139-release-please-valid ||
+              "$scenario" == phase139-release-please-unrelated-drift ]] && [[ "$*" != *pullRequestId=* ]]; then
+          if [[ "$*" == *pullRequests* ]]; then
+            updated="2026-09-25T15:02:50Z"
+            head="d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa"
+            title="chore(main): release lockspire 1.5.1"
+            if [[ "$scenario" != phase139-release-please-baseline ]]; then
+              updated="2026-09-26T16:22:41Z"
+              head="9999999999999999999999999999999999999999"
+            fi
+            [[ "$scenario" != phase139-release-please-unrelated-drift ]] || title="chore(main): release lockspire 1.5.2"
+            jq -nc --arg updated "$updated" --arg head "$head" --arg title "$title" \
+              --arg base "${FAKE_PR_BASE_OID:-2222222222222222222222222222222222222222}" '
+              {data:{repository:{pullRequests:{nodes:[{
+                id:"PR-100",number:100,title:$title,url:"https://github.com/lockspire/fixture/pull/100",
+                updatedAt:$updated,state:"OPEN",isDraft:false,mergeStateStatus:"UNSTABLE",reviewDecision:null,
+                headRefName:"release-please--branches--main--components--lockspire",headRefOid:$head,
+                baseRefName:"main",baseRefOid:$base,
+                commits:{nodes:[{commit:{oid:$head,statusCheckRollup:{state:null}}}]}
+              }],pageInfo:{hasNextPage:false,endCursor:null}}}}}'
+          else
+            printf '%s\\n' '{"data":{"repository":{"issues":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
+          fi
+          exit 0
+        fi
         if [[ "$*" == *pullRequestId=* ]]; then
           [[ "$scenario" == nested-api-failed ]] && exit 19
           if [[ "$scenario" == empty-checks-rest || "$scenario" == nonempty-checks-rest ]]; then
@@ -7305,6 +7512,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             exit 0
           fi
           nested_oid="1111111111111111111111111111111111111111"
+          [[ "$scenario" != phase139-release-please-baseline ]] || nested_oid="d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa"
+          [[ "$scenario" != phase139-release-please-valid && "$scenario" != phase139-release-please-unrelated-drift ]] || nested_oid="9999999999999999999999999999999999999999"
           [[ "$scenario" == github-object-64 ]] && nested_oid="1111111111111111111111111111111111111111111111111111111111111111"
           [[ "$scenario" == identical-duplicate-reversed && "$*" == *pullRequestId=PR-2* ]] && nested_oid="4444444444444444444444444444444444444444"
           if [[ "$scenario" == nested-many ]]; then

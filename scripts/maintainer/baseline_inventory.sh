@@ -3275,7 +3275,147 @@ classify_lifecycle_commit() {
     printf 'phase_139_completion'
     return
   fi
+  if [[ "$subject" == "fix(139): authenticate Release Please base advance" ]]; then
+    validate_phase_139_release_please_refresh_commit "$commit" "$paths" || return 1
+    printf 'phase_139_release_please_refresh'
+    return
+  fi
   return 1
+}
+
+validate_phase_139_release_please_refresh_commit() {
+  local commit="$1" paths="$2" parent subject script_path test_path support_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  support_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "$script_path"$'\n'"$test_path"$'\n'"$support_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$subject" == 'docs(phase-139): complete phase execution' ]] || return 1
+  blob_has_line "$commit" "$script_path" '^normalize_phase_139_release_please_receipt\(\)[[:space:]]*\{' || return 1
+  blob_has_line "$commit" "$script_path" 'app/github-actions' || return 1
+  blob_has_line "$commit" "$script_path" 'release-please--branches--main--components--lockspire' || return 1
+  blob_has_line "$commit" "$script_path" '\.planning/RELEASE-TRAIN\.md' || return 1
+  blob_has_line "$commit" "$script_path" '\.release-please-manifest\.json' || return 1
+  blob_has_line "$commit" "$test_path" 'phase 139 release-please main advance accepts only the authenticated refresh' || return 1
+  blob_has_line "$commit" "$support_path" 'phase139-release-please-unrelated-drift'
+}
+
+normalize_phase_139_release_please_receipt() {
+  local ledger_commit="$1" ledger="$2" receipt_file="$3" proof_file="$4"
+  local candidate="${LOCKSPIRE_INVENTORY_VERIFY_HEAD:-}" expected_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}"
+  local live_remote
+  [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
+    "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]] || return 1
+  [[ "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ &&
+    "$expected_base" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
+  git merge-base --is-ancestor "$expected_base" "$candidate" 2>/dev/null || return 1
+  if [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
+    [[ "$expected_base" == "$candidate" ]] || return 1
+  else
+    [[ "$(git rev-parse refs/heads/main 2>/dev/null || true)" == "$expected_base" &&
+      "$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)" == "$expected_base" ]] || return 1
+    live_remote="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
+    [[ "$live_remote" == "$expected_base" ]] || return 1
+  fi
+
+  gh pr view 100 --repo "$GITHUB_REPOSITORY" \
+    --json number,title,author,headRefName,headRefOid,baseRefName,baseRefOid,isDraft,state,updatedAt,files \
+    > "$proof_file" 2>/dev/null || return 1
+  jq -e --arg base "$expected_base" '
+    .number == 100 and
+    .title == "chore(main): release lockspire 1.5.1" and
+    .author.is_bot == true and .author.login == "app/github-actions" and
+    .headRefName == "release-please--branches--main--components--lockspire" and
+    (.headRefOid | type == "string" and test("^[0-9a-f]{40}([0-9a-f]{24})?$")) and
+    .baseRefName == "main" and .baseRefOid == $base and
+    .isDraft == false and .state == "OPEN" and
+    (.updatedAt | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+    ([.files[].path] | sort) == [
+      ".planning/RELEASE-TRAIN.md",
+      ".release-please-manifest.json",
+      "CHANGELOG.md",
+      "mix.exs"
+    ]
+  ' "$proof_file" >/dev/null 2>&1 || return 1
+
+  python3 - "$ledger_commit" "$ledger" "$receipt_file" "$proof_file" <<'PY'
+import json
+import re
+import subprocess
+import sys
+
+ledger_commit, ledger_path, receipt_path, proof_path = sys.argv[1:]
+row_id = "| GH-PR-100 |"
+fields = re.compile(
+    r"updated `(?P<updated>[^`]+)`; state `(?P<state>[^`]+)`; "
+    r"head `(?P<head_ref>[^`]+)` @ `(?P<head_sha>[0-9a-f]{40}(?:[0-9a-f]{24})?)`; "
+    r"base `(?P<base_ref>[^`]+)` @ `(?P<base_sha>[0-9a-f]{40}(?:[0-9a-f]{24})?)`"
+)
+
+def fail():
+    raise SystemExit(1)
+
+try:
+    expected = subprocess.check_output(
+        ["git", "show", f"{ledger_commit}:{ledger_path}"], text=True
+    )
+    proof = json.load(open(proof_path, encoding="utf-8"))
+    with open(receipt_path, encoding="utf-8") as stream:
+        observed = stream.read()
+except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
+    fail()
+
+def unique_row(document):
+    rows = [line for line in document.splitlines() if line.startswith(row_id)]
+    if len(rows) != 1:
+        fail()
+    return rows[0]
+
+expected_row = unique_row(expected)
+observed_row = unique_row(observed)
+expected_match = fields.search(expected_row)
+observed_match = fields.search(observed_row)
+if expected_match is None or observed_match is None:
+    fail()
+
+current = observed_match.groupdict()
+if (current["updated"] != proof.get("updatedAt") or
+        current["head_ref"] != proof.get("headRefName") or
+        current["head_sha"] != proof.get("headRefOid") or
+        current["base_ref"] != proof.get("baseRefName") or
+        current["base_sha"] != proof.get("baseRefOid") or
+        current["state"] != proof.get("state")):
+    fail()
+
+original = expected_match.groupdict()
+normalized = observed_row
+spans = sorted(
+    ((observed_match.start(name), observed_match.end(name), name)
+     for name in ("updated", "head_sha", "base_sha")),
+    reverse=True,
+)
+for start, end, name in spans:
+    normalized = normalized[:start] + original[name] + normalized[end:]
+if normalized != expected_row:
+    fail()
+
+replaced = False
+lines = []
+for line in observed.splitlines(keepends=True):
+    if line.rstrip("\r\n") == observed_row:
+        if replaced:
+            fail()
+        ending = line[len(line.rstrip("\r\n")):]
+        lines.append(expected_row + ending)
+        replaced = True
+    else:
+        lines.append(line)
+if not replaced:
+    fail()
+with open(receipt_path, "w", encoding="utf-8") as stream:
+    stream.write("".join(lines))
+PY
 }
 
 verify_external_snapshot_receipts() {
@@ -3287,6 +3427,10 @@ verify_external_snapshot_receipts() {
     if [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
       [[ "$observed" == "$head" ]] || return 1
       git merge-base --is-ancestor "$remote_sha" "$head" 2>/dev/null || return 1
+    elif [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ]]; then
+      [[ "$observed" == "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}" ]] || return 1
+      git merge-base --is-ancestor "$remote_sha" "$observed" 2>/dev/null || return 1
+      git merge-base --is-ancestor "$observed" "$head" 2>/dev/null || return 1
     else
       [[ "$observed" == "$remote_sha" ]] || return 1
     fi
@@ -3302,6 +3446,15 @@ verify_external_snapshot_receipts() {
     github_auth_receipt
     if [[ "$GITHUB_STATUS" != unavailable ]] && collect_github_inventory "$(git rev-parse --show-toplevel)" > "$receipt_file"; then
       observed="$(receipt_fingerprint github "$receipt_file" 2>/dev/null || printf unavailable)"
+      if [[ "$observed" != "$github_fingerprint" &&
+        ( "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
+          "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ) ]]; then
+        if normalize_phase_139_release_please_receipt "$ledger_commit" "$ledger" "$receipt_file" "$receipt_dir/release-please.json"; then
+          observed="$(receipt_fingerprint github "$receipt_file" 2>/dev/null || printf unavailable)"
+        else
+          observed="unavailable"
+        fi
+      fi
     else
       observed="unavailable"
     fi
@@ -3765,7 +3918,10 @@ verify_phase_139_posttransition_chain() {
     class="$(classify_lifecycle_commit "$commit" "$subject" "$(git diff-tree --no-commit-id --name-only -r "$commit" | LC_ALL=C sort)" 2>/dev/null || true)"
     classes+="$class"$'\n'
   done <<< "$chain"
-  [[ "$(printf '%s' "$classes" | sed '/^$/d')" == $'phase_139_passed_verification\nphase_139_completion' ]]
+  case "$(printf '%s' "$classes" | sed '/^$/d')" in
+    $'phase_139_passed_verification\nphase_139_completion'|$'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh') return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 verify_phase_139_posttransition_relation() {
@@ -3780,7 +3936,8 @@ verify_phase_139_posttransition_relation() {
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null || true)"
   validate_phase_139_main_advance "$ledger_commit" "$ledger" "$before_head" || verdict=1
-  LOCKSPIRE_PHASE_139_MAIN_ADVANCE=1 LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" \
+  LOCKSPIRE_PHASE_139_MAIN_ADVANCE=1 LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$before_head" \
+    LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" \
     verify_snapshot_relation "$ledger" receipt || verdict=1
   if [[ "$verdict" -ne 0 ]]; then
     printf 'relation_chain|phase-139-posttransition|refresh_required\n'
@@ -3790,7 +3947,7 @@ verify_phase_139_posttransition_relation() {
 }
 
 verify_phase_139_sealed_candidate_relation() {
-  local ledger="${1#./}" before_head verdict=0
+  local ledger="${1#./}" before_head release_base advertised verdict=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-sealed-candidate|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
@@ -3799,7 +3956,14 @@ verify_phase_139_sealed_candidate_relation() {
   printf 'relation_boundary|phase-139-sealed-candidate|receipt_authorized\n'
   printf 'receipt_before_head|%s|authorized_bookkeeping\n' "$before_head"
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
-  LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" verify_snapshot_relation "$ledger" receipt || verdict=1
+  release_base="$(git rev-parse refs/heads/main 2>/dev/null || true)"
+  advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  [[ -n "$release_base" && "$release_base" == "$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)" &&
+    "$release_base" == "$advertised" ]] || verdict=1
+  git merge-base --is-ancestor "$release_base" "$before_head" 2>/dev/null || verdict=1
+  LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
+    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$release_base" \
+    LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" verify_snapshot_relation "$ledger" receipt || verdict=1
   if [[ "$verdict" -ne 0 ]]; then
     printf 'relation_chain|phase-139-sealed-candidate|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
