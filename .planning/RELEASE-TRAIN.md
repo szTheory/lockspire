@@ -6,8 +6,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.5.0` <!-- x-release-please-version -->
-- Release date: `2026-08-28` <!-- x-release-please-date -->
+- Latest released version: `1.5.1` <!-- x-release-please-version -->
+- Release date: `2026-09-26` <!-- x-release-please-date -->
 - Protected publish proof: GitHub Actions recovery run `33141484467` succeeded end to end on the trusted `hex-publish` environment, publishing source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8` after canonical exact-SHA CI run `33141161205` passed.
 - Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for public `1.5.0` on `2026-08-28`, completing the clean-room install, migration, verification, boot, and HTTP journey against the exact published version.
 - Artifact truth: `lockspire-1.5.0.tar` was 415744 bytes with SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`; prepublish and postpublish receipts both reported `verified`.
