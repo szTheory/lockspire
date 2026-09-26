@@ -4,6 +4,28 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.5.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.0...lockspire-v1.5.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **139-10:** bind acceptance fixtures to one GSD runtime ([61dec68](https://github.com/szTheory/lockspire/commit/61dec683b0780a9062cb14ad7a90db561c6fa481))
+* **139-11:** gate planning proof before ref movement ([7dc0559](https://github.com/szTheory/lockspire/commit/7dc0559f557ac79f14eafa8b5d93af1618534994))
+* **139-12:** remove unused inventory tree local ([3cd4a18](https://github.com/szTheory/lockspire/commit/3cd4a18eafa99eafbecf1a471ebda216956c1705))
+* **139-13:** classify canonical phase completion ([b8167e4](https://github.com/szTheory/lockspire/commit/b8167e450c7cc569904083e8bec4da557300d801))
+* **139-quick:** match live completion parent state ([ca7d421](https://github.com/szTheory/lockspire/commit/ca7d421d0349cec5d3edbb73bfb06c9cb028baaa))
+* **139:** accept the observed transition document baseline ([e57f59b](https://github.com/szTheory/lockspire/commit/e57f59ba36956386dd99be548c4390c354c265a7))
+* **139:** accept the observed transition footer ([75cb77f](https://github.com/szTheory/lockspire/commit/75cb77f4ea1cf386f4ab9487c7d4c818a6266557))
+* **139:** align acceptance with phase records ([118d55f](https://github.com/szTheory/lockspire/commit/118d55ff2a40f8320e9648b2f9cc322d02b20579))
+* **139:** authenticate Release Please base advance ([062ca6e](https://github.com/szTheory/lockspire/commit/062ca6e7df618a3ddc512b4f640e22affe208b21))
+* **139:** authenticate Release Please base advance ([bcd6ba8](https://github.com/szTheory/lockspire/commit/bcd6ba83d57b7a0e59d3ef25bbe424c3501318f6))
+* **139:** corroborate empty GitHub check rollups ([3f02bb3](https://github.com/szTheory/lockspire/commit/3f02bb312e1a3151f12a4b9da7e373adf0cdf131))
+* **139:** isolate snapshot relation scratch files ([d6af63e](https://github.com/szTheory/lockspire/commit/d6af63e9c8fabe19df886a1b664cf087ad98764d))
+* **139:** normalize branch snapshots to recorded refs ([b2e1df1](https://github.com/szTheory/lockspire/commit/b2e1df1c9a1629a40ac7dc65cd932ee73862e491))
+* **139:** validate phase plan counts dynamically ([3f799b4](https://github.com/szTheory/lockspire/commit/3f799b4f0196b2e64e419c091e2e8d42c6bc00ff))
+* **260925-w7l:** validate Phase 139 completion contract ([bb317e0](https://github.com/szTheory/lockspire/commit/bb317e0162dba6024d3faa546296e65939c7ce32))
+* **260925-x8y:** classify testing UAT as active ([e63235a](https://github.com/szTheory/lockspire/commit/e63235a2fb85f3989790d2c2caa532bd23e9be5e))
+
 ## [1.5.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.4.0...lockspire-v1.5.0) (2026-08-28)
 
 
