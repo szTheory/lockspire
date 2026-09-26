@@ -3142,6 +3142,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert script =~ "push origin \"$candidate:refs/heads/main\""
     assert script =~ "fetch --no-tags origin refs/heads/main:refs/remotes/origin/main"
     assert script =~ "--verify-" <> @next_phase_slug <> "-posttransition-relation"
+
+    planning_check =
+      "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test " <>
+        "mix test test/lockspire/quality/phase_139_planning_consistency_test.exs"
+
+    assert script =~ planning_check
+
+    assert :binary.match(script, "--verify-phase-139-sealed-candidate-relation") <
+             :binary.match(script, planning_check)
+
+    assert :binary.match(script, planning_check) <
+             :binary.match(script, "fast_forward_main \"$CANDIDATE\"")
+
     assert script =~ "trap cleanup EXIT"
     assert script =~ "trap 'on_signal 143' TERM"
     refute script =~ "--force"
@@ -3170,6 +3183,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert output =~
                "relation_boundary|" <> @next_phase_slug <> "-posttransition|receipt_authorized"
 
+      assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
+               "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
+
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() == candidate
 
       assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
@@ -3187,6 +3203,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}])
 
       assert retry_output =~ "acceptance: already complete at #{candidate}"
+
+      assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
+               "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
+
       refute File.exists?(receipt.path)
     after
       File.rm_rf(fixture)
@@ -3197,6 +3217,28 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         context.receipt.bytes
         |> Jason.decode!()
         |> put_in(["after", "head"], String.duplicate("f", 40))
+        |> Jason.encode!(pretty: true)
+
+      File.write!(context.receipt.path, forged <> "\n")
+      File.chmod!(context.receipt.path, 0o600)
+    end)
+
+    assert_phase_139_acceptance_failure!("missing-receipt", fn context ->
+      File.rm!(context.receipt.path)
+
+      File.rm!(
+        Path.join(
+          context.repository,
+          "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
+        )
+      )
+    end)
+
+    assert_phase_139_acceptance_failure!("wrong-lifecycle", fn context ->
+      forged =
+        context.receipt.bytes
+        |> Jason.decode!()
+        |> Map.put("point", "execute:post")
         |> Jason.encode!(pretty: true)
 
       File.write!(context.receipt.path, forged <> "\n")
@@ -3250,6 +3292,41 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert_phase_139_acceptance_failure!("dirty-transition", fn context ->
       write_repo_file!(context.repository, "unexpected.txt", "unsealed change\n")
     end)
+
+    fixture = unique_tmp_fixture("lockspire-" <> @next_phase_slug <> "-planning-proof-failure")
+
+    try do
+      context = build_sealed_phase_139_acceptance_fixture!(fixture)
+      before_refs = relation_repository_state(context.repository, context.receipt.ledger).refs
+
+      before_advertised =
+        run_git!(context.repository, ["ls-remote", context.remote, "refs/heads/main"])
+
+      env =
+        install_phase_139_acceptance_api_fixture!(
+          fixture,
+          context.candidate,
+          "success",
+          context.gsd_tools
+        ) ++ [{"FAKE_ACCEPTANCE_MIX_FAIL", "1"}]
+
+      expected_receipt = File.read!(context.receipt.path)
+      {output, status} = run_phase_139_live_acceptance!(context.repository, env)
+      assert status != 0, "failed planning proof unexpectedly passed: #{output}"
+
+      assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
+               "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
+
+      assert relation_repository_state(context.repository, context.receipt.ledger).refs ==
+               before_refs
+
+      assert run_git!(context.repository, ["ls-remote", context.remote, "refs/heads/main"]) ==
+               before_advertised
+
+      assert File.read!(context.receipt.path) == expected_receipt
+    after
+      File.rm_rf(fixture)
+    end
 
     assert_phase_139_acceptance_failure!("missing-main", fn context ->
       run_git!(context.repository, ["update-ref", "-d", "refs/heads/main"])
@@ -4269,6 +4346,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     hygiene = Path.join(driver, "repo_hygiene_check.sh")
     gh = Path.join(bin, "gh")
     curl = Path.join(bin, "curl")
+    mix = Path.join(bin, "mix")
+    mix_log = Path.join(fixture, "planning-consistency-invocations")
 
     File.cp!(Paths.path("scripts/maintainer/finalize_phase_139_acceptance.sh"), finalizer)
     File.cp!(Paths.path("scripts/maintainer/baseline_inventory.sh"), inventory)
@@ -4345,7 +4424,29 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       """
     )
 
-    for path <- [finalizer, inventory, hygiene, gh, curl], do: File.chmod!(path, 0o755)
+    File.write!(
+      mix,
+      """
+      #!/usr/bin/env bash
+      set -euo pipefail
+      [[ "${ASDF_ELIXIR_VERSION:-}" == "1.19.5-otp-28" &&
+         "${ASDF_ERLANG_VERSION:-}" == "28.1" &&
+         "${MIX_ENV:-}" == "test" &&
+         "$#" -eq 2 && "$1" == "test" &&
+         "$2" == "test/lockspire/quality/phase_139_planning_consistency_test.exs" ]] || exit 91
+      head="$(git rev-parse HEAD)"
+      local_main="$(git rev-parse refs/heads/main)"
+      remote_main="$(git rev-parse refs/remotes/origin/main)"
+      [[ "$local_main" != "$head" && "$remote_main" != "$head" ]] || exit 93
+      receipt="$(git rev-parse --path-format=absolute --git-common-dir)/gsd-lifecycle/post-completion-finalizer.json"
+      jq -e '.status == "pending" and .phase == "139" and .point == "plan:pre"' "$receipt" >/dev/null || exit 94
+      printf '%s|%s|%s|%s\n' "$ASDF_ELIXIR_VERSION" "$ASDF_ERLANG_VERSION" "$MIX_ENV" "$*" >> "$FAKE_ACCEPTANCE_MIX_LOG"
+      [[ "${FAKE_ACCEPTANCE_MIX_FAIL:-0}" != "1" ]] || exit 92
+      printf '1 test, 0 failures\n'
+      """
+    )
+
+    for path <- [finalizer, inventory, hygiene, gh, curl, mix], do: File.chmod!(path, 0o755)
 
     [
       {"PATH", bin <> ":" <> System.get_env("PATH", "")},
@@ -4356,7 +4457,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"LOCKSPIRE_ACCEPTANCE_HYGIENE_SCRIPT", nil},
       {"FAKE_ACCEPTANCE_SCENARIO", scenario},
       {"FAKE_ACCEPTANCE_REMOTE", Path.join(fixture, "origin.git")},
-      {"FAKE_ACCEPTANCE_CANDIDATE", candidate}
+      {"FAKE_ACCEPTANCE_CANDIDATE", candidate},
+      {"FAKE_ACCEPTANCE_MIX_LOG", mix_log}
     ]
   end
 
@@ -4366,7 +4468,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       context = build_sealed_phase_139_acceptance_fixture!(fixture)
       mutate.(context)
-      expected_receipt = File.read!(context.receipt.path)
+
+      expected_receipt =
+        if File.exists?(context.receipt.path), do: File.read!(context.receipt.path), else: nil
+
       before_refs = relation_repository_state(context.repository, context.receipt.ledger).refs
 
       before_advertised =
@@ -4376,8 +4481,32 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         run_phase_139_acceptance!(context.repository, [{"GSD_TOOLS", context.gsd_tools}])
 
       assert status != 0, "#{label} unexpectedly passed: #{output}"
-      assert File.read!(context.receipt.path) == expected_receipt
+
+      if expected_receipt do
+        assert File.read!(context.receipt.path) == expected_receipt
+      else
+        refute File.exists?(context.receipt.path)
+      end
+
       refute output =~ "fixture-credential-sentinel"
+
+      if label in [
+           "wrong-receipt",
+           "missing-receipt",
+           "wrong-lifecycle",
+           "forged-writer",
+           "forged-hook",
+           "forged-hook-digest",
+           "forged-transformation",
+           "forged-before",
+           "forged-after",
+           "forged-lifecycle-point",
+           "dirty-transition",
+           "held-lock"
+         ] do
+        refute File.exists?(Path.join(fixture, "planning-consistency-invocations")),
+               "#{label} must be rejected before the planning proof runs"
+      end
 
       if String.starts_with?(label, "forged-") do
         assert relation_repository_state(context.repository, context.receipt.ledger).refs ==

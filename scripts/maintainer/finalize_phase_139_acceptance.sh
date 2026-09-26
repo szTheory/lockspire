@@ -511,6 +511,9 @@ CANDIDATE="$(printf '%s\n' "$PREAUTH" | awk -F'|' \
   fail "sealed candidate authentication was ambiguous"
 require_oid "$CANDIDATE" "sealed candidate"
 [[ "$(resolve_sealed_candidate)" == "$CANDIDATE" ]] || fail "sealed candidate changed after authentication"
+ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs ||
+  fail "post-transition planning consistency test failed"
+verify_sealed_state_unchanged "$CANDIDATE"
 fast_forward_main "$CANDIDATE"
 verify_sealed_state_unchanged "$CANDIDATE"
 bash "$SCRIPT_DIR/baseline_inventory.sh" --verify-phase-139-posttransition-relation "$LEDGER"
