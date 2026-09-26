@@ -1,6 +1,6 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-26T13:58:20.561Z
+verified: 2026-09-26T16:17:24.866Z
 status: passed
 score: 5/5 roadmap success criteria verified
 covered_files:
@@ -60,6 +60,7 @@ covered_files:
   - test/lockspire/conformance_redacted_evidence_contract_test.exs
   - test/lockspire/conformance_workflow_contract_test.exs
   - test/lockspire/quality/phase_139_planning_consistency_test.exs
+  - test/lockspire/quality/phase_138_prohibition_consistency_test.exs
   - test/lockspire/quality/proof_quality_baseline_test.exs
   - test/lockspire/release/repository_hygiene_contract_test.exs
   - test/lockspire/release_ci_evidence_contract_test.exs
@@ -74,17 +75,14 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:49d86e5073be03cbe46b8dfe7ca603b7d428163fd04bb2b79e56bd1924d89444"
+covered_digest: "v1:sha256:ee5644523c4dbff6c6d91af088c76a98860b4aacdd4c48108a74b915f81d47ea"
 behavior_unverified: 0
 overrides_applied: 0
 human_needed: false
 re_verification:
-  previous_status: gaps_found
-  previous_score: 4/5 roadmap success criteria verified
-  gaps_closed:
-    - "The proof-quality selector passes with zero active numbered-proof locations."
-    - "Workflow lint passes without the unused-local ShellCheck warning."
-    - "The canonical completion classifier accepts the actual live 13-plan parent and exact GSD Phase 139 completion child."
+  previous_status: passed
+  previous_score: 5/5 roadmap success criteria verified
+  gaps_closed: []
   gaps_remaining: []
   regressions: []
 gaps: []
@@ -97,9 +95,9 @@ deferred:
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-26T13:58:20.561Z
+**Verified:** 2026-09-26T16:17:24.866Z
 **Status:** passed
-**Re-verification:** Yes — after Plans 139-10 through 139-13 and a fresh Phase 138 inventory refresh at `9782c244`.
+**Re-verification:** Yes — refreshed against the current Phase 139 source at `98cb653b`; the prior passed report had no open gaps.
 
 ## Goal Achievement
 
@@ -133,7 +131,7 @@ All 13 PLAN/SUMMARY pairs are included in the covered-file fingerprint. No compl
 | `scripts/maintainer/repo_hygiene_check.sh` | Exact synchronized SHA, `mix ci`, hygiene disposition, canonical workflow evidence | ✓ VERIFIED | Exact-SHA success and hostile fixtures pass. |
 | `scripts/maintainer/finalize_phase_139_acceptance.sh` | Authenticate sealed candidate and inventory relation before ref movement | ✓ VERIFIED | Final-acceptance fixture passed and asserts planning-proof ordering. |
 | `scripts/maintainer/baseline_inventory.sh` | Fail-closed Phase 138/139 inventory and completion classification | ✓ VERIFIED | Fresh preverify ledger relation is current; the 13-plan canonical completion fixture passes; shell syntax and workflow lint pass. |
-| Phase 138 refreshed inventory ledger | Authenticated preverify relation | ✓ VERIFIED | Finalizer commit `9782c244` returned `relation_boundary|phase-139-preverify|current` and consumed review receipt `517665146e91ad75545cd7bcf41f7df91f72a290c24d21464ce353ce1725aa37`. |
+| Phase 138 refreshed inventory ledger | Authenticated preverify relation | ✓ VERIFIED | Finalizer commit `98cb653b` returned `relation_boundary|phase-139-preverify|current`; the review receipt was consumed and the relation reported `snapshot_relation: authorized_bookkeeping`. |
 | Phase finalizer capability/router | Portable and installed hooks retain blocking `plan:pre` boundary | ✓ VERIFIED | Portable lifecycle/router suite passed 17 tests, 0 failures, 2 expected skips. |
 | Maintained release and OIDF records | Historical 1.5.0 stays distinct; OIDF stays supplemental | ✓ VERIFIED | Acceptance-receipt, workflow, and redaction fixtures pass. |
 | Canonical GSD completion transition | Reconcile 13 plans, advance state, retain CI-06/07 as pending | ✓ VERIFIED | The isolated `phase139_inventory_relation` fixture invoked canonical GSD and asserted exact parent-to-child planning state and allowed paths. Live reconciliation awaits this passing report. |
@@ -163,10 +161,12 @@ Not applicable: this infrastructure/release-proof phase has no rendered dynamic 
 | Phase 139-13 canonical transition matrix | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test --trace test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 1 test, 0 failures, 266.7s; trace mode allows the declared integration matrix to finish near the default 300-second per-test timeout; exact 13/13 child and hostile rejection matrix passed | ✓ PASS |
 | Portable Phase 140 lifecycle/router gate | `LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS |
 | Installed lifecycle/router suite | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS (prior run) |
-| Phase 139 preverify finalizer | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139` | Commit `9782c244`; relation current; review receipt consumed | ✓ PASS |
+| Phase 139 preverify finalizer | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139` | Commit `98cb653b`; relation current; review receipt consumed | ✓ PASS |
+| Phase 139 transition baseline regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 1 test, 0 failures (228.2s); actual Phase 138 gap-verification footer and canonical Phase 139 transition fixture accepted | ✓ PASS |
+| Phase 138 immutable-history regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 6 tests, 0 failures; historical Phase 138 plans/summaries stay byte-pinned while Phase 139 ledger authorization is tested separately | ✓ PASS |
 | Shell and workflow validation | `bash -n scripts/maintainer/baseline_inventory.sh && bash scripts/ci/lint_workflows.sh && git diff --check` | All passed | ✓ PASS |
 
-The fresh 13-plan test uses the fixture environment required by Plan 139-13, and the Phase 140 router suite uses the exact host fixture declared by its capability. An earlier default-timeout attempt did not change repository state; the trace-mode rerun passed. No live acceptance, workflow dispatch, ref mutation, or human UAT was performed.
+The fresh 13-plan test uses the fixture environment required by Plan 139-13, and the Phase 140 router suite uses the exact host fixture declared by its capability. The latest supported preverify refresh is `98cb653b`; a previous publication attempt requested refresh, then the complete supported rerun passed and established a current relation. The Phase 138 history regression excludes the mutable canonical inventory ledger from its historical hash; the independent Phase 139 relation test validates that ledger's authorized update. No live acceptance, workflow dispatch, ref mutation, or human UAT was performed.
 
 ## Probe Execution
 
@@ -188,6 +188,10 @@ No probes are declared in the phase plans or validation strategy.
 
 All Phase 139 requirement IDs are represented in the 13 current plans. CI-06/CI-07 remain pending and mapped to Phase 140; no live receipt or acceptance is claimed.
 
+### Advisory (New Scope, Unevidenced)
+
+None. Re-verification found no new-scope blocker without deterministic evidence.
+
 ## Test Quality Audit
 
 | Test set | Active / skipped | Circular | Assertion level | Verdict |
@@ -206,7 +210,7 @@ Same-SHA authority, the separate historical 1.5.0 chain, supplemental non-certif
 
 ## Anti-Patterns Found
 
-No blocking anti-pattern remains in current Phase 139 implementation lines. The completion classifier models the live `current_plan: 12` parent; the exact canonical 13-plan fixture and hostile mutation matrix pass. No unreferenced `TBD`, `FIXME`, or `XXX` debt marker was found in changed implementation lines.
+No blocking anti-pattern remains in current Phase 139 implementation lines. The completion classifier models the live `current_plan: 12` parent; the exact canonical 13-plan fixture and hostile mutation matrix pass. The transition validator accepts the observed Phase 138 gap-verification footer, and its current baseline is exercised by the focused relation test. No unreferenced `TBD`, `FIXME`, or `XXX` debt marker was found in changed implementation lines.
 
 ## Human Verification Required
 
@@ -214,7 +218,7 @@ N/A — infrastructure/release-control phase with no user-facing behavior. Autom
 
 ## Gaps Summary
 
-Fresh repository-owned evidence passes across all five roadmap success criteria and all 13 PLAN/SUMMARY pairs. The Phase 138 inventory relation is current, and the canonical Phase 139 completion fixture accepts the exact checked-parent 13/13 transition while rejecting hostile mutations. Phase 140's exact-SHA `plan:pre` boundary remains unchanged and blocking; live CI-06/CI-07 evidence remains deferred there. This report passes before canonical Phase 139 state reconciliation; reconcile only after the report's freshness gate passes.
+Fresh repository-owned evidence passes across all five roadmap success criteria and all 13 PLAN/SUMMARY pairs. The Phase 138 inventory relation is current at `98cb653b`, and the canonical Phase 139 completion fixture accepts the exact checked-parent 13/13 transition while rejecting hostile mutations. Phase 140's exact-SHA `plan:pre` boundary remains unchanged and blocking; live CI-06/CI-07 evidence remains deferred there. This report passes before canonical Phase 139 state reconciliation; reconcile only after the report's freshness gate passes.
 
 ---
 
