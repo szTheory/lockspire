@@ -1656,7 +1656,7 @@ classify_active_record() {
       record_has_markdown_heading "$record_file" '## Tests' || return 1
       case "$status" in
         complete) printf 'resolved\talready-resolved\tdirect_current' ;;
-        partial) printf 'active\tdefer-with-trigger\tdirect_current' ;;
+        partial|testing) printf 'active\tdefer-with-trigger\tdirect_current' ;;
         *) return 1 ;;
       esac
       ;;
