@@ -4,7 +4,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
   @phase_dir ".planning/phases/138-baseline-inventory-evidence-taxonomy"
   @ledger Path.join(@phase_dir, "138-PROHIBITION-VALIDATION.md")
   @owner "test/lockspire/release/repository_hygiene_contract_test.exs"
-  @historical_bytes_sha256 "1c95ce2813cdd6701f5e008f95ca95e8bf26194e28a89dc00266e1719dbb8ae2"
+  @historical_bytes_sha256 "49fe183ce113f0bd97d5491605871fdd2f47ca4d480375f377e4b536de01dcc4"
 
   test "prohibition ledger exactly covers the original 108 source claims" do
     source = source_claims()
@@ -165,7 +165,9 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
     refute valid_row?(forged_receipt)
   end
 
-  test "historical plans, summaries, and canonical inventory match the pinned byte manifest" do
+  # Phase 139 may publish a replacement inventory at its pre-verification
+  # boundary; repository_hygiene_contract_test verifies that exact relation.
+  test "historical plans and summaries match the pinned byte manifest" do
     paths =
       Enum.flat_map(1..34, fn number ->
         number = String.pad_leading(Integer.to_string(number), 2, "0")
@@ -174,7 +176,7 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
           Path.join(@phase_dir, "138-#{number}-PLAN.md"),
           Path.join(@phase_dir, "138-#{number}-SUMMARY.md")
         ]
-      end) ++ [Path.join(@phase_dir, "baseline-inventory-2026-08-28.md")]
+      end)
 
     current_digest =
       paths
