@@ -2756,6 +2756,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   end
 
   def assert_phase_139_inventory_relation! do
+    assert_phase_139_canonical_completion_transition!()
+
     fixture = unique_tmp_fixture("lockspire-" <> @next_phase_slug <> "-inventory-relation")
     repository = Path.join(fixture, "repository")
 
