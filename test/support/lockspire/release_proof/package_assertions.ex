@@ -2543,11 +2543,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     ledger = ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline.md"
     gsd_tools = gsd_tools_path!()
 
-    state_helper =
-      Paths.path(
-        "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
-      )
-
     receipt_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
 
     hooks = %{
@@ -2564,11 +2559,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       build_snapshot_repository!(repository, ledger)
       append_pretransition_lifecycle!(repository, ledger)
+      local_writer = install_receipt_writer_fixture!(repository, gsd_tools)
+      local_gsd_tools = fixture_gsd_tools_path!(repository)
+      state_helper = fixture_state_helper_path!(repository)
 
       {begin_output, 0} =
         System.cmd("node", [state_helper, "begin", "138"],
           cd: repository,
-          env: [{"GSD_TOOLS", gsd_tools}],
+          env: [{"GSD_TOOLS", local_gsd_tools}],
           stderr_to_stdout: true
         )
 
@@ -2584,7 +2582,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           env: [
             {"STATE_HELPER", state_helper},
             {"HOOKS_PATH", hooks_path},
-            {"GSD_TOOLS", gsd_tools}
+            {"GSD_TOOLS", local_gsd_tools}
           ],
           stderr_to_stdout: true
         )
@@ -2592,14 +2590,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert Jason.decode!(seal_output)["status"] == "pending"
       original_receipt = File.read!(receipt_path)
       before_head = Jason.decode!(original_receipt)["before"]["head"]
-      local_writer = install_receipt_writer_fixture!(repository, gsd_tools)
       writer_sha256 = file_sha256(local_writer)
       source_core = gsd_tools |> Path.dirname() |> Path.dirname()
       assert writer_sha256 == file_sha256(Path.join(source_core, "workflows/transition.md"))
       original_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       {output, 0} =
-        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
       assert output =~ "relation_boundary|post-transition|receipt_authorized"
       assert output =~ "receipt_before_head|#{before_head}|authorized_bookkeeping"
@@ -2609,7 +2606,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.write!(local_writer, File.read!(local_writer) <> "\nwriter drift\n")
 
       {writer_drift, writer_drift_status} =
-        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
       assert writer_drift_status != 0
       assert writer_drift =~ "snapshot_relation: refresh_required"
@@ -2650,7 +2647,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         File.chmod!(receipt_path, 0o600)
 
         {rejected, status} =
-          run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+          run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
         assert status != 0, "#{name} receipt was authorized:\n#{rejected}"
         assert rejected =~ "snapshot_relation: refresh_required"
@@ -2663,7 +2660,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       write_repo_file!(repository, "unexpected.txt", "unexpected post-seal dirt\n")
 
       {dirty_output, dirty_status} =
-        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
       assert dirty_status != 0
       assert dirty_output =~ "snapshot_relation: refresh_required"
@@ -2675,7 +2672,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.chmod!(receipt_path, 0o600)
 
       {diagnostic, diagnostic_status} =
-        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
       assert diagnostic_status != 0
       assert_no_raw_credential!(diagnostic, credential, "post-transition receipt diagnostic")
@@ -2783,12 +2780,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       gsd_tools = gsd_tools_path!()
 
-      state_helper =
-        Paths.path(
-          "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
-        )
-
       write_phase_139_transition!(repository)
+      install_receipt_writer_fixture!(repository, gsd_tools)
+      local_gsd_tools = fixture_gsd_tools_path!(repository)
+      state_helper = fixture_state_helper_path!(repository)
 
       hooks = %{
         "activeHooks" => [
@@ -2818,14 +2813,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           env: [
             {"STATE_HELPER", state_helper},
             {"HOOKS_PATH", hooks_path},
-            {"GSD_TOOLS", gsd_tools}
+            {"GSD_TOOLS", local_gsd_tools}
           ],
           stderr_to_stdout: true
         )
 
       receipt_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
       receipt = File.read!(receipt_path)
-      install_receipt_writer_fixture!(repository, gsd_tools)
       expected_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
       run_git!(repository, ["update-ref", "refs/heads/main", candidate, expected_main])
       run_git!(repository, ["push", "origin", "#{candidate}:refs/heads/main"])
@@ -3351,13 +3345,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       commit_all!(repository, "fix(139): run acceptance from a clean candidate worktree")
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
-      state_helper =
-        Paths.path(
-          "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
-        )
-
       gsd_tools = gsd_tools_path!()
       write_phase_139_transition!(repository)
+      install_receipt_writer_fixture!(repository, gsd_tools)
+      local_gsd_tools = fixture_gsd_tools_path!(repository)
+      state_helper = fixture_state_helper_path!(repository)
 
       hooks = %{
         "activeHooks" => [
@@ -3387,12 +3379,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           env: [
             {"STATE_HELPER", state_helper},
             {"HOOKS_PATH", hooks_path},
-            {"GSD_TOOLS", gsd_tools}
+            {"GSD_TOOLS", local_gsd_tools}
           ],
           stderr_to_stdout: true
         )
 
-      install_receipt_writer_fixture!(repository, gsd_tools)
       bin = Path.join(fixture, "bin")
 
       previous_main =
@@ -4082,11 +4073,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     gsd_tools = gsd_tools_path!()
 
-    state_helper =
-      Paths.path(
-        "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
-      )
-
     receipt_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
 
     hooks = %{
@@ -4103,11 +4089,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       build_snapshot_repository!(repository, ledger)
       append_pretransition_lifecycle!(repository, ledger)
+      writer = install_receipt_writer_fixture!(repository, gsd_tools)
+      local_gsd_tools = fixture_gsd_tools_path!(repository)
+      state_helper = fixture_state_helper_path!(repository)
 
       {_, 0} =
         System.cmd("node", [state_helper, "begin", "138"],
           cd: repository,
-          env: [{"GSD_TOOLS", gsd_tools}]
+          env: [{"GSD_TOOLS", local_gsd_tools}]
         )
 
       write_valid_transition!(repository)
@@ -4120,25 +4109,23 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           env: [
             {"STATE_HELPER", state_helper},
             {"HOOKS_PATH", hooks_path},
-            {"GSD_TOOLS", gsd_tools}
+            {"GSD_TOOLS", local_gsd_tools}
           ]
         )
 
       receipt = File.read!(receipt_path)
-      install_receipt_writer_fixture!(repository, gsd_tools)
 
       {preflight, preflight_status} =
-        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", gsd_tools}])
+        run_posttransition_relation!(repository, ledger, [{"GSD_TOOLS", local_gsd_tools}])
 
       assert preflight_status == 0, preflight
-      writer = install_receipt_writer_fixture!(repository, gsd_tools)
       original_writer = File.read!(writer)
       original_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       File.write!(writer, original_writer <> "\nwriter drift\n")
 
       {writer_drift, writer_drift_status} =
-        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", gsd_tools}])
+        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", local_gsd_tools}])
 
       assert writer_drift_status != 0
       assert writer_drift =~ "snapshot_relation: refresh_required"
@@ -4159,7 +4146,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       {failed, failed_status} =
-        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", gsd_tools}])
+        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", local_gsd_tools}])
 
       assert failed_status != 0
       assert failed =~ "snapshot_relation: refresh_required"
@@ -4170,7 +4157,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.chmod!(receipt_path, 0o600)
 
       {success, 0} =
-        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", gsd_tools}])
+        run_phase_138_finalizer!(repository, "post-transition", [{"GSD_TOOLS", local_gsd_tools}])
 
       assert success =~ "relation_boundary|post-transition|receipt_authorized"
       assert File.read!(receipt_path) == receipt
@@ -4737,13 +4724,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     gsd_tools = gsd_tools_path!()
 
-    state_helper =
-      Paths.path(
-        "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
-      )
-
     write_phase_139_transition!(repository)
     transition_mutate.(repository)
+    install_receipt_writer_fixture!(repository, gsd_tools)
+    local_gsd_tools = fixture_gsd_tools_path!(repository)
+    state_helper = fixture_state_helper_path!(repository)
 
     hooks = %{
       "activeHooks" => [
@@ -4774,21 +4759,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           {"STATE_HELPER", state_helper},
           {"PHASE", @next_phase_number},
           {"HOOKS_PATH", hooks_path},
-          {"GSD_TOOLS", gsd_tools}
+          {"GSD_TOOLS", local_gsd_tools}
         ],
         stderr_to_stdout: true
       )
 
     receipt_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
     receipt = File.read!(receipt_path)
-    install_receipt_writer_fixture!(repository, gsd_tools)
 
     %{
       repository: repository,
       remote: remote,
       evidence_base: evidence_base,
       candidate: candidate,
-      gsd_tools: gsd_tools,
+      gsd_tools: local_gsd_tools,
       receipt: %{path: receipt_path, bytes: receipt, ledger: ledger}
     }
   end
@@ -6068,7 +6052,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp run_phase_139_posttransition_relation!(repository, ledger, env \\ []) do
     env = Enum.reject(env, fn {key, _value} -> key == "GSD_TOOLS" end)
-    env = [{"GSD_TOOLS", gsd_tools_path!()} | env]
+    env = [{"GSD_TOOLS", fixture_gsd_tools_path!(repository)} | env]
 
     System.cmd(
       "bash",
@@ -6085,7 +6069,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp run_phase_139_sealed_relation!(repository, ledger, env) do
     env = Enum.reject(env, fn {key, _value} -> key == "GSD_TOOLS" end)
-    env = [{"GSD_TOOLS", gsd_tools_path!()} | env]
+    env = [{"GSD_TOOLS", fixture_gsd_tools_path!(repository)} | env]
 
     System.cmd(
       "bash",
@@ -6244,6 +6228,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
 
     Path.join([repository, "gsd-core", "workflows", "transition.md"])
+  end
+
+  defp fixture_gsd_tools_path!(repository) do
+    Path.join([repository, "gsd-core", "bin", "gsd-tools.cjs"])
+  end
+
+  defp fixture_state_helper_path!(repository) do
+    Path.join([
+      repository,
+      "tools",
+      "gsd-capabilities",
+      "lockspire-phase-finalizer",
+      "post-completion-finalizer-state.cjs"
+    ])
   end
 
   defp assert_relation_refreshes!(repository, ledger) do

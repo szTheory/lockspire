@@ -20,6 +20,12 @@ defmodule Lockspire.TestSupport.QualityBaseline do
   @capability_proof_exclusions [
     "test/lockspire/web/live/admin/design_system/inventory_contract_test.exs"
   ]
+  # These files verify archival maintainer transitions. Their phase labels
+  # describe fixture history, not phase-coupled product capability proof.
+  @phase_numbered_proof_maintenance_files [
+    "test/lockspire/release/repository_hygiene_contract_test.exs",
+    "test/support/lockspire/release_proof/package_assertions.ex"
+  ]
 
   @type credo_directive :: %{
           file: String.t(),
@@ -138,6 +144,9 @@ defmodule Lockspire.TestSupport.QualityBaseline do
     capability_proof_files()
     |> Enum.flat_map(fn relative_path ->
       phase_numbered_proof_locations(relative_path, File.read!(absolute_path(relative_path)))
+    end)
+    |> Enum.reject(fn {relative_path, _line_number} ->
+      relative_path in @phase_numbered_proof_maintenance_files
     end)
     |> Enum.sort()
   end

@@ -117,6 +117,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Release proof fixtures resolve historical Phase 139 commit ancestry.
+        with:
+          fetch-depth: 0
 
       - name: Set up Elixir and Erlang
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
@@ -219,6 +222,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Release proof fixtures resolve historical Phase 139 commit ancestry.
+        with:
+          fetch-depth: 0
 
       - name: Set up minimum supported Elixir and Erlang
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1

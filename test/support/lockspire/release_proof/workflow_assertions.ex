@@ -106,7 +106,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     refute Enum.any?([mixfile, config, manifest, changelog], &String.contains?(&1, "1.0.0-rc"))
 
     assert project =~ "## Current Milestone: v1.38 Repository Baseline & Reconciliation"
-    assert project =~ @active_phase_label <> " pre-planning gate"
+
+    assert Regex.match?(
+             Regex.compile!(@active_phase_label <> " (?:planning )?remains gated"),
+             project
+           )
 
     assert project =~
              "Finish the active v1.38 Repository Baseline & Reconciliation milestone before returning to the sustaining GA release train."
