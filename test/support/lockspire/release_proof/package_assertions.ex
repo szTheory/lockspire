@@ -4363,7 +4363,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     state_path = Path.join(repository, ".planning/STATE.md")
     state =
       File.read!(state_path)
-      |> String.replace("current_plan: 12", "current_plan: 13")
       |> String.replace(
         "**Current focus:** Phase 139 — Required Truth Reconciliation verification refresh",
         "**Current focus:** Phase 139 — Required Truth Reconciliation"
@@ -4372,6 +4371,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "Last session: 2026-09-25T21:11:55.718Z",
         "Last session: 2026-09-12T00:40:28.652Z"
       )
+
+    unless Regex.match?(~r/^current_plan: 12$/m, state) do
+      raise("Phase 139 completion fixture must preserve the live current_plan: 12 parent")
+    end
 
     File.write!(state_path, state)
 

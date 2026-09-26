@@ -2765,7 +2765,7 @@ validate_phase_139_completion_commit() {
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   [[ "$(front_matter_value_from_blob "$parent" "$state" current_phase 2>/dev/null)" == 139 ]] || return 1
   [[ "$(front_matter_value_from_blob "$parent" "$state" status 2>/dev/null)" == verifying ]] || return 1
-  [[ "$(front_matter_value_from_blob "$parent" "$state" current_plan 2>/dev/null)" == 13 ]] || return 1
+  [[ "$(front_matter_value_from_blob "$parent" "$state" current_plan 2>/dev/null)" == 12 ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" current_phase 2>/dev/null)" == 140 ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" current_phase_name 2>/dev/null)" == 'Bounded Operational Loose-End Triage' ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" current_plan 2>/dev/null)" == 'Not started' ]] || return 1
@@ -2890,7 +2890,7 @@ validate_phase_139_completion_state() {
   [[ "$(git show "$commit:$path" | grep -Ec '^Stopped at:[[:space:]]+Phase 139 complete, ready to plan Phase 140$')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Stopped at:')" -eq 1 ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
-    "^-current_phase:|^-current_phase_name:|^-current_plan:[[:space:]]+13$|^-status:|^-stopped_at:|^-last_updated:|^-last_activity:[[:space:]]+${old_activity}$|^-last_activity_desc:|^-state_head:|^-[[:space:]]+completed_phases:|^-[[:space:]]+total_plans:[[:space:]]+50$|^-[[:space:]]+completed_plans:[[:space:]]+49$|^-[[:space:]]+percent:|^-Phase:[[:space:]]+139 — Required Truth Reconciliation$|^-Current Plan:[[:space:]]+12$|^-Status:|^-Last activity:|^-Progress:|^-Stopped at:" \
+    "^-current_phase:|^-current_phase_name:|^-current_plan:[[:space:]]+12$|^-status:|^-stopped_at:|^-last_updated:|^-last_activity:[[:space:]]+${old_activity}$|^-last_activity_desc:|^-state_head:|^-[[:space:]]+completed_phases:|^-[[:space:]]+total_plans:[[:space:]]+50$|^-[[:space:]]+completed_plans:[[:space:]]+49$|^-[[:space:]]+percent:|^-Phase:[[:space:]]+139 — Required Truth Reconciliation$|^-Current Plan:[[:space:]]+12$|^-Status:|^-Last activity:|^-Progress:|^-Stopped at:" \
     "^\\+current_phase:[[:space:]]*140$|^\\+current_phase_name:[[:space:]]*Bounded Operational Loose-End Triage$|^\\+current_plan:[[:space:]]*Not started$|^\\+status:[[:space:]]*planning$|^\\+stopped_at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$|^\\+last_updated:|^\\+last_activity:[[:space:]]*${new_activity}$|^\\+last_activity_desc:[[:space:]]*Phase 139 complete, transitioned to Phase 140$|^\\+state_head:[[:space:]]*${parent}$|^\\+[[:space:]]+completed_phases:[[:space:]]+2$|^\\+[[:space:]]+total_plans:[[:space:]]+51$|^\\+[[:space:]]+completed_plans:[[:space:]]+51$|^\\+[[:space:]]+percent:|^\\+Phase:[[:space:]]*140 — Bounded Operational Loose-End Triage$|^\\+Current Plan:[[:space:]]*Not started$|^\\+Status:[[:space:]]*Ready to plan$|^\\+Last activity:.*Phase 139 complete, transitioned to Phase 140$|^\\+Progress:[[:space:]]+\\[█████░░░░░\\][[:space:]]+50%$|^\\+Stopped at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$"
 }
 
