@@ -2758,8 +2758,9 @@ validate_phase_139_verification_commit() {
 
 validate_phase_139_completion_commit() {
   local commit="$1" paths="$2" state=.planning/STATE.md parent state_head path
-  exact_path_set "$paths" '^\.planning/STATE\.md$' '^\.planning/(ROADMAP|STATE|REQUIREMENTS)\.md$|^\.planning/phases/139-required-truth-reconciliation/139-VERIFICATION\.md$' || return 1
-  exact_path_set "$paths" '^\.planning/ROADMAP\.md$' '^\.planning/(ROADMAP|STATE|REQUIREMENTS)\.md$|^\.planning/phases/139-required-truth-reconciliation/139-VERIFICATION\.md$' || return 1
+  exact_path_set "$paths" '^\.planning/STATE\.md$' '^\.planning/(ROADMAP|STATE|REQUIREMENTS)\.md$|^\.planning/state\.json$|^\.planning/phases/139-required-truth-reconciliation/139-VERIFICATION\.md$' || return 1
+  exact_path_set "$paths" '^\.planning/ROADMAP\.md$' '^\.planning/(ROADMAP|STATE|REQUIREMENTS)\.md$|^\.planning/state\.json$|^\.planning/phases/139-required-truth-reconciliation/139-VERIFICATION\.md$' || return 1
+  exact_path_set "$paths" '^\.planning/state\.json$' '^\.planning/(ROADMAP|STATE|REQUIREMENTS)\.md$|^\.planning/state\.json$|^\.planning/phases/139-required-truth-reconciliation/139-VERIFICATION\.md$' || return 1
   all_commit_paths_are_regular_writes "$commit" "$paths" || return 1
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   [[ "$(front_matter_value_from_blob "$parent" "$state" current_phase 2>/dev/null)" == 139 ]] || return 1
@@ -2777,11 +2778,82 @@ validate_phase_139_completion_commit() {
       .planning/STATE.md) validate_phase_139_completion_state "$commit" "$path" || return 1 ;;
       .planning/ROADMAP.md) validate_phase_139_completion_roadmap "$commit" "$path" || return 1 ;;
       .planning/REQUIREMENTS.md) validate_phase_139_completion_requirements "$commit" "$path" || return 1 ;;
+      .planning/state.json) validate_phase_139_completion_state_contract "$commit" "$path" || return 1 ;;
       .planning/phases/139-required-truth-reconciliation/139-VERIFICATION.md)
         validate_phase_139_verification_commit "$commit" "$path" || return 1 ;;
       *) return 1 ;;
     esac
   done <<< "$paths"
+}
+
+validate_phase_139_completion_state_contract() {
+  local commit="$1" path="$2" parent old_json new_json old_updated new_updated commit_epoch mode
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  commit_path_is_regular_write "$commit" "$path" || return 1
+  mode="$(git ls-tree "$commit" -- "$path" 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  [[ "$mode" == 100644 || "$mode" == 100755 ]] || return 1
+  old_json="$(git show "$parent:$path" 2>/dev/null)" || return 1
+  mode="$(git ls-tree "$parent" -- "$path" 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  [[ "$mode" == 100644 || "$mode" == 100755 ]] || return 1
+  new_json="$(git show "$commit:$path" 2>/dev/null)" || return 1
+
+  jq -e '
+    type == "object" and
+    (keys | sort) == ["contract", "flavor", "milestone", "next", "phases", "updated_at"] and
+    .contract == "1.0.0" and .flavor == "core" and
+    .milestone == "v1.38 — Repository Baseline & Reconciliation" and
+    (.phases | type == "array" and length == 4) and
+    ([.phases[].number] == ["138", "139", "140", "141"]) and
+    all(.phases[]; (keys | sort) == ["name", "number", "status"]) and
+    .phases[0] == {"number":"138","name":"Baseline Inventory & Evidence Taxonomy","status":"complete"} and
+    .phases[1].name == "Required Truth Reconciliation" and .phases[1].status == "in_progress" and
+    .phases[2] == {"number":"140","name":"Bounded Operational Loose-End Triage","status":"pending"} and
+    .phases[3] == {"number":"141","name":"Maintenance-Baseline Closure","status":"pending"} and
+    (.next | type == "object" and (keys | sort) == ["command", "label", "reason"] and
+      (.command | type == "string" and length > 0) and
+      (.label | type == "string" and length > 0) and
+      (.reason | type == "string" and length > 0)) and
+    (.updated_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"))
+  ' <<<"$old_json" >/dev/null || return 1
+
+  jq -e '
+    type == "object" and
+    (keys | sort) == ["contract", "flavor", "milestone", "next", "phases", "updated_at"] and
+    .contract == "1.0.0" and .flavor == "core" and
+    .milestone == "v1.38 — Repository Baseline & Reconciliation" and
+    (.phases | type == "array" and length == 4) and
+    ([.phases[].number] == ["138", "139", "140", "141"]) and
+    all(.phases[]; (keys | sort) == ["name", "number", "status"]) and
+    .phases[0] == {"number":"138","name":"Baseline Inventory & Evidence Taxonomy","status":"complete"} and
+    .phases[1] == {"number":"139","name":"Required Truth Reconciliation","status":"complete"} and
+    .phases[2] == {"number":"140","name":"Bounded Operational Loose-End Triage","status":"pending"} and
+    .phases[3] == {"number":"141","name":"Maintenance-Baseline Closure","status":"pending"} and
+    .next == {"command":"/gsd:progress --next","label":"Advance to the next step (plan phase 140)","reason":"Phase 140 of 4 — needs a plan"} and
+    (.updated_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"))
+  ' <<<"$new_json" >/dev/null || return 1
+
+  # All fields other than the phase-139 status, exact GSD next action, and
+  # timestamp are immutable across this single bookkeeping transition.
+  jq -e --argjson old "$old_json" '
+    ($old.contract == .contract) and ($old.flavor == .flavor) and
+    ($old.milestone == .milestone) and
+    (($old.phases | map(if .number == "139" then .status = "complete" else . end)) == .phases) and
+    (.next == {"command":"/gsd:progress --next","label":"Advance to the next step (plan phase 140)","reason":"Phase 140 of 4 — needs a plan"})
+  ' <<<"$new_json" >/dev/null || return 1
+
+  old_updated="$(jq -r '.updated_at' <<<"$old_json")" || return 1
+  new_updated="$(jq -r '.updated_at' <<<"$new_json")" || return 1
+  commit_epoch="$(git show -s --format=%ct "$commit" 2>/dev/null)" || return 1
+  python3 - "$old_updated" "$new_updated" "$commit_epoch" <<'PY' >/dev/null 2>&1 || return 1
+from datetime import datetime, timedelta, timezone
+import sys
+
+old = datetime.strptime(sys.argv[1], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+new = datetime.strptime(sys.argv[2], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+commit = datetime.fromtimestamp(int(sys.argv[3]), timezone.utc)
+if not old < new <= commit + timedelta(seconds=1):
+    raise SystemExit(1)
+PY
 }
 
 validate_phase_139_completion_state() {
@@ -2816,16 +2888,51 @@ validate_phase_139_completion_state() {
 }
 
 validate_phase_139_completion_roadmap() {
-  local commit="$1" path="$2" parent
+  local commit="$1" path="$2" parent count
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  count="$(phase_139_completion_plan_count "$parent")" || return 1
   [[ "$(git show "$parent:$path" | grep -Ec '^- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$')" -eq 1 ]] || return 1
-  [[ "$(git show "$parent:$path" | grep -Ec '^[|] 139\. Required Truth Reconciliation [|] 9/9 [|] In Progress[|][[:space:]]*[|]$')" -eq 1 ]] || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^[|] 139\. Required Truth Reconciliation [|] 9/9 [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]$')" -eq 1 ]] || return 1
+  [[ "$(git show "$parent:$path" | grep -Ec "^[|] 139\\. Required Truth Reconciliation [|] ${count}/${count} [|] In Progress[|][[:space:]]*[|]$")" -eq 1 ]] || return 1
+  [[ "$(git show "$commit:$path" | grep -Ec "^[|] 139\\. Required Truth Reconciliation [|] ${count}/${count} [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]$")" -eq 1 ]] || return 1
   [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq 2 && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq 2 ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
     '^-\- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*|^-[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] In Progress[|]' \
     '^\+- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$|^\+[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]'
+}
+
+phase_139_completion_plan_count() {
+  local tree="$1" directory=.planning/phases/139-required-truth-reconciliation entries line mode rest type object path suffix plan_suffixes='' summary_suffixes='' plans=0 summaries=0 index expected=''
+  entries="$(git ls-tree -r "$tree" -- "$directory" 2>/dev/null)" || return 1
+  [[ -n "$entries" ]] || return 1
+  while IFS= read -r line; do
+    mode="${line%% *}"
+    rest="${line#* }"
+    type="${rest%% *}"
+    rest="${rest#* }"
+    object="${rest%%$'\t'*}"
+    path="${rest#*$'\t'}"
+    [[ "$type" == blob && ( "$mode" == 100644 || "$mode" == 100755 ) ]] || return 1
+    if [[ "$path" =~ ^${directory}/139-([0-9]{2})-PLAN\.md$ ]]; then
+      suffix="${BASH_REMATCH[1]}"
+      plans=$((plans + 1))
+      plan_suffixes+="${suffix}"$'\n'
+    elif [[ "$path" =~ ^${directory}/139-([0-9]{2})-SUMMARY\.md$ ]]; then
+      suffix="${BASH_REMATCH[1]}"
+      summaries=$((summaries + 1))
+      summary_suffixes+="${suffix}"$'\n'
+    fi
+  done <<< "$entries"
+  [[ "$plans" -gt 0 && "$plans" -eq "$summaries" ]] || return 1
+  [[ "$(printf '%s' "$plan_suffixes" | LC_ALL=C sort)" == "$(printf '%s' "$summary_suffixes" | LC_ALL=C sort)" ]] || return 1
+  while IFS= read -r suffix; do
+    [[ -n "$suffix" ]] || continue
+    index=$((10#$suffix))
+    [[ "$index" -ge 1 && "$index" -le "$plans" ]] || return 1
+    expected+="$(printf '%02d' "$index")"$'\n'
+  done <<< "$plan_suffixes"
+  [[ "$(printf '%s' "$expected" | LC_ALL=C sort)" == "$(printf '%s' "$plan_suffixes" | LC_ALL=C sort)" ]] || return 1
+  printf '%s\n' "$plans"
 }
 
 validate_phase_139_completion_requirements() {
