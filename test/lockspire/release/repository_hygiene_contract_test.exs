@@ -206,6 +206,13 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_phase_139_release_please_main_advance!()
   end
 
+  @tag :phase139_inventory_relation
+  @tag :phase139_merged_lineage
+  @tag timeout: 300_000
+  test "phase 139 accepts the authenticated merged release lineage" do
+    PackageAssertions.assert_phase_139_merged_release_lineage!()
+  end
+
   @tag :phase139_preverify_refresh
   @tag timeout: 600_000
   test "current pre-verifier refresh publishes one immutable ledger" do
