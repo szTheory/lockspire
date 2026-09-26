@@ -202,7 +202,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase139_inventory_relation
   @tag timeout: 300_000
-  test "phase 139 release-please main advance accepts only the authenticated refresh" do
+  test "phase 139 release-please main advance accepts only the authenticated refresh and recorded lag" do
     PackageAssertions.assert_phase_139_release_please_main_advance!()
   end
 

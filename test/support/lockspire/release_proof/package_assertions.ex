@@ -3312,6 +3312,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
 
       commit_all!(repository, "fix(139): authenticate Release Please base advance")
+      published_main = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      for path <- [
+            "scripts/maintainer/baseline_inventory.sh",
+            "test/lockspire/release/repository_hygiene_contract_test.exs",
+            "test/support/lockspire/release_proof/package_assertions.ex"
+          ] do
+        contents = File.read!(Path.join(repository, path)) <> "\n# recovery retry marker\n"
+        write_repo_file!(repository, path, contents)
+      end
+
+      commit_all!(repository, "fix(139): authenticate Release Please base advance")
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       state_helper =
@@ -3360,17 +3372,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       previous_main =
         run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
-      run_git!(repository, ["update-ref", "refs/heads/main", completion, previous_main])
-      run_git!(repository, ["push", "origin", "#{completion}:refs/heads/main"])
+      run_git!(repository, ["update-ref", "refs/heads/main", published_main, previous_main])
+      run_git!(repository, ["push", "origin", "#{published_main}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
-
-      current_main =
-        run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim()
 
       env = [
         {"PATH", bin <> ":" <> System.get_env("PATH", "")},
         {"FAKE_GH_SCENARIO", "phase139-release-please-valid"},
-        {"FAKE_PR_BASE_OID", current_main}
+        {"FAKE_PR_BASE_OID", completion}
       ]
 
       {sealed, 0} = run_phase_139_sealed_relation!(repository, ledger, env)
@@ -3385,9 +3394,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {accepted, 0} = run_phase_139_posttransition_relation!(repository, ledger, advanced_env)
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
+      lagged_env =
+        List.keystore(advanced_env, "FAKE_PR_BASE_OID", 0, {"FAKE_PR_BASE_OID", completion})
+      {lagged, 0} = run_phase_139_posttransition_relation!(repository, ledger, lagged_env)
+      assert lagged =~ "snapshot_relation: authorized_bookkeeping"
+
       drift_env =
         List.keystore(
-          advanced_env,
+          lagged_env,
           "FAKE_GH_SCENARIO",
           0,
           {"FAKE_GH_SCENARIO", "phase139-release-please-unrelated-drift"}

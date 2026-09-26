@@ -3291,7 +3291,13 @@ validate_phase_139_release_please_refresh_commit() {
   [[ "$paths" == "$script_path"$'\n'"$test_path"$'\n'"$support_path" ]] || return 1
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
-  [[ "$subject" == 'docs(phase-139): complete phase execution' ]] || return 1
+  if [[ "$subject" == 'fix(139): authenticate Release Please base advance' ]]; then
+    local parent_paths
+    parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+    validate_phase_139_release_please_refresh_commit "$parent" "$parent_paths" || return 1
+  else
+    [[ "$subject" == 'docs(phase-139): complete phase execution' ]] || return 1
+  fi
   blob_has_line "$commit" "$script_path" '^normalize_phase_139_release_please_receipt\(\)[[:space:]]*\{' || return 1
   blob_has_line "$commit" "$script_path" 'app/github-actions' || return 1
   blob_has_line "$commit" "$script_path" 'release-please--branches--main--components--lockspire' || return 1
@@ -3304,7 +3310,7 @@ validate_phase_139_release_please_refresh_commit() {
 normalize_phase_139_release_please_receipt() {
   local ledger_commit="$1" ledger="$2" receipt_file="$3" proof_file="$4"
   local candidate="${LOCKSPIRE_INVENTORY_VERIFY_HEAD:-}" expected_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}"
-  local live_remote
+  local live_remote prior_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE:-}" baseline_base=""
   [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
     "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]] || return 1
   [[ "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ &&
@@ -3318,17 +3324,21 @@ normalize_phase_139_release_please_receipt() {
     live_remote="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
     [[ "$live_remote" == "$expected_base" ]] || return 1
   fi
+  baseline_base="$(front_matter_value_from_blob "$ledger_commit" "$ledger" origin_main_sha 2>/dev/null || true)"
+  [[ "$baseline_base" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
 
   gh pr view 100 --repo "$GITHUB_REPOSITORY" \
     --json number,title,author,headRefName,headRefOid,baseRefName,baseRefOid,isDraft,state,updatedAt,files \
     > "$proof_file" 2>/dev/null || return 1
-  jq -e --arg base "$expected_base" '
+  jq -e --arg base "$expected_base" --arg prior "$prior_base" --arg baseline "$baseline_base" \
+    --argjson allow_lag 1 '
     .number == 100 and
     .title == "chore(main): release lockspire 1.5.1" and
     .author.is_bot == true and .author.login == "app/github-actions" and
     .headRefName == "release-please--branches--main--components--lockspire" and
     (.headRefOid | type == "string" and test("^[0-9a-f]{40}([0-9a-f]{24})?$")) and
-    .baseRefName == "main" and .baseRefOid == $base and
+    .baseRefName == "main" and
+    (.baseRefOid == $base or ($allow_lag == 1 and (.baseRefOid == $prior or .baseRefOid == $baseline))) and
     .isDraft == false and .state == "OPEN" and
     (.updatedAt | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
     ([.files[].path] | sort) == [
@@ -3919,13 +3929,32 @@ verify_phase_139_posttransition_chain() {
     classes+="$class"$'\n'
   done <<< "$chain"
   case "$(printf '%s' "$classes" | sed '/^$/d')" in
-    $'phase_139_passed_verification\nphase_139_completion'|$'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh') return 0 ;;
+    $'phase_139_passed_verification\nphase_139_completion'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh') return 0 ;;
     *) return 1 ;;
   esac
 }
 
+phase_139_release_please_completion_base() {
+  local ledger_commit="$1" head="$2" chain commit subject class paths found="" count=0
+  chain="$(git rev-list --reverse --first-parent "$ledger_commit..$head" 2>/dev/null)" || return 1
+  while IFS= read -r commit; do
+    [[ -n "$commit" ]] || continue
+    subject="$(git show -s --format=%s "$commit" 2>/dev/null || true)"
+    [[ "$subject" == 'docs(phase-139): complete phase execution' ]] || continue
+    paths="$(git diff-tree --no-commit-id --name-only -r "$commit" | LC_ALL=C sort)"
+    class="$(classify_lifecycle_commit "$commit" "$subject" "$paths" 2>/dev/null || true)"
+    [[ "$class" == phase_139_completion ]] || return 1
+    found="$commit"
+    count=$((count + 1))
+  done <<< "$chain"
+  [[ "$count" -eq 1 && -n "$found" ]] || return 1
+  printf '%s' "$found"
+}
+
 verify_phase_139_posttransition_relation() {
-  local ledger="${1#./}" before_head ledger_commit verdict=0
+  local ledger="${1#./}" before_head ledger_commit prior_base verdict=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-posttransition|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
@@ -3936,7 +3965,10 @@ verify_phase_139_posttransition_relation() {
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null || true)"
   validate_phase_139_main_advance "$ledger_commit" "$ledger" "$before_head" || verdict=1
+  prior_base="$(phase_139_release_please_completion_base "$ledger_commit" "$before_head" 2>/dev/null || true)"
+  [[ -n "$prior_base" ]] || verdict=1
   LOCKSPIRE_PHASE_139_MAIN_ADVANCE=1 LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$before_head" \
+    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE="$prior_base" \
     LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" \
     verify_snapshot_relation "$ledger" receipt || verdict=1
   if [[ "$verdict" -ne 0 ]]; then
@@ -3947,7 +3979,7 @@ verify_phase_139_posttransition_relation() {
 }
 
 verify_phase_139_sealed_candidate_relation() {
-  local ledger="${1#./}" before_head release_base advertised verdict=0
+  local ledger="${1#./}" before_head ledger_commit release_base prior_base advertised verdict=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-sealed-candidate|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
@@ -3956,13 +3988,16 @@ verify_phase_139_sealed_candidate_relation() {
   printf 'relation_boundary|phase-139-sealed-candidate|receipt_authorized\n'
   printf 'receipt_before_head|%s|authorized_bookkeeping\n' "$before_head"
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
+  ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null || true)"
   release_base="$(git rev-parse refs/heads/main 2>/dev/null || true)"
   advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  prior_base="$(phase_139_release_please_completion_base "$ledger_commit" "$before_head" 2>/dev/null || true)"
   [[ -n "$release_base" && "$release_base" == "$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)" &&
-    "$release_base" == "$advertised" ]] || verdict=1
+    "$release_base" == "$advertised" && -n "$prior_base" ]] || verdict=1
   git merge-base --is-ancestor "$release_base" "$before_head" 2>/dev/null || verdict=1
   LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$release_base" \
+    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE="$prior_base" \
     LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" verify_snapshot_relation "$ledger" receipt || verdict=1
   if [[ "$verdict" -ne 0 ]]; then
     printf 'relation_chain|phase-139-sealed-candidate|refresh_required\n'
