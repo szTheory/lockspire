@@ -3289,6 +3289,12 @@ verify_preverify_worktree_projection() {
 resolve_gsd_tools() {
   local repository_root user_home candidate
   repository_root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+  if [[ -n "${GSD_TOOLS+x}" ]]; then
+    candidate="$GSD_TOOLS"
+    [[ "$candidate" == /* && -f "$candidate" && ! -L "$candidate" ]] || return 1
+    printf '%s' "$candidate"
+    return 0
+  fi
   user_home="$(python3 - <<'PY'
 import os
 import pwd

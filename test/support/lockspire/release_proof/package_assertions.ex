@@ -2604,8 +2604,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert writer_drift_status != 0
       assert writer_drift =~ "snapshot_relation: refresh_required"
       assert File.read!(receipt_path) == original_receipt
+
       assert run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim() ==
                original_head
+
       install_receipt_writer_fixture!(repository, gsd_tools)
       assert file_sha256(local_writer) == writer_sha256
 
@@ -3153,11 +3155,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     fixture = unique_tmp_fixture("lockspire-" <> @next_phase_slug <> "-final-acceptance")
 
     try do
-      %{repository: repository, remote: remote, candidate: candidate, receipt: receipt} =
+      %{
+        repository: repository,
+        remote: remote,
+        candidate: candidate,
+        gsd_tools: gsd_tools,
+        receipt: receipt
+      } =
         build_sealed_phase_139_acceptance_fixture!(fixture)
 
       before = relation_repository_state(repository, receipt.ledger)
-      {output, 0} = run_phase_139_acceptance!(repository)
+      {output, 0} = run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}])
 
       assert output =~
                "relation_boundary|" <> @next_phase_slug <> "-posttransition|receipt_authorized"
@@ -3175,7 +3183,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert Map.drop(relation_repository_state(repository, receipt.ledger), [:refs]) ==
                Map.drop(before, [:refs])
 
-      {retry_output, 0} = run_phase_139_acceptance!(repository)
+      {retry_output, 0} =
+        run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}])
+
       assert retry_output =~ "acceptance: already complete at #{candidate}"
       refute File.exists?(receipt.path)
     after
@@ -3288,7 +3298,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         context.candidate
       ])
 
-      {output, status} = run_phase_139_acceptance!(linked)
+      {output, status} =
+        run_phase_139_acceptance!(linked, [{"GSD_TOOLS", context.gsd_tools}])
+
       assert status != 0
       assert output =~ "linked worktrees cannot perform final acceptance"
       assert File.exists?(context.receipt.path)
@@ -3303,8 +3315,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       barrier = Path.join(fixture, "acceptance-barrier")
 
       env =
-        install_phase_139_acceptance_api_fixture!(fixture, context.candidate) ++
-          [{"FAKE_ACCEPTANCE_BARRIER", barrier}]
+        install_phase_139_acceptance_api_fixture!(
+          fixture,
+          context.candidate,
+          "success",
+          context.gsd_tools
+        ) ++ [{"FAKE_ACCEPTANCE_BARRIER", barrier}]
 
       task = Task.async(fn -> run_phase_139_live_acceptance!(context.repository, env) end)
       wait_for_fixture_path!(barrier <> ".pid")
@@ -3362,7 +3378,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     try do
       context = build_sealed_phase_139_acceptance_fixture!(fixture)
-      env = install_phase_139_acceptance_api_fixture!(fixture, context.candidate)
+
+      env =
+        install_phase_139_acceptance_api_fixture!(
+          fixture,
+          context.candidate,
+          "success",
+          context.gsd_tools
+        )
+
       before = relation_repository_state(context.repository, context.receipt.ledger)
       {output, 0} = run_phase_139_live_acceptance!(context.repository, env)
       assert output =~ "snapshot_relation: authorized_bookkeeping"
@@ -3472,7 +3496,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       try do
         context = build_sealed_phase_139_acceptance_fixture!(fixture)
-        env = install_phase_139_acceptance_api_fixture!(fixture, context.candidate, scenario)
+
+        env =
+          install_phase_139_acceptance_api_fixture!(
+            fixture,
+            context.candidate,
+            scenario,
+            context.gsd_tools
+          )
+
         {output, status} = run_phase_139_live_acceptance!(context.repository, env)
         assert status != 0, "#{scenario} unexpectedly passed: #{output}"
         refute output =~ "fixture-credential-sentinel"
@@ -3494,7 +3526,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     try do
       context = build_sealed_phase_139_acceptance_fixture!(fixture)
-      env = install_phase_139_acceptance_api_fixture!(fixture, context.candidate)
+
+      env =
+        install_phase_139_acceptance_api_fixture!(
+          fixture,
+          context.candidate,
+          "success",
+          context.gsd_tools
+        )
 
       target =
         Path.join(
@@ -3546,11 +3585,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       build_snapshot_repository!(repository, ledger)
       append_pretransition_lifecycle!(repository, ledger)
+
       {_, 0} =
         System.cmd("node", [state_helper, "begin", "138"],
           cd: repository,
           env: [{"GSD_TOOLS", gsd_tools}]
         )
+
       write_valid_transition!(repository)
       hooks_path = Path.join(fixture, "hooks.json")
       File.write!(hooks_path, Jason.encode!(hooks))
@@ -4129,7 +4170,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         env: [
           {"STATE_HELPER", state_helper},
           {"PHASE", @next_phase_number},
-          {"HOOKS_PATH", hooks_path}
+          {"HOOKS_PATH", hooks_path},
+          {"GSD_TOOLS", gsd_tools}
         ],
         stderr_to_stdout: true
       )
@@ -4143,15 +4185,24 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       remote: remote,
       evidence_base: evidence_base,
       candidate: candidate,
+      gsd_tools: gsd_tools,
       receipt: %{path: receipt_path, bytes: receipt, ledger: ledger}
     }
   end
 
-  defp run_phase_139_acceptance!(repository, env \\ []) do
+  defp run_phase_139_acceptance!(repository, env) do
     candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
     fixture_env =
-      install_phase_139_acceptance_api_fixture!(Path.dirname(repository), candidate)
+      install_phase_139_acceptance_api_fixture!(
+        Path.dirname(repository),
+        candidate,
+        "success",
+        Enum.find_value(env, fn
+          {"GSD_TOOLS", path} -> path
+          _ -> nil
+        end)
+      )
 
     System.cmd(
       "bash",
@@ -4203,7 +4254,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp wait_for_fixture_path!(path, 0), do: flunk("timed out waiting for fixture path #{path}")
 
-  defp install_phase_139_acceptance_api_fixture!(fixture, candidate, scenario \\ "success") do
+  defp install_phase_139_acceptance_api_fixture!(
+         fixture,
+         candidate,
+         scenario,
+         gsd_tools
+       ) do
     bin = Path.join(fixture, "acceptance-bin")
     driver = Path.join(fixture, "acceptance-driver")
     File.mkdir_p!(bin)
@@ -4293,6 +4349,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     [
       {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+      {"GSD_TOOLS", gsd_tools},
+      {"LOCKSPIRE_ACCEPTANCE_TEST_MODE", nil},
+      {"LOCKSPIRE_ACCEPTANCE_TEST_STOP_AFTER_LANDING", nil},
+      {"LOCKSPIRE_ACCEPTANCE_TEST_BARRIER", nil},
+      {"LOCKSPIRE_ACCEPTANCE_HYGIENE_SCRIPT", nil},
       {"FAKE_ACCEPTANCE_SCENARIO", scenario},
       {"FAKE_ACCEPTANCE_REMOTE", Path.join(fixture, "origin.git")},
       {"FAKE_ACCEPTANCE_CANDIDATE", candidate}
@@ -4311,7 +4372,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       before_advertised =
         run_git!(context.repository, ["ls-remote", context.remote, "refs/heads/main"])
 
-      {output, status} = run_phase_139_acceptance!(context.repository)
+      {output, status} =
+        run_phase_139_acceptance!(context.repository, [{"GSD_TOOLS", context.gsd_tools}])
+
       assert status != 0, "#{label} unexpectedly passed: #{output}"
       assert File.read!(context.receipt.path) == expected_receipt
       refute output =~ "fixture-credential-sentinel"
@@ -4445,7 +4508,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     "# Requirements\n" <>
       Enum.map_join(phase_140_ids, "", &"- [ ] **#{&1}**: #{phase_label.(140)} requirement.\n") <>
-      Enum.map_join(phase_139_ids, "", &"- [#{checked}] **#{&1}**: #{phase_label.(139)} requirement.\n") <>
+      Enum.map_join(
+        phase_139_ids,
+        "",
+        &"- [#{checked}] **#{&1}**: #{phase_label.(139)} requirement.\n"
+      ) <>
       "\n| Requirement | Phase | Status |\n|-------------|-------|--------|\n" <>
       Enum.map_join(phase_140_ids, "", &"| #{&1} | #{phase_label.(140)} | Pending |\n") <>
       Enum.map_join(phase_139_ids, "", &"| #{&1} | #{phase_label.(139)} | #{status} |\n")
@@ -5389,29 +5456,43 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp gsd_tools_path! do
     home = System.user_home!()
+    explicit = System.get_env("GSD_TOOLS")
 
-    [
-      System.get_env("GSD_TOOLS"),
-      Paths.path("gsd-core/bin/gsd-tools.cjs"),
-      Paths.path(".codex/gsd-core/bin/gsd-tools.cjs"),
-      Paths.path(".claude/gsd-core/bin/gsd-tools.cjs"),
-      Paths.path(
-        "tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs"
-      ),
-      Path.join([home, ".codex", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".claude", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".hermes", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".cursor", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".gemini", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".copilot", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".agents", "gsd-core", "bin", "gsd-tools.cjs"])
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.find(&File.regular?/1)
-    |> case do
-      nil -> raise "GSD runtime tools unavailable"
-      path -> Path.expand(path)
-    end
+    candidates =
+      if explicit do
+        [explicit]
+      else
+        [
+          Paths.path("gsd-core/bin/gsd-tools.cjs"),
+          Paths.path(".codex/gsd-core/bin/gsd-tools.cjs"),
+          Paths.path(".claude/gsd-core/bin/gsd-tools.cjs"),
+          Paths.path(
+            "tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs"
+          ),
+          Path.join([home, ".codex", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".claude", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".hermes", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".cursor", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".gemini", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".copilot", "gsd-core", "bin", "gsd-tools.cjs"]),
+          Path.join([home, ".agents", "gsd-core", "bin", "gsd-tools.cjs"])
+        ]
+      end
+
+    path =
+      Enum.find(candidates, fn candidate ->
+        case File.lstat(candidate) do
+          {:ok, %{type: :regular}} -> true
+          _ -> false
+        end
+      end)
+
+    if explicit && is_nil(path),
+      do: raise("explicit GSD_TOOLS must be a non-symlink regular file")
+
+    if is_nil(path), do: raise("GSD runtime tools unavailable")
+
+    Path.expand(path, Paths.path("."))
   end
 
   defp install_receipt_writer_fixture!(repository, gsd_tools) do
@@ -5445,6 +5526,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       File.mkdir_p!(Path.dirname(target))
       File.cp!(source, target)
+      {:ok, source_stat} = File.lstat(source)
+      File.chmod!(target, source_stat.mode |> Bitwise.band(0o777))
     end
 
     Path.join([repository, "gsd-core", "workflows", "transition.md"])
