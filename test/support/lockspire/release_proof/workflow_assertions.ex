@@ -121,7 +121,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert state =~ "current_phase: 140"
     assert milestones =~ "## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)"
     assert milestones =~ "public package `1.5.0`"
-    assert release_train =~ "Latest released version: `1.5.0`"
+    assert release_train =~ "Latest released version: `#{Paths.mix_version()}`"
 
     assert hygiene =~
              "bash ./scripts/maintainer/repo_hygiene_check.sh --accept-sha <40-lowercase-hex-current-main-sha> --format json"
