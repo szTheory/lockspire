@@ -54,6 +54,7 @@ updated: "2026-09-13"
 | 139-05 — lifecycle/main relation | HYGIENE-05, HYGIENE-06, TRUTH-03 | Phase-139 inventory relation and pre-verifier refresh contracts | COVERED |
 | 139-06 — sealed landing and durable receipt | CI-06, CI-07, CI-08, QUAL-05, HYGIENE-05, TRUTH-04 | Final-acceptance and acceptance-receipt adversarial matrices | COVERED |
 | 139-07 — installed lifecycle routing | All Phase 139 requirements | Production router and installed-lifecycle Node suites | COVERED |
+| 139-10 — exact acceptance fixture runtime binding | CI-08, QUAL-05, HYGIENE-05, TRUTH-03, TRUTH-04 | `GSD_TOOLS=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_final_acceptance --only phase139_acceptance_receipt` — 2 tests, 0 failures; exact fixture runtime selected for every receipt writer and relation child | COVERED; live synchronized-main receipt and Phase 140 CI-06/CI-07 entry evidence remain deferred |
 
 ## Repaired Blockers
 
