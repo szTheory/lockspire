@@ -1,11 +1,14 @@
 ---
 phase: 139-required-truth-reconciliation
-reviewed: 2026-09-24T20:04:46Z
+reviewed: 2026-09-26T02:30:25Z
 depth: standard
-files_reviewed: 2
+files_reviewed: 5
 files_reviewed_list:
   - scripts/maintainer/baseline_inventory.sh
   - test/support/lockspire/release_proof/package_assertions.ex
+  - .gsd-capabilities.json
+  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+  - scripts/maintainer/finalize_phase_139_acceptance.sh
 findings:
   critical: 0
   warning: 0
@@ -107,3 +110,24 @@ _Scope: UAT heading fix commit 785b565b_
 _Follow-up reviewed: 2026-09-24T20:35:56Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Scope: UAT indented-code heading fix commit a736ef7e_
+
+## Follow-up Review — Phase 139 gap changes through `c04b0190`
+
+**Reviewed:** 2026-09-26T02:30:25Z  
+**Depth:** standard  
+**Files reviewed:** 5  
+**Status:** clean
+
+**Scope:** `scripts/maintainer/baseline_inventory.sh`, `test/support/lockspire/release_proof/package_assertions.ex`, `.gsd-capabilities.json`, `tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs`, and `scripts/maintainer/finalize_phase_139_acceptance.sh`. Reviewed their changes from `70bf4b68` through `c04b0190`, with `AGENTS.md`, plans/summaries 139-10 and 139-11, Phase 139 context, and current validation map as the intent/security boundary.
+
+The explicit GSD runtime path is checked and the fixture writer/relation validator bind to the same selected workflow root. Lifecycle tests make portable-vs-installed selection deterministic and preserve exact hook rendering/parity assertions. The new planning-consistency command is after sealed receipt/relation authentication and before ref movement; its failure exits under `set -e`, leaves the pending receipt untouched, and is followed by a sealed-state check before fast-forward. Phase 140's exact-SHA entry gate and no-publication controls remain unchanged. I found no new correctness, security, or maintainability defects in this change set. No tests were run, per review instructions.
+
+### Findings
+
+None.
+
+---
+
+_Follow-up reviewed: 2026-09-26T02:30:25Z_  
+_Reviewer: the agent (gsd-code-reviewer)_  
+_Depth: standard_
