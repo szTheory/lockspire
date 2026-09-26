@@ -214,7 +214,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase139_final_acceptance
   @tag timeout: 600_000
-  test "sealed candidate advances main through one exact fast-forward" do
+  test "sealed candidate advances main through one exact fast-forward from a clean candidate worktree" do
     PackageAssertions.assert_phase_139_final_acceptance!()
   end
 

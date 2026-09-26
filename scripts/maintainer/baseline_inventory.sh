@@ -3188,6 +3188,10 @@ verify_git_snapshot_receipt() {
     expected_sha="$(ledger_git_domain_sha "$expected_branches" "refs/heads/$current_branch" 2>/dev/null || true)"
     normalize_relation_git_domain "$branch_file" "refs/heads/$current_branch" "$current_branch_sha" "$expected_sha" || failed=1
   fi
+  if [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
+    "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
+    normalize_phase_139_release_please_git_ref "$ledger_commit" "$ledger" "$branch_file" || failed=1
+  fi
   current_head="$(git rev-parse HEAD 2>/dev/null || true)"
   repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [[ -n "$current_head" && -n "$repo_root" ]] && relation_sha_is_normalizable "$ledger_commit" "$current_head" "$head"; then
@@ -3280,6 +3284,11 @@ classify_lifecycle_commit() {
     printf 'phase_139_release_please_refresh'
     return
   fi
+  if [[ "$subject" == "fix(139): run acceptance from a clean candidate worktree" ]]; then
+    validate_phase_139_acceptance_worktree_commit "$commit" "$paths" || return 1
+    printf 'phase_139_acceptance_worktree'
+    return
+  fi
   return 1
 }
 
@@ -3307,10 +3316,33 @@ validate_phase_139_release_please_refresh_commit() {
   blob_has_line "$commit" "$support_path" 'phase139-release-please-unrelated-drift'
 }
 
-normalize_phase_139_release_please_receipt() {
-  local ledger_commit="$1" ledger="$2" receipt_file="$3" proof_file="$4"
+validate_phase_139_acceptance_worktree_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths
+  local script_path test_path support_path
+  script_path="scripts/maintainer/finalize_phase_139_acceptance.sh"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  support_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "scripts/maintainer/baseline_inventory.sh"$'\n'"$script_path"$'\n'"$test_path"$'\n'"$support_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(139): authenticate Release Please base advance' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  validate_phase_139_release_please_refresh_commit "$parent" "$parent_paths" || return 1
+  blob_has_line "$commit" "$script_path" '^create_exact_acceptance_checkout\(\)[[:space:]]*\{' || return 1
+  blob_has_line "$commit" "$script_path" 'worktree add --detach' || return 1
+  blob_has_line "$commit" "$script_path" 'cd "\$EXACT_CHECKOUT"' || return 1
+  blob_has_line "$commit" "$script_path" 'MIX_DEPS_PATH=' || return 1
+  blob_has_line "$commit" "scripts/maintainer/baseline_inventory.sh" \
+    '^normalize_phase_139_release_please_git_ref\(\)[[:space:]]*\{' || return 1
+  blob_has_line "$commit" "$test_path" 'sealed candidate advances main through one exact fast-forward' || return 1
+  blob_has_line "$commit" "$support_path" 'FAKE_ACCEPTANCE_HYGIENE_LOG' || return 1
+  blob_has_line "$commit" "$support_path" 'normalize_phase_139_release_please_git_ref'
+}
+
+phase_139_release_please_proof() {
+  local ledger_commit="$1" ledger="$2" proof_file="$3"
   local candidate="${LOCKSPIRE_INVENTORY_VERIFY_HEAD:-}" expected_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}"
-  local live_remote prior_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE:-}" baseline_base=""
+  local live_remote repository="$GITHUB_REPOSITORY" prior_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE:-}" baseline_base="" previous_main=""
   [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
     "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]] || return 1
   [[ "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ &&
@@ -3326,19 +3358,27 @@ normalize_phase_139_release_please_receipt() {
   fi
   baseline_base="$(front_matter_value_from_blob "$ledger_commit" "$ledger" origin_main_sha 2>/dev/null || true)"
   [[ "$baseline_base" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
+  if [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
+    previous_main="$(git rev-parse "$candidate^" 2>/dev/null || true)"
+    [[ "$previous_main" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
+  fi
 
-  gh pr view 100 --repo "$GITHUB_REPOSITORY" \
+  if [[ "$repository" == unavailable ]]; then
+    repository="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null)" || return 1
+  fi
+  [[ "$repository" =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]] || return 1
+  gh pr view 100 --repo "$repository" \
     --json number,title,author,headRefName,headRefOid,baseRefName,baseRefOid,isDraft,state,updatedAt,files \
     > "$proof_file" 2>/dev/null || return 1
   jq -e --arg base "$expected_base" --arg prior "$prior_base" --arg baseline "$baseline_base" \
-    --argjson allow_lag 1 '
+    --arg previous "$previous_main" --argjson allow_lag 1 '
     .number == 100 and
     .title == "chore(main): release lockspire 1.5.1" and
     .author.is_bot == true and .author.login == "app/github-actions" and
     .headRefName == "release-please--branches--main--components--lockspire" and
     (.headRefOid | type == "string" and test("^[0-9a-f]{40}([0-9a-f]{24})?$")) and
     .baseRefName == "main" and
-    (.baseRefOid == $base or ($allow_lag == 1 and (.baseRefOid == $prior or .baseRefOid == $baseline))) and
+    (.baseRefOid == $base or ($allow_lag == 1 and (.baseRefOid == $prior or .baseRefOid == $baseline or (.baseRefOid == $previous and $previous != "")))) and
     .isDraft == false and .state == "OPEN" and
     (.updatedAt | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
     ([.files[].path] | sort) == [
@@ -3348,6 +3388,42 @@ normalize_phase_139_release_please_receipt() {
       "mix.exs"
     ]
   ' "$proof_file" >/dev/null 2>&1 || return 1
+
+  jq -er '.headRefOid' "$proof_file"
+}
+
+normalize_phase_139_release_please_git_ref() {
+  local ledger_commit="$1" ledger="$2" branch_file="$3"
+  local branch_ref="refs/remotes/$REMOTE/release-please--branches--main--components--lockspire"
+  local branch_name="release-please--branches--main--components--lockspire"
+  local expected_branches expected_sha proof_dir proof_file live_head tracked_head advertised_head
+  expected_branches="$(ledger_git_domain_section "$ledger_commit" "$ledger" branches)"
+  expected_sha="$(ledger_git_domain_sha "$expected_branches" "$branch_ref" 2>/dev/null || true)"
+  if [[ ! "$expected_sha" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]]; then
+    git show-ref --verify --quiet "$branch_ref" && return 1
+    awk -F'`' -v subject="$branch_ref" '$2 == subject { found = 1 } END { exit found ? 0 : 1 }' \
+      "$branch_file" && return 1
+    return 0
+  fi
+  tracked_head="$(git rev-parse "$branch_ref" 2>/dev/null || true)"
+  [[ -n "$tracked_head" ]] || return 1
+  [[ "$tracked_head" != "$expected_sha" ]] || return 0
+  proof_dir="$(mktemp -d "${TMPDIR:-/tmp}/lockspire-release-please-ref.XXXXXX")" || return 1
+  proof_file="$proof_dir/release-please.json"
+  if ! live_head="$(phase_139_release_please_proof "$ledger_commit" "$ledger" "$proof_file")"; then
+    rm -rf "$proof_dir"
+    return 1
+  fi
+  advertised_head="$(git ls-remote "$REMOTE" "refs/heads/$branch_name" 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  rm -rf "$proof_dir"
+  [[ "$live_head" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ &&
+     "$tracked_head" == "$live_head" && "$advertised_head" == "$live_head" ]] || return 1
+  normalize_relation_git_domain "$branch_file" "$branch_ref" "$live_head" "$expected_sha"
+}
+
+normalize_phase_139_release_please_receipt() {
+  local ledger_commit="$1" ledger="$2" receipt_file="$3" proof_file="$4"
+  phase_139_release_please_proof "$ledger_commit" "$ledger" "$proof_file" >/dev/null || return 1
 
   python3 - "$ledger_commit" "$ledger" "$receipt_file" "$proof_file" <<'PY'
 import json
@@ -3931,7 +4007,8 @@ verify_phase_139_posttransition_chain() {
   case "$(printf '%s' "$classes" | sed '/^$/d')" in
     $'phase_139_passed_verification\nphase_139_completion'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh'|\
-    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh') return 0 ;;
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree') return 0 ;;
     *) return 1 ;;
   esac
 }

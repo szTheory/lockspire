@@ -34,7 +34,28 @@ LOCK="$COMMON_DIR/lockspire-phase-139-acceptance.lock"
 if ! mkdir "$LOCK" 2>/dev/null; then
   fail "another final acceptance is active"
 fi
-cleanup() { rmdir "$LOCK" 2>/dev/null || true; }
+EXACT_CHECKOUT_PARENT=""
+EXACT_CHECKOUT=""
+
+remove_exact_acceptance_checkout() {
+  [[ -n "$EXACT_CHECKOUT" ]] || return 0
+  if [[ -d "$EXACT_CHECKOUT" ]]; then
+    git -C "$ROOT" worktree remove "$EXACT_CHECKOUT" >/dev/null 2>&1 || return 1
+  fi
+  EXACT_CHECKOUT=""
+  if [[ -n "$EXACT_CHECKOUT_PARENT" ]]; then
+    rmdir "$EXACT_CHECKOUT_PARENT" 2>/dev/null || return 1
+    EXACT_CHECKOUT_PARENT=""
+  fi
+}
+
+cleanup() {
+  if ! remove_exact_acceptance_checkout; then
+    printf 'phase 139 acceptance: temporary exact checkout could not be removed: %s\n' \
+      "${EXACT_CHECKOUT:-$EXACT_CHECKOUT_PARENT}" >&2
+  fi
+  rmdir "$LOCK" 2>/dev/null || true
+}
 on_signal() {
   local status="$1"
   trap - EXIT HUP INT TERM
@@ -343,17 +364,36 @@ if {key: durable[key] for key in common_keys} != exact:
 PY
 }
 
+create_exact_acceptance_checkout() {
+  EXACT_CHECKOUT_PARENT="$(mktemp -d "${TMPDIR:-/tmp}/lockspire-phase-139-acceptance.XXXXXX")" || return 1
+  EXACT_CHECKOUT="$EXACT_CHECKOUT_PARENT/repository"
+  if ! git -C "$ROOT" worktree add --detach "$EXACT_CHECKOUT" "$CANDIDATE" >/dev/null; then
+    rmdir "$EXACT_CHECKOUT_PARENT" 2>/dev/null || true
+    EXACT_CHECKOUT_PARENT=""
+    EXACT_CHECKOUT=""
+    return 1
+  fi
+}
+
 wait_for_exact_acceptance() {
   local hygiene_script="$SCRIPT_DIR/repo_hygiene_check.sh" output
+  local -a exact_env=()
   [[ -f "$hygiene_script" && ! -L "$hygiene_script" ]] || fail "hygiene command is not a regular file"
-  output="$(bash "$hygiene_script" --accept-sha "$CANDIDATE" --wait-seconds 1800 --format json)" ||
+  [[ -d "$ROOT/deps" ]] && exact_env+=("MIX_DEPS_PATH=$ROOT/deps")
+  create_exact_acceptance_checkout || fail "clean exact-SHA checkout could not be prepared"
+  output="$(cd "$EXACT_CHECKOUT" && env "${exact_env[@]}" bash "$hygiene_script" \
+    --accept-sha "$CANDIDATE" --wait-seconds 1800 --format json)" || {
+    remove_exact_acceptance_checkout || true
     fail "exact-SHA hygiene acceptance did not pass"
+  }
   if ! validate_acceptance_receipt exact "$output" "$CANDIDATE" "" \
     "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
     "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" >/dev/null 2>&1; then
+    remove_exact_acceptance_checkout || true
     fail "exact-SHA hygiene receipt was malformed or incomplete"
   fi
   EXACT_ACCEPTANCE="$output"
+  remove_exact_acceptance_checkout || fail "clean exact-SHA checkout could not be removed"
 }
 
 verify_historical_release_chain() {

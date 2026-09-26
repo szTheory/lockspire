@@ -1031,11 +1031,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "Revalidate current state, authority, and recovery path before action",
                "repository maintainer",
                "no"
-      ]
+             ]
     end
 
     testing_id = stable_rec_id_from_canonical(String.downcase(testing_path))
-    testing_row = Enum.find(maintained_rec_rows(valid), &String.starts_with?(&1, "| #{testing_id} |"))
+
+    testing_row =
+      Enum.find(maintained_rec_rows(valid), &String.starts_with?(&1, "| #{testing_id} |"))
+
     assert testing_row =~ "| active | defer-with-trigger |"
     refute testing_row =~ "| resolved |"
 
@@ -3057,13 +3060,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         {"completion-state-contract-wrong-next-command",
          fn repository ->
            phase_139_state_contract_mutation!(repository, fn state ->
-             update_in(state["next"]["command"], fn _ -> "/gsd:plan-phase #{@next_phase_number} --gaps" end)
+             update_in(state["next"]["command"], fn _ ->
+               "/gsd:plan-phase #{@next_phase_number} --gaps"
+             end)
            end)
          end, fn _repository -> :ok end},
         {"completion-state-contract-stale-next-reason",
          fn repository ->
            phase_139_state_contract_mutation!(repository, fn state ->
-             update_in(state["next"]["reason"], fn _ -> "#{@next_phase_label} verification still stale" end)
+             update_in(state["next"]["reason"], fn _ ->
+               "#{@next_phase_label} verification still stale"
+             end)
            end)
          end, fn _repository -> :ok end},
         {"completion-state-contract-json-only",
@@ -3240,7 +3247,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       true = Path.expand(Path.dirname(fixture)) == Path.expand(System.tmp_dir!())
 
       true =
-        String.starts_with?(Path.basename(fixture), "lockspire-" <> @next_phase_slug <> "-inventory-relation-")
+        String.starts_with?(
+          Path.basename(fixture),
+          "lockspire-" <> @next_phase_slug <> "-inventory-relation-"
+        )
 
       System.cmd("rm", ["-rf", "--", fixture])
     end
@@ -3267,7 +3277,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     state = File.read!(Path.join(repository, ".planning/STATE.md"))
     result = output |> String.split("\n", parts: 2) |> List.last() |> Jason.decode!()
     assert result["completed_phase"] == "139"
-    assert result["plans_executed"] == "13/13", "unexpected canonical phase.complete output: #{output}"
+
+    assert result["plans_executed"] == "13/13",
+           "unexpected canonical phase.complete output: #{output}"
+
     assert roadmap =~ "| 139. Required Truth Reconciliation | 13/13 | Complete"
     assert roadmap =~ "- [x] **Phase 139: Required Truth Reconciliation**"
     assert state =~ "total_plans: 51"
@@ -3324,6 +3337,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
 
       commit_all!(repository, "fix(139): authenticate Release Please base advance")
+      previous_candidate_main = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      for path <- [
+            "scripts/maintainer/baseline_inventory.sh",
+            "scripts/maintainer/finalize_phase_139_acceptance.sh",
+            "test/lockspire/release/repository_hygiene_contract_test.exs",
+            "test/support/lockspire/release_proof/package_assertions.ex"
+          ] do
+        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+      end
+
+      commit_all!(repository, "fix(139): run acceptance from a clean candidate worktree")
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       state_helper =
@@ -3372,6 +3397,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       previous_main =
         run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+
       run_git!(repository, ["update-ref", "refs/heads/main", published_main, previous_main])
       run_git!(repository, ["push", "origin", "#{published_main}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
@@ -3396,8 +3422,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       lagged_env =
         List.keystore(advanced_env, "FAKE_PR_BASE_OID", 0, {"FAKE_PR_BASE_OID", completion})
+
       {lagged, 0} = run_phase_139_posttransition_relation!(repository, ledger, lagged_env)
       assert lagged =~ "snapshot_relation: authorized_bookkeeping"
+
+      lagged_main_env =
+        List.keystore(
+          advanced_env,
+          "FAKE_PR_BASE_OID",
+          0,
+          {"FAKE_PR_BASE_OID", previous_candidate_main}
+        )
+
+      {lagged_main, 0} =
+        run_phase_139_posttransition_relation!(repository, ledger, lagged_main_env)
+
+      assert lagged_main =~ "snapshot_relation: authorized_bookkeeping"
 
       drift_env =
         List.keystore(
@@ -3522,10 +3562,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     for helper <- [
           "resolve_sealed_candidate",
           "fast_forward_main",
-          "verify_sealed_state_unchanged"
+          "verify_sealed_state_unchanged",
+          "create_exact_acceptance_checkout",
+          "remove_exact_acceptance_checkout"
         ] do
       assert script =~ "#{helper}()"
     end
+
+    assert script =~ "git -C \"$ROOT\" worktree add --detach \"$EXACT_CHECKOUT\" \"$CANDIDATE\""
+    assert script =~ "cd \"$EXACT_CHECKOUT\" && env"
+    assert script =~ "MIX_DEPS_PATH=$ROOT/deps"
+
+    assert Paths.read!("scripts/maintainer/baseline_inventory.sh") =~
+             "normalize_phase_139_release_please_git_ref()"
 
     assert script =~ "update-ref refs/heads/main \"$candidate\" \"$old_main\""
     assert script =~ "push origin \"$candidate:refs/heads/main\""
@@ -3549,7 +3598,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     refute script =~ "--force"
     refute script =~ "push -f"
     refute script =~ "reset --hard"
-    refute script =~ "checkout"
+    refute script =~ "git checkout"
     refute script =~ " rebase"
     refute script =~ " commit --amend"
     refute script =~ "mix hex.publish"
@@ -3571,6 +3620,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       assert output =~
                "relation_boundary|" <> @next_phase_slug <> "-posttransition|receipt_authorized"
+
+      assert File.read!(Path.join(fixture, "hygiene-checkout-observation")) ==
+               "#{candidate}|\n"
 
       assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
                "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
@@ -4505,6 +4557,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     copy_phase_139_verification_parent_documents!(repository)
 
     state_path = Path.join(repository, ".planning/STATE.md")
+
     state =
       File.read!(state_path)
       |> String.replace(
@@ -4530,7 +4583,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     File.write!(project_path, project)
 
-    summary13 = Path.join(repository, ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md")
+    summary13 =
+      Path.join(
+        repository,
+        ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md"
+      )
 
     unless File.exists?(summary13) do
       write_repo_file!(
@@ -4667,11 +4724,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     write_phase_139_verification!(repository)
     commit_all!(repository, @next_phase_commit_prefix <> "record passed verification")
+
     if completion_snapshot do
       write_phase_139_completion_snapshot!(repository, completion_snapshot)
     else
       complete_phase_139_canonically!(repository)
     end
+
     completion_mutate.(repository)
     commit_all!(repository, @next_phase_commit_prefix <> "complete phase execution")
     candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
@@ -4846,6 +4905,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       """
       #!/usr/bin/env bash
       set -euo pipefail
+      head="$(git rev-parse HEAD)"
+      status="$(git status --porcelain --untracked-files=all)"
+      printf '%s|%s\\n' "$head" "$status" >> "$FAKE_ACCEPTANCE_HYGIENE_LOG"
       if [[ -n "${FAKE_ACCEPTANCE_BARRIER:-}" ]]; then
         printf '%s\n' "$PPID" > "${FAKE_ACCEPTANCE_BARRIER}.pid"
         sleep 1
@@ -4947,6 +5009,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"FAKE_ACCEPTANCE_SCENARIO", scenario},
       {"FAKE_ACCEPTANCE_REMOTE", Path.join(fixture, "origin.git")},
       {"FAKE_ACCEPTANCE_CANDIDATE", candidate},
+      {"FAKE_ACCEPTANCE_HYGIENE_LOG", Path.join(fixture, "hygiene-checkout-observation")},
       {"FAKE_ACCEPTANCE_MIX_LOG", mix_log}
     ]
   end
@@ -6130,7 +6193,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     path =
       Enum.find(candidates, fn
-        nil -> false
+        nil ->
+          false
+
         candidate ->
           not String.contains?(candidate, "/fixtures/") and
             case File.lstat(candidate) do
