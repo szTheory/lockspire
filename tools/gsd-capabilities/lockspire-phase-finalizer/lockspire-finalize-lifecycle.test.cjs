@@ -9,17 +9,17 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..', '..', '..');
-const tools = [
-  process.env.GSD_TOOLS,
-  path.join(root, 'gsd-core/bin/gsd-tools.cjs'),
-  path.join(root, '.codex/gsd-core/bin/gsd-tools.cjs'),
-  path.join(root, '.claude/gsd-core/bin/gsd-tools.cjs'),
-  ...['.codex', '.claude', '.hermes', '.cursor', '.gemini', '.copilot', '.agents']
-    .map((runtime) => path.join(os.homedir(), runtime, 'gsd-core/bin/gsd-tools.cjs')),
-].filter(Boolean).find((candidate) => fs.existsSync(candidate));
 const fixturePath = process.env.LOCKSPIRE_GSD_HOST_FIXTURE
   ? path.resolve(root, process.env.LOCKSPIRE_GSD_HOST_FIXTURE)
   : null;
+const tools = process.env.GSD_TOOLS
+  || (!fixturePath && [
+    path.join(root, 'gsd-core/bin/gsd-tools.cjs'),
+    path.join(root, '.codex/gsd-core/bin/gsd-tools.cjs'),
+    path.join(root, '.claude/gsd-core/bin/gsd-tools.cjs'),
+    ...['.codex', '.claude', '.hermes', '.cursor', '.gemini', '.copilot', '.agents']
+      .map((runtime) => path.join(os.homedir(), runtime, 'gsd-core/bin/gsd-tools.cjs')),
+  ].find((candidate) => fs.existsSync(candidate)));
 const hostFixture = fixturePath ? JSON.parse(fs.readFileSync(fixturePath, 'utf8')) : null;
 assert.ok(tools || hostFixture, 'GSD runtime tools or LOCKSPIRE_GSD_HOST_FIXTURE must be available');
 const mixAvailable = spawnSync('mix', ['--version'], { encoding: 'utf8' }).status === 0;
