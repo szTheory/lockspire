@@ -2996,7 +2996,7 @@ validate_phase_139_transition_commit() {
   grep -Eq '^\*Last updated:[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2} after Phase 139\*$' "$project" || return 1
   grep -Eq '^\*\*Current focus:\*\*[[:space:]]+Phase 140([[:space:]]|—|$)' "$state" || return 1
   worktree_path_diff_lines_match "$project" \
-    '^-Phase 138 completed the v1\.38 evidence foundation\. Phase 139 now owns required truth reconciliation\.$|^-Phase 138 gap closure has executed, but verification remains.*Phase 139 is recorded complete, though its verification is stale\..*Phase 140 planning remains gated until synchronized same-SHA acceptance evidence is validated and the durable receipt is written\.$|^-\*Last updated:.*after Phase 138\*$' \
+    '^-Phase 138 completed the v1\.38 evidence foundation\. Phase 139 now owns required truth reconciliation\.$|^-Phase 138 gap closure has executed, but verification remains.*Phase 139 is recorded complete, though its verification is stale\..*Phase 140 planning remains gated until synchronized same-SHA acceptance evidence is validated and the durable receipt is written\.$|^-\*Last updated:.*after Phase 138( gap verification)?\*$' \
     '^\+Phase 139 completed.*Phase 140|^\+\*Last updated:[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2} after Phase 139\*$' || return 1
   [[ "$(git diff --no-ext-diff --unified=0 HEAD -- "$project" | awk '/^-/ && $0 !~ /^--- / { removed++ } /^\+/ && $0 !~ /^\+\+\+ / { added++ } END { print removed + 0, added + 0 }')" == '2 2' ]] || return 1
   worktree_path_diff_lines_match "$state" \

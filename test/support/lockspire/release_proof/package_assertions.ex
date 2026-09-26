@@ -4383,7 +4383,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.read!(project_path)
       |> String.replace(
         ~r/^\*Last updated: .* after Phase 138.*\*$/m,
-        "*Last updated: 2026-09-25 after Phase 138*"
+        "*Last updated: 2026-09-25 after Phase 138 gap verification*"
       )
 
     File.write!(project_path, project)
@@ -4926,7 +4926,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "Phase 139 completed required truth reconciliation; canonical repository-owned verification passed on 2026-09-26. Phase 140 remains gated on synchronized refs and canonical same-SHA CI and release evidence with the durable acceptance receipt pending."
       )
       |> String.replace(
-        "*Last updated: 2026-09-25 after Phase 138*",
+        "*Last updated: 2026-09-25 after Phase 138 gap verification*",
         "*Last updated: 2026-09-26 after Phase 139*"
       )
     )
