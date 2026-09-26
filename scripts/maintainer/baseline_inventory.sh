@@ -3294,6 +3294,11 @@ classify_lifecycle_commit() {
     printf 'phase_139_acceptance_gate_repair'
     return
   fi
+  if [[ "$subject" == "fix(139): replay completion evidence in fixtures" ]]; then
+    validate_phase_139_acceptance_fixture_fix_commit "$commit" "$paths" || return 1
+    printf 'phase_139_acceptance_fixture_fix'
+    return
+  fi
   return 1
 }
 
@@ -3372,6 +3377,26 @@ validate_phase_139_acceptance_gate_repair_commit() {
   blob_has_line "$commit" "$quality_baseline_path" '@phase_numbered_proof_maintenance_files' || return 1
   blob_has_line "$commit" "$quality_baseline_path" 'repository_hygiene_contract_test\.exs' || return 1
   blob_has_line "$commit" "$quality_baseline_path" 'release_proof/package_assertions\.ex'
+}
+
+validate_phase_139_acceptance_fixture_fix_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths finalizer_path package_assertions_path
+  finalizer_path="scripts/maintainer/finalize_phase_139_acceptance.sh"
+  package_assertions_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "scripts/maintainer/baseline_inventory.sh"$'\n'"$finalizer_path"$'\n'"$package_assertions_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(139): repair exact-main acceptance gate' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  validate_phase_139_acceptance_gate_repair_commit "$parent" "$parent_paths" || return 1
+  blob_has_line "$commit" "$package_assertions_path" '@next_phase_completion_commit' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'write_phase_139_completion_snapshot!\(repository' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'docs\(phase-139\): complete phase execution' || return 1
+  ! git show "$commit:$package_assertions_path" 2>/dev/null | grep -Fq 'canonical_gsd_tools_path!'
+  blob_has_line "$commit" "$finalizer_path" 'local -a exact_command=' || return 1
+  blob_has_line "$commit" "$finalizer_path" 'env "MIX_DEPS_PATH=\$ROOT/deps"' || return 1
+  blob_has_line "$commit" "$finalizer_path" '129\|130\|143\) on_signal "\$acceptance_status"' || return 1
+  ! git show "$commit:$finalizer_path" 2>/dev/null | grep -Fq 'exact_env[@]'
 }
 
 phase_139_release_please_proof() {
@@ -4044,7 +4069,8 @@ verify_phase_139_posttransition_chain() {
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree'|\
-    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair') return 0 ;;
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix') return 0 ;;
     *) return 1 ;;
   esac
 }

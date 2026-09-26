@@ -376,16 +376,32 @@ create_exact_acceptance_checkout() {
 }
 
 wait_for_exact_acceptance() {
-  local hygiene_script="$SCRIPT_DIR/repo_hygiene_check.sh" output
-  local -a exact_env=()
+  local hygiene_script="$SCRIPT_DIR/repo_hygiene_check.sh" output acceptance_status=0
+  local -a exact_command=(bash "$hygiene_script" --accept-sha "$CANDIDATE" --wait-seconds 1800 --format json)
   [[ -f "$hygiene_script" && ! -L "$hygiene_script" ]] || fail "hygiene command is not a regular file"
-  [[ -d "$ROOT/deps" ]] && exact_env+=("MIX_DEPS_PATH=$ROOT/deps")
   create_exact_acceptance_checkout || fail "clean exact-SHA checkout could not be prepared"
-  output="$(cd "$EXACT_CHECKOUT" && env "${exact_env[@]}" bash "$hygiene_script" \
-    --accept-sha "$CANDIDATE" --wait-seconds 1800 --format json)" || {
-    remove_exact_acceptance_checkout || true
-    fail "exact-SHA hygiene acceptance did not pass"
-  }
+  if [[ -d "$ROOT/deps" ]]; then
+    if output="$(cd "$EXACT_CHECKOUT" && env "MIX_DEPS_PATH=$ROOT/deps" "${exact_command[@]}")"; then
+      :
+    else
+      acceptance_status=$?
+    fi
+  else
+    if output="$(cd "$EXACT_CHECKOUT" && env "${exact_command[@]}")"; then
+      :
+    else
+      acceptance_status=$?
+    fi
+  fi
+  if (( acceptance_status != 0 )); then
+    case "$acceptance_status" in
+      129|130|143) on_signal "$acceptance_status" ;;
+      *)
+        remove_exact_acceptance_checkout || true
+        fail "exact-SHA hygiene acceptance did not pass"
+        ;;
+    esac
+  fi
   if ! validate_acceptance_receipt exact "$output" "$CANDIDATE" "" \
     "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
     "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" >/dev/null 2>&1; then

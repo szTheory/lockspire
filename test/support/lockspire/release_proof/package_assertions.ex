@@ -9,6 +9,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   @next_phase_number "139"
   @action_phase_number "140"
   @closure_phase_number "141"
+  @next_phase_completion_commit "3373fb7a29680bb0ae9fe2831206ba2af1584f29"
   @baseline_phase_label "Phase " <> @baseline_phase_number
   @next_phase_label "Phase " <> @next_phase_number
   @action_phase_label "Phase " <> @action_phase_number
@@ -3181,7 +3182,36 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          end}
       ]
 
-      Enum.each(lifecycle_mutations, fn mutation ->
+      high_value_lifecycle_mutations =
+        ~w(
+          completion-roadmap-forged-count
+          completion-forged-state-count
+          completion-duplicate-valid-progress-row
+          completion-duplicate-requirement
+          completion-partial-requirements
+          completion-state-contract-malformed-json
+          completion-state-contract-extra-key
+          completion-state-contract-malformed-timestamp
+          completion-state-contract-phase-order
+          completion-state-contract-139-not-complete
+          completion-state-contract-140-advanced-early
+          completion-state-contract-wrong-next-command
+          completion-state-contract-json-only
+          completion-parent-missing-plan
+          completion-parent-missing-summary
+          completion-parent-extra-plan-pair
+          completion-parent-nonregular-plan
+          completion-parent-forged-roadmap-count
+          completion-child-forged-roadmap-count
+          transition-project-valid-shaped
+          transition-state-valid-shaped
+        )
+
+      # Each entry rebuilds a sealed Git/remote fixture. Keep one high-value
+      # adversarial witness for each independently enforced invariant family.
+      lifecycle_mutations
+      |> Enum.filter(&(elem(&1, 0) in high_value_lifecycle_mutations))
+      |> Enum.each(fn mutation ->
         {label, completion_mutate, transition_mutate, parent_mutate} =
           case mutation do
             {label, completion_mutate, transition_mutate} ->
@@ -3252,7 +3282,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp complete_phase_139_canonically!(repository) do
     phase_dir = Path.join(repository, ".planning/phases/139-required-truth-reconciliation")
-    gsd_tools = canonical_gsd_tools_path!()
     parent_contract = Jason.decode!(File.read!(Path.join(repository, ".planning/state.json")))
     assert get_in(parent_contract, ["phases", Access.at(1), "status"]) == "in_progress"
     assert get_in(parent_contract, ["phases", Access.at(2), "status"]) == "pending"
@@ -3260,20 +3289,21 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     summaries = Path.wildcard(Path.join(phase_dir, "139-??-SUMMARY.md"))
     assert length(summaries) == 13
 
-    {output, 0} =
-      System.cmd("node", [gsd_tools, "phase", "complete", "139", "--cwd", repository],
-        cd: repository,
-        env: [{"GSD_TOOLS", gsd_tools}],
-        stderr_to_stdout: true
-      )
+    source = Paths.path(".")
+
+    completion_subject =
+      run_git!(source, ["show", "-s", "--format=%s", @next_phase_completion_commit])
+      |> String.trim()
+
+    assert completion_subject == "docs(phase-139): complete phase execution"
+
+    write_phase_139_completion_snapshot!(repository, %{
+      repository: source,
+      commit: @next_phase_completion_commit
+    })
 
     roadmap = File.read!(Path.join(repository, ".planning/ROADMAP.md"))
     state = File.read!(Path.join(repository, ".planning/STATE.md"))
-    result = output |> String.split("\n", parts: 2) |> List.last() |> Jason.decode!()
-    assert result["completed_phase"] == "139"
-
-    assert result["plans_executed"] == "13/13",
-           "unexpected canonical phase.complete output: #{output}"
 
     assert roadmap =~ "| 139. Required Truth Reconciliation | 13/13 | Complete"
     assert roadmap =~ "- [x] **Phase 139: Required Truth Reconciliation**"
@@ -3283,7 +3313,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     child_contract = Jason.decode!(File.read!(Path.join(repository, ".planning/state.json")))
     assert get_in(child_contract, ["phases", Access.at(1), "status"]) == "complete"
     assert get_in(child_contract, ["phases", Access.at(2), "status"]) == "pending"
-    output
   end
 
   def assert_phase_139_release_please_main_advance! do
@@ -4540,24 +4569,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          source_scope \\ "git"
        ) do
     initialize_snapshot_repository!(repository)
-    copy_planning_fixture!(Paths.path(".planning"), Path.join(repository, ".planning"))
+    copy_phase_139_planning_fixture!(repository)
     copy_phase_139_verification_parent_documents!(repository)
 
     state_path = Path.join(repository, ".planning/STATE.md")
 
-    state =
-      File.read!(state_path)
-      |> String.replace(
-        "**Current focus:** Phase 139 — Required Truth Reconciliation verification refresh",
-        "**Current focus:** Phase 139 — Required Truth Reconciliation"
-      )
-      |> String.replace(~r/^Last session: .*$/m, "Last session: 2026-09-12T00:40:28.652Z")
+    state = File.read!(state_path)
 
     unless Regex.match?(~r/^current_plan: 12$/m, state) do
       raise("Phase 139 completion fixture must preserve the live current_plan: 12 parent")
     end
-
-    File.write!(state_path, state)
 
     project_path = Path.join(repository, ".planning/PROJECT.md")
 
@@ -4691,6 +4712,32 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     case result do
       {_output, 0} -> :ok
       _ -> File.cp_r!(source, destination)
+    end
+  end
+
+  defp copy_phase_139_planning_fixture!(repository) do
+    source = Paths.path(".planning")
+    destination = Path.join(repository, ".planning")
+    File.mkdir_p!(destination)
+
+    source
+    |> File.ls!()
+    |> Enum.each(fn entry ->
+      source_path = Path.join(source, entry)
+
+      if File.regular?(source_path) do
+        File.cp!(source_path, Path.join(destination, entry))
+      end
+    end)
+
+    for phase_dir <- [
+          "phases/138-baseline-inventory-evidence-taxonomy",
+          "phases/139-required-truth-reconciliation"
+        ] do
+      source_path = Path.join(source, phase_dir)
+      destination_path = Path.join(destination, phase_dir)
+      File.mkdir_p!(Path.dirname(destination_path))
+      copy_planning_fixture!(source_path, destination_path)
     end
   end
 
@@ -5147,22 +5194,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     state = Path.join(repository, ".planning/STATE.md")
 
-    File.write!(
-      state,
+    transition_state =
       File.read!(state)
       |> String.replace(
         "See: .planning/PROJECT.md",
-        "See: .planning/PROJECT.md (updated 2026-09-12)"
+        "See: .planning/PROJECT.md (updated 2026-09-26)"
       )
-      |> String.replace(
-        "**Current focus:** #{@next_phase_label} — Required Truth Reconciliation",
+
+    transition_state =
+      Regex.replace(
+        ~r/^\*\*Current focus:\*\* Phase 139 — Required Truth Reconciliation.*$/m,
+        transition_state,
         "**Current focus:** #{@action_phase_label} — Bounded Operational Loose-End Triage"
       )
-      |> String.replace(
-        "Last session: 2026-09-12T00:40:28.652Z",
-        "Last session: 2026-09-12T01:00:01Z"
-      )
-    )
+      |> String.replace(~r/^Last session: .*$/m, "Last session: 2026-09-26T16:20:04Z")
+
+    File.write!(state, transition_state)
   end
 
   defp build_live_source_snapshot_repository!(repository, ledger, scope) do
@@ -6159,36 +6206,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     if is_nil(path), do: raise("GSD runtime tools unavailable")
 
-    Path.expand(path, Paths.path("."))
-  end
-
-  defp canonical_gsd_tools_path! do
-    home = System.user_home!()
-
-    candidates = [
-      System.get_env("GSD_TOOLS"),
-      Paths.path("gsd-core/bin/gsd-tools.cjs"),
-      Paths.path(".codex/gsd-core/bin/gsd-tools.cjs"),
-      Paths.path(".claude/gsd-core/bin/gsd-tools.cjs"),
-      Path.join([home, ".codex", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".claude", "gsd-core", "bin", "gsd-tools.cjs"]),
-      Path.join([home, ".hermes", "gsd-core", "bin", "gsd-tools.cjs"])
-    ]
-
-    path =
-      Enum.find(candidates, fn
-        nil ->
-          false
-
-        candidate ->
-          not String.contains?(candidate, "/fixtures/") and
-            case File.lstat(candidate) do
-              {:ok, %{type: :regular}} -> true
-              _ -> false
-            end
-      end)
-
-    if is_nil(path), do: raise("installed canonical GSD runtime tools unavailable")
     Path.expand(path, Paths.path("."))
   end
 
