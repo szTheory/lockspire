@@ -3058,13 +3058,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         {"completion-state-contract-wrong-next-command",
          fn repository ->
            phase_139_state_contract_mutation!(repository, fn state ->
-             update_in(state["next"]["command"], fn _ -> "/gsd:plan-phase 139 --gaps" end)
+             update_in(state["next"]["command"], fn _ -> "/gsd:plan-phase #{@next_phase_number} --gaps" end)
            end)
          end, fn _repository -> :ok end},
         {"completion-state-contract-stale-next-reason",
          fn repository ->
            phase_139_state_contract_mutation!(repository, fn state ->
-             update_in(state["next"]["reason"], fn _ -> "Phase 139 verification still stale" end)
+             update_in(state["next"]["reason"], fn _ -> "#{@next_phase_label} verification still stale" end)
            end)
          end, fn _repository -> :ok end},
         {"completion-state-contract-json-only",
@@ -3359,7 +3359,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     assert script =~ planning_check
 
-    assert :binary.match(script, "--verify-phase-139-sealed-candidate-relation") <
+    assert :binary.match(script, "--verify-" <> @next_phase_slug <> "-sealed-candidate-relation") <
              :binary.match(script, planning_check)
 
     assert :binary.match(script, planning_check) <
@@ -4348,18 +4348,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     for plan_number <- 1..11 do
       suffix = String.pad_leading(Integer.to_string(plan_number), 2, "0")
-      phase_dir = ".planning/phases/139-required-truth-reconciliation"
+      phase_dir = ".planning/phases/#{@next_phase_number}-required-truth-reconciliation"
 
       write_repo_file!(
         repository,
-        "#{phase_dir}/139-#{suffix}-PLAN.md",
-        "---\nphase: 139-required-truth-reconciliation\nplan: #{suffix}\nstatus: planned\n---\n# Phase 139 Plan #{suffix}\n"
+        "#{phase_dir}/#{@next_phase_number}-#{suffix}-PLAN.md",
+        "---\nphase: #{@next_phase_number}-required-truth-reconciliation\nplan: #{suffix}\nstatus: planned\n---\n# #{@next_phase_label} Plan #{suffix}\n"
       )
 
       write_repo_file!(
         repository,
-        "#{phase_dir}/139-#{suffix}-SUMMARY.md",
-        "---\nphase: 139-required-truth-reconciliation\nplan: #{suffix}\nstatus: complete\n---\n# Phase 139 Plan #{suffix} Summary\n"
+        "#{phase_dir}/#{@next_phase_number}-#{suffix}-SUMMARY.md",
+        "---\nphase: #{@next_phase_number}-required-truth-reconciliation\nplan: #{suffix}\nstatus: complete\n---\n# #{@next_phase_label} Plan #{suffix} Summary\n"
       )
     end
 
@@ -4849,9 +4849,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     )
   end
 
-  # Captured from the installed GSD `query phase.complete 139` contract publisher
-  # at 10bad3ed (2026-09-26): the GSD action for a completed phase with Phase 140
-  # awaiting a plan is fixed; only `updated_at` varies per publisher invocation.
+  # Captured from the installed GSD phase completion contract publisher at 10bad3ed (2026-09-26):
+  # the publisher exposes a fixed action while only `updated_at` varies per invocation.
   defp phase_139_state_contract_fixture(phase_139_status) do
     timestamp =
       if phase_139_status == "complete" do
@@ -4864,15 +4863,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       if phase_139_status == "complete" do
         %{
           "command" => "/gsd:progress --next",
-          "label" => "Advance to the next step (plan phase 140)",
-          "reason" => "Phase 140 of 4 — needs a plan"
+          "label" => "Advance to the next step (plan phase #{@action_phase_number})",
+          "reason" => "#{@action_phase_label} of 4 — needs a plan"
         }
       else
         %{
           "command" => "/gsd:verify-work 139",
-          "label" => "Refresh Phase 139 verification after Phase 138 closeout",
+          "label" => "Refresh #{@next_phase_label} verification after #{@baseline_phase_label} closeout",
           "reason" =>
-            "All nine Phase 139 plans and its UAT are complete; the verification fingerprint is stale because Phase 138's final verification report changed"
+            "All nine #{@next_phase_label} plans and its UAT are complete; the verification fingerprint is stale because #{@baseline_phase_label}'s final verification report changed"
         }
       end
 
@@ -7159,10 +7158,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       "show HEAD:.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md")
         printf '%s\\n' '---' 'status: complete' '---' '## Current Test' 'The current test run finished.' '## Tests' 'All maintained UAT tests passed.' 'Actionable prose says fix-now and issues_found, but does not override lifecycle status.' ;;
       "show HEAD:.planning/phases/139-required-truth-reconciliation/139-UAT.md")
-        phase_heading='Phase '
-        printf '%s\\n' '---' 'status: partial' '---' "# ${phase_heading}139 UAT" '## Current Test' 'The current test run is pending.' '## Tests' 'Finish the current test before rechecking.' 'The recheck trigger is pending test completion; fix-now is only body prose.' ;;
+        printf '%s\\n' '---' 'status: partial' '---' "# #{@next_phase_label} UAT" '## Current Test' 'The current test run is pending.' '## Tests' 'Finish the current test before rechecking.' 'The recheck trigger is pending test completion; fix-now is only body prose.' ;;
       "show HEAD:.planning/phases/current/testing-UAT.md")
-        printf '%s\\n' '---' 'status: testing' '---' '# Phase 138 UAT' '## Current Test' 'current test 100 is awaiting a user response; result: pending' '## Tests' 'tests 100 and 101 have result: pending' ;;
+        printf '%s\\n' '---' 'status: testing' '---' '# #{@baseline_phase_label} UAT' '## Current Test' 'current test 100 is awaiting a user response; result: pending' '## Tests' 'tests 100 and 101 have result: pending' ;;
       "show HEAD:.planning/phases/current/missing-status-UAT.md")
         printf '%s\\n' '---' 'owner: test' '---' '## Current Test' '## Tests' 'fix-now issues_found actionable prose' ;;
       "show HEAD:.planning/phases/current/duplicate-status-UAT.md")
