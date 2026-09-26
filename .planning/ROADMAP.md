@@ -151,7 +151,7 @@ This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific 
   4. A maintainer can trace the current public release from its source SHA through CI, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
   5. Maintained planning and release records agree on the current milestone and release posture, while Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
 
-**Plans**: 9/9 plans executed
+**Plans**: 9/11 plans executed
 
 Plans:
 
@@ -184,6 +184,14 @@ Plans:
 **Wave 7** *(terminal lifecycle gap closure; after 139-08)*
 
 - [x] 139-09-PLAN.md — Prove the supported Phase 139 lifecycle portably in required CI and retain live exact-SHA acceptance as the blocking transition gate.
+
+**Wave 8** *(current exact-acceptance fixture and receipt gaps; after 139-09)*
+
+- [ ] 139-10-PLAN.md — Repair writer-descriptor fixture authority and restore exact-acceptance proof.
+
+**Wave 9** *(lifecycle rendering and post-transition proof; after 139-10)*
+
+- [ ] 139-11-PLAN.md — Make portable/live rendering explicit and gate planning consistency after canonical verification.
 
 ### Phase 140: Bounded Operational Loose-End Triage
 
@@ -219,6 +227,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
-| 139. Required Truth Reconciliation | 9/9 | In Progress|  |
+| 139. Required Truth Reconciliation | 9/11 | In Progress|  |
 | 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
