@@ -1001,18 +1001,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   def assert_baseline_inventory_active_uat! do
     complete_path = ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md"
     partial_path = ".planning/phases/139-required-truth-reconciliation/139-UAT.md"
+    testing_path = ".planning/phases/current/testing-UAT.md"
 
     assert {:ok, valid} = run_baseline_fixture!("maintained", "maintained-active-uat")
     assert valid =~ ~r/^status: "complete"$/m
 
     assert valid =~
-             "| active-records | complete | `.planning/phases/*/*-{REVIEW,AUDIT,VERIFICATION,UAT,HANDOFF,CHECKPOINT}*.md` | 2 bounded tracked matches |"
+             "| active-records | complete | `.planning/phases/*/*-{REVIEW,AUDIT,VERIFICATION,UAT,HANDOFF,CHECKPOINT}*.md` | 3 bounded tracked matches |"
 
     assert valid =~ "| Maintained follow-up families | complete |"
 
     for {path, lifecycle, disposition} <- [
           {complete_path, "resolved", "already-resolved"},
-          {partial_path, "active", "defer-with-trigger"}
+          {partial_path, "active", "defer-with-trigger"},
+          {testing_path, "active", "defer-with-trigger"}
         ] do
       id = stable_rec_id_from_canonical(String.downcase(path))
 
@@ -1029,8 +1031,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "Revalidate current state, authority, and recovery path before action",
                "repository maintainer",
                "no"
-             ]
+      ]
     end
+
+    testing_id = stable_rec_id_from_canonical(String.downcase(testing_path))
+    testing_row = Enum.find(maintained_rec_rows(valid), &String.starts_with?(&1, "| #{testing_id} |"))
+    assert testing_row =~ "| active | defer-with-trigger |"
+    refute testing_row =~ "| resolved |"
 
     near_miss_paths = [
       ".planning/phases/current/missing-status-UAT.md",
@@ -7067,7 +7074,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                 printf '.planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md\\0.planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md\\0'
                 [[ "$scenario" == maintained-active-lifecycle ]] && printf '.planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW-FIX.md\\0' || :
               elif [[ "$scenario" == maintained-active-uat ]]; then
-                printf '.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md\\0.planning/phases/139-required-truth-reconciliation/139-UAT.md\\0'
+                printf '.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md\\0.planning/phases/139-required-truth-reconciliation/139-UAT.md\\0.planning/phases/current/testing-UAT.md\\0'
               elif [[ "$scenario" == maintained-active-uat-near-misses ]]; then
                 printf '.planning/phases/current/missing-status-UAT.md\\0.planning/phases/current/duplicate-status-UAT.md\\0.planning/phases/current/unknown-status-UAT.md\\0.planning/phases/current/missing-current-test-UAT.md\\0.planning/phases/current/missing-tests-UAT.md\\0.planning/phases/current/fenced-headings-UAT.md\\0.planning/phases/current/commented-headings-UAT.md\\0.planning/phases/current/frontmatter-headings-UAT.md\\0.planning/phases/current/indented-code-headings-UAT.md\\0'
               elif [[ "$scenario" == maintained-review-fix-near-miss ]]; then
@@ -7154,6 +7161,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       "show HEAD:.planning/phases/139-required-truth-reconciliation/139-UAT.md")
         phase_heading='Phase '
         printf '%s\\n' '---' 'status: partial' '---' "# ${phase_heading}139 UAT" '## Current Test' 'The current test run is pending.' '## Tests' 'Finish the current test before rechecking.' 'The recheck trigger is pending test completion; fix-now is only body prose.' ;;
+      "show HEAD:.planning/phases/current/testing-UAT.md")
+        printf '%s\\n' '---' 'status: testing' '---' '# Phase 138 UAT' '## Current Test' 'current test 100 is awaiting a user response; result: pending' '## Tests' 'tests 100 and 101 have result: pending' ;;
       "show HEAD:.planning/phases/current/missing-status-UAT.md")
         printf '%s\\n' '---' 'owner: test' '---' '## Current Test' '## Tests' 'fix-now issues_found actionable prose' ;;
       "show HEAD:.planning/phases/current/duplicate-status-UAT.md")
