@@ -1,8 +1,8 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-25T15:28:04Z
-status: passed
-score: 5/5 roadmap success criteria verified
+verified: 2026-09-26T01:15:19Z
+status: gaps_found
+score: 2/5 roadmap success criteria verified; 2 failed current proof and 1 awaits post-transition proof
 covered_files:
   - .github/actions/release-please/action.yml
   - .github/workflows/ci.yml
@@ -66,17 +66,24 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:f79e1d9b1e5bd7e75af7eb8228ea7c07934fc038809383022ed31083ec45e333"
-behavior_unverified: 0
+covered_digest: "v1:sha256:9f55771aaa81f9778bb5180ee83e90bf3a16479837ed977e94b716be84573a18"
+behavior_unverified: 2
 overrides_applied: 0
 human_needed: false
 re_verification:
   previous_status: passed
   previous_score: 5/5 roadmap success criteria verified
   gaps_closed: []
-  gaps_remaining: []
-  regressions: []
-gaps: []
+  gaps_remaining:
+    - "Fresh exact-acceptance fixtures fail both tests with refresh_required and sealed-candidate authentication failure."
+    - "Both prescribed Node environments fail installed-capability rendering parity because post-completion-finalizer-state.cjs drifted."
+    - "Post-transition planning consistency remains unrun because the canonical precondition did not pass."
+  regressions:
+    - "Current exact-acceptance and installed-capability rendering proofs do not pass."
+gaps:
+  - "Roadmap truth 1: exact-acceptance fixture selection failed 2/2; receipt path was not proven."
+  - "Roadmap truth 2: exact-acceptance fixture selection failed 2/2; the live receipt remains absent at Phase 140 entry."
+  - "Roadmap truth 5: lifecycle rendering test failed in both Node environments; the post-transition planning proof is pending."
 deferred:
   - truth: "Synchronized-main CI-06 and same-SHA Release no-publish CI-07 evidence, and the durable exact-SHA receipt, are absent in this checkout."
     addressed_in: "Phase 140 entry gate"
@@ -90,36 +97,60 @@ advisory: []
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-25T15:28:04Z
-**Status:** passed
+**Verified:** 2026-09-26T01:15:19Z
+**Status:** gaps_found
 **Re-verification:** Yes — current working tree, after prior verification and Phase 139 closeout.
 
 ## Goal Achievement
 
-The five ROADMAP success criteria are met by repository-owned code and records. Exact acceptance validates one full SHA against repository refs and canonical CI/Release identities, executes the local gate, rejects unresolved hygiene blocks and undispositioned warnings, and emits an allowlisted receipt. Workflow and lifecycle tests connect this implementation to the supported blocking Phase 140 `plan:pre` boundary.
+This refresh did not establish a passing current verdict. The fresh exact-acceptance selection failed both tests with `writer descriptor: workflow`, `snapshot_relation: refresh_required`, and `sealed candidate authentication failed`. Both prescribed Node environments also failed the installed-capability rendering test because `post-completion-finalizer-state.cjs` drifted. Other focused proofs passed as listed below. The Phase 139 planning-consistency module was deliberately not run because it is the post-transition proof and the state gate did not pass.
 
-The exact-SHA receipt is not present and is not claimed as Phase 139 evidence. Main and origin/main are synchronized at `3764ad5aa049ebd4185b532734086e68343762fa`; this recovery branch refreshed the Phase 139 pre-verification ledger at `ac361446` after correcting its bookkeeping checks, scratch-file isolation, per-ref branch normalization, and corroboration for authenticated empty GitHub check rollups. The mandatory Phase 140 plan-pre gate must still run exact acceptance on the final synchronized SHA and write the durable receipt before Phase 140 planning.
+The live exact-SHA receipt remains absent and is not claimed. CI-06/CI-07 remain pending at Phase 140's unchanged blocking `plan:pre` hook. Phase 139 remains current; no state file was edited. The prior report's assertions are historical context only and are not counted as fresh results in this refresh.
 
 ### Observable Truths — Roadmap Contract
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
-| 1 | Repository-owned acceptance enforces `mix ci` and repository hygiene, with no unresolved `BLOCK` and a disposition for every `WARN`. | ✓ VERIFIED | Exact acceptance runs `mix ci` and checks hygiene/WARN disposition before receipt emission. Focused hostile exact-SHA tests passed 2/2; workflow lint passed. |
-| 2 | Acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at Phase 140 entry. | ✓ VERIFIED | Exact SHA, workflow/job identity, no-publish graph, sealed-candidate landing and receipt validators are wired through the finalizer. The blocking Phase 140 `plan:pre` lifecycle is installed and tested; live evidence remains deferred as the criterion specifies. |
+| 1 | Repository-owned acceptance enforces `mix ci` and repository hygiene, with no unresolved `BLOCK` and a disposition for every `WARN`. | ✗ GAP | The prescribed fresh exact-acceptance selection failed 2/2 before validating the success path: fixture writer descriptor rejected and sealed-candidate authentication failed. |
+| 2 | Acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at Phase 140 entry. | ✗ GAP | The same fresh exact-acceptance selection failed 2/2. The external receipt remains deferred to Phase 140 and is absent. |
 | 3 | Required acceptance is distinguishable from supplemental OIDF evidence, which is redacted and non-certifying. | ✓ VERIFIED | OIDF labels and receipt classification set `supplemental_non_certifying` and `required_gate: false`; the redacted evidence contract passed 3/3. |
 | 4 | Maintainers can trace public 1.5.0 from source SHA through CI, release, tag, package checksum, Hex and maintained records without rewriting history. | ✓ VERIFIED | Maintained release records and Phase 138 evidence preserve the 1.5.0 chain; Phase 139 acceptance data is separate. |
-| 5 | Planning/release records agree while protected release controls remain intact. | ✓ VERIFIED | Current records distinguish active v1.38 Phase 140 planning from shipped v1.37/1.5.0. Planning test passed 2/2; workflow source contract 4/4; semantic-label repair tests 2/2. |
+| 5 | Planning/release records agree while protected release controls remain intact. | ◇ PENDING | Workflow lint passed, but both prescribed Node environments failed the installed-capability rendering test (`post-completion-finalizer-state.cjs drifted`). The post-transition planning-consistency check is pending and was not run because Task 1 did not pass. |
 
-**Score:** 5/5 roadmap success criteria verified (0 behavior-unverified)
+**Score:** 2/5 roadmap success criteria verified. Truths 1 and 2 have failed current proof; truth 5 awaits its post-transition check and has a fresh Node failure.
 
-### Prior Deferred Boundary
+### Current Focused Proof Execution — 2026-09-26
+
+These are the commands actually executed during this refresh, with the prescribed environments. Historical summary/UAT results are not substituted for these outcomes.
+
+| Command | Actual result |
+|---|---|
+| `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs test/lockspire/quality/proof_quality_baseline_test.exs --only phase139_gap_closure` | PASS — 3 tests, 0 failures (55 excluded). |
+| `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/workflow_supply_chain_contract_test.exs` | PASS — 5 tests, 0 failures. |
+| `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/conformance_redacted_evidence_contract_test.exs` | PASS — 3 tests, 0 failures. |
+| `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_gate_repair` | PASS — 2 tests, 0 failures (52 excluded). |
+| `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_preverify_refresh` | PASS — 1 test, 0 failures (53 excluded). |
+| `GSD_TOOLS=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_final_acceptance --only phase139_acceptance_receipt` | FAIL — 2 tests, 2 failures. Both rejected `writer descriptor: workflow`, reported `snapshot_relation: refresh_required`, and failed sealed-candidate authentication. |
+| `LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | FAIL — 19 tests: 16 passed, 1 failed, 2 skipped. `installed capability renders fresh ordered lifecycle hooks` failed because `post-completion-finalizer-state.cjs drifted`; the output also stated `phase 139 acceptance: legacy test-only environment is not supported`. |
+| `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | FAIL — 19 tests: 16 passed, 1 failed, 2 skipped. The same installed-capability rendering test failed with `post-completion-finalizer-state.cjs drifted`. |
+| `bash scripts/ci/lint_workflows.sh` | PASS — exit 0. |
+
+The state-dependent `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs` command was not run: Task 2's precondition failed, so no state transition was attempted. Canonical UAT completion was not rerun; the existing 26 automated checks remain recorded as passing but do not override the current verifier failures.
+
+### Canonical Transition Gate Results
+
+- `node /Users/jon/.codex/gsd-core/bin/gsd-tools.cjs query verification.status .planning/phases/139-required-truth-reconciliation` returned `{"status":"gaps_found","next_action":"Gaps found. Plan the fixes, then re-run execute-phase before shipping.","next_command":"$gsd-plan-phase 139 --gaps"}`.
+- `node /Users/jon/.codex/gsd-core/bin/gsd-tools.cjs phase uat-passed 139 --require-verification` returned `passed: false`; all 26 existing UAT entries individually report `passing: true`, and blockers are the non-passing verification status plus the required-verification policy.
+- Task 2 precondition therefore failed. `.planning/STATE.md` and `.planning/state.json` remain unchanged and Phase 139 remains current.
+
+### Historical Proof Context — Prior Deferred Boundary
 
 | Item | Result | Evidence |
 |---|---|---|
 | Live synchronized-main CI/Release acceptance receipt | DEFERRED TO PHASE 140 ENTRY GATE | No receipt exists and refs differ. The roadmap assigns live evidence to Phase 140; its blocking `plan:pre` hook is wired to validate the receipt before planning. |
 | Repository-owned recovery and cancellation behavior | VERIFIED | Named host receipt recovery and production-router cancellation tests passed 2/2; portable router/lifecycle suite passed 16/16. |
 
-### Required Artifacts
+### Historical Proof Context — Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
@@ -152,7 +183,7 @@ The exact-SHA receipt is not present and is not claimed as Phase 139 evidence. M
 | OIDF workflow | bounded retained fields | OIDF/FAPI outputs through redaction | Yes | FLOWING; supplemental/non-certifying. |
 | Historical release records | SHA, run IDs, tag, checksum/version | maintained immutable evidence | Yes | FLOWING as historical data; not reused as future acceptance SHA. |
 
-### Behavioral Spot-Checks
+### Historical Proof Context — Behavioral Spot-Checks (not rerun in this refresh)
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
@@ -208,5 +239,5 @@ No Phase 139 roadmap criterion failed. Phase 139 provides the repository-owned a
 
 ---
 
-_Verified: 2026-09-25T15:28:04Z_
+_Verified: 2026-09-26T01:15:19Z_
 _Verifier: the agent (gsd-verifier)_
