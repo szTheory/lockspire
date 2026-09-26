@@ -2,18 +2,18 @@
 phase: 138
 scope: ""
 status: "complete"
-collection_started_at: "2026-09-26T13:16:41Z"
-collection_finished_at: "2026-09-26T13:17:08Z"
+collection_started_at: "2026-09-26T13:45:48Z"
+collection_finished_at: "2026-09-26T13:46:21Z"
 repository: "/Users/jon/projects/lockspire"
 repository_identity: "/Users/jon/projects/lockspire"
 declared_source_scopes: "git-baseline,git,github,maintained"
-local_head_sha: "1751b3970a23f660e161c2c31d33cd7b5d3c27e3"
-evidence_base_sha: "1751b3970a23f660e161c2c31d33cd7b5d3c27e3"
+local_head_sha: "da2476f05baa6c6a4f6b3f2e8a30253ef80c982f"
+evidence_base_sha: "da2476f05baa6c6a4f6b3f2e8a30253ef80c982f"
 local_main_sha: "3764ad5aa049ebd4185b532734086e68343762fa"
 origin_main_sha: "3764ad5aa049ebd4185b532734086e68343762fa"
-git_receipt_fingerprint: "fd2f0274e54925f3ea698e9e2d58aea5447e7a32"
+git_receipt_fingerprint: "32d505101786e9e90952b6812832d03b70f59d04"
 github_receipt_fingerprint: "265921c6ef9ba4cad6d88be3c79fe7625a9f43e3"
-maintained_receipt_fingerprint: "b5629c923bd46da9ddd219ac5e0bbcd02786077f"
+maintained_receipt_fingerprint: "b632bd52530ce484125b7b2d41fbfec201a04f9f"
 phase_review_status: "consumed"
 phase_review_sha256: "517665146e91ad75545cd7bcf41f7df91f72a290c24d21464ce353ce1725aa37"
 executed: "no — inventory proposal only"
@@ -25,10 +25,10 @@ Observed. Revalidation required before action. This receipt proposes no cleanup.
 
 ## Collection provenance
 
-- Collection window: `2026-09-26T13:16:41Z` to `2026-09-26T13:17:08Z`
-- Snapshot boundary: bounded as of `2026-09-26T13:16:41Z`; immutable refs and normalized source receipts are rechecked immediately before atomic publication.
+- Collection window: `2026-09-26T13:45:48Z` to `2026-09-26T13:46:21Z`
+- Snapshot boundary: bounded as of `2026-09-26T13:45:48Z`; immutable refs and normalized source receipts are rechecked immediately before atomic publication.
 - Git version: `git version 2.41.0`
-- Working-tree porcelain v2: `# branch.head recovery/phase-139-live-acceptance%0A# branch.oid 1751b3970a23f660e161c2c31d33cd7b5d3c27e3`
+- Working-tree porcelain v2: `# branch.head recovery/phase-139-live-acceptance%0A# branch.oid da2476f05baa6c6a4f6b3f2e8a30253ef80c982f`
 - Divergence command: `git rev-list --left-right --count main...origin/main`
 - Ahead of origin/main (local `main` only): `0`; behind origin/main (remote only): `0`
 - Completeness: `complete`
@@ -51,7 +51,7 @@ Observed. Revalidation required before action. This receipt proposes no cleanup.
 | GIT-BR-22018da5cdb4 | local_branch | `refs/heads/milestone/v1.36-adopter-path-proof` | observed SHA `5a4d05c019f0cbe25b6380832893fa3756b9c8a4` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 | GIT-BR-18a772f91be5 | local_branch | `refs/heads/milestone/v1.37-prime-time-readiness-ratchet` | observed SHA `5686853226794e9e84c58a7da8531c42997d0890` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 | GIT-BR-66ddc40b0fe7 | local_branch | `refs/heads/post-v1.14-rar-followup` | observed SHA `3baad35a4a2c1205ca05ccd86d11c952dabf9500` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
-| GIT-BR-ef44961d42b0 | local_branch | `refs/heads/recovery/phase-139-live-acceptance` | observed SHA `1751b3970a23f660e161c2c31d33cd7b5d3c27e3` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-BR-ef44961d42b0 | local_branch | `refs/heads/recovery/phase-139-live-acceptance` | observed SHA `da2476f05baa6c6a4f6b3f2e8a30253ef80c982f` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 | GIT-BR-784dc0e6ff92 | local_branch | `refs/heads/snapshot/pre-hygiene-2026-05-25` | observed SHA `effa2847396b4e9c0c10e81356dfc5a412c92acc` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 | GIT-BR-48077c7e31f8 | local_branch | `refs/heads/snapshot/release-prep-hygiene-2026-05-26` | observed SHA `f113b51c2b0b9347f989464da1028b3b41f77d80` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 | GIT-BR-c4bd87f875b6 | local_branch | `refs/heads/verify/final` | observed SHA `3cae9f9599dc4743b2e609be18180e84edfb0f48` | active | defer | `git for-each-ref refs/heads refs/remotes` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
@@ -121,7 +121,7 @@ Observed. Revalidation required before action. This receipt proposes no cleanup.
 
 | ID | Kind | Canonical subject | Observed state | Lifecycle | Proposed disposition | Evidence reference | Rationale | Confidence | Recheck proof | Required authority | Executed |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GIT-WT-4135abb150c8 | worktree | `/Users/jon/projects/lockspire` | observed SHA `1751b3970a23f660e161c2c31d33cd7b5d3c27e3` | active | defer | `git worktree list --porcelain -z` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
+| GIT-WT-4135abb150c8 | worktree | `/Users/jon/projects/lockspire` | observed SHA `da2476f05baa6c6a4f6b3f2e8a30253ef80c982f` | active | defer | `git worktree list --porcelain -z` | Current non-destructive inventory | direct_current | Revalidate exact target before action | release steward | no — inventory proposal only |
 
 ## GitHub open pull requests
 
@@ -152,7 +152,7 @@ No open issues observed; query succeeded with 0 results.
 | --- | --- | --- | --- |
 | todos | complete-zero | `.planning/todos/**` | selector succeeded with zero tracked matches |
 | debug | archive-summary | `.planning/debug/**` | 4 retained records summarized |
-| quick | archive-summary | `.planning/quick/**` | 14 retained records summarized |
+| quick | archive-summary | `.planning/quick/**` | 15 retained records summarized |
 | threads | complete | `.planning/threads/**` | 2 bounded tracked matches |
 | seeds | complete | `.planning/seeds/**` | 3 bounded tracked matches |
 | active-records | complete | `.planning/phases/*/*-{REVIEW,AUDIT,VERIFICATION,UAT,HANDOFF,CHECKPOINT}*.md` | 9 bounded tracked matches |
@@ -193,7 +193,7 @@ Observed maintained follow-up evidence. Revalidation required before action; eve
 | REC-958b4a3e2aaa | maintained_record | `[REDACTED]` | observed allowlisted source | active | defer-with-trigger | `[REDACTED]` | Allowlisted maintained record; source preserved | corroborated | Revalidate current state, authority, and recovery path before action | repository maintainer | no |
 | REC-7c205a386481 | archive_summary | `debug archive container \(4 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/debug/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
 | REC-34798a9689ee | archive_summary | `milestones archive container \(835 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/milestones/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
-| REC-e354d9fe8fe0 | archive_summary | `quick archive container \(14 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/quick/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
+| REC-88f2081417c7 | archive_summary | `quick archive container \(15 retained records\)` | observed allowlisted source | historical | retain-historical | `.planning/quick/**` | Archive summary preserves fulfilled history; expansion requires unresolved, contradictory, ambiguous, or actionable evidence | corroborated | Revalidate any expanded record before action | repository maintainer | no |
 | REC-9f94a0075364 | tracked_marker | `scripts/maintainer/baseline_inventory.sh` | observed allowlisted source | active | defer-with-trigger | `scripts/maintainer/baseline_inventory.sh` | Credible tracked marker; content intentionally not copied | corroborated | Revalidate marker context and owner before action | repository maintainer | no |
 | REC-d2f172b87929 | tracked_marker | `test/support/lockspire/release_proof/package_assertions.ex` | observed allowlisted source | active | defer-with-trigger | `test/support/lockspire/release_proof/package_assertions.ex` | Credible tracked marker; content intentionally not copied | corroborated | Revalidate marker context and owner before action | repository maintainer | no |
 
@@ -210,7 +210,7 @@ Observed maintained follow-up evidence. Revalidation required before action; eve
 
 ## Post-snapshot currentness relation
 
-This ledger is an immutable snapshot bounded as of `2026-09-26T13:16:41Z` at `evidence_base_sha` `1751b3970a23f660e161c2c31d33cd7b5d3c27e3`; it does not claim to represent a later HEAD or pre-authorize later lifecycle writes.
+This ledger is an immutable snapshot bounded as of `2026-09-26T13:45:48Z` at `evidence_base_sha` `da2476f05baa6c6a4f6b3f2e8a30253ef80c982f`; it does not claim to represent a later HEAD or pre-authorize later lifecycle writes.
 
 After publishing this candidate in a ledger-only commit whose direct parent is its `evidence_base_sha`, rerun the production classifier from the repository root:
 
