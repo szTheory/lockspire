@@ -2902,7 +2902,7 @@ validate_phase_139_completion_roadmap() {
 }
 
 phase_139_completion_plan_count() {
-  local tree="$1" directory=.planning/phases/139-required-truth-reconciliation entries line mode rest type object path suffix plan_suffixes='' summary_suffixes='' plans=0 summaries=0 index expected=''
+  local tree="$1" directory=.planning/phases/139-required-truth-reconciliation entries line mode rest type path suffix plan_suffixes='' summary_suffixes='' plans=0 summaries=0 index expected=''
   entries="$(git ls-tree -r "$tree" -- "$directory" 2>/dev/null)" || return 1
   [[ -n "$entries" ]] || return 1
   while IFS= read -r line; do
@@ -2910,7 +2910,6 @@ phase_139_completion_plan_count() {
     rest="${line#* }"
     type="${rest%% *}"
     rest="${rest#* }"
-    object="${rest%%$'\t'*}"
     path="${rest#*$'\t'}"
     [[ "$type" == blob && ( "$mode" == 100644 || "$mode" == 100755 ) ]] || return 1
     if [[ "$path" =~ ^${directory}/139-([0-9]{2})-PLAN\.md$ ]]; then
