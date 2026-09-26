@@ -2765,13 +2765,15 @@ validate_phase_139_completion_commit() {
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   [[ "$(front_matter_value_from_blob "$parent" "$state" current_phase 2>/dev/null)" == 139 ]] || return 1
   [[ "$(front_matter_value_from_blob "$parent" "$state" status 2>/dev/null)" == verifying ]] || return 1
+  [[ "$(front_matter_value_from_blob "$parent" "$state" current_plan 2>/dev/null)" == 13 ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" current_phase 2>/dev/null)" == 140 ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" current_phase_name 2>/dev/null)" == 'Bounded Operational Loose-End Triage' ]] || return 1
+  [[ "$(front_matter_value_from_blob "$commit" "$state" current_plan 2>/dev/null)" == 'Not started' ]] || return 1
   [[ "$(front_matter_value_from_blob "$commit" "$state" status 2>/dev/null)" == planning ]] || return 1
   state_head="$(front_matter_value_from_blob "$commit" "$state" state_head 2>/dev/null)"
   [[ "$state_head" == "$parent" ]] || return 1
   blob_has_line "$commit" "$state" '^Phase:[[:space:]]+140([[:space:]]|$)' || return 1
-  blob_has_line "$commit" "$state" '^Plan:[[:space:]]+Not started$' || return 1
+  blob_has_line "$commit" "$state" '^Current Plan:[[:space:]]+Not started$' || return 1
   blob_has_line "$commit" "$state" '^Status:[[:space:]]+Ready to plan$' || return 1
   while IFS= read -r path; do
     case "$path" in
@@ -2813,7 +2815,7 @@ validate_phase_139_completion_state_contract() {
       (.command | type == "string" and length > 0) and
       (.label | type == "string" and length > 0) and
       (.reason | type == "string" and length > 0)) and
-    (.updated_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"))
+    (.updated_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$"))
   ' <<<"$old_json" >/dev/null || return 1
 
   jq -e '
@@ -2848,8 +2850,8 @@ validate_phase_139_completion_state_contract() {
 from datetime import datetime, timedelta, timezone
 import sys
 
-old = datetime.strptime(sys.argv[1], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-new = datetime.strptime(sys.argv[2], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+old = datetime.fromisoformat(sys.argv[1].replace("Z", "+00:00")).astimezone(timezone.utc)
+new = datetime.fromisoformat(sys.argv[2].replace("Z", "+00:00")).astimezone(timezone.utc)
 commit = datetime.fromtimestamp(int(sys.argv[3]), timezone.utc)
 if not old < new <= commit + timedelta(seconds=1):
     raise SystemExit(1)
@@ -2857,8 +2859,13 @@ PY
 }
 
 validate_phase_139_completion_state() {
-  local commit="$1" path="$2" parent old_completed new_completed old_total new_total old_phases new_phases total_phases
+  local commit="$1" path="$2" parent old_completed new_completed old_total new_total old_phases new_phases total_phases old_activity new_activity state_updated
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  old_activity="$(front_matter_value_from_blob "$parent" "$path" last_activity 2>/dev/null)" || return 1
+  state_updated="$(git show "$commit:.planning/state.json" 2>/dev/null | jq -r '.updated_at // empty')" || return 1
+  [[ "$old_activity" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ && "$state_updated" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]] || return 1
+  new_activity="${state_updated:0:10}"
+  [[ "$(front_matter_value_from_blob "$commit" "$path" last_activity 2>/dev/null)" == "$new_activity" ]] || return 1
   old_completed="$(front_matter_indented_integer_from_blob "$parent" "$path" completed_plans)" || return 1
   new_completed="$(front_matter_indented_integer_from_blob "$commit" "$path" completed_plans)" || return 1
   old_total="$(front_matter_indented_integer_from_blob "$parent" "$path" total_plans)" || return 1
@@ -2866,14 +2873,14 @@ validate_phase_139_completion_state() {
   old_phases="$(front_matter_indented_integer_from_blob "$parent" "$path" completed_phases)" || return 1
   new_phases="$(front_matter_indented_integer_from_blob "$commit" "$path" completed_phases)" || return 1
   total_phases="$(front_matter_indented_integer_from_blob "$commit" "$path" total_phases)" || return 1
-  [[ "$old_total" -gt 0 && "$new_total" -eq "$old_total" &&
-     "$old_completed" -eq "$old_total" && "$new_completed" -eq "$new_total" ]] || return 1
+  [[ "$old_completed" -eq 49 && "$old_total" -eq 50 &&
+     "$new_completed" -eq 51 && "$new_total" -eq 51 ]] || return 1
   [[ "$old_phases" -eq 1 && "$new_phases" -eq 2 && "$total_phases" -eq 4 ]] || return 1
   blob_has_line "$commit" "$path" '^[[:space:]]+percent:[[:space:]]*50$' || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^Phase:[[:space:]]+140$')" -eq 1 ]] || return 1
+  [[ "$(git show "$commit:$path" | grep -Ec '^Phase:[[:space:]]+140 — Bounded Operational Loose-End Triage$')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Phase:')" -eq 1 ]] || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^Plan:[[:space:]]+Not started$')" -eq 1 ]] || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^Plan:')" -eq 1 ]] || return 1
+  [[ "$(git show "$commit:$path" | grep -Ec '^Current Plan:[[:space:]]+Not started$')" -eq 1 ]] || return 1
+  [[ "$(git show "$commit:$path" | grep -Ec '^Current Plan:')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Status:[[:space:]]+Ready to plan$')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Status:')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Last activity:[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+—[[:space:]]+Phase 139 complete, transitioned to Phase 140$')" -eq 1 ]] || return 1
@@ -2883,22 +2890,27 @@ validate_phase_139_completion_state() {
   [[ "$(git show "$commit:$path" | grep -Ec '^Stopped at:[[:space:]]+Phase 139 complete, ready to plan Phase 140$')" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec '^Stopped at:')" -eq 1 ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
-    '^-current_phase:|^-current_phase_name:|^-status:|^-stopped_at:|^-last_updated:|^-last_activity_desc:|^-state_head:|^-[[:space:]]+completed_phases:|^-[[:space:]]+percent:|^-Phase:|^-Plan:|^-Status:|^-Last activity:|^-Progress:|^-Stopped at:' \
-    "^\\+current_phase:[[:space:]]*140$|^\\+current_phase_name:[[:space:]]*Bounded Operational Loose-End Triage$|^\\+status:[[:space:]]*planning$|^\\+stopped_at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$|^\\+last_updated:|^\\+last_activity_desc:[[:space:]]*Phase 139 complete, transitioned to Phase 140$|^\\+state_head:[[:space:]]*${parent}$|^\\+[[:space:]]+completed_phases:|^\\+[[:space:]]+percent:|^\\+Phase:[[:space:]]*140$|^\\+Plan:[[:space:]]*Not started$|^\\+Status:[[:space:]]*Ready to plan$|^\\+Last activity:.*Phase 139 complete, transitioned to Phase 140$|^\\+Progress:[[:space:]]+\\[█████░░░░░\\][[:space:]]+50%$|^\\+Stopped at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$"
+    "^-current_phase:|^-current_phase_name:|^-current_plan:[[:space:]]+13$|^-status:|^-stopped_at:|^-last_updated:|^-last_activity:[[:space:]]+${old_activity}$|^-last_activity_desc:|^-state_head:|^-[[:space:]]+completed_phases:|^-[[:space:]]+total_plans:[[:space:]]+50$|^-[[:space:]]+completed_plans:[[:space:]]+49$|^-[[:space:]]+percent:|^-Phase:[[:space:]]+139 — Required Truth Reconciliation$|^-Current Plan:[[:space:]]+12$|^-Status:|^-Last activity:|^-Progress:|^-Stopped at:" \
+    "^\\+current_phase:[[:space:]]*140$|^\\+current_phase_name:[[:space:]]*Bounded Operational Loose-End Triage$|^\\+current_plan:[[:space:]]*Not started$|^\\+status:[[:space:]]*planning$|^\\+stopped_at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$|^\\+last_updated:|^\\+last_activity:[[:space:]]*${new_activity}$|^\\+last_activity_desc:[[:space:]]*Phase 139 complete, transitioned to Phase 140$|^\\+state_head:[[:space:]]*${parent}$|^\\+[[:space:]]+completed_phases:[[:space:]]+2$|^\\+[[:space:]]+total_plans:[[:space:]]+51$|^\\+[[:space:]]+completed_plans:[[:space:]]+51$|^\\+[[:space:]]+percent:|^\\+Phase:[[:space:]]*140 — Bounded Operational Loose-End Triage$|^\\+Current Plan:[[:space:]]*Not started$|^\\+Status:[[:space:]]*Ready to plan$|^\\+Last activity:.*Phase 139 complete, transitioned to Phase 140$|^\\+Progress:[[:space:]]+\\[█████░░░░░\\][[:space:]]+50%$|^\\+Stopped at:[[:space:]]*Phase 139 complete, ready to plan Phase 140$"
 }
 
 validate_phase_139_completion_roadmap() {
-  local commit="$1" path="$2" parent count
+  local commit="$1" path="$2" parent count parent_top child_top pending_count child_pending_count
   parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
   count="$(phase_139_completion_plan_count "$parent")" || return 1
-  [[ "$(git show "$parent:$path" | grep -Ec '^- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*')" -eq 1 ]] || return 1
-  [[ "$(git show "$commit:$path" | grep -Ec '^- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$')" -eq 1 ]] || return 1
-  [[ "$(git show "$parent:$path" | grep -Ec "^[|] 139\\. Required Truth Reconciliation [|] ${count}/${count} [|] In Progress[|][[:space:]]*[|]$")" -eq 1 ]] || return 1
+  [[ "$count" -eq 13 ]] || return 1
+  parent_top="$(git show "$parent:$path" | grep -E '^- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$')" || return 1
+  child_top="$(git show "$commit:$path" | grep -E '^- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$')" || return 1
+  [[ -n "$parent_top" && "$parent_top" == "$child_top" ]] || return 1
+  [[ "$(git show "$parent:$path" | grep -Ec "^[|] 139\\. Required Truth Reconciliation [|] 9/11 [|] In Progress[|][[:space:]]*[|]$")" -eq 1 ]] || return 1
   [[ "$(git show "$commit:$path" | grep -Ec "^[|] 139\\. Required Truth Reconciliation [|] ${count}/${count} [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]$")" -eq 1 ]] || return 1
-  [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq 2 && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq 2 ]] || return 1
+  pending_count="$(git show "$parent:$path" | grep -Ec '^- \[ \] 139-[0-9]{2}-PLAN\.md — ' || true)"
+  child_pending_count="$(git show "$commit:$path" | grep -Ec '^- \[ \] 139-[0-9]{2}-PLAN\.md — ' || true)"
+  [[ "$pending_count" -gt 0 && "$child_pending_count" -eq 0 ]] || return 1
+  [[ "$(commit_path_diff_line_count "$commit" "$path" -)" -eq $((pending_count + 1)) && "$(commit_path_diff_line_count "$commit" "$path" +)" -eq $((pending_count + 1)) ]] || return 1
   commit_path_diff_lines_match "$commit" "$path" \
-    '^-\- \[ \] \*\*Phase 139: Required Truth Reconciliation\*\*|^-[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] In Progress[|]' \
-    '^\+- \[x\] \*\*Phase 139: Required Truth Reconciliation\*\*.*\(completed [0-9]{4}-[0-9]{2}-[0-9]{2}\)$|^\+[|] 139\. Required Truth Reconciliation [|] [0-9]+/[0-9]+ [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]'
+    '^-\| 139\. Required Truth Reconciliation [|] 9/11 [|] In Progress[|]|^-- \[ \] 139-[0-9]{2}-PLAN\.md — ' \
+    '^\+\| 139\. Required Truth Reconciliation [|] 13/13 [|] Complete[[:space:]]+[|] [0-9]{4}-[0-9]{2}-[0-9]{2} [|]|^\+- \[x\] 139-[0-9]{2}-PLAN\.md — '
 }
 
 phase_139_completion_plan_count() {
