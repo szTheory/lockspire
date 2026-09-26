@@ -4360,6 +4360,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        ) do
     initialize_snapshot_repository!(repository)
     copy_planning_fixture!(Paths.path(".planning"), Path.join(repository, ".planning"))
+    copy_phase_139_verification_parent_documents!(repository)
+
     state_path = Path.join(repository, ".planning/STATE.md")
     state =
       File.read!(state_path)
@@ -4367,10 +4369,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "**Current focus:** Phase 139 — Required Truth Reconciliation verification refresh",
         "**Current focus:** Phase 139 — Required Truth Reconciliation"
       )
-      |> String.replace(
-        "Last session: 2026-09-25T21:11:55.718Z",
-        "Last session: 2026-09-12T00:40:28.652Z"
-      )
+      |> String.replace(~r/^Last session: .*$/m, "Last session: 2026-09-12T00:40:28.652Z")
 
     unless Regex.match?(~r/^current_plan: 12$/m, state) do
       raise("Phase 139 completion fixture must preserve the live current_plan: 12 parent")
@@ -4382,13 +4381,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     project =
       File.read!(project_path)
-      |> then(fn contents ->
-        Regex.replace(
-          ~r/## Current State\n.*?(?=\n## Completed Milestone: v1\.32)/s,
-          contents,
-          "## Current State\n\nPhase 138 completed the v1.38 evidence foundation. Phase 139 now owns required truth reconciliation."
-        )
-      end)
       |> String.replace(
         ~r/^\*Last updated: .* after Phase 138.*\*$/m,
         "*Last updated: 2026-09-25 after Phase 138*"
@@ -4449,6 +4441,30 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     ledger_commit = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
     {ledger_commit, evidence_base, remote}
+  end
+
+  defp copy_phase_139_verification_parent_documents!(repository) do
+    source = Paths.path(".")
+
+    completion =
+      run_git!(source, [
+        "rev-list",
+        "-1",
+        "--fixed-strings",
+        "--grep=docs(phase-139): complete phase execution",
+        "HEAD"
+      ])
+      |> String.trim()
+
+    unless completion =~ ~r/^[0-9a-f]{40}$/ do
+      raise("Phase 139 completion commit is required for the post-transition fixture")
+    end
+
+    parent = run_git!(source, ["rev-parse", "#{completion}^"]) |> String.trim()
+
+    for path <- [".planning/STATE.md", ".planning/ROADMAP.md", ".planning/state.json"] do
+      write_repo_file!(repository, path, run_git!(source, ["show", "#{parent}:#{path}"]))
+    end
   end
 
   defp copy_planning_fixture!(source, destination) do
@@ -4906,8 +4922,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       project,
       File.read!(project)
       |> String.replace(
-        "Phase 138 completed the v1.38 evidence foundation. Phase 139 now owns required truth reconciliation.",
-        "Phase 139 completed the v1.38 evidence foundation. Phase 140 owns bounded operational triage."
+        "Phase 138 gap closure has executed, but verification remains `gaps_found` because G-138-98 still needs claim-level evidence or resolved maintainer judgment. Phase 139 is recorded complete, though its verification is stale. Phase 140 planning remains gated until synchronized same-SHA acceptance evidence is validated and the durable receipt is written.",
+        "Phase 139 completed required truth reconciliation; canonical repository-owned verification passed on 2026-09-26. Phase 140 remains gated on synchronized refs and canonical same-SHA CI and release evidence with the durable acceptance receipt pending."
       )
       |> String.replace(
         "*Last updated: 2026-09-25 after Phase 138*",
