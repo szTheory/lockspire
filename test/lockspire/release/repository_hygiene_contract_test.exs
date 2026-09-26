@@ -196,7 +196,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase139_inventory_relation
   @tag timeout: 300_000
-  test "current inventory relation binds the refreshed ledger through synchronized main" do
+  test "Phase 139 relation accepts canonical completion and rejects hostile bookkeeping without moving refs" do
     PackageAssertions.assert_phase_139_inventory_relation!()
   end
 

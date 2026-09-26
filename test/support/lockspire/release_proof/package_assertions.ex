@@ -2806,14 +2806,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {_, 0} =
         System.cmd("bash", ["-c", ~S(exec node "$STATE_HELPER" prepare 139 < "$HOOKS_PATH")],
           cd: repository,
-          env: [{"STATE_HELPER", state_helper}, {"HOOKS_PATH", hooks_path}],
+          env: [
+            {"STATE_HELPER", state_helper},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ],
           stderr_to_stdout: true
         )
 
       receipt_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
       receipt = File.read!(receipt_path)
       install_receipt_writer_fixture!(repository, gsd_tools)
-      run_git!(repository, ["update-ref", "refs/heads/main", candidate, evidence_base])
+      expected_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", candidate, expected_main])
       run_git!(repository, ["push", "origin", "#{candidate}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
 
@@ -2860,7 +2865,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         {"completion-roadmap-forged-count",
          fn repository ->
            path = Path.join(repository, ".planning/ROADMAP.md")
-           File.write!(path, File.read!(path) |> String.replace("9/9", "99/99"))
+           File.write!(path, File.read!(path) |> String.replace("11/11", "99/99"))
          end, fn _repository -> :ok end},
         {"completion-forged-state-count",
          fn repository ->
@@ -2966,6 +2971,175 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
              Jason.encode!(%{"contract" => "rewritten"}) <> "\n"
            )
          end, fn _repository -> :ok end},
+        {"completion-state-contract-missing-key",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, &Map.delete(&1, "flavor"))
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-extra-key",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, &Map.put(&1, "extra", true))
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-malformed-json",
+         fn repository ->
+           write_repo_file!(repository, ".planning/state.json", "{malformed\n")
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-malformed-timestamp",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, &Map.put(&1, "updated_at", "yesterday"))
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-wrong-flavor",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, &Map.put(&1, "flavor", "legacy"))
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-wrong-milestone",
+         fn repository ->
+           phase_139_state_contract_mutation!(
+             repository,
+             &Map.put(&1, "milestone", "v1.39 forged")
+           )
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-wrong-phase-identity",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["phases"], fn phases ->
+               List.update_at(phases, 1, &Map.put(&1, "name", "Forged"))
+             end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-phase-order",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["phases"], fn phases ->
+               List.replace_at(phases, 2, Enum.at(phases, 3))
+               |> List.replace_at(3, Enum.at(phases, 2))
+             end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-139-not-complete",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["phases"], fn phases ->
+               List.update_at(phases, 1, &Map.put(&1, "status", "in_progress"))
+             end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-140-advanced-early",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["phases"], fn phases ->
+               List.update_at(phases, 2, &Map.put(&1, "status", "in_progress"))
+             end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-added-phase",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(
+               state["phases"],
+               &(&1 ++ [%{"number" => "142", "name" => "Unrelated", "status" => "pending"}])
+             )
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-changed-sibling",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["phases"], fn phases ->
+               List.update_at(phases, 0, &Map.put(&1, "status", "pending"))
+             end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-wrong-next-command",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["next"]["command"], fn _ -> "/gsd:plan-phase 139 --gaps" end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-stale-next-reason",
+         fn repository ->
+           phase_139_state_contract_mutation!(repository, fn state ->
+             update_in(state["next"]["reason"], fn _ -> "Phase 139 verification still stale" end)
+           end)
+         end, fn _repository -> :ok end},
+        {"completion-state-contract-json-only",
+         fn repository ->
+           for path <- [".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"] do
+             original = run_git!(repository, ["show", "HEAD:#{path}"])
+             write_repo_file!(repository, path, original)
+           end
+         end, fn _repository -> :ok end},
+        {"completion-parent-missing-plan", fn _repository -> :ok end, fn _repository -> :ok end,
+         fn repository ->
+           File.rm!(
+             Path.join(
+               repository,
+               ".planning/phases/139-required-truth-reconciliation/139-11-PLAN.md"
+             )
+           )
+         end},
+        {"completion-parent-missing-summary", fn _repository -> :ok end,
+         fn _repository -> :ok end,
+         fn repository ->
+           File.rm!(
+             Path.join(
+               repository,
+               ".planning/phases/139-required-truth-reconciliation/139-11-SUMMARY.md"
+             )
+           )
+         end},
+        {"completion-parent-extra-plan", fn _repository -> :ok end, fn _repository -> :ok end,
+         fn repository ->
+           write_repo_file!(
+             repository,
+             ".planning/phases/139-required-truth-reconciliation/139-12-PLAN.md",
+             "# Unpaired extra plan\n"
+           )
+         end},
+        {"completion-parent-extra-summary", fn _repository -> :ok end, fn _repository -> :ok end,
+         fn repository ->
+           write_repo_file!(
+             repository,
+             ".planning/phases/139-required-truth-reconciliation/139-12-SUMMARY.md",
+             "# Unpaired extra summary\n"
+           )
+         end},
+        {"completion-parent-extra-plan-pair", fn _repository -> :ok end,
+         fn _repository -> :ok end,
+         fn repository ->
+           write_repo_file!(
+             repository,
+             ".planning/phases/139-required-truth-reconciliation/139-12-PLAN.md",
+             "# Extra plan\n"
+           )
+
+           write_repo_file!(
+             repository,
+             ".planning/phases/139-required-truth-reconciliation/139-12-SUMMARY.md",
+             "# Extra summary\n"
+           )
+         end},
+        {"completion-parent-nonregular-plan", fn _repository -> :ok end,
+         fn _repository -> :ok end,
+         fn repository ->
+           path =
+             Path.join(
+               repository,
+               ".planning/phases/139-required-truth-reconciliation/139-11-PLAN.md"
+             )
+
+           File.rm!(path)
+           File.ln_s!("139-10-PLAN.md", path)
+         end},
+        {"completion-parent-forged-roadmap-count", fn _repository -> :ok end,
+         fn _repository -> :ok end,
+         fn repository ->
+           path = Path.join(repository, ".planning/ROADMAP.md")
+           File.write!(path, String.replace(File.read!(path), "11/11", "10/11"))
+         end},
+        {"completion-child-forged-roadmap-count",
+         fn repository ->
+           path = Path.join(repository, ".planning/ROADMAP.md")
+           File.write!(path, String.replace(File.read!(path), "11/11", "10/10"))
+         end, fn _repository -> :ok end, fn _repository -> :ok end},
         {"transition-project", fn _repository -> :ok end,
          fn repository ->
            File.write!(
@@ -3000,31 +3174,60 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          end}
       ]
 
-      Enum.each(lifecycle_mutations, fn {label, completion_mutate, transition_mutate} ->
+      Enum.each(lifecycle_mutations, fn mutation ->
+        {label, completion_mutate, transition_mutate, parent_mutate} =
+          case mutation do
+            {label, completion_mutate, transition_mutate} ->
+              {label, completion_mutate, transition_mutate, fn _repository -> :ok end}
+
+            {label, completion_mutate, transition_mutate, parent_mutate} ->
+              {label, completion_mutate, transition_mutate, parent_mutate}
+          end
+
         mutation_fixture = Path.join(fixture, label)
 
         context =
           build_sealed_phase_139_acceptance_fixture!(
             mutation_fixture,
             completion_mutate,
-            transition_mutate
+            transition_mutate,
+            parent_mutate
           )
+
+        expected_main =
+          run_git!(context.repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
 
         run_git!(context.repository, [
           "update-ref",
           "refs/heads/main",
           context.candidate,
-          context.evidence_base
+          expected_main
         ])
 
         run_git!(context.repository, ["push", "origin", "#{context.candidate}:refs/heads/main"])
         run_git!(context.repository, ["fetch", "origin", "main"])
+
+        before_relation = relation_repository_state(context.repository, context.receipt.ledger)
+        before_receipt = File.read!(context.receipt.path)
+        before_local_main = run_git!(context.repository, ["rev-parse", "refs/heads/main"])
+
+        before_remote_main =
+          run_git!(context.repository, ["ls-remote", "origin", "refs/heads/main"])
 
         {rejected, rejected_status} =
           run_phase_139_posttransition_relation!(context.repository, context.receipt.ledger)
 
         assert rejected_status != 0, "#{label} was authorized:\n#{rejected}"
         assert rejected =~ "refresh_required"
+
+        assert relation_repository_state(context.repository, context.receipt.ledger) ==
+                 before_relation
+
+        assert File.read!(context.receipt.path) == before_receipt
+        assert run_git!(context.repository, ["rev-parse", "refs/heads/main"]) == before_local_main
+
+        assert run_git!(context.repository, ["ls-remote", "origin", "refs/heads/main"]) ==
+                 before_remote_main
       end)
     after
       File.rm_rf(fixture)
@@ -4104,7 +4307,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     {run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim(), base}
   end
 
-  defp build_phase_139_relation_repository!(fixture, repository, ledger) do
+  defp build_phase_139_relation_repository!(
+         fixture,
+         repository,
+         ledger,
+         parent_mutate \\ fn _repository -> :ok end
+       ) do
     initialize_snapshot_repository!(repository)
 
     write_repo_file!(
@@ -4116,13 +4324,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     write_repo_file!(
       repository,
       ".planning/STATE.md",
-      "---\ncurrent_phase: #{@next_phase_number}\ncurrent_phase_name: Required Truth Reconciliation\nstatus: verifying\nstopped_at: Completed #{@next_phase_number}-09-PLAN.md\nlast_updated: \"2026-09-12T00:40:28.686Z\"\nlast_activity_desc: #{@next_phase_label} execution started\nstate_head: prior\nprogress:\n  total_phases: 4\n  completed_phases: 1\n  total_plans: 43\n  completed_plans: 43\n  percent: 25\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@next_phase_number}\nPlan: 9 of 9\nStatus: Phase complete — ready for verification\nLast activity: 2026-09-11 — #{@next_phase_label} execution started\nProgress: [███░░░░░░░] 25%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: Completed #{@next_phase_number}-09-PLAN.md\n"
+      "---\ncurrent_phase: #{@next_phase_number}\ncurrent_phase_name: Required Truth Reconciliation\nstatus: verifying\nstopped_at: Completed #{@next_phase_number}-11-PLAN.md\nlast_updated: \"2026-09-12T00:40:28.686Z\"\nlast_activity_desc: #{@next_phase_label} execution started\nstate_head: prior\nprogress:\n  total_phases: 4\n  completed_phases: 1\n  total_plans: 43\n  completed_plans: 43\n  percent: 25\n---\n# Project State\n## Project Reference\nSee: .planning/PROJECT.md\n**Current focus:** #{@next_phase_label} — Required Truth Reconciliation\n## Current Position\nPhase: #{@next_phase_number}\nPlan: 11 of 11\nStatus: Phase complete — ready for verification\nLast activity: 2026-09-11 — #{@next_phase_label} execution started\nProgress: [███░░░░░░░] 25%\n## Session Continuity\nLast session: 2026-09-12T00:40:28.652Z\nStopped at: Completed #{@next_phase_number}-11-PLAN.md\n"
     )
 
     write_repo_file!(
       repository,
       ".planning/ROADMAP.md",
-      "# Lockspire Roadmap\n## Phases\n- [ ] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth.\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 9/9 | In Progress|  |\n"
+      "# Lockspire Roadmap\n## Phases\n- [ ] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth.\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 11/11 | In Progress|  |\n"
     )
 
     write_repo_file!(
@@ -4130,6 +4338,31 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ".planning/REQUIREMENTS.md",
       phase_139_requirements_fixture("Pending")
     )
+
+    for plan_number <- 1..11 do
+      suffix = String.pad_leading(Integer.to_string(plan_number), 2, "0")
+      phase_dir = ".planning/phases/139-required-truth-reconciliation"
+
+      write_repo_file!(
+        repository,
+        "#{phase_dir}/139-#{suffix}-PLAN.md",
+        "---\nphase: 139-required-truth-reconciliation\nplan: #{suffix}\nstatus: planned\n---\n# Phase 139 Plan #{suffix}\n"
+      )
+
+      write_repo_file!(
+        repository,
+        "#{phase_dir}/139-#{suffix}-SUMMARY.md",
+        "---\nphase: 139-required-truth-reconciliation\nplan: #{suffix}\nstatus: complete\n---\n# Phase 139 Plan #{suffix} Summary\n"
+      )
+    end
+
+    write_repo_file!(
+      repository,
+      ".planning/state.json",
+      phase_139_state_contract_fixture("in_progress")
+    )
+
+    parent_mutate.(repository)
 
     historical =
       "source 5d10ce2219c2e687cf9573c8b280abfb118a47d8 ci 33141161205 release 33141484467 " <>
@@ -4191,7 +4424,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   defp build_sealed_phase_139_acceptance_fixture!(
          fixture,
          completion_mutate \\ fn _repository -> :ok end,
-         transition_mutate \\ fn _repository -> :ok end
+         transition_mutate \\ fn _repository -> :ok end,
+         parent_mutate \\ fn _repository -> :ok end
        ) do
     repository = Path.join(fixture, "repository")
 
@@ -4199,7 +4433,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
 
     {_ledger_commit, evidence_base, remote} =
-      build_phase_139_relation_repository!(fixture, repository, ledger)
+      build_phase_139_relation_repository!(fixture, repository, ledger, parent_mutate)
 
     write_phase_139_verification!(repository)
     commit_all!(repository, @next_phase_commit_prefix <> "record passed verification")
@@ -4592,13 +4826,87 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     write_repo_file!(
       repository,
       ".planning/ROADMAP.md",
-      "# Lockspire Roadmap\n## Phases\n- [x] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth. (completed 2026-09-12)\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 9/9 | Complete    | 2026-09-12 |\n"
+      "# Lockspire Roadmap\n## Phases\n- [x] **#{@next_phase_label}: Required Truth Reconciliation** - Reconcile required truth. (completed 2026-09-12)\n\n| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n| #{@next_phase_number}. Required Truth Reconciliation | 11/11 | Complete    | 2026-09-12 |\n"
     )
 
     write_repo_file!(
       repository,
       ".planning/REQUIREMENTS.md",
       phase_139_requirements_fixture("Complete")
+    )
+
+    write_repo_file!(
+      repository,
+      ".planning/state.json",
+      phase_139_state_contract_fixture("complete")
+    )
+  end
+
+  # Captured from the installed GSD `query phase.complete 139` contract publisher
+  # at 10bad3ed (2026-09-26): the GSD action for a completed phase with Phase 140
+  # awaiting a plan is fixed; only `updated_at` varies per publisher invocation.
+  defp phase_139_state_contract_fixture(phase_139_status) do
+    timestamp =
+      if phase_139_status == "complete" do
+        DateTime.utc_now() |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
+      else
+        "2026-09-25T21:57:06.000Z"
+      end
+
+    next =
+      if phase_139_status == "complete" do
+        %{
+          "command" => "/gsd:progress --next",
+          "label" => "Advance to the next step (plan phase 140)",
+          "reason" => "Phase 140 of 4 — needs a plan"
+        }
+      else
+        %{
+          "command" => "/gsd:verify-work 139",
+          "label" => "Refresh Phase 139 verification after Phase 138 closeout",
+          "reason" =>
+            "All nine Phase 139 plans and its UAT are complete; the verification fingerprint is stale because Phase 138's final verification report changed"
+        }
+      end
+
+    Jason.encode!(
+      %{
+        "contract" => "1.0.0",
+        "flavor" => "core",
+        "milestone" => "v1.38 — Repository Baseline & Reconciliation",
+        "phases" => [
+          %{
+            "number" => "138",
+            "name" => "Baseline Inventory & Evidence Taxonomy",
+            "status" => "complete"
+          },
+          %{
+            "number" => "139",
+            "name" => "Required Truth Reconciliation",
+            "status" => phase_139_status
+          },
+          %{
+            "number" => "140",
+            "name" => "Bounded Operational Loose-End Triage",
+            "status" => "pending"
+          },
+          %{"number" => "141", "name" => "Maintenance-Baseline Closure", "status" => "pending"}
+        ],
+        "next" => next,
+        "updated_at" => timestamp
+      },
+      pretty: true
+    ) <> "\n"
+  end
+
+  defp phase_139_state_contract_mutation!(repository, mutate) do
+    path = Path.join(repository, ".planning/state.json")
+    state = path |> File.read!() |> Jason.decode!() |> mutate.()
+
+    write_repo_file!(
+      repository,
+      ".planning/state.json",
+      Jason.encode!(state, pretty: true) <> "\n"
     )
   end
 
@@ -5533,6 +5841,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   end
 
   defp run_phase_139_posttransition_relation!(repository, ledger, env \\ []) do
+    env = Enum.reject(env, fn {key, _value} -> key == "GSD_TOOLS" end)
+    env = [{"GSD_TOOLS", gsd_tools_path!()} | env]
+
     System.cmd(
       "bash",
       [
