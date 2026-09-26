@@ -187,11 +187,11 @@ Plans:
 
 **Wave 8** *(current exact-acceptance fixture and receipt gaps; after 139-09)*
 
-- [ ] 139-10-PLAN.md — Repair writer-descriptor fixture authority and restore exact-acceptance proof.
+- [x] 139-10-PLAN.md — Repair writer-descriptor fixture authority and restore exact-acceptance proof.
 
 **Wave 9** *(lifecycle rendering and post-transition proof; after 139-10)*
 
-- [ ] 139-11-PLAN.md — Make portable/live rendering explicit and gate planning consistency after canonical verification.
+- [x] 139-11-PLAN.md — Make portable/live rendering explicit and gate planning consistency after canonical verification.
 
 ### Phase 140: Bounded Operational Loose-End Triage
 
@@ -227,6 +227,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
-| 139. Required Truth Reconciliation | 9/11 | In Progress|  |
+| 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
 | 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
