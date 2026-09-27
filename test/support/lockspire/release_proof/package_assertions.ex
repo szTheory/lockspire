@@ -3484,6 +3484,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     fixture = unique_tmp_fixture("lockspire-phase-139-merged-release-lineage")
     repository = Path.join(fixture, "repository")
 
+    lineage_base =
+      run_git!(Paths.path("."), ["merge-base", "HEAD", "refs/remotes/origin/main"])
+      |> String.trim()
+
     ledger =
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
 
@@ -3527,7 +3531,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/lockspire/release/repository_hygiene_contract_test.exs",
             "test/support/lockspire/release_proof/package_assertions.ex"
           ] do
-        write_repo_file!(repository, path, run_git!(Paths.path("."), ["show", "HEAD:#{path}"]))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       commit_all!(repository, "fix(139): authenticate Release Please base advance")
@@ -3549,7 +3557,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/lockspire/release/repository_hygiene_contract_test.exs",
             "test/support/lockspire/release_proof/package_assertions.ex"
           ] do
-        write_repo_file!(repository, path, run_git!(Paths.path("."), ["show", "HEAD:#{path}"]))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       commit_all!(repository, "fix(139): run acceptance from a clean candidate worktree")

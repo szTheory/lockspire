@@ -4414,6 +4414,7 @@ verify_phase_139_posttransition_relation() {
 
 verify_phase_139_sealed_candidate_relation() {
   local ledger="${1#./}" before_head ledger_commit release_base prior_base advertised verdict=0
+  local local_main main_advance=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-sealed-candidate|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
@@ -4423,12 +4424,19 @@ verify_phase_139_sealed_candidate_relation() {
   printf 'receipt_before_head|%s|authorized_bookkeeping\n' "$before_head"
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null || true)"
+  local_main="$(git rev-parse refs/heads/main 2>/dev/null || true)"
   release_base="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
   advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
   prior_base="$(phase_139_release_please_completion_base "$ledger_commit" "$before_head" 2>/dev/null || true)"
   [[ -n "$release_base" && "$release_base" == "$advertised" && -n "$prior_base" ]] || verdict=1
+  if [[ "$release_base" == "$before_head" ]]; then
+    git merge-base --is-ancestor "$local_main" "$before_head" 2>/dev/null || verdict=1
+    main_advance=1
+  else
+    [[ -n "$local_main" && "$local_main" == "$release_base" ]] || verdict=1
+  fi
   git merge-base --is-ancestor "$release_base" "$before_head" 2>/dev/null || verdict=1
-  LOCKSPIRE_PHASE_139_MAIN_ADVANCE=1 \
+  LOCKSPIRE_PHASE_139_MAIN_ADVANCE="$main_advance" \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$release_base" \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE="$prior_base" \
