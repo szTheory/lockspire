@@ -40,7 +40,7 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 ## Current State
 
-Phase 138 gap closure has executed, but verification remains `gaps_found` because G-138-98 still needs claim-level evidence or resolved maintainer judgment. Phase 139 is recorded complete, though its verification is stale. Phase 140 planning remains gated until synchronized same-SHA acceptance evidence is validated and the durable receipt is written.
+Phases 138 and 139 have all 51 plan/summary pairs, and their repository-owned verification was refreshed on 2026-09-27. Phase 140 discussion is complete: its confirmed context and discussion log are committed at `99e825da`; research and plans have not been generated. The next workflow is `$gsd-plan-phase 140 --research`, subject to its blocking entry gate. The existing exact-SHA acceptance receipt records synchronized `main` at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; it does not accept later documentation commits. Automatic approval review rejected the entry finalizer because it can push `origin/main`, and that authority remains unresolved. The complete restart handoff is `.planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md`.
 
 Lockspire has implemented and verified all seven v1.37 phases, and Hex reports `1.5.0` as the latest public release. Default-branch supplemental OIDC/FAPI run `33139876101` retained only allowlisted classified receipts from immutable suite inputs; its honest suite-failure findings remain non-certifying follow-up evidence. Protected release run `33141484467` published the exact pre-proven tar from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, matched its public Hex checksum, verified versioned docs, and repeated the clean-room public-package journey. The repo-native conformance jobs require no provider secrets; only the optional hosted-provider comparison accepts provider configuration.
 
@@ -334,6 +334,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
 | Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |
 | Keep the v1.38 baseline immutable and proposal-only, with lifecycle movement authorized by exact receipts and semantic classifiers | Reconciliation needs a stable evidence boundary without mistaking publication for cleanup authority or treating ordinary GSD bookkeeping as evidence drift | Adopted and verified in Phase 138; Phase 139 consumes ledger `b8b9ad75` |
 | Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
@@ -395,4 +396,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-25 after Phase 138 gap verification*
+*Last updated: 2026-09-27 after the Phase 139 acceptance gate and milestone-prompt adaptation*

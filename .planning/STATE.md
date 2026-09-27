@@ -6,11 +6,11 @@ current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
 current_plan: Not started
 status: planning
-stopped_at: Phase 139 complete, ready to plan Phase 140
-last_updated: "2026-09-26T16:19:49.967Z"
-last_activity: 2026-09-26
-last_activity_desc: Phase 139 complete, transitioned to Phase 140
-state_head: 7d9ab5eb43a3d0f964242f64bf2447d3431f4511
+stopped_at: Phase 140 context captured; planning entry hook awaits authorization because it can push origin/main
+last_updated: "2026-09-27T18:17:16.667Z"
+last_activity: 2026-09-27
+last_activity_desc: Phase 140 assumptions confirmed and context captured; proceed to research-first planning
+state_head: 99e825dad09557c907ad025289630091dc364c76
 progress:
   total_phases: 4
   completed_phases: 2
@@ -23,22 +23,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md
+See: .planning/PROJECT.md (updated 2026-09-26)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 139 — Required Truth Reconciliation verification refresh
+**Current focus:** Phase 140 — Bounded Operational Loose-End Triage
 
 ## Current Position
 
 Phase: 140 — Bounded Operational Loose-End Triage
 Current Plan: Not started
-Total Plans in Phase: 12
-Plan: Implementation and UAT are complete; refresh verification after Phase 138 closeout changed a covered artifact
-Status: Ready to plan
-Last activity: 2026-09-26 — Phase 139 complete, transitioned to Phase 140
+Total Plans in Phase: 0
+Plan: Not started; Phase 140 context confirmed and ready for research-first planning
+Status: Phase 140 context ready; planning entry hook awaiting authorization
+Last activity: 2026-09-27 — Phase 140 assumptions confirmed and context captured; Phase 138 UAT #100 remains deferred to the authorized snapshot refresh
 
 Progress: [█████░░░░░] 50%
+
+Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Phase 140 discussion is now complete; its research, plans, execution, and final acceptance remain outstanding.
 
 ## Accumulated Context
 
@@ -143,19 +145,24 @@ Progress: [█████░░░░░] 50%
 - [Phase 138]: Expose existing production-CLI proof through structured SUMMARY coverage instead of duplicating the subprocess-heavy repository-hygiene suite. — The exact behaviors already have passing executable proof, so metadata repair preserves signal without adding runtime.
 - [Phase 138]: Run only the self-contained finalizer router contract in release-hygiene CI; keep GSD-dependent lifecycle and authenticated mutable-source proof at execute/verify boundaries. — This is the cheapest durable recurring boundary and avoids unsafe credentials or mutable-source prerequisites in pull-request CI.
 - [Phase 138]: Compose Phase 139 fixture labels from semantic phase attributes so repository proof remains phase-neutral without weakening assertions. — The user-authorized repair restores the existing active proof-label hygiene contract while preserving generated fixture semantics.
-- [Phase 139]: Keep Phase 139 verification gaps and external acceptance separate from repository-owned proof mapping; requirements stay pending until synchronized live receipt evidence exists.
+- [Phase 139]: Keep repository-owned proof separate from live external acceptance. The exact synchronized-main receipt passed at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI-06 and CI-07 remain assigned to Phase 140 until its verification closes them.
 - [Operating default]: Shift verification left into the earliest reliable automated layer; add repeatable integration, end-to-end, smoke, and seam checks to required CI when they provide recurring regression value. Treat passing automated evidence as satisfying UAT and hand off only subjective judgment or a truly unreachable external boundary, with its machine-owned lifecycle gate named.
+- [Phase 138/139 verification]: Phase 138's 100 executable UAT checks pass and #100 remains explicitly deferred until the authorized live snapshot refresh; Phase 139's three focused lifecycle relation tests pass serially. Both phase reports record zero human verification required.
 
 ### Pending Todos
 
-- Reconcile required CI, release, hygiene, and planning truth against the immutable Phase 138 inventory before taking any bounded action.
+- Plan Phase 140 with fresh research from its confirmed context; retain exact, evidence-backed dispositions.
+- Before any Phase 140 inventory action, revalidate and refresh the Phase 138 live snapshot relation at the authorized boundary; inventory proposals do not authorize cleanup.
+- During Phase 140 triage, review the nine unresolved UAT records in archived v1.32/v1.27 artifacts as evidence-backed candidates; preserve their existing out-of-scope dispositions unless current evidence supports a change.
 
 ### Blockers/Concerns
 
-- Phase 139 must revalidate ledger `b8b9ad75` at each named authority boundary; the inventory remains proposal-only and does not authorize cleanup by itself.
-- Lifecycle ordering resolution (2026-09-24): Phase 139 now verifies repository-owned acceptance contracts and local gates. CI-06 and CI-07 are mapped to Phase 140 and remain pending until the existing blocking `plan:pre` hook validates synchronized refs, canonical same-SHA CI/Release evidence, and the durable receipt before any Phase 140 planning. No GSD runtime patch or live acceptance claim is involved.
+- Phase 140 context is committed at `99e825da`. Automatic approval review rejected the configured planning-entry finalizer because it can fast-forward and push `origin/main`; no hook ran and no Phase 140 research or plans were generated. Existing local edits remain preserved. Resolve exact-target authorization and the entry receipt through the supported lifecycle before continuing research-first planning.
+- Before any Phase 140 mutation, revalidate the current Phase 138 inventory relation at the named authority boundary; inventory dispositions remain proposals and do not authorize cleanup by themselves.
+- Lifecycle ordering resolution: the Phase 140 entry gate passed on 2026-09-27 at synchronized `main` SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`. Required CI run `36314255664` passed and Release no-publish run `36314255656` succeeded. CI-06 and CI-07 remain Phase 140 requirements until phase verification; they are no longer entry-gate blockers.
+- Phase 138 UAT #100 remains skipped pending the authorized Phase 140/141 snapshot refresh. Its automated relation check returned `refresh_required` before authenticated GraphQL recollection; keep the dated snapshot proposal-only until that refresh.
 - Supplemental OIDF findings remain future bounded conformance work unless a reproducible repository regression warrants a narrowly scoped correction.
-- 139-09 Task 1 historical blocker: live parity was initially blocked on GSD 1.10.0. Resolved 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16. The exact-SHA receipt is the mandatory Phase 140 pre-planning gate, not an active Phase 139 blocker.
+- 139-09 Task 1 historical blocker: live parity was initially blocked on GSD 1.10.0 and resolved on 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16. The Phase 140 exact-SHA entry gate has since passed.
 
 ### Quick Tasks Completed
 
@@ -174,14 +181,14 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-09-25T21:11:55.718Z
-Stopped at: Phase 139 complete, ready to plan Phase 140
-Resume file: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-38-PLAN.md
-Resume instruction: User prefers automatically following recommended GSD options; pause for destructive, one-way, or explicitly approval-gated choices.
+Last session: 2026-09-27T18:17:16.593Z
+Stopped at: Phase 140 context captured; planning entry hook awaits authorization because it can push origin/main
+Resume file: .planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md
+Resume instruction: Resolve the planning-entry hook's possible `origin/main` push authorization and validate the receipt through the supported lifecycle, then run `$gsd-plan-phase 140 --research` from the confirmed context. Keep completed plan/summary pairs and revalidate the Phase 138 snapshot at the authorized action boundary.
 
 ## Performance Metrics
 
-The original 36 Phase 138 plans and all nine Phase 139 plans have summaries. Phase 138 Plan 138-37 is complete; Plan 138-38 awaits explicit maintainer outcomes for 98 pending claims. G-138-98 remains open. Phase 139 verification is stale. Phase 140 planning remains gated on the exact-SHA acceptance receipt.
+All 38 Phase 138 plans and all 13 Phase 139 plans have summaries. Phase 138 verification passed 7/7 with no human verification required; its UAT has 100 passing checks and one explicit skip for the authorized later snapshot refresh. The serial Phase 139 lifecycle relation selector passed 3/3. The exact-SHA Phase 140 entry receipt passed. Phase 140 assumptions are confirmed; next research and plan without replaying completed phase plans.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |

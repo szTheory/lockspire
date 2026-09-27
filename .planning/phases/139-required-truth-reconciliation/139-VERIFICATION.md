@@ -1,6 +1,6 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-26T16:17:24.866Z
+verified: 2026-09-27T18:29:28Z
 status: passed
 score: 5/5 roadmap success criteria verified
 covered_files:
@@ -75,7 +75,7 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:ee5644523c4dbff6c6d91af088c76a98860b4aacdd4c48108a74b915f81d47ea"
+covered_digest: "v1:sha256:d95228c49342e89c61a10deacdd69637df6536856b114ba3cd32ee97e90170a0"
 behavior_unverified: 0
 overrides_applied: 0
 human_needed: false
@@ -86,18 +86,22 @@ re_verification:
   gaps_remaining: []
   regressions: []
 gaps: []
-deferred:
-  - truth: "Live synchronized-main CI-06 and same-SHA Release no-publish CI-07 evidence with the durable receipt."
-    addressed_in: "Phase 140 entry gate"
-    evidence: "The unchanged blocking Phase 140 plan:pre hook requires live exact-SHA evidence before Phase 140 planning."
 ---
 
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-26T16:17:24.866Z
+**Verified:** 2026-09-27T18:29:28Z
 **Status:** passed
-**Re-verification:** Yes — refreshed against the current Phase 139 source at `98cb653b`; the prior passed report had no open gaps.
+**Re-verification:** Yes — bounded bookkeeping recheck after Phase 140 context capture. The earlier exact-SHA receipt and serial lifecycle results remain dated evidence for `7ab6e495`; no new live acceptance is claimed for later documentation commits.
+
+## Bounded Bookkeeping Revalidation (2026-09-27)
+
+- Reviewed Phase 140 context capture and the changed PROJECT/STATE claims; preserved completed Phase 139 history while recording the current gate and exact next workflow.
+- The existing planning-consistency module initially failed because the historical transition text had disappeared from STATE. Restored that transition explicitly as history. Fresh command `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs` passed **2 tests, 0 failures**.
+- Compared every declared covered file with source `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`: only PROJECT, STATE, and the already-refreshed Phase 138 verification report differ. All **32 covered implementation/config/test files are byte-identical**. The Phase 138 verification-status query reports `passed`.
+- Renewed the covered-input fingerprint only after that focused recheck. Existing implementation proof below remains earlier evidence; the full phase and completed plans were not rerun.
+- The Phase 140 finalizer was rejected by automatic approval review before execution because it can push `origin/main`. The historical receipt does not accept later documentation commits. No remote refs, receipt authority, or entry-gate rules were changed.
 
 ## Goal Achievement
 
@@ -106,10 +110,10 @@ deferred:
 | # | Truth | Status | Evidence |
 |---|---|---|---|
 | 1 | Repository-owned acceptance enforces `mix ci` and repository hygiene, with no unresolved `BLOCK` and an explicit disposition for every `WARN`. | ✓ VERIFIED | Exact-SHA fixtures passed 2/2. The fail-closed matrix covers interrupted/nonzero `mix ci`, malformed proof, hygiene blocks, and valid/invalid warning dispositions. |
-| 2 | Acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at Phase 140 entry. | ✓ VERIFIED | Exact acceptance and receipt fixtures passed 2/2, including sealed-candidate authentication, same-SHA receipt shape, hostile evidence, and the Phase 140 `plan:pre` boundary. No live receipt is claimed. |
+| 2 | Acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at Phase 140 entry. | ✓ VERIFIED | The earlier read-only verification validated the durable mode-0600 receipt for synchronized SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`, CI run `36314255664`, and Release no-publish run `36314255656`. That receipt is historical after subsequent documentation commits. Repository-owned exact-SHA enforcement remains verified; current live acceptance remains the blocking Phase 140 entry obligation. |
 | 3 | Required acceptance is distinguishable from supplemental OIDF evidence, whose retained findings are redacted and non-certifying. | ✓ VERIFIED | Redaction and workflow-supply-chain contracts passed 8/8. OIDF remains `supplemental_non_certifying` with `required_gate: false`. |
 | 4 | Maintainers can trace public 1.5.0 from source SHA through CI, release, tag, package checksum, Hex, and maintained records without rewriting history. | ✓ VERIFIED | Acceptance-receipt fixtures retain the same source SHA, CI/release run IDs, tag, checksum, and Hex version. No release history or refs changed. |
-| 5 | Planning/release records agree on the current milestone and release posture while protected release controls remain intact. | ✓ VERIFIED | The refreshed 13-plan completion fixture invokes canonical GSD `phase.complete 139` from the checked 9/11 roadmap parent and live `current_plan: 12` state, accepts the exact 13/13 child and 51/51 counters, and rejects hostile mutations. The actual live phase transition remains the next gated operation. |
+| 5 | Planning/release records agree on the current milestone and release posture while protected release controls remain intact. | ✓ VERIFIED | Current `.planning/PROJECT.md` and `.planning/STATE.md` agree that Phase 139 implementation is complete, Phase 140 discussion is captured, and new planning remains subject to its unresolved entry gate. The fresh planning-consistency module passed 2/2. Prior serial lifecycle and supply-chain proof is retained for unchanged implementation files; no new remote acceptance is asserted. |
 
 **Score:** 5/5 roadmap success criteria verified.
 
@@ -130,20 +134,20 @@ All 13 PLAN/SUMMARY pairs are included in the covered-file fingerprint. No compl
 |---|---|---|---|
 | `scripts/maintainer/repo_hygiene_check.sh` | Exact synchronized SHA, `mix ci`, hygiene disposition, canonical workflow evidence | ✓ VERIFIED | Exact-SHA success and hostile fixtures pass. |
 | `scripts/maintainer/finalize_phase_139_acceptance.sh` | Authenticate sealed candidate and inventory relation before ref movement | ✓ VERIFIED | Final-acceptance fixture passed and asserts planning-proof ordering. |
-| `scripts/maintainer/baseline_inventory.sh` | Fail-closed Phase 138/139 inventory and completion classification | ✓ VERIFIED | Fresh preverify ledger relation is current; the 13-plan canonical completion fixture passes; shell syntax and workflow lint pass. |
+| `scripts/maintainer/baseline_inventory.sh` | Fail-closed Phase 138/139 inventory and completion classification | ✓ VERIFIED | Serial Phase 139 relation selector passed 3/3, including canonical completion, Release Please main advance, and sealed-candidate lineage; Phase 138/139 currentness boundaries remain fail-closed. |
 | Phase 138 refreshed inventory ledger | Authenticated preverify relation | ✓ VERIFIED | Finalizer commit `98cb653b` returned `relation_boundary|phase-139-preverify|current`; the review receipt was consumed and the relation reported `snapshot_relation: authorized_bookkeeping`. |
 | Phase finalizer capability/router | Portable and installed hooks retain blocking `plan:pre` boundary | ✓ VERIFIED | Portable lifecycle/router suite passed 17 tests, 0 failures, 2 expected skips. |
 | Maintained release and OIDF records | Historical 1.5.0 stays distinct; OIDF stays supplemental | ✓ VERIFIED | Acceptance-receipt, workflow, and redaction fixtures pass. |
-| Canonical GSD completion transition | Reconcile 13 plans, advance state, retain CI-06/07 as pending | ✓ VERIFIED | The isolated `phase139_inventory_relation` fixture invoked canonical GSD and asserted exact parent-to-child planning state and allowed paths. Live reconciliation awaits this passing report. |
+| Canonical GSD completion transition | Reconcile 13 plans and authorize the receipt-bound post-transition relation | ✓ VERIFIED | Uncontended serial selector passed all three cases (3 tests, 0 failures), including the canonical verification-plus-completion transition. |
 
 ## Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
 | Hygiene acceptance | synchronized `main` and required workflows | exact identity/evidence join | ✓ VERIFIED | Fixtures reject stale, moving, mismatched identities, and noncanonical workflow evidence. |
-| Phase 139 finalizer | sealed candidate and Phase 138 inventory relation | authenticated relation before planning check | ✓ VERIFIED | Fixture passed; consistency proof remains before `fast_forward_main`. |
+| Phase 139 finalizer | sealed candidate and Phase 138 inventory relation | authenticated relation before planning check | ✓ VERIFIED | The serial relation suite passed the canonical, main-advance, and sealed-candidate paths. The earlier overlapping run's single failure did not reproduce. |
 | Lifecycle router | Phase 140 `plan:pre` hook | fresh supported hook rendering | ✓ VERIFIED | Portable suite passes and retains exact-SHA blocking behavior. |
-| GSD `phase.complete 139` | completion classifier | canonical ROADMAP transition | ✓ VERIFIED | Fixture accepts the checked 9/11 parent with 13 plan/summary pairs and exact 13/13 child, while preserving the Phase 140 pending state. |
+| GSD `phase.complete 139` | completion classifier | canonical ROADMAP transition then authenticated post-transition relation | ✓ VERIFIED | Canonical GSD completion and receipt-bound post-transition relation passed in the serial focused selector. |
 
 ## Data-Flow Trace (Level 4)
 
@@ -162,11 +166,12 @@ Not applicable: this infrastructure/release-proof phase has no rendered dynamic 
 | Portable Phase 140 lifecycle/router gate | `LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS |
 | Installed lifecycle/router suite | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS (prior run) |
 | Phase 139 preverify finalizer | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139` | Commit `98cb653b`; relation current; review receipt consumed | ✓ PASS |
-| Phase 139 transition baseline regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 1 test, 0 failures (228.2s); actual Phase 138 gap-verification footer and canonical Phase 139 transition fixture accepted | ✓ PASS |
+| Phase 139 entry receipt | Read durable receipt; compare refs; `gh run view 36314255664/36314255656` | Receipt mode 0600; `HEAD`, `main`, `origin/main`, advertised origin main all equal `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI and Release both success; required jobs pass, publish jobs skipped | ✓ PASS |
+| Phase 139 relation regression (serial rerun) | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test --trace test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 3 tests, 0 failures, 53 excluded, 385.2s; canonical completion, Release Please main advance, and sealed-candidate cases all pass | ✓ PASS |
 | Phase 138 immutable-history regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 6 tests, 0 failures; historical Phase 138 plans/summaries stay byte-pinned while Phase 139 ledger authorization is tested separately | ✓ PASS |
 | Shell and workflow validation | `bash -n scripts/maintainer/baseline_inventory.sh && bash scripts/ci/lint_workflows.sh && git diff --check` | All passed | ✓ PASS |
 
-The fresh 13-plan test uses the fixture environment required by Plan 139-13, and the Phase 140 router suite uses the exact host fixture declared by its capability. The latest supported preverify refresh is `98cb653b`; a previous publication attempt requested refresh, then the complete supported rerun passed and established a current relation. The Phase 138 history regression excludes the mutable canonical inventory ledger from its historical hash; the independent Phase 139 relation test validates that ledger's authorized update. No live acceptance, workflow dispatch, ref mutation, or human UAT was performed.
+The receipt and live workflow runs were checked read-only. An initial relation-selector run overlapped another process using the same OS resources and reported one failure; the uncontended serial rerun passed all three tests (385.2s), including the same canonical completion case. The failure was not reproducible serially and is not retained as a gap.
 
 ## Probe Execution
 
@@ -176,17 +181,17 @@ No probes are declared in the phase plans or validation strategy.
 
 | Requirement | Source plans | Status | Evidence |
 |---|---|---|---|
-| CI-06 | 139-01/05/06/09 | DEFERRED TO PHASE 140 | Live synchronized-main CI evidence remains pending at the unchanged blocking exact-SHA `plan:pre` gate. |
-| CI-07 | 139-01/05/06/09 | DEFERRED TO PHASE 140 | Same-SHA Release no-publish evidence and durable live receipt remain pending at that gate. |
+| CI-06 | 139-01/05/06/09 | PHASE 140 REQUIREMENT — ENTRY EVIDENCE SATISFIED | Durable receipt and successful CI run `36314255664` prove the exact synchronized `main` SHA for entry; Phase 140 requirement closure remains with Phase 140 verification. |
+| CI-07 | 139-01/05/06/09 | PHASE 140 REQUIREMENT — ENTRY EVIDENCE SATISFIED | Durable receipt and successful Release no-publish run `36314255656` prove same-SHA no-publish entry evidence; Phase 140 requirement closure remains with Phase 140 verification. |
 | CI-08 | 139-03/04/06 | SATISFIED | Redaction/non-certifying OIDF contracts passed. |
 | QUAL-05 | 139-01/02/08/10/12/13 | SATISFIED | Exact acceptance, proof selector, completion matrix, shell syntax, and workflow lint pass. |
-| HYGIENE-05 | 139-01/05/06/10 | SATISFIED LOCALLY | Exact-SHA and hostile acceptance fixtures pass; live refs remain deferred. |
+| HYGIENE-05 | 139-01/05/06/10 | SATISFIED | Exact-SHA receipt records hygiene `pass`, 0 BLOCK, and 0 WARN at synchronized main SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; hostile acceptance fixtures pass. |
 | HYGIENE-06 | 139-03/07/09/11 | SATISFIED | Lifecycle and workflow supply-chain contracts pass. |
 | TRUTH-03 | 139-02/04/05/08/10/12/13 | SATISFIED | Fresh 13-plan canonical completion and hostile-transition matrix passed. |
 | TRUTH-04 | 139-04/06 | SATISFIED | Maintained 1.5.0 source/run/tag/checksum/Hex chain remains distinct from current acceptance. |
 | TRUTH-05 | 139-03/04/07/09/11 | SATISFIED | Protected exact-ref publishing and immutable action-reference contracts pass. |
 
-All Phase 139 requirement IDs are represented in the 13 current plans. CI-06/CI-07 remain pending and mapped to Phase 140; no live receipt or acceptance is claimed.
+All Phase 139 requirement IDs are represented in the 13 current plans. CI-06/CI-07 remain Phase 140 requirements; their live entry-gate evidence is now present in the exact-SHA receipt.
 
 ### Advisory (New Scope, Unevidenced)
 
@@ -200,7 +205,7 @@ None. Re-verification found no new-scope blocker without deterministic evidence.
 | Phase 139 gap-closure selectors | 3 / 0 | No; independent empty-inventory and parser contracts | Behavioral and value-level | ✓ PASS |
 | Portable/installed Node lifecycle suites | 17 / 2 each | No; router, cancellation, and hook rendering are invoked | Behavioral | ✓ PASS |
 | Redaction/workflow contracts | 8 / 0 | No | Value and structural | ✓ PASS |
-| Canonical Phase 139 completion matrix | 1 / 0 | No; canonical GSD completion runs in isolated repositories and hostile deltas are asserted | Behavioral and transition-value level | ✓ PASS |
+| Canonical Phase 139 completion/relation matrix | 3 / 0 | No; isolated lifecycle and hostile deltas are asserted | Behavioral | ✓ PASS — serial run, 3 tests, 0 failures |
 
 The two skipped Node tests are explicit; the Phase 32 case is outside Phase 139, and the Phase 139 acceptance boundary has active ExUnit coverage. Circular patterns detected: 0. No insufficient-assertion blocker found in the focused contracts.
 
@@ -210,7 +215,7 @@ Same-SHA authority, the separate historical 1.5.0 chain, supplemental non-certif
 
 ## Anti-Patterns Found
 
-No blocking anti-pattern remains in current Phase 139 implementation lines. The completion classifier models the live `current_plan: 12` parent; the exact canonical 13-plan fixture and hostile mutation matrix pass. The transition validator accepts the observed Phase 138 gap-verification footer, and its current baseline is exercised by the focused relation test. No unreferenced `TBD`, `FIXME`, or `XXX` debt marker was found in changed implementation lines.
+No unresolved debt-marker comments were found in modified implementation lines. The live receipt and synchronized-main evidence are valid. The initial overlapping test run's failure did not reproduce when the relation selector ran serially; no anti-pattern blocker remains.
 
 ## Human Verification Required
 
@@ -218,9 +223,9 @@ N/A — infrastructure/release-control phase with no user-facing behavior. Autom
 
 ## Gaps Summary
 
-Fresh repository-owned evidence passes across all five roadmap success criteria and all 13 PLAN/SUMMARY pairs. The Phase 138 inventory relation is current at `98cb653b`, and the canonical Phase 139 completion fixture accepts the exact checked-parent 13/13 transition while rejecting hostile mutations. Phase 140's exact-SHA `plan:pre` boundary remains unchanged and blocking; live CI-06/CI-07 evidence remains deferred there. This report passes before canonical Phase 139 state reconciliation; reconcile only after the report's freshness gate passes.
+All five roadmap criteria pass. The durable exact-SHA entry receipt at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9` and its same-SHA CI/Release results were independently checked. The serial lifecycle selector passed 3/3, and the concurrent-run failure was not reproducible.
 
 ---
 
-_Verified: 2026-09-26T13:58:20.561Z_
+_Verified: 2026-09-27T18:29:28Z_
 _Verifier: gsd-verifier_
