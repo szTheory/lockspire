@@ -3574,6 +3574,35 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       commit_all!(repository, "fix(139): run acceptance from a clean candidate worktree")
 
+      acceptance_gate_paths = [
+        ".github/workflows/ci.yml",
+        "mix.lock",
+        "scripts/maintainer/baseline_inventory.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex",
+        "test/support/lockspire/release_proof/workflow_assertions.ex",
+        "test/support/quality_baseline.ex"
+      ]
+
+      Enum.each(acceptance_gate_paths, fn path ->
+        contents = File.read!(Paths.path(path)) <> "\n# exact-main acceptance gate fixture\n"
+        write_repo_file!(repository, path, contents)
+      end)
+
+      commit_all!(repository, "fix(139): repair exact-main acceptance gate")
+
+      acceptance_fixture_paths = [
+        "scripts/maintainer/baseline_inventory.sh",
+        "scripts/maintainer/finalize_phase_139_acceptance.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex"
+      ]
+
+      Enum.each(acceptance_fixture_paths, fn path ->
+        contents = File.read!(Paths.path(path)) <> "\n# completion evidence fixture repair\n"
+        write_repo_file!(repository, path, contents)
+      end)
+
+      commit_all!(repository, "fix(139): replay completion evidence in fixtures")
+
       for path <- [
             ".planning/RELEASE-TRAIN.md",
             ".release-please-manifest.json",
