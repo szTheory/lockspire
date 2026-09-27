@@ -3724,6 +3724,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "test(139): preserve retained PR receipt spacing (#109)"
       )
 
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# composed lineage fix fixture\n",
+        "fix(139): accept composed acceptance lineage (#110)"
+      )
+
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# composed lineage classifier fixture\n",
+        "test(139): classify composed lineage follow-up (#111)"
+      )
+
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3811,6 +3825,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       {sealed, 0} = run_phase_139_sealed_relation!(repository, ledger, env)
       assert sealed =~ "snapshot_relation: authorized_bookkeeping"
+      assert sealed =~ "class=phase_139_composed_lineage_fix"
+      assert sealed =~ "class=phase_139_composed_lineage_classifier"
       assert sealed =~ "class=phase_139_merged_lineage_repair"
       assert sealed =~ "class=phase_139_sealed_gate_fix"
       assert sealed =~ "class=phase_139_lineage_fixture_anchor"
@@ -3843,6 +3859,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       run_git!(repository, ["update-ref", "refs/heads/main", candidate, previous_main])
       {accepted, 0} = run_phase_139_posttransition_relation!(repository, ledger, env)
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
+      assert accepted =~ "class=phase_139_composed_lineage_fix"
+      assert accepted =~ "class=phase_139_composed_lineage_classifier"
       assert accepted =~ "class=phase_139_release_please_merge"
       assert accepted =~ "class=phase_139_release_contract_test_merge"
       assert accepted =~ "class=phase_139_merged_lineage_repair"
