@@ -3680,6 +3680,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "test(139): accept release train version marker (#107)"
       )
 
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# verified absent release ref fixture\n",
+        "test(139): verify absent release refs (#108)"
+      )
+
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3732,6 +3739,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "refs/remotes/origin/#{release_please_name}"
              ]) == ""
 
+      {unresolved_release_ref, unresolved_release_ref_status} =
+        System.cmd(
+          "git",
+          ["rev-parse", "--verify", "refs/remotes/origin/#{release_please_name}"],
+          cd: repository,
+          stderr_to_stdout: true
+        )
+
+      assert unresolved_release_ref_status != 0
+      assert unresolved_release_ref =~ "single revision"
+
       {_, 0} =
         System.cmd("git", [
           "--git-dir",
@@ -3761,6 +3779,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert sealed =~ "class=phase_139_lineage_anchor_validation_repair"
       assert sealed =~ "class=phase_139_release_ref_restoration"
       assert sealed =~ "class=phase_139_release_train_marker_validation"
+      assert sealed =~ "class=phase_139_verified_absent_release_ref"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
                previous_main
@@ -3790,6 +3809,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_139_merged_lineage_repair"
       assert accepted =~ "class=phase_139_release_ref_restoration"
       assert accepted =~ "class=phase_139_release_train_marker_validation"
+      assert accepted =~ "class=phase_139_verified_absent_release_ref"
 
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
              |> String.starts_with?(candidate)
