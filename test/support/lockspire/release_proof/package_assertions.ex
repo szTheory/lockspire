@@ -3660,6 +3660,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
 
       commit_all!(repository, "fix(139): recognize complete fixture anchor commit (#105)")
+
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# release ref restoration fixture\n",
+        "fix(139): restore merged release inventory row (#106)"
+      )
+
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3706,6 +3714,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       release_please_name = "release-please--branches--main--components--lockspire"
       run_git!(repository, ["update-ref", "-d", "refs/remotes/origin/#{release_please_name}"])
 
+      assert run_git!(repository, [
+               "for-each-ref",
+               "--format=%(refname)",
+               "refs/remotes/origin/#{release_please_name}"
+             ]) == ""
+
       {_, 0} =
         System.cmd("git", [
           "--git-dir",
@@ -3733,6 +3747,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert sealed =~ "class=phase_139_sealed_gate_fix"
       assert sealed =~ "class=phase_139_lineage_fixture_anchor"
       assert sealed =~ "class=phase_139_lineage_anchor_validation_repair"
+      assert sealed =~ "class=phase_139_release_ref_restoration"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
                previous_main
@@ -6352,6 +6367,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     path = Path.join(repository, relative)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, content)
+  end
+
+  defp commit_lineage_fixture_step!(repository, paths, marker, subject) do
+    Enum.each(paths, fn path ->
+      contents = File.read!(Path.join(repository, path)) <> marker
+      write_repo_file!(repository, path, contents)
+    end)
+
+    commit_all!(repository, subject)
   end
 
   defp commit_all!(repository, subject) do

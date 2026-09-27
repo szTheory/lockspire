@@ -3393,6 +3393,11 @@ classify_lifecycle_commit() {
     printf 'phase_139_lineage_anchor_validation_repair'
     return
   fi
+  if [[ "$subject" == 'fix(139): restore merged release inventory row (#106)' ]]; then
+    validate_phase_139_release_ref_restoration_commit "$commit" "$paths" || return 1
+    printf 'phase_139_release_ref_restoration'
+    return
+  fi
   return 1
 }
 
@@ -3601,6 +3606,23 @@ validate_phase_139_lineage_anchor_validation_repair_commit() {
     'fix\(139\): recognize complete fixture anchor commit \(#105\)'
 }
 
+validate_phase_139_release_ref_restoration_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths script_path support_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  support_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "$script_path"$'\n'"$support_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null || true)"
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(139): recognize complete fixture anchor commit (#105)' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  validate_phase_139_lineage_anchor_validation_repair_commit "$parent" "$parent_paths" || return 1
+  [[ "$(git show -s --format=%s "$commit" 2>/dev/null || true)" == \
+    'fix(139): restore merged release inventory row (#106)' ]] || return 1
+  blob_has_line "$commit" "$script_path" 'trim\(\$4\) == "`" ref "`"' || return 1
+  blob_has_line "$commit" "$support_path" '"for-each-ref"' || return 1
+  blob_has_line "$commit" "$support_path" 'refs/remotes/origin/#\{release_please_name\}'
+}
+
 phase_139_release_please_proof() {
   local ledger_commit="$1" ledger="$2" proof_file="$3"
   local candidate="${LOCKSPIRE_INVENTORY_VERIFY_HEAD:-}" expected_base="${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}"
@@ -3699,9 +3721,18 @@ normalize_phase_139_release_please_git_ref() {
     rm -rf "$proof_dir"
     [[ "$state" == MERGED && -z "$advertised_head" ]] || return 1
     git show-ref --verify --quiet "refs/heads/$branch_name" && return 1
-    historical_row="$(awk -F'|' -v ref="$branch_ref" -v sha="$expected_sha" \
-      'index($0, "| `" ref "` | observed SHA `" sha "` |") == 1 { print; found++ } \
-      END { if (found != 1) exit 1 }' <<< "$expected_branches")" || return 1
+    historical_row="$(awk -F'|' -v ref="$branch_ref" -v sha="$expected_sha" '
+      function trim(value) {
+        sub(/^[[:space:]]+/, "", value)
+        sub(/[[:space:]]+$/, "", value)
+        return value
+      }
+      trim($4) == "`" ref "`" && trim($5) == "observed SHA `" sha "`" {
+        print
+        found++
+      }
+      END { if (found != 1) exit 1 }
+    ' <<< "$expected_branches")" || return 1
     restore_relation_git_domain_row "$branch_file" "$branch_ref" "$expected_sha" "$historical_row"
     return $?
   fi
@@ -4411,6 +4442,7 @@ verify_phase_139_posttransition_chain() {
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair\nphase_139_sealed_gate_fix'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair\nphase_139_sealed_gate_fix\nphase_139_lineage_fixture_anchor'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair\nphase_139_sealed_gate_fix\nphase_139_lineage_fixture_anchor\nphase_139_lineage_anchor_validation_repair'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair\nphase_139_sealed_gate_fix\nphase_139_lineage_fixture_anchor\nphase_139_lineage_anchor_validation_repair\nphase_139_release_ref_restoration'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix\nphase_139_release_please_merge\nphase_139_release_contract_test_merge'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair') return 0 ;;
     *) return 1 ;;
