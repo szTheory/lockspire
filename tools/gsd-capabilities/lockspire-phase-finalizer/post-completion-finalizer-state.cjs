@@ -116,6 +116,56 @@ function observation(root) {
   return { result, porcelain };
 }
 
+function preservedPlanningWorktree(root, porcelain) {
+  const entries = [];
+  let totalBytes = 0;
+  const records = porcelain.toString('utf8').split('\0').filter(Boolean);
+  for (const record of records) {
+    if (record.length < 4 || record[2] !== ' ') fail('malformed preserved worktree status');
+    const status = record.slice(0, 2);
+    const relative = record.slice(3);
+    const allowedPath = /^\.planning\/phases\/[0-9]{3}-[^/]+\/[A-Za-z0-9._-]+\.md$/.test(relative) ||
+      /^docs\/[A-Za-z0-9._-]+\.(?:md|txt)$/.test(relative);
+    if (!allowedPath || (status !== ' M' && status !== '??')) {
+      fail('recovery permits only unstaged planning-note overlays');
+    }
+    const target = path.join(root, relative);
+    const stat = fs.lstatSync(target);
+    if (!stat.isFile()) fail('preserved planning overlay is not a regular file');
+    const bytes = fs.readFileSync(target);
+    totalBytes += bytes.length;
+    if (entries.length >= 32 || totalBytes > 4 * 1024 * 1024) fail('preserved planning overlay exceeds limits');
+    entries.push({
+      path: relative,
+      status,
+      mode: stat.mode & 0o777,
+      size: bytes.length,
+      sha256: sha256(bytes),
+    });
+  }
+  return entries.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+}
+
+function acceptedPhase139Base(root) {
+  const target = path.join(commonDir(root), 'lockspire-phase-139-acceptance-v1.json');
+  let receipt;
+  try {
+    const stat = fs.lstatSync(target);
+    if (!stat.isFile() || (stat.mode & 0o777) !== 0o600 || stat.size <= 0 || stat.size > MAX_RECEIPT_BYTES) {
+      fail('durable Phase 139 acceptance receipt is unsafe');
+    }
+    receipt = JSON.parse(fs.readFileSync(target, 'utf8'));
+  } catch (_) {
+    fail('durable Phase 139 acceptance receipt is unavailable');
+  }
+  const baselineSha = receipt && receipt.baseline_sha;
+  if (receipt.schema !== 'lockspire-phase-139-acceptance-v1' ||
+      typeof baselineSha !== 'string' || !/^[0-9a-f]{40}$/.test(baselineSha)) {
+    fail('durable Phase 139 acceptance receipt is malformed');
+  }
+  return baselineSha;
+}
+
 function committedIdentity(root, head, relative) {
   const probe = childProcess.spawnSync('git', ['cat-file', '-e', `${head}:${relative}`], {
     cwd: root,
@@ -309,8 +359,26 @@ function prepare(root, phase) {
   const after = observation(root);
   const changed = after.porcelain.toString('utf8').split('\0').filter(Boolean)
     .map((record) => record.slice(3)).sort();
-  if (compact(changed) !== compact(['.planning/PROJECT.md', '.planning/STATE.md'])) {
-    fail('plan-pre preparation requires the exact transition path set');
+  const legacyTransition = compact(changed) === compact(['.planning/PROJECT.md', '.planning/STATE.md']);
+  let recovery = null;
+  if (!legacyTransition) {
+    if (phase !== '139') fail('plan-pre preparation requires the exact transition path set');
+    const baselineSha = acceptedPhase139Base(root);
+    const head = after.result.head;
+    if (git(['rev-parse', 'refs/heads/main'], { cwd: root }).trim() !== head) {
+      fail('recovery requires current main to be the candidate');
+    }
+    const ancestor = childProcess.spawnSync('git', ['merge-base', '--is-ancestor', baselineSha, head], {
+      cwd: root,
+      shell: false,
+      stdio: 'ignore',
+    });
+    if (ancestor.status !== 0) fail('current main does not descend from the accepted Phase 139 SHA');
+    recovery = {
+      protocol: 'phase-140-recovery-v1',
+      baselineSha,
+      preservedWorktree: preservedPlanningWorktree(root, after.porcelain),
+    };
   }
   const before = committedObservation(root, after.result.head);
   const receiptWriter = writer(root);
@@ -319,6 +387,7 @@ function prepare(root, phase) {
     writer: receiptWriter,
     before,
     after: after.result,
+    ...(recovery ? { recovery } : {}),
   };
   const receipt = {
     schemaVersion: 1,
@@ -330,6 +399,7 @@ function prepare(root, phase) {
     hooks,
     hooksSha256: sha256(compact(hooks)),
     after: after.result,
+    ...(recovery ? { recovery } : {}),
     transformation: {
       protocol: 'gsd-transition-v1',
       allowedPaths: ALLOWED_PATHS,

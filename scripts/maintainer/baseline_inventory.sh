@@ -3295,6 +3295,49 @@ verify_git_snapshot_receipt() {
 
 classify_lifecycle_commit() {
   local commit="$1" subject="$2" paths="$3"
+  if [[ "$subject" == "docs(140): capture phase context (assumptions mode)" ]]; then
+    local context_path=".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md"
+    local discussion_path=".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+    [[ "$paths" == "$context_path"$'\n'"$discussion_path" ]] || return 1
+    blob_has_line "$commit" "$context_path" '^# Phase 140: Bounded Operational Loose-End Triage - Context$' || return 1
+    for decision in 01 02 03 04 05 06 07 08 09 10 11 12 13 14; do
+      blob_has_line "$commit" "$context_path" "^- \\*\\*D-${decision}:\\*\\*" || return 1
+    done
+    blob_has_line "$commit" "$discussion_path" 'The user answered `1` to' || return 1
+    printf 'phase_140_context'
+    return
+  fi
+  if [[ "$subject" == "docs(140): preserve verified planning handoff" ]]; then
+    local project_path=".planning/PROJECT.md" state_path=".planning/STATE.md"
+    local verification_path=".planning/phases/139-required-truth-reconciliation/139-VERIFICATION.md"
+    local handoff_path=".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+    local expected_paths
+    expected_paths="$(printf '%s\n' "$project_path" "$state_path" "$verification_path" "$handoff_path" | LC_ALL=C sort)"
+    [[ "$paths" == "$expected_paths" ]] || return 1
+    blob_has_line "$commit" "$handoff_path" '^# Phase 140 restart handoff$' || return 1
+    blob_has_line "$commit" "$handoff_path" '^\*\*Next workflow:\*\* `\$gsd-plan-phase 140 --research`$' || return 1
+    [[ "$(front_matter_value_from_blob "$commit" "$state_path" current_phase 2>/dev/null)" == 140 ]] || return 1
+    [[ "$(front_matter_value_from_blob "$commit" "$verification_path" status 2>/dev/null)" == passed ]] || return 1
+    printf 'phase_140_handoff'
+    return
+  fi
+  if [[ "$subject" == "fix(140): separate candidate preparation from publication" ]]; then
+    local expected_paths
+    expected_paths="$(printf '%s\n' \
+      'scripts/maintainer/baseline_inventory.sh' \
+      'scripts/maintainer/finalize_phase_139_acceptance.sh' \
+      'test/support/lockspire/release_proof/package_assertions.ex' \
+      'tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs' \
+      'tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs' | LC_ALL=C sort)"
+    [[ "$paths" == "$expected_paths" ]] || return 1
+    blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' 'phase_140_gate_recovery' || return 1
+    blob_has_line "$commit" 'scripts/maintainer/finalize_phase_139_acceptance.sh' '--publish' || return 1
+    blob_has_line "$commit" 'tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs' 'phase-140-recovery-v1' || return 1
+    blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' 'candidate preparation is blocked until its exact SHA is explicitly published' || return 1
+    blob_has_line "$commit" 'tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs' 'Phase 140 recovery snapshots planning-only overlays' || return 1
+    printf 'phase_140_gate_recovery'
+    return
+  fi
   if [[ "$subject" =~ ^docs\(138-([0-9][0-9])\):[[:space:]]complete[[:space:]].+[[:space:]]plan$ ]]; then
     if validate_gsd_plan_closeout_commit "$commit" "$paths" "${BASH_REMATCH[1]}"; then
       printf 'gsd_plan_closeout'
@@ -3745,7 +3788,12 @@ phase_139_release_please_proof() {
     "$expected_base" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
   git merge-base --is-ancestor "$expected_base" "$candidate" 2>/dev/null || return 1
   if [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
-    [[ "$expected_base" == "$candidate" ]] || return 1
+    if [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 &&
+      "$expected_base" != "$candidate" ]]; then
+      validate_phase_140_recovery_chain "$expected_base" "$candidate" || return 1
+    else
+      [[ "$expected_base" == "$candidate" ]] || return 1
+    fi
   else
     [[ "$(git rev-parse refs/heads/main 2>/dev/null || true)" == "$expected_base" &&
       "$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)" == "$expected_base" ]] || return 1
@@ -4041,13 +4089,19 @@ verify_external_snapshot_receipts() {
   remote_sha="$(front_matter_value_from_blob "$ledger_commit" "$ledger" origin_main_sha 2>/dev/null || printf unavailable)"
   if [[ "$remote_sha" != unavailable ]]; then
     observed="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
-    if [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
+    if [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ]]; then
+      [[ "$observed" == "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}" ]] || {
+        printf 'snapshot_receipt|origin-main|refresh_required\n'; return 1;
+      }
+      git merge-base --is-ancestor "$remote_sha" "$observed" 2>/dev/null || {
+        printf 'snapshot_receipt|origin-main-ancestry|refresh_required\n'; return 1;
+      }
+      git merge-base --is-ancestor "$observed" "$head" 2>/dev/null || {
+        printf 'snapshot_receipt|release-base-ancestry|refresh_required\n'; return 1;
+      }
+    elif [[ "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
       [[ "$observed" == "$head" ]] || { printf 'snapshot_receipt|origin-main|refresh_required\n'; return 1; }
       git merge-base --is-ancestor "$remote_sha" "$head" 2>/dev/null || { printf 'snapshot_receipt|origin-main-ancestry|refresh_required\n'; return 1; }
-    elif [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ]]; then
-      [[ "$observed" == "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE:-}" ]] || { printf 'snapshot_receipt|origin-main|refresh_required\n'; return 1; }
-      git merge-base --is-ancestor "$remote_sha" "$observed" 2>/dev/null || { printf 'snapshot_receipt|origin-main-ancestry|refresh_required\n'; return 1; }
-      git merge-base --is-ancestor "$observed" "$head" 2>/dev/null || { printf 'snapshot_receipt|release-base-ancestry|refresh_required\n'; return 1; }
     else
       [[ "$observed" == "$remote_sha" ]] || { printf 'snapshot_receipt|origin-main|refresh_required\n'; return 1; }
     fi
@@ -4282,10 +4336,20 @@ if receipt.get('hooks') != hooks or receipt.get('hooksSha256') != hashlib.sha256
 before, after = receipt.get('before'), receipt.get('after')
 if not isinstance(before, dict) or not isinstance(after, dict):
     raise ValueError('observations')
+recovery = receipt.get('recovery')
+if recovery is not None:
+    if (not isinstance(recovery, dict) or set(recovery) != {'protocol', 'baselineSha', 'preservedWorktree'} or
+            recovery.get('protocol') != 'phase-140-recovery-v1' or
+            not isinstance(recovery.get('baselineSha'), str) or
+            not __import__('re').fullmatch(r'[0-9a-f]{40}', recovery['baselineSha']) or
+            not isinstance(recovery.get('preservedWorktree'), list)):
+        raise ValueError('recovery envelope')
 transform = receipt.get('transformation')
 if not isinstance(transform, dict) or transform.get('protocol') != 'gsd-transition-v1' or transform.get('allowedPaths') != allowed:
     raise ValueError('transformation')
 evidence = {'protocol': 'gsd-transition-v1', 'writer': writer, 'before': before, 'after': after}
+if recovery is not None:
+    evidence['recovery'] = recovery
 if transform.get('sha256') != hashlib.sha256(compact(evidence)).hexdigest():
     raise ValueError('transformation digest')
 
@@ -4315,13 +4379,42 @@ for key, path in keys:
     mode = 0o755 if entry == '100755' else 0o644
     expected = {'exists': True, 'type': 'file', 'mode': mode, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
     if before.get(key) != expected: raise ValueError('before file identity')
+if recovery is not None:
+    current = []
+    allowed_overlay = lambda p: bool(
+        __import__('re').fullmatch(r'\.planning/phases/[0-9]{3}-[^/]+/[A-Za-z0-9._-]+\.md', p) or
+        __import__('re').fullmatch(r'docs/[A-Za-z0-9._-]+\.(?:md|txt)', p)
+    )
+    for record in porcelain.decode().split('\0'):
+        if not record: continue
+        status, relative = record[:2], record[3:]
+        if record[2:3] != ' ' or not allowed_overlay(relative) or status not in {' M', '??'}:
+            raise ValueError('recovery working-tree path')
+        target = root / relative
+        st = target.lstat()
+        if not stat.S_ISREG(st.st_mode): raise ValueError('recovery working-tree type')
+        data = target.read_bytes()
+        current.append({
+            'path': relative, 'status': status, 'mode': stat.S_IMODE(st.st_mode),
+            'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()
+        })
+    current.sort(key=lambda row: row['path'])
+    if current != recovery['preservedWorktree']: raise ValueError('recovery working-tree identity')
 print(before_head)
 PY
 )" || return 1
   [[ "$before_head" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
   case "$expected_phase" in
     138) validate_worktree_transition || return 1 ;;
-    139) validate_phase_139_transition_commit || return 1 ;;
+    139)
+      local recovery_base
+      recovery_base="$(jq -er '.recovery.baselineSha // empty' "$receipt" 2>/dev/null || true)"
+      if [[ -n "$recovery_base" ]]; then
+        validate_phase_140_recovery_chain "$recovery_base" "$before_head" || return 1
+      else
+        validate_phase_139_transition_commit || return 1
+      fi
+      ;;
     *) return 1 ;;
   esac
   printf '%s' "$before_head"
@@ -4531,8 +4624,34 @@ verify_phase_139_preverify_relation() {
   return "$verdict"
 }
 
+validate_phase_140_recovery_chain() {
+  local baseline="$1" candidate="$2" chain commit parents subject paths class classes="" meta advertised local_main remote_main
+  [[ "$baseline" =~ ^[0-9a-f]{40}$ && "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
+  [[ "$(git rev-parse HEAD 2>/dev/null || true)" == "$candidate" ]] || return 1
+  local_main="$(git rev-parse refs/heads/main 2>/dev/null || true)"
+  remote_main="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
+  advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
+  [[ "$local_main" == "$candidate" && "$remote_main" == "$advertised" ]] || return 1
+  git merge-base --is-ancestor "$baseline" "$candidate" 2>/dev/null || return 1
+  git merge-base --is-ancestor "$remote_main" "$candidate" 2>/dev/null || return 1
+  chain="$(git rev-list --reverse --first-parent "$baseline..$candidate" 2>/dev/null)" || return 1
+  while IFS= read -r commit; do
+    [[ -n "$commit" ]] || continue
+    parents="$(git rev-list --parents -n 1 "$commit" 2>/dev/null || true)"
+    [[ "$(wc -w <<< "$parents" | tr -d ' ')" -eq 2 ]] || return 1
+    subject="$(git show -s --format=%s "$commit" 2>/dev/null || true)"
+    paths="$(git diff-tree --no-commit-id --name-only -r "$commit" | LC_ALL=C sort)"
+    class="$(classify_lifecycle_commit "$commit" "$subject" "$paths" 2>/dev/null || true)"
+    [[ -n "$class" ]] || return 1
+    meta="$(git show -s --format='%an <%ae>|%cn <%ce>' "$commit")"
+    [[ "${meta%%|*}" == "${meta#*|}" ]] || return 1
+    classes+="$class"$'\n'
+  done <<< "$chain"
+  [[ "$(printf '%s' "$classes" | sed '/^$/d')" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery' ]]
+}
+
 verify_phase_139_posttransition_chain() {
-  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes=""
+  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$ledger_commit" 2>/dev/null || true)"
   [[ "$subject" == 'docs(phase-139): refresh baseline inventory before verification' ]] || return 1
@@ -4543,7 +4662,12 @@ verify_phase_139_posttransition_chain() {
     class="$(classify_lifecycle_commit "$commit" "$subject" "$(git diff --name-only "$commit^1" "$commit" | LC_ALL=C sort)" 2>/dev/null || true)"
     classes+="$class"$'\n'
   done <<< "$chain"
-  case "$(printf '%s' "$classes" | sed '/^$/d')" in
+  classes="$(printf '%s' "$classes" | sed '/^$/d')"
+  suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery'
+  if [[ "$classes" == *"$suffix" ]]; then
+    classes="${classes%"$suffix"}"
+  fi
+  case "$classes" in
     $'phase_139_passed_verification\nphase_139_completion'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh'|\
@@ -4606,7 +4730,7 @@ verify_phase_139_posttransition_relation() {
 }
 
 verify_phase_139_sealed_candidate_relation() {
-  local ledger="${1#./}" before_head ledger_commit release_base prior_base advertised verdict=0
+  local ledger="${1#./}" before_head ledger_commit release_base prior_base advertised verdict=0 proof_base
   local local_main main_advance=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-sealed-candidate|refresh_required\n'
@@ -4626,12 +4750,20 @@ verify_phase_139_sealed_candidate_relation() {
     git merge-base --is-ancestor "$local_main" "$before_head" 2>/dev/null || verdict=1
     main_advance=1
   else
-    [[ -n "$local_main" && "$local_main" == "$release_base" ]] || verdict=1
+    if [[ "$local_main" == "$release_base" ]]; then
+      :
+    elif [[ "$local_main" == "$before_head" ]] &&
+         validate_phase_140_recovery_chain "$release_base" "$before_head"; then
+      main_advance=1
+    else
+      verdict=1
+    fi
   fi
   git merge-base --is-ancestor "$release_base" "$before_head" 2>/dev/null || verdict=1
+  proof_base="$release_base"
   LOCKSPIRE_PHASE_139_MAIN_ADVANCE="$main_advance" \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
-    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$release_base" \
+    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$proof_base" \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE="$prior_base" \
     LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" verify_snapshot_relation "$ledger" receipt || verdict=1
   if [[ "$verdict" -ne 0 ]]; then

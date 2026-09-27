@@ -3981,6 +3981,176 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
   end
 
+  def assert_phase_139_recovery_candidate_relation! do
+    fixture = unique_tmp_fixture("lockspire-phase-140-recovery-sealed-candidate")
+
+    ledger =
+      ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
+
+    try do
+      %{
+        repository: repository,
+        remote: remote,
+        candidate: phase139_base,
+        receipt: receipt,
+        gsd_tools: gsd_tools
+      } =
+        build_sealed_phase_139_acceptance_fixture!(fixture)
+
+      # The builder leaves the Phase 139 transition as an unstaged overlay.
+      # A real Phase 140 recovery has that handoff committed before planning starts.
+      for path <- [".planning/PROJECT.md", ".planning/STATE.md"] do
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(repository, ["show", "#{phase139_base}:#{path}"])
+        )
+      end
+
+      File.rm!(receipt.path)
+
+      run_git!(repository, ["push", "origin", "#{phase139_base}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+
+      source = Paths.path(".")
+
+      context_paths = [
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md",
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+      ]
+
+      Enum.each(context_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end)
+
+      commit_all!(repository, "docs(140): capture phase context (assumptions mode)")
+
+      handoff_paths = [
+        ".planning/PROJECT.md",
+        ".planning/STATE.md",
+        ".planning/phases/139-required-truth-reconciliation/139-VERIFICATION.md",
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+      ]
+
+      Enum.each(handoff_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end)
+
+      commit_all!(repository, "docs(140): preserve verified planning handoff")
+
+      recovery_paths = [
+        "scripts/maintainer/baseline_inventory.sh",
+        "scripts/maintainer/finalize_phase_139_acceptance.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex",
+        "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs",
+        "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
+      ]
+
+      state_helper_path =
+        Path.join(
+          repository,
+          "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
+        )
+
+      File.write!(
+        state_helper_path,
+        String.replace(
+          File.read!(state_helper_path),
+          "phase-140-recovery-v1",
+          "phase-140-recovery-old"
+        )
+      )
+
+      Enum.each(recovery_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end)
+
+      run_git!(repository, ["add", "-f", List.last(recovery_paths)])
+      commit_all!(repository, "fix(140): separate candidate preparation from publication")
+      recovery_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      old_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", recovery_head, old_main])
+
+      overlay = "docs/phase-140-recovery-note.txt"
+      write_repo_file!(repository, overlay, "preserve the in-progress research note\n")
+      accepted_receipt = Path.join(repository, ".git/lockspire-phase-139-acceptance-v1.json")
+
+      File.write!(
+        accepted_receipt,
+        Jason.encode!(%{
+          schema: "lockspire-phase-139-acceptance-v1",
+          baseline_sha: phase139_base
+        }) <> "\n"
+      )
+
+      File.chmod!(accepted_receipt, 0o600)
+
+      hooks_path = Path.join(fixture, "hooks.json")
+
+      File.write!(
+        hooks_path,
+        Jason.encode!(%{
+          "activeHooks" => [
+            %{
+              "kind" => "gate",
+              "capId" => "lockspire-phase-finalizer",
+              "check" => %{
+                "predicate" => %{
+                  "kind" => "command-exit-zero",
+                  "command" =>
+                    ~S(test "${PHASE_NUMBER}" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139),
+                  "timeout" => 2400
+                }
+              },
+              "blocking" => true,
+              "onError" => "halt"
+            }
+          ]
+        })
+      )
+
+      {sealed_json, 0} =
+        System.cmd(
+          "bash",
+          ["-c", ~S(exec node "$STATE_HELPER" prepare 139 < "$HOOKS_PATH")],
+          cd: repository,
+          env: [
+            {"STATE_HELPER", fixture_state_helper_path!(repository)},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ],
+          stderr_to_stdout: true
+        )
+
+      sealed = Jason.decode!(sealed_json)
+      assert get_in(sealed, ["recovery", "protocol"]) == "phase-140-recovery-v1"
+      assert get_in(sealed, ["recovery", "baselineSha"]) == phase139_base
+
+      assert get_in(sealed, ["recovery", "preservedWorktree"]) |> Enum.map(& &1["path"]) == [
+               overlay
+             ]
+
+      {accepted, 0} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert accepted =~ "class=phase_140_context"
+      assert accepted =~ "class=phase_140_handoff"
+      assert accepted =~ "class=phase_140_gate_recovery"
+      assert accepted =~ "snapshot_relation: authorized_bookkeeping"
+
+      assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
+               phase139_base
+
+      assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
+             |> String.starts_with?(phase139_base)
+
+      File.write!(Path.join(repository, overlay), "changed after recovery was sealed\n")
+      {changed, changed_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert changed_status != 0
+      assert changed =~ "recovery working-tree identity"
+    after
+      File.rm_rf(fixture)
+    end
+  end
+
   def assert_phase_139_final_acceptance! do
     script = Paths.read!("scripts/maintainer/finalize_phase_139_acceptance.sh")
 
@@ -4003,6 +4173,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     assert script =~ "update-ref refs/heads/main \"$candidate\" \"$old_main\""
     assert script =~ "push origin \"$candidate:refs/heads/main\""
+
+    assert script =~
+             "candidate preparation is blocked until its exact SHA is explicitly published"
+
+    assert script =~ "--publish must name the exact sealed candidate SHA"
     assert script =~ "fetch --no-tags origin refs/heads/main:refs/remotes/origin/main"
     assert script =~ "--verify-" <> @next_phase_slug <> "-posttransition-relation"
 
@@ -4041,7 +4216,42 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         build_sealed_phase_139_acceptance_fixture!(fixture)
 
       before = relation_repository_state(repository, receipt.ledger)
-      {output, 0} = run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}])
+      before_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+
+      before_origin =
+        run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim()
+
+      {prepared_output, prepared_status} =
+        run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}])
+
+      assert prepared_status != 0
+
+      assert prepared_output =~
+               "candidate preparation is blocked until its exact SHA is explicitly published"
+
+      assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
+               before_main
+
+      assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
+               before_origin
+
+      assert relation_repository_state(repository, receipt.ledger).refs == before.refs
+
+      assert File.exists?(receipt.path)
+
+      {wrong_publish_output, wrong_publish_status} =
+        run_phase_139_acceptance!(
+          repository,
+          [{"GSD_TOOLS", gsd_tools}],
+          String.duplicate("f", 40)
+        )
+
+      assert wrong_publish_status != 0
+      assert wrong_publish_output =~ "--publish must name the exact sealed candidate SHA"
+      assert relation_repository_state(repository, receipt.ledger).refs == before.refs
+
+      {output, 0} =
+        run_phase_139_acceptance!(repository, [{"GSD_TOOLS", gsd_tools}], candidate)
 
       assert output =~
                "relation_boundary|" <> @next_phase_slug <> "-posttransition|receipt_authorized"
@@ -4050,7 +4260,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "#{candidate}|\n"
 
       assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
-               "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
+               String.duplicate(
+                 "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n",
+                 3
+               )
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() == candidate
 
@@ -4071,7 +4284,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert retry_output =~ "acceptance: already complete at #{candidate}"
 
       assert File.read!(Path.join(fixture, "planning-consistency-invocations")) ==
-               "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n"
+               String.duplicate(
+                 "1.19.5-otp-28|28.1|test|test test/lockspire/quality/phase_139_planning_consistency_test.exs\n",
+                 3
+               )
 
       refute File.exists?(receipt.path)
     after
@@ -4293,6 +4509,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     after
       File.rm_rf(fixture)
     end
+
+    assert_phase_139_recovery_candidate_relation!()
   end
 
   def assert_phase_139_acceptance_receipt! do
@@ -5274,7 +5492,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
   end
 
-  defp run_phase_139_acceptance!(repository, env) do
+  defp run_phase_139_acceptance!(repository, env, publish_sha \\ nil) do
     candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
     fixture_env =
@@ -5288,14 +5506,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         end)
       )
 
+    args = [
+      phase_139_acceptance_driver_path(repository),
+      "post-transition",
+      "--phase",
+      @next_phase_number
+    ]
+
+    args = if is_binary(publish_sha), do: args ++ ["--publish", publish_sha], else: args
+
     System.cmd(
       "bash",
-      [
-        phase_139_acceptance_driver_path(repository),
-        "post-transition",
-        "--phase",
-        @next_phase_number
-      ],
+      args,
       cd: repository,
       env: fixture_env ++ env,
       stderr_to_stdout: true
@@ -5303,13 +5525,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   end
 
   defp run_phase_139_live_acceptance!(repository, env) do
+    candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
     System.cmd(
       "bash",
       [
         phase_139_acceptance_driver_path(repository),
         "post-transition",
         "--phase",
-        @next_phase_number
+        @next_phase_number,
+        "--publish",
+        candidate
       ],
       cd: repository,
       env: env,
@@ -5489,7 +5715,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         run_git!(context.repository, ["ls-remote", context.remote, "refs/heads/main"])
 
       {output, status} =
-        run_phase_139_acceptance!(context.repository, [{"GSD_TOOLS", context.gsd_tools}])
+        run_phase_139_acceptance!(
+          context.repository,
+          [{"GSD_TOOLS", context.gsd_tools}],
+          context.candidate
+        )
 
       assert status != 0, "#{label} unexpectedly passed: #{output}"
 

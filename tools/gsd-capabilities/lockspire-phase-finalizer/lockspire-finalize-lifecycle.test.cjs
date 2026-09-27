@@ -371,6 +371,92 @@ test('real host receipt preserves pending state across hook mismatch and complet
   }
 });
 
+test('Phase 140 recovery snapshots planning-only overlays and detects later edits', () => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-phase140-recovery-'));
+  const ledger = '.planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md';
+  try {
+    const recoveryTools = process.env.GSD_TOOLS || tools;
+    assert.ok(recoveryTools, 'recovery fixture requires the GSD tools path');
+    mustRun('git', ['init', '-q', '-b', 'main'], { cwd: fixture });
+    mustRun('git', ['config', 'user.name', 'Lifecycle Test'], { cwd: fixture });
+    mustRun('git', ['config', 'user.email', 'lifecycle@example.com'], { cwd: fixture });
+    for (const [relative, bytes] of [
+      ['.planning/PROJECT.md', '# Lockspire\n**Current focus:** Phase 139\n'],
+      ['.planning/STATE.md', '---\ncurrent_phase: 139\nstatus: verifying\n---\n'],
+      ['.planning/ROADMAP.md', '# Roadmap\n'],
+      ['.planning/REQUIREMENTS.md', '# Requirements\n'],
+    ]) {
+      const target = path.join(fixture, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, bytes);
+    }
+    const helperTarget = path.join(
+      fixture,
+      'tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs',
+    );
+    fs.mkdirSync(path.dirname(helperTarget), { recursive: true });
+    fs.copyFileSync(stateHelper, helperTarget);
+    const inventory = path.join(fixture, 'scripts/maintainer/baseline_inventory.sh');
+    fs.mkdirSync(path.dirname(inventory), { recursive: true });
+    fs.copyFileSync(path.join(root, 'scripts/maintainer/baseline_inventory.sh'), inventory);
+    mustRun('git', ['add', '--all'], { cwd: fixture });
+    mustRun('git', ['commit', '-qm', 'feat: accepted phase base'], { cwd: fixture });
+    const baseline = mustRun('git', ['rev-parse', 'HEAD'], { cwd: fixture }).trim();
+    fs.writeFileSync(path.join(fixture, '.planning/STATE.md'), '---\ncurrent_phase: 140\nstatus: planning\n---\n');
+    mustRun('git', ['add', '.planning/STATE.md'], { cwd: fixture });
+    mustRun('git', ['commit', '-qm', 'docs: phase 140 planning handoff'], { cwd: fixture });
+    const acceptedReceipt = path.join(fixture, '.git/lockspire-phase-139-acceptance-v1.json');
+    fs.writeFileSync(acceptedReceipt, JSON.stringify({
+      schema: 'lockspire-phase-139-acceptance-v1', baseline_sha: baseline,
+    }) + '\n', { mode: 0o600 });
+    fs.chmodSync(acceptedReceipt, 0o600);
+
+    const overlayPaths = [
+      '.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md',
+      'docs/recovery-note.txt',
+    ];
+    for (const relative of overlayPaths) {
+      const target = path.join(fixture, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, `preserve ${relative}\n`);
+    }
+    const hooks = JSON.stringify({ activeHooks: [{
+      kind: 'gate', capId: 'lockspire-phase-finalizer',
+      check: { predicate: {
+        kind: 'command-exit-zero',
+        command: 'test "${PHASE_NUMBER}" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139',
+        timeout: 2400,
+      } },
+      blocking: true, onError: 'halt',
+    }] });
+    const sealed = JSON.parse(mustRun('node', [helperTarget, 'prepare', '139'], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    }));
+    assert.equal(sealed.recovery.protocol, 'phase-140-recovery-v1');
+    assert.equal(sealed.recovery.baselineSha, baseline);
+    assert.deepEqual(sealed.recovery.preservedWorktree.map((entry) => entry.path), overlayPaths.sort());
+
+    const unchanged = run('bash', [inventory, '--verify-phase-139-posttransition-relation', ledger], {
+      cwd: fixture,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(unchanged.status, 0, 'the fixture intentionally lacks the accepted lifecycle chain');
+    assert.doesNotMatch(unchanged.stderr + unchanged.stdout, /recovery working-tree identity/);
+
+    fs.appendFileSync(path.join(fixture, overlayPaths[0]), 'changed after seal\n');
+    const altered = run('bash', [inventory, '--verify-phase-139-posttransition-relation', ledger], {
+      cwd: fixture,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(altered.status, 0);
+    assert.match(altered.stderr + altered.stdout, /recovery working-tree identity/);
+  } finally {
+    fs.rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
 test('Phase 139 host lifecycle preserves durable post-transition recovery', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-phase139-lifecycle-'));
   const counters = path.join(fixture, 'counters');

@@ -2,11 +2,19 @@
 set -euo pipefail
 
 usage() {
-  printf '%s\n' 'Usage: finalize_phase_139_acceptance.sh post-transition --phase 139' >&2
+  printf '%s\n' \
+    'Usage: finalize_phase_139_acceptance.sh post-transition --phase 139 [--publish <exact-sha>]' >&2
   exit 64
 }
 
-[[ "$#" -eq 3 && "$1" == "post-transition" && "$2" == "--phase" && "$3" == "139" ]] || usage
+[[ "$#" -eq 3 || "$#" -eq 5 ]] || usage
+[[ "$1" == "post-transition" && "$2" == "--phase" && "$3" == "139" ]] || usage
+if [[ "$#" -eq 5 ]]; then
+  [[ "$4" == "--publish" && "$5" =~ ^[0-9a-f]{40}$ ]] || usage
+  PUBLISH_SHA="$5"
+else
+  PUBLISH_SHA=""
+fi
 
 fail() {
   printf 'phase 139 acceptance: %s\n' "$1" >&2
@@ -106,7 +114,7 @@ prepare_host_receipt() {
 
 resolve_sealed_candidate() {
   python3 - "$ROOT" "$HOST_RECEIPT" <<'PY'
-import hashlib, json, os, stat, subprocess, sys
+import hashlib, json, os, re, stat, subprocess, sys
 root, path = sys.argv[1:]
 try:
     st = os.lstat(path)
@@ -134,8 +142,38 @@ try:
     for record in porcelain.split(b"\0"):
         if record:
             changed.add(record[3:].decode("utf-8", "strict"))
-    if changed != {".planning/PROJECT.md", ".planning/STATE.md"}:
-        raise ValueError("sealed transition contains unexpected paths")
+    recovery = receipt.get("recovery")
+    if recovery is None:
+        if changed != {".planning/PROJECT.md", ".planning/STATE.md"}:
+            raise ValueError("sealed transition contains unexpected paths")
+    else:
+        if (recovery.get("protocol") != "phase-140-recovery-v1" or
+                not re.fullmatch(r"[0-9a-f]{40}", recovery.get("baselineSha", ""))):
+            raise ValueError("recovery receipt is malformed")
+        expected = recovery.get("preservedWorktree")
+        if not isinstance(expected, list):
+            raise ValueError("recovery worktree receipt is malformed")
+        observed = []
+        for record in porcelain.split(b"\0"):
+            if not record:
+                continue
+            status = record[:2].decode("ascii")
+            relative = record[3:].decode("utf-8", "strict")
+            allowed = (re.fullmatch(r"\.planning/phases/[0-9]{3}-[^/]+/[A-Za-z0-9._-]+\.md", relative) or
+                       re.fullmatch(r"docs/[A-Za-z0-9._-]+\.(?:md|txt)", relative))
+            if record[2:3] != b" " or not allowed or status not in {" M", "??"}:
+                raise ValueError("recovery contains a non-planning worktree change")
+            target = os.path.join(root, relative)
+            info = os.lstat(target)
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError("recovery worktree entry is not a regular file")
+            with open(target, "rb") as stream:
+                data = stream.read()
+            observed.append({"path": relative, "status": status, "mode": stat.S_IMODE(info.st_mode),
+                             "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+        observed.sort(key=lambda entry: entry["path"])
+        if observed != expected:
+            raise ValueError("preserved planning worktree changed after sealing")
     print(candidate)
 except Exception as error:
     print(f"phase 139 acceptance: {error}", file=sys.stderr)
@@ -171,6 +209,8 @@ fast_forward_main() {
 }
 
 ACCEPTANCE_RECEIPT="$COMMON_DIR/lockspire-phase-139-acceptance-v1.json"
+OLD_ACCEPTANCE_BASE=""
+OLD_ACCEPTANCE_RECEIPT_SHA256=""
 HISTORICAL_SOURCE="5d10ce2219c2e687cf9573c8b280abfb118a47d8"
 HISTORICAL_CI_RUN="33141161205"
 HISTORICAL_RELEASE_RUN="33141484467"
@@ -319,8 +359,8 @@ PY
 }
 
 acceptance_already_complete() {
-  local candidate repository advertised
-  [[ -e "$ACCEPTANCE_RECEIPT" && ! -e "$HOST_RECEIPT" ]] || return 1
+  local candidate repository advertised current_local current_remote
+  [[ -e "$ACCEPTANCE_RECEIPT" ]] || return 1
   candidate="$(jq -er '.baseline_sha' "$ACCEPTANCE_RECEIPT" 2>/dev/null)" ||
     fail "existing acceptance receipt is malformed or unsafe"
   repository="$(jq -er '.repository' "$ACCEPTANCE_RECEIPT" 2>/dev/null)" ||
@@ -332,10 +372,29 @@ acceptance_already_complete() {
     "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
     "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" >/dev/null 2>&1 ||
     fail "existing acceptance receipt is malformed or unsafe"
+  OLD_ACCEPTANCE_BASE="$candidate"
+  OLD_ACCEPTANCE_RECEIPT_SHA256="$(python3 - "$ACCEPTANCE_RECEIPT" <<'PY'
+import hashlib, pathlib, sys
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)" || fail "existing acceptance receipt cannot be fingerprinted"
+  [[ ! -e "$HOST_RECEIPT" ]] || return 1
   advertised="$(git -C "$ROOT" ls-remote origin refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
-  [[ "$(git -C "$ROOT" rev-parse refs/heads/main 2>/dev/null)" == "$candidate" &&
-     "$(git -C "$ROOT" rev-parse refs/remotes/origin/main 2>/dev/null)" == "$candidate" &&
-     "$advertised" == "$candidate" ]] || fail "existing acceptance receipt no longer matches main"
+  current_local="$(git -C "$ROOT" rev-parse refs/heads/main 2>/dev/null)" ||
+    fail "local main is unavailable"
+  current_remote="$(git -C "$ROOT" rev-parse refs/remotes/origin/main 2>/dev/null)" ||
+    fail "origin/main is unavailable"
+  if [[ "$current_local" != "$candidate" || "$current_remote" != "$candidate" || "$advertised" != "$candidate" ]]; then
+    [[ "$(git -C "$ROOT" rev-parse HEAD 2>/dev/null)" == "$current_local" &&
+       "$advertised" == "$current_remote" ]] || fail "stale acceptance base has divergent main refs"
+    CANDIDATE="$candidate"
+    REPOSITORY="$repository"
+    git -C "$ROOT" merge-base --is-ancestor "$candidate" "$current_local" ||
+      fail "local main does not extend the recorded accepted SHA"
+    git -C "$ROOT" merge-base --is-ancestor "$candidate" "$current_remote" ||
+      fail "origin/main does not extend the recorded accepted SHA"
+    return 1
+  fi
   CANDIDATE="$candidate"
   REPOSITORY="$repository"
   wait_for_exact_acceptance
@@ -453,7 +512,7 @@ verify_historical_release_chain() {
 }
 
 write_live_receipt() {
-  local inventory_relation captured_at
+  local inventory_relation captured_at replace_stale=0 observed_old_digest
   inventory_relation="$(bash "$SCRIPT_DIR/baseline_inventory.sh" \
     --verify-phase-139-posttransition-relation "$LEDGER" >/dev/null && printf '%s' verified)" ||
     fail "inventory relation changed during acceptance"
@@ -465,22 +524,38 @@ write_live_receipt() {
     fail "repository moved during live acceptance"
 
   if [[ -e "$ACCEPTANCE_RECEIPT" ]]; then
-    validate_acceptance_receipt durable "$ACCEPTANCE_RECEIPT" "$CANDIDATE" "$REPOSITORY" \
+    if validate_acceptance_receipt durable "$ACCEPTANCE_RECEIPT" "$CANDIDATE" "$REPOSITORY" \
+      "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
+      "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" >/dev/null 2>&1; then
+      acceptance_receipt_matches_exact "$ACCEPTANCE_RECEIPT" "$EXACT_ACCEPTANCE" ||
+        fail "existing acceptance receipt disagrees with fresh exact-SHA evidence"
+      return 0
+    fi
+    [[ -n "$OLD_ACCEPTANCE_BASE" && -n "$OLD_ACCEPTANCE_RECEIPT_SHA256" &&
+       "$OLD_ACCEPTANCE_BASE" != "$CANDIDATE" ]] ||
+      fail "existing acceptance receipt is malformed or changed during acceptance"
+    validate_acceptance_receipt durable "$ACCEPTANCE_RECEIPT" "$OLD_ACCEPTANCE_BASE" "$REPOSITORY" \
       "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
       "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" >/dev/null 2>&1 ||
-      fail "existing acceptance receipt is malformed or unsafe"
-    acceptance_receipt_matches_exact "$ACCEPTANCE_RECEIPT" "$EXACT_ACCEPTANCE" ||
-      fail "existing acceptance receipt disagrees with fresh exact-SHA evidence"
-    return 0
+      fail "prior acceptance receipt is malformed or unsafe"
+    observed_old_digest="$(python3 - "$ACCEPTANCE_RECEIPT" <<'PY'
+import hashlib, pathlib, sys
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)" || fail "prior acceptance receipt cannot be fingerprinted"
+    [[ "$observed_old_digest" == "$OLD_ACCEPTANCE_RECEIPT_SHA256" ]] ||
+      fail "prior acceptance receipt changed during acceptance"
+    replace_stale=1
   fi
 
   captured_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   python3 - "$COMMON_DIR" "$ACCEPTANCE_RECEIPT" "$CANDIDATE" "$captured_at" "$REPOSITORY" \
     "$inventory_relation" "$HISTORICAL_SOURCE" "$HISTORICAL_CI_RUN" "$HISTORICAL_RELEASE_RUN" \
-    "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" "$EXACT_ACCEPTANCE" <<'PY'
-import json, os, stat, sys, tempfile
+    "$HISTORICAL_VERSION" "$HISTORICAL_CHECKSUM" "$HISTORICAL_TAG" "$EXACT_ACCEPTANCE" \
+    "$replace_stale" "$OLD_ACCEPTANCE_BASE" "$OLD_ACCEPTANCE_RECEIPT_SHA256" <<'PY'
+import hashlib, json, os, stat, sys, tempfile
 (directory, target, candidate, captured, repository, relation, source, ci_run,
- release_run, version, checksum, tag, exact) = sys.argv[1:]
+ release_run, version, checksum, tag, exact, replace_stale, old_base, old_digest) = sys.argv[1:]
 directory = os.path.abspath(directory)
 if os.path.dirname(os.path.abspath(target)) != directory:
     raise RuntimeError("acceptance target escaped Git common directory")
@@ -515,11 +590,47 @@ try:
     directory_fd = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
         try:
-            os.stat(target_name, dir_fd=directory_fd, follow_symlinks=False)
+            existing_stat = os.stat(target_name, dir_fd=directory_fd, follow_symlinks=False)
         except FileNotFoundError:
-            pass
+            existing_bytes = None
         else:
-            raise RuntimeError("acceptance target appeared during publication")
+            if replace_stale != "1":
+                raise RuntimeError("acceptance target appeared during publication")
+            if (not stat.S_ISREG(existing_stat.st_mode) or stat.S_IMODE(existing_stat.st_mode) != 0o600):
+                raise RuntimeError("prior acceptance target is unsafe")
+            existing_fd = os.open(target_name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            with os.fdopen(existing_fd, "rb") as existing_stream:
+                existing_bytes = existing_stream.read()
+            if hashlib.sha256(existing_bytes).hexdigest() != old_digest:
+                raise RuntimeError("prior acceptance target changed before replacement")
+            prior = json.loads(existing_bytes)
+            if prior.get("schema") != "lockspire-phase-139-acceptance-v1" or prior.get("baseline_sha") != old_base:
+                raise RuntimeError("prior acceptance target does not match its authenticated base")
+            archive_name = target_name + ".superseded-" + old_base
+            try:
+                archive_fd = os.open(
+                    archive_name,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                    0o600,
+                    dir_fd=directory_fd,
+                )
+            except FileExistsError:
+                archive_fd = None
+            if archive_fd is not None:
+                with os.fdopen(archive_fd, "wb") as archive:
+                    archive.write(existing_bytes)
+                    archive.flush()
+                    os.fsync(archive.fileno())
+            else:
+                archive_fd = os.open(archive_name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+                with os.fdopen(archive_fd, "rb") as archive:
+                    if archive.read() != existing_bytes:
+                        raise RuntimeError("prior acceptance archive conflicts with the receipt")
+            os.fsync(directory_fd)
+            current_fd = os.open(target_name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory_fd)
+            with os.fdopen(current_fd, "rb") as current_stream:
+                if hashlib.sha256(current_stream.read()).hexdigest() != old_digest:
+                    raise RuntimeError("prior acceptance target changed before replacement")
         os.replace(
             source_name,
             target_name,
@@ -570,6 +681,11 @@ require_oid "$CANDIDATE" "sealed candidate"
 ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs ||
   fail "post-transition planning consistency test failed"
 verify_sealed_state_unchanged "$CANDIDATE"
+if [[ -z "$PUBLISH_SHA" ]]; then
+  fail "candidate preparation is blocked until its exact SHA is explicitly published: candidate $CANDIDATE; no ref was changed; after approval, rerun with --publish $CANDIDATE"
+fi
+[[ "$PUBLISH_SHA" == "$CANDIDATE" ]] ||
+  fail "--publish must name the exact sealed candidate SHA $CANDIDATE"
 fast_forward_main "$CANDIDATE"
 verify_sealed_state_unchanged "$CANDIDATE"
 bash "$SCRIPT_DIR/baseline_inventory.sh" --verify-phase-139-posttransition-relation "$LEDGER"
