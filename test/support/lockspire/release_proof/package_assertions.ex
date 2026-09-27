@@ -3484,6 +3484,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     fixture = unique_tmp_fixture("lockspire-phase-139-merged-release-lineage")
     repository = Path.join(fixture, "repository")
 
+    lineage_base =
+      run_git!(Paths.path("."), ["merge-base", "HEAD", "refs/remotes/origin/main"])
+      |> String.trim()
+
     ledger =
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
 
@@ -3513,7 +3517,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           repository,
           ledger,
           old_release_state,
-          "github"
+          "github",
+          true
         )
 
       write_phase_139_verification!(repository)
@@ -3526,7 +3531,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/lockspire/release/repository_hygiene_contract_test.exs",
             "test/support/lockspire/release_proof/package_assertions.ex"
           ] do
-        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       commit_all!(repository, "fix(139): authenticate Release Please base advance")
@@ -3548,7 +3557,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/lockspire/release/repository_hygiene_contract_test.exs",
             "test/support/lockspire/release_proof/package_assertions.ex"
           ] do
-        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       commit_all!(repository, "fix(139): run acceptance from a clean candidate worktree")
@@ -3563,6 +3576,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
 
       release_parent = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      previous_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", release_parent, previous_main])
+      previous_main = release_parent
       commit_all!(repository, "chore(main): release lockspire 1.5.1 (#100)")
       release_merge = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
@@ -3598,7 +3614,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         write_repo_file!(repository, path, contents)
       end
 
-      commit_all!(repository, "chore(139): authorize merged release lineage")
+      commit_all!(repository, "chore(139): authorize merged release lineage (#102)")
+
+      for path <- [
+            "scripts/maintainer/baseline_inventory.sh",
+            "test/lockspire/release/repository_hygiene_contract_test.exs",
+            "test/support/lockspire/release_proof/package_assertions.ex"
+          ] do
+        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+      end
+
+      commit_all!(repository, "fix(139): unblock sealed acceptance after merged lineage (#103)")
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3640,10 +3666,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           stderr_to_stdout: true
         )
 
-      previous_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
-      run_git!(repository, ["update-ref", "refs/heads/main", candidate, previous_main])
       run_git!(repository, ["push", "origin", "#{candidate}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
+      release_please_name = "release-please--branches--main--components--lockspire"
+      run_git!(repository, ["update-ref", "-d", "refs/remotes/origin/#{release_please_name}"])
+
+      {_, 0} =
+        System.cmd("git", [
+          "--git-dir",
+          remote,
+          "update-ref",
+          "-d",
+          "refs/heads/#{release_please_name}"
+        ])
+
+      assert run_git!(repository, ["ls-remote", "origin", "refs/heads/#{release_please_name}"]) ==
+               ""
 
       bin = Path.join(fixture, "bin")
 
@@ -3654,6 +3692,32 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         {"FAKE_PR_MERGE_OID", release_merge}
       ]
 
+      {sealed, 0} = run_phase_139_sealed_relation!(repository, ledger, env)
+      assert sealed =~ "snapshot_relation: authorized_bookkeeping"
+      assert sealed =~ "class=phase_139_merged_lineage_repair"
+      assert sealed =~ "class=phase_139_sealed_gate_fix"
+
+      assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
+               previous_main
+
+      assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
+               candidate
+
+      wrong_parent = String.duplicate("f", 40)
+
+      rejected_sealed_env =
+        List.keystore(env, "FAKE_PR_BASE_OID", 0, {"FAKE_PR_BASE_OID", wrong_parent})
+
+      {rejected_sealed, rejected_sealed_status} =
+        run_phase_139_sealed_relation!(repository, ledger, rejected_sealed_env)
+
+      assert rejected_sealed_status != 0
+      assert rejected_sealed =~ "snapshot_relation: refresh_required"
+
+      assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
+               previous_main
+
+      run_git!(repository, ["update-ref", "refs/heads/main", candidate, previous_main])
       {accepted, 0} = run_phase_139_posttransition_relation!(repository, ledger, env)
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
       assert accepted =~ "class=phase_139_release_please_merge"
@@ -3663,7 +3727,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
              |> String.starts_with?(candidate)
 
-      wrong_parent = String.duplicate("f", 40)
       rejected_env = List.keystore(env, "FAKE_PR_BASE_OID", 0, {"FAKE_PR_BASE_OID", wrong_parent})
 
       {rejected, rejected_status} =
@@ -4763,7 +4826,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          repository,
          ledger,
          parent_mutate \\ fn _repository -> :ok end,
-         source_scope \\ "git"
+         source_scope \\ "git",
+         release_please_ref \\ false
        ) do
     initialize_snapshot_repository!(repository)
     copy_phase_139_planning_fixture!(repository)
@@ -4819,6 +4883,25 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     {_, 0} = System.cmd("git", ["clone", "-q", "--bare", repository, remote])
     run_git!(repository, ["remote", "add", "origin", remote])
     run_git!(repository, ["fetch", "-q", "origin", "main"])
+
+    if release_please_ref do
+      release_please_ref =
+        "refs/remotes/origin/release-please--branches--main--components--lockspire"
+
+      release_please_head = main_baseline
+
+      {_, 0} =
+        System.cmd("git", [
+          "--git-dir",
+          remote,
+          "update-ref",
+          "refs/heads/release-please--branches--main--components--lockspire",
+          release_please_head
+        ])
+
+      run_git!(repository, ["update-ref", release_please_ref, release_please_head])
+    end
+
     candidate = Path.join(fixture, @next_phase_slug <> "-ledger.md")
 
     collector_env = [{"LOCKSPIRE_INVENTORY_REVIEW_PHASE", "139"}]
@@ -4833,7 +4916,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         [
           {"PATH", bin <> ":" <> System.get_env("PATH", "")},
           {"FAKE_GH_SCENARIO", "phase139-release-please-baseline"},
-          {"FAKE_PR_BASE_OID", main_baseline}
+          {"FAKE_PR_BASE_OID", main_baseline},
+          {"FAKE_RELEASE_PLEASE_HEAD_OID", main_baseline}
           | collector_env
         ]
       else
@@ -7798,7 +7882,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
               "$scenario" == phase139-release-please-unrelated-drift ]] && [[ "$*" != *pullRequestId=* ]]; then
           if [[ "$*" == *pullRequests* ]]; then
             updated="2026-09-25T15:02:50Z"
-            head="d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa"
+            head="${FAKE_RELEASE_PLEASE_HEAD_OID:-d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa}"
             title="chore(main): release lockspire 1.5.1"
             if [[ "$scenario" != phase139-release-please-baseline ]]; then
               updated="2026-09-26T16:22:41Z"
@@ -7826,7 +7910,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             exit 0
           fi
           nested_oid="1111111111111111111111111111111111111111"
-          [[ "$scenario" != phase139-release-please-baseline ]] || nested_oid="d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa"
+          [[ "$scenario" != phase139-release-please-baseline ]] || nested_oid="${FAKE_RELEASE_PLEASE_HEAD_OID:-d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa}"
           [[ "$scenario" != phase139-release-please-valid && "$scenario" != phase139-release-please-unrelated-drift ]] || nested_oid="9999999999999999999999999999999999999999"
           [[ "$scenario" == github-object-64 ]] && nested_oid="1111111111111111111111111111111111111111111111111111111111111111"
           [[ "$scenario" == identical-duplicate-reversed && "$*" == *pullRequestId=PR-2* ]] && nested_oid="4444444444444444444444444444444444444444"

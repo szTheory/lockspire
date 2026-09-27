@@ -209,7 +209,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   @tag :phase139_inventory_relation
   @tag :phase139_merged_lineage
   @tag timeout: 300_000
-  test "phase 139 accepts the authenticated merged release lineage" do
+  test "phase 139 accepts the sealed candidate while local main lags and the merged release branch is deleted" do
     PackageAssertions.assert_phase_139_merged_release_lineage!()
   end
 

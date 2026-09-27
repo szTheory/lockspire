@@ -3116,21 +3116,68 @@ normalize_relation_git_domain() {
   mv -f "$normalized" "$file"
 }
 
-normalize_relation_git_domain_remove() {
-  local file="$1" subject="$2" expected_sha="$3" normalized marker
-  [[ -n "$expected_sha" ]] || return 1
-  normalized="$(mktemp "${TMPDIR:-/tmp}/lockspire-relation-removed.XXXXXX")" || return 1
-  marker="observed SHA \`$expected_sha\`"
-  awk -v subject="\`$subject\`" -v marker="$marker" '
-    index($0, subject) > 0 {
-      if (index($0, marker) == 0) exit 1
-      matched++
-      next
-    }
-    { print }
-    END { if (matched != 1) exit 1 }
-  ' "$file" > "$normalized" || { rm -f "$normalized"; return 1; }
-  mv -f "$normalized" "$file"
+restore_relation_git_domain_row() {
+  local file="$1" subject="$2" expected_sha="$3" expected_row="$4"
+  python3 - "$file" "$subject" "$expected_sha" "$expected_row" <<'PY'
+import os
+import sys
+import tempfile
+
+path, subject, expected_sha, historical_row = sys.argv[1:]
+
+def fields(line):
+    return [field.strip() for field in line.split("|")]
+
+def sha_from_state(state):
+    prefix = "observed SHA `"
+    if not state.startswith(prefix) or not state.endswith("`"):
+        return None
+    return state[len(prefix):-1]
+
+historical = fields(historical_row)
+if (len(historical) < 5 or historical[2] != "remote_branch" or
+        historical[3] != f"`{subject}`" or sha_from_state(historical[4]) != expected_sha):
+    raise SystemExit("historical branch row does not match the verified subject and SHA")
+
+with open(path, encoding="utf-8") as stream:
+    lines = stream.read().splitlines()
+
+rows = []
+first_row = None
+for index, line in enumerate(lines):
+    if not line.startswith("| GIT-BR-"):
+        continue
+    first_row = index if first_row is None else first_row
+    row_fields = fields(line)
+    if len(row_fields) < 5:
+        raise SystemExit("current branch inventory contains a malformed row")
+    if row_fields[3] == f"`{subject}`":
+        raise SystemExit("cannot restore a branch row that is already present")
+    rows.append(line)
+
+if first_row is None:
+    raise SystemExit("current branch inventory has no rows to normalize")
+
+rows.append(historical_row)
+rows.sort(key=lambda line: (
+    fields(line)[2], fields(line)[3].strip("`"),
+    sha_from_state(fields(line)[4]) or "", fields(line)[1]
+))
+without_rows = [line for line in lines if not line.startswith("| GIT-BR-")]
+insert_at = sum(1 for line in lines[:first_row] if not line.startswith("| GIT-BR-"))
+normalized = without_rows[:insert_at] + rows + without_rows[insert_at:]
+fd, temporary = tempfile.mkstemp(prefix="lockspire-relation-restored.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write("\n".join(normalized) + "\n")
+    os.replace(temporary, path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+PY
 }
 
 ledger_git_domain_sha() {
@@ -3326,9 +3373,14 @@ classify_lifecycle_commit() {
     printf 'phase_139_release_contract_test_merge'
     return
   fi
-  if [[ "$subject" == 'chore(139): authorize merged release lineage' ]]; then
+  if [[ "$subject" == 'chore(139): authorize merged release lineage (#102)' ]]; then
     validate_phase_139_merged_lineage_repair_commit "$commit" "$paths" || return 1
     printf 'phase_139_merged_lineage_repair'
+    return
+  fi
+  if [[ "$subject" == 'fix(139): unblock sealed acceptance after merged lineage (#103)' ]]; then
+    validate_phase_139_sealed_gate_fix_commit "$commit" "$paths" || return 1
+    printf 'phase_139_sealed_gate_fix'
     return
   fi
   return 1
@@ -3473,7 +3525,7 @@ validate_phase_139_merged_lineage_repair_commit() {
   [[ "$parent_subject" == 'Merge pull request #101 from szTheory/fix/release-train-current-version' ]] || return 1
   validate_phase_139_release_contract_test_merge "$parent" || return 1
   subject="$(git show -s --format=%s "$commit" 2>/dev/null || true)"
-  [[ "$subject" == 'chore(139): authorize merged release lineage' ]] || return 1
+  [[ "$subject" == 'chore(139): authorize merged release lineage (#102)' ]] || return 1
   [[ "$paths" == $'scripts/maintainer/baseline_inventory.sh\ntest/lockspire/release/repository_hygiene_contract_test.exs\ntest/support/lockspire/release_proof/package_assertions.ex' ]] || return 1
   blob_has_line "$commit" scripts/maintainer/baseline_inventory.sh \
     '^validate_phase_139_release_please_merge_commit\(\)[[:space:]]*\{' || return 1
@@ -3481,6 +3533,27 @@ validate_phase_139_merged_lineage_repair_commit() {
     '^validate_phase_139_release_contract_test_merge\(\)[[:space:]]*\{' || return 1
   blob_has_line "$commit" test/lockspire/release/repository_hygiene_contract_test.exs \
     'phase 139 accepts the authenticated merged release lineage'
+}
+
+validate_phase_139_sealed_gate_fix_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths
+  local script_path test_path support_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  support_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "$script_path"$'\n'"$test_path"$'\n'"$support_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null || true)"
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'chore(139): authorize merged release lineage (#102)' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  validate_phase_139_merged_lineage_repair_commit "$parent" "$parent_paths" || return 1
+  [[ "$(git show -s --format=%s "$commit" 2>/dev/null || true)" == \
+    'fix(139): unblock sealed acceptance after merged lineage (#103)' ]] || return 1
+  blob_has_line "$commit" "$script_path" '^restore_relation_git_domain_row\(\)[[:space:]]*\{' || return 1
+  blob_has_line "$commit" "$script_path" 'LOCKSPIRE_PHASE_139_MAIN_ADVANCE=1' || return 1
+  blob_has_line "$commit" "$script_path" 'refs/remotes/\$REMOTE/main' || return 1
+  blob_has_line "$commit" "$test_path" 'phase 139 accepts the sealed candidate while local main lags and the merged release branch is deleted' || return 1
+  blob_has_line "$commit" "$support_path" 'FAKE_RELEASE_PLEASE_HEAD_OID'
 }
 
 phase_139_release_please_proof() {
@@ -3559,7 +3632,7 @@ normalize_phase_139_release_please_git_ref() {
   local ledger_commit="$1" ledger="$2" branch_file="$3"
   local branch_ref="refs/remotes/$REMOTE/release-please--branches--main--components--lockspire"
   local branch_name="release-please--branches--main--components--lockspire"
-  local expected_branches expected_sha proof_dir proof_file live_head tracked_head advertised_head state
+  local expected_branches expected_sha proof_dir proof_file live_head tracked_head advertised_head state historical_row
   expected_branches="$(ledger_git_domain_section "$ledger_commit" "$ledger" branches)"
   expected_sha="$(ledger_git_domain_sha "$expected_branches" "$branch_ref" 2>/dev/null || true)"
   if [[ ! "$expected_sha" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]]; then
@@ -3579,9 +3652,13 @@ normalize_phase_139_release_please_git_ref() {
     state="$(jq -r '.state' "$proof_file" 2>/dev/null || true)"
     advertised_head="$(git ls-remote "$REMOTE" "refs/heads/$branch_name" 2>/dev/null | awk 'NR == 1 { print $1 }')"
     rm -rf "$proof_dir"
-    [[ "$state" == MERGED && -z "$advertised_head" &&
-       ! -e "$(git rev-parse --git-path "refs/heads/$branch_name")" ]] || return 1
-    normalize_relation_git_domain_remove "$branch_file" "$branch_ref" "$expected_sha"
+    [[ "$state" == MERGED && -z "$advertised_head" ]] || return 1
+    git show-ref --verify --quiet "refs/heads/$branch_name" && return 1
+    historical_row="$(awk -F'|' -v ref="$branch_ref" -v sha="$expected_sha" \
+      'index($0, "| `" ref "` | observed SHA `" sha "` |") == 1 { print; found++ } \
+      END { if (found != 1) exit 1 }' <<< "$expected_branches")" || return 1
+    restore_relation_git_domain_row "$branch_file" "$branch_ref" "$expected_sha" "$historical_row"
+    return $?
   fi
   [[ "$tracked_head" != "$expected_sha" ]] || return 0
   proof_dir="$(mktemp -d "${TMPDIR:-/tmp}/lockspire-release-please-ref.XXXXXX")" || return 1
@@ -4286,6 +4363,7 @@ verify_phase_139_posttransition_chain() {
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair'|\
+    $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair\nphase_139_sealed_gate_fix'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix\nphase_139_release_please_merge\nphase_139_release_contract_test_merge'|\
     $'phase_139_passed_verification\nphase_139_completion\nphase_139_release_please_refresh\nphase_139_release_please_refresh\nphase_139_acceptance_worktree\nphase_139_acceptance_gate_repair\nphase_139_acceptance_fixture_fix\nphase_139_release_please_merge\nphase_139_release_contract_test_merge\nphase_139_merged_lineage_repair') return 0 ;;
     *) return 1 ;;
@@ -4336,6 +4414,7 @@ verify_phase_139_posttransition_relation() {
 
 verify_phase_139_sealed_candidate_relation() {
   local ledger="${1#./}" before_head ledger_commit release_base prior_base advertised verdict=0
+  local local_main main_advance=0
   if ! before_head="$(validate_post_transition_receipt 139)"; then
     printf 'relation_boundary|phase-139-sealed-candidate|refresh_required\n'
     printf 'snapshot_relation: refresh_required\n'
@@ -4345,13 +4424,20 @@ verify_phase_139_sealed_candidate_relation() {
   printf 'receipt_before_head|%s|authorized_bookkeeping\n' "$before_head"
   verify_phase_139_posttransition_chain "$ledger" "$before_head" || verdict=1
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null || true)"
-  release_base="$(git rev-parse refs/heads/main 2>/dev/null || true)"
+  local_main="$(git rev-parse refs/heads/main 2>/dev/null || true)"
+  release_base="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
   advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
   prior_base="$(phase_139_release_please_completion_base "$ledger_commit" "$before_head" 2>/dev/null || true)"
-  [[ -n "$release_base" && "$release_base" == "$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)" &&
-    "$release_base" == "$advertised" && -n "$prior_base" ]] || verdict=1
+  [[ -n "$release_base" && "$release_base" == "$advertised" && -n "$prior_base" ]] || verdict=1
+  if [[ "$release_base" == "$before_head" ]]; then
+    git merge-base --is-ancestor "$local_main" "$before_head" 2>/dev/null || verdict=1
+    main_advance=1
+  else
+    [[ -n "$local_main" && "$local_main" == "$release_base" ]] || verdict=1
+  fi
   git merge-base --is-ancestor "$release_base" "$before_head" 2>/dev/null || verdict=1
-  LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
+  LOCKSPIRE_PHASE_139_MAIN_ADVANCE="$main_advance" \
+    LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED=1 \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_BASE="$release_base" \
     LOCKSPIRE_PHASE_139_RELEASE_PLEASE_PRIOR_BASE="$prior_base" \
     LOCKSPIRE_INVENTORY_VERIFY_HEAD="$before_head" verify_snapshot_relation "$ledger" receipt || verdict=1
