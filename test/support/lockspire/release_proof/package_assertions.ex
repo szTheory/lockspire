@@ -3525,6 +3525,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           ledger,
           old_release_state,
           "github",
+          true,
           true
         )
 
@@ -3687,6 +3688,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "test(139): verify absent release refs (#108)"
       )
 
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# retained open PR receipt spacing fixture\n",
+        "test(139): preserve retained PR receipt spacing (#109)"
+      )
+
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3767,6 +3775,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       env = [
         {"PATH", bin <> ":" <> System.get_env("PATH", "")},
         {"FAKE_GH_SCENARIO", "phase139-release-please-merged"},
+        {"FAKE_GH_INCLUDE_RETAINED_PR", "1"},
         {"FAKE_PR_BASE_OID", release_parent},
         {"FAKE_PR_MERGE_OID", release_merge}
       ]
@@ -3780,6 +3789,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert sealed =~ "class=phase_139_release_ref_restoration"
       assert sealed =~ "class=phase_139_release_train_marker_validation"
       assert sealed =~ "class=phase_139_verified_absent_release_ref"
+      assert sealed =~ "class=phase_139_open_pr_spacing_normalization"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
                previous_main
@@ -3810,6 +3820,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_139_release_ref_restoration"
       assert accepted =~ "class=phase_139_release_train_marker_validation"
       assert accepted =~ "class=phase_139_verified_absent_release_ref"
+      assert accepted =~ "class=phase_139_open_pr_spacing_normalization"
 
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
              |> String.starts_with?(candidate)
@@ -4914,7 +4925,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          ledger,
          parent_mutate \\ fn _repository -> :ok end,
          source_scope \\ "git",
-         release_please_ref \\ false
+         release_please_ref \\ false,
+         include_retained_pr \\ false
        ) do
     initialize_snapshot_repository!(repository)
     copy_phase_139_planning_fixture!(repository)
@@ -5004,7 +5016,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           {"PATH", bin <> ":" <> System.get_env("PATH", "")},
           {"FAKE_GH_SCENARIO", "phase139-release-please-baseline"},
           {"FAKE_PR_BASE_OID", main_baseline},
-          {"FAKE_RELEASE_PLEASE_HEAD_OID", main_baseline}
+          {"FAKE_RELEASE_PLEASE_HEAD_OID", main_baseline},
+          {"FAKE_GH_INCLUDE_RETAINED_PR", if(include_retained_pr, do: "1", else: "0")}
           | collector_env
         ]
       else
@@ -7914,6 +7927,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       printf '%s' "$count" > "$file"
       printf '%s' "$count"
     }
+    retained_open_pr_fixture() {
+      jq -nc '{id:"PR-83",number:83,title:"retained fixture pull request",
+        url:"https://github.com/lockspire/fixture/pull/83",updatedAt:"2026-09-26T16:22:41Z",
+        state:"OPEN",isDraft:false,mergeStateStatus:"CLEAN",reviewDecision:"APPROVED",
+        headRefName:"fixture/retained-open-pr",headRefOid:"5555555555555555555555555555555555555555",
+        baseRefName:"main",baseRefOid:"2222222222222222222222222222222222222222",
+        commits:{nodes:[{commit:{statusCheckRollup:{state:"SUCCESS"}}}]}}'
+    }
     case "$1 $2" in
       "auth status") [[ "$scenario" == auth-failed ]] && exit 1 || exit 0 ;;
       "repo view") printf 'lockspire/fixture\\n' ;;
@@ -7967,7 +7988,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         [[ "$scenario" == api-failed ]] && exit 19
         if [[ "$scenario" == phase139-release-please-merged && "$*" != *pullRequestId=* ]]; then
           if [[ "$*" == *pullRequests* ]]; then
-            printf '%s\\n' '{"data":{"repository":{"pullRequests":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
+            if [[ "${FAKE_GH_INCLUDE_RETAINED_PR:-0}" == 1 ]]; then
+              retained_pr="$(retained_open_pr_fixture)"
+              jq -nc --argjson retained "$retained_pr" \
+                '{data:{repository:{pullRequests:{nodes:[$retained],pageInfo:{hasNextPage:false,endCursor:null}}}}}'
+            else
+              printf '%s\\n' '{"data":{"repository":{"pullRequests":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
+            fi
           else
             printf '%s\\n' '{"data":{"repository":{"issues":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
           fi
@@ -7985,15 +8012,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
               head="9999999999999999999999999999999999999999"
             fi
             [[ "$scenario" != phase139-release-please-unrelated-drift ]] || title="chore(main): release lockspire 1.5.2"
+            retained_prs='[]'
+            if [[ "${FAKE_GH_INCLUDE_RETAINED_PR:-0}" == 1 ]]; then
+              retained_prs="[$(retained_open_pr_fixture)]"
+            fi
             jq -nc --arg updated "$updated" --arg head "$head" --arg title "$title" \
-              --arg base "${FAKE_PR_BASE_OID:-2222222222222222222222222222222222222222}" '
-              {data:{repository:{pullRequests:{nodes:[{
+              --arg base "${FAKE_PR_BASE_OID:-2222222222222222222222222222222222222222}" \
+              --argjson retained_prs "$retained_prs" '
+              {data:{repository:{pullRequests:{nodes:([{
                 id:"PR-100",number:100,title:$title,url:"https://github.com/lockspire/fixture/pull/100",
                 updatedAt:$updated,state:"OPEN",isDraft:false,mergeStateStatus:"UNSTABLE",reviewDecision:null,
                 headRefName:"release-please--branches--main--components--lockspire",headRefOid:$head,
                 baseRefName:"main",baseRefOid:$base,
                 commits:{nodes:[{commit:{oid:$head,statusCheckRollup:{state:null}}}]}
-              }],pageInfo:{hasNextPage:false,endCursor:null}}}}}'
+              }] + $retained_prs),pageInfo:{hasNextPage:false,endCursor:null}}}}}'
           else
             printf '%s\\n' '{"data":{"repository":{"issues":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}'
           fi
@@ -8008,6 +8040,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           nested_oid="1111111111111111111111111111111111111111"
           [[ "$scenario" != phase139-release-please-baseline ]] || nested_oid="${FAKE_RELEASE_PLEASE_HEAD_OID:-d0d7d3eed8fd6cc17b4c0f7e8d46f93964e727fa}"
           [[ "$scenario" != phase139-release-please-valid && "$scenario" != phase139-release-please-unrelated-drift ]] || nested_oid="9999999999999999999999999999999999999999"
+          if [[ "${FAKE_GH_INCLUDE_RETAINED_PR:-0}" == 1 && "$*" == *pullRequestId=PR-83* ]]; then
+            nested_oid="5555555555555555555555555555555555555555"
+          fi
           [[ "$scenario" == github-object-64 ]] && nested_oid="1111111111111111111111111111111111111111111111111111111111111111"
           [[ "$scenario" == identical-duplicate-reversed && "$*" == *pullRequestId=PR-2* ]] && nested_oid="4444444444444444444444444444444444444444"
           if [[ "$scenario" == nested-many ]]; then
