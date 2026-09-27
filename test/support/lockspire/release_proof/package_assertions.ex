@@ -3582,6 +3582,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         write_repo_file!(repository, path, File.read!(Paths.path(path)))
       end
 
+      release_train = File.read!(Path.join(repository, ".planning/RELEASE-TRAIN.md"))
+
+      assert release_train =~
+               "Latest released version: `1.5.1` <!-- x-release-please-version -->"
+
       release_parent = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
       previous_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
       run_git!(repository, ["update-ref", "refs/heads/main", release_parent, previous_main])
@@ -3668,6 +3673,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "fix(139): restore merged release inventory row (#106)"
       )
 
+      commit_lineage_fixture_step!(
+        repository,
+        [inventory_path, support_path],
+        "\n# release train marker validation fixture\n",
+        "test(139): accept release train version marker (#107)"
+      )
+
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3748,6 +3760,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert sealed =~ "class=phase_139_lineage_fixture_anchor"
       assert sealed =~ "class=phase_139_lineage_anchor_validation_repair"
       assert sealed =~ "class=phase_139_release_ref_restoration"
+      assert sealed =~ "class=phase_139_release_train_marker_validation"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
                previous_main
@@ -3775,6 +3788,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_139_release_please_merge"
       assert accepted =~ "class=phase_139_release_contract_test_merge"
       assert accepted =~ "class=phase_139_merged_lineage_repair"
+      assert accepted =~ "class=phase_139_release_ref_restoration"
+      assert accepted =~ "class=phase_139_release_train_marker_validation"
 
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
              |> String.starts_with?(candidate)
