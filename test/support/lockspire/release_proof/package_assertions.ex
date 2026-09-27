@@ -3634,6 +3634,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       commit_all!(repository, "fix(139): unblock sealed acceptance after merged lineage (#103)")
 
       support_path = "test/support/lockspire/release_proof/package_assertions.ex"
+      inventory_path = "scripts/maintainer/baseline_inventory.sh"
 
       write_repo_file!(
         repository,
@@ -3641,7 +3642,24 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         File.read!(Path.join(repository, support_path)) <> "\n# lineage anchor fixture\n"
       )
 
+      write_repo_file!(
+        repository,
+        inventory_path,
+        File.read!(Path.join(repository, inventory_path)) <>
+          "\n# lineage anchor classifier fixture\n"
+      )
+
       commit_all!(repository, "test(139): anchor fixture to merged lineage commit (#104)")
+
+      for path <- [inventory_path, support_path] do
+        contents =
+          File.read!(Path.join(repository, path)) <>
+            "\n# lineage anchor validator repair fixture\n"
+
+        write_repo_file!(repository, path, contents)
+      end
+
+      commit_all!(repository, "fix(139): recognize complete fixture anchor commit (#105)")
       candidate = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       gsd_tools = gsd_tools_path!()
@@ -3714,6 +3732,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert sealed =~ "class=phase_139_merged_lineage_repair"
       assert sealed =~ "class=phase_139_sealed_gate_fix"
       assert sealed =~ "class=phase_139_lineage_fixture_anchor"
+      assert sealed =~ "class=phase_139_lineage_anchor_validation_repair"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim() ==
                previous_main
