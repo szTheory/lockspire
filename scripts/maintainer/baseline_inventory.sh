@@ -3338,6 +3338,19 @@ classify_lifecycle_commit() {
     printf 'phase_140_gate_recovery'
     return
   fi
+  if [[ "$subject" == "fix(140): reconcile phase 140 entry gate truth" ]]; then
+    local expected_paths
+    expected_paths="$(printf '%s\n' \
+      '.planning/PROJECT.md' \
+      'scripts/maintainer/baseline_inventory.sh' \
+      'test/support/lockspire/release_proof/package_assertions.ex' | LC_ALL=C sort)"
+    [[ "$paths" == "$expected_paths" ]] || return 1
+    blob_has_line "$commit" '.planning/PROJECT.md' 'Phase 140 planning remains gated' || return 1
+    blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' 'phase_140_entry_contract_repair' || return 1
+    blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' 'phase_140_entry_contract_repair' || return 1
+    printf 'phase_140_entry_contract_repair'
+    return
+  fi
   if [[ "$subject" =~ ^docs\(138-([0-9][0-9])\):[[:space:]]complete[[:space:]].+[[:space:]]plan$ ]]; then
     if validate_gsd_plan_closeout_commit "$commit" "$paths" "${BASH_REMATCH[1]}"; then
       printf 'gsd_plan_closeout'
@@ -4626,6 +4639,7 @@ verify_phase_139_preverify_relation() {
 
 validate_phase_140_recovery_chain() {
   local baseline="$1" candidate="$2" chain commit parents subject paths class classes="" meta advertised local_main remote_main
+  local baseline_subject baseline_paths baseline_class
   [[ "$baseline" =~ ^[0-9a-f]{40}$ && "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
   [[ "$(git rev-parse HEAD 2>/dev/null || true)" == "$candidate" ]] || return 1
   local_main="$(git rev-parse refs/heads/main 2>/dev/null || true)"
@@ -4647,7 +4661,16 @@ validate_phase_140_recovery_chain() {
     [[ "${meta%%|*}" == "${meta#*|}" ]] || return 1
     classes+="$class"$'\n'
   done <<< "$chain"
-  [[ "$(printf '%s' "$classes" | sed '/^$/d')" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery' ]]
+  classes="$(printf '%s' "$classes" | sed '/^$/d')"
+  if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair' ]]; then
+    return 0
+  fi
+  [[ "$classes" == phase_140_entry_contract_repair ]] || return 1
+  baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+  [[ "$baseline_subject" == 'fix(140): separate candidate preparation from publication' ]] || return 1
+  baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" | LC_ALL=C sort)"
+  baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+  [[ "$baseline_class" == phase_140_gate_recovery ]]
 }
 
 verify_phase_139_posttransition_chain() {
@@ -4663,7 +4686,7 @@ verify_phase_139_posttransition_chain() {
     classes+="$class"$'\n'
   done <<< "$chain"
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
-  suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery'
+  suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair'
   if [[ "$classes" == *"$suffix" ]]; then
     classes="${classes%"$suffix"}"
   fi

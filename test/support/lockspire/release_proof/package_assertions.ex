@@ -4032,8 +4032,28 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
       ]
 
+      handoff_commit =
+        run_git!(
+          source,
+          [
+            "rev-list",
+            "--all",
+            "--grep=^docs(140): preserve verified planning handoff$",
+            "--max-count=1"
+          ]
+        )
+        |> String.trim()
+
+      refute handoff_commit == ""
+
       Enum.each(handoff_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        {content, 0} =
+          System.cmd("git", ["show", "#{handoff_commit}:#{path}"],
+            cd: source,
+            stderr_to_stdout: true
+          )
+
+        write_repo_file!(repository, path, content)
       end)
 
       commit_all!(repository, "docs(140): preserve verified planning handoff")
@@ -4045,6 +4065,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs",
         "tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs"
       ]
+
+      gate_recovery_commit =
+        run_git!(
+          source,
+          [
+            "rev-list",
+            "--all",
+            "--grep=^fix(140): separate candidate preparation from publication$",
+            "--max-count=1"
+          ]
+        )
+        |> String.trim()
+
+      refute gate_recovery_commit == ""
 
       state_helper_path =
         Path.join(
@@ -4062,14 +4096,36 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       )
 
       Enum.each(recovery_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        {content, 0} =
+          System.cmd("git", ["show", "#{gate_recovery_commit}:#{path}"],
+            cd: source,
+            stderr_to_stdout: true
+          )
+
+        write_repo_file!(repository, path, content)
       end)
 
       run_git!(repository, ["add", "-f", List.last(recovery_paths)])
       commit_all!(repository, "fix(140): separate candidate preparation from publication")
-      recovery_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      gate_recovery_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      run_git!(repository, ["push", "origin", "#{gate_recovery_head}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
       old_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
-      run_git!(repository, ["update-ref", "refs/heads/main", recovery_head, old_main])
+
+      entry_repair_paths = [
+        ".planning/PROJECT.md",
+        "scripts/maintainer/baseline_inventory.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex"
+      ]
+
+      Enum.each(entry_repair_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end)
+
+      run_git!(repository, ["add", "-f", List.last(entry_repair_paths)])
+      commit_all!(repository, "fix(140): reconcile phase 140 entry gate truth")
+      entry_repair_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      run_git!(repository, ["update-ref", "refs/heads/main", entry_repair_head, old_main])
 
       overlay = "docs/phase-140-recovery-note.txt"
       write_repo_file!(repository, overlay, "preserve the in-progress research note\n")
@@ -4134,13 +4190,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_140_context"
       assert accepted =~ "class=phase_140_handoff"
       assert accepted =~ "class=phase_140_gate_recovery"
+      assert accepted =~ "class=phase_140_entry_contract_repair"
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
       assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
-               phase139_base
+               gate_recovery_head
 
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
-             |> String.starts_with?(phase139_base)
+             |> String.starts_with?(gate_recovery_head)
 
       File.write!(Path.join(repository, overlay), "changed after recovery was sealed\n")
       {changed, changed_status} = run_phase_139_sealed_relation!(repository, ledger, [])
