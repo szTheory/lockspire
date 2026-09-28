@@ -205,7 +205,30 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 140-01-PLAN.md — Refresh current evidence and establish the single source-linked disposition record.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 140-02-PLAN.md — Reassess nine archived UAT candidates and correct demonstrated current planning contradictions.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 140-03-PLAN.md — Assess every dependency-update PR against its own current evidence.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 140-04-PLAN.md — Close finite dispositions and prepare final exact-SHA acceptance.
+
+**Cross-cutting constraints:**
+
+- A maintainer can see exactly why every credible finding is fixed now, deferred with a trigger, retained as historical evidence, already resolved, or out of scope.
+- Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
+- Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
 **Entry gate**: The existing blocking Phase 140 `plan:pre` hook must first produce and validate the Phase 139 exact-SHA acceptance receipt. CI-06 and CI-07 remain pending until that receipt proves synchronized refs and canonical same-SHA workflow results. This ordering lets Phase 139 verify the repository-owned acceptance contract, transition normally, and have the live evidence gate run before any Phase 140 planning begins.
 
