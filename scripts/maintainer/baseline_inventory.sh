@@ -3116,6 +3116,71 @@ normalize_relation_git_domain() {
   mv -f "$normalized" "$file"
 }
 
+remove_relation_git_domain_row() {
+  local file="$1" kind="$2" subject="$3" observed_sha="$4"
+  python3 - "$file" "$kind" "$subject" "$observed_sha" <<'PY'
+import os
+import sys
+import tempfile
+
+path, kind, subject, observed_sha = sys.argv[1:]
+
+def fields(line):
+    return [field.strip() for field in line.split("|")]
+
+with open(path, encoding="utf-8") as stream:
+    lines = stream.read().splitlines()
+
+kept = []
+matches = 0
+for line in lines:
+    if line.startswith("| GIT-BR-"):
+        row = fields(line)
+        if (len(row) >= 5 and row[2] == kind and row[3] == f"`{subject}`" and
+                row[4] == f"observed SHA `{observed_sha}`"):
+            matches += 1
+            continue
+    kept.append(line)
+
+if matches != 1:
+    raise SystemExit("recovery branch row is absent or ambiguous")
+
+fd, temporary = tempfile.mkstemp(prefix="lockspire-relation-removed.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write("\n".join(kept) + "\n")
+    os.replace(temporary, path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+PY
+}
+
+normalize_phase_140_signal_fixture_recovery_branch() {
+  local ledger_commit="$1" ledger="$2" branch_file="$3" head="$4"
+  local branch_ref branch_sha branch_subject branch_paths branch_class expected_sha remote_main
+  branch_ref="refs/heads/fix/phase139-signal-fixture-timeout"
+  expected_sha="$(ledger_git_domain_sha "$(ledger_git_domain_section "$ledger_commit" "$ledger" branches)" \
+    "$branch_ref" 2>/dev/null || true)"
+  [[ -z "$expected_sha" ]] || return 0
+
+  branch_sha="$(git rev-parse --verify "$branch_ref" 2>/dev/null)" || return 1
+  valid_snapshot_sha "$branch_sha" || return 1
+  branch_subject="$(git show -s --format=%s "$branch_sha" 2>/dev/null || true)"
+  [[ "$branch_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
+  branch_paths="$(git diff-tree --no-commit-id --name-only -r "$branch_sha" | LC_ALL=C sort)"
+  [[ "$branch_paths" == 'test/support/lockspire/release_proof/package_assertions.ex' ]] || return 1
+  branch_class="$(classify_lifecycle_commit "$branch_sha" "$branch_subject" "$branch_paths" 2>/dev/null || true)"
+  [[ "$branch_class" == phase_139_signal_fixture_timeout ]] || return 1
+  git merge-base --is-ancestor "$branch_sha" "$head" 2>/dev/null || return 1
+  remote_main="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
+  [[ -n "$remote_main" ]] && git merge-base --is-ancestor "$branch_sha" "$remote_main" 2>/dev/null || return 1
+  remove_relation_git_domain_row "$branch_file" local_branch "$branch_ref" "$branch_sha"
+}
+
 restore_relation_git_domain_row() {
   local file="$1" subject="$2" expected_sha="$3" expected_row="$4"
   python3 - "$file" "$subject" "$expected_sha" "$expected_row" <<'PY'
@@ -3255,6 +3320,8 @@ verify_git_snapshot_receipt() {
   if [[ "${LOCKSPIRE_PHASE_139_RELEASE_PLEASE_SEALED:-0}" == 1 ||
     "${LOCKSPIRE_PHASE_139_MAIN_ADVANCE:-0}" == 1 ]]; then
     normalize_phase_139_release_please_git_ref "$ledger_commit" "$ledger" "$branch_file" || failed=1
+    normalize_phase_140_signal_fixture_recovery_branch \
+      "$ledger_commit" "$ledger" "$branch_file" "$head" || failed=1
   fi
   current_head="$(git rev-parse HEAD 2>/dev/null || true)"
   repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -3349,6 +3416,16 @@ classify_lifecycle_commit() {
     blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' 'phase_140_entry_contract_repair' || return 1
     blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' 'phase_140_entry_contract_repair' || return 1
     printf 'phase_140_entry_contract_repair'
+    return
+  fi
+  if [[ "$subject" == 'test(139): tolerate slow signal fixture startup' ]]; then
+    validate_phase_139_signal_fixture_timeout_commit "$commit" "$paths" || return 1
+    printf 'phase_139_signal_fixture_timeout'
+    return
+  fi
+  if [[ "$subject" == 'fix(140): classify signal fixture gate follow-up' ]]; then
+    validate_phase_140_signal_fixture_followup_commit "$commit" "$paths" || return 1
+    printf 'phase_140_gate_recovery_followup'
     return
   fi
   if [[ "$subject" =~ ^docs\(138-([0-9][0-9])\):[[:space:]]complete[[:space:]].+[[:space:]]plan$ ]]; then
@@ -3480,6 +3557,48 @@ classify_lifecycle_commit() {
     return
   fi
   return 1
+}
+
+validate_phase_139_signal_fixture_timeout_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths package_assertions_path
+  package_assertions_path="test/support/lockspire/release_proof/package_assertions.ex"
+  [[ "$paths" == "$package_assertions_path" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(140): reconcile phase 140 entry gate truth' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  [[ "$(classify_lifecycle_commit "$parent" "$parent_subject" "$parent_paths" 2>/dev/null || true)" == \
+    phase_140_entry_contract_repair ]] || return 1
+  [[ "$(git diff --numstat "$parent" "$commit" -- "$package_assertions_path" 2>/dev/null)" == \
+    $'1\t1\t'"$package_assertions_path" ]] || return 1
+  blob_has_line "$parent" "$package_assertions_path" \
+    '^[[:space:]]*defp wait_for_fixture_path!\(path, attempts \\\\ 400\)$' || return 1
+  blob_has_line "$commit" "$package_assertions_path" \
+    '^[[:space:]]*defp wait_for_fixture_path!\(path, attempts \\\\ 2_400\)$'
+}
+
+validate_phase_140_signal_fixture_followup_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths expected_paths
+  local script_path package_assertions_path test_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  package_assertions_path="test/support/lockspire/release_proof/package_assertions.ex"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  expected_paths="$(printf '%s\n' "$script_path" "$package_assertions_path" "$test_path" | LC_ALL=C sort)"
+  [[ "$paths" == "$expected_paths" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  [[ "$(classify_lifecycle_commit "$parent" "$parent_subject" "$parent_paths" 2>/dev/null || true)" == \
+    phase_139_signal_fixture_timeout ]] || return 1
+  blob_has_line "$commit" "$script_path" "validate_phase_139_signal_fixture_timeout_commit" || return 1
+  blob_has_line "$commit" "$script_path" "phase_140_gate_recovery_followup" || return 1
+  blob_has_line "$commit" "$script_path" '^normalize_phase_140_signal_fixture_recovery_branch\(\)[[:space:]]*\{' || return 1
+  blob_has_line "$commit" "$script_path" 'fix/phase139-signal-fixture-timeout' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'class=phase_139_signal_fixture_timeout' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'class=phase_140_gate_recovery_followup'
+  blob_has_line "$commit" "$package_assertions_path" 'refs/heads/fix/phase139-signal-fixture-timeout' || return 1
+  blob_has_line "$commit" "$test_path" 'Phase 140 recovery authenticates the published signal fixture follow-up'
 }
 
 validate_phase_139_release_please_refresh_commit() {
@@ -4662,8 +4781,19 @@ validate_phase_140_recovery_chain() {
     classes+="$class"$'\n'
   done <<< "$chain"
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
+  if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup' ]]; then
+    return 0
+  fi
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair' ]]; then
     return 0
+  fi
+  if [[ "$classes" == phase_140_gate_recovery_followup ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" 2>/dev/null | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
+    return
   fi
   [[ "$classes" == phase_140_entry_contract_repair ]] || return 1
   baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
@@ -4674,7 +4804,7 @@ validate_phase_140_recovery_chain() {
 }
 
 verify_phase_139_posttransition_chain() {
-  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix
+  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$ledger_commit" 2>/dev/null || true)"
   [[ "$subject" == 'docs(phase-139): refresh baseline inventory before verification' ]] || return 1
@@ -4687,7 +4817,10 @@ verify_phase_139_posttransition_chain() {
   done <<< "$chain"
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
   suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair'
-  if [[ "$classes" == *"$suffix" ]]; then
+  extended_suffix="$suffix"$'\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup'
+  if [[ "$classes" == *"$extended_suffix" ]]; then
+    classes="${classes%"$extended_suffix"}"
+  elif [[ "$classes" == *"$suffix" ]]; then
     classes="${classes%"$suffix"}"
   fi
   case "$classes" in

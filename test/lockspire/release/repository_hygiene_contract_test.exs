@@ -219,6 +219,12 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_phase_139_preverify_refresh!()
   end
 
+  @tag :phase140_recovery_relation
+  @tag timeout: 180_000
+  test "Phase 140 recovery authenticates the published signal fixture follow-up" do
+    PackageAssertions.assert_phase_139_recovery_candidate_relation!()
+  end
+
   @tag :phase139_final_acceptance
   @tag timeout: 600_000
   test "sealed candidate advances main through one exact fast-forward from a clean candidate worktree" do

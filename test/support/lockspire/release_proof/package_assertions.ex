@@ -4112,6 +4112,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       run_git!(repository, ["fetch", "origin", "main"])
       old_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
 
+      entry_repair_baseline_inventory =
+        run_git!(source, [
+          "show",
+          "7c2f26d249c46796e0dba340c6960801a8440cc7:scripts/maintainer/baseline_inventory.sh"
+        ])
+
+      entry_repair_package_assertions =
+        run_git!(source, [
+          "show",
+          "7c2f26d249c46796e0dba340c6960801a8440cc7:test/support/lockspire/release_proof/package_assertions.ex"
+        ])
+
       entry_repair_paths = [
         ".planning/PROJECT.md",
         "scripts/maintainer/baseline_inventory.sh",
@@ -4119,13 +4131,75 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ]
 
       Enum.each(entry_repair_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        content =
+          case path do
+            "scripts/maintainer/baseline_inventory.sh" ->
+              entry_repair_baseline_inventory
+
+            "test/support/lockspire/release_proof/package_assertions.ex" ->
+              entry_repair_package_assertions
+
+            _ ->
+              File.read!(Path.join(source, path))
+          end
+
+        write_repo_file!(repository, path, content)
       end)
 
       run_git!(repository, ["add", "-f", List.last(entry_repair_paths)])
       commit_all!(repository, "fix(140): reconcile phase 140 entry gate truth")
       entry_repair_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
       run_git!(repository, ["update-ref", "refs/heads/main", entry_repair_head, old_main])
+      run_git!(repository, ["push", "origin", "#{entry_repair_head}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+
+      package_assertions_path =
+        Path.join(repository, "test/support/lockspire/release_proof/package_assertions.ex")
+
+      old_timeout = "defp wait_for_fixture_path!(path, attempts \\\\ 400)"
+      new_timeout = "defp wait_for_fixture_path!(path, attempts \\\\ 2_400)"
+      package_assertions = File.read!(package_assertions_path)
+
+      assert length(String.split(package_assertions, old_timeout)) == 2
+
+      assert run_git!(repository, [
+               "show",
+               "#{entry_repair_head}:test/support/lockspire/release_proof/package_assertions.ex"
+             ])
+             |> String.contains?(old_timeout)
+
+      File.write!(
+        package_assertions_path,
+        String.replace(package_assertions, old_timeout, new_timeout)
+      )
+
+      commit_all!(repository, "test(139): tolerate slow signal fixture startup")
+      timeout_fixture_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/main",
+        timeout_fixture_head,
+        entry_repair_head
+      ])
+
+      run_git!(repository, ["push", "origin", "#{timeout_fixture_head}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+
+      run_git!(repository, ["branch", "fix/phase139-signal-fixture-timeout", timeout_fixture_head])
+
+      for path <- [
+            "scripts/maintainer/baseline_inventory.sh",
+            "test/support/lockspire/release_proof/package_assertions.ex",
+            "test/lockspire/release/repository_hygiene_contract_test.exs"
+          ] do
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end
+
+      commit_all!(repository, "fix(140): classify signal fixture gate follow-up")
+      candidate_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      run_git!(repository, ["update-ref", "refs/heads/main", candidate_head, timeout_fixture_head])
 
       overlay = "docs/phase-140-recovery-note.txt"
       write_repo_file!(repository, overlay, "preserve the in-progress research note\n")
@@ -4186,18 +4260,46 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                overlay
              ]
 
-      {accepted, 0} = run_phase_139_sealed_relation!(repository, ledger, [])
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/fix/phase139-signal-fixture-timeout",
+        entry_repair_head,
+        timeout_fixture_head
+      ])
+
+      {moved_branch, moved_branch_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert moved_branch_status != 0
+      assert moved_branch =~ "git_topology|branches|mismatch|refresh_required"
+
+      assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
+             |> String.starts_with?(timeout_fixture_head)
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/fix/phase139-signal-fixture-timeout",
+        timeout_fixture_head,
+        entry_repair_head
+      ])
+
+      {accepted, accepted_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert accepted_status == 0, accepted
       assert accepted =~ "class=phase_140_context"
       assert accepted =~ "class=phase_140_handoff"
       assert accepted =~ "class=phase_140_gate_recovery"
       assert accepted =~ "class=phase_140_entry_contract_repair"
+      assert accepted =~ "class=phase_139_signal_fixture_timeout"
+      assert accepted =~ "class=phase_140_gate_recovery_followup"
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
+      assert run_git!(repository, ["rev-parse", "refs/heads/fix/phase139-signal-fixture-timeout"])
+             |> String.trim() ==
+               timeout_fixture_head
+
       assert run_git!(repository, ["rev-parse", "refs/remotes/origin/main"]) |> String.trim() ==
-               gate_recovery_head
+               timeout_fixture_head
 
       assert run_git!(repository, ["ls-remote", remote, "refs/heads/main"])
-             |> String.starts_with?(gate_recovery_head)
+             |> String.starts_with?(timeout_fixture_head)
 
       File.write!(Path.join(repository, overlay), "changed after recovery was sealed\n")
       {changed, changed_status} = run_phase_139_sealed_relation!(repository, ledger, [])
@@ -4566,8 +4668,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     after
       File.rm_rf(fixture)
     end
-
-    assert_phase_139_recovery_candidate_relation!()
   end
 
   def assert_phase_139_acceptance_receipt! do
