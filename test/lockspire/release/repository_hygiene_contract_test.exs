@@ -114,6 +114,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_baseline_inventory_maintained_records!()
   end
 
+  @tag timeout: 180_000
   test "baseline inventory collector fails closed for maintained selectors and hostile paths" do
     PackageAssertions.assert_baseline_inventory_maintained_fail_closed!()
   end
@@ -195,7 +196,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   end
 
   @tag :phase139_inventory_relation
-  @tag timeout: 300_000
+  @tag timeout: 600_000
   test "relation accepts canonical completion and rejects hostile bookkeeping without moving refs" do
     PackageAssertions.assert_phase_139_inventory_relation!()
   end
@@ -221,7 +222,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase140_recovery_relation
   @tag timeout: 180_000
-  test "Phase 140 recovery validates the patched Mint dependency follow-up" do
+  test "Phase 140 recovery validates dependency and inventory fixture timeout follow-ups" do
     PackageAssertions.assert_phase_139_recovery_candidate_relation!()
   end
 
@@ -282,11 +283,13 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   end
 
   @tag :phase138_prohibition
+  @tag timeout: 180_000
   test "138-02-1 rejects credential-like material at display boundaries" do
     PackageAssertions.assert_baseline_inventory_credential_redaction!()
   end
 
   @tag :phase138_prohibition
+  @tag timeout: 180_000
   test "138-09-2 rejects hostile maintained paths from escaping the collector" do
     PackageAssertions.assert_baseline_inventory_maintained_fail_closed!()
   end

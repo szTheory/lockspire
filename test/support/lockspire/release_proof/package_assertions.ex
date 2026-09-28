@@ -9,6 +9,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   @next_phase_number "139"
   @action_phase_number "140"
   @closure_phase_number "141"
+  @phase_140_dependency_audit_repair_commit "4a74502409d9f21114283d444a5b1187cb3d6b1b"
   @next_phase_completion_commit "3373fb7a29680bb0ae9fe2831206ba2af1584f29"
   @baseline_phase_label "Phase " <> @baseline_phase_number
   @next_phase_label "Phase " <> @next_phase_number
@@ -4238,11 +4239,28 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ]
 
       Enum.each(dependency_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        content =
+          run_git!(source, ["show", "#{@phase_140_dependency_audit_repair_commit}:#{path}"])
+
+        write_repo_file!(repository, path, content)
         run_git!(repository, ["add", "-f", path])
       end)
 
       run_git!(repository, ["commit", "-qm", "fix(140): update Mint for dependency advisories"])
+
+      timeout_repair_paths = [
+        "scripts/maintainer/baseline_inventory.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex",
+        "test/lockspire/release/repository_hygiene_contract_test.exs"
+      ]
+
+      Enum.each(timeout_repair_paths, fn path ->
+        content = File.read!(Path.join(source, path))
+        write_repo_file!(repository, path, content)
+        run_git!(repository, ["add", "-f", path])
+      end)
+
+      run_git!(repository, ["commit", "-qm", "fix(140): extend inventory fixture timeouts"])
       candidate_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
       run_git!(repository, ["update-ref", "refs/heads/main", candidate_head, signal_followup_head])
@@ -4336,6 +4354,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_139_signal_fixture_timeout"
       assert accepted =~ "class=phase_140_gate_recovery_followup"
       assert accepted =~ "class=phase_140_dependency_audit_repair"
+      assert accepted =~ "class=phase_140_inventory_timeout_repair"
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/fix/phase139-signal-fixture-timeout"])

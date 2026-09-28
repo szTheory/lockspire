@@ -3434,6 +3434,11 @@ classify_lifecycle_commit() {
     printf 'phase_140_dependency_audit_repair'
     return
   fi
+  if [[ "$subject" == 'fix(140): extend inventory fixture timeouts' ]]; then
+    validate_phase_140_inventory_timeout_repair_commit "$commit" "$paths" || return 1
+    printf 'phase_140_inventory_timeout_repair'
+    return
+  fi
   if [[ "$subject" =~ ^docs\(138-([0-9][0-9])\):[[:space:]]complete[[:space:]].+[[:space:]]plan$ ]]; then
     if validate_gsd_plan_closeout_commit "$commit" "$paths" "${BASH_REMATCH[1]}"; then
       printf 'gsd_plan_closeout'
@@ -3628,6 +3633,41 @@ validate_phase_140_dependency_audit_repair_commit() {
   blob_has_line "$commit" "$script_path" 'phase_140_dependency_audit_repair' || return 1
   blob_has_line "$commit" "$package_assertions_path" 'phase_140_dependency_audit_repair' || return 1
   blob_has_line "$commit" "$test_path" 'Phase 140 recovery validates the patched Mint dependency follow-up'
+}
+
+validate_phase_140_inventory_timeout_repair_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths expected_paths
+  local script_path package_assertions_path test_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  package_assertions_path="test/support/lockspire/release_proof/package_assertions.ex"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  expected_paths="$(printf '%s\n' "$script_path" "$package_assertions_path" "$test_path" | LC_ALL=C sort)"
+  [[ "$paths" == "$expected_paths" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(140): update Mint for dependency advisories' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  [[ "$(classify_lifecycle_commit "$parent" "$parent_subject" "$parent_paths" 2>/dev/null || true)" == \
+    phase_140_dependency_audit_repair ]] || return 1
+  blob_has_line "$commit" "$script_path" 'phase_140_inventory_timeout_repair' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'phase_140_inventory_timeout_repair' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'class=phase_140_inventory_timeout_repair' || return 1
+  blob_has_line "$commit" "$test_path" 'dependency and inventory fixture timeout follow-ups' || return 1
+  git show "$commit:$test_path" 2>/dev/null | awk '
+    /^  @tag :phase138_prohibition/ { phase138 = 1; phase_timeout = 0; next }
+    phase138 && /^  @tag timeout: 180_000/ { phase_timeout = 1; next }
+    phase138 && /^  test "138-02-1 rejects credential-like material at display boundaries"/ { redaction = phase_timeout; phase138 = 0; next }
+    phase138 && /^  test "138-09-2 rejects hostile maintained paths from escaping the collector"/ { hostile = phase_timeout; phase138 = 0; next }
+    phase138 && /^  test "/ { phase138 = 0 }
+    /^  @tag timeout: 180_000/ { generic_timeout = 1; next }
+    generic_timeout && /^  test "baseline inventory collector fails closed for maintained selectors and hostile paths"/ { maintained = 1; generic_timeout = 0; next }
+    generic_timeout && /^  test "/ { generic_timeout = 0 }
+    /^  @tag :phase139_inventory_relation/ { relation = 1; relation_timeout = 0; next }
+    relation && /^  @tag timeout: 600_000/ { relation_timeout = 1; next }
+    relation && /^  test "relation accepts canonical completion and rejects hostile bookkeeping without moving refs"/ { relation_extended = relation_timeout; relation = 0; next }
+    relation && /^  test "/ { relation = 0 }
+    END { exit(redaction && hostile && maintained && relation_extended ? 0 : 1) }
+  '
 }
 
 validate_phase_139_release_please_refresh_commit() {
@@ -4816,6 +4856,9 @@ validate_phase_140_recovery_chain() {
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup\nphase_140_dependency_audit_repair' ]]; then
     return 0
   fi
+  if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup\nphase_140_dependency_audit_repair\nphase_140_inventory_timeout_repair' ]]; then
+    return 0
+  fi
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair' ]]; then
     return 0
   fi
@@ -4827,6 +4870,14 @@ validate_phase_140_recovery_chain() {
     [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
     return
   fi
+  if [[ "$classes" == phase_140_inventory_timeout_repair ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'fix(140): update Mint for dependency advisories' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" 2>/dev/null | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_140_dependency_audit_repair ]]
+    return
+  fi
   if [[ "$classes" == phase_140_dependency_audit_repair ]]; then
     baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
     [[ "$baseline_subject" == 'fix(140): classify signal fixture gate follow-up' ]] || return 1
@@ -4835,10 +4886,26 @@ validate_phase_140_recovery_chain() {
     [[ "$baseline_class" == phase_140_gate_recovery_followup ]]
     return
   fi
+  if [[ "$classes" == $'phase_140_dependency_audit_repair\nphase_140_inventory_timeout_repair' ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'fix(140): update Mint for dependency advisories' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" 2>/dev/null | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_140_dependency_audit_repair ]]
+    return
+  fi
   if [[ "$classes" == $'phase_140_gate_recovery_followup\nphase_140_dependency_audit_repair' ]]; then
     baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
     [[ "$baseline_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
     baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
+    return
+  fi
+  if [[ "$classes" == $'phase_140_gate_recovery_followup\nphase_140_dependency_audit_repair\nphase_140_inventory_timeout_repair' ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" 2>/dev/null | LC_ALL=C sort)"
     baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
     [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
     return
@@ -4867,7 +4934,10 @@ verify_phase_139_posttransition_chain() {
   suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair'
   extended_suffix="$suffix"$'\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup'
   dependency_suffix="$extended_suffix"$'\nphase_140_dependency_audit_repair'
-  if [[ "$classes" == *"$dependency_suffix" ]]; then
+  local inventory_timeout_suffix="$dependency_suffix"$'\nphase_140_inventory_timeout_repair'
+  if [[ "$classes" == *"$inventory_timeout_suffix" ]]; then
+    classes="${classes%"$inventory_timeout_suffix"}"
+  elif [[ "$classes" == *"$dependency_suffix" ]]; then
     classes="${classes%"$dependency_suffix"}"
   elif [[ "$classes" == *"$extended_suffix" ]]; then
     classes="${classes%"$extended_suffix"}"
