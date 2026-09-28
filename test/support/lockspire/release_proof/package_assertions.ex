@@ -3995,7 +3995,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         receipt: receipt,
         gsd_tools: gsd_tools
       } =
-        build_sealed_phase_139_acceptance_fixture!(fixture)
+        build_sealed_phase_139_acceptance_fixture!(
+          fixture,
+          fn _repository -> :ok end,
+          fn _repository -> :ok end,
+          fn _repository -> :ok end,
+          nil,
+          true
+        )
 
       # The builder leaves the Phase 139 transition as an unstaged overlay.
       # A real Phase 140 recovery has that handoff committed before planning starts.
@@ -4188,18 +4195,57 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       run_git!(repository, ["branch", "fix/phase139-signal-fixture-timeout", timeout_fixture_head])
 
+      signal_followup_commit =
+        run_git!(source, [
+          "rev-list",
+          "--all",
+          "--grep=^fix(140): classify signal fixture gate follow-up$",
+          "--max-count=1"
+        ])
+        |> String.trim()
+
+      refute signal_followup_commit == ""
+
       for path <- [
             "scripts/maintainer/baseline_inventory.sh",
             "test/support/lockspire/release_proof/package_assertions.ex",
             "test/lockspire/release/repository_hygiene_contract_test.exs"
           ] do
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        {content, 0} =
+          System.cmd("git", ["show", "#{signal_followup_commit}:#{path}"],
+            cd: source,
+            stderr_to_stdout: true
+          )
+
+        write_repo_file!(repository, path, content)
       end
 
       commit_all!(repository, "fix(140): classify signal fixture gate follow-up")
+      signal_followup_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/main",
+        signal_followup_head,
+        timeout_fixture_head
+      ])
+
+      dependency_paths = [
+        "mix.lock",
+        "scripts/maintainer/baseline_inventory.sh",
+        "test/support/lockspire/release_proof/package_assertions.ex",
+        "test/lockspire/release/repository_hygiene_contract_test.exs"
+      ]
+
+      Enum.each(dependency_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        run_git!(repository, ["add", "-f", path])
+      end)
+
+      run_git!(repository, ["commit", "-qm", "fix(140): update Mint for dependency advisories"])
       candidate_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
 
-      run_git!(repository, ["update-ref", "refs/heads/main", candidate_head, timeout_fixture_head])
+      run_git!(repository, ["update-ref", "refs/heads/main", candidate_head, signal_followup_head])
 
       overlay = "docs/phase-140-recovery-note.txt"
       write_repo_file!(repository, overlay, "preserve the in-progress research note\n")
@@ -4289,6 +4335,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_140_entry_contract_repair"
       assert accepted =~ "class=phase_139_signal_fixture_timeout"
       assert accepted =~ "class=phase_140_gate_recovery_followup"
+      assert accepted =~ "class=phase_140_dependency_audit_repair"
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
       assert run_git!(repository, ["rev-parse", "refs/heads/fix/phase139-signal-fixture-timeout"])
@@ -5348,9 +5395,33 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          parent_mutate \\ fn _repository -> :ok end,
          source_scope \\ "git",
          release_please_ref \\ false,
-         include_retained_pr \\ false
+         include_retained_pr \\ false,
+         seed_mint_lockfile \\ false
        ) do
     initialize_snapshot_repository!(repository)
+
+    if seed_mint_lockfile do
+      lockfile_source =
+        run_git!(Paths.path("."), [
+          "rev-list",
+          "--all",
+          "--grep=^fix(140): classify signal fixture gate follow-up$",
+          "--max-count=1"
+        ])
+        |> String.trim()
+
+      refute lockfile_source == ""
+
+      {lockfile, 0} =
+        System.cmd("git", ["show", "#{lockfile_source}:mix.lock"],
+          cd: Paths.path("."),
+          stderr_to_stdout: true
+        )
+
+      write_repo_file!(repository, "mix.lock", lockfile)
+      commit_all!(repository, "test: seed phase 139 dependency lock")
+    end
+
     copy_phase_139_planning_fixture!(repository)
     copy_phase_139_verification_parent_documents!(repository)
 
@@ -5549,7 +5620,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          completion_mutate \\ fn _repository -> :ok end,
          transition_mutate \\ fn _repository -> :ok end,
          parent_mutate \\ fn _repository -> :ok end,
-         completion_snapshot \\ nil
+         completion_snapshot \\ nil,
+         seed_mint_lockfile \\ false
        ) do
     repository = Path.join(fixture, "repository")
 
@@ -5557,7 +5629,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
 
     {_ledger_commit, evidence_base, remote} =
-      build_phase_139_relation_repository!(fixture, repository, ledger, parent_mutate)
+      build_phase_139_relation_repository!(
+        fixture,
+        repository,
+        ledger,
+        parent_mutate,
+        "git",
+        false,
+        false,
+        seed_mint_lockfile
+      )
 
     write_phase_139_verification!(repository)
     commit_all!(repository, @next_phase_commit_prefix <> "record passed verification")

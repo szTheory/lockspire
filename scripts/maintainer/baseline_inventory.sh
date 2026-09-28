@@ -3167,7 +3167,8 @@ normalize_phase_140_signal_fixture_recovery_branch() {
     "$branch_ref" 2>/dev/null || true)"
   [[ -z "$expected_sha" ]] || return 0
 
-  branch_sha="$(git rev-parse --verify "$branch_ref" 2>/dev/null)" || return 1
+  branch_sha="$(git rev-parse --verify "$branch_ref" 2>/dev/null || true)"
+  [[ -n "$branch_sha" ]] || return 0
   valid_snapshot_sha "$branch_sha" || return 1
   branch_subject="$(git show -s --format=%s "$branch_sha" 2>/dev/null || true)"
   [[ "$branch_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
@@ -3428,6 +3429,11 @@ classify_lifecycle_commit() {
     printf 'phase_140_gate_recovery_followup'
     return
   fi
+  if [[ "$subject" == 'fix(140): update Mint for dependency advisories' ]]; then
+    validate_phase_140_dependency_audit_repair_commit "$commit" "$paths" || return 1
+    printf 'phase_140_dependency_audit_repair'
+    return
+  fi
   if [[ "$subject" =~ ^docs\(138-([0-9][0-9])\):[[:space:]]complete[[:space:]].+[[:space:]]plan$ ]]; then
     if validate_gsd_plan_closeout_commit "$commit" "$paths" "${BASH_REMATCH[1]}"; then
       printf 'gsd_plan_closeout'
@@ -3599,6 +3605,29 @@ validate_phase_140_signal_fixture_followup_commit() {
   blob_has_line "$commit" "$package_assertions_path" 'class=phase_140_gate_recovery_followup'
   blob_has_line "$commit" "$package_assertions_path" 'refs/heads/fix/phase139-signal-fixture-timeout' || return 1
   blob_has_line "$commit" "$test_path" 'Phase 140 recovery authenticates the published signal fixture follow-up'
+}
+
+validate_phase_140_dependency_audit_repair_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths expected_paths
+  local script_path package_assertions_path test_path
+  script_path="scripts/maintainer/baseline_inventory.sh"
+  package_assertions_path="test/support/lockspire/release_proof/package_assertions.ex"
+  test_path="test/lockspire/release/repository_hygiene_contract_test.exs"
+  expected_paths="$(printf '%s\n' \
+    'mix.lock' "$script_path" "$package_assertions_path" "$test_path" | LC_ALL=C sort)"
+  [[ "$paths" == "$expected_paths" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'fix(140): classify signal fixture gate follow-up' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  [[ "$(classify_lifecycle_commit "$parent" "$parent_subject" "$parent_paths" 2>/dev/null || true)" == \
+    phase_140_gate_recovery_followup ]] || return 1
+  [[ "$(git diff --numstat "$parent" "$commit" -- mix.lock 2>/dev/null)" == $'1\t1\tmix.lock' ]] || return 1
+  blob_has_line "$parent" 'mix.lock' '^  "mint": [{]:hex, :mint, "1\.10\.1",' || return 1
+  blob_has_line "$commit" 'mix.lock' '^  "mint": [{]:hex, :mint, "1\.11\.0",' || return 1
+  blob_has_line "$commit" "$script_path" 'phase_140_dependency_audit_repair' || return 1
+  blob_has_line "$commit" "$package_assertions_path" 'phase_140_dependency_audit_repair' || return 1
+  blob_has_line "$commit" "$test_path" 'Phase 140 recovery validates the patched Mint dependency follow-up'
 }
 
 validate_phase_139_release_please_refresh_commit() {
@@ -4784,6 +4813,9 @@ validate_phase_140_recovery_chain() {
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup' ]]; then
     return 0
   fi
+  if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup\nphase_140_dependency_audit_repair' ]]; then
+    return 0
+  fi
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair' ]]; then
     return 0
   fi
@@ -4791,6 +4823,22 @@ validate_phase_140_recovery_chain() {
     baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
     [[ "$baseline_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
     baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" 2>/dev/null | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
+    return
+  fi
+  if [[ "$classes" == phase_140_dependency_audit_repair ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'fix(140): classify signal fixture gate follow-up' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" | LC_ALL=C sort)"
+    baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
+    [[ "$baseline_class" == phase_140_gate_recovery_followup ]]
+    return
+  fi
+  if [[ "$classes" == $'phase_140_gate_recovery_followup\nphase_140_dependency_audit_repair' ]]; then
+    baseline_subject="$(git show -s --format=%s "$baseline" 2>/dev/null || true)"
+    [[ "$baseline_subject" == 'test(139): tolerate slow signal fixture startup' ]] || return 1
+    baseline_paths="$(git diff-tree --no-commit-id --name-only -r "$baseline" | LC_ALL=C sort)"
     baseline_class="$(classify_lifecycle_commit "$baseline" "$baseline_subject" "$baseline_paths" 2>/dev/null || true)"
     [[ "$baseline_class" == phase_139_signal_fixture_timeout ]]
     return
@@ -4804,7 +4852,7 @@ validate_phase_140_recovery_chain() {
 }
 
 verify_phase_139_posttransition_chain() {
-  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix
+  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix dependency_suffix
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$ledger_commit" 2>/dev/null || true)"
   [[ "$subject" == 'docs(phase-139): refresh baseline inventory before verification' ]] || return 1
@@ -4818,7 +4866,10 @@ verify_phase_139_posttransition_chain() {
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
   suffix=$'\nphase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair'
   extended_suffix="$suffix"$'\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup'
-  if [[ "$classes" == *"$extended_suffix" ]]; then
+  dependency_suffix="$extended_suffix"$'\nphase_140_dependency_audit_repair'
+  if [[ "$classes" == *"$dependency_suffix" ]]; then
+    classes="${classes%"$dependency_suffix"}"
+  elif [[ "$classes" == *"$extended_suffix" ]]; then
     classes="${classes%"$extended_suffix"}"
   elif [[ "$classes" == *"$suffix" ]]; then
     classes="${classes%"$suffix"}"

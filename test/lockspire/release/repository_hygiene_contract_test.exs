@@ -221,7 +221,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase140_recovery_relation
   @tag timeout: 180_000
-  test "Phase 140 recovery authenticates the published signal fixture follow-up" do
+  test "Phase 140 recovery validates the patched Mint dependency follow-up" do
     PackageAssertions.assert_phase_139_recovery_candidate_relation!()
   end
 
