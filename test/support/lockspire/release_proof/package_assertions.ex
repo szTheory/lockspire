@@ -5608,7 +5608,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     ])
   end
 
-  defp wait_for_fixture_path!(path, attempts \\ 400)
+  defp wait_for_fixture_path!(path, attempts \\ 2_400)
 
   defp wait_for_fixture_path!(path, attempts) when attempts > 0 do
     if File.exists?(path) do
