@@ -3982,6 +3982,270 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
   end
 
+  def assert_phase_140_planning_preparation_recovery_chain! do
+    wrapper = Paths.read!("scripts/maintainer/run_lockspire_phase_finalizer.sh")
+    assert wrapper =~ "${GSD_TOOLS:-}", "phase_140_finalizer_runtime_resolution_contract"
+    refute wrapper =~ "fixtures/gsd-core/bin/gsd-tools.cjs"
+    inventory = Paths.read!("scripts/maintainer/baseline_inventory.sh")
+
+    assert inventory =~ "normalize_phase_140_preserved_agent_branches",
+           "phase_140_preserved_agent_branches_contract"
+
+    fixture = unique_tmp_fixture("lockspire-phase-140-planning-prefix-recovery")
+
+    ledger =
+      ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"
+
+    try do
+      %{
+        repository: repository,
+        candidate: phase139_base,
+        receipt: receipt,
+        gsd_tools: gsd_tools
+      } =
+        build_sealed_phase_139_acceptance_fixture!(
+          fixture,
+          fn _repository -> :ok end,
+          fn _repository -> :ok end,
+          fn _repository -> :ok end,
+          nil,
+          true
+        )
+
+      for path <- [".planning/PROJECT.md", ".planning/STATE.md"] do
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(repository, ["show", "#{phase139_base}:#{path}"])
+        )
+      end
+
+      File.rm!(receipt.path)
+      run_git!(repository, ["push", "origin", "#{phase139_base}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+
+      source = Paths.path(".")
+
+      preparation_commits = [
+        {
+          "b75856823b4a51c302bfc7f602a89a57294c84e1",
+          "docs(140): refresh phase research",
+          [".planning/phases/140-bounded-operational-loose-end-triage/140-RESEARCH.md"]
+        },
+        {
+          "4bc83ccca0c91779f70d0ed581946bd1a16d61e8",
+          "docs(phase-140): add validation strategy",
+          [".planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md"]
+        },
+        {
+          "a18053394d3afb64fced32f50ff6832a9514915c",
+          "docs(phase-140): map repository patterns",
+          [".planning/phases/140-bounded-operational-loose-end-triage/140-PATTERNS.md"]
+        },
+        {
+          "71c0f26a465d49d755819b4f9ff24792792c1b89",
+          "docs(140): create phase plan",
+          [
+            ".planning/ROADMAP.md",
+            ".planning/STATE.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-02-PLAN.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-03-PLAN.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md"
+          ]
+        },
+        {
+          "c330a6f4982d833a74c114b85b9e8368069b539a",
+          "docs(140): refresh execution handoff",
+          [
+            ".planning/STATE.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+          ]
+        },
+        {
+          "cf0f2f41826fd20be79aa38915341a14b1475017",
+          "docs(140): pin overlay-sensitive plans to primary checkout",
+          [
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md",
+            ".planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md"
+          ]
+        }
+      ]
+
+      Enum.each(preparation_commits, fn {source_commit, subject, paths} ->
+        Enum.each(paths, fn path ->
+          {content, 0} =
+            System.cmd("git", ["show", "#{source_commit}:#{path}"],
+              cd: source,
+              stderr_to_stdout: true
+            )
+
+          write_repo_file!(repository, path, content)
+        end)
+
+        commit_all!(repository, subject)
+      end)
+
+      recovery_contract_paths = [
+        "scripts/maintainer/baseline_inventory.sh",
+        "scripts/maintainer/run_lockspire_phase_finalizer.sh",
+        "test/lockspire/quality/phase_139_planning_consistency_test.exs",
+        "test/lockspire/release/repository_hygiene_contract_test.exs",
+        "test/support/lockspire/release_proof/package_assertions.ex"
+      ]
+
+      Enum.each(recovery_contract_paths, fn path ->
+        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      end)
+
+      commit_all!(repository, "fix(140): authenticate planning preparation recovery prefix")
+      candidate_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      old_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/main",
+        candidate_head,
+        old_main
+      ])
+
+      run_git!(repository, ["push", "origin", "#{candidate_head}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+      run_git!(repository, ["remote", "add", "phase140-source", source])
+
+      for {branch, sha} <- [
+            {"agent-140-01", "4738b0d550e0435c3fac5dd0d1b926f7317cf92a"},
+            {"agent-140-02", "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"}
+          ] do
+        run_git!(repository, ["fetch", "phase140-source", sha])
+        run_git!(repository, ["update-ref", "refs/heads/#{branch}", sha])
+      end
+
+      write_repo_file!(
+        repository,
+        "docs/phase-140-planning-recovery-note.txt",
+        "retain planning note\n"
+      )
+
+      accepted_receipt = Path.join(repository, ".git/lockspire-phase-139-acceptance-v1.json")
+
+      File.write!(
+        accepted_receipt,
+        Jason.encode!(%{
+          schema: "lockspire-phase-139-acceptance-v1",
+          baseline_sha: phase139_base
+        }) <> "\n"
+      )
+
+      File.chmod!(accepted_receipt, 0o600)
+
+      hooks_path = Path.join(fixture, "planning-prefix-hooks.json")
+
+      File.write!(
+        hooks_path,
+        Jason.encode!(%{
+          "activeHooks" => [
+            %{
+              "kind" => "gate",
+              "capId" => "lockspire-phase-finalizer",
+              "check" => %{
+                "predicate" => %{
+                  "kind" => "command-exit-zero",
+                  "command" =>
+                    ~S(test "${PHASE_NUMBER}" != 140 || bash scripts/maintainer/run_lockspire_phase_finalizer.sh post-transition 139),
+                  "timeout" => 2400
+                }
+              },
+              "blocking" => true,
+              "onError" => "halt"
+            }
+          ]
+        })
+      )
+
+      prepare_recovery_receipt = fn ->
+        {sealed_json, 0} =
+          System.cmd(
+            "bash",
+            ["-c", ~S(exec node "$STATE_HELPER" prepare 139 < "$HOOKS_PATH")],
+            cd: repository,
+            env: [
+              {"STATE_HELPER", fixture_state_helper_path!(repository)},
+              {"HOOKS_PATH", hooks_path},
+              {"GSD_TOOLS", gsd_tools}
+            ],
+            stderr_to_stdout: true
+          )
+
+        Jason.decode!(sealed_json)
+      end
+
+      sealed = prepare_recovery_receipt.()
+      assert get_in(sealed, ["recovery", "baselineSha"]) == phase139_base
+
+      assert get_in(sealed, ["recovery", "preservedWorktree"]) |> Enum.map(& &1["path"]) == [
+               "docs/phase-140-planning-recovery-note.txt"
+             ]
+
+      {accepted, accepted_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert accepted_status == 0, accepted
+      assert accepted =~ "class=phase_140_research_refresh"
+      assert accepted =~ "class=phase_140_validation_strategy"
+      assert accepted =~ "class=phase_140_pattern_map"
+      assert accepted =~ "class=phase_140_plan_creation"
+      assert accepted =~ "class=phase_140_handoff_refresh"
+      assert accepted =~ "class=phase_140_primary_checkout_pin"
+      assert accepted =~ "class=phase_140_planning_recovery_contract_repair"
+      assert accepted =~ "snapshot_relation: authorized_bookkeeping"
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/agent-140-02",
+        candidate_head,
+        "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"
+      ])
+
+      {unrecognized_branch, unrecognized_branch_status} =
+        run_phase_139_sealed_relation!(repository, ledger, [])
+
+      assert unrecognized_branch_status != 0
+      assert unrecognized_branch =~ "git_topology|branches|mismatch"
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/agent-140-02",
+        "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d",
+        candidate_head
+      ])
+
+      {restored, restored_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert restored_status == 0, restored
+
+      File.rm!(receipt.path)
+      write_repo_file!(repository, "docs/phase-140-unclassified-note.txt", "unclassified\n")
+      commit_all!(repository, "docs(140): add unclassified note")
+      rejected_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+
+      run_git!(repository, [
+        "update-ref",
+        "refs/heads/main",
+        rejected_head,
+        candidate_head
+      ])
+
+      run_git!(repository, ["push", "origin", "#{rejected_head}:refs/heads/main"])
+      run_git!(repository, ["fetch", "origin", "main"])
+      _sealed = prepare_recovery_receipt.()
+
+      {rejected, rejected_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+      assert rejected_status != 0
+      assert rejected =~ "snapshot_relation: refresh_required"
+    after
+      File.rm_rf(fixture)
+    end
+  end
+
   def assert_phase_139_recovery_candidate_relation! do
     fixture = unique_tmp_fixture("lockspire-phase-140-recovery-sealed-candidate")
 

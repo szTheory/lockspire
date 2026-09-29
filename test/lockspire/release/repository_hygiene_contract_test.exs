@@ -226,6 +226,12 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_phase_139_recovery_candidate_relation!()
   end
 
+  @tag :phase140_recovery_relation
+  @tag timeout: 300_000
+  test "Phase 140 recovery authenticates the exact planning preparation prefix" do
+    PackageAssertions.assert_phase_140_planning_preparation_recovery_chain!()
+  end
+
   @tag :phase139_final_acceptance
   @tag timeout: 600_000
   test "sealed candidate advances main through one exact fast-forward from a clean candidate worktree" do

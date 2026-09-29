@@ -3182,6 +3182,42 @@ normalize_phase_140_signal_fixture_recovery_branch() {
   remove_relation_git_domain_row "$branch_file" local_branch "$branch_ref" "$branch_sha"
 }
 
+normalize_phase_140_preserved_agent_branches() {
+  local ledger_commit="$1" ledger="$2" branch_file="$3" branch_ref branch_sha subject paths expected_paths expected_blob
+  local expected_branches
+  expected_branches="$(ledger_git_domain_section "$ledger_commit" "$ledger" branches)"
+  for branch_ref in refs/heads/agent-140-01 refs/heads/agent-140-02; do
+    [[ -z "$(ledger_git_domain_sha "$expected_branches" "$branch_ref" 2>/dev/null || true)" ]] || continue
+    branch_sha="$(git rev-parse --verify "$branch_ref" 2>/dev/null || true)"
+    [[ -n "$branch_sha" ]] || continue
+    subject="$(git show -s --format=%s "$branch_sha" 2>/dev/null || true)"
+    paths="$(git diff-tree --no-commit-id --name-only -r "$branch_sha" 2>/dev/null | LC_ALL=C sort)"
+    case "$branch_ref" in
+      refs/heads/agent-140-01)
+        [[ "$branch_sha" == 4738b0d550e0435c3fac5dd0d1b926f7317cf92a &&
+           "$subject" == 'docs(140-01): complete bounded operational loose-end triage plan' ]] || return 1
+        expected_paths="$(printf '%s\n' \
+          '.planning/REQUIREMENTS.md' \
+          '.planning/ROADMAP.md' \
+          '.planning/STATE.md' \
+          '.planning/phases/140-bounded-operational-loose-end-triage/140-01-SUMMARY.md' | LC_ALL=C sort)"
+        [[ "$paths" == "$expected_paths" ]] || return 1
+        expected_blob='caf4c1844f0aee79a83195bb20d79695ee8c4fc8'
+        [[ "$(git rev-parse "$branch_sha:.planning/phases/140-bounded-operational-loose-end-triage/140-01-SUMMARY.md" 2>/dev/null || true)" == "$expected_blob" ]] || return 1
+        ;;
+      refs/heads/agent-140-02)
+        [[ "$branch_sha" == ea9447ae4147475672b4af1d993f8a6bb6f5cd2d &&
+           "$subject" == 'docs(140): add code review report' ]] || return 1
+        expected_paths='.planning/phases/140-bounded-operational-loose-end-triage/140-REVIEW.md'
+        [[ "$paths" == "$expected_paths" ]] || return 1
+        expected_blob='15ef6c95ff3c8b6446c75bffdfb68280ead22d16'
+        [[ "$(git rev-parse "$branch_sha:.planning/phases/140-bounded-operational-loose-end-triage/140-REVIEW.md" 2>/dev/null || true)" == "$expected_blob" ]] || return 1
+        ;;
+    esac
+    remove_relation_git_domain_row "$branch_file" local_branch "$branch_ref" "$branch_sha" || return 1
+  done
+}
+
 restore_relation_git_domain_row() {
   local file="$1" subject="$2" expected_sha="$3" expected_row="$4"
   python3 - "$file" "$subject" "$expected_sha" "$expected_row" <<'PY'
@@ -3323,6 +3359,8 @@ verify_git_snapshot_receipt() {
     normalize_phase_139_release_please_git_ref "$ledger_commit" "$ledger" "$branch_file" || failed=1
     normalize_phase_140_signal_fixture_recovery_branch \
       "$ledger_commit" "$ledger" "$branch_file" "$head" || failed=1
+    normalize_phase_140_preserved_agent_branches \
+      "$ledger_commit" "$ledger" "$branch_file" || failed=1
   fi
   current_head="$(git rev-parse HEAD 2>/dev/null || true)"
   repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -3361,8 +3399,107 @@ verify_git_snapshot_receipt() {
   [[ "$failed" -eq 0 ]]
 }
 
+validate_phase_140_preparation_commit() {
+  local commit="$1" subject="$2" paths="$3" expected_paths="" expected_blobs="" blob path class
+  case "$subject" in
+    'docs(140): refresh phase research')
+      expected_paths='.planning/phases/140-bounded-operational-loose-end-triage/140-RESEARCH.md'
+      expected_blobs=$'e7f7a8aaa40fabf30d7964a4ca3483cb7f3cb5b6\t.planning/phases/140-bounded-operational-loose-end-triage/140-RESEARCH.md'
+      class='phase_140_research_refresh'
+      ;;
+    'docs(phase-140): add validation strategy')
+      expected_paths='.planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md'
+      expected_blobs=$'e7c550b133bc2d319efe89dc70cd9aaa7116f9cf\t.planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md'
+      class='phase_140_validation_strategy'
+      ;;
+    'docs(phase-140): map repository patterns')
+      expected_paths='.planning/phases/140-bounded-operational-loose-end-triage/140-PATTERNS.md'
+      expected_blobs=$'b973065e3215381a7dc2205f3e9181d2a2776aa5\t.planning/phases/140-bounded-operational-loose-end-triage/140-PATTERNS.md'
+      class='phase_140_pattern_map'
+      ;;
+    'docs(140): create phase plan')
+      expected_paths="$(printf '%s\n' \
+        '.planning/ROADMAP.md' \
+        '.planning/STATE.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-02-PLAN.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-03-PLAN.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md' | LC_ALL=C sort)"
+      expected_blobs=$'8d6ce7f3927a0fd1f03d532997e6e85a577cfa30\t.planning/ROADMAP.md\n31908762dfaffcc31ad4034b860c8903cbe582d7\t.planning/STATE.md\n76391e8bfd4560323c2814f69c480eff40f68835\t.planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md\nc9347e1f23474b14300afec8e599f4ced6556cec\t.planning/phases/140-bounded-operational-loose-end-triage/140-02-PLAN.md\n29649f35f45c6d25ff63a13093d815668b757524\t.planning/phases/140-bounded-operational-loose-end-triage/140-03-PLAN.md\n316465fd42a3cbf7cf28ba22458552b2d01a8eae\t.planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md\n82dc5b50a57ac7d77f9c7467e1bba7425ae3e035\t.planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md'
+      class='phase_140_plan_creation'
+      ;;
+    'docs(140): refresh execution handoff')
+      expected_paths="$(printf '%s\n' \
+        '.planning/STATE.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md' | LC_ALL=C sort)"
+      expected_blobs=$'e996a1ea6a7165614888632f635edb1271a07bae\t.planning/STATE.md\ne56f7ae5733be84a2fe0fcd2abd92d639124bc69\t.planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md'
+      class='phase_140_handoff_refresh'
+      ;;
+    'docs(140): pin overlay-sensitive plans to primary checkout')
+      expected_paths="$(printf '%s\n' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md' \
+        '.planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md' | LC_ALL=C sort)"
+      expected_blobs=$'1cb05443064b81ba6b9a7251709aa616a5b10f47\t.planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md\nee7ba1722303b09bebd376b1cae632bcfbf4a549\t.planning/phases/140-bounded-operational-loose-end-triage/140-04-PLAN.md'
+      class='phase_140_primary_checkout_pin'
+      ;;
+    *) return 1 ;;
+  esac
+
+  [[ "$paths" == "$expected_paths" ]] || return 1
+  while IFS=$'\t' read -r blob path; do
+    [[ -n "$path" && "$(git rev-parse "$commit:$path" 2>/dev/null || true)" == "$blob" ]] || return 1
+  done <<< "$expected_blobs"
+  printf '%s' "$class"
+}
+
+validate_phase_140_recovery_contract_repair_commit() {
+  local commit="$1" paths="$2" parent parent_subject parent_paths expected_paths
+  expected_paths="$(printf '%s\n' \
+    'scripts/maintainer/baseline_inventory.sh' \
+    'scripts/maintainer/run_lockspire_phase_finalizer.sh' \
+    'test/lockspire/quality/phase_139_planning_consistency_test.exs' \
+    'test/lockspire/release/repository_hygiene_contract_test.exs' \
+    'test/support/lockspire/release_proof/package_assertions.ex' | LC_ALL=C sort)"
+  [[ "$paths" == "$expected_paths" ]] || return 1
+  parent="$(git rev-parse "$commit^" 2>/dev/null)" || return 1
+  parent_subject="$(git show -s --format=%s "$parent" 2>/dev/null || true)"
+  [[ "$parent_subject" == 'docs(140): pin overlay-sensitive plans to primary checkout' ]] || return 1
+  parent_paths="$(git diff-tree --no-commit-id --name-only -r "$parent" | LC_ALL=C sort)"
+  [[ "$(validate_phase_140_preparation_commit "$parent" "$parent_subject" "$parent_paths" 2>/dev/null || true)" == \
+    phase_140_primary_checkout_pin ]] || return 1
+  blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' \
+    'phase_140_planning_recovery_contract_repair' || return 1
+  if git show "$commit:scripts/maintainer/run_lockspire_phase_finalizer.sh" 2>/dev/null | \
+    grep -Fq 'fixtures/gsd-core/bin/gsd-tools.cjs'; then
+    return 1
+  fi
+  blob_has_line "$commit" 'test/lockspire/release/repository_hygiene_contract_test.exs' \
+    'Phase 140 recovery authenticates the exact planning preparation prefix' || return 1
+  blob_has_line "$commit" 'test/lockspire/quality/phase_139_planning_consistency_test.exs' \
+    'Phase: 140 \(Bounded Operational Loose-End Triage\) — READY TO EXECUTE' || return 1
+  blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' \
+    'assert_phase_140_planning_preparation_recovery_chain!' || return 1
+  blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' \
+    'phase_140_finalizer_runtime_resolution_contract' || return 1
+  blob_has_line "$commit" 'test/support/lockspire/release_proof/package_assertions.ex' \
+    'phase_140_preserved_agent_branches_contract' || return 1
+  blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' \
+    'normalize_phase_140_preserved_agent_branches'
+}
+
 classify_lifecycle_commit() {
   local commit="$1" subject="$2" paths="$3"
+  local preparation_class
+  if preparation_class="$(validate_phase_140_preparation_commit "$commit" "$subject" "$paths" 2>/dev/null)"; then
+    printf '%s' "$preparation_class"
+    return
+  fi
+  if [[ "$subject" == 'fix(140): authenticate planning preparation recovery prefix' ]]; then
+    validate_phase_140_recovery_contract_repair_commit "$commit" "$paths" || return 1
+    printf 'phase_140_planning_recovery_contract_repair'
+    return
+  fi
   if [[ "$subject" == "docs(140): capture phase context (assumptions mode)" ]]; then
     local context_path=".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md"
     local discussion_path=".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
@@ -4850,6 +4987,10 @@ validate_phase_140_recovery_chain() {
     classes+="$class"$'\n'
   done <<< "$chain"
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
+  # phase_140_planning_recovery_contract_repair
+  if [[ "$classes" == $'phase_140_research_refresh\nphase_140_validation_strategy\nphase_140_pattern_map\nphase_140_plan_creation\nphase_140_handoff_refresh\nphase_140_primary_checkout_pin\nphase_140_planning_recovery_contract_repair' ]]; then
+    return 0
+  fi
   if [[ "$classes" == $'phase_140_context\nphase_140_handoff\nphase_140_gate_recovery\nphase_140_entry_contract_repair\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup' ]]; then
     return 0
   fi
@@ -4919,7 +5060,7 @@ validate_phase_140_recovery_chain() {
 }
 
 verify_phase_139_posttransition_chain() {
-  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix dependency_suffix
+  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix dependency_suffix planning_prefix_suffix
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$ledger_commit" 2>/dev/null || true)"
   [[ "$subject" == 'docs(phase-139): refresh baseline inventory before verification' ]] || return 1
@@ -4935,6 +5076,10 @@ verify_phase_139_posttransition_chain() {
   extended_suffix="$suffix"$'\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup'
   dependency_suffix="$extended_suffix"$'\nphase_140_dependency_audit_repair'
   local inventory_timeout_suffix="$dependency_suffix"$'\nphase_140_inventory_timeout_repair'
+  planning_prefix_suffix=$'\nphase_140_research_refresh\nphase_140_validation_strategy\nphase_140_pattern_map\nphase_140_plan_creation\nphase_140_handoff_refresh\nphase_140_primary_checkout_pin\nphase_140_planning_recovery_contract_repair'
+  if [[ "$classes" == *"$planning_prefix_suffix" ]]; then
+    classes="${classes%"$planning_prefix_suffix"}"
+  fi
   if [[ "$classes" == *"$inventory_timeout_suffix" ]]; then
     classes="${classes%"$inventory_timeout_suffix"}"
   elif [[ "$classes" == *"$dependency_suffix" ]]; then
