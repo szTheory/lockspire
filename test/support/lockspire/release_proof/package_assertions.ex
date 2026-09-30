@@ -4096,7 +4096,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ]
 
       Enum.each(recovery_contract_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+        content =
+          case path do
+            "test/lockspire/quality/phase_139_planning_consistency_test.exs" ->
+              run_git!(source, [
+                "show",
+                "5ad2b2e935556c8f1a91be32605958530b477527:#{path}"
+              ])
+
+            _ ->
+              File.read!(Path.join(source, path))
+          end
+
+        write_repo_file!(repository, path, content)
       end)
 
       commit_all!(repository, "fix(140): authenticate planning preparation recovery prefix")
@@ -4411,8 +4423,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/support/lockspire/release_proof/package_assertions.ex" ->
               entry_repair_package_assertions
 
-            _ ->
-              File.read!(Path.join(source, path))
+          ".planning/PROJECT.md" ->
+            run_git!(source, ["show", "7c2f26d249c46796e0dba340c6960801a8440cc7:.planning/PROJECT.md"])
+
+          _ ->
+            File.read!(Path.join(source, path))
           end
 
         write_repo_file!(repository, path, content)
