@@ -3,9 +3,12 @@ defmodule Lockspire.SeedingHelpers do
 
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.SigningKeyRecord
   alias Lockspire.KeyCache
 
   def seed_signing_key(kid \\ "test-signing-key") do
+    Lockspire.TestRepo.delete_all(SigningKeyRecord)
+
     key = JOSE.JWK.generate_key({:rsa, 2048})
     {_fields, jwk} = JOSE.JWK.to_map(key)
 
@@ -21,7 +24,7 @@ defmodule Lockspire.SeedingHelpers do
           |> Map.put("kid", kid)
           |> Map.put("alg", "RS256")
           |> Map.put("use", "sig"),
-        private_jwk_encrypted: :erlang.term_to_binary(Map.put(jwk, "kid", kid)),
+        private_jwk_encrypted: Jason.encode!(Map.put(jwk, "kid", kid)),
         status: :active,
         published_at: DateTime.utc_now(),
         activated_at: DateTime.utc_now(),
