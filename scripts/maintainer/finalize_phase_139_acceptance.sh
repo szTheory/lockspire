@@ -147,6 +147,12 @@ try:
         if changed != {".planning/PROJECT.md", ".planning/STATE.md"}:
             raise ValueError("sealed transition contains unexpected paths")
     else:
+        expected_paths = [
+            ".planning/PROJECT.md",
+            ".planning/STATE.md",
+            ".planning/ROADMAP.md",
+            ".planning/REQUIREMENTS.md",
+        ]
         protocol = recovery.get("protocol")
         if (protocol not in {"phase-140-recovery-v1", "phase-140-recovery-v2"} or
                 not re.fullmatch(r"[0-9a-f]{40}", recovery.get("baselineSha", ""))):
@@ -188,7 +194,7 @@ try:
                     not isinstance(prior_head, str) or not re.fullmatch(r"[0-9a-f]{40}", prior_head) or
                     not isinstance(prior_transform, dict) or
                     prior_transform.get("protocol") != "gsd-transition-v1" or
-                    prior_transform.get("allowedPaths") != allowed or
+                    prior_transform.get("allowedPaths") != expected_paths or
                     prior_transform.get("sha256") != hashlib.sha256(
                         json.dumps(prior_evidence, ensure_ascii=False, separators=(",", ":")).encode()
                     ).hexdigest()):
