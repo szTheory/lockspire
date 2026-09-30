@@ -119,6 +119,116 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_baseline_inventory_maintained_fail_closed!()
   end
 
+  @tag :phase140_handoff_classification
+  @tag timeout: 180_000
+  test "Phase 140 handoff classification requires committed structure and emits one stable proposal" do
+    repo_root = Path.expand("../../..", __DIR__)
+    fixture =
+      Path.join(
+        System.tmp_dir!(),
+        "lockspire-phase140-handoff-#{System.unique_integer([:positive])}"
+      )
+
+    repository = Path.join(fixture, "repository")
+    origin = Path.join(fixture, "origin.git")
+    handoff_dir =
+      Path.join(repository, ".planning/phases/140-bounded-operational-loose-end-triage")
+
+    valid_handoff = """
+    ---
+    phase: 140-bounded-operational-loose-end-triage
+    status: in_progress
+    ---
+    # Phase 140 execution handoff
+
+    **Updated:** 2026-09-30
+    **Next command:** `$gsd-execute-phase 140 --gaps-only`
+
+    ## Why this is the next step
+
+    Continue only the remaining bounded gap-closure plans.
+
+    ## Durable Phase 140 context
+
+    Preserve exact-target and proposal-only boundaries.
+
+    ## Do not
+
+    Do not push or mutate remote state.
+    """
+
+    lookalikes = %{
+      "140-missing-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress\n", ""),
+      "140-wrong-shape-HANDOFF.md" => String.replace(valid_handoff, "## Durable Phase 140 context", "## Notes"),
+      "140-wrong-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress", "status: complete")
+    }
+
+    git = fn args, cwd ->
+      System.cmd("git", args,
+        cd: cwd,
+        env: [
+          {"GIT_AUTHOR_NAME", "Lockspire Test"},
+          {"GIT_AUTHOR_EMAIL", "lockspire-test@example.invalid"},
+          {"GIT_COMMITTER_NAME", "Lockspire Test"},
+          {"GIT_COMMITTER_EMAIL", "lockspire-test@example.invalid"}
+        ],
+        stderr_to_stdout: true
+      )
+    end
+
+    try do
+      File.mkdir_p!(handoff_dir)
+      File.write!(Path.join(handoff_dir, "140-HANDOFF.md"), valid_handoff)
+
+      Enum.each(lookalikes, fn {name, contents} ->
+        File.write!(Path.join(handoff_dir, name), contents)
+      end)
+
+      {_, 0} = git.("init --initial-branch=main" |> String.split(), repository)
+      {_, 0} = git.("init --bare origin.git" |> String.split(), fixture)
+      {_, 0} = git.("add .planning" |> String.split(), repository)
+      {_, 0} = git.("commit -m fixture" |> String.split(), repository)
+      {_, 0} = git.("remote add origin #{origin}" |> String.split(), repository)
+      {_, 0} = git.("push -u origin main" |> String.split(), repository)
+
+      output_path = Path.join(fixture, "inventory.md")
+      collector = Path.join(repo_root, "scripts/maintainer/baseline_inventory.sh")
+
+      {first_output, first_status} =
+        System.cmd("bash", [collector, "--scope", "maintained", "--output", output_path],
+          cd: repository,
+          stderr_to_stdout: true
+        )
+
+      assert first_status == 0, first_output
+      first_inventory = File.read!(output_path)
+      assert first_inventory =~ "Maintained follow-up families | partial"
+      assert first_inventory =~ "active-records | unclassified/ambiguous"
+
+      valid_path =
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+
+      [first_id] = Regex.scan(~r/^\| (REC-[0-9a-f]{12}) \| maintained_record \| `#{Regex.escape(valid_path)}` \|/m, first_inventory)
+      assert Enum.count(String.split(first_inventory, "\n"), &String.contains?(&1, "| #{hd(first_id)} |")) == 1
+
+      {second_output, second_status} =
+        System.cmd("bash", [collector, "--scope", "maintained", "--output", output_path, "--replace"],
+          cd: repository,
+          stderr_to_stdout: true
+        )
+
+      assert second_status == 0, second_output
+      second_inventory = File.read!(output_path)
+      assert second_inventory =~ "| #{hd(first_id)} | maintained_record | `#{valid_path}` | observed allowlisted source | active | defer-with-trigger |"
+      assert Enum.count(String.split(second_inventory, "\n"), &String.contains?(&1, "| #{hd(first_id)} |")) == 1
+      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-missing-status-HANDOFF")}` |")
+      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-shape-HANDOFF")}` |")
+      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-status-HANDOFF")}` |")
+    after
+      File.rm_rf(fixture)
+    end
+  end
+
   test "baseline inventory collector preserves maintained semantics and valid canonical encoding" do
     PackageAssertions.assert_baseline_inventory_maintained_encoding!()
   end
