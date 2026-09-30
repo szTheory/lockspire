@@ -539,6 +539,40 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
     const archivePath = path.join(fixture, '.git/gsd-lifecycle/receipt-archive', `${staleDigest}.json`);
     assert.deepEqual(fs.readFileSync(archivePath), sealedReceiptBytes, 'receipt archive must retain exact prior receipt bytes');
     assert.equal(fs.statSync(archivePath).mode & 0o777, 0o600);
+    const acceptanceScript = fs.readFileSync(
+      path.join(root, 'scripts/maintainer/finalize_phase_139_acceptance.sh'),
+      'utf8',
+    );
+    const resolverMatch = acceptanceScript.match(
+      /resolve_sealed_candidate\(\) \{\n  python3 - "\$ROOT" "\$HOST_RECEIPT" <<'PY'\n([\s\S]*?)\nPY\n\}/,
+    );
+    assert.ok(resolverMatch, 'acceptance script must retain its embedded sealed-candidate resolver');
+    const resolvedV2 = run('python3', ['-c', resolverMatch[1], fixture, receiptPath], { cwd: fixture });
+    assert.equal(
+      resolvedV2.status,
+      0,
+      `valid v2 lineage must resolve before the publication barrier: ${resolvedV2.stderr}`,
+    );
+    assert.equal(resolvedV2.stdout.trim(), successor.after.head);
+    const tamperedPrior = JSON.parse(fs.readFileSync(archivePath, 'utf8'));
+    tamperedPrior.transformation.allowedPaths = ['.planning/debug/attacker.md'];
+    const tamperedPriorBytes = Buffer.from(`${JSON.stringify(tamperedPrior)}\n`);
+    const tamperedDigest = crypto.createHash('sha256').update(tamperedPriorBytes).digest('hex');
+    const tamperedArchivePath = path.join(
+      fixture,
+      '.git/gsd-lifecycle/receipt-archive',
+      `${tamperedDigest}.json`,
+    );
+    fs.writeFileSync(tamperedArchivePath, tamperedPriorBytes, { mode: 0o600 });
+    const tamperedSuccessor = structuredClone(successor);
+    tamperedSuccessor.recovery.supersedesSha256 = tamperedDigest;
+    fs.writeFileSync(receiptPath, `${JSON.stringify(tamperedSuccessor)}\n`, { mode: 0o600 });
+    const alteredLineage = run('python3', ['-c', resolverMatch[1], fixture, receiptPath], { cwd: fixture });
+    assert.notEqual(alteredLineage.status, 0, 'changed archived allowedPaths must fail closed');
+    assert.match(alteredLineage.stderr, /superseded receipt lineage/);
+    fs.unlinkSync(tamperedArchivePath);
+    fs.writeFileSync(receiptPath, `${JSON.stringify(successor)}\n`, { mode: 0o600 });
+    assert.equal(fs.statSync(receiptPath).mode & 0o777, 0o600);
     const validSuccessor = run('bash', [
       path.join(root, 'scripts/maintainer/baseline_inventory.sh'),
       '--verify-phase-139-posttransition-relation',
@@ -558,14 +592,13 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
     ], { cwd: fixture, env: { GSD_TOOLS: recoveryTools } });
     assert.notEqual(driftedSuccessor.status, 0);
     assert.match(driftedSuccessor.stderr + driftedSuccessor.stdout, /recovery working-tree identity/);
+    const driftedResolver = run('python3', ['-c', resolverMatch[1], fixture, receiptPath], { cwd: fixture });
+    assert.notEqual(driftedResolver.status, 0, 'overlay drift must fail sealed-candidate authentication');
+    assert.match(driftedResolver.stderr, /sealed repository state changed|preserved planning worktree changed/);
     assert.deepEqual(
       mustRun('git', ['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: fixture }),
       refsBeforeSupersession,
       'receipt supersession must not move any refs',
-    );
-    const acceptanceScript = fs.readFileSync(
-      path.join(root, 'scripts/maintainer/finalize_phase_139_acceptance.sh'),
-      'utf8',
     );
     const inventoryScript = fs.readFileSync(path.join(root, 'scripts/maintainer/baseline_inventory.sh'), 'utf8');
     assert.match(acceptanceScript, /phase-140-recovery-v2/);
@@ -574,7 +607,7 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
       /candidate preparation is blocked until its exact SHA is explicitly published/,
       'supersession must preserve the separate exact-SHA publication barrier',
     );
-    assert.match(inventoryScript, /phase-140-recovery-v2\) git merge-base --is-ancestor/);
+    assert.match(inventoryScript, /phase-140-recovery-v2\)[\s\S]*?git merge-base --is-ancestor/);
   } finally {
     if (remote) fs.rmSync(remote, { recursive: true, force: true });
     fs.rmSync(fixture, { recursive: true, force: true });
