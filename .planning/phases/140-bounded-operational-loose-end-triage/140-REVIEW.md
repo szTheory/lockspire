@@ -1,13 +1,17 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-reviewed: 2026-09-30T06:09:03Z
+reviewed: 2026-09-30T18:16:36Z
 depth: standard
-files_reviewed: 1
+files_reviewed: 5
 files_reviewed_list:
-  - test/lockspire/quality/phase_139_planning_consistency_test.exs
+  - scripts/maintainer/baseline_inventory.sh
+  - scripts/maintainer/finalize_phase_139_acceptance.sh
+  - scripts/maintainer/supersede_phase_139_host_receipt.sh
+  - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
+  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
 findings:
-  critical: 0
-  warning: 1
+  critical: 1
+  warning: 0
   info: 0
   total: 1
 status: issues_found
@@ -15,26 +19,40 @@ status: issues_found
 
 # Phase 140: Code Review Report
 
-**Reviewed:** 2026-09-30T06:09:03Z  
+**Reviewed:** 2026-09-30T18:16:36Z  
 **Depth:** standard  
-**Files Reviewed:** 1  
+**Files Reviewed:** 5  
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the Phase 139 planning consistency test change and its Phase 140 lifecycle context. Removing assertions tied to a temporary current-plan position is appropriate, but the replacement preserves only historical text and no longer validates the current lifecycle consistency implied by the test name.
+The Phase 140 supersession path creates a v2 recovery receipt, but the acceptance script raises an unhandled `NameError` while validating its archived predecessor. This blocks all v2 receipts before the explicit publication step.
+
+## Critical Issues
+
+### CR-01: V2 recovery validation references `allowed` before assignment
+
+**Classification:** BLOCKER  
+**File:** `scripts/maintainer/finalize_phase_139_acceptance.sh:191, 208-213`  
+**Issue:** In `resolve_sealed_candidate`, the v2 receipt branch compares `prior_transform["allowedPaths"]` to `allowed` at line 191. The name `allowed` is assigned only later inside the loop that validates preserved worktree records (line 208). Python therefore raises `NameError` when this comparison is reached for every `phase-140-recovery-v2` receipt. `set -u` does not affect the embedded Python; its exception is caught and returned as a validation failure. The acceptance script calls this validator at line 729, so a superseded receipt cannot pass candidate authentication or reach publication.
+
+**Fix:** Define the expected transformation paths before the v2 branch and compare against that constant, keeping the per-record `allowed` variable local to the later loop. For example:
+
+```python
+expected_paths = [
+    ".planning/PROJECT.md", ".planning/STATE.md",
+    ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md",
+]
+...
+prior_transform.get("allowedPaths") != expected_paths
+```
 
 ## Warnings
 
-### WR-01: Current lifecycle consistency is no longer asserted
-
-**Severity:** WARNING  
-**File:** `test/lockspire/quality/phase_139_planning_consistency_test.exs:27`  
-**Issue:** This change removes the assertions for Phase 140's current phase status and plan position, then checks only that STATE retains the historical Phase 139 transition. As a result, the test passes even if STATE's active phase, status, or current position contradicts the maintained roadmap; this is the only test found that reads STATE for this consistency contract. The mutable exact plan-position assertion was brittle, but dropping all active-state checks weakens the regression guard.
-**Fix:** Make the test explicitly historical by renaming it and limiting its scope, or assert phase-neutral current-state invariants (for example, that STATE's current phase matches the roadmap's active phase and that its status is a valid lifecycle status) without pinning a particular plan number or execution stage.
+## Info
 
 ---
 
-_Reviewed: 2026-09-30T06:09:03Z_  
+_Reviewed: 2026-09-30T18:16:36Z_  
 _Reviewer: the agent (gsd-code-reviewer)_  
 _Depth: standard_
