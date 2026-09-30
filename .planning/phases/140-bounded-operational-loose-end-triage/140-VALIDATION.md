@@ -1,15 +1,16 @@
 ---
 phase: "140"
 slug: bounded-operational-loose-end-triage
-status: draft
+status: audited-partial
 nyquist_compliant: false
 wave_0_complete: false
 created: "2026-09-28"
+audited: "2026-09-30"
 ---
 
 # Phase 140 — Validation Strategy
 
-> Draft validation contract for bounded evidence refresh, disposition, dependency assessment, and exact-SHA acceptance.
+> Validation map updated from the Phase 140 plan summaries and recorded executable/external evidence. This is a partial audit: local failures remain open, and CI-06/CI-07 are external pending gates.
 
 ---
 
@@ -38,12 +39,12 @@ created: "2026-09-28"
 
 | Requirement | Plan / Task | Threat Ref | Secure Behavior | Test Type | Automated Command / Evidence | Existing Coverage | Status |
 |-------------|-------------|------------|-----------------|-----------|------------------------------|-------------------|--------|
-| CI-06 | 140-04-T2; post-summary verifier | T-140-11 | Required repository checks are bound to one synchronized final SHA. | External integration | Focused exact-SHA hygiene contract in T2; after all summaries, exact-SHA hygiene receipt plus canonical CI run/job identity for final `main`. | Existing hygiene contract and dated entry receipt; final-SHA gate remains external. | ⬜ pending external gate |
-| CI-07 | 140-04-T2; post-summary verifier | T-140-11, T-140-12 | Release evidence is same-SHA and intentionally no-publish; protected publication ownership remains unchanged. | External integration | Release-graph contract in T2; final same-SHA Release workflow, successful no-publish job graph, and hygiene receipt. | Existing release-graph contract; final-SHA gate remains external. | ⬜ pending external gate |
-| BASE-03 | 140-01-T1/T2, 140-04-T1 | T-140-01, T-140-03 | Actions name exact targets and preserve uncommitted work, intentional refs, and historical evidence. | Contract + action review | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase138_relation_gap` plus target-specific authority and pre-action evidence. | Existing inventory relation and hygiene contracts; no cleanup action is selected in these plans. | ⬜ pending |
-| TRIAGE-03 | 140-03-T1/T2 | T-140-07 | Each dependency PR has an independent compatibility, security, and required-gate assessment. | External integration + manual review | `gh pr view` exact metadata for #98/#97/#96 and #91/#88/#87; each row cites official upstream evidence and current required check results. | Existing supply-chain contract; mutable PR and upstream evidence need fresh assessment. | ⬜ pending |
-| LOOSE-02 | 140-01-T1/T2, 140-02-T1, 140-03-T1/T2, 140-04-T1 | T-140-01, T-140-10 | Every credible finding has exactly one supported disposition and traceable source evidence. | Artifact consistency | `git diff --check` plus manual source-ID and terminal-proof audit against the refreshed ledger and archive paths. | Existing maintained-record collector; add recurring contract only for a demonstrated repeatable gap. | ⬜ pending |
-| LOOSE-03 | 140-02-T1/T2, 140-04-T1 | T-140-04, T-140-05 | Current blockers and bounded regressions receive focused proof; speculative or feature-sized work stays deferred. | Focused contract + final full suite | Run the three v1.27 failure-group test files in 140-02-T1 and release-readiness/planning-consistency contracts in T2; one final `mix ci` after selected repairs. | Existing repair-specific seams; no product-code repair is presumed by planning. | ⬜ pending |
+| CI-06 | 140-04-T2; post-summary verifier | T-140-11 | Required repository checks are bound to one synchronized final SHA. | External integration | Focused exact-SHA hygiene contract passed (2 tests); required final evidence is exact hygiene receipt plus canonical CI run/job identity for final synchronized `main`. | Entry-only receipt covers SHA `c6332d3a8b716b938f93d978243281764e3ac41` (as recorded in acceptance); no post-summary final-SHA receipt. Local `mix ci` failed and cannot satisfy this requirement. | PENDING external gate |
+| CI-07 | 140-04-T2; post-summary verifier | T-140-11, T-140-12 | Release evidence is same-SHA and intentionally no-publish; protected publication ownership remains unchanged. | External integration | Release-evidence contract passed (3 tests); required final evidence is same-SHA Release workflow with successful intentional no-publish job graph plus exact hygiene receipt. | Phase 139 entry receipt is for an older SHA; no Phase 140 final-SHA Release run/job evidence. | PENDING external gate |
+| BASE-03 | 140-01-T1/T2, 140-04-T1 | T-140-01, T-140-03 | Actions name exact targets and preserve uncommitted work, intentional refs, and historical evidence. | Contract + action review | Focused relation selector: 2 tests, 0 failures. Full `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' mix test test/lockspire/release/repository_hygiene_contract_test.exs`: 58 tests, 2 failures. | Inventory/disposition keep actions proposal-only and defer incomplete source domains; the two recovery-diagnostic assertions fail against phase-139 sealed-candidate output. No action authority or cleanup is claimed. | WARNING — proposal safety evidenced; full contract unresolved |
+| TRIAGE-03 | 140-03-T1/T2 | T-140-07 | Each dependency PR has an independent compatibility, security, and required-gate assessment. | External integration + manual review | Six exact `gh pr view` metadata/diff/check queries and official-source review recorded in 140-03-SUMMARY.md and DISPOSITIONS; `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' mix test test/lockspire/workflow_supply_chain_contract_test.exs`: 5 tests, 0 failures. | All six dependency candidates separately assessed; failed, missing, stale, and undocumented-check evidence remains explicit defer triggers. External PR/check data is time-bounded (2026-09-30 02:34–02:43 UTC), not merge authorization. | WARNING — recorded evidence complete to available sources; refresh before action |
+| LOOSE-02 | 140-01-T1/T2, 140-02-T1, 140-03-T1/T2, 140-04-T1 | T-140-01, T-140-10 | Every credible finding has exactly one supported disposition and traceable source evidence. | Artifact consistency | Candidate table audit recorded: 109 unique rows with allowed outcomes and nonempty trigger/retention; `git diff --check` passed on plan edits. Full hygiene contract: 58 tests, 2 failures. | Phase 139 source-pair correction and disposition evidence recorded; four unnamed historical Phase32/AuditWriter IDs were not invented. Full hygiene contract failure prevents a blanket green claim. | WARNING — artifact audit recorded; recovery contract failures open |
+| LOOSE-03 | 140-02-T1/T2, 140-04-T1 | T-140-04, T-140-05 | Current blockers and bounded regressions receive focused proof; speculative or feature-sized work stays deferred. | Focused contract + final full suite | Archived-candidate focused run: 18 tests, 4 failures (two current Phase32 and two AuditWriter `:invalid_signing_key` failures). Planning/readiness contracts rerun: 4 tests, 0 failures. Final `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' mix ci`: 1439 tests, 44 failures, 6 skipped (286 excluded), exit 1. | Four current selector failures remain explicitly unresolved; full CI failure has additional representative failures recorded in 140-04-SUMMARY.md. No implementation repair was in scope. | BLOCKER — escalate bounded fixture failures and failed full suite |
 
 Task IDs are fixed above. The final external exact-SHA gate occurs after plan summaries so it measures the resulting SHA, not a pre-summary candidate.
 
@@ -60,12 +61,12 @@ Task IDs are fixed above. The final external exact-SHA gate occurs after plan su
 | Source | ID / item | Plan-task coverage | Status |
 |--------|-----------|--------------------|--------|
 | GOAL | Maintainers close only safe, evidence-backed maintenance gaps and retain a clear, recoverable disposition for everything else. | 140-01-T1/T2, 140-02-T1/T2, 140-03-T1/T2, 140-04-T1/T2 | COVERED |
-| REQ | CI-06 | 140-04-T2 and post-summary exact-SHA verifier gate | COVERED |
-| REQ | CI-07 | 140-04-T2 and post-summary Release no-publish verifier gate | COVERED |
-| REQ | BASE-03 | 140-01-T1/T2, 140-04-T1 exact-target/authority contract | COVERED |
-| REQ | TRIAGE-03 | 140-03-T1/T2 individual PR review | COVERED |
-| REQ | LOOSE-02 | 140-01-T1/T2, 140-02-T1, 140-03-T1/T2, 140-04-T1 single disposition record | COVERED |
-| REQ | LOOSE-03 | 140-02-T1/T2, 140-04-T1 bounded repair/deferral proof | COVERED |
+| REQ | CI-06 | 140-04-T2 and post-summary exact-SHA verifier gate | PENDING external gate |
+| REQ | CI-07 | 140-04-T2 and post-summary Release no-publish verifier gate | PENDING external gate |
+| REQ | BASE-03 | 140-01-T1/T2, 140-04-T1 exact-target/authority contract | PARTIAL — focused relation test passes; full hygiene contract has 2 failures |
+| REQ | TRIAGE-03 | 140-03-T1/T2 individual PR review | WARNING — six assessed; mutable checks and some source diagnostics need refresh/proof |
+| REQ | LOOSE-02 | 140-01-T1/T2, 140-02-T1, 140-03-T1/T2, 140-04-T1 single disposition record | PARTIAL — record audit passed; full hygiene contract has 2 failures |
+| REQ | LOOSE-03 | 140-02-T1/T2, 140-04-T1 bounded repair/deferral proof | BLOCKER — four focused current failures and failed full suite |
 | RESEARCH | Existing collector/relation, immutable Phase 138 ledger, `refresh_required` | 140-01-T1 | COVERED |
 | RESEARCH | Nine archived UAT candidate records, the v1.27 grouped failures, and v1.32 broad-suite caveats | 140-02-T1 | COVERED |
 | RESEARCH | Phase 139 count/current-state contradiction | 140-02-T2 | COVERED |
@@ -93,6 +94,23 @@ Deferred ideas and Phase 141's final milestone-baseline handoff are excluded fro
 
 ---
 
+## Audit Trail (2026-09-30)
+
+This audit used the four plan/SUMMARY pairs, this map, `140-DISPOSITIONS.md`, and `140-ACCEPTANCE.md`. It does not overwrite `140-VERIFICATION.md` and adds no test files: the candidate-level record check is an artifact review, while the real uncovered behavior discovered by execution is already covered by existing failing selectors and must be escalated to implementation owners.
+
+| Evidence | Observed result | Audit treatment |
+|----------|-----------------|-----------------|
+| Plan 140-01 focused relation command | 2 tests, 0 failures (56 excluded); protected-file hashes and artifact checks reported passing. | Record as a focused pass only. Origin refresh failed (exit 255), and `140-HANDOFF.md` was ambiguous, so affected evidence stays deferred. |
+| Plan 140-02 archived candidate selectors | 18 tests, 4 failures; Phase81 cases passed, two Phase32 and two AuditWriter cases failed with invalid signing keys. | LOOSE-03 remains open; four historical identities remain unnamed. |
+| Plan 140-02 readiness/planning contracts | Initial 4 tests, 1 failure from stale temporary STATE assertions; after the contract was adjusted, rerun was 4 tests, 0 failures. | Current rerun is green; earlier failure and adjustment remain in the summary. |
+| Plan 140-03 supply-chain contract and GitHub/upstream review | 5 tests, 0 failures; six dependency PRs independently assessed; missing/failed/stale evidence recorded per PR. | Warning-level evidence: assessment is time-bounded and some upstream/check diagnostics remain unavailable; no PR action is authorized. |
+| Plan 140-04 repository hygiene contract | 58 tests, 2 failures (exit 2); both failures are Phase 140 recovery diagnostic expectations receiving `relation_boundary|phase-139-sealed-candidate|refresh_required`. | Not covered-passing. Escalate the two contract mismatches; do not weaken assertions in this audit. |
+| Plan 140-04 focused exact-SHA / Release evidence contracts | 2 tests, 0 failures; Release evidence contract 3 tests, 0 failures; acceptance diff check passed. | Contract behavior only; it does not create external final-SHA evidence. |
+| Plan 140-04 final local `mix ci` | 1439 tests, 44 failures, 6 skipped (286 excluded), exit 1; preceding build/lint/security/docs/package/migration gates passed as documented. | Failed suite, not covered-passing. Output was truncated; listed causes are representative only. `.git/FETCH_HEAD` permission error is not accepted as fetch proof. |
+| CI-06/CI-07 post-summary external acceptance | No final synchronized SHA receipt or same-SHA canonical CI/Release job graph recorded. | Both remain pending external gates. The Phase 139 entry receipt is older and cannot substitute. |
+
+Overall audit outcome: **PARTIAL**. No implementation files were changed. The existing validation contract is reusable; no new deterministic test boundary was identified beyond the already failing selectors/contracts.
+
 ## Validation Sign-Off
 
 - [ ] Every generated task has an exact `<automated>` verify command or an explicit Wave 0 dependency.
@@ -100,6 +118,6 @@ Deferred ideas and Phase 141's final milestone-baseline handoff are excluded fro
 - [ ] Wave 0 covers every confirmed missing test reference.
 - [ ] No watch-mode flags.
 - [ ] Focused feedback commands stay under 30 seconds where stated; the full gate has its explicit 30-minute budget.
-- [ ] `nyquist_compliant: true` set only after the plan checker confirms task-level mapping and verification commands.
+- [ ] `nyquist_compliant: true` remains false until the escalated hygiene/LOOSE-03 failures are resolved and post-summary external CI-06/CI-07 evidence is available.
 
-**Approval:** pending planning verification
+**Audit status:** partial; blocker failures and external gates remain open.
