@@ -1660,6 +1660,18 @@ classify_active_record() {
         *) return 1 ;;
       esac
       ;;
+    *-HANDOFF.md)
+      record_has_line "$record_file" '^# Phase [0-9]+ .*execution handoff[[:space:]]*$' || return 1
+      record_has_line "$record_file" '^\*\*Next command:\*\* `[^`]+`[[:space:]]*$' || return 1
+      record_has_line "$record_file" '^\*\*Position:\*\* .+' || return 1
+      record_has_markdown_heading "$record_file" '## Current position' || return 1
+      record_has_markdown_heading "$record_file" '## Next step' || return 1
+      record_has_markdown_heading "$record_file" '## Do not' || return 1
+      case "$status" in
+        in_progress) printf 'active\tdefer-with-trigger\tdirect_current' ;;
+        *) return 1 ;;
+      esac
+      ;;
     *) return 1 ;;
   esac
 }

@@ -143,12 +143,13 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
     **Updated:** 2026-09-30
     **Next command:** `$gsd-execute-phase 140 --gaps-only`
+    **Position:** Plan 140-05 complete; Plans 140-06 through 140-09 remain.
 
-    ## Why this is the next step
+    ## Current position
 
     Continue only the remaining bounded gap-closure plans.
 
-    ## Durable Phase 140 context
+    ## Next step
 
     Preserve exact-target and proposal-only boundaries.
 
@@ -159,7 +160,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
     lookalikes = %{
       "140-missing-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress\n", ""),
-      "140-wrong-shape-HANDOFF.md" => String.replace(valid_handoff, "## Durable Phase 140 context", "## Notes"),
+      "140-wrong-shape-HANDOFF.md" => String.replace(valid_handoff, "## Current position", "## Notes"),
       "140-wrong-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress", "status: complete")
     }
 
@@ -207,9 +208,17 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
       valid_path =
         ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+      canonical_valid_path = String.downcase(valid_path)
 
-      [first_id] = Regex.scan(~r/^\| (REC-[0-9a-f]{12}) \| maintained_record \| `#{Regex.escape(valid_path)}` \|/m, first_inventory)
-      assert Enum.count(String.split(first_inventory, "\n"), &String.contains?(&1, "| #{hd(first_id)} |")) == 1
+      id_rows =
+        Regex.scan(
+          ~r/^\| (REC-[0-9a-f]{12}) \| maintained_record \| `#{Regex.escape(canonical_valid_path)}` \|/m,
+          first_inventory,
+          capture: :all_but_first
+        )
+
+      assert length(id_rows) == 1, first_inventory
+      [first_id] = id_rows
 
       {second_output, second_status} =
         System.cmd("bash", [collector, "--scope", "maintained", "--output", output_path, "--replace"],
@@ -219,8 +228,15 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
       assert second_status == 0, second_output
       second_inventory = File.read!(output_path)
-      assert second_inventory =~ "| #{hd(first_id)} | maintained_record | `#{valid_path}` | observed allowlisted source | active | defer-with-trigger |"
-      assert Enum.count(String.split(second_inventory, "\n"), &String.contains?(&1, "| #{hd(first_id)} |")) == 1
+      assert second_inventory =~ "| #{hd(first_id)} | maintained_record | `#{canonical_valid_path}` | observed allowlisted source | active | defer-with-trigger |"
+      second_id_rows =
+        Regex.scan(
+          ~r/^\| (REC-[0-9a-f]{12}) \| maintained_record \| `#{Regex.escape(canonical_valid_path)}` \|/m,
+          second_inventory,
+          capture: :all_but_first
+        )
+
+      assert second_id_rows == id_rows
       assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-missing-status-HANDOFF")}` |")
       assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-shape-HANDOFF")}` |")
       assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-status-HANDOFF")}` |")
