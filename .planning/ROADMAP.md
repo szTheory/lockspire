@@ -205,12 +205,12 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 140-01-PLAN.md — Refresh current evidence and establish the single source-linked disposition record.
+- [x] 140-01-PLAN.md — Refresh current evidence and establish the single source-linked disposition record.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -251,5 +251,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 0/TBD | Not started | - |
+| 140. Bounded Operational Loose-End Triage | 1/4 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |

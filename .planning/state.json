@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "milestone": "v1.38 \u2014 Repository Baseline & Reconciliation",
   "phases": [
     {
       "number": "138",
@@ -16,7 +16,7 @@
     {
       "number": "140",
       "name": "Bounded Operational Loose-End Triage",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "141",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 140)",
-    "reason": "Phase 140 of 4 — needs a plan"
+    "command": "$gsd-execute-phase 140",
+    "label": "Continue Phase 140 execution",
+    "reason": "Plan 140-01 is complete; Plan 140-02 is next (3 plans remain)."
   },
-  "updated_at": "2026-09-26T16:19:49.985Z"
+  "updated_at": "2026-09-30T01:25:56Z"
 }
