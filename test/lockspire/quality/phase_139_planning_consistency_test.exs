@@ -22,9 +22,9 @@ defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
              &(String.pad_leading(Integer.to_string(&1), 2, "0") in completed_numbers)
            )
 
-    assert state =~ "Phase: 140 (Bounded Operational Loose-End Triage) — READY TO EXECUTE"
+    # STATE.md advances through later phases; keep this contract anchored to
+    # Phase 139's durable historical transition rather than its old live posture.
     assert state =~ "Phase 139 complete, ready to plan Phase 140"
-    assert state =~ "Plan: Not started"
     assert roadmap =~ ~r/Phase 139.*#{length(summaries)}\/#{length(plans)}/s
     assert roadmap =~ "Phase 140: Bounded Operational Loose-End Triage"
     assert roadmap =~ "blocking Phase 140 `plan:pre` hook"
