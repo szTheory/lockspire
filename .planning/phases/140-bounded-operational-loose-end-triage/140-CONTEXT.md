@@ -37,6 +37,10 @@ This phase preserves Lockspire's embedded-library shape, host-owned seams, secur
 - **D-13:** Close CI-06 and CI-07 against the resulting synchronized final `main` SHA, with required canonical CI and a successful intentional Release no-publish outcome for that same SHA. Bind local `mix ci` and hygiene evidence through the existing acceptance path; retain an explicit disposition for each hygiene `WARN` and no unresolved `BLOCK`.
 - **D-14:** The recorded Phase 140 entry receipt is dated proof for its exact SHA, not blanket acceptance of later state. Preserve the blocking `plan:pre` contract and revalidate through its supported lifecycle. Keep supplemental OIDF/FAPI findings redacted and non-certifying, separate from required acceptance; preserve the historical 1.5.0 release chain and Release Please/protected publishing ownership.
 
+### Execution Scope Amendment (2026-09-30)
+
+The user approved a narrow rescope for Plan 140-02: assess only archived findings whose source identities are actually supported. The v1.27 grouped `5+2+2` report remains a grouped test-failure report, not nine UAT-record identities. The five Phase81 names may be tracked individually as source-native test cases, separately from that grouped report and from D-07's original nine-UAT-record target. The four historical Phase32/AuditWriter test identities remain unavailable; do not invent names or map current rerun selectors back to them. Keep v1.32 Phase115/JWKS caveats at their archived aggregate level. This approved amendment supersedes D-07's nine-distinct-record execution target; retain the source limitation in the disposition and plan summary.
+
 ### the agent's Discretion
 The user confirmed the complete recommendation bundle without corrections. Planning may choose the disposition filename and compact table layout, bounded task grouping, focused test selectors, and internal helper details. Those choices must preserve stable references, explicit authority, finite scope, current proof, existing release ownership, and the distinction between observed, proposed, and executed work. Fresh research is the selected next planning step.
 
