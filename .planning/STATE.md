@@ -7,10 +7,10 @@ current_phase_name: Bounded Operational Loose-End Triage
 current_plan: 4
 status: executing
 stopped_at: "Phase 140 verification found gaps (6/8); Plan 140-04 is blocked. Next: $gsd-plan-phase 140 --gaps"
-last_updated: "2026-09-30T07:30:53.999Z"
+last_updated: "2026-09-30T18:24:32.968Z"
 last_activity: 2026-09-30
 last_activity_desc: Phase 140 verification is gaps_found (6/8); Plan 140-04 is blocked and gap planning is next.
-state_head: 213ad3cd27e0125bc94bd0b9df493303323ba880
+state_head: fe9273f7c65c5bd971922c13dc80a291efa658b1
 progress:
   total_phases: 4
   completed_phases: 2
@@ -164,6 +164,7 @@ None yet.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. The current relation result is `refresh_required`; keep the dated snapshot proposal-only until the planned refresh.
 - Supplemental OIDF findings remain future bounded conformance work unless a reproducible repository regression warrants a narrowly scoped correction.
 - Resolved historical 139-09 Task 1 blocker: live parity was initially blocked on GSD 1.10.0 and resolved on 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16.
+- Phase 140 code review CR-01 (140-REVIEW.md): resolve_sealed_candidate in scripts/maintainer/finalize_phase_139_acceptance.sh compares prior_transform["allowedPaths"] to allowed before assignment for phase-140-recovery-v2 receipts. Include this fix in $gsd-plan-phase 140 --gaps.
 
 ### Quick Tasks Completed
 
