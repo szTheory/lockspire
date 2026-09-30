@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 3/4 plans executed
+**Plans**: 3/9 plans executed
 
 Plans:
 **Wave 1**
@@ -223,6 +223,20 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [ ] 140-04-PLAN.md — Close finite dispositions and prepare final exact-SHA acceptance.
+
+**Wave 5** *(gap closure after the Plan 140-04 verification failures)*
+
+- [ ] 140-05-PLAN.md — Complete origin and maintained-record source receipts, then disposition newly observed candidates.
+- [ ] 140-06-PLAN.md — Repair recovery diagnostics and authenticate recovery-v2 receipts through the no-publish barrier.
+- [ ] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
+
+**Wave 6** *(after Waves 5 inventory and focused repairs)*
+
+- [ ] 140-08-PLAN.md — Capture every local CI failure, repair bounded roots, and prove a clean full local run.
+
+**Wave 7** *(after clean local CI)*
+
+- [ ] 140-09-PLAN.md — Reconcile terminal dispositions and hand off the post-summary same-SHA CI/Release gate.
 
 **Cross-cutting constraints:**
 
