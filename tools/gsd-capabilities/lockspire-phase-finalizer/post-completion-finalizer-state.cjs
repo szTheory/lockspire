@@ -146,6 +146,216 @@ function preservedPlanningWorktree(root, porcelain) {
   return entries.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
 }
 
+function preservedSupersessionWorktree(root, porcelain) {
+  const entries = [];
+  let totalBytes = 0;
+  const records = porcelain.toString('utf8').split('\0').filter(Boolean);
+  for (const record of records) {
+    if (record.length < 4 || record[2] !== ' ') fail('malformed supersession worktree status');
+    const status = record.slice(0, 2);
+    const relative = record.slice(3);
+    const allowedPath = /^\.planning\/phases\/[0-9]{3}-[^/]+\/[A-Za-z0-9._-]+\.md$/.test(relative) ||
+      /^\.planning\/debug\/[a-z0-9][a-z0-9-]*\.md$/.test(relative) ||
+      /^docs\/[A-Za-z0-9._-]+\.(?:md|txt)$/.test(relative);
+    if (!allowedPath || (status !== ' M' && status !== '??')) {
+      fail('supersession permits only unstaged planning and debug notes');
+    }
+    const target = path.join(root, relative);
+    const stat = fs.lstatSync(target);
+    if (!stat.isFile()) fail('supersession overlay is not a regular file');
+    const bytes = fs.readFileSync(target);
+    totalBytes += bytes.length;
+    if (entries.length >= 32 || totalBytes > 4 * 1024 * 1024) fail('supersession overlay exceeds limits');
+    entries.push({
+      path: relative,
+      status,
+      mode: stat.mode & 0o777,
+      size: bytes.length,
+      sha256: sha256(bytes),
+    });
+  }
+  return entries.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+}
+
+function acquireFinalizerLock(root) {
+  const lockPath = path.join(commonDir(root), 'lockspire-phase-139-acceptance.lock');
+  try {
+    fs.mkdirSync(lockPath, { mode: 0o700 });
+  } catch (_) {
+    fail('another final acceptance is active');
+  }
+  process.once('exit', () => {
+    try { fs.rmdirSync(lockPath); } catch (_) { /* a failed cleanup remains fail-closed */ }
+  });
+  return lockPath;
+}
+
+function fsyncDirectory(directory) {
+  const descriptor = fs.openSync(directory, fs.constants.O_RDONLY);
+  try { fs.fsyncSync(descriptor); } finally { fs.closeSync(descriptor); }
+}
+
+function archiveReceipt(root, bytes, digest) {
+  const lifecycleDirectory = path.join(commonDir(root), 'gsd-lifecycle');
+  const lifecycleStat = fs.lstatSync(lifecycleDirectory);
+  if (!lifecycleStat.isDirectory()) fail('lifecycle receipt directory is unsafe');
+  const directory = path.join(lifecycleDirectory, 'receipt-archive');
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const directoryStat = fs.lstatSync(directory);
+  if (!directoryStat.isDirectory() || (directoryStat.mode & 0o777) !== 0o700) {
+    fail('receipt archive directory is unsafe');
+  }
+  const target = path.join(directory, `${digest}.json`);
+  if (fs.existsSync(target)) {
+    const info = fs.lstatSync(target);
+    if (!info.isFile() || (info.mode & 0o777) !== 0o600 || !fs.readFileSync(target).equals(bytes)) {
+      fail('receipt archive conflicts with prior bytes');
+    }
+    return target;
+  }
+  const temporary = path.join(directory, `.receipt.${process.pid}.${crypto.randomBytes(8).toString('hex')}`);
+  let descriptor;
+  try {
+    descriptor = fs.openSync(temporary, 'wx', 0o600);
+    fs.writeFileSync(descriptor, bytes);
+    fs.fsyncSync(descriptor);
+    fs.closeSync(descriptor);
+    descriptor = undefined;
+    try {
+      fs.linkSync(temporary, target);
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      const info = fs.lstatSync(target);
+      if (!info.isFile() || (info.mode & 0o777) !== 0o600 || !fs.readFileSync(target).equals(bytes)) {
+        fail('receipt archive conflicts with prior bytes');
+      }
+    }
+    fsyncDirectory(directory);
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+    try { fs.unlinkSync(temporary); } catch (_) { /* already removed */ }
+  }
+  return target;
+}
+
+function ancestor(root, older, newer, message) {
+  const result = childProcess.spawnSync('git', ['merge-base', '--is-ancestor', older, newer], {
+    cwd: root,
+    shell: false,
+    stdio: 'ignore',
+  });
+  if (result.status !== 0) fail(message);
+}
+
+function trackingRemoteMain(root) {
+  if (process.env.LOCKSPIRE_INVENTORY_REMOTE && process.env.LOCKSPIRE_INVENTORY_REMOTE !== 'origin') {
+    fail('receipt supersession requires the finalizer origin remote');
+  }
+  const tracking = git(['rev-parse', 'refs/remotes/origin/main'], { cwd: root }).trim();
+  const advertised = git(['ls-remote', 'origin', 'refs/heads/main'], { cwd: root }).trim().split(/\s+/)[0];
+  if (!/^[0-9a-f]{40}$/.test(tracking) || tracking !== advertised) {
+    fail('main tracking ref does not match advertised remote main');
+  }
+  return tracking;
+}
+
+function supersede(root, phase, expectedDigest) {
+  if (phase !== '139') fail('supersede is only available for Phase 139');
+  if (!/^[0-9a-f]{64}$/.test(expectedDigest || '')) fail('expected receipt SHA-256 is malformed');
+  const gitDirectory = fs.realpathSync(git(['rev-parse', '--path-format=absolute', '--git-dir'], { cwd: root }).trim());
+  if (gitDirectory !== commonDir(root)) fail('linked worktrees cannot supersede Phase 139 receipts');
+  const lockPath = acquireFinalizerLock(root);
+  const refsBefore = git(['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: root });
+  const target = receiptPath(root);
+  const info = fs.lstatSync(target);
+  if (!info.isFile() || (info.mode & 0o777) !== 0o600 || info.size <= 0 || info.size > MAX_RECEIPT_BYTES) {
+    fail('pending receipt is unsafe');
+  }
+  const previousBytes = fs.readFileSync(target);
+  const previousDigest = sha256(previousBytes);
+  if (previousDigest !== expectedDigest) fail('pending receipt SHA-256 does not match expected value');
+  let previous;
+  try { previous = JSON.parse(previousBytes.toString('utf8')); } catch (_) { fail('pending receipt is malformed'); }
+  if (previous.schemaVersion !== 1 || previous.status !== 'pending' || previous.phase !== phase ||
+      previous.point !== 'plan:pre' || typeof previous.after?.head !== 'string' ||
+      !/^[0-9a-f]{40}$/.test(previous.after.head)) {
+    fail('pending receipt cannot be superseded');
+  }
+  if (!previous.before || previous.before.porcelainSha256 !== sha256(Buffer.alloc(0)) ||
+      typeof previous.before.head !== 'string' || !/^[0-9a-f]{40}$/.test(previous.before.head) ||
+      !/^[0-9a-f]{64}$/.test(previous.after.porcelainSha256 || '') ||
+      previous.writer?.protocol !== 'gsd-transition-v1' ||
+      compact(previous.writer.allowedPaths) !== compact(ALLOWED_PATHS) ||
+      compact(previous.transformation?.allowedPaths) !== compact(ALLOWED_PATHS) ||
+      previous.transformation?.protocol !== 'gsd-transition-v1' ||
+      !Array.isArray(previous.hooks) || previous.hooksSha256 !== sha256(compact(previous.hooks))) {
+    fail('pending receipt provenance is malformed');
+  }
+  const priorEvidence = {
+    protocol: 'gsd-transition-v1',
+    writer: previous.writer,
+    before: previous.before,
+    after: previous.after,
+    ...(previous.recovery ? { recovery: previous.recovery } : {}),
+  };
+  if (previous.transformation.sha256 !== sha256(compact(priorEvidence))) {
+    fail('pending receipt provenance digest is invalid');
+  }
+  const hooks = normalizePlanPreGate(readStdin());
+  if (compact(previous.hooks) !== compact(hooks) || previous.hooksSha256 !== sha256(compact(hooks))) {
+    fail('pending receipt hook identity changed');
+  }
+  const after = observation(root);
+  const baselineSha = acceptedPhase139Base(root);
+  const head = after.result.head;
+  ancestor(root, baselineSha, head, 'current HEAD does not descend from the accepted Phase 139 SHA');
+  ancestor(root, previous.after.head, head, 'current HEAD does not descend from the pending receipt candidate');
+  const localMain = git(['rev-parse', 'refs/heads/main'], { cwd: root }).trim();
+  ancestor(root, localMain, head, 'local main is not an ancestor of current HEAD');
+  const remoteMain = trackingRemoteMain(root);
+  ancestor(root, remoteMain, head, 'tracked remote main is not an ancestor of current HEAD');
+  const preservedWorktree = preservedSupersessionWorktree(root, after.porcelain);
+  const recovery = {
+    protocol: 'phase-140-recovery-v2',
+    baselineSha,
+    supersedesSha256: previousDigest,
+    preservedWorktree,
+  };
+  const before = committedObservation(root, head);
+  const receiptWriter = writer(root);
+  const evidence = { protocol: 'gsd-transition-v1', writer: receiptWriter, before, after: after.result, recovery };
+  const receipt = {
+    schemaVersion: 1,
+    status: 'pending',
+    phase,
+    point: 'plan:pre',
+    writer: receiptWriter,
+    before,
+    hooks,
+    hooksSha256: sha256(compact(hooks)),
+    after: after.result,
+    recovery,
+    transformation: {
+      protocol: 'gsd-transition-v1',
+      allowedPaths: ALLOWED_PATHS,
+      sha256: sha256(compact(evidence)),
+    },
+  };
+  archiveReceipt(root, previousBytes, previousDigest);
+  const currentBytes = fs.readFileSync(target);
+  if (sha256(currentBytes) !== expectedDigest) fail('pending receipt changed before compare-and-swap');
+  writeReceipt(root, receipt);
+  const publishedBytes = fs.readFileSync(target);
+  if (sha256(publishedBytes) !== sha256(Buffer.from(`${compact(receipt)}\n`))) {
+    fail('successor receipt failed compare-and-swap verification');
+  }
+  if (refsBefore !== git(['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: root })) {
+    fail('refs changed during receipt supersession');
+  }
+  fs.rmdirSync(lockPath);
+  process.stdout.write(compact({ receipt, supersededSha256: previousDigest }) + '\n');
+}
+
 function acceptedPhase139Base(root) {
   const target = path.join(commonDir(root), 'lockspire-phase-139-acceptance-v1.json');
   let receipt;
@@ -429,7 +639,7 @@ function complete(root, phase) {
   process.stdout.write(compact({ completed: true, phase }) + '\n');
 }
 
-const [command, phase] = process.argv.slice(2);
+const [command, phase, expectedDigest] = process.argv.slice(2);
 const root = projectRoot();
 switch (command) {
   case 'status': {
@@ -449,6 +659,10 @@ switch (command) {
     assertPhase(phase);
     prepare(root, phase);
     break;
+  case 'supersede':
+    assertPhase(phase);
+    supersede(root, phase, expectedDigest);
+    break;
   case 'verify-hooks':
     assertPhase(phase);
     verifyHooks(root, phase);
@@ -458,5 +672,5 @@ switch (command) {
     complete(root, phase);
     break;
   default:
-    fail('expected begin, seal, prepare, verify-hooks, status, or complete');
+    fail('expected begin, seal, prepare, supersede, verify-hooks, status, or complete');
 }

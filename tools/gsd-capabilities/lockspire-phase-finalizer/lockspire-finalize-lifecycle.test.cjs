@@ -371,8 +371,9 @@ test('real host receipt preserves pending state across hook mismatch and complet
   }
 });
 
-test('Phase 140 recovery snapshots planning-only overlays and detects later edits', () => {
+test('Phase 140 recovery preserves stale receipts on replay and rejects overlay edits without ref movement', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-phase140-recovery-'));
+  let remote = null;
   const ledger = '.planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md';
   try {
     const recoveryTools = process.env.GSD_TOOLS || tools;
@@ -437,6 +438,9 @@ test('Phase 140 recovery snapshots planning-only overlays and detects later edit
     assert.equal(sealed.recovery.protocol, 'phase-140-recovery-v1');
     assert.equal(sealed.recovery.baselineSha, baseline);
     assert.deepEqual(sealed.recovery.preservedWorktree.map((entry) => entry.path), overlayPaths.sort());
+    const receiptPath = path.join(fixture, '.git/gsd-lifecycle/post-completion-finalizer.json');
+    const sealedReceiptBytes = fs.readFileSync(receiptPath);
+    const refsBeforeReplay = mustRun('git', ['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: fixture });
 
     const unchanged = run('bash', [inventory, '--verify-phase-139-posttransition-relation', ledger], {
       cwd: fixture,
@@ -446,13 +450,133 @@ test('Phase 140 recovery snapshots planning-only overlays and detects later edit
     assert.doesNotMatch(unchanged.stderr + unchanged.stdout, /recovery working-tree identity/);
 
     fs.appendFileSync(path.join(fixture, overlayPaths[0]), 'changed after seal\n');
+    const replayed = JSON.parse(mustRun('node', [helperTarget, 'prepare', '139'], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    }));
+    assert.deepEqual(replayed, sealed, 'prepare must not silently refresh a stale pending receipt');
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes, 'stale receipt bytes must remain intact');
+
     const altered = run('bash', [inventory, '--verify-phase-139-posttransition-relation', ledger], {
       cwd: fixture,
       env: { GSD_TOOLS: recoveryTools },
     });
     assert.notEqual(altered.status, 0);
     assert.match(altered.stderr + altered.stdout, /recovery working-tree identity/);
+    assert.equal(
+      mustRun('git', ['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: fixture }),
+      refsBeforeReplay,
+      'stale receipt replay and rejection must not move refs',
+    );
+
+    remote = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-phase140-origin-'));
+    mustRun('git', ['init', '--bare', '-q', remote], { cwd: fixture });
+    mustRun('git', ['remote', 'add', 'origin', remote], { cwd: fixture });
+    mustRun('git', ['push', '-q', '-u', 'origin', 'main'], { cwd: fixture });
+    mustRun('git', ['fetch', '-q', 'origin'], { cwd: fixture });
+    mustRun('git', ['switch', '-q', '-c', 'phase140-recovery'], { cwd: fixture });
+
+    const contextPath = '.planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md';
+    const discussionPath = '.planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md';
+    const context = [
+      '# Phase 140: Bounded Operational Loose-End Triage - Context',
+      ...Array.from({ length: 14 }, (_, index) => `- **D-${String(index + 1).padStart(2, '0')}:** bounded fixture choice`),
+      '',
+    ].join('\n');
+    const discussion = 'The user answered `1` to the bounded fixture choice.\n';
+    for (const [relative, bytes] of [[contextPath, context], [discussionPath, discussion]]) {
+      const target = path.join(fixture, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, bytes);
+    }
+    mustRun('git', ['add', contextPath, discussionPath], { cwd: fixture });
+    mustRun('git', ['commit', '-qm', 'docs(140): capture phase context (assumptions mode)'], { cwd: fixture });
+
+    const debugOverlay = '.planning/debug/fixture-recovery.md';
+    fs.mkdirSync(path.dirname(path.join(fixture, debugOverlay)), { recursive: true });
+    fs.writeFileSync(path.join(fixture, debugOverlay), 'fixture recovery evidence\n');
+    const staleDigest = crypto.createHash('sha256').update(sealedReceiptBytes).digest('hex');
+    const refsBeforeSupersession = mustRun(
+      'git', ['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: fixture },
+    );
+    const wrongDigest = run('node', [helperTarget, 'supersede', '139', '0'.repeat(64)], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(wrongDigest.status, 0);
+    assert.match(wrongDigest.stderr, /SHA-256 does not match/);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes, 'wrong digest must preserve pending receipt bytes');
+
+    const codePath = 'tools/gsd-capabilities/lockspire-phase-finalizer/untrusted.test.cjs';
+    fs.mkdirSync(path.dirname(path.join(fixture, codePath)), { recursive: true });
+    fs.writeFileSync(path.join(fixture, codePath), 'untrusted code\n');
+    const codeRejected = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(codeRejected.status, 0);
+    assert.match(codeRejected.stderr, /only unstaged planning and debug notes/);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes, 'code-path dirt must preserve pending receipt bytes');
+    fs.unlinkSync(path.join(fixture, codePath));
+
+    const superseded = JSON.parse(mustRun('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    }));
+    const successor = superseded.receipt;
+    assert.equal(successor.recovery.protocol, 'phase-140-recovery-v2');
+    assert.equal(successor.recovery.baselineSha, baseline);
+    assert.equal(successor.recovery.supersedesSha256, staleDigest);
+    assert.equal(successor.after.head, mustRun('git', ['rev-parse', 'HEAD'], { cwd: fixture }).trim());
+    assert.deepEqual(
+      successor.recovery.preservedWorktree.map((entry) => entry.path),
+      [...overlayPaths, debugOverlay].sort(),
+    );
+    const archivePath = path.join(fixture, '.git/gsd-lifecycle/receipt-archive', `${staleDigest}.json`);
+    assert.deepEqual(fs.readFileSync(archivePath), sealedReceiptBytes, 'receipt archive must retain exact prior receipt bytes');
+    assert.equal(fs.statSync(archivePath).mode & 0o777, 0o600);
+    const validSuccessor = run('bash', [
+      path.join(root, 'scripts/maintainer/baseline_inventory.sh'),
+      '--verify-phase-139-posttransition-relation',
+      ledger,
+    ], { cwd: fixture, env: { GSD_TOOLS: recoveryTools } });
+    assert.notEqual(validSuccessor.status, 0, 'the fixture intentionally lacks the complete accepted lifecycle chain');
+    assert.doesNotMatch(
+      validSuccessor.stderr + validSuccessor.stdout,
+      /recovery envelope|supersession envelope|superseded receipt archive|superseded receipt lineage|recovery working-tree identity/,
+      'a valid v2 receipt must pass identity and lineage validation before the unrelated chain fixture fails',
+    );
+    fs.appendFileSync(path.join(fixture, debugOverlay), 'changed after supersession\n');
+    const driftedSuccessor = run('bash', [
+      path.join(root, 'scripts/maintainer/baseline_inventory.sh'),
+      '--verify-phase-139-posttransition-relation',
+      ledger,
+    ], { cwd: fixture, env: { GSD_TOOLS: recoveryTools } });
+    assert.notEqual(driftedSuccessor.status, 0);
+    assert.match(driftedSuccessor.stderr + driftedSuccessor.stdout, /recovery working-tree identity/);
+    assert.deepEqual(
+      mustRun('git', ['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: fixture }),
+      refsBeforeSupersession,
+      'receipt supersession must not move any refs',
+    );
+    const acceptanceScript = fs.readFileSync(
+      path.join(root, 'scripts/maintainer/finalize_phase_139_acceptance.sh'),
+      'utf8',
+    );
+    const inventoryScript = fs.readFileSync(path.join(root, 'scripts/maintainer/baseline_inventory.sh'), 'utf8');
+    assert.match(acceptanceScript, /phase-140-recovery-v2/);
+    assert.match(
+      acceptanceScript,
+      /candidate preparation is blocked until its exact SHA is explicitly published/,
+      'supersession must preserve the separate exact-SHA publication barrier',
+    );
+    assert.match(inventoryScript, /phase-140-recovery-v2\) git merge-base --is-ancestor/);
   } finally {
+    if (remote) fs.rmSync(remote, { recursive: true, force: true });
     fs.rmSync(fixture, { recursive: true, force: true });
   }
 });

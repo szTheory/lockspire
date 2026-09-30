@@ -147,9 +147,55 @@ try:
         if changed != {".planning/PROJECT.md", ".planning/STATE.md"}:
             raise ValueError("sealed transition contains unexpected paths")
     else:
-        if (recovery.get("protocol") != "phase-140-recovery-v1" or
+        protocol = recovery.get("protocol")
+        if (protocol not in {"phase-140-recovery-v1", "phase-140-recovery-v2"} or
                 not re.fullmatch(r"[0-9a-f]{40}", recovery.get("baselineSha", ""))):
             raise ValueError("recovery receipt is malformed")
+        if protocol == "phase-140-recovery-v1":
+            if set(recovery) != {"protocol", "baselineSha", "preservedWorktree"}:
+                raise ValueError("legacy recovery receipt is malformed")
+        else:
+            if (set(recovery) != {"protocol", "baselineSha", "supersedesSha256", "preservedWorktree"} or
+                    not re.fullmatch(r"[0-9a-f]{64}", recovery.get("supersedesSha256", ""))):
+                raise ValueError("supersession receipt is malformed")
+            common = subprocess.check_output(
+                ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=root, text=True
+            ).strip()
+            archive = os.path.join(common, "gsd-lifecycle", "receipt-archive",
+                                   recovery["supersedesSha256"] + ".json")
+            archive_stat = os.lstat(archive)
+            if not stat.S_ISREG(archive_stat.st_mode) or stat.S_IMODE(archive_stat.st_mode) != 0o600:
+                raise ValueError("superseded receipt archive is unsafe")
+            with open(archive, "rb") as stream:
+                archived_bytes = stream.read()
+            if hashlib.sha256(archived_bytes).hexdigest() != recovery["supersedesSha256"]:
+                raise ValueError("superseded receipt archive digest")
+            prior = json.loads(archived_bytes)
+            prior_head = prior.get("after", {}).get("head") if isinstance(prior.get("after"), dict) else None
+            prior_transform = prior.get("transformation") if isinstance(prior, dict) else None
+            prior_evidence = {
+                "protocol": "gsd-transition-v1",
+                "writer": prior.get("writer"),
+                "before": prior.get("before"),
+                "after": prior.get("after"),
+            }
+            if prior.get("recovery"):
+                prior_evidence["recovery"] = prior["recovery"]
+            if (prior.get("schemaVersion") != 1 or prior.get("status") != "pending" or
+                    prior.get("phase") != "139" or prior.get("point") != "plan:pre" or
+                    prior.get("hooks") != receipt.get("hooks") or
+                    prior.get("hooksSha256") != receipt.get("hooksSha256") or
+                    not isinstance(prior_head, str) or not re.fullmatch(r"[0-9a-f]{40}", prior_head) or
+                    not isinstance(prior_transform, dict) or
+                    prior_transform.get("protocol") != "gsd-transition-v1" or
+                    prior_transform.get("allowedPaths") != allowed or
+                    prior_transform.get("sha256") != hashlib.sha256(
+                        json.dumps(prior_evidence, ensure_ascii=False, separators=(",", ":")).encode()
+                    ).hexdigest()):
+                raise ValueError("superseded receipt lineage")
+            if subprocess.run(["git", "merge-base", "--is-ancestor", prior_head, candidate],
+                              cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+                raise ValueError("superseded receipt candidate is not an ancestor")
         expected = recovery.get("preservedWorktree")
         if not isinstance(expected, list):
             raise ValueError("recovery worktree receipt is malformed")
@@ -161,6 +207,9 @@ try:
             relative = record[3:].decode("utf-8", "strict")
             allowed = (re.fullmatch(r"\.planning/phases/[0-9]{3}-[^/]+/[A-Za-z0-9._-]+\.md", relative) or
                        re.fullmatch(r"docs/[A-Za-z0-9._-]+\.(?:md|txt)", relative))
+            if protocol == "phase-140-recovery-v2" and re.fullmatch(
+                    r"\.planning/debug/[a-z0-9][a-z0-9-]*\.md", relative):
+                allowed = True
             if record[2:3] != b" " or not allowed or status not in {" M", "??"}:
                 raise ValueError("recovery contains a non-planning worktree change")
             target = os.path.join(root, relative)

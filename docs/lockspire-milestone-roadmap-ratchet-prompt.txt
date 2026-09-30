@@ -1,0 +1,63 @@
+Lockspire milestone and roadmap ratchet
+
+Purpose
+
+Use this prompt when deciding what Lockspire should do next, shaping a new milestone, or refreshing the near-, mid-, and long-term roadmap. Keep the project moving toward a trustworthy, easy-to-adopt embedded OAuth/OIDC authorization server for Phoenix applications. Optimize for useful progress, sound security, and maintainable quality; do not create work merely to stay busy.
+
+Project boundaries
+
+- Lockspire is a companion Elixir library embedded in a host Phoenix application. Do not turn it into a required hosted identity service or a Sigra module.
+- The host application owns accounts, login UX, layouts, branding, claims, and product-specific policy. Keep the host integration seam explicit and narrow.
+- Preserve the current product boundaries and secure defaults in the project guide and requirements. Do not broaden v1 into SAML, LDAP/AD federation, hosted auth, or a general CIAM suite.
+- Treat operator and admin UI as a candidate for later, when protocol, adoption, and operational work reach diminishing returns or evidence shows it is the most valuable next step. Do not assume it is the next milestone.
+
+How to choose work
+
+1. Inspect the current project intent, requirements, roadmap, state, recent milestone evidence, open work, release status, CI, and maintained follow-ups before recommending a direction. Refresh live facts and distinguish them from historical records.
+2. Identify who benefits and what they need to do. Consider Phoenix library adopters and maintainers, security reviewers, application operators, and the people who authorize access. Check relevant adoption contexts such as B2B and B2C SaaS, regulated products, and consumer services. Use these contexts to expose real requirements and failure modes; do not promise universal support or add domain-specific product policy to the library.
+3. Compare plausible work across user value, security and correctness, adoption friction, operability, maintainability, release risk, and implementation and CI cost. Include technical, product, security, and operator perspectives where they change the decision. State meaningful tradeoffs and evidence.
+4. Prefer bounded, independently verifiable improvements. Avoid speculative scope, redundant infrastructure, churn-only milestones, and milestones made up only of dependency updates. Assess each dependency update on its own compatibility, security, and required-gate evidence.
+5. Maintain a directional near-, mid-, and long-term roadmap. Mark candidates as hypotheses, not commitments. Refresh it at each milestone boundary, preserve provenance for durable decisions, and remove stale or superseded entries rather than accumulating noise.
+
+Quality and engineering posture
+
+- Preserve secure OAuth/OIDC behavior and the project's documented security defaults. Treat protocol, redirect, credential, token lifecycle, key management, logging, and host-seam changes as security-sensitive.
+- Keep code cohesive, readable, idiomatic, and self-documenting. Favor clear module boundaries, simple interfaces, and well-supported dependencies. Avoid circular dependencies and abstractions without demonstrated value.
+- Cover meaningful happy paths, errors, boundaries, regressions, and integration seams. Use property-based testing deliberately where it explores a meaningful state space or invariant that example tests miss.
+- Automate recurring verification, smoke, integration, and end-to-end checks when they provide repeatable value. Aim to remove routine human UAT from the release path; keep people involved for product judgments that automation cannot establish.
+- Make CI reliable and efficient: run cheap, high-signal checks early; avoid duplicated work; keep job names and failures understandable; watch total runtime and hosted runner minutes. Every test and job should protect a real contract.
+- Establish performance baselines before optimizing. Find the largest demonstrated bottleneck, then improve it with evidence across CPU, memory, database and network use, and disk or other I/O. Avoid premature optimization.
+- Keep executable documentation accurate and focused on adopter tasks. Explain the host-app boundary, setup, operations, and recovery clearly. Remove stale instructions and prose that does not help a reader act.
+- Keep the repository and planning records clean and useful. Preserve historical evidence, record consequential decisions with provenance, and make handoffs resilient to a context reset. Do not put personal information, credentials, tokens, or private local paths into public artifacts; use redaction or a local-only comparison when exact values are not needed.
+
+Digital twins and adoption proof
+
+Use a small, representative host application or digital twin when it can exercise behavior that unit tests cannot: installation, migrations, configuration, host account and claim adapters, browser redirects, persistence, operations, and upgrade paths. Choose scenarios from shared OAuth/OIDC invariants across application types, then add domain-specific cases only when the host boundary or protocol requirement justifies them. Keep the twin deterministic, maintainable, and proportionate; do not build a second product merely to have a demo.
+
+Release and milestone hygiene
+
+- Release when the change is useful, verified, and ready. Release actively when warranted, but do not force a release to satisfy a calendar or milestone label.
+- At each milestone closeout, reconcile the exact main branch and required CI, open pull requests and issues, worktrees and branches, release evidence, documentation, and planning state. Merge or close work only when evidence and repository policy support it; leave an explicit disposition for everything else.
+- Keep release ownership and protected publishing controls intact. Never rewrite historical release evidence to make current state appear cleaner.
+- Prefer milestones that leave the project releasable and the default branch healthy. If a release is not warranted, state the specific remaining gate and the evidence needed to clear it.
+
+Roadmap candidates to test against current evidence
+
+Near term — finish the active repository baseline and bounded operational triage, resolve only small high-confidence gaps, and close with a durable, evidence-backed baseline. Resume the sustaining GA release train when its acceptance and release gates are satisfied. Do not treat queue emptiness as a goal by itself.
+
+Mid term — use adopter and operational evidence to choose the next highest-value improvement. Candidates may include smoother Phoenix installation and upgrades, protocol lifecycle gaps, conformance and interoperability proof, operational visibility and recovery, or performance work when a measured bottleneck exists. Select only work supported by a concrete user need or risk.
+
+Long term — consider broader operator workflows, including admin UI, after the library's protocol, adoption, upgrade, and operational foundations are strong and user evidence supports the investment. Consider additional protocol or ecosystem scope only through an explicit boundary and threat review. Keep hosted identity, federation protocols outside the stated v1 boundary, and broad CIAM expansion out unless project direction is deliberately revised.
+
+These are candidate horizons, not a preapproved sequence. Before carrying any item forward, check current planning records and live project evidence, state what changed, and explain why the item is still worth doing.
+
+Expected GSD outcome
+
+- Record durable intent, decisions, requirements, roadmap changes, and lessons in the appropriate `.planning` artifacts with dates and provenance. Keep artifacts discoverable and consistent; update or retire stale records.
+- Choose the specific next GSD action that advances the current state. Preserve enough context and evidence that clearing the conversation will not lose the decision or misroute the workflow.
+- Plan with measurable outcomes, dependencies, verification, CI cost, and release implications. Execute only the scope requested and required by the current GSD step; do not silently turn planning into implementation.
+- Before recommending a release or the next command, verify the current repository state and say which phase or milestone just completed, what comes next, and what evidence supports that recommendation.
+
+Adaptation note
+
+This Lockspire version distills the reusable quality, roadmap, release, automation, and durable-planning intent of the original milestone prompt while replacing Stripe-specific goals with Lockspire's embedded OAuth/OIDC purpose, host-application boundary, security posture, roadmap, and release process. The roadmap candidates above reflect the planning horizon when this file was adapted; refresh them from the live project records before each new milestone.

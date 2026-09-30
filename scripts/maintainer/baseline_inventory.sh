@@ -3526,6 +3526,24 @@ classify_lifecycle_commit() {
     printf 'phase_140_handoff'
     return
   fi
+  if [[ "$subject" == 'fix(140): add provenance-preserving receipt supersession' ]]; then
+    local expected_paths
+    expected_paths="$(printf '%s\n' \
+      'scripts/maintainer/baseline_inventory.sh' \
+      'scripts/maintainer/finalize_phase_139_acceptance.sh' \
+      'scripts/maintainer/supersede_phase_139_host_receipt.sh' \
+      'tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs' \
+      'tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs' | LC_ALL=C sort)"
+    [[ "$paths" == "$expected_paths" ]] || return 1
+    blob_has_line "$commit" 'tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs' 'phase-140-recovery-v2' || return 1
+    blob_has_line "$commit" 'scripts/maintainer/supersede_phase_139_host_receipt.sh' --expected-sha256 || return 1
+    blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' 'phase-140-recovery-v2\)' || return 1
+    blob_has_line "$commit" 'scripts/maintainer/baseline_inventory.sh' 'REMOTE.*origin' || return 1
+    blob_has_line "$commit" 'scripts/maintainer/finalize_phase_139_acceptance.sh' 'candidate preparation is blocked until its exact SHA is explicitly published' || return 1
+    blob_has_line "$commit" 'tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs' 'receipt archive must retain exact prior receipt bytes' || return 1
+    printf 'phase_140_stale_receipt_supersession'
+    return
+  fi
   if [[ "$subject" == "fix(140): separate candidate preparation from publication" ]]; then
     local expected_paths
     expected_paths="$(printf '%s\n' \
@@ -4676,12 +4694,53 @@ if not isinstance(before, dict) or not isinstance(after, dict):
     raise ValueError('observations')
 recovery = receipt.get('recovery')
 if recovery is not None:
-    if (not isinstance(recovery, dict) or set(recovery) != {'protocol', 'baselineSha', 'preservedWorktree'} or
-            recovery.get('protocol') != 'phase-140-recovery-v1' or
+    if (not isinstance(recovery, dict) or
+            recovery.get('protocol') not in {'phase-140-recovery-v1', 'phase-140-recovery-v2'} or
             not isinstance(recovery.get('baselineSha'), str) or
             not __import__('re').fullmatch(r'[0-9a-f]{40}', recovery['baselineSha']) or
             not isinstance(recovery.get('preservedWorktree'), list)):
         raise ValueError('recovery envelope')
+    if recovery['protocol'] == 'phase-140-recovery-v1':
+        if set(recovery) != {'protocol', 'baselineSha', 'preservedWorktree'}:
+            raise ValueError('legacy recovery envelope')
+    else:
+        superseded_digest = recovery.get('supersedesSha256')
+        if (set(recovery) != {'protocol', 'baselineSha', 'supersedesSha256', 'preservedWorktree'} or
+                not isinstance(superseded_digest, str) or
+                not __import__('re').fullmatch(r'[0-9a-f]{64}', superseded_digest)):
+            raise ValueError('supersession envelope')
+        archive = receipt_path.parent / 'receipt-archive' / f'{superseded_digest}.json'
+        archive_stat = archive.lstat()
+        if not stat.S_ISREG(archive_stat.st_mode) or stat.S_IMODE(archive_stat.st_mode) != 0o600:
+            raise ValueError('superseded receipt archive type or mode')
+        archive_bytes = archive.read_bytes()
+        if hashlib.sha256(archive_bytes).hexdigest() != superseded_digest:
+            raise ValueError('superseded receipt archive digest')
+        prior = json.loads(archive_bytes)
+        prior_after = prior.get('after') if isinstance(prior, dict) else None
+        prior_head = prior_after.get('head') if isinstance(prior_after, dict) else None
+        successor_head = after.get('head') if isinstance(after, dict) else None
+        prior_transform = prior.get('transformation') if isinstance(prior, dict) else None
+        prior_evidence = {
+            'protocol': 'gsd-transition-v1', 'writer': prior.get('writer'),
+            'before': prior.get('before'), 'after': prior.get('after')
+        }
+        if prior.get('recovery'):
+            prior_evidence['recovery'] = prior['recovery']
+        if (prior.get('schemaVersion') != 1 or prior.get('status') != 'pending' or
+                prior.get('phase') != '139' or prior.get('point') != 'plan:pre' or
+                prior.get('hooks') != receipt.get('hooks') or
+                prior.get('hooksSha256') != receipt.get('hooksSha256') or
+                not isinstance(prior_head, str) or not __import__('re').fullmatch(r'[0-9a-f]{40}', prior_head) or
+                not isinstance(prior_transform, dict) or prior_transform.get('protocol') != 'gsd-transition-v1' or
+                prior_transform.get('allowedPaths') != allowed or
+                prior_transform.get('sha256') != hashlib.sha256(compact(prior_evidence)).hexdigest()):
+            raise ValueError('superseded receipt lineage')
+        if not isinstance(successor_head, str) or not __import__('re').fullmatch(r'[0-9a-f]{40}', successor_head):
+            raise ValueError('successor candidate identity')
+        if subprocess.run(['git', 'merge-base', '--is-ancestor', prior_head, successor_head], cwd=root,
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+            raise ValueError('superseded receipt candidate ancestry')
 transform = receipt.get('transformation')
 if not isinstance(transform, dict) or transform.get('protocol') != 'gsd-transition-v1' or transform.get('allowedPaths') != allowed:
     raise ValueError('transformation')
@@ -4721,7 +4780,9 @@ if recovery is not None:
     current = []
     allowed_overlay = lambda p: bool(
         __import__('re').fullmatch(r'\.planning/phases/[0-9]{3}-[^/]+/[A-Za-z0-9._-]+\.md', p) or
-        __import__('re').fullmatch(r'docs/[A-Za-z0-9._-]+\.(?:md|txt)', p)
+        __import__('re').fullmatch(r'docs/[A-Za-z0-9._-]+\.(?:md|txt)', p) or
+        (recovery.get('protocol') == 'phase-140-recovery-v2' and
+         __import__('re').fullmatch(r'\.planning/debug/[a-z0-9][a-z0-9-]*\.md', p))
     )
     for record in porcelain.decode().split('\0'):
         if not record: continue
@@ -4745,10 +4806,11 @@ PY
   case "$expected_phase" in
     138) validate_worktree_transition || return 1 ;;
     139)
-      local recovery_base
+      local recovery_base recovery_protocol
       recovery_base="$(jq -er '.recovery.baselineSha // empty' "$receipt" 2>/dev/null || true)"
       if [[ -n "$recovery_base" ]]; then
-        validate_phase_140_recovery_chain "$recovery_base" "$before_head" || return 1
+        recovery_protocol="$(jq -er '.recovery.protocol // empty' "$receipt" 2>/dev/null || true)"
+        validate_phase_140_recovery_chain "$recovery_base" "$before_head" "$recovery_protocol" || return 1
       else
         validate_phase_139_transition_commit || return 1
       fi
@@ -4963,14 +5025,23 @@ verify_phase_139_preverify_relation() {
 }
 
 validate_phase_140_recovery_chain() {
-  local baseline="$1" candidate="$2" chain commit parents subject paths class classes="" meta advertised local_main remote_main
-  local baseline_subject baseline_paths baseline_class
+  local baseline="$1" candidate="$2" protocol="${3:-phase-140-recovery-v1}"
+  local chain commit parents subject paths class classes="" meta advertised local_main remote_main
+  local baseline_subject baseline_paths baseline_class supersession_suffix
   [[ "$baseline" =~ ^[0-9a-f]{40}$ && "$candidate" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || return 1
   [[ "$(git rev-parse HEAD 2>/dev/null || true)" == "$candidate" ]] || return 1
   local_main="$(git rev-parse refs/heads/main 2>/dev/null || true)"
   remote_main="$(git rev-parse "refs/remotes/$REMOTE/main" 2>/dev/null || true)"
   advertised="$(git ls-remote "$REMOTE" refs/heads/main 2>/dev/null | awk 'NR == 1 { print $1 }')"
-  [[ "$local_main" == "$candidate" && "$remote_main" == "$advertised" ]] || return 1
+  [[ "$remote_main" == "$advertised" ]] || return 1
+  case "$protocol" in
+    phase-140-recovery-v1) [[ "$local_main" == "$candidate" ]] || return 1 ;;
+    phase-140-recovery-v2)
+      [[ "$REMOTE" == origin ]] || return 1
+      git merge-base --is-ancestor "$local_main" "$candidate" 2>/dev/null || return 1
+      ;;
+    *) return 1 ;;
+  esac
   git merge-base --is-ancestor "$baseline" "$candidate" 2>/dev/null || return 1
   git merge-base --is-ancestor "$remote_main" "$candidate" 2>/dev/null || return 1
   chain="$(git rev-list --reverse --first-parent "$baseline..$candidate" 2>/dev/null)" || return 1
@@ -4987,6 +5058,12 @@ validate_phase_140_recovery_chain() {
     classes+="$class"$'\n'
   done <<< "$chain"
   classes="$(printf '%s' "$classes" | sed '/^$/d')"
+  supersession_suffix=$'\nphase_140_stale_receipt_supersession'
+  if [[ "$classes" == *"$supersession_suffix" ]]; then
+    [[ "$protocol" == phase-140-recovery-v2 ]] || return 1
+    classes="${classes%"$supersession_suffix"}"
+    [[ "$classes" != *phase_140_stale_receipt_supersession ]] || return 1
+  fi
   # phase_140_planning_recovery_contract_repair
   if [[ "$classes" == $'phase_140_research_refresh\nphase_140_validation_strategy\nphase_140_pattern_map\nphase_140_plan_creation\nphase_140_handoff_refresh\nphase_140_primary_checkout_pin\nphase_140_planning_recovery_contract_repair' ]]; then
     return 0
@@ -5060,7 +5137,7 @@ validate_phase_140_recovery_chain() {
 }
 
 verify_phase_139_posttransition_chain() {
-  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix dependency_suffix planning_prefix_suffix
+  local ledger="$1" before_head="$2" ledger_commit subject chain commit class classes="" suffix extended_suffix dependency_suffix planning_prefix_suffix supersession_suffix
   ledger_commit="$(resolve_snapshot_ledger_commit "$ledger" "$before_head" 2>/dev/null)" || return 1
   subject="$(git show -s --format=%s "$ledger_commit" 2>/dev/null || true)"
   [[ "$subject" == 'docs(phase-139): refresh baseline inventory before verification' ]] || return 1
@@ -5076,7 +5153,12 @@ verify_phase_139_posttransition_chain() {
   extended_suffix="$suffix"$'\nphase_139_signal_fixture_timeout\nphase_140_gate_recovery_followup'
   dependency_suffix="$extended_suffix"$'\nphase_140_dependency_audit_repair'
   local inventory_timeout_suffix="$dependency_suffix"$'\nphase_140_inventory_timeout_repair'
+  supersession_suffix=$'\nphase_140_stale_receipt_supersession'
   planning_prefix_suffix=$'\nphase_140_research_refresh\nphase_140_validation_strategy\nphase_140_pattern_map\nphase_140_plan_creation\nphase_140_handoff_refresh\nphase_140_primary_checkout_pin\nphase_140_planning_recovery_contract_repair'
+  if [[ "$classes" == *"$supersession_suffix" ]]; then
+    classes="${classes%"$supersession_suffix"}"
+    [[ "$classes" != *phase_140_stale_receipt_supersession ]] || return 1
+  fi
   if [[ "$classes" == *"$planning_prefix_suffix" ]]; then
     classes="${classes%"$planning_prefix_suffix"}"
   fi

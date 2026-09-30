@@ -1,9 +1,10 @@
 ---
 phase: 138-baseline-inventory-evidence-taxonomy
-verified: 2026-09-25T23:10:00Z
+verified: 2026-09-27T17:01:20.545Z
 status: passed
 score: 7/7 must-haves verified
 covered_files:
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-01-PLAN.md
@@ -82,32 +83,35 @@ covered_files:
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-37-SUMMARY.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-38-PLAN.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-38-SUMMARY.md
+  - .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md
   - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-PROHIBITION-VALIDATION.md
+  - scripts/maintainer/baseline_inventory.sh
   - test/lockspire/quality/phase_138_prohibition_consistency_test.exs
-covered_digest: "v1:sha256:ac9a40611a7d351f562d76c69e3e149cdc47f9d63a9ba03b77d25d026cf28c9f"
+  - test/lockspire/release/repository_hygiene_contract_test.exs
+  - test/support/lockspire/release_proof/package_assertions.ex
+covered_digest: "v1:sha256:bb8d2292b207c3e5197c810aab52248908f9b3e7e28c124ff35d1ccdb5af61a8"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
-  previous_status: gaps_found
-  previous_score: 208/209 must-haves verified
-  gaps_closed:
-    - "G-138-98: all 108 prohibition rows now have exact claim-level evidence or an attributable maintainer resolution; the closure contract proves zero pending rows."
+  previous_status: passed
+  previous_score: 7/7 must-haves verified
+  gaps_closed: []
   gaps_remaining: []
   regressions: []
 gaps: []
 deferred:
   - truth: "Re-establish immutable snapshot currentness after later bookkeeping before relying on it for operational action."
     addressed_in: "Phases 140/141"
-    evidence: "Phase 138 remains proposal-only. Phase 139 verification assigns live exact-SHA acceptance and dated baseline refresh to the blocking Phase 140 entry gate and Phase 141."
+    evidence: "The live read-only relation check returned exit 1 with snapshot_relation: refresh_required because observed branches differ from the immutable Git receipt and later commits/worktree paths are outside its authorized bookkeeping set. UAT #100 therefore remains skipped; the dated snapshot stays proposal-only until the authorized Phase 140/141 refresh."
 human_needed: false
 ---
 
 # Phase 138: Baseline Inventory & Evidence Taxonomy Verification Report
 
 **Phase Goal:** Maintainers have one current, non-destructive evidence inventory for local/remote Git state and every maintained operational follow-up.
-**Verified:** 2026-09-25T23:10:00Z
+**Verified:** 2026-09-27T17:01:20.545Z
 **Status:** passed
-**Re-verification:** Yes — after gap-closure plans 138-37 and 138-38.
+**Re-verification:** Yes — after the UAT #100/#101 reconciliation; all seven prior truths remain, with the live refresh boundary recorded below.
 
 ## Goal Achievement
 
@@ -117,7 +121,7 @@ human_needed: false
 |---|---|---|---|
 | 1 | A maintainer can refresh origin references and show local `main` cleanliness/synchronization or exact divergence. | ✓ VERIFIED | Prior direct Git comparison and the production collector contract remain intact; previous Phase 138 verification and collector tests establish refresh, porcelain-v2 status, SHA capture, and divergence reporting. |
 | 2 | A maintainer can inspect relevant branches, tags, and worktrees with proposed dispositions in a dated inventory. | ✓ VERIFIED | The dated canonical inventory and collector remain present; historical byte manifest and prior production collector tests preserve source evidence and proposal-only authority. |
-| 3 | A maintainer can inspect every open pull request and issue with current evidence-backed dispositions. | ✓ VERIFIED | Previously completed authenticated pagination, terminal-page, and separate namespace receipt checks remain unchanged; this phase continues to defer live-source revalidation before operational action. |
+| 3 | A maintainer can inspect every open pull request and issue with current evidence-backed dispositions. | ✓ VERIFIED | The authenticated pagination and per-namespace receipt contracts remain present. The current read-only relation check fails closed with `refresh_required`, so stale live-source evidence is not represented as current; UAT #100 and operational use remain deferred to Phases 140/141. |
 | 4 | Maintained todos, audit/verification findings, debug or handoff artifacts, roadmap notes, and follow-ups are discoverable in one inventory. | ✓ VERIFIED | Previously verified explicit maintained-source allowlist, complete family receipts, and discoverable archive summaries remain intact. |
 | 5 | All 108 Phase 138 prohibition claims have an exact source identity and a resolved claim-level outcome. | ✓ VERIFIED | The focused closure test passes 6/6; all 108 rows preserve exact identities, with 10 evidence-backed and 98 attributable maintainer-affirmed decisions. |
 | 6 | Judgment outcomes remain judgment/UNVERIFIED; ENFORCED is reserved for supported claim-specific negative receipts. | ✓ VERIFIED | Closure test validates that all 98 judgment outcomes stay UNVERIFIED and only the ten individually evidenced test rows are ENFORCED. |
@@ -154,13 +158,26 @@ human_needed: false
 
 | Check | Result |
 |---|---|
-| Phase 138 focused prohibition closure contract | PASS — 6 tests, 0 failures |
+| Phase 138 focused prohibition closure contract (UAT #101) | PASS — rerun 2026-09-27: 6 tests, 0 failures |
 | Plan 138-38 summary integrity | PASS — summary exists, declared file exists, commits exist, self-check passed |
 | Historical source byte manifest | PASS — pinned SHA-256 verified by the focused contract |
+| UAT #100 live snapshot relation (`env -u LOCKSPIRE_INVENTORY_TEST_GITHUB_FINGERPRINT -u LOCKSPIRE_INVENTORY_TEST_MAINTAINED_FINGERPRINT bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md`) | DEFERRED — exit 1, `snapshot_relation: refresh_required`; observed branch topology differs from the immutable Git receipt, and later unclassified commits/worktree changes require authorized recollection before use. |
+
+### Test Quality Audit
+
+| Test File | Linked Requirement | Active | Skipped | Circular | Assertion Level | Verdict |
+|---|---|---:|---:|---|---|---|
+| `test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | G-138-98 closure; historical source integrity | 6 | 0 | No — reads ledger and pinned source bytes; does not generate its expected ledger | Behavioral and value-level | PASS |
+
+Disabled tests on requirements: 0. Circular patterns detected: 0. Insufficient assertions: 0.
 
 ### Downstream currentness boundary
 
-Phase 139 verification assigns live exact-SHA acceptance and immutable snapshot refresh to the Phase 140 entry gate and Phase 141. This Phase 138 report preserves that boundary; its inventory remains proposal-only until those later gates complete. A broad exploratory Phase 139 contract sweep in this checkout encountered stale-snapshot and state-position assertions; those checks concern the downstream refresh boundary and do not alter the Phase 138 claims above. They must be rerun after Phase 140 refreshes the exact-SHA evidence.
+The live relation check was rerun on 2026-09-27 with the UAT #100 command. It reported branch-topology mismatch and `snapshot_relation: refresh_required`, then stopped before authenticated GraphQL recollection; subsequent Phase 139 commits and worktree edits also appeared as unauthorized rows. This is the expected fail-closed result for the current checkout, not authorization to act on the dated snapshot. Phase 138 remains proposal-only until the authorized Phase 140/141 refresh establishes current receipts. The Phase 138 closure test (UAT #101) was rerun and passed all six assertions.
+
+### Advisory (New Scope, Unevidenced)
+
+None. The re-verification found no new-scope blocker without deterministic evidence.
 
 ## Human Verification Required
 
@@ -168,8 +185,8 @@ None for this phase. The 98 maintainer judgments were explicitly delegated by th
 
 ## Gaps Summary
 
-No Phase 138 verification gaps remain. G-138-98 is closed by attributable outcomes for every source claim plus a passing zero-pending closure contract. Snapshot revalidation remains explicitly deferred to Phases 140/141.
+No Phase 138 verification gaps remain. G-138-98 is closed by attributable outcomes for every source claim plus the passing six-test zero-pending closure contract. UAT #100's live recompare is explicitly deferred because the production relation reports `refresh_required`; the snapshot remains proposal-only until Phases 140/141 refresh it.
 
 ---
-*Verified: 2026-09-25T23:10:00Z*
+*Verified: 2026-09-27T17:01:20.545Z*
 *Verifier: Codex (inline goal-backward verification)*
