@@ -227,17 +227,20 @@ Plans:
 **Wave 5** *(gap closure after the Plan 140-04 verification failures)*
 
 - [ ] 140-05-PLAN.md — Complete origin and maintained-record source receipts, then disposition newly observed candidates.
-- [ ] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
 
 **Wave 6** *(after the inventory collector edit)*
 
 - [ ] 140-06-PLAN.md — Repair recovery diagnostics and authenticate recovery-v2 receipts through the no-publish barrier.
 
-**Wave 7** *(after inventory and focused repairs)*
+**Wave 7** *(after inventory and recovery repairs)*
+
+- [ ] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
+
+**Wave 8** *(after inventory and focused repairs)*
 
 - [ ] 140-08-PLAN.md — Capture every local CI failure, repair bounded roots, and prove a clean full local run.
 
-**Wave 8** *(after clean local CI)*
+**Wave 9** *(after clean local CI)*
 
 - [ ] 140-09-PLAN.md — Reconcile terminal dispositions and hand off the post-summary same-SHA CI/Release gate.
 
