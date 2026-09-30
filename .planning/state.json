@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-plan-phase 140 --gaps",
-    "label": "Plan Phase 140 gap closure",
-    "reason": "Phase verification is gaps_found (6/8); Plan 140-04 is blocked by the failed hygiene contract, local CI regressions, partial inventory, and pending exact-SHA gates."
+    "command": "/gsd:execute-phase 140 --gaps-only",
+    "label": "Execute Phase 140 gap closure",
+    "reason": "Plans 140-05 through 140-09 are planned gap_closure work; execute only these before re-verifying Phase 140."
   },
-  "updated_at": "2026-09-30T07:32:56Z"
+  "updated_at": "2026-09-30T20:43:29.020Z"
 }

@@ -4,13 +4,13 @@ milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
-current_plan: 4
+current_plan: 5
 status: executing
-stopped_at: "Phase 140 verification found gaps (6/8); Plan 140-04 is blocked. Next: $gsd-plan-phase 140 --gaps"
-last_updated: "2026-09-30T20:34:46.975Z"
+stopped_at: "Phase 140 gap-closure plans 140-05 through 140-09 are ready. Next: $gsd-execute-phase 140 --gaps-only"
+last_updated: "2026-09-30T20:43:29.020Z"
 last_activity: 2026-09-30
-last_activity_desc: Phase 140 verification is gaps_found (6/8); Plan 140-04 is blocked and gap planning is next.
-state_head: 229462126f39119f4a8527e3034bd71f92560d2f
+last_activity_desc: Phase 140 gap-closure Plans 140-05 through 140-09 are ready. Next: $gsd-execute-phase 140 --gaps-only.
+state_head: dcb248b30b7931b18e2172069873254e0d11a14e
 progress:
   total_phases: 4
   completed_phases: 2
@@ -31,15 +31,15 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 ## Current Position
 
 Phase: 140 (Bounded Operational Loose-End Triage) — READY TO EXECUTE
-Current Plan: 4
+Current Plan: 5 (next executable gap-closure plan)
 Total Plans in Phase: 9
-Plan: Plans 140-01 through 140-03 are complete. Plan 140-04 is blocked by two repository-hygiene contract failures and a failing full local CI run; Phase 140 verification is gaps_found (6/8). The signing-key fixture repair, complete inventory, and exact-SHA acceptance remain open.
-Status: Executing gap closure
-Last activity: 2026-09-30 — Phase 140 Plan 140-04 recorded as blocked; verification names four gap groups. Next: `$gsd-plan-phase 140 --gaps`.
+Plan: Plans 140-01 through 140-04 have summaries; Plan 140-04 ended with verification gaps (6/8). Gap-closure Plans 140-05 through 140-09 are planned in dependency order and are ready to execute.
+Status: Gap-closure plans ready to execute
+Last activity: 2026-09-30 — Phase 140 gap planning complete. Next: `$gsd-execute-phase 140 --gaps-only`; then follow the execute-phase verification handoff.
 
 Progress: [█████░░░░░] 50%
 
-Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Phase 140 discussion, research, and four plans are complete; execution and final exact-SHA acceptance remain outstanding.
+Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Phase 140's initial Plans 140-01 through 140-04 have summaries; Plan 140-04 left verification gaps, with five gap-closure plans now prepared to address them.
 
 ## Accumulated Context
 
@@ -183,14 +183,14 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-30T07:30:53.945Z
-Stopped at: Phase 140 verification found gaps (6/8); Plan 140-04 is blocked. Next: $gsd-plan-phase 140 --gaps
+Last session: 2026-09-30T20:43:28.930Z
+Stopped at: Phase 140 gap-closure Plans 140-05 through 140-09 are ready to execute. Next: $gsd-execute-phase 140 --gaps-only
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md
-Resume instruction: Run `$gsd-plan-phase 140 --gaps` from the current `.planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md`. Do not replay Plans 140-01 through 140-04, Phase 138/139 implementation plans, or push the local planning commits. Preserve protected overlays and require separate exact-candidate authorization before any new push or release action.
+Resume instruction: Run `$gsd-execute-phase 140 --gaps-only`. This selects only Plans 140-05 through 140-09 (`gap_closure: true`) and skips plans that already have summaries. After execution, follow its verification handoff; if verification still finds gaps, plan those with `$gsd-plan-phase 140 --gaps`. Do not replay Phase 138/139 implementation plans or Plans 140-01 through 140-04. Preserve protected overlays and require separate exact-candidate authorization before any new push or release action.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. Phase 140 Plans 140-01 through 140-03 are complete. Plan 140-04 is recorded as blocked/incomplete; current verification is gaps_found at 6/8. The next command is `$gsd-plan-phase 140 --gaps`. CI-06/CI-07, inventory completeness, and LOOSE-03 remain open.
+All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. Phase 140 Plans 140-01 through 140-04 have summaries, with verification gaps remaining after Plan 140-04. Gap-closure Plans 140-05 through 140-09 are ready; next run `$gsd-execute-phase 140 --gaps-only`. CI-06/CI-07, inventory completeness, and LOOSE-03 remain open until the gap plans and verification complete.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
