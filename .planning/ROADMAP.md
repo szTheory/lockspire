@@ -273,3 +273,20 @@ Plans:
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
 | 140. Bounded Operational Loose-End Triage | 3/4 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Repository Readability & Docs Polish (BACKLOG)
+
+**Goal:** Make Lockspire's repository a joy to navigate: clarify what each major directory is for, remove only verified stale clutter, and give adopters and maintainers a clear, accurate route through the README and canonical documentation.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+**Captured direction:**
+
+- Audit the top-level and nested directory tree by ownership and lifecycle. Review agent-managed worktree folders such as `.claude/worktrees/agent-ace643b0f744cfe0b`, scratch/output directories, and the long compatibility-fixture path before deciding whether anything should move, be renamed, ignored, or removed. Check active worktree/agent ownership and all CI/test references before changing paths.
+- Reshape the README around adopter and maintainer jobs: evaluate Lockspire's fit and boundaries, install it into an existing Phoenix app, follow the supported-surface contract, and operate or maintain a deployment. Use LatticeStripe's reader-first docs ladder and JTBD route map as inspiration while keeping Lockspire's product scope and voice.
+- Audit guide navigation, links, setup steps, and claims against the current code and `docs/supported-surface.md`; keep generated outputs, fixtures, brand assets, planning records, and maintained documentation clearly distinguished.
+
+Plans:
+- [ ] TBD (promote with `$gsd-review-backlog` when ready)
