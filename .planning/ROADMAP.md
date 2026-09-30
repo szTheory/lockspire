@@ -151,7 +151,7 @@ This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific 
   4. A maintainer can trace the current public release from its source SHA through CI, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
   5. Maintained planning and release records agree on the current milestone and release posture, while Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
 
-**Plans**: 9/11 plans executed
+**Plans**: 13/13 plans executed
 
 Plans:
 
@@ -230,7 +230,7 @@ Plans:
 - Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
 - Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Entry gate**: The existing blocking Phase 140 `plan:pre` hook must first produce and validate the Phase 139 exact-SHA acceptance receipt. CI-06 and CI-07 remain pending until that receipt proves synchronized refs and canonical same-SHA workflow results. This ordering lets Phase 139 verify the repository-owned acceptance contract, transition normally, and have the live evidence gate run before any Phase 140 planning begins.
+**Entry gate (satisfied 2026-09-28)**: The existing blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. This dated receipt satisfies the entry gate for that SHA only; CI-06 and CI-07 still require final same-SHA acceptance after Phase 140 execution.
 
 ### Phase 141: Maintenance-Baseline Closure
 
