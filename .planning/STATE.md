@@ -4,18 +4,18 @@ milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
-current_plan: 3
+current_plan: 4
 status: executing
-stopped_at: Completed Phase 140 Plan 140-02; next Plan 03
-last_updated: "2026-09-30T02:28:52.741Z"
+stopped_at: "Phase 140 verification found gaps (6/8); Plan 140-04 is blocked. Next: $gsd-plan-phase 140 --gaps"
+last_updated: "2026-09-30T07:30:53.999Z"
 last_activity: 2026-09-30
-last_activity_desc: Phase 140 Plan 140-02 completed with source and test limitations documented; Plan 140-03 is next.
-state_head: e3c55337e1d5a8fcdc38c2ca5c71c194000585ec
+last_activity_desc: Phase 140 verification is gaps_found (6/8); Plan 140-04 is blocked and gap planning is next.
+state_head: 213ad3cd27e0125bc94bd0b9df493303323ba880
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 55
-  completed_plans: 53
+  completed_plans: 54
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 ## Current Position
 
 Phase: 140 (Bounded Operational Loose-End Triage) — IN PROGRESS
-Current Plan: 3
+Current Plan: 4
 Total Plans in Phase: 4
-Plan: Plan 140-01 and Plan 140-02 are complete; Plan 140-03 is next. The LOOSE-03 fixture repair and final exact-SHA acceptance remain pending.
-Status: executing
-Last activity: 2026-09-30 — Phase 140 Plan 140-02 completed with source and test limitations documented; Plan 140-03 is next.
+Plan: Plans 140-01 through 140-03 are complete. Plan 140-04 is blocked by two repository-hygiene contract failures and a failing full local CI run; Phase 140 verification is gaps_found (6/8). The signing-key fixture repair, complete inventory, and exact-SHA acceptance remain open.
+Status: Executing gap closure
+Last activity: 2026-09-30 — Phase 140 Plan 140-04 recorded as blocked; verification names four gap groups. Next: `$gsd-plan-phase 140 --gaps`.
 
 Progress: [█████░░░░░] 50%
 
@@ -153,18 +153,17 @@ Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140.
 
 ### Pending Todos
 
-- Plan Phase 140 with fresh research from its confirmed context; retain exact, evidence-backed dispositions.
-- Before any Phase 140 inventory action, revalidate and refresh the Phase 138 live snapshot relation at the authorized boundary; inventory proposals do not authorize cleanup.
-- During Phase 140 triage, review the nine unresolved UAT records in archived v1.32/v1.27 artifacts as evidence-backed candidates; preserve their existing out-of-scope dispositions unless current evidence supports a change.
+None yet.
 
 ### Blockers/Concerns
 
-- Phase 140 context is committed at `99e825da`. Automatic approval review rejected the configured planning-entry finalizer because it can fast-forward and push `origin/main`; no hook ran and no Phase 140 research or plans were generated. Existing local edits remain preserved. Resolve exact-target authorization and the entry receipt through the supported lifecycle before continuing research-first planning.
-- Before any Phase 140 mutation, revalidate the current Phase 138 inventory relation at the named authority boundary; inventory dispositions remain proposals and do not authorize cleanup by themselves.
-- Lifecycle ordering resolution: the Phase 140 entry gate passed on 2026-09-27 at synchronized `main` SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`. Required CI run `36314255664` passed and Release no-publish run `36314255656` succeeded. CI-06 and CI-07 remain Phase 140 requirements until phase verification; they are no longer entry-gate blockers.
-- Phase 138 UAT #100 remains skipped pending the authorized Phase 140/141 snapshot refresh. Its automated relation check returned `refresh_required` before authenticated GraphQL recollection; keep the dated snapshot proposal-only until that refresh.
+- Resolved historical entry blocker: the Phase 140 entry gate passed on 2026-09-27 and was revalidated on 2026-09-28 at synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`. Its CI and Release no-publish receipts apply to that SHA only.
+- Current Phase 140 verification is `gaps_found` (6/8). Plan 140-04 is blocked: the full repository-hygiene contract had 58 tests / 2 failures; `mix ci` had 1,439 tests / 44 failures / 6 skipped (286 excluded); four current Phase32/AuditWriter selectors fail with `:invalid_signing_key`; and the refreshed inventory is partial (origin refresh exit 255 and `140-HANDOFF.md` ambiguity).
+- CI-06 and CI-07 remain pending a post-summary synchronized-main exact-SHA hygiene, canonical CI, and Release no-publish receipt. Current candidate HEAD is `213ad3cd27e0125bc94bd0b9df493303323ba880`; local and cached `origin/main` remain `5ad2b2e935556c8f1a91be32605958530b477527`. No push is authorized; any needed push requires separate exact-candidate authorization.
+- Before any future inventory or cleanup action, refresh the Phase 138 relation and incomplete source domains at the authorized boundary; current inventory rows remain proposal-only and do not establish exhaustive coverage.
+- Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. The current relation result is `refresh_required`; keep the dated snapshot proposal-only until the planned refresh.
 - Supplemental OIDF findings remain future bounded conformance work unless a reproducible repository regression warrants a narrowly scoped correction.
-- 139-09 Task 1 historical blocker: live parity was initially blocked on GSD 1.10.0 and resolved on 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16. The Phase 140 exact-SHA entry gate has since passed.
+- Resolved historical 139-09 Task 1 blocker: live parity was initially blocked on GSD 1.10.0 and resolved on 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16.
 
 ### Quick Tasks Completed
 
@@ -183,14 +182,14 @@ Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140.
 
 ## Session Continuity
 
-Last session: 2026-09-30T02:25:44.507Z
-Stopped at: Completed Phase 140 Plan 140-02; next Plan 03
+Last session: 2026-09-30T07:30:53.945Z
+Stopped at: Phase 140 verification found gaps (6/8); Plan 140-04 is blocked. Next: $gsd-plan-phase 140 --gaps
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md
-Resume instruction: Run `$gsd-execute-phase 140` and follow the four committed plans in order. Do not repeat Phase 138/139 implementation plans, push the local planning commits, or infer authority for a new remote/ref/release action. GSD currently reports Phase 138 and 139 verification as stale after later state changes; refresh only if an execution gate requires it, and preserve all Phase 138 overlays.
+Resume instruction: Run `$gsd-plan-phase 140 --gaps` from the current `.planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md`. Do not replay Plans 140-01 through 140-04, Phase 138/139 implementation plans, or push the local planning commits. Preserve protected overlays and require separate exact-candidate authorization before any new push or release action.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. GSD currently reports both verification records stale after later state changes. The Phase 140 entry gate passed against exact SHA `c6332d3a8b716b938f93d978243281764e3eac41`; four Phase 140 plans are verified and committed, with execution next. CI-06 and CI-07 remain pending the post-summary exact-SHA gate.
+All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. Phase 140 Plans 140-01 through 140-03 are complete. Plan 140-04 is recorded as blocked/incomplete; current verification is gaps_found at 6/8. The next command is `$gsd-plan-phase 140 --gaps`. CI-06/CI-07, inventory completeness, and LOOSE-03 remain open.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -240,3 +239,5 @@ All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase'
 | Phase 138 P38 | 8 min | 2 tasks | 3 files |
 | Phase 140 P01 | 66 min | 2 tasks | 2 files |
 | Phase 140 P2 | 25m | 2 tasks | 4 files |
+| Phase 140 P03 | 20m | 2 tasks | 2 files |
+| Phase 140 P04 | 55m (blocked) | 2 tasks | 2 files |

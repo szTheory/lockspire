@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 1/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -214,11 +214,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 140-02-PLAN.md — Reassess nine archived UAT candidates and correct demonstrated current planning contradictions.
+- [x] 140-02-PLAN.md — Reassess nine archived UAT candidates and correct demonstrated current planning contradictions.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 140-03-PLAN.md — Assess every dependency-update PR against its own current evidence.
+- [x] 140-03-PLAN.md — Assess every dependency-update PR against its own current evidence.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -251,5 +251,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 1/4 | In Progress|  |
+| 140. Bounded Operational Loose-End Triage | 3/4 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
