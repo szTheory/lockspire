@@ -28,7 +28,7 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
-    Lockspire.SeedingHelpers.seed_signing_key()
+    assert_active_signing_key_fixture()
     :ok
   end
 
@@ -438,5 +438,16 @@ defmodule Lockspire.Audit.AuditWriterTest do
   defp code_challenge(verifier) do
     :crypto.hash(:sha256, verifier)
     |> Base.url_encode64(padding: false)
+  end
+
+  defp assert_active_signing_key_fixture do
+    seeded_key = Lockspire.SeedingHelpers.seed_signing_key()
+    assert {:ok, active_key} = Repository.fetch_active_signing_key()
+    assert active_key.id == seeded_key.id
+
+    assert {:ok, private_jwk} =
+             Lockspire.Protocol.PrivateJwk.decode(active_key.private_jwk_encrypted)
+
+    assert %JOSE.JWK{} = JOSE.JWK.from_map(private_jwk)
   end
 end
