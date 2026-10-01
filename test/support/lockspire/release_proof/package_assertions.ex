@@ -4423,11 +4423,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "test/support/lockspire/release_proof/package_assertions.ex" ->
               entry_repair_package_assertions
 
-          ".planning/PROJECT.md" ->
-            run_git!(source, ["show", "7c2f26d249c46796e0dba340c6960801a8440cc7:.planning/PROJECT.md"])
+            ".planning/PROJECT.md" ->
+              run_git!(source, [
+                "show",
+                "7c2f26d249c46796e0dba340c6960801a8440cc7:.planning/PROJECT.md"
+              ])
 
-          _ ->
-            File.read!(Path.join(source, path))
+            _ ->
+              File.read!(Path.join(source, path))
           end
 
         write_repo_file!(repository, path, content)
