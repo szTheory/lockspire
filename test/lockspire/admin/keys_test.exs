@@ -19,7 +19,8 @@ defmodule Lockspire.Admin.KeysTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
     handler_id = attach_events(self())
 
     now = DateTime.utc_now()

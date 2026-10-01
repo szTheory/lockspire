@@ -694,10 +694,11 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   test "accepts a signed request object and projects its claims into the authorization pipeline",
        _context do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
+    client_id = unique_jar_client_id()
 
     {:ok, client} =
       Repository.register_client(%Client{
-        client_id: "client_jar",
+        client_id: client_id,
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
         name: "JAR Integrations",
@@ -749,7 +750,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     request_jwt =
       sign_jar_request!(private_jwk, client.client_id)
@@ -769,7 +770,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     request_jwt =
       sign_jar_request!(private_jwk, client.client_id)
@@ -790,7 +791,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     client: _client
   } do
     %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -806,7 +807,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -826,7 +827,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     %{pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
     other_private_jwk = JOSE.JWK.generate_key({:rsa, 2048})
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -855,7 +856,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -875,7 +876,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   test "maps issuer mismatches to the invalid_request_object_iss reason code", %{client: _client} do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -891,7 +892,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -911,7 +912,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -933,7 +934,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
   } do
     %{private_jwk: private_jwk, pub_jwk_map: pub_jwk_map} = JarTestHelpers.generate_keys()
 
-    {:ok, client} = register_jar_client!(pub_jwk_map, "client_jar")
+    {:ok, client} = register_jar_client!(pub_jwk_map, unique_jar_client_id())
 
     assert {:browser_error, %Error{} = error} =
              AuthorizationRequest.validate(%{
@@ -1061,6 +1062,10 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
       "code_challenge" => String.duplicate("a", 43),
       "code_challenge_method" => "S256"
     }
+  end
+
+  defp unique_jar_client_id do
+    "client_jar_#{System.unique_integer([:positive])}"
   end
 
   defp register_jar_client!(pub_jwk_map, client_id) do

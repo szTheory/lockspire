@@ -36,7 +36,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
 
     {:ok, _alpha} =
       Repository.register_client(%Client{

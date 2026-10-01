@@ -123,6 +123,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   @tag timeout: 180_000
   test "Phase 140 handoff classification requires committed structure and emits one stable proposal" do
     repo_root = Path.expand("../../..", __DIR__)
+
     fixture =
       Path.join(
         System.tmp_dir!(),
@@ -131,6 +132,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
     repository = Path.join(fixture, "repository")
     origin = Path.join(fixture, "origin.git")
+
     handoff_dir =
       Path.join(repository, ".planning/phases/140-bounded-operational-loose-end-triage")
 
@@ -159,9 +161,12 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     """
 
     lookalikes = %{
-      "140-missing-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress\n", ""),
-      "140-wrong-shape-HANDOFF.md" => String.replace(valid_handoff, "## Current position", "## Notes"),
-      "140-wrong-status-HANDOFF.md" => String.replace(valid_handoff, "status: in_progress", "status: complete")
+      "140-missing-status-HANDOFF.md" =>
+        String.replace(valid_handoff, "status: in_progress\n", ""),
+      "140-wrong-shape-HANDOFF.md" =>
+        String.replace(valid_handoff, "## Current position", "## Notes"),
+      "140-wrong-status-HANDOFF.md" =>
+        String.replace(valid_handoff, "status: in_progress", "status: complete")
     }
 
     git = fn args, cwd ->
@@ -208,6 +213,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
       valid_path =
         ".planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md"
+
       canonical_valid_path = String.downcase(valid_path)
 
       id_rows =
@@ -221,14 +227,19 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
       [first_id] = id_rows
 
       {second_output, second_status} =
-        System.cmd("bash", [collector, "--scope", "maintained", "--output", output_path, "--replace"],
+        System.cmd(
+          "bash",
+          [collector, "--scope", "maintained", "--output", output_path, "--replace"],
           cd: repository,
           stderr_to_stdout: true
         )
 
       assert second_status == 0, second_output
       second_inventory = File.read!(output_path)
-      assert second_inventory =~ "| #{hd(first_id)} | maintained_record | `#{canonical_valid_path}` | observed allowlisted source | active | defer-with-trigger |"
+
+      assert second_inventory =~
+               "| #{hd(first_id)} | maintained_record | `#{canonical_valid_path}` | observed allowlisted source | active | defer-with-trigger |"
+
       second_id_rows =
         Regex.scan(
           ~r/^\| (REC-[0-9a-f]{12}) \| maintained_record \| `#{Regex.escape(canonical_valid_path)}` \|/m,
@@ -237,9 +248,21 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
         )
 
       assert second_id_rows == id_rows
-      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-missing-status-HANDOFF")}` |")
-      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-shape-HANDOFF")}` |")
-      assert String.contains?(second_inventory, "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-status-HANDOFF")}` |")
+
+      assert String.contains?(
+               second_inventory,
+               "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-missing-status-HANDOFF")}` |"
+             )
+
+      assert String.contains?(
+               second_inventory,
+               "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-shape-HANDOFF")}` |"
+             )
+
+      assert String.contains?(
+               second_inventory,
+               "| active-records | unclassified/ambiguous | `#{valid_path |> String.replace("140-HANDOFF", "140-wrong-status-HANDOFF")}` |"
+             )
     after
       File.rm_rf(fixture)
     end

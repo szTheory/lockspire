@@ -34,7 +34,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
 
     # Register a few clients with different overrides to test summary counts
     {:ok, _c1} =

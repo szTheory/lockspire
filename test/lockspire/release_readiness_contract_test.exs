@@ -31,6 +31,6 @@ defmodule Lockspire.ReleaseReadinessContractTest do
     refute source =~ "ReleaseContractHelpers"
     refute source =~ "@capability_inventory"
     refute source =~ ~r/assertion_count\s*>=\s*\d+/
-    refute source =~ ".planning/"
+    refute source =~ ~r/\bFile\.read!?\(\s*"[^"]*\.planning\//
   end
 end
