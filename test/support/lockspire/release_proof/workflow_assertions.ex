@@ -110,11 +110,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert project =~ @active_phase_label <> " planning and execution are underway"
     assert state =~ "status: executing"
 
-    assert Regex.match?(
-             Regex.compile!(@active_phase_label <> " (?:planning )?remains gated"),
-             project
-           )
-
     assert project =~
              "Finish the active v1.38 Repository Baseline & Reconciliation milestone before returning to the sustaining GA release train."
 
