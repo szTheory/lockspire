@@ -4,18 +4,18 @@ milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
-current_plan: 9
+current_plan: 4
 status: executing
 stopped_at: "Phase 140 Plan 140-04 remains incomplete; latest full mix ci failed two receipt identity tests at 8fadb098. Next: $gsd-plan-phase 140 --gaps."
 last_updated: "2026-10-01T15:27:59.988Z"
 last_activity: 2026-10-01
-last_activity_desc: Phase 140 gap-closure Plans 140-05 through 140-09 completed; post-summary exact-SHA verification pending.
+last_activity_desc: Phase 140 gap-closure Plans 140-05 through 140-12 have summaries; Plan 140-04 remains blocked after latest full mix ci failed two receipt identity tests. Next: $gsd-plan-phase 140 --gaps.
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 2
   total_plans: 63
-  completed_plans: 63
-state_head: 6b63031531cd93f3d92dfdd4933522cb67e44dd6
+  completed_plans: 62
+state_head: 07978ca797e6c8618644c9b0144de384b700ad95
 ---
 
 # Project State
@@ -31,15 +31,15 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 ## Current Position
 
 Phase: 140 (Bounded Operational Loose-End Triage) — EXECUTING
-Current Plan: 9
+Current Plan: 4
 Total Plans in Phase: 12
-Plan: 9 of 12
+Plan: 4 of 12 (blocked; 140-05 through 140-12 have summaries)
 Status: executing
-Last activity: 2026-10-01 — Phase 140 gap-closure Plans 140-05 through 140-09 completed; post-summary exact-SHA verification pending.
+Last activity: 2026-10-01 — Latest full mix ci on 8fadb098 reported two Phase 138 receipt identity failures; Plan 140-04 remains incomplete.
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75% of the original four roadmap plans; Phase 140 remains incomplete.
 
-Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Phase 140's initial Plans 140-01 through 140-04 have summaries; Plan 140-04 left verification gaps, with five gap-closure plans now prepared to address them.
+Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plan 140-04 remains blocked/incomplete; gap-closure Plans 140-05 through 140-12 have summaries. The latest full local `mix ci` result is recorded in the Phase 140 handoff and CI log.
 
 ## Accumulated Context
 
@@ -186,11 +186,11 @@ None yet.
 Last session: 2026-10-01T15:27:59.920Z
 Stopped at: Phase 140 Plan 140-04 remains incomplete; latest full mix ci failed two receipt identity tests at 8fadb098. Next: $gsd-plan-phase 140 --gaps.
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Run `$gsd-verify-work 140` for final post-summary exact-SHA acceptance. Keep CI-06/CI-07 pending until the same full SHA has local `mix ci`, exact hygiene, canonical CI, and Release no-publish receipts. If refs differ, require separate authorization for the exact candidate before ref movement. Do not replay completed plans. Preserve the protected overlays.
+Resume instruction: Run `$gsd-resume-work`, then `$gsd-plan-phase 140 --gaps`. Reconcile the existing verification gaps against completed Plans 140-05 through 140-12 and the latest full-CI failures; do not replay completed plans. Keep CI-06/CI-07 pending until same-SHA local `mix ci`, exact hygiene, canonical CI, and Release no-publish receipts pass. Any changed candidate needs exact-SHA authorization before remote movement.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. All Phase 140 plans, including scoped Plans 140-10 through 140-12, now have summaries. The gap-closure plans are complete; next run `$gsd-verify-work 140` for post-summary exact-SHA acceptance. CI-06/CI-07 remain pending until the final full-SHA join passes; any required ref movement needs separate exact-candidate authorization.
+All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. Phase 140 Plans 140-05 through 140-12 have summaries. Plan 140-04 has a blocked summary and remains incomplete; the latest full local `mix ci` failed two receipt identity tests. The GSD verification query routes to `$gsd-plan-phase 140 --gaps`. CI-06/CI-07 remain pending until the final full-SHA join passes; any required ref movement needs exact-candidate authorization.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
