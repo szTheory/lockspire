@@ -59,10 +59,7 @@
       "phase": "140"
     }
   ],
-  "uncommitted_files": [
-    "?? .planning/HANDOFF.json",
-    "?? .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md"
-  ],
+  "uncommitted_files": [],
   "next_action": "Run $gsd-resume-work, then $gsd-plan-phase 140 --gaps. Reconcile the existing VERIFICATION.md against completed Plans 140-05 through 140-12 and the latest full-CI failure; plan only unresolved work.",
-  "context_notes": "Phase 139 is the last completed phase. Phase 140 remains incomplete; Phase 141 follows after Phase 140 is verified and marked complete. Candidate SHA 8fadb0984de9252475e8390bf4338c4df055f934 is on local main; origin/main is 218b50502e33f046ab24a61c807a4271b9a1436e. No push occurred. Latest CI log: /private/tmp/lockspire-140-final-ci-8fadb098-elevated.log."
+  "context_notes": "Phase 139 is the last completed phase. Phase 140 remains incomplete; Phase 141 follows after Phase 140 is verified and marked complete. Candidate SHA 8fadb0984de9252475e8390bf4338c4df055f934 is on local main; origin/main is 218b50502e33f046ab24a61c807a4271b9a1436e. The current branch has documentation-only WIP handoff commit(s) above that code candidate; no code changed in those commits. No push occurred. Latest CI log: /private/tmp/lockspire-140-final-ci-8fadb098-elevated.log."
 }
