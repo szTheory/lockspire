@@ -3585,7 +3585,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ]
 
       Enum.each(acceptance_gate_paths, fn path ->
-        contents = File.read!(Paths.path(path)) <> "\n# exact-main acceptance gate fixture\n"
+        contents =
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"]) <>
+            "\n# exact-main acceptance gate fixture\n"
+
         write_repo_file!(repository, path, contents)
       end)
 
@@ -3598,7 +3601,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       ]
 
       Enum.each(acceptance_fixture_paths, fn path ->
-        contents = File.read!(Paths.path(path)) <> "\n# completion evidence fixture repair\n"
+        contents =
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"]) <>
+            "\n# completion evidence fixture repair\n"
+
         write_repo_file!(repository, path, contents)
       end)
 
