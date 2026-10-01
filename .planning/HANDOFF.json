@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-10-01T15:16:16.041Z",
+  "phase": "140",
+  "phase_name": "Bounded Operational Loose-End Triage",
+  "phase_dir": ".planning/phases/140-bounded-operational-loose-end-triage",
+  "plan": 4,
+  "task": 1,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 2,
+      "name": "Plan 140-04 T2: prepare exact-SHA acceptance contract",
+      "status": "done",
+      "commit": "documented in 140-04-SUMMARY.md"
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 1,
+      "name": "Reconcile current CI failures, close scoped gaps, and complete Plan 140-04 acceptance",
+      "status": "blocked"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Latest full local mix ci on candidate 8fadb0984de9252475e8390bf4338c4df055f934 failed two Phase 138 receipt identity tests with before file identity; isolated selectors pass, and root cause is unknown.",
+      "type": "technical",
+      "workaround": "Plan exact-scope gap work from the latest complete CI log; preserve both assertions and rerun the full acceptance suite."
+    },
+    {
+      "description": "Plan 140-04 is still incomplete; CI-06/CI-07 final same-SHA acceptance is pending.",
+      "type": "technical",
+      "workaround": "Resolve fresh gaps, finish Plan 140-04, and use the phase verification/acceptance gates."
+    },
+    {
+      "description": "origin/main remains behind the local candidate. The exact-SHA conditional push approval cannot be used because CI failed; a changed candidate needs exact-SHA approval before remote movement.",
+      "type": "human_action",
+      "workaround": "Do not push until full CI passes on the exact candidate and any required new exact-SHA approval is obtained."
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {
+      "decision": "The next GSD command is $gsd-plan-phase 140 --gaps.",
+      "rationale": "The canonical verification.status query returns gaps_found and this exact next_command; Plan 140-04 remains incomplete while 140-05 through 140-12 are summarized.",
+      "phase": "140"
+    },
+    {
+      "decision": "Keep Phase 138 receipt assertions intact and diagnose the full-suite-only failure.",
+      "rationale": "Both focused selectors pass, but the latest complete mix ci reports before file identity failures.",
+      "phase": "140"
+    },
+    {
+      "decision": "Do not reuse approval for a changed candidate SHA or push after the failed run.",
+      "rationale": "The user's earlier authorization was tied to candidate 8fadb0984de9252475e8390bf4338c4df055f934 and conditioned the push on passing full local CI.",
+      "phase": "140"
+    }
+  ],
+  "uncommitted_files": [
+    "?? .planning/HANDOFF.json",
+    "?? .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md"
+  ],
+  "next_action": "Run $gsd-resume-work, then $gsd-plan-phase 140 --gaps. Reconcile the existing VERIFICATION.md against completed Plans 140-05 through 140-12 and the latest full-CI failure; plan only unresolved work.",
+  "context_notes": "Phase 139 is the last completed phase. Phase 140 remains incomplete; Phase 141 follows after Phase 140 is verified and marked complete. Candidate SHA 8fadb0984de9252475e8390bf4338c4df055f934 is on local main; origin/main is 218b50502e33f046ab24a61c807a4271b9a1436e. No push occurred. Latest CI log: /private/tmp/lockspire-140-final-ci-8fadb098-elevated.log."
+}
