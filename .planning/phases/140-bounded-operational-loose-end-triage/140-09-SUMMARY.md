@@ -35,7 +35,7 @@ key-files:
 key-decisions:
   - "Local mix ci at 93e85d11 is preparatory evidence; CI-06 and CI-07 remain pending until the post-summary same-SHA gate passes."
   - "Any required push or local ref movement needs separate blocking-human authorization for the exact final candidate and recovery path."
-requirements-completed: [CI-06, CI-07, BASE-03, LOOSE-02, LOOSE-03]
+requirements-completed: [BASE-03, LOOSE-02, LOOSE-03]
 coverage:
   - id: D1
     description: "The disposition register links the repaired recovery, CR-01, signing-key, and full-CI findings to stable source identities and terminal evidence while preserving unknown historical identities and deferred actions."
