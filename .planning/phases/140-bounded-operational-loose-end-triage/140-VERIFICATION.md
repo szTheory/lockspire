@@ -1,9 +1,10 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-verified: 2026-10-01T19:54:06Z
+verified: 2026-10-01T21:44:59Z
 status: gaps_found
-score: 28/31 must-haves verified
+score: 29/32 must-haves verified
 covered_files:
+  - .planning/PROJECT.md
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md
@@ -32,6 +33,8 @@ covered_files:
   - .planning/phases/140-bounded-operational-loose-end-triage/140-12-SUMMARY.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-13-PLAN.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-13-SUMMARY.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-14-PLAN.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-14-SUMMARY.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-CI-FAILURES.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md
@@ -41,8 +44,10 @@ covered_files:
   - .planning/phases/140-bounded-operational-loose-end-triage/140-RESEARCH.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-REVIEW.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-14-REVIEW.md
   - scripts/maintainer/baseline_inventory.sh
   - scripts/maintainer/finalize_phase_139_acceptance.sh
+  - scripts/maintainer/repo_hygiene_check.sh
   - test/integration/phase32_device_flow_token_exchange_e2e_test.exs
   - test/lockspire/admin/keys_test.exs
   - test/lockspire/audit/audit_writer_test.exs
@@ -60,182 +65,183 @@ covered_files:
   - test/support/lockspire/release_proof/workflow_assertions.ex
   - test/support/seeding_helpers.ex
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
-covered_digest: "v1:sha256:048455cb698b016c16c370ed725351e58f047adeb3686153d1e5624fa606cfe6"
-behavior_unverified: 1
+covered_digest: "v1:sha256:c4cbfd8f3d7f5ea7f90108bc76f1b01720ee0a6abcc651db070e4679e775fd14"
+behavior_unverified: 0
 overrides_applied: 0
 re_verification:
   previous_status: gaps_found
-  previous_score: 6/8
+  previous_score: 28/31
   gaps_closed:
-    - Complete current inventory and one-to-one disposition mapping, including maintained HANDOFF evidence.
-    - Exact current signing-key selectors and local repository-hygiene/CI failures, with production validation preserved.
-    - Standalone hygiene replay on the post-merge candidate.
+    - "Plan 140-06 valid/hostile recovery-v2 behavior at the historical planning-entry stage; Plan 140-14 now exercises the real finalizer through its no-publish barrier."
   gaps_remaining:
-    - CI-06 final exact-main synchronized canonical CI and hygiene acceptance.
-    - CI-07 successful same-SHA Release no-publish acceptance.
-    - Live acceptance recovery cannot represent the executed Phase 140 history.
+    - "CI-06 final synchronized exact-SHA local CI, exact hygiene, and canonical required CI acceptance."
+    - "CI-07 successful Release no-publish job graph on that same final SHA."
+    - "The live Phase 139 post-transition route still rejects completed Phase 140 history at relation_boundary before its no-publish barrier."
   regressions: []
 gaps:
-  - truth: "CI-06 is accepted only after the final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with exact-SHA local hygiene and all required canonical CI jobs passing."
+  - truth: "CI-06 is accepted only after one final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with current-SHA local mix ci, exact hygiene, and every required canonical CI job passing."
     status: failed
-    reason: "At verification HEAD d0d9cb483ab40d8cf6b131a3cd3026172255a07d, local main is 8fadb0984de9252475e8390bf4338c4df055f934 and cached origin/main is 218b50502e33f046ab24a61c807a4271b9a1436e. The complete local mix ci and hygiene receipts are preparatory evidence, not canonical CI on the final synchronized SHA."
+    reason: "The Plan 140-14 local mix ci passed at candidate a68ab1bb74aa0b8dbed30f46fd632d42731a54c5, but current HEAD is af457bacbcef2d45935fcddae65936b5f2314b7a, local main is 8fadb0984de9252475e8390bf4338c4df055f934, and tracking origin/main is 218b50502e33f046ab24a61c807a4271b9a1436e. The current candidate has no same-SHA local CI, exact hygiene receipt, or canonical required-CI receipt."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
-        issue: "The final exact-SHA acceptance checkpoint remains pending."
+        issue: "The exact-candidate synchronization and acceptance steps remain pending."
       - path: .planning/REQUIREMENTS.md
-        issue: "CI-06 requires canonical required-check evidence on the resulting synchronized full SHA."
+        issue: "CI-06 remains unchecked and requires required canonical jobs for the synchronized final SHA."
     missing:
-      - "A final full SHA shared by HEAD, local main, and freshly fetched origin/main, with exact-SHA hygiene and required canonical CI receipts."
-  - truth: "CI-07 is accepted only after a successful intentional Release no-publish run on the same final SHA, with the required Release Please result and publication jobs completed or skipped."
+      - "Refresh and authorize the exact candidate as required, synchronize refs, then attach local mix ci, exact hygiene, and required canonical CI evidence to that same full SHA."
+  - truth: "CI-07 is accepted only after the successful intentional Release no-publish job graph is proven on the same final synchronized SHA as CI-06."
     status: failed
-    reason: "No same-final-SHA Release no-publish receipt exists; the prior receipt is for an older candidate and cannot transfer."
+    reason: "The only cited Release run is historical Phase 139 entry evidence for c6332d3a8b716b938f93d978243281764e3eac41. No Release no-publish run and complete job graph exists for the final Phase 140 SHA."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
-        issue: "The same-SHA Release job graph is still pending."
+        issue: "CI-07 is explicitly pending the same-SHA Release result."
       - path: .planning/REQUIREMENTS.md
-        issue: "CI-07 requires Release no-publish evidence independent of CI-06."
+        issue: "CI-07 remains unchecked and is independent of CI-06."
     missing:
-      - "Successful intentional Release no-publish evidence on the final synchronized full SHA."
-  - truth: "The supported local recovery route can prepare the completed Phase 140 candidate for exact-SHA acceptance without bypassing historical authority or moving refs."
+      - "A successful same-final-SHA Release workflow with the expected no-publish job outcomes, joined by exact hygiene acceptance."
+  - truth: "The real live Phase 139 post-transition route accepts the completed Phase 140 candidate through to the explicit no-publish barrier without changing refs or receipt state."
     status: failed
-    reason: "After supported receipt CAS succeeded, the real no-publish entry point rejected the sealed-candidate relation. Its Phase 139 recovery chain recognizes only the seven Phase 140 planning-prefix commits and first rejects execution commit d9ed1899bed11f80891475fd11bce07da6ac4892."
+    reason: "The recorded production invocation at 5259a6545c04277ee44038779b23b139b6b1fcb2 exits 1 at `relation_boundary|phase-139-sealed-candidate|refresh_required`, before the no-publish barrier. The strict historical classifier accepts the seven-commit planning prefix and first rejects execution commit d9ed1899bed11f80891475fd11bce07da6ac4892. Plan 140-14 proves the separate accepted historical-prefix fixture; it does not make this live invocation pass."
     artifacts:
       - path: scripts/maintainer/baseline_inventory.sh
-        issue: "validate_phase_140_recovery_chain is an entry-recovery contract, not authority for the completed phase's execution and merge history."
+        issue: "The live completed-phase history is outside the existing historical planning-prefix classifier."
+      - path: scripts/maintainer/finalize_phase_139_acceptance.sh
+        issue: "The live post-transition finalizer fails before its explicit no-publish barrier on this completed-phase history."
     missing:
-      - "A bounded supported acceptance/recovery route for the completed phase, with real entry-point proof and unchanged exact-SHA, historical, receipt, and authorization boundaries."
+      - "A supported, evidence-backed disposition or route for the completed-phase live post-transition case; do not broaden the classifier or report the failed gate as passing."
+deferred:
+  - truth: "The project Current State section describes Phase 140 as still executing Plan 140-02."
+    addressed_in: "Phase 141"
+    evidence: "ROADMAP.md Phase 141 success criterion 2 requires the GSD project, roadmap, requirements, state, and milestone records to describe one completed v1.38 posture."
 advisory: []
-behavior_unverified_items:
-  - truth: "A valid recovery-v2 receipt authenticates through resolve_sealed_candidate and the supported production entry point then stops at the explicit no-publish barrier; malformed lineage fails closed."
-    test: "After the supported receipt-CAS recovery, run the exact post-transition production entry-point probe with the authenticated Phase 139 chain and no-publish mode."
-    expected: "The entry point accepts the valid recovery-v2 receipt, reaches the no-publish barrier, rejects malformed lineage, and performs no ref movement, release publication, or receipt mutation."
-    why_human: "The isolated Node fixture authenticates the resolver and checks the static barrier, but lacks the complete accepted Phase 139 chain and therefore does not exercise the production entry point through that barrier. This is unsupported live entry-point behavior, not evidence of an implementation defect."
 ---
 
 # Phase 140: Bounded Operational Loose-End Triage Verification Report
 
 **Phase Goal:** Maintainers close only safe, evidence-backed maintenance gaps and retain a clear, recoverable disposition for everything else.
-**Verified:** 2026-10-01T19:54:06Z
+**Verified:** 2026-10-01T21:44:59Z
 **Status:** gaps_found
-**Re-verification:** Yes — the previous report assessed only plans 01–04; this report reconciles all 13 plan/summary pairs.
+**Re-verification:** Yes — after Plan 140-14; all 14 plan/summary pairs reviewed.
 
 ## Goal Achievement
 
 ### Observable Truths
 
-The 31 assessed truths comprise 29 distinct explicit plan must-haves after deduplicating repeated roadmap truths, plus the two final acceptance truths required by CI-06 and CI-07. Plans 11 and 12 have no frontmatter must-haves; their fixture-isolation and release-proof task completion conditions are verified within the bounded-repair truth below. The four roadmap success criteria cover one disposition per finding, safe exact-target cleanup, independent dependency PR assessments, and closure of demonstrated bounded gaps with speculative work deferred.
+The prior report's `28/31` headline did not count the live recovery-route failure also present in its frontmatter and post-verifier observation. This refresh makes that failure an explicit 32nd truth. The previously behavior-unverified Plan 140-06 truth is now verified by Plan 140-14's focused real-entrypoint test. The seven Plan 140-14 must-haves map to the existing recovery, state-preservation, evidence-boundary, and CI-06/CI-07 truths below; they do not turn the live failed invocation or final acceptance into passes.
 
-| Truth set | Status | Evidence |
-|---|---|---|
-| Plans 01, 02, 04, 05: current source-linked inventory and one disposition per candidate; safe action boundaries and recovery data remain distinct | ✓ VERIFIED | `140-INVENTORY.md` records a refreshed source census and 114 current inventory IDs. Scripted reconciliation found every current ID mapped once; the only extra disposition is the separately retained historical `REC-7c205a386481`. Protected Phase 138 evidence remains proposal-only. |
-| Plan 02: historical archived UAT candidates are mapped to exact source evidence | ✓ VERIFIED (scope amended) | The approved 2026-09-30 context amendment limits claims to the five source-supported Phase 81 cases; four Phase 32/AuditWriter historical identities remain unknown, and v1.32 Phase 115/JWKS remains aggregate. The literal nine-record claim was explicitly amended; no identity is fabricated. |
-| Plans 02–04, 08–09: proven blockers, regressions, stale maintained claims, and local CI failures are closed; speculative work has explicit triggers and authority boundaries | ✓ VERIFIED | The complete local CI log records 1,441 unit tests (0 failures, 6 skipped) plus 102 integration tests (0 failures). Plan 13 changes only the test/support fixture and hygiene-contract files; source diff across `lib/`, tests, scripts, tools, and `.github` from repair `0227dea2` to HEAD is empty. Post-merge gate receipt reports compile success and 60 hygiene tests, 0 failures. Historical umask was not measured, so no historical-umask claim is made. |
-| Plans 03, 08–09: each of six dependency PRs is assessed independently with current evidence and separate PR-native disposition | ✓ VERIFIED | `140-DISPOSITIONS.md` has six individual assessments. Five are deferred with triggers; Postgrex was already resolved in source. No check evidence transfers between PRs, and no PR action was taken. |
-| Plan 04: CI-06/CI-07 remain pending until the resulting synchronized SHA has the required CI and Release evidence | ✓ VERIFIED | The plan’s contract-preparation criterion is met: `140-ACCEPTANCE.md` retains both as pending and separates local, canonical CI, and Release evidence. Plan-local completion is not external acceptance. |
-| Plan 05: origin/HANDOFF inventory is complete or explicitly partial, with action authority separated from observation | ✓ VERIFIED | Current origin refresh, exact source receipts, and classified HANDOFF evidence are present. Inventory/disposition reconciliation covers 114 current IDs exactly once; all candidates remain proposal-only. |
-| Plan 06: both recovery selectors reach their exact diagnostics without weakened assertions | ✓ VERIFIED | Focused acceptance and Release selectors passed; prior exact selector logs show the intended diagnostics. |
-| Plan 06: authenticated recovery-v2 receipt reaches the production no-publish barrier and malformed lineage fails closed | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Resolver-level valid/hostile receipt checks and static barrier checks exist. The fixture lacks the complete accepted Phase 139 chain, so the production entry point was not observed through the barrier. See the exact missing probe under Human Verification Required. |
-| Plan 07: four current Phase32/AuditWriter selectors use a valid active signing key and retain assertions; unnamed historical identities stay unknown | ✓ VERIFIED | Four focused selectors passed with the repaired persisted active private JWK fixture. Production signing validation is unchanged; archive identities remain explicitly unknown. |
-| Plans 08, 10, 11, 12, 13: complete failure census and bounded repairs have focused evidence; formatter/CI evidence is reproducible | ✓ VERIFIED | `140-CI-FAILURES.md` and local logs preserve failure identities and dispositions. Plan 13’s full CI log has 1,441 unit tests (0 failures, 6 skips) and 102 integration tests (0 failures). Current mode/forged-identity checks pass. Historical CI did not capture umask. |
-| Plan 09: final acceptance is measured after all summary/lifecycle writes; exact-candidate authorization is a separate checkpoint | ✓ VERIFIED | Acceptance contract and plan criteria preserve ordering and the blocking-human checkpoint. No prior-SHA approval is treated as transferable. |
-| Plan 13: interruption/concurrent change invalidates action authority, and source identity/disposition remains one-to-one | ✓ VERIFIED | Current inventory and disposition checks enforce one current ID per disposition; recovery/evidence requirements and source receipts remain explicit. |
-| Plan 13: Release no-publish cannot substitute for CI, and CI cannot substitute for Release evidence | ✓ VERIFIED | Acceptance record and requirements retain separate same-SHA CI-06 and CI-07 conditions. |
-| Plan 13: local CI and hygiene close the local prerequisite while CI-06 stays pending until canonical same-SHA evidence | ✓ VERIFIED | `/private/tmp/lockspire-140-13-ci.oVxPXP` and `/private/tmp/lockspire-140-plan/post-merge-gate-result.json` show local results. Exact refs remain unequal, so canonical acceptance is still pending. |
-| CI-06: final synchronized full SHA has exact-SHA hygiene and all required canonical CI jobs passing | ✗ FAILED | Current HEAD `d0d9cb483ab40d8cf6b131a3cd3026172255a07d`; local main `8fadb0984de9252475e8390bf4338c4df055f934`; cached origin/main `218b50502e33f046ab24a61c807a4271b9a1436e`. No matching final-SHA canonical CI receipt. |
-| CI-07: successful Release no-publish job graph exists on that same final SHA | ✗ FAILED | No same-SHA Release receipt. Earlier evidence is tied to a different SHA and cannot transfer. |
+| # | Truth | Status | Evidence |
+|---:|---|---|---|
+| 1 | Plans 01–05 establish current source-linked findings, one disposition per current ID, historical evidence boundaries, and proposal-only exact-target action authority. | ✓ VERIFIED | `140-INVENTORY.md` and `140-DISPOSITIONS.md` reconcile 114 current IDs exactly once, with the separate historical record retained. Protected files remain proposal-only; no destructive action was taken. |
+| 2 | Plan 02 attributes archived UAT candidates only to supported source evidence and leaves unknown identities unknown. | ✓ VERIFIED | Context amendment limits positive attribution to five supported Phase 81 cases; four Phase 32/AuditWriter historical identities remain unknown, and Phase 115/JWKS remains aggregate. |
+| 3 | Plans 02–04 and 08–13 close evidenced bounded blockers and local CI failures while retaining exact triggers for unknown or speculative work. | ✓ VERIFIED | Repair logs and dispositions preserve terminal outcomes; Plan 140-14's full CI is green at its recorded candidate. WR-01 remains explicitly cause-unknown and recurrence-triggered. |
+| 4 | Each of six dependency PRs has an independent compatibility, security, and required-gate assessment. | ✓ VERIFIED | `140-DISPOSITIONS.md` records six separate assessments, five deferred with triggers and Postgrex already resolved in source; no PR action or cross-PR evidence transfer occurred. |
+| 5 | The acceptance contract separates local preparation from final exact-SHA acceptance and keeps CI-06/CI-07 pending until their complete evidence joins. | ✓ VERIFIED | `140-ACCEPTANCE.md` steps 1–6 require post-summary candidate refresh, exact-candidate authorization if refs must move, same-SHA local CI/hygiene/canonical CI/Release no-publish, and separate CI-06/CI-07 closure. |
+| 6 | The inventory includes origin and maintained HANDOFF evidence, with observation kept separate from action authority. | ✓ VERIFIED | The current inventory and receipts record source completeness/limits; all 114 current IDs reconcile once and remain proposal-only. |
+| 7 | Plan 140-06 recovery selectors retain their exact diagnostic assertions. | ✓ VERIFIED | Focused acceptance and Release selector results are retained; assertions remain in the repository hygiene contract. |
+| 8 | A valid recovery-v2 receipt reaches the real finalizer's exact no-publish barrier on the accepted historical Phase 139 chain and recognized seven-commit Phase 140 planning prefix; tampered archived lineage fails earlier. | ✓ VERIFIED | Saved focused log `/private/tmp/lockspire-140-plan/phase140-entrypoint-recovery.bSVnM5`: seed 355859, 1 test, 0 failures; positive diagnostic is the exact no-publish authorization barrier, planning-consistency harness ran, and hostile diagnostic is `superseded receipt archive digest`. Assertions snapshot fixture HEAD, refs, worktree, pending/archive bytes, and publication calls. |
+| 9 | Plan 07's four current Phase32/AuditWriter selectors use a valid active signing key without weakening production validation or inventing historical test identities. | ✓ VERIFIED | The named focused selectors pass with the persisted active private JWK fixture; unknown archived identities remain explicitly unknown. |
+| 10 | Plans 08 and 10–13 retain the complete failure census, focused repairs, and reproducible formatter and full local CI proof. | ✓ VERIFIED | Plan 140-14 complete log reports 1,441 tests, 0 failures, 6 skipped (286 excluded), plus 102 integration tests, 0 failures (33 excluded). Earlier resolved findings retain their named focused evidence. |
+| 11 | Plan 09 measures final acceptance after summaries/lifecycle writes and requires separate exact-candidate authorization before any local-main movement or push. | ✓ VERIFIED | Acceptance contract does not transfer the earlier `8fadb098` observation/authorization to a later candidate and specifies the post-summary checkpoint. |
+| 12 | Plan 13 preserves one-to-one source identity/disposition and invalidates action authority on interruption or concurrent change. | ✓ VERIFIED | Current inventory/disposition records, receipt identity fixtures, and recovery evidence preserve these constraints; the Plan 140-14 fixture also checks state unchanged around both probes. |
+| 13 | Historical Phase 139 entry acceptance is distinct from final exact-main CI/Release acceptance. | ✓ VERIFIED | Plan 140-14 identifies the accepted historical SHA `c6332d3a8b716b938f93d978243281764e3eac41`, the live completed-phase failure at `5259a654…`, and the separate exact-candidate route. The classifier was not changed. |
+| 14 | The live Phase 139 post-transition route accepts completed Phase 140 history through to its no-publish barrier without changing refs or receipt state. | ✗ FAILED | Concrete live result `/private/tmp/lockspire-140-plan/live-no-publish-probe-result.json` says exit 1 and `expected_no_publish_barrier: false`; the saved log reports `relation_boundary|phase-139-sealed-candidate|refresh_required`. State remained unchanged. First unsupported commit: `d9ed1899bed11f80891475fd11bce07da6ac4892`. This live failure is retained separately from the passing historical fixture. |
+| 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ FAILED | Current observed HEAD `af457bacbcef2d45935fcddae65936b5f2314b7a`, local `main` `8fadb0984de9252475e8390bf4338c4df055f934`, and tracking `origin/main` `218b50502e33f046ab24a61c807a4271b9a1436e` differ. The Plan 140-14 CI candidate is `a68ab1bb74aa0b8dbed30f46fd632d42731a54c5`; exact current-SHA hygiene and canonical CI evidence are absent. |
+| 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ FAILED | No Phase 140 final-SHA Release receipt/job graph is recorded. The Phase 139 run IDs `36476762461` and `36476762490` are historical entry evidence only. |
 
-**Score:** 28/31 truths verified (1 present, behavior-unverified; 2 failed).
+**Score:** 29/32 truths verified; 3 failed; 0 behavior-unverified.
 
 ### Deferred Items
 
-No failed truth is deferred to a later milestone phase. WR-01 is a separate evidence-triggered operational deferral, not a completed repair: one earlier standalone Release Please relation selector failed with `relation_chain|phase-139-sealed-candidate|refresh_required`, while isolated selector, full CI, and same-seed post-merge replay passed. Its cause remains unknown; retain the exact-recurrence trigger and do not call it fixed.
+| Item | Addressed in | Evidence |
+|---|---|---|
+| `.planning/PROJECT.md` still says Phase 140 is executing Plan 140-02, although ROADMAP lists all 14 plans complete. | Phase 141 | Its success criterion 2 requires Project, roadmap, requirements, state, and milestone records to describe the same completed v1.38 posture. |
+
+WR-01 is a separate operational recurrence deferral, not a resolved issue or an inferred cause. One earlier standalone Phase 139 sealed Release Please relation selector failed with `relation_chain|phase-139-sealed-candidate|refresh_required`; isolated selector, complete local CI, and same-seed post-merge hygiene replay passed. Preserve cause as unknown and reopen with stage-specific evidence only if that exact selector/relation rejection recurs.
 
 ### Advisory (New Scope, Unevidenced)
 
-None. Re-verification found no new-scope blocker lacking deterministic evidence.
+None. The stale Project current-state claim is explicitly covered by Phase 141 success criterion 2 and is recorded above as deferred.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
-| `140-INVENTORY.md` | Dated bounded candidate census with source evidence | ✓ VERIFIED | 114 current inventory IDs; source boundaries retained. |
-| `140-DISPOSITIONS.md` | One source-linked finding disposition per current candidate | ✓ VERIFIED | Every current inventory ID maps once; historical extra record is retained separately. |
-| `140-CI-FAILURES.md` | Complete local failure census and dispositions | ✓ VERIFIED | Includes exact identities, causes, repairs, and remaining external conditions. |
-| `140-ACCEPTANCE.md` | Fail-closed final-SHA CI/Release acceptance contract | ✓ VERIFIED | Correctly leaves CI-06/CI-07 pending. |
-| `package_assertions.ex`, hygiene contract test | Stable package/repository proof assertions | ✓ VERIFIED | Plan 13 adds deterministic fixture modes and adversarial identity checks; strict production identity validation remains intact. |
-| `finalize_phase_139_acceptance.sh`, lifecycle test | Recovery diagnostics and no-publish boundary | ⚠️ PARTIAL | Resolver path and static barrier verified; live entry-point barrier probe remains outstanding. |
+| `140-INVENTORY.md` and `140-DISPOSITIONS.md` | Source-linked current census and one supported disposition per candidate | ✓ VERIFIED | 114 current IDs each map once; separate historical identity retained; action authority remains proposal-only. |
+| `140-ACCEPTANCE.md` | Fail-closed final-SHA acceptance sequence | ✓ VERIFIED | Same-SHA local, hygiene, canonical CI, and Release no-publish requirements are distinct; CI-06/CI-07 remain pending. |
+| `test/support/lockspire/release_proof/package_assertions.ex` and `repository_hygiene_contract_test.exs` | Real finalizer valid/hostile recovery-v2 fixture | ✓ VERIFIED | Focused test reaches exact positive barrier and hostile archived-digest rejection; fixture state invariants are asserted and focused log passes. |
+| `scripts/maintainer/finalize_phase_139_acceptance.sh` and `baseline_inventory.sh` | Historical entry and strict relation boundary | ✓ VERIFIED (historical boundary) | Existing classifier remains intact. Its current completed-phase live invocation still fails at the recorded relation boundary; that failed runtime truth remains open. |
+| Final exact candidate, CI, hygiene, and Release receipts | One synchronized full SHA with all required evidence | ✗ MISSING | Current refs differ; the last local CI candidate is not current HEAD or synchronized main; exact hygiene and canonical CI/Release evidence are absent for a final common SHA. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
-| Current inventory | Disposition rows | Stable/source-native IDs | ✓ WIRED | 114 current entries each map exactly once; separate historical record is preserved. |
-| Source receipts / origin / HANDOFF | Candidate census | Existing read-only inventory path | ✓ WIRED | Current evidence, source limits, and proposal-only action state are recorded. |
-| Active-key fixture | Phase32/AuditWriter tests | Persisted private JWK accepted by production decoder | ✓ WIRED | Four named selectors passed; production decoder was not relaxed. |
-| Local CI repair | Exact selectors and full local CI | Recorded repair commit and saved logs | ✓ WIRED | Focused behavior and complete local run evidence are present. |
-| Final candidate | CI-06/CI-07 acceptance | One full synchronized SHA | ✗ NOT WIRED | HEAD/local main/cached origin main differ; no canonical CI or Release receipt for a common final SHA. |
+| Historical accepted Phase 139 fixture | Real `finalize_phase_139_acceptance.sh` entry point | Focused ExUnit fixture, no publish argument | ✓ WIRED | Test executes the copied production finalizer and reaches the exact no-publish barrier. |
+| Tampered archived predecessor | Receipt archive validation | Same production entry point | ✓ WIRED | Rejected at `superseded receipt archive digest` before the no-publish barrier. |
+| Completed Phase 140 live candidate | Historical planning-prefix relation classifier | Production post-transition invocation | ✗ NOT PASSING | Live probe exits at `relation_boundary|phase-139-sealed-candidate|refresh_required`; fixture proof does not alter or relabel this result. |
+| Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ✗ NOT WIRED | No common final SHA/evidence join exists. |
 
 ### Data-Flow Trace (Level 4)
 
-| Artifact | Data variable | Source | Produces real data | Status |
+| Artifact | Data | Source | Produces real evidence | Status |
 |---|---|---|---|---|
-| `140-INVENTORY.md` | Candidate IDs and evidence | Git/origin/maintained-source receipts | Yes; current source-derived entries | ✓ FLOWING |
-| `140-DISPOSITIONS.md` | Finding disposition and authority | Inventory IDs joined to exact evidence | Yes; each current ID is accounted for | ✓ FLOWING |
-| `140-ACCEPTANCE.md` | Candidate SHA and gate receipts | Git refs and local/canonical workflow evidence | No final common SHA receipt yet | ⚠️ PENDING |
+| `140-INVENTORY.md` | Candidate identities/dispositions | Git, origin, and maintained-source receipts | Yes, source-derived 114 current IDs | ✓ FLOWING |
+| `140-DISPOSITIONS.md` | Final finding outcomes | Inventory IDs joined to exact evidence | Yes, each current ID accounted once | ✓ FLOWING |
+| `140-ACCEPTANCE.md` | Candidate SHA and workflow receipts | Git refs and workflow evidence | Current evidence is incomplete for final SHA | ⚠️ PENDING |
 
 ### Behavioral Spot-Checks
 
-| Behavior | Evidence inspected | Result | Status |
+| Behavior | Evidence | Result | Status |
 |---|---|---|---|
-| Complete local CI after bounded repairs | Saved `/private/tmp/lockspire-140-13-ci.oVxPXP` log | 1,441 unit tests, 0 failures, 6 skipped; 102 integration tests, 0 failures | ✓ PASS (existing run) |
-| Post-merge hygiene on identical before/after candidate | Saved `post-merge-gate-result.json` and hygiene log | Compile 0; seed 924694, 60 tests, 0 failures | ✓ PASS (existing run) |
-| Recovery selector diagnostics and focused acceptance/Release contracts | Existing focused selector logs | Expected diagnostic selectors and focused acceptance 2/0, Release 3/0 | ✓ PASS (existing runs) |
-| Production entry point reaches explicit no-publish barrier with accepted chain | Not exercised; see missing probe below | Fixture stops short of live entry-point behavior | ? SKIP |
+| Historical valid recovery-v2 reaches no-publish; hostile archive is rejected earlier | `mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase140_entrypoint_recovery`; `/private/tmp/lockspire-140-plan/phase140-entrypoint-recovery.bSVnM5` | Seed 355859; 1 test, 0 failures; exact positive and hostile diagnostics recorded | ✓ PASS |
+| Complete local CI after Plan 140-14 source change | `mix ci`; `/private/tmp/lockspire-140-plan/phase140-14-mix-ci.g5QHGn` at candidate `a68ab1bb74aa0b8dbed30f46fd632d42731a54c5` | 1,441 tests, 0 failures, 6 skipped; 102 integration tests, 0 failures. `mix_audit` could not read `.git/FETCH_HEAD`; later advisory-only deps audit passed but does not erase this log caveat. | ✓ PASS (local candidate only) |
+| Live completed-phase post-transition gate reaches no-publish barrier | `/private/tmp/lockspire-140-plan/live-no-publish-probe-result.json` and `live-recovery-diagnosis.md` | Exit 1 before barrier; exact `relation_boundary|phase-139-sealed-candidate|refresh_required`; refs/worktree/receipt unchanged | ✗ FAIL |
+| Final same-SHA CI/Release/hygiene join | `140-ACCEPTANCE.md` and current Git refs | No synchronized final SHA or complete receipt set | ✗ FAIL |
 
-No full suite or lifecycle gate was rerun during this verification.
+No full suite was rerun during this verification; the named focused and complete local results above were read from their saved mode-0600 logs. The final acceptance commands require a later post-summary candidate and the separate exact-candidate checkpoint.
 
 ### Probe Execution
 
-No phase-declared or conventional `scripts/*/tests/probe-*.sh` probes were found; probe execution is not applicable.
+No phase-declared or conventional `scripts/*/tests/probe-*.sh` probes were identified. The recorded live entrypoint probe is included above as a behavioral spot-check, not substituted by summary narration.
 
 ### Requirements Coverage
 
-| Requirement | Source plan | Description | Status | Evidence |
+| Requirement | Status | Evidence |
+|---|---|---|
+| BASE-03 | ✓ SATISFIED | Exact targets, action authority, worktree/recovery boundaries, and protected historical evidence are recorded; no cleanup action was authorized or taken. |
+| TRIAGE-03 | ✓ SATISFIED (dated evidence) | Six dependency PRs have independent assessments and separate deferrals; refresh mutable upstream/check evidence before any PR action. |
+| LOOSE-02 | ✓ SATISFIED | 114 current source IDs map exactly once; historical records remain separately labeled. |
+| LOOSE-03 | ✓ SATISFIED locally | Bounded repairs and Plan 140-14 focused/full local evidence pass. The live Phase 139 relation failure remains separately explicit; WR-01 remains cause-unknown with a recurrence trigger. |
+| CI-06 | ✗ BLOCKED | No synchronized final SHA with same-SHA local CI, exact hygiene acceptance, and canonical required CI jobs. |
+| CI-07 | ✗ BLOCKED | No same-final-SHA successful Release no-publish job graph. |
+
+### Test Quality Audit
+
+| Test file | Linked requirement | Active/skipped | Assertion level | Verdict |
 |---|---|---|---|---|
-| BASE-03 | 01, 04, 05, 09 | Only authorized exact-target cleanup preserves uncommitted work, intentional refs, and historical release evidence | ✓ SATISFIED | No cleanup executed; proposals retain exact identity, authority, recovery, and worktree conditions; protected hashes match. |
-| TRIAGE-03 | 03, 09, 13 | Evaluate each dependency PR independently against compatibility, security, and required gates | ✓ SATISFIED | Six separate package/head/base/check assessments; dated or missing evidence remains explicit; recommendations confer no action authority. |
-| LOOSE-02 | 01–05, 09, 13 | Assign each credible finding exactly one evidence-backed disposition | ✓ SATISFIED | All 114 current IDs map exactly once; source-native archive boundaries and a separate historical ID are preserved. |
-| LOOSE-03 | 02, 04, 06–13 | Close demonstrated bounded maintenance gaps and exclude speculative or feature-sized work | ✓ SATISFIED locally | Bounded repairs pass focused/full CI and hygiene; WR-01 has an explicit recurrence trigger. The live entry-point probe remains separately unverified. |
-| CI-06 | 04, 06, 08, 09, 13 | Required repo-owned CI checks pass for the exact synchronized final main SHA | ✗ BLOCKED | HEAD, local main, and cached origin/main differ; final-SHA local CI, exact hygiene, and canonical CI receipt absent. |
-| CI-07 | 04, 09, 13 | Release succeeds or intentionally no-ops at that same SHA without publishing or manual release edits | ✗ BLOCKED | No same-final-SHA Release no-publish receipt. |
+| `test/lockspire/release/repository_hygiene_contract_test.exs` (`phase140_entrypoint_recovery`) | LOOSE-03, BASE-03 | Active; no disabled marker found in the scanned requirement-linked test paths | Behavioral | PASS — asserts real entrypoint diagnostics plus before/after fixture identities and publication state. |
+| `test/support/lockspire/release_proof/package_assertions.ex` | LOOSE-03, BASE-03 | Fixture/support code | Behavioral | PASS — builds isolated fixture receipts/refs and checks exact independent diagnostics; expected values are asserted directly rather than generated as golden output by the production path. |
+
+Circular expected-value generation was not found in the Plan 140-14 proof. The complete CI log includes the focused selector and passes both unit and integration groups. The `FETCH_HEAD` access error is retained as a local audit freshness limitation, with a separate successful advisory refresh recorded in the summary.
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-|---|---:|---|---|---|
-| `140-REVIEW.md` | — | WR-01 exact standalone relation selector failed once; cause unknown | ⚠️ WARNING | Explicitly deferred on exact recurrence. Isolated selector, full CI, and same-seed post-merge replay passed; this is not classified as fixed. |
+| File | Pattern | Severity | Impact |
+|---|---|---|---|
+| `140-REVIEW.md` / `140-DISPOSITIONS.md` | WR-01 standalone sealed-relation failure once; cause remains unknown | ⚠️ WARNING | Deferred with exact recurrence trigger. It is not called fixed. |
+| `.planning/PROJECT.md` | Current State still says Phase 140 is executing Plan 140-02 | ℹ️ DEFERRED | Phase 141 success criterion 2 owns harmonizing project/roadmap/requirements/state/milestone records. |
 
-No unreferenced debt markers were found in changed implementation files. TODO-like marker strings are test fixtures for the marker scanner, not active debt comments. Protected file hashes were preserved at the expected values for the ledger, Phase 138 UAT/verification, and roadmap prompt.
+No active unreferenced TBD/FIXME/XXX debt marker was found in the inspected changed implementation/test sources. TODO-like matches in the support helper are test inputs for the maintained-marker scanner. Plan 140-14 deep review is clean: zero critical, warning, or info findings across both changed test sources.
 
 ### Human Verification Required
 
-**Recovery-v2 production entry-point no-publish probe**
-
-**Test:** After supported receipt-CAS recovery, run the exact post-transition production entry-point probe with a valid accepted Phase 139 chain and no-publish mode; also exercise malformed lineage.
-**Expected:** The valid recovery-v2 receipt reaches the explicit no-publish barrier, malformed lineage fails closed, and neither refs, release publication state, nor the pending receipt are mutated by the probe.
-**Why human:** The existing Node fixture tests resolver authentication and static barrier presence but does not provide the complete accepted Phase 139 chain needed to pass through the production entry point. This records unsupported live entry-point behavior; it does not assert an implementation defect.
+None. This is an infrastructure/maintenance phase; its unresolved items are deterministic failed or missing acceptance evidence reported as gaps.
 
 ### Gaps Summary
 
-The earlier inventory, historical-evidence attribution, signing-key fixture, full local CI, and standalone hygiene gaps are closed with inspectable artifacts and logs. The phase goal is not fully accepted because CI-06 and CI-07 still require canonical evidence for the same final synchronized full SHA. Local test success and older receipts do not satisfy those external requirements. One separate live entry-point behavior remains unverified pending the exact supported probe above. Plan 04 achieved contract preparation only; its final external acceptance criteria remain pending.
+Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: the valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, the focused selector passes, and the full local CI candidate is green. It does not make the live post-transition invocation at `5259a654` pass; that result remains a separate failure at `relation_boundary|phase-139-sealed-candidate|refresh_required`. The phase also remains unaccepted because CI-06 and CI-07 require the final synchronized SHA to carry current local CI, exact hygiene, required canonical CI, and the Release no-publish graph together. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete.
 
 ---
 
-_Verified: 2026-10-01T19:54:06Z_
+_Verified: 2026-10-01T21:44:59Z_
 _Verifier: the agent (gsd-verifier)_
-
-## Post-verifier live recovery observation (2026-10-01)
-
-Supported receipt supersession succeeded at `5259a6545c04277ee44038779b23b139b6b1fcb2`, archiving the original `cfab9f9e…` bytes and producing pending recovery-v2 digest `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The real post-transition entry point then failed the sealed-candidate relation before the no-publish barrier. HEAD, all refs, worktree status, and the successor receipt were unchanged by the probe. Logs and structured result are in `/private/tmp/lockspire-140-plan/live-no-publish-probe*`.
-
-The read-only chain probe identifies the first unsupported commit as `d9ed1899bed11f80891475fd11bce07da6ac4892`, the first Phase 140 execution commit after the recognized seven-commit planning prefix. Legitimate executor merges also exceed the entry-recovery contract's single-parent rule. This is a concrete acceptance/recovery scope mismatch; it does not authorize arbitrary history or imply that receipt identity validation is faulty. A new bounded gap plan must choose a supported route. The 28/31 score above describes the original all-plan verification; this subsequent operational gap is additional. The planned live proof remains unclosed, and CI-06/CI-07 remain pending.
