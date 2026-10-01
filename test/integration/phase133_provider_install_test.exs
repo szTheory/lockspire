@@ -4,6 +4,7 @@ defmodule Lockspire.Integration.Phase133ProviderInstallTest do
   @moduletag :integration
   @moduletag :phase133
   @moduletag :package_clean
+  @tag timeout: 180_000
 
   @builder Path.expand("../../scripts/acceptance/clean_room/build_provider.py", __DIR__)
 
