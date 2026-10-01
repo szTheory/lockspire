@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 3/9 plans executed
+**Plans**: 11/13 plans executed; 140-04 remains incomplete and 140-13 is planned
 
 Plans:
 **Wave 1**
@@ -226,23 +226,39 @@ Plans:
 
 **Wave 5** *(gap closure after the Plan 140-04 verification failures)*
 
-- [ ] 140-05-PLAN.md — Complete origin and maintained-record source receipts, then disposition newly observed candidates.
+- [x] 140-05-PLAN.md — Complete origin and maintained-record source receipts, then disposition newly observed candidates.
 
 **Wave 6** *(after the inventory collector edit)*
 
-- [ ] 140-06-PLAN.md — Repair recovery diagnostics and authenticate recovery-v2 receipts through the no-publish barrier.
+- [x] 140-06-PLAN.md — Repair recovery diagnostics and authenticate recovery-v2 receipts through the no-publish barrier.
 
 **Wave 7** *(after inventory and recovery repairs)*
 
-- [ ] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
+- [x] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
 
 **Wave 8** *(after inventory and focused repairs)*
 
-- [ ] 140-08-PLAN.md — Capture every local CI failure, repair bounded roots, and prove a clean full local run.
+- [x] 140-08-PLAN.md — Capture every local CI failure, repair bounded roots, and prove a clean full local run.
 
 **Wave 9** *(after clean local CI)*
 
-- [ ] 140-09-PLAN.md — Reconcile terminal dispositions and hand off the post-summary same-SHA CI/Release gate.
+- [x] 140-09-PLAN.md — Reconcile terminal dispositions and hand off the post-summary same-SHA CI/Release gate.
+
+**Wave 10** *(completed focused formatter repair)*
+
+- [x] 140-10-PLAN.md — Repair the two formatter findings without changing release proof behavior.
+
+**Wave 11** *(completed fixture isolation)*
+
+- [x] 140-11-PLAN.md — Isolate the current test database fixture behavior.
+
+**Wave 12** *(completed release proof fixture repair)*
+
+- [x] 140-12-PLAN.md — Repair the release-readiness and synthetic receipt selectors.
+
+**Wave 13** *(new gap closure after complete local CI exposed two receipt identity failures)*
+
+- [ ] 140-13-PLAN.md — Diagnose and repair the full-suite receipt identity failure, then prove complete local CI.
 
 **Cross-cutting constraints:**
 
@@ -250,7 +266,7 @@ Plans:
 - Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
 - Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Entry gate (satisfied 2026-09-28)**: The existing blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. This dated receipt satisfies the entry gate for that SHA only; CI-06 and CI-07 still require final same-SHA acceptance after Phase 140 execution.
+**Entry gate (dated pass, current blocker)**: On 2026-09-28 the blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. The current pending host receipt is stale against its writer descriptor, so the latest `plan:pre` attempt failed. Local diagnosis and repair proceed under the user's explicit authorization with that failure retained; supported receipt recovery follows completed local writes and cannot be represented as a pass until its checks succeed. CI-06 and CI-07 still require final same-SHA acceptance.
 
 ### Phase 141: Maintenance-Baseline Closure
 
@@ -271,7 +287,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 3/4 | In Progress|  |
+| 140. Bounded Operational Loose-End Triage | 11/13 | In Progress |  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog

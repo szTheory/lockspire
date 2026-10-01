@@ -121,3 +121,17 @@ Overall audit outcome: **PARTIAL**. No implementation files were changed. The ex
 - [ ] `nyquist_compliant: true` remains false until the escalated hygiene/LOOSE-03 failures are resolved and post-summary external CI-06/CI-07 evidence is available.
 
 **Audit status:** partial; blocker failures and external gates remain open.
+
+## Gap Plan 140-13 Validation Delta (2026-10-01)
+
+The table above is the 2026-09-30 snapshot and predates completed Plans 140-05 through 140-12. Those summaries close the origin/maintained-source receipt, recovery-diagnostic, four current signing-key-selector, formatter, fixture-isolation, and intermediate 45-failure census items. The passing 1,440-unit/102-integration `mix ci` result on `93e85d11cbb491d619e391acabec2641b14ae015` is preparatory historical proof. The latest complete run on code candidate `8fadb0984de9252475e8390bf4338c4df055f934` reported 1,440 unit tests, two receipt identity failures at `repository_hygiene_contract_test.exs:343` and `:404`, and six skips; integration did not run. Both focused selectors passed in isolation, which leaves the complete-context failure open.
+
+| Current requirement or check | Owning plan | Automated proof required | Status |
+|------------------------------|-------------|--------------------------|--------|
+| LOOSE-03 receipt identity blocker | 140-13-T1/T2 | Exact original selectors, discriminating mismatch regression, and actual complete local `mix ci` including integration | OPEN; complete-run failure reproduced in retained log |
+| CI-06 local prerequisite | 140-13-T2 | Current complete local `mix ci`, zero unit and integration failures, exact candidate SHA | OPEN; previous complete run failed |
+| LOOSE-02 and finite dispositions | 140-04-T1, 140-09 | Source-linked rows and terminal evidence for any executed closure | Pending Plan 140-04 closeout; completed prior summaries retained |
+| CI-06/CI-07 final acceptance | 140-04-T2 and unfiltered verifier | Same final synchronized main SHA, local `mix ci`, exact hygiene, required canonical CI jobs, and successful Release no-publish graph | PENDING; no final-SHA receipt |
+| Phase 139 host receipt recovery | Post-write orchestrator handoff under `140-ACCEPTANCE.md` | Supported supersession CAS, archived old bytes, lineage/hook/remote/worktree checks, then no-publish barrier result | BLOCKED at current `plan:pre`; no live receipt mutation in 140-13 |
+
+Both new tasks have runnable `<automated>` checks and explicit `<fails_when>` signals. The full gate is intentionally long-running; its result must be captured once after the source repair, and a new run is justified only by a subsequent change or a concrete failed check. The Phase 140 `140-VERIFICATION.md` file remains the canonical report until unfiltered verification updates it. `nyquist_compliant: true` remains unavailable while the current complete local gate and final exact-SHA acceptance are open.
