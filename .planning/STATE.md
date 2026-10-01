@@ -5,17 +5,17 @@ milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
 current_plan: 14
-status: executing
-stopped_at: Executing Plan 140-14 to prove the historical recovery entry point and finish the exact-SHA handoff.
-last_updated: "2026-10-01T20:26:20Z"
+status: verifying
+stopped_at: All 14 local plans and review are complete; refreshing unfiltered verification and exact-SHA acceptance remains.
+last_updated: "2026-10-01T21:35:00Z"
 last_activity: 2026-10-01
-last_activity_desc: Plan 140-14 checked and ready; 13 prior plans complete locally
+last_activity_desc: Plan 140-14 proof, full CI, advisory audit and review complete; verifying phase
 state_head: b631866a141c264ebbe38bca4fdc5b6f94218a9c
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 65
-  completed_plans: 64
+  completed_plans: 65
 ---
 
 # Project State
@@ -30,16 +30,16 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 
 ## Current Position
 
-Phase: 140 (Bounded Operational Loose-End Triage) — EXECUTING
+Phase: 140 (Bounded Operational Loose-End Triage) — VERIFYING
 Current Plan: 14
 Total Plans in Phase: 14
 Plan: 14 of 14
-Status: Executing Plan 140-14
-Last activity: 2026-10-01 — Plan 140-14 reviewed; entry-point proof and final acceptance pending
+Status: Verifying Phase 140
+Last activity: 2026-10-01 — All 14 local plans and review complete; unfiltered verification and final acceptance pending
 
-Progress: [█████████░] 13 of 14 plans executed; Phase 140 remains incomplete pending Plan 140-14 and exact-SHA acceptance.
+Progress: [██████████] 14 of 14 local plans executed; Phase 140 remains incomplete pending unfiltered verification and exact-SHA acceptance.
 
-Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plans 140-01 through 140-13 have complete summaries, including resumed Plan 140-04. Unfiltered verification found missing real entry-point behavior proof; checked Plan 140-14 closes that local evidence gap. Source candidate 0227dea2 passed complete local CI; post-merge candidate 80612475 passed all 60 hygiene tests.
+Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plans 140-01 through 140-14 have complete summaries, including resumed Plan 140-04. Plan 140-14 proves valid and hostile recovery-v2 through the production entry point at the historical planning-prefix stage; its source candidate a68ab1bb74aa0b8dbed30f46fd632d42731a54c5 passed full local CI and its two changed test files passed independent deep review. Phase 140 remains incomplete pending refreshed unfiltered verification and final exact-SHA acceptance.
 
 ## Accumulated Context
 
@@ -157,7 +157,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- Plans 140-01 through 140-13 pass their local checks. Canonical unfiltered verification retained the real no-publish entry-point behavior gap; Plan 140-14 is reviewed and executing. Do not replay superseded repairs.
+- Plans 140-01 through 140-14 pass local checks; Plan 140-14 full CI and code review are complete. Refresh canonical unfiltered verification against all 14 summaries. CI-06/CI-07 remain pending same-SHA final acceptance; retain the live 5259a654 post-transition failure and strict historical classifier scope.
 - CI-06 and CI-07 remain pending the post-summary synchronized-main exact-SHA hygiene, canonical CI, and Release no-publish receipt. Local main remains `8fadb0984de9252475e8390bf4338c4df055f934`; cached origin/main is `218b50502e33f046ab24a61c807a4271b9a1436e` until refreshed. The earlier conditional push approval was not used because that candidate failed CI; changed-candidate ref movement retains the exact-target checkpoint in 140-ACCEPTANCE.md.
 - Supported receipt supersession archived predecessor `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` and wrote pending recovery-v2 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The live post-transition probe at `5259a654` still failed before the no-publish barrier because the strict classifier accepts only the historical planning prefix. Preserve both receipts and the failure; Plan 140-14 proves the proper historical entry point without broadening production authority.
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
@@ -188,7 +188,7 @@ Resume instruction: Execute 140-14-PLAN.md, then refresh verification and the ex
 
 ## Performance Metrics
 
-All 38 Phase 138 plans, all 13 Phase 139 plans, and the first 13 of 14 Phase 140 plans have complete summaries. Phase 140 local repair candidate `0227dea2` passed complete `mix ci` (1,441 unit tests and 102 integration tests, zero failures); the unchanged post-merge `80612475` passed compile and 60 hygiene tests. CI-06/CI-07 remain pending the final full-SHA join. Phase 140 must not advance until that acceptance passes.
+All 38 Phase 138 plans, all 13 Phase 139 plans, and all 14 Phase 140 plans have complete summaries. Phase 140 local repair candidate `0227dea2` passed complete `mix ci` (1,441 unit tests and 102 integration tests, zero failures); the unchanged post-merge `80612475` passed compile and 60 hygiene tests. CI-06/CI-07 remain pending the final full-SHA join. Phase 140 must not advance until that acceptance passes.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -249,3 +249,4 @@ All 38 Phase 138 plans, all 13 Phase 139 plans, and the first 13 of 14 Phase 140
 | Phase 140 P11 | 12min | 2 tasks | 7 files |
 | Phase 140 P12 | 13min | 2 tasks | 2 files |
 | Phase 140 P13 | about 90min | 2 tasks | 3 files |
+| Phase 140 P14 | 55 min | 3 tasks | 4 files |

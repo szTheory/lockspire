@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 13/14 plans executed; Plan 140-14 and exact-SHA CI/Release acceptance remain pending
+**Plans**: 14/14 local plans executed; phase verification and exact-SHA CI/Release acceptance remain pending
 
 Plans:
 **Wave 1**
@@ -262,7 +262,7 @@ Plans:
 
 **Wave 14** *(real historical entry-point proof and final acceptance handoff)*
 
-- [ ] 140-14-PLAN.md — Prove valid and hostile recovery-v2 through the real entry point, then distinguish historical recovery from final exact-SHA acceptance.
+- [x] 140-14-PLAN.md — Prove valid and hostile recovery-v2 through the real entry point, then distinguish historical recovery from final exact-SHA acceptance.
 
 **Cross-cutting constraints:**
 
@@ -291,7 +291,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 13/14 | In Progress |  |
+| 140. Bounded Operational Loose-End Triage | 14/14 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog
@@ -309,4 +309,5 @@ Plans:
 - Audit guide navigation, links, setup steps, and claims against the current code and `docs/supported-surface.md`; keep generated outputs, fixtures, brand assets, planning records, and maintained documentation clearly distinguished.
 
 Plans:
+
 - [ ] TBD (promote with `$gsd-review-backlog` when ready)
