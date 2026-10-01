@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 13/13 plans executed; phase verification and exact-SHA CI/Release acceptance remain pending
+**Plans**: 13/14 plans executed; Plan 140-14 and exact-SHA CI/Release acceptance remain pending
 
 Plans:
 **Wave 1**
@@ -260,13 +260,17 @@ Plans:
 
 - [x] 140-13-PLAN.md — Diagnose and repair the full-suite receipt identity failure, then prove complete local CI.
 
+**Wave 14** *(real historical entry-point proof and final acceptance handoff)*
+
+- [ ] 140-14-PLAN.md — Prove valid and hostile recovery-v2 through the real entry point, then distinguish historical recovery from final exact-SHA acceptance.
+
 **Cross-cutting constraints:**
 
 - A maintainer can see exactly why every credible finding is fixed now, deferred with a trigger, retained as historical evidence, already resolved, or out of scope.
 - Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
 - Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Entry gate (dated pass, current blocker)**: On 2026-09-28 the blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. The current pending host receipt is stale against its writer descriptor, so the latest `plan:pre` attempt failed. Local diagnosis and repair proceed under the user's explicit authorization with that failure retained; supported receipt recovery follows completed local writes and cannot be represented as a pass until its checks succeed. CI-06 and CI-07 still require final same-SHA acceptance.
+**Entry gate (dated pass, current blocker)**: On 2026-09-28 the blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. The latest `plan:pre` attempt failed on a stale writer descriptor. Supported CAS subsequently archived that predecessor and wrote recovery-v2, but the real post-transition probe at `5259a654` failed before the no-publish barrier: completed Phase 140 execution history lies outside the strict historical planning-prefix classifier. Plan 140-14 proves the proper historical entry path and documents the independent final acceptance route; neither CAS success nor local authorization is a gate pass. CI-06 and CI-07 still require final same-SHA acceptance.
 
 ### Phase 141: Maintenance-Baseline Closure
 
@@ -287,7 +291,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 13/13 | In Progress |  |
+| 140. Bounded Operational Loose-End Triage | 13/14 | In Progress |  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog

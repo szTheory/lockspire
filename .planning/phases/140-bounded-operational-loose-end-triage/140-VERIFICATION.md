@@ -73,6 +73,7 @@ re_verification:
   gaps_remaining:
     - CI-06 final exact-main synchronized canonical CI and hygiene acceptance.
     - CI-07 successful same-SHA Release no-publish acceptance.
+    - Live acceptance recovery cannot represent the executed Phase 140 history.
   regressions: []
 gaps:
   - truth: "CI-06 is accepted only after the final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with exact-SHA local hygiene and all required canonical CI jobs passing."
@@ -95,6 +96,14 @@ gaps:
         issue: "CI-07 requires Release no-publish evidence independent of CI-06."
     missing:
       - "Successful intentional Release no-publish evidence on the final synchronized full SHA."
+  - truth: "The supported local recovery route can prepare the completed Phase 140 candidate for exact-SHA acceptance without bypassing historical authority or moving refs."
+    status: failed
+    reason: "After supported receipt CAS succeeded, the real no-publish entry point rejected the sealed-candidate relation. Its Phase 139 recovery chain recognizes only the seven Phase 140 planning-prefix commits and first rejects execution commit d9ed1899bed11f80891475fd11bce07da6ac4892."
+    artifacts:
+      - path: scripts/maintainer/baseline_inventory.sh
+        issue: "validate_phase_140_recovery_chain is an entry-recovery contract, not authority for the completed phase's execution and merge history."
+    missing:
+      - "A bounded supported acceptance/recovery route for the completed phase, with real entry-point proof and unchanged exact-SHA, historical, receipt, and authorization boundaries."
 advisory: []
 behavior_unverified_items:
   - truth: "A valid recovery-v2 receipt authenticates through resolve_sealed_candidate and the supported production entry point then stops at the explicit no-publish barrier; malformed lineage fails closed."
@@ -224,3 +233,9 @@ The earlier inventory, historical-evidence attribution, signing-key fixture, ful
 
 _Verified: 2026-10-01T19:54:06Z_
 _Verifier: the agent (gsd-verifier)_
+
+## Post-verifier live recovery observation (2026-10-01)
+
+Supported receipt supersession succeeded at `5259a6545c04277ee44038779b23b139b6b1fcb2`, archiving the original `cfab9f9e…` bytes and producing pending recovery-v2 digest `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The real post-transition entry point then failed the sealed-candidate relation before the no-publish barrier. HEAD, all refs, worktree status, and the successor receipt were unchanged by the probe. Logs and structured result are in `/private/tmp/lockspire-140-plan/live-no-publish-probe*`.
+
+The read-only chain probe identifies the first unsupported commit as `d9ed1899bed11f80891475fd11bce07da6ac4892`, the first Phase 140 execution commit after the recognized seven-commit planning prefix. Legitimate executor merges also exceed the entry-recovery contract's single-parent rule. This is a concrete acceptance/recovery scope mismatch; it does not authorize arbitrary history or imply that receipt identity validation is faulty. A new bounded gap plan must choose a supported route. The 28/31 score above describes the original all-plan verification; this subsequent operational gap is additional. The planned live proof remains unclosed, and CI-06/CI-07 remain pending.
