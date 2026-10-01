@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:execute-phase 140 --gaps-only",
-    "label": "Execute Phase 140 gap closure",
-    "reason": "Plans 140-05 through 140-09 are planned gap_closure work; execute only these before re-verifying Phase 140."
+    "command": "/gsd:verify-work",
+    "label": "Re-verify work",
+    "reason": "Phase 140 gap plans are complete. Run the post-summary exact-SHA acceptance gate; keep CI-06/CI-07 pending, and stop for exact-candidate authorization if refs differ."
   },
-  "updated_at": "2026-09-30T20:43:29.020Z"
+  "updated_at": "2026-10-01T07:16:32.041Z"
 }
