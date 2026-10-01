@@ -1,27 +1,91 @@
 # Phase 140-08 Local CI Failure Census
 
-## Run receipt
+## Run receipts
 
-- **Command:** `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' HEX_HOME=/private/tmp/lockspire-hex-cache mix ci`
-- **Started:** `2026-10-01T00:28:30Z`
-- **Checkout:** `a6d6dcfd4abb589650f7dd46be44de7a877b3ff0`
-- **Worktree status before run:** clean
-- **Exit status:** `1`
-- **Complete raw log:** `/private/tmp/lockspire-140-08-ci.XXXXXX.log` (mode `0600`; private temporary storage)
+| Run | Command / candidate | Result | Complete private log |
+| --- | --- | --- | --- |
+| Initial formatter gate | `mix ci` at `a6d6dcfd4abb589650f7dd46be44de7a877b3ff0`; worktree clean | Exit 1 before ExUnit: exactly 2 unformatted source files | `/private/tmp/lockspire-140-08-ci.XXXXXX.log` (mode `0600`) |
+| Failure census run | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' HEX_HOME=/private/tmp/lockspire-hex-cache mix ci`; after Plan 140-10 formatter repair, before 140-08/11/12 repairs | 1,440 tests, 45 failures, 6 skipped (286 excluded); complete log retained | `/private/tmp/lockspire-140-08-ci.RFfbGi` (mode `0600`) |
+| Final candidate | Same command and runtime; checkout `93e85d11cbb491d619e391acabec2641b14ae015`; worktree clean before run; started `2026-10-01T02:18:39Z`, completed `2026-10-01T04:03:56Z` | `mix ci` completed successfully: 1,440 tests, 0 failures, 6 skipped (286 excluded), then 102 integration tests, 0 failures (33 excluded). The preceding contract gate also reported 13 tests, 0 failures. | `/private/tmp/lockspire-140-08-ci-final.RVOcF5` (mode `0600`) |
 
-The run resolved existing locked dependencies, then stopped at `mix format --check-formatted`. ExUnit did not start. The two file identities below account for the complete formatter diagnostic; there is no current ExUnit failure count to infer from this run. The earlier 1,439-test/44-failure report remains historical and truncated, so none of its unnamed failures are represented as recurring current failures here.
+The final full run is the acceptance result. The earlier 45 failures below are retained as observed history and reconciled to that run; they are not current failures. No assertion or product uniqueness constraint was weakened.
 
-## Complete observed failure set
+## Complete observed 45-failure set and reconciliation
 
-| Identity | Exact current source | Root-cause group | Observed result | Focused verification | Disposition / trigger |
-| --- | --- | --- | --- | --- | --- |
-| `140-08-CI-FMT-001` | `test/lockspire/release/repository_hygiene_contract_test.exs` (formatter diff begins at line 124) | Formatting gate | `mix format --check-formatted` reports required spacing and line wrapping changes. No ExUnit test identity exists because the gate stopped before tests. | `mix format --check-formatted test/lockspire/release/repository_hygiene_contract_test.exs` | Fix in a separate exact-scope gap plan, then repeat the formatter check. |
-| `140-08-CI-FMT-002` | `test/support/lockspire/release_proof/package_assertions.ex` (formatter diff begins at line 4426) | Formatting gate | `mix format --check-formatted` reports required indentation and line wrapping changes. No ExUnit test identity exists because the gate stopped before tests. | `mix format --check-formatted test/support/lockspire/release_proof/package_assertions.ex` | Fix in a separate exact-scope gap plan, then repeat the formatter check. |
+Root groups: **R1** ReleaseReadiness source scan; **R2** PAR JAR-by-value fixture isolation; **R3** release receipt/lineage fixture truth; **R4** Authorization Code signing fixture; **R5** key admin fixture isolation; **R6** security policy LiveView fixture isolation; **R7** DPoP policy LiveView fixture isolation; **R8** CIBA signing fixture; **R9** AuthorizationRequest JAR client fixture uniqueness; **R10** coverage protocol signing fixture; **R11** PAR policy LiveView fixture isolation; **R12** clients LiveView fixture isolation; **R13** authorize-controller JAR fixture uniqueness; **R14** Device Code signing fixture.
 
-## Reconciliation
+Every identity below came from the complete 45-heading ExUnit report in the failure-census log. “Final pass” means the exact test was included in the final complete `mix ci` run, which reported zero failures.
 
-- **Complete diagnostic count:** 2 unformatted file identities in 1 blocking `mix format --check-formatted` gate.
-- **ExUnit:** not reached; no test count or failure count was emitted.
-- **Other CI gates:** not reached; the first Mix alias failure aborted the command.
-- **Credentials:** the private log was not copied into this durable census; no credential or token material was observed in the returned diagnostics.
-- **Repair boundary:** both formatter paths are outside Plan 140-08 `files_modified`. Plan 140-08 does not modify them; a separate scoped plan must close before its full CI task resumes.
+| # | Exact test identity | Source location | Root | Reconciliation |
+| ---: | --- | --- | --- | --- |
+| 1 | `release proof uses focused capability helpers` (`Lockspire.ReleaseReadinessContractTest`) | `test/lockspire/release_readiness_contract_test.exs:10` | R1 | Final pass after Plan 140-12 narrowed the direct `.planning` file-read check. |
+| 2 | `/par with JAR-by-value … wrong Basic password + valid JAR returns the ClientAuth error` (`Lockspire.Protocol.PushedAuthorizationRequestTest`) | `test/lockspire/protocol/pushed_authorization_request_test.exs:374` | R2 | Final pass after Plan 140-11 gave each test an owned sandbox. |
+| 3 | `/par with JAR-by-value … valid Basic auth + invalid JAR signature returns the JAR error` (`Lockspire.Protocol.PushedAuthorizationRequestTest`) | `test/lockspire/protocol/pushed_authorization_request_test.exs:355` | R2 | Final pass after Plan 140-11 gave each test an owned sandbox. |
+| 4 | `baseline snapshot relation binds post-transition authority to the host receipt` (`Lockspire.Release.RepositoryHygieneContractTest`) | `test/lockspire/release/repository_hygiene_contract_test.exs:343` | R3 | Final pass with the repository's normal process umask; the earlier selector's restrictive `umask 077` made its mode-sensitive fake receipts unreadable. |
+| 5 | `phase finalizer failures preserve host-owned pending recovery state` (`Lockspire.Release.RepositoryHygieneContractTest`) | `test/lockspire/release/repository_hygiene_contract_test.exs:404` | R3 | Final pass with the repository's normal process umask; no implementation change was needed for this selector. |
+| 6 | `phase 139 accepts the sealed candidate while local main lags and the merged release branch is deleted` (`Lockspire.Release.RepositoryHygieneContractTest`) | `test/lockspire/release/repository_hygiene_contract_test.exs:362` | R3 | Final pass after Plan 140-12 based the synthetic Phase 139 fixture on historical committed blobs. |
+| 7 | `rejects replayed authorization code redemption and emits replay telemetry` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:624` | R4 | Final pass. |
+| 8 | `AC flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:95` | R4 | Final pass. |
+| 9 | `token exchange emits auth_time only when openid was granted and max_age was persisted on the interaction` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:198` | R4 | Final pass. |
+| 10 | `token exchange emits auth_time for explicit auth_time_requested and preserves nonce unchanged` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:228` | R4 | Final pass. |
+| 11 | `AC flow mints an at+jwt access token by default and re-points the persisted hash to the signer's hash` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:55` | R4 | Final pass. |
+| 12 | `token exchange fails closed with missing_interaction_auth_time when auth_time was requested but missing` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:263` | R4 | Final pass. |
+| 13 | `does not issue an id token when openid is not granted` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:291` | R4 | Final pass. |
+| 14 | `successful redemption and replay attempts append durable audit rows with client attribution` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:661` | R4 | Final pass. |
+| 15 | `accepts form-encoded basic auth credentials containing reserved characters and colons` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:597` | R4 | Final pass. |
+| 16 | `issues an RS256 id token for openid code flow using the linked interaction nonce` (`Lockspire.Protocol.TokenExchange.AuthorizationCodeTest`) | `test/lockspire/protocol/token_exchange/authorization_code_test.exs:160` | R4 | Final pass. |
+| 17 | `D-01/D-03/D-04/D-08/D-10 key detail keeps public metadata before confirmation-backed lifecycle actions` (`Lockspire.Web.Live.Admin.KeysLiveTest`) | `test/lockspire/web/live/admin/keys_live_test.exs:116` | R5 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 18 | `lists keys in operator lifecycle order and hides private key material` (`Lockspire.Admin.KeysTest`) | `test/lockspire/admin/keys_test.exs:43` | R5 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 19 | `publish, activate, and retire enforce guided transitions` (`Lockspire.Admin.KeysTest`) | `test/lockspire/admin/keys_test.exs:55` | R5 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 20 | `global security profile page renders current mode nav and override summary` (`Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest`) | `test/lockspire/web/live/admin/policies_live/security_profile_test.exs:79` | R6 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 21 | `global DPoP policy page renders current mode and override summary` (`Lockspire.Web.Live.Admin.PoliciesLive.DpopTest`) | `test/lockspire/web/live/admin/policies_live/dpop_test.exs:69` | R7 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 22 | `CIBA flow without resource= mints an at+jwt whose aud == [client_id] (AUD-02)` (`Lockspire.Protocol.TokenExchange.CibaAndResourceTest`) | `test/lockspire/protocol/token_exchange/ciba_and_resource_test.exs:141` | R8 | Final pass. |
+| 23 | `CIBA flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)` (`Lockspire.Protocol.TokenExchange.CibaAndResourceTest`) | `test/lockspire/protocol/token_exchange/ciba_and_resource_test.exs:96` | R8 | Final pass. |
+| 24 | `maps malformed request objects to the invalid_request_object_jwt reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:789` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 25 | `maps max-age violations to the invalid_request_object_max_age reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:909` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 26 | `maps invalid signatures to the invalid_request_object_signature reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:823` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 27 | `rejects raw params mixed into a request object as sealed-envelope conflicts` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:747` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 28 | `maps invalid claim shapes to the invalid_request_object_claims reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:931` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 29 | `maps issuer mismatches to the invalid_request_object_iss reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:875` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 30 | `rejects request and request_uri collisions with the request-object reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:767` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 31 | `accepts a signed request object and projects its claims into the authorization pipeline` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:694` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 32 | `maps expired request objects to the invalid_request_object_expired reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:853` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 33 | `maps invalid request object typ headers to the invalid_request_object_typ reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:804` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 34 | `maps audience mismatches to the invalid_request_object_aud reason code` (`Lockspire.Protocol.AuthorizationRequestTest`) | `test/lockspire/protocol/authorization_request_test.exs:889` | R9 | Final pass after Plan 140-08 gave JAR tests unique client registrations. |
+| 35 | `a missing PKCE verifier is rejected without consuming the authorization code` (`Lockspire.Coverage.ProtocolBehaviorTest`) | `test/lockspire/coverage/protocol_behavior_test.exs:4` | R10 | Final pass. |
+| 36 | `global PAR policy page renders current mode and override summary` (`Lockspire.Web.Live.Admin.PoliciesLive.ParTest`) | `test/lockspire/web/live/admin/policies_live/par_test.exs:70` | R11 | Final pass after Plan 140-11 sandbox owner isolation. |
+| 37 | `clients index proves empty, disabled, many-count, and long-value Configure states` (`Lockspire.Web.Live.Admin.ClientsLiveTest`) | `test/lockspire/web/live/admin/clients_live_test.exs:214` | R12 | Final pass after Plan 140-11 sandbox owner isolation and fresh test database. |
+| 38 | `clients index renders Configure filter context and copy-once client-secret handoff` (`Lockspire.Web.Live.Admin.ClientsLiveTest`) | `test/lockspire/web/live/admin/clients_live_test.exs:152` | R12 | Final pass after Plan 140-11 sandbox owner isolation and fresh test database. |
+| 39 | `JAR-by-value at /authorize — browser boundary redirects to host login surface when JAR is valid` (`Lockspire.Web.AuthorizeControllerTest`) | `test/lockspire/web/authorize_controller_test.exs:169` | R13 | Final pass after Plan 140-11 sandbox owner isolation and unique fixture identity. |
+| 40 | `JAR-by-value at /authorize — browser boundary renders first-party browser error page when JAR signature is invalid` (`Lockspire.Web.AuthorizeControllerTest`) | `test/lockspire/web/authorize_controller_test.exs:150` | R13 | Final pass after Plan 140-11 sandbox owner isolation and unique fixture identity. |
+| 41 | `device flow with resource= mints an at+jwt whose aud == [resource] (AUD-01)` (`Lockspire.Protocol.TokenExchange.DeviceCodeTest`) | `test/lockspire/protocol/token_exchange/device_code_test.exs:433` | R14 | Final pass. |
+| 42 | `device flow without resource= mints an at+jwt whose aud == [client_id] (AUD-02)` (`Lockspire.Protocol.TokenExchange.DeviceCodeTest`) | `test/lockspire/protocol/token_exchange/device_code_test.exs:478` | R14 | Final pass. |
+| 43 | `device grants preserve shared refresh and id_token policy while collapsing client mismatch to invalid_grant` (`Lockspire.Protocol.TokenExchange.DeviceCodeTest`) | `test/lockspire/protocol/token_exchange/device_code_test.exs:628` | R14 | Final pass. |
+| 44 | `preserves bearer token_type for approved bearer-mode device authorization` (`Lockspire.Protocol.TokenExchange.DeviceCodeTest`) | `test/lockspire/protocol/token_exchange/device_code_test.exs:522` | R14 | Final pass. |
+| 45 | `device grants redeem once, collapse replay to invalid_grant, and append durable device audit rows` (`Lockspire.Protocol.TokenExchange.DeviceCodeTest`) | `test/lockspire/protocol/token_exchange/device_code_test.exs:565` | R14 | Final pass. |
+
+## Root-cause dispositions and focused evidence
+
+| Root | Finding and action | Focused terminal evidence |
+| --- | --- | --- |
+| R1 | The release-readiness test treated a `.planning/` path string as equivalent to a direct planning-file read. Plan 140-12 narrowed the check to reject the actual read pattern. | Exact release-readiness selector: 1 test, 0 failures; final `mix ci` pass. |
+| R2 | Shared fixed PAR client fixtures contaminated concurrent tests. Plan 140-11 moved to per-test sandbox ownership. | PAR selector: 35 tests, 0 failures; final `mix ci` pass. |
+| R3 | Two receipt selectors only failed when invoked under an artificial restrictive umask; the lineage selector reconstructed history from current rather than historical blobs. Plan 140-12 corrected the lineage fixture. | Selectors 343/404: 2 tests, 0 failures under normal umask; selector 362: 1 test, 0 failures; final `mix ci` pass. |
+| R4, R8, R10, R14 | Signing-related failures observed in the initial broad run did not recur after the test database reset and scoped fixture repairs. The complete final suite verifies the exact listed test identities. No unsupported cause is claimed for their disappearance. | Final `mix ci`: all 18 listed Authorization Code, CIBA, coverage, and Device Code tests are included in 1,440 tests; 0 failures. |
+| R5–R7, R11–R12 | Tests used shared sandbox ownership and leaked fixture records across concurrent tests. Plan 140-11 scoped records to test owners; only the configured test database was recreated. | Focused selectors: 71 tests, 0 failures total; final `mix ci` pass. |
+| R9 | Fixed `client_jar` registration collided across JAR cases. Plan 140-08 assigns unique per-case fixture identities without changing protocol uniqueness behavior. | AuthorizationRequest selector passes in final `mix ci`; 0 failures. |
+| R13 | Fixed authorize-controller JAR fixture records collided across cases. Plan 140-11 isolated owner transactions and fixture client identities. | Authorize controller selector passes in final `mix ci`; 0 failures. |
+| Formatter gate | The two initial formatting findings were repaired in scoped Plan 140-10. | Both exact `mix format --check-formatted` selectors pass; final `mix ci` pass. |
+
+## Non-ExUnit diagnostics
+
+The successful final run emitted two environment/cache diagnostics before reporting `No retired packages found` and `No vulnerabilities found`: opening `/private/tmp/lockspire-hex-cache/cache.ets` returned `:badfile`, and reading `.git/FETCH_HEAD` returned `Operation not permitted`. The Mix CI alias continued through package build, all fast tests, and integration tests. Treat these as non-blocking environment diagnostics, not omitted test failures; investigate them if a later dependency-audit gate fails or cannot produce its result. Expected application error logs from negative-path tests are not ExUnit failures.
+
+## Reconciliation and handling
+
+- Initial formatter run: 2 complete source identities; separate scoped Plan 140-10 closed both.
+- Complete intermediate failure run: all 45 ExUnit headings and source locations are enumerated above; total reconciles exactly to 45.
+- Final run: 1,440 fast tests and 102 integration tests pass with zero failures. All 45 intermediate identities are present and pass; no current local CI blocker remains.
+- Complete raw logs remain mode `0600` in private temporary storage. This durable report contains test names, paths, and outcomes only; assertion payloads, tokens, and credentials are excluded.
+- Plan 140-08 source repairs: the current-state ReleaseAutomation contract and unique JAR fixture identity. Exact-scope findings outside its declared files were closed through Plans 140-10, 140-11, and 140-12 before final acceptance.
+- No dependency or workflow pin changed. No PR, issue, branch, tag, release, remote ref, STATE.md, or ROADMAP.md was mutated.
