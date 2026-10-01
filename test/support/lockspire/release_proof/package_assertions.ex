@@ -4130,40 +4130,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       run_git!(repository, ["push", "origin", "#{candidate_head}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
-      run_git!(repository, ["remote", "add", "phase140-source", source])
 
-      preserved_agent_branches = [
-        {"agent-140-01", "4738b0d550e0435c3fac5dd0d1b926f7317cf92a"},
-        {"agent-140-02", "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"}
-      ]
-
-      source_agent_shas =
-        Enum.map(preserved_agent_branches, fn {branch, _expected_sha} ->
-          {sha, status} =
-            System.cmd(
-              "git",
-              ["rev-parse", "--verify", "--quiet", "refs/heads/#{branch}"],
-              cd: source,
-              stderr_to_stdout: true
-            )
-
-          if status == 0, do: String.trim(sha), else: nil
-        end)
-
-      has_preserved_agent_branches? = Enum.all?(source_agent_shas, &is_binary/1)
-
-      if Enum.any?(source_agent_shas, &is_binary/1) and not has_preserved_agent_branches? do
-        flunk("preserved Phase 140 agent refs must be present together")
-      end
-
-      if has_preserved_agent_branches? do
-        assert source_agent_shas == Enum.map(preserved_agent_branches, &elem(&1, 1))
-
-        for {branch, sha} <- preserved_agent_branches do
-          run_git!(repository, ["fetch", "phase140-source", sha])
-          run_git!(repository, ["update-ref", "refs/heads/#{branch}", sha])
-        end
-      end
+      has_preserved_agent_branches? =
+        install_preserved_phase_140_agent_branches!(repository, source)
 
       write_repo_file!(
         repository,
@@ -4242,42 +4211,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert accepted =~ "class=phase_140_planning_recovery_contract_repair"
       assert accepted =~ "snapshot_relation: authorized_bookkeeping"
 
-      if has_preserved_agent_branches? do
-        run_git!(repository, [
-          "update-ref",
-          "refs/heads/agent-140-02",
-          candidate_head,
-          "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"
-        ])
-
-        {unrecognized_branch, unrecognized_branch_status} =
-          run_phase_139_sealed_relation!(repository, ledger, [])
-
-        assert unrecognized_branch_status != 0
-        assert unrecognized_branch =~ "git_topology|branches|mismatch"
-
-        run_git!(repository, [
-          "update-ref",
-          "refs/heads/agent-140-02",
-          "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d",
-          candidate_head
-        ])
-
-        {restored, restored_status} = run_phase_139_sealed_relation!(repository, ledger, [])
-        assert restored_status == 0, restored
-      else
-        run_git!(repository, ["update-ref", "refs/heads/agent-140-02", candidate_head])
-
-        {unrecognized_branch, unrecognized_branch_status} =
-          run_phase_139_sealed_relation!(repository, ledger, [])
-
-        assert unrecognized_branch_status != 0
-        assert unrecognized_branch =~ "git_topology|branches|mismatch"
-
-        run_git!(repository, ["update-ref", "-d", "refs/heads/agent-140-02", candidate_head])
-        {restored, restored_status} = run_phase_139_sealed_relation!(repository, ledger, [])
-        assert restored_status == 0, restored
-      end
+      assert_phase_140_agent_branch_mutation!(
+        repository,
+        ledger,
+        candidate_head,
+        has_preserved_agent_branches?
+      )
 
       File.rm!(receipt.path)
       write_repo_file!(repository, "docs/phase-140-unclassified-note.txt", "unclassified\n")
@@ -4301,6 +4240,87 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     after
       File.rm_rf(fixture)
     end
+  end
+
+  defp install_preserved_phase_140_agent_branches!(repository, source) do
+    run_git!(repository, ["remote", "add", "phase140-source", source])
+
+    preserved_agent_branches = [
+      {"agent-140-01", "4738b0d550e0435c3fac5dd0d1b926f7317cf92a"},
+      {"agent-140-02", "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"}
+    ]
+
+    source_agent_shas =
+      Enum.map(preserved_agent_branches, fn {branch, _expected_sha} ->
+        {sha, status} =
+          System.cmd(
+            "git",
+            ["rev-parse", "--verify", "--quiet", "refs/heads/#{branch}"],
+            cd: source,
+            stderr_to_stdout: true
+          )
+
+        if status == 0, do: String.trim(sha), else: nil
+      end)
+
+    has_preserved_agent_branches? = Enum.all?(source_agent_shas, &is_binary/1)
+
+    if Enum.any?(source_agent_shas, &is_binary/1) and not has_preserved_agent_branches? do
+      flunk("preserved Phase 140 agent refs must be present together")
+    end
+
+    if has_preserved_agent_branches? do
+      assert source_agent_shas == Enum.map(preserved_agent_branches, &elem(&1, 1))
+
+      for {branch, sha} <- preserved_agent_branches do
+        run_git!(repository, ["fetch", "phase140-source", sha])
+        run_git!(repository, ["update-ref", "refs/heads/#{branch}", sha])
+      end
+    end
+
+    has_preserved_agent_branches?
+  end
+
+  defp assert_phase_140_agent_branch_mutation!(repository, ledger, candidate_head, true) do
+    expected_agent_02_sha = "ea9447ae4147475672b4af1d993f8a6bb6f5cd2d"
+
+    run_git!(repository, [
+      "update-ref",
+      "refs/heads/agent-140-02",
+      candidate_head,
+      expected_agent_02_sha
+    ])
+
+    assert_phase_140_unrecognized_agent_branch!(repository, ledger)
+
+    run_git!(repository, [
+      "update-ref",
+      "refs/heads/agent-140-02",
+      expected_agent_02_sha,
+      candidate_head
+    ])
+
+    assert_phase_140_restored_agent_branches!(repository, ledger)
+  end
+
+  defp assert_phase_140_agent_branch_mutation!(repository, ledger, candidate_head, false) do
+    run_git!(repository, ["update-ref", "refs/heads/agent-140-02", candidate_head])
+    assert_phase_140_unrecognized_agent_branch!(repository, ledger)
+    run_git!(repository, ["update-ref", "-d", "refs/heads/agent-140-02", candidate_head])
+    assert_phase_140_restored_agent_branches!(repository, ledger)
+  end
+
+  defp assert_phase_140_unrecognized_agent_branch!(repository, ledger) do
+    {unrecognized_branch, unrecognized_branch_status} =
+      run_phase_139_sealed_relation!(repository, ledger, [])
+
+    assert unrecognized_branch_status != 0
+    assert unrecognized_branch =~ "git_topology|branches|mismatch"
+  end
+
+  defp assert_phase_140_restored_agent_branches!(repository, ledger) do
+    {restored, restored_status} = run_phase_139_sealed_relation!(repository, ledger, [])
+    assert restored_status == 0, restored
   end
 
   def assert_phase_139_recovery_candidate_relation! do
