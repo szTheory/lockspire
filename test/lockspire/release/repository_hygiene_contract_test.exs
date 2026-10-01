@@ -304,6 +304,10 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_baseline_inventory_caller_paths_and_preflight!()
   end
 
+  test "snapshot fixture preserves committed modes for protected planning files" do
+    PackageAssertions.assert_snapshot_planning_file_modes!()
+  end
+
   test "baseline inventory collector proves live interruption and pagination contention" do
     PackageAssertions.assert_baseline_inventory_live_writer_contention!()
   end
