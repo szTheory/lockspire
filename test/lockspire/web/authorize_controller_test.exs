@@ -69,7 +69,8 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
     Application.put_env(:lockspire, :issuer, "https://issuer.test/lockspire")
 
     Application.put_env(
