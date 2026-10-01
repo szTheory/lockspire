@@ -1,17 +1,14 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-reviewed: 2026-09-30T18:16:36Z
+reviewed: 2026-10-01T19:08:08Z
 depth: standard
-files_reviewed: 5
+files_reviewed: 2
 files_reviewed_list:
-  - scripts/maintainer/baseline_inventory.sh
-  - scripts/maintainer/finalize_phase_139_acceptance.sh
-  - scripts/maintainer/supersede_phase_139_host_receipt.sh
-  - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
-  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+  - test/lockspire/release/repository_hygiene_contract_test.exs
+  - test/support/lockspire/release_proof/package_assertions.ex
 findings:
-  critical: 1
-  warning: 0
+  critical: 0
+  warning: 1
   info: 0
   total: 1
 status: issues_found
@@ -19,40 +16,28 @@ status: issues_found
 
 # Phase 140: Code Review Report
 
-**Reviewed:** 2026-09-30T18:16:36Z  
-**Depth:** standard  
-**Files Reviewed:** 5  
+**Reviewed:** 2026-10-01T19:08:08Z
+**Depth:** standard
+**Files Reviewed:** 2
 **Status:** issues_found
+**Candidate:** `0227dea2fd7cc8646d098505c3eb6637afb70d87`
 
 ## Summary
 
-The Phase 140 supersession path creates a v2 recovery receipt, but the acceptance script raises an unhandled `NameError` while validating its archived predecessor. This blocks all v2 receipts before the explicit publication step.
+Reviewed the two scoped test and support files at candidate `0227dea2`. The new mode regression is discriminating: under `umask 077` it passes with the current helper, and fails when a private temporary copy omits only the new `chmod`, reporting observed mode `0600` versus expected `0644` with matching size and digest. The current selectors are line 307 for “snapshot fixture preserves committed modes for protected planning files” and line 347 for “baseline snapshot relation binds post-transition authority to the host receipt”; both passed in targeted runs. The forged `before.project.sha256` mutation is exercised by the latter test.
 
-## Critical Issues
-
-### CR-01: V2 recovery validation references `allowed` before assignment
-
-**Classification:** BLOCKER  
-**File:** `scripts/maintainer/finalize_phase_139_acceptance.sh:191, 208-213`  
-**Issue:** In `resolve_sealed_candidate`, the v2 receipt branch compares `prior_transform["allowedPaths"]` to `allowed` at line 191. The name `allowed` is assigned only later inside the loop that validates preserved worktree records (line 208). Python therefore raises `NameError` when this comparison is reached for every `phase-140-recovery-v2` receipt. `set -u` does not affect the embedded Python; its exception is caught and returned as a validation failure. The acceptance script calls this validator at line 729, so a superseded receipt cannot pass candidate authentication or reach publication.
-
-**Fix:** Define the expected transformation paths before the v2 branch and compare against that constant, keeping the per-record `allowed` variable local to the later loop. For example:
-
-```python
-expected_paths = [
-    ".planning/PROJECT.md", ".planning/STATE.md",
-    ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md",
-]
-...
-prior_transform.get("allowedPaths") != expected_paths
-```
+One previously reported standalone failure remains unexplained. The exact release-please selector at line 359 passed in isolation, and the supplied full-CI result passed, but those later passes do not establish why the earlier standalone run rejected the sealed candidate.
 
 ## Warnings
 
-## Info
+### WR-01: Sealed-candidate relation test has an unresolved intermittent rejection
+
+**File:** `test/support/lockspire/release_proof/package_assertions.ex:3484`
+**Issue:** The supplied standalone hygiene run (seed `924694`) failed at this acceptance step with `relation_chain|phase-139-sealed-candidate|refresh_required`. The exact selector, currently `test/lockspire/release/repository_hygiene_contract_test.exs:359` (“phase 139 release-please main advance accepts only the authenticated refresh and recorded lag”), passed in a later isolated run; full CI also passed according to the supplied evidence. The failure therefore remains an unresolved test or relation-contract defect, not a demonstrated repair.
+**Fix:** Reproduce the rejected relation chain and retain stage-specific evidence for the failing candidate inputs, then correct the mismatching authority or evidence predicate. If the reproduction confirms source-worktree drift, pin fixture reads to one source SHA. Verify the same sealed candidate across repeated isolated and suite runs without relaxing the relation validator.
 
 ---
 
-_Reviewed: 2026-09-30T18:16:36Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
+_Reviewed: 2026-10-01T19:08:08Z_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_

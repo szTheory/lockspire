@@ -2625,6 +2625,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          fn receipt ->
            put_in(receipt, ["writer", "workflow", "sha256"], String.duplicate("0", 64))
          end},
+        {"before-file-identity",
+         fn receipt ->
+           put_in(receipt, ["before", "project", "sha256"], String.duplicate("3", 64))
+         end},
         {"transformation-digest",
          fn receipt ->
            put_in(receipt, ["transformation", "sha256"], String.duplicate("1", 64))
@@ -2678,6 +2682,54 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       assert diagnostic_status != 0
       assert_no_raw_credential!(diagnostic, credential, "post-transition receipt diagnostic")
+    after
+      File.rm_rf(fixture)
+    end
+  end
+
+  def assert_snapshot_planning_file_modes! do
+    fixture = unique_tmp_fixture("lockspire-snapshot-planning-modes")
+    repository = Path.join(fixture, "repository")
+
+    paths = [
+      ".planning/PROJECT.md",
+      ".planning/STATE.md",
+      ".planning/ROADMAP.md",
+      ".planning/REQUIREMENTS.md"
+    ]
+
+    try do
+      build_snapshot_repository!(
+        repository,
+        ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline.md"
+      )
+
+      Enum.each(paths, fn relative ->
+        expected_bytes = run_git!(repository, ["show", "HEAD:#{relative}"])
+
+        tree_mode =
+          run_git!(repository, ["ls-tree", "HEAD", "--", relative]) |> String.split() |> hd()
+
+        expected_mode = if tree_mode == "100755", do: 0o755, else: 0o644
+        observed_stat = File.stat!(Path.join(repository, relative))
+        observed_bytes = File.read!(Path.join(repository, relative))
+
+        expected = %{
+          mode: expected_mode,
+          size: byte_size(expected_bytes),
+          sha256: Base.encode16(:crypto.hash(:sha256, expected_bytes), case: :lower)
+        }
+
+        observed = %{
+          mode: Bitwise.band(observed_stat.mode, 0o777),
+          size: byte_size(observed_bytes),
+          sha256: Base.encode16(:crypto.hash(:sha256, observed_bytes), case: :lower)
+        }
+
+        unless expected == observed do
+          raise "snapshot identity mismatch for #{relative}: expected #{inspect(expected)}, observed #{inspect(observed)}"
+        end
+      end)
     after
       File.rm_rf(fixture)
     end
@@ -5681,7 +5733,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        ) do
     initialize_snapshot_repository!(repository)
 
-    write_repo_file!(
+    write_snapshot_identity_file!(
       repository,
       ".planning/PROJECT.md",
       "# Lockspire\n## Current Milestone: v1.38 Repository Baseline & Reconciliation\n**Current focus:** " <>
@@ -5693,19 +5745,23 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         )
     )
 
-    write_repo_file!(
+    write_snapshot_identity_file!(
       repository,
       ".planning/STATE.md",
       "---\ncurrent_phase: 138\nstatus: executing\n---\n# Project State\n## Current Position\nPhase: 138\nStatus: Ready to execute\n"
     )
 
-    write_repo_file!(
+    write_snapshot_identity_file!(
       repository,
       ".planning/ROADMAP.md",
       "# Lockspire Roadmap\n## Phases\nPhase 138 in progress\n"
     )
 
-    write_repo_file!(repository, ".planning/REQUIREMENTS.md", "# Requirements\nBASE-01 pending\n")
+    write_snapshot_identity_file!(
+      repository,
+      ".planning/REQUIREMENTS.md",
+      "# Requirements\nBASE-01 pending\n"
+    )
 
     write_repo_file!(
       repository,
@@ -7296,6 +7352,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     path = Path.join(repository, relative)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, content)
+  end
+
+  defp write_snapshot_identity_file!(repository, relative, content) do
+    write_repo_file!(repository, relative, content)
+    File.chmod!(Path.join(repository, relative), 0o644)
   end
 
   defp commit_lineage_fixture_step!(repository, paths, marker, subject) do
