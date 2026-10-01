@@ -4057,6 +4057,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       %{
         repository: repository,
+        remote: remote,
         candidate: phase139_base,
         receipt: receipt,
         gsd_tools: gsd_tools
@@ -4070,6 +4071,50 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           true
         )
 
+      acceptance_env =
+        install_phase_139_acceptance_api_fixture!(
+          fixture,
+          phase139_base,
+          "success",
+          gsd_tools
+        )
+
+      acceptance_env =
+        acceptance_env ++
+          [
+            {"ASDF_ELIXIR_VERSION", "1.19.5-otp-28"},
+            {"ASDF_ERLANG_VERSION", "28.1"},
+            {"MIX_ENV", "test"},
+            {"GSD_TOOLS", gsd_tools}
+          ]
+
+      {historical_acceptance, historical_acceptance_status} =
+        System.cmd(
+          "bash",
+          [
+            phase_139_acceptance_driver_path(repository),
+            "post-transition",
+            "--phase",
+            @next_phase_number,
+            "--publish",
+            phase139_base
+          ],
+          cd: repository,
+          env: acceptance_env,
+          stderr_to_stdout: true
+        )
+
+      assert historical_acceptance_status == 0, historical_acceptance
+
+      durable_acceptance_path =
+        Path.join(repository, ".git/lockspire-phase-139-acceptance-v1.json")
+
+      durable_acceptance_bytes = File.read!(durable_acceptance_path)
+      durable_acceptance = Jason.decode!(durable_acceptance_bytes)
+      assert durable_acceptance["schema"] == "lockspire-phase-139-acceptance-v1"
+      assert durable_acceptance["baseline_sha"] == phase139_base
+      assert File.stat!(durable_acceptance_path).mode |> Bitwise.band(0o777) == 0o600
+
       for path <- [".planning/PROJECT.md", ".planning/STATE.md"] do
         write_repo_file!(
           repository,
@@ -4078,7 +4123,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         )
       end
 
-      File.rm!(receipt.path)
+      if File.exists?(receipt.path), do: File.rm!(receipt.path)
       run_git!(repository, ["push", "origin", "#{phase139_base}:refs/heads/main"])
       run_git!(repository, ["fetch", "origin", "main"])
 
@@ -4171,17 +4216,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       commit_all!(repository, "fix(140): authenticate planning preparation recovery prefix")
       candidate_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
-      old_main = run_git!(repository, ["rev-parse", "refs/heads/main"]) |> String.trim()
 
       run_git!(repository, [
         "update-ref",
         "refs/heads/main",
         candidate_head,
-        old_main
+        phase139_base
       ])
-
-      run_git!(repository, ["push", "origin", "#{candidate_head}:refs/heads/main"])
-      run_git!(repository, ["fetch", "origin", "main"])
 
       has_preserved_agent_branches? =
         install_preserved_phase_140_agent_branches!(repository, source)
@@ -4191,18 +4232,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         "docs/phase-140-planning-recovery-note.txt",
         "retain planning note\n"
       )
-
-      accepted_receipt = Path.join(repository, ".git/lockspire-phase-139-acceptance-v1.json")
-
-      File.write!(
-        accepted_receipt,
-        Jason.encode!(%{
-          schema: "lockspire-phase-139-acceptance-v1",
-          baseline_sha: phase139_base
-        }) <> "\n"
-      )
-
-      File.chmod!(accepted_receipt, 0o600)
 
       hooks_path = Path.join(fixture, "planning-prefix-hooks.json")
 
@@ -4245,10 +4274,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         Jason.decode!(sealed_json)
       end
 
-      sealed = prepare_recovery_receipt.()
-      assert get_in(sealed, ["recovery", "baselineSha"]) == phase139_base
+      v1_json = prepare_recovery_receipt.()
+      assert get_in(v1_json, ["recovery", "baselineSha"]) == phase139_base
+      assert get_in(v1_json, ["recovery", "protocol"]) == "phase-140-recovery-v1"
 
-      assert get_in(sealed, ["recovery", "preservedWorktree"]) |> Enum.map(& &1["path"]) == [
+      assert get_in(v1_json, ["recovery", "preservedWorktree"]) |> Enum.map(& &1["path"]) == [
                "docs/phase-140-planning-recovery-note.txt"
              ]
 
@@ -4270,25 +4300,150 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         has_preserved_agent_branches?
       )
 
-      File.rm!(receipt.path)
-      write_repo_file!(repository, "docs/phase-140-unclassified-note.txt", "unclassified\n")
-      commit_all!(repository, "docs(140): add unclassified note")
-      rejected_head = run_git!(repository, ["rev-parse", "HEAD"]) |> String.trim()
+      pending_path = Path.join(repository, ".git/gsd-lifecycle/post-completion-finalizer.json")
+      v1_bytes = File.read!(pending_path)
+      v1_digest = :crypto.hash(:sha256, v1_bytes) |> Base.encode16(case: :lower)
+      state_helper = fixture_state_helper_path!(repository)
 
-      run_git!(repository, [
-        "update-ref",
-        "refs/heads/main",
-        rejected_head,
-        candidate_head
-      ])
+      {v2_json, v2_status} =
+        System.cmd(
+          "bash",
+          ["-c", ~S(exec node "$STATE_HELPER" supersede 139 "$EXPECTED_DIGEST" < "$HOOKS_PATH")],
+          cd: repository,
+          env: [
+            {"STATE_HELPER", state_helper},
+            {"EXPECTED_DIGEST", v1_digest},
+            {"HOOKS_PATH", hooks_path},
+            {"GSD_TOOLS", gsd_tools}
+          ],
+          stderr_to_stdout: true
+        )
 
-      run_git!(repository, ["push", "origin", "#{rejected_head}:refs/heads/main"])
-      run_git!(repository, ["fetch", "origin", "main"])
-      _sealed = prepare_recovery_receipt.()
+      assert v2_status == 0, v2_json
+      v2 = Jason.decode!(v2_json)
+      assert get_in(v2, ["receipt", "recovery", "protocol"]) == "phase-140-recovery-v2"
+      assert get_in(v2, ["receipt", "recovery", "baselineSha"]) == phase139_base
+      assert get_in(v2, ["receipt", "recovery", "supersedesSha256"]) == v1_digest
+      assert v2["supersededSha256"] == v1_digest
 
-      {rejected, rejected_status} = run_phase_139_sealed_relation!(repository, ledger, [])
-      assert rejected_status != 0
-      assert rejected =~ "snapshot_relation: refresh_required"
+      archive_path =
+        Path.join(repository, ".git/gsd-lifecycle/receipt-archive/#{v1_digest}.json")
+
+      archived_bytes = File.read!(archive_path)
+      assert archived_bytes == v1_bytes
+      assert File.stat!(archive_path).mode |> Bitwise.band(0o777) == 0o600
+      v2_bytes = File.read!(pending_path)
+      publication_log = Path.join(fixture, "publication-calls.log")
+
+      snapshot = fn ->
+        %{
+          head: run_git!(repository, ["rev-parse", "HEAD"]),
+          refs: run_git!(repository, ["for-each-ref", "--format=%(refname) %(objectname)"]),
+          remote_refs:
+            run_git!(repository, [
+              "--git-dir",
+              remote,
+              "for-each-ref",
+              "--format=%(refname) %(objectname)"
+            ]),
+          status: run_git!(repository, ["status", "--porcelain=v1", "--untracked-files=all"]),
+          worktrees: run_git!(repository, ["worktree", "list", "--porcelain"]),
+          pending: File.read!(pending_path),
+          archive: File.read!(archive_path),
+          publication_calls:
+            if(File.exists?(publication_log), do: File.read!(publication_log), else: "")
+        }
+      end
+
+      before_probe = snapshot.()
+      assert before_probe.pending == v2_bytes
+      assert before_probe.archive == archived_bytes
+      assert before_probe.publication_calls == ""
+      mix_log_path = Path.join(fixture, "planning-consistency-invocations")
+      mix_before = File.read!(mix_log_path) |> String.split("\n", trim: true)
+      assert length(mix_before) == 1
+
+      entrypoint_args = [
+        phase_139_acceptance_driver_path(repository),
+        "post-transition",
+        "--phase",
+        @next_phase_number
+      ]
+
+      {positive, positive_status} =
+        System.cmd("bash", entrypoint_args,
+          cd: repository,
+          env:
+            acceptance_env ++
+              [
+                {"FAKE_ACCEPTANCE_PUBLICATION_LOG", publication_log},
+                {"FAKE_ACCEPTANCE_ALLOW_CANDIDATE_MAIN", "1"}
+              ],
+          stderr_to_stdout: true
+        )
+
+      assert positive_status == 1, positive
+
+      assert positive =~
+               "candidate preparation is blocked until its exact SHA is explicitly published",
+             positive
+
+      assert positive =~ "snapshot_relation: authorized_bookkeeping", positive
+
+      assert File.read!(mix_log_path) =~
+               "test/lockspire/quality/phase_139_planning_consistency_test.exs"
+
+      mix_after_positive = File.read!(mix_log_path) |> String.split("\n", trim: true)
+      assert length(mix_after_positive) == length(mix_before) + 1
+
+      IO.puts(
+        "phase140-entrypoint-positive=candidate preparation is blocked until its exact SHA is explicitly published"
+      )
+
+      IO.puts("phase140-entrypoint-planning-consistency=#{List.last(mix_after_positive)}")
+
+      after_positive = snapshot.()
+
+      assert Map.drop(after_positive, [:publication_calls]) ==
+               Map.drop(before_probe, [:publication_calls])
+
+      assert after_positive.publication_calls == ""
+
+      File.write!(archive_path, archived_bytes <> "tampered")
+      File.chmod!(archive_path, 0o600)
+
+      {hostile, hostile_status} =
+        System.cmd("bash", entrypoint_args,
+          cd: repository,
+          env:
+            acceptance_env ++
+              [
+                {"FAKE_ACCEPTANCE_PUBLICATION_LOG", publication_log},
+                {"FAKE_ACCEPTANCE_ALLOW_CANDIDATE_MAIN", "1"}
+              ],
+          stderr_to_stdout: true
+        )
+
+      assert hostile_status != 0, hostile
+      assert hostile =~ "superseded receipt archive digest", hostile
+
+      refute hostile =~
+               "candidate preparation is blocked until its exact SHA is explicitly published"
+
+      IO.puts("phase140-entrypoint-hostile=superseded receipt archive digest")
+      assert File.read!(mix_log_path) |> String.split("\n", trim: true) == mix_after_positive
+
+      File.write!(archive_path, archived_bytes)
+      File.chmod!(archive_path, 0o600)
+
+      after_hostile = snapshot.()
+
+      assert Map.drop(after_hostile, [:publication_calls]) ==
+               Map.drop(before_probe, [:publication_calls])
+
+      assert after_hostile.publication_calls == ""
+      assert File.read!(archive_path) == archived_bytes
+      assert File.read!(pending_path) == v2_bytes
     after
       File.rm_rf(fixture)
     end
@@ -6296,6 +6451,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       """
       #!/usr/bin/env bash
       set -euo pipefail
+      if [[ -n "${FAKE_ACCEPTANCE_PUBLICATION_LOG:-}" ]]; then
+        case "$*" in
+          "workflow run "*|"release create "*|"api "*"-X POST"*|"api "*"-XPOST"*)
+            printf '%s\\n' "$*" >> "$FAKE_ACCEPTANCE_PUBLICATION_LOG" ;;
+        esac
+      fi
       source_sha="5d10ce2219c2e687cf9573c8b280abfb118a47d8"
       case "$1 $2" in
         "repo view") printf 'lockspire/fixture\n' ;;
@@ -6333,7 +6494,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       head="$(git rev-parse HEAD)"
       local_main="$(git rev-parse refs/heads/main)"
       remote_main="$(git rev-parse refs/remotes/origin/main)"
-      [[ "$local_main" != "$head" && "$remote_main" != "$head" ]] || exit 93
+      if [[ "${FAKE_ACCEPTANCE_ALLOW_CANDIDATE_MAIN:-0}" != "1" ]]; then
+        [[ "$local_main" != "$head" && "$remote_main" != "$head" ]] || exit 93
+      fi
       receipt="$(git rev-parse --path-format=absolute --git-common-dir)/gsd-lifecycle/post-completion-finalizer.json"
       jq -e '.status == "pending" and .phase == "139" and .point == "plan:pre"' "$receipt" >/dev/null || exit 94
       printf '%s|%s|%s|%s\n' "$ASDF_ELIXIR_VERSION" "$ASDF_ERLANG_VERSION" "$MIX_ENV" "$*" >> "$FAKE_ACCEPTANCE_MIX_LOG"
@@ -6355,7 +6518,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"FAKE_ACCEPTANCE_REMOTE", Path.join(fixture, "origin.git")},
       {"FAKE_ACCEPTANCE_CANDIDATE", candidate},
       {"FAKE_ACCEPTANCE_HYGIENE_LOG", Path.join(fixture, "hygiene-checkout-observation")},
-      {"FAKE_ACCEPTANCE_MIX_LOG", mix_log}
+      {"FAKE_ACCEPTANCE_MIX_LOG", mix_log},
+      {"FAKE_ACCEPTANCE_PUBLICATION_LOG", Path.join(fixture, "publication-calls.log")}
     ]
   end
 

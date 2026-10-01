@@ -380,7 +380,8 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   end
 
   @tag :phase140_recovery_relation
-  @tag timeout: 300_000
+  @tag :phase140_entrypoint_recovery
+  @tag timeout: 600_000
   test "Phase 140 recovery authenticates the exact planning preparation prefix" do
     PackageAssertions.assert_phase_140_planning_preparation_recovery_chain!()
   end
