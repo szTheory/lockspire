@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 11/13 plans executed; 140-04 remains incomplete and 140-13 is planned
+**Plans**: 13/13 plans executed; phase verification and exact-SHA CI/Release acceptance remain pending
 
 Plans:
 **Wave 1**
@@ -220,9 +220,9 @@ Plans:
 
 - [x] 140-03-PLAN.md — Assess every dependency-update PR against its own current evidence.
 
-**Wave 4** *(blocked on Wave 3 completion)*
+**Wave 4** *(local closeout complete; external acceptance belongs to phase verification)*
 
-- [ ] 140-04-PLAN.md — Close finite dispositions and prepare final exact-SHA acceptance.
+- [x] 140-04-PLAN.md — Close finite dispositions and prepare final exact-SHA acceptance.
 
 **Wave 5** *(gap closure after the Plan 140-04 verification failures)*
 
@@ -258,7 +258,7 @@ Plans:
 
 **Wave 13** *(new gap closure after complete local CI exposed two receipt identity failures)*
 
-- [ ] 140-13-PLAN.md — Diagnose and repair the full-suite receipt identity failure, then prove complete local CI.
+- [x] 140-13-PLAN.md — Diagnose and repair the full-suite receipt identity failure, then prove complete local CI.
 
 **Cross-cutting constraints:**
 
@@ -287,7 +287,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 11/13 | In Progress |  |
+| 140. Bounded Operational Loose-End Triage | 13/13 | In Progress |  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog

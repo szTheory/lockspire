@@ -5,17 +5,17 @@ milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
 current_plan: 13
-status: executing
-stopped_at: Executing approved Plan 140-13 gap repair; Plan 140-04 and same-SHA acceptance remain incomplete.
-last_updated: "2026-10-01T17:32:25.215Z"
+status: verifying
+stopped_at: All 13 Phase 140 plans complete locally; unfiltered verification and exact-SHA acceptance pending.
+last_updated: "2026-10-01T19:41:22.294Z"
 last_activity: 2026-10-01
-last_activity_desc: Phase 140 execution started
+last_activity_desc: Plans 140-13 and 140-04 passed local checks; verifying the complete phase
 state_head: b631866a141c264ebbe38bca4fdc5b6f94218a9c
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 64
-  completed_plans: 62
+  completed_plans: 64
 ---
 
 # Project State
@@ -30,16 +30,16 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 
 ## Current Position
 
-Phase: 140 (Bounded Operational Loose-End Triage) — EXECUTING
+Phase: 140 (Bounded Operational Loose-End Triage) — VERIFYING
 Current Plan: 13
 Total Plans in Phase: 13
-Plan: 1 of 13
-Status: Executing Phase 140
-Last activity: 2026-10-01 — Phase 140 execution started
+Plan: 13 of 13
+Status: Verifying Phase 140
+Last activity: 2026-10-01 — All local plan checks complete; final acceptance pending
 
-Progress: [███████░░░] 75% of the original four roadmap plans; Phase 140 remains incomplete.
+Progress: [██████████] 100% of 13 plans executed; Phase 140 remains incomplete pending exact-SHA acceptance.
 
-Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plan 140-04 remains blocked/incomplete; gap-closure Plans 140-05 through 140-12 have summaries. The latest full local `mix ci` result is recorded in the Phase 140 handoff and CI log.
+Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. All 13 Phase 140 plans now have complete summaries, including resumed Plan 140-04. Source candidate 0227dea2 passed complete local CI; post-merge candidate 80612475 passed all 60 hygiene tests.
 
 ## Accumulated Context
 
@@ -157,14 +157,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Resolved historical entry blocker: the Phase 140 entry gate passed on 2026-09-27 and was revalidated on 2026-09-28 at synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`. Its CI and Release no-publish receipts apply to that SHA only.
-- Current Phase 140 verification is `gaps_found` (6/8). Plan 140-04 is blocked: the full repository-hygiene contract had 58 tests / 2 failures; `mix ci` had 1,439 tests / 44 failures / 6 skipped (286 excluded); four current Phase32/AuditWriter selectors fail with `:invalid_signing_key`; and the refreshed inventory is partial (origin refresh exit 255 and `140-HANDOFF.md` ambiguity).
-- CI-06 and CI-07 remain pending a post-summary synchronized-main exact-SHA hygiene, canonical CI, and Release no-publish receipt. Current candidate HEAD is `213ad3cd27e0125bc94bd0b9df493303323ba880`; local and cached `origin/main` remain `5ad2b2e935556c8f1a91be32605958530b477527`. No push is authorized; any needed push requires separate exact-candidate authorization.
-- Before any future inventory or cleanup action, refresh the Phase 138 relation and incomplete source domains at the authorized boundary; current inventory rows remain proposal-only and do not establish exhaustive coverage.
-- Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. The current relation result is `refresh_required`; keep the dated snapshot proposal-only until the planned refresh.
-- Supplemental OIDF findings remain future bounded conformance work unless a reproducible repository regression warrants a narrowly scoped correction.
-- Resolved historical 139-09 Task 1 blocker: live parity was initially blocked on GSD 1.10.0 and resolved on 2026-09-24 after the installed runtime reached 1.14.0; the capability is active and fixture-backed live hook parity passed 16/16.
-- Phase 140 code review CR-01 (140-REVIEW.md): resolve_sealed_candidate in scripts/maintainer/finalize_phase_139_acceptance.sh compares prior_transform["allowedPaths"] to allowed before assignment for phase-140-recovery-v2 receipts. Include this fix in $gsd-plan-phase 140 --gaps.
+- All local Phase 140 plan checks pass. The canonical verification is being refreshed across all 13 plans; old inventory, signing-key, recovery, formatter, and receipt identity gaps must be reconciled with their terminal fixes, not replayed.
+- CI-06 and CI-07 remain pending the post-summary synchronized-main exact-SHA hygiene, canonical CI, and Release no-publish receipt. Local main remains `8fadb0984de9252475e8390bf4338c4df055f934`; cached origin/main is `218b50502e33f046ab24a61c807a4271b9a1436e` until refreshed. The earlier conditional push approval was not used because that candidate failed CI; changed-candidate ref movement retains the exact-target checkpoint in 140-ACCEPTANCE.md.
+- Pending Phase 139 recovery receipt SHA-256 `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` remains unchanged. The entry gate rejected its stale writer descriptor. Use supported compare-and-swap supersession after all local lifecycle writes; do not forge or discard the prior receipt.
+- Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
+- Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
+- The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
 
 ### Quick Tasks Completed
 
@@ -183,14 +181,14 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T17:32:25.155Z
-Stopped at: Executing approved Plan 140-13 gap repair; Plan 140-04 and same-SHA acceptance remain incomplete.
+Last session: 2026-10-01T19:41:22.294Z
+Stopped at: All local Phase 140 plans complete; unfiltered verification and final exact-SHA acceptance pending.
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Run `$gsd-resume-work`, then `$gsd-plan-phase 140 --gaps`. Reconcile the existing verification gaps against completed Plans 140-05 through 140-12 and the latest full-CI failures; do not replay completed plans. Keep CI-06/CI-07 pending until same-SHA local `mix ci`, exact hygiene, canonical CI, and Release no-publish receipts pass. Any changed candidate needs exact-SHA authorization before remote movement.
+Resume instruction: Read 140-VERIFICATION.md and 140-ACCEPTANCE.md. Continue the exact-SHA acceptance tail; do not replay the 13 completed plans. Preserve CI-06/CI-07 as pending until one final SHA has local CI, exact hygiene, canonical CI, and Release no-publish proof.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase's implementation plans need replay. Phase 140 Plans 140-05 through 140-12 have summaries. Plan 140-04 has a blocked summary and remains incomplete; the latest full local `mix ci` failed two receipt identity tests. The GSD verification query routes to `$gsd-plan-phase 140 --gaps`. CI-06/CI-07 remain pending until the final full-SHA join passes; any required ref movement needs exact-candidate authorization.
+All 38 Phase 138 plans, all 13 Phase 139 plans, and all 13 Phase 140 plans have complete summaries. Phase 140 local repair candidate `0227dea2` passed complete `mix ci` (1,441 unit tests and 102 integration tests, zero failures); the unchanged post-merge `80612475` passed compile and 60 hygiene tests. CI-06/CI-07 remain pending the final full-SHA join. Phase 140 must not advance until that acceptance passes.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -241,7 +239,7 @@ All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase'
 | Phase 140 P01 | 66 min | 2 tasks | 2 files |
 | Phase 140 P2 | 25m | 2 tasks | 4 files |
 | Phase 140 P03 | 20m | 2 tasks | 2 files |
-| Phase 140 P04 | 55m (blocked) | 2 tasks | 2 files |
+| Phase 140 P04 | 55m initial; resumed closeout complete | 2 tasks | 3 files |
 | Phase 140 P5 | 20min | 2 tasks | 5 files |
 | Phase 140 P6 | 38min | 2 tasks | 3 files |
 | Phase 140 P7 | 31min | 2 tasks | 2 files |
@@ -250,3 +248,4 @@ All 38 Phase 138 plans and all 13 Phase 139 plans have summaries; neither phase'
 | Phase 140 P10 | 38min | 1 tasks | 2 files |
 | Phase 140 P11 | 12min | 2 tasks | 7 files |
 | Phase 140 P12 | 13min | 2 tasks | 2 files |
+| Phase 140 P13 | about 90min | 2 tasks | 3 files |

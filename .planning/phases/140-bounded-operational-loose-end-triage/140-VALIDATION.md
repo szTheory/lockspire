@@ -5,12 +5,12 @@ status: audited-partial
 nyquist_compliant: false
 wave_0_complete: false
 created: "2026-09-28"
-audited: "2026-09-30"
+audited: "2026-10-01"
 ---
 
 # Phase 140 — Validation Strategy
 
-> Validation map updated from the Phase 140 plan summaries and recorded executable/external evidence. This is a partial audit: local failures remain open, and CI-06/CI-07 are external pending gates.
+> Current status (2026-10-01): all 13 local plans are complete. The Plan 140-13 source candidate passed complete local CI, and the unchanged post-merge candidate passed all 60 hygiene tests. CI-06/CI-07 remain pending final exact-SHA acceptance. The 2026-09-30 tables below are retained as historical failed-run evidence; the current delta at the end supersedes their local-failure status.
 
 ---
 
@@ -35,7 +35,7 @@ audited: "2026-09-30"
 
 ---
 
-## Per-Requirement Verification Map
+## Historical Per-Requirement Verification Map (2026-09-30)
 
 | Requirement | Plan / Task | Threat Ref | Secure Behavior | Test Type | Automated Command / Evidence | Existing Coverage | Status |
 |-------------|-------------|------------|-----------------|-----------|------------------------------|-------------------|--------|
@@ -56,7 +56,7 @@ Task IDs are fixed above. The final external exact-SHA gate occurs after plan su
 - The planner must identify any small deterministic disposition-record check only if the refreshed evidence demonstrates a repeatable repository-owned gap.
 - Local Mix requires explicit Elixir/OTP selection in this environment; verification commands must retain the working `ASDF_ELIXIR_VERSION`, `ASDF_ERLANG_VERSION`, and scheduler settings shown above.
 
-## Multi-Source Coverage Audit
+## Historical Multi-Source Coverage Audit (2026-09-30)
 
 | Source | ID / item | Plan-task coverage | Status |
 |--------|-----------|--------------------|--------|
@@ -111,7 +111,7 @@ This audit used the four plan/SUMMARY pairs, this map, `140-DISPOSITIONS.md`, an
 
 Overall audit outcome: **PARTIAL**. No implementation files were changed. The existing validation contract is reusable; no new deterministic test boundary was identified beyond the already failing selectors/contracts.
 
-## Validation Sign-Off
+## Historical Validation Sign-Off (2026-09-30)
 
 - [ ] Every generated task has an exact `<automated>` verify command or an explicit Wave 0 dependency.
 - [ ] Sampling continuity: no three consecutive tasks lack automated verification.
@@ -122,16 +122,25 @@ Overall audit outcome: **PARTIAL**. No implementation files were changed. The ex
 
 **Audit status:** partial; blocker failures and external gates remain open.
 
-## Gap Plan 140-13 Validation Delta (2026-10-01)
+## Current Validation Delta (2026-10-01)
 
-The table above is the 2026-09-30 snapshot and predates completed Plans 140-05 through 140-12. Those summaries close the origin/maintained-source receipt, recovery-diagnostic, four current signing-key-selector, formatter, fixture-isolation, and intermediate 45-failure census items. The passing 1,440-unit/102-integration `mix ci` result on `93e85d11cbb491d619e391acabec2641b14ae015` is preparatory historical proof. The latest complete run on code candidate `8fadb0984de9252475e8390bf4338c4df055f934` reported 1,440 unit tests, two receipt identity failures at `repository_hygiene_contract_test.exs:343` and `:404`, and six skips; integration did not run. Both focused selectors passed in isolation, which leaves the complete-context failure open.
+The earlier tables predate completed Plans 140-05 through 140-13. Their source/selector, recovery, signing-key, formatter, isolation, and full-CI findings are closed by bounded fixes. The previously failed `8fadb098` candidate remains historical evidence. Plan 140-13 source candidate `0227dea2fd7cc8646d098505c3eb6637afb70d87` passed complete `mix ci`: 1,441 unit tests, 0 failures, 6 skipped; 102 integration tests, 0 failures. Its private complete log is `/private/tmp/lockspire-140-13-ci.oVxPXP`. The umask-controlled legacy/current probe establishes a sufficient cause for both original receipt identity errors without claiming the old run measured that umask.
+
+The primary checkout stayed at `8061247594fb563d79e3b7d62f1d21b6789ede9f` across post-merge compile and the full hygiene replay: 60 tests, 0 failures, seed 924694. Source diff from the complete-CI candidate is empty. The prior standalone sealed-relation failure is WR-01, deferred with a trigger to reopen on recurrence; its cause is unknown and it is not marked fixed. Plan 140-04's local audit and focused 2-test/3-test acceptance contracts passed. All 114 current IDs are accounted for and all four protected file hashes match.
 
 | Current requirement or check | Owning plan | Automated proof required | Status |
 |------------------------------|-------------|--------------------------|--------|
-| LOOSE-03 receipt identity blocker | 140-13-T1/T2 | Exact original selectors, discriminating mismatch regression, and actual complete local `mix ci` including integration | OPEN; complete-run failure reproduced in retained log |
-| CI-06 local prerequisite | 140-13-T2 | Current complete local `mix ci`, zero unit and integration failures, exact candidate SHA | OPEN; previous complete run failed |
-| LOOSE-02 and finite dispositions | 140-04-T1, 140-09 | Source-linked rows and terminal evidence for any executed closure | Pending Plan 140-04 closeout; completed prior summaries retained |
+| LOOSE-03 receipt identity blocker | 140-13-T1/T2 | Exact original selectors, discriminating mismatch regression, and actual complete local `mix ci` including integration | PASS — causal regression and complete CI recorded |
+| CI-06 local prerequisite | 140-13-T2 | Current complete local `mix ci`, zero unit and integration failures, exact candidate SHA | PASS locally at 0227dea2; final-SHA requirement remains pending |
+| LOOSE-02 and finite dispositions | 140-04-T1, 140-09 | Source-linked rows and terminal evidence for any executed closure | PASS — Plan 140-04 local closeout complete, 114 current IDs and protected hashes verified |
 | CI-06/CI-07 final acceptance | 140-04-T2 and unfiltered verifier | Same final synchronized main SHA, local `mix ci`, exact hygiene, required canonical CI jobs, and successful Release no-publish graph | PENDING; no final-SHA receipt |
 | Phase 139 host receipt recovery | Post-write orchestrator handoff under `140-ACCEPTANCE.md` | Supported supersession CAS, archived old bytes, lineage/hook/remote/worktree checks, then no-publish barrier result | BLOCKED at current `plan:pre`; no live receipt mutation in 140-13 |
 
-Both new tasks have runnable `<automated>` checks and explicit `<fails_when>` signals. The full gate is intentionally long-running; its result must be captured once after the source repair, and a new run is justified only by a subsequent change or a concrete failed check. The Phase 140 `140-VERIFICATION.md` file remains the canonical report until unfiltered verification updates it. `nyquist_compliant: true` remains unavailable while the current complete local gate and final exact-SHA acceptance are open.
+Both new tasks have runnable `<automated>` checks and explicit `<fails_when>` signals. The full gate is intentionally long-running; its result must be captured once after the source repair, and a new run is justified only by a subsequent change or a concrete failed check. The Phase 140 `140-VERIFICATION.md` file remains the canonical report until unfiltered verification updates it. `nyquist_compliant: true` remains unavailable until the final exact-SHA acceptance is proven; all current local repair checks pass.
+
+## Execution Tail Evidence
+
+- Wave-post schema drift: no drift and no block. Codebase drift: skipped because no STRUCTURE.md exists, no action required. UI safety: no frontend/UI files and no block.
+- Execute-post Phase 139 predicate on Phase 140: inert command success, no finalizer action. This does not override the separately failed plan-entry receipt gate.
+- Regression evidence reuse: all nine unique prior-phase test paths cited by Phase 138/139 verification are under `test/lockspire` and included in the passing complete `mix ci` command. The changed receipt suite additionally passed its full post-merge replay. No implementation changed after the complete-CI candidate. Repeating the complete suite before another material change would add no new local source evidence.
+- Final local CI on the eventual synchronized acceptance SHA remains required by `140-ACCEPTANCE.md`; the earlier local run is preparatory proof only.

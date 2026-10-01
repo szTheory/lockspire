@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "milestone": "v1.38 \u2014 Repository Baseline & Reconciliation",
   "phases": [
     {
       "number": "138",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:verify-work",
-    "label": "Re-verify work",
-    "reason": "Recent verification failed — re-verify or debug"
+    "command": "/gsd:execute-phase 140",
+    "label": "Finish phase acceptance",
+    "reason": "All plans complete locally; unfiltered verification and final exact-SHA acceptance remain"
   },
-  "updated_at": "2026-10-01T17:24:50.072Z"
+  "updated_at": "2026-10-01T19:41:22.294Z"
 }
