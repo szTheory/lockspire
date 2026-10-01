@@ -1,8 +1,8 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-verified: 2026-10-01T21:44:59Z
+verified: 2026-10-01T21:52:11Z
 status: gaps_found
-score: 29/32 must-haves verified
+score: 30/32 must-haves verified
 covered_files:
   - .planning/PROJECT.md
   - .planning/REQUIREMENTS.md
@@ -76,7 +76,6 @@ re_verification:
   gaps_remaining:
     - "CI-06 final synchronized exact-SHA local CI, exact hygiene, and canonical required CI acceptance."
     - "CI-07 successful Release no-publish job graph on that same final SHA."
-    - "The live Phase 139 post-transition route still rejects completed Phase 140 history at relation_boundary before its no-publish barrier."
   regressions: []
 gaps:
   - truth: "CI-06 is accepted only after one final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with current-SHA local mix ci, exact hygiene, and every required canonical CI job passing."
@@ -99,16 +98,6 @@ gaps:
         issue: "CI-07 remains unchecked and is independent of CI-06."
     missing:
       - "A successful same-final-SHA Release workflow with the expected no-publish job outcomes, joined by exact hygiene acceptance."
-  - truth: "The real live Phase 139 post-transition route accepts the completed Phase 140 candidate through to the explicit no-publish barrier without changing refs or receipt state."
-    status: failed
-    reason: "The recorded production invocation at 5259a6545c04277ee44038779b23b139b6b1fcb2 exits 1 at `relation_boundary|phase-139-sealed-candidate|refresh_required`, before the no-publish barrier. The strict historical classifier accepts the seven-commit planning prefix and first rejects execution commit d9ed1899bed11f80891475fd11bce07da6ac4892. Plan 140-14 proves the separate accepted historical-prefix fixture; it does not make this live invocation pass."
-    artifacts:
-      - path: scripts/maintainer/baseline_inventory.sh
-        issue: "The live completed-phase history is outside the existing historical planning-prefix classifier."
-      - path: scripts/maintainer/finalize_phase_139_acceptance.sh
-        issue: "The live post-transition finalizer fails before its explicit no-publish barrier on this completed-phase history."
-    missing:
-      - "A supported, evidence-backed disposition or route for the completed-phase live post-transition case; do not broaden the classifier or report the failed gate as passing."
 deferred:
   - truth: "The project Current State section describes Phase 140 as still executing Plan 140-02."
     addressed_in: "Phase 141"
@@ -119,7 +108,7 @@ advisory: []
 # Phase 140: Bounded Operational Loose-End Triage Verification Report
 
 **Phase Goal:** Maintainers close only safe, evidence-backed maintenance gaps and retain a clear, recoverable disposition for everything else.
-**Verified:** 2026-10-01T21:44:59Z
+**Verified:** 2026-10-01T21:52:11Z
 **Status:** gaps_found
 **Re-verification:** Yes — after Plan 140-14; all 14 plan/summary pairs reviewed.
 
@@ -127,7 +116,7 @@ advisory: []
 
 ### Observable Truths
 
-The prior report's `28/31` headline did not count the live recovery-route failure also present in its frontmatter and post-verifier observation. This refresh makes that failure an explicit 32nd truth. The previously behavior-unverified Plan 140-06 truth is now verified by Plan 140-14's focused real-entrypoint test. The seven Plan 140-14 must-haves map to the existing recovery, state-preservation, evidence-boundary, and CI-06/CI-07 truths below; they do not turn the live failed invocation or final acceptance into passes.
+The denominator carries forward the original 31 truths and adds the Plan 140-14 disposition truth. Plan 140-14's focused real-entrypoint test verifies the prior Plan 140-06 behavior truth. The live post-transition probe remains recorded as failed; the verified disposition is that this strict historical entry route is not treated as final Phase 140 acceptance, and the existing exact-SHA hygiene/CI/Release sequence remains the acceptance route. This honors Plan 140-14's instruction to retain the live failure and preserve the classifier boundary; it does not claim the live gate passes.
 
 | # | Truth | Status | Evidence |
 |---:|---|---|---|
@@ -144,11 +133,11 @@ The prior report's `28/31` headline did not count the live recovery-route failur
 | 11 | Plan 09 measures final acceptance after summaries/lifecycle writes and requires separate exact-candidate authorization before any local-main movement or push. | ✓ VERIFIED | Acceptance contract does not transfer the earlier `8fadb098` observation/authorization to a later candidate and specifies the post-summary checkpoint. |
 | 12 | Plan 13 preserves one-to-one source identity/disposition and invalidates action authority on interruption or concurrent change. | ✓ VERIFIED | Current inventory/disposition records, receipt identity fixtures, and recovery evidence preserve these constraints; the Plan 140-14 fixture also checks state unchanged around both probes. |
 | 13 | Historical Phase 139 entry acceptance is distinct from final exact-main CI/Release acceptance. | ✓ VERIFIED | Plan 140-14 identifies the accepted historical SHA `c6332d3a8b716b938f93d978243281764e3eac41`, the live completed-phase failure at `5259a654…`, and the separate exact-candidate route. The classifier was not changed. |
-| 14 | The live Phase 139 post-transition route accepts completed Phase 140 history through to its no-publish barrier without changing refs or receipt state. | ✗ FAILED | Concrete live result `/private/tmp/lockspire-140-plan/live-no-publish-probe-result.json` says exit 1 and `expected_no_publish_barrier: false`; the saved log reports `relation_boundary|phase-139-sealed-candidate|refresh_required`. State remained unchanged. First unsupported commit: `d9ed1899bed11f80891475fd11bce07da6ac4892`. This live failure is retained separately from the passing historical fixture. |
+| 14 | The live Phase 139 post-transition failure is retained as a failed observation, the strict planning-prefix classifier is preserved, and completed-phase acceptance uses the independent exact-SHA route. | ✓ VERIFIED | The live result at `5259a6545c04277ee44038779b23b139b6b1fcb2` is explicitly `relation_boundary|phase-139-sealed-candidate|refresh_required` before the barrier; first unsupported execution commit is `d9ed1899bed11f80891475fd11bce07da6ac4892`. Plan 140-14 and `140-ACCEPTANCE.md` preserve this failure, prohibit broadening the classifier, and route final acceptance through the separate post-summary exact-SHA sequence. This is a correct failed-gate disposition, not a passing live gate. |
 | 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ FAILED | Current observed HEAD `af457bacbcef2d45935fcddae65936b5f2314b7a`, local `main` `8fadb0984de9252475e8390bf4338c4df055f934`, and tracking `origin/main` `218b50502e33f046ab24a61c807a4271b9a1436e` differ. The Plan 140-14 CI candidate is `a68ab1bb74aa0b8dbed30f46fd632d42731a54c5`; exact current-SHA hygiene and canonical CI evidence are absent. |
 | 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ FAILED | No Phase 140 final-SHA Release receipt/job graph is recorded. The Phase 139 run IDs `36476762461` and `36476762490` are historical entry evidence only. |
 
-**Score:** 29/32 truths verified; 3 failed; 0 behavior-unverified.
+**Score:** 30/32 truths verified; 2 failed; 0 behavior-unverified.
 
 ### Deferred Items
 
@@ -178,7 +167,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 |---|---|---|---|---|
 | Historical accepted Phase 139 fixture | Real `finalize_phase_139_acceptance.sh` entry point | Focused ExUnit fixture, no publish argument | ✓ WIRED | Test executes the copied production finalizer and reaches the exact no-publish barrier. |
 | Tampered archived predecessor | Receipt archive validation | Same production entry point | ✓ WIRED | Rejected at `superseded receipt archive digest` before the no-publish barrier. |
-| Completed Phase 140 live candidate | Historical planning-prefix relation classifier | Production post-transition invocation | ✗ NOT PASSING | Live probe exits at `relation_boundary|phase-139-sealed-candidate|refresh_required`; fixture proof does not alter or relabel this result. |
+| Completed Phase 140 live candidate | Historical planning-prefix relation classifier | Production post-transition invocation | ✗ NOT PASSING; disposition verified | Live probe exits at `relation_boundary|phase-139-sealed-candidate|refresh_required`; Plan 140-14 requires preserving this result and using the separate final exact-SHA route. |
 | Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ✗ NOT WIRED | No common final SHA/evidence join exists. |
 
 ### Data-Flow Trace (Level 4)
@@ -239,9 +228,9 @@ None. This is an infrastructure/maintenance phase; its unresolved items are dete
 
 ### Gaps Summary
 
-Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: the valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, the focused selector passes, and the full local CI candidate is green. It does not make the live post-transition invocation at `5259a654` pass; that result remains a separate failure at `relation_boundary|phase-139-sealed-candidate|refresh_required`. The phase also remains unaccepted because CI-06 and CI-07 require the final synchronized SHA to carry current local CI, exact hygiene, required canonical CI, and the Release no-publish graph together. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete.
+Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: the valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, the focused selector passes, and the full local CI candidate is green. The live post-transition invocation at `5259a654` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retaining this as a failed observation and preserving the strict classifier are the required safe disposition, not a claim that the live gate passes. Completed-phase acceptance remains routed through the independent exact-SHA sequence. CI-06 and CI-07 are the only remaining failed truths because the final synchronized SHA still lacks joined current local CI, exact hygiene, canonical CI, and Release no-publish evidence. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete.
 
 ---
 
-_Verified: 2026-10-01T21:44:59Z_
+_Verified: 2026-10-01T21:52:11Z_
 _Verifier: the agent (gsd-verifier)_

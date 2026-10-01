@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 14/14 local plans executed; phase verification and exact-SHA CI/Release acceptance remain pending
+**Plans**: 14/14 local plans executed; verification is 30/32, with CI-06/CI-07 exact-SHA CI/Release acceptance still pending
 
 Plans:
 **Wave 1**
