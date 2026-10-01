@@ -255,3 +255,12 @@ Check notation, in column order `Dialyzer / Dependency Review / Release Hygiene 
 - For every deferred ref/PR/maintained record, current identity, ownership, authority, recovery path, uncommitted-work safety, and historical-release linkage remain required before action. Re-query mutable remote/GitHub state immediately before any future operation.
 - The earlier partial collection is retained only as historical evidence. The refreshed inventory has complete Git, GitHub, and maintained-source receipts for its collection window; mutable targets still require exact revalidation before action.
 - The Phase 138 source ledger remains byte-identical historical evidence. The new inventory is itself proposal-only and gains no action authority merely by existing; its own immutable relation and source receipts must be validated under the documented classifier before it can authorize bookkeeping claims.
+
+## Plan 140-08 current local CI findings
+
+The complete run receipt and diagnostic reconciliation are in `140-CI-FAILURES.md`. The 2026-10-01 run at checkout `a6d6dcfd4abb589650f7dd46be44de7a877b3ff0` exited 1 in the first `mix format --check-formatted` gate; ExUnit did not start. These are two current, source-identified formatter findings, not inferred members of the older truncated 44-failure report. Both are scoped to a separate gap plan because their paths are outside Plan 140-08's declared `files_modified` set.
+
+| Finding ID | Exact source and observed identity | Finding disposition | Evidence / rationale | Trigger and next proof | Proposed / executed |
+| --- | --- | --- | --- | --- | --- |
+| `140-08-CI-FMT-001` | `test/lockspire/release/repository_hygiene_contract_test.exs`, formatter diff begins at line 124 | fix-now | The complete local `mix ci` log reports formatting differences before tests begin; no test identity is emitted. | Close a separate scoped formatting plan; `mix format --check-formatted test/lockspire/release/repository_hygiene_contract_test.exs` must pass. | proposed; not executed |
+| `140-08-CI-FMT-002` | `test/support/lockspire/release_proof/package_assertions.ex`, formatter diff begins at line 4426 | fix-now | The complete local `mix ci` log reports formatting differences before tests begin; no test identity is emitted. | Close a separate scoped formatting plan; `mix format --check-formatted test/support/lockspire/release_proof/package_assertions.ex` must pass. | proposed; not executed |
