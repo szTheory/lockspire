@@ -29,6 +29,7 @@ defmodule Lockspire.Integration.Phase133HarnessTest do
   end
 
   @tag :dependency_lock
+  @tag timeout: 180_000
   test "the two child manifests resolve Lockspire only from copied package contents" do
     script = Path.expand("../../scripts/acceptance/clean_room/package_input.py", __DIR__)
 

@@ -125,4 +125,10 @@ The exact terminal hygiene join was not run because this candidate's local gate 
 
 ## Remaining plan work
 
-- T3 remains open: the latest published candidate `1ca94e8…` failed local and canonical CI. A local fixture-seed repair addresses the common root cause without broadening the Phase 139 classifier; run the full local gate, then prepare a fresh exact-candidate packet and its own blocking-human ref-action checkpoint before any further ref action.
+- T3 remains open: the latest published candidate `1ca94e8…` failed local and canonical CI. The fixture-seed repair is now in `259933e`; its unit suite passed but the Phase 133 package self-test timed out in the full integration run. A test-specific 180-second limit is set and needs a complete local gate before preparing a fresh exact-candidate packet and its own blocking-human ref-action checkpoint.
+
+## Fixture-repair candidate local gate (2026-10-02)
+
+The local fixture-seed repair was committed as `259933e76d14ea303a134d41dda9833442682e79`. Its pinned full `mix ci` run passed the fast ExUnit suite: **1,441 tests, 0 failures, 6 skipped (286 excluded)**. The subsequent integration suite reported **102 tests, 1 failure (33 excluded)**: `test/integration/phase133_harness_test.exs` exceeded the test's 60-second timeout while running `scripts/acceptance/clean_room/package_input.py --self-test`. The mode-0600 full log is `/private/tmp/lockspire-140-plan/phase140-15-post-fix-mix-ci.259933e76d14ea303a134d41dda9833442682e79.log`.
+
+The timed test passed in isolation with `--only dependency_lock` in 24.8 seconds (1 test, 0 failures); its mode-0600 log is `/private/tmp/lockspire-140-plan/phase140-15-phase133-package-self-test.259933e76d14ea303a134d41dda9833442682e79.log`. The test now has a 180-second test-specific timeout to accommodate the observed load-sensitive runtime. This adjustment and its evidence update still need a fresh complete local gate. CI-06/CI-07 remain pending; no terminal exact-hygiene receipt exists, no candidate with this adjustment has been synchronized, and the live Phase 139 finalizer was not rerun.
