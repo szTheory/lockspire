@@ -13,7 +13,7 @@ affects: [phase-140-verification, phase-140-acceptance, CI-06, CI-07]
 actuals:
   tokens: 1800
   tasks: 1
-  commits: 3
+  commits: 4
 tech-stack:
   added: []
   patterns: [main-only exact-SHA remote refresh]
@@ -28,8 +28,8 @@ key-files:
 key-decisions:
   - "Exact-SHA acceptance refreshes only the selected remote main ref, with tags and pruning excluded."
   - "CI-06 and CI-07 remain pending until final local, remote, CI, Release, and hygiene evidence joins on one SHA."
-requirements-completed: [BASE-03, CI-06, CI-07]
-requirements-pending: []
+requirements-completed: [BASE-03]
+requirements-pending: [CI-06, CI-07]
 coverage:
   - id: D1
     description: "Exact-SHA acceptance accepts and records only the main-only no-tags fetch and preserves fail-closed refresh errors."
@@ -45,8 +45,11 @@ coverage:
       - kind: other
         ref: "/private/tmp/lockspire-140-plan/140-15-final-acceptance.47fbdf68a33c0542afa479c43aa95da2174b2bd6.json"
         status: pass
+      - kind: other
+        ref: "/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.f9a0c50a7ef117aa8023fae823d14c12e95f46c2.log; GitHub CI run 37024977354"
+        status: fail
     human_judgment: false
-    rationale: "The first authorized candidate passed the executable exact-SHA join. This completion-record commit creates a new candidate that still requires a fresh T2 packet and terminal T3 run."
+    rationale: "The first authorized candidate passed the executable exact-SHA join. The post-write candidate failed local mix ci and canonical CI, so CI-06/CI-07 remain pending and no terminal acceptance receipt exists."
 duration: 7min
 completed: 2026-10-02
 status: in_progress
@@ -59,9 +62,9 @@ The exact-SHA hygiene check now refreshes only remote main; its fixture rejects 
 
 ## Progress
 
-- Plan status: T1/T2 complete; corrected candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6 was authorized, fast-forwarded locally, and non-force pushed. T3's first post-summary exact-SHA join passed; this completion-record commit creates a new candidate that still needs a fresh T2 packet and terminal T3 join.
+- Plan status: T1/T2 complete for candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6; its first exact-SHA join passed. After the completion-record commit, candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2 was separately authorized and non-force pushed. Its local mix ci and canonical CI failed; the provisional CI-06/CI-07 marks are reverted to pending in this commit.
 - Focused validation: shell syntax passed; tagged exact-SHA contract passed with 2 tests, 0 failures (58 excluded); Phase 139 planning consistency passed with 2 tests, 0 failures; both changed Elixir files pass mix format --check-formatted.
-- Acceptance status: CI-06 and CI-07 passed together for first candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6 on 2026-10-02. The terminal check must repeat after this summary and lifecycle write on the resulting candidate SHA; revert the completion marks if that check fails.
+- Acceptance status: First candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6 passed together on 2026-10-02. Post-write candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2 failed local and canonical CI, so CI-06/CI-07 are pending. No terminal exact-hygiene receipt was produced.
 
 ## Accomplishments
 
@@ -95,9 +98,16 @@ Canonical CI run [37010692578](https://github.com/szTheory/lockspire/actions/run
 
 The mode-0600 receipt is `/private/tmp/lockspire-140-plan/140-15-final-acceptance.47fbdf68a33c0542afa479c43aa95da2174b2bd6.json`, SHA-256 `76b42dc2154c728b6fa096532bcfd49b068276ef203e67964a23e0b28449af5c`. The first exact-hygiene invocation omitted the pinned ASDF variables and stopped at the local-gate check before running tests; the successful retry used Elixir 1.19.5 / OTP 28.1. The failed invocation is retained privately and does not represent a source or test failure.
 
-This is the first passing receipt (A), not the terminal receipt. The tracked completion-record changes in this commit create a new SHA; the next step is a fresh packet and separate exact-candidate authorization if local/remote synchronization requires a ref action, then one terminal T3 run with no later tracked write. Do not transfer the 47fbdf68 receipt to the new SHA. The known failed live Phase 139 finalizer remains historical and was not rerun.
+This is the first passing receipt (A), not the terminal receipt. The tracked completion-record changes created candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2`; its separate T2 checkpoint was approved, and it was pushed normally. Do not transfer the 47fbdf68 receipt to that SHA. The known failed live Phase 139 finalizer remains historical and was not rerun.
+
+## Post-write candidate terminal-gate failure
+
+The completion-record candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` was authorized and pushed non-force. Fresh refs matched at that SHA, the worktree was clean, and all four protected execution-entry hashes remained unchanged. Local `mix ci` then failed: **1,441 tests, 8 failures, 6 skipped (286 excluded)** after 1,612.8 seconds. The mode-0600 log is `/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.f9a0c50a7ef117aa8023fae823d14c12e95f46c2.log`. Seven failures were Phase 139/140 lifecycle relation fixtures; one was the baseline-snapshot relation fixture timing out after 180 seconds. The unit gate stopped before the integration suite.
+
+Canonical CI run [37024977354](https://github.com/szTheory/lockspire/actions/runs/37024977354) failed on this SHA: Fast Checks reported 1,441 tests / 7 failures; Minimum Supported Elixir/OTP reported 1,727 tests / 7 failures. Integration Checks, Dialyzer, Release Hygiene Drift, and Adoption Demo Smoke succeeded; Complete Coverage Evidence was skipped. Release run [37024977672](https://github.com/szTheory/lockspire/actions/runs/37024977672) succeeded with `Maintain Release Please PR` successful and all four protected publication jobs skipped. Release Please Auto Merge run 37026427771 was skipped and did not advance `main`.
+
+The terminal `repo_hygiene_check.sh --accept-sha` join was not run: its mandatory local gate and required CI were already observed failing on the candidate. No f9a0 terminal receipt exists. The exact WARN-disposition file is empty and mode 0600; Docker 29.5.2 was reachable, with no project containers or volumes. CI-06/CI-07 are reverted to pending in this commit. Preserve the historical classifier and failed live Phase 139 observation; do not rerun the live finalizer.
 
 ## Remaining plan work
 
-- Refresh the packet for this completion-record candidate and stop at T2 for its own exact approval before local-main movement or push.
-- After synchronization, run the terminal exact-SHA acceptance command and verify its receipt, canonical jobs, protected hashes, clean worktree, and all four equal refs. If any predicate fails, restore CI-06/CI-07 marks to pending in a new commit.
+- T3 is blocked on `f9a0c50…`: local `mix ci` and canonical CI failed. This commit restores CI-06/CI-07 to pending and records the evidence. Any future attempt requires addressing the fixture failures without broadening the Phase 139 classifier, then a fresh exact-candidate packet and its own blocking-human ref-action checkpoint.

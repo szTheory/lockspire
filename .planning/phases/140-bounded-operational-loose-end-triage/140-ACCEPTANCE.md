@@ -75,3 +75,14 @@ The first T3 evidence run (A) passed for full candidate `47fbdf68a33c0542afa479c
 The first exact-hygiene invocation omitted the pinned ASDF variables and returned a local-gate BLOCK before tests ran. The corrected invocation used `ASDF_ELIXIR_VERSION=1.19.5-otp-28`, `ASDF_ERLANG_VERSION=28.1`, `ERL_FLAGS='+S 1:1'`, and the private Hex cache; it completed successfully. This was an invocation correction, not a source or test failure.
 
 This receipt is dated predecessor evidence. The completion-record commit that follows changes the candidate SHA, so CI-06/CI-07 are not terminal until the resulting candidate has its own current receipt after fresh T2 review and synchronization. Run the final automated evidence join once and make no tracked write after it. If it fails, restore the CI-06/CI-07 marks to pending. The live Phase 139 finalizer was not rerun.
+
+## Plan 140-15 post-write candidate failure (2026-10-02)
+
+The separately authorized post-write candidate was `f9a0c50a7ef117aa8023fae823d14c12e95f46c2`. At post-push verification, `HEAD`, local `main`, freshly fetched `origin/main`, and advertised `origin/main` matched; the worktree was clean and all four protected execution-entry hashes matched their preserved values.
+
+- Pinned local `mix ci` failed: **1,441 tests, 8 failures, 6 skipped (286 excluded)** after 1,612.8 seconds. Seven failures were Phase 139/140 lifecycle relation fixtures; the baseline-snapshot relation fixture timed out after 180 seconds. The run stopped before integration tests. Mode-0600 log: `/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.f9a0c50a7ef117aa8023fae823d14c12e95f46c2.log`.
+- Canonical CI run [37024977354](https://github.com/szTheory/lockspire/actions/runs/37024977354) failed: Fast Checks reported 1,441 tests / 7 failures and Minimum Supported Elixir/OTP reported 1,727 tests / 7 failures. Integration Checks, Dialyzer, Release Hygiene Drift, and Adoption Demo Smoke succeeded; Complete Coverage Evidence was skipped.
+- Release run [37024977672](https://github.com/szTheory/lockspire/actions/runs/37024977672) succeeded with `Maintain Release Please PR` successful and all four protected publication jobs skipped. Release Please Auto Merge run 37026427771 was skipped; `main` remained at the candidate.
+- Docker 29.5.2 was reachable, and the exact project-label queries found no running or stopped adoption-demo containers and no project volumes. The mode-0600 WARN disposition file is empty.
+
+The terminal `repo_hygiene_check.sh --accept-sha` command was not run because its required local gate and canonical CI were already failing for this SHA. No terminal receipt exists. CI-06 and CI-07 remain pending; the first passing receipt for `47fbdf68a33c0542afa479c43aa95da2174b2bd6` does not transfer. The tracked requirement marks have been restored to pending. Preserve the Phase 139 classifier and historical failed live observation; the live Phase 139 finalizer was not rerun.

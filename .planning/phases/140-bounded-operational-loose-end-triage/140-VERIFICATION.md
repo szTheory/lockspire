@@ -1,6 +1,6 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-verified: 2026-10-02T14:57:53Z
+verified: 2026-10-02T15:53:09Z
 status: gaps_found
 score: 30/32 must-haves verified
 covered_files:
@@ -74,30 +74,30 @@ re_verification:
   gaps_closed:
     - "Plan 140-06 valid/hostile recovery-v2 behavior at the historical planning-entry stage; Plan 140-14 now exercises the real finalizer through its no-publish barrier."
   gaps_remaining:
-    - "CI-06 terminal same-SHA local CI, exact hygiene, and canonical required CI acceptance after the completion-record write."
-    - "CI-07 terminal successful Release no-publish job graph on that same final SHA."
+    - "CI-06 a post-write candidate with passing local mix ci, exact hygiene, and all required canonical CI jobs; candidate f9a0c50 failed local and canonical CI."
+    - "CI-07 a terminal successful Release no-publish graph joined with passing local CI and exact hygiene on the same candidate."
   regressions: []
 gaps:
   - truth: "CI-06 is accepted only after one final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with current-SHA local mix ci, exact hygiene, and every required canonical CI job passing."
     status: failed
-    reason: "The first exact-SHA acceptance pass succeeded on 47fbdf68a33c0542afa479c43aa95da2174b2bd6: local mix ci passed, exact hygiene returned 24 PASS / 0 WARN / 0 BLOCK, and all seven canonical CI jobs passed. The required completion-record write then creates a new candidate SHA, so terminal same-SHA acceptance for that post-write candidate remains pending; the 47fbdf68 receipt cannot transfer."
+    reason: "The first exact-SHA acceptance pass succeeded on 47fbdf68a33c0542afa479c43aa95da2174b2bd6. Post-write candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2 had local mix ci fail with 1,441 tests and 8 failures, and canonical CI run 37024977354 fail in Fast Checks and Minimum Supported Elixir/OTP with 7 failures each. The final exact hygiene join was not run and no terminal receipt exists."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
         issue: "The exact-candidate synchronization and acceptance steps remain pending."
       - path: .planning/REQUIREMENTS.md
-        issue: "CI-06 records the passing first receipt but explicitly requires terminal recheck on the post-write candidate."
+        issue: "CI-06 is reverted to pending; the first receipt passed on 47fbdf68, but post-write candidate f9a0c50 failed local and canonical CI."
     missing:
-      - "Refresh and authorize the post-write exact candidate as required, synchronize refs, then attach local mix ci, exact hygiene, and required canonical CI evidence to that same full SHA."
+      - "Address the recorded fixture failures without broadening the Phase 139 classifier, then prove passing local mix ci, exact hygiene, and required canonical CI on one freshly authorized candidate."
   - truth: "CI-07 is accepted only after the successful intentional Release no-publish job graph is proven on the same final synchronized SHA as CI-06."
     status: failed
-    reason: "The first exact-SHA pass has a successful Release no-publish job graph on 47fbdf68a33c0542afa479c43aa95da2174b2bd6 (run 37010692603). The completion-record write creates a new candidate, so that graph does not satisfy the terminal same-SHA join for the post-write candidate."
+    reason: "Release run 37024977672 succeeded on post-write candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2, with Maintain Release Please PR successful and all four protected publication jobs skipped. However, local mix ci and canonical CI failed on that SHA, so CI-07 has no passing same-SHA acceptance join or terminal exact hygiene receipt."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
         issue: "CI-07 is explicitly pending the same-SHA Release result."
       - path: .planning/REQUIREMENTS.md
-        issue: "CI-07 records the passing first Release graph but explicitly requires terminal recheck on the post-write candidate."
+        issue: "The f9a0c50 Release graph passed, but CI-07 remains pending because the same candidate's local and canonical CI failed."
     missing:
-      - "A successful post-write final-SHA Release workflow with the expected no-publish job outcomes, joined by exact hygiene acceptance."
+      - "A successful Release no-publish graph joined with passing local CI, canonical CI, and exact hygiene on one new final candidate."
 deferred:
   - truth: "The project Current State section describes Phase 140 as still executing Plan 140-02."
     addressed_in: "Phase 141"
@@ -134,8 +134,8 @@ The denominator carries forward the original 31 truths and adds the Plan 140-14 
 | 12 | Plan 13 preserves one-to-one source identity/disposition and invalidates action authority on interruption or concurrent change. | ✓ VERIFIED | Current inventory/disposition records, receipt identity fixtures, and recovery evidence preserve these constraints; the Plan 140-14 fixture also checks state unchanged around both probes. |
 | 13 | Historical Phase 139 entry acceptance is distinct from final exact-main CI/Release acceptance. | ✓ VERIFIED | Plan 140-14 identifies the accepted historical SHA `c6332d3a8b716b938f93d978243281764e3eac41`, the live completed-phase failure at `5259a654…`, and the separate exact-candidate route. The classifier was not changed. |
 | 14 | The live Phase 139 post-transition failure is retained as a failed observation, the strict planning-prefix classifier is preserved, and completed-phase acceptance uses the independent exact-SHA route. | ✓ VERIFIED | The live result at `5259a6545c04277ee44038779b23b139b6b1fcb2` is explicitly `relation_boundary|phase-139-sealed-candidate|refresh_required` before the barrier; first unsupported execution commit is `d9ed1899bed11f80891475fd11bce07da6ac4892`. Plan 140-14 and `140-ACCEPTANCE.md` preserve this failure, prohibit broadening the classifier, and route final acceptance through the separate post-summary exact-SHA sequence. This is a correct failed-gate disposition, not a passing live gate. |
-| 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ PENDING TERMINAL RECHECK | First exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed local `mix ci`, exact hygiene (24 PASS / 0 WARN / 0 BLOCK), and all seven canonical CI jobs. The required completion-record write creates a new candidate; its terminal same-SHA receipt is not yet available. |
-| 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ PENDING TERMINAL RECHECK | The first exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has successful Release no-publish run `37010692603`. The completion-record write creates a new candidate; its terminal same-SHA Release graph is not yet available. |
+| 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ BLOCKED | The first exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed. Post-write candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` failed local `mix ci` (1,441 tests, 8 failures) and canonical CI run `37024977354` (Fast Checks and Minimum Supported Elixir/OTP each failed with 7 tests); no terminal hygiene receipt exists. |
+| 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ BLOCKED | Release run `37024977672` passed on `f9a0c50a7ef117aa8023fae823d14c12e95f46c2`, with four protected publication jobs skipped, but that SHA's local and canonical CI failed, so the same-SHA acceptance join is incomplete. |
 
 **Score:** 30/32 truths verified; 2 failed; 0 behavior-unverified.
 
@@ -159,7 +159,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 | `140-ACCEPTANCE.md` | Fail-closed final-SHA acceptance sequence | ✓ VERIFIED | Same-SHA local, hygiene, canonical CI, and Release no-publish requirements are distinct; CI-06/CI-07 remain pending. |
 | `test/support/lockspire/release_proof/package_assertions.ex` and `repository_hygiene_contract_test.exs` | Real finalizer valid/hostile recovery-v2 fixture | ✓ VERIFIED | Focused test reaches exact positive barrier and hostile archived-digest rejection; fixture state invariants are asserted and focused log passes. |
 | `scripts/maintainer/finalize_phase_139_acceptance.sh` and `baseline_inventory.sh` | Historical entry and strict relation boundary | ✓ VERIFIED (historical boundary) | Existing classifier remains intact. Its current completed-phase live invocation still fails at the recorded relation boundary; that failed runtime truth remains open. |
-| Final exact candidate, CI, hygiene, and Release receipts | One synchronized full SHA with all required evidence | ⚠️ FIRST RECEIPT PASSED; TERMINAL RECHECK PENDING | First candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has the full passing receipt. The completion-record write creates a new candidate that needs a fresh checkpoint and terminal same-SHA CI, hygiene, and Release join. |
+| Final exact candidate, CI, hygiene, and Release receipts | One synchronized full SHA with all required evidence | ✗ BLOCKED | First candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has a complete passing receipt. Post-write candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` failed local and canonical CI; the terminal hygiene command was not run and no terminal receipt exists. |
 
 ### Key Link Verification
 
@@ -168,7 +168,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 | Historical accepted Phase 139 fixture | Real `finalize_phase_139_acceptance.sh` entry point | Focused ExUnit fixture, no publish argument | ✓ WIRED | Test executes the copied production finalizer and reaches the exact no-publish barrier. |
 | Tampered archived predecessor | Receipt archive validation | Same production entry point | ✓ WIRED | Rejected at `superseded receipt archive digest` before the no-publish barrier. |
 | Completed Phase 140 live candidate | Historical planning-prefix relation classifier | Production post-transition invocation | ✗ NOT PASSING; disposition verified | Live probe exits at `relation_boundary|phase-139-sealed-candidate|refresh_required`; Plan 140-14 requires preserving this result and using the separate final exact-SHA route. |
-| Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ⚠️ FIRST RECEIPT PASSED; TERMINAL RECHECK PENDING | Candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed; the post-write candidate needs its own full join. |
+| Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ✗ BLOCKED | `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` synchronized and its Release run passed, but local mix ci and canonical CI failed; exact hygiene has no terminal receipt. |
 
 ### Data-Flow Trace (Level 4)
 
@@ -201,8 +201,8 @@ No phase-declared or conventional `scripts/*/tests/probe-*.sh` probes were ident
 | TRIAGE-03 | ✓ SATISFIED (dated evidence) | Six dependency PRs have independent assessments and separate deferrals; refresh mutable upstream/check evidence before any PR action. |
 | LOOSE-02 | ✓ SATISFIED | 114 current source IDs map exactly once; historical records remain separately labeled. |
 | LOOSE-03 | ✓ SATISFIED locally | Bounded repairs and Plan 140-14 focused/full local evidence pass. The live Phase 139 relation failure remains separately explicit; WR-01 remains cause-unknown with a recurrence trigger. |
-| CI-06 | ✓ FIRST RECEIPT PASSED; TERMINAL RECHECK PENDING | Candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has local `mix ci`, exact hygiene, and all required canonical CI jobs passing. The post-write final candidate must repeat the joined evidence. |
-| CI-07 | ✓ FIRST RECEIPT PASSED; TERMINAL RECHECK PENDING | Candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has successful Release no-publish run `37010692603`; the post-write final candidate must produce its own joined graph. |
+| CI-06 | ✗ BLOCKED (first receipt passed; terminal candidate failed) | Candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed. Candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` failed local mix ci and canonical CI; marks are pending. |
+| CI-07 | ✗ BLOCKED (first receipt passed; terminal join failed) | Release run `37024977672` passed on `f9a0c50a7ef117aa8023fae823d14c12e95f46c2`, but local and canonical CI failed and exact hygiene did not produce a terminal receipt. |
 
 ### Test Quality Audit
 
@@ -211,7 +211,7 @@ No phase-declared or conventional `scripts/*/tests/probe-*.sh` probes were ident
 | `test/lockspire/release/repository_hygiene_contract_test.exs` (`phase140_entrypoint_recovery`) | LOOSE-03, BASE-03 | Active; no disabled marker found in the scanned requirement-linked test paths | Behavioral | PASS — asserts real entrypoint diagnostics plus before/after fixture identities and publication state. |
 | `test/support/lockspire/release_proof/package_assertions.ex` | LOOSE-03, BASE-03 | Fixture/support code | Behavioral | PASS — builds isolated fixture receipts/refs and checks exact independent diagnostics; expected values are asserted directly rather than generated as golden output by the production path. |
 
-Circular expected-value generation was not found in the Plan 140-14 proof. The complete CI log includes the focused selector and passes both unit and integration groups. The `FETCH_HEAD` access error is retained as a local audit freshness limitation, with a separate successful advisory refresh recorded in the summary.
+Circular expected-value generation was not found in the Plan 140-14 proof. Its saved complete CI log includes the focused selector and passes both unit and integration groups. The post-write candidate's separate full local `mix ci` failed in eight Phase 139/140 relation fixtures, including one 180-second timeout, and did not reach the integration suite. Canonical run `37024977354` also failed its Fast Checks and Minimum Supported Elixir/OTP test jobs; it is recorded separately from the first candidate's pass. The earlier `FETCH_HEAD` access caveat remains historical, with a separate successful advisory refresh recorded in the summary.
 
 ### Anti-Patterns Found
 
@@ -228,9 +228,9 @@ None. This is an infrastructure/maintenance phase; its unresolved items are dete
 
 ### Gaps Summary
 
-Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: the valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, the focused selector passes, and the full local CI candidate is green. The live post-transition invocation at `5259a654` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retain this as a failed observation and preserve the strict classifier. The Phase 139 finalizer was not rerun. The first exact-SHA acceptance pass on `47fbdf68a33c0542afa479c43aa95da2174b2bd6` then passed local `mix ci`, exact hygiene, all seven canonical CI jobs, and the successful Release no-publish workflow. The required completion-record write creates a new candidate, so CI-06 and CI-07 remain open only for terminal same-SHA revalidation of that post-write candidate; the first receipt does not transfer. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete before terminal acceptance passes.
+Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: its valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, and its saved local CI candidate is green. The live post-transition invocation at `5259a654` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retain this historical failure and preserve the strict classifier. The live Phase 139 finalizer was not rerun. First exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed the full acceptance join. Post-write candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` failed local `mix ci` (1,441 tests, 8 failures) and canonical CI run `37024977354` (Fast Checks and Minimum Supported Elixir/OTP failed with 7 test failures each). Its Release no-publish run `37024977672` passed, but no terminal exact hygiene receipt was produced. CI-06 and CI-07 are therefore pending; the first receipt does not transfer. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete.
 
 ---
 
-_Verified: 2026-10-02T14:57:53Z_
+_Verified: 2026-10-02T15:53:09Z_
 _Verifier: the agent (gsd-verifier)_
