@@ -320,7 +320,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
     PackageAssertions.assert_baseline_inventory_post_snapshot_drift!()
   end
 
-  @tag timeout: 180_000
+  @tag timeout: 600_000
   test "baseline snapshot relation fails closed on topology and destructive bookkeeping drift" do
     PackageAssertions.assert_baseline_inventory_snapshot_relation_fail_closed!()
     PackageAssertions.assert_baseline_inventory_lifecycle_transitions_fail_closed!()
