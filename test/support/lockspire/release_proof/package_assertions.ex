@@ -66,7 +66,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   def assert_phase_139_exact_sha_hygiene! do
     script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
-    {output, status} = run_exact_sha_hygiene_fixture!()
+    {output, status} = run_exact_sha_hygiene_fixture!("success", assert_main_only_fetch: true)
 
     assert status == 0, output
 
@@ -8426,7 +8426,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     Path.join(System.tmp_dir!(), "#{prefix}-#{suffix}")
   end
 
-  defp run_exact_sha_hygiene_fixture!(scenario \\ "success", options \\ []) do
+  defp run_exact_sha_hygiene_fixture!(scenario, options) do
     fixture = unique_tmp_fixture("lockspire-exact-sha-hygiene")
     bin = Path.join(fixture, "bin")
     state = Path.join(fixture, "state")
@@ -8475,6 +8475,25 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           ],
           stderr_to_stdout: true
         )
+
+      if Keyword.get(options, :assert_main_only_fetch, false) do
+        fetch_log = Path.join(state, "fetch.argv")
+
+        assert File.exists?(fetch_log), "exact-SHA acceptance did not refresh origin/main"
+
+        fetch_commands =
+          fetch_log
+          |> File.read!()
+          |> String.split("\n", trim: true)
+
+        assert fetch_commands != [], "exact-SHA acceptance recorded no fetch command"
+
+        assert Enum.all?(fetch_commands, fn command ->
+                 command ==
+                   "fetch --no-tags origin refs/heads/main:refs/remotes/origin/main"
+               end),
+               "exact-SHA acceptance must fetch only origin/main without tags or pruning"
+      end
 
       refute Enum.any?(File.ls!(state), &String.starts_with?(&1, "lockspire-mix-ci."))
       result
@@ -8534,7 +8553,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       "rev-parse origin/main")
         [ "$scenario" = "remote-mismatch" ] && printf '%s\n' "$other_sha" || printf '%s\n' "$FAKE_HYGIENE_SHA" ;;
       "status --porcelain") [ "$scenario" = "status-failure" ] && exit 93 || : ;;
-      "fetch origin --prune"|"fetch origin --prune --tags"|"fetch --prune origin"|"fetch --prune --tags origin")
+      "fetch --no-tags origin refs/heads/main:refs/remotes/origin/main")
+        printf '%s\n' "$*" >> "$FAKE_HYGIENE_STATE/fetch.argv"
         [ "$scenario" = "fetch-failure" ] && exit 94 || exit 0 ;;
       *) printf 'unexpected fake git command\n' >&2; exit 90 ;;
     esac

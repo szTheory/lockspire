@@ -177,7 +177,7 @@ validate_acceptance_sha() {
 validate_acceptance_identity() {
   local head main remote_main
 
-  if ! git fetch "$REMOTE" --prune >/dev/null 2>&1; then
+  if ! git fetch --no-tags "$REMOTE" "refs/heads/main:refs/remotes/$REMOTE/main" >/dev/null 2>&1; then
     acceptance_block "acceptance identity" "remote main refresh failed"
     return
   fi
