@@ -86,3 +86,15 @@ The separately authorized post-write candidate was `f9a0c50a7ef117aa8023fae823d1
 - Docker 29.5.2 was reachable, and the exact project-label queries found no running or stopped adoption-demo containers and no project volumes. The mode-0600 WARN disposition file is empty.
 
 The terminal `repo_hygiene_check.sh --accept-sha` command was not run because its required local gate and canonical CI were already failing for this SHA. No terminal receipt exists. CI-06 and CI-07 remain pending; the first passing receipt for `47fbdf68a33c0542afa479c43aa95da2174b2bd6` does not transfer. The tracked requirement marks have been restored to pending. Preserve the Phase 139 classifier and historical failed live observation; the live Phase 139 finalizer was not rerun.
+
+## Plan 140-15 follow-up candidate failure (2026-10-02)
+
+The separately authorized candidate `1ca94e8ca31d46ea3550f596208e96ce2cb8d607` was pushed with a normal non-force update. At post-push verification, `HEAD`, local `main`, freshly fetched `origin/main`, and advertised `origin/main` matched, and the worktree was clean.
+
+- Pinned local `mix ci` failed after 1,150.5 seconds: **1,441 tests, 7 failures, 6 skipped (286 excluded)**. All seven were Phase 139/140 repository-hygiene contract fixtures whose synthetic Phase 139 completion relation returned `refresh_required`. Mode-0600 log: `/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.1ca94e8ca31d46ea3550f596208e96ce2cb8d607.log`.
+- Canonical CI run [37030798398](https://github.com/szTheory/lockspire/actions/runs/37030798398) failed in Fast Checks (1,441 tests / 7 failures) and Minimum Supported Elixir/OTP (1,727 tests / 7 failures). Integration Checks, Dialyzer, Release Hygiene Drift, and Adoption Demo Smoke succeeded; Complete Coverage Evidence was skipped.
+- Release run [37030798360](https://github.com/szTheory/lockspire/actions/runs/37030798360) succeeded with `Maintain Release Please PR` successful and all four protected publication jobs skipped. Release Please Auto Merge run 37032202307 was skipped; `main` remained at the candidate.
+
+Diagnosis: the Phase 139 fixture copied the current root `.planning/REQUIREMENTS.md`, then replaced it with a pinned historical completion snapshot. The candidate had four extra requirement-description and traceability lines, exceeding the strict validator's expected 14-line completion diff. The local test-support repair seeds that file from the historical verification parent instead. It does not change the Phase 139 classifier. Focused affected selectors passed on rerun; the full local gate and a new pushed candidate are still required.
+
+The terminal `repo_hygiene_check.sh --accept-sha` join was not run because local `mix ci` and required canonical CI failed. No terminal receipt exists for `1ca94e8`. CI-06 and CI-07 remain pending, and the first receipt for `47fbdf68a33c0542afa479c43aa95da2174b2bd6` does not transfer. The live Phase 139 finalizer was not rerun.

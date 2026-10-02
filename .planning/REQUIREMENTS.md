@@ -22,8 +22,8 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 ### CI and Release Evidence
 
-- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. First candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed, but post-write candidate `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` failed local and canonical CI; see the Phase 140-15 terminal-candidate disposition.
-- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release passed on `f9a0c50a7ef117aa8023fae823d14c12e95f46c2`, but CI and local `mix ci` failed, so the required same-SHA acceptance join is incomplete.
+- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. First candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed, but post-write candidates `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` and `1ca94e8ca31d46ea3550f596208e96ce2cb8d607` failed local and canonical CI; see the Phase 140-15 terminal-candidate disposition.
+- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release passed on `1ca94e8ca31d46ea3550f596208e96ce2cb8d607`, but CI and local `mix ci` failed, so the required same-SHA acceptance join is incomplete.
 - [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
@@ -83,7 +83,7 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
 | TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | Pending (post-write candidate CI failed) |
+| CI-06 | Phase 140 | Pending (post-write candidates failed CI) |
 | CI-07 | Phase 140 | Pending (Release passed, but the same-SHA acceptance join failed) |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |

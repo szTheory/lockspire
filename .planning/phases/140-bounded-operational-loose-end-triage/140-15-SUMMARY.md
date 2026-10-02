@@ -48,8 +48,11 @@ coverage:
       - kind: other
         ref: "/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.f9a0c50a7ef117aa8023fae823d14c12e95f46c2.log; GitHub CI run 37024977354"
         status: fail
+      - kind: other
+        ref: "/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.1ca94e8ca31d46ea3550f596208e96ce2cb8d607.log; GitHub CI run 37030798398"
+        status: fail
     human_judgment: false
-    rationale: "The first authorized candidate passed the executable exact-SHA join. The post-write candidate failed local mix ci and canonical CI, so CI-06/CI-07 remain pending and no terminal acceptance receipt exists."
+    rationale: "The first authorized candidate passed the executable exact-SHA join. Both post-write candidates failed local mix ci and canonical CI, so CI-06/CI-07 remain pending and no terminal acceptance receipt exists."
 duration: 7min
 completed: 2026-10-02
 status: in_progress
@@ -62,9 +65,9 @@ The exact-SHA hygiene check now refreshes only remote main; its fixture rejects 
 
 ## Progress
 
-- Plan status: T1/T2 complete for candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6; its first exact-SHA join passed. After the completion-record commit, candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2 was separately authorized and non-force pushed. Its local mix ci and canonical CI failed; the provisional CI-06/CI-07 marks are reverted to pending in this commit.
+- Plan status: T1/T2 complete for candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6; its first exact-SHA join passed. Post-write candidates f9a0c50a7ef117aa8023fae823d14c12e95f46c2 and 1ca94e8ca31d46ea3550f596208e96ce2cb8d607 were separately authorized and non-force pushed. Both candidates' local mix ci and canonical CI failed; CI-06/CI-07 remain pending.
 - Focused validation: shell syntax passed; tagged exact-SHA contract passed with 2 tests, 0 failures (58 excluded); Phase 139 planning consistency passed with 2 tests, 0 failures; both changed Elixir files pass mix format --check-formatted.
-- Acceptance status: First candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6 passed together on 2026-10-02. Post-write candidate f9a0c50a7ef117aa8023fae823d14c12e95f46c2 failed local and canonical CI, so CI-06/CI-07 are pending. No terminal exact-hygiene receipt was produced.
+- Acceptance status: First candidate 47fbdf68a33c0542afa479c43aa95da2174b2bd6 passed together on 2026-10-02. Post-write candidates f9a0c50a7ef117aa8023fae823d14c12e95f46c2 and 1ca94e8ca31d46ea3550f596208e96ce2cb8d607 failed local and canonical CI, so CI-06/CI-07 are pending. No terminal exact-hygiene receipt was produced.
 
 ## Accomplishments
 
@@ -108,6 +111,18 @@ Canonical CI run [37024977354](https://github.com/szTheory/lockspire/actions/run
 
 The terminal `repo_hygiene_check.sh --accept-sha` join was not run: its mandatory local gate and required CI were already observed failing on the candidate. No f9a0 terminal receipt exists. The exact WARN-disposition file is empty and mode 0600; Docker 29.5.2 was reachable, with no project containers or volumes. CI-06/CI-07 are reverted to pending in this commit. Preserve the historical classifier and failed live Phase 139 observation; do not rerun the live finalizer.
 
+## Follow-up candidate failure and fixture diagnosis (2026-10-02)
+
+Candidate `1ca94e8ca31d46ea3550f596208e96ce2cb8d607` was approved and pushed with a normal non-force update. Fresh `HEAD`, local `main`, fetched `origin/main`, and advertised `origin/main` matched; the worktree was clean. The four protected execution-entry hashes were unchanged.
+
+Pinned local `mix ci` failed after 1,150.5 seconds: **1,441 tests, 7 failures, 6 skipped (286 excluded)**. All seven failures were Phase 139/140 contract fixtures in `test/lockspire/release/repository_hygiene_contract_test.exs` (lines 354, 360, 367, 379, 386, 392, and 398). Their generated Phase 139 completion relation returned `refresh_required`. The mode-0600 log is `/private/tmp/lockspire-140-plan/phase140-15-post-sync-mix-ci.1ca94e8ca31d46ea3550f596208e96ce2cb8d607.log`.
+
+Canonical CI run [37030798398](https://github.com/szTheory/lockspire/actions/runs/37030798398) failed: Fast Checks reported 1,441 tests / 7 failures; Minimum Supported Elixir/OTP reported 1,727 tests / 7 failures. Integration Checks, Dialyzer, Release Hygiene Drift, and Adoption Demo Smoke passed; Complete Coverage Evidence was skipped. Release run [37030798360](https://github.com/szTheory/lockspire/actions/runs/37030798360) succeeded with `Maintain Release Please PR` successful and all four protected publication jobs skipped. Release Please Auto Merge run 37032202307 was skipped and did not advance `main`.
+
+The common cause was the fixture seed: `copy_phase_139_planning_fixture!/1` copied the current root `.planning/REQUIREMENTS.md`, then the fixture rewrote it to its pinned historical Phase 139 completion snapshot. The four candidate-specific lines in `REQUIREMENTS.md` made the synthetic completion diff exceed the validator's exact 14-line contract, so it classified that fixture commit as unknown. The production classifier remains unchanged. A local test-support repair now also seeds `REQUIREMENTS.md` from the pinned completion's verification parent; focused inventory, recovery, final-acceptance, and receipt selectors passed on rerun. Full local CI and a new synchronized candidate are still pending.
+
+The exact terminal hygiene join was not run because this candidate's local gate and required CI failed. No terminal receipt exists for `1ca94e8`. Keep CI-06/CI-07 pending and preserve the failed live Phase 139 observation; the live finalizer was not rerun.
+
 ## Remaining plan work
 
-- T3 is blocked on `f9a0c50…`: local `mix ci` and canonical CI failed. This commit restores CI-06/CI-07 to pending and records the evidence. Any future attempt requires addressing the fixture failures without broadening the Phase 139 classifier, then a fresh exact-candidate packet and its own blocking-human ref-action checkpoint.
+- T3 remains open: the latest published candidate `1ca94e8…` failed local and canonical CI. A local fixture-seed repair addresses the common root cause without broadening the Phase 139 classifier; run the full local gate, then prepare a fresh exact-candidate packet and its own blocking-human ref-action checkpoint before any further ref action.

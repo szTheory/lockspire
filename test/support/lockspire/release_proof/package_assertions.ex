@@ -6142,6 +6142,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     for path <- [
           ".planning/PROJECT.md",
+          ".planning/REQUIREMENTS.md",
           ".planning/STATE.md",
           ".planning/ROADMAP.md",
           ".planning/state.json"
