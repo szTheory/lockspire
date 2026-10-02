@@ -33,9 +33,9 @@ The previous dated receipt may support only its recorded SHA. Supplemental OIDF/
 
 ## Current disposition
 
-**CI-06: pending.** The required final synchronized-main full SHA, canonical CI run/job identities at that SHA, and exact hygiene receipt do not yet exist. The entry receipt is for an older SHA. A new push, if required after final writes, needs separate exact-candidate authorization.
+**CI-06: predecessor passed; terminal candidate pending.** Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed its full exact-SHA join, recorded below. The completion-record update creates a new candidate; refresh T1 and obtain separate exact-candidate authorization before its normal non-force push, then require a new terminal receipt.
 
-**CI-07: pending.** The successful intentional Release no-publish run and its complete job graph must be queried at the same final synchronized-main SHA. No Release dispatch or publication action is authorized by this contract.
+**CI-07: predecessor passed; terminal candidate pending.** Release run `37056328607` passed the no-publish graph on candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`. The completion-record candidate still requires its own same-SHA Release graph and exact-hygiene receipt. No Release dispatch or publication action is authorized by this contract.
 
 ## Post-merge local verification update (2026-10-01)
 
@@ -116,3 +116,14 @@ The topology/bookkeeping fixture now has a 600-second test-specific timeout. On 
 Pinned `mix ci` passed on candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a`: **1,441 unit tests, 0 failures, 6 skipped (286 excluded)**, followed by **102 integration tests, 0 failures (33 excluded)**. The unit group took 2,031.6 seconds and integration took 66.6 seconds. Mode-0600 log: `/private/tmp/lockspire-140-plan/phase140-15-full-ci.0027dcfed0b2c7d761ce73cccbc366c54332538a.log`. The audit step printed a `.git/FETCH_HEAD` permission error and then reported no vulnerabilities; the overall command exited successfully.
 
 Candidate `0027dcfe` is local-only and its evidence does not satisfy exact-SHA acceptance. The tracked update to record this result creates a new candidate; rerun full local `mix ci` on that resulting SHA before any sync or ref-action checkpoint. No canonical CI, Release, or terminal hygiene receipt exists for `0027dcfe`. CI-06/CI-07 remain pending, and the Phase 139 live finalizer was not rerun.
+
+## Plan 140-15 first post-write receipt A (2026-10-02)
+
+Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed exact acceptance after its separately approved normal non-force push. `HEAD`, local `main`, fetched `origin/main`, and advertised `origin/main` matched; the worktree was clean and the remote diff was empty. The pinned local gate passed with 102 executed ExUnit tests. Exact hygiene reported 24 PASS, 0 WARN, 0 BLOCK; Docker was reachable and no matching containers, volumes, or generated artifacts existed.
+
+- CI push run [37056328643](https://github.com/szTheory/lockspire/actions/runs/37056328643) passed all seven required jobs.
+- Release push run [37056328607](https://github.com/szTheory/lockspire/actions/runs/37056328607) passed; Maintain Release Please PR succeeded and all four protected publication jobs were skipped.
+- Protected-file hashes remained the preserved values: ledger `b200d2491cffd55c5334e03a25f3410945a6df77e43c57172972e61f8c93c10f`; `138-UAT.md` `adebfc5edc5d5671b4776b6c6495643a43123768907635c8905bd7045abd517b`; `138-VERIFICATION.md` `a38ba1062de64e990bd05381cacd1a044abefad1e5d1a6320b72413a7a55cc10`; roadmap ratchet prompt `8cba24252908e0de1a9c64198b0644579970c5c9c1bfa0ab26d733d720ca3b05`.
+- Private mode-0600 exact receipt: `/private/tmp/lockspire-140-plan/140-15-final-acceptance.4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d.json`, SHA-256 `6dc2c03865ec66cd745edc84b23169807ff3e714f5b47e30ac5fd559ff17e8db`.
+
+Receipt A supports these dated completion marks only for its recorded SHA. The tracked completion-record update creates a new candidate, so CI-06 and CI-07 remain pending for that terminal candidate until its own exact receipt passes. If the terminal check fails, restore both requirement marks to pending. No protected Release publication was dispatched, and the live Phase 139 finalizer was not rerun.
