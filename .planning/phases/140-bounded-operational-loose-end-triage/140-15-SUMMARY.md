@@ -13,7 +13,7 @@ affects: [phase-140-verification, phase-140-acceptance, CI-06, CI-07]
 actuals:
   tokens: 1800
   tasks: 1
-  commits: 1
+  commits: 2
 tech-stack:
   added: []
   patterns: [main-only exact-SHA remote refresh]
@@ -56,14 +56,15 @@ The exact-SHA hygiene check now refreshes only remote main; its fixture rejects 
 
 ## Progress
 
-- Plan status: T1 complete; T2 candidate checkpoint and T3 same-SHA acceptance remain.
-- Focused validation: shell syntax passed; tagged contract passed with 2 tests, 0 failures (58 excluded); both changed Elixir files pass mix format --check-formatted.
-- Acceptance status: CI-06 and CI-07 are still pending. This implementation test is not a local full mix ci result or a canonical CI/Release receipt.
+- Plan status: T1 complete; the first T2 candidate was approved and pushed; T3's first canonical CI run exposed and now has a focused regression fix. The corrected candidate needs a fresh T2 checkpoint before synchronization.
+- Focused validation: shell syntax passed; tagged exact-SHA contract passed with 2 tests, 0 failures (58 excluded); Phase 139 planning consistency passed with 2 tests, 0 failures; both changed Elixir files pass mix format --check-formatted.
+- Acceptance status: CI-06 and CI-07 remain pending. The first canonical CI run failed at the test-owner consistency assertion; no passing exact hygiene receipt exists.
 
 ## Accomplishments
 
 - Replaced exact-mode git fetch "$REMOTE" --prune with git fetch --no-tags "$REMOTE" "refs/heads/main:refs/remotes/$REMOTE/main". The separate local local_checks() fetch remains unchanged.
 - Updated the existing exact-SHA fake Git boundary to record and accept only the precise main-only argv. The success contract requires at least one such fetch; the fake rejects other fetch arguments and still simulates refresh failure.
+- Restored the existing tagged test's exact title after the first remote CI run showed that Phase 139's owner check matches this title as a tracked executable entry.
 - Kept the historical Phase 139 live finalizer failure and WR-01 recurrence disposition intact. The live finalizer was not rerun.
 
 ## T1 validation
@@ -75,7 +76,13 @@ Formatting: mix format --check-formatted test/support/lockspire/release_proof/pa
 
 The current exact-candidate packet is captured after this summary and its commit, outside tracked files with restrictive permissions. It will report fresh HEAD, local and remote main, separately advertised remote identity, exact binary diff, porcelain, protected execution-entry hashes, ancestry, and any required normal non-force ref action with its recovery route.
 
+## First T3 attempt on the prior candidate
+
+The initial push of candidate 7f88840923ea829351500f87496efc0ca14e0122 produced Release run 37001116850, which completed successfully: Maintain Release Please PR succeeded and all four protected publication jobs were skipped. CI run 37001116711 failed in Fast Checks and Minimum Supported Elixir/OTP because both encountered the Phase 139 planning-consistency assertion that the original tagged test name remains an executable owner. The accidental title change has been reverted; the direct consistency test and the Plan 15 tagged contract both pass at the corrected worktree. These failed runs belong to the prior candidate and do not satisfy CI-06.
+
+The authorized non-force push succeeded, and GitHub reported bypassing the main branch's no-merge-commits rule because history contains merge 8061247594fb563d79e3b7d62f1d21b6789ede9f. This observation is retained; no force update, publication dispatch, or live Phase 139 finalizer rerun occurred.
+
 ## Remaining plan work
 
-- T2: Recheck and present the exact candidate packet. If refs differ, stop for explicit approval naming that full SHA and the normal non-force ref action. No prior approval transfers. If the refs already match, record that no ref action is needed.
+- T2: Recheck and present the corrected exact candidate packet. The earlier approval applies only to 7f88840923ea829351500f87496efc0ca14e0122 and does not transfer. If the corrected candidate needs local-main movement or a push, stop for its own explicit approval.
 - T3: Only after the T2 condition is satisfied, pursue the full same-SHA local hygiene, canonical CI, and Release no-publish join. Keep CI-06 and CI-07 pending if any evidence or authorization is missing.

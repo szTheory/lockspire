@@ -36,7 +36,7 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   @tag :phase139_gap_closure
   @tag :phase139_exact_sha_hygiene
   @tag timeout: 180_000
-  test "exact-SHA repository hygiene fetches only main and joins synchronized local and workflow truth" do
+  test "exact-SHA repository hygiene joins synchronized local and workflow truth" do
     PackageAssertions.assert_phase_139_exact_sha_hygiene!()
   end
 
