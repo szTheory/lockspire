@@ -22,8 +22,8 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 ### CI and Release Evidence
 
-- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA.
-- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files.
+- [x] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. First complete receipt: `47fbdf68a33c0542afa479c43aa95da2174b2bd6` (2026-10-02); the post-receipt completion-record candidate still requires the terminal same-SHA recheck.
+- [x] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. First complete receipt: `47fbdf68a33c0542afa479c43aa95da2174b2bd6` (2026-10-02); the post-receipt completion-record candidate still requires the terminal same-SHA recheck.
 - [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
@@ -83,8 +83,8 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
 | TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | Pending |
-| CI-07 | Phase 140 | Pending |
+| CI-06 | Phase 140 | Complete (first receipt `47fbdf68`; terminal recheck pending) |
+| CI-07 | Phase 140 | Complete (first receipt `47fbdf68`; terminal recheck pending) |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |
 | HYGIENE-05 | Phase 139 | Complete |
