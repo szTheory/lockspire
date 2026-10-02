@@ -125,7 +125,7 @@ The exact terminal hygiene join was not run because this candidate's local gate 
 
 ## Remaining plan work
 
-- T3 remains open: the latest published candidate `1ca94e8…` failed local and canonical CI. The fixture-seed repair is now in `259933e`; its unit suite passed but the Phase 133 package self-test timed out in the full integration run. A test-specific 180-second limit is set and needs a complete local gate before preparing a fresh exact-candidate packet and its own blocking-human ref-action checkpoint.
+- T3 remains open: published candidate `1ca94e8…` failed local and canonical CI. The fixture-seed repair and two focused timeout adjustments now pass full local `mix ci` on unpublished candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a`. Its evidence is local only; this record update creates a new candidate, which needs a fresh complete local gate before its exact-candidate packet and blocking-human ref-action checkpoint.
 
 ## Fixture-repair candidate local gate (2026-10-02)
 
@@ -138,3 +138,9 @@ The timed test passed in isolation with `--only dependency_lock` in 24.8 seconds
 Candidate `0375505c61057386b125e8cc2415509cc4d87496` included the 180-second timeout for the Phase 133 package self-test and the associated evidence update. During its full `mix ci` run, the unit group reached `test "baseline snapshot relation fails closed on topology and destructive bookkeeping drift"` and that test exceeded its own 180-second limit. It runs the snapshot relation against dozens of isolated Git fixtures and hostile variants. The full mode-0600 log is `/private/tmp/lockspire-140-plan/phase140-15-post-timeout-mix-ci.0375505c61057386b125e8cc2415509cc4d87496.log`; the run was stopped after this confirmed failure, before the unit group or integration suite completed, so it has no full-gate result.
 
 The fixture matrix's timeout is now 600 seconds. On candidate `19092e8016821d6dcad775a2d0e8c3db462f9533`, the focused test passed: **1 test, 0 failures**, in 107.7 seconds. Its mode-0600 log is `/private/tmp/lockspire-140-plan/phase140-15-snapshot-fixture.19092e8016821d6dcad775a2d0e8c3db462f9533.log`. This is a focused result only; the new full `mix ci` run remains pending. The timeout adjustment and follow-up record are local. CI-06/CI-07 stay pending; no terminal exact-hygiene receipt was run, and the Phase 139 live finalizer was not rerun.
+
+## Full local gate after timeout adjustments (2026-10-02)
+
+Candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a` passed pinned full `mix ci`: **1,441 unit tests, 0 failures, 6 skipped (286 excluded)**, then **102 integration tests, 0 failures (33 excluded)**. The unit group took 2,031.6 seconds and integration took 66.6 seconds. Mode-0600 log: `/private/tmp/lockspire-140-plan/phase140-15-full-ci.0027dcfed0b2c7d761ce73cccbc366c54332538a.log`.
+
+The audit command printed `error: cannot open '.git/FETCH_HEAD': Operation not permitted` followed by `No vulnerabilities found.`; `mix ci` returned success. This is retained as an environment caveat, not hidden or treated as a failed gate. This SHA has not been synchronized and has no canonical CI, Release, or terminal exact-hygiene receipt. The requirement and phase-record updates below create a new candidate, so the full local gate must be repeated for that candidate. CI-06/CI-07 remain pending; the Phase 139 live finalizer was not rerun.
