@@ -125,8 +125,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   def assert_phase_139_docker_volume_name_matching! do
     script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
-    assert Regex.match?(~r/project_volumes="\$\(active_project_volume_names\)"/, script)
-    assert Regex.match?(~r/project_volumes="\$\(active_project_volume_names \|\| true\)"/, script)
+
+    assert length(Regex.scan(~r/project_volumes="\$\(active_project_volume_names\)"/, script)) ==
+             2
+
+    refute script =~ "active_project_volume_names || true"
 
     {output, status} =
       run_exact_sha_hygiene_fixture!("docker-volume-exact",
@@ -147,6 +150,69 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     receipt = Jason.decode!(output)
     assert receipt["hygiene"]["warn"] == 0
     assert receipt["warn_dispositions"] == []
+  end
+
+  def assert_phase_139_local_docker_list_failures! do
+    script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
+    assert script =~ "running_observation_failed=true"
+    assert script =~ "stopped_observation_failed=true"
+    assert script =~ "volume_observation_failed=true"
+
+    cases = [
+      {
+        "running-container-list-failure",
+        "[WARN] adoption demo containers: running active-project container state could not be observed for lockspire-adoption-demo",
+        "[PASS] adoption demo containers: no running active-project demo containers found for lockspire-adoption-demo"
+      },
+      {
+        "stopped-container-list-failure",
+        "[WARN] adoption demo stopped containers: stopped active-project container state could not be observed for lockspire-adoption-demo",
+        "[PASS] adoption demo stopped containers: no stopped project containers found for lockspire-adoption-demo"
+      },
+      {
+        "volume-list-failure",
+        "[WARN] adoption demo volumes: active-project volume state could not be observed for lockspire-adoption-demo",
+        "[PASS] adoption demo volumes: no active-project demo volumes found for lockspire-adoption-demo"
+      }
+    ]
+
+    fixture = unique_tmp_fixture("lockspire-local-volume-failure")
+    bin = Path.join(fixture, "bin")
+
+    real_git =
+      System.find_executable("git") || flunk("git is required for the local hygiene fixture")
+
+    try do
+      File.mkdir_p!(bin)
+      File.write!(Path.join(bin, "git"), local_hygiene_git_script())
+      File.write!(Path.join(bin, "gh"), "#!/usr/bin/env bash\nexit 1\n")
+      File.write!(Path.join(bin, "docker"), local_hygiene_docker_script())
+
+      for command <- ["git", "gh", "docker"] do
+        File.chmod!(Path.join(bin, command), 0o755)
+      end
+
+      Enum.each(cases, fn {scenario, expected_warning, forbidden_pass} ->
+        {output, status} =
+          System.cmd(
+            "bash",
+            [Paths.path("scripts/maintainer/repo_hygiene_check.sh"), "--skip-mix-ci"],
+            cd: Paths.path("."),
+            env: [
+              {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+              {"REAL_GIT", real_git},
+              {"FAKE_LOCAL_HYGIENE_SCENARIO", scenario}
+            ],
+            stderr_to_stdout: true
+          )
+
+        assert status in [0, 1], output
+        assert output =~ expected_warning
+        refute output =~ forbidden_pass
+      end)
+    after
+      File.rm_rf(fixture)
+    end
   end
 
   def assert_phase_139_exact_sha_hygiene_fail_closed! do
@@ -183,7 +249,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"successful publication job", "release-published", []},
       {"missing publication job", "release-job-missing", []},
       {"duplicated publication job", "release-job-duplicate", []},
+      {"Docker running-container list failure", "docker-running-list-failure", []},
+      {"Docker stopped-container list failure", "docker-stopped-list-failure", []},
       {"identity movement during Docker inspection", "docker-main-race", []},
+      {"Docker volume-list failure", "docker-volume-list-failure", []},
       {"undispositioned warning", "docker-warn", []},
       {"unknown zero-warning disposition", "success", [dispositions: ["unknown=reviewed"]]},
       {"duplicate warning disposition", "docker-warn",
@@ -8611,11 +8680,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     scenario="${FAKE_HYGIENE_SCENARIO:-success}"
     case "$*" in
       "version") exit 0 ;;
-      "container ls --filter label=com.docker.compose.project=lockspire-adoption-demo --format {{.Names}}") : ;;
+      "container ls --filter label=com.docker.compose.project=lockspire-adoption-demo --format {{.Names}}")
+        [ "$scenario" = "docker-running-list-failure" ] && exit 98 || : ;;
       "container ls --all --filter label=com.docker.compose.project=lockspire-adoption-demo --filter status=exited --format {{.Names}}")
+        if [ "$scenario" = "docker-stopped-list-failure" ]; then exit 99; fi
         [ "$scenario" = "docker-warn" ] && printf 'stopped-demo\n' || : ;;
       "volume list --format {{.Name}}")
         case "$scenario" in
+          docker-volume-list-failure) exit 97 ;;
           docker-main-race) : > "$FAKE_HYGIENE_STATE/docker-inspected" ;;
           docker-volume-exact)
             printf '%s\n' \
@@ -8630,6 +8702,35 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
               'lockspire-adoption-demo_other' ;;
           *) : ;;
         esac ;;
+      *) printf 'unexpected fake docker command\n' >&2; exit 96 ;;
+    esac
+    """
+  end
+
+  defp local_hygiene_git_script do
+    ~S"""
+    #!/usr/bin/env bash
+    set -eu
+    if [[ "$*" == "fetch origin --prune" ]]; then
+      exit 1
+    fi
+    exec "$REAL_GIT" "$@"
+    """
+  end
+
+  defp local_hygiene_docker_script do
+    ~S"""
+    #!/usr/bin/env bash
+    set -eu
+    scenario="${FAKE_LOCAL_HYGIENE_SCENARIO:-volume-list-failure}"
+    case "$*" in
+      "version") exit 0 ;;
+      "container ls --filter label=com.docker.compose.project=lockspire-adoption-demo --format {{.Names}}")
+        [[ "$scenario" != "running-container-list-failure" ]] || exit 97 ;;
+      "container ls --all --filter label=com.docker.compose.project=lockspire-adoption-demo --filter status=exited --format {{.Names}}")
+        [[ "$scenario" != "stopped-container-list-failure" ]] || exit 98 ;;
+      "volume list --format {{.Name}}")
+        [[ "$scenario" != "volume-list-failure" ]] || exit 99 ;;
       *) printf 'unexpected fake docker command\n' >&2; exit 96 ;;
     esac
     """

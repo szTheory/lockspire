@@ -901,23 +901,45 @@ local_demo_docker_hygiene_checks() {
   fi
 
   local running_containers stopped_containers project_volumes
-  running_containers="$(docker container ls --filter "label=com.docker.compose.project=$project" --format '{{.Names}}' 2>/dev/null || true)"
-  stopped_containers="$(docker container ls --all --filter "label=com.docker.compose.project=$project" --filter "status=exited" --format '{{.Names}}' 2>/dev/null || true)"
-  project_volumes="$(active_project_volume_names || true)"
+  local running_observation_failed stopped_observation_failed volume_observation_failed
 
-  if [[ -n "$running_containers" ]]; then
+  running_observation_failed=false
+  if ! running_containers="$(docker container ls --filter "label=com.docker.compose.project=$project" --format '{{.Names}}' 2>/dev/null)"; then
+    running_containers=""
+    running_observation_failed=true
+  fi
+
+  stopped_observation_failed=false
+  if ! stopped_containers="$(docker container ls --all --filter "label=com.docker.compose.project=$project" --filter "status=exited" --format '{{.Names}}' 2>/dev/null)"; then
+    stopped_containers=""
+    stopped_observation_failed=true
+  fi
+
+  volume_observation_failed=false
+  if ! project_volumes="$(active_project_volume_names)"; then
+    project_volumes=""
+    volume_observation_failed=true
+  fi
+
+  if [[ "$running_observation_failed" == true ]]; then
+    record_result "WARN" "adoption demo containers" "running active-project container state could not be observed for $project"
+  elif [[ -n "$running_containers" ]]; then
     record_result "BLOCK" "adoption demo Docker" "running active-project demo containers remain for $project: $(printf '%s' "$running_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-stop --project $project or COMPOSE_PROJECT_NAME=$project make demo-stop"
   else
     record_result "PASS" "adoption demo containers" "no running active-project demo containers found for $project"
   fi
 
-  if [[ -n "$stopped_containers" ]]; then
+  if [[ "$stopped_observation_failed" == true ]]; then
+    record_result "WARN" "adoption demo stopped containers" "stopped active-project container state could not be observed for $project"
+  elif [[ -n "$stopped_containers" ]]; then
     record_result "WARN" "adoption demo stopped containers" "stopped project containers remain for $project: $(printf '%s' "$stopped_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute or COMPOSE_PROJECT_NAME=$project make demo-clean-execute if cleanup is intended (docker-cleanup --execute)"
   else
     record_result "PASS" "adoption demo stopped containers" "no stopped project containers found for $project"
   fi
 
-  if [[ -n "$project_volumes" ]]; then
+  if [[ "$volume_observation_failed" == true ]]; then
+    record_result "WARN" "adoption demo volumes" "active-project volume state could not be observed for $project"
+  elif [[ -n "$project_volumes" ]]; then
     record_result "WARN" "adoption demo volumes" "active project volumes remain for $project: $(printf '%s' "$project_volumes" | tr '\n' ' '); run examples/adoption_demo/bin/docker-cleanup --project $project --execute or COMPOSE_PROJECT_NAME=$project make demo-clean-execute if cleanup is intended (docker-cleanup --execute)"
   else
     record_result "PASS" "adoption demo volumes" "no active-project demo volumes found for $project"

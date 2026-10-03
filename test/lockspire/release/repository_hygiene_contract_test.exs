@@ -49,6 +49,12 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase139_gap_closure
   @tag :phase139_exact_sha_hygiene
+  test "local hygiene warns when Docker state cannot be observed" do
+    PackageAssertions.assert_phase_139_local_docker_list_failures!()
+  end
+
+  @tag :phase139_gap_closure
+  @tag :phase139_exact_sha_hygiene
   @tag timeout: 180_000
   test "exact-SHA repository hygiene fails every ambiguous or stale path closed" do
     PackageAssertions.assert_phase_139_exact_sha_hygiene_fail_closed!()
