@@ -109,3 +109,13 @@ The production relation correctly fails closed at the audit-time HEAD because la
 ### Verify-work post-hook audit — 2026-09-24
 
 The authored 17-threat register remains closed at ASVS L1. Phase 138 Plan 34 changes only coverage metadata, UAT evidence, workflow CI ownership, and semantic fixture labels; it does not introduce a new trust boundary. The existing operational currentness caveat remains documented above: a later validation bookkeeping commit is classified as unknown by the production relation, so this security result does not refresh canonical phase verification.
+
+## Security Audit 2026-10-03
+
+| Metric | Count |
+|--------|-------|
+| Threats found | 17 |
+| Closed | 17 |
+| Open | 0 |
+
+Plans 138-35 through 138-38 add test fixtures, a claim-evidence ledger, and maintainer dispositions. They introduce no runtime trust boundary or new authorization surface. The authored threat register remains at 17 closed threats, with zero open threats at the configured ASVS L1 threshold.
