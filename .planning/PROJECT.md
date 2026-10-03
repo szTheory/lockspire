@@ -40,7 +40,7 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 ## Current State
 
-Phases 138 and 139 have all 51 plan/summary pairs, and their repository-owned verification was refreshed on 2026-09-27. Phase 140 planning and execution are underway; Plan 140-02 is reconciling archived evidence and current planning truth. The blocking entry finalizer accepted receipt SHA `c6332d3a8b716b938f93d978243281764e3eac41` on 2026-09-28, with required CI run `36476762461` passed and Release no-publish run `36476762490` successful. This is dated entry evidence for that SHA, not final acceptance of later commits; CI-06 and CI-07 remain for the post-summary exact-SHA gate. The earlier `7ab6e495` receipt and candidate `1558cc9386a9cdb98531c2977c9a9a6e4006a978` / failed CI run `36348080560` remain historical. The complete execution handoff is `.planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md`.
+Phases 138 and 139 are complete. Phase 140 has all 16 plans summarized; its canonical verification is 30/32, with only CI-06 and CI-07 awaiting terminal exact-SHA acceptance. Receipt A for `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` is predecessor evidence and does not accept the terminal candidate. Continue from `.planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md`: refresh the final candidate packet after all tracked writes, stop at the candidate-specific human checkpoint before any ref movement, then join same-SHA local `mix ci`, exact hygiene, required canonical CI, and Release no-publish evidence. The Phase 141 context and reviewed plan already exist; resume them only after Phase 140 closes. The canonical GSD next action for the two remaining verification gaps is `$gsd-plan-phase 140 --gaps`.
 
 Lockspire has implemented and verified all seven v1.37 phases, and Hex reports `1.5.0` as the latest public release. Default-branch supplemental OIDC/FAPI run `33139876101` retained only allowlisted classified receipts from immutable suite inputs; its honest suite-failure findings remain non-certifying follow-up evidence. Protected release run `33141484467` published the exact pre-proven tar from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, matched its public Hex checksum, verified versioned docs, and repeated the clean-room public-package journey. The repo-native conformance jobs require no provider secrets; only the optional hosted-provider comparison accepts provider configuration.
 
@@ -396,4 +396,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-27 after the Phase 139 acceptance gate and milestone-prompt adaptation*
+*Last updated: 2026-10-03 after Phase 138 closeout and Phase 140 handoff reconciliation*
