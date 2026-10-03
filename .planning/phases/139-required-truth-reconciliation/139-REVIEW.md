@@ -1,133 +1,73 @@
 ---
 phase: 139-required-truth-reconciliation
-reviewed: 2026-09-26T02:30:25Z
+reviewed: 2026-10-03T20:26:26Z
 depth: standard
-files_reviewed: 5
+files_reviewed: 31
 files_reviewed_list:
+  - .github/workflows/ci.yml
+  - .release-please-manifest.json
+  - CHANGELOG.md
+  - docs/lockspire-milestone-roadmap-ratchet-prompt.txt
+  - mix.exs
   - scripts/maintainer/baseline_inventory.sh
-  - test/support/lockspire/release_proof/package_assertions.ex
-  - .gsd-capabilities.json
-  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - scripts/maintainer/finalize_phase_139_acceptance.sh
+  - scripts/maintainer/repo_hygiene_check.sh
+  - scripts/maintainer/run_lockspire_phase_finalizer.sh
+  - scripts/maintainer/supersede_phase_139_host_receipt.sh
+  - test/integration/phase133_harness_test.exs
+  - test/integration/phase133_provider_install_test.exs
+  - test/lockspire/admin/keys_test.exs
+  - test/lockspire/audit/audit_writer_test.exs
+  - test/lockspire/protocol/authorization_request_test.exs
+  - test/lockspire/protocol/pushed_authorization_request_test.exs
+  - test/lockspire/quality/phase_138_prohibition_consistency_test.exs
+  - test/lockspire/quality/phase_139_planning_consistency_test.exs
+  - test/lockspire/release/repository_hygiene_contract_test.exs
+  - test/lockspire/release_readiness_contract_test.exs
+  - test/lockspire/web/authorize_controller_test.exs
+  - test/lockspire/web/live/admin/clients_live_test.exs
+  - test/lockspire/web/live/admin/policies_live/dpop_test.exs
+  - test/lockspire/web/live/admin/policies_live/par_test.exs
+  - test/lockspire/web/live/admin/policies_live/security_profile_test.exs
+  - test/support/lockspire/release_proof/package_assertions.ex
+  - test/support/lockspire/release_proof/workflow_assertions.ex
+  - test/support/quality_baseline.ex
+  - test/support/seeding_helpers.ex
+  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+  - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
 findings:
-  critical: 0
+  critical: 1
   warning: 0
   info: 0
-  total: 0
-status: clean
+  total: 1
+status: issues_found
 ---
 
 # Phase 139: Code Review Report
 
-**Reviewed:** 2026-09-24T20:04:46Z
+**Reviewed:** 2026-10-03T20:26:26Z
 **Depth:** standard
-**Files Reviewed:** 2
-**Status:** clean
+**Files Reviewed:** 31
+**Status:** issues_found
 
 ## Summary
 
-Reviewed commit `bafa4a60` at standard depth in the two scoped files, including the completion classifier's row validation, lifecycle classification call path, and adversarial lifecycle fixtures. The change closes CR-01: `validate_phase_139_completion_state` now requires exactly one top-level body row for each tracked completion field, and the added-line allowlist accepts only the exact canonical Phase 140 and Progress values. The new Phase and Progress fixtures append malformed rows while retaining the original canonical rows, and the enclosing acceptance fixture requires the resulting post-transition relation to fail closed. The commit changes only these row checks and fixtures; it does not alter the exact-SHA acceptance authorization logic. No new defects found in the reviewed scope.
+Reviewed the Phase 139 source scope, including the acceptance and inventory shell workflows, lifecycle receipt helper, CI changes, release metadata, and related test/support changes. The exact-SHA acceptance path can miss leftover adoption-demo Docker volumes and report a clean result, so its hygiene receipt can overstate the observed state.
 
-## Narrative Findings (AI reviewer)
+## Critical Issues
 
-All reviewed files meet quality standards. No issues found.
+### CR-01: [BLOCKER] Exact-SHA acceptance misses active-project volumes
+
+**File:** `scripts/maintainer/repo_hygiene_check.sh:250`
+**Issue:** Docker's `volume ls --filter name=...` matches all or part of a volume name; it does not interpret the supplied value as a regular expression. The anchored expression `^${project}_(db_data|deps_volume|build_volume)$` therefore does not match volumes named, for example, `lockspire-adoption-demo_db_data`. The exact acceptance path sees an empty result, records `PASS` at line 270, and can emit a passing receipt despite project volumes remaining. The local hygiene path repeats the same ineffective filter at line 890.
+**Fix:** List names without a name filter, then compare each result against the three exact allowlisted names (for example, with `case "$volume" in "${project}_db_data"|"${project}_deps_volume"|"${project}_build_volume") ...`). Use the same exact comparison in both hygiene paths.
+
+## Warnings
+
+## Info
 
 ---
 
-_Reviewed: 2026-09-24T20:04:46Z_
+_Reviewed: 2026-10-03T20:26:26Z_
 _Reviewer: the agent (gsd-code-reviewer)_
-_Depth: standard_
-
-## Follow-up Review — 2026-09-24 (Quick Task 260924-mhp)
-
-**Scope:** `scripts/maintainer/baseline_inventory.sh`, `test/support/lockspire/release_proof/package_assertions.ex`, and `test/lockspire/release/repository_hygiene_contract_test.exs`.
-
-**Follow-up status:** issues_found. The original review status and CR-01 history above remain unchanged.
-
-### BLOCKER — UAT headings inside code blocks authorize false completion
-
-**File:** `scripts/maintainer/baseline_inventory.sh:1556-1557`
-**Issue:** `record_has_line` searches the raw document for `## Current Test` and `## Tests` without recognizing Markdown code fences or comments. A malformed UAT document with frontmatter `status: complete` and those heading-shaped lines only inside a fenced code block passes `classify_active_record` and is proposed as `resolved | already-resolved | direct_current`. This can make the maintained inventory report a malformed/incomplete record as resolved. The added near-miss fixtures cover missing headings but not heading-shaped text that is not a Markdown section.
-**Fix:** Parse the Markdown section headings while ignoring fenced code blocks (and other non-rendered regions), and add a fixture whose only matching heading lines are inside a fence; it must remain `unclassified | unclassified | inferred` and make the family/aggregate receipt partial.
-
----
-
-_Follow-up reviewed: 2026-09-24T20:25:43Z_
-_Reviewer: the agent (gsd-code-reviewer)_
-
-## Follow-up Review — UAT heading fix commit 2b0b768b
-
-**Scope:** `scripts/maintainer/baseline_inventory.sh`, its active-record classification caller, and the maintained active-UAT fixtures in `test/support/lockspire/release_proof/package_assertions.ex`.
-
-**Prior blocker:** CLOSED. `classify_active_record` now calls `record_has_markdown_heading` for both required UAT headings. That parser ignores lines inside backtick/tilde fenced blocks and removes HTML comments before checking headings. The new fenced and commented hostile fixtures both retain `status: complete` but are asserted to remain `unclassified/ambiguous`, and the receipt/family must become partial. Existing positive fixtures still assert that rendered headings classify a complete UAT as `resolved | already-resolved` and a partial UAT as `active | defer-with-trigger`.
-
-**Follow-up status:** issues_found. One additional non-rendered region remains accepted.
-
-### BLOCKER — UAT headings in frontmatter still authorize completion
-
-**File:** `scripts/maintainer/baseline_inventory.sh:1524-1573` (heading parser); caller at `1607-1612`
-**Issue:** `record_has_markdown_heading` scans the entire record and skips fences and HTML comments, but does not skip the delimited frontmatter block. A record shaped as `---`, `status: complete`, `## Current Test`, `## Tests`, `---`, followed by body text will have its status extracted by `front_matter_value_from_file` and both hidden frontmatter lines accepted as headings. `classify_active_record` then emits `resolved | already-resolved | direct_current` even though the document has no rendered required headings. This preserves the same false-completion authorization failure for malformed UAT records through a different non-rendered region.
-**Fix:** Limit heading recognition to the document body after the opening and closing frontmatter delimiters, and add a hostile fixture with both required headings inside frontmatter. It must remain `unclassified | unclassified | inferred` and make the family and aggregate receipt partial.
-
----
-
-_Follow-up reviewed: 2026-09-24_
-_Reviewer: the agent (gsd-code-reviewer)_
-_Scope: heading fix commit 2b0b768b_
-
-## Follow-up Review — UAT heading scanner fix commit 785b565b
-
-**Scope:** `scripts/maintainer/baseline_inventory.sh` UAT heading recognition and the maintained active-UAT fixtures in `test/support/lockspire/release_proof/package_assertions.ex`.
-
-**Prior blocker — CLOSED:** The frontmatter bypass is closed. `record_has_markdown_heading` enters frontmatter only on an opening delimiter at line 1, skips its contents, and resumes after the closing delimiter (`scripts/maintainer/baseline_inventory.sh:1533-1537`). The new hostile fixture places both required headings before that closing delimiter and is included among unclassified near misses (`test/support/lockspire/release_proof/package_assertions.ex:6470-6471,6569-6570`). The same near-miss set covers fenced and HTML-comment headings. The positive fixtures retain rendered headings: a `complete` UAT is expected to classify as resolved and a `partial` UAT as active/deferred (`test/support/lockspire/release_proof/package_assertions.ex:988-1020,6551-6554`). The classifier continues to gate those dispositions on the parsed frontmatter status (`scripts/maintainer/baseline_inventory.sh:1615-1621`).
-
-**Follow-up status:** issues_found. One additional non-rendered region remains accepted.
-
-### BLOCKER — Indented code headings authorize false UAT completion
-
-**File:** `scripts/maintainer/baseline_inventory.sh:1557-1558,1577-1578` (heading parser); caller at `1616-1617`
-**Issue:** The parser removes all leading whitespace before examining the line, then compares the whitespace-stripped line with the requested heading. Under CommonMark, a line indented by four spaces is an indented code block, not a rendered heading. A `status: complete` UAT containing only four-space-indented `## Current Test` and `## Tests` therefore satisfies both checks and is classified as `resolved | already-resolved | direct_current`, despite having neither required rendered section. This is the same false-completion authorization risk as the closed frontmatter bypass. The hostile fixture set checks fences, comments, and frontmatter, but has no indented-code case.
-**Fix:** Recognize only valid rendered Markdown headings while excluding indented code blocks (including lines with four or more leading spaces); add a hostile `status: complete` UAT fixture whose only matching headings are four-space-indented and require it to remain unclassified with a partial family/aggregate receipt.
-
-**Verification note:** This was a static review of the current source and fixture assertions; no tests were run, as requested.
-
----
-
-_Follow-up reviewed: 2026-09-24_
-_Reviewer: the agent (gsd-code-reviewer)_
-_Scope: UAT heading fix commit 785b565b_
-
-## Follow-up Review — UAT indented-code heading fix commit a736ef7e
-
-**Scope:** `scripts/maintainer/baseline_inventory.sh` UAT heading recognition and the maintained active-UAT fixtures in `test/support/lockspire/release_proof/package_assertions.ex`.
-
-**Prior blocker — CLOSED:** `record_has_markdown_heading` now counts leading spaces and removes at most three before matching the heading. Thus exact level-2 headings with zero through three leading spaces still match, while four or more leading spaces are skipped as indented code; a leading tab is also skipped (`scripts/maintainer/baseline_inventory.sh:1557-1563`). A tab advances indentation to at least four columns in CommonMark, including when preceded by spaces. The existing scanner continues to skip delimited frontmatter, HTML-comment contents, and fenced code before comparing heading text (`scripts/maintainer/baseline_inventory.sh:1533-1555,1564-1583`). The new `status: complete` hostile fixture contains only four-space-indented matching headings and is included in the near-miss inventory whose records are required to remain absent/unclassified (`test/support/lockspire/release_proof/package_assertions.ex:1018-1039,6572-6573`). The four-space check therefore no longer authorizes false completion.
-
-**Follow-up status:** clean. No new correctness or security defect found in the reviewed scanner change. The requested zero-to-three-space and tab cases were confirmed by static inspection; no tests were run.
-
----
-
-_Follow-up reviewed: 2026-09-24T20:35:56Z_
-_Reviewer: the agent (gsd-code-reviewer)_
-_Scope: UAT indented-code heading fix commit a736ef7e_
-
-## Follow-up Review — Phase 139 gap changes through `c04b0190`
-
-**Reviewed:** 2026-09-26T02:30:25Z  
-**Depth:** standard  
-**Files reviewed:** 5  
-**Status:** clean
-
-**Scope:** `scripts/maintainer/baseline_inventory.sh`, `test/support/lockspire/release_proof/package_assertions.ex`, `.gsd-capabilities.json`, `tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs`, and `scripts/maintainer/finalize_phase_139_acceptance.sh`. Reviewed their changes from `70bf4b68` through `c04b0190`, with `AGENTS.md`, plans/summaries 139-10 and 139-11, Phase 139 context, and current validation map as the intent/security boundary.
-
-The explicit GSD runtime path is checked and the fixture writer/relation validator bind to the same selected workflow root. Lifecycle tests make portable-vs-installed selection deterministic and preserve exact hook rendering/parity assertions. The new planning-consistency command is after sealed receipt/relation authentication and before ref movement; its failure exits under `set -e`, leaves the pending receipt untouched, and is followed by a sealed-state check before fast-forward. Phase 140's exact-SHA entry gate and no-publication controls remain unchanged. I found no new correctness, security, or maintainability defects in this change set. No tests were run, per review instructions.
-
-### Findings
-
-None.
-
----
-
-_Follow-up reviewed: 2026-09-26T02:30:25Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
 _Depth: standard_
