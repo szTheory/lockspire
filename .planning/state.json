@@ -27,7 +27,7 @@
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 140 of 4 · executing; terminal CI-06/CI-07 acceptance pending (Phase 141 is planned behind this gate)"
+    "reason": "Phase 140 of 4 · executing"
   },
-  "updated_at": "2026-10-03T02:54:46Z"
+  "updated_at": "2026-10-03T14:31:28.026Z"
 }
