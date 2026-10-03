@@ -235,3 +235,7 @@ Plan 140-14 closes the prior behavior-evidence omission for the supported histor
 
 _Verified: 2026-10-02T20:41:06Z_
 _Verifier: the agent (manual Plan 140-15 receipt A update)_
+
+## Plan 140-16 T1 terminal-acceptance status (2026-10-03)
+
+The verification remains 30/32 truths with CI-06 and CI-07 pending. Receipt A on `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` is predecessor evidence only. Plan 140-16 records conditional acceptance before candidate capture and requires a fresh exact-SHA packet, candidate-specific ref authorization if synchronization is needed, and a terminal receipt. The recorded live Phase 139 post-transition failure at `5259a6545c04277ee44038779b23b139b6b1fcb2` remains failed historical evidence; the user's selected “Use recorded failure” choice is preserved, and the skipped `plan:pre` hook is not rerun or reclassified.

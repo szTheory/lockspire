@@ -127,3 +127,7 @@ Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed exact acceptance aft
 - Private mode-0600 exact receipt: `/private/tmp/lockspire-140-plan/140-15-final-acceptance.4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d.json`, SHA-256 `6dc2c03865ec66cd745edc84b23169807ff3e714f5b47e30ac5fd559ff17e8db`.
 
 Receipt A supports these dated completion marks only for its recorded SHA. The tracked completion-record update creates a new candidate, so CI-06 and CI-07 remain pending for that terminal candidate until its own exact receipt passes. If the terminal check fails, restore both requirement marks to pending. No protected Release publication was dispatched, and the live Phase 139 finalizer was not rerun.
+
+## Plan 140-16 T1 record seal (2026-10-03)
+
+Receipt A remains historical evidence for `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; CI-06 and CI-07 remain pending until a private terminal receipt matches the last tracked candidate and proves the complete exact-SHA join. The T1 packet is captured only after the summary, this conditional contract, verification status, and requirement marks are committed. Any required local-main update or push is gated by T2's candidate-specific `blocking-human` checkpoint. Preserve the failed `5259a6545c04277ee44038779b23b139b6b1fcb2` observation and the skipped Phase 139 `plan:pre` hook as recorded; no finalizer rerun or reclassification is authorized.

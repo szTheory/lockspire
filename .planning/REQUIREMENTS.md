@@ -22,8 +22,8 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 ### CI and Release Evidence
 
-- [x] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed the same-SHA join with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is receipt A; the completion-record update creates a new candidate whose terminal receipt must be checked before these marks are final. Restore this mark to pending if that terminal gate fails.
-- [x] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. This is receipt A; the completion-record candidate needs its own terminal same-SHA join. Restore this mark to pending if that terminal gate fails.
+- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed receipt A with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is predecessor evidence only; a matching terminal private receipt on the final synchronized SHA is required before completion.
+- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on predecessor `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. A matching terminal private receipt on the final synchronized SHA is required before completion.
 - [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
@@ -83,8 +83,8 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
 | TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | Complete on receipt A; terminal recertification pending |
-| CI-07 | Phase 140 | Complete on receipt A; terminal recertification pending |
+| CI-06 | Phase 140 | Pending terminal exact-SHA receipt |
+| CI-07 | Phase 140 | Pending terminal exact-SHA receipt |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |
 | HYGIENE-05 | Phase 139 | Complete |
