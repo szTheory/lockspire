@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:plan-phase 140 --gaps",
-    "label": "Plan Phase 140 verification gaps",
-    "reason": "Phase 140 verification is 30/32; CI-06 and CI-07 remain"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 139 of 4 · executing"
   },
-  "updated_at": "2026-10-03T17:22:16Z"
+  "updated_at": "2026-10-03T23:04:05.422Z"
 }
