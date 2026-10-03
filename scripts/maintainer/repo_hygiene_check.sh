@@ -237,6 +237,22 @@ run_exact_local_gate() {
   record_result "PASS" "local gate" "mix ci passed with executed ExUnit tests at the acceptance SHA"
 }
 
+active_project_volume_names() {
+  local listed_volumes volume
+
+  if ! listed_volumes="$(docker volume list --format '{{.Name}}' 2>/dev/null)"; then
+    return 1
+  fi
+
+  while IFS= read -r volume; do
+    case "$volume" in
+      "${project}_db_data"|"${project}_deps_volume"|"${project}_build_volume")
+        printf '%s\n' "$volume"
+        ;;
+    esac
+  done <<< "$listed_volumes"
+}
+
 exact_demo_docker_hygiene_checks() {
   local running_containers stopped_containers project_volumes
 
@@ -247,7 +263,7 @@ exact_demo_docker_hygiene_checks() {
 
   if ! running_containers="$(docker container ls --filter "label=com.docker.compose.project=$project" --format '{{.Names}}' 2>/dev/null)" ||
      ! stopped_containers="$(docker container ls --all --filter "label=com.docker.compose.project=$project" --filter "status=exited" --format '{{.Names}}' 2>/dev/null)" ||
-     ! project_volumes="$(docker volume list --filter "name=^${project}_(db_data|deps_volume|build_volume)$" --format '{{.Name}}' 2>/dev/null)"; then
+     ! project_volumes="$(active_project_volume_names)"; then
     acceptance_block "adoption demo Docker" "Docker state observation failed"
     return
   fi
@@ -887,7 +903,7 @@ local_demo_docker_hygiene_checks() {
   local running_containers stopped_containers project_volumes
   running_containers="$(docker container ls --filter "label=com.docker.compose.project=$project" --format '{{.Names}}' 2>/dev/null || true)"
   stopped_containers="$(docker container ls --all --filter "label=com.docker.compose.project=$project" --filter "status=exited" --format '{{.Names}}' 2>/dev/null || true)"
-  project_volumes="$(docker volume list --filter "name=^${project}_(db_data|deps_volume|build_volume)$" --format '{{.Name}}' 2>/dev/null || true)"
+  project_volumes="$(active_project_volume_names || true)"
 
   if [[ -n "$running_containers" ]]; then
     record_result "BLOCK" "adoption demo Docker" "running active-project demo containers remain for $project: $(printf '%s' "$running_containers" | tr '\n' ' '); run examples/adoption_demo/bin/docker-stop --project $project or COMPOSE_PROJECT_NAME=$project make demo-stop"

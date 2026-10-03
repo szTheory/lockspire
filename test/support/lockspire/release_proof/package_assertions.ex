@@ -123,6 +123,32 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
            )
   end
 
+  def assert_phase_139_docker_volume_name_matching! do
+    script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
+    assert Regex.match?(~r/project_volumes="\$\(active_project_volume_names\)"/, script)
+    assert Regex.match?(~r/project_volumes="\$\(active_project_volume_names \|\| true\)"/, script)
+
+    {output, status} =
+      run_exact_sha_hygiene_fixture!("docker-volume-exact",
+        dispositions: ["adoption demo volumes=reviewed"]
+      )
+
+    assert status == 0, output
+    receipt = Jason.decode!(output)
+    assert receipt["hygiene"]["warn"] == 1
+
+    assert receipt["warn_dispositions"] == [
+             %{"label" => "adoption demo volumes", "disposition" => "reviewed"}
+           ]
+
+    {output, status} = run_exact_sha_hygiene_fixture!("docker-volume-lookalikes", [])
+
+    assert status == 0, output
+    receipt = Jason.decode!(output)
+    assert receipt["hygiene"]["warn"] == 0
+    assert receipt["warn_dispositions"] == []
+  end
+
   def assert_phase_139_exact_sha_hygiene_fail_closed! do
     cases = [
       {"invalid SHA syntax", "success", [accept_sha: String.upcase(acceptance_sha())]},
@@ -8588,8 +8614,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       "container ls --filter label=com.docker.compose.project=lockspire-adoption-demo --format {{.Names}}") : ;;
       "container ls --all --filter label=com.docker.compose.project=lockspire-adoption-demo --filter status=exited --format {{.Names}}")
         [ "$scenario" = "docker-warn" ] && printf 'stopped-demo\n' || : ;;
-      "volume list --filter name=^lockspire-adoption-demo_(db_data|deps_volume|build_volume)$ --format {{.Name}}")
-        [ "$scenario" != "docker-main-race" ] || : > "$FAKE_HYGIENE_STATE/docker-inspected" ;;
+      "volume list --format {{.Name}}")
+        case "$scenario" in
+          docker-main-race) : > "$FAKE_HYGIENE_STATE/docker-inspected" ;;
+          docker-volume-exact)
+            printf '%s\n' \
+              'lockspire-adoption-demo_db_data' \
+              'prefix-lockspire-adoption-demo_db_data' \
+              'lockspire-adoption-demo_db_data_backup' \
+              'lockspire-adoption-demo_other' ;;
+          docker-volume-lookalikes)
+            printf '%s\n' \
+              'prefix-lockspire-adoption-demo_db_data' \
+              'lockspire-adoption-demo_db_data_backup' \
+              'lockspire-adoption-demo_other' ;;
+          *) : ;;
+        esac ;;
       *) printf 'unexpected fake docker command\n' >&2; exit 96 ;;
     esac
     """
