@@ -38,10 +38,9 @@ created: "2026-10-02"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 141-01-01 | 01 | 1 | BASE-04, BASE-05 | T-141-01 | Do not assert a final accepted SHA until Phase 140's post-summary exact-SHA receipt exists; distinguish accepted source SHA from report commit SHA | docs + evidence review | `git diff --check` | ✅ | ⬜ pending |
-| 141-01-02 | 01 | 1 | BASE-04, BASE-05 | T-141-02 | Preserve publication ownership; do not imply a successful no-publish graph is a package publication | docs + evidence review | `git diff --check` | ✅ | ⬜ pending |
-
-*The planner should update these task IDs and wave assignments to match the executable plan while preserving the requirements, invariants, and verification intent.*
+| 141-01-01 | 01 | 1 | BASE-04 | T-141-01 | Consume only Phase 140 terminal evidence for the accepted source SHA; preserve separate report-commit provenance and redact sensitive proof | docs + evidence review | `git diff --check` | N/A | ⬜ pending |
+| 141-01-02 | 01 | 1 | BASE-05 | T-141-02 | Base public-release prose on revalidated Hex/GitHub publication evidence; preserve release-owner boundaries | docs + evidence review | `git diff --check` | N/A | ⬜ pending |
+| 141-01-03 | 01 | 1 | BASE-04, BASE-05 | T-141-03 | Gate completion statuses on the terminal receipt and keep accepted-source, baseline-report, and reconciliation-commit identities separate | docs + cross-record review | `git diff --check` | N/A | ⬜ pending |
 
 ---
 
@@ -63,11 +62,11 @@ Existing infrastructure covers the phase's mechanical documentation check. No te
 
 ## Validation Sign-Off
 
-- [ ] All plan tasks have a mechanical check or a specific manual evidence review.
+- [ ] All plan tasks have a mechanical check and a specific manual evidence review.
 - [ ] Sampling continuity: every wave has a `git diff --check` and its applicable evidence review.
 - [x] Wave 0 covers all requirements; no new test infrastructure is applicable.
 - [x] No watch-mode flags.
 - [ ] Phase 140 exact-SHA acceptance dependency is satisfied before closure claims are made.
-- [ ] `nyquist_compliant: true` is not asserted unless every task has an appropriate automated verification path; manual evidence review remains required either way.
+- [x] `nyquist_compliant: false` because semantic evidence joins and cross-record truth require a human review; `git diff --check` covers only Markdown whitespace.
 
 **Approval:** pending
