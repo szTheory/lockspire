@@ -151,7 +151,7 @@ This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific 
   4. A maintainer can trace the current public release from its source SHA through CI, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
   5. Maintained planning and release records agree on the current milestone and release posture, while Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
 
-**Plans**: 13/13 plans executed
+**Plans**: 13/13 plans complete
 
 Plans:
 

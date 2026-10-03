@@ -1,6 +1,6 @@
 ---
 phase: 139-required-truth-reconciliation
-verified: 2026-09-27T18:29:28Z
+verified: 2026-10-03T23:51:12Z
 status: passed
 score: 5/5 roadmap success criteria verified
 covered_files:
@@ -10,15 +10,6 @@ covered_files:
   - .github/workflows/release-please-automerge.yml
   - .github/workflows/release.yml
   - .gsd-capabilities.json
-  - .planning/MILESTONES.md
-  - .planning/PROJECT.md
-  - .planning/RELEASE-TRAIN.md
-  - .planning/REPO-HYGIENE-CHECKLIST.md
-  - .planning/REQUIREMENTS.md
-  - .planning/ROADMAP.md
-  - .planning/STATE.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md
-  - .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md
   - .planning/phases/139-required-truth-reconciliation/139-01-PLAN.md
   - .planning/phases/139-required-truth-reconciliation/139-01-SUMMARY.md
   - .planning/phases/139-required-truth-reconciliation/139-02-PLAN.md
@@ -48,7 +39,6 @@ covered_files:
   - .planning/phases/139-required-truth-reconciliation/139-UAT.md
   - .planning/phases/139-required-truth-reconciliation/139-VALIDATION.md
   - .planning/phases/139-required-truth-reconciliation/COVERAGE.md
-  - .planning/state.json
   - docs/maintainer-release.md
   - mix.exs
   - mix.lock
@@ -59,12 +49,11 @@ covered_files:
   - scripts/maintainer/repo_hygiene_check.sh
   - test/lockspire/conformance_redacted_evidence_contract_test.exs
   - test/lockspire/conformance_workflow_contract_test.exs
-  - test/lockspire/quality/phase_139_planning_consistency_test.exs
   - test/lockspire/quality/phase_138_prohibition_consistency_test.exs
+  - test/lockspire/quality/phase_139_planning_consistency_test.exs
   - test/lockspire/quality/proof_quality_baseline_test.exs
   - test/lockspire/release/repository_hygiene_contract_test.exs
   - test/lockspire/release_ci_evidence_contract_test.exs
-  - test/lockspire/release_readiness_contract_test.exs
   - test/lockspire/workflow_supply_chain_contract_test.exs
   - test/support/lockspire/release_proof/package_assertions.ex
   - test/support/lockspire/release_proof/workflow_assertions.ex
@@ -75,33 +64,30 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalizer-process-supervisor.cjs
-covered_digest: "v1:sha256:d95228c49342e89c61a10deacdd69637df6536856b114ba3cd32ee97e90170a0"
+covered_digest: "v2:sha256:5eba3bd00dc87101cd81e5eebc46b93675b9ec5e27a77c2cdd8c8c74e1a104f0"
 behavior_unverified: 0
 overrides_applied: 0
-human_needed: false
 re_verification:
   previous_status: passed
   previous_score: 5/5 roadmap success criteria verified
   gaps_closed: []
   gaps_remaining: []
   regressions: []
-gaps: []
+deferred:
+  - truth: "CI-06 terminal acceptance receipt for final synchronized main SHA"
+    addressed_in: "Phase 140"
+    evidence: "Phase 140 roadmap states CI-06 still requires final same-SHA acceptance; its success criteria require required-gate and terminal receipt proof."
+  - truth: "CI-07 terminal Release no-publish receipt for final synchronized main SHA"
+    addressed_in: "Phase 140"
+    evidence: "Phase 140 roadmap states CI-07 still requires final same-SHA acceptance; its success criteria require required-gate and terminal receipt proof."
 ---
 
 # Phase 139: Required Truth Reconciliation Verification Report
 
 **Phase Goal:** Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Verified:** 2026-09-27T18:29:28Z
+**Verified:** 2026-10-03T23:51:12Z
 **Status:** passed
-**Re-verification:** Yes — bounded bookkeeping recheck after Phase 140 context capture. The earlier exact-SHA receipt and serial lifecycle results remain dated evidence for `7ab6e495`; no new live acceptance is claimed for later documentation commits.
-
-## Bounded Bookkeeping Revalidation (2026-09-27)
-
-- Reviewed Phase 140 context capture and the changed PROJECT/STATE claims; preserved completed Phase 139 history while recording the current gate and exact next workflow.
-- The existing planning-consistency module initially failed because the historical transition text had disappeared from STATE. Restored that transition explicitly as history. Fresh command `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs` passed **2 tests, 0 failures**.
-- Compared every declared covered file with source `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`: only PROJECT, STATE, and the already-refreshed Phase 138 verification report differ. All **32 covered implementation/config/test files are byte-identical**. The Phase 138 verification-status query reports `passed`.
-- Renewed the covered-input fingerprint only after that focused recheck. Existing implementation proof below remains earlier evidence; the full phase and completed plans were not rerun.
-- The Phase 140 finalizer was rejected by automatic approval review before execution because it can push `origin/main`. The historical receipt does not accept later documentation commits. No remote refs, receipt authority, or entry-gate rules were changed.
+**Re-verification:** Yes — bounded recheck after Phase 140 work and the October 3 Docker hygiene fixes. The prior report had no failed gaps; the changed Docker behavior and phase lifecycle were checked directly.
 
 ## Goal Achievement
 
@@ -109,123 +95,113 @@ gaps: []
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
-| 1 | Repository-owned acceptance enforces `mix ci` and repository hygiene, with no unresolved `BLOCK` and an explicit disposition for every `WARN`. | ✓ VERIFIED | Exact-SHA fixtures passed 2/2. The fail-closed matrix covers interrupted/nonzero `mix ci`, malformed proof, hygiene blocks, and valid/invalid warning dispositions. |
-| 2 | Acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at Phase 140 entry. | ✓ VERIFIED | The earlier read-only verification validated the durable mode-0600 receipt for synchronized SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`, CI run `36314255664`, and Release no-publish run `36314255656`. That receipt is historical after subsequent documentation commits. Repository-owned exact-SHA enforcement remains verified; current live acceptance remains the blocking Phase 140 entry obligation. |
-| 3 | Required acceptance is distinguishable from supplemental OIDF evidence, whose retained findings are redacted and non-certifying. | ✓ VERIFIED | Redaction and workflow-supply-chain contracts passed 8/8. OIDF remains `supplemental_non_certifying` with `required_gate: false`. |
-| 4 | Maintainers can trace public 1.5.0 from source SHA through CI, release, tag, package checksum, Hex, and maintained records without rewriting history. | ✓ VERIFIED | Acceptance-receipt fixtures retain the same source SHA, CI/release run IDs, tag, checksum, and Hex version. No release history or refs changed. |
-| 5 | Planning/release records agree on the current milestone and release posture while protected release controls remain intact. | ✓ VERIFIED | Current `.planning/PROJECT.md` and `.planning/STATE.md` agree that Phase 139 implementation is complete, Phase 140 discussion is captured, and new planning remains subject to its unresolved entry gate. The fresh planning-consistency module passed 2/2. Prior serial lifecycle and supply-chain proof is retained for unchanged implementation files; no new remote acceptance is asserted. |
+| 1 | Repository-owned acceptance enforces `mix ci` and repository hygiene for the reconciled baseline, including no unresolved `BLOCK` and an explicit disposition for every `WARN`. | ✓ VERIFIED | `repo_hygiene_check.sh` captures and rechecks the acceptance SHA around `mix ci`; exact acceptance validates clean checkout and warning dispositions. The focused Docker volume fixture proves an exact active-project volume produces a WARN requiring disposition. |
+| 2 | Repository-owned acceptance identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence; live evidence is accepted at the Phase 140 entry gate. | ✓ VERIFIED | Exact mode requires lowercase 40-hex SHA equal to `HEAD`, local `main`, and refreshed remote `main`; it validates canonical CI and Release workflow identity, exact head SHA, status/conclusion, and required jobs. Existing exact-acceptance hostile fixtures remain in the repository; Phase 139's prior entry receipt was dated evidence, and terminal CI-06/07 receipt closure is explicitly carried by Phase 140. |
+| 3 | Required acceptance is distinguishable from supplemental OIDF evidence, whose retained findings are redacted and non-certifying. | ✓ VERIFIED | Current OIDF workflow is named Supplemental; receipt schema distinguishes `supplemental_non_certifying` and `required_gate: false`. Existing focused redaction/workflow contract tests cover the bounded retained evidence surface. |
+| 4 | Maintainers can trace public 1.5.0 from source SHA through CI, release, tag, package checksum, Hex, and maintained records without rewriting history. | ✓ VERIFIED | The maintained release record preserves source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, CI/release run IDs, release tag, tar checksum, and Hex version. Release workflow and proof contracts bind publication and public install verification to the same manifest-verified artifact. |
+| 5 | Planning/release records agree on the current milestone and release posture while protected release controls remain intact. | ✓ VERIFIED | The Phase 139 planning-consistency test passed (1 test, 0 failures) against current Phase 139/140 history. Current release workflow retains Release Please ownership, verified-SHA publishing, protected publish jobs, full-SHA action references, and manifest-bound artifact evidence; portable lifecycle tests passed. |
 
-**Score:** 5/5 roadmap success criteria verified.
+**Score:** 5/5 roadmap success criteria verified (0 present, behavior-unverified).
 
-### Gap-Closure Plan Truths
+### Deferred Items
 
-| Plan | Must-have truths | Status | Evidence |
-|---|---:|---|---|
-| 139-10 | 3 | ✓ VERIFIED | Exact-SHA success/hostile fixtures and acceptance/receipt selectors passed. |
-| 139-11 | 4 | ✓ VERIFIED | Portable and installed lifecycle suites passed 17 tests, 0 failures, 2 expected skips; ordering assertions retain relation authentication before ref movement. |
-| 139-12 | 2 | ✓ VERIFIED | Active-label selector is empty; parser acceptance fixture, shell syntax, and workflow lint pass. |
-| 139-13 | 3 | ✓ VERIFIED | Canonical 13-plan completion and hostile-transition matrix passed against the live `current_plan: 12` parent; the portable Phase 140 gate suite passed 17 tests with 2 expected skips. |
-
-All 13 PLAN/SUMMARY pairs are included in the covered-file fingerprint. No completed plan was replayed and no conversational or human UAT was invoked.
+| # | Item | Addressed In | Evidence |
+|---|---|---|---|
+| 1 | Terminal same-SHA CI-06 receipt for final synchronized `main`. | Phase 140 | Roadmap Phase 140 says CI-06 still requires final same-SHA acceptance; terminal acceptance belongs to that phase. |
+| 2 | Terminal same-SHA CI-07 Release no-publish receipt for final synchronized `main`. | Phase 140 | Roadmap Phase 140 says CI-07 still requires final same-SHA acceptance; terminal acceptance belongs to that phase. |
 
 ## Required Artifacts
 
-| Artifact | Expected | Status | Evidence |
+| Artifact | Expected | Status | Details |
 |---|---|---|---|
-| `scripts/maintainer/repo_hygiene_check.sh` | Exact synchronized SHA, `mix ci`, hygiene disposition, canonical workflow evidence | ✓ VERIFIED | Exact-SHA success and hostile fixtures pass. |
-| `scripts/maintainer/finalize_phase_139_acceptance.sh` | Authenticate sealed candidate and inventory relation before ref movement | ✓ VERIFIED | Final-acceptance fixture passed and asserts planning-proof ordering. |
-| `scripts/maintainer/baseline_inventory.sh` | Fail-closed Phase 138/139 inventory and completion classification | ✓ VERIFIED | Serial Phase 139 relation selector passed 3/3, including canonical completion, Release Please main advance, and sealed-candidate lineage; Phase 138/139 currentness boundaries remain fail-closed. |
-| Phase 138 refreshed inventory ledger | Authenticated preverify relation | ✓ VERIFIED | Finalizer commit `98cb653b` returned `relation_boundary|phase-139-preverify|current`; the review receipt was consumed and the relation reported `snapshot_relation: authorized_bookkeeping`. |
-| Phase finalizer capability/router | Portable and installed hooks retain blocking `plan:pre` boundary | ✓ VERIFIED | Portable lifecycle/router suite passed 17 tests, 0 failures, 2 expected skips. |
-| Maintained release and OIDF records | Historical 1.5.0 stays distinct; OIDF stays supplemental | ✓ VERIFIED | Acceptance-receipt, workflow, and redaction fixtures pass. |
-| Canonical GSD completion transition | Reconcile 13 plans and authorize the receipt-bound post-transition relation | ✓ VERIFIED | Uncontended serial selector passed all three cases (3 tests, 0 failures), including the canonical verification-plus-completion transition. |
+| `scripts/maintainer/repo_hygiene_check.sh` | Exact-SHA acceptance, local `mix ci`, hygiene classifications, and fail-closed observation | ✓ VERIFIED | Substantive exact-SHA and local modes are wired to the focused ExUnit fixtures. Docker volume enumeration accepts only `${project}_db_data`, `${project}_deps_volume`, and `${project}_build_volume`; command failure is surfaced as WARN locally and BLOCK in exact acceptance. |
+| `scripts/maintainer/finalize_phase_139_acceptance.sh` | Sealed transition, exact-main acceptance, receipt writer | ✓ VERIFIED | Existing focused fixtures exercise sealed state and hostile receipt/relation rejection; prior passed evidence remains applicable to unchanged source. |
+| `scripts/maintainer/baseline_inventory.sh` | Bounded inventory and canonical completion relation | ✓ VERIFIED | Existing classifier and lifecycle fixtures cover the allowed Phase 139 parent-to-child transition and reject hostile deltas. |
+| `.github/workflows/{ci,release,oidf-conformance}.yml` and release action | Required CI/release wiring, separate supplemental OIDF, protected exact-ref publishing | ✓ VERIFIED | Workflow contracts and action pin/source checks remain present and connected. |
+| `tools/gsd-capabilities/lockspire-phase-finalizer/*` | Two supported lifecycle boundaries and recovery behavior | ✓ VERIFIED | Portable lifecycle/router contract ran: 18 passed, 0 failed, 2 expected skips. |
+| `test/lockspire/release/repository_hygiene_contract_test.exs` | Executable proof for exact Docker volume matching and truthful inspection errors | ✓ VERIFIED | The tests at lines 46 and 52 call the corresponding package assertions; both passed on this verification. |
 
 ## Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
-| Hygiene acceptance | synchronized `main` and required workflows | exact identity/evidence join | ✓ VERIFIED | Fixtures reject stale, moving, mismatched identities, and noncanonical workflow evidence. |
-| Phase 139 finalizer | sealed candidate and Phase 138 inventory relation | authenticated relation before planning check | ✓ VERIFIED | The serial relation suite passed the canonical, main-advance, and sealed-candidate paths. The earlier overlapping run's single failure did not reproduce. |
-| Lifecycle router | Phase 140 `plan:pre` hook | fresh supported hook rendering | ✓ VERIFIED | Portable suite passes and retains exact-SHA blocking behavior. |
-| GSD `phase.complete 139` | completion classifier | canonical ROADMAP transition then authenticated post-transition relation | ✓ VERIFIED | Canonical GSD completion and receipt-bound post-transition relation passed in the serial focused selector. |
+| Exact hygiene acceptance | `HEAD`, local `main`, refreshed `origin/main` | SHA equality before/after local gate | ✓ VERIFIED | Code compares all three identities to the accepted full SHA and rechecks after `mix ci`. |
+| Exact hygiene acceptance | Canonical CI and Release no-publish runs | Repository/workflow/event/branch/status/conclusion/head SHA/job validation | ✓ VERIFIED | Acceptance code and existing positive/hostile fixtures implement the joined identity contract. |
+| Docker hygiene | active Compose project volumes | Exact allowlist matching in `active_project_volume_names()` | ✓ VERIFIED | `repo_hygiene_check.sh` uses exact names; lookalike-prefix and backup names do not match in the passing fixture. |
+| Docker inspection errors | local hygiene result / exact acceptance | Per-command failure flags | ✓ VERIFIED | Focused test confirms each running, stopped, and volume-list failure emits WARN and never emits the corresponding false PASS; exact-mode Docker observation is fail-closed. |
+| Phase finalizer capability | Phase 139 hooks and later-phase routing | Tracked manifest, bounded router, process-group supervisor | ✓ VERIFIED | Current portable suite exercises route selection, cancellation, durable recovery, and later-phase no-op behavior. |
+| Release workflow | Release Please → exact verified artifact → protected publish → public verification | SHA-bound manifest and job dependencies | ✓ VERIFIED | Workflow and supply-chain tests remain linked; no manual version/tag/package mutation is part of the maintainer path. |
 
 ## Data-Flow Trace (Level 4)
 
-Not applicable: this infrastructure/release-proof phase has no rendered dynamic user data. Acceptance evidence flows from Git identity, workflow evidence, and maintained release records into a bounded receipt; repository-owned fixtures cover those boundaries.
+| Artifact | Data Variable | Source | Produces Real Data | Status |
+|---|---|---|---|---|
+| Exact acceptance | accepted SHA and workflow evidence | Git refs plus canonical GitHub workflow-run/job queries | Yes; validated identities and run fields, not static return values | ✓ FLOWING |
+| Docker hygiene | container and volume names | Docker CLI output, filtered by active project and exact volume names | Yes; command failures are separately represented | ✓ FLOWING |
+| Release record | source SHA, run IDs, tag, checksum, package version | maintained release ledger plus manifest-bound workflow evidence | Yes; bounded historic evidence is linked to the release artifact | ✓ FLOWING |
 
 ## Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
-| Prior Phase 139 gap-closure selectors | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test GSD_TOOLS=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs mix test test/lockspire/release/repository_hygiene_contract_test.exs test/lockspire/quality/proof_quality_baseline_test.exs --only phase139_gap_closure` | 3 tests, 0 failures | ✓ PASS |
-| Prior parser and workflow-lint repair | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_gate_repair` | 2 tests, 0 failures | ✓ PASS |
-| Prior preverify refresh fixture | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_preverify_refresh` | 1 test, 0 failures | ✓ PASS |
-| Prior exact acceptance and durable receipt | `GSD_TOOLS=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_final_acceptance --only phase139_acceptance_receipt` | 2 tests, 0 failures | ✓ PASS |
-| Prior OIDF redaction and workflow supply chain | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/conformance_redacted_evidence_contract_test.exs test/lockspire/workflow_supply_chain_contract_test.exs` | 8 tests, 0 failures | ✓ PASS |
-| Phase 139-13 canonical transition matrix | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test --trace test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 1 test, 0 failures, 266.7s; trace mode allows the declared integration matrix to finish near the default 300-second per-test timeout; exact 13/13 child and hostile rejection matrix passed | ✓ PASS |
-| Portable Phase 140 lifecycle/router gate | `LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS |
-| Installed lifecycle/router suite | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 17 passed, 0 failed, 2 expected skips | ✓ PASS (prior run) |
-| Phase 139 preverify finalizer | `GSD_TOOLS=/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs bash scripts/maintainer/run_lockspire_phase_finalizer.sh pre-verify 139` | Commit `98cb653b`; relation current; review receipt consumed | ✓ PASS |
-| Phase 139 entry receipt | Read durable receipt; compare refs; `gh run view 36314255664/36314255656` | Receipt mode 0600; `HEAD`, `main`, `origin/main`, advertised origin main all equal `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI and Release both success; required jobs pass, publish jobs skipped | ✓ PASS |
-| Phase 139 relation regression (serial rerun) | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test --trace test/lockspire/release/repository_hygiene_contract_test.exs --only phase139_inventory_relation` | 3 tests, 0 failures, 53 excluded, 385.2s; canonical completion, Release Please main advance, and sealed-candidate cases all pass | ✓ PASS |
-| Phase 138 immutable-history regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 6 tests, 0 failures; historical Phase 138 plans/summaries stay byte-pinned while Phase 139 ledger authorization is tested separately | ✓ PASS |
-| Shell and workflow validation | `bash -n scripts/maintainer/baseline_inventory.sh && bash scripts/ci/lint_workflows.sh && git diff --check` | All passed | ✓ PASS |
-
-The receipt and live workflow runs were checked read-only. An initial relation-selector run overlapped another process using the same OS resources and reported one failure; the uncontended serial rerun passed all three tests (385.2s), including the same canonical completion case. The failure was not reproducible serially and is not retained as a gap.
+| Exact project volume match excludes lookalikes | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs:46 test/lockspire/release/repository_hygiene_contract_test.exs:52` | Included in the same focused run: exact volume warns with a disposition; prefix/backup lookalikes yield zero WARN; 2 tests, 0 failures | ✓ PASS |
+| Docker inspection failures do not become false clean results | Same focused command | Running-container, stopped-container, and volume-list failures each produce WARN and suppress the corresponding PASS | ✓ PASS |
+| Maintained Phase 139 planning posture | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/quality/phase_139_planning_consistency_test.exs:7` | 1 test, 0 failures | ✓ PASS |
+| OIDF supplemental classification and dispatch boundary | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 MIX_ENV=test mix test test/lockspire/conformance_workflow_contract_test.exs:19` | 1 test, 0 failures | ✓ PASS |
+| Portable/live lifecycle route and recovery contract (portable mode) | `LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` | 18 passed, 0 failed, 2 expected skips | ✓ PASS |
+| Exact acceptance, redaction, historical release, and supply-chain contracts | Prior focused behavioral evidence in the previous report; checked current source and wiring for regression | Unchanged contract surfaces; source and test files remain present and connected | ✓ PASS (regression check) |
 
 ## Probe Execution
 
-No probes are declared in the phase plans or validation strategy.
+No probes are declared in Phase 139 plans or validation strategy.
 
 ## Requirements Coverage
 
-| Requirement | Source plans | Status | Evidence |
-|---|---|---|---|
-| CI-06 | 139-01/05/06/09 | PHASE 140 REQUIREMENT — ENTRY EVIDENCE SATISFIED | Durable receipt and successful CI run `36314255664` prove the exact synchronized `main` SHA for entry; Phase 140 requirement closure remains with Phase 140 verification. |
-| CI-07 | 139-01/05/06/09 | PHASE 140 REQUIREMENT — ENTRY EVIDENCE SATISFIED | Durable receipt and successful Release no-publish run `36314255656` prove same-SHA no-publish entry evidence; Phase 140 requirement closure remains with Phase 140 verification. |
-| CI-08 | 139-03/04/06 | SATISFIED | Redaction/non-certifying OIDF contracts passed. |
-| QUAL-05 | 139-01/02/08/10/12/13 | SATISFIED | Exact acceptance, proof selector, completion matrix, shell syntax, and workflow lint pass. |
-| HYGIENE-05 | 139-01/05/06/10 | SATISFIED | Exact-SHA receipt records hygiene `pass`, 0 BLOCK, and 0 WARN at synchronized main SHA `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; hostile acceptance fixtures pass. |
-| HYGIENE-06 | 139-03/07/09/11 | SATISFIED | Lifecycle and workflow supply-chain contracts pass. |
-| TRUTH-03 | 139-02/04/05/08/10/12/13 | SATISFIED | Fresh 13-plan canonical completion and hostile-transition matrix passed. |
-| TRUTH-04 | 139-04/06 | SATISFIED | Maintained 1.5.0 source/run/tag/checksum/Hex chain remains distinct from current acceptance. |
-| TRUTH-05 | 139-03/04/07/09/11 | SATISFIED | Protected exact-ref publishing and immutable action-reference contracts pass. |
+| Requirement | Source Plan | Description | Status | Evidence |
+|---|---|---|---|---|
+| CI-08 | 139-03/04/06 | Required acceptance distinct from supplemental non-certifying OIDF evidence | SATISFIED | OIDF workflow classification and redaction contract remain wired. |
+| QUAL-05 | 139-01/02/08/10/12/13 | `mix ci` passes at reconciled acceptance SHA | SATISFIED | Exact gate invokes `mix ci`, confirms tests ran, and verifies unchanged accepted SHA. |
+| HYGIENE-05 | 139-01/05/06/10 | No unresolved hygiene BLOCK; every WARN has explicit disposition | SATISFIED | Exact receipt schema and positive/hostile fixtures cover classification and disposition matching. New Docker focused tests pass. |
+| HYGIENE-06 | 139-03/07/09/11 | New repository-health checks require repeatable evidence | SATISFIED | Deterministic source-level and behavior fixtures cover release and hygiene contract boundaries. |
+| TRUTH-03 | 139-02/04/05/08/10/12/13 | Coherent maintained planning/release posture | SATISFIED | Current planning consistency test passes; 13-plan completion classifier remains present and tested. |
+| TRUTH-04 | 139-04/06 | Trace public release across source, runs, tag, checksum, Hex, and records | SATISFIED | Maintained 1.5.0 record and manifest-bound release path retain the linked evidence chain. |
+| TRUTH-05 | 139-03/04/07/09/11 | Release ownership and artifact controls remain intact | SATISFIED | Current release workflow, full-SHA references, and workflow contract tests retain protected exact-ref and manifest-bound proof. |
+| CI-06 | 139-01/05/06/09 | Terminal exact-SHA CI evidence for final synchronized `main` | DEFERRED | Phase 140 roadmap explicitly requires terminal same-SHA acceptance; Phase 139 supplies repository-owned acceptance logic. |
+| CI-07 | 139-01/05/06/09 | Terminal exact-SHA Release no-publish evidence for final synchronized `main` | DEFERRED | Phase 140 roadmap explicitly requires terminal same-SHA acceptance; Phase 139 supplies repository-owned acceptance logic. |
 
-All Phase 139 requirement IDs are represented in the 13 current plans. CI-06/CI-07 remain Phase 140 requirements; their live entry-gate evidence is now present in the exact-SHA receipt.
-
-### Advisory (New Scope, Unevidenced)
-
-None. Re-verification found no new-scope blocker without deterministic evidence.
+All seven Phase 139 roadmap requirement IDs are covered. CI-06 and CI-07 remain in the older plan frontmatter but the current requirements and roadmap assign terminal receipt closure to Phase 140.
 
 ## Test Quality Audit
 
-| Test set | Active / skipped | Circular | Assertion level | Verdict |
-|---|---:|---|---|---|
-| Exact acceptance/receipt fixtures | 2 / 0 | No; runs finalizer against isolated fake remote/API | Behavioral and value-level | ✓ PASS |
-| Phase 139 gap-closure selectors | 3 / 0 | No; independent empty-inventory and parser contracts | Behavioral and value-level | ✓ PASS |
-| Portable/installed Node lifecycle suites | 17 / 2 each | No; router, cancellation, and hook rendering are invoked | Behavioral | ✓ PASS |
-| Redaction/workflow contracts | 8 / 0 | No | Value and structural | ✓ PASS |
-| Canonical Phase 139 completion/relation matrix | 3 / 0 | No; isolated lifecycle and hostile deltas are asserted | Behavioral | ✓ PASS — serial run, 3 tests, 0 failures |
+| Test File | Linked Req | Active | Skipped | Circular | Assertion Level | Verdict |
+|---|---|---:|---:|---|---|---|
+| `repository_hygiene_contract_test.exs` | QUAL-05, HYGIENE-05/06 | Yes | 0 in focused Docker run | No; invokes the real shell checker against controlled fake Docker/GitHub commands | Behavioral/value | ✓ PASS |
+| `conformance_redacted_evidence_contract_test.exs`, `conformance_workflow_contract_test.exs` | CI-08 | 1 workflow classification test now; prior redaction suite 3 tests | 0 reported | No; asserts redaction and workflow contract independently | Value/behavioral | ✓ PASS |
+| `workflow_supply_chain_contract_test.exs` | TRUTH-05 | Prior focused evidence: 8 tests combined | 0 reported | No; checks source workflow/action pins and dependencies | Structural/value | ✓ PASS (regression check) |
+| `phase_139_planning_consistency_test.exs` | TRUTH-03 | 1 run now | 0 | No; compares tracked current records and plan inventory | Behavioral/value | ✓ PASS |
+| Portable lifecycle/router Node tests | QUAL-05, HYGIENE-06, TRUTH-03/05 | 18 | 2 expected | No; invokes router and isolated lifecycle fixture | Behavioral | ✓ PASS |
 
-The two skipped Node tests are explicit; the Phase 32 case is outside Phase 139, and the Phase 139 acceptance boundary has active ExUnit coverage. Circular patterns detected: 0. No insufficient-assertion blocker found in the focused contracts.
+**Disabled requirement tests:** 0 identified. **Circular expected-value generation:** 0 identified. **Insufficient assertions:** none found in focused contracts.
 
 ## Decision Coverage
 
-Same-SHA authority, the separate historical 1.5.0 chain, supplemental non-certifying OIDF handling, the bounded lifecycle surface, and phase-neutral fixture labels remain represented in current plans and artifacts. No decision-coverage warning changes the status.
+The decision coverage gate returned `total: 12`, `honored: 12`, `not_honored: []`. All trackable Phase 139 context decisions are represented in shipped artifacts.
 
 ## Anti-Patterns Found
 
-No unresolved debt-marker comments were found in modified implementation lines. The live receipt and synchronized-main evidence are valid. The initial overlapping test run's failure did not reproduce when the relation selector ran serially; no anti-pattern blocker remains.
+| File | Line | Pattern | Severity | Impact |
+|---|---:|---|---|---|
+| — | — | No unresolved `TBD`, `FIXME`, or `XXX` debt markers or implementation stubs in the inspected Phase 139 acceptance/Docker files | — | No blocker |
 
 ## Human Verification Required
 
-N/A — infrastructure/release-control phase with no user-facing behavior. Automated integration and lifecycle fixtures cover the repository-owned acceptance boundaries. No conversational or human UAT was invoked.
+N/A — infrastructure/release-control phase with no user-facing elements. Runtime transition, cancellation, exact-SHA validation, and Docker inspection-result handling have executable checks.
 
 ## Gaps Summary
 
-All five roadmap criteria pass. The durable exact-SHA entry receipt at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9` and its same-SHA CI/Release results were independently checked. The serial lifecycle selector passed 3/3, and the concurrent-run failure was not reproducible.
+No Phase 139 roadmap success criterion failed. The October 3 exact Docker volume matching and truthful inspection-failure fixes are present, wired, and proven by focused passing tests. Terminal CI-06 and CI-07 receipts for the final synchronized SHA remain Phase 140 work, as the current roadmap states; they do not block Phase 139's repository-owned acceptance capability.
 
 ---
 
-_Verified: 2026-09-27T18:29:28Z_
-_Verifier: gsd-verifier_
+_Verified: 2026-10-03T23:51:12Z_
+_Verifier: the agent (gsd-verifier)_
