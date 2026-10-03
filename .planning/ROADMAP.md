@@ -287,7 +287,10 @@ Plans:
   2. GSD project, roadmap, requirements, state, and milestone records describe the same completed v1.38 posture and the next sustaining GA release-train action.
   3. A maintainer can distinguish verified closure from deferred conformance, feature, cleanup, or release-publication work that remains outside this milestone.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 141-01-PLAN.md — Link the terminal baseline evidence and reconcile v1.38 planning truth
 
 ## Progress
 
