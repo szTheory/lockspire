@@ -28,7 +28,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue.
   4. A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory.
 
-**Plans**: 38/38 plans executed; Phase 138 verification passed (G-138-98 closed)
+**Plans**: 38/38 plans complete; Phase 138 verification passed (G-138-98 closed)
 
 Plans:
 

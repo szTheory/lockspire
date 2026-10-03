@@ -3,19 +3,20 @@ gsd_state_version: "1.0"
 milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
-current_phase_name: bounded-operational-loose-end-triage
-current_plan: 15
-status: executing
-stopped_at: Phase 140 terminal exact-SHA acceptance pending; Phase 141 is planned behind this prerequisite
-last_updated: "2026-10-03T14:31:28.008Z"
-last_activity: 2026-10-02
-last_activity_desc: Phase 140 terminal CI-06/CI-07 acceptance remains pending; Phase 141 plan is reviewed and gated on it
-state_head: dc5cc5536cf332f0f866f79a3a421fc2161056de
+current_phase_name: Bounded Operational Loose-End Triage
+current_plan: Not started
+status: planning
+stopped_at: Phase 138 complete, ready to plan Phase 140
+last_updated: "2026-10-03T17:15:15.720Z"
+last_activity: 2026-10-03
+last_activity_desc: Phase 138 complete, transitioned to Phase 140
+state_head: 49531ffe2810f3dfa7ede10c1851d7514cdc2b76
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 68
-  completed_plans: 66
+  completed_plans: 67
+  percent: 50
 ---
 
 # Project State
@@ -26,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-09-26)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 140 — Bounded Operational Loose-End Triage. Phase 141 is planned, but its execution depends on Phase 140 terminal acceptance.
+**Current focus:** Phase 138 — Baseline Inventory & Evidence Taxonomy
 
 ## Current Position
 
-Phase: 140 (bounded-operational-loose-end-triage) — READY TO EXECUTE
-Current Plan: 15
-Total Plans in Phase: 16
-Plan: 15 of 15
-Status: Waiting for terminal exact-SHA acceptance (CI-06/CI-07)
-Last activity: 2026-10-02 — Phase 140 terminal acceptance remains pending; Phase 141 plan is reviewed and gated on it
+Phase: 140 — Bounded Operational Loose-End Triage
+Current Plan: Not started
+Total Plans in Phase: 38
+Plan: 1 of 38
+Status: Ready to plan
+Last activity: 2026-10-03 — Phase 138 complete, transitioned to Phase 140
 
-Progress: [█████████░] 14 of 15 plans complete; Plan 140-15's terminal exact-SHA acceptance remains pending. Phase 141 is planned but cannot execute until this gate closes.
+Progress: [█████░░░░░] 50%
 
 Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plans 140-01 through 140-14 have complete summaries, including resumed Plan 140-04. Plan 140-14 proves valid and hostile recovery-v2 through the production entry point at the historical planning-prefix stage; its source candidate a68ab1bb74aa0b8dbed30f46fd632d42731a54c5 passed full local CI and its two changed test files passed independent deep review. Phase 140 remains incomplete pending refreshed unfiltered verification and final exact-SHA acceptance.
 
@@ -182,7 +183,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-10-03T02:54:46Z
-Stopped at: Phase 141 plan reviewed; execution awaits Phase 140 terminal acceptance
+Stopped at: Phase 138 complete, ready to plan Phase 140
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
 Resume instruction: Continue Phase 140's post-summary terminal exact-SHA acceptance for one synchronized main SHA. CI-06/CI-07 remain pending until that same SHA has local CI, exact hygiene, required canonical CI, and Release no-publish proof, corroborated by the Phase 140 owner. Do not substitute predecessor evidence or move refs without current exact-target authorization. After Phase 140 closes, resume the reviewed Phase 141 plan; do not recreate its context or plan.
 
