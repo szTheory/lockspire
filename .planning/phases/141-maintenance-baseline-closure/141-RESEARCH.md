@@ -274,17 +274,19 @@ No remote service was modified and no tests or acceptance gates were run during 
 | A2 | GitHub workflow records remain accessible to the maintainer at closure. | Environment Availability | Hosted proof cannot be freshly joined; closure must remain pending or state the observation gap. |
 | A3 | `141-BASELINE.md` is a useful filename for the canonical dated handoff. | Summary / Architecture Patterns | Low impact; filename is delegated discretion and can change without changing evidence semantics. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **What is the terminal Phase 140 accepted SHA?**
+The values below remain unknown until the relevant mutable evidence is observed at execution time. Their **planning questions are resolved**: Phase 141 has an explicit source-native procedure and fail-closed outcome for each value. `(RESOLVED)` here means no design or planning ambiguity remains; it does not claim that closure-time observations have already happened.
+
+1. **What is the terminal Phase 140 accepted SHA?** — RESOLVED for planning: Task 1 consumes only the Phase 140 owner's post-summary terminal receipt and matching verifier. If absent, contradictory, or inaccessible, Phase 141 stops without inventing a SHA or making closure claims.
    - What we know: The acceptance file says prior candidate receipts are not terminal if subsequent writes create another candidate.
    - What's unclear: The exact post-summary accepted source SHA after Phase 140 verifier and all evidence writes.
    - Recommendation: Leave it unknown in the plan template; consume only the completed Phase 140 verifier and final exact-hygiene JSON receipt.
-2. **Which version is the latest public release when Phase 141 closes?**
+2. **Which version is the latest public release when Phase 141 closes?** — RESOLVED for planning: Task 1 re-queries authoritative Hex/GitHub publication and workflow evidence at closure; Task 2 updates explanatory prose only from that evidence. Failed/unavailable queries remain pending observations, not absence claims.
    - What we know: Phase 141 context cites discussion-time Hex/GitHub proof for `1.5.0`, while `.planning/RELEASE-TRAIN.md` contains `1.5.1` claims.
    - What's unclear: Whether public release truth changed between discussion and execution, and what exact tag/run/package chain is current then.
    - Recommendation: Read current Hex and GitHub primary records at closure; update explanatory planning claims only, preserve release-owned state.
-3. **What exact sustaining GA action should be recorded?**
+3. **What exact sustaining GA action should be recorded?** — RESOLVED for planning: Task 2 re-reads the release-train conditions and current evidence, then records the next supported conditional action. It does not invent a patch intent or execute publication.
    - What we know: The release train says patch-eligible changes flow through Release Please and a next patch is cut only when at least one such change is merged, exact current-main CI is green, hygiene has no BLOCK, and supported-surface truth remains current. [VERIFIED: `.planning/RELEASE-TRAIN.md:22-30`]
    - What's unclear: Whether a qualifying merged change exists at closure; that is mutable.
    - Recommendation: Re-read current main/release train evidence, then state the next action/condition precisely. Do not invent a patch intent if its entry conditions are absent.

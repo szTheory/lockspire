@@ -19,16 +19,16 @@ created: "2026-10-02"
 |----------|-------|
 | **Framework** | ExUnit exists in the project; no application test is in scope for this documentation-only phase |
 | **Config file** | `mix.exs` (existing project configuration; do not change it for Phase 141) |
-| **Quick run command** | `git diff --check` |
-| **Full suite command** | `git diff --check` plus the manual evidence review below; application tests do not establish the truth of the release handoff |
+| **Quick run command** | `git add -- <task-owned-paths> && git diff --cached --check -- <task-owned-paths>` before committing the task |
+| **Full suite command** | The three task-scoped staged whitespace checks plus the manual evidence review below; application tests do not establish the truth of the release handoff |
 | **Estimated runtime** | Under 5 seconds for the mechanical check; evidence review depends on available Phase 140 receipts and read-only sources |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `git diff --check`.
-- **After every plan wave:** Run `git diff --check` and complete the manual verification rows for artifacts written in that wave.
+- **Before every task commit:** Stage only that task's declared paths, then run its exact `git diff --cached --check -- <task-owned-paths>` command. This includes new files and checks the staged task content before the commit makes it disappear from the working diff.
+- **After every plan wave:** Complete the applicable manual evidence reviews and confirm each task-scoped staged check passed before its commit.
 - **Before `$gsd-verify-work`:** Reconcile the dated baseline report and GSD records against the final Phase 140 terminal acceptance and current read-only Hex/GitHub release evidence.
 - **Max feedback latency:** 5 seconds for the mechanical check; remote evidence latency is external.
 
@@ -38,9 +38,9 @@ created: "2026-10-02"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 141-01-01 | 01 | 1 | BASE-04 | T-141-01 | Consume only Phase 140 terminal evidence for the accepted source SHA; preserve separate report-commit provenance and redact sensitive proof | docs + evidence review | `git diff --check` | N/A | ⬜ pending |
-| 141-01-02 | 01 | 1 | BASE-05 | T-141-02 | Base public-release prose on revalidated Hex/GitHub publication evidence; preserve release-owner boundaries | docs + evidence review | `git diff --check` | N/A | ⬜ pending |
-| 141-01-03 | 01 | 1 | BASE-04, BASE-05 | T-141-03 | Gate completion statuses on the terminal receipt and keep accepted-source, baseline-report, and reconciliation-commit identities separate | docs + cross-record review | `git diff --check` | N/A | ⬜ pending |
+| 141-01-01 | 01 | 1 | BASE-04 | T-141-01 | Consume only Phase 140 terminal evidence for the accepted source SHA; preserve separate report-commit provenance and redact sensitive proof | docs + evidence review | `git add -- .planning/phases/141-maintenance-baseline-closure/141-BASELINE.md && git diff --cached --check -- .planning/phases/141-maintenance-baseline-closure/141-BASELINE.md` | N/A | ⬜ pending |
+| 141-01-02 | 01 | 1 | BASE-05 | T-141-02 | Base public-release prose on revalidated Hex/GitHub publication evidence; preserve release-owner boundaries | docs + evidence review | `git add -- .planning/PROJECT.md .planning/RELEASE-TRAIN.md && git diff --cached --check -- .planning/PROJECT.md .planning/RELEASE-TRAIN.md` | N/A | ⬜ pending |
+| 141-01-03 | 01 | 1 | BASE-04, BASE-05 | T-141-03 | Gate completion statuses on the terminal receipt and keep accepted-source, baseline-report, and reconciliation-commit identities separate | docs + cross-record review | `git add -- .planning/REQUIREMENTS.md .planning/ROADMAP.md .planning/STATE.md .planning/MILESTONES.md && git diff --cached --check -- .planning/REQUIREMENTS.md .planning/ROADMAP.md .planning/STATE.md .planning/MILESTONES.md` | N/A | ⬜ pending |
 
 ---
 
@@ -63,7 +63,7 @@ Existing infrastructure covers the phase's mechanical documentation check. No te
 ## Validation Sign-Off
 
 - [ ] All plan tasks have a mechanical check and a specific manual evidence review.
-- [ ] Sampling continuity: every wave has a `git diff --check` and its applicable evidence review.
+- [ ] Sampling continuity: every task's staged content is checked before commit and every wave receives its applicable evidence review.
 - [x] Wave 0 covers all requirements; no new test infrastructure is applicable.
 - [x] No watch-mode flags.
 - [ ] Phase 140 exact-SHA acceptance dependency is satisfied before closure claims are made.
