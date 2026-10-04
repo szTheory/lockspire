@@ -1,6 +1,6 @@
 ---
 phase: 138-baseline-inventory-evidence-taxonomy
-verified: 2026-10-03T17:12:36Z
+verified: 2026-10-04T16:44:52Z
 status: passed
 score: 7/7 must-haves verified
 covered_files:
@@ -97,7 +97,7 @@ covered_files:
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
   - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
-covered_digest: "v2:sha256:6fcb76af157fddd186ea1d3296aa33f90cbf43c9f929ff6a0557d8d138ce45a9"
+covered_digest: "v2:sha256:9c3b69f482a348925a81ba69150de4b08031ffe1b3cb87c4093e049774000031"
 behavior_unverified: 0
 overrides_applied: 0
 decision_coverage:
@@ -119,9 +119,9 @@ deferred:
 # Phase 138: Baseline Inventory & Evidence Taxonomy Verification Report
 
 **Phase Goal:** Maintainers have one current, non-destructive evidence inventory for local/remote Git state and every maintained operational follow-up.
-**Verified:** 2026-10-03T17:12:36Z
+**Verified:** 2026-10-04T16:44:52Z
 **Status:** passed
-**Re-verification:** Yes — refreshed the stale 2026-09-27 report against current source files.
+**Re-verification:** Yes — refreshed the stale 2026-10-03 report after checking current covered sources and recomputing its fingerprint.
 
 ## Goal Achievement
 
@@ -180,9 +180,9 @@ None. The generic key-link checker reports the ledger-to-test links as absent be
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
-| Git receipt, Git domains, GitHub PR/issue collection and fail-closed pagination, maintained-source completeness/path safety, and stale snapshot classification | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 ERL_FLAGS='+S 1:1' mix test test/lockspire/release/repository_hygiene_contract_test.exs:54 test/lockspire/release/repository_hygiene_contract_test.exs:66 test/lockspire/release/repository_hygiene_contract_test.exs:74 test/lockspire/release/repository_hygiene_contract_test.exs:86 test/lockspire/release/repository_hygiene_contract_test.exs:113 test/lockspire/release/repository_hygiene_contract_test.exs:118 test/lockspire/release/repository_hygiene_contract_test.exs:319` | 7 tests, 0 failures, 53 excluded; 52.6 seconds | ✓ PASS |
-| Exact 108-row closure and historical-byte protection | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.4.1 ERL_FLAGS='+S 1:1' mix test test/lockspire/quality/phase_138_prohibition_consistency_test.exs` | 6 tests, 0 failures; 4.5 seconds | ✓ PASS |
-| Invalid finalizer routing rejects unsupported input without spawning a child | `node --test --test-name-pattern=138-33-2 tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs` | 1 test passed; 0 failed; 31 ms | ✓ PASS |
+| Git/GitHub/maintained-source contracts, pagination failures, output safety, and snapshot classification | Orchestrator regression run: `test/lockspire/release/repository_hygiene_contract_test.exs` | 62 tests passed; 0 failures | ✓ PASS |
+| Remaining phase-referenced ExUnit regression coverage, including the exact 108-row closure and historical-byte contract | Orchestrator regression run over the remaining referenced ExUnit test files | 164 tests passed; 0 failures | ✓ PASS |
+| Finalizer command routing, including invalid input rejection without child construction | Orchestrator Node regression run for `tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs` | 11 tests passed; 0 failures | ✓ PASS |
 | Historical snapshot cannot be mistaken for current after topology drift | `env -u LOCKSPIRE_INVENTORY_TEST_GITHUB_FINGERPRINT -u LOCKSPIRE_INVENTORY_TEST_MAINTAINED_FINGERPRINT bash scripts/maintainer/baseline_inventory.sh --verify-snapshot-relation .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md` | Exit 1; reported `snapshot_relation: refresh_required` for observed topology and unclassified later changes | ✓ PASS — expected fail-closed result; freshness itself is deferred |
 
 ### Probe Execution
@@ -235,5 +235,5 @@ All 24 trackable decisions from `138-CONTEXT.md` are honored by the shipped arti
 
 ---
 
-_Verified: 2026-10-03T17:12:36Z_
+_Verified: 2026-10-04T16:44:52Z_
 _Verifier: the agent (gsd-verifier)_
