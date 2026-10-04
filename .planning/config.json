@@ -1,6 +1,5 @@
 {
-  "runtime": "codex",
-  "model_profile": "balanced",
+  "model_profile": "adaptive",
   "commit_docs": true,
   "parallelization": true,
   "search_gitignored": false,
@@ -40,7 +39,6 @@
   "phase_naming": "sequential",
   "agent_skills": {},
   "features": {},
-  "resolve_model_ids": "omit",
   "mode": "yolo",
   "granularity": "standard",
   "model_profile_overrides": {
@@ -48,6 +46,11 @@
       "opus": "gpt-6-sol",
       "sonnet": "gpt-6-luna",
       "haiku": "gpt-6-luna"
+    },
+    "claude": {
+      "opus": "claude-opus-5-5",
+      "sonnet": "claude-opus-5-5",
+      "haiku": "claude-sonnet-5-5"
     }
   }
 }
