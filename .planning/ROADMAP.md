@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 14/16 local plans executed; verification is 30/32, with CI-06/CI-07 exact-SHA CI/Release acceptance still pending
+**Plans**: 17 plans; 16 prior summaries exist, and Plan 140-17 awaits terminal acceptance; verification is 30/32 with CI-06/CI-07 pending
 
 Plans:
 **Wave 1**
@@ -271,6 +271,10 @@ Plans:
 **Wave 16** *(terminal receipt after all tracked completion writes)*
 
 - [ ] 140-16-PLAN.md — Close CI-06/CI-07 on the last exact candidate with fresh ref authority and a private same-SHA receipt.
+
+**Wave 17** *(gap closure continuation after Plan 140-16 T1 summary)*
+
+- [ ] 140-17-PLAN.md — Refresh the final candidate, obtain exact ref authority if needed, and prove CI-06/CI-07 with a private same-SHA receipt.
 
 **Cross-cutting constraints:**
 
