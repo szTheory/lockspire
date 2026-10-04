@@ -5,7 +5,7 @@ status: validated
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-08-28
-audited: 2026-10-03
+audited: 2026-10-04
 ---
 
 # Phase 138 — Validation Strategy
@@ -171,3 +171,16 @@ Plan 138-34 adds machine-derived coverage metadata, a portable router contract a
 | Manual-only items | 0 |
 
 Plans 138-35 through 138-38 add lifecycle receipt checks, exact 108-claim ledger coverage, claim-level negative-test receipts, and explicit maintainer resolutions. Their summaries record the focused verification commands as passing. These plans cover the existing five Phase 138 requirements and add no uncovered behavior. UAT #100 remains assigned to Phases 140/141 and is not a Phase 138 validation gap.
+
+## Validation Audit 2026-10-04
+
+| Metric | Count |
+|--------|-------|
+| Phase plans re-audited | 38 |
+| Matching summaries | 38 |
+| New behavioral gaps | 0 |
+| Uncovered requirements | 0 |
+| Manual-only items | 0 |
+| Prior-phase regression tests passed | 237 |
+
+The execution repair stabilizes an existing Phase 139 acceptance fixture against the pinned historical completion parent; it adds no Phase 138 product behavior or uncovered requirement. The prior-phase regression selection passed 62 repository-hygiene tests, 164 tests across the remaining referenced ExUnit files, and 11 finalizer-router Node tests. The Phase 138 requirements and task-to-test coverage remain fully mapped.
