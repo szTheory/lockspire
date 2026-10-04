@@ -6102,7 +6102,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     state = File.read!(state_path)
 
     unless Regex.match?(~r/^current_plan: 12$/m, state) do
-      raise("Phase 139 completion fixture must preserve the live current_plan: 12 parent")
+      raise("Phase 139 completion fixture must preserve the canonical current_plan: 12 parent")
     end
 
     project_path = Path.join(repository, ".planning/PROJECT.md")
@@ -6218,22 +6218,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp copy_phase_139_verification_parent_documents!(repository) do
     source = Paths.path(".")
-
-    completion =
-      run_git!(source, [
-        "rev-list",
-        "-1",
-        "--fixed-strings",
-        "--grep=docs(phase-139): complete phase execution",
-        "HEAD"
-      ])
+    parent =
+      run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
       |> String.trim()
-
-    unless completion =~ ~r/^[0-9a-f]{40}$/ do
-      raise("Phase 139 completion commit is required for the post-transition fixture")
-    end
-
-    parent = run_git!(source, ["rev-parse", "#{completion}^"]) |> String.trim()
 
     for path <- [
           ".planning/PROJECT.md",
