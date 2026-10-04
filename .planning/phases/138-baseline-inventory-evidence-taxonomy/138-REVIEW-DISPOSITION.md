@@ -6,7 +6,7 @@ findings:
   - id: WR-01
     severity: warning
     disposition: open
-    title: "Evidence receipt validation accepts mismatched or contradictory receipts"
+    title: "Git fixture splits a generated remote path on whitespace"
   - id: WR-02
     severity: warning
     disposition: open
@@ -17,7 +17,7 @@ findings:
     title: "External cancellation orphans the detached finalizer process group"
 open: 2
 total: 3
-recorded: 2026-10-03T13:37:07.288Z
+recorded: 2026-10-04T15:26:20.594Z
 ---
 
 # Phase 138: Code Review Disposition
@@ -25,7 +25,7 @@ recorded: 2026-10-03T13:37:07.288Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-02 | warning | open | - (not in the current review) |
 | CR-01 | critical | fixed | 138-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
