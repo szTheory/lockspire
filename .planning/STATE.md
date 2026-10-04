@@ -6,11 +6,11 @@ current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
 current_plan: Not started
 status: planning
-stopped_at: Phase 138 complete; resume existing Phase 140-16 acceptance closure
-last_updated: "2026-10-04T16:52:21Z"
+stopped_at: Phase 138 and 139 complete; Phase 140 CI-06/CI-07 terminal acceptance continuation pending
+last_updated: "2026-10-04T17:17:08.384Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 138 complete, transitioned to Phase 140
-state_head: 9cc7e8669ffd503b8d557622220be1a8f77b46b2
+state_head: 17a908a794449885c39e5a059f370a5823eeefd3
 progress:
   total_phases: 4
   completed_phases: 2
@@ -38,7 +38,7 @@ Plan: 1 of 16
 Status: Ready to plan
 Last activity: 2026-10-04 — Phase 138 complete, transitioned to Phase 140
 
-Progress: [███████████████████░] 67/68 plans
+Progress: [█████░░░░░] 50%
 
 Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140. Plans 140-01 through 140-14 have complete summaries, including resumed Plan 140-04. Plan 140-14 proves valid and hostile recovery-v2 through the production entry point at the historical planning-prefix stage; its source candidate a68ab1bb74aa0b8dbed30f46fd632d42731a54c5 passed full local CI and its two changed test files passed independent deep review. Phase 140 remains incomplete pending refreshed unfiltered verification and final exact-SHA acceptance.
 
@@ -183,9 +183,9 @@ Historical transition (2026-09-26): Phase 139 complete, ready to plan Phase 140.
 ## Session Continuity
 
 Last session: 2026-10-04T16:52:21Z
-Stopped at: Phase 138 complete; resume existing Phase 140-16 acceptance closure
+Stopped at: Phase 138 and 139 complete; Phase 140 CI-06/CI-07 terminal acceptance continuation pending
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Run $gsd-execute-phase 140 --gaps-only to resume existing Plan 140-16 T2/T3 for CI-06/CI-07; Phase 138 verification is current and passed. After Phase 140 closes, run $gsd-execute-phase 141. Do not create a duplicate Phase 140 plan.
+Resume instruction: Run $gsd-plan-phase 140 --gaps to create a runnable continuation for refreshed candidate capture, T2, and T3; then run $gsd-execute-phase 140 --gaps-only. Do not rerun Phase 138 or Phase 139, replay Plan 140-16 T1, or reuse the de671 approval.
 
 ## Performance Metrics
 
