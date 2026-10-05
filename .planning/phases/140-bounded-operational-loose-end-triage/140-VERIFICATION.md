@@ -74,30 +74,30 @@ re_verification:
   gaps_closed:
     - "Plan 140-06 valid/hostile recovery-v2 behavior at the historical planning-entry stage; Plan 140-14 now exercises the real finalizer through its no-publish barrier."
   gaps_remaining:
-    - "CI-06 the terminal candidate created by the completion-record update must pass local mix ci, exact hygiene, and all required canonical CI jobs; predecessor A at 4ce0ab3d passed the complete join."
-    - "CI-07 the terminal candidate created by the completion-record update must pass the Release no-publish graph joined with local CI and exact hygiene; predecessor A at 4ce0ab3d passed."
+    - "CI-06 remains pending until one final synchronized SHA passes local mix ci, exact hygiene, and every required canonical CI job, and a GSD-compatible read-only path can consume its receipt after all tracked lifecycle writes."
+    - "CI-07 remains pending until the same SHA passes the Release no-publish graph and a GSD-compatible read-only path can consume its receipt after all tracked lifecycle writes."
   regressions: []
 gaps:
   - truth: "CI-06 is accepted only after one final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with current-SHA local mix ci, exact hygiene, and every required canonical CI job passing."
     status: failed
-    reason: "The first exact-SHA acceptance pass succeeded on 47fbdf68a33c0542afa479c43aa95da2174b2bd6. Later candidates f9a0c50a7ef117aa8023fae823d14c12e95f46c2 and 1ca94e8ca31d46ea3550f596208e96ce2cb8d607 failed local mix ci and canonical CI. Candidate 4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d then passed the complete join, including CI run 37056328643. This record update creates the terminal candidate, which still needs its own receipt."
+    reason: "The first exact-SHA acceptance pass succeeded on 47fbdf68a33c0542afa479c43aa95da2174b2bd6. Later candidates f9a0c50a7ef117aa8023fae823d14c12e95f46c2 and 1ca94e8ca31d46ea3550f596208e96ce2cb8d607 failed local mix ci and canonical CI. Candidate 4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d passed the predecessor join, including CI run 37056328643, but does not certify the current SHA. A terminal receipt is deferred because standard GSD execution performs gsd_post_task_tracked_writes after task work; a later plan must establish a supported read-only completion path before candidate capture or CI."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
-        issue: "Candidate 4ce0ab3d passed the full join; the completion-record update creates a new candidate whose terminal exact-SHA receipt is pending."
+        issue: "Candidate 4ce0ab3d passed the predecessor join only; the current candidate has no terminal receipt and GSD lifecycle ordering must be resolved before acceptance starts."
       - path: .planning/REQUIREMENTS.md
-        issue: "Candidate 4ce0ab3d passed the full join; the completion-record update creates a new candidate whose terminal exact-SHA receipt is pending."
+        issue: "CI-06 remains unchecked; predecessor evidence is not current-SHA evidence, and a GSD-compatible receipt-aware completion path is still required."
     missing:
-      - "Run the terminal exact acceptance join on the completion-record candidate after fresh exact-candidate authorization and synchronization."
+      - "Plan and verify a supported read-only completion route that can consume the private exact-SHA receipt after all GSD tracked lifecycle writes; only then capture and gate a fresh candidate."
   - truth: "CI-07 is accepted only after the successful intentional Release no-publish job graph is proven on the same final synchronized SHA as CI-06."
     status: failed
-    reason: "Candidate 4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d passed Release run 37056328607 with the intentional no-publish graph as part of complete receipt A. The completion-record update creates a terminal candidate whose Release graph must be joined with its local CI and exact hygiene."
+    reason: "Candidate 4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d passed Release run 37056328607 with the intentional no-publish graph as part of predecessor receipt A. That receipt does not certify the current SHA. A terminal join is deferred because standard GSD execution performs gsd_post_task_tracked_writes after task work; a later plan must establish a supported read-only completion path before candidate capture or CI."
     artifacts:
       - path: .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
-        issue: "Receipt A passed; the completion-record candidate needs its own terminal same-SHA Release result."
+        issue: "Receipt A is predecessor evidence; the current SHA has no terminal same-SHA Release result, and GSD lifecycle ordering must be resolved before acceptance starts."
       - path: .planning/REQUIREMENTS.md
-        issue: "Receipt A includes the successful Release graph; terminal candidate evidence is pending."
+        issue: "CI-07 remains unchecked until a current-SHA Release graph and GSD-compatible receipt-aware completion path are established."
     missing:
-      - "A successful terminal-candidate Release no-publish graph joined with passing local CI, canonical CI, and exact hygiene."
+      - "A supported read-only completion route that consumes the private same-SHA Release receipt after all tracked GSD lifecycle writes; then a fresh candidate-specific Release no-publish join with local CI, canonical CI, and exact hygiene."
 deferred:
   - truth: "The project Current State section describes Phase 140 as still executing Plan 140-02."
     addressed_in: "Phase 141"
