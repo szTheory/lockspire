@@ -4729,6 +4729,8 @@ if recovery is not None:
         if hashlib.sha256(archive_bytes).hexdigest() != superseded_digest:
             raise ValueError('superseded receipt archive digest')
         prior = json.loads(archive_bytes)
+        if prior.get('recovery', {}).get('protocol') == 'phase-140-recovery-v2':
+            raise ValueError('nested supersession lineage is unsupported')
         prior_after = prior.get('after') if isinstance(prior, dict) else None
         prior_head = prior_after.get('head') if isinstance(prior_after, dict) else None
         successor_head = after.get('head') if isinstance(after, dict) else None

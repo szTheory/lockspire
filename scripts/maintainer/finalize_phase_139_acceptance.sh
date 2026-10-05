@@ -177,6 +177,8 @@ try:
             if hashlib.sha256(archived_bytes).hexdigest() != recovery["supersedesSha256"]:
                 raise ValueError("superseded receipt archive digest")
             prior = json.loads(archived_bytes)
+            if prior.get("recovery", {}).get("protocol") == "phase-140-recovery-v2":
+                raise ValueError("nested supersession lineage is unsupported")
             prior_head = prior.get("after", {}).get("head") if isinstance(prior.get("after"), dict) else None
             prior_transform = prior.get("transformation") if isinstance(prior, dict) else None
             prior_evidence = {

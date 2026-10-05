@@ -509,6 +509,61 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
     assert.match(wrongDigest.stderr, /SHA-256 does not match/);
     assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes, 'wrong digest must preserve pending receipt bytes');
 
+    const truncatedAcceptance = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(truncatedAcceptance.status, 0);
+    assert.match(truncatedAcceptance.stderr, /acceptance receipt evidence is malformed/);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes);
+    assert.equal(
+      fs.existsSync(path.join(fixture, '.git/gsd-lifecycle/receipt-archive', `${staleDigest}.json`)),
+      false,
+      'invalid durable authority must not create a prior-receipt archive',
+    );
+    const ciNames = [
+      'Dialyzer', 'Release Hygiene Drift', 'Fast Checks', 'Minimum Supported Elixir/OTP',
+      'Integration Checks', 'Complete Coverage Evidence', 'Adoption Demo Smoke',
+    ];
+    const releaseJobs = [
+      ['Maintain Release Please PR', 'success'],
+      ['Validate exact main head and CI evidence', 'skipped'],
+      ['Prove exact package before publication', 'skipped'],
+      ['Publish verified release to Hex', 'skipped'],
+      ['Verify public install truth', 'skipped'],
+    ];
+    fs.writeFileSync(acceptedReceipt, `${JSON.stringify({
+      schema: 'lockspire-phase-139-acceptance-v1',
+      baseline_sha: baseline,
+      local_gate: { status: 'pass', exunit_tests: 1 },
+      hygiene: { status: 'pass', pass: 1, warn: 0, block: 0 },
+      required_ci: {
+        status: 'pass', run_id: 1, event: 'push', conclusion: 'success',
+        url: 'https://example.invalid/required',
+        jobs: ciNames.map((name) => ({ name, status: 'completed', conclusion: 'success' })),
+      },
+      release_no_publish: {
+        status: 'pass', run_id: 2, event: 'push', conclusion: 'success',
+        url: 'https://example.invalid/release', outcome: 'no_publish',
+        jobs: releaseJobs.map(([name, conclusion]) => ({ name, status: 'completed', conclusion })),
+      },
+      warn_dispositions: [],
+      supplemental_oidf: { classification: 'supplemental_non_certifying', required_gate: false },
+      inventory_relation: { status: 'verified' },
+      historical_release: {
+        source_sha: '5d10ce2219c2e687cf9573c8b280abfb118a47d8',
+        ci_run_id: 33141161205,
+        release_run_id: 33141484467,
+        version: '1.5.0',
+        checksum: '30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de',
+        tag: 'lockspire-v1.5.0',
+        status: 'verified',
+      },
+      captured_at: '2026-10-05T00:00:00Z',
+      repository: 'lockspire/fixture',
+    })}\n`, { mode: 0o600 });
+
     const codePath = 'tools/gsd-capabilities/lockspire-phase-finalizer/untrusted.test.cjs';
     fs.mkdirSync(path.dirname(path.join(fixture, codePath)), { recursive: true });
     fs.writeFileSync(path.join(fixture, codePath), 'untrusted code\n');
@@ -521,6 +576,87 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
     assert.match(codeRejected.stderr, /only unstaged planning and debug notes/);
     assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes, 'code-path dirt must preserve pending receipt bytes');
     fs.unlinkSync(path.join(fixture, codePath));
+
+    const syncFailurePreload = path.join(fixture, '.git/sync-failure-preload.cjs');
+    fs.writeFileSync(syncFailurePreload, [
+      "const fs = require('node:fs');",
+      'const original = fs.fsyncSync;',
+      'let calls = 0;',
+      'fs.fsyncSync = (descriptor) => {',
+      '  calls += 1;',
+      '  if (calls === Number(process.env.LOCKSPIRE_TEST_FAIL_FSYNC_AT)) {',
+      '    const error = new Error("simulated directory sync failure"); error.code = "EIO"; throw error;',
+      '  }',
+      '  return original(descriptor);',
+      '};',
+      '',
+    ].join('\n'));
+    const failedArchiveSync = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: {
+        GSD_TOOLS: recoveryTools, NODE_OPTIONS: `--require=${syncFailurePreload}`,
+        LOCKSPIRE_TEST_FAIL_FSYNC_AT: '2',
+      },
+    });
+    assert.notEqual(failedArchiveSync.status, 0);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes);
+    const retryArchiveSync = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: {
+        GSD_TOOLS: recoveryTools, NODE_OPTIONS: `--require=${syncFailurePreload}`,
+        LOCKSPIRE_TEST_FAIL_FSYNC_AT: '1',
+      },
+    });
+    assert.notEqual(retryArchiveSync.status, 0);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes);
+    const failedSync = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: {
+        GSD_TOOLS: recoveryTools, NODE_OPTIONS: `--require=${syncFailurePreload}`,
+        LOCKSPIRE_TEST_FAIL_FSYNC_AT: '3',
+      },
+    });
+    assert.notEqual(failedSync.status, 0);
+    assert.match(failedSync.stderr, /successor publication failed; prior pending receipt restored/);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes);
+
+    const wrapperDir = path.join(fixture, '.git/test-bin');
+    fs.mkdirSync(wrapperDir);
+    const gitCounter = path.join(wrapperDir, 'for-each-ref-count');
+    fs.writeFileSync(gitCounter, '0\n');
+    const gitWrapper = path.join(wrapperDir, 'git');
+    fs.writeFileSync(gitWrapper, [
+      '#!/bin/sh',
+      'if [ "$1" = "for-each-ref" ]; then',
+      '  count=$(cat "$LOCKSPIRE_TEST_GIT_COUNTER")',
+      '  count=$((count + 1))',
+      '  printf "%s\\n" "$count" > "$LOCKSPIRE_TEST_GIT_COUNTER"',
+      '  if [ "$count" -eq 4 ]; then',
+      '    "$LOCKSPIRE_TEST_GIT_REAL" "$@"',
+      '    printf "refs/heads/fixture-drift %040d\\n" 0',
+      '    exit 0',
+      '  fi',
+      'fi',
+      'exec "$LOCKSPIRE_TEST_GIT_REAL" "$@"',
+      '',
+    ].join('\n'), { mode: 0o755 });
+    const driftedRefs = run('node', [helperTarget, 'supersede', '139', staleDigest], {
+      cwd: fixture,
+      input: hooks,
+      env: {
+        GSD_TOOLS: recoveryTools,
+        PATH: `${wrapperDir}:${process.env.PATH}`,
+        LOCKSPIRE_TEST_GIT_COUNTER: gitCounter,
+        LOCKSPIRE_TEST_GIT_REAL: mustRun('which', ['git']).trim(),
+      },
+    });
+    assert.notEqual(driftedRefs.status, 0);
+    assert.match(driftedRefs.stderr, /prior pending receipt restored/);
+    assert.deepEqual(fs.readFileSync(receiptPath), sealedReceiptBytes);
+    assert.equal(fs.readFileSync(gitCounter, 'utf8').trim(), '4');
 
     const superseded = JSON.parse(mustRun('node', [helperTarget, 'supersede', '139', staleDigest], {
       cwd: fixture,
@@ -539,6 +675,23 @@ test('Phase 140 recovery preserves stale receipts on replay and rejects overlay 
     const archivePath = path.join(fixture, '.git/gsd-lifecycle/receipt-archive', `${staleDigest}.json`);
     assert.deepEqual(fs.readFileSync(archivePath), sealedReceiptBytes, 'receipt archive must retain exact prior receipt bytes');
     assert.equal(fs.statSync(archivePath).mode & 0o777, 0o600);
+    const successorBytes = fs.readFileSync(receiptPath);
+    const repeated = run('node', [helperTarget, 'supersede', '139',
+      crypto.createHash('sha256').update(successorBytes).digest('hex')], {
+      cwd: fixture,
+      input: hooks,
+      env: { GSD_TOOLS: recoveryTools },
+    });
+    assert.notEqual(repeated.status, 0);
+    assert.match(repeated.stderr, /v2 receipt cannot be superseded again/);
+    assert.deepEqual(fs.readFileSync(receiptPath), successorBytes);
+    const mutationLock = path.join(fixture, '.git/gsd-lifecycle/receipt-mutation.lock');
+    fs.mkdirSync(mutationLock);
+    const simultaneousCompletion = run('node', [helperTarget, 'complete', '139'], { cwd: fixture });
+    assert.notEqual(simultaneousCompletion.status, 0);
+    assert.match(simultaneousCompletion.stderr, /another receipt mutation is active/);
+    assert.deepEqual(fs.readFileSync(receiptPath), successorBytes);
+    fs.rmdirSync(mutationLock);
     const acceptanceScript = fs.readFileSync(
       path.join(root, 'scripts/maintainer/finalize_phase_139_acceptance.sh'),
       'utf8',

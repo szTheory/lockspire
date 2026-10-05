@@ -68,21 +68,30 @@ function readReceipt(root) {
   return receipt;
 }
 
-function writeReceipt(root, receipt) {
+function writeReceiptBytes(root, bytes) {
   const target = receiptPath(root);
   const directory = path.dirname(target);
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   const temporary = path.join(directory, `.post-completion-finalizer.${process.pid}.${crypto.randomBytes(8).toString('hex')}`);
-  const bytes = compact(receipt) + '\n';
-  if (Buffer.byteLength(bytes) > MAX_RECEIPT_BYTES) fail('receipt exceeds size limit');
+  if (bytes.length <= 0 || bytes.length > MAX_RECEIPT_BYTES) fail('receipt exceeds size limit');
+  let descriptor;
   try {
-    fs.writeFileSync(temporary, bytes, { mode: 0o600, flag: 'wx' });
-    fs.chmodSync(temporary, 0o600);
+    descriptor = fs.openSync(temporary, 'wx', 0o600);
+    fs.writeFileSync(descriptor, bytes);
+    fs.fchmodSync(descriptor, 0o600);
+    fs.fsyncSync(descriptor);
+    fs.closeSync(descriptor);
+    descriptor = undefined;
     fs.renameSync(temporary, target);
-    fs.chmodSync(target, 0o600);
+    fsyncDirectory(directory);
   } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
     try { fs.unlinkSync(temporary); } catch (_) { /* already published */ }
   }
+}
+
+function writeReceipt(root, receipt) {
+  writeReceiptBytes(root, Buffer.from(`${compact(receipt)}\n`));
 }
 
 function identity(root, relative) {
@@ -190,6 +199,20 @@ function acquireFinalizerLock(root) {
   return lockPath;
 }
 
+function acquireReceiptMutationLock(root) {
+  const directory = path.join(commonDir(root), 'gsd-lifecycle');
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const lockPath = path.join(directory, 'receipt-mutation.lock');
+  try {
+    fs.mkdirSync(lockPath, { mode: 0o700 });
+  } catch (_) {
+    fail('another receipt mutation is active');
+  }
+  process.once('exit', () => {
+    try { fs.rmdirSync(lockPath); } catch (_) { /* a failed cleanup remains fail-closed */ }
+  });
+}
+
 function fsyncDirectory(directory) {
   const descriptor = fs.openSync(directory, fs.constants.O_RDONLY);
   try { fs.fsyncSync(descriptor); } finally { fs.closeSync(descriptor); }
@@ -211,6 +234,7 @@ function archiveReceipt(root, bytes, digest) {
     if (!info.isFile() || (info.mode & 0o777) !== 0o600 || !fs.readFileSync(target).equals(bytes)) {
       fail('receipt archive conflicts with prior bytes');
     }
+    fsyncDirectory(directory);
     return target;
   }
   const temporary = path.join(directory, `.receipt.${process.pid}.${crypto.randomBytes(8).toString('hex')}`);
@@ -259,12 +283,49 @@ function trackingRemoteMain(root) {
   return tracking;
 }
 
+function refsUnchanged(root, snapshot) {
+  const result = childProcess.spawnSync('git', ['for-each-ref', '--format=%(refname) %(objectname)'], {
+    cwd: root, encoding: 'utf8', shell: false, maxBuffer: MAX_RECEIPT_BYTES,
+  });
+  return result.status === 0 && result.stdout === snapshot;
+}
+
+function remoteMainUnchanged(root, expected) {
+  const result = childProcess.spawnSync('git', ['ls-remote', 'origin', 'refs/heads/main'], {
+    cwd: root, encoding: 'utf8', shell: false, maxBuffer: MAX_RECEIPT_BYTES,
+  });
+  return result.status === 0 && result.stdout.trim().split(/\s+/)[0] === expected;
+}
+
+function pendingDigest(target) {
+  try { return sha256(fs.readFileSync(target)); } catch (_) { return 'unreadable'; }
+}
+
+function restorePriorReceipt(root, previousBytes, successorDigest, stage) {
+  const target = receiptPath(root);
+  const previousDigest = sha256(previousBytes);
+  const observed = pendingDigest(target);
+  if (observed === previousDigest) fail(`${stage}; prior pending receipt preserved`);
+  if (observed !== successorDigest) {
+    fail(`${stage}; pending receipt state is ${observed}; archived prior SHA-256 is ${previousDigest}`);
+  }
+  let restoreFailed = false;
+  try { writeReceiptBytes(root, previousBytes); } catch (_) { restoreFailed = true; }
+  const restored = pendingDigest(target);
+  if (restored === previousDigest && !restoreFailed) fail(`${stage}; prior pending receipt restored`);
+  if (restored === previousDigest) {
+    fail(`${stage}; prior pending receipt is visible but directory durability is unconfirmed`);
+  }
+  fail(`${stage}; pending receipt state is ${restored}; archived prior SHA-256 is ${previousDigest}`);
+}
+
 function supersede(root, phase, expectedDigest) {
   if (phase !== '139') fail('supersede is only available for Phase 139');
   if (!/^[0-9a-f]{64}$/.test(expectedDigest || '')) fail('expected receipt SHA-256 is malformed');
   const gitDirectory = fs.realpathSync(git(['rev-parse', '--path-format=absolute', '--git-dir'], { cwd: root }).trim());
   if (gitDirectory !== commonDir(root)) fail('linked worktrees cannot supersede Phase 139 receipts');
   const lockPath = acquireFinalizerLock(root);
+  acquireReceiptMutationLock(root);
   const refsBefore = git(['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: root });
   const target = receiptPath(root);
   const info = fs.lstatSync(target);
@@ -280,6 +341,9 @@ function supersede(root, phase, expectedDigest) {
       previous.point !== 'plan:pre' || typeof previous.after?.head !== 'string' ||
       !/^[0-9a-f]{40}$/.test(previous.after.head)) {
     fail('pending receipt cannot be superseded');
+  }
+  if (previous.recovery?.protocol === 'phase-140-recovery-v2') {
+    fail('a v2 receipt cannot be superseded again');
   }
   if (!previous.before || previous.before.porcelainSha256 !== sha256(Buffer.alloc(0)) ||
       typeof previous.before.head !== 'string' || !/^[0-9a-f]{40}$/.test(previous.before.head) ||
@@ -306,7 +370,7 @@ function supersede(root, phase, expectedDigest) {
     fail('pending receipt hook identity changed');
   }
   const after = observation(root);
-  const baselineSha = acceptedPhase139Base(root);
+  const baselineSha = acceptedPhase139Base(root, true);
   const head = after.result.head;
   ancestor(root, baselineSha, head, 'current HEAD does not descend from the accepted Phase 139 SHA');
   ancestor(root, previous.after.head, head, 'current HEAD does not descend from the pending receipt candidate');
@@ -341,22 +405,33 @@ function supersede(root, phase, expectedDigest) {
       sha256: sha256(compact(evidence)),
     },
   };
+  if (!refsUnchanged(root, refsBefore) || !remoteMainUnchanged(root, remoteMain)) {
+    fail('refs changed before receipt supersession');
+  }
   archiveReceipt(root, previousBytes, previousDigest);
   const currentBytes = fs.readFileSync(target);
   if (sha256(currentBytes) !== expectedDigest) fail('pending receipt changed before compare-and-swap');
-  writeReceipt(root, receipt);
-  const publishedBytes = fs.readFileSync(target);
-  if (sha256(publishedBytes) !== sha256(Buffer.from(`${compact(receipt)}\n`))) {
-    fail('successor receipt failed compare-and-swap verification');
+  if (!refsUnchanged(root, refsBefore) || !remoteMainUnchanged(root, remoteMain)) {
+    fail('refs changed before successor publication');
   }
-  if (refsBefore !== git(['for-each-ref', '--format=%(refname) %(objectname)'], { cwd: root })) {
-    fail('refs changed during receipt supersession');
+  const successorDigest = sha256(Buffer.from(`${compact(receipt)}\n`));
+  try {
+    writeReceipt(root, receipt);
+  } catch (_) {
+    restorePriorReceipt(root, previousBytes, successorDigest, 'successor publication failed');
+  }
+  const publishedBytes = fs.readFileSync(target);
+  if (sha256(publishedBytes) !== successorDigest) {
+    fail(`successor receipt failed compare-and-swap verification; pending receipt state is ${pendingDigest(target)}`);
+  }
+  if (!refsUnchanged(root, refsBefore) || !remoteMainUnchanged(root, remoteMain)) {
+    restorePriorReceipt(root, previousBytes, successorDigest, 'refs changed during receipt supersession');
   }
   fs.rmdirSync(lockPath);
   process.stdout.write(compact({ receipt, supersededSha256: previousDigest }) + '\n');
 }
 
-function acceptedPhase139Base(root) {
+function acceptedPhase139Base(root, requireDurableEvidence = false) {
   const target = path.join(commonDir(root), 'lockspire-phase-139-acceptance-v1.json');
   let receipt;
   try {
@@ -373,7 +448,85 @@ function acceptedPhase139Base(root) {
       typeof baselineSha !== 'string' || !/^[0-9a-f]{40}$/.test(baselineSha)) {
     fail('durable Phase 139 acceptance receipt is malformed');
   }
+  if (requireDurableEvidence) validateDurableAcceptanceReceipt(receipt);
   return baselineSha;
+}
+
+function validateDurableAcceptanceReceipt(receipt) {
+  const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const exactKeys = (value, keys) => object(value) &&
+    compact(Object.keys(value).sort()) === compact([...keys].sort());
+  const positive = (value) => Number.isSafeInteger(value) && value > 0;
+  const nonnegative = (value) => Number.isSafeInteger(value) && value >= 0;
+  const requiredJobs = [
+    'Dialyzer', 'Release Hygiene Drift', 'Fast Checks', 'Minimum Supported Elixir/OTP',
+    'Integration Checks', 'Complete Coverage Evidence', 'Adoption Demo Smoke',
+  ];
+  const releaseJobs = {
+    'Maintain Release Please PR': 'success',
+    'Validate exact main head and CI evidence': 'skipped',
+    'Prove exact package before publication': 'skipped',
+    'Publish verified release to Hex': 'skipped',
+    'Verify public install truth': 'skipped',
+  };
+  const validRun = (run, expected, outcome) => {
+    const keys = ['status', 'run_id', 'event', 'conclusion', 'url', 'jobs'];
+    if (outcome) keys.push('outcome');
+    if (!exactKeys(run, keys) || run.status !== 'pass' || run.event !== 'push' ||
+        run.conclusion !== 'success' || !positive(run.run_id) ||
+        typeof run.url !== 'string' || !/^https:\/\/\S+$/.test(run.url) ||
+        (outcome && run.outcome !== outcome) || !Array.isArray(run.jobs) ||
+        run.jobs.length !== Object.keys(expected).length) return false;
+    const jobs = {};
+    for (const job of run.jobs) {
+      if (!exactKeys(job, ['name', 'status', 'conclusion']) ||
+          typeof job.name !== 'string' || Object.hasOwn(jobs, job.name) ||
+          job.status !== 'completed') return false;
+      jobs[job.name] = job.conclusion;
+    }
+    return compact(Object.entries(jobs).sort()) === compact(Object.entries(expected).sort());
+  };
+  const captured = receipt.captured_at;
+  const capturedDate = typeof captured === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(captured)
+    ? new Date(captured) : null;
+  const validDispositions = Array.isArray(receipt.warn_dispositions) &&
+    receipt.warn_dispositions.length === receipt.hygiene?.warn &&
+    receipt.warn_dispositions.every((item) => exactKeys(item, ['label', 'disposition']) &&
+      typeof item.label === 'string' && /^[A-Za-z0-9][A-Za-z0-9 ._/-]{0,127}$/.test(item.label) &&
+      typeof item.disposition === 'string' && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(item.disposition)) &&
+    new Set(receipt.warn_dispositions.map((item) => item.label)).size === receipt.warn_dispositions.length;
+  if (!exactKeys(receipt, [
+    'schema', 'baseline_sha', 'local_gate', 'hygiene', 'required_ci', 'release_no_publish',
+    'warn_dispositions', 'supplemental_oidf', 'inventory_relation', 'historical_release',
+    'captured_at', 'repository',
+  ]) || !exactKeys(receipt.local_gate, ['status', 'exunit_tests']) ||
+      receipt.local_gate.status !== 'pass' || !positive(receipt.local_gate.exunit_tests) ||
+      !exactKeys(receipt.hygiene, ['status', 'pass', 'warn', 'block']) ||
+      receipt.hygiene.status !== 'pass' || !positive(receipt.hygiene.pass) ||
+      !nonnegative(receipt.hygiene.warn) || receipt.hygiene.block !== 0 ||
+      !validRun(receipt.required_ci, Object.fromEntries(requiredJobs.map((name) => [name, 'success']))) ||
+      !validRun(receipt.release_no_publish, releaseJobs, 'no_publish') ||
+      !validDispositions ||
+      !exactKeys(receipt.supplemental_oidf, ['classification', 'required_gate']) ||
+      receipt.supplemental_oidf.classification !== 'supplemental_non_certifying' ||
+      receipt.supplemental_oidf.required_gate !== false ||
+      compact(receipt.inventory_relation) !== compact({ status: 'verified' }) ||
+      typeof receipt.repository !== 'string' || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(receipt.repository) ||
+      !exactKeys(receipt.historical_release, [
+        'source_sha', 'ci_run_id', 'release_run_id', 'version', 'checksum', 'tag', 'status',
+      ]) ||
+      compact(Object.entries(receipt.historical_release).sort()) !== compact(Object.entries({
+        source_sha: '5d10ce2219c2e687cf9573c8b280abfb118a47d8',
+        ci_run_id: 33141161205,
+        release_run_id: 33141484467,
+        version: '1.5.0',
+        checksum: '30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de',
+        tag: 'lockspire-v1.5.0',
+        status: 'verified',
+      }).sort()) || !capturedDate || !Number.isFinite(capturedDate.getTime()) ||
+      capturedDate.toISOString() !== captured.replace(/Z$/, '.000Z')) {
+    fail('durable Phase 139 acceptance receipt evidence is malformed');
+  }
 }
 
 function committedIdentity(root, head, relative) {
@@ -635,6 +788,8 @@ function verifyHooks(root, phase) {
 function complete(root, phase) {
   const receipt = readReceipt(root);
   if (!receipt || receipt.status !== 'pending' || receipt.phase !== phase) fail('pending receipt is unavailable');
+  const expectedDigest = sha256(fs.readFileSync(receiptPath(root)));
+  if (sha256(fs.readFileSync(receiptPath(root))) !== expectedDigest) fail('pending receipt changed before completion');
   fs.unlinkSync(receiptPath(root));
   process.stdout.write(compact({ completed: true, phase }) + '\n');
 }
@@ -649,14 +804,17 @@ switch (command) {
   }
   case 'begin':
     assertPhase(phase);
+    acquireReceiptMutationLock(root);
     begin(root, phase);
     break;
   case 'seal':
     assertPhase(phase);
+    acquireReceiptMutationLock(root);
     seal(root, phase);
     break;
   case 'prepare':
     assertPhase(phase);
+    acquireReceiptMutationLock(root);
     prepare(root, phase);
     break;
   case 'supersede':
@@ -669,6 +827,7 @@ switch (command) {
     break;
   case 'complete':
     assertPhase(phase);
+    acquireReceiptMutationLock(root);
     complete(root, phase);
     break;
   default:
