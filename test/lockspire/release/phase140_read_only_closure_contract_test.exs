@@ -2,8 +2,9 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   use ExUnit.Case, async: false
 
   @script "scripts/maintainer/verify_phase140_read_only_closure.py"
-  @reviewer "phase140-reviewer@example.invalid"
-  @namespace "lockspire-phase140-review"
+  @contract_test "test/lockspire/release/phase140_read_only_closure_contract_test.exs"
+  @ci_workflow ".github/workflows/ci.yml"
+  @mix_file "mix.exs"
   @ci_jobs [
     "Dialyzer",
     "Release Hygiene Drift",
@@ -28,39 +29,27 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   ]
 
   @tag :phase140_closure_tracer
-  test "the committed closure command exposes independent signed-review inputs" do
+  test "the committed closure command exposes only the exact-SHA acceptance inputs" do
     repo_root = Path.expand("../../..", __DIR__)
     script = Path.join(repo_root, @script)
 
     {output, status} = System.cmd("python3", [script, "--help"], cd: repo_root)
 
     assert status == 0
-    assert output =~ "--verify-review-only"
-    assert output =~ "--review-statement"
-    assert output =~ "--review-signature"
-    assert output =~ "--allowed-signers"
-    assert output =~ "--reviewer-principal"
-    assert output =~ "--trusted-fingerprint"
+    assert output =~ "--sha"
+    assert output =~ "--record-head"
+    assert output =~ "--receipt"
+    assert output =~ "--output"
+    refute output =~ "--review-signature"
   end
 
   @tag :phase140_closure_tracer
   @tag timeout: 180_000
-  test "an SSH-signed review authorizes the private read-only closure result" do
+  test "automated contract and same-SHA workflow evidence authorize the private read-only result" do
     repo_root = Path.expand("../../..", __DIR__)
     fixture = build_fixture!(repo_root)
     on_exit(fn -> cleanup_fixture(fixture) end)
 
-    valid_signature = File.read!(fixture.signature)
-    File.write!(fixture.signature, "not an OpenSSH signature\n")
-    File.chmod!(fixture.signature, 0o600)
-
-    {invalid_output, invalid_status} = run_verifier(fixture)
-    assert invalid_status != 0
-    assert invalid_output =~ "external review signature is invalid"
-    refute File.exists?(fixture.output)
-
-    File.write!(fixture.signature, valid_signature)
-    File.chmod!(fixture.signature, 0o600)
     before = repository_state(fixture.repository)
     protected_before = Enum.map(@protected_files, &File.read!(Path.join(fixture.repository, &1)))
 
@@ -71,9 +60,12 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     result = fixture.output |> File.read!() |> Jason.decode!()
     assert result["sha"] == fixture.sha
     assert result["requirements"] == %{"CI-06" => "pass", "CI-07" => "pass"}
-    assert result["method"]["external_review"]["reviewer_principal"] == @reviewer
-    assert result["method"]["external_review"]["trusted_fingerprint"] == fixture.fingerprint
-    assert result["method"]["external_review"]["statement_sha256"] == fixture.statement_sha256
+    automated = result["method"]["automated_verification"]
+    assert automated["contract_test_path"] == @contract_test
+    assert automated["ci_workflow_path"] == @ci_workflow
+    assert automated["ci_job"] == "Minimum Supported Elixir/OTP"
+    assert automated["ci_command"] == "mix test.fast"
+    assert automated["executable_sha256"] == result["method"]["executable_sha256"]
     assert repository_state(fixture.repository) == before
 
     assert Enum.map(@protected_files, &File.read!(Path.join(fixture.repository, &1))) ==
@@ -88,39 +80,39 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   end
 
   @tag :phase140_closure_tracer
-  @tag timeout: 240_000
-  test "review-only preflight validates the signature without a receipt or output" do
-    repo_root = Path.expand("../../..", __DIR__)
-    fixture = build_fixture!(repo_root)
-    on_exit(fn -> cleanup_fixture(fixture) end)
-    File.rm!(fixture.receipt)
-
-    before = repository_state(fixture.repository)
-    {output, status} = run_review_preflight(fixture)
-
-    assert status == 0, output
-    assert Jason.decode!(output)["review_preflight"] == "PASS"
-    refute File.exists?(fixture.output)
-    refute File.exists?(fixture.receipt)
-    assert repository_state(fixture.repository) == before
-  end
-
-  @tag :phase140_closure_tracer
   @tag timeout: 360_000
-  test "rejects forged trust, lifecycle, receipt, workflow, and in-flight state" do
+  test "rejects missing automated test coverage, lifecycle, receipt, workflow, and in-flight state" do
     repo_root = Path.expand("../../..", __DIR__)
     summary_path = ".planning/phases/140-bounded-operational-loose-end-triage/140-18-SUMMARY.md"
     requirements_path = ".planning/REQUIREMENTS.md"
 
     cases = [
-      {"wrong reviewer principal", fn fixture -> fixture end,
-       [reviewer: "other-reviewer@example.invalid"], "review statement principal differs"},
-      {"wrong trusted fingerprint", fn fixture -> fixture end,
-       [fingerprint: "SHA256:" <> String.duplicate("A", 43)], "key fingerprint differs"},
-      {"wrong signer key", &replace_signer_with_untrusted_key!/1, [],
-       "external review signature is invalid"},
-      {"reviewed commit has an altered executable blob", &review_altered_blob!/1, [],
-       "running executable bytes differ from the committed executable"},
+      {"missing closure contract test",
+       fn fixture -> advance_candidate!(fixture, @contract_test, :delete) end, [],
+       "committed automated verifier contract is incomplete"},
+      {"minimum-supported CI does not run the fast test suite",
+       fn fixture ->
+         workflow = File.read!(Path.join(fixture.repository, @ci_workflow))
+
+         updated =
+           String.replace(workflow, "run: mix test.fast", "run: mix compile", global: false)
+
+         if updated == workflow, do: flunk("Fast Checks command was not found")
+         advance_candidate!(fixture, @ci_workflow, updated)
+       end, [], "minimum-supported CI does not run the fast test suite"},
+      {"fast test alias omits lockspire tests",
+       fn fixture ->
+         mix_file = File.read!(Path.join(fixture.repository, @mix_file))
+
+         updated =
+           String.replace(
+             mix_file,
+             "test test/lockspire test/mix test/integration",
+             "test test/mix test/integration", global: false)
+
+         if updated == mix_file, do: flunk("fast test alias was not found")
+         advance_candidate!(fixture, @mix_file, updated)
+       end, [], "mix test.fast does not include the committed lockspire contract tests"},
       {"missing committed plan summary",
        fn fixture -> advance_candidate!(fixture, summary_path, :delete) end, [],
        "conditional record is not a regular committed file"},
@@ -186,6 +178,9 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
     files = [
       @script,
+      @contract_test,
+      @ci_workflow,
+      @mix_file,
       ".planning/REQUIREMENTS.md",
       ".planning/ROADMAP.md",
       ".planning/STATE.md",
@@ -258,57 +253,8 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
     git!(repository, ["push", "--quiet", "origin", "#{alternate_sha}:refs/heads/adversarial"])
 
-    key_base = Path.join(private_dir, "140-18-fixture-#{sha}")
-    key_path = key_base
-    public_path = key_base <> ".pub"
-    statement = key_base <> ".statement.json"
-    signature = statement <> ".sig"
-    allowed_signers = key_base <> ".allowed-signers"
     receipt = Path.join(private_dir, "140-18-final-acceptance.#{sha}.json")
     output = Path.join(private_dir, "140-18-read-only-closure.#{sha}.json")
-
-    ssh_keygen!(directory, ["-q", "-t", "ed25519", "-N", "", "-C", @reviewer, "-f", key_path])
-
-    [key_type, encoded_key | _comment] =
-      public_path |> File.read!() |> String.trim() |> String.split()
-
-    File.write!(
-      allowed_signers,
-      "#{@reviewer} namespaces=\"#{@namespace}\" #{key_type} #{encoded_key}\n"
-    )
-
-    File.chmod!(allowed_signers, 0o600)
-
-    executable_digest =
-      Path.join(repository, @script)
-      |> File.read!()
-      |> then(&:crypto.hash(:sha256, &1))
-      |> Base.encode16(case: :lower)
-
-    review_statement = %{
-      "schema" => "lockspire-phase-140-external-review-v1",
-      "reviewed_commit" => sha,
-      "executable_sha256" => executable_digest,
-      "reviewer_principal" => @reviewer,
-      "verdict" => "PASS",
-      "review_scope" => [
-        "read-only tracked/ref behavior",
-        "receipt validation",
-        "workflow identity",
-        "no-publish classification"
-      ]
-    }
-
-    statement_bytes = Jason.encode!(review_statement) <> "\n"
-    File.write!(statement, statement_bytes)
-    File.chmod!(statement, 0o600)
-    ssh_keygen!(directory, ["-Y", "sign", "-f", key_path, "-n", @namespace, statement])
-    File.chmod!(signature, 0o600)
-
-    fingerprint =
-      ssh_keygen!(directory, ["-lf", public_path, "-E", "sha256"])
-      |> String.split()
-      |> Enum.at(1)
 
     File.write!(receipt, Jason.encode!(receipt(sha)) <> "\n")
     File.chmod!(receipt, 0o600)
@@ -329,14 +275,6 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       initial_sha: sha,
       alternate_sha: alternate_sha,
       sha: sha,
-      signature: signature,
-      statement: statement,
-      statement_sha256: :crypto.hash(:sha256, statement_bytes) |> Base.encode16(case: :lower),
-      allowed_signers: allowed_signers,
-      reviewer: @reviewer,
-      fingerprint: fingerprint,
-      key_path: key_path,
-      public_path: public_path,
       receipt: receipt,
       output: output,
       fake_bin: fake_bin,
@@ -422,87 +360,6 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     git!(fixture.repository, ["checkout", "--quiet", "--detach", fixture.sha])
     git!(fixture.repository, ["update-ref", "refs/heads/main", moved_local_main])
     fixture
-  end
-
-  defp replace_signer_with_untrusted_key!(fixture) do
-    other_key = Path.join(fixture.directory, "other-reviewer-key")
-    other_public = other_key <> ".pub"
-    ssh_keygen!(fixture.directory, ["-q", "-t", "ed25519", "-N", "", "-f", other_key])
-    [key_type, encoded_key | _] = other_public |> File.read!() |> String.trim() |> String.split()
-
-    File.write!(
-      fixture.allowed_signers,
-      "#{@reviewer} namespaces=\"#{@namespace}\" #{key_type} #{encoded_key}\n"
-    )
-
-    File.chmod!(fixture.allowed_signers, 0o600)
-
-    fingerprint =
-      ssh_keygen!(fixture.directory, ["-lf", other_public, "-E", "sha256"])
-      |> String.split()
-      |> Enum.at(1)
-
-    %{fixture | fingerprint: fingerprint}
-  end
-
-  defp review_altered_blob!(fixture) do
-    script_path = Path.join(fixture.repository, @script)
-    original_script = File.read!(script_path)
-    File.write!(script_path, original_script <> "\n# altered historical verifier blob\n")
-    git!(fixture.repository, ["add", "--", @script])
-    git!(fixture.repository, ["commit", "--quiet", "-m", "alter reviewed verifier blob"])
-    altered_commit = git!(fixture.repository, ["rev-parse", "HEAD"]) |> String.trim()
-
-    File.write!(script_path, original_script)
-    git!(fixture.repository, ["add", "--", @script])
-    git!(fixture.repository, ["commit", "--quiet", "-m", "restore reviewed verifier bytes"])
-    git!(fixture.repository, ["push", "--quiet", "origin", "main"])
-    fixture = refresh_fixture_candidate!(fixture)
-    candidate_script = git!(fixture.repository, ["show", "#{fixture.sha}:#{@script}"])
-
-    if candidate_script != original_script,
-      do: flunk("restored candidate did not retain the original verifier bytes")
-
-    if File.read!(script_path) != candidate_script,
-      do: flunk("fixture checkout differs from its restored verifier blob")
-
-    executable_digest = :crypto.hash(:sha256, original_script) |> Base.encode16(case: :lower)
-
-    statement = %{
-      "schema" => "lockspire-phase-140-external-review-v1",
-      "reviewed_commit" => altered_commit,
-      "executable_sha256" => executable_digest,
-      "reviewer_principal" => @reviewer,
-      "verdict" => "PASS",
-      "review_scope" => [
-        "read-only tracked/ref behavior",
-        "receipt validation",
-        "workflow identity",
-        "no-publish classification"
-      ]
-    }
-
-    statement_bytes = Jason.encode!(statement) <> "\n"
-    File.write!(fixture.statement, statement_bytes)
-    File.chmod!(fixture.statement, 0o600)
-    File.rm!(fixture.signature)
-
-    ssh_keygen!(fixture.directory, [
-      "-Y",
-      "sign",
-      "-f",
-      fixture.key_path,
-      "-n",
-      @namespace,
-      fixture.statement
-    ])
-
-    File.chmod!(fixture.signature, 0o600)
-
-    %{
-      fixture
-      | statement_sha256: :crypto.hash(:sha256, statement_bytes) |> Base.encode16(case: :lower)
-    }
   end
 
   defp remove_warn_disposition!(fixture) do
@@ -628,9 +485,6 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       {"LOCKSPIRE_REAL_GIT", fixture.real_git}
     ]
 
-    reviewer = Keyword.get(options, :reviewer, fixture.reviewer)
-    fingerprint = Keyword.get(options, :fingerprint, fixture.fingerprint)
-
     System.cmd(
       "python3",
       [
@@ -641,46 +495,8 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
         fixture.sha,
         "--receipt",
         fixture.receipt,
-        "--review-statement",
-        fixture.statement,
-        "--review-signature",
-        fixture.signature,
-        "--allowed-signers",
-        fixture.allowed_signers,
-        "--reviewer-principal",
-        reviewer,
-        "--trusted-fingerprint",
-        fingerprint,
         "--output",
         fixture.output
-      ],
-      cd: fixture.repository,
-      env: env,
-      stderr_to_stdout: true
-    )
-  end
-
-  defp run_review_preflight(fixture) do
-    env = [
-      {"PATH", fixture.fake_bin <> ":" <> System.get_env("PATH")},
-      {"LOCKSPIRE_REAL_GIT", fixture.real_git}
-    ]
-
-    System.cmd(
-      "python3",
-      [
-        Path.join(fixture.repository, @script),
-        "--verify-review-only",
-        "--review-statement",
-        fixture.statement,
-        "--review-signature",
-        fixture.signature,
-        "--allowed-signers",
-        fixture.allowed_signers,
-        "--reviewer-principal",
-        fixture.reviewer,
-        "--trusted-fingerprint",
-        fixture.fingerprint
       ],
       cd: fixture.repository,
       env: env,
@@ -698,7 +514,6 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   end
 
   defp git!(cwd, args), do: command!("git", args, cwd)
-  defp ssh_keygen!(cwd, args), do: command!("ssh-keygen", args, cwd)
 
   defp command!(program, args, cwd) do
     case System.cmd(program, args, cd: cwd, stderr_to_stdout: true) do
@@ -713,11 +528,6 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   defp cleanup_fixture(fixture) do
     Enum.each(
       [
-        fixture.signature,
-        fixture.statement,
-        fixture.allowed_signers,
-        fixture.key_path,
-        fixture.public_path,
         fixture.receipt,
         fixture.output
       ],

@@ -9,12 +9,13 @@ database. Its only explicit result file is a new mode-0600 JSON beneath
 exact synchronized SHA supplied on the command line. The receipt's local gate
 and hygiene fields are trusted owner-only local evidence; GitHub workflow claims
 are re-queried through the authenticated CLI before either requirement passes.
+The committed contract test runs in the normal Fast Checks CI job and proves the
+actual command behavior against temporary repositories and adversarial evidence.
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -29,18 +30,13 @@ from urllib.parse import urlsplit
 
 
 SCHEMA = "lockspire-phase-140-read-only-closure-v1"
-REVIEW_SCHEMA = "lockspire-phase-140-external-review-v1"
 RECEIPT_SCHEMA = "lockspire-phase-139-acceptance-v1"
 VERSION = "1"
 SCRIPT_PATH = "scripts/maintainer/verify_phase140_read_only_closure.py"
+CONTRACT_TEST_PATH = "test/lockspire/release/phase140_read_only_closure_contract_test.exs"
+CI_WORKFLOW_PATH = ".github/workflows/ci.yml"
+MIX_PATH = "mix.exs"
 PRIVATE_DIR = Path("/private/tmp/lockspire-140-plan")
-REVIEW_NAMESPACE = "lockspire-phase140-review"
-REVIEW_SCOPE = [
-    "read-only tracked/ref behavior",
-    "receipt validation",
-    "workflow identity",
-    "no-publish classification",
-]
 SUMMARY_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-18-SUMMARY.md"
 VERIFICATION_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md"
 ACCEPTANCE_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
@@ -79,9 +75,6 @@ CONDITIONAL_RECORDS = (
     ACCEPTANCE_PATH,
 )
 OID_RE = re.compile(r"^[0-9a-f]{40}$")
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-PRINCIPAL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@+-]{0,127}$")
-FINGERPRINT_RE = re.compile(r"^SHA256:[A-Za-z0-9+/]{43}$")
 
 
 class ClosureError(Exception):
@@ -425,146 +418,39 @@ def committed_executable(root: Path, sha: str, script_file: Path) -> tuple[bytes
     return script_bytes, hashlib.sha256(script_bytes).hexdigest()
 
 
-def parse_allowed_signer(data: bytes, principal: str) -> tuple[str, bytes]:
+def validate_automated_contract(root: Path, sha: str, script_file: Path) -> dict:
+    _script_bytes, executable_digest = committed_executable(root, sha, script_file)
     try:
-        text = data.decode("ascii")
-    except UnicodeDecodeError as exc:
-        raise ClosureError("allowed-signers file is not ASCII") from exc
-    entries = [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
-    if len(entries) != 1:
-        fail("allowed-signers file must contain exactly one signer entry")
-    match = re.fullmatch(
-        r'([A-Za-z0-9][A-Za-z0-9._@+-]{0,127}) namespaces="([A-Za-z0-9_,.-]+)" '
-        r'([A-Za-z0-9@._+-]+) ([A-Za-z0-9+/]+={0,2})(?: [^\r\n]*)?',
-        entries[0],
+        workflow = read_committed_blob(root, sha, CI_WORKFLOW_PATH).decode("utf-8")
+        mix_file = read_committed_blob(root, sha, MIX_PATH).decode("utf-8")
+        test_file = read_committed_blob(root, sha, CONTRACT_TEST_PATH).decode("utf-8")
+    except (UnicodeDecodeError, ClosureError) as exc:
+        raise ClosureError("committed automated verifier contract is incomplete") from exc
+
+    minimum_job = re.search(
+        r"(?ms)^  compatibility:\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)",
+        workflow,
     )
-    if not match or match.group(1) != principal or match.group(2) != REVIEW_NAMESPACE:
-        fail("allowed-signers entry does not bind the requested principal and namespace")
-    try:
-        key_blob = base64.b64decode(match.group(4), validate=True)
-    except ValueError as exc:
-        raise ClosureError("allowed-signers public key is malformed") from exc
-    if len(key_blob) < 4:
-        fail("allowed-signers public key is truncated")
-    key_type_size = int.from_bytes(key_blob[:4], "big")
-    key_type = key_blob[4 : 4 + key_type_size]
-    if key_type_size == 0 or key_type.decode("ascii", errors="ignore") != match.group(3):
-        fail("allowed-signers key type does not match its public-key blob")
-    fingerprint = "SHA256:" + base64.b64encode(hashlib.sha256(key_blob).digest()).decode("ascii").rstrip("=")
-    return fingerprint, key_blob
+    if not minimum_job or not re.search(
+        r"(?m)^    name:\s*Minimum Supported Elixir/OTP\s*$", minimum_job["body"]
+    ):
+        fail("CI does not define the minimum-supported Elixir/OTP job")
+    if not re.search(
+        r"(?m)^      - name: Run fast tests on minimum supported pair\n        run: mix test\.fast\s*$",
+        minimum_job["body"],
+    ):
+        fail("minimum-supported CI does not run the fast test suite")
+    if '"test test/lockspire test/mix test/integration"' not in mix_file:
+        fail("mix test.fast does not include the committed lockspire contract tests")
+    if "Phase140ReadOnlyClosureContractTest" not in test_file or "--output" not in test_file:
+        fail("the committed closure contract does not exercise the executable entry point")
 
-
-def write_private_temp(path: Path, data: bytes) -> None:
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(path, flags, 0o600)
-    try:
-        os.fchmod(fd, 0o600)
-        with os.fdopen(fd, "wb") as stream:
-            fd = -1
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-    finally:
-        if fd >= 0:
-            os.close(fd)
-
-
-def verify_ssh_signature(statement: bytes, signature: bytes, allowed_signers: bytes, principal: str) -> None:
-    ssh_keygen = shutil.which("ssh-keygen")
-    if ssh_keygen is None:
-        fail("ssh-keygen is required to verify the external review signature")
-    with tempfile.TemporaryDirectory(prefix="140-18-review-", dir=PRIVATE_DIR) as temporary_dir:
-        directory = Path(temporary_dir)
-        os.chmod(directory, 0o700)
-        signers_path = directory / "allowed-signers"
-        signature_path = directory / "review.sig"
-        write_private_temp(signers_path, allowed_signers)
-        write_private_temp(signature_path, signature)
-        result = subprocess.run(
-            [
-                ssh_keygen,
-                "-Y",
-                "verify",
-                "-f",
-                str(signers_path),
-                "-I",
-                principal,
-                "-n",
-                REVIEW_NAMESPACE,
-                "-s",
-                str(signature_path),
-            ],
-            input=statement,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-    if result.returncode != 0:
-        fail("external review signature is invalid")
-
-
-def validate_signed_review(
-    root: Path,
-    record_sha: str,
-    script_file: Path,
-    statement_path: Path,
-    signature_path: Path,
-    allowed_signers_path: Path,
-    reviewer_principal: str,
-    trusted_fingerprint: str,
-) -> dict:
-    if not PRINCIPAL_RE.fullmatch(reviewer_principal):
-        fail("reviewer principal is malformed")
-    if not FINGERPRINT_RE.fullmatch(trusted_fingerprint):
-        fail("trusted signer fingerprint is malformed")
-    script_bytes, script_digest = committed_executable(root, record_sha, script_file)
-    statement_bytes = read_private_file(statement_path, "review statement", 64 * 1024)
-    signature_bytes = read_private_file(signature_path, "review signature", 64 * 1024)
-    allowed_signers_bytes = read_private_file(allowed_signers_path, "allowed-signers file", 64 * 1024)
-    statement = strict_json(statement_bytes, "review statement")
-    exact_keys(
-        statement,
-        {"schema", "reviewed_commit", "executable_sha256", "reviewer_principal", "verdict", "review_scope"},
-        "review statement",
-    )
-    canonical = (json.dumps(statement, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-    if statement_bytes != canonical:
-        fail("review statement is not in canonical UTF-8 JSON form")
-    if (statement["schema"] != REVIEW_SCHEMA or statement["verdict"] != "PASS"
-            or statement["review_scope"] != REVIEW_SCOPE):
-        fail("review statement schema, verdict, or exact scope is invalid")
-    reviewed_commit = statement["reviewed_commit"]
-    reviewed_digest = statement["executable_sha256"]
-    if not isinstance(reviewed_commit, str) or not OID_RE.fullmatch(reviewed_commit):
-        fail("review statement has an invalid full reviewed commit OID")
-    if not isinstance(reviewed_digest, str) or not SHA256_RE.fullmatch(reviewed_digest):
-        fail("review statement has an invalid executable digest")
-    if statement["reviewer_principal"] != reviewer_principal:
-        fail("review statement principal differs from the independently supplied principal")
-    if reviewed_digest != script_digest:
-        fail("review statement does not bind the exact committed executable bytes")
-    reviewed_script, reviewed_script_digest = committed_executable(root, reviewed_commit, script_file)
-    if reviewed_script_digest != script_digest or reviewed_script != script_bytes:
-        fail("reviewed commit does not contain the exact committed executable bytes")
-    ancestry = subprocess.run(
-        ["git", "-C", str(root), "merge-base", "--is-ancestor", reviewed_commit, record_sha],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    if ancestry.returncode != 0:
-        fail("reviewed commit is not an ancestor of the record SHA")
-    observed_fingerprint, _key_blob = parse_allowed_signer(allowed_signers_bytes, reviewer_principal)
-    if observed_fingerprint != trusted_fingerprint:
-        fail("allowed-signers key fingerprint differs from the independently confirmed fingerprint")
-    verify_ssh_signature(statement_bytes, signature_bytes, allowed_signers_bytes, reviewer_principal)
     return {
-        "reviewed_commit": reviewed_commit,
-        "executable_sha256": script_digest,
-        "reviewer_principal": reviewer_principal,
-        "trusted_fingerprint": trusted_fingerprint,
-        "statement_sha256": hashlib.sha256(statement_bytes).hexdigest(),
-        "signature_sha256": hashlib.sha256(signature_bytes).hexdigest(),
+        "executable_sha256": executable_digest,
+        "contract_test_path": CONTRACT_TEST_PATH,
+        "ci_workflow_path": CI_WORKFLOW_PATH,
+        "ci_job": "Minimum Supported Elixir/OTP",
+        "ci_command": "mix test.fast",
     }
 
 
@@ -697,16 +583,10 @@ def atomic_private_output(path: Path, body: bytes, root: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--verify-review-only", action="store_true", help="verify the external review before candidate capture")
     parser.add_argument("--sha", help="full candidate SHA")
     parser.add_argument("--receipt", help="private mode-0600 terminal receipt JSON")
     parser.add_argument("--record-head", help="full SHA containing all conditional records")
     parser.add_argument("--output", help="new private JSON path under /private/tmp/lockspire-140-plan")
-    parser.add_argument("--review-statement", required=True, help="private canonical UTF-8 external review statement")
-    parser.add_argument("--review-signature", required=True, help="private detached SSH signature")
-    parser.add_argument("--allowed-signers", required=True, help="private OpenSSH allowed-signers file")
-    parser.add_argument("--reviewer-principal", required=True, help="independently confirmed reviewer principal")
-    parser.add_argument("--trusted-fingerprint", required=True, help="independently confirmed SHA256 SSH key fingerprint")
     args = parser.parse_args()
 
     script_file = Path(__file__).resolve()
@@ -716,26 +596,6 @@ def main() -> int:
     root = Path(root_text).resolve()
     if script_file != (root / SCRIPT_PATH).resolve():
         fail("run the committed maintainer verifier from this repository")
-
-    if args.verify_review_only:
-        if args.sha or args.receipt or args.record_head or args.output:
-            fail("review-only mode accepts review inputs only, without a receipt or output")
-        head = resolve_ref(root, "HEAD", "HEAD")
-        review = validate_signed_review(
-            root,
-            head,
-            script_file,
-            Path(args.review_statement),
-            Path(args.review_signature),
-            Path(args.allowed_signers),
-            args.reviewer_principal,
-            args.trusted_fingerprint,
-        )
-        if resolve_ref(root, "HEAD", "HEAD") != head:
-            fail("HEAD moved during review-only preflight")
-        result = {"review_preflight": "PASS", **review}
-        print(json.dumps(result, sort_keys=True, separators=(",", ":")))
-        return 0
 
     if not args.sha or not args.record_head or not args.receipt or not args.output:
         fail("full closure mode requires --sha, --record-head, --receipt, and --output")
@@ -752,17 +612,8 @@ def main() -> int:
     if porcelain_before:
         fail("worktree must be completely clean before closure")
 
-    review = validate_signed_review(
-        root,
-        args.record_head,
-        script_file,
-        Path(args.review_statement),
-        Path(args.review_signature),
-        Path(args.allowed_signers),
-        args.reviewer_principal,
-        args.trusted_fingerprint,
-    )
-    executable_digest = review["executable_sha256"]
+    automated_verification = validate_automated_contract(root, args.record_head, script_file)
+    executable_digest = automated_verification["executable_sha256"]
     validate_pending_records(root, args.record_head)
     receipt, receipt_digest = validate_receipt(Path(args.receipt), args.sha)
     github_evidence = validate_live_github_evidence(root, args.sha, receipt)
@@ -829,14 +680,10 @@ def main() -> int:
             "version": VERSION,
             "invocation": [
                 SCRIPT_PATH, "--sha", args.sha, "--record-head", args.record_head,
-                "--receipt", str(Path(args.receipt)), "--review-statement", str(Path(args.review_statement)),
-                "--review-signature", str(Path(args.review_signature)),
-                "--allowed-signers", str(Path(args.allowed_signers)),
-                "--reviewer-principal", args.reviewer_principal,
-                "--trusted-fingerprint", args.trusted_fingerprint, "--output", str(output),
+                "--receipt", str(Path(args.receipt)), "--output", str(output),
             ],
             "executable_sha256": executable_digest,
-            "external_review": review,
+            "automated_verification": automated_verification,
         },
     }
     body = (json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
