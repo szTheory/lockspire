@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 17 plans; 16 prior summaries exist, and Plan 140-17 records the GSD lifecycle deferral; verification is 30/32 with CI-06/CI-07 pending
+**Plans**: 17/17 plans executed; 16 prior summaries exist, and Plan 140-17 records the GSD lifecycle deferral; verification is 30/32 with CI-06/CI-07 pending
 
 Plans:
 **Wave 1**
@@ -266,15 +266,15 @@ Plans:
 
 **Wave 15** *(final synchronized-SHA CI and Release gap closure)*
 
-- [ ] 140-15-PLAN.md — Join the final exact candidate, local gates, canonical CI, and Release no-publish graph behind candidate-specific ref authorization.
+- [x] 140-15-PLAN.md — Join the final exact candidate, local gates, canonical CI, and Release no-publish graph behind candidate-specific ref authorization.
 
 **Wave 16** *(terminal receipt after all tracked completion writes)*
 
-- [ ] 140-16-PLAN.md — Close CI-06/CI-07 on the last exact candidate with fresh ref authority and a private same-SHA receipt.
+- [x] 140-16-PLAN.md — Close CI-06/CI-07 on the last exact candidate with fresh ref authority and a private same-SHA receipt.
 
 **Wave 17** *(safe deferral while GSD-compatible receipt closure is planned)*
 
-- [ ] 140-17-PLAN.md — Record the GSD post-task write boundary, preserve CI-06/CI-07 as pending, and hand off to a lifecycle-compatible closure plan.
+- [x] 140-17-PLAN.md — Record the GSD post-task write boundary, preserve CI-06/CI-07 as pending, and hand off to a lifecycle-compatible closure plan.
 
 **Cross-cutting constraints:**
 
@@ -306,7 +306,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 14/16 | In Progress|  |
+| 140. Bounded Operational Loose-End Triage | 17/17 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog
