@@ -7,10 +7,10 @@ current_phase_name: Bounded Operational Loose-End Triage
 current_plan: Not started
 status: executing
 stopped_at: Phase 140 Plan 17 ready to execute; CI-06/CI-07 remain pending
-last_updated: "2026-10-05T00:20:30Z"
+last_updated: "2026-10-05T00:22:25Z"
 last_activity: 2026-10-04
 last_activity_desc: Prepared Phase 140 Plan 17 lifecycle deferral and recorded the exact next GSD command
-state_head: 82a93fb0deaaa14ca64cd4f0ed0e557e77d4a43b
+state_head: 5a6fb634509dff2ea63dea8eec084b47a342e508
 progress:
   total_phases: 4
   completed_phases: 2
@@ -153,7 +153,7 @@ Current position (2026-10-04): Phase 138 is the last fully complete phase. Phase
 
 ### Pending Todos
 
-- Phase 140: CI-06 and CI-07 remain pending at 30/32. Plan 140-17 records the safe deferral caused by GSD's post-task tracked writes; it does not perform terminal acceptance. Immediate command: `$gsd-execute-phase 140 --gaps-only`. After its summary is committed, next command: `$gsd-plan-phase 140 --gaps` to plan a GSD-compatible receipt-aware closure route.
+- Phase 140: CI-06 and CI-07 remain pending at 30/32. Plan 140-17 records the safe deferral caused by GSD's post-task tracked writes; it does not perform terminal acceptance. Immediate command: `$gsd-execute-phase 140 --gaps-only`. After that command returns and the canonical 30/32 gaps remain, next command: `$gsd-plan-phase 140 --gaps` to plan a trusted, GSD-compatible receipt-aware closure route.
 
 ### Blockers/Concerns
 
@@ -184,7 +184,7 @@ Current position (2026-10-04): Phase 138 is the last fully complete phase. Phase
 Last session: 2026-10-04T22:41:40Z
 Stopped at: Phase 140 Plan 17 ready to execute; CI-06/CI-07 remain pending
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Run `$gsd-execute-phase 140 --gaps-only` to execute the only incomplete plan, 140-17, which records deferral only. After its GSD summary is committed, run `$gsd-plan-phase 140 --gaps` to plan the remaining lifecycle-compatible closure work. Do not rerun Phase 138 or Phase 139, replay Plan 140-16 T1, or reuse the de671 approval.
+Resume instruction: Run `$gsd-execute-phase 140 --gaps-only` to execute the only incomplete plan, 140-17, which records deferral only. After that command returns and the canonical 30/32 gaps remain, run `$gsd-plan-phase 140 --gaps` to plan the remaining trusted, lifecycle-compatible closure work. Do not rerun Phase 138 or Phase 139, replay Plan 140-16 T1, or reuse the de671 approval.
 
 ## Performance Metrics
 
