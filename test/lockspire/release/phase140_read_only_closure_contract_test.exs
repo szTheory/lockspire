@@ -108,7 +108,9 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
            String.replace(
              mix_file,
              "test test/lockspire test/mix test/integration",
-             "test test/mix test/integration", global: false)
+             "test test/mix test/integration",
+             global: false
+           )
 
          if updated == mix_file, do: flunk("fast test alias was not found")
          advance_candidate!(fixture, @mix_file, updated)
