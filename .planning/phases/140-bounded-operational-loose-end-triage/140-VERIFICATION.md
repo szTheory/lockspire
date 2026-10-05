@@ -1,12 +1,9 @@
 ---
 phase: 140-bounded-operational-loose-end-triage
-verified: 2026-10-02T20:41:06Z
+verified: 2026-10-05T02:12:56Z
 status: gaps_found
 score: 30/32 must-haves verified
 covered_files:
-  - .planning/PROJECT.md
-  - .planning/REQUIREMENTS.md
-  - .planning/ROADMAP.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-01-PLAN.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-01-SUMMARY.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-02-PLAN.md
@@ -35,47 +32,22 @@ covered_files:
   - .planning/phases/140-bounded-operational-loose-end-triage/140-13-SUMMARY.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-14-PLAN.md
   - .planning/phases/140-bounded-operational-loose-end-triage/140-14-SUMMARY.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-CI-FAILURES.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-DISPOSITIONS.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-HANDOFF.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-INVENTORY.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-RESEARCH.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-REVIEW.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-VALIDATION.md
-  - .planning/phases/140-bounded-operational-loose-end-triage/140-14-REVIEW.md
-  - scripts/maintainer/baseline_inventory.sh
-  - scripts/maintainer/finalize_phase_139_acceptance.sh
-  - scripts/maintainer/repo_hygiene_check.sh
-  - test/integration/phase32_device_flow_token_exchange_e2e_test.exs
-  - test/lockspire/admin/keys_test.exs
-  - test/lockspire/audit/audit_writer_test.exs
-  - test/lockspire/protocol/authorization_request_test.exs
-  - test/lockspire/protocol/pushed_authorization_request_test.exs
-  - test/lockspire/quality/phase_139_planning_consistency_test.exs
-  - test/lockspire/release/repository_hygiene_contract_test.exs
-  - test/lockspire/release_readiness_contract_test.exs
-  - test/lockspire/web/authorize_controller_test.exs
-  - test/lockspire/web/live/admin/clients_live_test.exs
-  - test/lockspire/web/live/admin/policies_live/dpop_test.exs
-  - test/lockspire/web/live/admin/policies_live/par_test.exs
-  - test/lockspire/web/live/admin/policies_live/security_profile_test.exs
-  - test/support/lockspire/release_proof/package_assertions.ex
-  - test/support/lockspire/release_proof/workflow_assertions.ex
-  - test/support/seeding_helpers.ex
-  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
-covered_digest: "v1:sha256:c4cbfd8f3d7f5ea7f90108bc76f1b01720ee0a6abcc651db070e4679e775fd14"
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-15-PLAN.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-15-SUMMARY.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-16-PLAN.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-16-SUMMARY.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-17-PLAN.md
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-17-SUMMARY.md
+covered_digest: "v2:sha256:ecf626013e4fd73221c744b53e3e005d21a1d55fdc2d990cc8fd118f6192c4f6"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
   previous_status: gaps_found
   previous_score: 30/32
-  gaps_closed:
-    - "Plan 140-06 valid/hostile recovery-v2 behavior at the historical planning-entry stage; Plan 140-14 now exercises the real finalizer through its no-publish barrier."
+  gaps_closed: []
   gaps_remaining:
-    - "CI-06 remains pending until one final synchronized SHA passes local mix ci, exact hygiene, and every required canonical CI job, with a trusted external review attestation and a GSD-compatible read-only path to consume its receipt after all tracked lifecycle writes."
-    - "CI-07 remains pending until the same SHA passes the Release no-publish graph, with a trusted external review attestation and a GSD-compatible read-only path to consume its receipt after all tracked lifecycle writes."
+    - "CI-06 remains pending: predecessor receipts do not certify the current SHA; the verifier review report/proof is unsigned without trusted external attestation; the GSD-compatible read-only receipt-consumption path must be established before candidate capture or CI."
+    - "CI-07 remains pending: predecessor receipts do not certify the current SHA; the verifier review report/proof is unsigned without trusted external attestation; the GSD-compatible read-only receipt-consumption path must be established before candidate capture or CI."
   regressions: []
 gaps:
   - truth: "CI-06 is accepted only after one final full SHA is synchronized across HEAD, local main, and freshly fetched origin/main, with current-SHA local mix ci, exact hygiene, and every required canonical CI job passing."
@@ -108,15 +80,15 @@ advisory: []
 # Phase 140: Bounded Operational Loose-End Triage Verification Report
 
 **Phase Goal:** Maintainers close only safe, evidence-backed maintenance gaps and retain a clear, recoverable disposition for everything else.
-**Verified:** 2026-10-01T21:52:11Z
+**Verified:** 2026-10-05T02:12:56Z
 **Status:** gaps_found
-**Re-verification:** Yes — after Plan 140-14; all 14 plan/summary pairs reviewed.
+**Re-verification:** Yes — after Plan 140-17; all 17 plan/summary pairs reviewed.
 
 ## Goal Achievement
 
 ### Observable Truths
 
-The denominator carries forward the original 31 truths and adds the Plan 140-14 disposition truth. Plan 140-14's focused real-entrypoint test verifies the prior Plan 140-06 behavior truth. The live post-transition probe remains recorded as failed; the verified disposition is that this strict historical entry route is not treated as final Phase 140 acceptance, and the existing exact-SHA hygiene/CI/Release sequence remains the acceptance route. This honors Plan 140-14's instruction to retain the live failure and preserve the classifier boundary; it does not claim the live gate passes.
+The scored denominator carries forward the original truths and the Plan 140-14 disposition truth at 32. All 17 phase plan/summary pairs were reviewed. Previously passed truths received a quick regression check; CI-06 and CI-07 received full re-verification. Plan 140-17's added disposition checks are summarized below without changing the established 30/32 scored denominator. The live post-transition probe remains a recorded failure; the strict historical entry route is not treated as final Phase 140 acceptance, and the exact-SHA acceptance route remains required.
 
 | # | Truth | Status | Evidence |
 |---:|---|---|---|
@@ -134,8 +106,8 @@ The denominator carries forward the original 31 truths and adds the Plan 140-14 
 | 12 | Plan 13 preserves one-to-one source identity/disposition and invalidates action authority on interruption or concurrent change. | ✓ VERIFIED | Current inventory/disposition records, receipt identity fixtures, and recovery evidence preserve these constraints; the Plan 140-14 fixture also checks state unchanged around both probes. |
 | 13 | Historical Phase 139 entry acceptance is distinct from final exact-main CI/Release acceptance. | ✓ VERIFIED | Plan 140-14 identifies the accepted historical SHA `c6332d3a8b716b938f93d978243281764e3eac41`, the live completed-phase failure at `5259a654…`, and the separate exact-candidate route. The classifier was not changed. |
 | 14 | The live Phase 139 post-transition failure is retained as a failed observation, the strict planning-prefix classifier is preserved, and completed-phase acceptance uses the independent exact-SHA route. | ✓ VERIFIED | The live result at `5259a6545c04277ee44038779b23b139b6b1fcb2` is explicitly `relation_boundary|phase-139-sealed-candidate|refresh_required` before the barrier; first unsupported execution commit is `d9ed1899bed11f80891475fd11bce07da6ac4892`. Plan 140-14 and `140-ACCEPTANCE.md` preserve this failure, prohibit broadening the classifier, and route final acceptance through the separate post-summary exact-SHA sequence. This is a correct failed-gate disposition, not a passing live gate. |
-| 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ BLOCKED | Candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a` passed local `mix ci` (1,441 unit and 102 integration tests, 0 failures), but it is local-only and this tracked evidence update creates a new candidate. Exact hygiene and canonical CI remain unproven on the resulting SHA. |
-| 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ BLOCKED | Release run `37030798360` passed on `1ca94e8ca31d46ea3550f596208e96ce2cb8d607`, with four protected publication jobs skipped, but local and canonical CI failed on that SHA. No later candidate has a complete same-SHA acceptance join. |
+| 15 | CI-06 is proven on one final synchronized SHA by current local `mix ci`, exact hygiene, and all canonical required CI jobs. | ✗ BLOCKED | Predecessor candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed local `mix ci`, exact hygiene, and all seven canonical CI jobs. Later tracked GSD lifecycle writes changed the candidate; the current SHA has no terminal receipt. |
+| 16 | CI-07 has a successful intentional Release no-publish job graph on the same final synchronized SHA as CI-06. | ✗ BLOCKED | Release run `37056328607` passed the no-publish graph on predecessor candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`. Later tracked GSD lifecycle writes changed the candidate; the current SHA has no terminal receipt. |
 
 **Score:** 30/32 truths verified; 2 failed; 0 behavior-unverified.
 
@@ -159,7 +131,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 | `140-ACCEPTANCE.md` | Fail-closed final-SHA acceptance sequence | ✓ VERIFIED | Same-SHA local, hygiene, canonical CI, and Release no-publish requirements are distinct; CI-06/CI-07 remain pending. |
 | `test/support/lockspire/release_proof/package_assertions.ex` and `repository_hygiene_contract_test.exs` | Real finalizer valid/hostile recovery-v2 fixture | ✓ VERIFIED | Focused test reaches exact positive barrier and hostile archived-digest rejection; fixture state invariants are asserted and focused log passes. |
 | `scripts/maintainer/finalize_phase_139_acceptance.sh` and `baseline_inventory.sh` | Historical entry and strict relation boundary | ✓ VERIFIED (historical boundary) | Existing classifier remains intact. Its current completed-phase live invocation still fails at the recorded relation boundary; that failed runtime truth remains open. |
-| Final exact candidate, CI, hygiene, and Release receipts | One synchronized full SHA with all required evidence | ✗ BLOCKED | First candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` has a complete passing receipt. Later candidates failed or timed out locally; the terminal hygiene command has not been run and no terminal receipt exists. |
+| Final exact candidate, CI, hygiene, and Release receipts | One synchronized full SHA with all required evidence | ✗ BLOCKED | Predecessor candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed its full acceptance join, but later tracked lifecycle writes changed the candidate. The current SHA has no terminal receipt; acceptance remains deferred pending trusted external attestation and a GSD-compatible read-only completion path. |
 
 ### Key Link Verification
 
@@ -168,7 +140,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 | Historical accepted Phase 139 fixture | Real `finalize_phase_139_acceptance.sh` entry point | Focused ExUnit fixture, no publish argument | ✓ WIRED | Test executes the copied production finalizer and reaches the exact no-publish barrier. |
 | Tampered archived predecessor | Receipt archive validation | Same production entry point | ✓ WIRED | Rejected at `superseded receipt archive digest` before the no-publish barrier. |
 | Completed Phase 140 live candidate | Historical planning-prefix relation classifier | Production post-transition invocation | ✗ NOT PASSING; disposition verified | Live probe exits at `relation_boundary|phase-139-sealed-candidate|refresh_required`; Plan 140-14 requires preserving this result and using the separate final exact-SHA route. |
-| Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ✗ BLOCKED | Candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a` passed local `mix ci`, but remains local-only. The tracked evidence update creates a new candidate; exact hygiene, canonical CI, and Release no-publish have not been joined on that SHA. |
+| Final candidate | CI-06 and CI-07 acceptance | Same full synchronized SHA, local evidence, canonical CI and Release no-publish | ✗ BLOCKED | Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed the predecessor join, but subsequent GSD tracked lifecycle writes changed the candidate. A terminal receipt on the current SHA is deferred until trusted external attestation and a supported read-only completion route are established. |
 
 ### Data-Flow Trace (Level 4)
 
@@ -187,7 +159,7 @@ None. The stale Project current-state claim is explicitly covered by Phase 141 s
 | Live completed-phase post-transition gate reaches no-publish barrier | `/private/tmp/lockspire-140-plan/live-no-publish-probe-result.json` and `live-recovery-diagnosis.md` | Exit 1 before barrier; exact `relation_boundary|phase-139-sealed-candidate|refresh_required`; refs/worktree/receipt unchanged | ✗ FAIL |
 | Final same-SHA CI/Release/hygiene join | `140-ACCEPTANCE.md` and current Git refs | No synchronized final SHA or complete receipt set | ✗ FAIL |
 
-The original verification pass did not run a new full suite. A later pinned `mix ci` passed on `0027dcfed0b2c7d761ce73cccbc366c54332538a` and is recorded in the Plan 140-15 follow-up; this verification-record update creates a new candidate that still needs its own full gate and exact-candidate checkpoint.
+The original verification pass did not run a new full suite. A later pinned `mix ci` passed on `0027dcfed0b2c7d761ce73cccbc366c54332538a`; candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` subsequently passed the full predecessor acceptance join. GSD lifecycle writes after that receipt changed the candidate. Plan 140-17 deferred further acceptance work pending a trusted external review attestation and supported read-only completion route.
 
 ### Probe Execution
 
@@ -219,6 +191,7 @@ Circular expected-value generation was not found in the Plan 140-14 proof. Its s
 |---|---|---|---|
 | `140-REVIEW.md` / `140-DISPOSITIONS.md` | WR-01 standalone sealed-relation failure once; cause remains unknown | ⚠️ WARNING | Deferred with exact recurrence trigger. It is not called fixed. |
 | `.planning/PROJECT.md` | Current State still says Phase 140 is executing Plan 140-02 | ℹ️ DEFERRED | Phase 141 success criterion 2 owns harmonizing project/roadmap/requirements/state/milestone records. |
+| `140-15-SUMMARY.md` | Frontmatter lists CI-06/CI-07 as `requirements-completed`, while current requirements and later summary text keep both pending | ⚠️ WARNING | Treat latest checked requirement rows and terminal-receipt evidence as authoritative; reconcile stale summary metadata in a later record update. |
 
 No active unreferenced TBD/FIXME/XXX debt marker was found in the inspected changed implementation/test sources. TODO-like matches in the support helper are test inputs for the maintained-marker scanner. Plan 140-14 deep review is clean: zero critical, warning, or info findings across both changed test sources.
 
@@ -226,15 +199,23 @@ No active unreferenced TBD/FIXME/XXX debt marker was found in the inspected chan
 
 None. This is an infrastructure/maintenance phase; its unresolved items are deterministic failed or missing acceptance evidence reported as gaps.
 
+### Plan 140-17 Re-verification
+
+| Plan 140-17 truth | Status | Evidence |
+|---|---|---|
+| CI-06/CI-07 remain unchecked and canonical verification remains 30/32. | ✓ VERIFIED | `.planning/REQUIREMENTS.md` leaves both unchecked; `140-VERIFICATION.md` retains `gaps_found` and score 30/32. |
+| GSD writes task summary and tracked lifecycle records after task work. | ✓ VERIFIED | `execute-plan.md` commits summary and metadata after tasks; `execute-phase.md` writes close-out tracking records after verification. |
+| Plan 140-17 is deferral-only and performs no candidate/ref/acceptance work. | ✓ VERIFIED | Summary records no candidate, diff, receipt, or ref action; no 140-17 candidate or closure proof artifact exists. No tests or operational gates were run during this verification. |
+| Phase 138 remains last complete; Phase 139's failed probe and skipped hook are preserved; next command is named. | ✓ VERIFIED | `.continue-here.md`, STATE, and ROADMAP keep Phase 140 active, preserve `5259a6545c04277ee44038779b23b139b6b1fcb2` and the skipped `plan:pre`, and name `$gsd-plan-phase 140 --gaps`. |
+
 ### Gaps Summary
 
-Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: its valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, and its saved local CI candidate is green. The live post-transition invocation at `5259a654` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retain this historical failure and preserve the strict classifier. The live Phase 139 finalizer was not rerun. First exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed the full acceptance join. Post-write candidate `1ca94e8ca31d46ea3550f596208e96ce2cb8d607` failed local `mix ci` and canonical CI run `37030798398`; Release run `37030798360` passed but no terminal exact hygiene receipt was produced. The fixture root cause was current requirements being copied into a historical Phase 139 fixture; the test-support repair pins that input to the verification parent. After two bounded test-timeout adjustments, candidate `0027dcfed0b2c7d761ce73cccbc366c54332538a` passed local `mix ci` (1,441 unit tests and 102 integration tests, 0 failures). That SHA is local-only, and this evidence update creates a new candidate requiring its own full gate and exact-SHA acceptance. CI-06 and CI-07 remain pending; the first receipt does not transfer. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or claim Phase 140 complete.
-Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: its valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, and its saved local CI candidate is green. The live post-transition invocation at `5259a654` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retain this historical failure and preserve the strict classifier. The live Phase 139 finalizer was not rerun. First exact-SHA candidate `47fbdf68a33c0542afa479c43aa95da2174b2bd6` passed the full acceptance join. Post-write candidates `f9a0c50a7ef117aa8023fae823d14c12e95f46c2` and `1ca94e8ca31d46ea3550f596208e96ce2cb8d607` failed local and canonical CI; the fixture root cause was current requirements being copied into a historical Phase 139 fixture, and the test-support repair seeds that file from the verification parent. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` subsequently passed the full exact-SHA join: local gate passed, exact hygiene reported 24 PASS/0 WARN/0 BLOCK, all seven CI jobs passed in run `37056328643`, and the Release no-publish graph passed in run `37056328607`. Its private receipt is `/private/tmp/lockspire-140-plan/140-15-final-acceptance.4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d.json` (SHA-256 `6dc2c03865ec66cd745edc84b23169807ff3e714f5b47e30ac5fd559ff17e8db`). The completion-record update creates a new candidate; its terminal join is still pending and will be stored in that candidate's SHA-derived receipt without a later tracked write. The verification report intentionally records the pre-terminal checkpoint; a failed final join requires reverting CI-06/CI-07 to pending. Keep WR-01 cause-unknown and recurrence-triggered. Do not broaden the historical classifier or rerun the live Phase 139 finalizer.
+Plan 140-14 closes the prior behavior-evidence omission for the supported historical planning-entry case: its valid recovery-v2 fixture reaches the real finalizer's exact no-publish barrier, hostile archived lineage fails earlier, the state-preservation assertions pass, and its saved local CI candidate is green. The live post-transition invocation at `5259a6545c04277ee44038779b23b139b6b1fcb2` still fails at `relation_boundary|phase-139-sealed-candidate|refresh_required`; retain this historical failure and preserve the strict classifier. The live Phase 139 finalizer was not rerun. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed the full predecessor exact-SHA join: local CI passed, exact hygiene reported 24 PASS/0 WARN/0 BLOCK, all seven CI jobs passed in run `37056328643`, and the Release no-publish graph passed in run `37056328607`. Its private receipt is `/private/tmp/lockspire-140-plan/140-15-final-acceptance.4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d.json` (SHA-256 `6dc2c03865ec66cd745edc84b23169807ff3e714f5b47e30ac5fd559ff17e8db`), but that receipt does not certify the current SHA after later tracked lifecycle writes. CI-06 and CI-07 remain pending until a trusted external review attestation and a GSD-compatible read-only completion path are established; only then should a fresh candidate receive its own terminal same-SHA evidence. Plan 140-17 deferred acceptance and performed no candidate/ref/CI action. WR-01 remains cause-unknown and recurrence-triggered. The Plan 140-15 summary's `requirements-completed` metadata for CI-06/CI-07 conflicts with current unchecked requirements and is retained as a historical warning for reconciliation. Do not broaden the historical classifier or claim Phase 140 complete.
 
 ---
 
-_Verified: 2026-10-02T20:41:06Z_
-_Verifier: the agent (manual Plan 140-15 receipt A update)_
+_Verified: 2026-10-05T02:12:56Z_
+_Verifier: the agent (gsd-verifier re-verification after Plan 140-17)_
 
 ## Plan 140-16 T1 terminal-acceptance status (2026-10-03)
 
