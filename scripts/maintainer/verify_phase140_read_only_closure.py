@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Derive Phase 140 CI-06/CI-07 status from committed records and one receipt.
 
-This verifier never edits the checkout. Its only output is a new mode-0600 JSON
-file beneath /private/tmp/lockspire-140-plan. A successful result is valid only
-for the exact synchronized SHA supplied on the command line.
+This verifier never edits tracked files or moves HEAD/local main. It refreshes
+only origin/main and FETCH_HEAD through a no-tags fetch, then checks the server's
+advertisement separately; Git may also add fetched objects to its local object
+database. Its only explicit result file is a new mode-0600 JSON beneath
+/private/tmp/lockspire-140-plan. A successful result is valid only for the
+exact synchronized SHA supplied on the command line. The receipt's local gate
+and hygiene fields are trusted owner-only local evidence; GitHub workflow claims
+are re-queried through the authenticated CLI before either requirement passes.
 """
 
 from __future__ import annotations
@@ -14,10 +19,12 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import subprocess
 import sys
 import tempfile
+from urllib.parse import urlsplit
 
 
 SCHEMA = "lockspire-phase-140-read-only-closure-v1"
@@ -26,6 +33,7 @@ RECEIPT_SCHEMA = "lockspire-phase-139-acceptance-v1"
 VERSION = "1"
 SCRIPT_PATH = "scripts/maintainer/verify_phase140_read_only_closure.py"
 PROOF_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-17-read-only-closure-proof.json"
+PROOF_REVIEW_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-17-closure-review.md"
 PRIVATE_DIR = Path("/private/tmp/lockspire-140-plan")
 
 CI_JOBS = {
@@ -59,6 +67,7 @@ CONDITIONAL_RECORDS = (
 )
 PENDING_MARKER = "<!-- lockspire-phase-140-closure-status-v1 CI-06=pending CI-07=pending -->"
 OID_RE = re.compile(r"^[0-9a-f]{40}$")
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class ClosureError(Exception):
@@ -139,6 +148,153 @@ def validate_job_run(run, label: str, expected_jobs: dict[str, str], outcome=Non
         observed[name] = job["conclusion"]
     if observed != expected_jobs:
         fail(f"{label} job graph is not the required graph")
+
+
+def gh_json(args: list[str], label: str):
+    if shutil.which("gh") is None:
+        fail("authenticated GitHub CLI is required for independent workflow verification")
+    command = ["gh", *args]
+    if args and args[0] == "api":
+        command[2:2] = ["--hostname", "github.com"]
+    result = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
+    )
+    if result.returncode != 0:
+        fail(f"GitHub API request failed while verifying {label}")
+    return strict_json(result.stdout, label)
+
+
+def validate_live_workflow(
+    repository: str, sha: str, receipt_run: dict, workflow_file: str,
+    workflow_name: str, expected_jobs: dict[str, str], outcome=None,
+) -> dict:
+    workflow_meta = gh_json(
+        ["api", f"repos/{repository}/actions/workflows/{workflow_file}"],
+        f"{workflow_name} workflow metadata",
+    )
+    workflow_id = workflow_meta.get("id") if isinstance(workflow_meta, dict) else None
+    if (type(workflow_id) is not int or workflow_id <= 0
+            or workflow_meta.get("name") != workflow_name
+            or workflow_meta.get("path") != f".github/workflows/{workflow_file}"
+            or workflow_meta.get("state") != "active"):
+        fail(f"{workflow_name} workflow identity is unavailable or unexpected")
+
+    run_id = receipt_run["run_id"]
+    selected = gh_json(
+        ["api", f"repos/{repository}/actions/workflows/{workflow_file}/runs?branch=main&event=push&head_sha={sha}&per_page=100"],
+        f"{workflow_name} exact-SHA run selection",
+    )
+    if not isinstance(selected, dict):
+        fail(f"{workflow_name} exact-SHA run selection is malformed")
+    runs = selected.get("workflow_runs")
+    if (type(selected.get("total_count")) is not int or selected["total_count"] < 1
+            or not isinstance(runs, list) or len(runs) < 1):
+        fail(f"{workflow_name} has no exact-SHA push run")
+    selected_runs = [
+        run for run in runs
+        if isinstance(run, dict) and run.get("id") == run_id
+    ]
+    if len(selected_runs) != 1:
+        fail(f"{workflow_name} receipt run is absent or duplicated in the exact-SHA run list")
+    selected_run = selected_runs[0]
+    if (selected_run.get("head_sha") != sha or selected_run.get("head_branch") != "main"
+            or selected_run.get("event") != "push"
+            or selected_run.get("workflow_id") != workflow_id):
+        fail(f"{workflow_name} selected run list entry is not bound to main and the exact SHA")
+
+    live_run = gh_json(
+        ["api", f"repos/{repository}/actions/runs/{run_id}"], f"{workflow_name} run"
+    )
+    if (not isinstance(live_run, dict)
+            or live_run.get("id") != run_id
+            or live_run.get("name") != workflow_name
+            or live_run.get("path") != f".github/workflows/{workflow_file}"
+            or live_run.get("workflow_id") != workflow_id
+            or not isinstance(live_run.get("repository"), dict)
+            or live_run["repository"].get("full_name") != repository
+            or live_run.get("event") != "push"
+            or live_run.get("head_branch") != "main"
+            or live_run.get("head_sha") != sha
+            or live_run.get("status") != "completed"
+            or live_run.get("conclusion") != "success"
+            or live_run.get("html_url") != receipt_run["url"]):
+        fail(f"{workflow_name} live run is not bound to the receipt's repository, workflow, and SHA")
+
+    jobs_page = gh_json(
+        ["api", f"repos/{repository}/actions/runs/{run_id}/jobs?per_page=100&page=1"],
+        f"{workflow_name} jobs",
+    )
+    if not isinstance(jobs_page, dict):
+        fail(f"{workflow_name} live jobs response is malformed")
+    jobs = jobs_page.get("jobs")
+    if (type(jobs_page.get("total_count")) is not int
+            or jobs_page["total_count"] != len(expected_jobs)
+            or not isinstance(jobs, list) or len(jobs) != len(expected_jobs)):
+        fail(f"{workflow_name} live job list is incomplete or has unexpected jobs")
+    observed = {}
+    for job in jobs:
+        if not isinstance(job, dict):
+            fail(f"{workflow_name} live job entry is malformed")
+        name = job.get("name")
+        status = job.get("status")
+        conclusion = job.get("conclusion")
+        if not isinstance(name, str) or name in observed or status != "completed":
+            fail(f"{workflow_name} live job entry is duplicated or incomplete")
+        observed[name] = conclusion
+    if observed != expected_jobs:
+        fail(f"{workflow_name} live job graph differs from the required graph")
+    return {"workflow_id": workflow_id, "run_id": run_id, "head_sha": sha}
+
+
+def repository_from_origin(root: Path) -> str:
+    remote = run_git(root, "remote", "get-url", "origin").decode("utf-8").strip()
+    if remote.startswith("git@github.com:"):
+        path = remote.removeprefix("git@github.com:")
+    else:
+        parsed = urlsplit(remote)
+        if parsed.scheme not in {"https", "ssh"} or parsed.hostname != "github.com":
+            fail("origin is not a GitHub repository URL")
+        path = parsed.path.lstrip("/")
+    path = path.removesuffix(".git")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", path):
+        fail("origin repository path is malformed")
+    return path
+
+
+def validate_live_github_evidence(root: Path, sha: str, receipt: dict) -> dict:
+    if shutil.which("gh") is None:
+        fail("authenticated GitHub CLI is required for independent workflow verification")
+    origin_repository = repository_from_origin(root)
+    github_env = os.environ.copy()
+    github_env["GH_HOST"] = "github.com"
+    github_env["GH_REPO"] = origin_repository
+    auth = subprocess.run(
+        ["gh", "auth", "status", "--hostname", "github.com"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+        env=github_env,
+    )
+    if auth.returncode != 0:
+        fail("GitHub CLI authentication is unavailable")
+    repository_result = subprocess.run(
+        ["gh", "repo", "view", origin_repository, "--json", "nameWithOwner"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, env=github_env,
+    )
+    if repository_result.returncode != 0:
+        fail("GitHub repository identity is unavailable")
+    repository_doc = strict_json(repository_result.stdout, "GitHub repository identity")
+    repository = repository_doc.get("nameWithOwner") if isinstance(repository_doc, dict) else None
+    if not isinstance(repository, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
+        fail("GitHub repository identity is malformed")
+    if repository.casefold() != origin_repository.casefold():
+        fail("github.com repository identity does not match origin")
+    ci = validate_live_workflow(
+        repository, sha, receipt["required_ci"], "ci.yml", "CI", CI_JOBS
+    )
+    release = validate_live_workflow(
+        repository, sha, receipt["release_no_publish"], "release.yml", "Release", RELEASE_JOBS,
+        "no_publish",
+    )
+    return {"repository": repository, "required_ci": ci, "release_no_publish": release}
 
 
 def validate_receipt(receipt_path: Path, sha: str) -> tuple[dict, str]:
@@ -240,13 +396,20 @@ def validate_proof(root: Path, sha: str, script_file: Path) -> tuple[dict, str]:
     script_digest = hashlib.sha256(script_bytes).hexdigest()
     if script_file.read_bytes() != script_bytes:
         fail("running executable bytes differ from the committed executable")
+    proof_entry = run_git(root, "ls-tree", sha, "--", PROOF_PATH).decode("ascii").strip()
+    report_entry = run_git(root, "ls-tree", sha, "--", PROOF_REVIEW_PATH).decode("ascii").strip()
+    if not (proof_entry.startswith("100644 blob ") and proof_entry.endswith(chr(9) + PROOF_PATH)):
+        fail("independent review proof is not a regular committed file")
+    if not (report_entry.startswith("100644 blob ") and report_entry.endswith(chr(9) + PROOF_REVIEW_PATH)):
+        fail("independent review report is not a regular committed file")
     proof = strict_json(read_committed_blob(root, sha, PROOF_PATH), "independent review proof")
     exact_keys(
         proof,
         {"schema", "executable_sha256", "independently_reviewed", "read_only",
          "reviewer_identity", "proof_identity", "reviewed_head", "review_head_before",
          "review_head_after", "review_worktree_clean_before", "review_worktree_clean_after",
-         "no_tracked_write_during_review", "no_head_movement_during_review", "verdict"},
+         "no_tracked_write_during_review", "no_head_movement_during_review", "verdict",
+         "review_report_sha256"},
         "independent review proof",
     )
     if (proof["schema"] != PROOF_SCHEMA or proof["executable_sha256"] != script_digest
@@ -265,6 +428,28 @@ def validate_proof(root: Path, sha: str, script_file: Path) -> tuple[dict, str]:
             fail(f"independent review proof has an invalid {key}")
     if proof["reviewed_head"] != proof["review_head_before"] or proof["reviewed_head"] != proof["review_head_after"]:
         fail("independent review did not observe a stable HEAD")
+    reviewed_tree_entry = run_git(
+        root, "ls-tree", proof["reviewed_head"], "--", SCRIPT_PATH
+    ).decode("ascii").strip()
+    if not re.fullmatch(r"100755 blob [0-9a-f]{40}\tscripts/maintainer/verify_phase140_read_only_closure\.py", reviewed_tree_entry):
+        fail("reviewed commit does not contain the executable")
+    reviewed_script = read_committed_blob(root, proof["reviewed_head"], SCRIPT_PATH)
+    if hashlib.sha256(reviewed_script).hexdigest() != script_digest:
+        fail("reviewed commit does not contain the exact executable bytes")
+    if (not isinstance(proof["review_report_sha256"], str)
+            or not SHA256_RE.fullmatch(proof["review_report_sha256"])):
+        fail("independent review report digest is malformed")
+    review_report = read_committed_blob(root, sha, PROOF_REVIEW_PATH)
+    report_digest = hashlib.sha256(review_report).hexdigest()
+    if proof["review_report_sha256"] != report_digest or proof["proof_identity"] != f"sha256:{report_digest}":
+        fail("independent review proof does not match its committed report")
+    for expected_line in (
+        f"Reviewed executable SHA-256: `{script_digest}`",
+        f"Review HEAD: `{proof['reviewed_head']}`",
+        "Verdict: PASS",
+    ):
+        if expected_line.encode("utf-8") not in review_report:
+            fail("independent review report does not bind the passing review to this executable")
     # `merge-base --is-ancestor` returns no stdout in either case; use its
     # status rather than inferring ancestry from output.
     ancestry = subprocess.run(
@@ -280,6 +465,9 @@ def validate_proof(root: Path, sha: str, script_file: Path) -> tuple[dict, str]:
 
 def validate_pending_records(root: Path, sha: str) -> None:
     for path in CONDITIONAL_RECORDS:
+        entry = run_git(root, "ls-tree", sha, "--", path).decode("ascii").strip()
+        if not (entry.startswith("100644 blob ") and entry.endswith(chr(9) + path)):
+            fail(f"conditional record is not a regular committed file: {path}")
         data = read_committed_blob(root, sha, path)
         try:
             content = data.decode("utf-8")
@@ -396,6 +584,7 @@ def main() -> int:
     proof, executable_digest = validate_proof(root, args.record_head, script_file)
     validate_pending_records(root, args.record_head)
     receipt, receipt_digest = validate_receipt(Path(args.receipt), args.sha)
+    github_evidence = validate_live_github_evidence(root, args.sha, receipt)
     protected = validate_protected_hashes(root, args.record_head)
 
     # Refresh only origin/main; this is metadata-only and must converge on the
@@ -449,8 +638,12 @@ def main() -> int:
             "binary_diff_sha256": hashlib.sha256(diff).hexdigest(),
         },
         "protected_hashes": protected,
+        "github_evidence": github_evidence,
+        "local_evidence_trust": "owner-only-mode-0600-receipt",
         "requirements": {"CI-06": "pass", "CI-07": "pass"},
         "read_only": True,
+        "read_only_boundary": "tracked-files-and-HEAD/local-main-unchanged; origin/main-tracking-ref-and-FETCH_HEAD-refreshed; fetched-objects-may-enter-local-object-database",
+        "receipt_trust": "owner-only mode-0600 local gate and hygiene evidence; live GitHub workflows re-queried",
         "method": {
             "version": VERSION,
             "invocation": [
@@ -459,6 +652,7 @@ def main() -> int:
             ],
             "executable_sha256": executable_digest,
             "proof_identity": proof["proof_identity"],
+            "review_report_sha256": proof["review_report_sha256"],
         },
     }
     body = (json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
@@ -466,9 +660,22 @@ def main() -> int:
 
     # The evidence file is outside the checkout. Confirm no tracked state or
     # object identity changed after writing it.
-    if (resolve_ref(root, "HEAD", "HEAD") != args.sha
-            or resolve_ref(root, "refs/heads/main", "local main") != args.sha
-            or run_git(root, "status", "--porcelain=v1", "--untracked-files=all", "-z")):
+    try:
+        final_head = resolve_ref(root, "HEAD", "HEAD")
+        final_local = resolve_ref(root, "refs/heads/main", "local main")
+        final_fetched = resolve_ref(root, "refs/remotes/origin/main", "fetched origin/main")
+        final_advertised = run_git(
+            root, "ls-remote", "--exit-code", "origin", "refs/heads/main"
+        ).decode("ascii").strip()
+        final_porcelain = run_git(root, "status", "--porcelain=v1", "--untracked-files=all", "-z")
+    except (ClosureError, OSError, subprocess.CalledProcessError):
+        try:
+            output.unlink()
+        except OSError:
+            pass
+        raise
+    if (final_head != args.sha or final_local != args.sha or final_fetched != args.sha
+            or final_advertised != args.sha + chr(9) + "refs/heads/main" or final_porcelain):
         try:
             output.unlink()
         except OSError:
