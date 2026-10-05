@@ -39,6 +39,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     assert output =~ "--sha"
     assert output =~ "--record-head"
     assert output =~ "--receipt"
+    assert output =~ "--private-dir"
     assert output =~ "--output"
     refute output =~ "--review-signature"
   end
@@ -139,6 +140,10 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
        [gh_scenario: "publication_job_succeeded"], "Release live job graph differs"},
       {"a WARN lacks its exact disposition", &remove_warn_disposition!/1, [],
        "WARN disposition count does not match"},
+      {"the receipt directory is publicly accessible", &make_private_directory_public!/1, [],
+       "private evidence directory must be an owner-only mode-0700 directory"},
+      {"the receipt directory is a symlink", &make_private_directory_symlink!/1, [],
+       "private evidence directory must not be a symlink"},
       {"the receipt has unsafe permissions", &make_receipt_public!/1, [],
        "regular owner-only mode-0600 file"},
       {"a tracked file changed during live checks", fn fixture -> fixture end,
@@ -172,10 +177,10 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
   defp build_fixture!(repo_root) do
     nonce = System.unique_integer([:positive])
-    directory = Path.join(System.tmp_dir!(), "lockspire-phase140-closure-#{nonce}")
+    directory = Path.join(System.tmp_dir!(), "lockspire-closure-fixture-#{nonce}")
     repository = Path.join(directory, "repository")
     origin = Path.join(directory, "origin.git")
-    private_dir = "/private/tmp/lockspire-140-plan"
+    private_dir = Path.join(directory, "private")
     File.mkdir_p!(repository)
     File.mkdir_p!(private_dir)
     File.chmod!(private_dir, 0o700)
@@ -284,6 +289,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       initial_sha: sha,
       alternate_sha: alternate_sha,
       sha: sha,
+      private_dir: private_dir,
       receipt: receipt,
       output: output,
       fake_bin: fake_bin,
@@ -381,6 +387,18 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
   defp make_receipt_public!(fixture) do
     File.chmod!(fixture.receipt, 0o644)
+    fixture
+  end
+
+  defp make_private_directory_public!(fixture) do
+    File.chmod!(fixture.private_dir, 0o755)
+    fixture
+  end
+
+  defp make_private_directory_symlink!(fixture) do
+    real_directory = fixture.private_dir <> "-real"
+    File.rename!(fixture.private_dir, real_directory)
+    File.ln_s!(real_directory, fixture.private_dir)
     fixture
   end
 
@@ -502,6 +520,8 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
         fixture.sha,
         "--record-head",
         fixture.sha,
+        "--private-dir",
+        fixture.private_dir,
         "--receipt",
         fixture.receipt,
         "--output",

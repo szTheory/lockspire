@@ -4,9 +4,10 @@
 This verifier never edits tracked files or moves HEAD/local main. It refreshes
 only origin/main and FETCH_HEAD through a no-tags fetch, then checks the server's
 advertisement separately; Git may also add fetched objects to its local object
-database. Its only explicit result file is a new mode-0600 JSON beneath
-/private/tmp/lockspire-140-plan. A successful result is valid only for the
-exact synchronized SHA supplied on the command line. The receipt's local gate
+database. Its only explicit result file is a new mode-0600 JSON beneath a
+private mode-0700 directory (by default /private/tmp/lockspire-140-plan). A
+successful result is valid only for the exact synchronized SHA supplied on the
+command line. The receipt's local gate
 and hygiene fields are trusted owner-only local evidence; GitHub workflow claims
 are re-queried through the authenticated CLI before either requirement passes.
 The committed contract test runs in the normal Fast Checks CI job and proves the
@@ -36,7 +37,7 @@ SCRIPT_PATH = "scripts/maintainer/verify_phase140_read_only_closure.py"
 CONTRACT_TEST_PATH = "test/lockspire/release/phase140_read_only_closure_contract_test.exs"
 CI_WORKFLOW_PATH = ".github/workflows/ci.yml"
 MIX_PATH = "mix.exs"
-PRIVATE_DIR = Path("/private/tmp/lockspire-140-plan")
+DEFAULT_PRIVATE_DIR = Path("/private/tmp/lockspire-140-plan")
 SUMMARY_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-18-SUMMARY.md"
 VERIFICATION_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md"
 ACCEPTANCE_PATH = ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
@@ -268,11 +269,13 @@ def repository_from_origin(root: Path) -> str:
     return path
 
 
-def validate_private_directory() -> None:
-    if PRIVATE_DIR.is_symlink():
+def validate_private_directory(private_dir: Path) -> None:
+    if not private_dir.is_absolute():
+        fail("private evidence directory must be an absolute path")
+    if private_dir.is_symlink():
         fail("private evidence directory must not be a symlink")
     try:
-        directory_stat = PRIVATE_DIR.lstat()
+        directory_stat = private_dir.lstat()
     except OSError as exc:
         raise ClosureError("private evidence directory is unavailable") from exc
     if (not stat.S_ISDIR(directory_stat.st_mode)
@@ -281,10 +284,11 @@ def validate_private_directory() -> None:
         fail("private evidence directory must be an owner-only mode-0700 directory")
 
 
-def read_private_file(path: Path, label: str, limit: int) -> bytes:
-    if not path.is_absolute() or path.parent != PRIVATE_DIR:
-        fail(f"{label} must be stored directly beneath /private/tmp/lockspire-140-plan")
-    validate_private_directory()
+def read_private_file(path: Path, label: str, limit: int, private_dir: Path) -> bytes:
+    if not path.is_absolute() or path.parent.resolve(strict=True) != private_dir:
+        fail(f"{label} must be stored directly beneath {private_dir}")
+    path = private_dir / path.name
+    validate_private_directory(private_dir)
     try:
         file_stat = path.lstat()
     except OSError as exc:
@@ -349,10 +353,10 @@ def validate_live_github_evidence(root: Path, sha: str, receipt: dict) -> dict:
     return {"repository": repository, "required_ci": ci, "release_no_publish": release}
 
 
-def validate_receipt(receipt_path: Path, sha: str) -> tuple[dict, str]:
+def validate_receipt(receipt_path: Path, sha: str, private_dir: Path) -> tuple[dict, str]:
     if receipt_path.name != f"140-18-final-acceptance.{sha}.json":
         fail("receipt filename must be bound to the full candidate SHA")
-    data = read_private_file(receipt_path, "receipt", 1024 * 1024)
+    data = read_private_file(receipt_path, "receipt", 1024 * 1024, private_dir)
     receipt = strict_json(data, "receipt")
     exact_keys(
         receipt,
@@ -530,19 +534,20 @@ def validate_protected_hashes(root: Path, sha: str) -> dict[str, str]:
     return observed
 
 
-def atomic_private_output(path: Path, body: bytes, root: Path) -> None:
-    if path.parent != PRIVATE_DIR:
-        fail("output must be directly inside /private/tmp/lockspire-140-plan")
+def atomic_private_output(path: Path, body: bytes, root: Path, private_dir: Path) -> None:
+    if not path.is_absolute() or path.parent.resolve(strict=True) != private_dir:
+        fail(f"output must be directly inside {private_dir}")
+    path = private_dir / path.name
     try:
         path.resolve(strict=False).relative_to(root.resolve())
     except ValueError:
         pass
     else:
         fail("output must be outside the repository")
-    PRIVATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    validate_private_directory()
+    private_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    validate_private_directory(private_dir)
     directory_fd = os.open(
-        PRIVATE_DIR,
+        private_dir,
         os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
     )
     directory_stat = os.fstat(directory_fd)
@@ -553,7 +558,7 @@ def atomic_private_output(path: Path, body: bytes, root: Path) -> None:
     if path.name in os.listdir(directory_fd):
         os.close(directory_fd)
         fail("output already exists; refusing to overwrite private evidence")
-    fd, temporary_name = tempfile.mkstemp(prefix=".140-18-closure.", dir=PRIVATE_DIR)
+    fd, temporary_name = tempfile.mkstemp(prefix=".140-18-closure.", dir=private_dir)
     temporary = Path(temporary_name)
     linked = False
     try:
@@ -586,7 +591,13 @@ def main() -> int:
     parser.add_argument("--sha", help="full candidate SHA")
     parser.add_argument("--receipt", help="private mode-0600 terminal receipt JSON")
     parser.add_argument("--record-head", help="full SHA containing all conditional records")
-    parser.add_argument("--output", help="new private JSON path under /private/tmp/lockspire-140-plan")
+    parser.add_argument(
+        "--private-dir",
+        default=str(DEFAULT_PRIVATE_DIR),
+        help="owner-only mode-0700 directory for receipt and result "
+        f"(default: {DEFAULT_PRIVATE_DIR})",
+    )
+    parser.add_argument("--output", help="new mode-0600 JSON directly inside --private-dir")
     args = parser.parse_args()
 
     script_file = Path(__file__).resolve()
@@ -603,6 +614,16 @@ def main() -> int:
         fail("--sha and --record-head must be full lowercase 40-character object IDs")
     if args.sha != args.record_head:
         fail("candidate SHA and conditional-record head must be identical")
+    private_dir = Path(args.private_dir)
+    if not private_dir.is_absolute():
+        fail("--private-dir must be an absolute path")
+    if private_dir.is_symlink():
+        fail("private evidence directory must not be a symlink")
+    try:
+        private_dir = private_dir.resolve(strict=True)
+    except OSError as exc:
+        raise ClosureError("private evidence directory is unavailable") from exc
+    validate_private_directory(private_dir)
 
     head_before = resolve_ref(root, "HEAD", "HEAD")
     local_before = resolve_ref(root, "refs/heads/main", "local main")
@@ -615,7 +636,7 @@ def main() -> int:
     automated_verification = validate_automated_contract(root, args.record_head, script_file)
     executable_digest = automated_verification["executable_sha256"]
     validate_pending_records(root, args.record_head)
-    receipt, receipt_digest = validate_receipt(Path(args.receipt), args.sha)
+    receipt, receipt_digest = validate_receipt(Path(args.receipt), args.sha, private_dir)
     github_evidence = validate_live_github_evidence(root, args.sha, receipt)
     protected = validate_protected_hashes(root, args.record_head)
 
@@ -687,7 +708,7 @@ def main() -> int:
         },
     }
     body = (json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-    atomic_private_output(output, body, root)
+    atomic_private_output(output, body, root, private_dir)
 
     # The evidence file is outside the checkout. Confirm no tracked state or
     # object identity changed after writing it.

@@ -20,9 +20,10 @@ defmodule Lockspire.TestSupport.QualityBaseline do
   @capability_proof_exclusions [
     "test/lockspire/web/live/admin/design_system/inventory_contract_test.exs"
   ]
-  # These files verify archival maintainer transitions. Their phase labels
-  # describe fixture history, not phase-coupled product capability proof.
+  # These files contain archival transition or GSD closure fixtures. Their
+  # phase labels are fixture data, not phase-coupled product capability proof.
   @phase_numbered_proof_maintenance_files [
+    "test/lockspire/release/phase140_read_only_closure_contract_test.exs",
     "test/lockspire/release/repository_hygiene_contract_test.exs",
     "test/support/lockspire/release_proof/package_assertions.ex"
   ]
