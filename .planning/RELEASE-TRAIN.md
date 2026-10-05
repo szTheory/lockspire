@@ -6,12 +6,13 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Latest released version: `1.5.1` <!-- x-release-please-version -->
-- Release date: `2026-09-26` <!-- x-release-please-date -->
-- Protected publish proof: GitHub Actions recovery run `33141484467` succeeded end to end on the trusted `hex-publish` environment, publishing source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8` after canonical exact-SHA CI run `33141161205` passed.
-- Install-truth proof: `./scripts/publish/verify_install_truth.sh` passed for public `1.5.0` on `2026-08-28`, completing the clean-room install, migration, verification, boot, and HTTP journey against the exact published version.
-- Artifact truth: `lockspire-1.5.0.tar` was 415744 bytes with SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`; prepublish and postpublish receipts both reported `verified`.
-- GitHub release truth: `lockspire-v1.5.0` was created on `2026-08-28` for the exact source used by release run `33141484467`, after Release Please auto-merged release PR #93.
+- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->
+- Release Please date metadata: `2026-09-26` <!-- x-release-please-date -->
+- Latest public package: Hex lists `1.5.0` as latest at the 2026-10-05 closure observation; the exact `1.5.1` release query returned HTTP 404. Release Please metadata above is not publication proof.
+- Published source: `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` passed and protected `workflow_dispatch` run `33141484467` published successfully for this same SHA.
+- Artifact truth: the published `lockspire-1.5.0` package checksum is `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`; the protected release run verified the exact package and public install journey.
+- GitHub release truth: [lockspire-v1.5.0](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.0) was created on `2026-08-28` for the source used by release run `33141484467`, after Release Please auto-merged release PR #93.
+- Phase 141 planning completion and Phase 140's accepted source SHA do not represent a new package publication. See the [dated Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md) for observation times, same-SHA acceptance, links, and evidence boundaries.
 - Release Please bookkeeping: the publish job now advances the merged release PR's `autorelease:` label itself (#78). Before that fix the label stayed `pending`, and Release Please aborted every later run with "There are untagged, merged release PRs outstanding", silently proposing no further releases. #79 was labelled `autorelease: tagged` automatically, confirming the fix end to end.
 
 ## Normal Train Rules
@@ -49,4 +50,4 @@ Cut the next patch release when there is at least one merged patch-eligible chan
 
 ## Current Main Readiness
 
-As of 2026-08-28, the released source is `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, canonical CI run `33141161205` is green, and the latest public release is `1.5.0`. Release run `33141484467` retained the exact manifest plus bounded prepublish/postpublish receipts and verified the public package journey.
+At the 2026-10-05 Phase 140 terminal acceptance, the accepted source was `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; required CI run `37354878786` passed all seven required jobs and Release run `37354878693` succeeded with the protected publication jobs skipped. This is current repository-baseline evidence, not a package release. The latest evidenced public release remains `1.5.0` from source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`, as detailed in the Current Baseline and the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
