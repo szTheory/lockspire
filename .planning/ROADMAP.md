@@ -311,14 +311,14 @@ Plans:
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
 | 140. Bounded Operational Loose-End Triage | 18/18 | Complete | 2026-10-05 |
-| 141. Maintenance-Baseline Closure | 1/1 | Complete | 2026-10-05 |
+| 141. Maintenance-Baseline Closure | 1/1 | Complete    | 2026-10-05 |
 
 ## Backlog
 
 ### Phase 999.1: Repository Readability & Docs Polish (BACKLOG)
 
 **Goal:** Make Lockspire's repository a joy to navigate: clarify what each major directory is for, remove only verified stale clutter, and give adopters and maintainers a clear, accurate route through the README and canonical documentation.
-**Requirements:** TBD
+**Requirements:** None assigned; identify applicable requirements during backlog promotion.
 **Plans:** 0 plans
 
 **Captured direction:**
@@ -329,4 +329,4 @@ Plans:
 
 Plans:
 
-- [ ] TBD (promote with `$gsd-review-backlog` when ready)
+- [ ] Define and scope plans during backlog promotion with `$gsd-review-backlog`.

@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "milestone": "v1.38",
   "phases": [
     {
       "number": "138",
@@ -16,18 +16,18 @@
     {
       "number": "140",
       "name": "Bounded Operational Loose-End Triage",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "141",
       "name": "Maintenance-Baseline Closure",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 141 of 4 · executing"
+    "command": "/gsd:new-milestone",
+    "label": "Start a new milestone",
+    "reason": "All phases complete — start a new milestone"
   },
-  "updated_at": "2026-10-05T19:27:01.327Z"
+  "updated_at": "2026-10-05T20:16:34.471Z"
 }
