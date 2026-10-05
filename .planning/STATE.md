@@ -1,21 +1,21 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.38
-milestone_name: Repository Baseline & Reconciliation
 current_phase: 141
 current_phase_name: Maintenance-Baseline Closure
 current_plan: 1
 status: complete
-stopped_at: Completed 141-01-PLAN.md; returned to the sustaining GA release train
-last_updated: "2026-10-05T19:27:01.313Z"
+stopped_at: Completed 141-01-PLAN.md
+last_updated: "2026-10-05T19:50:23.033Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 141 execution started
-state_head: 877a0f758aa0bbd5433cbe3d70f1476fa0e12223
+state_head: 4b1d50272a620a080a8ded0844fc7f94809ae8b5
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 70
   completed_plans: 70
+milestone_name: Repository Baseline & Reconciliation
 ---
 
 # Project State
@@ -153,8 +153,8 @@ Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complet
 - [Phase 140]: Phase 140 Plan 02: keep current rerun selectors distinct from unnamed historical Phase32/AuditWriter identities.
 - [Phase 140]: The initially planned external SSH reviewer signature was removed on 2026-10-05. The actual closure command is exercised by an adversarial CLI contract in the required test suite and its CI job is part of the exact-SHA acceptance join.
 - [Phase 140]: The post-summary private terminal receipt accepts CI-06/CI-07 on `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; preserve the tracked 30/32 verification report as pre-terminal history and link the terminal result through the Phase 141 baseline.
-- [Phase 141]: Keep the accepted Phase 140 source SHA separate from the Task 1 baseline commit and Task 3 planning-reconciliation commit; a documentation commit does not inherit source acceptance.
-- [Phase 141]: v1.38 planning completion returns Lockspire to the existing sustaining GA train and does not publish a package. The next action is conditional on a merged patch-eligible change, exact-current-main CI, hygiene without BLOCK, and supported-surface truth.
+- [Phase 141]: Phase 140 receipt proves only source SHA 877a0f758aa0bbd5433cbe3d70f1476fa0e12223; report and reconciliation documentation SHAs stay distinct.
+- [Phase 141]: v1.38 planning closure does not publish a package; the latest public release is 1.5.0 and the next sustaining action remains conditional.
 
 ### Pending Todos
 
@@ -188,8 +188,8 @@ Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complet
 
 ## Session Continuity
 
-Last session: 2026-10-05
-Stopped at: Completed Phase 141 Plan 01; v1.38 planning is complete
+Last session: 2026-10-05T19:50:22.981Z
+Stopped at: Completed 141-01-PLAN.md
 Resume file: None
 Resume instruction: Continue on the sustaining GA train. Evaluate a merged patch-eligible change, then confirm exact-current-main CI, repository hygiene without BLOCK, and supported-surface truth before the release owner acts. Public package truth remains Lockspire 1.5.0; no publication is part of Phase 141.
 
@@ -259,3 +259,4 @@ All 38 Phase 138 plans, all 13 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 140 P14 | 55 min | 3 tasks | 4 files |
 | Phase 140 P17 | 12 min | 1 tasks | 5 files |
 | Phase 140 P18 | 43 min | 3 tasks | 12 files |
+| Phase 141 P01 | 10m | 3 tasks | 7 files |
