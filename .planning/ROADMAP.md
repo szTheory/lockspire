@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 18 plans; 140-01 through 140-17 executed, 140-18 executing its automated verifier contract; verification is 30/32 with CI-06/CI-07 pending
+**Plans**: 18/18 plans executed; 140-01 through 140-17 executed, 140-18 executing its automated verifier contract; verification is 30/32 with CI-06/CI-07 pending
 
 Plans:
 **Wave 1**
@@ -278,7 +278,7 @@ Plans:
 
 **Wave 18** *(automated read-only completion route after GSD tracked writes; no manual verifier UAT)*
 
-- [ ] 140-18-PLAN.md — Prove the closure command through required CI contract tests, establish the post-GSD read-only receipt route, and gate final same-SHA CI/Release acceptance.
+- [x] 140-18-PLAN.md — Prove the closure command through required CI contract tests, establish the post-GSD read-only receipt route, and gate final same-SHA CI/Release acceptance.
 
 **Cross-cutting constraints:**
 
@@ -310,7 +310,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 17/17 | In Progress|  |
+| 140. Bounded Operational Loose-End Triage | 18/18 | In Progress|  |
 | 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
 
 ## Backlog
