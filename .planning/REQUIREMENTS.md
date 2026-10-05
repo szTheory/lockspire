@@ -22,8 +22,8 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 ### CI and Release Evidence
 
-- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed receipt A with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is predecessor evidence only; a terminal private receipt for the final synchronized SHA, a trusted external review attestation, and a GSD-compatible read-only completion path are required before completion.
-- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on predecessor `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. This is predecessor evidence only; a terminal private receipt for the final synchronized SHA, a trusted external review attestation, and a GSD-compatible read-only completion path are required before completion.
+- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed receipt A with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with required CI evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
+- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on predecessor `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with same-SHA Release evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
 - [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
@@ -83,8 +83,8 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
 | TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | pending terminal exact-SHA receipt, trusted external review attestation, and GSD-compatible read-only closure path |
-| CI-07 | Phase 140 | pending terminal exact-SHA receipt, trusted external review attestation, and GSD-compatible read-only closure path |
+| CI-06 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA required CI evidence |
+| CI-07 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA Release evidence |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |
 | HYGIENE-05 | Phase 139 | Complete |

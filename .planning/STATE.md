@@ -4,13 +4,13 @@ milestone: v1.38
 milestone_name: Repository Baseline & Reconciliation
 current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
-current_plan: 17
+current_plan: 18
 status: executing
-stopped_at: Phase 140 Plan 17 summarized; CI-06/CI-07 remain pending
-last_updated: "2026-10-05T02:53:18.230Z"
-last_activity: 2026-10-04
-last_activity_desc: Phase 140 Plan 18 planned; CI-06/CI-07 remain pending for external attestation and final same-SHA proof.
-state_head: 87aac1c3e77bed48f46ac511abbfb6e0ef4d6195
+stopped_at: Plan 140-18 T3 automated verifier contract and planning update
+last_updated: "2026-10-05T14:43:58.000Z"
+last_activity: 2026-10-05
+last_activity_desc: Replaced Plan 140-18's one-off reviewer signoff with an adversarial CLI contract in required CI; focused contract passes.
+state_head: fcfb77b4fb8028af9f9c50345fce306bf6d62b12
 progress:
   total_phases: 4
   completed_phases: 2
@@ -30,16 +30,16 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 ## Current Position
 
-Phase: 140 (Bounded Operational Loose-End Triage) — READY TO EXECUTE
-Current Plan: 17
+Phase: 140 (Bounded Operational Loose-End Triage) — EXECUTING
+Current Plan: 18
 Total Plans in Phase: 18
-Plan: 17 of 18
-Status: Ready to execute
-Last activity: 2026-10-04 — Phase 140 Plan 18 planned; CI-06/CI-07 remain pending for external attestation and final same-SHA proof.
+Plan: 18 of 18
+Status: Executing Phase 140
+Last activity: 2026-10-05 — Phase 140 execution started
 
 Progress: [█████░░░░░] 50%
 
-Current position (2026-10-04): Phase 138 is the last fully complete phase. Phase 139 has stale verification and a retained failed post-transition probe at 5259a6545c04277ee44038779b23b139b6b1fcb2; do not rerun its finalizer or reinterpret the probe. Plans 140-01 through 140-17 have complete summaries. Plan 140-18 is planned to resolve verifier trust and GSD lifecycle ordering; CI-06/CI-07 remain pending until terminal proof exists on one synchronized SHA.
+Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase 139 has stale verification and a retained failed post-transition probe at 5259a6545c04277ee44038779b23b139b6b1fcb2; do not rerun its finalizer or reinterpret the probe. Plans 140-01 through 140-17 have complete summaries. Plan 140-18 now proves the closure command through its committed adversarial contract test in required CI, then performs the receipt-aware same-SHA join after GSD writes. CI-06/CI-07 remain pending until terminal proof exists on one synchronized SHA; no human verifier UAT is required.
 
 ## Accumulated Context
 
@@ -146,20 +146,21 @@ Current position (2026-10-04): Phase 138 is the last fully complete phase. Phase
 - [Phase 138]: Compose Phase 139 fixture labels from semantic phase attributes so repository proof remains phase-neutral without weakening assertions. — The user-authorized repair restores the existing active proof-label hygiene contract while preserving generated fixture semantics.
 - [Phase 139]: Keep repository-owned proof separate from live external acceptance. The exact synchronized-main receipt passed at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI-06 and CI-07 remain assigned to Phase 140 until its verification closes them.
 - [Operating default]: Shift verification left into the earliest reliable automated layer; add repeatable integration, end-to-end, smoke, and seam checks to required CI when they provide recurring regression value. Treat passing automated evidence as satisfying UAT and hand off only subjective judgment or a truly unreachable external boundary, with its machine-owned lifecycle gate named.
+- [Operating default, reaffirmed 2026-10-05]: This is the standing GSD default. Once a repeatable check is automated and required CI proves it, do not add manual UAT/signoff for the same property or reopen the choice without new evidence that automation cannot establish it. Separate authorization for consequential external actions from verification.
 - [Phase 138/139 verification]: Phase 138's 100 executable UAT checks pass and #100 remains explicitly deferred until the authorized live snapshot refresh; Phase 139's three focused lifecycle relation tests pass serially. Both phase reports record zero human verification required.
 - [Phase 140]: Keep fresh inventory and candidate outcomes proposal-only where origin refresh or maintained-source classification is incomplete. — The collector reported origin refresh unavailable and the active-record family ambiguous; treating those gaps as complete could authorize destructive or misleading maintenance.
 - [Phase 140]: Phase 140 Plan 02: assess only source-identifiable archived findings; do not fabricate missing identities or equate grouped counts with records.
 - [Phase 140]: Phase 140 Plan 02: keep current rerun selectors distinct from unnamed historical Phase32/AuditWriter identities.
-- [Phase 140]: Defer CI-06 and CI-07 terminal acceptance until trusted review attestation and a GSD-compatible read-only completion path are established.
+- [Phase 140]: The initially planned external SSH reviewer signature was removed on 2026-10-05. The actual closure command is exercised by an adversarial CLI contract in the required test suite and its CI job is part of the exact-SHA acceptance join.
 - [Phase 140]: Plan 140-17 now has its GSD summary; all 17 Phase 140 plans are summarized, but the phase remains active with CI-06/CI-07 pending at 30/32. After verification returns with gaps, plan the remaining closure with $gsd-plan-phase 140 --gaps.
 
 ### Pending Todos
 
-- Phase 140: CI-06 and CI-07 remain pending at 30/32. Plan 140-17 records the safe deferral caused by GSD's post-task tracked writes; it does not perform terminal acceptance. Immediate command: `$gsd-execute-phase 140 --gaps-only`. After that command returns and the canonical 30/32 gaps remain, next command: `$gsd-plan-phase 140 --gaps` to plan a trusted, GSD-compatible receipt-aware closure route.
+- Phase 140: CI-06 and CI-07 remain pending at 30/32 until the post-GSD candidate receives its exact-SHA local/hygiene receipt, required CI results, and Release no-publish result. Plan 140-18 automates verifier UAT; any candidate-specific ref update still requires separate exact-action authorization if one is needed.
 
 ### Blockers/Concerns
 
-- Plans 140-01 through 140-16 have summaries; Plan 140-17 is the only current incomplete plan. Canonical verification records 30/32 truths verified; only CI-06 and CI-07 remain. GSD commits the plan summary and lifecycle metadata after task work, so Plan 140-17 records a safe deferral and a later plan must establish a GSD-compatible receipt-aware completion path before terminal acceptance. The live `5259a654` post-transition probe remains failed historical evidence with its recorded stage-specific disposition; do not broaden the historical classifier. Phase 140 remains active.
+- Plans 140-01 through 140-17 have summaries; Plan 140-18 is the current gap closure. Canonical verification records 30/32 truths verified; only CI-06 and CI-07 remain. The Plan 140-18 CLI contract is automated in required CI, and final exact-SHA evidence runs after GSD's summary/lifecycle writes. The live `5259a654` post-transition probe remains failed historical evidence with its recorded stage-specific disposition; do not broaden the historical classifier. Phase 140 remains active.
 - No terminal exact-SHA receipt exists for the current HEAD. Receipt A and prior ref-action approvals apply only to their named candidates. If synchronization needs a local-main update or push, stop at the candidate-specific human checkpoint in `140-ACCEPTANCE.md`; no ref movement is currently authorized.
 - Supported receipt supersession archived predecessor `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` and wrote pending recovery-v2 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The live post-transition probe at `5259a654` still failed before the no-publish barrier because the strict classifier accepts only the historical planning prefix. Preserve both receipts and the failure; Plan 140-14 proves the proper historical entry point without broadening production authority.
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
@@ -183,10 +184,10 @@ Current position (2026-10-04): Phase 138 is the last fully complete phase. Phase
 
 ## Session Continuity
 
-Last session: 2026-10-05T01:59:02.393Z
-Stopped at: Phase 140 Plan 17 summarized; CI-06/CI-07 remain pending
+Last session: 2026-10-05T14:43:58.000Z
+Stopped at: Plan 140-18 T3 automated verifier contract and planning update
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Run `$gsd-execute-phase 140 --gaps-only` to execute the only incomplete plan, 140-17, which records deferral only. After that command returns and the canonical 30/32 gaps remain, run `$gsd-plan-phase 140 --gaps` to plan the remaining trusted, lifecycle-compatible closure work. Do not rerun Phase 138 or Phase 139, replay Plan 140-16 T1, or reuse the de671 approval.
+Resume instruction: Finish Plan 140-18 and let standard GSD commit its SUMMARY and lifecycle records. Then follow 140-ACCEPTANCE.md for fresh exact-SHA local/hygiene, required CI, Release no-publish and read-only closure evidence. Do not request manual verifier review/UAT; the required CI contract test covers that property. Keep candidate-specific ref authorization only if a local-main update or push is actually needed.
 
 ## Performance Metrics
 
