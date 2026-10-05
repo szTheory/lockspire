@@ -414,8 +414,8 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     args = " ".join(sys.argv[1:])
     sha = os.environ["LOCKSPIRE_FAKE_SHA"]
     scenario = os.environ.get("LOCKSPIRE_FAKE_GH_SCENARIO", "")
-    ci_jobs = [#{@ci_jobs |> Enum.map(&inspect/1) |> Enum.join(", ")}]
-    release_jobs = [#{@release_jobs |> Enum.map(fn {name, _} -> inspect(name) end) |> Enum.join(", ")}]
+    ci_jobs = [#{Enum.map_join(@ci_jobs, ", ", &inspect/1)}]
+    release_jobs = [#{Enum.map_join(@release_jobs, ", ", fn {name, _} -> inspect(name) end)}]
     if scenario == "missing_ci_job":
         ci_jobs = ci_jobs[:-1]
     if scenario == "duplicate_ci_job":
