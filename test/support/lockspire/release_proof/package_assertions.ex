@@ -6218,6 +6218,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp copy_phase_139_verification_parent_documents!(repository) do
     source = Paths.path(".")
+
     parent =
       run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
       |> String.trim()
