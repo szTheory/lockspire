@@ -311,7 +311,7 @@ Plans:
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
 | 140. Bounded Operational Loose-End Triage | 18/18 | Complete | 2026-10-05 |
-| 141. Maintenance-Baseline Closure | 1/1 | Complete | 2026-10-05 |
+| 141. Maintenance-Baseline Closure | 1/1 | In Progress|  |
 
 ## Backlog
 
