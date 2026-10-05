@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 18/18 plans executed; 140-01 through 140-17 executed, 140-18 executing its automated verifier contract; verification is 30/32 with CI-06/CI-07 pending
+**Plans**: 18/18 plans executed; 140-01 through 140-18 have summaries; automated verifier contract is complete, with final exact-SHA acceptance pending at 30/32 for CI-06/CI-07
 
 Plans:
 **Wave 1**

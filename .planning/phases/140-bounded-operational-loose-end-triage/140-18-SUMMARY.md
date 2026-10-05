@@ -13,7 +13,7 @@ affects: [CI-06, CI-07, phase-140-closure]
 actuals:
   tokens: 28037
   tasks: 3
-  commits: 4
+  commits: 5
 tech-stack:
   added: []
   patterns:
@@ -47,7 +47,7 @@ coverage:
         ref: "test/lockspire/release/phase140_read_only_closure_contract_test.exs#automated contract and same-SHA workflow evidence"
         status: pass
     human_judgment: false
-duration: 43 min
+duration: approximately 64 min, including post-GSD protected-file reconciliation
 completed: 2026-10-05
 status: complete
 ---
@@ -58,9 +58,9 @@ status: complete
 
 ## Performance
 
-- **Duration:** approximately 43 min
+- **Duration:** approximately 64 min, including post-GSD protected-file reconciliation
 - **Started:** 2026-10-05T14:11:49Z
-- **Completed:** 2026-10-05T14:54:08Z
+- **Completed:** 2026-10-05T15:15:20Z
 - **Tasks:** 3/3
 - **Files modified:** 12, including this summary
 
@@ -69,6 +69,7 @@ status: complete
 - Removed SSH reviewer inputs and the signature-only preflight from the read-only closure verifier.
 - Bound the private result to the committed verifier, its end-to-end contract test, the fast-test alias and the required Minimum Supported Elixir/OTP CI job.
 - Kept exact-SHA receipt validation, canonical CI/Release re-query, no-publish checks and read-only ref/worktree behavior fail-closed.
+- Re-pinned the two protected planning files to their later committed Phase 139/138 versions, kept the original hashes as history, and added a contract case proving later file edits are rejected.
 - Replaced acceptance and continuation instructions that requested a human verifier signoff with an automated test and CI evidence.
 - Recorded the standing GSD default in PROJECT.md and STATE.md: automate repeatable checks, use required CI when they have recurring value, and do not reopen manual UAT without new evidence.
 - Left CI-06 and CI-07 pending because no fresh terminal receipt and canonical same-SHA workflow join has been produced.
@@ -78,6 +79,8 @@ status: complete
 1. **Task 1: Bind exact-SHA closure to its automated CLI contract** — 66ce2ba3 (verifier and contract test), with formatter follow-up 25230606.
 2. **Task 2: Prove fail-closed lifecycle boundaries and document the post-GSD handoff** — 66daba70.
 3. **Task 3: Replace the one-off signoff with required CI contract proof** — 1297d6aa.
+
+Post-summary acceptance correction: **36c6a9db** updates the protected-file pins to the current committed Phase 138/139 versions and tests rejection of later changes.
 
 The plan metadata commit is recorded with this summary and the GSD state/roadmap lifecycle updates.
 
@@ -97,6 +100,8 @@ The recurring required test suite is sufficient for routine verifier UAT because
 
 **1. User-directed adjustment:** The user asked to shift reliable verification into automation and make zero manual UAT the default. The original T3 blocking reviewer-signature checkpoint was replaced with an automated contract test and a required CI binding. The plan and GSD records now state that this decision should not be reopened without new evidence.
 
+**2. Evidence-based protected-file pin update:** The post-GSD verifier correctly rejected two old file hashes. Their current contents came from the committed Phase 139 inventory refresh (`171d4635`) and Phase 138 verification refresh (`17a908a7`). The user chose to retain those committed updates. The verifier and fixture now pin those exact contents, and a hostile mutation case proves a later change is still rejected. The original execution-entry hashes remain in historical records.
+
 **Verification:** The focused contract passes locally. CI-06 and CI-07 remain pending until a fresh post-GSD exact-SHA receipt, required canonical CI and Release no-publish results agree.
 
 ## Issues Encountered
@@ -114,6 +119,7 @@ Plan 140-18 is complete, but Phase 140 is not closed: CI-06 and CI-07 remain pen
 ## Self-Check: PASSED
 
 - The focused CLI contract test passed: 3 passing tests.
+- The contract also rejected a candidate that changed a protected file.
 - The formatter check, Python compile check, planning assertions and git diff check passed.
 - CI-06 and CI-07 remain pending; no terminal same-SHA result is claimed.
 

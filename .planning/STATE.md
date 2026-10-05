@@ -6,11 +6,11 @@ current_phase: 140
 current_phase_name: Bounded Operational Loose-End Triage
 current_plan: 18
 status: verifying
-stopped_at: Plan 140-18 summarized; exact-SHA acceptance pending
-last_updated: "2026-10-05T14:55:47.445Z"
+stopped_at: Plan 140-18 protected-file pins reconciled; exact-SHA acceptance pending
+last_updated: "2026-10-05T15:16:01.975Z"
 last_activity: 2026-10-05
 last_activity_desc: Replaced Plan 140-18's one-off reviewer signoff with an adversarial CLI contract in required CI; focused contract passes.
-state_head: 1297d6aaec2aecc8ebb75dad4856699bf178df0e
+state_head: 36c6a9dbc30cde1e2316b69bc165cfba4fe6c066
 progress:
   total_phases: 4
   completed_phases: 2
@@ -39,7 +39,7 @@ Last activity: 2026-10-05 — Phase 140 execution started
 
 Progress: [█████░░░░░] 50%
 
-Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase 139 has stale verification and a retained failed post-transition probe at 5259a6545c04277ee44038779b23b139b6b1fcb2; do not rerun its finalizer or reinterpret the probe. Plans 140-01 through 140-17 have complete summaries. Plan 140-18 now proves the closure command through its committed adversarial contract test in required CI, then performs the receipt-aware same-SHA join after GSD writes. CI-06/CI-07 remain pending until terminal proof exists on one synchronized SHA; no human verifier UAT is required.
+Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase 139 has stale verification and a retained failed post-transition probe at 5259a6545c04277ee44038779b23b139b6b1fcb2; do not rerun its finalizer or reinterpret the probe. Plans 140-01 through 140-18 have summaries. The verifier's protected-file pins now match the current committed Phase 139 inventory refresh and Phase 138 verification refresh, and its contract test rejects later edits. CI-06/CI-07 remain pending until terminal proof exists on one synchronized SHA; no human verifier UAT is required.
 
 ## Accumulated Context
 
@@ -184,8 +184,8 @@ Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase
 
 ## Session Continuity
 
-Last session: 2026-10-05T14:55:47.370Z
-Stopped at: Plan 140-18 summarized; exact-SHA acceptance pending
+Last session: 2026-10-05T15:16:01.865Z
+Stopped at: Plan 140-18 protected-file pins reconciled; exact-SHA acceptance pending
 Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
 Resume instruction: Finish Plan 140-18 and let standard GSD commit its SUMMARY and lifecycle records. Then follow 140-ACCEPTANCE.md for fresh exact-SHA local/hygiene, required CI, Release no-publish and read-only closure evidence. Do not request manual verifier review/UAT; the required CI contract test covers that property. Keep candidate-specific ref authorization only if a local-main update or push is actually needed.
 
