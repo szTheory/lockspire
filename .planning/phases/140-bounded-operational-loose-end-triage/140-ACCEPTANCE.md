@@ -49,6 +49,19 @@ It checks that the committed executable, adversarial CLI contract and CI test wi
 
 The previous dated receipt supports only its recorded SHA. Supplemental OIDF/FAPI results remain separate and cannot substitute for required CI or Release evidence. No current final-SHA receipt is asserted here.
 
+## Current protected-file baseline (reconciled 2026-10-05)
+
+The Phase 140 entry hashes remain historical. The current verifier pins the exact later committed versions of the two files refreshed by completed Phase 139/138 work; it still rejects any subsequent change. This preserves the reviewed content instead of restoring older snapshots.
+
+| File | Current SHA-256 | Recorded source |
+|---|---|---|
+| `.planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md` | `e28f727046273109629dceaf5b99ab9af6927a7d2084ff960b6fa337983f289d` | Phase 139 refresh commit `171d46351f804951e8a13c82173113662bb14c1c` |
+| `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md` | `adebfc5edc5d5671b4776b6c6495643a43123768907635c8905bd7045abd517b` | Preserved entry version |
+| `.planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md` | `b2c4ada9a7c34fe266dfa527a7c43c00be9afb8d7ce70ff0f8f0a7232d1bf904` | Phase 138 verification refresh commit `17a908a794449885c39e5a059f370a5823eeefd3` |
+| `docs/lockspire-milestone-roadmap-ratchet-prompt.txt` | `8cba24252908e0de1a9c64198b0644579970c5c9c1bfa0ab26d733d720ca3b05` | Preserved entry version |
+
+The CLI contract fixture now starts from these committed versions and includes an adversarial case that changes a protected file and expects rejection. Earlier receipts and summaries retain their original entry hashes as evidence for their own dates and candidates.
+
 ## Current disposition
 
 **CI-06: predecessor passed; terminal candidate pending.** Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed its full exact-SHA join, recorded below. The completion-record update creates a new candidate; refresh T1 and obtain separate exact-candidate authorization before its normal non-force push, then require a new terminal receipt.

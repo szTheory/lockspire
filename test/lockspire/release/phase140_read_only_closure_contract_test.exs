@@ -143,6 +143,13 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
        "regular owner-only mode-0600 file"},
       {"a tracked file changed during live checks", fn fixture -> fixture end,
        [gh_scenario: "tracked_write"], "refs or worktree changed"},
+      {"a protected file changed after candidate capture",
+       fn fixture ->
+         relative = hd(@protected_files)
+         content = File.read!(Path.join(fixture.repository, relative))
+         advance_candidate!(fixture, relative, content <> "\nchanged after baseline\n")
+       end, [],
+       "protected hash changed for .planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md"},
       {"origin moved after result publication", &advance_empty_candidate!/1,
        [git_scenario: "final_remote_move"], "checkout changed while writing"}
     ]
@@ -197,14 +204,14 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       File.cp!(Path.join(repo_root, relative), target)
     end)
 
-    historical_protected_blobs = %{
+    protected_baseline_blobs = %{
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md" =>
-        "98cb653bae3e3fd57c1d6b598f42b84c155e983c",
+        "171d46351f804951e8a13c82173113662bb14c1c",
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" =>
-        "e286437b73b7b39f087e90175723525aaa223e05"
+        "17a908a794449885c39e5a059f370a5823eeefd3"
     }
 
-    Enum.each(historical_protected_blobs, fn {relative, commit} ->
+    Enum.each(protected_baseline_blobs, fn {relative, commit} ->
       target = Path.join(repository, relative)
       File.write!(target, git!(repo_root, ["show", "#{commit}:#{relative}"]))
     end)

@@ -61,9 +61,9 @@ RELEASE_JOBS = {
     "Verify public install truth": "skipped",
 }
 PROTECTED_HASHES = {
-    ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md": "b200d2491cffd55c5334e03a25f3410945a6df77e43c57172972e61f8c93c10f",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md": "e28f727046273109629dceaf5b99ab9af6927a7d2084ff960b6fa337983f289d",
     ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md": "adebfc5edc5d5671b4776b6c6495643a43123768907635c8905bd7045abd517b",
-    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md": "a38ba1062de64e990bd05381cacd1a044abefad1e5d1a6320b72413a7a55cc10",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md": "b2c4ada9a7c34fe266dfa527a7c43c00be9afb8d7ce70ff0f8f0a7232d1bf904",
     "docs/lockspire-milestone-roadmap-ratchet-prompt.txt": "8cba24252908e0de1a9c64198b0644579970c5c9c1bfa0ab26d733d720ca3b05",
 }
 CONDITIONAL_RECORDS = (
