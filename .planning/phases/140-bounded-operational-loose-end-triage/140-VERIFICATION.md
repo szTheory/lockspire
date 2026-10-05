@@ -239,3 +239,9 @@ _Verifier: the agent (manual Plan 140-15 receipt A update)_
 ## Plan 140-16 T1 terminal-acceptance status (2026-10-03)
 
 The verification remains 30/32 truths with CI-06 and CI-07 pending. Receipt A on `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` is predecessor evidence only. Plan 140-16 records conditional acceptance before candidate capture and requires a fresh exact-SHA packet, candidate-specific ref authorization if synchronization is needed, and a terminal receipt. The recorded live Phase 139 post-transition failure at `5259a6545c04277ee44038779b23b139b6b1fcb2` remains failed historical evidence; the user's selected “Use recorded failure” choice is preserved, and the skipped `plan:pre` hook is not rerun or reclassified.
+
+## Plan 140-17 T1 safe-deferral status (2026-10-04)
+
+CI-06 and CI-07 remain pending; the canonical verification stays `gaps_found` at 30/32. Receipt A on `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` and every other predecessor result remain limited to their named SHA. The committed verifier review report and proof are unsigned and do not establish a trusted external review attestation. Terminal acceptance is deferred because GSD writes the task summary and tracked lifecycle records after task work (`gsd_post_task_tracked_writes`); a later plan must establish both a trusted external review attestation and a GSD-compatible read-only completion path before candidate capture or expensive CI.
+
+Plan 140-17 created no candidate, candidate diff, terminal receipt, or ref action. No ref approval, repository hygiene, local `mix ci`, external CI, terminal acceptance, finalizer, or read-only closure command was run. The failed Phase 139 probe at `5259a6545c04277ee44038779b23b139b6b1fcb2` remains preserved, and the explicitly skipped `plan:pre` hook remains skipped. Phase 140 stays active. After this plan's GSD-generated summary and metadata commit, the next command is `$gsd-plan-phase 140 --gaps`.

@@ -83,8 +83,8 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
 | TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | Pending terminal exact-SHA receipt |
-| CI-07 | Phase 140 | Pending terminal exact-SHA receipt |
+| CI-06 | Phase 140 | pending terminal exact-SHA receipt, trusted external review attestation, and GSD-compatible read-only closure path |
+| CI-07 | Phase 140 | pending terminal exact-SHA receipt, trusted external review attestation, and GSD-compatible read-only closure path |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |
 | HYGIENE-05 | Phase 139 | Complete |
