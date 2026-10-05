@@ -11,23 +11,63 @@ This is a fail-closed verification contract, not an acceptance receipt. CI-06 an
 - Earlier preparatory local `mix ci` receipt: Plan 140-13 source candidate `0227dea2fd7cc8646d098505c3eb6637afb70d87`; command `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 ERL_FLAGS='+S 1:1' HEX_HOME=/private/tmp/lockspire-hex-cache mix ci`; result **1,441 tests, 0 failures, 6 skipped (286 excluded), then 102 integration tests, 0 failures (33 excluded)**. Log: `/private/tmp/lockspire-140-13-ci.oVxPXP` (mode `0600`). It remains historical source evidence; later Plan 140-15 exact-SHA receipts are recorded below.
 - Keep the historical Lockspire 1.5.0 source, CI, protected Release, tag, checksum, and Hex proof distinct from current acceptance. Supplemental OIDF/FAPI evidence remains redacted and non-certifying.
 
-## Verifier sequence after all Phase 140 writes
+## Post-GSD verifier sequence for Plan 140-18
 
-1. After this plan's SUMMARY and every lifecycle write, fetch `origin` and record full immutable object IDs for `HEAD`, local `main`, and freshly fetched `origin/main`; record the porcelain worktree state and the exact diff from remote (`git diff --binary origin/main...HEAD`, including an explicit empty result when there is no diff). Require all three OIDs to be equal at one full SHA for final acceptance. Disclose the four protected execution-entry files: the Phase 138 ledger, `138-UAT.md`, `138-VERIFICATION.md`, and `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`. Use only the existing hygiene contract's exact registered-overlay treatment and recheck each recorded entry SHA-256 before concluding the bytes are unchanged. Preserve and report every unrelated dirty or untracked path; do not clean it.
-2. If reaching synchronized `main` requires a new push or local ref movement, stop at a separate `gate=blocking-human` authorization checkpoint before either action. Present the final full candidate SHA, exact diff, freshly observed remote OID, normal non-force ref update, and recovery route; wait for explicit authorization for that exact candidate and action. No earlier SHA approval transfers. Do not mutate protected publication state or release-owned files.
-3. Query canonical GitHub `CI` and `Release` run and job records for that exact same final SHA. Required CI is `.github/workflows/ci.yml`; require success for Dialyzer, Release Hygiene Drift, Fast Checks, Minimum Supported Elixir/OTP, Integration Checks, Complete Coverage Evidence, and Adoption Demo Smoke.
-4. Require the `.github/workflows/release.yml` push run to prove the intentional no-publish graph at that SHA: `Maintain Release Please PR` succeeds, while `Validate exact main head and CI evidence`, `Prove exact package before publication`, `Publish verified release to Hex`, and `Verify public install truth` are completed and skipped. Do not dispatch the protected publication workflow.
-5. Run a clean local `mix ci` on that final SHA with the supported Elixir/OTP environment, then run exact hygiene acceptance for the same SHA, supplying one `--warn-disposition LABEL=DISPOSITION` argument for every WARN label actually observed:
+Run this sequence only after Plan 140-18's tasks are committed and the standard GSD executor has committed `140-18-SUMMARY.md` and all applicable lifecycle records. Re-read `140-VERIFICATION.md` and `REQUIREMENTS.md`; CI-06 and CI-07 must still be pending and verification must still report `gaps_found` at 30/32. Installing this route, passing its fixtures, or possessing predecessor evidence is not terminal acceptance.
+
+1. Have a reviewer independent of the code author inspect the exact committed verifier executable bytes and sign the canonical `PASS` statement for that commit under namespace `lockspire-phase140-review`. Transfer the statement, detached signature, and allowed-signers public key through a trusted external channel. Confirm the reviewer principal and SHA256 key fingerprint independently of those supplied files. Before candidate capture, run the signature-only preflight with private mode-0600 inputs:
 
    ```sh
-   bash scripts/maintainer/repo_hygiene_check.sh \
-     --accept-sha {final-sha} \
-     --warn-disposition {observed-label}={specific-disposition} \
-     --format json
+   python3 scripts/maintainer/verify_phase140_read_only_closure.py --verify-review-only \
+     --review-statement "$LOCKSPIRE_140_REVIEW_STATEMENT" \
+     --review-signature "$LOCKSPIRE_140_REVIEW_SIGNATURE" \
+     --allowed-signers "$LOCKSPIRE_140_ALLOWED_SIGNERS" \
+     --reviewer-principal "$LOCKSPIRE_140_REVIEW_PRINCIPAL" \
+     --trusted-fingerprint "$LOCKSPIRE_140_TRUSTED_FINGERPRINT"
    ```
 
-   Repeat `--warn-disposition` once per distinct observed WARN. Omit all such arguments only when the observed WARN count is zero. Require local `mix ci` to pass, zero hygiene BLOCK, exactly one bounded disposition per WARN, and the CLI's exact synchronized-main and same-SHA workflow validation to pass.
-6. Store the final SHA, exact diff and worktree-state receipt, protected-overlay hashes, local `mix ci` result, bounded hygiene receipt, and canonical CI/Release run and job identities with the phase verification. Mark CI-06/CI-07 complete only if the full exact-SHA join and exact hygiene command pass; otherwise keep both pending and name the exact missing ref, authorization, CI, Release, or WARN/BLOCK condition.
+   Do not self-sign, infer the fingerprint from the provided key, or treat a review by the code author as independent. If attestation or the separate identity confirmation is unavailable, stop here and keep both CI requirements pending.
+
+2. Capture a fresh full-SHA candidate packet after the GSD commits: `HEAD`, local `main`, freshly fetched `origin/main`, and the server-advertised `origin/main`; clean porcelain; exact binary diff from remote (`git diff --binary origin/main...HEAD`, including an explicit empty result); and SHA-256 values for all four protected files listed below. Any required local-main movement or push must first stop for a separate `gate=blocking-human` authorization naming the full candidate SHA, observed remote OID, exact diff, intended normal non-force update, and recovery route. Wait for authorization for that exact candidate and action. Earlier approval never transfers. Preserve unrelated dirty or untracked paths; do not clean them.
+
+3. After any separately authorized synchronization, run the existing exact hygiene command once for that full SHA with the pinned Plan 140-15 environment. It runs the complete local `mix ci` gate and emits the receipt JSON on stdout. Capture that output at a new full-SHA path under the owner-only mode-0700 private directory, with umask 077 and noclobber enabled so an existing receipt cannot be replaced. Supply one bounded disposition for each observed WARN and none when there are no WARNs:
+
+   ```sh
+   set -euo pipefail
+   umask 077
+   set -o noclobber
+   install -d -m 700 /private/tmp/lockspire-140-plan
+   LOCKSPIRE_140_RECEIPT="/private/tmp/lockspire-140-plan/140-18-final-acceptance.${LOCKSPIRE_140_FULL_SHA}.json"
+   ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.1 \
+     ERL_FLAGS='+S 1:1' HEX_HOME=/private/tmp/lockspire-hex-cache \
+     bash scripts/maintainer/repo_hygiene_check.sh \
+       --accept-sha "$LOCKSPIRE_140_FULL_SHA" \
+       --warn-disposition {observed-label}={specific-disposition} \
+       --format json > "$LOCKSPIRE_140_RECEIPT"
+   chmod 600 "$LOCKSPIRE_140_RECEIPT"
+   export LOCKSPIRE_140_RECEIPT
+   ```
+
+   Set `LOCKSPIRE_140_FULL_SHA` to the authorized full candidate before this block. Repeat `--warn-disposition` once for each distinct observed WARN; omit the argument when there are none. Require the local gate to pass, zero hygiene BLOCK, and exactly one bounded disposition for every WARN. On failure, keep the private output as a diagnostic and do not pass it to the verifier as a receipt.
+
+4. Wait for the canonical `.github/workflows/ci.yml` push run and `.github/workflows/release.yml` push run to complete on that same full SHA. CI must pass Dialyzer, Release Hygiene Drift, Fast Checks, Minimum Supported Elixir/OTP, Integration Checks, Complete Coverage Evidence, and Adoption Demo Smoke. Release must pass `Maintain Release Please PR`; `Validate exact main head and CI evidence`, `Prove exact package before publication`, `Publish verified release to Hex`, and `Verify public install truth` must be completed and skipped. Do not dispatch protected publication work.
+
+5. Invoke the read-only verifier with the identical candidate and record head, the new exact-SHA private receipt, the signed review, and a new private output whose name contains the full SHA:
+
+   ```sh
+   python3 scripts/maintainer/verify_phase140_read_only_closure.py \
+     --sha {full-sha} \
+     --record-head {same-full-sha} \
+     --receipt "$LOCKSPIRE_140_RECEIPT" \
+     --review-statement "$LOCKSPIRE_140_REVIEW_STATEMENT" \
+     --review-signature "$LOCKSPIRE_140_REVIEW_SIGNATURE" \
+     --allowed-signers "$LOCKSPIRE_140_ALLOWED_SIGNERS" \
+     --reviewer-principal "$LOCKSPIRE_140_REVIEW_PRINCIPAL" \
+     --trusted-fingerprint "$LOCKSPIRE_140_TRUSTED_FINGERPRINT" \
+     --output /private/tmp/lockspire-140-plan/140-18-read-only-closure.{full-sha}.json
+   ```
+
+   The verifier re-queries authenticated canonical workflow evidence and confirms the worktree, `HEAD`, local main, fetched and advertised remote main, protected hashes, and no-publish graph. If any check fails, keep CI-06 and CI-07 pending, retain the exact diagnostic, and restart from a new candidate after any tracked repair. An existing output is never overwritten. The private result is terminal evidence; any later tracked status edit creates a new candidate and requires the sequence again. Do not write a tracked completion claim after success.
 
 The previous dated receipt may support only its recorded SHA. Supplemental OIDF/FAPI results remain separate and cannot substitute for required CI or Release evidence. No current final-SHA receipt is asserted here.
 
