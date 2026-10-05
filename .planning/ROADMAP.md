@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 17/17 plans executed; 16 prior summaries exist, and Plan 140-17 records the GSD lifecycle deferral; verification is 30/32 with CI-06/CI-07 pending
+**Plans**: 18 plans; 140-01 through 140-17 executed, 140-18 planned; verification is 30/32 with CI-06/CI-07 pending
 
 Plans:
 **Wave 1**
@@ -275,6 +275,10 @@ Plans:
 **Wave 17** *(safe deferral while GSD-compatible receipt closure is planned)*
 
 - [x] 140-17-PLAN.md — Record the GSD post-task write boundary, preserve CI-06/CI-07 as pending, and hand off to a lifecycle-compatible closure plan.
+
+**Wave 18** *(externally attested read-only completion route after GSD tracked writes)*
+
+- [ ] 140-18-PLAN.md — Verify an independent review signature, establish the post-GSD read-only receipt route, and gate final same-SHA CI/Release acceptance.
 
 **Cross-cutting constraints:**
 
