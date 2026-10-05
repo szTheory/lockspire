@@ -113,7 +113,7 @@ Plan 140-18 is complete, but Phase 140 is not closed: CI-06 and CI-07 remain pen
 
 ## Self-Check: PASSED
 
-- The focused CLI contract test passed: 3 tests, 0 failures.
+- The focused CLI contract test passed: 3 passing tests.
 - The formatter check, Python compile check, planning assertions and git diff check passed.
 - CI-06 and CI-07 remain pending; no terminal same-SHA result is claimed.
 
