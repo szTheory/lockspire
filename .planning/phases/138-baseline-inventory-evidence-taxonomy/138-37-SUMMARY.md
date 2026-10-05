@@ -22,21 +22,23 @@ key-decisions:
   - Unsupported claims remain judgment/UNVERIFIED/pending for Plan 138-38.
 requirements-completed: [BASE-01, BASE-02, TRIAGE-01, TRIAGE-02, LOOSE-01]
 coverage:
-  - deliverable: Additive 108-row resolution ledger
+  - id: D1
+    description: Additive 108-row resolution ledger
     verification:
-      - kind: test
+      - kind: unit
         ref: test/lockspire/quality/phase_138_prohibition_consistency_test.exs
         status: pass
     human_judgment: false
-  - deliverable: Claim-specific collector, inventory, and router evidence
+  - id: D2
+    description: Claim-specific collector, inventory, and router evidence
     verification:
-      - kind: test
+      - kind: integration
         ref: test/lockspire/release/repository_hygiene_contract_test.exs#phase138_prohibition
         status: pass
-      - kind: test
+      - kind: unit
         ref: tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs
         status: pass
-      - kind: test
+      - kind: integration
         ref: tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
         status: pass
     human_judgment: false

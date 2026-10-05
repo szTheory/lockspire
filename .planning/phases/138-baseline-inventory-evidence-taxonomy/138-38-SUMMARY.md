@@ -19,13 +19,18 @@ key-decisions:
   - Human judgment remains judgment/UNVERIFIED; only ten rows retain ENFORCED status through their individual tests.
 requirements-completed: [BASE-01, BASE-02, TRIAGE-01, TRIAGE-02, LOOSE-01]
 coverage:
-  - deliverable: Attributable per-row outcome for every remaining claim
+  - id: D1
+    description: Attributable per-row outcome for every remaining claim
     verification:
-      - kind: unit
+      - kind: other
         ref: .planning/phases/138-baseline-inventory-evidence-taxonomy/138-PROHIBITION-VALIDATION.md
         status: pass
+      - kind: unit
+        ref: test/lockspire/quality/phase_138_prohibition_consistency_test.exs
+        status: pass
     human_judgment: false
-  - deliverable: Fail-closed closure contract with zero pending rows and derived totals
+  - id: D2
+    description: Fail-closed closure contract with zero pending rows and derived totals
     verification:
       - kind: unit
         ref: test/lockspire/quality/phase_138_prohibition_consistency_test.exs
