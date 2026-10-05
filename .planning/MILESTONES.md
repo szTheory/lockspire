@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.38 Repository Baseline & Reconciliation (Completed: 2026-10-05)
+
+**Delivered:** Closed the maintenance baseline with a dated, source-linked handoff, reconciled Phase 140's terminal exact-SHA acceptance, and aligned project, roadmap, requirements, state, milestone, and release-train records. Deferred findings retain their source-specific triggers.
+
+**Phases completed:** **4** (**138-141**), **70** plans, **20** requirements closed.
+
+**Key outcomes:**
+
+- Accepted Phase 140 source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223` with matching local gates, all seven required CI jobs, and the successful Release no-publish graph.
+- Recorded the current public-package chain independently: Lockspire 1.5.0 remains latest public, published from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`.
+- Preserved proposal-only maintenance findings, historical evidence, WR-01's recurrence trigger, and non-certifying supplemental OIDF/FAPI status.
+- Returned the next supported action to the sustaining train: evaluate a merged patch-eligible change against exact-main CI, hygiene without BLOCK, and supported-surface truth before the release owner acts.
+
+**Evidence:** [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md); [execution summary with distinct report and reconciliation commit SHAs](phases/141-maintenance-baseline-closure/141-01-SUMMARY.md). The Phase 140 receipt proves only its accepted source SHA. This milestone is planning completion and does not publish a package; the latest public release remains 1.5.0.
+
+---
+
 ## v1.3 Roadmap: Lockspire (Backfilled: 2026-09-24)
 
 **Note:** Synthesized from archive snapshot by `$gsd-health --backfill`. Original completion date unknown.

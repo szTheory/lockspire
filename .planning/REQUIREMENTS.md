@@ -12,18 +12,18 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 
 - [x] **BASE-01**: Maintainer can refresh origin refs and tags and prove that local `main` is clean and synchronized with `origin/main`, or record the exact divergence blocking that state.
 - [x] **BASE-02**: Maintainer can inspect every relevant local/remote branch, tag, and worktree with an explicit keep, remove, or defer disposition.
-- [ ] **BASE-03**: Maintainer can perform only authorized, exact-target cleanup without deleting uncommitted work, intentional refs, or historical release evidence.
+- [x] **BASE-03**: Maintainer can perform only authorized, exact-target cleanup without deleting uncommitted work, intentional refs, or historical release evidence; Phase 140 dispositions preserve exact-target revalidation, authority, recovery, and worktree-safety triggers before any future action.
 
 ### GitHub Triage
 
 - [x] **TRIAGE-01**: Maintainer can inspect every open pull request and record a merge-ready, needs-work, close, or defer disposition supported by current evidence.
 - [x] **TRIAGE-02**: Maintainer can inspect every open issue and record a close, retain, or defer disposition without using zero open issues as a success metric.
-- [ ] **TRIAGE-03**: Maintainer can evaluate each dependency-update PR independently against compatibility, security, and required repository gates rather than treating updates as a bulk campaign.
+- [x] **TRIAGE-03**: Maintainer can evaluate each dependency-update PR independently against compatibility, security, and required repository gates rather than treating updates as a bulk campaign; Phase 140 records six individual assessments and retains their source-specific triggers.
 
 ### CI and Release Evidence
 
-- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed receipt A with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with required CI evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
-- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on predecessor `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with same-SHA Release evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
+- [x] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Phase 140's post-summary private receipt and read-only verifier accept `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; all seven required jobs passed in run `37354878786`. See the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
+- [x] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37354878693` succeeded with the protected publication jobs skipped on the same accepted SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. See the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
 - [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
 
 ### Local Gates
@@ -41,13 +41,13 @@ Requirements for the Repository Baseline & Reconciliation milestone. Each requir
 ### Evidence-Led Loose Ends
 
 - [x] **LOOSE-01**: Maintainer can inventory pending todos, archived audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records.
-- [ ] **LOOSE-02**: Maintainer can assign each credible finding exactly one evidence-backed disposition: fix now, defer with a trigger, retain as historical evidence, already resolved, or out of scope.
-- [ ] **LOOSE-03**: Maintainer can close blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps while excluding speculative or feature-sized work.
+- [x] **LOOSE-02**: Maintainer can assign each credible finding exactly one evidence-backed disposition: fix now, defer with a trigger, retain as historical evidence, already resolved, or out of scope; the Phase 140 register reconciles 114 current source IDs and retains source-specific recheck triggers.
+- [x] **LOOSE-03**: Maintainer can close blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps while excluding speculative or feature-sized work; bounded fixes have terminal evidence and unsupported items remain deferred with triggers.
 
 ### Baseline Closure
 
-- [ ] **BASE-04**: Maintainer can inspect a dated baseline record tying final Git state, local gates, required workflow runs, release evidence, loose-end dispositions, and explicit deferrals to exact SHAs and sources.
-- [ ] **BASE-05**: Maintainer can finish v1.38 with coherent GSD state and an explicit return to Lockspire's sustaining GA release train.
+- [x] **BASE-04**: Maintainer can inspect a dated baseline record tying final Git state, local gates, required workflow runs, release evidence, loose-end dispositions, and explicit deferrals to exact SHAs and sources. See the [2026-10-05 Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
+- [x] **BASE-05**: Maintainer can finish v1.38 with coherent GSD state and an explicit return to Lockspire's sustaining GA release train. This planning milestone does not publish a package; see the [baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md) and [release train](RELEASE-TRAIN.md).
 
 ## Future Requirements
 
@@ -79,12 +79,12 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 |-------------|-------|--------|
 | BASE-01 | Phase 138 | Complete |
 | BASE-02 | Phase 138 | Complete |
-| BASE-03 | Phase 140 | Pending |
+| BASE-03 | Phase 140 | Complete |
 | TRIAGE-01 | Phase 138 | Complete |
 | TRIAGE-02 | Phase 138 | Complete |
-| TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA required CI evidence |
-| CI-07 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA Release evidence |
+| TRIAGE-03 | Phase 140 | Complete |
+| CI-06 | Phase 140 | Complete — terminal private receipt, accepted SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`, CI run `37354878786` |
+| CI-07 | Phase 140 | Complete — terminal private receipt, same accepted SHA, Release no-publish run `37354878693` |
 | CI-08 | Phase 139 | Complete |
 | QUAL-05 | Phase 139 | Complete |
 | HYGIENE-05 | Phase 139 | Complete |
@@ -93,10 +93,10 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 | TRUTH-04 | Phase 139 | Complete |
 | TRUTH-05 | Phase 139 | Complete |
 | LOOSE-01 | Phase 138 | Complete |
-| LOOSE-02 | Phase 140 | Pending |
-| LOOSE-03 | Phase 140 | Pending |
-| BASE-04 | Phase 141 | Pending |
-| BASE-05 | Phase 141 | Pending |
+| LOOSE-02 | Phase 140 | Complete |
+| LOOSE-03 | Phase 140 | Complete |
+| BASE-04 | Phase 141 | Complete — dated baseline |
+| BASE-05 | Phase 141 | Complete — reconciled planning state; no package publication |
 
 **Coverage:**
 
@@ -106,4 +106,4 @@ Populated during roadmap creation. Every v1.38 requirement must map to exactly o
 
 ---
 *Requirements defined: 2026-08-28*
-*Last updated: 2026-09-25 after Phase 139 verification*
+*Last updated: 2026-10-05 after Phase 141 baseline closure*

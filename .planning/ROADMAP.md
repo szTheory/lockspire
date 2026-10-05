@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131-137 (shipped 2026-08-28 as Lockspire 1.5.0)
-- 🚧 **v1.38 Repository Baseline & Reconciliation** — Phases 138-141 (planned)
+- ✅ **v1.38 Repository Baseline & Reconciliation** — Phases 138-141 (completed 2026-10-05; planning closeout only, no package publication)
 
 Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and preserved under `.planning/milestones/`.
 
@@ -11,8 +11,8 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 - [x] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies. (completed 2026-09-25)
 - [x] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls. (completed 2026-09-25)
-- [ ] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work.
-- [ ] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train.
+- [x] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work. (completed 2026-10-05; terminal CI-06/CI-07 acceptance is recorded in the Phase 141 baseline)
+- [x] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train. (completed 2026-10-05; no package publication)
 
 ## Phase Details
 
@@ -205,7 +205,7 @@ Plans:
   3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
   4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Plans**: 18/18 plans executed; 140-01 through 140-18 have summaries; automated verifier contract is complete, with final exact-SHA acceptance pending at 30/32 for CI-06/CI-07
+**Plans**: 18/18 plans complete with summaries. The tracked verification report records its pre-terminal 30/32 result; the later post-summary private terminal receipt accepts CI-06/CI-07 on synchronized source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. See the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
 
 Plans:
 **Wave 1**
@@ -286,7 +286,7 @@ Plans:
 - Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
 - Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
 
-**Entry gate (dated pass, current blocker)**: On 2026-09-28 the blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. The latest `plan:pre` attempt failed on a stale writer descriptor. Supported CAS subsequently archived that predecessor and wrote recovery-v2, but the real post-transition probe at `5259a654` failed before the no-publish barrier: completed Phase 140 execution history lies outside the strict historical planning-prefix classifier. Plan 140-14 proves the proper historical entry path and documents the independent final acceptance route; neither CAS success nor local authorization is a gate pass. CI-06 and CI-07 still require final same-SHA acceptance.
+**Terminal acceptance (2026-10-05)**: The Phase 140 owner-only post-summary receipt and read-only verifier pass for synchronized source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. The receipt joins local `mix ci`, exact hygiene, all seven required CI jobs, and the successful Release no-publish graph; the owner handoff corroborates CI-06/CI-07 closure. The earlier `5259a654` post-transition probe remains a recorded failure with its existing disposition and is not reclassified as a pass. Supplemental OIDF/FAPI evidence remains non-certifying.
 
 ### Phase 141: Maintenance-Baseline Closure
 
@@ -299,10 +299,10 @@ Plans:
   2. GSD project, roadmap, requirements, state, and milestone records describe the same completed v1.38 posture and the next sustaining GA release-train action.
   3. A maintainer can distinguish verified closure from deferred conformance, feature, cleanup, or release-publication work that remains outside this milestone.
 
-**Plans**: 1 plan
+**Plans**: 1/1 plan complete
 
 Plans:
-- [ ] 141-01-PLAN.md — Link the terminal baseline evidence and reconcile v1.38 planning truth
+- [x] 141-01-PLAN.md — Link the terminal baseline evidence and reconcile v1.38 planning truth; [execution summary](phases/141-maintenance-baseline-closure/141-01-SUMMARY.md)
 
 ## Progress
 
@@ -310,8 +310,8 @@ Plans:
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
 | 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 18/18 | In Progress|  |
-| 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
+| 140. Bounded Operational Loose-End Triage | 18/18 | Complete | 2026-10-05 |
+| 141. Maintenance-Baseline Closure | 1/1 | Complete | 2026-10-05 |
 
 ## Backlog
 
