@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 140 of 4 · executing"
+    "command": "/gsd:execute-phase 140 --gaps-only",
+    "label": "Execute Phase 140 Plan 17 safe deferral",
+    "reason": "Plan 140-17 is the only incomplete plan; CI-06/CI-07 remain pending at 30/32"
   },
-  "updated_at": "2026-10-04T22:38:45.948Z"
+  "updated_at": "2026-10-05T00:20:30Z"
 }
