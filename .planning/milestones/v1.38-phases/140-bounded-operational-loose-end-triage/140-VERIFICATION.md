@@ -75,6 +75,10 @@ deferred:
     addressed_in: "Phase 141"
     evidence: "ROADMAP.md Phase 141 success criterion 2 requires the GSD project, roadmap, requirements, state, and milestone records to describe one completed v1.38 posture."
 advisory: []
+audit_acknowledged:
+  milestone: v1.38
+  at: 2026-10-06
+  status: gaps_found
 ---
 
 # Phase 140: Bounded Operational Loose-End Triage Verification Report
