@@ -3735,8 +3735,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         release_train =
           run_git!(Paths.path("."), ["show", "#{lineage_base}:.planning/RELEASE-TRAIN.md"])
           |> String.replace(
-            "Release Please version metadata: `1.5.1` <!-- x-release-please-version -->",
-            "Release Please version metadata: `1.5.0` <!-- x-release-please-version -->"
+            "- Latest released version: `1.5.1` <!-- x-release-please-version -->",
+            "- Latest released version: `1.5.0` <!-- x-release-please-version -->"
           )
 
         write_repo_file!(repo, ".planning/RELEASE-TRAIN.md", release_train)
