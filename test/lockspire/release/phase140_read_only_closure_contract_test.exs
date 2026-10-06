@@ -185,7 +185,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   end
 
   defp build_fixture!(repo_root) do
-    nonce = System.unique_integer([:positive])
+    nonce = "#{System.pid()}-#{System.unique_integer([:positive])}"
     directory = Path.join(System.tmp_dir!(), "lockspire-closure-fixture-#{nonce}")
     repository = Path.join(directory, "repository")
     origin = Path.join(directory, "origin.git")
