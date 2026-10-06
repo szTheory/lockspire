@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v1.38
 current_phase: 139
 current_phase_name: Required Truth Reconciliation
-current_plan: Not started
-status: completed
-stopped_at: Completed 139-14-PLAN.md
-last_updated: "2026-10-06T01:08:18.554Z"
+current_plan: 15
+status: executing
+stopped_at: Completed 139-16-PLAN.md; Plan 139-15 remains
+last_updated: "2026-10-06T02:13:46.410Z"
 last_activity: 2026-10-05
-last_activity_desc: Phase 141 complete
-state_head: d000f26d88191a04aacc8f1413ac5320b1e33ba2
+last_activity_desc: Phase 139 execution started
+state_head: 1b974ba1687aad62e7f2e02a787b2b024e18b8e6
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 73
-  completed_plans: 71
+  completed_plans: 72
 milestone_name: Repository Baseline & Reconciliation
 ---
 
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Sustaining GA release train
+**Current focus:** Phase 139 — Required Truth Reconciliation
 
 ## Current Position
 
-Phase: 139 (Required Truth Reconciliation) — READY TO EXECUTE
-Current Plan: Not started
+Phase: 139 (Required Truth Reconciliation) — EXECUTING
+Current Plan: 15
 Total Plans in Phase: 16
-Plan: 1 of 1 — complete
-Status: All phases complete
-Last activity: 2026-10-05 — Phase 141 complete
+Plan: 15 of 16
+Status: Executing Phase 139
+Last activity: 2026-10-05 — Phase 139 execution started
 
 Progress: [██████████] 100%
 
@@ -157,6 +157,7 @@ Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complet
 - [Phase 141]: v1.38 planning closure does not publish a package; the latest public release is 1.5.0 and the next sustaining action remains conditional.
 - [Phase 139]: Release Please version metadata and latest public package remain independent; public truth must agree with the artifact and release tag.
 - [Phase 139]: Malformed, duplicate, missing, or contradictory release-train fields block before exact-SHA acceptance.
+- [Phase 139]: Historical test repositories must use records from the exact committed boundary they model. — This prevents later planning state from contaminating earlier acceptance and relation fixtures.
 
 ### Pending Todos
 
@@ -190,10 +191,10 @@ Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complet
 
 ## Session Continuity
 
-Last session: 2026-10-06T00:10:57.048Z
-Stopped at: Completed 139-14-PLAN.md
+Last session: 2026-10-06T02:11:22.756Z
+Stopped at: Completed 139-16-PLAN.md; Plan 139-15 remains
 Resume file: None
-Resume instruction: Review `.planning/v1.38-MILESTONE-AUDIT.md`, then run `$gsd-complete-milestone v1.38` to archive v1.38 if accepting its historical Phase 140 verification status alongside the later exact-SHA terminal receipt. No push or publication is part of Phase 141. The next sustaining action is to evaluate a merged patch-eligible change, then confirm exact-current-main CI, repository hygiene without BLOCK, and supported-surface truth before the release owner acts. Public package truth remains Lockspire 1.5.0.
+Resume instruction: Run `$gsd-execute-phase 139 --gaps-only --wave 14` to close out the existing Plan 139-15 work and run its focused checks plus local `mix ci`; then run `$gsd-execute-phase 139` to refresh Phase 139 verification before continuing v1.38 closeout.
 
 ## Performance Metrics
 
@@ -263,3 +264,4 @@ All 38 Phase 138 plans, all 13 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 140 P18 | 43 min | 3 tasks | 12 files |
 | Phase 141 P01 | 10m | 3 tasks | 7 files |
 | Phase 139 P14 | 9 min | 2 tasks | 3 files |
+| Phase 139 P16 | 39min | 2 tasks | 2 files |
