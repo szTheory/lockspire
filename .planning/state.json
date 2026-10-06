@@ -11,7 +11,7 @@
     {
       "number": "139",
       "name": "Required Truth Reconciliation",
-      "status": "complete"
+      "status": "in_progress"
     },
     {
       "number": "140",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:new-milestone",
-    "label": "Start a new milestone",
-    "reason": "All phases complete — start a new milestone"
+    "command": "/gsd:progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-05T23:58:41.779Z"
+  "updated_at": "2026-10-06T01:08:18.570Z"
 }
