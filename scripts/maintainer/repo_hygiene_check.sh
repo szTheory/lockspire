@@ -661,8 +661,12 @@ release_train_artifact_version() {
 }
 
 release_train_tag_version() {
-  sed -nE 's/^- GitHub release truth: \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/[^)]*\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\) was created on `[0-9-]+`.*/\1 \2/p' .planning/RELEASE-TRAIN.md |
-    awk '$1 == $2 { print $1 }'
+  local tag_evidence label_version url_repository url_version expected_repository
+  tag_evidence="$(sed -nE 's/^- GitHub release truth: \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\) was created on `[0-9-]+`.*/\1|\2|\3/p' .planning/RELEASE-TRAIN.md)"
+  IFS='|' read -r label_version url_repository url_version <<< "$tag_evidence"
+  expected_repository="${REPOSITORY:-szTheory/lockspire}"
+  [[ "$url_repository" == "$expected_repository" && "$label_version" == "$url_version" ]] || return 1
+  printf '%s\n' "$label_version"
 }
 
 release_train_has_consistent_versions() {

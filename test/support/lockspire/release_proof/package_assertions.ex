@@ -183,6 +183,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          "/tag/lockspire-v1.5.0)",
          "/tag/lockspire-v1.5.1)"
        )},
+      {"GitHub release URL points to another repository",
+       String.replace(
+         source,
+         "https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.0",
+         "https://github.com/another-owner/another-repo/releases/tag/lockspire-v1.5.0"
+       )},
       {"legacy release label cannot replace metadata",
        String.replace(source, metadata_line, "- Latest released version: `1.5.1`")}
     ]
