@@ -90,6 +90,8 @@ The repository hygiene gate now distinguishes Release Please metadata `1.5.1` fr
 1. **Task 1: Accept the maintained release train and reach exact-SHA receipt through refreshed origin/main** — `fc4420f0` (`fix`).
 2. **Task 2: Reject misleading release-train values before acceptance** — `7c25ae0c` (`test`).
 
+**Plan metadata:** `ddc99a3c` (initial summary, STATE, and ROADMAP commit).
+
 ## Files Created/Modified
 
 - `scripts/maintainer/repo_hygiene_check.sh` — parses and corroborates current metadata/public package claims before acceptance.
