@@ -105,6 +105,31 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert post_publish_install_truth =~ ~S(if: ${{ needs.publish.result == 'success' }})
   end
 
+  test "release automation requires explicit opt-in and current-main recovery authorization" do
+    automerge = File.read!(@automerge)
+    graph = @release |> File.read!() |> release_job_graph()
+    recovery_validation = graph["recovery-validation"]
+    publish = graph["publish"]
+
+    assert automerge =~ "vars.LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED == 'true'"
+    assert recovery_validation =~ "LOCKSPIRE_PHASE143_AUTHORIZED_SHA"
+    assert recovery_validation =~ "test -n \"$AUTHORIZED_SHA\""
+    assert recovery_validation =~ "test \"$RECOVERY_REF\" = \"$AUTHORIZED_SHA\""
+    assert recovery_validation =~ "test \"$verified_sha\" = \"$AUTHORIZED_SHA\""
+    assert publish =~ "name: Recheck exact current main before Hex upload"
+    assert publish =~ "git fetch --no-tags origin refs/heads/main"
+    assert publish =~ "repos/$GH_REPO/git/ref/heads/main"
+    assert publish =~ "actions/variables/LOCKSPIRE_PHASE143_AUTHORIZED_SHA"
+    assert publish =~ "test \"$remote_main_sha\" = \"$hosted_main_sha\""
+    assert publish =~ "test \"$remote_main_sha\" = \"$AUTHORIZED_SHA\""
+    assert publish =~ "test \"$remote_main_sha\" = \"$authorized_sha_from_api\""
+    assert publish =~ "test \"$remote_main_sha\" = \"$RECOVERY_REF\""
+    assert publish =~ "test \"$remote_main_sha\" = \"$VERIFIED_SHA\""
+
+    assert :binary.match(publish, "name: Recheck exact current main before Hex upload") <
+             :binary.match(publish, "name: Publish package")
+  end
+
   defp release_job_graph(workflow) do
     [_, jobs] = String.split(workflow, "\njobs:\n", parts: 2)
 
