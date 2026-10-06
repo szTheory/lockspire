@@ -8563,7 +8563,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       if Keyword.get(options, :assert_main_only_fetch, false) do
         fetch_log = Path.join(state, "fetch.argv")
 
-        assert File.exists?(fetch_log), "exact-SHA acceptance did not refresh origin/main"
+        assert File.exists?(fetch_log), "exact-SHA acceptance did not refresh origin/main: #{elem(result, 0)}"
 
         fetch_commands =
           fetch_log
