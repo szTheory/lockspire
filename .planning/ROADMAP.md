@@ -151,9 +151,10 @@ This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific 
   4. A maintainer can trace the current public release from its source SHA through CI, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
   5. Maintained planning and release records agree on the current milestone and release posture, while Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
 
-**Plans**: 14/15 plans executed
+**Plans**: 14/16 plans executed
 
 Plans:
+- [ ] 139-16-PLAN.md
 - [x] 139-12-PLAN.md
 - [x] 139-13-PLAN.md
 - [x] 139-14-PLAN.md
@@ -313,7 +314,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
-| 139. Required Truth Reconciliation | 14/15 | In Progress|  |
+| 139. Required Truth Reconciliation | 14/16 | In Progress|  |
 | 140. Bounded Operational Loose-End Triage | 18/18 | Complete | 2026-10-05 |
 | 141. Maintenance-Baseline Closure | 1/1 | Complete    | 2026-10-05 |
 
