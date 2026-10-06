@@ -14,7 +14,7 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 Once a repeatable check is automated and required CI proves it, do not add a manual UAT/signoff step for the same property or reopen that choice without new evidence that automation cannot establish it. Keep human approval for genuinely consequential external actions, such as a specifically identified ref update, separate from verification.
 
-## Current Milestone: v1.38 Repository Baseline & Reconciliation
+## Completed Milestone: v1.38 Repository Baseline & Reconciliation
 
 **Goal:** Bring Lockspire to a clean, green, internally consistent maintenance baseline, then close only concrete loose ends supported by repository evidence.
 
@@ -22,6 +22,8 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 - Verify that local Git state, branches, tags, worktrees, GitHub pull requests and issues, required CI and release workflows, local quality gates, and repository hygiene all have an intentional disposition.
 - Reconcile GSD planning state, roadmap and requirements truth, release records, maintained documentation, and other repository-owned evidence so they describe one coherent baseline.
 - Audit existing plans, findings, todos, and archived evidence, fixing only blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps while deferring speculative or feature-sized work.
+
+**Delivered:** Phases 138-141 closed the repository evidence baseline, exact-SHA required CI and Release no-publish acceptance, and a sustaining-train handoff. This v1.38 completion archives planning only and publishes no package; Lockspire 1.5.0 remains the latest public release. Three audit items were acknowledged at closeout: one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See [MILESTONES.md](MILESTONES.md) and [STATE.md](STATE.md).
 
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
@@ -44,7 +46,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 Phases 138-141 are complete. Phase 140's post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits. The completed v1.38 planning milestone returns the repository to its sustaining GA release train without publishing a package.
 
-At the 2026-10-05 closure observation, Hex lists `1.5.0` as the latest public package. GitHub's `lockspire-v1.5.0` tag and release identify source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` and protected publication run `33141484467` succeeded for that source, and Hex reports checksum `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. The `1.5.1` value in release metadata is not proof of a published package. Phase 140's supplemental OIDF/FAPI results remain redacted, non-certifying follow-up evidence, not a release gate or certification claim. The current and historical source identities and evidence links are in the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md).
+At the 2026-10-05 closure observation, Hex lists `1.5.0` as the latest public package. GitHub's `lockspire-v1.5.0` tag and release identify source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` and protected publication run `33141484467` succeeded for that source, and Hex reports checksum `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. The `1.5.1` value in release metadata is not proof of a published package. Phase 140's supplemental OIDF/FAPI results remain redacted, non-certifying follow-up evidence, not a release gate or certification claim. The current and historical source identities and evidence links are in the [Phase 141 baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md).
 
 The implemented milestone makes packaged installation executable, aligns the supported client/resource-server surface with runtime truth, proves the separate-origin SaaS journey, enforces acyclic/cohesive internals, restores high-signal static analysis, aggregates truthful complete-suite coverage above 84%, pins external conformance inputs, and binds release proof to one manifest-verified tar. Generated routes and consent, collision-safe migrations, semantic access-token readers, capability-aware registration, durable DPoP replay defaults, and host-owned authorization boundaries remain verified and security-audited.
 
@@ -336,7 +338,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md) |
+| Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md) |
 | Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141; Lockspire 1.5.0 remains the latest public package |
 | Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
 | Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |

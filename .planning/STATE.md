@@ -1,45 +1,37 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.38
-current_phase: 139
-current_phase_name: Required Truth Reconciliation
-current_plan: 16
-status: verifying
-stopped_at: Completed 139-15-PLAN.md
-last_updated: "2026-10-06T09:08:07.010Z"
-last_activity: 2026-10-05
-last_activity_desc: Phase 139 execution started
-state_head: b4da418433523959d74d2e1e48328b706a1d7330
+status: Awaiting next milestone
+stopped_at: Archived milestone v1.38
+last_updated: "2026-10-06T14:03:46.286Z"
+last_activity: 2026-10-06
+last_activity_desc: Milestone v1.38 completed and archived
+state_head: 06d19a74489995edb39617bcc021ac9b7eea4774
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 73
   completed_plans: 73
 milestone_name: Repository Baseline & Reconciliation
+closeout_type: override_closeout
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-05)
+See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 139 — Required Truth Reconciliation
+**Current focus:** Planning the next milestone with `$gsd-new-milestone`
 
 ## Current Position
 
-Phase: 139 (Required Truth Reconciliation) — EXECUTING
-Current Plan: 16
-Total Plans in Phase: 16
-Plan: 16 of 16
-Status: Phase complete — ready for verification
-Last activity: 2026-10-05 — Phase 139 execution started
-
-Progress: [██████████] 100%
-
-Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complete. Phase 140's post-summary private receipt and read-only verifier pass CI-06/CI-07 for accepted source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; the seven-job CI and Release no-publish proof is linked from the [Phase 141 baseline](phases/141-maintenance-baseline-closure/141-BASELINE.md). The tracked Phase 140 verification report's 30/32 score is the earlier pre-terminal result and remains historical; it is not rewritten by this closeout. The baseline report commit is `905811bbe3da33e631de630d538d0c65accf74d5`; the later four-record reconciliation commit is separately identified in the Phase 141 summary. Neither documentation commit inherits acceptance for the Phase 140 source SHA. Phase 139's failed post-transition probe `5259a6545c04277ee44038779b23b139b6b1fcb2`, Phase 140 WR-01's recurrence deferral, and Phase 138 UAT #100's authorized-refresh trigger remain preserved. The latest public package remains 1.5.0; v1.38 completion is not a release.
+Phase: Milestone v1.38 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-06 — Milestone v1.38 completed and archived
 
 ## Accumulated Context
 
@@ -188,17 +180,20 @@ Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complet
 |----------|------|--------|-------------|
 | Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start |
 | Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start |
+| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 |
+| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
+| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 
 ## Session Continuity
 
-Last session: 2026-10-06T09:08:06.796Z
-Stopped at: Completed 139-15-PLAN.md
+Last session: 2026-10-06T14:03:46Z
+Stopped at: v1.38 archived; closeout evidence and overrides recorded
 Resume file: None
-Resume instruction: Run `$gsd-execute-phase 139` to refresh Phase 139 verification before rerunning the v1.38 audit and completing the milestone.
+Resume instruction: Run `$gsd-new-milestone` to begin the next milestone. Lockspire 1.5.0 remains the latest public package.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans, all 13 Phase 139 plans, all 18 Phase 140 plans, and the Phase 141 plan have summaries. Phase 140's tracked verifier remains a historical 30/32 pre-terminal report; the private post-summary terminal result passes CI-06/CI-07 for the accepted source SHA recorded in the Phase 141 baseline.
+All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the Phase 141 plan have summaries. Phase 140's tracked verifier remains a historical 30/32 pre-terminal report; the private post-summary terminal result passes CI-06/CI-07 for the accepted source SHA recorded in the Phase 141 baseline.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -266,3 +261,7 @@ All 38 Phase 138 plans, all 13 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 139 P14 | 9 min | 2 tasks | 3 files |
 | Phase 139 P16 | 39min | 2 tasks | 2 files |
 | Phase 139 P15 | 325min | 2 tasks | 4 files |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
