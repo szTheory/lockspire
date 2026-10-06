@@ -5,10 +5,10 @@ current_phase: 142
 current_phase_name: "Phase 142: Merge the Corrected Main Baseline"
 status: Ready to plan Phase 142
 stopped_at: Phase 142 context gathered
-last_updated: "2026-10-06T15:39:16.969Z"
+last_updated: "2026-10-06T15:40:19.686Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 142 context gathered; next plan Phase 142
-state_head: a9d1a4afb7ceba313a41fb3a82a2046f093351fb
+state_head: b8a22e83356249a1cf57c1d425ea3c17e85398c7
 progress:
   total_phases: 2
   completed_phases: 0
@@ -187,10 +187,10 @@ Last activity: 2026-10-06 — Phase 142 context gathered
 
 ## Session Continuity
 
-Last session: 2026-10-06T15:39:16.954Z
+Last session: 2026-10-06T15:40:19.673Z
 Stopped at: Phase 142 context gathered
 Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-CONTEXT.md
-Resume instruction: Run `$gsd-plan-phase 142` to create the plan for the first v1.39 phase. Lockspire 1.5.0 remains the latest public package until verified 1.5.1 publication.
+Resume instruction: Run `$gsd-plan-phase 142 --text` to create the plan for the first v1.39 phase. Lockspire 1.5.0 remains the latest public package until verified 1.5.1 publication.
 
 ## Performance Metrics
 
