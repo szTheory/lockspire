@@ -25,6 +25,18 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 **Delivered:** Phases 138-141 closed the repository evidence baseline, exact-SHA required CI and Release no-publish acceptance, and a sustaining-train handoff. This v1.38 completion archives planning only and publishes no package; Lockspire 1.5.0 remains the latest public release. Three audit items were acknowledged at closeout: one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See [MILESTONES.md](MILESTONES.md) and [STATE.md](STATE.md).
 
+## Current Milestone: v1.39 Verified 1.5.1 Release
+
+**Goal:** Correct the release record on `main`, land the reviewed Phase 141 baseline, and publish Lockspire 1.5.1 only after exact-main checks and protected artifact verification pass.
+
+**Target features:**
+- Merge the corrected release record through the normal reviewed PR path, keeping 1.5.0 identified as the latest public package until 1.5.1 is proven public.
+- Require green CI and a passing repository-hygiene check for the exact current `main` revision before release.
+- Use the protected release workflow to publish the manifest-verified 1.5.1 artifact and verify its public checksum, matching GitHub release, and clean-room install journey.
+- If any gate fails, preserve the evidence, record the blocker, and make no claim that 1.5.1 shipped.
+
+**Verification:** Use the existing required CI, repository-hygiene, protected publish, and public install checks as the acceptance evidence. Do not add a manual UAT step for a property those checks prove.
+
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
 **Goal:** Make Lockspire's documented embedded-provider path genuinely installable, prove it through a separate SaaS client and resource-server journey, and tighten the architecture and executable quality gates around that truth.
@@ -44,7 +56,9 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 ## Current State
 
-Phases 138-141 are complete. Phase 140's post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits. The completed v1.38 planning milestone returns the repository to its sustaining GA release train without publishing a package.
+v1.39 is defining requirements. The Phase 141 branch has corrected release-truth records but is not yet merged to `main`; current remote `main` still incorrectly labels 1.5.1 as released. Hex and GitHub evidence show 1.5.0 is the latest public release. The milestone must merge the correction, establish fresh exact-current-main release gates, and publish 1.5.1 through the protected workflow only if every gate passes.
+
+The completed v1.38 planning milestone returned the repository to its sustaining GA release train without publishing a package. Its Phase 140 post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits.
 
 At the 2026-10-05 closure observation, Hex lists `1.5.0` as the latest public package. GitHub's `lockspire-v1.5.0` tag and release identify source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` and protected publication run `33141484467` succeeded for that source, and Hex reports checksum `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. The `1.5.1` value in release metadata is not proof of a published package. Phase 140's supplemental OIDF/FAPI results remain redacted, non-certifying follow-up evidence, not a release gate or certification claim. The current and historical source identities and evidence links are in the [Phase 141 baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md).
 
@@ -87,10 +101,6 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 **Why now:** v1.29 made the admin UI coherent and v1.30 made the adoption demo boring to start and inspect. The next leverage point is not protocol breadth; it is making the admin UI's design system compound at the component and group level so future operator pages can be improved idempotently without reintroducing generic styling, inaccessible controls, dark-mode regressions, mobile overflow, or host-integration weight.
 
 **Delivered:** Phases 116-120 are complete, verified, audited, and archived. The component lab contract, stress fixtures, shared primitives, highest-drift admin page/group pass, browser proof matrix, deterministic regression guardrails, bounded operator docs, and final adversarial audit shipped without adding public lab/design-system/theming support or browser-tooling product surface.
-
-## Next Milestone Goals
-
-No feature milestone is active. Continue the sustaining GA release train: evaluate merged patch-eligible changes, then confirm exact-current-main CI, repository hygiene without BLOCK, and supported-surface truth before the release owner acts. Lockspire 1.5.0 remains the latest public package until the normal release train changes that fact. Keep the retained supplemental OIDF/FAPI findings as evidence for future bounded conformance work; certification claims and supported-surface expansion require stable measured proof.
 
 ## Completed Milestone: v1.30 Adoption Demo Docker DX & Repo Hygiene
 
@@ -230,10 +240,10 @@ No feature milestone is active. Continue the sustaining GA release train: evalua
 
 ### Active
 
-- [ ] Required repo-owned CI and release workflows, `mix ci`, and the repository hygiene check pass from a clean and synchronized `main` baseline.
-- [ ] Local refs, branches, tags, and worktrees plus open GitHub pull requests and issues have an explicit, intentional disposition.
-- [ ] GSD planning state, release records, maintained documentation, and other repository-owned evidence describe one coherent current baseline.
-- [ ] Evidence-backed blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are fixed or explicitly deferred without forcing speculative work.
+- [ ] The corrected Phase 141 release record is merged through a reviewed PR, and 1.5.0 remains the latest-release claim until public 1.5.1 proof exists.
+- [ ] Required CI and the repository-hygiene check pass for the exact current `main` revision before release dispatch.
+- [ ] The protected release workflow publishes one manifest-verified 1.5.1 artifact and proves its public checksum, matching GitHub release, and clean-room install journey.
+- [ ] Any failed release gate stops publication or completion, preserves its evidence, and records the blocker without claiming 1.5.1 shipped.
 
 ### Validated
 
@@ -402,4 +412,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-05 after Phase 141 completion*
+*Last updated: 2026-10-06 after starting milestone v1.39*
