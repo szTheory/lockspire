@@ -2,12 +2,48 @@
 
 ## Milestones
 
+- 🔄 **v1.39 Verified 1.5.1 Release** — Phases 142–143 (active; publish only after exact-main checks and protected verification pass).
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
 
 Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and preserved under `.planning/milestones/`.
 
 ## Phases
+
+<details>
+<summary>🔄 v1.39 Verified 1.5.1 Release (active)</summary>
+
+- [ ] **Phase 142: Merge the Corrected Main Baseline** — Merge the corrected Phase 141 release record through review and prove the resulting exact `main` revision is ready for release.
+- [ ] **Phase 143: Publish and Verify Lockspire 1.5.1** — Use the protected release workflow to publish and verify the exact 1.5.1 artifact, or record the failing gate and keep the milestone open.
+
+### Phase 142: Merge the Corrected Main Baseline
+
+**Goal**: Maintainers merge the reviewed Phase 141 correction so `main` truthfully identifies 1.5.0 as the latest public package until 1.5.1 has public proof, then establish a green, exact-current-main release candidate.
+**Depends on**: None
+**Requirements**: TRUTH-06, CI-09
+**Success Criteria** (what must be TRUE):
+
+1. The correction lands through the normal reviewed PR path, and release records continue to identify 1.5.0 as latest until a verified 1.5.1 publication exists.
+2. The post-merge local `main` and refreshed `origin/main` resolve to the same full commit SHA, and the canonical required CI run passes for that SHA.
+3. The exact-SHA repository-hygiene check reports no `BLOCK`, with every `WARN` disposition recorded; supplemental OIDF/FAPI results remain outside the release gate.
+
+**Plans**: 0 plans
+
+### Phase 143: Publish and Verify Lockspire 1.5.1
+
+**Goal**: Maintainers publish Lockspire 1.5.1 from the approved exact `main` revision through the protected workflow and record the matching public package proof.
+**Depends on**: Phase 142
+**Requirements**: REL-01, REL-02, REL-03
+**Success Criteria** (what must be TRUE):
+
+1. The protected workflow validates that the 1.5.1 source is the exact current `main` SHA and has its own matching successful canonical CI run before publication.
+2. The workflow publishes the same manifest-verified artifact it proved before publication; public Hex checksum, `lockspire-v1.5.1` release target, and clean-room install proof all match that artifact and source.
+3. `.planning/RELEASE-TRAIN.md` records the actual public version, source SHA, canonical CI run, protected publish run, package checksum, GitHub release, and install-truth result.
+4. If any gate fails, publication or milestone completion stops, the evidence and blocker are recorded, and no record says 1.5.1 shipped.
+
+**Plans**: 0 plans
+
+</details>
 
 <details>
 <summary>✅ v1.38 Repository Baseline & Reconciliation (completed 2026-10-06)</summary>
