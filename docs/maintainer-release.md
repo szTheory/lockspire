@@ -33,7 +33,7 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 2. Let Release Please open or update the release PR.
 3. Treat the Release Please PR as review-only evidence, not authenticated release proof.
 4. Review the release PR diff, `mix.exs`, `CHANGELOG.md`, and the workflow/config artifacts that define the release lane.
-5. Let `.github/workflows/release-please-automerge.yml` squash-merge an eligible bot Release Please PR after green `main` CI, or manually merge it if the guard does not apply.
+5. Let `.github/workflows/release-please-automerge.yml` squash-merge an eligible bot Release Please PR only when the repository variable `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED` is explicitly `true`; otherwise keep the automation closed and use the separately reviewed PR path.
 6. Wait for the merge commit's own successful `CI` push run on the current `main` head. That exact run dispatches the trusted release lane with its SHA and run ID; the pre-merge CI run is never publish evidence.
 7. Let the validator confirm the exact immutable main SHA, matching successful CI run, and repository identity.
 8. Let the unprivileged prepublish job build one tar, bind it to a redacted manifest, and prove that local tar through the clean-room SaaS HTTP journey.
@@ -41,7 +41,7 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 10. Treat the resulting protected Hex package, matching GitHub release, exact-version public HTTP journey, and bounded evidence artifact as the authoritative release record.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
-Normal releases maintain the Release Please PR on `main` pushes. After the repository token merges a Release Please PR, automation explicitly dispatches canonical CI for that exact current main SHA because token-authored merges do not recursively emit push workflows. A successful canonical CI run—either a normal `push` or that bounded `workflow_dispatch`—then dispatches publish. Recovery needs the same full SHA, successful CI run ID, and auditable reason; it cannot publish a tag, a stale SHA, or a pre-merge run.
+Normal releases maintain the Release Please PR on `main` pushes. After an authorized repository-token merge, automation explicitly dispatches canonical CI for that exact current main SHA because token-authored merges do not recursively emit push workflows. A successful canonical CI run—either a normal `push` or that bounded `workflow_dispatch`—then dispatches publish. Recovery needs the same full SHA, successful CI run ID, auditable reason, and the one-SHA `LOCKSPIRE_PHASE143_AUTHORIZED_SHA` authorization; the protected job fetches `main` again after its environment approval and verifies the authorization variable and current ref immediately before upload.
 
 ## Evidence boundaries
 
@@ -80,7 +80,7 @@ Keep the Release Please invocation repo-controlled. `.github/workflows/release.y
 
 `mix package.publish-dry-run` remains a required release gate through `mix release.preflight`. It does not require the publish secret and is not a manual local verification requirement for contributor closure.
 
-If `workflow_dispatch` is used, treat it as exact-ref only. It is not a new release-intent trigger and it does not replace the Release Please driven path. `workflow_dispatch` accepts only one lowercase full 40-hex commit equal to current `origin/main`, together with the matching successful canonical CI run ID; it never accepts a tag or arbitrary candidate.
+If `workflow_dispatch` is used, treat it as exact-ref only. It is not a new release-intent trigger and it does not replace the Release Please driven path. `workflow_dispatch` accepts only one lowercase full 40-hex commit equal to current `origin/main`, together with the matching successful canonical CI run ID and a nonempty matching `LOCKSPIRE_PHASE143_AUTHORIZED_SHA`; immediately before upload, a fresh origin fetch and GitHub API reads must still show that same SHA. It never accepts a tag or arbitrary candidate.
 
 ## Sustaining release train
 
@@ -105,7 +105,7 @@ Before merging a Release Please PR for the root package, confirm this checked-in
 7. Confirm `workflow_dispatch` remains exact-ref only, requires `recovery_reason`, `recovery_ref`, and `source_ci_run_id`, and accepts only a lowercase full 40-hex commit equal to current `origin/main` rather than a tag or new release intent.
 8. Confirm the publish job still targets exactly one protected environment, `hex-publish`, and that checked-in proof stops there.
 9. Confirm `docs/supported-surface.md` remains the canonical support contract and that this maintainer guide, `README`, and `SECURITY.md` only defer to it rather than creating a second support matrix.
-10. Let the guarded auto-merge workflow merge the reviewed Release Please PR, or merge it manually if the guard does not apply, and let the protected workflow run become the first authenticated evidence bucket.
+10. Confirm `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED` is intentionally enabled before allowing the guard to merge. During the Phase 142 hold, it remains absent/false and the hosted workflow is disabled. Only Phase 143 may authorize one exact current-main recovery SHA; publish only after the environment approval and last-moment SHA recheck.
 
 Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `mix release.preflight` and the exact-tar Hex upload are release-workflow commands only; publication belongs to the protected `hex-publish` boundary, not to local maintainer folklore.
 
@@ -114,12 +114,22 @@ Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `
 - Use a protected `hex-publish` environment for publish jobs.
 - Store `HEX_API_KEY` as an environment secret, not an inline workflow secret.
 - Restrict the environment to deployments from `main`.
-- Do not require environment reviewers for `hex-publish`; protection comes from environment scoping, branch restriction, and the checked-in workflow contract rather than a manual approval click.
+- Require explicit environment approval for `hex-publish`. The current repository has only the maintainer as an eligible reviewer, so `szTheory` may approve their own deployment (`prevent_self_review=false`); this is a manual hold, not independent review.
 - Keep workflow permissions minimal and publish jobs pinned to immutable action SHAs.
 - Keep `HEX_API_KEY` available only to the protected publish step. The prepublish clean-room proof and postpublish public verification stay unprivileged.
 - Configure the `hex-publish` environment to serialize and restrict publication from `main`; the workflow's release concurrency remains non-canceling.
 - If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with both a recovery reason and the exact recovery ref so the protected publish lane replays the intended revision rather than whatever `main` points to later.
 - Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
+
+## Phase 142/143 release hold
+
+Phase 142 keeps the hosted `Release Please Auto Merge` workflow disabled. `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED` stays absent or anything other than the literal `true`, and `LOCKSPIRE_PHASE143_AUTHORIZED_SHA` stays absent. Do not merge the correction PR, dispatch protected publication, create a tag/release, or publish while this hold is in effect.
+
+The `hex-publish` environment retains its custom `main`-only deployment policy and requires a named reviewer. The sole eligible reviewer is the authenticated maintainer, so the configured approval permits self-review and is not independent. `main` requires a PR, strict status checks for all seven canonical CI jobs, stale-review dismissal, conversation resolution, admin enforcement, and no force pushes or branch deletion. Its approval count is zero because no independent reviewer is available; the separate exact-head merge authorization remains required.
+
+Phase 143 may authorize one publication only after its separate maintainer decision and fresh current-main proof. Set `LOCKSPIRE_PHASE143_AUTHORIZED_SHA` to that full lowercase 40-hex `main` SHA, then use the exact-ref recovery dispatch with the matching successful canonical CI run and reason. The protected job waits for `hex-publish` approval, fetches `refs/heads/main` again, reads the hosted `main` ref and authorization variable through GitHub's API, and requires every value plus the recovery input and verified source SHA to match before the Hex upload. Clear the authorized SHA after the attempt. Re-enable `Release Please Auto Merge` and set `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED=true` only after publication and public artifact verification pass.
+
+For rollback, clear `LOCKSPIRE_PHASE143_AUTHORIZED_SHA`, remove or set `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED` to a value other than `true`, disable `Release Please Auto Merge`, and query both release workflows for queued, in-progress, waiting, or pending runs. Stop if a protected publish run is active; do not silently cancel it. Verify the `hex-publish` `main` policy and required reviewer gate remain in place.
 
 ## Release posture
 
