@@ -25,13 +25,25 @@ function projectRoot(cwd) {
     'scripts/maintainer/finalize_phase_138_inventory.sh',
     'scripts/maintainer/finalize_phase_139_acceptance.sh',
   ];
-  const directories = [
-    '.planning/phases/138-baseline-inventory-evidence-taxonomy',
-    '.planning/phases/139-required-truth-reconciliation',
+  const directoryLayouts = [
+    [
+      '.planning/phases/138-baseline-inventory-evidence-taxonomy',
+      '.planning/phases/139-required-truth-reconciliation',
+    ],
+    [
+      '.planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy',
+      '.planning/milestones/v1.38-phases/139-required-truth-reconciliation',
+    ],
   ];
   try {
     if (!files.every((entry) => fs.lstatSync(path.join(root, entry)).isFile()) ||
-        !directories.every((entry) => fs.lstatSync(path.join(root, entry)).isDirectory())) return null;
+        !directoryLayouts.some((layout) => layout.every((entry) => {
+          try {
+            return fs.lstatSync(path.join(root, entry)).isDirectory();
+          } catch (_) {
+            return false;
+          }
+        }))) return null;
   } catch (_) {
     return null;
   }
