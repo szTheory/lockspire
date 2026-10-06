@@ -6340,6 +6340,39 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.mkdir_p!(Path.dirname(destination_path))
       copy_planning_fixture!(source_path, destination_path)
     end
+
+    phase_139_directory =
+      Path.join(destination, "phases/139-required-truth-reconciliation")
+
+    expected_plans =
+      Enum.map(1..13, fn number ->
+        "139-#{String.pad_leading(to_string(number), 2, "0")}-PLAN.md"
+      end)
+
+    expected_summaries =
+      Enum.map(1..13, fn number ->
+        "139-#{String.pad_leading(to_string(number), 2, "0")}-SUMMARY.md"
+      end)
+
+    actual_plans =
+      phase_139_directory
+      |> Path.join("139-??-PLAN.md")
+      |> Path.wildcard()
+      |> Enum.map(&Path.basename/1)
+      |> Enum.sort()
+
+    actual_summaries =
+      phase_139_directory
+      |> Path.join("139-??-SUMMARY.md")
+      |> Path.wildcard()
+      |> Enum.map(&Path.basename/1)
+      |> Enum.sort()
+
+    assert actual_plans == expected_plans,
+           "Phase 139 parent fixture must contain only plans 01 through 13"
+
+    assert actual_summaries == expected_summaries,
+           "Phase 139 parent fixture must contain only summaries 01 through 13"
   end
 
   defp build_sealed_phase_139_acceptance_fixture!(
